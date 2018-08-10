@@ -132,7 +132,7 @@ func (d *Disco) DiscoverServiceURL(host svchost.Hostname, serviceID string) *url
 // by the public-facing Discover method.
 func (d *Disco) discover(host svchost.Hostname) Host {
 	discoURL := &url.URL{
-		Scheme: "http",
+		Scheme: "https",
 		Host:   host.String(),
 		Path:   discoPath,
 	}
