@@ -6,6 +6,7 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 )
 
 func resourceTFEOrganization() *schema.Resource {
@@ -41,18 +42,14 @@ func resourceTFEOrganization() *schema.Resource {
 			"collaborator_auth_policy": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
-				Computed: true,
-				ValidateFunc: func(v interface{}, k string) ([]string, []error) {
-					switch v.(string) {
-					case "password", "two_factor_mandatory":
-						// These are the two valid options, so we return without errors.
-						return nil, nil
-					default:
-						return nil, []error{fmt.Errorf(
-							"%q must be either 'password' or 'two_factor_mandatory'", k),
-						}
-					}
-				},
+				Default:  string(tfe.AuthPolicyPassword),
+				ValidateFunc: validation.StringInSlice(
+					[]string{
+						string(tfe.AuthPolicyPassword),
+						string(tfe.AuthPolicyTwoFactor),
+					},
+					false,
+				),
 			},
 		},
 	}

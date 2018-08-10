@@ -21,9 +21,16 @@ func resourceTFEOrganizationToken() *schema.Resource {
 				ForceNew: true,
 			},
 
+			"force_regenerate": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+				ForceNew: true,
+			},
+
 			"token": &schema.Schema{
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:      schema.TypeString,
+				Computed:  true,
+				Sensitive: true,
 			},
 		},
 	}
@@ -35,15 +42,31 @@ func resourceTFEOrganizationTokenCreate(d *schema.ResourceData, meta interface{}
 	// Get the organization name.
 	organization := d.Get("organization").(string)
 
-	log.Printf("[DEBUG] Create new token for organization: %s", organization)
+	log.Printf("[DEBUG] Check if a token already exists for organization: %s", organization)
+	_, err := tfeClient.OrganizationTokens.Read(ctx, organization)
+	if err != nil && err != tfe.ErrResourceNotFound {
+		return fmt.Errorf("Error checking if a token exists for organization %s: %v", organization, err)
+	}
+
+	// If error is nil, the token already exists.
+	if err == nil {
+		if !d.Get("force_regenerate").(bool) {
+			return fmt.Errorf("A token already exists for organization: %s", organization)
+		}
+		log.Printf("[DEBUG] Regenerating existing token for organization: %s", organization)
+	}
+
 	token, err := tfeClient.OrganizationTokens.Generate(ctx, organization)
 	if err != nil {
 		return fmt.Errorf(
 			"Error creating new token for organization %s: %v", organization, err)
 	}
 
-	d.Set("token", token.Token)
 	d.SetId(organization)
+
+	// We need to set this here in the create function as this value will
+	// only be returned once during the creation of the token.
+	d.Set("token", token.Token)
 
 	return resourceTFEOrganizationTokenRead(d, meta)
 }

@@ -73,12 +73,12 @@ func resourceTFETeamMembersRead(d *schema.ResourceData, meta interface{}) error 
 		return fmt.Errorf("Error reading users from team %s: %v", teamID, err)
 	}
 
-	usernames := resourceTFETeamMembers().Schema["usernames"].ZeroValue().(*schema.Set)
+	var usernames []interface{}
 	for _, user := range users {
-		usernames.Add(user.Username)
+		usernames = append(usernames, user.Username)
 	}
 
-	if usernames.Len() > 0 {
+	if len(usernames) > 0 {
 		d.Set("usernames", usernames)
 	} else {
 		log.Printf("[DEBUG] Users do no longer exist")
@@ -140,21 +140,27 @@ func resourceTFETeamMembersUpdate(d *schema.ResourceData, meta interface{}) erro
 func resourceTFETeamMembersDelete(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	// Get the team ID and username..
-	teamID := d.Get("team_id").(string)
+	log.Printf("[DEBUG] Retrieve users to remove from team: %s", d.Id())
+	users, err := tfeClient.TeamMembers.List(ctx, d.Id())
+	if err != nil {
+		if err == tfe.ErrResourceNotFound {
+			return nil
+		}
+		return fmt.Errorf("Error retrieving users to remove from team %s: %v", d.Id(), err)
+	}
 
 	// Create a new options struct.
 	options := tfe.TeamMemberRemoveOptions{}
 
-	// Add all the users that need to be added.
-	for _, username := range d.Get("usernames").(*schema.Set).List() {
-		options.Usernames = append(options.Usernames, username.(string))
+	// Add all the users that need to be removed.
+	for _, user := range users {
+		options.Usernames = append(options.Usernames, user.Username)
 	}
 
-	log.Printf("[DEBUG] Remove users from team: %s", teamID)
-	err := tfeClient.TeamMembers.Remove(ctx, teamID, options)
+	log.Printf("[DEBUG] Remove users from team: %s", d.Id())
+	err = tfeClient.TeamMembers.Remove(ctx, d.Id(), options)
 	if err != nil {
-		return fmt.Errorf("Error removing users to team %s: %v", teamID, err)
+		return fmt.Errorf("Error removing users to team %s: %v", d.Id(), err)
 	}
 
 	return nil

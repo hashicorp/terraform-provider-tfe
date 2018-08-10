@@ -1,7 +1,7 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_organization_token"
-sidebar_current: "docs-tfe-organization-token"
+sidebar_current: "docs-resource-tfe-organization-token"
 description: |-
 Generates a new organization token, replacing any existing token.
 ---
@@ -17,7 +17,7 @@ Basic usage:
 
 ```hcl
 resource "tfe_organization_token" "token" {
-	organization = "my-org-name"
+  organization = "my-org-name"
 }
 ```
 
@@ -26,6 +26,9 @@ resource "tfe_organization_token" "token" {
 The following arguments are supported:
 
 * `organization` - (Required) Name of the organization.
+* `force_regenerate` - (Optional) If set to `true`, a new token will be
+  generated even if a token already exists. This will invalidate the existing
+  token!
 
 ## Attributes Reference
 

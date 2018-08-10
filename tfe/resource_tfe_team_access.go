@@ -6,6 +6,7 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 )
 
 func resourceTFETeamAccess() *schema.Resource {
@@ -19,17 +20,14 @@ func resourceTFETeamAccess() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
-				ValidateFunc: func(v interface{}, k string) ([]string, []error) {
-					switch v.(string) {
-					case "admin", "read", "write":
-						// These are the two valid options, so we return without errors.
-						return nil, nil
-					default:
-						return nil, []error{fmt.Errorf(
-							"%q must be either 'admin', 'read' or 'write'", k),
-						}
-					}
-				},
+				ValidateFunc: validation.StringInSlice(
+					[]string{
+						string(tfe.AccessAdmin),
+						string(tfe.AccessRead),
+						string(tfe.AccessWrite),
+					},
+					false,
+				),
 			},
 
 			"team_id": &schema.Schema{
@@ -103,7 +101,12 @@ func resourceTFETeamAccessRead(d *schema.ResourceData, meta interface{}) error {
 
 	// Update config.
 	d.Set("access", string(tmAccess.Access))
-	d.Set("team_id", tmAccess.Team.ID)
+
+	if tmAccess.Team != nil {
+		d.Set("team_id", tmAccess.Team.ID)
+	} else {
+		d.Set("team_id", "")
+	}
 
 	return nil
 }

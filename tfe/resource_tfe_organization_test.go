@@ -195,13 +195,13 @@ func testAccCheckTFEOrganizationDestroy(s *terraform.State) error {
 const testAccTFEOrganization_basic = `
 resource "tfe_organization" "foobar" {
   name = "terraform-test"
-	email = "admin@company.com"
+  email = "admin@company.com"
 }`
 
 const testAccTFEOrganization_update = `
 resource "tfe_organization" "foobar" {
   name = "terraform-updated"
-	email = "admin-updated@company.com"
-	session_timeout = 3600
-	session_remember = 3600
+  email = "admin-updated@company.com"
+  session_timeout = 3600
+  session_remember = 3600
 }`

@@ -30,15 +30,12 @@ resource "tfe_organization" "org" {
 }
 ```
 
-We recommend omitting the token which can be provided as an environment
-variable or set as [credentials in the CLI Config File](/docs/commands/cli-config.html#credentials).
-
 ## Argument Reference
 
 The following arguments are supported:
 
-* `hostname` - (Optional) The remote backend hostname to connect to. Default
-  to app.terraform.io.
-* `token` - (Optional) The token used to authenticate with the remote backend.
-  If `TFE_TOKEN` is set or credentials for the host are configured in the CLI
-  Config File, then this will override any saved value for this.
+* `hostname` - (Optional) The Terraform Enterprise hostname to connect to.
+  Defaults to `app.terraform.io`.
+* `token` - (Optional) The token used to authenticate with Terraform Enterprise.
+	We recommend omitting the token which can be set as `credentials` in the
+  [CLI config file](/docs/commands/cli-config.html#credentials).

@@ -45,14 +45,13 @@ func Provider() terraform.ResourceProvider {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: descriptions["hostname"],
-				DefaultFunc: schema.EnvDefaultFunc("TFE_HOSTNAME", defaultHostname),
+				Default:     defaultHostname,
 			},
 
 			"token": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: descriptions["token"],
-				DefaultFunc: schema.EnvDefaultFunc("TFE_TOKEN", nil),
 			},
 		},
 
@@ -66,7 +65,7 @@ func Provider() terraform.ResourceProvider {
 			"tfe_team_member":        resourceTFETeamMember(),
 			"tfe_team_members":       resourceTFETeamMembers(),
 			"tfe_team_token":         resourceTFETeamToken(),
-			"tfe_workspoce":          resourceTFEWorkspace(),
+			"tfe_workspace":          resourceTFEWorkspace(),
 			"tfe_variable":           resourceTFEVariable(),
 		},
 
@@ -108,13 +107,21 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		return nil, fmt.Errorf("host %s does not provide a Terraform Enterprise API", host)
 	}
 
-	// Get any configured credentials from the CLI Config File.
-	creds, err := services.CredentialsForHost(host)
-	if err != nil {
-		log.Printf("[DEBUG] Failed to get credentials for %s: %s (ignoring)", host, err)
+	// Only try to get to the token from the credentials source if no token
+	// was explicitly set in the provider configuration.
+	if token == "" {
+		creds, err := services.CredentialsForHost(host)
+		if err != nil {
+			log.Printf("[DEBUG] Failed to get credentials for %s: %s (ignoring)", host, err)
+		}
+		if creds != nil {
+			token = creds.Token()
+		}
 	}
-	if creds != nil {
-		token = creds.Token()
+
+	// If we still don't have a token at this point, we return an error.
+	if token == "" {
+		return nil, fmt.Errorf("required token could not be found")
 	}
 
 	// Create a new TFE client config..
@@ -187,8 +194,7 @@ func credentialsSource(config *Config) auth.CredentialsSource {
 }
 
 var descriptions = map[string]string{
-	"hostname": "The remote backend hostname to connect to. Default to app.terraform.io.",
-	"token": "The token used to authenticate with the remote backend. If `TFE_TOKEN` is set\n" +
-		"or credentials for the host are configured in the CLI Config File, then those\n" +
-		"will be used instead.",
+	"hostname": "The Terraform Enterprise hostname to connect to. Defaults to app.terraform.io.",
+	"token": "The token used to authenticate with Terraform Enterprise. We recommend omitting\n" +
+		"the token which can be set as credentials in the CLI config file.",
 }

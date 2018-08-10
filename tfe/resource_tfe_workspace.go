@@ -153,9 +153,9 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("terraform_version", workspace.TerraformVersion)
 	d.Set("working_directory", workspace.WorkingDirectory)
 
-	vcsRepo := resourceTFEWorkspace().Schema["vcs_repo"].ZeroValue().(*schema.Set)
+	var vcsRepo []interface{}
 	if workspace.VCSRepo != nil {
-		vcsRepo.Add(map[string]interface{}{
+		vcsRepo = append(vcsRepo, map[string]interface{}{
 			"identifier":         workspace.VCSRepo.Identifier,
 			"branch":             workspace.VCSRepo.Branch,
 			"ingress_submodules": workspace.VCSRepo.IngressSubmodules,

@@ -159,25 +159,25 @@ func testAccCheckTFESentinelPolicyDestroy(s *terraform.State) error {
 const testAccTFESentinelPolicy_basic = `
 resource "tfe_organization" "foobar" {
   name = "terraform-test"
-	email = "admin@company.com"
+  email = "admin@company.com"
 }
 
 resource "tfe_sentinel_policy" "foobar" {
-	name = "policy-test"
-	organization = "${tfe_organization.foobar.id}"
-	policy = "main = rule { true }"
-	enforce_mode = "hard-mandatory"
+  name = "policy-test"
+  organization = "${tfe_organization.foobar.id}"
+  policy = "main = rule { true }"
+  enforce_mode = "hard-mandatory"
 }`
 
 const testAccTFESentinelPolicy_update = `
 resource "tfe_organization" "foobar" {
   name = "terraform-test"
-	email = "admin@company.com"
+  email = "admin@company.com"
 }
 
 resource "tfe_sentinel_policy" "foobar" {
-	name = "policy-test"
-	organization = "${tfe_organization.foobar.id}"
-	policy = "main = rule { false }"
-	enforce_mode = "soft-mandatory"
+  name = "policy-test"
+  organization = "${tfe_organization.foobar.id}"
+  policy = "main = rule { false }"
+  enforce_mode = "soft-mandatory"
 }`

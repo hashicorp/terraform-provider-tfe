@@ -1,7 +1,7 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_sentinel_policy"
-sidebar_current: "docs-tfe-sentinel-policy"
+sidebar_current: "docs-resource-tfe-sentinel-policy"
 description: |-
 Sentinel Policy as Code is an embedded policy as code framework integrated with Terraform Enterprise.
 ---
@@ -21,10 +21,10 @@ Basic usage:
 
 ```hcl
 resource "tfe_sentinel_policy" "policy" {
-	name = "my-policy-name"
-	organization = "my-org-name"
-	policy = "main = rule { true }"
-	enforce_mode = "hard-mandatory"
+  name = "my-policy-name"
+  organization = "my-org-name"
+  policy = "main = rule { true }"
+  enforce_mode = "hard-mandatory"
 }
 ```
 

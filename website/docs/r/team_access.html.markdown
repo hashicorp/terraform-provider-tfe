@@ -1,7 +1,7 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_team_access"
-sidebar_current: "docs-tfe-team-access"
+sidebar_current: "docs-resource-tfe-team-access"
 description: |-
   Associate a team to permissions on a workspace.
 ---
@@ -20,15 +20,15 @@ resource "tfe_team" "team" {
   organization = "my-org-name"
 }
 
-resource "tfe_workspoce" "workspace" {
-	name = "my-workspace-name"
-	organization = "my-org-name"
+resource "tfe_workspace" "workspace" {
+  name = "my-workspace-name"
+  organization = "my-org-name"
 }
 
 resource "tfe_team_access" "access" {
-	access = "read"
+  access = "read"
   team_id = "${tfe_team.team.id}"
-  workspace_id = "${tfe_workspoce.workspace.id}"
+  workspace_id = "${tfe_workspace.workspace.id}"
 }
 ```
 

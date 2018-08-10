@@ -71,4 +71,3 @@ Testing
 -------
 A hostname and token must be provided in order to run the acceptance tests. We recomment configuring
 the required `credentials` in the [CLI config file](/docs/commands/cli-config.html#credentials).
-Alternatively they can also be provided via the TFE_HOSTNAME and TFE_TOKEN environment variables.

@@ -1,7 +1,7 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_ssh_key"
-sidebar_current: "docs-tfe-ssh-key"
+sidebar_current: "docs-resource-tfe-ssh-key"
 description: |-
   This resource represents an SSH key which includes a name and the SSH private key.
 ---
@@ -17,8 +17,8 @@ Basic usage:
 
 ```hcl
 resource "tfe_ssh_key" "ssh-key" {
-	name = "my-ssh-key-name"
-	organization = "my-org-name"
+  name = "my-ssh-key-name"
+  organization = "my-org-name"
   key = "private-ssh-key"
 }
 ```

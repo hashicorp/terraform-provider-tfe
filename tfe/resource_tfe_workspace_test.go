@@ -21,14 +21,14 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 				Config: testAccTFEWorkspace_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
-						"tfe_workspoce.foobar", workspace),
+						"tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
-						"tfe_workspoce.foobar", "name", "workspace-test"),
+						"tfe_workspace.foobar", "name", "workspace-test"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspoce.foobar", "auto_apply", "false"),
+						"tfe_workspace.foobar", "auto_apply", "false"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspoce.foobar", "working_directory", ""),
+						"tfe_workspace.foobar", "working_directory", ""),
 				),
 			},
 		},
@@ -47,14 +47,14 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 				Config: testAccTFEWorkspace_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
-						"tfe_workspoce.foobar", workspace),
+						"tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
-						"tfe_workspoce.foobar", "name", "workspace-test"),
+						"tfe_workspace.foobar", "name", "workspace-test"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspoce.foobar", "auto_apply", "false"),
+						"tfe_workspace.foobar", "auto_apply", "false"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspoce.foobar", "working_directory", ""),
+						"tfe_workspace.foobar", "working_directory", ""),
 				),
 			},
 
@@ -62,16 +62,16 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 				Config: testAccTFEWorkspace_update,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
-						"tfe_workspoce.foobar", workspace),
+						"tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributesUpdated(workspace),
 					resource.TestCheckResourceAttr(
-						"tfe_workspoce.foobar", "name", "workspace-updated"),
+						"tfe_workspace.foobar", "name", "workspace-updated"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspoce.foobar", "auto_apply", "true"),
+						"tfe_workspace.foobar", "auto_apply", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspoce.foobar", "terraform_version", "0.11.1"),
+						"tfe_workspace.foobar", "terraform_version", "0.11.1"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspoce.foobar", "working_directory", "terraform/test"),
+						"tfe_workspace.foobar", "working_directory", "terraform/test"),
 				),
 			},
 		},
@@ -156,7 +156,7 @@ func testAccCheckTFEWorkspaceDestroy(s *terraform.State) error {
 	tfeClient := testAccProvider.Meta().(*tfe.Client)
 
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "tfe_workspoce" {
+		if rs.Type != "tfe_workspace" {
 			continue
 		}
 
@@ -179,24 +179,24 @@ func testAccCheckTFEWorkspaceDestroy(s *terraform.State) error {
 const testAccTFEWorkspace_basic = `
 resource "tfe_organization" "foobar" {
   name = "terraform-test"
-	email = "admin@company.com"
+  email = "admin@company.com"
 }
 
-resource "tfe_workspoce" "foobar" {
-	name = "workspace-test"
-	organization = "${tfe_organization.foobar.id}"
+resource "tfe_workspace" "foobar" {
+  name = "workspace-test"
+  organization = "${tfe_organization.foobar.id}"
 }`
 
 const testAccTFEWorkspace_update = `
 resource "tfe_organization" "foobar" {
   name = "terraform-test"
-	email = "admin@company.com"
+  email = "admin@company.com"
 }
 
-resource "tfe_workspoce" "foobar" {
-	name = "workspace-updated"
-	organization = "${tfe_organization.foobar.id}"
-	auto_apply = true
-	terraform_version = "0.11.1"
-	working_directory = "terraform/test"
+resource "tfe_workspace" "foobar" {
+  name = "workspace-updated"
+  organization = "${tfe_organization.foobar.id}"
+  auto_apply = true
+  terraform_version = "0.11.1"
+  working_directory = "terraform/test"
 }`

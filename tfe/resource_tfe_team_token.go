@@ -21,9 +21,16 @@ func resourceTFETeamToken() *schema.Resource {
 				ForceNew: true,
 			},
 
+			"force_regenerate": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+				ForceNew: true,
+			},
+
 			"token": &schema.Schema{
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:      schema.TypeString,
+				Computed:  true,
+				Sensitive: true,
 			},
 		},
 	}
@@ -35,6 +42,20 @@ func resourceTFETeamTokenCreate(d *schema.ResourceData, meta interface{}) error 
 	// Get the team ID.
 	teamID := d.Get("team_id").(string)
 
+	log.Printf("[DEBUG] Check if a token already exists for team: %s", teamID)
+	_, err := tfeClient.TeamTokens.Read(ctx, teamID)
+	if err != nil && err != tfe.ErrResourceNotFound {
+		return fmt.Errorf("Error checking if a token exists for team %s: %v", teamID, err)
+	}
+
+	// If error is nil, the token already exists.
+	if err == nil {
+		if !d.Get("force_regenerate").(bool) {
+			return fmt.Errorf("A token already exists for team: %s", teamID)
+		}
+		log.Printf("[DEBUG] Regenerating existing token for team: %s", teamID)
+	}
+
 	log.Printf("[DEBUG] Create new token for team: %s", teamID)
 	token, err := tfeClient.TeamTokens.Generate(ctx, teamID)
 	if err != nil {
@@ -42,8 +63,11 @@ func resourceTFETeamTokenCreate(d *schema.ResourceData, meta interface{}) error 
 			"Error creating new token for team %s: %v", teamID, err)
 	}
 
-	d.Set("token", token.Token)
 	d.SetId(teamID)
+
+	// We need to set this here in the create function as this value will
+	// only be returned once during the creation of the token.
+	d.Set("token", token.Token)
 
 	return resourceTFETeamTokenRead(d, meta)
 }
@@ -68,11 +92,8 @@ func resourceTFETeamTokenRead(d *schema.ResourceData, meta interface{}) error {
 func resourceTFETeamTokenDelete(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	// Get the team ID.
-	teamID := d.Get("team_id").(string)
-
-	log.Printf("[DEBUG] Delete token from team: %s", teamID)
-	err := tfeClient.TeamTokens.Delete(ctx, teamID)
+	log.Printf("[DEBUG] Delete token from team: %s", d.Id())
+	err := tfeClient.TeamTokens.Delete(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil

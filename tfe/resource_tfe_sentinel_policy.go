@@ -6,6 +6,7 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 )
 
 func resourceTFESentinelPolicy() *schema.Resource {
@@ -36,18 +37,15 @@ func resourceTFESentinelPolicy() *schema.Resource {
 			"enforce_mode": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
-				Computed: true,
-				ValidateFunc: func(v interface{}, k string) ([]string, []error) {
-					switch v.(string) {
-					case "advisory", "hard-mandatory", "soft-mandatory":
-						// These are the two valid options, so we return without errors.
-						return nil, nil
-					default:
-						return nil, []error{fmt.Errorf(
-							"%q must be either 'advisory', 'hard-mandatory' or 'soft-mandatory'", k),
-						}
-					}
-				},
+				Default:  string(tfe.EnforcementSoft),
+				ValidateFunc: validation.StringInSlice(
+					[]string{
+						string(tfe.EnforcementAdvisory),
+						string(tfe.EnforcementHard),
+						string(tfe.EnforcementSoft),
+					},
+					false,
+				),
 			},
 		},
 	}
@@ -106,7 +104,10 @@ func resourceTFESentinelPolicyRead(d *schema.ResourceData, meta interface{}) err
 
 	// Update the config.
 	d.Set("name", policy.Name)
-	d.Set("enforce_mode", string(policy.Enforce[0].Mode))
+
+	if len(policy.Enforce) == 1 {
+		d.Set("enforce_mode", string(policy.Enforce[0].Mode))
+	}
 
 	content, err := tfeClient.Policies.Download(ctx, policy.ID)
 	if err != nil {

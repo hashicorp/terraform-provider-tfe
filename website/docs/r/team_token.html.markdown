@@ -1,7 +1,7 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_team_token"
-sidebar_current: "docs-tfe-team-token"
+sidebar_current: "docs-resource-tfe-team-token"
 description: |-
   Generates a new team token and overrides existing token if one exists.
 ---
@@ -21,7 +21,7 @@ resource "tfe_team" "team" {
 }
 
 resource "tfe_team_token" "token" {
-	team_id = "${tfe_team.team.id}"
+  team_id = "${tfe_team.team.id}"
 }
 ```
 
@@ -30,6 +30,9 @@ resource "tfe_team_token" "token" {
 The following arguments are supported:
 
 * `team_id` - (Required) ID of the team.
+* `force_regenerate` - (Optional) If set to `true`, a new token will be
+  generated even if a token already exists. This will invalidate the existing
+  token!
 
 ## Attributes Reference
 
