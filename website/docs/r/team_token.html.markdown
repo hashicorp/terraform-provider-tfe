@@ -1,7 +1,7 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_team_token"
-sidebar_current: "docs-tfe-team-token"
+sidebar_current: "docs-resource-tfe-team-token"
 description: |-
   Generates a new team token and overrides existing token if one exists.
 ---

@@ -1,7 +1,7 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_variable"
-sidebar_current: "docs-tfe-variable"
+sidebar_current: "docs-resource-tfe-variable"
 description: |-
   Creates, updates and destroys variables.
 ---
@@ -20,7 +20,7 @@ resource "tfe_organization" "organization" {
 	email = "admin@company.com"
 }
 
-resource "tfe_workspoce" "workspace" {
+resource "tfe_workspace" "workspace" {
 	name = "my-workspace-name"
 	organization = "${tfe_organization.organization.id}"
 }
@@ -29,7 +29,7 @@ resource "tfe_variable" "variable" {
 	key = "my_key_name"
 	value = "my_value_name"
 	category = "terraform"
-  workspace_id = "${tfe_workspoce.workspace.id}"
+  workspace_id = "${tfe_workspace.workspace.id}"
 }
 ```
 

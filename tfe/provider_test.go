@@ -28,6 +28,8 @@ func TestProvider_impl(t *testing.T) {
 }
 
 func testAccPreCheck(t *testing.T) {
-	// The credentials must be provided by the CLI config file or by exporting
-	// the TFE_HOSTNAME and TFE_TOKEN environment varriables.
+	// The credentials must be provided by the CLI config file for testing.
+	if err := Provider().Configure(&terraform.ResourceConfig{}); err != nil {
+		t.Fatalf("err: %s", err)
+	}
 }

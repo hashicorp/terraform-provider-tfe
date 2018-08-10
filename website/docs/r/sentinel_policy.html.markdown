@@ -1,7 +1,7 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_sentinel_policy"
-sidebar_current: "docs-tfe-sentinel-policy"
+sidebar_current: "docs-resource-tfe-sentinel-policy"
 description: |-
 Sentinel Policy as Code is an embedded policy as code framework integrated with Terraform Enterprise.
 ---

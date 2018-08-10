@@ -81,7 +81,7 @@ func testAccCheckTFETeamTokenDestroy(s *terraform.State) error {
 const testAccTFETeamToken_basic = `
 resource "tfe_organization" "foobar" {
   name = "terraform-test"
-	email = "admin@company.com"
+  email = "admin@company.com"
 }
 
 resource "tfe_team" "foobar" {

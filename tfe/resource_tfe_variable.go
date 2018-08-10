@@ -6,6 +6,7 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 )
 
 func resourceTFEVariable() *schema.Resource {
@@ -22,25 +23,22 @@ func resourceTFEVariable() *schema.Resource {
 			},
 
 			"value": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
+				Type:      schema.TypeString,
+				Required:  true,
+				Sensitive: true,
 			},
 
 			"category": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
-				ValidateFunc: func(v interface{}, k string) ([]string, []error) {
-					switch v.(string) {
-					case "env", "terraform":
-						// These are the two valid options, so we return without errors.
-						return nil, nil
-					default:
-						return nil, []error{fmt.Errorf(
-							"%q must be either 'env' or 'terraform'", k),
-						}
-					}
-				},
+				ValidateFunc: validation.StringInSlice(
+					[]string{
+						string(tfe.CategoryEnv),
+						string(tfe.CategoryTerraform),
+					},
+					false,
+				),
 			},
 
 			"hcl": &schema.Schema{

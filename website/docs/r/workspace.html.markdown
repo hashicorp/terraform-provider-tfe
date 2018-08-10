@@ -1,12 +1,12 @@
 ---
 layout: "tfe"
-page_title: "Terraform Enterprise: tfe_workspoce"
-sidebar_current: "docs-tfe-workspace"
+page_title: "Terraform Enterprise: tfe_workspace"
+sidebar_current: "docs-resource-tfe-workspace"
 description: |-
   Workspaces represent running infrastructure managed by Terraform.
 ---
 
-# tfe_workspoce
+# tfe_workspace
 
 Provides a workspace resource.
 
@@ -15,7 +15,7 @@ Provides a workspace resource.
 Basic usage:
 
 ```hcl
-resource "tfe_workspoce" "my-workspace" {
+resource "tfe_workspace" "my-workspace" {
 	name = "my-workspace"
 	organization = "my-organization"
 }

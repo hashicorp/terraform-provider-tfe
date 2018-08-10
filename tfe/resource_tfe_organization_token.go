@@ -22,8 +22,9 @@ func resourceTFEOrganizationToken() *schema.Resource {
 			},
 
 			"token": &schema.Schema{
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:      schema.TypeString,
+				Computed:  true,
+				Sensitive: true,
 			},
 		},
 	}
@@ -42,8 +43,11 @@ func resourceTFEOrganizationTokenCreate(d *schema.ResourceData, meta interface{}
 			"Error creating new token for organization %s: %v", organization, err)
 	}
 
-	d.Set("token", token.Token)
 	d.SetId(organization)
+
+	// We need to set this here in the create function as this value will
+	// only be returned once during the creation of the token.
+	d.Set("token", token.Token)
 
 	return resourceTFEOrganizationTokenRead(d, meta)
 }

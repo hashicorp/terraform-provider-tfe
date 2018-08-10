@@ -170,7 +170,7 @@ func testAccCheckTFETeamMembersDestroy(s *terraform.State) error {
 const testAccTFETeamMembers_basic = `
 resource "tfe_organization" "foobar" {
   name = "terraform-test"
-	email = "admin@company.com"
+  email = "admin@company.com"
 }
 
 resource "tfe_team" "foobar" {
@@ -179,14 +179,14 @@ resource "tfe_team" "foobar" {
 }
 
 resource "tfe_team_members" "foobar" {
-	team_id = "${tfe_team.foobar.id}"
-	usernames = ["admin", "sander"]
+  team_id = "${tfe_team.foobar.id}"
+  usernames = ["admin", "sander"]
 }`
 
 const testAccTFETeamMembers_update = `
 resource "tfe_organization" "foobar" {
   name = "terraform-test"
-	email = "admin@company.com"
+  email = "admin@company.com"
 }
 
 resource "tfe_team" "foobar" {
@@ -195,6 +195,6 @@ resource "tfe_team" "foobar" {
 }
 
 resource "tfe_team_members" "foobar" {
-	team_id = "${tfe_team.foobar.id}"
-	usernames = ["admin", "ryan"]
+  team_id = "${tfe_team.foobar.id}"
+  usernames = ["admin", "ryan"]
 }`

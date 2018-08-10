@@ -1,14 +1,14 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_team"
-sidebar_current: "docs-tfe-team"
+sidebar_current: "docs-resource-tfe-team-x"
 description: |-
-  Creates and destroys teams.
+  Manages teams.
 ---
 
 # tfe_team
 
-Creates and destroys teams.
+Manages teams.
 
 ## Example Usage
 
