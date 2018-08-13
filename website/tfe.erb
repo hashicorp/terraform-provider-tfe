@@ -1,0 +1,66 @@
+<% wrap_layout :inner do %>
+    <% content_for :sidebar do %>
+        <div class="docs-sidebar hidden-print affix-top" role="complementary">
+            <ul class="nav docs-sidenav">
+                <li<%= sidebar_current("docs-home") %>>
+                    <a href="/docs/providers/index.html">All Providers</a>
+                </li>
+
+                <li<%= sidebar_current("docs-tfe-index") %>>
+                    <a href="/docs/providers/tfe/index.html">Terraform Enterprise Provider</a>
+                </li>
+
+                <li<%= sidebar_current("docs-tfe-resource") %>>
+                    <a href="#">Resources</a>
+                    <ul class="nav nav-visible">
+                        <li<%= sidebar_current("docs-resource-tfe-organization-x") %>>
+                            <a href="/docs/providers/tfe/r/organization.html">tfe_organization</a>
+                        </li>
+
+                        <li<%= sidebar_current("docs-resource-tfe-organization-token") %>>
+                            <a href="/docs/providers/tfe/r/organization_token.html">tfe_organization_token</a>
+                        </li>
+
+                        <li<%= sidebar_current("docs-resource-tfe-sentinel-policy") %>>
+                            <a href="/docs/providers/tfe/r/sentinel_policy.html">tfe_sentinel_policy</a>
+                        </li>
+
+                        <li<%= sidebar_current("docs-resource-tfe-ssh-key") %>>
+                            <a href="/docs/providers/tfe/r/ssh_key.html">tfe_ssh_key</a>
+                        </li>
+
+                        <li<%= sidebar_current("docs-resource-tfe-team-x") %>>
+                            <a href="/docs/providers/tfe/r/team.html">tfe_team</a>
+                        </li>
+
+                        <li<%= sidebar_current("docs-resource-tfe-team-access") %>>
+                            <a href="/docs/providers/tfe/r/team_access.html">tfe_team_access</a>
+                        </li>
+
+                        <li<%= sidebar_current("docs-resource-tfe-team-member-x") %>>
+                            <a href="/docs/providers/tfe/r/team_member.html">tfe_team_member</a>
+                        </li>
+
+                        <li<%= sidebar_current("docs-resource-tfe-team-members") %>>
+                            <a href="/docs/providers/tfe/r/team_members.html">tfe_team_members</a>
+                        </li>
+
+                        <li<%= sidebar_current("docs-resource-tfe-team-token") %>>
+                            <a href="/docs/providers/tfe/r/team_token.html">tfe_team_token</a>
+                        </li>
+
+                        <li<%= sidebar_current("docs-resource-tfe-variable") %>>
+                            <a href="/docs/providers/tfe/r/variable.html">tfe_variable</a>
+                        </li>
+
+                        <li<%= sidebar_current("docs-resource-tfe-workspace") %>>
+                            <a href="/docs/providers/tfe/r/workspace.html">tfe_workspace</a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    <% end %>
+
+    <%= yield %>
+<% end %>

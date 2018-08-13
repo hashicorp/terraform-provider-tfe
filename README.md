@@ -69,6 +69,5 @@ $ make testacc
 
 Testing
 -------
-A hostname and token must be provided via the TFE_HOSTNAME and TFE_TOKEN environment
-variables in order to run acceptance tests.
-
+A hostname and token must be provided in order to run the acceptance tests. We recomment configuring
+the required `credentials` in the [CLI config file](/docs/commands/cli-config.html#credentials).
