@@ -27,9 +27,9 @@ The following arguments are supported:
 
 * `name` - (Required) Name of the organization.
 * `email` - (Required) Admin email address.
-* `session_timeout` - (Optional) Session timeout after inactivity (minutes).
+* `session_timeout_minutes` - (Optional) Session timeout after inactivity.
   Defaults to `20160`.
-* `session_remember` - (Optional) Session expiration (minutes). Defaults to
+* `session_remember_minutes` - (Optional) Session expiration. Defaults to
   `20160`.
 * `collaborator_auth_policy` - (Optional) Authentication policy (`password`
   or `two_factor_mandatory`). Defaults to `password`.

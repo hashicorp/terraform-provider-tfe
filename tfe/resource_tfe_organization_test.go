@@ -28,9 +28,9 @@ func TestAccTFEOrganization_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "email", "admin@company.com"),
 					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "session_timeout", "20160"),
+						"tfe_organization.foobar", "session_timeout_minutes", "20160"),
 					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "session_remember", "20160"),
+						"tfe_organization.foobar", "session_remember_minutes", "20160"),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "collaborator_auth_policy", "password"),
 				),
@@ -58,9 +58,9 @@ func TestAccTFEOrganization_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "email", "admin@company.com"),
 					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "session_timeout", "20160"),
+						"tfe_organization.foobar", "session_timeout_minutes", "20160"),
 					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "session_remember", "20160"),
+						"tfe_organization.foobar", "session_remember_minutes", "20160"),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "collaborator_auth_policy", "password"),
 				),
@@ -77,9 +77,9 @@ func TestAccTFEOrganization_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "email", "admin-updated@company.com"),
 					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "session_timeout", "3600"),
+						"tfe_organization.foobar", "session_timeout_minutes", "3600"),
 					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "session_remember", "3600"),
+						"tfe_organization.foobar", "session_remember_minutes", "3600"),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "collaborator_auth_policy", "password"),
 				),
@@ -129,11 +129,11 @@ func testAccCheckTFEOrganizationAttributes(
 		}
 
 		if org.SessionTimeout != 20160 {
-			return fmt.Errorf("Bad session timeout: %d", org.SessionTimeout)
+			return fmt.Errorf("Bad session timeout minutes: %d", org.SessionTimeout)
 		}
 
 		if org.SessionRemember != 20160 {
-			return fmt.Errorf("Bad session remember: %d", org.SessionRemember)
+			return fmt.Errorf("Bad session remember minutes: %d", org.SessionRemember)
 		}
 
 		if org.CollaboratorAuthPolicy != tfe.AuthPolicyPassword {
@@ -156,11 +156,11 @@ func testAccCheckTFEOrganizationAttributesUpdated(
 		}
 
 		if org.SessionTimeout != 3600 {
-			return fmt.Errorf("Bad session timeout: %d", org.SessionTimeout)
+			return fmt.Errorf("Bad session timeout minutes: %d", org.SessionTimeout)
 		}
 
 		if org.SessionRemember != 3600 {
-			return fmt.Errorf("Bad session remember: %d", org.SessionRemember)
+			return fmt.Errorf("Bad session remember minutes: %d", org.SessionRemember)
 		}
 
 		if org.CollaboratorAuthPolicy != tfe.AuthPolicyPassword {
@@ -202,6 +202,6 @@ const testAccTFEOrganization_update = `
 resource "tfe_organization" "foobar" {
   name = "terraform-updated"
   email = "admin-updated@company.com"
-  session_timeout = 3600
-  session_remember = 3600
+  session_timeout_minutes = 3600
+  session_remember_minutes = 3600
 }`
