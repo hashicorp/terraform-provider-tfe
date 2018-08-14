@@ -19,6 +19,7 @@ script:
 - make test
 - make vendor-status
 - make vet
+- make website-test
 
 branches:
   only:
