@@ -153,20 +153,20 @@ func cliConfig() *Config {
 	// Read the CLI config file content.
 	content, err := ioutil.ReadFile(configFilePath)
 	if err != nil {
-		log.Printf("[ERROR] Error reading the CLI config file: %v", err)
+		log.Printf("[ERROR] Error reading the CLI config file %s: %v", configFilePath, err)
 		return config
 	}
 
 	// Parse the CLI config file content.
 	obj, err := hcl.Parse(string(content))
 	if err != nil {
-		log.Printf("[ERROR] Error parsing the CLI config file: %v", err)
+		log.Printf("[ERROR] Error parsing the CLI config file %s: %v", configFilePath, err)
 		return config
 	}
 
 	// Decode the CLI config file content.
 	if err := hcl.DecodeObject(&config, obj); err != nil {
-		log.Printf("[ERROR] Error decoding the CLI config file: %v", err)
+		log.Printf("[ERROR] Error decoding the CLI config file %s: %v", configFilePath, err)
 	}
 
 	return config

@@ -27,13 +27,13 @@ func resourceTFEOrganization() *schema.Resource {
 				Required: true,
 			},
 
-			"session_timeout": &schema.Schema{
+			"session_timeout_minutes": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
 				Default:  20160,
 			},
 
-			"session_remember": &schema.Schema{
+			"session_remember_minutes": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
 				Default:  20160,
@@ -95,8 +95,8 @@ func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error
 	// Update the config.
 	d.Set("name", org.Name)
 	d.Set("email", org.Email)
-	d.Set("session_timeout", org.SessionTimeout)
-	d.Set("session_remember", org.SessionRemember)
+	d.Set("session_timeout_minutes", org.SessionTimeout)
+	d.Set("session_remember_minutes", org.SessionRemember)
 	d.Set("collaborator_auth_policy", string(org.CollaboratorAuthPolicy))
 
 	return nil
@@ -112,12 +112,12 @@ func resourceTFEOrganizationUpdate(d *schema.ResourceData, meta interface{}) err
 	}
 
 	// If session_timeout is supplied, set it using the options struct.
-	if sessionTimeout, ok := d.GetOk("session_timeout"); ok {
+	if sessionTimeout, ok := d.GetOk("session_timeout_minutes"); ok {
 		options.SessionTimeout = tfe.Int(sessionTimeout.(int))
 	}
 
 	// If session_remember is supplied, set it using the options struct.
-	if sessionRemember, ok := d.GetOk("session_remember"); ok {
+	if sessionRemember, ok := d.GetOk("session_remember_minutes"); ok {
 		options.SessionRemember = tfe.Int(sessionRemember.(int))
 	}
 
