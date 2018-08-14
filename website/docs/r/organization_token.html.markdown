@@ -3,7 +3,7 @@ layout: "tfe"
 page_title: "Terraform Enterprise: tfe_organization_token"
 sidebar_current: "docs-resource-tfe-organization-token"
 description: |-
-Generates a new organization token, replacing any existing token.
+  Generates a new organization token, replacing any existing token.
 ---
 
 # tfe_organization_token
