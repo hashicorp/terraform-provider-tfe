@@ -13,6 +13,9 @@ func resourceTFETeam() *schema.Resource {
 		Create: resourceTFETeamCreate,
 		Read:   resourceTFETeamRead,
 		Delete: resourceTFETeamDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
