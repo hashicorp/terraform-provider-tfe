@@ -15,6 +15,9 @@ func resourceTFEOrganization() *schema.Resource {
 		Read:   resourceTFEOrganizationRead,
 		Update: resourceTFEOrganizationUpdate,
 		Delete: resourceTFEOrganizationDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{

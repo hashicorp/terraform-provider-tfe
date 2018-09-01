@@ -15,6 +15,9 @@ func resourceTFEVariable() *schema.Resource {
 		Read:   resourceTFEVariableRead,
 		Update: resourceTFEVariableUpdate,
 		Delete: resourceTFEVariableDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"key": &schema.Schema{

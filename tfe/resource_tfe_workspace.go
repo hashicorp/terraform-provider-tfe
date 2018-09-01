@@ -15,6 +15,9 @@ func resourceTFEWorkspace() *schema.Resource {
 		Read:   resourceTFEWorkspaceRead,
 		Update: resourceTFEWorkspaceUpdate,
 		Delete: resourceTFEWorkspaceDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
