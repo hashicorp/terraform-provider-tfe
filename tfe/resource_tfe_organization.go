@@ -33,13 +33,11 @@ func resourceTFEOrganization() *schema.Resource {
 			"session_timeout_minutes": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
-				Default:  20160,
 			},
 
 			"session_remember_minutes": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
-				Default:  20160,
 			},
 
 			"collaborator_auth_policy": &schema.Schema{
