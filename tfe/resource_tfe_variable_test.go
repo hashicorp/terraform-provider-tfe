@@ -103,7 +103,10 @@ func testAccCheckTFEVariableExists(
 		}
 
 		// Get the workspace and organization.
-		workspace, organization := unpackWorkspaceID(rs.Primary.Attributes["workspace_id"])
+		workspace, organization, err := unpackWorkspaceID(rs.Primary.Attributes["workspace_id"])
+		if err != nil {
+			return fmt.Errorf("Error unpacking workspace ID: %v", err)
+		}
 
 		// Create a new options struct.
 		options := tfe.VariableListOptions{
@@ -198,7 +201,10 @@ func testAccCheckTFEVariableDestroy(s *terraform.State) error {
 		}
 
 		// Get the workspace and organization.
-		workspace, organization := unpackWorkspaceID(rs.Primary.Attributes["workspace_id"])
+		workspace, organization, err := unpackWorkspaceID(rs.Primary.Attributes["workspace_id"])
+		if err != nil {
+			return fmt.Errorf("Error unpacking workspace ID: %v", err)
+		}
 
 		// Create a new options struct.
 		options := tfe.VariableListOptions{

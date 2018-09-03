@@ -14,6 +14,9 @@ func resourceTFETeamAccess() *schema.Resource {
 		Create: resourceTFETeamAccessCreate,
 		Read:   resourceTFETeamAccessRead,
 		Delete: resourceTFETeamAccessDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"access": &schema.Schema{
@@ -48,10 +51,15 @@ func resourceTFETeamAccess() *schema.Resource {
 func resourceTFETeamAccessCreate(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	// Get access, team ID, workspace and organization.
+	// Get access and team ID.
 	access := d.Get("access").(string)
 	teamID := d.Get("team_id").(string)
-	workspace, organization := unpackWorkspaceID(d.Get("workspace_id").(string))
+
+	// Get workspace and organization.
+	workspace, organization, err := unpackWorkspaceID(d.Get("workspace_id").(string))
+	if err != nil {
+		return fmt.Errorf("Error unpacking workspace ID: %v", err)
+	}
 
 	// Get the team.
 	tm, err := tfeClient.Teams.Read(ctx, teamID)
