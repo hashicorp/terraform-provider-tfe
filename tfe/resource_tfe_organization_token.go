@@ -13,6 +13,9 @@ func resourceTFEOrganizationToken() *schema.Resource {
 		Create: resourceTFEOrganizationTokenCreate,
 		Read:   resourceTFEOrganizationTokenRead,
 		Delete: resourceTFEOrganizationTokenDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"organization": &schema.Schema{

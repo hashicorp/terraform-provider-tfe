@@ -14,6 +14,9 @@ func resourceTFESSHKey() *schema.Resource {
 		Read:   resourceTFESSHKeyRead,
 		Update: resourceTFESSHKeyUpdate,
 		Delete: resourceTFESSHKeyDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{

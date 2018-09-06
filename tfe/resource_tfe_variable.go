@@ -68,10 +68,15 @@ func resourceTFEVariable() *schema.Resource {
 func resourceTFEVariableCreate(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	// Get key, category, workspace and organization.
+	// Get key and category.
 	key := d.Get("key").(string)
 	category := d.Get("category").(string)
-	workspace, organization := unpackWorkspaceID(d.Get("workspace_id").(string))
+
+	// Get workspace and organization.
+	workspace, organization, err := unpackWorkspaceID(d.Get("workspace_id").(string))
+	if err != nil {
+		return fmt.Errorf("Error unpacking workspace ID: %v", err)
+	}
 
 	// Get the workspace.
 	ws, err := tfeClient.Workspaces.Read(ctx, organization, workspace)
@@ -105,7 +110,10 @@ func resourceTFEVariableRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
 	// Get workspace and organization.
-	workspace, organization := unpackWorkspaceID(d.Get("workspace_id").(string))
+	workspace, organization, err := unpackWorkspaceID(d.Get("workspace_id").(string))
+	if err != nil {
+		return fmt.Errorf("Error unpacking workspace ID: %v", err)
+	}
 
 	// Create a new options struct.
 	options := tfe.VariableListOptions{

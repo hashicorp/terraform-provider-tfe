@@ -64,7 +64,6 @@ func resourceTFEWorkspace() *schema.Resource {
 						"branch": &schema.Schema{
 							Type:     schema.TypeString,
 							Optional: true,
-							Default:  "master",
 						},
 
 						"ingress_submodules": &schema.Schema{
@@ -115,9 +114,13 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 
 		options.VCSRepo = &tfe.VCSRepoOptions{
 			Identifier:        tfe.String(vcsRepo["identifier"].(string)),
-			Branch:            tfe.String(vcsRepo["branch"].(string)),
 			IngressSubmodules: tfe.Bool(vcsRepo["ingress_submodules"].(bool)),
 			OAuthTokenID:      tfe.String(vcsRepo["oauth_token_id"].(string)),
+		}
+
+		// Only set the branch if one is configured.
+		if branch, ok := vcsRepo["branch"].(string); ok && branch != "" {
+			options.VCSRepo.Branch = tfe.String(branch)
 		}
 	}
 
@@ -128,7 +131,12 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 			"Error creating workspace %s for organization %s: %v", name, organization, err)
 	}
 
-	d.SetId(packWorkspaceID(workspace))
+	id, err := packWorkspaceID(workspace)
+	if err != nil {
+		return fmt.Errorf("Error creating ID for workspace %s: %v", name, err)
+	}
+
+	d.SetId(id)
 
 	return resourceTFEWorkspaceRead(d, meta)
 }
@@ -137,7 +145,10 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
 	// Get the name and organization.
-	name, organization := unpackWorkspaceID(d.Id())
+	name, organization, err := unpackWorkspaceID(d.Id())
+	if err != nil {
+		return fmt.Errorf("Error unpacking workspace ID: %v", err)
+	}
 
 	log.Printf("[DEBUG] Read configuration of workspace: %s", name)
 	workspace, err := tfeClient.Workspaces.Read(ctx, organization, name)
@@ -156,15 +167,31 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("terraform_version", workspace.TerraformVersion)
 	d.Set("working_directory", workspace.WorkingDirectory)
 
+	if workspace.Organization != nil {
+		d.Set("organization", workspace.Organization.Name)
+	}
+
 	var vcsRepo []interface{}
 	if workspace.VCSRepo != nil {
-		vcsRepo = append(vcsRepo, map[string]interface{}{
+		vcsConfig := map[string]interface{}{
 			"identifier":         workspace.VCSRepo.Identifier,
-			"branch":             workspace.VCSRepo.Branch,
 			"ingress_submodules": workspace.VCSRepo.IngressSubmodules,
 			"oauth_token_id":     workspace.VCSRepo.OAuthTokenID,
-		})
+		}
+
+		// Get and assert the VCS repo configuration block.
+		if v, ok := d.GetOk("vcs_repo"); ok {
+			vcsRepo := v.(*schema.Set).List()[0].(map[string]interface{})
+
+			// Only set the branch if one is configured.
+			if branch, ok := vcsRepo["branch"].(string); ok && branch != "" {
+				vcsConfig["branch"] = workspace.VCSRepo.Branch
+			}
+		}
+
+		vcsRepo = append(vcsRepo, vcsConfig)
 	}
+
 	d.Set("vcs_repo", vcsRepo)
 
 	return nil
@@ -174,7 +201,10 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 	tfeClient := meta.(*tfe.Client)
 
 	// Get the name and organization.
-	name, organization := unpackWorkspaceID(d.Id())
+	name, organization, err := unpackWorkspaceID(d.Id())
+	if err != nil {
+		return fmt.Errorf("Error unpacking workspace ID: %v", err)
+	}
 
 	// Create a new options struct.
 	options := tfe.WorkspaceUpdateOptions{
@@ -213,7 +243,12 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			"Error updating workspace %s for organization %s: %v", name, organization, err)
 	}
 
-	d.SetId(packWorkspaceID(workspace))
+	id, err := packWorkspaceID(workspace)
+	if err != nil {
+		return fmt.Errorf("Error creating ID for workspace %s: %v", name, err)
+	}
+
+	d.SetId(id)
 
 	return resourceTFEWorkspaceRead(d, meta)
 }
@@ -222,10 +257,13 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 	tfeClient := meta.(*tfe.Client)
 
 	// Get the name and organization.
-	name, organization := unpackWorkspaceID(d.Id())
+	name, organization, err := unpackWorkspaceID(d.Id())
+	if err != nil {
+		return fmt.Errorf("Error unpacking workspace ID: %v", err)
+	}
 
 	log.Printf("[DEBUG] Delete workspace %s from organization: %s", name, organization)
-	err := tfeClient.Workspaces.Delete(ctx, organization, name)
+	err = tfeClient.Workspaces.Delete(ctx, organization, name)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil
@@ -237,11 +275,17 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 	return nil
 }
 
-func packWorkspaceID(w *tfe.Workspace) string {
-	return w.Name + "|" + w.Organization.Name
+func packWorkspaceID(w *tfe.Workspace) (id string, err error) {
+	if w.Organization == nil {
+		return "", fmt.Errorf("no organization in workspace response")
+	}
+	return w.Name + "|" + w.Organization.Name, nil
 }
 
-func unpackWorkspaceID(id string) (name, organization string) {
+func unpackWorkspaceID(id string) (name, organization string, err error) {
 	s := strings.SplitN(id, "|", 2)
-	return s[0], s[1]
+	if len(s) != 2 {
+		return "", "", fmt.Errorf("invalid workspace ID format: %s", id)
+	}
+	return s[0], s[1], nil
 }
