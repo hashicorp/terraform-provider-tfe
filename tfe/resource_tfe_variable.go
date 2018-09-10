@@ -72,8 +72,8 @@ func resourceTFEVariableCreate(d *schema.ResourceData, meta interface{}) error {
 	key := d.Get("key").(string)
 	category := d.Get("category").(string)
 
-	// Get workspace and organization.
-	workspace, organization, err := unpackWorkspaceID(d.Get("workspace_id").(string))
+	// Get organization and workspace.
+	organization, workspace, err := unpackWorkspaceID(d.Get("workspace_id").(string))
 	if err != nil {
 		return fmt.Errorf("Error unpacking workspace ID: %v", err)
 	}
