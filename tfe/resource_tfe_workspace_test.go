@@ -92,8 +92,8 @@ func testAccCheckTFEWorkspaceExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		// Get the name and organization.
-		name, organization, err := unpackWorkspaceID(rs.Primary.ID)
+		// Get the organization and workspace name.
+		organization, name, err := unpackWorkspaceID(rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("Error unpacking workspace ID: %v", err)
 		}
@@ -103,7 +103,7 @@ func testAccCheckTFEWorkspaceExists(
 			return err
 		}
 
-		id, err := packWorkspaceID(workspace)
+		id, err := packWorkspaceID(w)
 		if err != nil {
 			return fmt.Errorf("Error creating ID for workspace %s: %v", name, err)
 		}
@@ -172,8 +172,8 @@ func testAccCheckTFEWorkspaceDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		// Get the name and organization.
-		name, organization, err := unpackWorkspaceID(rs.Primary.ID)
+		// Get the organization and workspace name.
+		organization, name, err := unpackWorkspaceID(rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("Error unpacking workspace ID: %v", err)
 		}

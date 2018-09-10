@@ -28,10 +28,6 @@ func TestAccTFEOrganization_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "email", "admin@company.com"),
 					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "session_timeout_minutes", "20160"),
-					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "session_remember_minutes", "20160"),
-					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "collaborator_auth_policy", "password"),
 				),
 			},
@@ -57,10 +53,6 @@ func TestAccTFEOrganization_update(t *testing.T) {
 						"tfe_organization.foobar", "name", "terraform-test"),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "email", "admin@company.com"),
-					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "session_timeout_minutes", "20160"),
-					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "session_remember_minutes", "20160"),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "collaborator_auth_policy", "password"),
 				),
@@ -126,14 +118,6 @@ func testAccCheckTFEOrganizationAttributes(
 
 		if org.Email != "admin@company.com" {
 			return fmt.Errorf("Bad email: %s", org.Email)
-		}
-
-		if org.SessionTimeout != 20160 {
-			return fmt.Errorf("Bad session timeout minutes: %d", org.SessionTimeout)
-		}
-
-		if org.SessionRemember != 20160 {
-			return fmt.Errorf("Bad session remember minutes: %d", org.SessionRemember)
 		}
 
 		if org.CollaboratorAuthPolicy != tfe.AuthPolicyPassword {
