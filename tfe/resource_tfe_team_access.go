@@ -55,8 +55,8 @@ func resourceTFETeamAccessCreate(d *schema.ResourceData, meta interface{}) error
 	access := d.Get("access").(string)
 	teamID := d.Get("team_id").(string)
 
-	// Get workspace and organization.
-	workspace, organization, err := unpackWorkspaceID(d.Get("workspace_id").(string))
+	// Get organization and workspace.
+	organization, workspace, err := unpackWorkspaceID(d.Get("workspace_id").(string))
 	if err != nil {
 		return fmt.Errorf("Error unpacking workspace ID: %v", err)
 	}
