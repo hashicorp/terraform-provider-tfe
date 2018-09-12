@@ -15,9 +15,6 @@ func resourceTFESentinelPolicy() *schema.Resource {
 		Read:   resourceTFESentinelPolicyRead,
 		Update: resourceTFESentinelPolicyUpdate,
 		Delete: resourceTFESentinelPolicyDelete,
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
-		},
 
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{

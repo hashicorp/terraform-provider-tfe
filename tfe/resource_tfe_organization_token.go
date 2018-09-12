@@ -88,6 +88,10 @@ func resourceTFEOrganizationTokenRead(d *schema.ResourceData, meta interface{}) 
 		return fmt.Errorf("Error reading token from organization %s: %v", d.Id(), err)
 	}
 
+	// Update the organization using the ID. This is a bit
+	// unusual, but this enables importing the resource.
+	d.Set("organization", d.Id())
+
 	return nil
 }
 

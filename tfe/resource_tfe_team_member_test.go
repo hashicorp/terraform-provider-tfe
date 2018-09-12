@@ -45,8 +45,11 @@ func testAccCheckTFETeamMemberExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		// Get the team ID and username..
-		teamID, username := unpackTeamMemberID(rs.Primary.ID)
+		// Get the team ID and username.
+		teamID, username, err := unpackTeamMemberID(rs.Primary.ID)
+		if err != nil {
+			return fmt.Errorf("Error unpacking team member ID: %v", err)
+		}
 
 		users, err := tfeClient.TeamMembers.List(ctx, teamID)
 		if err != nil && err != tfe.ErrResourceNotFound {
@@ -92,8 +95,11 @@ func testAccCheckTFETeamMemberDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		// Get the team ID and username..
-		teamID, username := unpackTeamMemberID(rs.Primary.ID)
+		// Get the team ID and username.
+		teamID, username, err := unpackTeamMemberID(rs.Primary.ID)
+		if err != nil {
+			return fmt.Errorf("Error unpacking team member ID: %v", err)
+		}
 
 		users, err := tfeClient.TeamMembers.List(ctx, teamID)
 		if err != nil && err != tfe.ErrResourceNotFound {
