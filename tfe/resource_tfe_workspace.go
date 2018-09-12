@@ -194,6 +194,14 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 
 	d.Set("vcs_repo", vcsRepo)
 
+	// We do this here as a means to convert the internal ID,
+	// in case anyone still uses the old format.
+	id, err := packWorkspaceID(workspace)
+	if err != nil {
+		return err
+	}
+	d.SetId(id)
+
 	return nil
 }
 

@@ -3,6 +3,7 @@ package tfe
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -14,7 +15,7 @@ func resourceTFETeam() *schema.Resource {
 		Read:   resourceTFETeamRead,
 		Delete: resourceTFETeamDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			State: resourceTFETeamImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -61,7 +62,7 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
 	log.Printf("[DEBUG] Read configuration of team: %s", d.Id())
-	_, err := tfeClient.Teams.Read(ctx, d.Id())
+	team, err := tfeClient.Teams.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] Team %s does no longer exist", d.Id())
@@ -70,6 +71,9 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 		}
 		return fmt.Errorf("Error reading configuration of team %s: %v", d.Id(), err)
 	}
+
+	// Update the config.
+	d.Set("name", team.Name)
 
 	return nil
 }
@@ -87,4 +91,17 @@ func resourceTFETeamDelete(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	return nil
+}
+
+func resourceTFETeamImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	s := strings.SplitN(d.Id(), "/", 2)
+	if len(s) != 2 {
+		return nil, fmt.Errorf("invalid team import format: %s", d.Id())
+	}
+
+	// Set the fields that are part of the import ID.
+	d.Set("organization", s[0])
+	d.SetId(s[1])
+
+	return []*schema.ResourceData{d}, nil
 }

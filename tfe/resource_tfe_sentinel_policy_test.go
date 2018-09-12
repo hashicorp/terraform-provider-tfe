@@ -76,6 +76,26 @@ func TestAccTFESentinelPolicy_update(t *testing.T) {
 	})
 }
 
+func TestAccTFESentinelPolicy_import(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFESentinelPolicyDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: testAccTFESentinelPolicy_basic,
+			},
+
+			resource.TestStep{
+				ResourceName:        "tfe_sentinel_policy.foobar",
+				ImportState:         true,
+				ImportStateIdPrefix: "terraform-test/",
+				ImportStateVerify:   true,
+			},
+		},
+	})
+}
+
 func testAccCheckTFESentinelPolicyExists(
 	n string, policy *tfe.Policy) resource.TestCheckFunc {
 	return func(s *terraform.State) error {

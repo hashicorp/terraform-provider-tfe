@@ -14,7 +14,7 @@ func resourceTFETeamToken() *schema.Resource {
 		Read:   resourceTFETeamTokenRead,
 		Delete: resourceTFETeamTokenDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			State: resourceTFETeamTokenImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -105,4 +105,11 @@ func resourceTFETeamTokenDelete(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	return nil
+}
+
+func resourceTFETeamTokenImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	// Set the team ID field.
+	d.Set("team_id", d.Id())
+
+	return []*schema.ResourceData{d}, nil
 }

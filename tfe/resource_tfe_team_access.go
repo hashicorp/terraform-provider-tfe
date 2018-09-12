@@ -3,6 +3,7 @@ package tfe
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -15,7 +16,7 @@ func resourceTFETeamAccess() *schema.Resource {
 		Read:   resourceTFETeamAccessRead,
 		Delete: resourceTFETeamAccessDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			State: resourceTFETeamAccessImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -132,4 +133,17 @@ func resourceTFETeamAccessDelete(d *schema.ResourceData, meta interface{}) error
 	}
 
 	return nil
+}
+
+func resourceTFETeamAccessImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	s := strings.SplitN(d.Id(), "/", 3)
+	if len(s) != 3 {
+		return nil, fmt.Errorf("invalid team access import format: %s", d.Id())
+	}
+
+	// Set the fields that are part of the import ID.
+	d.Set("workspace_id", s[0]+"/"+s[1])
+	d.SetId(s[2])
+
+	return []*schema.ResourceData{d}, nil
 }

@@ -31,6 +31,26 @@ func TestAccTFETeamAccess_basic(t *testing.T) {
 	})
 }
 
+func TestAccTFETeamAccess_import(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamAccessDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: testAccTFETeamAccess_basic,
+			},
+
+			resource.TestStep{
+				ResourceName:        "tfe_team_access.foobar",
+				ImportState:         true,
+				ImportStateIdPrefix: "terraform-test/workspace-test/",
+				ImportStateVerify:   true,
+			},
+		},
+	})
+}
+
 func testAccCheckTFETeamAccessExists(
 	n string, tmAccess *tfe.TeamAccess) resource.TestCheckFunc {
 	return func(s *terraform.State) error {

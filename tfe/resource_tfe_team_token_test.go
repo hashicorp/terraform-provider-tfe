@@ -80,6 +80,26 @@ func TestAccTFETeamToken_existsWithForce(t *testing.T) {
 	})
 }
 
+func TestAccTFETeamToken_import(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamTokenDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: testAccTFETeamToken_basic,
+			},
+
+			resource.TestStep{
+				ResourceName:            "tfe_team_token.foobar",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"token"},
+			},
+		},
+	})
+}
+
 func testAccCheckTFETeamTokenExists(
 	n string, token *tfe.TeamToken) resource.TestCheckFunc {
 	return func(s *terraform.State) error {

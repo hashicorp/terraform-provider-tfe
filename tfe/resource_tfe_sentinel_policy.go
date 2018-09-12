@@ -3,6 +3,7 @@ package tfe
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -16,7 +17,7 @@ func resourceTFESentinelPolicy() *schema.Resource {
 		Update: resourceTFESentinelPolicyUpdate,
 		Delete: resourceTFESentinelPolicyDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			State: resourceTFESentinelPolicyImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -168,4 +169,17 @@ func resourceTFESentinelPolicyDelete(d *schema.ResourceData, meta interface{}) e
 	}
 
 	return nil
+}
+
+func resourceTFESentinelPolicyImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	s := strings.SplitN(d.Id(), "/", 2)
+	if len(s) != 2 {
+		return nil, fmt.Errorf("invalid Sentinel policy import format: %s", d.Id())
+	}
+
+	// Set the fields that are part of the import ID.
+	d.Set("organization", s[0])
+	d.SetId(s[1])
+
+	return []*schema.ResourceData{d}, nil
 }
