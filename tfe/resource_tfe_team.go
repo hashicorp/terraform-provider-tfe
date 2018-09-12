@@ -13,9 +13,6 @@ func resourceTFETeam() *schema.Resource {
 		Create: resourceTFETeamCreate,
 		Read:   resourceTFETeamRead,
 		Delete: resourceTFETeamDelete,
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
-		},
 
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
@@ -61,7 +58,7 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
 	log.Printf("[DEBUG] Read configuration of team: %s", d.Id())
-	_, err := tfeClient.Teams.Read(ctx, d.Id())
+	team, err := tfeClient.Teams.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] Team %s does no longer exist", d.Id())
@@ -70,6 +67,9 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 		}
 		return fmt.Errorf("Error reading configuration of team %s: %v", d.Id(), err)
 	}
+
+	// Update the config.
+	d.Set("name", team.Name)
 
 	return nil
 }

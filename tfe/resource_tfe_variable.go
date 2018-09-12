@@ -15,9 +15,6 @@ func resourceTFEVariable() *schema.Resource {
 		Read:   resourceTFEVariableRead,
 		Update: resourceTFEVariableUpdate,
 		Delete: resourceTFEVariableDelete,
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
-		},
 
 		Schema: map[string]*schema.Schema{
 			"key": &schema.Schema{
@@ -120,6 +117,8 @@ func resourceTFEVariableRead(d *schema.ResourceData, meta interface{}) error {
 		Organization: tfe.String(organization),
 		Workspace:    tfe.String(workspace),
 	}
+
+	// TODO (SvH): Use the (to be created) Read method instead!
 
 	log.Printf("[DEBUG] List variables of workspace: %s", workspace)
 	variables, err := tfeClient.Variables.List(ctx, options)
