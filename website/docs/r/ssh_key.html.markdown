@@ -16,7 +16,7 @@ key. An organization can have multiple SSH keys available.
 Basic usage:
 
 ```hcl
-resource "tfe_ssh_key" "ssh-key" {
+resource "tfe_ssh_key" "test" {
   name = "my-ssh-key-name"
   organization = "my-org-name"
   key = "private-ssh-key"
@@ -34,3 +34,12 @@ The following arguments are supported:
 ## Attributes Reference
 
 * `id` The ID of the SSH key.
+
+## Import
+
+SSH keys can be imported by concatenating the `organization name` and
+`resource id`, e.g.
+
+```shell
+terraform import tfe_ssh_key.test my-org-name/sshkey-X3xvJx5VJbor5Tca
+```

@@ -70,6 +70,27 @@ func TestAccTFESSHKey_update(t *testing.T) {
 	})
 }
 
+func TestAccTFESSHKey_import(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFESSHKeyDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: testAccTFESSHKey_basic,
+			},
+
+			resource.TestStep{
+				ResourceName:            "tfe_ssh_key.foobar",
+				ImportState:             true,
+				ImportStateIdPrefix:     "terraform-test/",
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"key"},
+			},
+		},
+	})
+}
+
 func testAccCheckTFESSHKeyExists(
 	n string, sshKey *tfe.SSHKey) resource.TestCheckFunc {
 	return func(s *terraform.State) error {

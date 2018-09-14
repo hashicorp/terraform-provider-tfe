@@ -15,9 +15,9 @@ Provides a workspace resource.
 Basic usage:
 
 ```hcl
-resource "tfe_workspace" "my-workspace" {
-  name = "my-workspace"
-  organization = "my-organization"
+resource "tfe_workspace" "test" {
+  name = "my-workspace-name"
+  organization = "my-org-name"
 }
 ```
 
@@ -46,3 +46,16 @@ The `vcs_repo` block supports:
   cloning the VCS repository. Defaults to `false`.
 * `oauth_token_id` - (Required) Token ID of the VCS Connection (OAuth Conection
   + Token) to use.
+
+## Attributes Reference
+
+* `id` - The ID of the workspace.
+
+## Import
+
+Workspaces can be imported by concatenating the `organization name` and the
+`workspace name`, e.g.
+
+```shell
+terraform import tfe_workspace.test my-org-name/my-workspace-name
+```

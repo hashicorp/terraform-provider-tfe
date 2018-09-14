@@ -20,7 +20,7 @@ validated against the policy prior to the apply step.
 Basic usage:
 
 ```hcl
-resource "tfe_sentinel_policy" "policy" {
+resource "tfe_sentinel_policy" "test" {
   name = "my-policy-name"
   organization = "my-org-name"
   policy = "main = rule { true }"
@@ -42,3 +42,12 @@ The following arguments are supported:
 ## Attributes Reference
 
 * `id` - The ID of the policy.
+
+## Import
+
+Sentinel policies can be imported by concatenating the `organization name` and
+`resource id`, e.g.
+
+```shell
+terraform import tfe_sentinel_policy.test my-org-name/pol-wAs3zYmWAhYK7peR
+```

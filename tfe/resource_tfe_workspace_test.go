@@ -78,6 +78,25 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspace_import(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: testAccTFEWorkspace_basic,
+			},
+
+			resource.TestStep{
+				ResourceName:      "tfe_workspace.foobar",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func testAccCheckTFEWorkspaceExists(
 	n string, workspace *tfe.Workspace) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
