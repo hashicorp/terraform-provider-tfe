@@ -101,38 +101,15 @@ func resourceTFEVariableCreate(d *schema.ResourceData, meta interface{}) error {
 func resourceTFEVariableRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	// Get workspace and organization.
-	workspace, organization := unpackWorkspaceID(d.Get("workspace_id").(string))
-
-	// Create a new options struct.
-	options := tfe.VariableListOptions{
-		Organization: tfe.String(organization),
-		Workspace:    tfe.String(workspace),
-	}
-
-	log.Printf("[DEBUG] List variables of workspace: %s", workspace)
-	variables, err := tfeClient.Variables.List(ctx, options)
+	log.Printf("[DEBUG] Read variable: %s", d.Id())
+	variable, err := tfeClient.Variables.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] Variable %s does no longer exist", d.Id())
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error listing variables of workspace %s: %v", d.Id(), err)
-	}
-
-	var variable *tfe.Variable
-	for _, v := range variables {
-		if v.ID == d.Id() {
-			variable = v
-			break
-		}
-	}
-
-	if variable == nil {
-		log.Printf("[DEBUG] Variable %s does no longer exist", d.Id())
-		d.SetId("")
-		return nil
+		return fmt.Errorf("Error reading variable %s: %v", d.Id(), err)
 	}
 
 	// Update config.
