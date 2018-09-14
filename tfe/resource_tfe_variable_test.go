@@ -88,6 +88,26 @@ func TestAccTFEVariable_update(t *testing.T) {
 	})
 }
 
+func TestAccTFEVariable_import(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEVariableDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: testAccTFEVariable_basic,
+			},
+
+			resource.TestStep{
+				ResourceName:        "tfe_variable.foobar",
+				ImportState:         true,
+				ImportStateIdPrefix: "terraform-test/workspace-test/",
+				ImportStateVerify:   true,
+			},
+		},
+	})
+}
+
 func testAccCheckTFEVariableExists(
 	n string, variable *tfe.Variable) resource.TestCheckFunc {
 	return func(s *terraform.State) error {

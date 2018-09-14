@@ -80,6 +80,25 @@ func TestAccTFEOrganization_update(t *testing.T) {
 	})
 }
 
+func TestAccTFEOrganization_import(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEOrganizationDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: testAccTFEOrganization_basic,
+			},
+
+			resource.TestStep{
+				ResourceName:      "tfe_organization.foobar",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func testAccCheckTFEOrganizationExists(
 	n string, org *tfe.Organization) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
