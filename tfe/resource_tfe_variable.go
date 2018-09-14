@@ -3,6 +3,7 @@ package tfe
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -15,6 +16,9 @@ func resourceTFEVariable() *schema.Resource {
 		Read:   resourceTFEVariableRead,
 		Update: resourceTFEVariableUpdate,
 		Delete: resourceTFEVariableDelete,
+		Importer: &schema.ResourceImporter{
+			State: resourceTFEVariableImporter,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"key": &schema.Schema{
@@ -192,4 +196,17 @@ func resourceTFEVariableDelete(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	return nil
+}
+
+func resourceTFEVariableImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	s := strings.SplitN(d.Id(), "/", 3)
+	if len(s) != 3 {
+		return nil, fmt.Errorf("invalid variable import format: %s", d.Id())
+	}
+
+	// Set the fields that are part of the import ID.
+	d.Set("workspace_id", s[0]+"/"+s[1])
+	d.SetId(s[2])
+
+	return []*schema.ResourceData{d}, nil
 }

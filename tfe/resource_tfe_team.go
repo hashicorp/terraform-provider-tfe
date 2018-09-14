@@ -3,6 +3,7 @@ package tfe
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -13,6 +14,9 @@ func resourceTFETeam() *schema.Resource {
 		Create: resourceTFETeamCreate,
 		Read:   resourceTFETeamRead,
 		Delete: resourceTFETeamDelete,
+		Importer: &schema.ResourceImporter{
+			State: resourceTFETeamImporter,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
@@ -87,4 +91,17 @@ func resourceTFETeamDelete(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	return nil
+}
+
+func resourceTFETeamImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	s := strings.SplitN(d.Id(), "/", 2)
+	if len(s) != 2 {
+		return nil, fmt.Errorf("invalid team import format: %s", d.Id())
+	}
+
+	// Set the fields that are part of the import ID.
+	d.Set("organization", s[0])
+	d.SetId(s[1])
+
+	return []*schema.ResourceData{d}, nil
 }

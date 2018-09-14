@@ -22,13 +22,13 @@ used once. Both resources cannot be used for the same team simultaneously.
 Basic usage:
 
 ```hcl
-resource "tfe_team" "team" {
+resource "tfe_team" "test" {
   name = "my-team-name"
   organization = "my-org-name"
 }
 
-resource "tfe_team_members" "members" {
-  team_id = "${tfe_team.team.id}"
+resource "tfe_team_members" "test" {
+  team_id = "${tfe_team.test.id}"
   usernames = ["admin", "sander"]
 }
 ```
@@ -43,3 +43,11 @@ The following arguments are supported:
 ## Attributes Reference
 
 * `id` - The ID of the team.
+
+## Import
+
+Team members can be imported by the `team id`, e.g.
+
+```shell
+terraform import tfe_team_members.test team-47qC3LmA47piVan7
+```
