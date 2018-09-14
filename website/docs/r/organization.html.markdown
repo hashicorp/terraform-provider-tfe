@@ -15,7 +15,7 @@ Manages organizations.
 Basic usage:
 
 ```hcl
-resource "tfe_organization" "organization" {
+resource "tfe_organization" "test" {
   name = "my-org-name"
   email = "admin@company.com"
 }
@@ -37,3 +37,11 @@ The following arguments are supported:
 ## Attributes Reference
 
 * `id` - The name of the organization.
+
+## Import
+
+Organizations can be imported using the `organization name`, e.g.
+
+```shell
+terraform import tfe_organization.test my-org-name
+```

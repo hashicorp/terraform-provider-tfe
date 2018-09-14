@@ -14,6 +14,9 @@ func resourceTFETeamMembers() *schema.Resource {
 		Read:   resourceTFETeamMembersRead,
 		Update: resourceTFETeamMembersUpdate,
 		Delete: resourceTFETeamMembersDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"team_id": &schema.Schema{
@@ -34,7 +37,7 @@ func resourceTFETeamMembers() *schema.Resource {
 func resourceTFETeamMembersCreate(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	// Get the team ID and username..
+	// Get the team ID.
 	teamID := d.Get("team_id").(string)
 
 	// Create a new options struct.
@@ -59,18 +62,15 @@ func resourceTFETeamMembersCreate(d *schema.ResourceData, meta interface{}) erro
 func resourceTFETeamMembersRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	// Get the team ID and username..
-	teamID := d.Get("team_id").(string)
-
-	log.Printf("[DEBUG] Read users from team: %s", teamID)
-	users, err := tfeClient.TeamMembers.List(ctx, teamID)
+	log.Printf("[DEBUG] Read users from team: %s", d.Id())
+	users, err := tfeClient.TeamMembers.List(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] Users do no longer exist")
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading users from team %s: %v", teamID, err)
+		return fmt.Errorf("Error reading users from team %s: %v", d.Id(), err)
 	}
 
 	var usernames []interface{}
@@ -79,6 +79,7 @@ func resourceTFETeamMembersRead(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	if len(usernames) > 0 {
+		d.Set("team_id", d.Id())
 		d.Set("usernames", usernames)
 	} else {
 		log.Printf("[DEBUG] Users do no longer exist")
@@ -96,9 +97,6 @@ func resourceTFETeamMembersUpdate(d *schema.ResourceData, meta interface{}) erro
 		oldUsers := old.(*schema.Set).Difference(new.(*schema.Set))
 		newUsers := new.(*schema.Set).Difference(old.(*schema.Set))
 
-		// Get the team ID and username..
-		teamID := d.Get("team_id").(string)
-
 		// First add the new users.
 		if newUsers.Len() > 0 {
 			// Create a new options struct.
@@ -109,10 +107,10 @@ func resourceTFETeamMembersUpdate(d *schema.ResourceData, meta interface{}) erro
 				options.Usernames = append(options.Usernames, username.(string))
 			}
 
-			log.Printf("[DEBUG] Add users to team: %s", teamID)
-			err := tfeClient.TeamMembers.Add(ctx, teamID, options)
+			log.Printf("[DEBUG] Add users to team: %s", d.Id())
+			err := tfeClient.TeamMembers.Add(ctx, d.Id(), options)
 			if err != nil {
-				return fmt.Errorf("Error adding users to team %s: %v", teamID, err)
+				return fmt.Errorf("Error adding users to team %s: %v", d.Id(), err)
 			}
 		}
 
@@ -126,10 +124,10 @@ func resourceTFETeamMembersUpdate(d *schema.ResourceData, meta interface{}) erro
 				options.Usernames = append(options.Usernames, username.(string))
 			}
 
-			log.Printf("[DEBUG] Remove users from team: %s", teamID)
-			err := tfeClient.TeamMembers.Remove(ctx, teamID, options)
+			log.Printf("[DEBUG] Remove users from team: %s", d.Id())
+			err := tfeClient.TeamMembers.Remove(ctx, d.Id(), options)
 			if err != nil {
-				return fmt.Errorf("Error removing users to team %s: %v", teamID, err)
+				return fmt.Errorf("Error removing users to team %s: %v", d.Id(), err)
 			}
 		}
 	}

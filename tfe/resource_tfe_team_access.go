@@ -3,6 +3,7 @@ package tfe
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -14,6 +15,9 @@ func resourceTFETeamAccess() *schema.Resource {
 		Create: resourceTFETeamAccessCreate,
 		Read:   resourceTFETeamAccessRead,
 		Delete: resourceTFETeamAccessDelete,
+		Importer: &schema.ResourceImporter{
+			State: resourceTFETeamAccessImporter,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"access": &schema.Schema{
@@ -48,10 +52,15 @@ func resourceTFETeamAccess() *schema.Resource {
 func resourceTFETeamAccessCreate(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	// Get access, team ID, workspace and organization.
+	// Get access and team ID.
 	access := d.Get("access").(string)
 	teamID := d.Get("team_id").(string)
-	workspace, organization := unpackWorkspaceID(d.Get("workspace_id").(string))
+
+	// Get organization and workspace.
+	organization, workspace, err := unpackWorkspaceID(d.Get("workspace_id").(string))
+	if err != nil {
+		return fmt.Errorf("Error unpacking workspace ID: %v", err)
+	}
 
 	// Get the team.
 	tm, err := tfeClient.Teams.Read(ctx, teamID)
@@ -124,4 +133,17 @@ func resourceTFETeamAccessDelete(d *schema.ResourceData, meta interface{}) error
 	}
 
 	return nil
+}
+
+func resourceTFETeamAccessImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	s := strings.SplitN(d.Id(), "/", 3)
+	if len(s) != 3 {
+		return nil, fmt.Errorf("invalid team access import format: %s", d.Id())
+	}
+
+	// Set the fields that are part of the import ID.
+	d.Set("workspace_id", s[0]+"/"+s[1])
+	d.SetId(s[2])
+
+	return []*schema.ResourceData{d}, nil
 }

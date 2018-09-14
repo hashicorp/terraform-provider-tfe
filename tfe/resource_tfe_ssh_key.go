@@ -3,6 +3,7 @@ package tfe
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -14,6 +15,9 @@ func resourceTFESSHKey() *schema.Resource {
 		Read:   resourceTFESSHKeyRead,
 		Update: resourceTFESSHKeyUpdate,
 		Delete: resourceTFESSHKeyDelete,
+		Importer: &schema.ResourceImporter{
+			State: resourceTFESSHKeyImporter,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
@@ -112,4 +116,17 @@ func resourceTFESSHKeyDelete(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	return nil
+}
+
+func resourceTFESSHKeyImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	s := strings.SplitN(d.Id(), "/", 2)
+	if len(s) != 2 {
+		return nil, fmt.Errorf("invalid SSH key import format: %s", d.Id())
+	}
+
+	// Set the fields that are part of the import ID.
+	d.Set("organization", s[0])
+	d.SetId(s[1])
+
+	return []*schema.ResourceData{d}, nil
 }

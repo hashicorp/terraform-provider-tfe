@@ -31,6 +31,26 @@ func TestAccTFETeam_basic(t *testing.T) {
 	})
 }
 
+func TestAccTFETeam_import(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: testAccTFETeam_basic,
+			},
+
+			resource.TestStep{
+				ResourceName:        "tfe_team.foobar",
+				ImportState:         true,
+				ImportStateIdPrefix: "terraform-test/",
+				ImportStateVerify:   true,
+			},
+		},
+	})
+}
+
 func testAccCheckTFETeamExists(
 	n string, team *tfe.Team) resource.TestCheckFunc {
 	return func(s *terraform.State) error {

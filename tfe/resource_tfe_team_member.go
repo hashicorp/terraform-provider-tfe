@@ -14,6 +14,9 @@ func resourceTFETeamMember() *schema.Resource {
 		Create: resourceTFETeamMemberCreate,
 		Read:   resourceTFETeamMemberRead,
 		Delete: resourceTFETeamMemberDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"team_id": &schema.Schema{
@@ -57,8 +60,11 @@ func resourceTFETeamMemberCreate(d *schema.ResourceData, meta interface{}) error
 func resourceTFETeamMemberRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	// Get the team ID and username..
-	teamID, username := unpackTeamMemberID(d.Id())
+	// Get the team ID and username.
+	teamID, username, err := unpackTeamMemberID(d.Id())
+	if err != nil {
+		return fmt.Errorf("Error unpacking team member ID: %v", err)
+	}
 
 	log.Printf("[DEBUG] Read users from team: %s", teamID)
 	users, err := tfeClient.TeamMembers.List(ctx, teamID)
@@ -74,6 +80,8 @@ func resourceTFETeamMemberRead(d *schema.ResourceData, meta interface{}) error {
 	found := false
 	for _, user := range users {
 		if user.Username == username {
+			d.Set("team_id", teamID)
+			d.Set("username", username)
 			found = true
 			break
 		}
@@ -90,8 +98,11 @@ func resourceTFETeamMemberRead(d *schema.ResourceData, meta interface{}) error {
 func resourceTFETeamMemberDelete(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	// Get the team ID and username..
-	teamID, username := unpackTeamMemberID(d.Id())
+	// Get the team ID and username.
+	teamID, username, err := unpackTeamMemberID(d.Id())
+	if err != nil {
+		return fmt.Errorf("Error unpacking team member ID: %v", err)
+	}
 
 	// Create a new options struct.
 	options := tfe.TeamMemberRemoveOptions{
@@ -99,7 +110,7 @@ func resourceTFETeamMemberDelete(d *schema.ResourceData, meta interface{}) error
 	}
 
 	log.Printf("[DEBUG] Remove user %q from team: %s", username, teamID)
-	err := tfeClient.TeamMembers.Remove(ctx, teamID, options)
+	err = tfeClient.TeamMembers.Remove(ctx, teamID, options)
 	if err != nil {
 		return fmt.Errorf("Error removing user %q to team %s: %v", username, teamID, err)
 	}
@@ -108,10 +119,19 @@ func resourceTFETeamMemberDelete(d *schema.ResourceData, meta interface{}) error
 }
 
 func packTeamMemberID(teamID, username string) string {
-	return teamID + "|" + username
+	return teamID + "/" + username
 }
 
-func unpackTeamMemberID(id string) (teamID, username string) {
-	s := strings.SplitN(id, "|", 2)
-	return s[0], s[1]
+func unpackTeamMemberID(id string) (teamID, username string, err error) {
+	// Support the old ID format for backwards compatibitily.
+	if s := strings.SplitN(id, "|", 2); len(s) == 2 {
+		return s[0], s[1], nil
+	}
+
+	s := strings.SplitN(id, "/", 2)
+	if len(s) != 2 {
+		return "", "", fmt.Errorf("invalid team member ID format: %s", id)
+	}
+
+	return s[0], s[1], nil
 }

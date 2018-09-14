@@ -31,6 +31,25 @@ func TestAccTFETeamMember_basic(t *testing.T) {
 	})
 }
 
+func TestAccTFETeamMember_import(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamMemberDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: testAccTFETeamMember_basic,
+			},
+
+			resource.TestStep{
+				ResourceName:      "tfe_team_member.foobar",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func testAccCheckTFETeamMemberExists(
 	n string, user *tfe.User) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
@@ -45,8 +64,11 @@ func testAccCheckTFETeamMemberExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		// Get the team ID and username..
-		teamID, username := unpackTeamMemberID(rs.Primary.ID)
+		// Get the team ID and username.
+		teamID, username, err := unpackTeamMemberID(rs.Primary.ID)
+		if err != nil {
+			return fmt.Errorf("Error unpacking team member ID: %v", err)
+		}
 
 		users, err := tfeClient.TeamMembers.List(ctx, teamID)
 		if err != nil && err != tfe.ErrResourceNotFound {
@@ -92,8 +114,11 @@ func testAccCheckTFETeamMemberDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		// Get the team ID and username..
-		teamID, username := unpackTeamMemberID(rs.Primary.ID)
+		// Get the team ID and username.
+		teamID, username, err := unpackTeamMemberID(rs.Primary.ID)
+		if err != nil {
+			return fmt.Errorf("Error unpacking team member ID: %v", err)
+		}
 
 		users, err := tfeClient.TeamMembers.List(ctx, teamID)
 		if err != nil && err != tfe.ErrResourceNotFound {

@@ -28,10 +28,6 @@ func TestAccTFEOrganization_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "email", "admin@company.com"),
 					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "session_timeout_minutes", "20160"),
-					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "session_remember_minutes", "20160"),
-					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "collaborator_auth_policy", "password"),
 				),
 			},
@@ -58,10 +54,6 @@ func TestAccTFEOrganization_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "email", "admin@company.com"),
 					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "session_timeout_minutes", "20160"),
-					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "session_remember_minutes", "20160"),
-					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "collaborator_auth_policy", "password"),
 				),
 			},
@@ -83,6 +75,25 @@ func TestAccTFEOrganization_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "collaborator_auth_policy", "password"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccTFEOrganization_import(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEOrganizationDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: testAccTFEOrganization_basic,
+			},
+
+			resource.TestStep{
+				ResourceName:      "tfe_organization.foobar",
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})
@@ -126,14 +137,6 @@ func testAccCheckTFEOrganizationAttributes(
 
 		if org.Email != "admin@company.com" {
 			return fmt.Errorf("Bad email: %s", org.Email)
-		}
-
-		if org.SessionTimeout != 20160 {
-			return fmt.Errorf("Bad session timeout minutes: %d", org.SessionTimeout)
-		}
-
-		if org.SessionRemember != 20160 {
-			return fmt.Errorf("Bad session remember minutes: %d", org.SessionRemember)
 		}
 
 		if org.CollaboratorAuthPolicy != tfe.AuthPolicyPassword {

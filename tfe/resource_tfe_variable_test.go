@@ -88,6 +88,26 @@ func TestAccTFEVariable_update(t *testing.T) {
 	})
 }
 
+func TestAccTFEVariable_import(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEVariableDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: testAccTFEVariable_basic,
+			},
+
+			resource.TestStep{
+				ResourceName:        "tfe_variable.foobar",
+				ImportState:         true,
+				ImportStateIdPrefix: "terraform-test/workspace-test/",
+				ImportStateVerify:   true,
+			},
+		},
+	})
+}
+
 func testAccCheckTFEVariableExists(
 	n string, variable *tfe.Variable) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
@@ -102,8 +122,11 @@ func testAccCheckTFEVariableExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		// Get the workspace and organization.
-		workspace, organization := unpackWorkspaceID(rs.Primary.Attributes["workspace_id"])
+		// Get organization and workspace.
+		organization, workspace, err := unpackWorkspaceID(rs.Primary.Attributes["workspace_id"])
+		if err != nil {
+			return fmt.Errorf("Error unpacking workspace ID: %v", err)
+		}
 
 		// Create a new options struct.
 		options := tfe.VariableListOptions{
@@ -197,8 +220,11 @@ func testAccCheckTFEVariableDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		// Get the workspace and organization.
-		workspace, organization := unpackWorkspaceID(rs.Primary.Attributes["workspace_id"])
+		// Get organization and workspace.
+		organization, workspace, err := unpackWorkspaceID(rs.Primary.Attributes["workspace_id"])
+		if err != nil {
+			return fmt.Errorf("Error unpacking workspace ID: %v", err)
+		}
 
 		// Create a new options struct.
 		options := tfe.VariableListOptions{

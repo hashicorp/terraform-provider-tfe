@@ -13,6 +13,9 @@ func resourceTFETeamToken() *schema.Resource {
 		Create: resourceTFETeamTokenCreate,
 		Read:   resourceTFETeamTokenRead,
 		Delete: resourceTFETeamTokenDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"team_id": &schema.Schema{
@@ -85,6 +88,10 @@ func resourceTFETeamTokenRead(d *schema.ResourceData, meta interface{}) error {
 		}
 		return fmt.Errorf("Error reading token from team %s: %v", d.Id(), err)
 	}
+
+	// Update the team ID using the ID. This is a bit
+	// unusual, but this enables importing the resource.
+	d.Set("team_id", d.Id())
 
 	return nil
 }

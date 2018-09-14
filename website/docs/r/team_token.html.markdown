@@ -15,13 +15,13 @@ Generates a new team token and overrides existing token if one exists.
 Basic usage:
 
 ```hcl
-resource "tfe_team" "team" {
+resource "tfe_team" "test" {
   name = "my-team-name"
   organization = "my-org-name"
 }
 
-resource "tfe_team_token" "token" {
-  team_id = "${tfe_team.team.id}"
+resource "tfe_team_token" "test" {
+  team_id = "${tfe_team.test.id}"
 }
 ```
 
@@ -38,3 +38,11 @@ The following arguments are supported:
 
 * `id` - The ID of the token.
 * `token` - The generated token.
+
+## Import
+
+Team tokens can be imported by the `team id`, e.g.
+
+```shell
+terraform import tfe_team_token.test team-47qC3LmA47piVan7
+```

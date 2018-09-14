@@ -15,20 +15,20 @@ Associate a team to permissions on a workspace.
 Basic usage:
 
 ```hcl
-resource "tfe_team" "team" {
+resource "tfe_team" "test" {
   name = "my-team-name"
   organization = "my-org-name"
 }
 
-resource "tfe_workspace" "workspace" {
+resource "tfe_workspace" "test" {
   name = "my-workspace-name"
   organization = "my-org-name"
 }
 
-resource "tfe_team_access" "access" {
+resource "tfe_team_access" "test" {
   access = "read"
-  team_id = "${tfe_team.team.id}"
-  workspace_id = "${tfe_workspace.workspace.id}"
+  team_id = "${tfe_team.test.id}"
+  workspace_id = "${tfe_workspace.test.id}"
 }
 ```
 
@@ -44,3 +44,12 @@ The following arguments are supported:
 ## Attributes Reference
 
 * `id` The team access ID.
+
+## Import
+
+Team accesses can be imported by concatenating the `organization name`, the
+`workspace name` and the `resource id`, e.g.
+
+```shell
+terraform import tfe_team_access.test my-org-name/my-workspace-name/tws-8S5wnRbRpogw6apb
+```

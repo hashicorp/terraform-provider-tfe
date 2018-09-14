@@ -78,6 +78,25 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspace_import(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: testAccTFEWorkspace_basic,
+			},
+
+			resource.TestStep{
+				ResourceName:      "tfe_workspace.foobar",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func testAccCheckTFEWorkspaceExists(
 	n string, workspace *tfe.Workspace) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
@@ -92,15 +111,23 @@ func testAccCheckTFEWorkspaceExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		// Get the name and organization.
-		name, organization := unpackWorkspaceID(rs.Primary.ID)
+		// Get the organization and workspace name.
+		organization, name, err := unpackWorkspaceID(rs.Primary.ID)
+		if err != nil {
+			return fmt.Errorf("Error unpacking workspace ID: %v", err)
+		}
 
 		w, err := tfeClient.Workspaces.Read(ctx, organization, name)
 		if err != nil {
 			return err
 		}
 
-		if packWorkspaceID(w) != rs.Primary.ID {
+		id, err := packWorkspaceID(w)
+		if err != nil {
+			return fmt.Errorf("Error creating ID for workspace %s: %v", name, err)
+		}
+
+		if id != rs.Primary.ID {
 			return fmt.Errorf("Workspace not found")
 		}
 
@@ -164,10 +191,13 @@ func testAccCheckTFEWorkspaceDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		// Get the name and organization.
-		name, organization := unpackWorkspaceID(rs.Primary.ID)
+		// Get the organization and workspace name.
+		organization, name, err := unpackWorkspaceID(rs.Primary.ID)
+		if err != nil {
+			return fmt.Errorf("Error unpacking workspace ID: %v", err)
+		}
 
-		_, err := tfeClient.Workspaces.Read(ctx, organization, name)
+		_, err = tfeClient.Workspaces.Read(ctx, organization, name)
 		if err == nil {
 			return fmt.Errorf("Workspace %s still exists", rs.Primary.ID)
 		}
