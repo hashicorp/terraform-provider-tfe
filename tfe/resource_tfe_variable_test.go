@@ -102,30 +102,12 @@ func testAccCheckTFEVariableExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		// Get the workspace and organization.
-		workspace, organization := unpackWorkspaceID(rs.Primary.Attributes["workspace_id"])
-
-		// Create a new options struct.
-		options := tfe.VariableListOptions{
-			Organization: tfe.String(organization),
-			Workspace:    tfe.String(workspace),
-		}
-
-		variables, err := tfeClient.Variables.List(ctx, options)
+		v, err := tfeClient.Variables.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
 
-		for _, v := range variables {
-			if v.ID == rs.Primary.ID {
-				*variable = *v
-				break
-			}
-		}
-
-		if variable.ID != rs.Primary.ID {
-			return fmt.Errorf("Variable not found")
-		}
+		*variable = *v
 
 		return nil
 	}
@@ -197,29 +179,8 @@ func testAccCheckTFEVariableDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		// Get the workspace and organization.
-		workspace, organization := unpackWorkspaceID(rs.Primary.Attributes["workspace_id"])
-
-		// Create a new options struct.
-		options := tfe.VariableListOptions{
-			Organization: tfe.String(organization),
-			Workspace:    tfe.String(workspace),
-		}
-
-		variables, err := tfeClient.Variables.List(ctx, options)
-		if err != nil && err != tfe.ErrResourceNotFound {
-			return err
-		}
-
-		variable := &tfe.Variable{}
-		for _, v := range variables {
-			if v.ID == rs.Primary.ID {
-				variable = v
-				break
-			}
-		}
-
-		if variable.ID == rs.Primary.ID {
+		_, err := tfeClient.Variables.Read(ctx, rs.Primary.ID)
+		if err == nil {
 			return fmt.Errorf("Variable %s still exists", rs.Primary.ID)
 		}
 	}
