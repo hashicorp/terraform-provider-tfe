@@ -16,7 +16,7 @@ can be used to act as the organization service account.
 Basic usage:
 
 ```hcl
-resource "tfe_organization_token" "token" {
+resource "tfe_organization_token" "test" {
   organization = "my-org-name"
 }
 ```
@@ -34,3 +34,11 @@ The following arguments are supported:
 
 * `id` - The ID of the token.
 * `token` - The generated token.
+
+## Import
+
+Organization tokens can be imported using the `organization name`, e.g.
+
+```shell
+terraform import tfe_organization_token.test my-org-name
+```

@@ -15,6 +15,9 @@ func resourceTFEOrganization() *schema.Resource {
 		Read:   resourceTFEOrganizationRead,
 		Update: resourceTFEOrganizationUpdate,
 		Delete: resourceTFEOrganizationDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
@@ -30,13 +33,11 @@ func resourceTFEOrganization() *schema.Resource {
 			"session_timeout_minutes": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
-				Default:  20160,
 			},
 
 			"session_remember_minutes": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
-				Default:  20160,
 			},
 
 			"collaborator_auth_policy": &schema.Schema{

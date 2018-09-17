@@ -13,6 +13,9 @@ func resourceTFEOrganizationToken() *schema.Resource {
 		Create: resourceTFEOrganizationTokenCreate,
 		Read:   resourceTFEOrganizationTokenRead,
 		Delete: resourceTFEOrganizationTokenDelete,
+		Importer: &schema.ResourceImporter{
+			State: resourceTFEOrganizationTokenImporter,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"organization": &schema.Schema{
@@ -104,4 +107,11 @@ func resourceTFEOrganizationTokenDelete(d *schema.ResourceData, meta interface{}
 	}
 
 	return nil
+}
+
+func resourceTFEOrganizationTokenImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	// Set the organization field.
+	d.Set("organization", d.Id())
+
+	return []*schema.ResourceData{d}, nil
 }

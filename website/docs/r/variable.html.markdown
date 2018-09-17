@@ -15,21 +15,21 @@ Creates, updates and destroys variables.
 Basic usage:
 
 ```hcl
-resource "tfe_organization" "organization" {
+resource "tfe_organization" "test" {
   name = "my-org-name"
   email = "admin@company.com"
 }
 
-resource "tfe_workspace" "workspace" {
+resource "tfe_workspace" "test" {
   name = "my-workspace-name"
-  organization = "${tfe_organization.organization.id}"
+  organization = "${tfe_organization.test.id}"
 }
 
-resource "tfe_variable" "variable" {
+resource "tfe_variable" "test" {
   key = "my_key_name"
   value = "my_value_name"
   category = "terraform"
-  workspace_id = "${tfe_workspace.workspace.id}"
+  workspace_id = "${tfe_workspace.test.id}"
 }
 ```
 
@@ -50,3 +50,12 @@ The following arguments are supported:
 ## Attributes Reference
 
 * `id` - The ID of the variable.
+
+## Import
+
+Variables can be imported by concatenating the `organization name`, the
+`workspace name` and the `resource id`, e.g.
+
+```shell
+terraform import tfe_variable.test my-org-name/my-workspace-name/var-5rTwnSaRPogw6apb
+```

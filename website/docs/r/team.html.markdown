@@ -15,7 +15,7 @@ Manages teams.
 Basic usage:
 
 ```hcl
-resource "tfe_team" "team" {
+resource "tfe_team" "test" {
   name = "my-team-name"
   organization = "my-org-name"
 }
@@ -31,3 +31,11 @@ The following arguments are supported:
 ## Attributes Reference
 
 * `id` The ID of the team.
+
+## Import
+
+Teams can be imported by the `resource id`, e.g.
+
+```shell
+terraform import tfe_team.test team-47qC3LmA47piVan7
+```
