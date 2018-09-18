@@ -79,6 +79,11 @@ func resourceTFEWorkspace() *schema.Resource {
 					},
 				},
 			},
+
+			"external_id": &schema.Schema{
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -166,6 +171,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("auto_apply", workspace.AutoApply)
 	d.Set("terraform_version", workspace.TerraformVersion)
 	d.Set("working_directory", workspace.WorkingDirectory)
+	d.Set("external_id", workspace.ID)
 
 	if workspace.Organization != nil {
 		d.Set("organization", workspace.Organization.Name)
