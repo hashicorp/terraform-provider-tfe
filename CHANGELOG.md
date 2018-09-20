@@ -1,4 +1,4 @@
-## 0.2.0 (Unreleased)
+## 0.2.0 (September 20, 2018)
 
 NOTES:
 
@@ -9,11 +9,11 @@ NOTES:
 
 FEATURES:
 
-* Add `terraform import` support to all (except `tfe_ssh_key`) resources [GH-20]
+* Add `terraform import` support to all (except `tfe_ssh_key`) resources ([#20](https://github.com/terraform-providers/terraform-provider-tfe/issues/20))
 
 ENHANCEMENTS:
 
-* resource/tfe_workspace: Export the Terraform Enterprise workspace ID [GH-21]
+* resource/tfe_workspace: Export the Terraform Enterprise workspace ID ([#21](https://github.com/terraform-providers/terraform-provider-tfe/issues/21))
 
 ## 0.1.0 (August 14, 2018)
 
