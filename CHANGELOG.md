@@ -6,7 +6,7 @@ NOTES:
 * resource/tfe_workspace: The format of the internal ID used to track workspaces
   is changed to be more inline with other representations of the same ID. The ID
   should be converted automatically during an `apply`, but the conversion can also
-  be triggered manually by running `terraform refresh` when it causes a issues.
+  be triggered manually by running `terraform refresh` when it causes issues.
 
 FEATURES:
 
