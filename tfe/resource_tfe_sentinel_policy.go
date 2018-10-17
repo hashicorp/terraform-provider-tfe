@@ -27,6 +27,12 @@ func resourceTFESentinelPolicy() *schema.Resource {
 				ForceNew: true,
 			},
 
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
 			"organization": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
@@ -73,6 +79,10 @@ func resourceTFESentinelPolicyCreate(d *schema.ResourceData, meta interface{}) e
 		},
 	}
 
+	if desc, ok := d.GetOk("description"); ok {
+		options.Description = tfe.String(desc.(string))
+	}
+
 	log.Printf("[DEBUG] Create sentinel policy %s for organization: %s", name, organization)
 	policy, err := tfeClient.Policies.Create(ctx, organization, options)
 	if err != nil {
@@ -108,6 +118,7 @@ func resourceTFESentinelPolicyRead(d *schema.ResourceData, meta interface{}) err
 
 	// Update the config.
 	d.Set("name", policy.Name)
+	d.Set("description", policy.Description)
 
 	if len(policy.Enforce) == 1 {
 		d.Set("enforce_mode", string(policy.Enforce[0].Mode))
@@ -125,22 +136,29 @@ func resourceTFESentinelPolicyRead(d *schema.ResourceData, meta interface{}) err
 func resourceTFESentinelPolicyUpdate(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	if d.HasChange("enforce_mode") {
+	changeEnforce := d.HasChange("enforce_mode")
+	if d.HasChange("description") || changeEnforce {
 		// Create a new options struct.
-		options := tfe.PolicyUpdateOptions{
-			Enforce: []*tfe.EnforcementOptions{
+		options := tfe.PolicyUpdateOptions{}
+
+		if changeEnforce {
+			options.Enforce = []*tfe.EnforcementOptions{
 				&tfe.EnforcementOptions{
 					Path: tfe.String(d.Get("name").(string) + ".sentinel"),
 					Mode: tfe.EnforcementMode(tfe.EnforcementLevel(d.Get("enforce_mode").(string))),
 				},
-			},
+			}
 		}
 
-		log.Printf("[DEBUG] Update enforce configuration for sentinel policy: %s", d.Id())
+		if desc, ok := d.GetOk("description"); ok {
+			options.Description = tfe.String(desc.(string))
+		}
+
+		log.Printf("[DEBUG] Update configuration for sentinel policy: %s", d.Id())
 		_, err := tfeClient.Policies.Update(ctx, d.Id(), options)
 		if err != nil {
 			return fmt.Errorf(
-				"Error updating enforce configuration for sentinel policy %s: %v", d.Id(), err)
+				"Error updating configuration for sentinel policy %s: %v", d.Id(), err)
 		}
 	}
 

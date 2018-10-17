@@ -26,6 +26,8 @@ func TestAccTFESentinelPolicy_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_sentinel_policy.foobar", "name", "policy-test"),
 					resource.TestCheckResourceAttr(
+						"tfe_sentinel_policy.foobar", "description", "A test policy"),
+					resource.TestCheckResourceAttr(
 						"tfe_sentinel_policy.foobar", "policy", "main = rule { true }"),
 					resource.TestCheckResourceAttr(
 						"tfe_sentinel_policy.foobar", "enforce_mode", "hard-mandatory"),
@@ -52,6 +54,8 @@ func TestAccTFESentinelPolicy_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_sentinel_policy.foobar", "name", "policy-test"),
 					resource.TestCheckResourceAttr(
+						"tfe_sentinel_policy.foobar", "description", "A test policy"),
+					resource.TestCheckResourceAttr(
 						"tfe_sentinel_policy.foobar", "policy", "main = rule { true }"),
 					resource.TestCheckResourceAttr(
 						"tfe_sentinel_policy.foobar", "enforce_mode", "hard-mandatory"),
@@ -66,6 +70,8 @@ func TestAccTFESentinelPolicy_update(t *testing.T) {
 					testAccCheckTFESentinelPolicyAttributesUpdated(policy),
 					resource.TestCheckResourceAttr(
 						"tfe_sentinel_policy.foobar", "name", "policy-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_sentinel_policy.foobar", "description", "An updated test policy"),
 					resource.TestCheckResourceAttr(
 						"tfe_sentinel_policy.foobar", "policy", "main = rule { false }"),
 					resource.TestCheckResourceAttr(
@@ -184,6 +190,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_sentinel_policy" "foobar" {
   name = "policy-test"
+  description = "A test policy"
   organization = "${tfe_organization.foobar.id}"
   policy = "main = rule { true }"
   enforce_mode = "hard-mandatory"
@@ -197,6 +204,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_sentinel_policy" "foobar" {
   name = "policy-test"
+  description = "An updated test policy"
   organization = "${tfe_organization.foobar.id}"
   policy = "main = rule { false }"
   enforce_mode = "soft-mandatory"
