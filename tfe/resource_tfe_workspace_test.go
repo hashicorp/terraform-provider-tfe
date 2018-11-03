@@ -106,7 +106,7 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-test"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "auto_apply", "false"),
+						"tfe_workspace.foobar", "auto_apply", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "working_directory", ""),
 				),
@@ -132,7 +132,7 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-test"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "auto_apply", "false"),
+						"tfe_workspace.foobar", "auto_apply", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "working_directory", ""),
 				),
@@ -147,7 +147,7 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-updated"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "auto_apply", "true"),
+						"tfe_workspace.foobar", "auto_apply", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "terraform_version", "0.11.1"),
 					resource.TestCheckResourceAttr(
@@ -224,7 +224,7 @@ func testAccCheckTFEWorkspaceAttributes(
 			return fmt.Errorf("Bad name: %s", workspace.Name)
 		}
 
-		if workspace.AutoApply != false {
+		if workspace.AutoApply != true {
 			return fmt.Errorf("Bad auto apply: %t", workspace.AutoApply)
 		}
 
@@ -243,7 +243,7 @@ func testAccCheckTFEWorkspaceAttributesUpdated(
 			return fmt.Errorf("Bad name: %s", workspace.Name)
 		}
 
-		if workspace.AutoApply != true {
+		if workspace.AutoApply != false {
 			return fmt.Errorf("Bad auto apply: %t", workspace.AutoApply)
 		}
 
@@ -295,6 +295,7 @@ resource "tfe_organization" "foobar" {
 resource "tfe_workspace" "foobar" {
   name = "workspace-test"
   organization = "${tfe_organization.foobar.id}"
+  auto_apply = true
 }`
 
 const testAccTFEWorkspace_update = `
@@ -306,7 +307,7 @@ resource "tfe_organization" "foobar" {
 resource "tfe_workspace" "foobar" {
   name = "workspace-updated"
   organization = "${tfe_organization.foobar.id}"
-  auto_apply = true
+  auto_apply = false
   terraform_version = "0.11.1"
   working_directory = "terraform/test"
 }`
