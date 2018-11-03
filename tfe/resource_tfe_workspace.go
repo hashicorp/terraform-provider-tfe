@@ -34,7 +34,7 @@ func resourceTFEWorkspace() *schema.Resource {
 			"auto_apply": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
-				Computed: true,
+				Default:  false,
 			},
 
 			"terraform_version": &schema.Schema{
@@ -97,14 +97,11 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 
 	// Create a new options struct.
 	options := tfe.WorkspaceCreateOptions{
-		Name: tfe.String(name),
+		Name:      tfe.String(name),
+		AutoApply: tfe.Bool(d.Get("auto_apply").(bool)),
 	}
 
 	// Process all configured options.
-	if autoApply, ok := d.GetOk("auto_apply"); ok {
-		options.AutoApply = tfe.Bool(autoApply.(bool))
-	}
-
 	if tfVersion, ok := d.GetOk("terraform_version"); ok {
 		options.TerraformVersion = tfe.String(tfVersion.(string))
 	}
@@ -222,14 +219,11 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 
 	// Create a new options struct.
 	options := tfe.WorkspaceUpdateOptions{
-		Name: tfe.String(d.Get("name").(string)),
+		Name:      tfe.String(d.Get("name").(string)),
+		AutoApply: tfe.Bool(d.Get("auto_apply").(bool)),
 	}
 
 	// Process all configured options.
-	if autoApply, ok := d.GetOk("auto_apply"); ok {
-		options.AutoApply = tfe.Bool(autoApply.(bool))
-	}
-
 	if tfVersion, ok := d.GetOk("terraform_version"); ok {
 		options.TerraformVersion = tfe.String(tfVersion.(string))
 	}
