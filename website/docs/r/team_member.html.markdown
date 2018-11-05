@@ -42,8 +42,7 @@ The following arguments are supported:
 
 ## Import
 
-A team member can be imported by concatenating the `team id` and the
-`username`, e.g.
+A team member can be imported with an ID of `<TEAM ID>/<USERNAME>`. For example:
 
 ```shell
 terraform import tfe_team_member.test team-47qC3LmA47piVan7/sander

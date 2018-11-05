@@ -138,7 +138,7 @@ func resourceTFETeamAccessDelete(d *schema.ResourceData, meta interface{}) error
 func resourceTFETeamAccessImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	s := strings.SplitN(d.Id(), "/", 3)
 	if len(s) != 3 {
-		return nil, fmt.Errorf("invalid team access import format: %s", d.Id())
+		return nil, fmt.Errorf("invalid team access import format: %s (expected <ORGANIZATION>/<WORKSPACE NAME>/<RESOURCE ID>)", d.Id())
 	}
 
 	// Set the fields that are part of the import ID.

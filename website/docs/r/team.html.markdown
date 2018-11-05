@@ -34,9 +34,8 @@ The following arguments are supported:
 
 ## Import
 
-Teams can be imported by concatenating the `organization name` and the
-`team name`, e.g.
+Teams can be imported with an ID of `<ORGANIZATION NAME>/<RESOURCE ID>`. For example:
 
 ```shell
-terraform import tfe_team.test my-org-name/my-team-name
+terraform import tfe_team.test my-org-name/team-uomQZysH9ou42ZYY
 ```
