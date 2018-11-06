@@ -174,7 +174,10 @@ func resourceTFESentinelPolicyDelete(d *schema.ResourceData, meta interface{}) e
 func resourceTFESentinelPolicyImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	s := strings.SplitN(d.Id(), "/", 2)
 	if len(s) != 2 {
-		return nil, fmt.Errorf("invalid Sentinel policy import format: %s (expected <ORGANIZATION>/<RESOURCE ID>)", d.Id())
+		return nil, fmt.Errorf(
+		  "invalid Sentinel policy import format: %s (expected <ORGANIZATION>/<POLICY ID>)",
+		  d.Id()
+		)
 	}
 
 	// Set the fields that are part of the import ID.

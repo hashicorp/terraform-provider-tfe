@@ -37,7 +37,8 @@ The following arguments are supported:
 
 ## Import
 
-Organization tokens can be imported with an ID of `<ORGANIZATION NAME>`. For example:
+Organization tokens can be imported; use `<ORGANIZATION NAME>` as the import ID.
+For example:
 
 ```shell
 terraform import tfe_organization_token.test my-org-name

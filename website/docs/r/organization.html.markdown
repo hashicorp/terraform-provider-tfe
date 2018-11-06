@@ -40,7 +40,8 @@ The following arguments are supported:
 
 ## Import
 
-Organizations can be imported with an ID of `<ORGANIZATION NAME>`. For example:
+Organizations can be imported; use `<ORGANIZATION NAME>` as the import ID. For
+example:
 
 ```shell
 terraform import tfe_organization.test my-org-name

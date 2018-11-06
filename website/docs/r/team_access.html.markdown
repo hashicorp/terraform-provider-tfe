@@ -47,7 +47,9 @@ The following arguments are supported:
 
 ## Import
 
-Team accesses can be imported with an ID of `<ORGANIZATION NAME>/<WORKSPACE NAME>/<RESOURCE ID>`. For example:
+Team accesses can be imported; use
+`<ORGANIZATION NAME>/<WORKSPACE NAME>/<TEAM ACCESS ID>` as the import ID. For
+example:
 
 ```shell
 terraform import tfe_team_access.test my-org-name/my-workspace-name/tws-8S5wnRbRpogw6apb

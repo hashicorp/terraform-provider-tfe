@@ -173,7 +173,10 @@ func resourceTFEVariableDelete(d *schema.ResourceData, meta interface{}) error {
 func resourceTFEVariableImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	s := strings.SplitN(d.Id(), "/", 3)
 	if len(s) != 3 {
-		return nil, fmt.Errorf("invalid variable import format: %s (expected <ORGANIZATION>/<WORKSPACE NAME>/<RESOURCE ID>)", d.Id())
+		return nil, fmt.Errorf(
+		  "invalid variable import format: %s (expected <ORGANIZATION>/<WORKSPACE>/<VARIABLE ID>)",
+		  d.Id()
+		)
 	}
 
 	// Set the fields that are part of the import ID.

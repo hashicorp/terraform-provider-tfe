@@ -299,7 +299,7 @@ func unpackWorkspaceID(id string) (organization, name string, err error) {
 	s := strings.SplitN(id, "/", 2)
 	if len(s) != 2 {
 		return "", "", fmt.Errorf(
-			"invalid workspace ID format: %s (expected <ORGANIZATION>/<WORKSPACE NAME>)", id)
+			"invalid workspace ID format: %s (expected <ORGANIZATION>/<WORKSPACE>)", id)
 	}
 
 	return s[0], s[1], nil

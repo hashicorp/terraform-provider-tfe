@@ -96,7 +96,10 @@ func resourceTFETeamDelete(d *schema.ResourceData, meta interface{}) error {
 func resourceTFETeamImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	s := strings.SplitN(d.Id(), "/", 2)
 	if len(s) != 2 {
-		return nil, fmt.Errorf("invalid team import format: %s (expected <ORGANIZATION>/<RESOURCE ID>)", d.Id())
+		return nil, fmt.Errorf(
+		  "invalid team import format: %s (expected <ORGANIZATION>/<TEAM ID>)",
+		  d.Id()
+		)
 	}
 
 	// Set the fields that are part of the import ID.
