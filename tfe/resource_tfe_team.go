@@ -97,8 +97,8 @@ func resourceTFETeamImporter(d *schema.ResourceData, meta interface{}) ([]*schem
 	s := strings.SplitN(d.Id(), "/", 2)
 	if len(s) != 2 {
 		return nil, fmt.Errorf(
-		  "invalid team import format: %s (expected <ORGANIZATION>/<TEAM ID>)",
-		  d.Id()
+			"invalid team import format: %s (expected <ORGANIZATION>/<TEAM ID>)",
+			d.Id(),
 		)
 	}
 

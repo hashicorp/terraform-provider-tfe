@@ -175,8 +175,8 @@ func resourceTFESentinelPolicyImporter(d *schema.ResourceData, meta interface{})
 	s := strings.SplitN(d.Id(), "/", 2)
 	if len(s) != 2 {
 		return nil, fmt.Errorf(
-		  "invalid Sentinel policy import format: %s (expected <ORGANIZATION>/<POLICY ID>)",
-		  d.Id()
+			"invalid Sentinel policy import format: %s (expected <ORGANIZATION>/<POLICY ID>)",
+			d.Id(),
 		)
 	}
 

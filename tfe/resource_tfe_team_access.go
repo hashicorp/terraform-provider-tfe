@@ -139,8 +139,8 @@ func resourceTFETeamAccessImporter(d *schema.ResourceData, meta interface{}) ([]
 	s := strings.SplitN(d.Id(), "/", 3)
 	if len(s) != 3 {
 		return nil, fmt.Errorf(
-		  "invalid team access import format: %s (expected <ORGANIZATION>/<WORKSPACE>/<TEAM ACCESS ID>)",
-		  d.Id()
+			"invalid team access import format: %s (expected <ORGANIZATION>/<WORKSPACE>/<TEAM ACCESS ID>)",
+			d.Id(),
 		)
 	}
 

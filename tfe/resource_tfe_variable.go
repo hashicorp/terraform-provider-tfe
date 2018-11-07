@@ -174,8 +174,8 @@ func resourceTFEVariableImporter(d *schema.ResourceData, meta interface{}) ([]*s
 	s := strings.SplitN(d.Id(), "/", 3)
 	if len(s) != 3 {
 		return nil, fmt.Errorf(
-		  "invalid variable import format: %s (expected <ORGANIZATION>/<WORKSPACE>/<VARIABLE ID>)",
-		  d.Id()
+			"invalid variable import format: %s (expected <ORGANIZATION>/<WORKSPACE>/<VARIABLE ID>)",
+			d.Id(),
 		)
 	}
 
