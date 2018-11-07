@@ -41,7 +41,7 @@ The following arguments are supported:
 
 ## Import
 
-Team tokens can be imported by the `team id`, e.g.
+Team tokens can be imported; use `<TEAM ID>` as the import ID. For example:
 
 ```shell
 terraform import tfe_team_token.test team-47qC3LmA47piVan7

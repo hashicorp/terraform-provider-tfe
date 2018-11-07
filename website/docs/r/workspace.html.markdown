@@ -56,8 +56,8 @@ The `vcs_repo` block supports:
 
 ## Import
 
-Workspaces can be imported by concatenating the `organization name` and the
-`workspace name`, e.g.
+Workspaces can be imported; use `<ORGANIZATION NAME>/<WORKSPACE NAME>` as the
+import ID. For example:
 
 ```shell
 terraform import tfe_workspace.test my-org-name/my-workspace-name

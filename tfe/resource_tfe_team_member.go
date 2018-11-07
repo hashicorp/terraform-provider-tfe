@@ -135,7 +135,7 @@ func unpackTeamMemberID(id string) (teamID, username string, err error) {
 	s := strings.SplitN(id, "/", 2)
 	if len(s) != 2 {
 		return "", "", fmt.Errorf(
-			"invalid team member ID format (i.e. <organization>/<team>): %s", id)
+			"invalid team member ID format: %s (expected <TEAM ID>/<USERNAME>)", id)
 	}
 
 	return s[0], s[1], nil

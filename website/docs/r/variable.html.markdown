@@ -53,8 +53,9 @@ The following arguments are supported:
 
 ## Import
 
-Variables can be imported by concatenating the `organization name`, the
-`workspace name` and the `resource id`, e.g.
+Variables can be imported; use
+`<ORGANIZATION NAME>/<WORKSPACE NAME>/<VARIABLE ID>` as the import ID. For
+example:
 
 ```shell
 terraform import tfe_variable.test my-org-name/my-workspace-name/var-5rTwnSaRPogw6apb

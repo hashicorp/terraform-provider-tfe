@@ -45,8 +45,8 @@ The following arguments are supported:
 
 ## Import
 
-Sentinel policies can be imported by concatenating the `organization name` and
-`resource id`, e.g.
+Sentinel policies can be imported; use `<ORGANIZATION NAME>/<POLICY ID>` as the
+import ID. For example:
 
 ```shell
 terraform import tfe_sentinel_policy.test my-org-name/pol-wAs3zYmWAhYK7peR
