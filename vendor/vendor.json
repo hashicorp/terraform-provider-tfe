@@ -372,6 +372,12 @@
 			"revisionTime": "2018-08-09T11:15:33Z"
 		},
 		{
+			"checksumSHA1": "/yKfFSspjuDzyOe/bBslrPzyfYM=",
+			"path": "github.com/hashicorp/go-retryablehttp",
+			"revision": "e651d75abec6fbd4f2c09508f72ae7af8a8b7171",
+			"revisionTime": "2018-07-18T19:50:05Z"
+		},
+		{
 			"checksumSHA1": "CduvzBFfTv77nhjtXPGdIjQQLMI=",
 			"origin": "github.com/hashicorp/terraform/vendor/github.com/hashicorp/go-safetemp",
 			"path": "github.com/hashicorp/go-safetemp",
@@ -385,10 +391,10 @@
 			"revisionTime": "2018-07-12T07:51:27Z"
 		},
 		{
-			"checksumSHA1": "3C1ALhVPpNvXgN/AKvNB4PPYOkI=",
+			"checksumSHA1": "SSpagWxXN+FGZBMC12N8AfzLkDM=",
 			"path": "github.com/hashicorp/go-tfe",
-			"revision": "6a3f66e1cccdaba86473028d07abc9a0770e5ebb",
-			"revisionTime": "2018-11-07T18:04:27Z"
+			"revision": "150f2f4faab9a204095ad30a124971db8a7dc0f9",
+			"revisionTime": "2018-11-13T09:27:22Z"
 		},
 		{
 			"checksumSHA1": "85XUnluYJL7F55ptcwdmN8eSOsk=",
@@ -1052,6 +1058,12 @@
 			"path": "golang.org/x/text/unicode/norm",
 			"revision": "77cfa31ecbba6fbb7e3b53c3556a2eccfb22b165",
 			"revisionTime": "2018-08-09T11:15:33Z"
+		},
+		{
+			"checksumSHA1": "7Ev/X4Xe8P3961myez/hBKO05ig=",
+			"path": "golang.org/x/time/rate",
+			"revision": "85acf8d2951cb2a3bde7632f9ff273ef0379bcbd",
+			"revisionTime": "2018-11-08T03:19:45Z"
 		},
 		{
 			"checksumSHA1": "AvVpgwhxhJgjoSledwDtYrEKVE4=",
