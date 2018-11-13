@@ -58,6 +58,7 @@ func Provider() terraform.ResourceProvider {
 		ResourcesMap: map[string]*schema.Resource{
 			"tfe_organization":       resourceTFEOrganization(),
 			"tfe_organization_token": resourceTFEOrganizationToken(),
+			"tfe_policy_set":         resourceTFEPolicySet(),
 			"tfe_sentinel_policy":    resourceTFESentinelPolicy(),
 			"tfe_ssh_key":            resourceTFESSHKey(),
 			"tfe_team":               resourceTFETeam(),

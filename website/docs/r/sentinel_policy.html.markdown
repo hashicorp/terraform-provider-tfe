@@ -22,6 +22,7 @@ Basic usage:
 ```hcl
 resource "tfe_sentinel_policy" "test" {
   name = "my-policy-name"
+  description = "This policy always passes"
   organization = "my-org-name"
   policy = "main = rule { true }"
   enforce_mode = "hard-mandatory"
@@ -33,6 +34,7 @@ resource "tfe_sentinel_policy" "test" {
 The following arguments are supported:
 
 * `name` - (Required) Name of the policy.
+* `description` - (Optional) A description of the policy's purpose.
 * `organization` - (Required) Name of the organization.
 * `policy` - (Required) The actual policy itself.
 * `enforce_mode` - (Required) The enforcement level of the policy. Valid
