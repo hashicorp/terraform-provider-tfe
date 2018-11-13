@@ -170,7 +170,7 @@ func NewClient(cfg *Config) (*Client, error) {
 	}
 
 	// Configure the rate limiter.
-	if err := client.configureLimiter(config.Address); err != nil {
+	if err := client.configureLimiter(); err != nil {
 		return nil, err
 	}
 
@@ -243,12 +243,29 @@ func rateLimitBackoff(min, max time.Duration, attemptNum int, resp *http.Respons
 }
 
 // configureLimiter configures the rate limiter.
-func (c *Client) configureLimiter(address string) error {
-	// We make a single HTTP call in order to get the rate limit settings.
-	resp, err := c.http.HTTPClient.Get(address)
+func (c *Client) configureLimiter() error {
+	u, err := c.baseURL.Parse("/")
 	if err != nil {
-		return fmt.Errorf("error reading rate limit headers: %v", err)
+		return err
 	}
+
+	// Create a new request.
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return err
+	}
+
+	// Attach the default headers.
+	for k, v := range c.headers {
+		req.Header[k] = v
+	}
+
+	// Make a single request to retrieve the rate limit headers.
+	resp, err := c.http.HTTPClient.Do(req)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
 
 	// Set default values for when rate limiting is disabled.
 	limit := rate.Inf
