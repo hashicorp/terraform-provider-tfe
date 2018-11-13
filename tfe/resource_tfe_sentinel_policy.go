@@ -136,22 +136,21 @@ func resourceTFESentinelPolicyRead(d *schema.ResourceData, meta interface{}) err
 func resourceTFESentinelPolicyUpdate(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	changeEnforce := d.HasChange("enforce_mode")
-	if d.HasChange("description") || changeEnforce {
+	if d.HasChange("description") || d.HasChange("enforce_mode") {
 		// Create a new options struct.
 		options := tfe.PolicyUpdateOptions{}
 
-		if changeEnforce {
+		if desc, ok := d.GetOk("description"); ok {
+			options.Description = tfe.String(desc.(string))
+		}
+
+		if d.HasChange("enforce_mode") {
 			options.Enforce = []*tfe.EnforcementOptions{
 				&tfe.EnforcementOptions{
 					Path: tfe.String(d.Get("name").(string) + ".sentinel"),
 					Mode: tfe.EnforcementMode(tfe.EnforcementLevel(d.Get("enforce_mode").(string))),
 				},
 			}
-		}
-
-		if desc, ok := d.GetOk("description"); ok {
-			options.Description = tfe.String(desc.(string))
 		}
 
 		log.Printf("[DEBUG] Update configuration for sentinel policy: %s", d.Id())

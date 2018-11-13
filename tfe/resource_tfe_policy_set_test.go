@@ -161,6 +161,7 @@ func TestAccTFEPolicySetUpdate_global(t *testing.T) {
 					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "description", "A global set populated with some policies"),
 					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "global", "true"),
 					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "policy_ids.#", "1"),
+					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "workspace_external_ids.#", "0"),
 				),
 			},
 		},
@@ -184,6 +185,7 @@ func TestAccTFEPolicySetUpdate_workspaceSwap(t *testing.T) {
 					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "description", "A global set populated with some policies"),
 					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "global", "true"),
 					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "policy_ids.#", "1"),
+					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "workspace_external_ids.#", "0"),
 				),
 			},
 

@@ -75,11 +75,12 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 		options.Description = tfe.String(desc.(string))
 	}
 
-	// Set up the policies and workspaces.
+	// Set up the policies.
 	for _, policyID := range d.Get("policy_ids").(*schema.Set).List() {
 		options.Policies = append(options.Policies, &tfe.Policy{ID: policyID.(string)})
 	}
 
+	// Set up the workspaces.
 	for _, workspaceID := range d.Get("workspace_external_ids").(*schema.Set).List() {
 		options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: workspaceID.(string)})
 	}
@@ -119,20 +120,21 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 		d.Set("organization", policySet.Organization.Name)
 	}
 
-	// Update the relationships.
+	// Update the policies.
 	var policyIDs []interface{}
 	for _, policy := range policySet.Policies {
 		policyIDs = append(policyIDs, policy.ID)
 	}
 	d.Set("policy_ids", policyIDs)
 
+	// Update the workspaces.
+	var workspaceIDs []interface{}
 	if !policySet.Global {
-		var workspaceIDs []interface{}
 		for _, workspace := range policySet.Workspaces {
 			workspaceIDs = append(workspaceIDs, workspace.ID)
 		}
-		d.Set("workspace_external_ids", workspaceIDs)
 	}
+	d.Set("workspace_external_ids", workspaceIDs)
 
 	return nil
 }
@@ -146,20 +148,20 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 	// If a user is setting the policy set to "global", make sure the workspaces
 	// that _had_ been set are explicitly removed. This helps keep the policy
 	// set's state in check
-	if d.HasChange("global") && global {
+	if global && d.HasChange("global") {
 		// The new set of workspaces will be an empty set, so we don't need it
 		oldSet, _ := d.GetChange("workspace_external_ids")
 		oldWorkspaceIDs := oldSet.(*schema.Set)
 
 		if oldWorkspaceIDs.Len() > 0 {
-			options := tfe.PolicySetDetachFromWorkspacesOptions{}
+			options := tfe.PolicySetRemoveWorkspacesOptions{}
 
 			for _, workspaceID := range oldWorkspaceIDs.List() {
 				options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: workspaceID.(string)})
 			}
 
 			log.Printf("[DEBUG] Removing previous workspaces from now-global policy set: %s", d.Id())
-			err := tfeClient.PolicySets.DetachFromWorkspaces(ctx, d.Id(), options)
+			err := tfeClient.PolicySets.RemoveWorkspaces(ctx, d.Id(), options)
 			if err != nil {
 				return fmt.Errorf("Error detaching policy set %s from workspaces: %v", d.Id(), err)
 			}
@@ -227,31 +229,31 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 		oldWorkspaceIDs := oldSet.(*schema.Set).Difference(newSet.(*schema.Set))
 		newWorkspaceIDs := newSet.(*schema.Set).Difference(oldSet.(*schema.Set))
 
-		// First add the new policies.
+		// First add the new workspaces.
 		if newWorkspaceIDs.Len() > 0 {
-			options := tfe.PolicySetAttachToWorkspacesOptions{}
+			options := tfe.PolicySetAddWorkspacesOptions{}
 
 			for _, workspaceID := range newWorkspaceIDs.List() {
 				options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: workspaceID.(string)})
 			}
 
 			log.Printf("[DEBUG] Attach policy set to workspaces: %s", d.Id())
-			err := tfeClient.PolicySets.AttachToWorkspaces(ctx, d.Id(), options)
+			err := tfeClient.PolicySets.AddWorkspaces(ctx, d.Id(), options)
 			if err != nil {
 				return fmt.Errorf("Error attaching policy set %s to workspaces: %v", d.Id(), err)
 			}
 		}
 
-		// Then remove all the old policies.
+		// Then remove all the old workspaces.
 		if oldWorkspaceIDs.Len() > 0 {
-			options := tfe.PolicySetDetachFromWorkspacesOptions{}
+			options := tfe.PolicySetRemoveWorkspacesOptions{}
 
 			for _, workspaceID := range oldWorkspaceIDs.List() {
 				options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: workspaceID.(string)})
 			}
 
 			log.Printf("[DEBUG] Detach policy set from workspaces: %s", d.Id())
-			err := tfeClient.PolicySets.DetachFromWorkspaces(ctx, d.Id(), options)
+			err := tfeClient.PolicySets.RemoveWorkspaces(ctx, d.Id(), options)
 			if err != nil {
 				return fmt.Errorf("Error detaching policy set %s from workspaces: %v", d.Id(), err)
 			}
