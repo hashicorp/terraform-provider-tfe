@@ -1,16 +1,16 @@
-## 0.3.0 (Unreleased)
+## 0.3.0 (November 13, 2018)
 
 FEATURES:
 
-* **New resource**: `tfe_policy_set` [GH-33]
+* **New resource**: `tfe_policy_set` ([#33](https://github.com/terraform-providers/terraform-provider-tfe/issues/33))
 
 ENHANCEMENTS:
 
-* `go-tfe` now includes logic to throttle requests preventing rate limit errors [GH-34]
+* `go-tfe` now includes logic to throttle requests preventing rate limit errors ([#34](https://github.com/terraform-providers/terraform-provider-tfe/issues/34))
 
 BUG FIXES:
 
-* r/tfe_workspace: Fix a bug that prevented to set `auto-apply` to false [GH-30]
+* r/tfe_workspace: Fix a bug that prevented to set `auto-apply` to false ([#30](https://github.com/terraform-providers/terraform-provider-tfe/issues/30))
 
 ## 0.2.0 (September 20, 2018)
 
