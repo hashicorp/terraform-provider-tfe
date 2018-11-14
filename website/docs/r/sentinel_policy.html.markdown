@@ -11,9 +11,9 @@ description: |-
 Sentinel Policy as Code is an embedded policy as code framework integrated
 with Terraform Enterprise.
 
-Policies are configured on a per-organization level, and are enforced on
-all of an organization's workspaces during runs. Each plan's changes are
-validated against the policy prior to the apply step.
+Policies are configured on a per-organization level and are organized and
+grouped into policy sets, which define the workspaces on which policies are
+enforced during runs.
 
 ## Example Usage
 
