@@ -37,6 +37,12 @@ func resourceTFEWorkspace() *schema.Resource {
 				Default:  false,
 			},
 
+			"ssh_key_id": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
 			"terraform_version": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -140,6 +146,15 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 
 	d.SetId(id)
 
+	if sshKeyID, ok := d.GetOk("ssh_key_id"); ok {
+		_, err = tfeClient.Workspaces.AssignSSHKey(ctx, workspace.ID, tfe.WorkspaceAssignSSHKeyOptions{
+			SSHKeyID: tfe.String(sshKeyID.(string)),
+		})
+		if err != nil {
+			return fmt.Errorf("Error assigning SSH key to workspace %s: %v", name, err)
+		}
+	}
+
 	return resourceTFEWorkspaceRead(d, meta)
 }
 
@@ -172,6 +187,10 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 
 	if workspace.Organization != nil {
 		d.Set("organization", workspace.Organization.Name)
+	}
+
+	if workspace.SSHKey != nil {
+		d.Set("ssh_key_id", workspace.SSHKey.ID)
 	}
 
 	var vcsRepo []interface{}
@@ -217,46 +236,72 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		return fmt.Errorf("Error unpacking workspace ID: %v", err)
 	}
 
-	// Create a new options struct.
-	options := tfe.WorkspaceUpdateOptions{
-		Name:      tfe.String(d.Get("name").(string)),
-		AutoApply: tfe.Bool(d.Get("auto_apply").(bool)),
+	if d.HasChange("name") || d.HasChange("auto_apply") || d.HasChange("terraform_version") ||
+		d.HasChange("working_directory") || d.HasChange("vcs_repo") {
+		// Create a new options struct.
+		options := tfe.WorkspaceUpdateOptions{
+			Name:      tfe.String(d.Get("name").(string)),
+			AutoApply: tfe.Bool(d.Get("auto_apply").(bool)),
+		}
+
+		// Process all configured options.
+		if tfVersion, ok := d.GetOk("terraform_version"); ok {
+			options.TerraformVersion = tfe.String(tfVersion.(string))
+		}
+
+		if workingDir, ok := d.GetOk("working_directory"); ok {
+			options.WorkingDirectory = tfe.String(workingDir.(string))
+		}
+
+		// Get and assert the VCS repo configuration block.
+		if v, ok := d.GetOk("vcs_repo"); ok {
+			vcsRepo := v.(*schema.Set).List()[0].(map[string]interface{})
+
+			options.VCSRepo = &tfe.VCSRepoOptions{
+				Identifier:        tfe.String(vcsRepo["identifier"].(string)),
+				Branch:            tfe.String(vcsRepo["branch"].(string)),
+				IngressSubmodules: tfe.Bool(vcsRepo["ingress_submodules"].(bool)),
+				OAuthTokenID:      tfe.String(vcsRepo["oauth_token_id"].(string)),
+			}
+		}
+
+		log.Printf("[DEBUG] Update workspace %s for organization: %s", name, organization)
+		workspace, err := tfeClient.Workspaces.Update(ctx, organization, name, options)
+		if err != nil {
+			return fmt.Errorf(
+				"Error updating workspace %s for organization %s: %v", name, organization, err)
+		}
+
+		id, err := packWorkspaceID(workspace)
+		if err != nil {
+			return fmt.Errorf("Error creating ID for workspace %s: %v", name, err)
+		}
+
+		d.SetId(id)
 	}
 
-	// Process all configured options.
-	if tfVersion, ok := d.GetOk("terraform_version"); ok {
-		options.TerraformVersion = tfe.String(tfVersion.(string))
-	}
+	if d.HasChange("ssh_key_id") {
+		sshKeyID := d.Get("ssh_key_id").(string)
+		externalID, _ := d.GetChange("external_id")
 
-	if workingDir, ok := d.GetOk("working_directory"); ok {
-		options.WorkingDirectory = tfe.String(workingDir.(string))
-	}
-
-	// Get and assert the VCS repo configuration block.
-	if v, ok := d.GetOk("vcs_repo"); ok {
-		vcsRepo := v.(*schema.Set).List()[0].(map[string]interface{})
-
-		options.VCSRepo = &tfe.VCSRepoOptions{
-			Identifier:        tfe.String(vcsRepo["identifier"].(string)),
-			Branch:            tfe.String(vcsRepo["branch"].(string)),
-			IngressSubmodules: tfe.Bool(vcsRepo["ingress_submodules"].(bool)),
-			OAuthTokenID:      tfe.String(vcsRepo["oauth_token_id"].(string)),
+		if sshKeyID != "" {
+			_, err := tfeClient.Workspaces.AssignSSHKey(
+				ctx,
+				externalID.(string),
+				tfe.WorkspaceAssignSSHKeyOptions{
+					SSHKeyID: tfe.String(sshKeyID),
+				},
+			)
+			if err != nil {
+				return fmt.Errorf("Error assigning SSH key to workspace %s: %v", name, err)
+			}
+		} else {
+			_, err := tfeClient.Workspaces.UnassignSSHKey(ctx, externalID.(string))
+			if err != nil {
+				return fmt.Errorf("Error unassigning SSH key from workspace %s: %v", name, err)
+			}
 		}
 	}
-
-	log.Printf("[DEBUG] Update workspace %s for organization: %s", name, organization)
-	workspace, err := tfeClient.Workspaces.Update(ctx, organization, name, options)
-	if err != nil {
-		return fmt.Errorf(
-			"Error updating workspace %s for organization %s: %v", name, organization, err)
-	}
-
-	id, err := packWorkspaceID(workspace)
-	if err != nil {
-		return fmt.Errorf("Error creating ID for workspace %s: %v", name, err)
-	}
-
-	d.SetId(id)
 
 	return resourceTFEWorkspaceRead(d, meta)
 }

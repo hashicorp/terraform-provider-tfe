@@ -29,6 +29,7 @@ The following arguments are supported:
 * `organization` - (Required) Name of the organization.
 * `auto_apply` - (Optional) Whether to automatically apply changes when a
   Terraform plan is successful. Defaults to `false`.
+* `ssh_key_id` - (Optional) The ID of an SSH key to assign to the workspace.
 * `terraform_version` - (Optional) The version of Terraform to use for this
   workspace. Defaults to the latest available version.
 * `working_directory` - (Optional) A relative path that Terraform will execute

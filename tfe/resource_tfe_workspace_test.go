@@ -158,6 +158,44 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspace_sshKey(t *testing.T) {
+	workspace := &tfe.Workspace{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: testAccTFEWorkspace_basic,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					testAccCheckTFEWorkspaceAttributes(workspace),
+				),
+			},
+
+			resource.TestStep{
+				Config: testAccTFEWorkspace_sshKey,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					testAccCheckTFEWorkspaceAttributesSSHKey(workspace),
+				),
+			},
+
+			resource.TestStep{
+				Config: testAccTFEWorkspace_basic,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					testAccCheckTFEWorkspaceAttributes(workspace),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEWorkspace_import(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -228,6 +266,10 @@ func testAccCheckTFEWorkspaceAttributes(
 			return fmt.Errorf("Bad auto apply: %t", workspace.AutoApply)
 		}
 
+		if workspace.SSHKey != nil {
+			return fmt.Errorf("Bad SSH key: %v", workspace.SSHKey)
+		}
+
 		if workspace.WorkingDirectory != "" {
 			return fmt.Errorf("Bad working directory: %s", workspace.WorkingDirectory)
 		}
@@ -253,6 +295,21 @@ func testAccCheckTFEWorkspaceAttributesUpdated(
 
 		if workspace.WorkingDirectory != "terraform/test" {
 			return fmt.Errorf("Bad working directory: %s", workspace.WorkingDirectory)
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckTFEWorkspaceAttributesSSHKey(
+	workspace *tfe.Workspace) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if workspace.Name != "workspace-ssh-key" {
+			return fmt.Errorf("Bad name: %s", workspace.Name)
+		}
+
+		if workspace.SSHKey == nil {
+			return fmt.Errorf("Bad SSH key: %v", workspace.SSHKey)
 		}
 
 		return nil
@@ -310,4 +367,23 @@ resource "tfe_workspace" "foobar" {
   auto_apply = false
   terraform_version = "0.11.1"
   working_directory = "terraform/test"
+}`
+
+const testAccTFEWorkspace_sshKey = `
+resource "tfe_organization" "foobar" {
+  name = "terraform-test"
+  email = "admin@company.com"
+}
+
+resource "tfe_ssh_key" "foobar" {
+  name = "ssh-key-test"
+  organization = "${tfe_organization.foobar.id}"
+  key = "SSH-KEY-CONTENT"
+}
+
+resource "tfe_workspace" "foobar" {
+  name = "workspace-ssh-key"
+  organization = "${tfe_organization.foobar.id}"
+  auto_apply = true
+  ssh_key_id = "${tfe_ssh_key.foobar.id}"
 }`
