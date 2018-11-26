@@ -1,4 +1,9 @@
 ## 0.4.0 (Unreleased)
+
+ENHANCEMENTS:
+
+* r/tfe_workspace: Support assigning an SSH key to a workspace [GH-38]
+
 ## 0.3.0 (November 13, 2018)
 
 FEATURES:
