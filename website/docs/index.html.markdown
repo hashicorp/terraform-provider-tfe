@@ -29,9 +29,9 @@ from an account with appropriate permissions. This user should belong to the
 instead of a user token, but it will limit which resources you can manage.
 Organization and team tokens cannot manage resources across multiple
 organizations, and organization tokens cannot manage certain resource types
-(like SSH keys or policies). See the
+(like SSH keys). See the
 [Terraform Enterprise API documentation](/docs/enterprise/api/index.html)
-for more details about access to resources.
+for more details about access to specific resources.
 
 There are two ways to provide the required token:
 
