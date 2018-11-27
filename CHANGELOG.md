@@ -1,8 +1,8 @@
-## 0.4.0 (Unreleased)
+## 0.4.0 (November 27, 2018)
 
 ENHANCEMENTS:
 
-* r/tfe_workspace: Support assigning an SSH key to a workspace [GH-38]
+* r/tfe_workspace: Support assigning an SSH key to a workspace ([#38](https://github.com/terraform-providers/terraform-provider-tfe/issues/38))
 
 ## 0.3.0 (November 13, 2018)
 
