@@ -1,4 +1,9 @@
 ## 0.5.0 (Unreleased)
+
+ENHANCEMENTS:
+
+* r/tfe_workspace: Support queuing all runs for new workspaces [GH-41]
+
 ## 0.4.0 (November 27, 2018)
 
 ENHANCEMENTS:

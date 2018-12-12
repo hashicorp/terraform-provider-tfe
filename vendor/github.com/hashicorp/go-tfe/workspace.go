@@ -37,6 +37,9 @@ type Workspaces interface {
 	// Unlock a workspace by its ID.
 	Unlock(ctx context.Context, workspaceID string) (*Workspace, error)
 
+	// ForceUnlock a workspace by its ID.
+	ForceUnlock(ctx context.Context, workspaceID string) (*Workspace, error)
+
 	// AssignSSHKey to a workspace.
 	AssignSSHKey(ctx context.Context, workspaceID string, options WorkspaceAssignSSHKeyOptions) (*Workspace, error)
 
@@ -66,7 +69,9 @@ type Workspace struct {
 	Locked               bool                  `jsonapi:"attr,locked"`
 	MigrationEnvironment string                `jsonapi:"attr,migration-environment"`
 	Name                 string                `jsonapi:"attr,name"`
+	Operations           bool                  `jsonapi:"attr,operations"`
 	Permissions          *WorkspacePermissions `jsonapi:"attr,permissions"`
+	QueueAllRuns         bool                  `jsonapi:"attr,queue-all-runs"`
 	TerraformVersion     string                `jsonapi:"attr,terraform-version"`
 	VCSRepo              *VCSRepo              `jsonapi:"attr,vcs-repo"`
 	WorkingDirectory     string                `jsonapi:"attr,working-directory"`
@@ -147,6 +152,10 @@ type WorkspaceCreateOptions struct {
 	// and _. This will be used as an identifier and must be unique in the
 	// organization.
 	Name *string `jsonapi:"attr,name"`
+
+	// Whether to queue all runs. Unless this is set to true, runs triggered by
+	// a webhook will not be queued until at least one run is manually queued.
+	QueueAllRuns *bool `jsonapi:"attr,queue-all-runs,omitempty"`
 
 	// The version of Terraform to use for this workspace. Upon creating a
 	// workspace, the latest version is selected unless otherwise specified.
@@ -249,6 +258,10 @@ type WorkspaceUpdateOptions struct {
 	// organization. Warning: Changing a workspace's name changes its URL in the
 	// API and UI.
 	Name *string `jsonapi:"attr,name,omitempty"`
+
+	// Whether to queue all runs. Unless this is set to true, runs triggered by
+	// a webhook will not be queued until at least one run is manually queued.
+	QueueAllRuns *bool `jsonapi:"attr,queue-all-runs,omitempty"`
 
 	// The version of Terraform to use for this workspace.
 	TerraformVersion *string `jsonapi:"attr,terraform-version,omitempty"`
@@ -354,6 +367,27 @@ func (s *workspaces) Unlock(ctx context.Context, workspaceID string) (*Workspace
 	}
 
 	u := fmt.Sprintf("workspaces/%s/actions/unlock", url.QueryEscape(workspaceID))
+	req, err := s.client.newRequest("POST", u, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	w := &Workspace{}
+	err = s.client.do(ctx, req, w)
+	if err != nil {
+		return nil, err
+	}
+
+	return w, nil
+}
+
+// ForceUnlock a workspace by its ID.
+func (s *workspaces) ForceUnlock(ctx context.Context, workspaceID string) (*Workspace, error) {
+	if !validStringID(&workspaceID) {
+		return nil, errors.New("invalid value for workspace ID")
+	}
+
+	u := fmt.Sprintf("workspaces/%s/actions/force-unlock", url.QueryEscape(workspaceID))
 	req, err := s.client.newRequest("POST", u, nil)
 	if err != nil {
 		return nil, err

@@ -385,16 +385,16 @@
 			"revisionTime": "2018-08-09T11:15:33Z"
 		},
 		{
-			"checksumSHA1": "CdPSnO0sFf6G9CtXBzLEI9Pcmsw=",
+			"checksumSHA1": "mPTBTTaD7rKYOZeZhd2w3Cq5RSM=",
 			"path": "github.com/hashicorp/go-slug",
-			"revision": "cc9d70694ef317c2e6443e20b7927363d69c8b1e",
-			"revisionTime": "2018-07-12T07:51:27Z"
+			"revision": "98c6f0ec89d1cf8f4e487810d666ce3c0b6d4b44",
+			"revisionTime": "2018-11-30T17:20:08Z"
 		},
 		{
-			"checksumSHA1": "CMhkgtN9SjmPaGr4gPTqf68THoQ=",
+			"checksumSHA1": "mea9LK2TCey4U61BOYhrQz7rMuY=",
 			"path": "github.com/hashicorp/go-tfe",
-			"revision": "c27cad6e3b38809253bf33e97ff832d4d4b744b9",
-			"revisionTime": "2018-11-13T19:56:35Z"
+			"revision": "b2ffbdb458ac6f5f3621a76318ad0fd2eac939fd",
+			"revisionTime": "2018-12-12T19:01:16Z"
 		},
 		{
 			"checksumSHA1": "85XUnluYJL7F55ptcwdmN8eSOsk=",
