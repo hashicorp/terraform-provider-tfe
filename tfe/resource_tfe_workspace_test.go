@@ -108,6 +108,8 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "auto_apply", "true"),
 					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "queue_all_runs", "true"),
+					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "working_directory", ""),
 				),
 			},
@@ -134,6 +136,8 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "auto_apply", "true"),
 					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "queue_all_runs", "true"),
+					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "working_directory", ""),
 				),
 			},
@@ -148,6 +152,8 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 						"tfe_workspace.foobar", "name", "workspace-updated"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "auto_apply", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "queue_all_runs", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "terraform_version", "0.11.1"),
 					resource.TestCheckResourceAttr(
@@ -266,6 +272,10 @@ func testAccCheckTFEWorkspaceAttributes(
 			return fmt.Errorf("Bad auto apply: %t", workspace.AutoApply)
 		}
 
+		if workspace.QueueAllRuns != true {
+			return fmt.Errorf("Bad queue all runs: %t", workspace.QueueAllRuns)
+		}
+
 		if workspace.SSHKey != nil {
 			return fmt.Errorf("Bad SSH key: %v", workspace.SSHKey)
 		}
@@ -287,6 +297,10 @@ func testAccCheckTFEWorkspaceAttributesUpdated(
 
 		if workspace.AutoApply != false {
 			return fmt.Errorf("Bad auto apply: %t", workspace.AutoApply)
+		}
+
+		if workspace.QueueAllRuns != false {
+			return fmt.Errorf("Bad queue all runs: %t", workspace.QueueAllRuns)
 		}
 
 		if workspace.TerraformVersion != "0.11.1" {
@@ -365,6 +379,7 @@ resource "tfe_workspace" "foobar" {
   name = "workspace-updated"
   organization = "${tfe_organization.foobar.id}"
   auto_apply = false
+	queue_all_runs = false
   terraform_version = "0.11.1"
   working_directory = "terraform/test"
 }`

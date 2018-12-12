@@ -43,6 +43,12 @@ func resourceTFEWorkspace() *schema.Resource {
 				Computed: true,
 			},
 
+			"queue_all_runs": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
+			},
+
 			"terraform_version": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -103,8 +109,9 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 
 	// Create a new options struct.
 	options := tfe.WorkspaceCreateOptions{
-		Name:      tfe.String(name),
-		AutoApply: tfe.Bool(d.Get("auto_apply").(bool)),
+		Name:         tfe.String(name),
+		AutoApply:    tfe.Bool(d.Get("auto_apply").(bool)),
+		QueueAllRuns: tfe.Bool(d.Get("queue_all_runs").(bool)),
 	}
 
 	// Process all configured options.
@@ -181,6 +188,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	// Update the config.
 	d.Set("name", workspace.Name)
 	d.Set("auto_apply", workspace.AutoApply)
+	d.Set("queue_all_runs", workspace.QueueAllRuns)
 	d.Set("terraform_version", workspace.TerraformVersion)
 	d.Set("working_directory", workspace.WorkingDirectory)
 	d.Set("external_id", workspace.ID)
@@ -236,12 +244,13 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		return fmt.Errorf("Error unpacking workspace ID: %v", err)
 	}
 
-	if d.HasChange("name") || d.HasChange("auto_apply") || d.HasChange("terraform_version") ||
-		d.HasChange("working_directory") || d.HasChange("vcs_repo") {
+	if d.HasChange("name") || d.HasChange("auto_apply") || d.HasChange("queue_all_runs") ||
+		d.HasChange("terraform_version") || d.HasChange("working_directory") || d.HasChange("vcs_repo") {
 		// Create a new options struct.
 		options := tfe.WorkspaceUpdateOptions{
-			Name:      tfe.String(d.Get("name").(string)),
-			AutoApply: tfe.Bool(d.Get("auto_apply").(bool)),
+			Name:         tfe.String(d.Get("name").(string)),
+			AutoApply:    tfe.Bool(d.Get("auto_apply").(bool)),
+			QueueAllRuns: tfe.Bool(d.Get("queue_all_runs").(bool)),
 		}
 
 		// Process all configured options.

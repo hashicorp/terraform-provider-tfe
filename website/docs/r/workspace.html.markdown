@@ -30,6 +30,9 @@ The following arguments are supported:
 * `auto_apply` - (Optional) Whether to automatically apply changes when a
   Terraform plan is successful. Defaults to `false`.
 * `ssh_key_id` - (Optional) The ID of an SSH key to assign to the workspace.
+* `queue_all_runs` - (Optional) Whether all runs should be queued. When set
+  to `false`, runs triggered by a VCS change will not be queued until at least
+  one run is manually queued. Defaults to `true`.
 * `terraform_version` - (Optional) The version of Terraform to use for this
   workspace. Defaults to the latest available version.
 * `working_directory` - (Optional) A relative path that Terraform will execute

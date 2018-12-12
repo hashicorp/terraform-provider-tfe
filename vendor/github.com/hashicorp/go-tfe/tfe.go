@@ -38,6 +38,13 @@ var (
 	// random is used to generate pseudo-random numbers.
 	random = rand.New(rand.NewSource(time.Now().UnixNano()))
 
+	// ErrWorkspaceLocked is returned when trying to lock a
+	// locked workspace.
+	ErrWorkspaceLocked = errors.New("workspace already locked")
+	// ErrWorkspaceNotLocked is returned when trying to unlock
+	// a unlocked workspace.
+	ErrWorkspaceNotLocked = errors.New("workspace already unlocked")
+
 	// ErrUnauthorized is returned when a receiving a 401.
 	ErrUnauthorized = errors.New("unauthorized")
 	// ErrResourceNotFound is returned when a receiving a 404.
@@ -164,8 +171,8 @@ func NewClient(cfg *Config) (*Client, error) {
 			ErrorHandler: retryablehttp.PassthroughErrorHandler,
 			HTTPClient:   config.HTTPClient,
 			RetryWaitMin: 100 * time.Millisecond,
-			RetryWaitMax: 300 * time.Millisecond,
-			RetryMax:     5,
+			RetryWaitMax: 400 * time.Millisecond,
+			RetryMax:     30,
 		},
 	}
 
@@ -287,25 +294,6 @@ func (c *Client) configureLimiter() error {
 	c.limiter = rate.NewLimiter(limit, burst)
 
 	return nil
-}
-
-// ListOptions is used to specify pagination options when making API requests.
-// Pagination allows breaking up large result sets into chunks, or "pages".
-type ListOptions struct {
-	// The page number to request. The results vary based on the PageSize.
-	PageNumber int `url:"page[number],omitempty"`
-
-	// The number of elements returned in a single page.
-	PageSize int `url:"page[size],omitempty"`
-}
-
-// Pagination is used to return the pagination details of an API request.
-type Pagination struct {
-	CurrentPage  int `json:"current-page"`
-	PreviousPage int `json:"prev-page"`
-	NextPage     int `json:"next-page"`
-	TotalPages   int `json:"total-pages"`
-	TotalCount   int `json:"total-count"`
 }
 
 // newRequest creates an API request. A relative URL path can be provided in
@@ -479,6 +467,25 @@ func (c *Client) do(ctx context.Context, req *retryablehttp.Request, v interface
 	return nil
 }
 
+// ListOptions is used to specify pagination options when making API requests.
+// Pagination allows breaking up large result sets into chunks, or "pages".
+type ListOptions struct {
+	// The page number to request. The results vary based on the PageSize.
+	PageNumber int `url:"page[number],omitempty"`
+
+	// The number of elements returned in a single page.
+	PageSize int `url:"page[size],omitempty"`
+}
+
+// Pagination is used to return the pagination details of an API request.
+type Pagination struct {
+	CurrentPage  int `json:"current-page"`
+	PreviousPage int `json:"prev-page"`
+	NextPage     int `json:"next-page"`
+	TotalPages   int `json:"total-pages"`
+	TotalCount   int `json:"total-count"`
+}
+
 func parsePagination(body io.Reader) (*Pagination, error) {
 	var raw struct {
 		Meta struct {
@@ -505,6 +512,15 @@ func checkResponseCode(r *http.Response) error {
 		return ErrUnauthorized
 	case 404:
 		return ErrResourceNotFound
+	case 409:
+		switch {
+		case strings.HasSuffix(r.Request.URL.Path, "actions/lock"):
+			return ErrWorkspaceLocked
+		case strings.HasSuffix(r.Request.URL.Path, "actions/unlock"):
+			return ErrWorkspaceNotLocked
+		case strings.HasSuffix(r.Request.URL.Path, "actions/force-unlock"):
+			return ErrWorkspaceNotLocked
+		}
 	}
 
 	// Decode the error payload.
