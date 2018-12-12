@@ -1,8 +1,8 @@
-## 0.5.0 (Unreleased)
+## 0.5.0 (December 12, 2018)
 
 ENHANCEMENTS:
 
-* r/tfe_workspace: Support queuing all runs for new workspaces [GH-41]
+* r/tfe_workspace: Support queuing all runs for new workspaces ([#41](https://github.com/terraform-providers/terraform-provider-tfe/issues/41))
 
 ## 0.4.0 (November 27, 2018)
 
