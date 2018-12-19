@@ -1,6 +1,7 @@
 package tfe
 
 import (
+	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/schema"
@@ -28,8 +29,13 @@ func TestProvider_impl(t *testing.T) {
 }
 
 func testAccPreCheck(t *testing.T) {
+	if v := os.Getenv("GITHUB_TOKEN"); v == "" {
+		t.Fatal("GITHUB_TOKEN must be set for acceptance tests")
+	}
 	// The credentials must be provided by the CLI config file for testing.
 	if err := Provider().Configure(&terraform.ResourceConfig{}); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 }
+
+var GITHUB_TOKEN = os.Getenv("GITHUB_TOKEN")
