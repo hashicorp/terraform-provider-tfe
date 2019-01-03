@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 )
 
-func TestAccTFEPolicySetCreate_basic(t *testing.T) {
+func TestAccTFEPolicySet_basic(t *testing.T) {
 	policySet := &tfe.PolicySet{}
 
 	resource.Test(t, resource.TestCase{
@@ -20,44 +20,23 @@ func TestAccTFEPolicySetCreate_basic(t *testing.T) {
 			resource.TestStep{
 				Config: testAccTFEPolicySet_basic,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEPolicySetExists("tfe_policy_set.my_set", policySet),
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "name", "my-set"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "description", "A set for some of my Sentinel policies"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "global", "false"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "policy_ids.#", "0"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "workspace_external_ids.#", "0"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "terraform-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "description", "Policy Set"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_ids.#", "1"),
 				),
 			},
 		},
 	})
 }
 
-func TestAccTFEPolicySetCreate_populated(t *testing.T) {
-	policySet := &tfe.PolicySet{}
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEPolicySetDestroy,
-		Steps: []resource.TestStep{
-			resource.TestStep{
-				Config: testAccTFEPolicySet_populated,
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEPolicySetExists("tfe_policy_set.my_set", policySet),
-					testAccCheckTFEPolicySetPopulated(policySet),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "name", "populated-set"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "description", "A set populated with some policies"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "global", "false"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "policy_ids.#", "1"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "workspace_external_ids.#", "1"),
-				),
-			},
-		},
-	})
-}
-
-func TestAccTFEPolicySetUpdate_basic(t *testing.T) {
+func TestAccTFEPolicySet_update(t *testing.T) {
 	policySet := &tfe.PolicySet{}
 
 	resource.Test(t, resource.TestCase{
@@ -68,33 +47,39 @@ func TestAccTFEPolicySetUpdate_basic(t *testing.T) {
 			resource.TestStep{
 				Config: testAccTFEPolicySet_basic,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEPolicySetExists("tfe_policy_set.my_set", policySet),
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "name", "my-set"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "description", "A set for some of my Sentinel policies"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "global", "false"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "policy_ids.#", "0"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "workspace_external_ids.#", "0"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "terraform-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "description", "Policy Set"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_ids.#", "1"),
 				),
 			},
 
 			resource.TestStep{
 				Config: testAccTFEPolicySet_populated,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEPolicySetExists("tfe_policy_set.my_set", policySet),
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetPopulated(policySet),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "name", "populated-set"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "description", "A set populated with some policies"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "global", "false"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "policy_ids.#", "1"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "workspace_external_ids.#", "1"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "terraform-populated"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_ids.#", "1"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "workspace_external_ids.#", "1"),
 				),
 			},
 		},
 	})
 }
 
-func TestAccTFEPolicySetUpdate_populated(t *testing.T) {
+func TestAccTFEPolicySet_updatePopulated(t *testing.T) {
 	policySet := &tfe.PolicySet{}
 
 	resource.Test(t, resource.TestCase{
@@ -105,33 +90,38 @@ func TestAccTFEPolicySetUpdate_populated(t *testing.T) {
 			resource.TestStep{
 				Config: testAccTFEPolicySet_populated,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEPolicySetExists("tfe_policy_set.my_set", policySet),
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetPopulated(policySet),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "name", "populated-set"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "description", "A set populated with some policies"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "global", "false"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "policy_ids.#", "1"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "workspace_external_ids.#", "1"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "terraform-populated"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_ids.#", "1"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "workspace_external_ids.#", "1"),
 				),
 			},
 
 			resource.TestStep{
-				Config: testAccTFEPolicySet_newMembers,
+				Config: testAccTFEPolicySet_updatePopulated,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEPolicySetExists("tfe_policy_set.my_set", policySet),
-					testAccCheckTFEPolicySetNewMembers(policySet),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "name", "populated-set"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "description", "A set populated with some policies"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "global", "false"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "policy_ids.#", "1"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "workspace_external_ids.#", "1"),
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "terraform-populated-updated"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_ids.#", "1"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "workspace_external_ids.#", "1"),
 				),
 			},
 		},
 	})
 }
 
-func TestAccTFEPolicySetUpdate_global(t *testing.T) {
+func TestAccTFEPolicySet_updateToGlobal(t *testing.T) {
 	policySet := &tfe.PolicySet{}
 
 	resource.Test(t, resource.TestCase{
@@ -142,33 +132,37 @@ func TestAccTFEPolicySetUpdate_global(t *testing.T) {
 			resource.TestStep{
 				Config: testAccTFEPolicySet_populated,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEPolicySetExists("tfe_policy_set.my_set", policySet),
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetPopulated(policySet),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "name", "populated-set"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "description", "A set populated with some policies"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "global", "false"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "policy_ids.#", "1"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "workspace_external_ids.#", "1"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "terraform-populated"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_ids.#", "1"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "workspace_external_ids.#", "1"),
 				),
 			},
 
 			resource.TestStep{
 				Config: testAccTFEPolicySet_global,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEPolicySetExists("tfe_policy_set.my_set", policySet),
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetGlobal(policySet),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "name", "global-set"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "description", "A global set populated with some policies"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "global", "true"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "policy_ids.#", "1"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "workspace_external_ids.#", "0"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "terraform-global"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_ids.#", "1"),
 				),
 			},
 		},
 	})
 }
 
-func TestAccTFEPolicySetUpdate_workspaceSwap(t *testing.T) {
+func TestAccTFEPolicySet_updateToWorkspace(t *testing.T) {
 	policySet := &tfe.PolicySet{}
 
 	resource.Test(t, resource.TestCase{
@@ -179,26 +173,30 @@ func TestAccTFEPolicySetUpdate_workspaceSwap(t *testing.T) {
 			resource.TestStep{
 				Config: testAccTFEPolicySet_global,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEPolicySetExists("tfe_policy_set.my_set", policySet),
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetGlobal(policySet),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "name", "global-set"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "description", "A global set populated with some policies"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "global", "true"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "policy_ids.#", "1"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "workspace_external_ids.#", "0"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "terraform-global"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_ids.#", "1"),
 				),
 			},
 
 			resource.TestStep{
-				Config: testAccTFEPolicySet_globalUpdate,
+				Config: testAccTFEPolicySet_populated,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEPolicySetExists("tfe_policy_set.my_set", policySet),
-					testAccCheckTFEPolicySetGlobalUpdate(policySet),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "name", "populated-set"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "description", "A set populated with some policies"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "global", "false"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "policy_ids.#", "1"),
-					resource.TestCheckResourceAttr("tfe_policy_set.my_set", "workspace_external_ids.#", "1"),
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					testAccCheckTFEPolicySetPopulated(policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "terraform-populated"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_ids.#", "1"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "workspace_external_ids.#", "1"),
 				),
 			},
 		},
@@ -212,11 +210,11 @@ func TestAccTFEPolicySetImport(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			resource.TestStep{
-				Config: testAccTFEPolicySet_basic,
+				Config: testAccTFEPolicySet_populated,
 			},
 
 			resource.TestStep{
-				ResourceName:      "tfe_policy_set.my_set",
+				ResourceName:      "tfe_policy_set.foobar",
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -254,11 +252,11 @@ func testAccCheckTFEPolicySetExists(n string, policySet *tfe.PolicySet) resource
 
 func testAccCheckTFEPolicySetAttributes(policySet *tfe.PolicySet) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		if policySet.Name != "my-set" {
+		if policySet.Name != "terraform-test" {
 			return fmt.Errorf("Bad name: %s", policySet.Name)
 		}
 
-		if policySet.Description != "A set for some of my Sentinel policies" {
+		if policySet.Description != "Policy Set" {
 			return fmt.Errorf("Bad description: %s", policySet.Description)
 		}
 
@@ -274,12 +272,8 @@ func testAccCheckTFEPolicySetPopulated(policySet *tfe.PolicySet) resource.TestCh
 	return func(s *terraform.State) error {
 		tfeClient := testAccProvider.Meta().(*tfe.Client)
 
-		if policySet.Name != "populated-set" {
+		if policySet.Name != "terraform-populated" {
 			return fmt.Errorf("Bad name: %s", policySet.Name)
-		}
-
-		if policySet.Description != "A set populated with some policies" {
-			return fmt.Errorf("Bad description: %s", policySet.Description)
 		}
 
 		if policySet.Global {
@@ -292,7 +286,7 @@ func testAccCheckTFEPolicySetPopulated(policySet *tfe.PolicySet) resource.TestCh
 
 		policyID := policySet.Policies[0].ID
 		policy, _ := tfeClient.Policies.Read(ctx, policyID)
-		if policy.Name != "policy-one" {
+		if policy.Name != "policy-foo" {
 			return fmt.Errorf("Wrong member policy: %v", policy.Name)
 		}
 
@@ -301,47 +295,7 @@ func testAccCheckTFEPolicySetPopulated(policySet *tfe.PolicySet) resource.TestCh
 		}
 
 		workspaceID := policySet.Workspaces[0].ID
-		workspace, _ := tfeClient.Workspaces.Read(ctx, "terraform-test", "workspace-one")
-		if workspace.ID != workspaceID {
-			return fmt.Errorf("Wrong member workspace: %v", workspace.Name)
-		}
-
-		return nil
-	}
-}
-
-func testAccCheckTFEPolicySetNewMembers(policySet *tfe.PolicySet) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
-
-		if policySet.Name != "populated-set" {
-			return fmt.Errorf("Bad name: %s", policySet.Name)
-		}
-
-		if policySet.Description != "A set populated with some policies" {
-			return fmt.Errorf("Bad description: %s", policySet.Description)
-		}
-
-		if policySet.Global {
-			return fmt.Errorf("Bad value for global: %v", policySet.Global)
-		}
-
-		if len(policySet.Policies) != 1 {
-			return fmt.Errorf("Wrong number of policies: %v", len(policySet.Policies))
-		}
-
-		policyID := policySet.Policies[0].ID
-		policy, _ := tfeClient.Policies.Read(ctx, policyID)
-		if policy.Name != "policy-two" {
-			return fmt.Errorf("Wrong member policy: %v", policy.Name)
-		}
-
-		if len(policySet.Workspaces) != 1 {
-			return fmt.Errorf("Wrong number of workspaces: %v", len(policySet.Workspaces))
-		}
-
-		workspaceID := policySet.Workspaces[0].ID
-		workspace, _ := tfeClient.Workspaces.Read(ctx, "terraform-test", "workspace-two")
+		workspace, _ := tfeClient.Workspaces.Read(ctx, "terraform-test", "workspace-foo")
 		if workspace.ID != workspaceID {
 			return fmt.Errorf("Wrong member workspace: %v", workspace.Name)
 		}
@@ -354,12 +308,8 @@ func testAccCheckTFEPolicySetGlobal(policySet *tfe.PolicySet) resource.TestCheck
 	return func(s *terraform.State) error {
 		tfeClient := testAccProvider.Meta().(*tfe.Client)
 
-		if policySet.Name != "global-set" {
+		if policySet.Name != "terraform-global" {
 			return fmt.Errorf("Bad name: %s", policySet.Name)
-		}
-
-		if policySet.Description != "A global set populated with some policies" {
-			return fmt.Errorf("Bad description: %s", policySet.Description)
 		}
 
 		if !policySet.Global {
@@ -372,7 +322,7 @@ func testAccCheckTFEPolicySetGlobal(policySet *tfe.PolicySet) resource.TestCheck
 
 		policyID := policySet.Policies[0].ID
 		policy, _ := tfeClient.Policies.Read(ctx, policyID)
-		if policy.Name != "policy-one" {
+		if policy.Name != "policy-foo" {
 			return fmt.Errorf("Wrong member policy: %v", policy.Name)
 		}
 
@@ -384,47 +334,7 @@ func testAccCheckTFEPolicySetGlobal(policySet *tfe.PolicySet) resource.TestCheck
 		}
 
 		workspaceID := policySet.Workspaces[0].ID
-		workspace, _ := tfeClient.Workspaces.Read(ctx, "terraform-test", "workspace-one")
-		if workspace.ID != workspaceID {
-			return fmt.Errorf("Wrong member workspace: %v", workspace.Name)
-		}
-
-		return nil
-	}
-}
-
-func testAccCheckTFEPolicySetGlobalUpdate(policySet *tfe.PolicySet) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
-
-		if policySet.Name != "populated-set" {
-			return fmt.Errorf("Bad name: %s", policySet.Name)
-		}
-
-		if policySet.Description != "A set populated with some policies" {
-			return fmt.Errorf("Bad description: %s", policySet.Description)
-		}
-
-		if policySet.Global {
-			return fmt.Errorf("Bad value for global: %v", policySet.Global)
-		}
-
-		if len(policySet.Policies) != 1 {
-			return fmt.Errorf("Wrong number of policies: %v", len(policySet.Policies))
-		}
-
-		policyID := policySet.Policies[0].ID
-		policy, _ := tfeClient.Policies.Read(ctx, policyID)
-		if policy.Name != "policy-one" {
-			return fmt.Errorf("Wrong member policy: %v", policy.Name)
-		}
-
-		if len(policySet.Workspaces) != 1 {
-			return fmt.Errorf("Wrong number of workspaces: %v", len(policySet.Workspaces))
-		}
-
-		workspaceID := policySet.Workspaces[0].ID
-		workspace, _ := tfeClient.Workspaces.Read(ctx, "terraform-test", "workspace-two")
+		workspace, _ := tfeClient.Workspaces.Read(ctx, "terraform-test", "workspace-foo")
 		if workspace.ID != workspaceID {
 			return fmt.Errorf("Wrong member workspace: %v", workspace.Name)
 		}
@@ -460,11 +370,17 @@ resource "tfe_organization" "foobar" {
   email = "admin@company.com"
 }
 
-resource "tfe_policy_set" "my_set" {
-  name = "my-set"
-  description = "A set for some of my Sentinel policies"
+resource "tfe_sentinel_policy" "foo" {
+  name = "policy-foo"
+  policy = "main = rule { true }"
   organization = "${tfe_organization.foobar.id}"
-  policy_ids = []
+}
+
+resource "tfe_policy_set" "foobar" {
+  name = "terraform-test"
+  description = "Policy Set"
+  organization = "${tfe_organization.foobar.id}"
+  policy_ids = ["${tfe_sentinel_policy.foo.id}"]
 }`
 
 const testAccTFEPolicySet_populated = `
@@ -473,54 +389,57 @@ resource "tfe_organization" "foobar" {
   email = "admin@company.com"
 }
 
-resource "tfe_sentinel_policy" "one" {
-  name = "policy-one"
+resource "tfe_sentinel_policy" "foo" {
+  name = "policy-foo"
   policy = "main = rule { true }"
   organization = "${tfe_organization.foobar.id}"
 }
 
-resource "tfe_workspace" "one" {
-  name = "workspace-one"
+resource "tfe_workspace" "foo" {
+  name = "workspace-foo"
   organization = "${tfe_organization.foobar.id}"
 }
 
-resource "tfe_policy_set" "my_set" {
-  name = "populated-set"
-  description = "A set populated with some policies"
+resource "tfe_policy_set" "foobar" {
+  name = "terraform-populated"
   organization = "${tfe_organization.foobar.id}"
-  policy_ids = ["${tfe_sentinel_policy.one.id}"]
-  workspace_external_ids = ["${tfe_workspace.one.external_id}"]
+  policy_ids = ["${tfe_sentinel_policy.foo.id}"]
+  workspace_external_ids = ["${tfe_workspace.foo.external_id}"]
 }`
 
-const testAccTFEPolicySet_newMembers = `
+const testAccTFEPolicySet_updatePopulated = `
 resource "tfe_organization" "foobar" {
   name = "terraform-test"
   email = "admin@company.com"
 }
 
-resource "tfe_sentinel_policy" "one" {
-  name = "policy-one"
+resource "tfe_sentinel_policy" "foo" {
+  name = "policy-foo"
   policy = "main = rule { true }"
   organization = "${tfe_organization.foobar.id}"
 }
 
-resource "tfe_sentinel_policy" "two" {
-  name = "policy-two"
+resource "tfe_sentinel_policy" "bar" {
+  name = "policy-bar"
   policy = "main = rule { false }"
   organization = "${tfe_organization.foobar.id}"
 }
 
-resource "tfe_workspace" "two" {
-  name = "workspace-two"
+resource "tfe_workspace" "foo" {
+  name = "workspace-foo"
   organization = "${tfe_organization.foobar.id}"
 }
 
-resource "tfe_policy_set" "my_set" {
-  name = "populated-set"
-  description = "A set populated with some policies"
+resource "tfe_workspace" "bar" {
+  name = "workspace-bar"
   organization = "${tfe_organization.foobar.id}"
-  policy_ids = ["${tfe_sentinel_policy.two.id}"]
-  workspace_external_ids = ["${tfe_workspace.two.external_id}"]
+}
+
+resource "tfe_policy_set" "foobar" {
+  name = "terraform-populated-updated"
+  organization = "${tfe_organization.foobar.id}"
+  policy_ids = ["${tfe_sentinel_policy.bar.id}"]
+  workspace_external_ids = ["${tfe_workspace.bar.external_id}"]
 }`
 
 const testAccTFEPolicySet_global = `
@@ -529,51 +448,20 @@ resource "tfe_organization" "foobar" {
   email = "admin@company.com"
 }
 
-resource "tfe_sentinel_policy" "one" {
-  name = "policy-one"
+resource "tfe_sentinel_policy" "foo" {
+  name = "policy-foo"
   policy = "main = rule { true }"
   organization = "${tfe_organization.foobar.id}"
 }
 
-resource "tfe_workspace" "one" {
-  name = "workspace-one"
+resource "tfe_workspace" "foo" {
+  name = "workspace-foo"
   organization = "${tfe_organization.foobar.id}"
 }
 
-resource "tfe_policy_set" "my_set" {
-  name = "global-set"
-  description = "A global set populated with some policies"
+resource "tfe_policy_set" "foobar" {
+  name = "terraform-global"
   organization = "${tfe_organization.foobar.id}"
   global = true
-  policy_ids = ["${tfe_sentinel_policy.one.id}"]
-}`
-
-const testAccTFEPolicySet_globalUpdate = `
-resource "tfe_organization" "foobar" {
-  name = "terraform-test"
-  email = "admin@company.com"
-}
-
-resource "tfe_sentinel_policy" "one" {
-  name = "policy-one"
-  policy = "main = rule { true }"
-  organization = "${tfe_organization.foobar.id}"
-}
-
-resource "tfe_workspace" "one" {
-  name = "workspace-one"
-  organization = "${tfe_organization.foobar.id}"
-}
-
-resource "tfe_workspace" "two" {
-  name = "workspace-two"
-  organization = "${tfe_organization.foobar.id}"
-}
-
-resource "tfe_policy_set" "my_set" {
-  name = "populated-set"
-  description = "A set populated with some policies"
-  organization = "${tfe_organization.foobar.id}"
-  policy_ids = ["${tfe_sentinel_policy.one.id}"]
-  workspace_external_ids = ["${tfe_workspace.two.external_id}"]
+  policy_ids = ["${tfe_sentinel_policy.foo.id}"]
 }`

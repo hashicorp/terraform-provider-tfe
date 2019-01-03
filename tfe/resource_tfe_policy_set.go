@@ -30,17 +30,17 @@ func resourceTFEPolicySet() *schema.Resource {
 				Computed: true,
 			},
 
+			"organization": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
+
 			"global": &schema.Schema{
 				Type:          schema.TypeBool,
 				Optional:      true,
 				Default:       false,
 				ConflictsWith: []string{"workspace_external_ids"},
-			},
-
-			"organization": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
 			},
 
 			"policy_ids": &schema.Schema{
@@ -71,16 +71,15 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 		Global: tfe.Bool(d.Get("global").(bool)),
 	}
 
+	// Process all configured options.
 	if desc, ok := d.GetOk("description"); ok {
 		options.Description = tfe.String(desc.(string))
 	}
 
-	// Set up the policies.
 	for _, policyID := range d.Get("policy_ids").(*schema.Set).List() {
 		options.Policies = append(options.Policies, &tfe.Policy{ID: policyID.(string)})
 	}
 
-	// Set up the workspaces.
 	for _, workspaceID := range d.Get("workspace_external_ids").(*schema.Set).List() {
 		options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: workspaceID.(string)})
 	}
@@ -150,13 +149,12 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 	// set's state in check
 	if global && d.HasChange("global") {
 		// The new set of workspaces will be an empty set, so we don't need it
-		oldSet, _ := d.GetChange("workspace_external_ids")
-		oldWorkspaceIDs := oldSet.(*schema.Set)
+		oldWorkspaceIDs, _ := d.GetChange("workspace_external_ids")
 
-		if oldWorkspaceIDs.Len() > 0 {
+		if oldWorkspaceIDs.(*schema.Set).Len() > 0 {
 			options := tfe.PolicySetRemoveWorkspacesOptions{}
 
-			for _, workspaceID := range oldWorkspaceIDs.List() {
+			for _, workspaceID := range oldWorkspaceIDs.(*schema.Set).List() {
 				options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: workspaceID.(string)})
 			}
 

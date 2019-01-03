@@ -1,0 +1,51 @@
+package tfe
+
+import (
+	"fmt"
+	"math/rand"
+	"testing"
+	"time"
+
+	"github.com/hashicorp/terraform/helper/resource"
+)
+
+func TestAccTFESSHKeyDataSource_basic(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFESSHKeyDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: testAccTFESSHKeyDataSourceConfig(rInt),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"data.tfe_ssh_key.foobar", "name", fmt.Sprintf("ssh-key-test-%d", rInt)),
+					resource.TestCheckResourceAttr(
+						"data.tfe_ssh_key.foobar", "organization", fmt.Sprintf("terraform-test-%d", rInt)),
+					resource.TestCheckResourceAttrSet("data.tfe_ssh_key.foobar", "id"),
+				),
+			},
+		},
+	})
+}
+
+func testAccTFESSHKeyDataSourceConfig(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name = "terraform-test-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_ssh_key" "foobar" {
+  name = "ssh-key-test-%d"
+  organization = "${tfe_organization.foobar.id}"
+  key = "SSH-KEY-CONTENT"
+}
+
+data "tfe_ssh_key" "foobar" {
+  name = "${tfe_ssh_key.foobar.name}"
+  organization = "${tfe_ssh_key.foobar.organization}"
+}`, rInt, rInt)
+}
