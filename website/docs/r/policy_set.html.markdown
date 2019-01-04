@@ -22,11 +22,10 @@ Basic usage:
 
 ```hcl
 resource "tfe_policy_set" "test" {
-  name                   = "my-policy-set"
-  description            = "A brand new policy set"
-  organization           = "my-org-name"
-  policy_ids             = ["${tfe_sentinel_policy.test.id}"]
-  workspace_external_ids = ["${tfe_workspace.test.id}"]
+  name          = "my-policy-set-name"
+  organization  = "my-org-name"
+  policy_ids    = ["pol-X1eNTk7E9s8etcF2"]
+  workspace_ids = ["my-org-name/my-workspace-name"]
 }
 ```
 
@@ -36,13 +35,14 @@ The following arguments are supported:
 
 * `name` - (Required) Name of the policy set.
 * `description` - (Optional) A description of the policy set's purpose.
-* `global` - (Optional) Whether or not policies in this set will apply to
-  all workspaces. Defaults to `false`. This value _must not_ be provided if
-  `workspace_external_ids` are provided.
 * `organization` - (Required) Name of the organization.
-* `policy_ids` - (Required) A list of Sentinel policy IDs.
-* `workspace_external_ids` - (Optional) A list of workspace external IDs. If
-  the policy set is `global`, this value _must not_ be provided.
+* `global` - (Optional) Whether or not policies in this set will apply to
+  all workspaces. Defaults to `false`.
+* `policy_ids` - (Required) A list of Sentinel policy IDs to add to the set.
+* `workspace_ids` - (Optional) A list of workspace IDs which should be attached
+  to the policy set.
+* `workspace_external_ids` - (**Deprecated**) This attribute is deprecated,
+  please use the `workspace_ids` attribute instead.
 
 ## Attributes Reference
 

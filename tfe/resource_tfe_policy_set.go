@@ -19,41 +19,49 @@ func resourceTFEPolicySet() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"name": &schema.Schema{
+			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
 
-			"description": &schema.Schema{
+			"description": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
 
-			"organization": &schema.Schema{
+			"organization": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"global": &schema.Schema{
+			"global": {
 				Type:          schema.TypeBool,
 				Optional:      true,
 				Default:       false,
-				ConflictsWith: []string{"workspace_external_ids"},
+				ConflictsWith: []string{"workspace_ids", "workspace_external_ids"},
 			},
 
-			"policy_ids": &schema.Schema{
+			"policy_ids": {
 				Type:     schema.TypeSet,
 				Required: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
-			"workspace_external_ids": &schema.Schema{
+			"workspace_ids": {
 				Type:          schema.TypeSet,
 				Optional:      true,
 				Elem:          &schema.Schema{Type: schema.TypeString},
-				ConflictsWith: []string{"global"},
+				ConflictsWith: []string{"global", "workspace_external_ids"},
+			},
+
+			"workspace_external_ids": {
+				Type:          schema.TypeSet,
+				Optional:      true,
+				Elem:          &schema.Schema{Type: schema.TypeString},
+				ConflictsWith: []string{"global", "workspace_ids"},
+				Deprecated:    "please use the workspace_ids attribute",
 			},
 		},
 	}
@@ -76,10 +84,23 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 		options.Description = tfe.String(desc.(string))
 	}
 
+	// Set up the policies.
 	for _, policyID := range d.Get("policy_ids").(*schema.Set).List() {
 		options.Policies = append(options.Policies, &tfe.Policy{ID: policyID.(string)})
 	}
 
+	// Set up the workspaces.
+	if d.Get("workspace_ids").(*schema.Set).Len() > 0 {
+		workspaces, err := getWorkspaces(d, meta, d.Get("workspace_ids").(*schema.Set).List())
+		if err != nil {
+			return fmt.Errorf("Error retrieving workspaces: %v", err)
+		}
+		if len(workspaces) > 0 {
+			options.Workspaces = workspaces
+		}
+	}
+
+	// Add any workspaces configured using the deprecated workspace_external_ids.
 	for _, workspaceID := range d.Get("workspace_external_ids").(*schema.Set).List() {
 		options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: workspaceID.(string)})
 	}
@@ -127,13 +148,27 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("policy_ids", policyIDs)
 
 	// Update the workspaces.
-	var workspaceIDs []interface{}
-	if !policySet.Global {
-		for _, workspace := range policySet.Workspaces {
-			workspaceIDs = append(workspaceIDs, workspace.ID)
+	if _, ok := d.GetOk("workspace_ids"); ok {
+		var workspaceIDs []interface{}
+		if !policySet.Global {
+			workspaceIDs, err = getWorkspaceIDs(d, meta, policySet.Workspaces)
+			if err != nil {
+				return fmt.Errorf("Error retrieving workspace names: %v", err)
+			}
 		}
+		d.Set("workspace_ids", workspaceIDs)
 	}
-	d.Set("workspace_external_ids", workspaceIDs)
+
+	// Update the workspaces.
+	if _, ok := d.GetOk("workspace_external_ids"); ok {
+		var workspaceExternalIDs []interface{}
+		if !policySet.Global {
+			for _, workspace := range policySet.Workspaces {
+				workspaceExternalIDs = append(workspaceExternalIDs, workspace.ID)
+			}
+		}
+		d.Set("workspace_external_ids", workspaceExternalIDs)
+	}
 
 	return nil
 }
@@ -148,16 +183,24 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 	// that _had_ been set are explicitly removed. This helps keep the policy
 	// set's state in check
 	if global && d.HasChange("global") {
-		// The new set of workspaces will be an empty set, so we don't need it
-		oldWorkspaceIDs, _ := d.GetChange("workspace_external_ids")
+		options := tfe.PolicySetRemoveWorkspacesOptions{}
 
+		// The new set of workspace IDs will be an empty set, so we don't need it
+		oldWorkspaceIDs, _ := d.GetChange("workspace_ids")
 		if oldWorkspaceIDs.(*schema.Set).Len() > 0 {
-			options := tfe.PolicySetRemoveWorkspacesOptions{}
-
-			for _, workspaceID := range oldWorkspaceIDs.(*schema.Set).List() {
-				options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: workspaceID.(string)})
+			workspaces, err := getWorkspaces(d, meta, oldWorkspaceIDs.(*schema.Set).List())
+			if err != nil {
+				return fmt.Errorf("Error retrieving workspaces: %v", err)
 			}
+			options.Workspaces = workspaces
+		}
 
+		oldExternalIDs, _ := d.GetChange("workspace_external_ids")
+		for _, externalID := range oldExternalIDs.(*schema.Set).List() {
+			options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: externalID.(string)})
+		}
+
+		if len(options.Workspaces) > 0 {
 			log.Printf("[DEBUG] Removing previous workspaces from now-global policy set: %s", d.Id())
 			err := tfeClient.PolicySets.RemoveWorkspaces(ctx, d.Id(), options)
 			if err != nil {
@@ -222,17 +265,63 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 		}
 	}
 
-	if !global && d.HasChange("workspace_external_ids") {
-		oldSet, newSet := d.GetChange("workspace_external_ids")
+	if !global && d.HasChange("workspace_ids") {
+		oldSet, newSet := d.GetChange("workspace_ids")
 		oldWorkspaceIDs := oldSet.(*schema.Set).Difference(newSet.(*schema.Set))
 		newWorkspaceIDs := newSet.(*schema.Set).Difference(oldSet.(*schema.Set))
 
 		// First add the new workspaces.
 		if newWorkspaceIDs.Len() > 0 {
+			workspaces, err := getWorkspaces(d, meta, newWorkspaceIDs.List())
+			if err != nil {
+				return fmt.Errorf("Error retrieving workspaces: %v", err)
+			}
+
+			if len(workspaces) > 0 {
+				options := tfe.PolicySetAddWorkspacesOptions{
+					Workspaces: workspaces,
+				}
+
+				log.Printf("[DEBUG] Attach policy set to workspaces: %s", d.Id())
+				err = tfeClient.PolicySets.AddWorkspaces(ctx, d.Id(), options)
+				if err != nil {
+					return fmt.Errorf("Error attaching policy set %s to workspaces: %v", d.Id(), err)
+				}
+			}
+		}
+
+		// Then remove all the old workspaces.
+		if oldWorkspaceIDs.Len() > 0 {
+			workspaces, err := getWorkspaces(d, meta, oldWorkspaceIDs.List())
+			if err != nil {
+				return fmt.Errorf("Error retrieving workspaces: %v", err)
+			}
+
+			if len(workspaces) > 0 {
+				options := tfe.PolicySetRemoveWorkspacesOptions{
+					Workspaces: workspaces,
+				}
+
+				log.Printf("[DEBUG] Detach policy set from workspaces: %s", d.Id())
+				err = tfeClient.PolicySets.RemoveWorkspaces(ctx, d.Id(), options)
+				if err != nil {
+					return fmt.Errorf("Error detaching policy set %s from workspaces: %v", d.Id(), err)
+				}
+			}
+		}
+	}
+
+	if !global && d.HasChange("workspace_external_ids") {
+		oldSet, newSet := d.GetChange("workspace_external_ids")
+		oldExternalIDs := oldSet.(*schema.Set).Difference(newSet.(*schema.Set))
+		newExternalIDs := newSet.(*schema.Set).Difference(oldSet.(*schema.Set))
+
+		// First add the new workspaces.
+		if newExternalIDs.Len() > 0 {
 			options := tfe.PolicySetAddWorkspacesOptions{}
 
-			for _, workspaceID := range newWorkspaceIDs.List() {
-				options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: workspaceID.(string)})
+			for _, externalID := range newExternalIDs.List() {
+				options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: externalID.(string)})
 			}
 
 			log.Printf("[DEBUG] Attach policy set to workspaces: %s", d.Id())
@@ -243,11 +332,11 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 		}
 
 		// Then remove all the old workspaces.
-		if oldWorkspaceIDs.Len() > 0 {
+		if oldExternalIDs.Len() > 0 {
 			options := tfe.PolicySetRemoveWorkspacesOptions{}
 
-			for _, workspaceID := range oldWorkspaceIDs.List() {
-				options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: workspaceID.(string)})
+			for _, externalID := range oldExternalIDs.List() {
+				options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: externalID.(string)})
 			}
 
 			log.Printf("[DEBUG] Detach policy set from workspaces: %s", d.Id())
@@ -274,4 +363,97 @@ func resourceTFEPolicySetDelete(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	return nil
+}
+
+func getWorkspaces(d *schema.ResourceData, meta interface{}, ids []interface{}) ([]*tfe.Workspace, error) {
+	tfeClient := meta.(*tfe.Client)
+
+	// Get the organization name.
+	organization := d.Get("organization").(string)
+
+	// Create a map with workspace names.
+	m := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		org, name, err := unpackWorkspaceID(id.(string))
+		if err != nil {
+			return nil, err
+		}
+		if org != organization {
+			return nil, fmt.Errorf("workspace %s does not belong to organization %s", id, organization)
+		}
+		m[name] = true
+	}
+
+	// Create a slice for any matching workspaces.
+	var workspaces []*tfe.Workspace
+
+	options := tfe.WorkspaceListOptions{}
+	for {
+		wl, err := tfeClient.Workspaces.List(ctx, organization, options)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, w := range wl.Items {
+			if m[w.Name] {
+				workspaces = append(workspaces, w)
+				if len(workspaces) == len(ids) {
+					return workspaces, nil
+				}
+			}
+		}
+
+		// Exit the loop when we've seen all pages.
+		if wl.CurrentPage >= wl.TotalPages {
+			break
+		}
+
+		// Update the page number to get the next page.
+		options.PageNumber = wl.NextPage
+	}
+
+	return workspaces, nil
+}
+
+func getWorkspaceIDs(d *schema.ResourceData, meta interface{}, workspaces []*tfe.Workspace) ([]interface{}, error) {
+	tfeClient := meta.(*tfe.Client)
+
+	// Get the organization name.
+	organization := d.Get("organization").(string)
+
+	// Create a map with workspace IDs.
+	m := make(map[string]bool, len(workspaces))
+	for _, w := range workspaces {
+		m[w.ID] = true
+	}
+
+	// Create a slice for any matching workspaces.
+	var ids []interface{}
+
+	options := tfe.WorkspaceListOptions{}
+	for {
+		wl, err := tfeClient.Workspaces.List(ctx, organization, options)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, w := range wl.Items {
+			if m[w.ID] {
+				ids = append(ids, organization+"/"+w.Name)
+				if len(ids) == len(workspaces) {
+					return ids, nil
+				}
+			}
+		}
+
+		// Exit the loop when we've seen all pages.
+		if wl.CurrentPage >= wl.TotalPages {
+			break
+		}
+
+		// Update the page number to get the next page.
+		options.PageNumber = wl.NextPage
+	}
+
+	return ids, nil
 }
