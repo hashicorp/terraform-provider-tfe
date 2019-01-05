@@ -210,38 +210,38 @@ func testAccCheckTFEVariableDestroy(s *terraform.State) error {
 
 const testAccTFEVariable_basic = `
 resource "tfe_organization" "foobar" {
-  name = "terraform-test"
+  name  = "terraform-test"
   email = "admin@company.com"
 }
 
 resource "tfe_workspace" "foobar" {
-  name = "workspace-test"
+  name         = "workspace-test"
   organization = "${tfe_organization.foobar.id}"
 }
 
 resource "tfe_variable" "foobar" {
-  key = "key_test"
-  value = "value_test"
-  category = "env"
+  key          = "key_test"
+  value        = "value_test"
+  category     = "env"
   workspace_id = "${tfe_workspace.foobar.id}"
 }`
 
 const testAccTFEVariable_update = `
 resource "tfe_organization" "foobar" {
-  name = "terraform-test"
+  name  = "terraform-test"
   email = "admin@company.com"
 }
 
 resource "tfe_workspace" "foobar" {
-  name = "workspace-test"
+  name         = "workspace-test"
   organization = "${tfe_organization.foobar.id}"
 }
 
 resource "tfe_variable" "foobar" {
-  key = "key_updated"
-  value = "value_updated"
-  category = "terraform"
-  hcl = true
-  sensitive = true
+  key          = "key_updated"
+  value        = "value_updated"
+  category     = "terraform"
+  hcl          = true
+  sensitive    = true
   workspace_id = "${tfe_workspace.foobar.id}"
 }`

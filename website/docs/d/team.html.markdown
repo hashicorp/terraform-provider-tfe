@@ -14,7 +14,7 @@ Use this data source to get information about a team.
 
 ```hcl
 data "tfe_team" "test" {
-  name = "my-team-name"
+  name         = "my-team-name"
   organization = "my-org-name"
 }
 ```

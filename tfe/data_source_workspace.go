@@ -2,6 +2,7 @@ package tfe
 
 import (
 	"fmt"
+	"log"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -15,13 +16,11 @@ func dataSourceTFEWorkspace() *schema.Resource {
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 			},
 
 			"organization": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 			},
 
 			"auto_apply": &schema.Schema{
@@ -50,16 +49,11 @@ func dataSourceTFEWorkspace() *schema.Resource {
 			},
 
 			"vcs_repo": &schema.Schema{
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"identifier": &schema.Schema{
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-
-						"branch": &schema.Schema{
 							Type:     schema.TypeString,
 							Computed: true,
 						},
@@ -92,7 +86,8 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	name := d.Get("name").(string)
 	organization := d.Get("organization").(string)
 
-	_, err := tfeClient.Workspaces.Read(ctx, organization, name)
+	log.Printf("[DEBUG] Read configuration of workspace: %s", name)
+	workspace, err := tfeClient.Workspaces.Read(ctx, organization, name)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return fmt.Errorf("Could not find workspace %s/%s", organization, name)
@@ -100,6 +95,29 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 		return fmt.Errorf("Error retrieving workspace: %v", err)
 	}
 
-	d.SetId(organization + "/" + name)
-	return resourceTFEWorkspaceRead(d, meta)
+	// Update the config.
+	d.Set("auto_apply", workspace.AutoApply)
+	d.Set("queue_all_runs", workspace.QueueAllRuns)
+	d.Set("terraform_version", workspace.TerraformVersion)
+	d.Set("working_directory", workspace.WorkingDirectory)
+	d.Set("external_id", workspace.ID)
+
+	if workspace.SSHKey != nil {
+		d.Set("ssh_key_id", workspace.SSHKey.ID)
+	}
+
+	var vcsRepo []interface{}
+	if workspace.VCSRepo != nil {
+		vcsConfig := map[string]interface{}{
+			"identifier":         workspace.VCSRepo.Identifier,
+			"ingress_submodules": workspace.VCSRepo.IngressSubmodules,
+			"oauth_token_id":     workspace.VCSRepo.OAuthTokenID,
+		}
+		vcsRepo = append(vcsRepo, vcsConfig)
+	}
+	d.Set("vcs_repo", vcsRepo)
+
+	d.SetId(workspace.ID)
+
+	return nil
 }

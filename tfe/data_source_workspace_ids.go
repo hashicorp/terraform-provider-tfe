@@ -16,13 +16,11 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 				Type:     schema.TypeList,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Required: true,
-				ForceNew: true,
 			},
 
 			"organization": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 			},
 
 			"ids": &schema.Schema{

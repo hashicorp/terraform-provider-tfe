@@ -14,7 +14,7 @@ Use this data source to get information about a workspace.
 
 ```hcl
 data "tfe_workspace" "test" {
-  name = "my-workspace-name"
+  name         = "my-workspace-name"
   organization = "my-org-name"
 }
 ```
@@ -33,10 +33,10 @@ In addition to all arguments above, the following attributes are exported:
 * `id` - The ID of the workspace within Terraform. This is a custom ID that is
   needed because the Terraform Enterprise workspace related API calls require
   the organization and workspace name instead of the actual workspace ID.
-* `auto_apply` - Indicated whether to automatically apply changes when a
+* `auto_apply` - Indicates whether to automatically apply changes when a
   Terraform plan is successful.
 * `ssh_key_id` - The ID of an SSH key assigned to the workspace.
-* `queue_all_runs` - Indicated whether all runs should be queued.
+* `queue_all_runs` - Indicates whether all runs should be queued.
 * `terraform_version` - The version of Terraform used for this workspace.
 * `working_directory` - A relative path that Terraform will execute within.
 * `vcs_repo` - Settings for the workspace's VCS repository.
@@ -48,6 +48,6 @@ The `vcs_repo` block contains:
   where `:org` and `:repo` refer to the organization and repository in your VCS
   provider.
 * `branch` - The repository branch that Terraform will execute from.
-* `ingress_submodules` - Indicated whether submodules should be fetched when
+* `ingress_submodules` - Indicates whether submodules should be fetched when
   cloning the VCS repository.
 * `oauth_token_id` - OAuth token ID of the configured VCS connection.

@@ -23,12 +23,12 @@ Basic usage:
 
 ```hcl
 resource "tfe_team" "test" {
-  name = "my-team-name"
+  name         = "my-team-name"
   organization = "my-org-name"
 }
 
 resource "tfe_team_member" "test" {
-  team_id = "${tfe_team.test.id}"
+  team_id  = "${tfe_team.test.id}"
   username = "sander"
 }
 ```

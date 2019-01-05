@@ -14,7 +14,7 @@ Use this data source to get a map of (external) workspace IDs.
 
 ```hcl
 data "tfe_workspace" "test" {
-  names = ["my-workspace-name"]
+  names        = ["my-workspace-name"]
   organization = "my-org-name"
 }
 ```

@@ -16,7 +16,7 @@ Basic usage:
 
 ```hcl
 resource "tfe_workspace" "test" {
-  name = "my-workspace-name"
+  name         = "my-workspace-name"
   organization = "my-org-name"
 }
 ```

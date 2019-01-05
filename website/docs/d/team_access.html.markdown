@@ -14,7 +14,7 @@ Use this data source to get information about team permissions for a workspace.
 
 ```hcl
 data "tfe_team_access" "test" {
-  team_id = "my-team-id"
+  team_id      = "my-team-id"
   workspace_id = "my-workspace-id"
 }
 ```

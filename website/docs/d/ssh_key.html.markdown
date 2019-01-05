@@ -14,7 +14,7 @@ Use this data source to get information about a SSH key.
 
 ```hcl
 data "tfe_ssh_key" "test" {
-  name = "my-ssh-key-name"
+  name         = "my-ssh-key-name"
   organization = "my-org-name"
 }
 ```

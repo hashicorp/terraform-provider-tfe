@@ -366,102 +366,102 @@ func testAccCheckTFEPolicySetDestroy(s *terraform.State) error {
 
 const testAccTFEPolicySet_basic = `
 resource "tfe_organization" "foobar" {
-  name = "terraform-test"
+  name  = "terraform-test"
   email = "admin@company.com"
 }
 
 resource "tfe_sentinel_policy" "foo" {
-  name = "policy-foo"
-  policy = "main = rule { true }"
+  name         = "policy-foo"
+  policy       = "main = rule { true }"
   organization = "${tfe_organization.foobar.id}"
 }
 
 resource "tfe_policy_set" "foobar" {
-  name = "terraform-test"
-  description = "Policy Set"
+  name         = "terraform-test"
+  description  = "Policy Set"
   organization = "${tfe_organization.foobar.id}"
-  policy_ids = ["${tfe_sentinel_policy.foo.id}"]
+  policy_ids   = ["${tfe_sentinel_policy.foo.id}"]
 }`
 
 const testAccTFEPolicySet_populated = `
 resource "tfe_organization" "foobar" {
-  name = "terraform-test"
+  name  = "terraform-test"
   email = "admin@company.com"
 }
 
 resource "tfe_sentinel_policy" "foo" {
-  name = "policy-foo"
-  policy = "main = rule { true }"
+  name         = "policy-foo"
+  policy       = "main = rule { true }"
   organization = "${tfe_organization.foobar.id}"
 }
 
 resource "tfe_workspace" "foo" {
-  name = "workspace-foo"
+  name         = "workspace-foo"
   organization = "${tfe_organization.foobar.id}"
 }
 
 resource "tfe_policy_set" "foobar" {
-  name = "terraform-populated"
-  organization = "${tfe_organization.foobar.id}"
-  policy_ids = ["${tfe_sentinel_policy.foo.id}"]
+  name                   = "terraform-populated"
+  organization           = "${tfe_organization.foobar.id}"
+  policy_ids             = ["${tfe_sentinel_policy.foo.id}"]
   workspace_external_ids = ["${tfe_workspace.foo.external_id}"]
 }`
 
 const testAccTFEPolicySet_updatePopulated = `
 resource "tfe_organization" "foobar" {
-  name = "terraform-test"
+  name  = "terraform-test"
   email = "admin@company.com"
 }
 
 resource "tfe_sentinel_policy" "foo" {
-  name = "policy-foo"
-  policy = "main = rule { true }"
+  name         = "policy-foo"
+  policy       = "main = rule { true }"
   organization = "${tfe_organization.foobar.id}"
 }
 
 resource "tfe_sentinel_policy" "bar" {
-  name = "policy-bar"
-  policy = "main = rule { false }"
+  name         = "policy-bar"
+  policy       = "main = rule { false }"
   organization = "${tfe_organization.foobar.id}"
 }
 
 resource "tfe_workspace" "foo" {
-  name = "workspace-foo"
+  name         = "workspace-foo"
   organization = "${tfe_organization.foobar.id}"
 }
 
 resource "tfe_workspace" "bar" {
-  name = "workspace-bar"
+  name         = "workspace-bar"
   organization = "${tfe_organization.foobar.id}"
 }
 
 resource "tfe_policy_set" "foobar" {
-  name = "terraform-populated-updated"
-  organization = "${tfe_organization.foobar.id}"
-  policy_ids = ["${tfe_sentinel_policy.bar.id}"]
+  name                   = "terraform-populated-updated"
+  organization           = "${tfe_organization.foobar.id}"
+  policy_ids             = ["${tfe_sentinel_policy.bar.id}"]
   workspace_external_ids = ["${tfe_workspace.bar.external_id}"]
 }`
 
 const testAccTFEPolicySet_global = `
 resource "tfe_organization" "foobar" {
-  name = "terraform-test"
+  name  = "terraform-test"
   email = "admin@company.com"
 }
 
 resource "tfe_sentinel_policy" "foo" {
-  name = "policy-foo"
-  policy = "main = rule { true }"
+  name         = "policy-foo"
+  policy       = "main = rule { true }"
   organization = "${tfe_organization.foobar.id}"
 }
 
 resource "tfe_workspace" "foo" {
-  name = "workspace-foo"
+  name         = "workspace-foo"
   organization = "${tfe_organization.foobar.id}"
 }
 
 resource "tfe_policy_set" "foobar" {
-  name = "terraform-global"
+  name         = "terraform-global"
   organization = "${tfe_organization.foobar.id}"
-  global = true
-  policy_ids = ["${tfe_sentinel_policy.foo.id}"]
+  global       = true
+  policy_ids   = ["${tfe_sentinel_policy.foo.id}"]
 }`

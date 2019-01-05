@@ -13,9 +13,8 @@ func TestAccTFEWorkspaceIDsDataSource_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			resource.TestStep{
 				Config: testAccTFEWorkspaceIDsDataSourceConfig_basic(rInt),
@@ -105,27 +104,27 @@ func TestAccTFEWorkspaceIDsDataSource_wildcard(t *testing.T) {
 func testAccTFEWorkspaceIDsDataSourceConfig_basic(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name = "terraform-test-%d"
+  name  = "terraform-test-%d"
   email = "admin@company.com"
 }
 
 resource "tfe_workspace" "foo" {
-  name = "workspace-foo-%d"
+  name         = "workspace-foo-%d"
   organization = "${tfe_organization.foobar.id}"
 }
 
 resource "tfe_workspace" "bar" {
-  name = "workspace-bar-%d"
+  name         = "workspace-bar-%d"
   organization = "${tfe_organization.foobar.id}"
 }
 
 resource "tfe_workspace" "dummy" {
-  name = "workspace-dummy-%d"
+  name         = "workspace-dummy-%d"
   organization = "${tfe_organization.foobar.id}"
 }
 
 data "tfe_workspace_ids" "foobar" {
-  names = ["${tfe_workspace.foo.name}", "${tfe_workspace.bar.name}"]
+  names        = ["${tfe_workspace.foo.name}", "${tfe_workspace.bar.name}"]
   organization = "${tfe_organization.foobar.name}"
 }`, rInt, rInt, rInt, rInt)
 }
@@ -133,27 +132,27 @@ data "tfe_workspace_ids" "foobar" {
 func testAccTFEWorkspaceIDsDataSourceConfig_wildcard(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name = "terraform-test-%d"
+  name  = "terraform-test-%d"
   email = "admin@company.com"
 }
 
 resource "tfe_workspace" "foo" {
-  name = "workspace-foo-%d"
+  name         = "workspace-foo-%d"
   organization = "${tfe_organization.foobar.id}"
 }
 
 resource "tfe_workspace" "bar" {
-  name = "workspace-bar-%d"
+  name         = "workspace-bar-%d"
   organization = "${tfe_organization.foobar.id}"
 }
 
 resource "tfe_workspace" "dummy" {
-  name = "workspace-dummy-%d"
+  name         = "workspace-dummy-%d"
   organization = "${tfe_organization.foobar.id}"
 }
 
 data "tfe_workspace_ids" "foobar" {
-  names = ["*"]
-  organization = "${tfe_organization.foobar.name}"
+  names        = ["*"]
+  organization = "${tfe_workspace.dummy.organization}"
 }`, rInt, rInt, rInt, rInt)
 }

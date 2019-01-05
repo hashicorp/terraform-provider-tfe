@@ -359,46 +359,46 @@ func testAccCheckTFEWorkspaceDestroy(s *terraform.State) error {
 
 const testAccTFEWorkspace_basic = `
 resource "tfe_organization" "foobar" {
-  name = "terraform-test"
+  name  = "terraform-test"
   email = "admin@company.com"
 }
 
 resource "tfe_workspace" "foobar" {
-  name = "workspace-test"
+  name         = "workspace-test"
   organization = "${tfe_organization.foobar.id}"
-  auto_apply = true
+  auto_apply   = true
 }`
 
 const testAccTFEWorkspace_update = `
 resource "tfe_organization" "foobar" {
-  name = "terraform-test"
+  name  = "terraform-test"
   email = "admin@company.com"
 }
 
 resource "tfe_workspace" "foobar" {
-  name = "workspace-updated"
-  organization = "${tfe_organization.foobar.id}"
-  auto_apply = false
-	queue_all_runs = false
+  name              = "workspace-updated"
+  organization      = "${tfe_organization.foobar.id}"
+  auto_apply        = false
+  queue_all_runs    = false
   terraform_version = "0.11.1"
   working_directory = "terraform/test"
 }`
 
 const testAccTFEWorkspace_sshKey = `
 resource "tfe_organization" "foobar" {
-  name = "terraform-test"
+  name  = "terraform-test"
   email = "admin@company.com"
 }
 
 resource "tfe_ssh_key" "foobar" {
-  name = "ssh-key-test"
+  name         = "ssh-key-test"
   organization = "${tfe_organization.foobar.id}"
-  key = "SSH-KEY-CONTENT"
+  key          = "SSH-KEY-CONTENT"
 }
 
 resource "tfe_workspace" "foobar" {
-  name = "workspace-ssh-key"
+  name         = "workspace-ssh-key"
   organization = "${tfe_organization.foobar.id}"
-  auto_apply = true
-  ssh_key_id = "${tfe_ssh_key.foobar.id}"
+  auto_apply   = true
+  ssh_key_id   = "${tfe_ssh_key.foobar.id}"
 }`

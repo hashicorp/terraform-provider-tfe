@@ -160,7 +160,7 @@ func testAccCheckTFEOrganizationTokenDestroy(s *terraform.State) error {
 
 const testAccTFEOrganizationToken_basic = `
 resource "tfe_organization" "foobar" {
-  name = "terraform-test"
+  name  = "terraform-test"
   email = "admin@company.com"
 }
 
@@ -170,7 +170,7 @@ resource "tfe_organization_token" "foobar" {
 
 const testAccTFEOrganizationToken_existsWithoutForce = `
 resource "tfe_organization" "foobar" {
-  name = "terraform-test"
+  name  = "terraform-test"
   email = "admin@company.com"
 }
 
@@ -184,7 +184,7 @@ resource "tfe_organization_token" "error" {
 
 const testAccTFEOrganizationToken_existsWithForce = `
 resource "tfe_organization" "foobar" {
-  name = "terraform-test"
+  name  = "terraform-test"
   email = "admin@company.com"
 }
 
@@ -193,6 +193,6 @@ resource "tfe_organization_token" "foobar" {
 }
 
 resource "tfe_organization_token" "regenerated" {
-  organization = "${tfe_organization.foobar.id}"
+  organization     = "${tfe_organization.foobar.id}"
   force_regenerate = true
 }`

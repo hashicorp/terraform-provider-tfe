@@ -13,9 +13,8 @@ func TestAccTFETeamAccessDataSource_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamAccessDestroy,
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			resource.TestStep{
 				Config: testAccTFETeamAccessDataSourceConfig(rInt),
@@ -34,28 +33,28 @@ func TestAccTFETeamAccessDataSource_basic(t *testing.T) {
 func testAccTFETeamAccessDataSourceConfig(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name = "terraform-test-%d"
+  name  = "terraform-test-%d"
   email = "admin@company.com"
 }
 
 resource "tfe_team" "foobar" {
-  name = "team-test-%d"
+  name         = "team-test-%d"
   organization = "${tfe_organization.foobar.id}"
 }
 
 resource "tfe_workspace" "foobar" {
-  name = "workspace-test-%d"
+  name         = "workspace-test-%d"
   organization = "${tfe_organization.foobar.id}"
 }
 
 resource "tfe_team_access" "foobar" {
-  access = "write"
-  team_id = "${tfe_team.foobar.id}"
+  access       = "write"
+  team_id      = "${tfe_team.foobar.id}"
   workspace_id = "${tfe_workspace.foobar.id}"
 }
 
 data "tfe_team_access" "foobar" {
-  team_id = "${tfe_team.foobar.id}"
-  workspace_id = "${tfe_workspace.foobar.id}"
+  team_id      = "${tfe_team.foobar.id}"
+  workspace_id = "${tfe_team_access.foobar.workspace_id}"
 }`, rInt, rInt, rInt)
 }
