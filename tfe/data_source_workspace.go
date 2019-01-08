@@ -13,57 +13,57 @@ func dataSourceTFEWorkspace() *schema.Resource {
 		Read: dataSourceTFEWorkspaceRead,
 
 		Schema: map[string]*schema.Schema{
-			"name": &schema.Schema{
+			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
 
-			"organization": &schema.Schema{
+			"organization": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
 
-			"auto_apply": &schema.Schema{
+			"auto_apply": {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
 
-			"ssh_key_id": &schema.Schema{
+			"ssh_key_id": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"queue_all_runs": &schema.Schema{
+			"queue_all_runs": {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
 
-			"terraform_version": &schema.Schema{
+			"terraform_version": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"working_directory": &schema.Schema{
+			"working_directory": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"vcs_repo": &schema.Schema{
+			"vcs_repo": {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"identifier": &schema.Schema{
+						"identifier": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
 
-						"ingress_submodules": &schema.Schema{
+						"ingress_submodules": {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
 
-						"oauth_token_id": &schema.Schema{
+						"oauth_token_id": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
@@ -71,7 +71,7 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				},
 			},
 
-			"external_id": &schema.Schema{
+			"external_id": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},

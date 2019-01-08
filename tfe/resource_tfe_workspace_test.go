@@ -97,7 +97,7 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFEWorkspace_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
@@ -125,7 +125,7 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFEWorkspace_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
@@ -142,7 +142,7 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 				),
 			},
 
-			resource.TestStep{
+			{
 				Config: testAccTFEWorkspace_update,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
@@ -172,7 +172,7 @@ func TestAccTFEWorkspace_sshKey(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFEWorkspace_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
@@ -181,7 +181,7 @@ func TestAccTFEWorkspace_sshKey(t *testing.T) {
 				),
 			},
 
-			resource.TestStep{
+			{
 				Config: testAccTFEWorkspace_sshKey,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
@@ -190,7 +190,7 @@ func TestAccTFEWorkspace_sshKey(t *testing.T) {
 				),
 			},
 
-			resource.TestStep{
+			{
 				Config: testAccTFEWorkspace_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
@@ -208,11 +208,11 @@ func TestAccTFEWorkspace_import(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFEWorkspace_basic,
 			},
 
-			resource.TestStep{
+			{
 				ResourceName:      "tfe_workspace.foobar",
 				ImportState:       true,
 				ImportStateVerify: true,

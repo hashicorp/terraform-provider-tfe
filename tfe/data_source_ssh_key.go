@@ -12,12 +12,12 @@ func dataSourceTFESSHKey() *schema.Resource {
 		Read: dataSourceTFESSHKeyRead,
 
 		Schema: map[string]*schema.Schema{
-			"name": &schema.Schema{
+			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
 
-			"organization": &schema.Schema{
+			"organization": {
 				Type:     schema.TypeString,
 				Required: true,
 			},

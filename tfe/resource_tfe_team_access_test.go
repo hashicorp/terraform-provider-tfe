@@ -17,7 +17,7 @@ func TestAccTFETeamAccess_basic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFETeamAccess_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamAccessExists(
@@ -37,11 +37,11 @@ func TestAccTFETeamAccess_import(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFETeamAccess_basic,
 			},
 
-			resource.TestStep{
+			{
 				ResourceName:        "tfe_team_access.foobar",
 				ImportState:         true,
 				ImportStateIdPrefix: "terraform-test/workspace-test/",

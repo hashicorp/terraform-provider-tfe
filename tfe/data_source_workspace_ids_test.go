@@ -16,7 +16,7 @@ func TestAccTFEWorkspaceIDsDataSource_basic(t *testing.T) {
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFEWorkspaceIDsDataSourceConfig_basic(rInt),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
@@ -60,7 +60,7 @@ func TestAccTFEWorkspaceIDsDataSource_wildcard(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFEWorkspaceIDsDataSourceConfig_wildcard(rInt),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(

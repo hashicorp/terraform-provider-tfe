@@ -17,7 +17,7 @@ func TestAccTFEOrganization_basic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFEOrganization_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
@@ -43,7 +43,7 @@ func TestAccTFEOrganization_update(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFEOrganization_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
@@ -58,7 +58,7 @@ func TestAccTFEOrganization_update(t *testing.T) {
 				),
 			},
 
-			resource.TestStep{
+			{
 				Config: testAccTFEOrganization_update,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
@@ -86,11 +86,11 @@ func TestAccTFEOrganization_import(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFEOrganization_basic,
 			},
 
-			resource.TestStep{
+			{
 				ResourceName:      "tfe_organization.foobar",
 				ImportState:       true,
 				ImportStateVerify: true,

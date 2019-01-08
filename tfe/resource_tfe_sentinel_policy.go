@@ -21,30 +21,30 @@ func resourceTFESentinelPolicy() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"name": &schema.Schema{
+			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"description": &schema.Schema{
+			"description": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
 
-			"organization": &schema.Schema{
+			"organization": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"policy": &schema.Schema{
+			"policy": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
 
-			"enforce_mode": &schema.Schema{
+			"enforce_mode": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Default:  string(tfe.EnforcementSoft),
@@ -72,7 +72,7 @@ func resourceTFESentinelPolicyCreate(d *schema.ResourceData, meta interface{}) e
 	options := tfe.PolicyCreateOptions{
 		Name: tfe.String(name),
 		Enforce: []*tfe.EnforcementOptions{
-			&tfe.EnforcementOptions{
+			{
 				Path: tfe.String(name + ".sentinel"),
 				Mode: tfe.EnforcementMode(tfe.EnforcementLevel(d.Get("enforce_mode").(string))),
 			},
@@ -146,7 +146,7 @@ func resourceTFESentinelPolicyUpdate(d *schema.ResourceData, meta interface{}) e
 
 		if d.HasChange("enforce_mode") {
 			options.Enforce = []*tfe.EnforcementOptions{
-				&tfe.EnforcementOptions{
+				{
 					Path: tfe.String(d.Get("name").(string) + ".sentinel"),
 					Mode: tfe.EnforcementMode(tfe.EnforcementLevel(d.Get("enforce_mode").(string))),
 				},
