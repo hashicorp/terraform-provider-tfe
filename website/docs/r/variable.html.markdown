@@ -3,7 +3,7 @@ layout: "tfe"
 page_title: "Terraform Enterprise: tfe_variable"
 sidebar_current: "docs-resource-tfe-variable"
 description: |-
-  Creates, updates and destroys variables.
+  Manages variables.
 ---
 
 # tfe_variable

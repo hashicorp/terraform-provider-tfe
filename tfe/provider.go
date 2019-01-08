@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/url"
 	"os"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -16,10 +17,9 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 )
 
-const (
-	defaultHostname = "app.terraform.io"
-	serviceID       = "tfe.v2"
-)
+const defaultHostname = "app.terraform.io"
+
+var serviceIDs = []string{"tfe.v2.1", "tfe.v2"}
 
 // Config is the structure of the configuration for the Terraform CLI.
 type Config struct {
@@ -56,6 +56,7 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
+			"tfe_oauth_client":       resourceTFEOAuthClient(),
 			"tfe_organization":       resourceTFEOrganization(),
 			"tfe_organization_token": resourceTFEOrganizationToken(),
 			"tfe_policy_set":         resourceTFEPolicySet(),
@@ -103,7 +104,15 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	}
 
 	// Discover the full Terraform Enterprise service address.
-	address := services.DiscoverServiceURL(host, serviceID)
+	var address *url.URL
+	for _, serviceID := range serviceIDs {
+		address = services.DiscoverServiceURL(host, serviceID)
+		if address != nil {
+			break
+		}
+	}
+
+	// Check if we were able to discover a service address.
 	if address == nil {
 		return nil, fmt.Errorf("host %s does not provide a Terraform Enterprise API", host)
 	}

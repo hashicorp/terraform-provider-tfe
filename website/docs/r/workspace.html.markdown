@@ -3,7 +3,7 @@ layout: "tfe"
 page_title: "Terraform Enterprise: tfe_workspace"
 sidebar_current: "docs-resource-tfe-workspace"
 description: |-
-  Workspaces represent running infrastructure managed by Terraform.
+  Manages workspaces.
 ---
 
 # tfe_workspace
