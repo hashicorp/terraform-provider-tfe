@@ -1,13 +1,13 @@
-## 0.6.0 (Unreleased)
+## 0.6.0 (January 08, 2019)
 
 FEATURES:
 
-* **New resource**: `tfe_oauth_client` [GH-42]
-* **New data source**: `tfe_ssh_key` [GH-43]
-* **New data source**: `tfe_team` [GH-43]
-* **New data source**: `tfe_team_access` [GH-43]
-* **New data source**: `tfe_workspace` [GH-43]
-* **New data source**: `tfe_workspace_ids` [GH-43]
+* **New resource**: `tfe_oauth_client` ([#42](https://github.com/terraform-providers/terraform-provider-tfe/issues/42))
+* **New data source**: `tfe_ssh_key` ([#43](https://github.com/terraform-providers/terraform-provider-tfe/issues/43))
+* **New data source**: `tfe_team` ([#43](https://github.com/terraform-providers/terraform-provider-tfe/issues/43))
+* **New data source**: `tfe_team_access` ([#43](https://github.com/terraform-providers/terraform-provider-tfe/issues/43))
+* **New data source**: `tfe_workspace` ([#43](https://github.com/terraform-providers/terraform-provider-tfe/issues/43))
+* **New data source**: `tfe_workspace_ids` ([#43](https://github.com/terraform-providers/terraform-provider-tfe/issues/43))
 
 ## 0.5.0 (December 12, 2018)
 
