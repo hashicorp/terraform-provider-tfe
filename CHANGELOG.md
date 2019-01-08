@@ -3,6 +3,11 @@
 FEATURES:
 
 * **New resource**: `tfe_oauth_client` [GH-42]
+* **New data source**: `tfe_ssh_key` [GH-43]
+* **New data source**: `tfe_team` [GH-43]
+* **New data source**: `tfe_team_access` [GH-43]
+* **New data source**: `tfe_workspace` [GH-43]
+* **New data source**: `tfe_workspace_ids` [GH-43]
 
 ## 0.5.0 (December 12, 2018)
 
