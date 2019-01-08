@@ -47,7 +47,6 @@ The `vcs_repo` block contains:
 * `identifier` - A reference to your VCS repository in the format `:org/:repo`
   where `:org` and `:repo` refer to the organization and repository in your VCS
   provider.
-* `branch` - The repository branch that Terraform will execute from.
 * `ingress_submodules` - Indicates whether submodules should be fetched when
   cloning the VCS repository.
 * `oauth_token_id` - OAuth token ID of the configured VCS connection.

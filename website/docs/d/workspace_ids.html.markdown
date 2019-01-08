@@ -22,13 +22,14 @@ data "tfe_workspace" "test" {
 ## Argument Reference
 
 The following arguments are supported:
+
 * `names` - (Required) A list of workspace names.
 * `organization` - (Required) Name of the organization.
 
 ~> The list of names can be used to search for workspaces with matching names.
-  Additionally you can also use a single entry with a wildcard (e.g. "*") which
+  Additionally you can also use a single entry with a wildcard (e.g. `"*"`) which
   will match all names. Using a partial string together with a wildcard (e.g.
-  "my-workspace-*") is not supported.
+  `"my-workspace-*"`) is **not** supported.
 
 ## Attributes Reference
 
