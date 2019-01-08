@@ -12,17 +12,17 @@ func dataSourceTFETeamAccess() *schema.Resource {
 		Read: dataSourceTFETeamAccessRead,
 
 		Schema: map[string]*schema.Schema{
-			"access": &schema.Schema{
+			"access": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"team_id": &schema.Schema{
+			"team_id": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
 
-			"workspace_id": &schema.Schema{
+			"workspace_id": {
 				Type:     schema.TypeString,
 				Required: true,
 			},

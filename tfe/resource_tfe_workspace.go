@@ -20,71 +20,71 @@ func resourceTFEWorkspace() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"name": &schema.Schema{
+			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
 
-			"organization": &schema.Schema{
+			"organization": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"auto_apply": &schema.Schema{
+			"auto_apply": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
 			},
 
-			"ssh_key_id": &schema.Schema{
+			"ssh_key_id": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
 
-			"queue_all_runs": &schema.Schema{
+			"queue_all_runs": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  true,
 			},
 
-			"terraform_version": &schema.Schema{
+			"terraform_version": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
 
-			"working_directory": &schema.Schema{
+			"working_directory": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
 
-			"vcs_repo": &schema.Schema{
+			"vcs_repo": {
 				Type:     schema.TypeSet,
 				Optional: true,
 				MinItems: 1,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"identifier": &schema.Schema{
+						"identifier": {
 							Type:     schema.TypeString,
 							Required: true,
 						},
 
-						"branch": &schema.Schema{
+						"branch": {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
 
-						"ingress_submodules": &schema.Schema{
+						"ingress_submodules": {
 							Type:     schema.TypeBool,
 							Optional: true,
 							Default:  false,
 						},
 
-						"oauth_token_id": &schema.Schema{
+						"oauth_token_id": {
 							Type:     schema.TypeString,
 							Required: true,
 						},
@@ -92,7 +92,7 @@ func resourceTFEWorkspace() *schema.Resource {
 				},
 			},
 
-			"external_id": &schema.Schema{
+			"external_id": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},

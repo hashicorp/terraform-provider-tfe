@@ -16,32 +16,32 @@ func resourceTFEOAuthClient() *schema.Resource {
 		Delete: resourceTFEOAuthClientDelete,
 
 		Schema: map[string]*schema.Schema{
-			"organization": &schema.Schema{
+			"organization": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"api_url": &schema.Schema{
+			"api_url": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"http_url": &schema.Schema{
+			"http_url": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"oauth_token": &schema.Schema{
+			"oauth_token": {
 				Type:      schema.TypeString,
 				Required:  true,
 				Sensitive: true,
 				ForceNew:  true,
 			},
 
-			"service_provider": &schema.Schema{
+			"service_provider": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
@@ -58,7 +58,7 @@ func resourceTFEOAuthClient() *schema.Resource {
 				),
 			},
 
-			"oauth_token_id": &schema.Schema{
+			"oauth_token_id": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},

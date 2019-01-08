@@ -16,18 +16,18 @@ func resourceTFESSHKey() *schema.Resource {
 		Delete: resourceTFESSHKeyDelete,
 
 		Schema: map[string]*schema.Schema{
-			"name": &schema.Schema{
+			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
 
-			"organization": &schema.Schema{
+			"organization": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"key": &schema.Schema{
+			"key": {
 				Type:      schema.TypeString,
 				Required:  true,
 				Sensitive: true,

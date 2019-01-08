@@ -12,23 +12,23 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 		Read: dataSourceTFEWorkspaceIDsRead,
 
 		Schema: map[string]*schema.Schema{
-			"names": &schema.Schema{
+			"names": {
 				Type:     schema.TypeList,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Required: true,
 			},
 
-			"organization": &schema.Schema{
+			"organization": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
 
-			"ids": &schema.Schema{
+			"ids": {
 				Type:     schema.TypeMap,
 				Computed: true,
 			},
 
-			"external_ids": &schema.Schema{
+			"external_ids": {
 				Type:     schema.TypeMap,
 				Computed: true,
 			},

@@ -17,7 +17,7 @@ func TestAccTFEOAuthClient_basic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEOAuthClientDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFEOAuthClient_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOAuthClientExists("tfe_oauth_client.foobar", oc),

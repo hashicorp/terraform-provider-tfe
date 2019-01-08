@@ -21,18 +21,18 @@ func resourceTFEVariable() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"key": &schema.Schema{
+			"key": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
 
-			"value": &schema.Schema{
+			"value": {
 				Type:      schema.TypeString,
 				Required:  true,
 				Sensitive: true,
 			},
 
-			"category": &schema.Schema{
+			"category": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
@@ -45,19 +45,19 @@ func resourceTFEVariable() *schema.Resource {
 				),
 			},
 
-			"hcl": &schema.Schema{
+			"hcl": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
 			},
 
-			"sensitive": &schema.Schema{
+			"sensitive": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
 			},
 
-			"workspace_id": &schema.Schema{
+			"workspace_id": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,

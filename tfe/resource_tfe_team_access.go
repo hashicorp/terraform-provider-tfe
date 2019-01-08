@@ -20,7 +20,7 @@ func resourceTFETeamAccess() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"access": &schema.Schema{
+			"access": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
@@ -34,13 +34,13 @@ func resourceTFETeamAccess() *schema.Resource {
 				),
 			},
 
-			"team_id": &schema.Schema{
+			"team_id": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"workspace_id": &schema.Schema{
+			"workspace_id": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
