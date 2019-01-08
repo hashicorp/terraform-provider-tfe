@@ -1,4 +1,9 @@
 ## 0.6.0 (Unreleased)
+
+FEATURES:
+
+* **New resource**: `tfe_oauth_client` [GH-42]
+
 ## 0.5.0 (December 12, 2018)
 
 ENHANCEMENTS:
