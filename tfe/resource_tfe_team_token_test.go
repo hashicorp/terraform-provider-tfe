@@ -18,7 +18,7 @@ func TestAccTFETeamToken_basic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFETeamTokenDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFETeamToken_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamTokenExists(
@@ -37,7 +37,7 @@ func TestAccTFETeamToken_existsWithoutForce(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFETeamTokenDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFETeamToken_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamTokenExists(
@@ -45,7 +45,7 @@ func TestAccTFETeamToken_existsWithoutForce(t *testing.T) {
 				),
 			},
 
-			resource.TestStep{
+			{
 				Config:      testAccTFETeamToken_existsWithoutForce,
 				ExpectError: regexp.MustCompile(`token already exists`),
 			},
@@ -61,7 +61,7 @@ func TestAccTFETeamToken_existsWithForce(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFETeamTokenDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFETeamToken_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamTokenExists(
@@ -69,7 +69,7 @@ func TestAccTFETeamToken_existsWithForce(t *testing.T) {
 				),
 			},
 
-			resource.TestStep{
+			{
 				Config: testAccTFETeamToken_existsWithForce,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamTokenExists(
@@ -86,11 +86,11 @@ func TestAccTFETeamToken_import(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFETeamTokenDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFETeamToken_basic,
 			},
 
-			resource.TestStep{
+			{
 				ResourceName:            "tfe_team_token.foobar",
 				ImportState:             true,
 				ImportStateVerify:       true,

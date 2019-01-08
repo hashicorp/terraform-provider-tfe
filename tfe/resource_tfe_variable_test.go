@@ -17,7 +17,7 @@ func TestAccTFEVariable_basic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFEVariable_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEVariableExists(
@@ -47,7 +47,7 @@ func TestAccTFEVariable_update(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFEVariable_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEVariableExists(
@@ -66,7 +66,7 @@ func TestAccTFEVariable_update(t *testing.T) {
 				),
 			},
 
-			resource.TestStep{
+			{
 				Config: testAccTFEVariable_update,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEVariableExists(
@@ -94,11 +94,11 @@ func TestAccTFEVariable_import(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFEVariable_basic,
 			},
 
-			resource.TestStep{
+			{
 				ResourceName:        "tfe_variable.foobar",
 				ImportState:         true,
 				ImportStateIdPrefix: "terraform-test/workspace-test/",

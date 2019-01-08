@@ -18,7 +18,7 @@ func TestAccTFEOrganizationToken_basic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFEOrganizationToken_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationTokenExists(
@@ -39,7 +39,7 @@ func TestAccTFEOrganizationToken_existsWithoutForce(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFEOrganizationToken_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationTokenExists(
@@ -49,7 +49,7 @@ func TestAccTFEOrganizationToken_existsWithoutForce(t *testing.T) {
 				),
 			},
 
-			resource.TestStep{
+			{
 				Config:      testAccTFEOrganizationToken_existsWithoutForce,
 				ExpectError: regexp.MustCompile(`token already exists`),
 			},
@@ -65,7 +65,7 @@ func TestAccTFEOrganizationToken_existsWithForce(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFEOrganizationToken_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationTokenExists(
@@ -75,7 +75,7 @@ func TestAccTFEOrganizationToken_existsWithForce(t *testing.T) {
 				),
 			},
 
-			resource.TestStep{
+			{
 				Config: testAccTFEOrganizationToken_existsWithForce,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationTokenExists(
@@ -94,11 +94,11 @@ func TestAccTFEOrganizationToken_import(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFEOrganizationToken_basic,
 			},
 
-			resource.TestStep{
+			{
 				ResourceName:            "tfe_organization_token.foobar",
 				ImportState:             true,
 				ImportStateVerify:       true,

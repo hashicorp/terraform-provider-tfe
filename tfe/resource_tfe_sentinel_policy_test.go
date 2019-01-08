@@ -17,7 +17,7 @@ func TestAccTFESentinelPolicy_basic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFESentinelPolicyDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFESentinelPolicy_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFESentinelPolicyExists(
@@ -45,7 +45,7 @@ func TestAccTFESentinelPolicy_update(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFESentinelPolicyDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFESentinelPolicy_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFESentinelPolicyExists(
@@ -62,7 +62,7 @@ func TestAccTFESentinelPolicy_update(t *testing.T) {
 				),
 			},
 
-			resource.TestStep{
+			{
 				Config: testAccTFESentinelPolicy_update,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFESentinelPolicyExists(
@@ -88,11 +88,11 @@ func TestAccTFESentinelPolicy_import(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFESentinelPolicyDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFESentinelPolicy_basic,
 			},
 
-			resource.TestStep{
+			{
 				ResourceName:        "tfe_sentinel_policy.foobar",
 				ImportState:         true,
 				ImportStateIdPrefix: "terraform-test/",

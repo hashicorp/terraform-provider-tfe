@@ -17,7 +17,7 @@ func TestAccTFEPolicySetCreate_basic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFEPolicySet_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.my_set", policySet),
@@ -41,7 +41,7 @@ func TestAccTFEPolicySetCreate_populated(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFEPolicySet_populated,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.my_set", policySet),
@@ -65,7 +65,7 @@ func TestAccTFEPolicySetUpdate_basic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFEPolicySet_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.my_set", policySet),
@@ -78,7 +78,7 @@ func TestAccTFEPolicySetUpdate_basic(t *testing.T) {
 				),
 			},
 
-			resource.TestStep{
+			{
 				Config: testAccTFEPolicySet_populated,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.my_set", policySet),
@@ -102,7 +102,7 @@ func TestAccTFEPolicySetUpdate_populated(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFEPolicySet_populated,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.my_set", policySet),
@@ -115,7 +115,7 @@ func TestAccTFEPolicySetUpdate_populated(t *testing.T) {
 				),
 			},
 
-			resource.TestStep{
+			{
 				Config: testAccTFEPolicySet_newMembers,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.my_set", policySet),
@@ -139,7 +139,7 @@ func TestAccTFEPolicySetUpdate_global(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFEPolicySet_populated,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.my_set", policySet),
@@ -152,7 +152,7 @@ func TestAccTFEPolicySetUpdate_global(t *testing.T) {
 				),
 			},
 
-			resource.TestStep{
+			{
 				Config: testAccTFEPolicySet_global,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.my_set", policySet),
@@ -176,7 +176,7 @@ func TestAccTFEPolicySetUpdate_workspaceSwap(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFEPolicySet_global,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.my_set", policySet),
@@ -189,7 +189,7 @@ func TestAccTFEPolicySetUpdate_workspaceSwap(t *testing.T) {
 				),
 			},
 
-			resource.TestStep{
+			{
 				Config: testAccTFEPolicySet_globalUpdate,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.my_set", policySet),
@@ -211,11 +211,11 @@ func TestAccTFEPolicySetImport(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFEPolicySet_basic,
 			},
 
-			resource.TestStep{
+			{
 				ResourceName:      "tfe_policy_set.my_set",
 				ImportState:       true,
 				ImportStateVerify: true,

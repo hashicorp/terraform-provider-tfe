@@ -20,27 +20,27 @@ func resourceTFEOrganization() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"name": &schema.Schema{
+			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
 
-			"email": &schema.Schema{
+			"email": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
 
-			"session_timeout_minutes": &schema.Schema{
+			"session_timeout_minutes": {
 				Type:     schema.TypeInt,
 				Optional: true,
 			},
 
-			"session_remember_minutes": &schema.Schema{
+			"session_remember_minutes": {
 				Type:     schema.TypeInt,
 				Optional: true,
 			},
 
-			"collaborator_auth_policy": &schema.Schema{
+			"collaborator_auth_policy": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Default:  string(tfe.AuthPolicyPassword),

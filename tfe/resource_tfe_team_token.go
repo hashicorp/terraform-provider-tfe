@@ -18,19 +18,19 @@ func resourceTFETeamToken() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"team_id": &schema.Schema{
+			"team_id": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"force_regenerate": &schema.Schema{
+			"force_regenerate": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				ForceNew: true,
 			},
 
-			"token": &schema.Schema{
+			"token": {
 				Type:      schema.TypeString,
 				Computed:  true,
 				Sensitive: true,

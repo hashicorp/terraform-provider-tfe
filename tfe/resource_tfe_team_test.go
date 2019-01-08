@@ -17,7 +17,7 @@ func TestAccTFETeam_basic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFETeam_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamExists(
@@ -37,11 +37,11 @@ func TestAccTFETeam_import(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFETeam_basic,
 			},
 
-			resource.TestStep{
+			{
 				ResourceName:        "tfe_team.foobar",
 				ImportState:         true,
 				ImportStateIdPrefix: "terraform-test/",

@@ -17,7 +17,7 @@ func TestAccTFESSHKey_basic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFESSHKeyDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFESSHKey_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFESSHKeyExists(
@@ -41,7 +41,7 @@ func TestAccTFESSHKey_update(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFESSHKeyDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFESSHKey_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFESSHKeyExists(
@@ -54,7 +54,7 @@ func TestAccTFESSHKey_update(t *testing.T) {
 				),
 			},
 
-			resource.TestStep{
+			{
 				Config: testAccTFESSHKey_update,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFESSHKeyExists(

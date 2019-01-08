@@ -41,14 +41,14 @@ var ctx = context.Background()
 func Provider() terraform.ResourceProvider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
-			"hostname": &schema.Schema{
+			"hostname": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: descriptions["hostname"],
 				Default:     defaultHostname,
 			},
 
-			"token": &schema.Schema{
+			"token": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: descriptions["token"],

@@ -84,7 +84,7 @@ func TestAccTFETeamMember_basic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFETeamMemberDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFETeamMember_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamMemberExists(
@@ -104,11 +104,11 @@ func TestAccTFETeamMember_import(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFETeamMemberDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccTFETeamMember_basic,
 			},
 
-			resource.TestStep{
+			{
 				ResourceName:      "tfe_team_member.foobar",
 				ImportState:       true,
 				ImportStateVerify: true,
