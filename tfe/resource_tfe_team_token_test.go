@@ -152,12 +152,12 @@ func testAccCheckTFETeamTokenDestroy(s *terraform.State) error {
 
 const testAccTFETeamToken_basic = `
 resource "tfe_organization" "foobar" {
-  name = "terraform-test"
+  name  = "terraform-test"
   email = "admin@company.com"
 }
 
 resource "tfe_team" "foobar" {
-  name = "team-test"
+  name         = "team-test"
   organization = "${tfe_organization.foobar.id}"
 }
 
@@ -167,12 +167,12 @@ resource "tfe_team_token" "foobar" {
 
 const testAccTFETeamToken_existsWithoutForce = `
 resource "tfe_organization" "foobar" {
-  name = "terraform-test"
+  name  = "terraform-test"
   email = "admin@company.com"
 }
 
 resource "tfe_team" "foobar" {
-  name = "team-test"
+  name         = "team-test"
   organization = "${tfe_organization.foobar.id}"
 }
 
@@ -186,12 +186,12 @@ resource "tfe_team_token" "error" {
 
 const testAccTFETeamToken_existsWithForce = `
 resource "tfe_organization" "foobar" {
-  name = "terraform-test"
+  name  = "terraform-test"
   email = "admin@company.com"
 }
 
 resource "tfe_team" "foobar" {
-  name = "team-test"
+  name         = "team-test"
   organization = "${tfe_organization.foobar.id}"
 }
 
@@ -200,6 +200,6 @@ resource "tfe_team_token" "foobar" {
 }
 
 resource "tfe_team_token" "regenerated" {
-  team_id = "${tfe_team.foobar.id}"
+  team_id          = "${tfe_team.foobar.id}"
   force_regenerate = true
 }`

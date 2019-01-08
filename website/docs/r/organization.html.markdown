@@ -16,7 +16,7 @@ Basic usage:
 
 ```hcl
 resource "tfe_organization" "test" {
-  name = "my-org-name"
+  name  = "my-org-name"
   email = "admin@company.com"
 }
 ```

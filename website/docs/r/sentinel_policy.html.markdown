@@ -21,10 +21,10 @@ Basic usage:
 
 ```hcl
 resource "tfe_sentinel_policy" "test" {
-  name = "my-policy-name"
-  description = "This policy always passes"
+  name         = "my-policy-name"
+  description  = "This policy always passes"
   organization = "my-org-name"
-  policy = "main = rule { true }"
+  policy       = "main = rule { true }"
   enforce_mode = "hard-mandatory"
 }
 ```

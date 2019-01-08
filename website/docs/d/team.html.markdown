@@ -1,21 +1,19 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_team"
-sidebar_current: "docs-resource-tfe-team-x"
+sidebar_current: "docs-datasource-tfe-team-x"
 description: |-
-  Manages teams.
+  Get information on a team.
 ---
 
-# tfe_team
+# Data Source: tfe_team
 
-Manages teams.
+Use this data source to get information about a team.
 
 ## Example Usage
 
-Basic usage:
-
 ```hcl
-resource "tfe_team" "test" {
+data "tfe_team" "test" {
   name         = "my-team-name"
   organization = "my-org-name"
 }
@@ -30,13 +28,6 @@ The following arguments are supported:
 
 ## Attributes Reference
 
-* `id` The ID of the team.
+In addition to all arguments above, the following attributes are exported:
 
-## Import
-
-Teams can be imported; use `<ORGANIZATION NAME>/<TEAM ID>` as the import ID. For
-example:
-
-```shell
-terraform import tfe_team.test my-org-name/team-uomQZysH9ou42ZYY
-```
+* `id` - The ID of the team.

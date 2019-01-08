@@ -113,22 +113,22 @@ func testAccCheckTFETeamAccessDestroy(s *terraform.State) error {
 
 const testAccTFETeamAccess_basic = `
 resource "tfe_organization" "foobar" {
-  name = "terraform-test"
+  name  = "terraform-test"
   email = "admin@company.com"
 }
 
 resource "tfe_team" "foobar" {
-  name = "team-test"
+  name         = "team-test"
   organization = "${tfe_organization.foobar.id}"
 }
 
 resource "tfe_workspace" "foobar" {
-  name = "workspace-test"
+  name         = "workspace-test"
   organization = "${tfe_organization.foobar.id}"
 }
 
 resource "tfe_team_access" "foobar" {
-  access = "write"
-  team_id = "${tfe_team.foobar.id}"
+  access       = "write"
+  team_id      = "${tfe_team.foobar.id}"
   workspace_id = "${tfe_workspace.foobar.id}"
 }`

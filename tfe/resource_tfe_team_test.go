@@ -113,11 +113,11 @@ func testAccCheckTFETeamDestroy(s *terraform.State) error {
 
 const testAccTFETeam_basic = `
 resource "tfe_organization" "foobar" {
-  name = "terraform-test"
+  name  = "terraform-test"
   email = "admin@company.com"
 }
 
 resource "tfe_team" "foobar" {
-  name = "team-test"
+  name         = "team-test"
   organization = "${tfe_organization.foobar.id}"
 }`
