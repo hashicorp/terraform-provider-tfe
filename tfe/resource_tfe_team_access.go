@@ -28,6 +28,7 @@ func resourceTFETeamAccess() *schema.Resource {
 					[]string{
 						string(tfe.AccessAdmin),
 						string(tfe.AccessRead),
+						string(tfe.AccessPlan),
 						string(tfe.AccessWrite),
 					},
 					false,
