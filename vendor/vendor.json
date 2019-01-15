@@ -372,10 +372,10 @@
 			"revisionTime": "2018-08-09T11:15:33Z"
 		},
 		{
-			"checksumSHA1": "/yKfFSspjuDzyOe/bBslrPzyfYM=",
+			"checksumSHA1": "LsI/6KqvwPY9DdBCzLBlYMl3cMs=",
 			"path": "github.com/hashicorp/go-retryablehttp",
-			"revision": "e651d75abec6fbd4f2c09508f72ae7af8a8b7171",
-			"revisionTime": "2018-07-18T19:50:05Z"
+			"revision": "d3a63d3c72068412f9ecd7c36faafd874d2e2888",
+			"revisionTime": "2018-12-14T16:04:37Z"
 		},
 		{
 			"checksumSHA1": "CduvzBFfTv77nhjtXPGdIjQQLMI=",
@@ -391,10 +391,10 @@
 			"revisionTime": "2018-11-30T17:20:08Z"
 		},
 		{
-			"checksumSHA1": "mea9LK2TCey4U61BOYhrQz7rMuY=",
+			"checksumSHA1": "2rhI00yzaOLjtr3Atq/C8yt7o0E=",
 			"path": "github.com/hashicorp/go-tfe",
-			"revision": "b2ffbdb458ac6f5f3621a76318ad0fd2eac939fd",
-			"revisionTime": "2018-12-12T19:01:16Z"
+			"revision": "eb838353d6c8ee935b27e4cc96cf654f7846d668",
+			"revisionTime": "2019-01-15T12:01:04Z"
 		},
 		{
 			"checksumSHA1": "85XUnluYJL7F55ptcwdmN8eSOsk=",
