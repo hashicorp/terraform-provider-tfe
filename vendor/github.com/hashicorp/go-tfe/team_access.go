@@ -41,7 +41,6 @@ type AccessType string
 const (
 	AccessAdmin AccessType = "admin"
 	AccessRead  AccessType = "read"
-	AccessPlan  AccessType = "plan"
 	AccessWrite AccessType = "write"
 )
 
