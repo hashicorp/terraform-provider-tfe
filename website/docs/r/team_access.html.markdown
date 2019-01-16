@@ -37,7 +37,7 @@ resource "tfe_team_access" "test" {
 The following arguments are supported:
 
 * `access` - (Required) Type of access to grant. Valid values are `admin`,
-  `read` or `write`.
+  `read`, `plan`, or `write`.
 * `team_id` - (Required) ID of the team to add to the workspace.
 * `workspace_id` - (Required) Workspace ID to which the team will be added.
 
