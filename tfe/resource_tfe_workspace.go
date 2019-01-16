@@ -176,13 +176,48 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 
 	log.Printf("[DEBUG] Read configuration of workspace: %s", name)
 	workspace, err := tfeClient.Workspaces.Read(ctx, organization, name)
-	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+	if err != nil && err != tfe.ErrResourceNotFound {
+		return fmt.Errorf("Error reading configuration of workspace %s: %v", name, err)
+	}
+
+	// If we cannot find the workspace, it either doesn't exist anymore or is
+	// renamed. To make sure the workspace is really gone before we delete it
+	// from our state, we will list all workspaces and try to find it using
+	// the external ID.
+	if err == tfe.ErrResourceNotFound {
+		// Set the workspace to nil so we can check if we found one later.
+		workspace = nil
+
+		options := tfe.WorkspaceListOptions{}
+		externalID := d.Get("external_id").(string)
+		for {
+			wl, err := tfeClient.Workspaces.List(ctx, organization, options)
+			if err != nil {
+				return fmt.Errorf("Error retrieving workspaces: %v", err)
+			}
+
+			for _, w := range wl.Items {
+				if externalID == w.ID {
+					workspace = w
+					break
+				}
+			}
+
+			// Exit the loop if we found the workspace or have seen all pages.
+			if workspace != nil || wl.CurrentPage >= wl.TotalPages {
+				break
+			}
+
+			// Update the page number to get the next page.
+			options.PageNumber = wl.NextPage
+		}
+
+		// Return if we didn't find a matching workspace.
+		if workspace == nil {
 			log.Printf("[DEBUG] Workspace %s does no longer exist", name)
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading configuration of workspace %s: %v", name, err)
 	}
 
 	// Update the config.
