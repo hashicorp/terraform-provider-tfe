@@ -120,4 +120,9 @@ resource "tfe_organization" "foobar" {
 resource "tfe_team" "foobar" {
   name = "team-test"
   organization = "${tfe_organization.foobar.id}"
+  organization_access {
+    manage_policies = true
+    manage_workspaces = false
+    manage_vcs_settings = true
+  }
 }`
