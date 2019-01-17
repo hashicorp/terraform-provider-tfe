@@ -1,7 +1,9 @@
 package tfe
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"testing"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -117,6 +119,52 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspace_renamed(t *testing.T) {
+	workspace := &tfe.Workspace{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_basic,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					testAccCheckTFEWorkspaceAttributes(workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "name", "workspace-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "auto_apply", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "queue_all_runs", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "working_directory", ""),
+				),
+			},
+
+			{
+				PreConfig: testAccCheckTFEWorkspaceRename,
+				Config:    testAccTFEWorkspace_renamed,
+				PlanOnly:  true,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					testAccCheckTFEWorkspaceAttributes(workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "name", "workspace-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "auto_apply", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "queue_all_runs", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "working_directory", ""),
+				),
+			},
+		},
+	})
+}
 func TestAccTFEWorkspace_update(t *testing.T) {
 	workspace := &tfe.Workspace{}
 
@@ -288,6 +336,24 @@ func testAccCheckTFEWorkspaceAttributes(
 	}
 }
 
+func testAccCheckTFEWorkspaceRename() {
+	tfeClient := testAccProvider.Meta().(*tfe.Client)
+
+	w, err := tfeClient.Workspaces.Update(
+		context.Background(),
+		"terraform-test",
+		"workspace-test",
+		tfe.WorkspaceUpdateOptions{Name: tfe.String("renamed-out-of-band")},
+	)
+	if err != nil {
+		log.Fatalf("Could not rename the workspace out of band: %v", err)
+	}
+
+	if w.Name != "renamed-out-of-band" {
+		log.Fatalf("Failed to rename the workspace out of band: %v", err)
+	}
+}
+
 func testAccCheckTFEWorkspaceAttributesUpdated(
 	workspace *tfe.Workspace) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
@@ -365,6 +431,18 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
+  organization = "${tfe_organization.foobar.id}"
+  auto_apply   = true
+}`
+
+const testAccTFEWorkspace_renamed = `
+resource "tfe_organization" "foobar" {
+  name  = "terraform-test"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "renamed-out-of-band"
   organization = "${tfe_organization.foobar.id}"
   auto_apply   = true
 }`
