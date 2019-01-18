@@ -25,6 +25,12 @@ func TestAccTFETeam_basic(t *testing.T) {
 					testAccCheckTFETeamAttributes(team),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "name", "team-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_policies", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_workspaces", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_vcs_settings", "true"),
 				),
 			},
 		},
@@ -86,6 +92,18 @@ func testAccCheckTFETeamAttributes(
 		if team.Name != "team-test" {
 			return fmt.Errorf("Bad name: %s", team.Name)
 		}
+		// expectedOrganizationAccess := tfe.OrganizationAccess{
+		// 	ManagePolicies:    true,
+		// 	ManageWorkspaces:  false,
+		// 	ManageVCSSettings: true,
+		// }
+		// if team.OrganizationAccess != &expectedOrganizationAccess {
+		// 	return fmt.Errorf(
+		// 		"Expected OrganizationAccess: %s\nGot OrganizationAccess: %s",
+		// 		expectedOrganizationAccess,
+		// 		team.OrganizationAccess,
+		// 	)
+		// }
 		return nil
 	}
 }
