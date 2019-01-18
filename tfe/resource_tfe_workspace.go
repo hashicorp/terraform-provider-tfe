@@ -62,7 +62,7 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"vcs_repo": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				MinItems: 1,
 				MaxItems: 1,
@@ -125,7 +125,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 
 	// Get and assert the VCS repo configuration block.
 	if v, ok := d.GetOk("vcs_repo"); ok {
-		vcsRepo := v.(*schema.Set).List()[0].(map[string]interface{})
+		vcsRepo := v.([]interface{})[0].(map[string]interface{})
 
 		options.VCSRepo = &tfe.VCSRepoOptions{
 			Identifier:        tfe.String(vcsRepo["identifier"].(string)),
@@ -246,7 +246,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 
 		// Get and assert the VCS repo configuration block.
 		if v, ok := d.GetOk("vcs_repo"); ok {
-			vcsRepo := v.(*schema.Set).List()[0].(map[string]interface{})
+			vcsRepo := v.([]interface{})[0].(map[string]interface{})
 
 			// Only set the branch if one is configured.
 			if branch, ok := vcsRepo["branch"].(string); ok && branch != "" {
@@ -299,7 +299,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 
 		// Get and assert the VCS repo configuration block.
 		if v, ok := d.GetOk("vcs_repo"); ok {
-			vcsRepo := v.(*schema.Set).List()[0].(map[string]interface{})
+			vcsRepo := v.([]interface{})[0].(map[string]interface{})
 
 			options.VCSRepo = &tfe.VCSRepoOptions{
 				Identifier:        tfe.String(vcsRepo["identifier"].(string)),
