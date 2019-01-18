@@ -3,6 +3,7 @@
 ENHANCEMENTS:
 
 * r/tfe_workspace: Try to find a workspace by external ID before removing it [GH-51]
+* r/tfe_workspace: Use a list instead of a set for a workspace `vcs_repo` [GH-53]
 
 ## 0.6.0 (January 08, 2019)
 
