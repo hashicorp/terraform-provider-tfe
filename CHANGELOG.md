@@ -1,4 +1,9 @@
 ## 0.7.0 (Unreleased)
+
+ENHANCEMENTS:
+
+* r/tfe_workspace: Try to find a workspace by external ID before removing it [GH-51]
+
 ## 0.6.0 (January 08, 2019)
 
 FEATURES:
