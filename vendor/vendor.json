@@ -391,10 +391,10 @@
 			"revisionTime": "2018-11-30T17:20:08Z"
 		},
 		{
-			"checksumSHA1": "2rhI00yzaOLjtr3Atq/C8yt7o0E=",
+			"checksumSHA1": "HvXl3+vxiegrtj5xxBgKZax5lEA=",
 			"path": "github.com/hashicorp/go-tfe",
-			"revision": "eb838353d6c8ee935b27e4cc96cf654f7846d668",
-			"revisionTime": "2019-01-15T12:01:04Z"
+			"revision": "437fc3949d853eada03ca55c38cad18b945543d3",
+			"revisionTime": "2019-01-18T18:30:33Z"
 		},
 		{
 			"checksumSHA1": "85XUnluYJL7F55ptcwdmN8eSOsk=",
