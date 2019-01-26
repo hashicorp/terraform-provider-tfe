@@ -114,8 +114,12 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	// Discover the full Terraform Enterprise service address.
 	var address *url.URL
 	for _, serviceID := range serviceIDs {
-		address = services.DiscoverServiceURL(host, serviceID)
-		if address != nil {
+		addr, err := services.DiscoverServiceURL(host, serviceID)
+		if err != nil {
+			return nil, err
+		}
+		if addr != nil {
+			address = addr
 			break
 		}
 	}
