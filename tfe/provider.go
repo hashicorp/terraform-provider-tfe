@@ -10,6 +10,7 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/hcl"
+	"github.com/hashicorp/terraform/helper/logging"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/svchost"
 	"github.com/hashicorp/terraform/svchost/auth"
@@ -100,6 +101,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	// Create a new credential source and service discovery object.
 	credsSrc := credentialsSource(config)
 	services := disco.NewWithCredentialsSource(credsSrc)
+	services.Transport = logging.NewTransport("TFE Discovery", services.Transport)
 
 	// Add any static host configurations service discovery object.
 	for userHost, hostConfig := range config.Hosts {
@@ -146,10 +148,14 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		return nil, fmt.Errorf("required token could not be found")
 	}
 
-	// Create a new TFE client config..
+	httpClient := tfe.DefaultConfig().HTTPClient
+	httpClient.Transport = logging.NewTransport("TFE", httpClient.Transport)
+
+	// Create a new TFE client config
 	cfg := &tfe.Config{
-		Address: address.String(),
-		Token:   token,
+		Address:    address.String(),
+		Token:      token,
+		HTTPClient: httpClient,
 	}
 
 	// Create s new TFE client.
