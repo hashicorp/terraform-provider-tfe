@@ -6,15 +6,20 @@ description: |-
   Get information on (external) workspace IDs.
 ---
 
-# Data Source: tfe_workspace
+# Data Source: tfe_workspace_ids
 
 Use this data source to get a map of (external) workspace IDs.
 
 ## Example Usage
 
 ```hcl
-data "tfe_workspace" "test" {
-  names        = ["my-workspace-name"]
+data "tfe_workspace_ids" "app-frontend" {
+  names        = ["app-frontend-prod", "app-frontend-dev1", "app-frontend-staging"]
+  organization = "my-org-name"
+}
+
+data "tfe_workspace_ids" "all" {
+  names        = ["*"]
   organization = "my-org-name"
 }
 ```
@@ -23,13 +28,12 @@ data "tfe_workspace" "test" {
 
 The following arguments are supported:
 
-* `names` - (Required) A list of workspace names.
-* `organization` - (Required) Name of the organization.
+* `names` - (Required) A list of workspace names to search for. Names that don't
+  match a real workspace will be omitted from the results, but are not an error.
 
-~> The list of names can be used to search for workspaces with matching names.
-  Additionally you can also use a single entry with a wildcard (e.g. `"*"`) which
-  will match all names. Using a partial string together with a wildcard (e.g.
-  `"my-workspace-*"`) is **not** supported.
+    To select _all_ workspaces for an organization, provide a list with a single
+    asterisk, like `["*"]`. No other use of wildcards is supported.
+* `organization` - (Required) Name of the organization.
 
 ## Attributes Reference
 
