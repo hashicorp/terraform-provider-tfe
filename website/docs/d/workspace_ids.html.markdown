@@ -35,8 +35,7 @@ The following arguments are supported:
 
 In addition to all arguments above, the following attributes are exported:
 
-* `ids` - A map of the workspace names and their IDs within Terraform. This is a
-  custom ID that is needed because the Terraform Enterprise workspace related
-  API calls require the organization and workspace name instead of the actual
-  workspace ID.
-* `external_ids` - A map of workspace names and their external IDs.
+* `ids` - A map of workspace names and their human-readable IDs, which look like
+  `<ORGANIZATION>/<WORKSPACE>`.
+* `external_ids` - A map of workspace names and their opaque external IDs, which
+  look like `ws-<RANDOM STRING>`.

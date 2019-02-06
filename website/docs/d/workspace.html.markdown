@@ -30,17 +30,17 @@ The following arguments are supported:
 
 In addition to all arguments above, the following attributes are exported:
 
-* `id` - The ID of the workspace within Terraform. This is a custom ID that is
-  needed because the Terraform Enterprise workspace related API calls require
-  the organization and workspace name instead of the actual workspace ID.
+* `id` - The workspace's human-readable ID, which looks like
+  `<ORGANIZATION>/<WORKSPACE>`.
+* `external_id` - The workspace's opaque external ID, which looks like
+  `ws-<RANDOM STRING>`.
 * `auto_apply` - Indicates whether to automatically apply changes when a
   Terraform plan is successful.
-* `ssh_key_id` - The ID of an SSH key assigned to the workspace.
 * `queue_all_runs` - Indicates whether all runs should be queued.
+* `ssh_key_id` - The ID of an SSH key assigned to the workspace.
 * `terraform_version` - The version of Terraform used for this workspace.
-* `working_directory` - A relative path that Terraform will execute within.
 * `vcs_repo` - Settings for the workspace's VCS repository.
-* `external_id` - The external ID of the workspace within Terraform Enterprise.
+* `working_directory` - A relative path that Terraform will execute within.
 
 The `vcs_repo` block contains:
 
