@@ -53,10 +53,12 @@ The `vcs_repo` block supports:
 
 ## Attributes Reference
 
-* `id` - The ID of the workspace within Terraform. This is a custom ID that is
-  needed because the Terraform Enterprise workspace related API calls require
-  the organization and workspace name instead of the actual workspace ID.
-* `external_id` - The external ID of the workspace within Terraform Enterprise.
+In addition to all arguments above, the following attributes are exported:
+
+* `id` - The workspace's human-readable ID, which looks like
+  `<ORGANIZATION>/<WORKSPACE>`.
+* `external_id` - The workspace's opaque external ID, which looks like
+  `ws-<RANDOM STRING>`.
 
 ## Import
 
