@@ -11,9 +11,8 @@ require (
 	github.com/hashicorp/go-version v1.1.0 // indirect
 	github.com/hashicorp/hcl v0.0.0-20180404174102-ef8a98b0bbce
 	github.com/hashicorp/hcl2 v0.0.0-20190128103256-93fb31f28b86 // indirect
-	github.com/hashicorp/hil v0.0.0-20170627220502-fa9f258a9250 // indirect
 	github.com/hashicorp/logutils v1.0.0 // indirect
-	github.com/hashicorp/terraform v0.11.11
+	github.com/hashicorp/terraform v0.11.12-beta1.0.20190212191339-ee1f8f9362f3
 	github.com/mitchellh/cli v1.0.0 // indirect
 	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
