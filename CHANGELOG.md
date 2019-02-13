@@ -2,6 +2,7 @@
 
 ENHANCEMENTS:
 
+* provider: Enable request/response logging [GH-55]
 * r/tfe_workspace: Try to find a workspace by external ID before removing it [GH-51]
 * r/tfe_workspace: Use a list instead of a set for a workspace `vcs_repo` [GH-53]
 
