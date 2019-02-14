@@ -7,8 +7,11 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"sort"
+	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
+	version "github.com/hashicorp/go-version"
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/terraform/helper/logging"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -16,11 +19,12 @@ import (
 	"github.com/hashicorp/terraform/svchost/auth"
 	"github.com/hashicorp/terraform/svchost/disco"
 	"github.com/hashicorp/terraform/terraform"
+	providerVersion "github.com/terraform-providers/terraform-provider-tfe/version"
 )
 
 const defaultHostname = "app.terraform.io"
 
-var serviceIDs = []string{"tfe.v2.1", "tfe.v2"}
+var tfeServiceIDs = []string{"tfe.v2.1", "tfe.v2"}
 
 // Config is the structure of the configuration for the Terraform CLI.
 type Config struct {
@@ -85,12 +89,8 @@ func Provider() terraform.ResourceProvider {
 }
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
-	// Get the hostname and token.
-	hostname := d.Get("hostname").(string)
-	token := d.Get("token").(string)
-
 	// Parse the hostname for comparison,
-	host, err := svchost.ForComparison(hostname)
+	hostname, err := svchost.ForComparison(d.Get("hostname").(string))
 	if err != nil {
 		return nil, err
 	}
@@ -113,30 +113,60 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		services.ForceHostServices(host, hostConfig.Services)
 	}
 
-	// Discover the full Terraform Enterprise service address.
+	// Discover the Terraform Enterprise address.
+	host, err := services.Discover(hostname)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the full Terraform Enterprise service address.
 	var address *url.URL
-	for _, serviceID := range serviceIDs {
-		addr, err := services.DiscoverServiceURL(host, serviceID)
-		if err != nil {
+	var discoErr error
+	for _, tfeServiceID := range tfeServiceIDs {
+		service, err := host.ServiceURL(tfeServiceID)
+		if _, ok := err.(*disco.ErrVersionNotSupported); !ok && err != nil {
 			return nil, err
 		}
-		if addr != nil {
-			address = addr
+		// If discoErr is nil we save the first error. When multiple services
+		// are checked and we found one that didn't give an error we need to
+		// reset the discoErr. So if err is nil, we assign it as well.
+		if discoErr == nil || err == nil {
+			discoErr = err
+		}
+		if service != nil {
+			address = service
 			break
 		}
 	}
 
-	// Check if we were able to discover a service address.
-	if address == nil {
-		return nil, fmt.Errorf("host %s does not provide a Terraform Enterprise API", host)
+	if providerVersion.ProviderVersion != "dev" {
+		// We purposefully ignore the error and return the previous error, as
+		// checking for version constraints is considered optional.
+		constraints, _ := host.VersionConstraints(tfeServiceIDs[0], "tfe-provider")
+
+		// First check any constraints we might have received.
+		if constraints != nil {
+			if err := checkConstraints(constraints); err != nil {
+				return nil, err
+			}
+		}
 	}
+
+	// When we don't have any constraints errors, also check for discovery
+	// errors before we continue.
+	if discoErr != nil {
+		return nil, discoErr
+	}
+
+	// Get the token from the config.
+	token := d.Get("token").(string)
 
 	// Only try to get to the token from the credentials source if no token
 	// was explicitly set in the provider configuration.
 	if token == "" {
-		creds, err := services.CredentialsForHost(host)
+		creds, err := services.CredentialsForHost(hostname)
 		if err != nil {
-			log.Printf("[DEBUG] Failed to get credentials for %s: %s (ignoring)", host, err)
+			log.Printf("[DEBUG] Failed to get credentials for %s: %s (ignoring)", hostname, err)
 		}
 		if creds != nil {
 			token = creds.Token()
@@ -219,6 +249,111 @@ func credentialsSource(config *Config) auth.CredentialsSource {
 	}
 
 	return creds
+}
+
+// checkConstraints checks service version constrains against our own
+// version and returns rich and informational diagnostics in case any
+// incompatibilities are detected.
+func checkConstraints(c *disco.Constraints) error {
+	if c == nil || c.Minimum == "" || c.Maximum == "" {
+		return nil
+	}
+
+	// Generate a parsable constraints string.
+	excluding := ""
+	if len(c.Excluding) > 0 {
+		excluding = fmt.Sprintf(", != %s", strings.Join(c.Excluding, ", != "))
+	}
+	constStr := fmt.Sprintf(">= %s%s, <= %s", c.Minimum, excluding, c.Maximum)
+
+	// Create the constraints to check against.
+	constraints, err := version.NewConstraint(constStr)
+	if err != nil {
+		return checkConstraintsWarning(err)
+	}
+
+	// Create the version to check.
+	v, err := version.NewVersion(providerVersion.ProviderVersion)
+	if err != nil {
+		return checkConstraintsWarning(err)
+	}
+
+	// Return if we satisfy all constraints.
+	if constraints.Check(v) {
+		return nil
+	}
+
+	// Find out what action (upgrade/downgrade) we should advice.
+	minimum, err := version.NewVersion(c.Minimum)
+	if err != nil {
+		return checkConstraintsWarning(err)
+	}
+
+	maximum, err := version.NewVersion(c.Maximum)
+	if err != nil {
+		return checkConstraintsWarning(err)
+	}
+
+	var excludes []*version.Version
+	for _, exclude := range c.Excluding {
+		v, err := version.NewVersion(exclude)
+		if err != nil {
+			return checkConstraintsWarning(err)
+		}
+		excludes = append(excludes, v)
+	}
+
+	// Sort all the excludes.
+	sort.Sort(version.Collection(excludes))
+
+	var action, toVersion string
+	switch {
+	case minimum.GreaterThan(v):
+		action = "upgrade"
+		toVersion = ">= " + minimum.String()
+	case maximum.LessThan(v):
+		action = "downgrade"
+		toVersion = "<= " + maximum.String()
+	case len(excludes) > 0:
+		// Get the latest excluded version.
+		action = "upgrade"
+		toVersion = "> " + excludes[len(excludes)-1].String()
+	}
+
+	switch {
+	case len(excludes) == 1:
+		excluding = fmt.Sprintf(", excluding version %s", excludes[0].String())
+	case len(excludes) > 1:
+		var vs []string
+		for _, v := range excludes {
+			vs = append(vs, v.String())
+		}
+		excluding = fmt.Sprintf(", excluding versions %s", strings.Join(vs, ", "))
+	default:
+		excluding = ""
+	}
+
+	summary := fmt.Sprintf("Incompatible TFE provider version v%s", v.String())
+	details := fmt.Sprintf(
+		"The configured Terraform Enterprise backend is compatible with TFE provider\n"+
+			"versions >= %s, <= %s%s.", c.Minimum, c.Maximum, excluding,
+	)
+
+	if action != "" && toVersion != "" {
+		summary = fmt.Sprintf("Please %s the TFE provider to %s", action, toVersion)
+	}
+
+	// Return the customized and informational error message.
+	return fmt.Errorf("%s\n\n%s", summary, details)
+}
+
+func checkConstraintsWarning(err error) error {
+	return fmt.Errorf(
+		"Failed to check version constraints: %v\n\n"+
+			"Checking version constraints is considered optional, but this is an\n"+
+			"unexpected error which should be reported.",
+		err,
+	)
 }
 
 var descriptions = map[string]string{
