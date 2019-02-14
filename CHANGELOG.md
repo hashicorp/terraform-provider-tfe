@@ -1,11 +1,11 @@
-## 0.7.0 (Unreleased)
+## 0.7.0 (February 14, 2019)
 
 ENHANCEMENTS:
 
-* provider: Enable request/response logging [GH-55]
-* provider: Report detailed service discovery and version constraints information [GH-61]
-* r/tfe_workspace: Try to find a workspace by external ID before removing it [GH-51]
-* r/tfe_workspace: Use a list instead of a set for a workspace `vcs_repo` [GH-53]
+* provider: Enable request/response logging ([#55](https://github.com/terraform-providers/terraform-provider-tfe/issues/55))
+* provider: Report detailed service discovery and version constraints information ([#61](https://github.com/terraform-providers/terraform-provider-tfe/issues/61))
+* r/tfe_workspace: Try to find a workspace by external ID before removing it ([#51](https://github.com/terraform-providers/terraform-provider-tfe/issues/51))
+* r/tfe_workspace: Use a list instead of a set for a workspace `vcs_repo` ([#53](https://github.com/terraform-providers/terraform-provider-tfe/issues/53))
 
 ## 0.6.0 (January 08, 2019)
 
