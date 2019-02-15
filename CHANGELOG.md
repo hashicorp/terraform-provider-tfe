@@ -1,8 +1,8 @@
-## 0.7.1 (Unreleased)
+## 0.7.1 (February 15, 2019)
 
 BUG FIXES:
 
-* r/tfe_workspace: Add a check when migrating `vcs_repo` from a set to a list [GH-64]
+* r/tfe_workspace: Add a check when migrating `vcs_repo` from a set to a list ([#64](https://github.com/terraform-providers/terraform-provider-tfe/issues/64))
 
 ## 0.7.0 (February 14, 2019)
 
