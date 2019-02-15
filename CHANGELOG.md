@@ -1,4 +1,9 @@
-## 0.8.0 (Unreleased)
+## 0.7.1 (Unreleased)
+
+BUG FIXES:
+
+* r/tfe_workspace: Add a check when migrating `vcs_repo` from a set to a list [GH-64]
+
 ## 0.7.0 (February 14, 2019)
 
 ENHANCEMENTS:

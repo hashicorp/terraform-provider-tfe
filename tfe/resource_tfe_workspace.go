@@ -246,11 +246,11 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 
 		// Get and assert the VCS repo configuration block.
 		if v, ok := d.GetOk("vcs_repo"); ok {
-			vcsRepo := v.([]interface{})[0].(map[string]interface{})
-
-			// Only set the branch if one is configured.
-			if branch, ok := vcsRepo["branch"].(string); ok && branch != "" {
-				vcsConfig["branch"] = workspace.VCSRepo.Branch
+			if vcsRepo, ok := v.([]interface{})[0].(map[string]interface{}); ok {
+				// Only set the branch if one is configured.
+				if branch, ok := vcsRepo["branch"].(string); ok && branch != "" {
+					vcsConfig["branch"] = workspace.VCSRepo.Branch
+				}
 			}
 		}
 
