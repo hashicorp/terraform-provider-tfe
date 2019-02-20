@@ -1,6 +1,7 @@
 package tfe
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -92,12 +93,20 @@ func TestProvider_versionConstraints(t *testing.T) {
 }
 
 func testAccPreCheck(t *testing.T) {
-	if v := os.Getenv("GITHUB_TOKEN"); v == "" {
+	if os.Getenv("GITHUB_TOKEN") == "" {
 		t.Fatal("GITHUB_TOKEN must be set for acceptance tests")
 	}
 	// The credentials must be provided by the CLI config file for testing.
 	if err := Provider().Configure(&terraform.ResourceConfig{}); err != nil {
 		t.Fatalf("err: %s", err)
+	}
+}
+
+func testAccCheckEnvVariables(t *testing.T, variableNames []string) {
+	for _, varName := range variableNames {
+		if os.Getenv(varName) == "" {
+			t.Fatal(fmt.Sprintf("%s must be set for this test", varName))
+		}
 	}
 }
 
