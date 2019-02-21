@@ -52,6 +52,11 @@ func resourceTFEOrganization() *schema.Resource {
 					false,
 				),
 			},
+
+			"owners_team_saml_role_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -99,6 +104,7 @@ func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error
 	d.Set("session_timeout_minutes", org.SessionTimeout)
 	d.Set("session_remember_minutes", org.SessionRemember)
 	d.Set("collaborator_auth_policy", string(org.CollaboratorAuthPolicy))
+	d.Set("owners_team_saml_role_id", org.OwnersTeamSAMLRoleID)
 
 	return nil
 }
@@ -125,6 +131,11 @@ func resourceTFEOrganizationUpdate(d *schema.ResourceData, meta interface{}) err
 	// If collaborator_auth_policy is supplied, set it using the options struct.
 	if authPolicy, ok := d.GetOk("collaborator_auth_policy"); ok {
 		options.CollaboratorAuthPolicy = tfe.AuthPolicy(tfe.AuthPolicyType(authPolicy.(string)))
+	}
+
+	// If owners_team_saml_role_id is supplied, set it using the options struct.
+	if ownersTeamSAMLRoleID, ok := d.GetOk("owners_team_saml_role_id"); ok {
+		options.OwnersTeamSAMLRoleID = tfe.String(ownersTeamSAMLRoleID.(string))
 	}
 
 	log.Printf("[DEBUG] Update configuration of organization: %s", d.Id())

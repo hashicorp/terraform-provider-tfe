@@ -33,6 +33,7 @@ The following arguments are supported:
   `20160`.
 * `collaborator_auth_policy` - (Optional) Authentication policy (`password`
   or `two_factor_mandatory`). Defaults to `password`.
+* `owners_team_saml_role_id` - (Optional) The name of the "owners" team.
 
 ## Attributes Reference
 
