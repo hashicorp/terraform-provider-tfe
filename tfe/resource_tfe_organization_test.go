@@ -29,8 +29,6 @@ func TestAccTFEOrganization_basic(t *testing.T) {
 						"tfe_organization.foobar", "email", "admin@company.com"),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "collaborator_auth_policy", "password"),
-					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "owners_team_saml_role_id", "owners"),
 				),
 			},
 		},
