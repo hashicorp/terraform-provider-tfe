@@ -83,7 +83,7 @@ github.com/hashicorp/go-retryablehttp
 github.com/hashicorp/go-safetemp
 # github.com/hashicorp/go-slug v0.2.0
 github.com/hashicorp/go-slug
-# github.com/hashicorp/go-tfe v0.3.8
+# github.com/hashicorp/go-tfe v0.3.9
 github.com/hashicorp/go-tfe
 # github.com/hashicorp/go-uuid v1.0.0
 github.com/hashicorp/go-uuid
@@ -116,6 +116,7 @@ github.com/hashicorp/hil/scanner
 github.com/hashicorp/logutils
 # github.com/hashicorp/terraform v0.11.12-beta1.0.20190212191339-ee1f8f9362f3
 github.com/hashicorp/terraform/plugin
+github.com/hashicorp/terraform/helper/logging
 github.com/hashicorp/terraform/helper/schema
 github.com/hashicorp/terraform/helper/validation
 github.com/hashicorp/terraform/svchost
@@ -141,7 +142,6 @@ github.com/hashicorp/terraform/registry
 github.com/hashicorp/terraform/registry/regsrc
 github.com/hashicorp/terraform/registry/response
 github.com/hashicorp/terraform/helper/config
-github.com/hashicorp/terraform/helper/logging
 # github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb
 github.com/hashicorp/yamux
 # github.com/jmespath/go-jmespath v0.0.0-20160803190731-bd40a432e4c7
