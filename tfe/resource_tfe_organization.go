@@ -103,7 +103,7 @@ func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error
 	d.Set("email", org.Email)
 	d.Set("session_timeout_minutes", org.SessionTimeout)
 	d.Set("session_remember_minutes", org.SessionRemember)
-	d.Set("collaborator_auth_policy", string(org.CollaboratorAuthPolicy))
+	d.Set("collaborator_auth_policy", org.CollaboratorAuthPolicy)
 	d.Set("owners_team_saml_role_id", org.OwnersTeamSAMLRoleID)
 
 	return nil

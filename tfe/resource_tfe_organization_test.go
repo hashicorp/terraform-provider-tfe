@@ -75,7 +75,7 @@ func TestAccTFEOrganization_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "collaborator_auth_policy", "password"),
 					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "owners_team_saml_role_id", "owners-updated"),
+						"tfe_organization.foobar", "owners_team_saml_role_id", "owners"),
 				),
 			},
 		},
@@ -172,7 +172,7 @@ func testAccCheckTFEOrganizationAttributesUpdated(
 			return fmt.Errorf("Bad auth policy: %s", org.CollaboratorAuthPolicy)
 		}
 
-		if org.OwnersTeamSAMLRoleID != "owners-updated" {
+		if org.OwnersTeamSAMLRoleID != "owners" {
 			return fmt.Errorf("Bad owners team SAML role ID: %s", org.OwnersTeamSAMLRoleID)
 		}
 
@@ -213,5 +213,5 @@ resource "tfe_organization" "foobar" {
   email                    = "admin-updated@company.com"
   session_timeout_minutes  = 3600
   session_remember_minutes = 3600
-  owners_team_saml_role_id = "owners-updated"
+  owners_team_saml_role_id = "owners"
 }`
