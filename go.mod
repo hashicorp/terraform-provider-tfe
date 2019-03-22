@@ -7,7 +7,7 @@ require (
 	github.com/hashicorp/go-getter v1.0.1 // indirect
 	github.com/hashicorp/go-hclog v0.0.0-20190109152822-4783caec6f2e // indirect
 	github.com/hashicorp/go-plugin v0.0.0-20181212150838-f444068e8f5a // indirect
-	github.com/hashicorp/go-tfe v0.3.9
+	github.com/hashicorp/go-tfe v0.3.13
 	github.com/hashicorp/go-version v1.1.0
 	github.com/hashicorp/hcl v0.0.0-20180404174102-ef8a98b0bbce
 	github.com/hashicorp/hcl2 v0.0.0-20190128103256-93fb31f28b86 // indirect
