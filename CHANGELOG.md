@@ -1,4 +1,9 @@
 ## 0.8.0 (Unreleased)
+
+BUG FIXES:
+
+* r/tfe_variable: Mark `value` as optional (defaults to `""`) to match TFE API behavior [GH-72]
+
 ## 0.7.1 (February 15, 2019)
 
 BUG FIXES:
