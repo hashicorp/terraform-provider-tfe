@@ -28,7 +28,8 @@ func resourceTFEVariable() *schema.Resource {
 
 			"value": {
 				Type:      schema.TypeString,
-				Required:  true,
+				Optional:  true,
+				Default:   "",
 				Sensitive: true,
 			},
 
