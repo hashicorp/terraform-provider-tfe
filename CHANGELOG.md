@@ -1,8 +1,8 @@
-## 0.8.0 (Unreleased)
+## 0.8.0 (March 26, 2019)
 
 BUG FIXES:
 
-* r/tfe_variable: Mark `value` as optional (defaults to `""`) to match TFE API behavior [GH-72]
+* r/tfe_variable: Mark `value` as optional (defaults to `""`) to match TFE API behavior ([#72](https://github.com/terraform-providers/terraform-provider-tfe/issues/72))
 
 ## 0.7.1 (February 15, 2019)
 
