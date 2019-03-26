@@ -1,8 +1,8 @@
-## 0.8.1 (Unreleased)
+## 0.8.1 (March 26, 2019)
 
 BUG FIXES:
 
-* provider: Update the vendor directory so it's in sync with the versions defined in `go.mod` [GH-73]
+* provider: Update the vendor directory so it's in sync with the versions defined in `go.mod` ([#73](https://github.com/terraform-providers/terraform-provider-tfe/issues/73))
 
 ## 0.8.0 (March 26, 2019)
 
