@@ -1,4 +1,9 @@
-## 0.9.0 (Unreleased)
+## 0.8.1 (Unreleased)
+
+BUG FIXES:
+
+* provider: Update the vendor directory so it's in sync with the versions defined in `go.mod` [GH-73]
+
 ## 0.8.0 (March 26, 2019)
 
 BUG FIXES:
