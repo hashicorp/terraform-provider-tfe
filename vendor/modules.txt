@@ -77,15 +77,15 @@ github.com/hashicorp/go-multierror
 # github.com/hashicorp/go-plugin v0.0.0-20181212150838-f444068e8f5a
 github.com/hashicorp/go-plugin
 github.com/hashicorp/go-plugin/internal/proto
-# github.com/hashicorp/go-retryablehttp v0.5.1
+# github.com/hashicorp/go-retryablehttp v0.5.2
 github.com/hashicorp/go-retryablehttp
 # github.com/hashicorp/go-safetemp v1.0.0
 github.com/hashicorp/go-safetemp
 # github.com/hashicorp/go-slug v0.2.0
 github.com/hashicorp/go-slug
-# github.com/hashicorp/go-tfe v0.3.9
+# github.com/hashicorp/go-tfe v0.3.13
 github.com/hashicorp/go-tfe
-# github.com/hashicorp/go-uuid v1.0.0
+# github.com/hashicorp/go-uuid v1.0.1
 github.com/hashicorp/go-uuid
 # github.com/hashicorp/go-version v1.1.0
 github.com/hashicorp/go-version
@@ -215,7 +215,7 @@ golang.org/x/text/unicode/norm
 golang.org/x/text/secure/bidirule
 golang.org/x/text/unicode/bidi
 golang.org/x/text/transform
-# golang.org/x/time v0.0.0-20181108054448-85acf8d2951c
+# golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
 golang.org/x/time/rate
 # google.golang.org/genproto v0.0.0-20180817151627-c66870c02cf8
 google.golang.org/genproto/googleapis/rpc/status
