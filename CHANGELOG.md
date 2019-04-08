@@ -1,4 +1,9 @@
-## 0.9.0 (Unreleased)
+## 0.8.2 (Unreleased)
+
+BUG FIXES:
+
+* d/tfe_workspace: Set the correct workspace ID [GH-74]
+
 ## 0.8.1 (March 26, 2019)
 
 BUG FIXES:
