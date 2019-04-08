@@ -20,6 +20,11 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 				Config: testAccTFEWorkspaceDataSourceConfig(rInt),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar",
+						"id",
+						fmt.Sprintf("terraform-test-%d/workspace-test-%d", rInt, rInt),
+					),
+					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "name", fmt.Sprintf("workspace-test-%d", rInt)),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "organization", fmt.Sprintf("terraform-test-%d", rInt)),
@@ -31,7 +36,6 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 						"data.tfe_workspace.foobar", "terraform_version", "0.11.1"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "working_directory", "terraform/test"),
-					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "id"),
 					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "external_id"),
 				),
 			},
