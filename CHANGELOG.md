@@ -1,8 +1,8 @@
-## 0.8.2 (Unreleased)
+## 0.8.2 (April 08, 2019)
 
 BUG FIXES:
 
-* d/tfe_workspace: Set the correct workspace ID [GH-74]
+* d/tfe_workspace: Set the correct workspace ID ([#74](https://github.com/terraform-providers/terraform-provider-tfe/issues/74))
 
 ## 0.8.1 (March 26, 2019)
 
