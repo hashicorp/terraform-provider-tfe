@@ -235,6 +235,8 @@ func TestAccTFEWorkspace_sshKey(t *testing.T) {
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributesSSHKey(workspace),
+					resource.TestCheckResourceAttrSet(
+						"tfe_workspace.foobar", "ssh_key_id"),
 				),
 			},
 
@@ -244,6 +246,23 @@ func TestAccTFEWorkspace_sshKey(t *testing.T) {
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
+					// as the ssh_key_id key is *not* in the config,
+					// it should not be unset in state
+					resource.TestCheckResourceAttrSet(
+						"tfe_workspace.foobar", "ssh_key_id"),
+				),
+			},
+
+			{
+				Config: testAccTFEWorkspace_blankSshKey,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					testAccCheckTFEWorkspaceAttributes(workspace),
+					// as the ssh_key_id key is in the config, it should be
+					// set to the new value (even though it is blank)
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "ssh_key_id", ""),
 				),
 			},
 		},
@@ -479,4 +498,23 @@ resource "tfe_workspace" "foobar" {
   organization = "${tfe_organization.foobar.id}"
   auto_apply   = true
   ssh_key_id   = "${tfe_ssh_key.foobar.id}"
+}`
+
+const testAccTFEWorkspace_blankSshKey = `
+resource "tfe_organization" "foobar" {
+  name  = "terraform-test"
+  email = "admin@company.com"
+}
+
+resource "tfe_ssh_key" "foobar" {
+  name         = "ssh-key-test"
+  organization = "${tfe_organization.foobar.id}"
+  key          = "SSH-KEY-CONTENT"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-ssh-key"
+  organization = "${tfe_organization.foobar.id}"
+  auto_apply   = true
+  ssh_key_id   = ""
 }`
