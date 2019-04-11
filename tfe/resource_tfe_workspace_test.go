@@ -241,28 +241,11 @@ func TestAccTFEWorkspace_sshKey(t *testing.T) {
 			},
 
 			{
-				Config: testAccTFEWorkspace_basic,
+				Config: testAccTFEWorkspace_noSSHKey,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
-					// as the ssh_key_id key is *not* in the config,
-					// it should not be unset in state
-					resource.TestCheckResourceAttrSet(
-						"tfe_workspace.foobar", "ssh_key_id"),
-				),
-			},
-
-			{
-				Config: testAccTFEWorkspace_blankSshKey,
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace),
-					testAccCheckTFEWorkspaceAttributes(workspace),
-					// as the ssh_key_id key is in the config, it should be
-					// set to the new value (even though it is blank)
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "ssh_key_id", ""),
 				),
 			},
 		},
@@ -403,10 +386,6 @@ func testAccCheckTFEWorkspaceAttributesUpdated(
 func testAccCheckTFEWorkspaceAttributesSSHKey(
 	workspace *tfe.Workspace) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		if workspace.Name != "workspace-ssh-key" {
-			return fmt.Errorf("Bad name: %s", workspace.Name)
-		}
-
 		if workspace.SSHKey == nil {
 			return fmt.Errorf("Bad SSH key: %v", workspace.SSHKey)
 		}
@@ -494,13 +473,13 @@ resource "tfe_ssh_key" "foobar" {
 }
 
 resource "tfe_workspace" "foobar" {
-  name         = "workspace-ssh-key"
+  name         = "workspace-test"
   organization = "${tfe_organization.foobar.id}"
   auto_apply   = true
   ssh_key_id   = "${tfe_ssh_key.foobar.id}"
 }`
 
-const testAccTFEWorkspace_blankSshKey = `
+const testAccTFEWorkspace_noSSHKey = `
 resource "tfe_organization" "foobar" {
   name  = "terraform-test"
   email = "admin@company.com"
@@ -513,8 +492,7 @@ resource "tfe_ssh_key" "foobar" {
 }
 
 resource "tfe_workspace" "foobar" {
-  name         = "workspace-ssh-key"
+  name         = "workspace-test"
   organization = "${tfe_organization.foobar.id}"
   auto_apply   = true
-  ssh_key_id   = ""
 }`

@@ -40,6 +40,7 @@ func resourceTFEWorkspace() *schema.Resource {
 			"ssh_key_id": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Default:  "",
 			},
 
 			"queue_all_runs": {
@@ -231,13 +232,11 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 		d.Set("organization", workspace.Organization.Name)
 	}
 
-	// if the config sets ssh_key_id (even if "") set the
-	//  value from tfe's state, but otherwise ignore
-	if _, ok := d.GetOkExists("ssh_key_id"); ok {
-		if workspace.SSHKey != nil {
-			d.Set("ssh_key_id", workspace.SSHKey.ID)
-		}
+	var sshKeyID string
+	if workspace.SSHKey != nil {
+		sshKeyID = workspace.SSHKey.ID
 	}
+	d.Set("ssh_key_id", sshKeyID)
 
 	var vcsRepo []interface{}
 	if workspace.VCSRepo != nil {
