@@ -235,11 +235,13 @@ func TestAccTFEWorkspace_sshKey(t *testing.T) {
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributesSSHKey(workspace),
+					resource.TestCheckResourceAttrSet(
+						"tfe_workspace.foobar", "ssh_key_id"),
 				),
 			},
 
 			{
-				Config: testAccTFEWorkspace_basic,
+				Config: testAccTFEWorkspace_noSSHKey,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
@@ -384,10 +386,6 @@ func testAccCheckTFEWorkspaceAttributesUpdated(
 func testAccCheckTFEWorkspaceAttributesSSHKey(
 	workspace *tfe.Workspace) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		if workspace.Name != "workspace-ssh-key" {
-			return fmt.Errorf("Bad name: %s", workspace.Name)
-		}
-
 		if workspace.SSHKey == nil {
 			return fmt.Errorf("Bad SSH key: %v", workspace.SSHKey)
 		}
@@ -475,8 +473,26 @@ resource "tfe_ssh_key" "foobar" {
 }
 
 resource "tfe_workspace" "foobar" {
-  name         = "workspace-ssh-key"
+  name         = "workspace-test"
   organization = "${tfe_organization.foobar.id}"
   auto_apply   = true
   ssh_key_id   = "${tfe_ssh_key.foobar.id}"
+}`
+
+const testAccTFEWorkspace_noSSHKey = `
+resource "tfe_organization" "foobar" {
+  name  = "terraform-test"
+  email = "admin@company.com"
+}
+
+resource "tfe_ssh_key" "foobar" {
+  name         = "ssh-key-test"
+  organization = "${tfe_organization.foobar.id}"
+  key          = "SSH-KEY-CONTENT"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = "${tfe_organization.foobar.id}"
+  auto_apply   = true
 }`

@@ -40,7 +40,7 @@ func resourceTFEWorkspace() *schema.Resource {
 			"ssh_key_id": {
 				Type:     schema.TypeString,
 				Optional: true,
-				Computed: true,
+				Default:  "",
 			},
 
 			"queue_all_runs": {
@@ -232,9 +232,11 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 		d.Set("organization", workspace.Organization.Name)
 	}
 
+	var sshKeyID string
 	if workspace.SSHKey != nil {
-		d.Set("ssh_key_id", workspace.SSHKey.ID)
+		sshKeyID = workspace.SSHKey.ID
 	}
+	d.Set("ssh_key_id", sshKeyID)
 
 	var vcsRepo []interface{}
 	if workspace.VCSRepo != nil {
