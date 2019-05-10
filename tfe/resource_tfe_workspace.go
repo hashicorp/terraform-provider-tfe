@@ -61,6 +61,18 @@ func resourceTFEWorkspace() *schema.Resource {
 				Computed: true,
 			},
 
+			"file_triggers_enabled": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
+			},
+
+			"trigger_prefixes": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+
 			"vcs_repo": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -121,6 +133,14 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 
 	if workingDir, ok := d.GetOk("working_directory"); ok {
 		options.WorkingDirectory = tfe.String(workingDir.(string))
+	}
+
+	if fileTriggersEnabled, ok := d.GetOk("file_triggers_enabled"); ok {
+		options.FileTriggersEnabled = tfe.Bool(fileTriggersEnabled.(bool))
+	}
+
+	if tp, ok := d.GetOk("trigger_prefixes"); ok {
+		options.TriggerPrefixes = append([]string(nil), tp.([]string)...)
 	}
 
 	// Get and assert the VCS repo configuration block.
@@ -226,6 +246,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("queue_all_runs", workspace.QueueAllRuns)
 	d.Set("terraform_version", workspace.TerraformVersion)
 	d.Set("working_directory", workspace.WorkingDirectory)
+	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
 	d.Set("external_id", workspace.ID)
 
 	if workspace.Organization != nil {
@@ -237,6 +258,12 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 		sshKeyID = workspace.SSHKey.ID
 	}
 	d.Set("ssh_key_id", sshKeyID)
+
+	var triggerPrefixes []string
+	if workspace.TriggerPrefixes != nil {
+		triggerPrefixes = append(triggerPrefixes, workspace.TriggerPrefixes...)
+	}
+	d.Set("trigger_prefixes", triggerPrefixes)
 
 	var vcsRepo []interface{}
 	if workspace.VCSRepo != nil {
@@ -297,6 +324,14 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 
 		if workingDir, ok := d.GetOk("working_directory"); ok {
 			options.WorkingDirectory = tfe.String(workingDir.(string))
+		}
+
+		if fileTriggersEnabled, ok := d.GetOk("file_triggers_enabled"); ok {
+			options.FileTriggersEnabled = tfe.Bool(fileTriggersEnabled.(bool))
+		}
+
+		if tp, ok := d.GetOk("trigger_prefixes"); ok {
+			options.TriggerPrefixes = append([]string(nil), (tp.([]string))...)
 		}
 
 		// Get and assert the VCS repo configuration block.

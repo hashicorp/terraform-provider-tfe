@@ -48,6 +48,17 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Computed: true,
 			},
 
+			"file_triggers_enabled": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
+
+			"trigger_prefixes": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+
 			"vcs_repo": {
 				Type:     schema.TypeList,
 				Computed: true,
@@ -100,11 +111,18 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("queue_all_runs", workspace.QueueAllRuns)
 	d.Set("terraform_version", workspace.TerraformVersion)
 	d.Set("working_directory", workspace.WorkingDirectory)
+	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
 	d.Set("external_id", workspace.ID)
 
 	if workspace.SSHKey != nil {
 		d.Set("ssh_key_id", workspace.SSHKey.ID)
 	}
+
+	var triggerPrefixes []string
+	if workspace.TriggerPrefixes != nil {
+		triggerPrefixes = append(triggerPrefixes, workspace.TriggerPrefixes...)
+	}
+	d.Set("trigger_prefixes", triggerPrefixes)
 
 	var vcsRepo []interface{}
 	if workspace.VCSRepo != nil {

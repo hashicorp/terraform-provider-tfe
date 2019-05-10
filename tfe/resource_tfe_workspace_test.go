@@ -113,6 +113,38 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 						"tfe_workspace.foobar", "queue_all_runs", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "working_directory", ""),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "file_triggers_enabled", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "trigger_prefixes", "[]"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspace_monorepo(t *testing.T) {
+	workspace := &tfe.Workspace{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_basic,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					testAccCheckTFEWorkspaceMonorepoAttributes(workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "name", "workspace-monorepo"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "working_directory", "/db"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "file_triggers_enabled", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "trigger_prefixes", "[\"/modules\", \"/shared\"]"),
 				),
 			},
 		},
@@ -338,6 +370,35 @@ func testAccCheckTFEWorkspaceAttributes(
 	}
 }
 
+func testAccCheckTFEWorkspaceMonorepoAttributes(
+	workspace *tfe.Workspace) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if workspace.Name != "workspace-monorepo" {
+			return fmt.Errorf("Bad name: %s", workspace.Name)
+		}
+
+		if workspace.WorkingDirectory != "/db" {
+			return fmt.Errorf("Bad working directory: %s", workspace.WorkingDirectory)
+		}
+
+		if workspace.FileTriggersEnabled != true {
+			return fmt.Errorf("Bad file triggers enabled: %t", workspace.FileTriggersEnabled)
+		}
+
+		triggerPrefixes := []string{"/modules", "/shared"}
+		if len(workspace.TriggerPrefixes) != len(triggerPrefixes) {
+			return fmt.Errorf("Bad trigger prefixes length: %d", len(workspace.TriggerPrefixes))
+		}
+		for i := range triggerPrefixes {
+			if workspace.TriggerPrefixes[i] != triggerPrefixes[i] {
+				return fmt.Errorf("Bad trigger prefixes %v", workspace.TriggerPrefixes)
+			}
+		}
+
+		return nil
+	}
+}
+
 func testAccCheckTFEWorkspaceRename() {
 	tfeClient := testAccProvider.Meta().(*tfe.Client)
 
@@ -431,6 +492,20 @@ resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
   organization = "${tfe_organization.foobar.id}"
   auto_apply   = true
+}`
+
+const testAccTFEWorkspace_monorepo = `
+resource "tfe_organization" "foobar" {
+  name  = "terraform-test"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name                  = "workspace-monorepo"
+  organization          = "${tfe_organization.foobar.id}"
+  working_directory     = "/db"
+  file_triggers_enabled = true
+  trigger_prefixes      = ["/modules", "/shared"]
 }`
 
 const testAccTFEWorkspace_renamed = `

@@ -36,6 +36,10 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 						"data.tfe_workspace.foobar", "terraform_version", "0.11.1"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "working_directory", "terraform/test"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "file_triggers_enabled", "true"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "trigger_prefixes", "[\"/modules\", \"/shared\"]"),
 					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "external_id"),
 				),
 			},
@@ -51,12 +55,14 @@ resource "tfe_organization" "foobar" {
 }
 
 resource "tfe_workspace" "foobar" {
-  name              = "workspace-test-%d"
-  organization      = "${tfe_organization.foobar.id}"
-  auto_apply        = true
-  queue_all_runs    = false
-  terraform_version = "0.11.1"
-  working_directory = "terraform/test"
+  name                  = "workspace-test-%d"
+  organization          = "${tfe_organization.foobar.id}"
+  auto_apply            = true
+  queue_all_runs        = false
+  terraform_version     = "0.11.1"
+  working_directory     = "terraform/test"
+  file_triggers_enabled = true
+  trigger_prefixes      = ["/modules", "/shared"]
 }
 
 data "tfe_workspace" "foobar" {
