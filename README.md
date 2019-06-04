@@ -69,5 +69,7 @@ $ make testacc
 
 Testing
 -------
-A hostname and token must be provided in order to run the acceptance tests. We recomment configuring
+A hostname and token must be provided in order to run the acceptance tests. We recommend configuring
 the required `credentials` in the [CLI config file](https://www.terraform.io/docs/commands/cli-config.html).
+
+Alternatively, you can specify these values with environment variables: `TFE_HOSTNAME` and `TFE_TOKEN`.
