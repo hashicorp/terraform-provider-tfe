@@ -39,7 +39,11 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "file_triggers_enabled", "true"),
 					resource.TestCheckResourceAttr(
-						"data.tfe_workspace.foobar", "trigger_prefixes", "[\"/modules\", \"/shared\"]"),
+						"data.tfe_workspace.foobar", "trigger_prefixes.#", "2"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "trigger_prefixes.0", "/modules"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "trigger_prefixes.1", "/shared"),
 					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "external_id"),
 				),
 			},

@@ -28,8 +28,8 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Computed: true,
 			},
 
-			"ssh_key_id": {
-				Type:     schema.TypeString,
+			"file_triggers_enabled": {
+				Type:     schema.TypeBool,
 				Computed: true,
 			},
 
@@ -38,18 +38,13 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Computed: true,
 			},
 
+			"ssh_key_id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+
 			"terraform_version": {
 				Type:     schema.TypeString,
-				Computed: true,
-			},
-
-			"working_directory": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-
-			"file_triggers_enabled": {
-				Type:     schema.TypeBool,
 				Computed: true,
 			},
 
@@ -57,6 +52,11 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+
+			"working_directory": {
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 
 			"vcs_repo": {
@@ -108,21 +108,17 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 
 	// Update the config.
 	d.Set("auto_apply", workspace.AutoApply)
+	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
 	d.Set("queue_all_runs", workspace.QueueAllRuns)
 	d.Set("terraform_version", workspace.TerraformVersion)
 	d.Set("working_directory", workspace.WorkingDirectory)
-	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
 	d.Set("external_id", workspace.ID)
 
 	if workspace.SSHKey != nil {
 		d.Set("ssh_key_id", workspace.SSHKey.ID)
 	}
 
-	var triggerPrefixes []string
-	if workspace.TriggerPrefixes != nil {
-		triggerPrefixes = append(triggerPrefixes, workspace.TriggerPrefixes...)
-	}
-	d.Set("trigger_prefixes", triggerPrefixes)
+	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
 
 	var vcsRepo []interface{}
 	if workspace.VCSRepo != nil {

@@ -114,9 +114,9 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "working_directory", ""),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "file_triggers_enabled", "false"),
+						"tfe_workspace.foobar", "file_triggers_enabled", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "trigger_prefixes", "[]"),
+						"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
 				),
 			},
 		},
@@ -132,7 +132,7 @@ func TestAccTFEWorkspace_monorepo(t *testing.T) {
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspace_basic,
+				Config: testAccTFEWorkspace_monorepo,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
@@ -144,7 +144,11 @@ func TestAccTFEWorkspace_monorepo(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "file_triggers_enabled", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "trigger_prefixes", "[\"/modules\", \"/shared\"]"),
+						"tfe_workspace.foobar", "trigger_prefixes.#", "2"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "trigger_prefixes.0", "/modules"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "trigger_prefixes.1", "/shared"),
 				),
 			},
 		},
@@ -232,6 +236,8 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 						"tfe_workspace.foobar", "name", "workspace-updated"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "auto_apply", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "file_triggers_enabled", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "queue_all_runs", "false"),
 					resource.TestCheckResourceAttr(
@@ -527,12 +533,13 @@ resource "tfe_organization" "foobar" {
 }
 
 resource "tfe_workspace" "foobar" {
-  name              = "workspace-updated"
-  organization      = "${tfe_organization.foobar.id}"
-  auto_apply        = false
-  queue_all_runs    = false
-  terraform_version = "0.11.1"
-  working_directory = "terraform/test"
+  name                  = "workspace-updated"
+  organization          = "${tfe_organization.foobar.id}"
+  auto_apply            = false
+  file_triggers_enabled = false
+  queue_all_runs        = false
+  terraform_version     = "0.11.1"
+  working_directory     = "terraform/test"
 }`
 
 const testAccTFEWorkspace_sshKey = `

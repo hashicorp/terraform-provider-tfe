@@ -121,9 +121,10 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 
 	// Create a new options struct.
 	options := tfe.WorkspaceCreateOptions{
-		Name:         tfe.String(name),
-		AutoApply:    tfe.Bool(d.Get("auto_apply").(bool)),
-		QueueAllRuns: tfe.Bool(d.Get("queue_all_runs").(bool)),
+		Name:                tfe.String(name),
+		AutoApply:           tfe.Bool(d.Get("auto_apply").(bool)),
+		FileTriggersEnabled: tfe.Bool(d.Get("file_triggers_enabled").(bool)),
+		QueueAllRuns:        tfe.Bool(d.Get("queue_all_runs").(bool)),
 	}
 
 	// Process all configured options.
@@ -135,12 +136,10 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		options.WorkingDirectory = tfe.String(workingDir.(string))
 	}
 
-	if fileTriggersEnabled, ok := d.GetOk("file_triggers_enabled"); ok {
-		options.FileTriggersEnabled = tfe.Bool(fileTriggersEnabled.(bool))
-	}
-
 	if tp, ok := d.GetOk("trigger_prefixes"); ok {
-		options.TriggerPrefixes = append([]string(nil), tp.([]string)...)
+		for _, trigger := range tp.([]interface{}) {
+			options.TriggerPrefixes = append(options.TriggerPrefixes, trigger.(string))
+		}
 	}
 
 	// Get and assert the VCS repo configuration block.
@@ -312,9 +311,10 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		d.HasChange("terraform_version") || d.HasChange("working_directory") || d.HasChange("vcs_repo") {
 		// Create a new options struct.
 		options := tfe.WorkspaceUpdateOptions{
-			Name:         tfe.String(d.Get("name").(string)),
-			AutoApply:    tfe.Bool(d.Get("auto_apply").(bool)),
-			QueueAllRuns: tfe.Bool(d.Get("queue_all_runs").(bool)),
+			Name:                tfe.String(d.Get("name").(string)),
+			AutoApply:           tfe.Bool(d.Get("auto_apply").(bool)),
+			FileTriggersEnabled: tfe.Bool(d.Get("file_triggers_enabled").(bool)),
+			QueueAllRuns:        tfe.Bool(d.Get("queue_all_runs").(bool)),
 		}
 
 		// Process all configured options.
@@ -324,10 +324,6 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 
 		if workingDir, ok := d.GetOk("working_directory"); ok {
 			options.WorkingDirectory = tfe.String(workingDir.(string))
-		}
-
-		if fileTriggersEnabled, ok := d.GetOk("file_triggers_enabled"); ok {
-			options.FileTriggersEnabled = tfe.Bool(fileTriggersEnabled.(bool))
 		}
 
 		if tp, ok := d.GetOk("trigger_prefixes"); ok {
