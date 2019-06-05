@@ -106,13 +106,13 @@ type Client struct {
 
 	Applies                    Applies
 	ConfigurationVersions      ConfigurationVersions
-	CostEstimations            CostEstimations
 	NotificationConfigurations NotificationConfigurations
 	OAuthClients               OAuthClients
 	OAuthTokens                OAuthTokens
 	Organizations              Organizations
 	OrganizationTokens         OrganizationTokens
 	Plans                      Plans
+	PlanExports                PlanExports
 	Policies                   Policies
 	PolicyChecks               PolicyChecks
 	PolicySets                 PolicySets
@@ -196,13 +196,13 @@ func NewClient(cfg *Config) (*Client, error) {
 	// Create the services.
 	client.Applies = &applies{client: client}
 	client.ConfigurationVersions = &configurationVersions{client: client}
-	client.CostEstimations = &costEstimations{client: client}
 	client.NotificationConfigurations = &notificationConfigurations{client: client}
 	client.OAuthClients = &oAuthClients{client: client}
 	client.OAuthTokens = &oAuthTokens{client: client}
 	client.Organizations = &organizations{client: client}
 	client.OrganizationTokens = &organizationTokens{client: client}
 	client.Plans = &plans{client: client}
+	client.PlanExports = &planExports{client: client}
 	client.Policies = &policies{client: client}
 	client.PolicyChecks = &policyChecks{client: client}
 	client.PolicySets = &policySets{client: client}

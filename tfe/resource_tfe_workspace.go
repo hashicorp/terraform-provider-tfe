@@ -37,6 +37,12 @@ func resourceTFEWorkspace() *schema.Resource {
 				Default:  false,
 			},
 
+			"file_triggers_enabled": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
+			},
+
 			"ssh_key_id": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -53,6 +59,12 @@ func resourceTFEWorkspace() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
+			},
+
+			"trigger_prefixes": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
 			"working_directory": {
@@ -109,14 +121,21 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 
 	// Create a new options struct.
 	options := tfe.WorkspaceCreateOptions{
-		Name:         tfe.String(name),
-		AutoApply:    tfe.Bool(d.Get("auto_apply").(bool)),
-		QueueAllRuns: tfe.Bool(d.Get("queue_all_runs").(bool)),
+		Name:                tfe.String(name),
+		AutoApply:           tfe.Bool(d.Get("auto_apply").(bool)),
+		FileTriggersEnabled: tfe.Bool(d.Get("file_triggers_enabled").(bool)),
+		QueueAllRuns:        tfe.Bool(d.Get("queue_all_runs").(bool)),
 	}
 
 	// Process all configured options.
 	if tfVersion, ok := d.GetOk("terraform_version"); ok {
 		options.TerraformVersion = tfe.String(tfVersion.(string))
+	}
+
+	if tps, ok := d.GetOk("trigger_prefixes"); ok {
+		for _, tp := range tps.([]interface{}) {
+			options.TriggerPrefixes = append(options.TriggerPrefixes, tp.(string))
+		}
 	}
 
 	if workingDir, ok := d.GetOk("working_directory"); ok {
@@ -223,8 +242,10 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	// Update the config.
 	d.Set("name", workspace.Name)
 	d.Set("auto_apply", workspace.AutoApply)
+	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
 	d.Set("queue_all_runs", workspace.QueueAllRuns)
 	d.Set("terraform_version", workspace.TerraformVersion)
+	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
 	d.Set("working_directory", workspace.WorkingDirectory)
 	d.Set("external_id", workspace.ID)
 
@@ -285,14 +306,21 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		d.HasChange("terraform_version") || d.HasChange("working_directory") || d.HasChange("vcs_repo") {
 		// Create a new options struct.
 		options := tfe.WorkspaceUpdateOptions{
-			Name:         tfe.String(d.Get("name").(string)),
-			AutoApply:    tfe.Bool(d.Get("auto_apply").(bool)),
-			QueueAllRuns: tfe.Bool(d.Get("queue_all_runs").(bool)),
+			Name:                tfe.String(d.Get("name").(string)),
+			AutoApply:           tfe.Bool(d.Get("auto_apply").(bool)),
+			FileTriggersEnabled: tfe.Bool(d.Get("file_triggers_enabled").(bool)),
+			QueueAllRuns:        tfe.Bool(d.Get("queue_all_runs").(bool)),
 		}
 
 		// Process all configured options.
 		if tfVersion, ok := d.GetOk("terraform_version"); ok {
 			options.TerraformVersion = tfe.String(tfVersion.(string))
+		}
+
+		if tps, ok := d.GetOk("trigger_prefixes"); ok {
+			for _, tp := range tps.([]interface{}) {
+				options.TriggerPrefixes = append(options.TriggerPrefixes, tp.(string))
+			}
 		}
 
 		if workingDir, ok := d.GetOk("working_directory"); ok {
