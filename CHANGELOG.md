@@ -1,4 +1,10 @@
-## 0.10.0 (Unreleased)
+## 0.9.1 (Unreleased)
+
+ENHANCEMENTS:
+
+* r/tfe_workspace: Add monorepo filtering workspace config fields ([#77](https://github.com/terraform-providers/terraform-provider-tfe/pull/77))
+* provider: Add support for TFE_HOSTNAME and TFE_TOKEN environment variables ([#78](https://github.com/terraform-providers/terraform-provider-tfe/pull/78), fixes [#31](https://github.com/terraform-providers/terraform-provider-tfe/issues/31))
+
 ## 0.9.0 (May 23, 2019)
 
 IMPROVEMENTS:
