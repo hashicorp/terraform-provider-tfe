@@ -53,6 +53,9 @@ $ $GOPATH/bin/terraform-provider-tfe
 ...
 ```
 
+Testing
+-------
+
 In order to test the provider, you can simply run `make test`.
 
 ```sh
@@ -61,13 +64,19 @@ $ make test
 
 In order to run the full suite of Acceptance tests, run `make testacc`.
 
-*Note:* Acceptance tests create real resources, and often cost money to run.
-
 ```sh
 $ make testacc
 ```
 
-Testing
--------
-A hostname and token must be provided in order to run the acceptance tests. We recomment configuring
-the required `credentials` in the [CLI config file](https://www.terraform.io/docs/commands/cli-config.html).
+A hostname and token must be provided in order to run the acceptance tests. By
+default, these are loaded from the the `credentials` in the [CLI config
+file](https://www.terraform.io/docs/commands/cli-config.html). You can override
+these values with the environment variables specified below: `TFE_HOSTNAME` and
+`TFE_TOKEN`.
+
+To run all tests, you will need to set the following environment variables:
+
+- `TFE_HOSTNAME`: the hostname of your test TFE instance; for example, `tfe-test.local`
+- `TFE_TOKEN`: a user token for an administrator account on your TFE instance
+- `GITHUB_TOKEN`: a GitHub personal access token, used to establish a VCS provider connection
+- `TFE_USER1` and `TFE_USER2`: the usernames of two pre-existing TFE users, for testing team membership

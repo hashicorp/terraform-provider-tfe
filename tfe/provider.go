@@ -50,13 +50,14 @@ func Provider() terraform.ResourceProvider {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: descriptions["hostname"],
-				Default:     defaultHostname,
+				DefaultFunc: schema.EnvDefaultFunc("TFE_HOSTNAME", defaultHostname),
 			},
 
 			"token": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: descriptions["token"],
+				DefaultFunc: schema.EnvDefaultFunc("TFE_TOKEN", nil),
 			},
 		},
 

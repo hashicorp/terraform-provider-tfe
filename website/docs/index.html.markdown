@@ -33,10 +33,11 @@ organizations, and organization tokens cannot manage certain resource types
 [Terraform Enterprise API documentation](/docs/enterprise/api/index.html)
 for more details about access to specific resources.
 
-There are two ways to provide the required token:
+There are three ways to provide the required token:
 
 - On the CLI, omit the `token` argument and set a `credentials` block in your
   [CLI config file](/docs/commands/cli-config.html#credentials).
+- Set the `TFE_TOKEN` environment variable.
 - In a Terraform Enterprise workspace, set `token` in the provider
   configuration. Use an input variable for the token and mark the corresponding
   variable in the workspace as sensitive.
@@ -61,9 +62,11 @@ resource "tfe_organization" "org" {
 The following arguments are supported:
 
 * `hostname` - (Optional) The Terraform Enterprise hostname to connect to.
-  Defaults to `app.terraform.io`.
+  Defaults to `app.terraform.io`. Can be overridden by setting the
+  `TFE_HOSTNAME` environment variable.
 * `token` - (Optional) The token used to authenticate with Terraform Enterprise.
   Only set this argument when running in a Terraform Enterprise workspace; for
   CLI usage, omit the token from the configuration and set it as `credentials`
-  in the [CLI config file](/docs/commands/cli-config.html#credentials). See
-  [Authentication](#authentication) above for more.
+  in the [CLI config file](/docs/commands/cli-config.html#credentials) or set
+  the `TFE_TOKEN` environment variable. See [Authentication](#authentication)
+  above for more.
