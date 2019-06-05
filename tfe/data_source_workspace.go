@@ -111,14 +111,13 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
 	d.Set("queue_all_runs", workspace.QueueAllRuns)
 	d.Set("terraform_version", workspace.TerraformVersion)
+	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
 	d.Set("working_directory", workspace.WorkingDirectory)
 	d.Set("external_id", workspace.ID)
 
 	if workspace.SSHKey != nil {
 		d.Set("ssh_key_id", workspace.SSHKey.ID)
 	}
-
-	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
 
 	var vcsRepo []interface{}
 	if workspace.VCSRepo != nil {

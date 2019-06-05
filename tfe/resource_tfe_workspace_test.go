@@ -110,13 +110,13 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "auto_apply", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "queue_all_runs", "true"),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "working_directory", ""),
-					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "file_triggers_enabled", "true"),
 					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "queue_all_runs", "true"),
+					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "working_directory", ""),
 				),
 			},
 		},
@@ -140,8 +140,6 @@ func TestAccTFEWorkspace_monorepo(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-monorepo"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "working_directory", "/db"),
-					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "file_triggers_enabled", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "trigger_prefixes.#", "2"),
@@ -149,6 +147,8 @@ func TestAccTFEWorkspace_monorepo(t *testing.T) {
 						"tfe_workspace.foobar", "trigger_prefixes.0", "/modules"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "trigger_prefixes.1", "/shared"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "working_directory", "/db"),
 				),
 			},
 		},
@@ -237,11 +237,17 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "auto_apply", "false"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "file_triggers_enabled", "false"),
+						"tfe_workspace.foobar", "file_triggers_enabled", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "queue_all_runs", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "terraform_version", "0.11.1"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "trigger_prefixes.#", "2"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "trigger_prefixes.0", "/modules"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "trigger_prefixes.1", "/shared"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "working_directory", "terraform/test"),
 				),
@@ -383,10 +389,6 @@ func testAccCheckTFEWorkspaceMonorepoAttributes(
 			return fmt.Errorf("Bad name: %s", workspace.Name)
 		}
 
-		if workspace.WorkingDirectory != "/db" {
-			return fmt.Errorf("Bad working directory: %s", workspace.WorkingDirectory)
-		}
-
 		if workspace.FileTriggersEnabled != true {
 			return fmt.Errorf("Bad file triggers enabled: %t", workspace.FileTriggersEnabled)
 		}
@@ -399,6 +401,10 @@ func testAccCheckTFEWorkspaceMonorepoAttributes(
 			if workspace.TriggerPrefixes[i] != triggerPrefixes[i] {
 				return fmt.Errorf("Bad trigger prefixes %v", workspace.TriggerPrefixes)
 			}
+		}
+
+		if workspace.WorkingDirectory != "/db" {
+			return fmt.Errorf("Bad working directory: %s", workspace.WorkingDirectory)
 		}
 
 		return nil
@@ -509,9 +515,9 @@ resource "tfe_organization" "foobar" {
 resource "tfe_workspace" "foobar" {
   name                  = "workspace-monorepo"
   organization          = "${tfe_organization.foobar.id}"
-  working_directory     = "/db"
   file_triggers_enabled = true
   trigger_prefixes      = ["/modules", "/shared"]
+  working_directory     = "/db"
 }`
 
 const testAccTFEWorkspace_renamed = `
@@ -536,9 +542,10 @@ resource "tfe_workspace" "foobar" {
   name                  = "workspace-updated"
   organization          = "${tfe_organization.foobar.id}"
   auto_apply            = false
-  file_triggers_enabled = false
+  file_triggers_enabled = true
   queue_all_runs        = false
   terraform_version     = "0.11.1"
+  trigger_prefixes      = ["/modules", "/shared"]
   working_directory     = "terraform/test"
 }`
 

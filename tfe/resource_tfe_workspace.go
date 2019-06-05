@@ -37,6 +37,12 @@ func resourceTFEWorkspace() *schema.Resource {
 				Default:  false,
 			},
 
+			"file_triggers_enabled": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
+			},
+
 			"ssh_key_id": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -55,22 +61,16 @@ func resourceTFEWorkspace() *schema.Resource {
 				Computed: true,
 			},
 
-			"working_directory": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			"file_triggers_enabled": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
-			},
-
 			"trigger_prefixes": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+
+			"working_directory": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
 			},
 
 			"vcs_repo": {
@@ -132,14 +132,14 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		options.TerraformVersion = tfe.String(tfVersion.(string))
 	}
 
-	if workingDir, ok := d.GetOk("working_directory"); ok {
-		options.WorkingDirectory = tfe.String(workingDir.(string))
+	if tps, ok := d.GetOk("trigger_prefixes"); ok {
+		for _, tp := range tps.([]interface{}) {
+			options.TriggerPrefixes = append(options.TriggerPrefixes, tp.(string))
+		}
 	}
 
-	if tp, ok := d.GetOk("trigger_prefixes"); ok {
-		for _, trigger := range tp.([]interface{}) {
-			options.TriggerPrefixes = append(options.TriggerPrefixes, trigger.(string))
-		}
+	if workingDir, ok := d.GetOk("working_directory"); ok {
+		options.WorkingDirectory = tfe.String(workingDir.(string))
 	}
 
 	// Get and assert the VCS repo configuration block.
@@ -242,10 +242,11 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	// Update the config.
 	d.Set("name", workspace.Name)
 	d.Set("auto_apply", workspace.AutoApply)
+	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
 	d.Set("queue_all_runs", workspace.QueueAllRuns)
 	d.Set("terraform_version", workspace.TerraformVersion)
+	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
 	d.Set("working_directory", workspace.WorkingDirectory)
-	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
 	d.Set("external_id", workspace.ID)
 
 	if workspace.Organization != nil {
@@ -257,12 +258,6 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 		sshKeyID = workspace.SSHKey.ID
 	}
 	d.Set("ssh_key_id", sshKeyID)
-
-	var triggerPrefixes []string
-	if workspace.TriggerPrefixes != nil {
-		triggerPrefixes = append(triggerPrefixes, workspace.TriggerPrefixes...)
-	}
-	d.Set("trigger_prefixes", triggerPrefixes)
 
 	var vcsRepo []interface{}
 	if workspace.VCSRepo != nil {
@@ -322,12 +317,14 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			options.TerraformVersion = tfe.String(tfVersion.(string))
 		}
 
-		if workingDir, ok := d.GetOk("working_directory"); ok {
-			options.WorkingDirectory = tfe.String(workingDir.(string))
+		if tps, ok := d.GetOk("trigger_prefixes"); ok {
+			for _, tp := range tps.([]interface{}) {
+				options.TriggerPrefixes = append(options.TriggerPrefixes, tp.(string))
+			}
 		}
 
-		if tp, ok := d.GetOk("trigger_prefixes"); ok {
-			options.TriggerPrefixes = append([]string(nil), (tp.([]string))...)
+		if workingDir, ok := d.GetOk("working_directory"); ok {
+			options.WorkingDirectory = tfe.String(workingDir.(string))
 		}
 
 		// Get and assert the VCS repo configuration block.
