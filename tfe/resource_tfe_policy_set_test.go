@@ -2,6 +2,7 @@ package tfe
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -217,6 +218,121 @@ func TestAccTFEPolicySetImport(t *testing.T) {
 				ResourceName:      "tfe_policy_set.foobar",
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccTFEPolicySet_vcs(t *testing.T) {
+	policySet := &tfe.PolicySet{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			if v := os.Getenv("TFE_VCS_IDENTIFIER"); v == "" {
+				t.Skip("please set TFE_VCS_IDENTIFIER to run this test")
+			}
+
+			if v := os.Getenv("TFE_POLICY_SET_VCS_BRANCH"); v == "" {
+				t.Skip("please set TFE_POLICY_SET_VCS_BRANCH to run this test")
+			}
+
+			if v := os.Getenv("TFE_POLICY_SET_VCS_PATH"); v == "" {
+				t.Skip("please set TFE_POLICY_SET_VCS_PATH to run this test")
+			}
+		},
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicySet_vcs(),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					testAccCheckTFEPolicySetAttributes(policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "terraform-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "description", "Policy Set"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "vcs_repo.0.identifier", os.Getenv("TFE_VCS_IDENTIFIER")),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "vcs_repo.0.branch", os.Getenv("TFE_POLICY_SET_VCS_BRANCH")),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "vcs_repo.0.ingress_submodules", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policies_path", os.Getenv("TFE_POLICY_SET_VCS_PATH")),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEPolicySet_default(t *testing.T) {
+	policySet := &tfe.PolicySet{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicySet_default,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					testAccCheckTFEPolicySetAttributes(policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "terraform-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "description", "Policy Set"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_ids.#", "0"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEPolicySet_populatedToDefault(t *testing.T) {
+	policySet := &tfe.PolicySet{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicySet_basic,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					testAccCheckTFEPolicySetAttributes(policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "terraform-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "description", "Policy Set"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_ids.#", "1"),
+				),
+			},
+			{
+				Config: testAccTFEPolicySet_default,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					testAccCheckTFEPolicySetAttributes(policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "terraform-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "description", "Policy Set"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_ids.#", "0"),
+				),
 			},
 		},
 	})
@@ -464,4 +580,52 @@ resource "tfe_policy_set" "foobar" {
   organization = "${tfe_organization.foobar.id}"
   global       = true
   policy_ids   = ["${tfe_sentinel_policy.foo.id}"]
+}`
+
+func testAccTFEPolicySet_vcs() string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "terraform-test"
+  email = "admin@company.com"
+}
+
+resource "tfe_oauth_client" "test" {
+  organization     = "${tfe_organization.foobar.id}"
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "%s"
+  service_provider = "github"
+}
+
+resource "tfe_policy_set" "foobar" {
+  name         = "terraform-test"
+  description  = "Policy Set"
+  organization = "${tfe_organization.foobar.id}"
+  vcs_repo {
+    identifier         = "%s"
+    branch             = "%s"
+    ingress_submodules = true
+    oauth_token_id     = "${tfe_oauth_client.test.oauth_token_id}"
+  }
+
+  policies_path = "%s"
+}
+`,
+		os.Getenv("GITHUB_TOKEN"),
+		os.Getenv("TFE_VCS_IDENTIFIER"),
+		os.Getenv("TFE_POLICY_SET_VCS_BRANCH"),
+		os.Getenv("TFE_POLICY_SET_VCS_PATH"),
+	)
+}
+
+const testAccTFEPolicySet_default = `
+resource "tfe_organization" "foobar" {
+  name  = "terraform-test"
+  email = "admin@company.com"
+}
+
+resource "tfe_policy_set" "foobar" {
+  name         = "terraform-test"
+  description  = "Policy Set"
+  organization = "${tfe_organization.foobar.id}"
 }`
