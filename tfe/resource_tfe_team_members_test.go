@@ -2,9 +2,7 @@ package tfe
 
 import (
 	"fmt"
-	"os"
 	"reflect"
-	"strings"
 	"testing"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -15,29 +13,30 @@ import (
 
 func TestAccTFETeamMembers_basic(t *testing.T) {
 	users := []*tfe.User{}
-	username := os.Getenv("TFE_USER1")
-	usernameHash := hashSchemaString(username)
+	TFE_USER1_HASH := hashSchemaString(TFE_USER1)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			testAccCheckEnvVariables(t, []string{"TFE_USER1"})
+			if TFE_USER1 == "" {
+				t.Skip("Please set TFE_USER1 to run this test")
+			}
 		},
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFETeamMembersDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamMembers_basic([]string{"admin", username}),
+				Config: testAccTFETeamMembers_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamMembersExists(
 						"tfe_team_members.foobar", &users),
-					testAccCheckTFETeamMembersAttributes(&users, []string{"admin", username}),
+					testAccCheckTFETeamMembersAttributes(&users, []string{"admin", TFE_USER1}),
 					resource.TestCheckResourceAttr(
 						"tfe_team_members.foobar", "usernames.#", "2"),
 					resource.TestCheckResourceAttr(
 						"tfe_team_members.foobar", "usernames.3672628397", "admin"),
 					resource.TestCheckResourceAttr(
-						"tfe_team_members.foobar", fmt.Sprintf("usernames.%d", usernameHash), username),
+						"tfe_team_members.foobar", fmt.Sprintf("usernames.%d", TFE_USER1_HASH), TFE_USER1),
 				),
 			},
 		},
@@ -46,44 +45,47 @@ func TestAccTFETeamMembers_basic(t *testing.T) {
 
 func TestAccTFETeamMembers_update(t *testing.T) {
 	users := []*tfe.User{}
-	username := os.Getenv("TFE_USER1")
-	usernameHash := hashSchemaString(username)
-	secondUsername := os.Getenv("TFE_USER2")
-	secondUsernameHash := hashSchemaString(secondUsername)
+	TFE_USER1_HASH := hashSchemaString(TFE_USER1)
+	TFE_USER2_HASH := hashSchemaString(TFE_USER2)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			testAccCheckEnvVariables(t, []string{"TFE_USER1", "TFE_USER2"})
+			if TFE_USER1 == "" {
+				t.Skip("Please set TFE_USER1 to run this test")
+			}
+			if TFE_USER2 == "" {
+				t.Skip("Please set TFE_USER2 to run this test")
+			}
 		},
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFETeamMembersDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamMembers_basic([]string{"admin", username}),
+				Config: testAccTFETeamMembers_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamMembersExists(
 						"tfe_team_members.foobar", &users),
-					testAccCheckTFETeamMembersAttributes(&users, []string{"admin", username}),
+					testAccCheckTFETeamMembersAttributes(&users, []string{"admin", TFE_USER1}),
 					resource.TestCheckResourceAttr(
 						"tfe_team_members.foobar", "usernames.#", "2"),
 					resource.TestCheckResourceAttr(
 						"tfe_team_members.foobar", "usernames.3672628397", "admin"),
 					resource.TestCheckResourceAttr(
-						"tfe_team_members.foobar", fmt.Sprintf("usernames.%d", usernameHash), username),
+						"tfe_team_members.foobar", fmt.Sprintf("usernames.%d", TFE_USER1_HASH), TFE_USER1),
 				),
 			},
 
 			{
-				Config: testAccTFETeamMembers_basic([]string{"admin", secondUsername}),
+				Config: testAccTFETeamMembers_update,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamMembersExists(
 						"tfe_team_members.foobar", &users),
-					testAccCheckTFETeamMembersAttributes(&users, []string{"admin", secondUsername}),
+					testAccCheckTFETeamMembersAttributes(&users, []string{"admin", TFE_USER2}),
 					resource.TestCheckResourceAttr(
 						"tfe_team_members.foobar", "usernames.#", "2"),
 					resource.TestCheckResourceAttr(
-						"tfe_team_members.foobar", fmt.Sprintf("usernames.%d", secondUsernameHash), secondUsername),
+						"tfe_team_members.foobar", fmt.Sprintf("usernames.%d", TFE_USER2_HASH), TFE_USER2),
 					resource.TestCheckResourceAttr(
 						"tfe_team_members.foobar", "usernames.3672628397", "admin"),
 				),
@@ -93,18 +95,18 @@ func TestAccTFETeamMembers_update(t *testing.T) {
 }
 
 func TestAccTFETeamMembers_import(t *testing.T) {
-	username := os.Getenv("TFE_USER1")
-
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			testAccCheckEnvVariables(t, []string{"TFE_USER1"})
+			if TFE_USER1 == "" {
+				t.Skip("Please set TFE_USER1 to run this test")
+			}
 		},
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFETeamMembersDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamMembers_basic([]string{"admin", username}),
+				Config: testAccTFETeamMembers_basic,
 			},
 
 			{
@@ -196,8 +198,7 @@ func testAccCheckTFETeamMembersDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccTFETeamMembers_basic(usernames []string) string {
-	return fmt.Sprintf(`
+var testAccTFETeamMembers_basic = fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "terraform-test"
   email = "admin@company.com"
@@ -211,5 +212,20 @@ resource "tfe_team" "foobar" {
 resource "tfe_team_members" "foobar" {
   team_id   = "${tfe_team.foobar.id}"
   usernames = ["%s"]
-}`, strings.Join(usernames, `", "`))
+}`, TFE_USER1)
+
+var testAccTFETeamMembers_update = fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "terraform-test"
+  email = "admin@company.com"
 }
+
+resource "tfe_team" "foobar" {
+  name         = "team-test"
+  organization = "${tfe_organization.foobar.id}"
+}
+
+resource "tfe_team_members" "foobar" {
+  team_id   = "${tfe_team.foobar.id}"
+  usernames = ["%s", "%s"]
+}`, TFE_USER1, TFE_USER2)

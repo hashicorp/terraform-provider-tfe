@@ -43,6 +43,20 @@ func resourceTFEPolicySet() *schema.Resource {
 				ConflictsWith: []string{"workspace_external_ids"},
 			},
 
+			"policies_path": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				ForceNew:      true,
+				ConflictsWith: []string{"policy_ids"},
+			},
+
+			"policy_ids": {
+				Type:          schema.TypeSet,
+				Optional:      true,
+				Elem:          &schema.Schema{Type: schema.TypeString},
+				ConflictsWith: []string{"vcs_repo", "policies_path"},
+			},
+
 			"vcs_repo": {
 				Type:          schema.TypeList,
 				Optional:      true,
@@ -76,20 +90,6 @@ func resourceTFEPolicySet() *schema.Resource {
 				},
 			},
 
-			"policies_path": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				ForceNew:      true,
-				ConflictsWith: []string{"policy_ids"},
-			},
-
-			"policy_ids": {
-				Type:          schema.TypeSet,
-				Optional:      true,
-				Elem:          &schema.Schema{Type: schema.TypeString},
-				ConflictsWith: []string{"vcs_repo", "policies_path"},
-			},
-
 			"workspace_external_ids": {
 				Type:          schema.TypeSet,
 				Optional:      true,
@@ -117,6 +117,14 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 		options.Description = tfe.String(desc.(string))
 	}
 
+	if policiesPath, ok := d.GetOk("policies_path"); ok {
+		options.PoliciesPath = tfe.String(policiesPath.(string))
+	}
+
+	for _, policyID := range d.Get("policy_ids").(*schema.Set).List() {
+		options.Policies = append(options.Policies, &tfe.Policy{ID: policyID.(string)})
+	}
+
 	// Get and assert the VCS repo configuration block.
 	if v, ok := d.GetOk("vcs_repo"); ok {
 		vcsRepo := v.([]interface{})[0].(map[string]interface{})
@@ -131,14 +139,6 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 		if branch, ok := vcsRepo["branch"].(string); ok && branch != "" {
 			options.VCSRepo.Branch = tfe.String(branch)
 		}
-	}
-
-	if policiesPath, ok := d.GetOk("policies_path"); ok {
-		options.PoliciesPath = tfe.String(policiesPath.(string))
-	}
-
-	for _, policyID := range d.Get("policy_ids").(*schema.Set).List() {
-		options.Policies = append(options.Policies, &tfe.Policy{ID: policyID.(string)})
 	}
 
 	for _, workspaceID := range d.Get("workspace_external_ids").(*schema.Set).List() {

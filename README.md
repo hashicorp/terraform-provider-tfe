@@ -76,7 +76,10 @@ these values with the environment variables specified below: `TFE_HOSTNAME` and
 
 To run all tests, you will need to set the following environment variables:
 
-- `TFE_HOSTNAME`: the hostname of your test TFE instance; for example, `tfe-test.local`
-- `TFE_TOKEN`: a user token for an administrator account on your TFE instance
 - `GITHUB_TOKEN`: a GitHub personal access token, used to establish a VCS provider connection
+- `TFE_HOSTNAME`: the hostname of your test TFE instance; for example, `tfe-test.local`
+- `TFE_POLICY_SET_VCS_BRANCH`: a VCS branch, used to test policy sets
+- `TFE_POLICY_SET_VCS_PATH`: a VCS path, used to test policy sets
+- `TFE_TOKEN`: a user token for an administrator account on your TFE instance
 - `TFE_USER1` and `TFE_USER2`: the usernames of two pre-existing TFE users, for testing team membership
+- `TFE_VCS_IDENTIFIER`: a VCS identifier, used to test policy sets
