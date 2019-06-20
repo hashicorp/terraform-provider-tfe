@@ -1,8 +1,8 @@
-## 0.10.0 (Unreleased)
+## 0.10.0 (June 20, 2019)
 
 ENHANCEMENTS:
 
-* r/tfe_policy_set: Added support for VCS policy sets. [GH-80]
+* r/tfe_policy_set: Added support for VCS policy sets. ([#80](https://github.com/terraform-providers/terraform-provider-tfe/issues/80))
 
 ## 0.9.1 (June 05, 2019)
 
