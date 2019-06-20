@@ -1,4 +1,9 @@
 ## 0.10.0 (Unreleased)
+
+ENHANCEMENTS:
+
+* r/tfe_policy_set: Added support for VCS policy sets. [GH-80]
+
 ## 0.9.1 (June 05, 2019)
 
 ENHANCEMENTS:
