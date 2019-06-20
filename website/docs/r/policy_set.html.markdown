@@ -18,7 +18,26 @@ for workspaces that the policy set is attached to.
 
 ## Example Usage
 
-Basic usage:
+Basic usage (VCS-based policy set):
+
+```hcl
+resource "tfe_policy_set" "test" {
+  name                   = "my-policy-set"
+  description            = "A brand new policy set"
+  organization           = "my-org-name"
+  policies_path          = "policies/my-policy-set"
+  workspace_external_ids = ["${tfe_workspace.test.external_id}"]
+
+  vcs_repo {
+    identifier         = "my-org-name/my-policy-set-repository"
+    branch             = "master"
+    ingress_submodules = false
+    oauth_token_id     = "${tfe_oauth_client.test.oauth_token_id}"
+  }
+}
+```
+
+Using manually-specified policies:
 
 ```hcl
 resource "tfe_policy_set" "test" {
@@ -40,9 +59,30 @@ The following arguments are supported:
   all workspaces. Defaults to `false`. This value _must not_ be provided if
   `workspace_external_ids` are provided.
 * `organization` - (Required) Name of the organization.
-* `policy_ids` - (Required) A list of Sentinel policy IDs.
-* `workspace_external_ids` - (Optional) A list of workspace external IDs. If
   the policy set is `global`, this value _must not_ be provided.
+* `policies_path` - (Optional) The sub-path within the attached VCS repository
+  to ingress when using `vcs_repo`. All files and directories outside of this
+  sub-path will be ignored. This option can only be supplied when `vcs_repo` is
+  present. Forces a new resource if changed.
+* `policy_ids` - (Optional) A list of Sentinel policy IDs.
+* `vcs_repo` - (Optional) Settings for the policy sets VCS repository. Forces a
+  new resource if changed.
+* `workspace_external_ids` - (Optional) A list of workspace external IDs. If
+
+-> **Note:** When neither `vcs_repo` or `policy_ids` is not specified, the current
+default is to create an empty non-VCS policy set.
+
+The `vcs_repo` block supports:
+
+* `identifier` - (Required) A reference to your VCS repository in the format
+  `:org/:repo` where `:org` and `:repo` refer to the organization and repository
+  in your VCS provider.
+* `branch` - (Optional) The repository branch that Terraform will execute from.
+  Default to `master`.
+* `ingress_submodules` - (Optional) Whether submodules should be fetched when
+  cloning the VCS repository. Defaults to `false`.
+* `oauth_token_id` - (Required) Token ID of the VCS Connection (OAuth Conection Token)
+  to use.
 
 ## Attributes Reference
 

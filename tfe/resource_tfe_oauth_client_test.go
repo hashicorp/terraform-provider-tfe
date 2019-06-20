@@ -13,7 +13,12 @@ func TestAccTFEOAuthClient_basic(t *testing.T) {
 	oc := &tfe.OAuthClient{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
+		PreCheck: func() {
+			testAccPreCheck(t)
+			if GITHUB_TOKEN == "" {
+				t.Skip("Please set GITHUB_TOKEN to run this test")
+			}
+		},
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEOAuthClientDestroy,
 		Steps: []resource.TestStep{

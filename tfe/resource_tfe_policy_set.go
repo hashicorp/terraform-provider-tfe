@@ -43,10 +43,51 @@ func resourceTFEPolicySet() *schema.Resource {
 				ConflictsWith: []string{"workspace_external_ids"},
 			},
 
+			"policies_path": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				ForceNew:      true,
+				ConflictsWith: []string{"policy_ids"},
+			},
+
 			"policy_ids": {
-				Type:     schema.TypeSet,
-				Required: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Type:          schema.TypeSet,
+				Optional:      true,
+				Elem:          &schema.Schema{Type: schema.TypeString},
+				ConflictsWith: []string{"vcs_repo", "policies_path"},
+			},
+
+			"vcs_repo": {
+				Type:          schema.TypeList,
+				Optional:      true,
+				ForceNew:      true,
+				ConflictsWith: []string{"policy_ids"},
+				MinItems:      1,
+				MaxItems:      1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"identifier": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+
+						"branch": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+
+						"ingress_submodules": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
+						},
+
+						"oauth_token_id": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+					},
+				},
 			},
 
 			"workspace_external_ids": {
@@ -76,8 +117,28 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 		options.Description = tfe.String(desc.(string))
 	}
 
+	if policiesPath, ok := d.GetOk("policies_path"); ok {
+		options.PoliciesPath = tfe.String(policiesPath.(string))
+	}
+
 	for _, policyID := range d.Get("policy_ids").(*schema.Set).List() {
 		options.Policies = append(options.Policies, &tfe.Policy{ID: policyID.(string)})
+	}
+
+	// Get and assert the VCS repo configuration block.
+	if v, ok := d.GetOk("vcs_repo"); ok {
+		vcsRepo := v.([]interface{})[0].(map[string]interface{})
+
+		options.VCSRepo = &tfe.VCSRepoOptions{
+			Identifier:        tfe.String(vcsRepo["identifier"].(string)),
+			IngressSubmodules: tfe.Bool(vcsRepo["ingress_submodules"].(bool)),
+			OAuthTokenID:      tfe.String(vcsRepo["oauth_token_id"].(string)),
+		}
+
+		// Only set the branch if one is configured.
+		if branch, ok := vcsRepo["branch"].(string); ok && branch != "" {
+			options.VCSRepo.Branch = tfe.String(branch)
+		}
 	}
 
 	for _, workspaceID := range d.Get("workspace_external_ids").(*schema.Set).List() {
@@ -114,10 +175,35 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", policySet.Name)
 	d.Set("description", policySet.Description)
 	d.Set("global", policySet.Global)
+	d.Set("policies_path", policySet.PoliciesPath)
 
 	if policySet.Organization != nil {
 		d.Set("organization", policySet.Organization.Name)
 	}
+
+	// Set VCS policy set options.
+	var vcsRepo []interface{}
+	if policySet.VCSRepo != nil {
+		vcsConfig := map[string]interface{}{
+			"identifier":         policySet.VCSRepo.Identifier,
+			"ingress_submodules": policySet.VCSRepo.IngressSubmodules,
+			"oauth_token_id":     policySet.VCSRepo.OAuthTokenID,
+		}
+
+		// Get and assert the VCS repo configuration block.
+		if v, ok := d.GetOk("vcs_repo"); ok {
+			if vcsRepo, ok := v.([]interface{})[0].(map[string]interface{}); ok {
+				// Only set the branch if one is configured.
+				if branch, ok := vcsRepo["branch"].(string); ok && branch != "" {
+					vcsConfig["branch"] = policySet.VCSRepo.Branch
+				}
+			}
+		}
+
+		vcsRepo = append(vcsRepo, vcsConfig)
+	}
+
+	d.Set("vcs_repo", vcsRepo)
 
 	// Update the policies.
 	var policyIDs []interface{}
