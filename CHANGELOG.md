@@ -1,4 +1,9 @@
 ## 0.10.1 (Unreleased)
+
+BUG FIXES:
+
+* r/tfe_workspace: Ensure that file-triggers-enabled and trigger-prefixes fields are updated when changed ([#81](https://github.com/terraform-providers/terraform-provider-tfe/pull/81))
+
 ## 0.10.0 (June 20, 2019)
 
 ENHANCEMENTS:
