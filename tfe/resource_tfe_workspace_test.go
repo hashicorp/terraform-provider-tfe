@@ -256,6 +256,37 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspace_updateFileTriggers(t *testing.T) {
+	workspace := &tfe.Workspace{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_basic,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "file_triggers_enabled", "true"),
+				),
+			},
+
+			{
+				Config: testAccTFEWorkspace_basicFileTriggersOff,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "file_triggers_enabled", "false"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEWorkspace_sshKey(t *testing.T) {
 	workspace := &tfe.Workspace{}
 
@@ -504,6 +535,19 @@ resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
   organization = "${tfe_organization.foobar.id}"
   auto_apply   = true
+}`
+
+const testAccTFEWorkspace_basicFileTriggersOff = `
+resource "tfe_organization" "foobar" {
+  name  = "terraform-test"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name                  = "workspace-test"
+  organization          = "${tfe_organization.foobar.id}"
+  auto_apply            = true
+  file_triggers_enabled = false
 }`
 
 const testAccTFEWorkspace_monorepo = `
