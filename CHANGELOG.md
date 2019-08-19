@@ -1,4 +1,9 @@
-## 0.10.2 (Unreleased)
+## 0.11.0 (Unreleased)
+
+FEATURES:
+
+* **New Resource:** `tfe_notification_configuration` ([GH-86])
+
 ## 0.10.1 (June 26, 2019)
 
 BUG FIXES:
