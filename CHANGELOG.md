@@ -1,8 +1,8 @@
-## 0.11.0 (Unreleased)
+## 0.11.0 (August 19, 2019)
 
 FEATURES:
 
-* **New Resource:** `tfe_notification_configuration` ([GH-86])
+* **New Resource:** `tfe_notification_configuration` ([[#86](https://github.com/terraform-providers/terraform-provider-tfe/issues/86)])
 
 ## 0.10.1 (June 26, 2019)
 
