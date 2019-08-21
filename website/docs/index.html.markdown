@@ -21,16 +21,16 @@ This provider requires a Terraform Enterprise API token in order to manage
 resources.
 
 To manage the full selection of resources, provide a
-[user token](/docs/enterprise/users-teams-organizations/users.html#api-tokens)
+[user token](/docs/cloud/users-teams-organizations/users.html#api-tokens)
 from an account with appropriate permissions. This user should belong to the
 "owners" team of every Terraform Enterprise organization you wish to manage.
 
--> **Note:** You can use [an organization or team token](/docs/enterprise/users-teams-organizations/service-accounts.html)
+-> **Note:** You can use [an organization or team token](/docs/cloud/users-teams-organizations/service-accounts.html)
 instead of a user token, but it will limit which resources you can manage.
 Organization and team tokens cannot manage resources across multiple
 organizations, and organization tokens cannot manage certain resource types
 (like SSH keys). See the
-[Terraform Enterprise API documentation](/docs/enterprise/api/index.html)
+[Terraform Enterprise API documentation](/docs/cloud/api/index.html)
 for more details about access to specific resources.
 
 There are three ways to provide the required token:
