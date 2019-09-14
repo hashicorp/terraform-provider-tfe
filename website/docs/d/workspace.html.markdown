@@ -38,6 +38,7 @@ In addition to all arguments above, the following attributes are exported:
   Terraform plan is successful.
 * `file_triggers_enabled` - Indicates whether runs are triggered based on the changed files in a VCS push (if `true`) or always triggered on every push (if `false`).
 * `queue_all_runs` - Indicates whether all runs should be queued.
+* `remote_execution` - Indicates whether the workspace is using remote execution mode.
 * `ssh_key_id` - The ID of an SSH key assigned to the workspace.
 * `terraform_version` - The version of Terraform used for this workspace.
 * `trigger_prefixes` - List of repository-root-relative paths which describe all locations to be tracked for changes.

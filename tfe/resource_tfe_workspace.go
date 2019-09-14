@@ -108,6 +108,12 @@ func resourceTFEWorkspace() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+
+			"remote_execution": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
+			},
 		},
 	}
 }
@@ -125,6 +131,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		AutoApply:           tfe.Bool(d.Get("auto_apply").(bool)),
 		FileTriggersEnabled: tfe.Bool(d.Get("file_triggers_enabled").(bool)),
 		QueueAllRuns:        tfe.Bool(d.Get("queue_all_runs").(bool)),
+		Operations:          tfe.Bool(d.Get("remote_execution").(bool)),
 	}
 
 	// Process all configured options.
@@ -248,6 +255,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
 	d.Set("working_directory", workspace.WorkingDirectory)
 	d.Set("external_id", workspace.ID)
+	d.Set("remote_execution", workspace.Operations)
 
 	if workspace.Organization != nil {
 		d.Set("organization", workspace.Organization.Name)
@@ -304,13 +312,15 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 
 	if d.HasChange("name") || d.HasChange("auto_apply") || d.HasChange("queue_all_runs") ||
 		d.HasChange("terraform_version") || d.HasChange("working_directory") || d.HasChange("vcs_repo") ||
-		d.HasChange("file_triggers_enabled") || d.HasChange("trigger_prefixes") {
+		d.HasChange("file_triggers_enabled") || d.HasChange("trigger_prefixes") ||
+		d.HasChange("remote_execution") {
 		// Create a new options struct.
 		options := tfe.WorkspaceUpdateOptions{
 			Name:                tfe.String(d.Get("name").(string)),
 			AutoApply:           tfe.Bool(d.Get("auto_apply").(bool)),
 			FileTriggersEnabled: tfe.Bool(d.Get("file_triggers_enabled").(bool)),
 			QueueAllRuns:        tfe.Bool(d.Get("queue_all_runs").(bool)),
+			Operations:          tfe.Bool(d.Get("remote_execution").(bool)),
 		}
 
 		// Process all configured options.
