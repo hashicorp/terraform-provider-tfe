@@ -33,6 +33,11 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Computed: true,
 			},
 
+			"operations": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
+
 			"queue_all_runs": {
 				Type:     schema.TypeBool,
 				Computed: true,
@@ -86,11 +91,6 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-
-			"remote_execution": {
-				Type:     schema.TypeBool,
-				Computed: true,
-			},
 		},
 	}
 }
@@ -119,7 +119,7 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
 	d.Set("working_directory", workspace.WorkingDirectory)
 	d.Set("external_id", workspace.ID)
-	d.Set("remote_execution", workspace.Operations)
+	d.Set("operations", workspace.Operations)
 
 	if workspace.SSHKey != nil {
 		d.Set("ssh_key_id", workspace.SSHKey.ID)
