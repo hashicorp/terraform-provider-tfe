@@ -25,7 +25,7 @@ To manage the full selection of resources, provide a
 from an account with appropriate permissions. This user should belong to the
 "owners" team of every Terraform Enterprise organization you wish to manage.
 
--> **Note:** You can use [an organization or team token](/docs/cloud/users-teams-organizations/service-accounts.html)
+-> **Note:** You can use [an organization or team token](/docs/cloud/users-teams-organizations/api-tokens.html)
 instead of a user token, but it will limit which resources you can manage.
 Organization and team tokens cannot manage resources across multiple
 organizations, and organization tokens cannot manage certain resource types
