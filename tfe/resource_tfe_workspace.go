@@ -130,8 +130,8 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		Name:                tfe.String(name),
 		AutoApply:           tfe.Bool(d.Get("auto_apply").(bool)),
 		FileTriggersEnabled: tfe.Bool(d.Get("file_triggers_enabled").(bool)),
-		QueueAllRuns:        tfe.Bool(d.Get("queue_all_runs").(bool)),
 		Operations:          tfe.Bool(d.Get("operations").(bool)),
+		QueueAllRuns:        tfe.Bool(d.Get("queue_all_runs").(bool)),
 	}
 
 	// Process all configured options.
@@ -250,12 +250,12 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", workspace.Name)
 	d.Set("auto_apply", workspace.AutoApply)
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
+	d.Set("operations", workspace.Operations)
 	d.Set("queue_all_runs", workspace.QueueAllRuns)
 	d.Set("terraform_version", workspace.TerraformVersion)
 	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
 	d.Set("working_directory", workspace.WorkingDirectory)
 	d.Set("external_id", workspace.ID)
-	d.Set("operations", workspace.Operations)
 
 	if workspace.Organization != nil {
 		d.Set("organization", workspace.Organization.Name)
@@ -319,8 +319,8 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			Name:                tfe.String(d.Get("name").(string)),
 			AutoApply:           tfe.Bool(d.Get("auto_apply").(bool)),
 			FileTriggersEnabled: tfe.Bool(d.Get("file_triggers_enabled").(bool)),
-			QueueAllRuns:        tfe.Bool(d.Get("queue_all_runs").(bool)),
 			Operations:          tfe.Bool(d.Get("operations").(bool)),
+			QueueAllRuns:        tfe.Bool(d.Get("queue_all_runs").(bool)),
 		}
 
 		// Process all configured options.
