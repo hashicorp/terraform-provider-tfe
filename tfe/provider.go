@@ -2,9 +2,11 @@ package tfe
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"sort"
@@ -58,6 +60,13 @@ func Provider() terraform.ResourceProvider {
 				Optional:    true,
 				Description: descriptions["token"],
 				DefaultFunc: schema.EnvDefaultFunc("TFE_TOKEN", nil),
+			},
+
+			"ssl_skip_verify": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: descriptions["ssl_skip_verify"],
+				DefaultFunc: schema.EnvDefaultFunc("TFE_SSL_SKIP_VERIFY", false),
 			},
 		},
 
@@ -191,7 +200,18 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	}
 
 	httpClient := tfe.DefaultConfig().HTTPClient
-	httpClient.Transport = logging.NewTransport("TFE", httpClient.Transport)
+
+	// Make sure the transport has a TLS config.
+	transport := httpClient.Transport.(*http.Transport)
+	if transport.TLSClientConfig == nil {
+		transport.TLSClientConfig = &tls.Config{}
+	}
+
+	// Configure the certificate verification options.
+	transport.TLSClientConfig.InsecureSkipVerify = d.Get("ssl_skip_verify").(bool)
+
+	// Wrap the configured transport to enable logging.
+	httpClient.Transport = logging.NewTransport("TFE", transport)
 
 	// Create a new TFE client config
 	cfg := &tfe.Config{
@@ -378,4 +398,5 @@ var descriptions = map[string]string{
 	"hostname": "The Terraform Enterprise hostname to connect to. Defaults to app.terraform.io.",
 	"token": "The token used to authenticate with Terraform Enterprise. We recommend omitting\n" +
 		"the token which can be set as credentials in the CLI config file.",
+	"ssl_skip_verify": "Whether or not to skip certificate verifications.",
 }
