@@ -25,14 +25,26 @@ type Workspaces interface {
 	// Read a workspace by its name.
 	Read(ctx context.Context, organization string, workspace string) (*Workspace, error)
 
+	// ReadByID reads a workspace by its ID.
+	ReadByID(ctx context.Context, workspaceID string) (*Workspace, error)
+
 	// Update settings of an existing workspace.
 	Update(ctx context.Context, organization string, workspace string, options WorkspaceUpdateOptions) (*Workspace, error)
+
+	// UpdateByID updates the settings of an existing workspace.
+	UpdateByID(ctx context.Context, workspaceID string, options WorkspaceUpdateOptions) (*Workspace, error)
 
 	// Delete a workspace by its name.
 	Delete(ctx context.Context, organization string, workspace string) error
 
+	// DeleteByID deletes a workspace by its ID.
+	DeleteByID(ctx context.Context, workspaceID string) error
+
 	// RemoveVCSConnection from a workspace.
 	RemoveVCSConnection(ctx context.Context, organization, workspace string) (*Workspace, error)
+
+	// RemoveVCSConnectionByID removes a VCS connection from a workspace.
+	RemoveVCSConnectionByID(ctx context.Context, workspaceID string) (*Workspace, error)
 
 	// Lock a workspace by its ID.
 	Lock(ctx context.Context, workspaceID string, options WorkspaceLockOptions) (*Workspace, error)
@@ -167,6 +179,9 @@ type WorkspaceCreateOptions struct {
 	// organization.
 	Name *string `jsonapi:"attr,name"`
 
+	// Whether the workspace will use remote or local execution mode.
+	Operations *bool `jsonapi:"attr,operations,omitempty"`
+
 	// Whether to queue all runs. Unless this is set to true, runs triggered by
 	// a webhook will not be queued until at least one run is manually queued.
 	QueueAllRuns *bool `jsonapi:"attr,queue-all-runs,omitempty"`
@@ -263,6 +278,27 @@ func (s *workspaces) Read(ctx context.Context, organization, workspace string) (
 	return w, nil
 }
 
+// ReadByID reads a workspace by its ID.
+func (s *workspaces) ReadByID(ctx context.Context, workspaceID string) (*Workspace, error) {
+	if !validStringID(&workspaceID) {
+		return nil, errors.New("invalid value for workspace ID")
+	}
+
+	u := fmt.Sprintf("workspaces/%s", url.QueryEscape(workspaceID))
+	req, err := s.client.newRequest("GET", u, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	w := &Workspace{}
+	err = s.client.do(ctx, req, w)
+	if err != nil {
+		return nil, err
+	}
+
+	return w, nil
+}
+
 // WorkspaceUpdateOptions represents the options for updating a workspace.
 type WorkspaceUpdateOptions struct {
 	// For internal use only!
@@ -282,6 +318,9 @@ type WorkspaceUpdateOptions struct {
 	// paths which must contain changes for a VCS push to trigger a run. If
 	// disabled, any push will trigger a run.
 	FileTriggersEnabled *bool `jsonapi:"attr,file-triggers-enabled,omitempty"`
+
+	// Whether the workspace will use remote or local execution mode.
+	Operations *bool `jsonapi:"attr,operations,omitempty"`
 
 	// Whether to queue all runs. Unless this is set to true, runs triggered by
 	// a webhook will not be queued until at least one run is manually queued.
@@ -339,6 +378,30 @@ func (s *workspaces) Update(ctx context.Context, organization, workspace string,
 	return w, nil
 }
 
+// UpdateByID updates the settings of an existing workspace.
+func (s *workspaces) UpdateByID(ctx context.Context, workspaceID string, options WorkspaceUpdateOptions) (*Workspace, error) {
+	if !validStringID(&workspaceID) {
+		return nil, errors.New("invalid value for workspace ID")
+	}
+
+	// Make sure we don't send a user provided ID.
+	options.ID = ""
+
+	u := fmt.Sprintf("workspaces/%s", url.QueryEscape(workspaceID))
+	req, err := s.client.newRequest("PATCH", u, &options)
+	if err != nil {
+		return nil, err
+	}
+
+	w := &Workspace{}
+	err = s.client.do(ctx, req, w)
+	if err != nil {
+		return nil, err
+	}
+
+	return w, nil
+}
+
 // Delete a workspace by its name.
 func (s *workspaces) Delete(ctx context.Context, organization, workspace string) error {
 	if !validStringID(&organization) {
@@ -353,6 +416,21 @@ func (s *workspaces) Delete(ctx context.Context, organization, workspace string)
 		url.QueryEscape(organization),
 		url.QueryEscape(workspace),
 	)
+	req, err := s.client.newRequest("DELETE", u, nil)
+	if err != nil {
+		return err
+	}
+
+	return s.client.do(ctx, req, nil)
+}
+
+// DeleteByID deletes a workspace by its ID.
+func (s *workspaces) DeleteByID(ctx context.Context, workspaceID string) error {
+	if !validStringID(&workspaceID) {
+		return errors.New("invalid value for workspace ID")
+	}
+
+	u := fmt.Sprintf("workspaces/%s", url.QueryEscape(workspaceID))
 	req, err := s.client.newRequest("DELETE", u, nil)
 	if err != nil {
 		return err
@@ -381,6 +459,28 @@ func (s *workspaces) RemoveVCSConnection(ctx context.Context, organization, work
 		url.QueryEscape(organization),
 		url.QueryEscape(workspace),
 	)
+
+	req, err := s.client.newRequest("PATCH", u, &workspaceRemoveVCSConnectionOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	w := &Workspace{}
+	err = s.client.do(ctx, req, w)
+	if err != nil {
+		return nil, err
+	}
+
+	return w, nil
+}
+
+// RemoveVCSConnectionByID removes a VCS connection from a workspace.
+func (s *workspaces) RemoveVCSConnectionByID(ctx context.Context, workspaceID string) (*Workspace, error) {
+	if !validStringID(&workspaceID) {
+		return nil, errors.New("invalid value for workspace ID")
+	}
+
+	u := fmt.Sprintf("workspaces/%s", url.QueryEscape(workspaceID))
 
 	req, err := s.client.newRequest("PATCH", u, &workspaceRemoveVCSConnectionOptions{})
 	if err != nil {

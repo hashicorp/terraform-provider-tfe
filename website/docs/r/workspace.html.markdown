@@ -30,6 +30,9 @@ The following arguments are supported:
 * `auto_apply` - (Optional) Whether to automatically apply changes when a
   Terraform plan is successful. Defaults to `false`.
 * `file_triggers_enabled` - (Optional) Whether to filter runs based on the changed files in a VCS push. If enabled, the working directory and trigger prefixes describe a set of paths which must contain changes for a VCS push to trigger a run. If disabled, any push will trigger a run. Defaults to `true`.
+* `operations` - (Optional) Whether to use remote execution mode. When set
+  to `false`, the workspace will be used for state storage only.
+  Defaults to `true`.
 * `queue_all_runs` - (Optional) Whether all runs should be queued. When set
   to `false`, runs triggered by a VCS change will not be queued until at least
   one run is manually queued. Defaults to `true`.

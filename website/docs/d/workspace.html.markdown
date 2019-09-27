@@ -37,6 +37,7 @@ In addition to all arguments above, the following attributes are exported:
 * `auto_apply` - Indicates whether to automatically apply changes when a
   Terraform plan is successful.
 * `file_triggers_enabled` - Indicates whether runs are triggered based on the changed files in a VCS push (if `true`) or always triggered on every push (if `false`).
+* `operations` - Indicates whether the workspace is using remote execution mode.
 * `queue_all_runs` - Indicates whether all runs should be queued.
 * `ssh_key_id` - The ID of an SSH key assigned to the workspace.
 * `terraform_version` - The version of Terraform used for this workspace.

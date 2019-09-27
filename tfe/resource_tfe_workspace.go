@@ -43,16 +43,22 @@ func resourceTFEWorkspace() *schema.Resource {
 				Default:  true,
 			},
 
-			"ssh_key_id": {
-				Type:     schema.TypeString,
+			"operations": {
+				Type:     schema.TypeBool,
 				Optional: true,
-				Default:  "",
+				Default:  true,
 			},
 
 			"queue_all_runs": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  true,
+			},
+
+			"ssh_key_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "",
 			},
 
 			"terraform_version": {
@@ -124,6 +130,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		Name:                tfe.String(name),
 		AutoApply:           tfe.Bool(d.Get("auto_apply").(bool)),
 		FileTriggersEnabled: tfe.Bool(d.Get("file_triggers_enabled").(bool)),
+		Operations:          tfe.Bool(d.Get("operations").(bool)),
 		QueueAllRuns:        tfe.Bool(d.Get("queue_all_runs").(bool)),
 	}
 
@@ -243,6 +250,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", workspace.Name)
 	d.Set("auto_apply", workspace.AutoApply)
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
+	d.Set("operations", workspace.Operations)
 	d.Set("queue_all_runs", workspace.QueueAllRuns)
 	d.Set("terraform_version", workspace.TerraformVersion)
 	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
@@ -304,12 +312,14 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 
 	if d.HasChange("name") || d.HasChange("auto_apply") || d.HasChange("queue_all_runs") ||
 		d.HasChange("terraform_version") || d.HasChange("working_directory") || d.HasChange("vcs_repo") ||
-		d.HasChange("file_triggers_enabled") || d.HasChange("trigger_prefixes") {
+		d.HasChange("file_triggers_enabled") || d.HasChange("trigger_prefixes") ||
+		d.HasChange("operations") {
 		// Create a new options struct.
 		options := tfe.WorkspaceUpdateOptions{
 			Name:                tfe.String(d.Get("name").(string)),
 			AutoApply:           tfe.Bool(d.Get("auto_apply").(bool)),
 			FileTriggersEnabled: tfe.Bool(d.Get("file_triggers_enabled").(bool)),
+			Operations:          tfe.Bool(d.Get("operations").(bool)),
 			QueueAllRuns:        tfe.Bool(d.Get("queue_all_runs").(bool)),
 		}
 
