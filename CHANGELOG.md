@@ -1,4 +1,9 @@
 ## 0.11.1 (Unreleased)
+
+ENHANCEMENTS:
+
+* r/tfe_workspace: Adding support to configure execution mode ([[#92](https://github.com/terraform-providers/terraform-provider-tfe/pull/92)])
+
 ## 0.11.0 (August 19, 2019)
 
 FEATURES:
