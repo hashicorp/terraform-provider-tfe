@@ -37,9 +37,8 @@ The following arguments are supported:
   to `false`, runs triggered by a VCS change will not be queued until at least
   one run is manually queued. Defaults to `true`.
 * `ssh_key_id` - (Optional) The ID of an SSH key to assign to the workspace.
-* `terraform_version` - (Optional) The version of Terraform to use for this
+* `terraform_version` - (Optional) The version of Terraform to use for this workspace. Defaults to the latest available version.
 * `trigger_prefixes` - (Optional) List of repository-root-relative paths which describe all locations to be tracked for changes.
-  workspace. Defaults to the latest available version.
 * `working_directory` - (Optional) A relative path that Terraform will execute
   within.  Defaults to the root of your repository.
 * `vcs_repo` - (Optional) Settings for the workspace's VCS repository.
