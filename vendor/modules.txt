@@ -66,9 +66,10 @@ github.com/golang/protobuf/ptypes/any
 github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/timestamp
 github.com/golang/protobuf/protoc-gen-go/descriptor
-# github.com/google/go-cmp v0.2.0
+# github.com/google/go-cmp v0.3.1
 github.com/google/go-cmp/cmp
 github.com/google/go-cmp/cmp/internal/diff
+github.com/google/go-cmp/cmp/internal/flags
 github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
 # github.com/google/go-querystring v1.0.0
@@ -77,7 +78,7 @@ github.com/google/go-querystring/query
 github.com/googleapis/gax-go/v2
 # github.com/hashicorp/errwrap v1.0.0
 github.com/hashicorp/errwrap
-# github.com/hashicorp/go-cleanhttp v0.5.0
+# github.com/hashicorp/go-cleanhttp v0.5.1
 github.com/hashicorp/go-cleanhttp
 # github.com/hashicorp/go-getter v1.3.0
 github.com/hashicorp/go-getter
@@ -99,7 +100,7 @@ github.com/hashicorp/go-slug
 github.com/hashicorp/go-tfe
 # github.com/hashicorp/go-uuid v1.0.1
 github.com/hashicorp/go-uuid
-# github.com/hashicorp/go-version v1.1.0
+# github.com/hashicorp/go-version v1.2.0
 github.com/hashicorp/go-version
 # github.com/hashicorp/hcl v0.0.0-20180404174102-ef8a98b0bbce
 github.com/hashicorp/hcl
@@ -134,9 +135,6 @@ github.com/hashicorp/terraform/plugin
 github.com/hashicorp/terraform/helper/logging
 github.com/hashicorp/terraform/helper/schema
 github.com/hashicorp/terraform/helper/validation
-github.com/hashicorp/terraform/svchost
-github.com/hashicorp/terraform/svchost/auth
-github.com/hashicorp/terraform/svchost/disco
 github.com/hashicorp/terraform/terraform
 github.com/hashicorp/terraform/configs/configschema
 github.com/hashicorp/terraform/helper/plugin
@@ -151,13 +149,13 @@ github.com/hashicorp/terraform/config/hcl2shim
 github.com/hashicorp/terraform/helper/hashcode
 github.com/hashicorp/terraform/tfdiags
 github.com/hashicorp/terraform/helper/structure
-github.com/hashicorp/terraform/httpclient
 github.com/hashicorp/terraform/addrs
 github.com/hashicorp/terraform/config/module
 github.com/hashicorp/terraform/configs
 github.com/hashicorp/terraform/dag
 github.com/hashicorp/terraform/flatmap
 github.com/hashicorp/terraform/helper/didyoumean
+github.com/hashicorp/terraform/httpclient
 github.com/hashicorp/terraform/lang
 github.com/hashicorp/terraform/moduledeps
 github.com/hashicorp/terraform/plans
@@ -168,6 +166,7 @@ github.com/hashicorp/terraform/helper/resource
 github.com/hashicorp/terraform/registry
 github.com/hashicorp/terraform/registry/regsrc
 github.com/hashicorp/terraform/registry/response
+github.com/hashicorp/terraform/svchost/disco
 github.com/hashicorp/terraform/helper/hilmapstructure
 github.com/hashicorp/terraform/lang/blocktoattr
 github.com/hashicorp/terraform/lang/funcs
@@ -175,10 +174,16 @@ github.com/hashicorp/terraform/command/format
 github.com/hashicorp/terraform/configs/configload
 github.com/hashicorp/terraform/helper/config
 github.com/hashicorp/terraform/internal/initwd
+github.com/hashicorp/terraform/svchost
+github.com/hashicorp/terraform/svchost/auth
 github.com/hashicorp/terraform/internal/modsdir
 github.com/hashicorp/terraform/internal/earlyconfig
 # github.com/hashicorp/terraform-config-inspect v0.0.0-20190327195015-8022a2663a70
 github.com/hashicorp/terraform-config-inspect/tfconfig
+# github.com/hashicorp/terraform-svchost v0.0.0-20191011084731-65d371908596
+github.com/hashicorp/terraform-svchost
+github.com/hashicorp/terraform-svchost/auth
+github.com/hashicorp/terraform-svchost/disco
 # github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb
 github.com/hashicorp/yamux
 # github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af
@@ -225,11 +230,11 @@ github.com/ulikunitz/xz/internal/hash
 # github.com/vmihailenco/msgpack v4.0.1+incompatible
 github.com/vmihailenco/msgpack
 github.com/vmihailenco/msgpack/codes
-# github.com/zclconf/go-cty v0.0.0-20190516203816-4fecf87372ec
+# github.com/zclconf/go-cty v1.1.0
 github.com/zclconf/go-cty/cty
 github.com/zclconf/go-cty/cty/msgpack
-github.com/zclconf/go-cty/cty/convert
 github.com/zclconf/go-cty/cty/json
+github.com/zclconf/go-cty/cty/convert
 github.com/zclconf/go-cty/cty/gocty
 github.com/zclconf/go-cty/cty/set
 github.com/zclconf/go-cty/cty/function
@@ -259,19 +264,19 @@ golang.org/x/crypto/openpgp/s2k
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/cast5
 golang.org/x/crypto/openpgp/elgamal
-# golang.org/x/net v0.0.0-20190502183928-7f726cade0ab
+# golang.org/x/net v0.0.0-20191009170851-d66e71096ffb
 golang.org/x/net/idna
 golang.org/x/net/context
 golang.org/x/net/trace
 golang.org/x/net/internal/timeseries
 golang.org/x/net/http2
 golang.org/x/net/http2/hpack
-golang.org/x/net/http/httpguts
 golang.org/x/net/context/ctxhttp
-# golang.org/x/oauth2 v0.0.0-20190220154721-9b3c75971fc9
+golang.org/x/net/http/httpguts
+# golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 golang.org/x/oauth2
-golang.org/x/oauth2/google
 golang.org/x/oauth2/internal
+golang.org/x/oauth2/google
 golang.org/x/oauth2/jws
 golang.org/x/oauth2/jwt
 # golang.org/x/sys v0.0.0-20190502175342-a43fa875dd82
@@ -296,16 +301,16 @@ google.golang.org/api/googleapi/transport
 google.golang.org/api/transport/http/internal/propagation
 # google.golang.org/appengine v1.4.0
 google.golang.org/appengine/datastore
+google.golang.org/appengine/urlfetch
 google.golang.org/appengine
 google.golang.org/appengine/internal
 google.golang.org/appengine/internal/datastore
-google.golang.org/appengine/urlfetch
+google.golang.org/appengine/internal/urlfetch
 google.golang.org/appengine/internal/app_identity
 google.golang.org/appengine/internal/modules
 google.golang.org/appengine/internal/base
 google.golang.org/appengine/internal/log
 google.golang.org/appengine/internal/remote_api
-google.golang.org/appengine/internal/urlfetch
 # google.golang.org/genproto v0.0.0-20190201180003-4b09977fb922
 google.golang.org/genproto/googleapis/rpc/status
 google.golang.org/genproto/googleapis/iam/v1
