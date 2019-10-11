@@ -13,11 +13,11 @@ import (
 	tfe "github.com/hashicorp/go-tfe"
 	version "github.com/hashicorp/go-version"
 	"github.com/hashicorp/hcl"
+	svchost "github.com/hashicorp/terraform-svchost"
+	"github.com/hashicorp/terraform-svchost/auth"
+	"github.com/hashicorp/terraform-svchost/disco"
 	"github.com/hashicorp/terraform/helper/logging"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/svchost"
-	"github.com/hashicorp/terraform/svchost/auth"
-	"github.com/hashicorp/terraform/svchost/disco"
 	"github.com/hashicorp/terraform/terraform"
 	providerVersion "github.com/terraform-providers/terraform-provider-tfe/version"
 )
@@ -97,12 +97,15 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		return nil, err
 	}
 
+	providerUaString := fmt.Sprintf("terraform-provider-tfe/%s", providerVersion.ProviderVersion)
+
 	// Get the Terraform CLI configuration.
 	config := cliConfig()
 
 	// Create a new credential source and service discovery object.
 	credsSrc := credentialsSource(config)
 	services := disco.NewWithCredentialsSource(credsSrc)
+	services.SetUserAgent(providerUaString)
 	services.Transport = logging.NewTransport("TFE Discovery", services.Transport)
 
 	// Add any static host configurations service discovery object.
