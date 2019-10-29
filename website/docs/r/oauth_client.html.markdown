@@ -39,7 +39,7 @@ The following arguments are supported:
   `https://github.com` or `https://ghe.example.com`).
 * `oauth_token` - (Required) The token string you were given by your VCS provider.
 * `service_provider` - (Required) The VCS provider being connected with. Valid
-  options are `github`, `github_enterprise`, `bitbucket_hosted`, `gitlab_hosted`,
+  options are `ado_server`, `ado_services`, `github`, `github_enterprise`, `gitlab_hosted`,
   `gitlab_community_edition`, or `gitlab_enterprise_edition`.
 
 ## Attributes Reference

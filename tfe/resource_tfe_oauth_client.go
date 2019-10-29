@@ -47,6 +47,8 @@ func resourceTFEOAuthClient() *schema.Resource {
 				ForceNew: true,
 				ValidateFunc: validation.StringInSlice(
 					[]string{
+						string(tfe.ServiceProviderAzureDevOpsServer),
+						string(tfe.ServiceProviderAzureDevOpsServices),
 						string(tfe.ServiceProviderBitbucket),
 						string(tfe.ServiceProviderGithub),
 						string(tfe.ServiceProviderGithubEE),
