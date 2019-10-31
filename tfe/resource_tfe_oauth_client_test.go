@@ -110,7 +110,7 @@ func testAccCheckTFEOAuthClientDestroy(s *terraform.State) error {
 
 var testAccTFEOAuthClient_basic = fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 

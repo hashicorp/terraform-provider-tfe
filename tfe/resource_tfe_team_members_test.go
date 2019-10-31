@@ -200,7 +200,7 @@ func testAccCheckTFETeamMembersDestroy(s *terraform.State) error {
 
 var testAccTFETeamMembers_basic = fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 
@@ -216,7 +216,7 @@ resource "tfe_team_members" "foobar" {
 
 var testAccTFETeamMembers_update = fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 

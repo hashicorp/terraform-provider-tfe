@@ -22,7 +22,7 @@ func TestAccTFETeamDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_team.foobar", "name", fmt.Sprintf("team-test-%d", rInt)),
 					resource.TestCheckResourceAttr(
-						"data.tfe_team.foobar", "organization", fmt.Sprintf("terraform-test-%d", rInt)),
+						"data.tfe_team.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
 					resource.TestCheckResourceAttrSet("data.tfe_team.foobar", "id"),
 				),
 			},
@@ -33,7 +33,7 @@ func TestAccTFETeamDataSource_basic(t *testing.T) {
 func testAccTFETeamDataSourceConfig(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test-%d"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 

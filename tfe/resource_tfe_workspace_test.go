@@ -463,7 +463,7 @@ func testAccCheckTFEWorkspaceRename() {
 
 	w, err := tfeClient.Workspaces.Update(
 		context.Background(),
-		"terraform-test",
+		"tst-terraform",
 		"workspace-test",
 		tfe.WorkspaceUpdateOptions{Name: tfe.String("renamed-out-of-band")},
 	)
@@ -547,7 +547,7 @@ func testAccCheckTFEWorkspaceDestroy(s *terraform.State) error {
 
 const testAccTFEWorkspace_basic = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 
@@ -559,7 +559,7 @@ resource "tfe_workspace" "foobar" {
 
 const testAccTFEWorkspace_basicFileTriggersOff = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 
@@ -572,7 +572,7 @@ resource "tfe_workspace" "foobar" {
 
 const testAccTFEWorkspace_monorepo = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 
@@ -586,7 +586,7 @@ resource "tfe_workspace" "foobar" {
 
 const testAccTFEWorkspace_renamed = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 
@@ -598,7 +598,7 @@ resource "tfe_workspace" "foobar" {
 
 const testAccTFEWorkspace_update = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 
@@ -615,7 +615,7 @@ resource "tfe_workspace" "foobar" {
 
 const testAccTFEWorkspace_sshKey = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 
@@ -634,7 +634,7 @@ resource "tfe_workspace" "foobar" {
 
 const testAccTFEWorkspace_noSSHKey = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 

@@ -23,7 +23,7 @@ func TestAccTFEPolicySet_basic(t *testing.T) {
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "name", "terraform-test"),
+						"tfe_policy_set.foobar", "name", "tst-terraform"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "description", "Policy Set"),
 					resource.TestCheckResourceAttr(
@@ -50,7 +50,7 @@ func TestAccTFEPolicySet_update(t *testing.T) {
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "name", "terraform-test"),
+						"tfe_policy_set.foobar", "name", "tst-terraform"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "description", "Policy Set"),
 					resource.TestCheckResourceAttr(
@@ -93,7 +93,7 @@ func TestAccTFEPolicySet_updateEmpty(t *testing.T) {
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "name", "terraform-test"),
+						"tfe_policy_set.foobar", "name", "tst-terraform"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "description", "Policy Set"),
 					resource.TestCheckResourceAttr(
@@ -108,7 +108,7 @@ func TestAccTFEPolicySet_updateEmpty(t *testing.T) {
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "name", "terraform-test"),
+						"tfe_policy_set.foobar", "name", "tst-terraform"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "description", "Policy Set"),
 					resource.TestCheckResourceAttr(
@@ -273,7 +273,7 @@ func TestAccTFEPolicySet_vcs(t *testing.T) {
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "name", "terraform-test"),
+						"tfe_policy_set.foobar", "name", "tst-terraform"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "description", "Policy Set"),
 					resource.TestCheckResourceAttr(
@@ -341,7 +341,7 @@ func testAccCheckTFEPolicySetExists(n string, policySet *tfe.PolicySet) resource
 
 func testAccCheckTFEPolicySetAttributes(policySet *tfe.PolicySet) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		if policySet.Name != "terraform-test" {
+		if policySet.Name != "tst-terraform" {
 			return fmt.Errorf("Bad name: %s", policySet.Name)
 		}
 
@@ -384,7 +384,7 @@ func testAccCheckTFEPolicySetPopulated(policySet *tfe.PolicySet) resource.TestCh
 		}
 
 		workspaceID := policySet.Workspaces[0].ID
-		workspace, _ := tfeClient.Workspaces.Read(ctx, "terraform-test", "workspace-foo")
+		workspace, _ := tfeClient.Workspaces.Read(ctx, "tst-terraform", "workspace-foo")
 		if workspace.ID != workspaceID {
 			return fmt.Errorf("Wrong member workspace: %v", workspace.Name)
 		}
@@ -423,7 +423,7 @@ func testAccCheckTFEPolicySetGlobal(policySet *tfe.PolicySet) resource.TestCheck
 		}
 
 		workspaceID := policySet.Workspaces[0].ID
-		workspace, _ := tfeClient.Workspaces.Read(ctx, "terraform-test", "workspace-foo")
+		workspace, _ := tfeClient.Workspaces.Read(ctx, "tst-terraform", "workspace-foo")
 		if workspace.ID != workspaceID {
 			return fmt.Errorf("Wrong member workspace: %v", workspace.Name)
 		}
@@ -455,7 +455,7 @@ func testAccCheckTFEPolicySetDestroy(s *terraform.State) error {
 
 const testAccTFEPolicySet_basic = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 
@@ -466,7 +466,7 @@ resource "tfe_sentinel_policy" "foo" {
 }
 
 resource "tfe_policy_set" "foobar" {
-  name         = "terraform-test"
+  name         = "tst-terraform"
   description  = "Policy Set"
   organization = "${tfe_organization.foobar.id}"
   policy_ids   = ["${tfe_sentinel_policy.foo.id}"]
@@ -474,18 +474,18 @@ resource "tfe_policy_set" "foobar" {
 
 const testAccTFEPolicySet_empty = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
  resource "tfe_policy_set" "foobar" {
-  name         = "terraform-test"
+  name         = "tst-terraform"
   description  = "Policy Set"
   organization = "${tfe_organization.foobar.id}"
 }`
 
 const testAccTFEPolicySet_populated = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 
@@ -509,7 +509,7 @@ resource "tfe_policy_set" "foobar" {
 
 const testAccTFEPolicySet_updatePopulated = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 
@@ -544,7 +544,7 @@ resource "tfe_policy_set" "foobar" {
 
 const testAccTFEPolicySet_global = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 
@@ -568,7 +568,7 @@ resource "tfe_policy_set" "foobar" {
 
 var testAccTFEPolicySet_vcs = fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 
@@ -581,7 +581,7 @@ resource "tfe_oauth_client" "test" {
 }
 
 resource "tfe_policy_set" "foobar" {
-  name         = "terraform-test"
+  name         = "tst-terraform"
   description  = "Policy Set"
   organization = "${tfe_organization.foobar.id}"
   vcs_repo {

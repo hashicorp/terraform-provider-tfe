@@ -142,7 +142,7 @@ func testAccCheckTFESSHKeyDestroy(s *terraform.State) error {
 
 const testAccTFESSHKey_basic = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 
@@ -154,7 +154,7 @@ resource "tfe_ssh_key" "foobar" {
 
 const testAccTFESSHKey_update = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 

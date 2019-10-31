@@ -24,7 +24,7 @@ func TestAccTFEOrganizationToken_basic(t *testing.T) {
 					testAccCheckTFEOrganizationTokenExists(
 						"tfe_organization_token.foobar", token),
 					resource.TestCheckResourceAttr(
-						"tfe_organization_token.foobar", "organization", "terraform-test"),
+						"tfe_organization_token.foobar", "organization", "tst-terraform"),
 				),
 			},
 		},
@@ -45,7 +45,7 @@ func TestAccTFEOrganizationToken_existsWithoutForce(t *testing.T) {
 					testAccCheckTFEOrganizationTokenExists(
 						"tfe_organization_token.foobar", token),
 					resource.TestCheckResourceAttr(
-						"tfe_organization_token.foobar", "organization", "terraform-test"),
+						"tfe_organization_token.foobar", "organization", "tst-terraform"),
 				),
 			},
 
@@ -71,7 +71,7 @@ func TestAccTFEOrganizationToken_existsWithForce(t *testing.T) {
 					testAccCheckTFEOrganizationTokenExists(
 						"tfe_organization_token.foobar", token),
 					resource.TestCheckResourceAttr(
-						"tfe_organization_token.foobar", "organization", "terraform-test"),
+						"tfe_organization_token.foobar", "organization", "tst-terraform"),
 				),
 			},
 
@@ -81,7 +81,7 @@ func TestAccTFEOrganizationToken_existsWithForce(t *testing.T) {
 					testAccCheckTFEOrganizationTokenExists(
 						"tfe_organization_token.regenerated", token),
 					resource.TestCheckResourceAttr(
-						"tfe_organization_token.regenerated", "organization", "terraform-test"),
+						"tfe_organization_token.regenerated", "organization", "tst-terraform"),
 				),
 			},
 		},
@@ -160,7 +160,7 @@ func testAccCheckTFEOrganizationTokenDestroy(s *terraform.State) error {
 
 const testAccTFEOrganizationToken_basic = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 
@@ -170,7 +170,7 @@ resource "tfe_organization_token" "foobar" {
 
 const testAccTFEOrganizationToken_existsWithoutForce = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 
@@ -184,7 +184,7 @@ resource "tfe_organization_token" "error" {
 
 const testAccTFEOrganizationToken_existsWithForce = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 

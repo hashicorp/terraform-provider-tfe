@@ -22,7 +22,7 @@ func TestAccTFESSHKeyDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_ssh_key.foobar", "name", fmt.Sprintf("ssh-key-test-%d", rInt)),
 					resource.TestCheckResourceAttr(
-						"data.tfe_ssh_key.foobar", "organization", fmt.Sprintf("terraform-test-%d", rInt)),
+						"data.tfe_ssh_key.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
 					resource.TestCheckResourceAttrSet("data.tfe_ssh_key.foobar", "id"),
 				),
 			},
@@ -33,7 +33,7 @@ func TestAccTFESSHKeyDataSource_basic(t *testing.T) {
 func testAccTFESSHKeyDataSourceConfig(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test-%d"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
