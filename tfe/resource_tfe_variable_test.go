@@ -101,7 +101,7 @@ func TestAccTFEVariable_import(t *testing.T) {
 			{
 				ResourceName:        "tfe_variable.foobar",
 				ImportState:         true,
-				ImportStateIdPrefix: "terraform-test/workspace-test/",
+				ImportStateIdPrefix: "tst-terraform/workspace-test/",
 				ImportStateVerify:   true,
 			},
 		},
@@ -210,7 +210,7 @@ func testAccCheckTFEVariableDestroy(s *terraform.State) error {
 
 const testAccTFEVariable_basic = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 
@@ -228,7 +228,7 @@ resource "tfe_variable" "foobar" {
 
 const testAccTFEVariable_update = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 

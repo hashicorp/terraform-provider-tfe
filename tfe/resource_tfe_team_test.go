@@ -44,7 +44,7 @@ func TestAccTFETeam_import(t *testing.T) {
 			{
 				ResourceName:        "tfe_team.foobar",
 				ImportState:         true,
-				ImportStateIdPrefix: "terraform-test/",
+				ImportStateIdPrefix: "tst-terraform/",
 				ImportStateVerify:   true,
 			},
 		},
@@ -113,7 +113,7 @@ func testAccCheckTFETeamDestroy(s *terraform.State) error {
 
 const testAccTFETeam_basic = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 

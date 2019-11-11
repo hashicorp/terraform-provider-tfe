@@ -95,7 +95,7 @@ func TestAccTFESentinelPolicy_import(t *testing.T) {
 			{
 				ResourceName:        "tfe_sentinel_policy.foobar",
 				ImportState:         true,
-				ImportStateIdPrefix: "terraform-test/",
+				ImportStateIdPrefix: "tst-terraform/",
 				ImportStateVerify:   true,
 			},
 		},
@@ -184,7 +184,7 @@ func testAccCheckTFESentinelPolicyDestroy(s *terraform.State) error {
 
 const testAccTFESentinelPolicy_basic = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 
@@ -198,7 +198,7 @@ resource "tfe_sentinel_policy" "foobar" {
 
 const testAccTFESentinelPolicy_update = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 

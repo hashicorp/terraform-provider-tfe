@@ -24,7 +24,7 @@ func TestAccTFEOrganization_basic(t *testing.T) {
 						"tfe_organization.foobar", org),
 					testAccCheckTFEOrganizationAttributes(org),
 					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "name", "terraform-test"),
+						"tfe_organization.foobar", "name", "tst-terraform"),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "email", "admin@company.com"),
 					resource.TestCheckResourceAttr(
@@ -50,7 +50,7 @@ func TestAccTFEOrganization_update(t *testing.T) {
 						"tfe_organization.foobar", org),
 					testAccCheckTFEOrganizationAttributes(org),
 					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "name", "terraform-test"),
+						"tfe_organization.foobar", "name", "tst-terraform"),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "email", "admin@company.com"),
 					resource.TestCheckResourceAttr(
@@ -133,7 +133,7 @@ func testAccCheckTFEOrganizationExists(
 func testAccCheckTFEOrganizationAttributes(
 	org *tfe.Organization) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		if org.Name != "terraform-test" {
+		if org.Name != "tst-terraform" {
 			return fmt.Errorf("Bad name: %s", org.Name)
 		}
 
@@ -203,7 +203,7 @@ func testAccCheckTFEOrganizationDestroy(s *terraform.State) error {
 
 const testAccTFEOrganization_basic = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }`
 

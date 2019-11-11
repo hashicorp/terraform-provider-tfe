@@ -22,12 +22,12 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar",
 						"id",
-						fmt.Sprintf("terraform-test-%d/workspace-test-%d", rInt, rInt),
+						fmt.Sprintf("tst-terraform-%d/workspace-test-%d", rInt, rInt),
 					),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "name", fmt.Sprintf("workspace-test-%d", rInt)),
 					resource.TestCheckResourceAttr(
-						"data.tfe_workspace.foobar", "organization", fmt.Sprintf("terraform-test-%d", rInt)),
+						"data.tfe_workspace.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "auto_apply", "true"),
 					resource.TestCheckResourceAttr(
@@ -55,7 +55,7 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 func testAccTFEWorkspaceDataSourceConfig(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test-%d"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 

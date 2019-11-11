@@ -152,7 +152,7 @@ func testAccCheckTFETeamTokenDestroy(s *terraform.State) error {
 
 const testAccTFETeamToken_basic = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 
@@ -167,7 +167,7 @@ resource "tfe_team_token" "foobar" {
 
 const testAccTFETeamToken_existsWithoutForce = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 
@@ -186,7 +186,7 @@ resource "tfe_team_token" "error" {
 
 const testAccTFETeamToken_existsWithForce = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 

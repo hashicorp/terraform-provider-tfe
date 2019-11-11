@@ -288,7 +288,7 @@ func testAccCheckTFENotificationConfigurationDestroy(s *terraform.State) error {
 
 const testAccTFENotificationConfiguration_basic = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 
@@ -306,7 +306,7 @@ resource "tfe_notification_configuration" "foobar" {
 
 const testAccTFENotificationConfiguration_update = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 
@@ -327,7 +327,7 @@ resource "tfe_notification_configuration" "foobar" {
 
 const testAccTFENotificationConfiguration_slackWithToken = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 
@@ -346,7 +346,7 @@ resource "tfe_notification_configuration" "foobar" {
 
 const testAccTFENotificationConfiguration_duplicateTriggers = `
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 

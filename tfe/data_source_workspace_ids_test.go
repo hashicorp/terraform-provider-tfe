@@ -26,18 +26,18 @@ func TestAccTFEWorkspaceIDsDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "names.1", fmt.Sprintf("workspace-bar-%d", rInt)),
 					resource.TestCheckResourceAttr(
-						"data.tfe_workspace_ids.foobar", "organization", fmt.Sprintf("terraform-test-%d", rInt)),
+						"data.tfe_workspace_ids.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "ids.%", "2"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar",
 						fmt.Sprintf("ids.workspace-foo-%d", rInt),
-						fmt.Sprintf("terraform-test-%d/workspace-foo-%d", rInt, rInt),
+						fmt.Sprintf("tst-terraform-%d/workspace-foo-%d", rInt, rInt),
 					),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar",
 						fmt.Sprintf("ids.workspace-bar-%d", rInt),
-						fmt.Sprintf("terraform-test-%d/workspace-bar-%d", rInt, rInt),
+						fmt.Sprintf("tst-terraform-%d/workspace-bar-%d", rInt, rInt),
 					),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "external_ids.%", "2"),
@@ -68,23 +68,23 @@ func TestAccTFEWorkspaceIDsDataSource_wildcard(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "names.0", "*"),
 					resource.TestCheckResourceAttr(
-						"data.tfe_workspace_ids.foobar", "organization", fmt.Sprintf("terraform-test-%d", rInt)),
+						"data.tfe_workspace_ids.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "ids.%", "3"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar",
 						fmt.Sprintf("ids.workspace-foo-%d", rInt),
-						fmt.Sprintf("terraform-test-%d/workspace-foo-%d", rInt, rInt),
+						fmt.Sprintf("tst-terraform-%d/workspace-foo-%d", rInt, rInt),
 					),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar",
 						fmt.Sprintf("ids.workspace-bar-%d", rInt),
-						fmt.Sprintf("terraform-test-%d/workspace-bar-%d", rInt, rInt),
+						fmt.Sprintf("tst-terraform-%d/workspace-bar-%d", rInt, rInt),
 					),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar",
 						fmt.Sprintf("ids.workspace-dummy-%d", rInt),
-						fmt.Sprintf("terraform-test-%d/workspace-dummy-%d", rInt, rInt),
+						fmt.Sprintf("tst-terraform-%d/workspace-dummy-%d", rInt, rInt),
 					),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "external_ids.%", "3"),
@@ -104,7 +104,7 @@ func TestAccTFEWorkspaceIDsDataSource_wildcard(t *testing.T) {
 func testAccTFEWorkspaceIDsDataSourceConfig_basic(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test-%d"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -132,7 +132,7 @@ data "tfe_workspace_ids" "foobar" {
 func testAccTFEWorkspaceIDsDataSourceConfig_wildcard(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test-%d"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 

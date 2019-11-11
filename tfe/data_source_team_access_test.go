@@ -33,7 +33,7 @@ func TestAccTFETeamAccessDataSource_basic(t *testing.T) {
 func testAccTFETeamAccessDataSourceConfig(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "terraform-test-%d"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
