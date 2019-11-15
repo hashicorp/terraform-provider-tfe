@@ -1,5 +1,4 @@
-Terraform Enterprise Provider
-=============================
+# Terraform Enterprise Provider
 
 - Website: https://www.terraform.io
 - [![Gitter chat](https://badges.gitter.im/hashicorp-terraform/Lobby.png)](https://gitter.im/hashicorp-terraform/Lobby)
@@ -7,14 +6,12 @@ Terraform Enterprise Provider
 
 <img src="https://cdn.rawgit.com/hashicorp/terraform-website/master/content/source/assets/images/logo-hashicorp.svg" width="600px">
 
-Requirements
-------------
+## Requirements
 
 -	[Terraform](https://www.terraform.io/downloads.html) 0.10.x
 -	[Go](https://golang.org/doc/install) 1.11 (to build the provider plugin)
 
-Building The Provider
----------------------
+## Building The Provider
 
 Clone repository to: `$GOPATH/src/github.com/terraform-providers/terraform-provider-tfe`
 
@@ -30,14 +27,13 @@ $ cd $GOPATH/src/github.com/terraform-providers/terraform-provider-tfe
 $ make build
 ```
 
-Using the provider
-----------------------
+## Using the provider
+
 If you're building the provider, follow the instructions to
 [install it as a plugin.](https://www.terraform.io/docs/plugins/basics.html#installing-a-plugin)
 After placing it into your plugins directory,  run `terraform init` to initialize it.
 
-Developing the Provider
----------------------------
+## Developing the Provider
 
 If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed
 on your machine (version 1.11+ is *required*). You'll also need to correctly setup a
@@ -53,33 +49,86 @@ $ $GOPATH/bin/terraform-provider-tfe
 ...
 ```
 
-Testing
--------
+## Testing
 
-In order to test the provider, you can simply run `make test`.
+### 1. (Optional) Create a policy sets repo
 
+If you are planning to run the full suite of tests or work on policy sets, you'll need to set up a policy set repository in GitHub.
+
+Your policy set repository will need the following: 
+1. A policy set stored in a subdirectory
+1. A branch other than master
+   
+### 2. Set up environment variables
+
+To run all tests, you will need to set the following environment variables:
+
+##### Required:
+A hostname and token must be provided in order to run the acceptance tests. By
+default, these are loaded from the the `credentials` in the [CLI config
+file](https://www.terraform.io/docs/commands/cli-config.html). You can override
+these values with the environment variables specified below: 
+
+1. `TFE_HOSTNAME` - URL of a Terraform Cloud or Terraform Enterprise instance to be used for testing, without the scheme. Example: `tfe.local`
+1. `TFE_TOKEN` - A [user API token](https://www.terraform.io/docs/cloud/users-teams-organizations/users.html#api-tokens) for an administrator account on the Terraform Cloud or Terraform Enterprise instance being used for testing.
+
+##### Optional:
+1. `TFE_USER1` and `TFE_USER2`: The usernames of two pre-existing users on the Terraform Cloud or Terraform Enterprise instance being used for testing. Required for running team membership tests.
+1. `GITHUB_TOKEN` - [GitHub personal access token](https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line). Used to establish a VCS provider connection.
+1. `GITHUB_POLICY_SET_IDENTIFIER` - GitHub policy set repository identifier in the format `username/repository`. Required for running policy set tests.
+1. `GITHUB_POLICY_SET_BRANCH`: A GitHub branch for the repository specified by `GITHUB_POLICY_SET_IDENTIFIER`. Required for running policy set tests.
+1. `GITHUB_POLICY_SET_PATH`: A GitHub subdirectory for the repository specified by `GITHUB_POLICY_SET_IDENTIFIER`. Required for running policy set tests.
+
+You can set your environment variables up however you prefer. The following are instructions for setting up environment variables using [envchain](https://github.com/sorah/envchain).
+   1. Make sure you have envchain installed. [Instructions for this can be found in the envchain README](https://github.com/sorah/envchain#installation).
+   1. Pick a namespace for storing your environment variables. I suggest `terraform-provider-tfe` or something similar.
+   1. For each environment variable you need to set, run the following command:
+      ```sh
+      envchain --set YOUR_NAMESPACE_HERE ENVIRONMENT_VARIABLE_HERE
+      ```
+      **OR**
+    
+      Set all of the environment variables at once with the following command:
+      ```sh
+      envchain --set YOUR_NAMESPACE_HERE TFE_HOSTNAME TFE_TOKEN TFE_USER1 TFE_USER2 GITHUB_TOKEN GITHUB_POLICY_SET_IDENTIFIER GITHUB_POLICY_SET_BRANCH GITHUB_POLICY_SET_PATH
+      ```
+
+### 3. Run the tests
+
+#### Running the provider tests
+
+##### With envchain:
+```sh
+$ envchain YOUR_NAMESPACE_HERE make test
+```
+
+##### Without envchain:
 ```sh
 $ make test
 ```
 
-In order to run the full suite of Acceptance tests, run `make testacc`.
+#### Running all the acceptance tests
 
+##### With envchain:
+```sh
+$ envchain YOUR_NAMESPACE_HERE make testacc
+```
+
+##### Without envchain:
 ```sh
 $ make testacc
 ```
 
-A hostname and token must be provided in order to run the acceptance tests. By
-default, these are loaded from the the `credentials` in the [CLI config
-file](https://www.terraform.io/docs/commands/cli-config.html). You can override
-these values with the environment variables specified below: `TFE_HOSTNAME` and
-`TFE_TOKEN`.
+#### Running specific acceptance tests 
 
-To run all tests, you will need to set the following environment variables:
+The commands below use notification configurations as an example.
 
-- `GITHUB_TOKEN`: a GitHub personal access token, used to establish a VCS provider connection
-- `TFE_HOSTNAME`: the hostname of your test TFE instance; for example, `tfe-test.local`
-- `TFE_POLICY_SET_VCS_BRANCH`: a VCS branch, used to test policy sets
-- `TFE_POLICY_SET_VCS_PATH`: a VCS path, used to test policy sets
-- `TFE_TOKEN`: a user token for an administrator account on your TFE instance
-- `TFE_USER1` and `TFE_USER2`: the usernames of two pre-existing TFE users, for testing team membership
-- `TFE_VCS_IDENTIFIER`: a VCS identifier, used to test policy sets
+##### With envchain:
+```sh
+$ TESTARGS="-run TestAccTFENotificationConfiguration" envchain YOUR_NAMESPACE_HERE make testacc
+```
+
+##### Without envchain:
+```sh
+$ TESTARGS="-run TestAccTFENotificationConfiguration" make testacc
+```   

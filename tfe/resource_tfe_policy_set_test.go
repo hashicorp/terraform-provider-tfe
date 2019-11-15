@@ -254,14 +254,14 @@ func TestAccTFEPolicySet_vcs(t *testing.T) {
 			if GITHUB_TOKEN == "" {
 				t.Skip("Please set GITHUB_TOKEN to run this test")
 			}
-			if TFE_VCS_IDENTIFIER == "" {
-				t.Skip("Please set TFE_VCS_IDENTIFIER to run this test")
+			if GITHUB_POLICY_SET_IDENTIFIER == "" {
+				t.Skip("Please set GITHUB_POLICY_SET_IDENTIFIER to run this test")
 			}
-			if TFE_POLICY_SET_VCS_BRANCH == "" {
-				t.Skip("Please set TFE_POLICY_SET_VCS_BRANCH to run this test")
+			if GITHUB_POLICY_SET_BRANCH == "" {
+				t.Skip("Please set GITHUB_POLICY_SET_BRANCH to run this test")
 			}
-			if TFE_POLICY_SET_VCS_PATH == "" {
-				t.Skip("Please set TFE_POLICY_SET_VCS_PATH to run this test")
+			if GITHUB_POLICY_SET_PATH == "" {
+				t.Skip("Please set GITHUB_POLICY_SET_PATH to run this test")
 			}
 		},
 		Providers:    testAccProviders,
@@ -279,13 +279,13 @@ func TestAccTFEPolicySet_vcs(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "global", "false"),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "vcs_repo.0.identifier", TFE_VCS_IDENTIFIER),
+						"tfe_policy_set.foobar", "vcs_repo.0.identifier", GITHUB_POLICY_SET_IDENTIFIER),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "vcs_repo.0.branch", TFE_POLICY_SET_VCS_BRANCH),
+						"tfe_policy_set.foobar", "vcs_repo.0.branch", GITHUB_POLICY_SET_BRANCH),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.ingress_submodules", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "policies_path", TFE_POLICY_SET_VCS_PATH),
+						"tfe_policy_set.foobar", "policies_path", GITHUB_POLICY_SET_PATH),
 				),
 			},
 		},
@@ -595,7 +595,7 @@ resource "tfe_policy_set" "foobar" {
 }
 `,
 	GITHUB_TOKEN,
-	TFE_VCS_IDENTIFIER,
-	TFE_POLICY_SET_VCS_BRANCH,
-	TFE_POLICY_SET_VCS_PATH,
+	GITHUB_POLICY_SET_IDENTIFIER,
+	GITHUB_POLICY_SET_BRANCH,
+	GITHUB_POLICY_SET_PATH,
 )
