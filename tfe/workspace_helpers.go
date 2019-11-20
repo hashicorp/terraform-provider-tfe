@@ -28,6 +28,26 @@ func fetchWorkspaceExternalID(id string, r workspaceReader) (string, error) {
 	return workspace.ID, nil
 }
 
+type workspaceIDReader interface {
+	ReadByID(context.Context, string) (*tfe.Workspace, error)
+}
+
+// fetchWorkspaceHumanID returns the human readable id "org/workspace"
+// when given a workspace external id
+func fetchWorkspaceHumanID(id string, r workspaceIDReader) (string, error) {
+	workspace, err := r.ReadByID(ctx, id)
+	if err != nil {
+		return "", fmt.Errorf("Error reading configuration of workspace %s: %v", id, err)
+	}
+
+	humanID, err := packWorkspaceID(workspace)
+	if err != nil {
+		return "", fmt.Errorf("Error creating human ID for workspace %s: %v", id, err)
+	}
+
+	return humanID, nil
+}
+
 func packWorkspaceID(w *tfe.Workspace) (id string, err error) {
 	if w.Organization == nil {
 		return "", fmt.Errorf("no organization in workspace response")

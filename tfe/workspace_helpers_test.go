@@ -59,6 +59,56 @@ func TestFetchWorkspaceExternalID(t *testing.T) {
 	}
 }
 
+type mockWorkspaceIDReader struct{}
+
+func (*mockWorkspaceIDReader) ReadByID(ctx context.Context, id string) (*tfe.Workspace, error) {
+	if id == "ws-123" {
+		return &tfe.Workspace{
+			Name: "a-workspace",
+			Organization: &tfe.Organization{
+				Name: "hashicorp",
+			},
+		}, nil
+	}
+
+	return nil, tfe.ErrResourceNotFound
+}
+
+func TestFetchWorkspaceHumanID(t *testing.T) {
+	tests := map[string]struct {
+		def  string
+		want string
+		err  bool
+	}{
+		"non exisiting workspace": {
+			"ws-notathing",
+			"",
+			true,
+		},
+		"found workspace": {
+			"ws-123",
+			"hashicorp/a-workspace",
+			false,
+		},
+	}
+
+	reader := &mockWorkspaceIDReader{}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, err := fetchWorkspaceHumanID(test.def, reader)
+
+			if (err != nil) != test.err {
+				t.Fatalf("expected error is %t, got %v", test.err, err)
+			}
+
+			if got != test.want {
+				t.Fatalf("wrong result\ngot: %#v\nwant: %#v", got, test.want)
+			}
+		})
+	}
+}
+
 func TestPackWorkspaceID(t *testing.T) {
 	cases := []struct {
 		w   *tfe.Workspace
