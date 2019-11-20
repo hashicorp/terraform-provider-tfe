@@ -20,6 +20,15 @@ func resourceTFEVariable() *schema.Resource {
 			State: resourceTFEVariableImporter,
 		},
 
+		SchemaVersion: 1,
+		StateUpgraders: []schema.StateUpgrader{
+			{
+				Type:    resourceTfeVariableResourceV0().CoreConfigSchema().ImpliedType(),
+				Upgrade: resourceTfeVariableStateUpgradeV0,
+				Version: 0,
+			},
+		},
+
 		Schema: map[string]*schema.Schema{
 			"key": {
 				Type:     schema.TypeString,
@@ -74,17 +83,12 @@ func resourceTFEVariableCreate(d *schema.ResourceData, meta interface{}) error {
 	key := d.Get("key").(string)
 	category := d.Get("category").(string)
 
-	// Get organization and workspace.
-	organization, workspace, err := unpackWorkspaceID(d.Get("workspace_id").(string))
-	if err != nil {
-		return fmt.Errorf("Error unpacking workspace ID: %v", err)
-	}
-
-	// Get the workspace.
-	ws, err := tfeClient.Workspaces.Read(ctx, organization, workspace)
+	// Get the workspace
+	workspaceID := d.Get("workspace_id").(string)
+	ws, err := tfeClient.Workspaces.ReadByID(ctx, workspaceID)
 	if err != nil {
 		return fmt.Errorf(
-			"Error retrieving workspace %s from organization %s: %v", workspace, organization, err)
+			"Error retrieving workspace %s: %v", workspaceID, err)
 	}
 
 	// Create a new options struct.
@@ -171,6 +175,7 @@ func resourceTFEVariableDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
+//TODO: Gotta fix this too
 func resourceTFEVariableImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	s := strings.SplitN(d.Id(), "/", 3)
 	if len(s) != 3 {
