@@ -18,6 +18,15 @@ func resourceTFEWorkspace() *schema.Resource {
 			State: schema.ImportStatePassthrough,
 		},
 
+		SchemaVersion: 1,
+		StateUpgraders: []schema.StateUpgrader{
+			{
+				Type:    resourceTfeWorkspaceResourceV0().CoreConfigSchema().ImpliedType(),
+				Upgrade: resourceTfeWorkspaceStateUpgradeV0,
+				Version: 0,
+			},
+		},
+
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
@@ -171,12 +180,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 			"Error creating workspace %s for organization %s: %v", name, organization, err)
 	}
 
-	id, err := packWorkspaceID(workspace)
-	if err != nil {
-		return fmt.Errorf("Error creating ID for workspace %s: %v", name, err)
-	}
-
-	d.SetId(id)
+	d.SetId(workspace.ID)
 
 	if sshKeyID, ok := d.GetOk("ssh_key_id"); ok {
 		_, err = tfeClient.Workspaces.AssignSSHKey(ctx, workspace.ID, tfe.WorkspaceAssignSSHKeyOptions{
@@ -193,56 +197,11 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	// Get the organization and workspace name.
-	organization, name, err := unpackWorkspaceID(d.Id())
-	if err != nil {
-		return fmt.Errorf("Error unpacking workspace ID: %v", err)
-	}
-
-	log.Printf("[DEBUG] Read configuration of workspace: %s", name)
-	workspace, err := tfeClient.Workspaces.Read(ctx, organization, name)
+	id := d.Id()
+	log.Printf("[DEBUG] Read configuration of workspace: %s", id)
+	workspace, err := tfeClient.Workspaces.ReadByID(ctx, id)
 	if err != nil && err != tfe.ErrResourceNotFound {
-		return fmt.Errorf("Error reading configuration of workspace %s: %v", name, err)
-	}
-
-	// If we cannot find the workspace, it either doesn't exist anymore or is
-	// renamed. To make sure the workspace is really gone before we delete it
-	// from our state, we will list all workspaces and try to find it using
-	// the external ID.
-	if err == tfe.ErrResourceNotFound {
-		// Set the workspace to nil so we can check if we found one later.
-		workspace = nil
-
-		options := tfe.WorkspaceListOptions{}
-		externalID := d.Get("external_id").(string)
-		for {
-			wl, err := tfeClient.Workspaces.List(ctx, organization, options)
-			if err != nil {
-				return fmt.Errorf("Error retrieving workspaces: %v", err)
-			}
-
-			for _, w := range wl.Items {
-				if externalID == w.ID {
-					workspace = w
-					break
-				}
-			}
-
-			// Exit the loop if we found the workspace or have seen all pages.
-			if workspace != nil || wl.CurrentPage >= wl.TotalPages {
-				break
-			}
-
-			// Update the page number to get the next page.
-			options.PageNumber = wl.NextPage
-		}
-
-		// Return if we didn't find a matching workspace.
-		if workspace == nil {
-			log.Printf("[DEBUG] Workspace %s does no longer exist", name)
-			d.SetId("")
-			return nil
-		}
+		return fmt.Errorf("Error reading configuration of workspace %s: %v", id, err)
 	}
 
 	// Update the config.
@@ -255,10 +214,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
 	d.Set("working_directory", workspace.WorkingDirectory)
 	d.Set("external_id", workspace.ID)
-
-	if workspace.Organization != nil {
-		d.Set("organization", workspace.Organization.Name)
-	}
+	d.Set("organization", workspace.Organization.Name)
 
 	var sshKeyID string
 	if workspace.SSHKey != nil {
@@ -289,25 +245,12 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 
 	d.Set("vcs_repo", vcsRepo)
 
-	// We do this here as a means to convert the internal ID,
-	// in case anyone still uses the old format.
-	id, err := packWorkspaceID(workspace)
-	if err != nil {
-		return err
-	}
-	d.SetId(id)
-
 	return nil
 }
 
 func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
-
-	// Get the organization and workspace name.
-	organization, name, err := unpackWorkspaceID(d.Id())
-	if err != nil {
-		return fmt.Errorf("Error unpacking workspace ID: %v", err)
-	}
+	id := d.Id()
 
 	if d.HasChange("name") || d.HasChange("auto_apply") || d.HasChange("queue_all_runs") ||
 		d.HasChange("terraform_version") || d.HasChange("working_directory") || d.HasChange("vcs_repo") ||
@@ -349,19 +292,12 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			}
 		}
 
-		log.Printf("[DEBUG] Update workspace %s for organization: %s", name, organization)
-		workspace, err := tfeClient.Workspaces.Update(ctx, organization, name, options)
+		log.Printf("[DEBUG] Update workspace %s", id)
+		_, err := tfeClient.Workspaces.UpdateByID(ctx, id, options)
 		if err != nil {
 			return fmt.Errorf(
-				"Error updating workspace %s for organization %s: %v", name, organization, err)
+				"Error updating workspace %s: %v", id, err)
 		}
-
-		id, err := packWorkspaceID(workspace)
-		if err != nil {
-			return fmt.Errorf("Error creating ID for workspace %s: %v", name, err)
-		}
-
-		d.SetId(id)
 	}
 
 	if d.HasChange("ssh_key_id") {
@@ -377,12 +313,12 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 				},
 			)
 			if err != nil {
-				return fmt.Errorf("Error assigning SSH key to workspace %s: %v", name, err)
+				return fmt.Errorf("Error assigning SSH key to workspace %s: %v", id, err)
 			}
 		} else {
 			_, err := tfeClient.Workspaces.UnassignSSHKey(ctx, externalID.(string))
 			if err != nil {
-				return fmt.Errorf("Error unassigning SSH key from workspace %s: %v", name, err)
+				return fmt.Errorf("Error unassigning SSH key from workspace %s: %v", id, err)
 			}
 		}
 	}
@@ -392,21 +328,16 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 
 func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
+	id := d.Id()
 
-	// Get the organization and workspace name.
-	organization, name, err := unpackWorkspaceID(d.Id())
-	if err != nil {
-		return fmt.Errorf("Error unpacking workspace ID: %v", err)
-	}
-
-	log.Printf("[DEBUG] Delete workspace %s from organization: %s", name, organization)
-	err = tfeClient.Workspaces.Delete(ctx, organization, name)
+	log.Printf("[DEBUG] Delete workspace %s", id)
+	err := tfeClient.Workspaces.DeleteByID(ctx, id)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil
 		}
 		return fmt.Errorf(
-			"Error deleting workspace %s from organization %s: %v", name, organization, err)
+			"Error deleting workspace %s: %v", id, err)
 	}
 
 	return nil
