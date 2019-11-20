@@ -3,7 +3,6 @@ package tfe
 import (
 	"fmt"
 	"log"
-	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -411,26 +410,4 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	return nil
-}
-
-func packWorkspaceID(w *tfe.Workspace) (id string, err error) {
-	if w.Organization == nil {
-		return "", fmt.Errorf("no organization in workspace response")
-	}
-	return w.Organization.Name + "/" + w.Name, nil
-}
-
-func unpackWorkspaceID(id string) (organization, name string, err error) {
-	// Support the old ID format for backwards compatibitily.
-	if s := strings.SplitN(id, "|", 2); len(s) == 2 {
-		return s[1], s[0], nil
-	}
-
-	s := strings.SplitN(id, "/", 2)
-	if len(s) != 2 {
-		return "", "", fmt.Errorf(
-			"invalid workspace ID format: %s (expected <ORGANIZATION>/<WORKSPACE>)", id)
-	}
-
-	return s[0], s[1], nil
 }
