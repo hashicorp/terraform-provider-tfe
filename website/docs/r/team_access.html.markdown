@@ -40,7 +40,7 @@ The following arguments are supported:
   `read`, `plan`, or `write`.
 * `team_id` - (Required) ID of the team to add to the workspace.
 * `workspace_id` - (Required) The workspace to which the team will be added,
-  specified as the workspace's external id (`ws-123`).
+  specified as the workspace's external id (`ws-<RANDOM STRING>`).
 
 ## Attributes Reference
 
