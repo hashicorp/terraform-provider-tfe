@@ -3,6 +3,7 @@ package tfe
 import (
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -11,6 +12,8 @@ import (
 )
 
 func resourceTFEVariable() *schema.Resource {
+	workspaceIdRegexp, _ := regexp.Compile("^[^/]*$")
+
 	return &schema.Resource{
 		Create: resourceTFEVariableCreate,
 		Read:   resourceTFEVariableRead,
@@ -71,6 +74,10 @@ func resourceTFEVariable() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
+				ValidateFunc: validation.StringMatch(
+					workspaceIdRegexp,
+					"must be the workspace's external_id",
+				),
 			},
 		},
 	}
@@ -175,7 +182,6 @@ func resourceTFEVariableDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-//TODO: Gotta fix this too
 func resourceTFEVariableImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	tfeClient := meta.(*tfe.Client)
 
