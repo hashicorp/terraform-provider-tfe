@@ -177,6 +177,8 @@ func resourceTFEVariableDelete(d *schema.ResourceData, meta interface{}) error {
 
 //TODO: Gotta fix this too
 func resourceTFEVariableImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	tfeClient := meta.(*tfe.Client)
+
 	s := strings.SplitN(d.Id(), "/", 3)
 	if len(s) != 3 {
 		return nil, fmt.Errorf(
@@ -186,7 +188,12 @@ func resourceTFEVariableImporter(d *schema.ResourceData, meta interface{}) ([]*s
 	}
 
 	// Set the fields that are part of the import ID.
-	d.Set("workspace_id", s[0]+"/"+s[1])
+	workspace_id, err := fetchWorkspaceExternalID(s[0]+"/"+s[1], tfeClient.Workspaces)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"error retrieving workspace %s from organization %s: %v", s[0], s[1], err)
+	}
+	d.Set("workspace_id", workspace_id)
 	d.SetId(s[2])
 
 	return []*schema.ResourceData{d}, nil
