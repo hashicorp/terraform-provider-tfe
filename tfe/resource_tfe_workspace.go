@@ -3,10 +3,13 @@ package tfe
 import (
 	"fmt"
 	"log"
+	"regexp"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform/helper/schema"
 )
+
+var /* const */ workspaceIdRegexp = regexp.MustCompile("^ws-[a-zA-Z0-9]{16}$")
 
 func resourceTFEWorkspace() *schema.Resource {
 	return &schema.Resource{
