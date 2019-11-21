@@ -12,7 +12,7 @@ import (
 )
 
 func resourceTFETeamAccess() *schema.Resource {
-	workspaceIdRegexp, _ := regexp.Compile("^[^/]*$")
+	workspaceIdRegexp, _ := regexp.Compile("^ws-[a-zA-Z0-9]{16}$")
 
 	return &schema.Resource{
 		Create: resourceTFETeamAccessCreate,
