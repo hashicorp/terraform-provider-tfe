@@ -7,18 +7,6 @@ import (
 	tfe "github.com/hashicorp/go-tfe"
 )
 
-type mockWorkspaceReader struct{}
-
-func (*mockWorkspaceReader) Read(ctx context.Context, organization string, workspace string) (*tfe.Workspace, error) {
-	if organization == "hashicorp" && workspace == "a-workspace" {
-		return &tfe.Workspace{
-			ID: "ws-123",
-		}, nil
-	}
-
-	return nil, tfe.ErrResourceNotFound
-}
-
 func TestFetchWorkspaceExternalID(t *testing.T) {
 	tests := map[string]struct {
 		def  string
@@ -42,11 +30,16 @@ func TestFetchWorkspaceExternalID(t *testing.T) {
 		},
 	}
 
-	reader := &mockWorkspaceReader{}
+	client := testTfeClient(t)
+	name := "a-workspace"
+	client.Workspaces.Create(nil, "hashicorp", tfe.WorkspaceCreateOptions{
+		ID:   "ws-123",
+		Name: &name,
+	})
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := fetchWorkspaceExternalID(test.def, reader)
+			got, err := fetchWorkspaceExternalID(test.def, client)
 
 			if (err != nil) != test.err {
 				t.Fatalf("expected error is %t, got %v", test.err, err)

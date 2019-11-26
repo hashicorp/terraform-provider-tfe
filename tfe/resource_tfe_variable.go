@@ -191,7 +191,7 @@ func resourceTFEVariableImporter(d *schema.ResourceData, meta interface{}) ([]*s
 	}
 
 	// Set the fields that are part of the import ID.
-	workspace_id, err := fetchWorkspaceExternalID(s[0]+"/"+s[1], tfeClient.Workspaces)
+	workspace_id, err := fetchWorkspaceExternalID(s[0]+"/"+s[1], tfeClient)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"error retrieving workspace %s from organization %s: %v", s[0], s[1], err)

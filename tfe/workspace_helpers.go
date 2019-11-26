@@ -8,19 +8,15 @@ import (
 	tfe "github.com/hashicorp/go-tfe"
 )
 
-type workspaceReader interface {
-	Read(context.Context, string, string) (*tfe.Workspace, error)
-}
-
 // fetchWorkspaceExternalID returns the external id for a workspace
 // when given a workspace id of the form ORGANIZATION_AME/WORKSPACE_NAME
-func fetchWorkspaceExternalID(id string, r workspaceReader) (string, error) {
+func fetchWorkspaceExternalID(id string, client *tfe.Client) (string, error) {
 	orgName, wsName, err := unpackWorkspaceID(id)
 	if err != nil {
 		return "", fmt.Errorf("Error unpacking workspace ID: %v", err)
 	}
 
-	workspace, err := r.Read(ctx, orgName, wsName)
+	workspace, err := client.Workspaces.Read(ctx, orgName, wsName)
 	if err != nil {
 		return "", fmt.Errorf("Error reading configuration of workspace %s: %v", id, err)
 	}

@@ -1,8 +1,15 @@
 package tfe
 
+import (
+	"reflect"
+	"testing"
+
+	tfe "github.com/hashicorp/go-tfe"
+)
+
 func testResourceTfeTeamAccessStateDataV0() map[string]interface{} {
 	return map[string]interface{}{
-		"workspace_id": "hashicorp/workspace",
+		"workspace_id": "hashicorp/a-workspace",
 	}
 }
 
@@ -12,16 +19,21 @@ func testResourceTfeTeamAccessStateDataV1() map[string]interface{} {
 	}
 }
 
-//TODO: how would I test this since I have to pass a tfe.Client as the meta? I don't want to mock out the entire client.
+func TestResourceTfeTeamAccessStateUpgradeV0(t *testing.T) {
+	client := testTfeClient(t)
+	name := "a-workspace"
+	client.Workspaces.Create(nil, "hashicorp", tfe.WorkspaceCreateOptions{
+		ID:   "ws-123",
+		Name: &name,
+	})
 
-// func TestResourceTfeTeamAccessStateUpgradeV0(t *testing.T) {
-// 	expected := testResourceTfeTeamAccessStateDataV1()
-// 	actual, err := resourceTfeTeamAccessStateUpgradeV0(testResourceTfeTeamAccessStateDataV0(), nil)
-// 	if err != nil {
-// 		t.Fatalf("error migrating state: %s", err)
-// 	}
-//
-// 	if !reflect.DeepEqual(expected, actual) {
-// 		t.Fatalf("\n\nexpected:\n\n%#v\n\ngot:\n\n%#v\n\n", expected, actual)
-// 	}
-// }
+	expected := testResourceTfeTeamAccessStateDataV1()
+	actual, err := resourceTfeTeamAccessStateUpgradeV0(testResourceTfeTeamAccessStateDataV0(), client)
+	if err != nil {
+		t.Fatalf("error migrating state: %s", err)
+	}
+
+	if !reflect.DeepEqual(expected, actual) {
+		t.Fatalf("\n\nexpected:\n\n%#v\n\ngot:\n\n%#v\n\n", expected, actual)
+	}
+}
