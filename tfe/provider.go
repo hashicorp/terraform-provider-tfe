@@ -24,7 +24,7 @@ import (
 
 const defaultHostname = "app.terraform.io"
 
-var tfeServiceIDs = []string{"tfe.v2.1", "tfe.v2"}
+var tfeServiceIDs = []string{"tfe.v2.2"}
 
 // Config is the structure of the configuration for the Terraform CLI.
 type Config struct {
