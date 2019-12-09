@@ -169,6 +169,7 @@ github.com/hashicorp/go-rootcerts v1.0.0 h1:Rqb66Oo1X/eSV1x66xbDccZjhJigjg0+e82k
 github.com/hashicorp/go-rootcerts v1.0.0/go.mod h1:K6zTfqpRlCUIjkwsN4Z+hiSfzSTQa6eBIzfwKfwNnHU=
 github.com/hashicorp/go-safetemp v1.0.0 h1:2HR189eFNrjHQyENnQMMpCiBAsRxzbTMIgBhEyExpmo=
 github.com/hashicorp/go-safetemp v1.0.0/go.mod h1:oaerMy3BhqiTbVye6QuFhFtIceqFoDHxNAB65b+Rj1I=
+github.com/hashicorp/go-service v0.0.0-20190301095854-3ec4b98dc730/go.mod h1:/EYLpLHGVoYkKzVx7vl1hJtt08ux/s3Ia3YmvmjKnGQ=
 github.com/hashicorp/go-slug v0.3.0 h1:L0c+AvH/J64iMNF4VqRaRku2DMTEuHioPVS7kMjWIU8=
 github.com/hashicorp/go-slug v0.3.0/go.mod h1:I5tq5Lv0E2xcNXNkmx7BSfzi1PsJ2cNjs3cC3LwyhK8=
 github.com/hashicorp/go-slug v0.4.1 h1:/jAo8dNuLgSImoLXaX7Od7QB4TfYCVPam+OpAt5bZqc=
@@ -180,6 +181,8 @@ github.com/hashicorp/go-tfe v0.3.24 h1:pqUiGQf3pZnDa7ZRtRtdHWMxt8Uhu1oWJA3m3JuJf
 github.com/hashicorp/go-tfe v0.3.24/go.mod h1:SuPHR+OcxvzBZNye7nGPfwZTEyd3rWPfLVbCgyZPezM=
 github.com/hashicorp/go-tfe v0.3.27 h1:7XZ/ZoPyYoeuNXaWWW0mJOq016y0qb7I4Q0P/cagyu8=
 github.com/hashicorp/go-tfe v0.3.27/go.mod h1:DVPSW2ogH+M9W1/i50ASgMht8cHP7NxxK0nrY9aFikQ=
+github.com/hashicorp/go-tfe v0.3.28 h1:We0B953itT1fcvPuGGKJVcL/Vq/PZ/MWDU/hFRmDhl0=
+github.com/hashicorp/go-tfe v0.3.28/go.mod h1:+bbL5jtTCyNbqhZhcKls8jmfqSdYx/l9J/1e84JuO/A=
 github.com/hashicorp/go-uuid v1.0.0 h1:RS8zrF7PhGwyNPOtxSClXXj9HA8feRnJzgnI1RJCSnM=
 github.com/hashicorp/go-uuid v1.0.0/go.mod h1:6SBZvOh/SIDV7/2o3Jml5SYk/TvGqwFJ/bN7x4byOro=
 github.com/hashicorp/go-uuid v1.0.1 h1:fv1ep09latC32wFoVwnqcnKJGnMSdBanPczbHAYm1BE=

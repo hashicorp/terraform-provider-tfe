@@ -41,6 +41,12 @@ func resourceTFEOAuthClient() *schema.Resource {
 				ForceNew:  true,
 			},
 
+			"private_key": {
+				Type:     schema.TypeString,
+				ForceNew: true,
+				Optional: true,
+			},
+
 			"service_provider": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -81,6 +87,7 @@ func resourceTFEOAuthClientCreate(d *schema.ResourceData, meta interface{}) erro
 		HTTPURL:         tfe.String(d.Get("http_url").(string)),
 		OAuthToken:      tfe.String(d.Get("oauth_token").(string)),
 		ServiceProvider: tfe.ServiceProvider(serviceProvider),
+		PrivateKey:      tfe.String(d.Get("private_key").(string)),
 	}
 
 	log.Printf("[DEBUG] Create an OAuth client for organization: %s", organization)
