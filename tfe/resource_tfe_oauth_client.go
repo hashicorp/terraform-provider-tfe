@@ -83,7 +83,7 @@ func resourceTFEOAuthClientCreate(d *schema.ResourceData, meta interface{}) erro
 	serviceProvider := tfe.ServiceProviderType(d.Get("service_provider").(string))
 
 	if serviceProvider == tfe.ServiceProviderAzureDevOpsServer && privateKey == "" {
-		return fmt.Errorf("PrivateKey is required for ServiceProvider %s", serviceProvider)
+		return fmt.Errorf("private_key is required for service_provider %s", serviceProvider)
 	}
 
 	// Create a new options struct.
