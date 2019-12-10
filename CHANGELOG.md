@@ -1,4 +1,4 @@
-## 0.11.3 (Unreleased)
+## 0.11.3 (December 10, 2019)
 ENHANCEMENTS:
 
 * r/tfe_oauth_client: Adding support for Azure DevOps Server and Azure DevOps Services ([[#99](https://github.com/terraform-providers/terraform-provider-tfe/pull/99)])
