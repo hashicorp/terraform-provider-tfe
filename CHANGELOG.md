@@ -1,4 +1,9 @@
 ## 0.11.2 (Unreleased)
+
+ENHANCEMENTS:
+
+* provider: Retry requests which result in server errors ([[#109](https://github.com/terraform-providers/terraform-provider-tfe/pull/109)])
+
 ## 0.11.1 (September 27, 2019)
 
 ENHANCEMENTS:
