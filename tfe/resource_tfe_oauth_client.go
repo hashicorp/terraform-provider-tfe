@@ -43,7 +43,7 @@ func resourceTFEOAuthClient() *schema.Resource {
 
 			"private_key": {
 				Type:     schema.TypeString,
-				ForceNew: true,
+				ForceNew: false,
 				Optional: true,
 			},
 
@@ -79,8 +79,8 @@ func resourceTFEOAuthClientCreate(d *schema.ResourceData, meta interface{}) erro
 
 	// Get the organization and provider.
 	organization := d.Get("organization").(string)
-	serviceProvider := tfe.ServiceProviderType(d.Get("service_provider").(string))
 	privateKey := d.Get("private_key").(string)
+	serviceProvider := tfe.ServiceProviderType(d.Get("service_provider").(string))
 
 	if serviceProvider == tfe.ServiceProviderAzureDevOpsServer && privateKey == "" {
 		return fmt.Errorf("PrivateKey is required for ServiceProvider %s", serviceProvider)
@@ -91,8 +91,8 @@ func resourceTFEOAuthClientCreate(d *schema.ResourceData, meta interface{}) erro
 		APIURL:          tfe.String(d.Get("api_url").(string)),
 		HTTPURL:         tfe.String(d.Get("http_url").(string)),
 		OAuthToken:      tfe.String(d.Get("oauth_token").(string)),
-		ServiceProvider: tfe.ServiceProvider(serviceProvider),
 		PrivateKey:      tfe.String(privateKey),
+		ServiceProvider: tfe.ServiceProvider(serviceProvider),
 	}
 
 	log.Printf("[DEBUG] Create an OAuth client for organization: %s", organization)
