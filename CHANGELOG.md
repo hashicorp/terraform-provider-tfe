@@ -1,4 +1,9 @@
 ## 0.11.4 (Unreleased)
+
+BUG FIXES:
+
+r/tfe_oauth_client: Issue with using private_key and validation check ([[#113]](https://github.com/terraform-providers/terraform-provider-tfe/pull/113))
+
 ## 0.11.3 (December 10, 2019)
 ENHANCEMENTS:
 
