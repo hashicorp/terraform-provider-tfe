@@ -73,6 +73,7 @@ func Provider() terraform.ResourceProvider {
 			"tfe_notification_configuration": resourceTFENotificationConfiguration(),
 			"tfe_oauth_client":               resourceTFEOAuthClient(),
 			"tfe_organization":               resourceTFEOrganization(),
+			"tfe_organization_membership":    resourceTFEOrganizationMembership(),
 			"tfe_organization_token":         resourceTFEOrganizationToken(),
 			"tfe_policy_set":                 resourceTFEPolicySet(),
 			"tfe_sentinel_policy":            resourceTFESentinelPolicy(),
