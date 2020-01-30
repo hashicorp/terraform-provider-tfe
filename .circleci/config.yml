@@ -6,7 +6,7 @@ version: 2
 test_results_dir: &test_results_dir /tmp/test_results
 
 jobs:
-  build:
+  run-tests:
     docker:
       - image: circleci/golang:1.11.13
         environment:
@@ -38,3 +38,10 @@ jobs:
 
       - store_test_results:
           path: *test_results_dir
+
+workflows:
+  version: 2
+  my-workflow:
+    jobs:
+      - run-tests:
+          context: terraform-provider-tfe build access
