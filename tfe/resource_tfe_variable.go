@@ -46,6 +46,12 @@ func resourceTFEVariable() *schema.Resource {
 				),
 			},
 
+			"description": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "",
+			},
+
 			"hcl": {
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -94,6 +100,7 @@ func resourceTFEVariableCreate(d *schema.ResourceData, meta interface{}) error {
 		Category:  tfe.Category(tfe.CategoryType(category)),
 		HCL:       tfe.Bool(d.Get("hcl").(bool)),
 		Sensitive: tfe.Bool(d.Get("sensitive").(bool)),
+		Description: tfe.String(d.Get("description").(string)),
 	}
 
 	log.Printf("[DEBUG] Create %s variable: %s", category, key)
@@ -137,6 +144,7 @@ func resourceTFEVariableRead(d *schema.ResourceData, meta interface{}) error {
 	// Update config.
 	d.Set("key", variable.Key)
 	d.Set("category", string(variable.Category))
+	d.Set("description", string(variable.Description))
 	d.Set("hcl", variable.HCL)
 	d.Set("sensitive", variable.Sensitive)
 
