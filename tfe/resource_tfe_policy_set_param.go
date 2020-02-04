@@ -7,7 +7,6 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
 )
 
 func resourceTFEPolicySetParameter() *schema.Resource {
@@ -33,18 +32,6 @@ func resourceTFEPolicySetParameter() *schema.Resource {
 				Sensitive: true,
 			},
 
-			"category": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
-				ValidateFunc: validation.StringInSlice(
-					[]string{
-						string(tfe.CategoryPolicySet),
-					},
-					false,
-				),
-			},
-
 			"sensitive": {
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -63,9 +50,8 @@ func resourceTFEPolicySetParameter() *schema.Resource {
 func resourceTFEPolicySetParameterCreate(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	// Get key and category.
+	// Get key
 	key := d.Get("key").(string)
-	category := d.Get("category").(string)
 
 	ps := d.Get("policy_set_id").(string)
 	policySet, err := tfeClient.PolicySets.Read(ctx, ps)
@@ -77,14 +63,14 @@ func resourceTFEPolicySetParameterCreate(d *schema.ResourceData, meta interface{
 	options := tfe.PolicySetParameterCreateOptions{
 		Key:       tfe.String(key),
 		Value:     tfe.String(d.Get("value").(string)),
-		Category:  tfe.Category(tfe.CategoryType(category)),
+		Category:  tfe.Category(tfe.CategoryPolicySet),
 		Sensitive: tfe.Bool(d.Get("sensitive").(bool)),
 	}
 
-	log.Printf("[DEBUG] Create %s variable: %s", category, key)
+	log.Printf("[DEBUG] Create %s variable: %s", tfe.CategoryPolicySet, key)
 	variable, err := tfeClient.PolicySetParameters.Create(ctx, policySet.ID, options)
 	if err != nil {
-		return fmt.Errorf("Error creating %s variable %s: %v", category, key, err)
+		return fmt.Errorf("Error creating %s variable %s %v", tfe.CategoryPolicySet, key, err)
 	}
 
 	d.SetId(variable.ID)
@@ -114,7 +100,6 @@ func resourceTFEPolicySetParameterRead(d *schema.ResourceData, meta interface{})
 
 	// Update config.
 	d.Set("key", variable.Key)
-	d.Set("category", string(variable.Category))
 	d.Set("sensitive", variable.Sensitive)
 
 	// Only set the value if its not sensitive, as otherwise it will be empty.

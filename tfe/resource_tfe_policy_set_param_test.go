@@ -28,8 +28,6 @@ func TestAccTFEPolicySetParameter_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set_parameter.foobar", "value", "value_test"),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set_parameter.foobar", "category", "policy-set"),
-					resource.TestCheckResourceAttr(
 						"tfe_policy_set_parameter.foobar", "sensitive", "false"),
 				),
 			},
@@ -56,8 +54,6 @@ func TestAccTFEPolicySetParameter_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set_parameter.foobar", "value", "value_test"),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set_parameter.foobar", "category", "policy-set"),
-					resource.TestCheckResourceAttr(
 						"tfe_policy_set_parameter.foobar", "sensitive", "false"),
 				),
 			},
@@ -72,8 +68,6 @@ func TestAccTFEPolicySetParameter_update(t *testing.T) {
 						"tfe_policy_set_parameter.foobar", "key", "key_updated"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set_parameter.foobar", "value", "value_updated"),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set_parameter.foobar", "category", "policy-set"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set_parameter.foobar", "sensitive", "true"),
 				),
@@ -138,10 +132,6 @@ func testAccCheckTFEPolicySetParameterAttributes(
 			return fmt.Errorf("Bad value: %s", parameter.Value)
 		}
 
-		if parameter.Category != tfe.CategoryPolicySet {
-			return fmt.Errorf("Bad category: %s", parameter.Category)
-		}
-
 		if parameter.Sensitive != false {
 			return fmt.Errorf("Bad sensitive: %t", parameter.Sensitive)
 		}
@@ -159,10 +149,6 @@ func testAccCheckTFEPolicySetParameterAttributesUpdate(
 
 		if parameter.Value != "" {
 			return fmt.Errorf("Bad value: %s", parameter.Value)
-		}
-
-		if parameter.Category != tfe.CategoryPolicySet {
-			return fmt.Errorf("Bad category: %s", parameter.Category)
 		}
 
 		if parameter.Sensitive != true {
@@ -208,7 +194,6 @@ resource "tfe_policy_set" "foobar" {
 resource "tfe_policy_set_parameter" "foobar" {
   key          = "key_test"
   value        = "value_test"
-  category     = "policy-set"
   policy_set_id = "${tfe_policy_set.foobar.id}"
 }`
 
@@ -226,7 +211,6 @@ resource "tfe_policy_set" "foobar" {
 resource "tfe_policy_set_parameter" "foobar" {
   key          = "key_updated"
   value        = "value_updated"
-  category     = "policy-set"
   sensitive    = true
   policy_set_id = "${tfe_policy_set.foobar.id}"
 }`
