@@ -67,13 +67,13 @@ func resourceTFEPolicySetParameterCreate(d *schema.ResourceData, meta interface{
 		Sensitive: tfe.Bool(d.Get("sensitive").(bool)),
 	}
 
-	log.Printf("[DEBUG] Create %s variable: %s", tfe.CategoryPolicySet, key)
-	variable, err := tfeClient.PolicySetParameters.Create(ctx, policySet.ID, options)
+	log.Printf("[DEBUG] Create %s parameter: %s", tfe.CategoryPolicySet, key)
+	parameter, err := tfeClient.PolicySetParameters.Create(ctx, policySet.ID, options)
 	if err != nil {
-		return fmt.Errorf("Error creating %s variable %s %v", tfe.CategoryPolicySet, key, err)
+		return fmt.Errorf("Error creating %s parameter %s %v", tfe.CategoryPolicySet, key, err)
 	}
 
-	d.SetId(variable.ID)
+	d.SetId(parameter.ID)
 
 	return resourceTFEPolicySetParameterRead(d, meta)
 }
@@ -87,24 +87,24 @@ func resourceTFEPolicySetParameterRead(d *schema.ResourceData, meta interface{})
 		return fmt.Errorf("Error retrieving policy set %s: %v", ps, err)
 	}
 
-	log.Printf("[DEBUG] Read variable: %s", d.Id())
-	variable, err := tfeClient.PolicySetParameters.Read(ctx, policySet.ID, d.Id())
+	log.Printf("[DEBUG] Read parameter: %s", d.Id())
+	parameter, err := tfeClient.PolicySetParameters.Read(ctx, policySet.ID, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] PolicySetParameter %s does no longer exist", d.Id())
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading variable %s: %v", d.Id(), err)
+		return fmt.Errorf("Error reading parameter %s: %v", d.Id(), err)
 	}
 
 	// Update config.
-	d.Set("key", variable.Key)
-	d.Set("sensitive", variable.Sensitive)
+	d.Set("key", parameter.Key)
+	d.Set("sensitive", parameter.Sensitive)
 
 	// Only set the value if its not sensitive, as otherwise it will be empty.
-	if !variable.Sensitive {
-		d.Set("value", variable.Value)
+	if !parameter.Sensitive {
+		d.Set("value", parameter.Value)
 	}
 
 	return nil
@@ -126,10 +126,10 @@ func resourceTFEPolicySetParameterUpdate(d *schema.ResourceData, meta interface{
 		Sensitive: tfe.Bool(d.Get("sensitive").(bool)),
 	}
 
-	log.Printf("[DEBUG] Update variable: %s", d.Id())
+	log.Printf("[DEBUG] Update parameter: %s", d.Id())
 	_, err = tfeClient.PolicySetParameters.Update(ctx, policySet.ID, d.Id(), options)
 	if err != nil {
-		return fmt.Errorf("Error updating variable %s: %v", d.Id(), err)
+		return fmt.Errorf("Error updating parameter %s: %v", d.Id(), err)
 	}
 
 	return resourceTFEPolicySetParameterRead(d, meta)
@@ -144,13 +144,13 @@ func resourceTFEPolicySetParameterDelete(d *schema.ResourceData, meta interface{
 		return fmt.Errorf("Error retrieving policy set %s: %v", ps, err)
 	}
 
-	log.Printf("[DEBUG] Delete variable: %s", d.Id())
+	log.Printf("[DEBUG] Delete parameter: %s", d.Id())
 	err = tfeClient.PolicySetParameters.Delete(ctx, policySet.ID, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil
 		}
-		return fmt.Errorf("Error deleting variable%s: %v", d.Id(), err)
+		return fmt.Errorf("Error deleting parameter %s: %v", d.Id(), err)
 	}
 
 	return nil
@@ -160,7 +160,7 @@ func resourceTFEPolicySetParameterImporter(d *schema.ResourceData, meta interfac
 	s := strings.SplitN(d.Id(), "/", 2)
 	if len(s) != 2 {
 		return nil, fmt.Errorf(
-			"invalid variable import format: %s (expected <POLICY SET>/<VARIABLE ID>)",
+			"invalid parameter import format: %s (expected <POLICY SET ID>/<PARAMETER ID>)",
 			d.Id(),
 		)
 	}
