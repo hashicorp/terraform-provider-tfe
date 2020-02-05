@@ -30,6 +30,7 @@ resource "tfe_variable" "test" {
   value        = "my_value_name"
   category     = "terraform"
   workspace_id = "${tfe_workspace.test.id}"
+  description  = "a useful description"
 }
 ```
 
@@ -41,6 +42,7 @@ The following arguments are supported:
 * `value` - (Required) Value of the variable.
 * `category` - (Required) Whether this is a Terraform or environment variable.
   Valid values are `terraform` or `env`.
+* `description` - (Optional) Description of the variable.
 * `hcl` - (Optional) Whether to evaluate the value of the variable as a string
   of HCL code. Has no effect for environment variables. Defaults to `false`.
 * `sensitive` - (Optional) Whether the value is sensitive. If true then the
