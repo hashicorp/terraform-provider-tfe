@@ -1,4 +1,21 @@
-## 0.11.2 (Unreleased)
+## 0.11.5 (Unreleased)
+## 0.11.4 (December 13, 2019)
+
+BUG FIXES:
+
+r/tfe_oauth_client: Issue with using private_key and validation check ([[#113]](https://github.com/terraform-providers/terraform-provider-tfe/pull/113))
+
+## 0.11.3 (December 10, 2019)
+ENHANCEMENTS:
+
+* r/tfe_oauth_client: Adding support for Azure DevOps Server and Azure DevOps Services ([[#99](https://github.com/terraform-providers/terraform-provider-tfe/pull/99)])
+
+## 0.11.2 (December 10, 2019)
+
+ENHANCEMENTS:
+
+* provider: Retry requests which result in server errors ([[#109](https://github.com/terraform-providers/terraform-provider-tfe/pull/109)])
+
 ## 0.11.1 (September 27, 2019)
 
 ENHANCEMENTS:

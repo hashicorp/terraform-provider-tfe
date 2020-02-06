@@ -193,8 +193,14 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		HTTPClient: httpClient,
 	}
 
-	// Create s new TFE client.
-	return tfe.NewClient(cfg)
+	// Create a new TFE client.
+	client, err := tfe.NewClient(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	client.RetryServerErrors(true)
+	return client, nil
 }
 
 // cliConfig tries to find and parse the configuration of the Terraform CLI.
