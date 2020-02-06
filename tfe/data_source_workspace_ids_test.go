@@ -71,13 +71,6 @@ func TestAccTFEWorkspaceIDsDataSource_wildcard(t *testing.T) {
 						"data.tfe_workspace_ids.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "ids.%", "3"),
-					// resource.TestCheckResourceAttrSet(
-					// 	"data.tfe_workspace_ids.foobar", fmt.Sprintf("ids.workspace-foo-%d", rInt)),
-					// resource.TestCheckResourceAttrSet(
-					// 	"data.tfe_workspace_ids.foobar", fmt.Sprintf("ids.workspace-bar-%d", rInt)),
-					// resource.TestCheckResourceAttrSet(
-					// 	"data.tfe_workspace_ids.foobar", fmt.Sprintf("ids.workspace-dummy-%d", rInt)),
-					//
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar",
 						fmt.Sprintf("ids.workspace-foo-%d", rInt),
