@@ -87,10 +87,16 @@ func TestAccTFEPolicySetParameter_import(t *testing.T) {
 			},
 
 			{
-				ResourceName:        "tfe_policy_set_parameter.foobar",
-				ImportState:         true,
-				ImportStateIdPrefix: "policy-set-test/",
-				ImportStateVerify:   true,
+				ResourceName: "tfe_policy_set_parameter.foobar",
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					resources := s.RootModule().Resources
+					policySet := resources["tfe_policy_set.foobar"]
+					param := resources["tfe_policy_set_parameter.foobar"]
+
+					return fmt.Sprintf("%s/%s", policySet.Primary.ID, param.Primary.ID), nil
+				},
+				ImportStateVerify: true,
 			},
 		},
 	})
