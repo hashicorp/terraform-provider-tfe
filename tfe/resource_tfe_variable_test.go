@@ -122,7 +122,18 @@ func testAccCheckTFEVariableExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		v, err := tfeClient.Variables.Read(ctx, rs.Primary.ID)
+		wsID := rs.Primary.Attributes["workspace_id"]
+		organization, workspace, err := unpackWorkspaceID(wsID)
+		if err != nil {
+			return fmt.Errorf("Unable to unpack workspace ID: %s", wsID)
+		}
+
+		ws, err := tfeClient.Workspaces.Read(ctx, organization, workspace)
+		if err != nil {
+			return fmt.Errorf("Unable to retreive workspace: %s", err)
+		}
+
+		v, err := tfeClient.Variables.Read(ctx, ws.ID, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -199,7 +210,7 @@ func testAccCheckTFEVariableDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := tfeClient.Variables.Read(ctx, rs.Primary.ID)
+		_, err := tfeClient.Variables.Read(ctx, rs.Primary.Attributes["workspace_id"], rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Variable %s still exists", rs.Primary.ID)
 		}

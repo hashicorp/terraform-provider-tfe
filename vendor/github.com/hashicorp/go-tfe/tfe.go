@@ -113,11 +113,13 @@ type Client struct {
 	OAuthClients               OAuthClients
 	OAuthTokens                OAuthTokens
 	Organizations              Organizations
+	OrganizationMemberships    OrganizationMemberships
 	OrganizationTokens         OrganizationTokens
 	Plans                      Plans
 	PlanExports                PlanExports
 	Policies                   Policies
 	PolicyChecks               PolicyChecks
+	PolicySetParameters        PolicySetParameters
 	PolicySets                 PolicySets
 	Runs                       Runs
 	SSHKeys                    SSHKeys
@@ -204,11 +206,13 @@ func NewClient(cfg *Config) (*Client, error) {
 	client.OAuthClients = &oAuthClients{client: client}
 	client.OAuthTokens = &oAuthTokens{client: client}
 	client.Organizations = &organizations{client: client}
+	client.OrganizationMemberships = &organizationMemberships{client: client}
 	client.OrganizationTokens = &organizationTokens{client: client}
 	client.Plans = &plans{client: client}
 	client.PlanExports = &planExports{client: client}
 	client.Policies = &policies{client: client}
 	client.PolicyChecks = &policyChecks{client: client}
+	client.PolicySetParameters = &policySetParameters{client: client}
 	client.PolicySets = &policySets{client: client}
 	client.Runs = &runs{client: client}
 	client.SSHKeys = &sshKeys{client: client}
