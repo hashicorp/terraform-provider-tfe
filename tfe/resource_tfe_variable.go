@@ -174,10 +174,11 @@ func resourceTFEVariableUpdate(d *schema.ResourceData, meta interface{}) error {
 
 	// Create a new options struct.
 	options := tfe.VariableUpdateOptions{
-		Key:       tfe.String(d.Get("key").(string)),
-		Value:     tfe.String(d.Get("value").(string)),
-		HCL:       tfe.Bool(d.Get("hcl").(bool)),
-		Sensitive: tfe.Bool(d.Get("sensitive").(bool)),
+		Key:         tfe.String(d.Get("key").(string)),
+		Value:       tfe.String(d.Get("value").(string)),
+		HCL:         tfe.Bool(d.Get("hcl").(bool)),
+		Sensitive:   tfe.Bool(d.Get("sensitive").(bool)),
+		Description: tfe.String(d.Get("description").(string)),
 	}
 
 	log.Printf("[DEBUG] Update variable: %s", d.Id())
