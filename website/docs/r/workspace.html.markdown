@@ -60,8 +60,6 @@ The `vcs_repo` block supports:
 In addition to all arguments above, the following attributes are exported:
 
 * `id` - The workspace ID.
-* `external_id` - The workspace's opaque external ID, which looks like
-  `ws-<RANDOM STRING>`.
 
 ## Import
 
