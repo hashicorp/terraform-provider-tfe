@@ -95,11 +95,11 @@ func resourceTFEVariableCreate(d *schema.ResourceData, meta interface{}) error {
 
 	// Create a new options struct.
 	options := tfe.VariableCreateOptions{
-		Key:       tfe.String(key),
-		Value:     tfe.String(d.Get("value").(string)),
-		Category:  tfe.Category(tfe.CategoryType(category)),
-		HCL:       tfe.Bool(d.Get("hcl").(bool)),
-		Sensitive: tfe.Bool(d.Get("sensitive").(bool)),
+		Key:         tfe.String(key),
+		Value:       tfe.String(d.Get("value").(string)),
+		Category:    tfe.Category(tfe.CategoryType(category)),
+		HCL:         tfe.Bool(d.Get("hcl").(bool)),
+		Sensitive:   tfe.Bool(d.Get("sensitive").(bool)),
 		Description: tfe.String(d.Get("description").(string)),
 	}
 
