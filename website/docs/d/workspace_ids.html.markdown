@@ -39,7 +39,6 @@ The following arguments are supported:
 
 In addition to all arguments above, the following attributes are exported:
 
-* `ids` - A map of workspace names and their opaque external IDs, which
-  look like `ws-<RANDOM STRING>`.
+* `ids` - A map of workspace names and their IDs.
 * `external_ids` - A map of workspace names and their opaque external IDs, which
   look like `ws-<RANDOM STRING>`.
