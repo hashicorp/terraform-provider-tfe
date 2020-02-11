@@ -1,4 +1,10 @@
-## 0.11.5 (Unreleased)
+## 0.12.0 (Unreleased)
+
+ENHANCEMENTS:
+
+* Add support for policy set parameters
+* Add support for descriptions for workspace variables
+
 ## 0.11.4 (December 13, 2019)
 
 BUG FIXES:
