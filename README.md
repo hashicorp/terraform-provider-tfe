@@ -140,3 +140,15 @@ You may want to run tests against a local version of `go-tfe`. Add the following
 ```
 replace github.com/hashicorp/go-tfe => /path-to-local-repo/go-tfe
 ```
+
+## Updating the Changelog
+
+Only update the `Unreleased` section. Please use the template below when updating the changelog:
+
+```
+<change category>:
+* **New Resource:** `name_of_new_resource` ([#123](link-to-PR))
+* r/tfe_resource: description of change or bug fix ([#124](link-to-PR))
+```
+
+Change categories: `BUG FIXES`, `ENHANCEMENTS`, `FEATURES`, `NOTES`
