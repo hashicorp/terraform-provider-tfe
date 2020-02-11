@@ -2,8 +2,8 @@
 
 ENHANCEMENTS:
 
-* Add support for policy set parameters
-* Add support for descriptions for workspace variables
+* **New Resource:** `tfe_policy_set_parameter` ([[#123](https://github.com/terraform-providers/terraform-provider-tfe/pull/123)])
+* r/tfe_variable: Add support for descriptions for workspace variables ([[#121](https://github.com/terraform-providers/terraform-provider-tfe/pull/121)])
 
 ## 0.11.4 (December 13, 2019)
 
