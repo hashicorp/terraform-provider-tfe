@@ -28,6 +28,8 @@ func TestAccTFEVariable_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_variable.foobar", "value", "value_test"),
 					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "description", "some description"),
+					resource.TestCheckResourceAttr(
 						"tfe_variable.foobar", "category", "env"),
 					resource.TestCheckResourceAttr(
 						"tfe_variable.foobar", "hcl", "false"),
@@ -58,6 +60,8 @@ func TestAccTFEVariable_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_variable.foobar", "value", "value_test"),
 					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "description", "some description"),
+					resource.TestCheckResourceAttr(
 						"tfe_variable.foobar", "category", "env"),
 					resource.TestCheckResourceAttr(
 						"tfe_variable.foobar", "hcl", "false"),
@@ -76,6 +80,8 @@ func TestAccTFEVariable_update(t *testing.T) {
 						"tfe_variable.foobar", "key", "key_updated"),
 					resource.TestCheckResourceAttr(
 						"tfe_variable.foobar", "value", "value_updated"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "description", "another description"),
 					resource.TestCheckResourceAttr(
 						"tfe_variable.foobar", "category", "terraform"),
 					resource.TestCheckResourceAttr(
@@ -155,6 +161,10 @@ func testAccCheckTFEVariableAttributes(
 			return fmt.Errorf("Bad value: %s", variable.Value)
 		}
 
+		if variable.Description != "some description" {
+			return fmt.Errorf("Bad description: %s", variable.Description)
+		}
+
 		if variable.Category != tfe.CategoryEnv {
 			return fmt.Errorf("Bad category: %s", variable.Category)
 		}
@@ -180,6 +190,10 @@ func testAccCheckTFEVariableAttributesUpdate(
 
 		if variable.Value != "" {
 			return fmt.Errorf("Bad value: %s", variable.Value)
+		}
+
+		if variable.Description != "another description" {
+			return fmt.Errorf("Bad description: %s", variable.Description)
 		}
 
 		if variable.Category != tfe.CategoryTerraform {
@@ -233,6 +247,7 @@ resource "tfe_workspace" "foobar" {
 resource "tfe_variable" "foobar" {
   key          = "key_test"
   value        = "value_test"
+  description  = "some description"
   category     = "env"
   workspace_id = "${tfe_workspace.foobar.id}"
 }`
@@ -251,6 +266,7 @@ resource "tfe_workspace" "foobar" {
 resource "tfe_variable" "foobar" {
   key          = "key_updated"
   value        = "value_updated"
+  description  = "another description"
   category     = "terraform"
   hcl          = true
   sensitive    = true

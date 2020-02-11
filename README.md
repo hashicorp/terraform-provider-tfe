@@ -132,3 +132,11 @@ $ TESTARGS="-run TestAccTFENotificationConfiguration" envchain YOUR_NAMESPACE_HE
 ```sh
 $ TESTARGS="-run TestAccTFENotificationConfiguration" make testacc
 ```   
+
+### 4. Referencing a local version of `go-tfe`
+
+You may want to run tests against a local version of `go-tfe`. Add the following line to `go.mod` above the require statement, using your local path to `go-tfe`.
+
+```
+replace github.com/hashicorp/go-tfe => /path-to-local-repo/go-tfe
+```
