@@ -1,5 +1,9 @@
 ## 0.12.1 (Unreleased)
 ## 0.12.0 (February 11, 2020)
+BREAKING CHANGES:
+
+* r/tfe_variable: Update the workspace variable resource to utilize the "nested" routes that are now preferred ([[#123](https://github.com/terraform-providers/terraform-provider-tfe/pull/123)])
+This change is incompatible with Terraform Enterprise versions < 202001-1. 
 
 ENHANCEMENTS:
 
