@@ -1,5 +1,12 @@
 ## 0.12.1 (Unreleased)
+
+BUG FIXES:
+
+* provider: Lock the provider v2.2 for Terraform Enterprise ([[#109](https://github.com/terraform-providers/terraform-provider-tfe/pull/109)])
+This will warn users that this version of the provider does not support Terraform Enterprise versions < 202001-1
+
 ## 0.12.0 (February 11, 2020)
+
 BREAKING CHANGES:
 
 * r/tfe_variable: Update the workspace variable resource to utilize the "nested" routes that are now preferred ([[#123](https://github.com/terraform-providers/terraform-provider-tfe/pull/123)])
@@ -17,6 +24,7 @@ BUG FIXES:
 r/tfe_oauth_client: Issue with using private_key and validation check ([[#113]](https://github.com/terraform-providers/terraform-provider-tfe/pull/113))
 
 ## 0.11.3 (December 10, 2019)
+
 ENHANCEMENTS:
 
 * r/tfe_oauth_client: Adding support for Azure DevOps Server and Azure DevOps Services ([[#99](https://github.com/terraform-providers/terraform-provider-tfe/pull/99)])
