@@ -3,7 +3,7 @@
 
 BUG FIXES:
 
-* provider: Lock the provider v2.2 for Terraform Enterprise ([[#109](https://github.com/terraform-providers/terraform-provider-tfe/pull/109)])
+* provider: Lock the provider v2.2 for Terraform Enterprise ([[#127](https://github.com/terraform-providers/terraform-provider-tfe/pull/127)])
 This will warn users that this version of the provider does not support Terraform Enterprise versions < 202001-1
 
 ## 0.12.0 (February 11, 2020)
