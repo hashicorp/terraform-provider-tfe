@@ -1,0 +1,21 @@
+# In the manager workspace, in the variables page, create a variable called
+# "addtl_vars". Copy and paste this value into the input box, then
+# check the "sensitive" and "hcl" boxes.
+
+# The contents of this variable need to be saved somewhere secure, as it cannot
+# be revealed in the Variables page for editing. It must be pasted in, in full,
+# each time it is changed.
+
+{
+  ws1 = {
+    sens_tf_var = {
+      value = "secret"
+      sensitive = true
+    }
+    sens_env_var = {
+      value = "secret"
+      sensitive = true
+      category = "env"
+    }
+  }
+}
