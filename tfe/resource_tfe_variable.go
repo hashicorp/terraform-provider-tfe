@@ -82,6 +82,12 @@ func resourceTFEVariable() *schema.Resource {
 					"must be the workspace's external_id",
 				),
 			},
+
+			"overwrite": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
 		},
 	}
 }
@@ -99,6 +105,35 @@ func resourceTFEVariableCreate(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return fmt.Errorf(
 			"Error retrieving workspace %s: %v", workspaceID, err)
+	}
+
+	// Check if variable with key already exists. Overwrite if necessary
+	vl, _ := tfeClient.Variables.List(ctx, ws.ID, tfe.VariableListOptions{})
+	for _, v := range vl.Items {
+		if v.Key == key {
+			overwrite := d.Get("overwrite").(bool)
+			if !overwrite {
+				return fmt.Errorf("Error creating %s variable %s: variable already exists", category, key)
+			} else {
+				// overwrite existing variable and assume its ID
+				options := tfe.VariableUpdateOptions{
+					Key:         tfe.String(d.Get("key").(string)),
+					Value:       tfe.String(d.Get("value").(string)),
+					HCL:         tfe.Bool(d.Get("hcl").(bool)),
+					Sensitive:   tfe.Bool(d.Get("sensitive").(bool)),
+					Description: tfe.String(d.Get("description").(string)),
+				}
+
+				log.Printf("[DEBUG] Update variable: %s", v.ID)
+				_, err = tfeClient.Variables.Update(ctx, ws.ID, v.ID, options)
+				if err != nil {
+					return fmt.Errorf("Error updating variable %s: %v", v.ID, err)
+				}
+				d.SetId(v.ID)
+				return resourceTFEVariableRead(d, meta)
+			}
+			break
+		}
 	}
 
 	// Create a new options struct.
