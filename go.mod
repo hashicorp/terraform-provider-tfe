@@ -9,3 +9,5 @@ require (
 	github.com/hashicorp/terraform-svchost v0.0.0-20191011084731-65d371908596
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 )
+
+go 1.13
