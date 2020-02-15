@@ -105,10 +105,11 @@ func TestAccTFEVariable_import(t *testing.T) {
 			},
 
 			{
-				ResourceName:        "tfe_variable.foobar",
-				ImportState:         true,
-				ImportStateIdPrefix: "tst-terraform/workspace-test/",
-				ImportStateVerify:   true,
+				ResourceName:            "tfe_variable.foobar",
+				ImportState:             true,
+				ImportStateIdPrefix:     "tst-terraform/workspace-test/",
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"overwrite"},
 			},
 		},
 	})
