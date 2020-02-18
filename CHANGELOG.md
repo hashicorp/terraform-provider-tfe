@@ -1,4 +1,9 @@
-## 0.12.2 (Unreleased)
+## 0.13.0 (Unreleased)
+
+ENHANCEMENTS:
+
+* provider: Update to the standalone SDK ([[#130](https://github.com/terraform-providers/terraform-provider-tfe/pull/130)])
+
 ## 0.12.1 (February 12, 2020)
 
 BUG FIXES:
