@@ -151,4 +151,4 @@ Only update the `Unreleased` section. Please use the template below when updatin
 * r/tfe_resource: description of change or bug fix ([#124](link-to-PR))
 ```
 
-Change categories: `BUG FIXES`, `ENHANCEMENTS`, `FEATURES`, `NOTES`, `BREAKING_CHANGE`
+Change categories: `BUG FIXES`, `ENHANCEMENTS`, `FEATURES`, `NOTES`, `BREAKING CHANGES`
