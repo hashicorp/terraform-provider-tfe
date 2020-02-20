@@ -1,4 +1,9 @@
 ## 0.14.0 (Unreleased)
+
+FEATURES:
+
+* **New Resource:** `tfe_run_trigger` ([[#132](https://github.com/terraform-providers/terraform-provider-tfe/pull/132)])
+
 ## 0.13.0 (February 18, 2020)
 
 ENHANCEMENTS:
@@ -52,7 +57,7 @@ ENHANCEMENTS:
 
 FEATURES:
 
-* **New Resource:** `tfe_notification_configuration` ([[#86](https://github.com/terraform-providers/terraform-provider-tfe/issues/86)])
+* **New Resource:** `tfe_notification_configuration` ([[#86](https://github.com/terraform-providers/terraform-provider-tfe/pull/86)])
 
 ## 0.10.1 (June 26, 2019)
 
