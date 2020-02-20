@@ -249,7 +249,7 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "file_triggers_enabled", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "operations", "false"),
+						"tfe_workspace.foobar", "operations", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "queue_all_runs", "false"),
 					resource.TestCheckResourceAttr(
@@ -487,7 +487,7 @@ func testAccCheckTFEWorkspaceAttributesUpdated(
 			return fmt.Errorf("Bad auto apply: %t", workspace.AutoApply)
 		}
 
-		if workspace.Operations != false {
+		if workspace.Operations != true {
 			return fmt.Errorf("Bad operations: %t", workspace.Operations)
 		}
 
