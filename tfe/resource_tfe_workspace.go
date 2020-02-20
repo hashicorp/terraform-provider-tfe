@@ -76,7 +76,7 @@ func resourceTFEWorkspace() *schema.Resource {
 			"working_directory": {
 				Type:     schema.TypeString,
 				Optional: true,
-				Computed: true,
+				Default:  "",
 			},
 
 			"vcs_repo": {
@@ -321,6 +321,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			FileTriggersEnabled: tfe.Bool(d.Get("file_triggers_enabled").(bool)),
 			Operations:          tfe.Bool(d.Get("operations").(bool)),
 			QueueAllRuns:        tfe.Bool(d.Get("queue_all_runs").(bool)),
+			WorkingDirectory:    tfe.String(d.Get("working_directory").(string)),
 		}
 
 		// Process all configured options.
