@@ -329,7 +329,11 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		if tps, ok := d.GetOk("trigger_prefixes"); ok {
 			for _, tp := range tps.([]interface{}) {
 				options.TriggerPrefixes = append(options.TriggerPrefixes, tp.(string))
+
 			}
+		} else {
+			// Reset trigger prefixes when none are present in the config.
+			options.TriggerPrefixes = []string{}
 		}
 
 		if workingDir, ok := d.GetOk("working_directory"); ok {

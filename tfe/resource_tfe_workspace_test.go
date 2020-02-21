@@ -353,6 +353,42 @@ func TestAccTFEWorkspace_updateFileTriggers(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspace_updateTriggerPrefixes(t *testing.T) {
+	workspace := &tfe.Workspace{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_triggerPrefixes,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "trigger_prefixes.#", "2"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "trigger_prefixes.0", "/modules"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "trigger_prefixes.1", "/shared"),
+				),
+			},
+
+			{
+				Config: testAccTFEWorkspace_updateEmptyTriggerPrefixes,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					testAccCheckTFEWorkspaceAttributes(workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEWorkspace_sshKey(t *testing.T) {
 	workspace := &tfe.Workspace{}
 
@@ -477,6 +513,10 @@ func testAccCheckTFEWorkspaceAttributes(
 
 		if workspace.WorkingDirectory != "" {
 			return fmt.Errorf("Bad working directory: %s", workspace.WorkingDirectory)
+		}
+
+		if len(workspace.TriggerPrefixes) != 0 {
+			return fmt.Errorf("Bad trigger prefixes: %s", workspace.TriggerPrefixes)
 		}
 
 		return nil
@@ -757,4 +797,27 @@ resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
   organization = "${tfe_organization.foobar.id}"
   auto_apply   = true
+}`
+
+const testAccTFEWorkspace_triggerPrefixes = `
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name                  = "workspace"
+  organization          = "${tfe_organization.foobar.id}"
+  trigger_prefixes      = ["/modules", "/shared"]
+}`
+
+const testAccTFEWorkspace_updateEmptyTriggerPrefixes = `
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform"
+  email = "admin@company.com"
+}
+resource "tfe_workspace" "foobar" {
+  name                  = "workspace-test"
+  organization          = "${tfe_organization.foobar.id}"
+  auto_apply            = true
 }`
