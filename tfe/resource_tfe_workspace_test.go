@@ -735,6 +735,7 @@ resource "tfe_workspace" "foobar" {
   terraform_version     = "0.11.1"
   trigger_prefixes      = ["/modules", "/shared"]
   working_directory     = "terraform/test"
+  operations            = false
 }`
 
 const testAccTFEWorkspace_updateAddWorkingDirectory = `
