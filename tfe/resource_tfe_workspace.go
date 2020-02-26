@@ -132,6 +132,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		FileTriggersEnabled: tfe.Bool(d.Get("file_triggers_enabled").(bool)),
 		Operations:          tfe.Bool(d.Get("operations").(bool)),
 		QueueAllRuns:        tfe.Bool(d.Get("queue_all_runs").(bool)),
+		WorkingDirectory:    tfe.String(d.Get("working_directory").(string)),
 	}
 
 	// Process all configured options.
@@ -143,10 +144,6 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		for _, tp := range tps.([]interface{}) {
 			options.TriggerPrefixes = append(options.TriggerPrefixes, tp.(string))
 		}
-	}
-
-	if workingDir, ok := d.GetOk("working_directory"); ok {
-		options.WorkingDirectory = tfe.String(workingDir.(string))
 	}
 
 	// Get and assert the VCS repo configuration block.
