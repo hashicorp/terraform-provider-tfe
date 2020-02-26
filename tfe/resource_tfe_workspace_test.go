@@ -209,6 +209,7 @@ func TestAccTFEWorkspace_renamed(t *testing.T) {
 		},
 	})
 }
+
 func TestAccTFEWorkspace_update(t *testing.T) {
 	workspace := &tfe.Workspace{}
 
@@ -235,7 +236,6 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 						"tfe_workspace.foobar", "working_directory", ""),
 				),
 			},
-
 			{
 				Config: testAccTFEWorkspace_update,
 				Check: resource.ComposeTestCheckFunc(
@@ -249,7 +249,7 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "file_triggers_enabled", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "operations", "true"),
+						"tfe_workspace.foobar", "operations", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "queue_all_runs", "false"),
 					resource.TestCheckResourceAttr(
@@ -515,7 +515,7 @@ func testAccCheckTFEWorkspaceAttributesUpdated(
 			return fmt.Errorf("Bad auto apply: %t", workspace.AutoApply)
 		}
 
-		if workspace.Operations != true {
+		if workspace.Operations != false {
 			return fmt.Errorf("Bad operations: %t", workspace.Operations)
 		}
 
