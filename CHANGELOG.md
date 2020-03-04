@@ -1,4 +1,4 @@
-## 0.14.1 (Unreleased)
+## 0.14.1 (March 04, 2020)
 BUG FIXES:
 
 * t/tfe_workspace: Issues with updating `working_directory` ([[#137](https://github.com/terraform-providers/terraform-provider-tfe/pull/137)]) 
