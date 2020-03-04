@@ -1,7 +1,9 @@
 ## 0.14.1 (Unreleased)
 BUG FIXES:
 
-* t/tfe_workspace: Issues with updating `working_directory` and `trigger_prefixes` when removed from the configuration. Special note: if you have workspaces which are configured through the TFE provider, but have set the working directory or trigger prefixes manually, through the UI, you'll need to update your configuration.
+* t/tfe_workspace: Issues with updating `working_directory` ([[#137](https://github.com/terraform-providers/terraform-provider-tfe/pull/137)]) 
+  and `trigger_prefixes` ([[#138](https://github.com/terraform-providers/terraform-provider-tfe/pull/138)]) when removed from the configuration. 
+  Special note: if you have workspaces which are configured through the TFE provider, but have set the working directory or trigger prefixes manually, through the UI, you'll need to update your configuration.
 
 ## 0.14.0 (February 20, 2020)
 
