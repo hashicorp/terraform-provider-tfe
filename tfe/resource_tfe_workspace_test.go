@@ -209,6 +209,7 @@ func TestAccTFEWorkspace_renamed(t *testing.T) {
 		},
 	})
 }
+
 func TestAccTFEWorkspace_update(t *testing.T) {
 	workspace := &tfe.Workspace{}
 
@@ -235,7 +236,6 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 						"tfe_workspace.foobar", "working_directory", ""),
 				),
 			},
-
 			{
 				Config: testAccTFEWorkspace_update,
 				Check: resource.ComposeTestCheckFunc(
@@ -262,6 +262,60 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 						"tfe_workspace.foobar", "trigger_prefixes.1", "/shared"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "working_directory", "terraform/test"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspace_updateWorkingDirectory(t *testing.T) {
+	workspace := &tfe.Workspace{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_basic,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					testAccCheckTFEWorkspaceAttributes(workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "name", "workspace-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "auto_apply", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "operations", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "queue_all_runs", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "working_directory", ""),
+				),
+			},
+			{
+				Config: testAccTFEWorkspace_updateAddWorkingDirectory,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					testAccCheckTFEWorkspaceAttributesUpdatedAddWorkingDirectory(workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "name", "workspace-updated"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "working_directory", "terraform/test"),
+				),
+			},
+			{
+				Config: testAccTFEWorkspace_updateRemoveWorkingDirectory,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					testAccCheckTFEWorkspaceAttributesUpdatedRemoveWorkingDirectory(workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "name", "workspace-updated"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "working_directory", ""),
 				),
 			},
 		},
@@ -507,6 +561,36 @@ func testAccCheckTFEWorkspaceAttributesUpdated(
 	}
 }
 
+func testAccCheckTFEWorkspaceAttributesUpdatedAddWorkingDirectory(
+	workspace *tfe.Workspace) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if workspace.Name != "workspace-updated" {
+			return fmt.Errorf("Bad name: %s", workspace.Name)
+		}
+
+		if workspace.WorkingDirectory != "terraform/test" {
+			return fmt.Errorf("Today Bad working directory: %s", workspace.WorkingDirectory)
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckTFEWorkspaceAttributesUpdatedRemoveWorkingDirectory(
+	workspace *tfe.Workspace) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if workspace.Name != "workspace-updated" {
+			return fmt.Errorf("Bad name: %s", workspace.Name)
+		}
+
+		if workspace.WorkingDirectory != "" {
+			return fmt.Errorf("Today Bad working directory: %s", workspace.WorkingDirectory)
+		}
+
+		return nil
+	}
+}
+
 func testAccCheckTFEWorkspaceAttributesSSHKey(
 	workspace *tfe.Workspace) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
@@ -611,6 +695,31 @@ resource "tfe_workspace" "foobar" {
   terraform_version     = "0.11.1"
   trigger_prefixes      = ["/modules", "/shared"]
   working_directory     = "terraform/test"
+}`
+
+const testAccTFEWorkspace_updateAddWorkingDirectory = `
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name                  = "workspace-updated"
+  organization          = "${tfe_organization.foobar.id}"
+  auto_apply            = false
+  working_directory     = "terraform/test"
+}`
+
+const testAccTFEWorkspace_updateRemoveWorkingDirectory = `
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name                  = "workspace-updated"
+  organization          = "${tfe_organization.foobar.id}"
+  auto_apply            = false
 }`
 
 const testAccTFEWorkspace_sshKey = `
