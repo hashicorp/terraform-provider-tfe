@@ -5,7 +5,7 @@ import (
 	"log"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 func resourceTFEPolicySet() *schema.Resource {

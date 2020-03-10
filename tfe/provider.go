@@ -13,12 +13,12 @@ import (
 	tfe "github.com/hashicorp/go-tfe"
 	version "github.com/hashicorp/go-version"
 	"github.com/hashicorp/hcl"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/logging"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	svchost "github.com/hashicorp/terraform-svchost"
 	"github.com/hashicorp/terraform-svchost/auth"
 	"github.com/hashicorp/terraform-svchost/disco"
-	"github.com/hashicorp/terraform/helper/logging"
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/terraform"
 	providerVersion "github.com/terraform-providers/terraform-provider-tfe/version"
 )
 
@@ -76,6 +76,7 @@ func Provider() terraform.ResourceProvider {
 			"tfe_organization_token":         resourceTFEOrganizationToken(),
 			"tfe_policy_set":                 resourceTFEPolicySet(),
 			"tfe_policy_set_parameter":       resourceTFEPolicySetParameter(),
+			"tfe_run_trigger":                resourceTFERunTrigger(),
 			"tfe_sentinel_policy":            resourceTFESentinelPolicy(),
 			"tfe_ssh_key":                    resourceTFESSHKey(),
 			"tfe_team":                       resourceTFETeam(),
