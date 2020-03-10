@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
 func TestAccTFEVariable_basic(t *testing.T) {
@@ -105,11 +105,10 @@ func TestAccTFEVariable_import(t *testing.T) {
 			},
 
 			{
-				ResourceName:            "tfe_variable.foobar",
-				ImportState:             true,
-				ImportStateIdPrefix:     "tst-terraform/workspace-test/",
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"overwrite"},
+				ResourceName:        "tfe_variable.foobar",
+				ImportState:         true,
+				ImportStateIdPrefix: "tst-terraform/workspace-test/",
+				ImportStateVerify:   true,
 			},
 		},
 	})
@@ -239,12 +238,10 @@ resource "tfe_organization" "foobar" {
   name  = "tst-terraform"
   email = "admin@company.com"
 }
-
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
   organization = "${tfe_organization.foobar.id}"
 }
-
 resource "tfe_variable" "foobar" {
   key          = "key_test"
   value        = "value_test"
@@ -258,12 +255,10 @@ resource "tfe_organization" "foobar" {
   name  = "tst-terraform"
   email = "admin@company.com"
 }
-
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
   organization = "${tfe_organization.foobar.id}"
 }
-
 resource "tfe_variable" "foobar" {
   key          = "key_updated"
   value        = "value_updated"
