@@ -95,8 +95,9 @@ func resourceTFEVariableCreate(d *schema.ResourceData, meta interface{}) error {
 	// Get the workspace.
 	ws, err := tfeClient.Workspaces.Read(ctx, organization, workspace)
 	if err != nil {
-		return fmt.Errorf(
-			"Error retrieving workspace %s from organization %s: %v", workspace, organization, err)
+		log.Printf("[DEBUG] Workspace %s no longer exists, so variable doesn't exist either", workspace)
+		d.SetId("")
+		return nil
 	}
 
 	// Check if variable with key already exists. Overwrite if necessary
