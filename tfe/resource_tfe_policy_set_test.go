@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
 func TestAccTFEPolicySet_basic(t *testing.T) {
@@ -415,17 +415,9 @@ func testAccCheckTFEPolicySetGlobal(policySet *tfe.PolicySet) resource.TestCheck
 			return fmt.Errorf("Wrong member policy: %v", policy.Name)
 		}
 
-		// Even though the terraform config should have 0 workspaces, the API will return
-		// workspaces for global policy sets. This list would be the same as listing the
-		// workspaces for the organization itself.
-		if len(policySet.Workspaces) != 1 {
+		// No workspaces are returned for global policy sets
+		if len(policySet.Workspaces) != 0 {
 			return fmt.Errorf("Wrong number of workspaces: %v", len(policySet.Workspaces))
-		}
-
-		workspaceID := policySet.Workspaces[0].ID
-		workspace, _ := tfeClient.Workspaces.Read(ctx, "tst-terraform", "workspace-foo")
-		if workspace.ID != workspaceID {
-			return fmt.Errorf("Wrong member workspace: %v", workspace.Name)
 		}
 
 		return nil

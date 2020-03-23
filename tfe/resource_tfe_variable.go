@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 )
 
 func resourceTFEVariable() *schema.Resource {
@@ -55,6 +55,12 @@ func resourceTFEVariable() *schema.Resource {
 				),
 			},
 
+			"description": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "",
+			},
+
 			"hcl": {
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -97,16 +103,16 @@ func resourceTFEVariableCreate(d *schema.ResourceData, meta interface{}) error {
 
 	// Create a new options struct.
 	options := tfe.VariableCreateOptions{
-		Key:       tfe.String(key),
-		Value:     tfe.String(d.Get("value").(string)),
-		Category:  tfe.Category(tfe.CategoryType(category)),
-		HCL:       tfe.Bool(d.Get("hcl").(bool)),
-		Sensitive: tfe.Bool(d.Get("sensitive").(bool)),
-		Workspace: ws,
+		Key:         tfe.String(key),
+		Value:       tfe.String(d.Get("value").(string)),
+		Category:    tfe.Category(tfe.CategoryType(category)),
+		HCL:         tfe.Bool(d.Get("hcl").(bool)),
+		Sensitive:   tfe.Bool(d.Get("sensitive").(bool)),
+		Description: tfe.String(d.Get("description").(string)),
 	}
 
 	log.Printf("[DEBUG] Create %s variable: %s", category, key)
-	variable, err := tfeClient.Variables.Create(ctx, options)
+	variable, err := tfeClient.Variables.Create(ctx, ws.ID, options)
 	if err != nil {
 		return fmt.Errorf("Error creating %s variable %s: %v", category, key, err)
 	}
@@ -119,8 +125,21 @@ func resourceTFEVariableCreate(d *schema.ResourceData, meta interface{}) error {
 func resourceTFEVariableRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
+	// Get organization and workspace.
+	organization, workspace, err := unpackWorkspaceID(d.Get("workspace_id").(string))
+	if err != nil {
+		return fmt.Errorf("Error unpacking workspace ID: %v", err)
+	}
+
+	// Get the workspace.
+	ws, err := tfeClient.Workspaces.Read(ctx, organization, workspace)
+	if err != nil {
+		return fmt.Errorf(
+			"Error retrieving workspace %s from organization %s: %v", workspace, organization, err)
+	}
+
 	log.Printf("[DEBUG] Read variable: %s", d.Id())
-	variable, err := tfeClient.Variables.Read(ctx, d.Id())
+	variable, err := tfeClient.Variables.Read(ctx, ws.ID, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] Variable %s does no longer exist", d.Id())
@@ -133,6 +152,7 @@ func resourceTFEVariableRead(d *schema.ResourceData, meta interface{}) error {
 	// Update config.
 	d.Set("key", variable.Key)
 	d.Set("category", string(variable.Category))
+	d.Set("description", string(variable.Description))
 	d.Set("hcl", variable.HCL)
 	d.Set("sensitive", variable.Sensitive)
 
@@ -147,16 +167,30 @@ func resourceTFEVariableRead(d *schema.ResourceData, meta interface{}) error {
 func resourceTFEVariableUpdate(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
+	// Get organization and workspace.
+	organization, workspace, err := unpackWorkspaceID(d.Get("workspace_id").(string))
+	if err != nil {
+		return fmt.Errorf("Error unpacking workspace ID: %v", err)
+	}
+
+	// Get the workspace.
+	ws, err := tfeClient.Workspaces.Read(ctx, organization, workspace)
+	if err != nil {
+		return fmt.Errorf(
+			"Error retrieving workspace %s from organization %s: %v", workspace, organization, err)
+	}
+
 	// Create a new options struct.
 	options := tfe.VariableUpdateOptions{
-		Key:       tfe.String(d.Get("key").(string)),
-		Value:     tfe.String(d.Get("value").(string)),
-		HCL:       tfe.Bool(d.Get("hcl").(bool)),
-		Sensitive: tfe.Bool(d.Get("sensitive").(bool)),
+		Key:         tfe.String(d.Get("key").(string)),
+		Value:       tfe.String(d.Get("value").(string)),
+		HCL:         tfe.Bool(d.Get("hcl").(bool)),
+		Sensitive:   tfe.Bool(d.Get("sensitive").(bool)),
+		Description: tfe.String(d.Get("description").(string)),
 	}
 
 	log.Printf("[DEBUG] Update variable: %s", d.Id())
-	_, err := tfeClient.Variables.Update(ctx, d.Id(), options)
+	_, err = tfeClient.Variables.Update(ctx, ws.ID, d.Id(), options)
 	if err != nil {
 		return fmt.Errorf("Error updating variable %s: %v", d.Id(), err)
 	}
@@ -167,8 +201,21 @@ func resourceTFEVariableUpdate(d *schema.ResourceData, meta interface{}) error {
 func resourceTFEVariableDelete(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
+	// Get organization and workspace.
+	organization, workspace, err := unpackWorkspaceID(d.Get("workspace_id").(string))
+	if err != nil {
+		return fmt.Errorf("Error unpacking workspace ID: %v", err)
+	}
+
+	// Get the workspace.
+	ws, err := tfeClient.Workspaces.Read(ctx, organization, workspace)
+	if err != nil {
+		return fmt.Errorf(
+			"Error retrieving workspace %s from organization %s: %v", workspace, organization, err)
+	}
+
 	log.Printf("[DEBUG] Delete variable: %s", d.Id())
-	err := tfeClient.Variables.Delete(ctx, d.Id())
+	err = tfeClient.Variables.Delete(ctx, ws.ID, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil

@@ -1,4 +1,42 @@
-## 0.11.5 (Unreleased)
+## 0.15.0 (Unreleased)
+## 0.14.1 (March 04, 2020)
+BUG FIXES:
+
+* t/tfe_workspace: Issues with updating `working_directory` ([[#137](https://github.com/terraform-providers/terraform-provider-tfe/pull/137)]) 
+  and `trigger_prefixes` ([[#138](https://github.com/terraform-providers/terraform-provider-tfe/pull/138)]) when removed from the configuration. 
+  Special note: if you have workspaces which are configured through the TFE provider, but have set the working directory or trigger prefixes manually, through the UI, you'll need to update your configuration.
+
+## 0.14.0 (February 20, 2020)
+
+FEATURES:
+
+* **New Resource:** `tfe_run_trigger` ([[#132](https://github.com/terraform-providers/terraform-provider-tfe/pull/132)])
+
+## 0.13.0 (February 18, 2020)
+
+ENHANCEMENTS:
+
+* provider: Update to the standalone SDK ([[#130](https://github.com/terraform-providers/terraform-provider-tfe/pull/130)])
+
+## 0.12.1 (February 12, 2020)
+
+BUG FIXES:
+
+* provider: Lock the provider v2.2 for Terraform Enterprise ([[#127](https://github.com/terraform-providers/terraform-provider-tfe/pull/127)])
+This will warn users that this version of the provider does not support Terraform Enterprise versions < 202001-1
+
+## 0.12.0 (February 11, 2020)
+
+BREAKING CHANGES:
+
+* r/tfe_variable: Update the workspace variable resource to utilize the "nested" routes that are now preferred ([[#123](https://github.com/terraform-providers/terraform-provider-tfe/pull/123)])
+This change is incompatible with Terraform Enterprise versions < 202001-1. 
+
+ENHANCEMENTS:
+
+* **New Resource:** `tfe_policy_set_parameter` ([[#123](https://github.com/terraform-providers/terraform-provider-tfe/pull/123)])
+* r/tfe_variable: Add support for descriptions for workspace variables ([[#121](https://github.com/terraform-providers/terraform-provider-tfe/pull/121)])
+
 ## 0.11.4 (December 13, 2019)
 
 BUG FIXES:
@@ -6,6 +44,7 @@ BUG FIXES:
 r/tfe_oauth_client: Issue with using private_key and validation check ([[#113]](https://github.com/terraform-providers/terraform-provider-tfe/pull/113))
 
 ## 0.11.3 (December 10, 2019)
+
 ENHANCEMENTS:
 
 * r/tfe_oauth_client: Adding support for Azure DevOps Server and Azure DevOps Services ([[#99](https://github.com/terraform-providers/terraform-provider-tfe/pull/99)])
@@ -26,7 +65,7 @@ ENHANCEMENTS:
 
 FEATURES:
 
-* **New Resource:** `tfe_notification_configuration` ([[#86](https://github.com/terraform-providers/terraform-provider-tfe/issues/86)])
+* **New Resource:** `tfe_notification_configuration` ([[#86](https://github.com/terraform-providers/terraform-provider-tfe/pull/86)])
 
 ## 0.10.1 (June 26, 2019)
 

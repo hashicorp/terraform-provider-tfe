@@ -6,7 +6,7 @@ import (
 	"regexp"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 var workspaceIdRegexp = regexp.MustCompile("^ws-[a-zA-Z0-9]{16}$")
@@ -87,7 +87,7 @@ func resourceTFEWorkspace() *schema.Resource {
 			"working_directory": {
 				Type:     schema.TypeString,
 				Optional: true,
-				Computed: true,
+				Default:  "",
 			},
 
 			"vcs_repo": {
@@ -143,6 +143,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		FileTriggersEnabled: tfe.Bool(d.Get("file_triggers_enabled").(bool)),
 		Operations:          tfe.Bool(d.Get("operations").(bool)),
 		QueueAllRuns:        tfe.Bool(d.Get("queue_all_runs").(bool)),
+		WorkingDirectory:    tfe.String(d.Get("working_directory").(string)),
 	}
 
 	// Process all configured options.
@@ -154,10 +155,6 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		for _, tp := range tps.([]interface{}) {
 			options.TriggerPrefixes = append(options.TriggerPrefixes, tp.(string))
 		}
-	}
-
-	if workingDir, ok := d.GetOk("working_directory"); ok {
-		options.WorkingDirectory = tfe.String(workingDir.(string))
 	}
 
 	// Get and assert the VCS repo configuration block.
@@ -266,6 +263,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			FileTriggersEnabled: tfe.Bool(d.Get("file_triggers_enabled").(bool)),
 			Operations:          tfe.Bool(d.Get("operations").(bool)),
 			QueueAllRuns:        tfe.Bool(d.Get("queue_all_runs").(bool)),
+			WorkingDirectory:    tfe.String(d.Get("working_directory").(string)),
 		}
 
 		// Process all configured options.
@@ -277,6 +275,9 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			for _, tp := range tps.([]interface{}) {
 				options.TriggerPrefixes = append(options.TriggerPrefixes, tp.(string))
 			}
+		} else {
+			// Reset trigger prefixes when none are present in the config.
+			options.TriggerPrefixes = []string{}
 		}
 
 		if workingDir, ok := d.GetOk("working_directory"); ok {

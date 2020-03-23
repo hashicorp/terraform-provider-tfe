@@ -132,3 +132,29 @@ $ TESTARGS="-run TestAccTFENotificationConfiguration" envchain YOUR_NAMESPACE_HE
 ```sh
 $ TESTARGS="-run TestAccTFENotificationConfiguration" make testacc
 ```   
+
+### 4. Referencing a local version of `go-tfe`
+
+You may want to run tests against a local version of `go-tfe`. Add the following line to `go.mod` above the require statement, using your local path to `go-tfe`.
+
+```
+replace github.com/hashicorp/go-tfe => /path-to-local-repo/go-tfe
+```
+
+## Updating the Changelog
+
+Only update the `Unreleased` section. Please use the template below when updating the changelog:
+
+```
+<change category>:
+* **New Resource:** `name_of_new_resource` ([#123](link-to-PR))
+* r/tfe_resource: description of change or bug fix ([#124](link-to-PR))
+```
+
+### Change categories
+
+BREAKING CHANGES: Use this for any changes that aren't backwards compatible. Include details on how to handle these changes.
+FEATURES: Use this for any larger new features added
+ENHANCEMENTS: Use this for smaller new features added
+BUG FIXES: Use this for any bugs that were fixed
+NOTES: Use this section if you need to include any additional notes on things like upgrading, upcoming deprecations, or any other information you might want to highlight.
