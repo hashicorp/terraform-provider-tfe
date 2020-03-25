@@ -30,10 +30,7 @@ The following arguments are supported:
 
 In addition to all arguments above, the following attributes are exported:
 
-* `id` - The workspace's human-readable ID, which looks like
-  `<ORGANIZATION>/<WORKSPACE>`.
-* `external_id` - The workspace's opaque external ID, which looks like
-  `ws-<RANDOM STRING>`.
+* `id` - The workspace ID.
 * `auto_apply` - Indicates whether to automatically apply changes when a
   Terraform plan is successful.
 * `file_triggers_enabled` - Indicates whether runs are triggered based on the changed files in a VCS push (if `true`) or always triggered on every push (if `false`).

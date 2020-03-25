@@ -47,8 +47,7 @@ The following arguments are supported:
   of HCL code. Has no effect for environment variables. Defaults to `false`.
 * `sensitive` - (Optional) Whether the value is sensitive. If true then the
   variable is written once and not visible thereafter. Defaults to `false`.
-* `workspace_id` - (Required) The workspace that owns the variable, specified as
-  a human-readable ID (`<ORGANIZATION>/<WORKSPACE>`).
+* `workspace_id` - (Required) ID of the workspace that owns the variable.
 
 ## Attributes Reference
 

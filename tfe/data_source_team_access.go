@@ -36,17 +36,12 @@ func dataSourceTFETeamAccessRead(d *schema.ResourceData, meta interface{}) error
 	// Get the team ID.
 	teamID := d.Get("team_id").(string)
 
-	// Get organization and workspace.
-	organization, workspace, err := unpackWorkspaceID(d.Get("workspace_id").(string))
-	if err != nil {
-		return fmt.Errorf("Error unpacking workspace ID: %v", err)
-	}
-
-	// Get the workspace.
-	ws, err := tfeClient.Workspaces.Read(ctx, organization, workspace)
+	// Get the workspace
+	workspaceID := d.Get("workspace_id").(string)
+	ws, err := tfeClient.Workspaces.ReadByID(ctx, workspaceID)
 	if err != nil {
 		return fmt.Errorf(
-			"Error retrieving workspace %s from organization %s: %v", workspace, organization, err)
+			"Error retrieving workspace %s: %v", workspaceID, err)
 	}
 
 	// Create an options struct.
