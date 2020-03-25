@@ -1,4 +1,4 @@
-## 0.15.1 (Unreleased)
+## 0.15.1 (March 25, 2020)
 ENHANCEMENTS:
 * r/tfe_workspace: Migrate ID from <organization>/<workspace> to opaque external_id ([#106](https://github.com/terraform-providers/terraform-provider-tfe/pull/106))
 * r/tfe_variable: Migrate workspace_id from <organization>/<workspace> to opaque external_id ([#106](https://github.com/terraform-providers/terraform-provider-tfe/pull/106))
