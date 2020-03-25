@@ -125,17 +125,12 @@ func resourceTFEVariableCreate(d *schema.ResourceData, meta interface{}) error {
 func resourceTFEVariableRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	// Get organization and workspace.
-	organization, workspace, err := unpackWorkspaceID(d.Get("workspace_id").(string))
-	if err != nil {
-		return fmt.Errorf("Error unpacking workspace ID: %v", err)
-	}
-
 	// Get the workspace.
-	ws, err := tfeClient.Workspaces.Read(ctx, organization, workspace)
+	workspaceID := d.Get("workspace_id").(string)
+	ws, err := tfeClient.Workspaces.ReadByID(ctx, workspaceID)
 	if err != nil {
 		return fmt.Errorf(
-			"Error retrieving workspace %s from organization %s: %v", workspace, organization, err)
+			"Error retrieving workspace %s: %v", workspaceID, err)
 	}
 
 	log.Printf("[DEBUG] Read variable: %s", d.Id())
@@ -167,17 +162,12 @@ func resourceTFEVariableRead(d *schema.ResourceData, meta interface{}) error {
 func resourceTFEVariableUpdate(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	// Get organization and workspace.
-	organization, workspace, err := unpackWorkspaceID(d.Get("workspace_id").(string))
-	if err != nil {
-		return fmt.Errorf("Error unpacking workspace ID: %v", err)
-	}
-
 	// Get the workspace.
-	ws, err := tfeClient.Workspaces.Read(ctx, organization, workspace)
+	workspaceID := d.Get("workspace_id").(string)
+	ws, err := tfeClient.Workspaces.ReadByID(ctx, workspaceID)
 	if err != nil {
 		return fmt.Errorf(
-			"Error retrieving workspace %s from organization %s: %v", workspace, organization, err)
+			"Error retrieving workspace %s: %v", workspaceID, err)
 	}
 
 	// Create a new options struct.
@@ -201,17 +191,12 @@ func resourceTFEVariableUpdate(d *schema.ResourceData, meta interface{}) error {
 func resourceTFEVariableDelete(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	// Get organization and workspace.
-	organization, workspace, err := unpackWorkspaceID(d.Get("workspace_id").(string))
-	if err != nil {
-		return fmt.Errorf("Error unpacking workspace ID: %v", err)
-	}
-
 	// Get the workspace.
-	ws, err := tfeClient.Workspaces.Read(ctx, organization, workspace)
+	workspaceID := d.Get("workspace_id").(string)
+	ws, err := tfeClient.Workspaces.ReadByID(ctx, workspaceID)
 	if err != nil {
 		return fmt.Errorf(
-			"Error retrieving workspace %s from organization %s: %v", workspace, organization, err)
+			"Error retrieving workspace %s: %v", workspaceID, err)
 	}
 
 	log.Printf("[DEBUG] Delete variable: %s", d.Id())

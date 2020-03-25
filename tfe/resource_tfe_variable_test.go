@@ -129,14 +129,10 @@ func testAccCheckTFEVariableExists(
 		}
 
 		wsID := rs.Primary.Attributes["workspace_id"]
-		organization, workspace, err := unpackWorkspaceID(wsID)
+		ws, err := tfeClient.Workspaces.ReadByID(ctx, wsID)
 		if err != nil {
-			return fmt.Errorf("Unable to unpack workspace ID: %s", wsID)
-		}
-
-		ws, err := tfeClient.Workspaces.Read(ctx, organization, workspace)
-		if err != nil {
-			return fmt.Errorf("Unable to retreive workspace: %s", err)
+			return fmt.Errorf(
+				"Error retrieving workspace %s: %v", wsID, err)
 		}
 
 		v, err := tfeClient.Variables.Read(ctx, ws.ID, rs.Primary.ID)
