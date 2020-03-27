@@ -15,6 +15,10 @@ It supports both the SaaS version of Terraform Enterprise
 
 Use the navigation to the left to read about the available resources.
 
+~> **Important:** For production use, you should constrain the acceptable provider versions via configuration,
+to ensure that new versions with breaking changes will not be automatically installed. 
+For more information, see [Versions](#versions).
+
 ## Authentication
 
 This provider requires a Terraform Enterprise API token in order to manage
@@ -41,6 +45,36 @@ There are three ways to provide the required token:
 - In a Terraform Enterprise workspace, set `token` in the provider
   configuration. Use an input variable for the token and mark the corresponding
   variable in the workspace as sensitive.
+  
+## Versions
+
+For production use, you should constrain the acceptable provider versions via configuration,
+to ensure that new versions with breaking changes will not be automatically installed by 
+`terraform init` in future. As this provider is still at version zero, you should constrain 
+the acceptable provider versions on the minor version.
+
+If you are using Terraform CLI version 0.12.x, you can constrain this provider to 0.15.x versions 
+by adding a `required_providers` block inside a `terraform` block.
+```
+terraform {
+  required_providers {
+    tfe = "~> 0.15.0"
+  }
+}
+```
+
+If you are using Terraform CLI version 0.11.x, you can constrain this provider to 0.15.x versions 
+by adding the version constraint to the tfe provider block.
+```
+provider "tfe" {
+  version = "~> 0.15.0"
+  ...
+}
+```
+
+For more information on constraining provider versions, see the 
+[provider versions documentation](https://www.terraform.io/docs/configuration/providers.html#provider-versions).
+  
 
 ## Example Usage
 
@@ -49,6 +83,7 @@ There are three ways to provide the required token:
 provider "tfe" {
   hostname = "${var.hostname}"
   token    = "${var.token}"
+  version  = "~> 0.15.0"
 }
 
 # Create an organization
