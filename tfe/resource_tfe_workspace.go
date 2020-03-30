@@ -200,7 +200,11 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	id := d.Id()
 	log.Printf("[DEBUG] Read configuration of workspace: %s", id)
 	workspace, err := tfeClient.Workspaces.ReadByID(ctx, id)
-	if err != nil && err != tfe.ErrResourceNotFound {
+	if err != nil {
+		if err == tfe.ErrResourceNotFound {
+			d.SetId("")
+			return nil
+		}
 		return fmt.Errorf("Error reading configuration of workspace %s: %v", id, err)
 	}
 
