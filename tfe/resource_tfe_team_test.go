@@ -31,6 +31,34 @@ func TestAccTFETeam_basic(t *testing.T) {
 	})
 }
 
+func TestAccTFETeam_full(t *testing.T) {
+	team := &tfe.Team{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeam_full,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFETeamExists(
+						"tfe_team.foobar", team),
+					testAccCheckTFETeamAttributes(team),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "name", "team-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_policies", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_workspaces", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_vcs_settings", "true"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFETeam_import(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -120,4 +148,21 @@ resource "tfe_organization" "foobar" {
 resource "tfe_team" "foobar" {
   name         = "team-test"
   organization = "${tfe_organization.foobar.id}"
+}`
+
+const testAccTFETeam_full = `
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform"
+  email = "admin@company.com"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-test"
+	organization = "${tfe_organization.foobar.id}"
+	
+	organization_access {
+		manage_policies = true
+		manage_workspaces = true
+		manage_vcs_settings = true
+	}
 }`
