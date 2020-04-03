@@ -9,8 +9,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
-var teamVisibilityValues = []string{"secret", "organization"}
-
 func resourceTFETeam() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceTFETeamCreate,
