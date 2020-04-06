@@ -63,9 +63,8 @@ In addition to all arguments above, the following attributes are exported:
 
 ## Import
 
-Workspaces can be imported; use `<ORGANIZATION NAME>/<WORKSPACE ID>` as the
-import ID. For example:
+Workspaces can be imported; use `<WORKSPACE ID>` as the import ID. For example:
 
 ```shell
-terraform import tfe_workspace.test my-org-name/my-workspace-id
+terraform import tfe_workspace.test my-workspace-id
 ```
