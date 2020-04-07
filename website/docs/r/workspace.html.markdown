@@ -63,6 +63,9 @@ In addition to all arguments above, the following attributes are exported:
 
 ## Import
 
+~> **NOTE** In versions < 0.15.1, the import ID was in the format `<ORGANIZATION NAME>/<WORKSPACE NAME>`.
+This format has been deprecated in favor of the immutable workspace ID in the format `ws-<RANDOM STRING>`.
+
 Workspaces can be imported; use `<WORKSPACE ID>` as the
 import ID. For example:
 
