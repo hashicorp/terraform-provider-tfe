@@ -15,6 +15,9 @@ Add or remove a team member using a
 resources for managing team memberships. This is the preferred method as it
 allows you to add a member to a team by email address.
 
+~> **NOTE:** This resource requires using the provider with Terraform Cloud or
+an instance of Terraform Enterprise at least as recent as v202004-1.
+
 ## Example Usage
 
 Basic usage:

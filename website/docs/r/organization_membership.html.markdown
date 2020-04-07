@@ -10,6 +10,9 @@ description: |-
 
 Add or remove a user from an organization.
 
+~> **NOTE:** This resource requires using the provider with Terraform Cloud or
+an instance of Terraform Enterprise at least as recent as v202004-1.
+
 ## Example Usage
 
 Basic usage:
