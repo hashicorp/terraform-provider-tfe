@@ -55,7 +55,8 @@ the acceptable provider versions on the minor version.
 
 If you are using Terraform CLI version 0.12.x, you can constrain this provider to 0.15.x versions 
 by adding a `required_providers` block inside a `terraform` block.
-```
+
+```hcl
 terraform {
   required_providers {
     tfe = "~> 0.15.0"
@@ -65,7 +66,8 @@ terraform {
 
 If you are using Terraform CLI version 0.11.x, you can constrain this provider to 0.15.x versions 
 by adding the version constraint to the tfe provider block.
-```
+
+```hcl
 provider "tfe" {
   version = "~> 0.15.0"
   ...
