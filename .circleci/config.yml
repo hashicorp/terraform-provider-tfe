@@ -41,7 +41,7 @@ jobs:
 
 workflows:
   version: 2
-  my-workflow:
+  build-and-test:
     jobs:
       - run-tests:
           context: terraform-provider-tfe build access
