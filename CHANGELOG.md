@@ -1,4 +1,10 @@
 ## 0.16.0 (Unreleased)
+
+FEATURES:
+
+- **New Resource**: `tfe_organization_membership` ([#154](https://github.com/terraform-providers/terraform-provider-tfe/pull/154))
+- **New Resource**: `tfe_team_organization_member` ([#154](https://github.com/terraform-providers/terraform-provider-tfe/pull/154))
+
 ## 0.15.1 (March 25, 2020)
 ENHANCEMENTS:
 * r/tfe_workspace: Migrate ID from <organization>/<workspace> to opaque external_id ([#106](https://github.com/terraform-providers/terraform-provider-tfe/pull/106))
