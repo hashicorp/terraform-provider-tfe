@@ -39,6 +39,12 @@ The following arguments are supported:
 
 In addition to all arguments above, the following attributes are exported:
 
-* `ids` - A map of workspace names and their IDs.
+~> **NOTE** In versions < 0.15.1, workspace IDs were in the format 
+`<ORGANIZATION NAME>/<WORKSPACE NAME>` for some resources. This format 
+has been deprecated in favor of the immutable workspace ID in the format `ws-<RANDOM STRING>`.
+The `ids` attribute for this resource return workspace IDs in the deprecated
+format so you should use `external_ids` instead.
+
+* `ids` - A map of workspace names and their human-readable IDs, which look like `<ORGANIZATION>/<WORKSPACE>`. 
 * `external_ids` - A map of workspace names and their opaque external IDs, which
   look like `ws-<RANDOM STRING>`.
