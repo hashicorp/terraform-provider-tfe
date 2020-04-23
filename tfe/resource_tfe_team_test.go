@@ -174,7 +174,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-	organization = "${tfe_organization.foobar.id}"
+  organization = "${tfe_organization.foobar.id}"
 }`
 
 const testAccTFETeam_full = `
@@ -185,13 +185,13 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-	organization = "${tfe_organization.foobar.id}"
+  organization = "${tfe_organization.foobar.id}"
 
-	visibility = "organization"
-	
-	organization_access {
-		manage_policies = true
-		manage_workspaces = true
-		manage_vcs_settings = true
-	}
+  visibility = "organization"
+  
+  organization_access {
+    manage_policies = true
+    manage_workspaces = true
+    manage_vcs_settings = true
+  }
 }`
