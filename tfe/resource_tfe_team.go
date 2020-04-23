@@ -5,6 +5,8 @@ import (
 	"log"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
@@ -25,7 +27,6 @@ func resourceTFETeam() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-
 			"organization": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -52,6 +53,14 @@ func resourceTFETeam() *schema.Resource {
 					},
 				},
 			},
+			"visibility": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ValidateFunc: validation.StringInSlice([]string{
+					"secret",
+					"organization",
+				}, false),
+			},
 		},
 	}
 }
@@ -62,12 +71,12 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 	// Get team attributes.
 	name := d.Get("name").(string)
 	organization := d.Get("organization").(string)
-	access := getTeamOrganizationAccess(d)
 
 	// Create a new options struct.
 	options := tfe.TeamCreateOptions{
 		Name:               tfe.String(name),
-		OrganizationAccess: access,
+		OrganizationAccess: getTeamOrganizationAccess(d),
+		Visibility:         tfe.String(d.Get("visibility").(string)),
 	}
 
 	log.Printf("[DEBUG] Create team %s for organization: %s", name, organization)
@@ -101,6 +110,7 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("organization_access.0.manage_policies", team.OrganizationAccess.ManagePolicies)
 	d.Set("organization_access.0.manage_workspaces", team.OrganizationAccess.ManageWorkspaces)
 	d.Set("organization_access.0.manage_vcs_settings", team.OrganizationAccess.ManageVCSSettings)
+	d.Set("visibility", team.Visibility)
 
 	return nil
 }
@@ -110,12 +120,12 @@ func resourceTFETeamUpdate(d *schema.ResourceData, meta interface{}) error {
 
 	// Get the name and organization.
 	name := d.Get("name").(string)
-	access := getTeamOrganizationAccess(d)
 
 	// create an options struct
 	options := tfe.TeamUpdateOptions{
 		Name:               tfe.String(name),
-		OrganizationAccess: access,
+		OrganizationAccess: getTeamOrganizationAccess(d),
+		Visibility:         tfe.String(d.Get("visibility").(string)),
 	}
 
 	log.Printf("[DEBUG] Update team: %s", d.Id())
