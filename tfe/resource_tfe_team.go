@@ -56,6 +56,7 @@ func resourceTFETeam() *schema.Resource {
 			"visibility": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 				ValidateFunc: validation.StringInSlice([]string{
 					"secret",
 					"organization",
@@ -76,7 +77,10 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 	options := tfe.TeamCreateOptions{
 		Name:               tfe.String(name),
 		OrganizationAccess: getTeamOrganizationAccess(d),
-		Visibility:         tfe.String(d.Get("visibility").(string)),
+	}
+
+	if v, ok := d.GetOk("visibility"); ok {
+		options.Visibility = tfe.String(v.(string))
 	}
 
 	log.Printf("[DEBUG] Create team %s for organization: %s", name, organization)
@@ -125,7 +129,10 @@ func resourceTFETeamUpdate(d *schema.ResourceData, meta interface{}) error {
 	options := tfe.TeamUpdateOptions{
 		Name:               tfe.String(name),
 		OrganizationAccess: getTeamOrganizationAccess(d),
-		Visibility:         tfe.String(d.Get("visibility").(string)),
+	}
+
+	if v, ok := d.GetOk("visibility"); ok {
+		options.Visibility = tfe.String(v.(string))
 	}
 
 	log.Printf("[DEBUG] Update team: %s", d.Id())
