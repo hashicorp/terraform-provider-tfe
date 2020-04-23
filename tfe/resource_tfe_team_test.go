@@ -25,6 +25,8 @@ func TestAccTFETeam_basic(t *testing.T) {
 					testAccCheckTFETeamAttributes(team),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "name", "team-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "visibility", "organization"),
 				),
 			},
 		},
@@ -86,6 +88,9 @@ func testAccCheckTFETeamAttributes(
 		if team.Name != "team-test" {
 			return fmt.Errorf("Bad name: %s", team.Name)
 		}
+		if team.Visibility != "organization" {
+			return fmt.Errorf("Wrong visibility: %s", team.Visibility)
+		}
 		return nil
 	}
 }
@@ -119,5 +124,6 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = "${tfe_organization.foobar.id}"
+	organization = "${tfe_organization.foobar.id}"
+	visibility   = "organization"
 }`

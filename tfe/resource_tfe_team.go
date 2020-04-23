@@ -5,6 +5,8 @@ import (
 	"log"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
@@ -24,11 +26,18 @@ func resourceTFETeam() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-
 			"organization": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
+			},
+			"visibility": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ValidateFunc: validation.StringInSlice([]string{
+					"secret",
+					"organization",
+				}, false),
 			},
 		},
 	}
@@ -43,7 +52,8 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 
 	// Create a new options struct.
 	options := tfe.TeamCreateOptions{
-		Name: tfe.String(name),
+		Name:       tfe.String(name),
+		Visibility: tfe.String(d.Get("visibility").(string)),
 	}
 
 	log.Printf("[DEBUG] Create team %s for organization: %s", name, organization)
@@ -74,6 +84,7 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 
 	// Update the config.
 	d.Set("name", team.Name)
+	d.Set("visibility", team.Visibility)
 
 	return nil
 }
