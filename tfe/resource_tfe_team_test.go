@@ -22,7 +22,7 @@ func TestAccTFETeam_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamExists(
 						"tfe_team.foobar", team),
-					testAccCheckTFETeamAttributes(team),
+					testAccCheckTFETeamAttributes_basic(team),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "name", "team-test"),
 				),
@@ -44,7 +44,7 @@ func TestAccTFETeam_full(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamExists(
 						"tfe_team.foobar", team),
-					testAccCheckTFETeamAttributes(team),
+					testAccCheckTFETeamAttributes_full(team),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "name", "team-test"),
 					resource.TestCheckResourceAttr(
@@ -110,15 +110,37 @@ func testAccCheckTFETeamExists(
 	}
 }
 
-func testAccCheckTFETeamAttributes(
+func testAccCheckTFETeamAttributes_basic(
 	team *tfe.Team) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if team.Name != "team-test" {
 			return fmt.Errorf("Bad name: %s", team.Name)
 		}
-		if team.Visibility != "organization" {
-			return fmt.Errorf("Wrong visibility: %s", team.Visibility)
+		return nil
+	}
+}
+
+func testAccCheckTFETeamAttributes_full(
+	team *tfe.Team) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if team.Name != "team-test" {
+			return fmt.Errorf("Bad name: %s", team.Name)
 		}
+
+		if team.Visibility != "organization" {
+			return fmt.Errorf("Bad visibility: %s", team.Visibility)
+		}
+
+		if !team.OrganizationAccess.ManagePolicies {
+			return fmt.Errorf("OrganizationAccess.ManagePolicies should be true")
+		}
+		if !team.OrganizationAccess.ManageVCSSettings {
+			return fmt.Errorf("OrganizationAccess.ManageVCSSettings should be true")
+		}
+		if !team.OrganizationAccess.ManageWorkspaces {
+			return fmt.Errorf("OrganizationAccess.ManageWorkspaces should be true")
+		}
+
 		return nil
 	}
 }
