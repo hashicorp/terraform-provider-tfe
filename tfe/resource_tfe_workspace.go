@@ -202,6 +202,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	workspace, err := tfeClient.Workspaces.ReadByID(ctx, id)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
+			log.Printf("[DEBUG] Workspace %s no longer exists", id)
 			d.SetId("")
 			return nil
 		}
