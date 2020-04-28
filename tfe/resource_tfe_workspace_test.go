@@ -8,6 +8,7 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
@@ -39,6 +40,25 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 						"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "working_directory", ""),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspace_panic(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:             testAccTFEWorkspace_basic,
+				ExpectNonEmptyPlan: true,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", &tfe.Workspace{}),
+					testAccCheckTFEWorkspacePanic("tfe_workspace.foobar"),
 				),
 			},
 		},
@@ -389,6 +409,43 @@ func testAccCheckTFEWorkspaceExists(
 		}
 
 		*workspace = *w
+
+		return nil
+	}
+}
+
+// As of 4/20/2020 there is a bug that will cause the provider to panic
+// if a workspace is deleted outside of terraform. This case is handled
+// by the data_workspace but not resource_workspace.
+//
+// This test demonstrates the bug.
+//
+// panic: runtime error: invalid memory address or nil pointer dereference
+// resource_tfe_workspace.go:208 resourceTFEWorkspaceRead(...)
+func testAccCheckTFEWorkspacePanic(n string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		tfeClient := testAccProvider.Meta().(*tfe.Client)
+
+		// Grab the resource out of the state and delete it from TFC/E directly.
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return fmt.Errorf("Not found: %s", n)
+		}
+
+		err := tfeClient.Workspaces.DeleteByID(ctx, rs.Primary.ID)
+		if err != nil {
+			return fmt.Errorf("Could not delete %s: %v", n, err)
+		}
+
+		// Read the workspace again using the lower level resource reader
+		// which will trigger the panic
+		rd := &schema.ResourceData{}
+		rd.SetId(rs.Primary.ID)
+
+		err = resourceTFEWorkspaceRead(rd, testAccProvider.Meta())
+		if err != nil && err != tfe.ErrResourceNotFound {
+			return fmt.Errorf("Could not re-read resource directly: %v", err)
+		}
 
 		return nil
 	}

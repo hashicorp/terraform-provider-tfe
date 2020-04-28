@@ -1,4 +1,9 @@
-## 0.17.0 (Unreleased)
+## 0.16.1 (Unreleased)
+
+BUG FIXES:
+* r/tfe_workspace: Running a plan/apply when a workspace has been deleted outside of
+  terraform no longer causes a panic. ([#162](https://github.com/terraform-providers/terraform-provider-tfe/pull/162))
+
 ## 0.16.0 (April 14, 2020)
 
 FEATURES:
