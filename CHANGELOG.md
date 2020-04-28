@@ -1,4 +1,4 @@
-## 0.16.1 (Unreleased)
+## 0.16.1 (April 28, 2020)
 
 BUG FIXES:
 * r/tfe_workspace: Running a plan/apply when a workspace has been deleted outside of
