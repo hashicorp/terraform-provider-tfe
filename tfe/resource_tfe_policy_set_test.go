@@ -987,6 +987,17 @@ resource "tfe_policy_set" "foobar" {
 )
 
 const testAccTFEPolicySet_invalidname = `
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform"
+  email = "admin@company.com"
+}
+
+resource "tfe_sentinel_policy" "foo" {
+  name         = "policy-foo"
+  policy       = "main = rule { true }"
+  organization = "${tfe_organization.foobar.id}"
+}
+
 resource "tfe_policy_set" "foobar" {
   name         = "not the right format"
   description  = "Policy Set"
