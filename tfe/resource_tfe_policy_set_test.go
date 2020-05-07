@@ -2,6 +2,7 @@ package tfe
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -445,6 +446,20 @@ func testAccCheckTFEPolicySetDestroy(s *terraform.State) error {
 	return nil
 }
 
+func TestAccTFEPolicySet_invalidname(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFEPolicySet_invalidname,
+				ExpectError: regexp.MustCompile(`policy set name not the right format should only contain`),
+			},
+		},
+	})
+}
+
 const testAccTFEPolicySet_basic = `
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform"
@@ -591,3 +606,11 @@ resource "tfe_policy_set" "foobar" {
 	GITHUB_POLICY_SET_BRANCH,
 	GITHUB_POLICY_SET_PATH,
 )
+
+const testAccTFEPolicySet_invalidname = `
+resource "tfe_policy_set" "foobar" {
+  name         = "not the right format"
+  description  = "Policy Set"
+  organization = "${tfe_organization.foobar.id}"
+  policy_ids   = ["${tfe_sentinel_policy.foo.id}"]
+}`
