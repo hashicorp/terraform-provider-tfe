@@ -3,6 +3,7 @@ package tfe
 import (
 	"fmt"
 	"log"
+	"regexp"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -22,6 +23,17 @@ func resourceTFEPolicySet() *schema.Resource {
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
+				ValidateFunc: func(v interface{}, k string) (ws []string, errs []error) {
+					value := v.(string)
+					matched, err := regexp.Match(`^[A-Za-z\d-_]+$`, []byte(value))
+					if err != nil {
+						errs = append(errs, err)
+					}
+					if !matched {
+						errs = append(errs, fmt.Errorf("policy set name %s should only contain letters, numbers, dashes (-) and underscores (_)", value))
+					}
+					return
+				},
 			},
 
 			"description": {
