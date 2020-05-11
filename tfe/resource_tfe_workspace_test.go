@@ -329,6 +329,87 @@ func TestAccTFEWorkspace_updateTriggerPrefixes(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
+	workspace := &tfe.Workspace{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			if GITHUB_TOKEN == "" {
+				t.Skip("Please set GITHUB_TOKEN to run this test")
+			}
+			if GITHUB_WORKSPACE_IDENTIFIER == "" {
+				t.Skip("Please set GITHUB_WORKSPACE_IDENTIFIER to run this test")
+			}
+			if GITHUB_WORKSPACE_BRANCH == "" {
+				t.Skip("Please set GITHUB_WORKSPACE_BRANCH to run this test")
+			}
+		},
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_basic,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					testAccCheckTFEWorkspaceAttributes(workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "name", "workspace-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "auto_apply", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "operations", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "queue_all_runs", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "working_directory", ""),
+				),
+			},
+			{
+				Config: testAccTFEWorkspace_updateAddVCSRepo,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
+					testAccCheckTFEWorkspaceUpdatedAddVCSRepoAttributes(workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "name", "workspace-test-add-vcs-repo"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.0.identifier", GITHUB_WORKSPACE_IDENTIFIER),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.0.branch", ""),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.0.ingress_submodules", "false"),
+				),
+			},
+			{
+				Config: testAccTFEWorkspace_updateUpdateVCSRepoBranch,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
+					testAccCheckTFEWorkspaceUpdatedUpdateVCSRepoBranchAttributes(workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "name", "workspace-test-update-vcs-repo-branch"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.0.identifier", GITHUB_WORKSPACE_IDENTIFIER),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.0.branch", GITHUB_WORKSPACE_BRANCH),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.0.ingress_submodules", "false"),
+				),
+			},
+			{
+				Config: testAccTFEWorkspace_updateRemoveVCSRepo,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
+					testAccCheckTFEWorkspaceUpdatedRemoveVCSRepoAttributes(workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "name", "workspace-test-remove-vcs-repo"),
+					resource.TestCheckNoResourceAttr("tfe_workspace.foobar", "vcs_repo"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEWorkspace_sshKey(t *testing.T) {
 	workspace := &tfe.Workspace{}
 
@@ -605,6 +686,75 @@ func testAccCheckTFEWorkspaceAttributesSSHKey(
 	}
 }
 
+func testAccCheckTFEWorkspaceUpdatedAddVCSRepoAttributes(
+	workspace *tfe.Workspace) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if workspace.Name != "workspace-test-add-vcs-repo" {
+			return fmt.Errorf("Bad name: %s", workspace.Name)
+		}
+
+		if workspace.VCSRepo == nil {
+			return fmt.Errorf("Bad VCS repo: %v", workspace.VCSRepo)
+		}
+
+		if workspace.VCSRepo.Branch != "" {
+			return fmt.Errorf("Bad VCS repo branch: %v", workspace.VCSRepo.Branch)
+		}
+
+		if workspace.VCSRepo.Identifier != GITHUB_WORKSPACE_IDENTIFIER {
+			return fmt.Errorf("Bad VCS repo identifier: %v", workspace.VCSRepo.Identifier)
+		}
+
+		if workspace.VCSRepo.IngressSubmodules != false {
+			return fmt.Errorf("Bad VCS repo ingress submodules: %v", workspace.VCSRepo.IngressSubmodules)
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckTFEWorkspaceUpdatedUpdateVCSRepoBranchAttributes(
+	workspace *tfe.Workspace) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if workspace.Name != "workspace-test-update-vcs-repo-branch" {
+			return fmt.Errorf("Bad name: %s", workspace.Name)
+		}
+
+		if workspace.VCSRepo == nil {
+			return fmt.Errorf("Bad VCS repo: %v", workspace.VCSRepo)
+		}
+
+		if workspace.VCSRepo.Branch != GITHUB_WORKSPACE_BRANCH {
+			return fmt.Errorf("Bad VCS repo branch: %v", workspace.VCSRepo.Branch)
+		}
+
+		if workspace.VCSRepo.Identifier != GITHUB_WORKSPACE_IDENTIFIER {
+			return fmt.Errorf("Bad VCS repo identifier: %v", workspace.VCSRepo.Identifier)
+		}
+
+		if workspace.VCSRepo.IngressSubmodules != false {
+			return fmt.Errorf("Bad VCS repo ingress submodules: %v", workspace.VCSRepo.IngressSubmodules)
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckTFEWorkspaceUpdatedRemoveVCSRepoAttributes(
+	workspace *tfe.Workspace) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if workspace.Name != "workspace-test-remove-vcs-repo" {
+			return fmt.Errorf("Bad name: %s", workspace.Name)
+		}
+
+		if workspace.VCSRepo != nil {
+			return fmt.Errorf("Bad VCS repo: %v", workspace.VCSRepo)
+		}
+
+		return nil
+	}
+}
+
 func testAccCheckTFEWorkspaceDestroy(s *terraform.State) error {
 	tfeClient := testAccProvider.Meta().(*tfe.Client)
 
@@ -779,3 +929,74 @@ resource "tfe_workspace" "foobar" {
   organization          = "${tfe_organization.foobar.id}"
   auto_apply            = true
 }`
+
+var testAccTFEWorkspace_updateAddVCSRepo = fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform"
+  email = "admin@company.com"
+}
+
+resource "tfe_oauth_client" "test" {
+  organization     = "${tfe_organization.foobar.id}"
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "%s"
+  service_provider = "github"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test-add-vcs-repo"
+  organization = "${tfe_organization.foobar.id}"
+  auto_apply   = true
+  vcs_repo {
+    identifier     = "%s"
+    oauth_token_id = "${tfe_oauth_client.test.oauth_token_id}"
+  }
+}
+`,
+	GITHUB_TOKEN,
+	GITHUB_WORKSPACE_IDENTIFIER,
+)
+
+var testAccTFEWorkspace_updateUpdateVCSRepoBranch = fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform"
+  email = "admin@company.com"
+}
+
+resource "tfe_oauth_client" "test" {
+  organization     = "${tfe_organization.foobar.id}"
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "%s"
+  service_provider = "github"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test-update-vcs-repo-branch"
+  organization = "${tfe_organization.foobar.id}"
+  auto_apply   = true
+  vcs_repo {
+    identifier     = "%s"
+    oauth_token_id = "${tfe_oauth_client.test.oauth_token_id}"
+    branch         = "%s"
+  }
+}
+`,
+	GITHUB_TOKEN,
+	GITHUB_WORKSPACE_IDENTIFIER,
+	GITHUB_WORKSPACE_BRANCH,
+)
+
+const testAccTFEWorkspace_updateRemoveVCSRepo = `
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test-remove-vcs-repo"
+  organization = "${tfe_organization.foobar.id}"
+  auto_apply   = true
+}
+`
