@@ -2,6 +2,13 @@
 
 _Describe why you're making this change._
 
+## BREAKING CHANGE
+
+_Delete this section if your change is not introducing a breaking change to the provider or a breaking change from the TFE API_
+
+- [ ] New TFE API version created
+- [ ] Provider restricted to TFE API version
+
 ## Testing plan
 
 1.  _Describe how to replicate_
