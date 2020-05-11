@@ -76,11 +76,22 @@ $ $GOPATH/bin/terraform-provider-tfe
 ...
 ```
 
+## Referencing a local version of `go-tfe`
+
+You may want to create configs or run tests against a local version of `go-tfe`. Add the following line to `go.mod` above the require statement, using your local path to `go-tfe`.
+
+```
+replace github.com/hashicorp/go-tfe => /path-to-local-repo/go-tfe
+```
+
 ## Testing
 
-### 1. (Optional) Create a policy sets repo
+### 1. (Optional) Create repositories for policy sets and workspaces
 
-If you are planning to run the full suite of tests or work on policy sets, you'll need to set up a policy set repository in GitHub.
+If you are planning to run the full suite of tests or work on workspaces or policy sets, you'll need to set up a workspace repository and a policy set repository in GitHub.
+
+Your workspace repository will need the following: 
+1. A branch other than master
 
 Your policy set repository will need the following: 
 1. A policy set stored in a subdirectory
@@ -105,6 +116,8 @@ these values with the environment variables specified below:
 1. `GITHUB_POLICY_SET_IDENTIFIER` - GitHub policy set repository identifier in the format `username/repository`. Required for running policy set tests.
 1. `GITHUB_POLICY_SET_BRANCH`: A GitHub branch for the repository specified by `GITHUB_POLICY_SET_IDENTIFIER`. Required for running policy set tests.
 1. `GITHUB_POLICY_SET_PATH`: A GitHub subdirectory for the repository specified by `GITHUB_POLICY_SET_IDENTIFIER`. Required for running policy set tests.
+1. `GITHUB_WORKSPACE_IDENTIFIER` - GitHub workspace repository identifier in the format `username/repository`. Required for running workspace tests.
+1. `GITHUB_WORKSPACE_BRANCH`: A GitHub branch for the repository specified by `GITHUB_WORKSPACE_IDENTIFIER`. Required for running workspace tests.
 
 You can set your environment variables up however you prefer. The following are instructions for setting up environment variables using [envchain](https://github.com/sorah/envchain).
    1. Make sure you have envchain installed. [Instructions for this can be found in the envchain README](https://github.com/sorah/envchain#installation).
@@ -117,9 +130,9 @@ You can set your environment variables up however you prefer. The following are 
     
       Set all of the environment variables at once with the following command:
       ```sh
-      envchain --set YOUR_NAMESPACE_HERE TFE_HOSTNAME TFE_TOKEN TFE_USER1 TFE_USER2 GITHUB_TOKEN GITHUB_POLICY_SET_IDENTIFIER GITHUB_POLICY_SET_BRANCH GITHUB_POLICY_SET_PATH
+      envchain --set YOUR_NAMESPACE_HERE TFE_HOSTNAME TFE_TOKEN TFE_USER1 TFE_USER2 GITHUB_TOKEN GITHUB_POLICY_SET_IDENTIFIER GITHUB_POLICY_SET_BRANCH GITHUB_POLICY_SET_PATH GITHUB_WORKSPACE_IDENTIFIER GITHUB_WORKSPACE_BRANCH
       ```
-
+  
 ### 3. Run the tests
 
 #### Running the provider tests
@@ -160,18 +173,11 @@ $ TESTARGS="-run TestAccTFENotificationConfiguration" envchain YOUR_NAMESPACE_HE
 $ TESTARGS="-run TestAccTFENotificationConfiguration" make testacc
 ```   
 
-### 4. Referencing a local version of `go-tfe`
-
-You may want to run tests against a local version of `go-tfe`. Add the following line to `go.mod` above the require statement, using your local path to `go-tfe`.
-
-```
-replace github.com/hashicorp/go-tfe => /path-to-local-repo/go-tfe
-```
-
 ## Updating the Changelog
 
-Only update the `Unreleased` section. Please use the template below when updating the changelog:
+Only update the `Unreleased` section. Make sure you change the unreleased tag to an appropriate version, using [Semantic Versioning](https://semver.org/) as a guideline.
 
+Please use the template below when updating the changelog:
 ```
 <change category>:
 * **New Resource:** `name_of_new_resource` ([#123](link-to-PR))
@@ -180,8 +186,8 @@ Only update the `Unreleased` section. Please use the template below when updatin
 
 ### Change categories
 
-BREAKING CHANGES: Use this for any changes that aren't backwards compatible. Include details on how to handle these changes.
-FEATURES: Use this for any larger new features added
-ENHANCEMENTS: Use this for smaller new features added
-BUG FIXES: Use this for any bugs that were fixed
-NOTES: Use this section if you need to include any additional notes on things like upgrading, upcoming deprecations, or any other information you might want to highlight.
+- BREAKING CHANGES: Use this for any changes that aren't backwards compatible. Include details on how to handle these changes.
+- FEATURES: Use this for any large new features added.
+- ENHANCEMENTS: Use this for smaller new features added.
+- BUG FIXES: Use this for any bugs that were fixed.
+- NOTES: Use this section if you need to include any additional notes on things like upgrading, upcoming deprecations, or any other information you might want to highlight.
