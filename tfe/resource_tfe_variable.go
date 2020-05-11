@@ -20,6 +20,15 @@ func resourceTFEVariable() *schema.Resource {
 			State: resourceTFEVariableImporter,
 		},
 
+		SchemaVersion: 1,
+		StateUpgraders: []schema.StateUpgrader{
+			{
+				Type:    resourceTfeVariableResourceV0().CoreConfigSchema().ImpliedType(),
+				Upgrade: resourceTfeVariableStateUpgradeV0,
+				Version: 0,
+			},
+		},
+
 		Schema: map[string]*schema.Schema{
 			"key": {
 				Type:     schema.TypeString,
@@ -68,6 +77,10 @@ func resourceTFEVariable() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
+				ValidateFunc: validation.StringMatch(
+					workspaceIdRegexp,
+					"must be the workspace's external_id",
+				),
 			},
 		},
 	}
@@ -80,16 +93,11 @@ func resourceTFEVariableCreate(d *schema.ResourceData, meta interface{}) error {
 	key := d.Get("key").(string)
 	category := d.Get("category").(string)
 
-	// Get organization and workspace.
-	organization, workspace, err := unpackWorkspaceID(d.Get("workspace_id").(string))
+	// Get the workspace
+	workspaceID := d.Get("workspace_id").(string)
+	ws, err := tfeClient.Workspaces.ReadByID(ctx, workspaceID)
 	if err != nil {
-		return fmt.Errorf("Error unpacking workspace ID: %v", err)
-	}
-
-	// Get the workspace.
-	ws, err := tfeClient.Workspaces.Read(ctx, organization, workspace)
-	if err != nil {
-		log.Printf("[DEBUG] Workspace %s no longer exists, so variable doesn't exist either", workspace)
+		log.Printf("[DEBUG] Workspace %s no longer exists, so variable doesn't exist either", workspaceID)
 		d.SetId("")
 		return nil
 	}
@@ -118,17 +126,12 @@ func resourceTFEVariableCreate(d *schema.ResourceData, meta interface{}) error {
 func resourceTFEVariableRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	// Get organization and workspace.
-	organization, workspace, err := unpackWorkspaceID(d.Get("workspace_id").(string))
-	if err != nil {
-		return fmt.Errorf("Error unpacking workspace ID: %v", err)
-	}
-
 	// Get the workspace.
-	ws, err := tfeClient.Workspaces.Read(ctx, organization, workspace)
+	workspaceID := d.Get("workspace_id").(string)
+	ws, err := tfeClient.Workspaces.ReadByID(ctx, workspaceID)
 	if err != nil {
 		return fmt.Errorf(
-			"Error retrieving workspace %s from organization %s: %v", workspace, organization, err)
+			"Error retrieving workspace %s: %v", workspaceID, err)
 	}
 
 	log.Printf("[DEBUG] Read variable: %s", d.Id())
@@ -160,17 +163,12 @@ func resourceTFEVariableRead(d *schema.ResourceData, meta interface{}) error {
 func resourceTFEVariableUpdate(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	// Get organization and workspace.
-	organization, workspace, err := unpackWorkspaceID(d.Get("workspace_id").(string))
-	if err != nil {
-		return fmt.Errorf("Error unpacking workspace ID: %v", err)
-	}
-
 	// Get the workspace.
-	ws, err := tfeClient.Workspaces.Read(ctx, organization, workspace)
+	workspaceID := d.Get("workspace_id").(string)
+	ws, err := tfeClient.Workspaces.ReadByID(ctx, workspaceID)
 	if err != nil {
 		return fmt.Errorf(
-			"Error retrieving workspace %s from organization %s: %v", workspace, organization, err)
+			"Error retrieving workspace %s: %v", workspaceID, err)
 	}
 
 	// Create a new options struct.
@@ -194,17 +192,12 @@ func resourceTFEVariableUpdate(d *schema.ResourceData, meta interface{}) error {
 func resourceTFEVariableDelete(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	// Get organization and workspace.
-	organization, workspace, err := unpackWorkspaceID(d.Get("workspace_id").(string))
-	if err != nil {
-		return fmt.Errorf("Error unpacking workspace ID: %v", err)
-	}
-
 	// Get the workspace.
-	ws, err := tfeClient.Workspaces.Read(ctx, organization, workspace)
+	workspaceID := d.Get("workspace_id").(string)
+	ws, err := tfeClient.Workspaces.ReadByID(ctx, workspaceID)
 	if err != nil {
 		return fmt.Errorf(
-			"Error retrieving workspace %s from organization %s: %v", workspace, organization, err)
+			"Error retrieving workspace %s: %v", workspaceID, err)
 	}
 
 	log.Printf("[DEBUG] Delete variable: %s", d.Id())
@@ -220,6 +213,8 @@ func resourceTFEVariableDelete(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceTFEVariableImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	tfeClient := meta.(*tfe.Client)
+
 	s := strings.SplitN(d.Id(), "/", 3)
 	if len(s) != 3 {
 		return nil, fmt.Errorf(
@@ -229,7 +224,12 @@ func resourceTFEVariableImporter(d *schema.ResourceData, meta interface{}) ([]*s
 	}
 
 	// Set the fields that are part of the import ID.
-	d.Set("workspace_id", s[0]+"/"+s[1])
+	workspace_id, err := fetchWorkspaceExternalID(s[0]+"/"+s[1], tfeClient)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"error retrieving workspace %s from organization %s: %v", s[0], s[1], err)
+	}
+	d.Set("workspace_id", workspace_id)
 	d.SetId(s[2])
 
 	return []*schema.ResourceData{d}, nil

@@ -1,4 +1,25 @@
-## 0.15.0 (Unreleased)
+## 0.17.0 (Unreleased)
+## 0.16.1 (April 28, 2020)
+
+BUG FIXES:
+* r/tfe_workspace: Running a plan/apply when a workspace has been deleted outside of
+  terraform no longer causes a panic. ([#162](https://github.com/terraform-providers/terraform-provider-tfe/pull/162))
+
+## 0.16.0 (April 14, 2020)
+
+FEATURES:
+
+- **New Resource**: `tfe_organization_membership` ([#154](https://github.com/terraform-providers/terraform-provider-tfe/pull/154))
+- **New Resource**: `tfe_team_organization_member` ([#154](https://github.com/terraform-providers/terraform-provider-tfe/pull/154))
+
+## 0.15.1 (March 25, 2020)
+ENHANCEMENTS:
+* r/tfe_workspace: Migrate ID from <organization>/<workspace> to opaque external_id ([#106](https://github.com/terraform-providers/terraform-provider-tfe/pull/106))
+* r/tfe_variable: Migrate workspace_id from <organization>/<workspace> to opaque external_id ([#106](https://github.com/terraform-providers/terraform-provider-tfe/pull/106))
+* r/tfe_team_access: Migrate workspace_id from <organization>/<workspace> to opaque external_id ([#106](https://github.com/terraform-providers/terraform-provider-tfe/pull/106))
+
+## 0.15.0 (March 25, 2020)
+
 ## 0.14.1 (March 04, 2020)
 BUG FIXES:
 

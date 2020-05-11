@@ -19,6 +19,15 @@ func resourceTFETeamAccess() *schema.Resource {
 			State: resourceTFETeamAccessImporter,
 		},
 
+		SchemaVersion: 1,
+		StateUpgraders: []schema.StateUpgrader{
+			{
+				Type:    resourceTfeTeamAccessResourceV0().CoreConfigSchema().ImpliedType(),
+				Upgrade: resourceTfeTeamAccessStateUpgradeV0,
+				Version: 0,
+			},
+		},
+
 		Schema: map[string]*schema.Schema{
 			"access": {
 				Type:     schema.TypeString,
@@ -45,6 +54,10 @@ func resourceTFETeamAccess() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
+				ValidateFunc: validation.StringMatch(
+					workspaceIdRegexp,
+					"must be the workspace's external_id",
+				),
 			},
 		},
 	}
@@ -57,23 +70,18 @@ func resourceTFETeamAccessCreate(d *schema.ResourceData, meta interface{}) error
 	access := d.Get("access").(string)
 	teamID := d.Get("team_id").(string)
 
-	// Get organization and workspace.
-	organization, workspace, err := unpackWorkspaceID(d.Get("workspace_id").(string))
+	// Get the workspace
+	workspaceID := d.Get("workspace_id").(string)
+	ws, err := tfeClient.Workspaces.ReadByID(ctx, workspaceID)
 	if err != nil {
-		return fmt.Errorf("Error unpacking workspace ID: %v", err)
+		return fmt.Errorf(
+			"Error retrieving workspace %s: %v", workspaceID, err)
 	}
 
 	// Get the team.
 	tm, err := tfeClient.Teams.Read(ctx, teamID)
 	if err != nil {
 		return fmt.Errorf("Error retrieving team %s: %v", teamID, err)
-	}
-
-	// Get the workspace.
-	ws, err := tfeClient.Workspaces.Read(ctx, organization, workspace)
-	if err != nil {
-		return fmt.Errorf(
-			"Error retrieving workspace %s from organization %s: %v", workspace, organization, err)
 	}
 
 	// Create a new options struct.
@@ -137,6 +145,8 @@ func resourceTFETeamAccessDelete(d *schema.ResourceData, meta interface{}) error
 }
 
 func resourceTFETeamAccessImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	tfeClient := meta.(*tfe.Client)
+
 	s := strings.SplitN(d.Id(), "/", 3)
 	if len(s) != 3 {
 		return nil, fmt.Errorf(
@@ -146,7 +156,12 @@ func resourceTFETeamAccessImporter(d *schema.ResourceData, meta interface{}) ([]
 	}
 
 	// Set the fields that are part of the import ID.
-	d.Set("workspace_id", s[0]+"/"+s[1])
+	workspace_id, err := fetchWorkspaceExternalID(s[0]+"/"+s[1], tfeClient)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"error retrieving workspace %s from organization %s: %v", s[0], s[1], err)
+	}
+	d.Set("workspace_id", workspace_id)
 	d.SetId(s[2])
 
 	return []*schema.ResourceData{d}, nil

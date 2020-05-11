@@ -39,8 +39,7 @@ The following arguments are supported:
 * `access` - (Required) Type of access to grant. Valid values are `admin`,
   `read`, `plan`, or `write`.
 * `team_id` - (Required) ID of the team to add to the workspace.
-* `workspace_id` - (Required) The workspace to which the team will be added,
-  specified as a human-readable ID (`<ORGANIZATION>/<WORKSPACE>`).
+* `workspace_id` - (Required) ID of the workspace to which the team will be added.
 
 ## Attributes Reference
 

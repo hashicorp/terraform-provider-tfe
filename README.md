@@ -29,6 +29,33 @@ $ make build
 
 ## Using the provider
 
+For production use, you should constrain the acceptable provider versions via configuration,
+to ensure that new versions with breaking changes will not be automatically installed by 
+`terraform init` in future. As this provider is still at version zero, you should constrain 
+the acceptable provider versions on the minor version.
+
+If you are using Terraform CLI version 0.12.x, you can constrain this provider to 0.15.x versions 
+by adding a `required_providers` block inside a `terraform` block.
+```
+terraform {
+  required_providers {
+    tfe = "~> 0.15.0"
+  }
+}
+```
+
+If you are using Terraform CLI version 0.11.x, you can constrain this provider to 0.15.x versions 
+by adding the version constraint to the tfe provider block.
+```
+provider "tfe" {
+  version = "~> 0.15.0"
+  ...
+}
+```
+
+For more information on constraining provider versions, see the 
+[provider versions documentation](https://www.terraform.io/docs/configuration/providers.html#provider-versions).
+
 If you're building the provider, follow the instructions to
 [install it as a plugin.](https://www.terraform.io/docs/plugins/basics.html#installing-a-plugin)
 After placing it into your plugins directory,  run `terraform init` to initialize it.

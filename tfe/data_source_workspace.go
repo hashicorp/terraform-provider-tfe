@@ -136,12 +136,7 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	}
 	d.Set("vcs_repo", vcsRepo)
 
-	id, err := packWorkspaceID(workspace)
-	if err != nil {
-		return fmt.Errorf("Error creating ID for workspace %s: %v", name, err)
-	}
-
-	d.SetId(id)
+	d.SetId(workspace.ID)
 
 	return nil
 }
