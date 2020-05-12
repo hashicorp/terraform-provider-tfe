@@ -309,6 +309,19 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		}
 	}
 
+	// Remove vcs_repo from the workspace
+	// if the value of vcs_repo has been changed
+	// by removing it from the config
+	if d.HasChange("vcs_repo") {
+		_, ok := d.GetOk("vcs_repo")
+		if !ok {
+			_, err := tfeClient.Workspaces.RemoveVCSConnectionByID(ctx, id)
+			if err != nil {
+				return fmt.Errorf("Error removing VCS repo from workspace %s: %v", id, err)
+			}
+		}
+	}
+
 	if d.HasChange("ssh_key_id") {
 		sshKeyID := d.Get("ssh_key_id").(string)
 		externalID, _ := d.GetChange("external_id")
