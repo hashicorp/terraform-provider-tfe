@@ -33,6 +33,7 @@ func resourceTFEVariable() *schema.Resource {
 			"key": {
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
 			},
 
 			"value": {
