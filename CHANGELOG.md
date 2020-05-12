@@ -1,4 +1,8 @@
-## 0.17.0 (Unreleased)
+## 0.16.2 (Unreleased)
+
+BUG FIXES:
+* r/tfe_workspace: Allow VCS repo to be removed from a workspace when it has been removed from the configuration. ([#173](https://github.com/terraform-providers/terraform-provider-tfe/pull/173))
+
 ## 0.16.1 (April 28, 2020)
 
 BUG FIXES:
@@ -13,6 +17,7 @@ FEATURES:
 - **New Resource**: `tfe_team_organization_member` ([#154](https://github.com/terraform-providers/terraform-provider-tfe/pull/154))
 
 ## 0.15.1 (March 25, 2020)
+
 ENHANCEMENTS:
 * r/tfe_workspace: Migrate ID from <organization>/<workspace> to opaque external_id ([#106](https://github.com/terraform-providers/terraform-provider-tfe/pull/106))
 * r/tfe_variable: Migrate workspace_id from <organization>/<workspace> to opaque external_id ([#106](https://github.com/terraform-providers/terraform-provider-tfe/pull/106))
@@ -21,6 +26,7 @@ ENHANCEMENTS:
 ## 0.15.0 (March 25, 2020)
 
 ## 0.14.1 (March 04, 2020)
+
 BUG FIXES:
 
 * t/tfe_workspace: Issues with updating `working_directory` ([[#137](https://github.com/terraform-providers/terraform-provider-tfe/pull/137)]) 
