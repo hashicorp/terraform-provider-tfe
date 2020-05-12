@@ -1,4 +1,4 @@
-## 0.16.2 (Unreleased)
+## 0.16.2 (May 12, 2020)
 
 BUG FIXES:
 * r/tfe_workspace: Allow VCS repo to be removed from a workspace when it has been removed from the configuration. ([#173](https://github.com/terraform-providers/terraform-provider-tfe/pull/173))
