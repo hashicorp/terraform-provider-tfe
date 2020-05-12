@@ -28,12 +28,10 @@ func resourceTFEVariable() *schema.Resource {
 				Version: 0,
 			},
 		},
-
 		Schema: map[string]*schema.Schema{
 			"key": {
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 			},
 
 			"value": {
@@ -83,6 +81,14 @@ func resourceTFEVariable() *schema.Resource {
 					"must be the workspace's external_id",
 				),
 			},
+		},
+
+		CustomizeDiff: func(diff *schema.ResourceDiff, m interface{}) error {
+			if diff.Get("sensitive").(bool) {
+				diff.ForceNew("key")
+			}
+
+			return nil
 		},
 	}
 }

@@ -94,6 +94,60 @@ func TestAccTFEVariable_update(t *testing.T) {
 	})
 }
 
+func TestAccTFEVariable_update_key_sensitive(t *testing.T) {
+	first := &tfe.Variable{}
+	second := &tfe.Variable{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEVariableDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEVariable_update,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEVariableExists(
+						"tfe_variable.foobar", first),
+					testAccCheckTFEVariableAttributesUpdate(first),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "key", "key_updated"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "value", "value_updated"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "description", "another description"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "category", "terraform"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "hcl", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "sensitive", "true"),
+				),
+			},
+			{
+				Config: testAccTFEVariable_update_key_sensitive,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEVariableExists(
+						"tfe_variable.foobar", second),
+					testAccCheckTFEVariableAttributesUpdate_key_sensitive(second),
+					testAccCheckTFEVariableIDsNotEqual(first, second),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "key", "key_updated_2"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "value", "value_updated"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "description", "another description"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "category", "terraform"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "hcl", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "sensitive", "true"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEVariable_import(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -208,6 +262,48 @@ func testAccCheckTFEVariableAttributesUpdate(
 	}
 }
 
+func testAccCheckTFEVariableAttributesUpdate_key_sensitive(
+	variable *tfe.Variable) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if variable.Key != "key_updated_2" {
+			return fmt.Errorf("Bad key: %s", variable.Key)
+		}
+
+		if variable.Value != "" {
+			return fmt.Errorf("Bad value: %s", variable.Value)
+		}
+
+		if variable.Description != "another description" {
+			return fmt.Errorf("Bad description: %s", variable.Description)
+		}
+
+		if variable.Category != tfe.CategoryTerraform {
+			return fmt.Errorf("Bad category: %s", variable.Category)
+		}
+
+		if variable.HCL != true {
+			return fmt.Errorf("Bad HCL: %t", variable.HCL)
+		}
+
+		if variable.Sensitive != true {
+			return fmt.Errorf("Bad sensitive: %t", variable.Sensitive)
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckTFEVariableIDsNotEqual(
+	a, b *tfe.Variable) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if a.ID == b.ID {
+			return fmt.Errorf("Variables should not have same ID: %s, %s", a.ID, b.ID)
+		}
+
+		return nil
+	}
+}
+
 func testAccCheckTFEVariableDestroy(s *terraform.State) error {
 	tfeClient := testAccProvider.Meta().(*tfe.Client)
 
@@ -261,6 +357,27 @@ resource "tfe_workspace" "foobar" {
 
 resource "tfe_variable" "foobar" {
   key          = "key_updated"
+  value        = "value_updated"
+  description  = "another description"
+  category     = "terraform"
+  hcl          = true
+  sensitive    = true
+  workspace_id = "${tfe_workspace.foobar.id}"
+}`
+
+const testAccTFEVariable_update_key_sensitive = `
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = "${tfe_organization.foobar.id}"
+}
+
+resource "tfe_variable" "foobar" {
+  key          = "key_updated_2"
   value        = "value_updated"
   description  = "another description"
   category     = "terraform"
