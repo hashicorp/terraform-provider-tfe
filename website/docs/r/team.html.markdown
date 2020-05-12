@@ -27,7 +27,7 @@ The following arguments are supported:
 
 * `name` - (Required) Name of the team.
 * `organization` - (Required) Name of the organization.
-* `visibility` - (Optional) The visibility of the team ("secret" or "organization").
+* `visibility` - (Optional) The visibility of the team ("secret" or "organization"). Defaults to "secret".
 * `organization_access` - (Optional) Settings for the team's [organization access](https://www.terraform.io/docs/cloud/users-teams-organizations/permissions.html#organization-level-permissions).
 
 The `organization_access` block supports:
