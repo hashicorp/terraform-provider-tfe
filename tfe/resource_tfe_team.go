@@ -75,8 +75,17 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 
 	// Create a new options struct.
 	options := tfe.TeamCreateOptions{
-		Name:               tfe.String(name),
-		OrganizationAccess: getTeamOrganizationAccess(d),
+		Name: tfe.String(name),
+	}
+
+	if v, ok := d.GetOk("organization_access"); ok {
+		organizationAccess := v.([]interface{})[0].(map[string]interface{})
+
+		options.OrganizationAccess = &tfe.OrganizationAccessOptions{
+			ManagePolicies:    tfe.Bool(organizationAccess["manage_policies"].(bool)),
+			ManageWorkspaces:  tfe.Bool(organizationAccess["manage_workspaces"].(bool)),
+			ManageVCSSettings: tfe.Bool(organizationAccess["manage_vcs_settings"].(bool)),
+		}
 	}
 
 	if v, ok := d.GetOk("visibility"); ok {
@@ -127,8 +136,17 @@ func resourceTFETeamUpdate(d *schema.ResourceData, meta interface{}) error {
 
 	// create an options struct
 	options := tfe.TeamUpdateOptions{
-		Name:               tfe.String(name),
-		OrganizationAccess: getTeamOrganizationAccess(d),
+		Name: tfe.String(name),
+	}
+
+	if v, ok := d.GetOk("organization_access"); ok {
+		organizationAccess := v.([]interface{})[0].(map[string]interface{})
+
+		options.OrganizationAccess = &tfe.OrganizationAccessOptions{
+			ManagePolicies:    tfe.Bool(organizationAccess["manage_policies"].(bool)),
+			ManageWorkspaces:  tfe.Bool(organizationAccess["manage_workspaces"].(bool)),
+			ManageVCSSettings: tfe.Bool(organizationAccess["manage_vcs_settings"].(bool)),
+		}
 	}
 
 	if v, ok := d.GetOk("visibility"); ok {
@@ -174,22 +192,4 @@ func resourceTFETeamImporter(d *schema.ResourceData, meta interface{}) ([]*schem
 	d.SetId(s[1])
 
 	return []*schema.ResourceData{d}, nil
-}
-
-func getTeamOrganizationAccess(d *schema.ResourceData) *tfe.OrganizationAccessOptions {
-	options := &tfe.OrganizationAccessOptions{}
-
-	if attr, ok := d.GetOk("organization_access.0.manage_policies"); ok {
-		options.ManagePolicies = tfe.Bool(attr.(bool))
-	}
-
-	if attr, ok := d.GetOk("organization_access.0.manage_workspaces"); ok {
-		options.ManageWorkspaces = tfe.Bool(attr.(bool))
-	}
-
-	if attr, ok := d.GetOk("organization_access.0.manage_vcs_settings"); ok {
-		options.ManageVCSSettings = tfe.Bool(attr.(bool))
-	}
-
-	return options
 }
