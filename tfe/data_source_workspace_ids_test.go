@@ -28,6 +28,18 @@ func TestAccTFEWorkspaceIDsDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
 					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_ids.foobar", "full_names.%", "2"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_ids.foobar",
+						fmt.Sprintf("full_names.workspace-foo-%d", rInt),
+						fmt.Sprintf("tst-terraform-%d/workspace-foo-%d", rInt, rInt),
+					),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_ids.foobar",
+						fmt.Sprintf("full_names.workspace-bar-%d", rInt),
+						fmt.Sprintf("tst-terraform-%d/workspace-bar-%d", rInt, rInt),
+					),
+					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "ids.%", "2"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar",
@@ -69,6 +81,23 @@ func TestAccTFEWorkspaceIDsDataSource_wildcard(t *testing.T) {
 						"data.tfe_workspace_ids.foobar", "names.0", "*"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_ids.foobar", "full_names.%", "3"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_ids.foobar",
+						fmt.Sprintf("full_names.workspace-foo-%d", rInt),
+						fmt.Sprintf("tst-terraform-%d/workspace-foo-%d", rInt, rInt),
+					),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_ids.foobar",
+						fmt.Sprintf("full_names.workspace-bar-%d", rInt),
+						fmt.Sprintf("tst-terraform-%d/workspace-bar-%d", rInt, rInt),
+					),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_ids.foobar",
+						fmt.Sprintf("full_names.workspace-dummy-%d", rInt),
+						fmt.Sprintf("tst-terraform-%d/workspace-dummy-%d", rInt, rInt),
+					),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "ids.%", "3"),
 					resource.TestCheckResourceAttr(

@@ -9,7 +9,8 @@ import (
 
 func dataSourceTFEWorkspaceIDs() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceTFEWorkspaceIDsRead,
+		DeprecationMessage: "\"ids\": [DEPRECATED] Use full_names instead. The ids attribute will be removed in the future. See the CHANGELOG to learn more: https://github.com/terraform-providers/terraform-provider-tfe/blob/v0.18.0/CHANGELOG.md",
+		Read:               dataSourceTFEWorkspaceIDsRead,
 
 		Schema: map[string]*schema.Schema{
 			"names": {
@@ -24,11 +25,17 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 			},
 
 			"ids": {
+				Type:       schema.TypeMap,
+				Computed:   true,
+				Deprecated: "Use full_names instead. The ids attribute will be removed in the future.",
+			},
+
+			"external_ids": {
 				Type:     schema.TypeMap,
 				Computed: true,
 			},
 
-			"external_ids": {
+			"full_names": {
 				Type:     schema.TypeMap,
 				Computed: true,
 			},
@@ -50,7 +57,7 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 		names[name.(string)] = true
 	}
 
-	// Create two maps to hold the resuls.
+	// Create two maps to hold the results.
 	ids := make(map[string]string, len(names))
 	externalIDs := make(map[string]string, len(names))
 
@@ -79,6 +86,7 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 
 	d.Set("ids", ids)
 	d.Set("external_ids", externalIDs)
+	d.Set("full_names", ids)
 	d.SetId(fmt.Sprintf("%s/%d", organization, schema.HashString(id)))
 
 	return nil

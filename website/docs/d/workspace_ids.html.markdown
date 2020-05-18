@@ -45,6 +45,11 @@ has been deprecated in favor of the immutable workspace ID in the format `ws-<RA
 The `ids` attribute for this resource return workspace IDs in the deprecated
 format so you should use `external_ids` instead.
 
-* `ids` - A map of workspace names and their human-readable IDs, which look like `<ORGANIZATION>/<WORKSPACE>`. 
-* `external_ids` - A map of workspace names and their opaque external IDs, which
+~> **NOTE** The deprecation warning for the ids attribute will not go away until it is removed. 
+This is due to a [limitation of the 1.0 version of the Terraform SDK](https://github.com/hashicorp/terraform/issues/7569) for deprecation warnings on attributes that aren't specified in a configuration.
+If you have made sure to change all references to this data source's `ids` attribute to the new `full_names` attribute, you can ignore the warning.  
+
+* `full_names` - A map of workspace names and their full names, which look like `<ORGANIZATION>/<WORKSPACE>`. 
+* `ids` - **Deprecated** Use `full_names` instead. A map of workspace names and their full names, which look like `<ORGANIZATION>/<WORKSPACE>`. 
+* `external_ids` - A map of workspace names and their opaque, immutable IDs, which
   look like `ws-<RANDOM STRING>`.
