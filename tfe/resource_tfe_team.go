@@ -5,6 +5,8 @@ import (
 	"log"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
@@ -13,6 +15,7 @@ func resourceTFETeam() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceTFETeamCreate,
 		Read:   resourceTFETeamRead,
+		Update: resourceTFETeamUpdate,
 		Delete: resourceTFETeamDelete,
 		Importer: &schema.ResourceImporter{
 			State: resourceTFETeamImporter,
@@ -24,11 +27,43 @@ func resourceTFETeam() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-
 			"organization": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
+			},
+			"organization_access": {
+				Type:     schema.TypeList,
+				MaxItems: 1,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"manage_policies": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
+						},
+						"manage_workspaces": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
+						},
+						"manage_vcs_settings": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
+						},
+					},
+				},
+			},
+			"visibility": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "secret",
+				ValidateFunc: validation.StringInSlice([]string{
+					"secret",
+					"organization",
+				}, false),
 			},
 		},
 	}
@@ -37,13 +72,27 @@ func resourceTFETeam() *schema.Resource {
 func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	// Get the name and organization.
+	// Get team attributes.
 	name := d.Get("name").(string)
 	organization := d.Get("organization").(string)
 
 	// Create a new options struct.
 	options := tfe.TeamCreateOptions{
 		Name: tfe.String(name),
+	}
+
+	if v, ok := d.GetOk("organization_access"); ok {
+		organizationAccess := v.([]interface{})[0].(map[string]interface{})
+
+		options.OrganizationAccess = &tfe.OrganizationAccessOptions{
+			ManagePolicies:    tfe.Bool(organizationAccess["manage_policies"].(bool)),
+			ManageWorkspaces:  tfe.Bool(organizationAccess["manage_workspaces"].(bool)),
+			ManageVCSSettings: tfe.Bool(organizationAccess["manage_vcs_settings"].(bool)),
+		}
+	}
+
+	if v, ok := d.GetOk("visibility"); ok {
+		options.Visibility = tfe.String(v.(string))
 	}
 
 	log.Printf("[DEBUG] Create team %s for organization: %s", name, organization)
@@ -74,6 +123,45 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 
 	// Update the config.
 	d.Set("name", team.Name)
+	d.Set("organization_access.0.manage_policies", team.OrganizationAccess.ManagePolicies)
+	d.Set("organization_access.0.manage_workspaces", team.OrganizationAccess.ManageWorkspaces)
+	d.Set("organization_access.0.manage_vcs_settings", team.OrganizationAccess.ManageVCSSettings)
+	d.Set("visibility", team.Visibility)
+
+	return nil
+}
+
+func resourceTFETeamUpdate(d *schema.ResourceData, meta interface{}) error {
+	tfeClient := meta.(*tfe.Client)
+
+	// Get the name and organization.
+	name := d.Get("name").(string)
+
+	// create an options struct
+	options := tfe.TeamUpdateOptions{
+		Name: tfe.String(name),
+	}
+
+	if v, ok := d.GetOk("organization_access"); ok {
+		organizationAccess := v.([]interface{})[0].(map[string]interface{})
+
+		options.OrganizationAccess = &tfe.OrganizationAccessOptions{
+			ManagePolicies:    tfe.Bool(organizationAccess["manage_policies"].(bool)),
+			ManageWorkspaces:  tfe.Bool(organizationAccess["manage_workspaces"].(bool)),
+			ManageVCSSettings: tfe.Bool(organizationAccess["manage_vcs_settings"].(bool)),
+		}
+	}
+
+	if v, ok := d.GetOk("visibility"); ok {
+		options.Visibility = tfe.String(v.(string))
+	}
+
+	log.Printf("[DEBUG] Update team: %s", d.Id())
+	_, err := tfeClient.Teams.Update(ctx, d.Id(), options)
+	if err != nil {
+		return fmt.Errorf(
+			"Error updating team %s: %v", d.Id(), err)
+	}
 
 	return nil
 }
