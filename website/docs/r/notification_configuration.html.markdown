@@ -33,7 +33,7 @@ resource "tfe_notification_configuration" "test" {
   destination_type          = "generic"
   triggers                  = ["run:created", "run:planning", "run:errored"]
   url                       = "https://example.com"
-  workspace_external_id     = "${tfe_workspace.test.external_id}"
+  workspace_external_id     = "${tfe_workspace.test.id}"
 }
 ```
 
@@ -55,7 +55,12 @@ The following arguments are supported:
   `run:completed`, `run:errored`. If omitted, no notification triggers are configured.
 * `url` - (Required) The HTTP or HTTPS URL of the notification configuration where notification
   requests will be made.
-* `workspace_external_id` - (Required) The external id of the workspace that owns the notification configuration.
+* `workspace_id` - The id of the workspace that owns the notification configuration. 
+  This value _must not_ be provided if `workspace_external_id` is provided.
+* `workspace_external_id` - **Deprecated** Use `workspace_id` instead. The id of the workspace that owns the notification configuration.
+  This value _must not_ be provided if `workspace_id` is provided.
+  
+-> **Note:** One of `workspace_id` or `workspace_external_id` _must_ be provided.
 
 ## Attributes Reference
 

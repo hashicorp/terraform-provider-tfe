@@ -2,6 +2,7 @@ package tfe
 
 import (
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/customdiff"
 	"log"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -18,6 +19,26 @@ func resourceTFENotificationConfiguration() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
 		},
+		CustomizeDiff: customdiff.Sequence(
+			// ForceNew if workspace_external_id is changing from a non-empty value to another non-empty value
+			// If workspace_external_id is changing from an empty value to a non-empty value or a non-empty value
+			// to an empty value, we know we are switching between workspace_external_id and workspace_id because
+			// we ensure later that one of them has to be set.
+			customdiff.ForceNewIfChange("workspace_external_id", func(old, new, meta interface{}) bool {
+				oldWorkspaceExternalID := old.(string)
+				newWorkspaceExternalID := new.(string)
+				return oldWorkspaceExternalID != "" && newWorkspaceExternalID != ""
+			}),
+			// ForceNew if workspace_id is changing from a non-empty value to another non-empty value
+			// If workspace_id is changing from an empty value to a non-empty value or a non-empty value
+			// to an empty value, we know we are switching between workspace_external_id and workspace_id because
+			// we ensure later that one of them has to be set.
+			customdiff.ForceNewIfChange("workspace_id", func(old, new, meta interface{}) bool {
+				oldWorkspaceID := old.(string)
+				newWorkspaceID := new.(string)
+				return oldWorkspaceID != "" && newWorkspaceID != ""
+			}),
+		),
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -75,9 +96,18 @@ func resourceTFENotificationConfiguration() *schema.Resource {
 			},
 
 			"workspace_external_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:          schema.TypeString,
+				Computed:      true,
+				Optional:      true,
+				ConflictsWith: []string{"workspace_id"},
+				Deprecated:    "Use workspace_id instead. The workspace_external_id attribute will be removed in the future. See the CHANGELOG to learn more: https://github.com/terraform-providers/terraform-provider-tfe/blob/v0.18.0/CHANGELOG.md",
+			},
+
+			"workspace_id": {
+				Type:          schema.TypeString,
+				Computed:      true,
+				Optional:      true,
+				ConflictsWith: []string{"workspace_external_id"},
 			},
 		},
 	}
@@ -86,8 +116,19 @@ func resourceTFENotificationConfiguration() *schema.Resource {
 func resourceTFENotificationConfigurationCreate(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	// Get workspace
-	workspaceID := d.Get("workspace_external_id").(string)
+	// Get workspace ID
+	workspaceExternalIDValue, workspaceExternalIDValueOk := d.GetOk("workspace_external_id")
+	workspaceIDValue, workspaceIDValueOk := d.GetOk("workspace_id")
+	if !workspaceExternalIDValueOk && !workspaceIDValueOk {
+		return fmt.Errorf("One of workspace_id or workspace_external_id must be set")
+	}
+
+	var workspaceID string
+	if workspaceExternalIDValueOk {
+		workspaceID = workspaceExternalIDValue.(string)
+	} else {
+		workspaceID = workspaceIDValue.(string)
+	}
 
 	// Get attributes
 	destinationType := tfe.NotificationDestinationType(d.Get("destination_type").(string))
@@ -148,6 +189,11 @@ func resourceTFENotificationConfigurationRead(d *schema.ResourceData, meta inter
 	// and setting it here would make it blank
 	d.Set("triggers", notificationConfiguration.Triggers)
 	d.Set("url", notificationConfiguration.URL)
+
+	// TODO: remove once workspace_external_id has been removed
+	d.Set("workspace_external_id", notificationConfiguration.Subscribable.ID)
+
+	d.Set("workspace_id", notificationConfiguration.Subscribable.ID)
 
 	return nil
 }
