@@ -41,14 +41,17 @@ func resourceTFETeam() *schema.Resource {
 						"manage_policies": {
 							Type:     schema.TypeBool,
 							Optional: true,
+							Default:  false,
 						},
 						"manage_workspaces": {
 							Type:     schema.TypeBool,
 							Optional: true,
+							Default:  false,
 						},
 						"manage_vcs_settings": {
 							Type:     schema.TypeBool,
 							Optional: true,
+							Default:  false,
 						},
 					},
 				},
@@ -56,7 +59,7 @@ func resourceTFETeam() *schema.Resource {
 			"visibility": {
 				Type:     schema.TypeString,
 				Optional: true,
-				Computed: true,
+				Default:  "secret",
 				ValidateFunc: validation.StringInSlice([]string{
 					"secret",
 					"organization",
