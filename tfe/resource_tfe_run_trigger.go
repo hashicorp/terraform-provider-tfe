@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/customdiff"
 	"log"
+	"strings"
+	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
@@ -90,12 +93,24 @@ func resourceTFERunTriggerCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	log.Printf("[DEBUG] Create run trigger on workspace %s with sourceable %s", workspaceID, sourceableID)
-	runTrigger, err := tfeClient.RunTriggers.Create(ctx, workspaceID, options)
+	err := resource.Retry(1*time.Minute, func() *resource.RetryError {
+		runTrigger, err := tfeClient.RunTriggers.Create(ctx, workspaceID, options)
+		if err == nil {
+			d.SetId(runTrigger.ID)
+			return nil
+		}
+
+		if strings.Contains(err.Error(), "Run Trigger creation locked") {
+			log.Printf("[DEBUG] Run triggers are locked for workspace %s, will retry", workspaceID)
+			return resource.RetryableError(err)
+		}
+
+		return resource.NonRetryableError(err)
+	})
+
 	if err != nil {
 		return fmt.Errorf("Error creating run trigger on workspace %s with sourceable %s: %v", workspaceID, sourceableID, err)
 	}
-
-	d.SetId(runTrigger.ID)
 
 	return resourceTFERunTriggerRead(d, meta)
 }
