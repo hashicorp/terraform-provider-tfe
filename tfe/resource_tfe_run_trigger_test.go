@@ -77,6 +77,25 @@ func TestAccTFERunTrigger_updateWorkspaceExternalIDToWorkspaceID(t *testing.T) {
 	})
 }
 
+func TestAccTFERunTrigger_many(t *testing.T) {
+	checks := make([]resource.TestCheckFunc, 10)
+	for i := range checks {
+		checks[i] = resource.TestCheckResourceAttrSet(fmt.Sprintf("tfe_run_trigger.foobar.%d", i), "id")
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFERunTriggerDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFERunTrigger_many,
+				Check:  resource.ComposeTestCheckFunc(checks...),
+			},
+		},
+	})
+}
+
 func TestAccTFERunTriggerImport(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -201,4 +220,29 @@ resource "tfe_workspace" "sourceable" {
 resource "tfe_run_trigger" "foobar" {
   workspace_id = "${tfe_workspace.workspace.id}"
   sourceable_id         = "${tfe_workspace.sourceable.id}"
+}`
+
+const testAccTFERunTrigger_many = `
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "workspace" {
+  name         = "workspace-test"
+  organization = "${tfe_organization.foobar.id}"
+}
+
+resource "tfe_workspace" "sourceable" {
+  count = 10
+
+  name         = "sourceable-test-${count.index}"
+  organization = "${tfe_organization.foobar.id}"
+}
+
+resource "tfe_run_trigger" "foobar" {
+  count = 10
+
+  workspace_external_id = "${tfe_workspace.workspace.external_id}"
+  sourceable_id         = "${tfe_workspace.sourceable[count.index].external_id}"
 }`
