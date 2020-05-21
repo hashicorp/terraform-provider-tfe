@@ -1,4 +1,8 @@
 ## 0.17.0 (Unreleased)
+
+ENHANCEMENTS:
+* r/tfe_team: Added support for organization-level permissions and visibility on teams. ([#155](https://github.com/terraform-providers/terraform-provider-tfe/pull/155))
+
 ## 0.16.2 (May 12, 2020)
 
 BUG FIXES:
