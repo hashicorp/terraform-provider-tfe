@@ -123,10 +123,13 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 
 	// Update the config.
 	d.Set("name", team.Name)
-	d.Set("organization_access.0.manage_policies", team.OrganizationAccess.ManagePolicies)
-	d.Set("organization_access.0.manage_workspaces", team.OrganizationAccess.ManageWorkspaces)
-	d.Set("organization_access.0.manage_vcs_settings", team.OrganizationAccess.ManageVCSSettings)
 	d.Set("visibility", team.Visibility)
+	
+	if team.OrganizationAccess != nil {
+		d.Set("organization_access.0.manage_policies", team.OrganizationAccess.ManagePolicies)
+		d.Set("organization_access.0.manage_workspaces", team.OrganizationAccess.ManageWorkspaces)
+		d.Set("organization_access.0.manage_vcs_settings", team.OrganizationAccess.ManageVCSSettings)
+	}
 
 	return nil
 }
