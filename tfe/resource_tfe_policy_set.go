@@ -92,9 +92,18 @@ func resourceTFEPolicySet() *schema.Resource {
 
 			"workspace_external_ids": {
 				Type:          schema.TypeSet,
+				Computed:      true,
 				Optional:      true,
 				Elem:          &schema.Schema{Type: schema.TypeString},
-				ConflictsWith: []string{"global"},
+				Deprecated:    "Use workspace_ids instead. The workspace_external_ids attribute will be removed in the future. See the CHANGELOG to learn more: https://github.com/terraform-providers/terraform-provider-tfe/blob/v0.18.0/CHANGELOG.md",
+				ConflictsWith: []string{"global", "workspace_ids"},
+			},
+			"workspace_ids": {
+				Type:          schema.TypeSet,
+				Computed:      true,
+				Optional:      true,
+				Elem:          &schema.Schema{Type: schema.TypeString},
+				ConflictsWith: []string{"global", "workspace_external_ids"},
 			},
 		},
 	}
@@ -141,8 +150,17 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 		}
 	}
 
-	for _, workspaceID := range d.Get("workspace_external_ids").(*schema.Set).List() {
-		options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: workspaceID.(string)})
+	workspaceExternalIDs, workspaceExternalIDsOk := d.GetOk("workspace_external_ids")
+	workspaceIDs, _ := d.GetOk("workspace_ids")
+
+	if workspaceExternalIDsOk {
+		for _, workspaceExternalID := range workspaceExternalIDs.(*schema.Set).List() {
+			options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: workspaceExternalID.(string)})
+		}
+	} else {
+		for _, workspaceID := range workspaceIDs.(*schema.Set).List() {
+			options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: workspaceID.(string)})
+		}
 	}
 
 	log.Printf("[DEBUG] Create policy set %s for organization: %s", name, organization)
@@ -219,7 +237,11 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 			workspaceIDs = append(workspaceIDs, workspace.ID)
 		}
 	}
+
+	// TODO: remove once workspace_external_id has been removed
 	d.Set("workspace_external_ids", workspaceIDs)
+
+	d.Set("workspace_ids", workspaceIDs)
 
 	return nil
 }
@@ -235,7 +257,15 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 	// set's state in check
 	if global && d.HasChange("global") {
 		// The new set of workspaces will be an empty set, so we don't need it
-		oldWorkspaceIDs, _ := d.GetChange("workspace_external_ids")
+		oldWorkspaceExternalIDValues, _ := d.GetChange("workspace_external_ids")
+		oldWorkspaceIDValues, _ := d.GetChange("workspace_ids")
+
+		var oldWorkspaceIDs interface{}
+		if oldWorkspaceExternalIDValues.(*schema.Set).Len() > 0 {
+			oldWorkspaceIDs = oldWorkspaceExternalIDValues
+		} else {
+			oldWorkspaceIDs = oldWorkspaceIDValues
+		}
 
 		if oldWorkspaceIDs.(*schema.Set).Len() > 0 {
 			options := tfe.PolicySetRemoveWorkspacesOptions{}
@@ -308,10 +338,26 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 		}
 	}
 
-	if !global && d.HasChange("workspace_external_ids") {
-		oldSet, newSet := d.GetChange("workspace_external_ids")
-		oldWorkspaceIDs := oldSet.(*schema.Set).Difference(newSet.(*schema.Set))
-		newWorkspaceIDs := newSet.(*schema.Set).Difference(oldSet.(*schema.Set))
+	if !global && (d.HasChange("workspace_external_ids") || d.HasChange("workspace_ids")) {
+		oldWorkspaceExternalIDValues, newWorkspaceExternalIDValues := d.GetChange("workspace_external_ids")
+		oldWorkspaceIDValues, newWorkspaceIDValues := d.GetChange("workspace_ids")
+
+		// The new and old workspace IDs are whichever has changed, workspace_ids or workspace_external_ids.
+		// Only one can be changed at a time by being set in the schema because of the schema ConflictsWith
+		// settings.
+		// Default to workspace_ids if nothing is set.
+		var newWorkspaceIDsSet *schema.Set
+		var oldWorkspaceIDsSet *schema.Set
+		if d.HasChange("workspace_external_ids") {
+			newWorkspaceIDsSet = newWorkspaceExternalIDValues.(*schema.Set)
+			oldWorkspaceIDsSet = oldWorkspaceExternalIDValues.(*schema.Set)
+		} else {
+			newWorkspaceIDsSet = newWorkspaceIDValues.(*schema.Set)
+			oldWorkspaceIDsSet = oldWorkspaceIDValues.(*schema.Set)
+		}
+
+		newWorkspaceIDs := newWorkspaceIDsSet.Difference(oldWorkspaceIDsSet)
+		oldWorkspaceIDs := oldWorkspaceIDsSet.Difference(newWorkspaceIDsSet)
 
 		// First add the new workspaces.
 		if newWorkspaceIDs.Len() > 0 {
