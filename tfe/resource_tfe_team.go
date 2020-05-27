@@ -36,6 +36,7 @@ func resourceTFETeam() *schema.Resource {
 				Type:     schema.TypeList,
 				MaxItems: 1,
 				Optional: true,
+				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"manage_policies": {
@@ -123,9 +124,16 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 
 	// Update the config.
 	d.Set("name", team.Name)
-	d.Set("organization_access.0.manage_policies", team.OrganizationAccess.ManagePolicies)
-	d.Set("organization_access.0.manage_workspaces", team.OrganizationAccess.ManageWorkspaces)
-	d.Set("organization_access.0.manage_vcs_settings", team.OrganizationAccess.ManageVCSSettings)
+	if team.OrganizationAccess != nil {
+		organizationAccess := []map[string]bool{{
+			"manage_policies":     team.OrganizationAccess.ManagePolicies,
+			"manage_workspaces":   team.OrganizationAccess.ManageWorkspaces,
+			"manage_vcs_settings": team.OrganizationAccess.ManageVCSSettings,
+		}}
+		if err := d.Set("organization_access", organizationAccess); err != nil {
+			return fmt.Errorf("error setting organization access for team %s: %s", d.Id(), err)
+		}
+	}
 	d.Set("visibility", team.Visibility)
 
 	return nil
