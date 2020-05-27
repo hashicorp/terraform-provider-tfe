@@ -1,4 +1,8 @@
 ## 0.18.0 (Unreleased)
+
+BUG FIXES:
+* r/tfe_team: Fixed a panic occurring with importing Owners teams on Free TFC organizations which do not include visible organization access. ([#181](https://github.com/terraform-providers/terraform-provider-tfe/pull/181))
+
 ## 0.17.0 (May 21, 2020)
 
 ENHANCEMENTS:
