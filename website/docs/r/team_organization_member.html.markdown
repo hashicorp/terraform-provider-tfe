@@ -28,7 +28,7 @@ resource "tfe_team" "test" {
   organization = "my-org-name"
 }
 
-resource "tfe_organization_membership "test" {
+resource "tfe_organization_membership" "test" {
   organization = "my-org-name"
   email = "example@hashicorp.com"
 }
