@@ -8,9 +8,9 @@ DEPRECATIONS:
 * r/tfe_run_trigger: Added deprecation warning to the `workspace_external_id` attribute, preferring `workspace_id` instead ([#182](https://github.com/terraform-providers/terraform-provider-tfe/pull/182))
 
 NOTES:
-* All deprecated attributes will be removed 3 months after the release of v0.18.0.
+* All deprecated attributes will be removed 3 months after the release of v0.18.0. You will have until September 3, 2020 to migrate to the preferred attributes. 
 * More information about these deprecations can be found in the description of [#182](https://github.com/terraform-providers/terraform-provider-tfe/pull/182)
-* d/tfe_workspace_ids: The deprecation warning for the `ids` attribute will not go away until it the attribute is removed in a future version. 
+* d/tfe_workspace_ids: The deprecation warning for the `ids` attribute will not go away until the attribute is removed in a future version. 
 This is due to a [limitation of the 1.0 version of the Terraform SDK](https://github.com/hashicorp/terraform/issues/7569) for deprecation warnings on attributes that aren't specified in a configuration.
 If you have already changed all references to this data source's `ids` attribute to the new `full_names` attribute, you can ignore the warning.  
 
