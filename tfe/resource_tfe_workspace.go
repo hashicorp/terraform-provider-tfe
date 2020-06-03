@@ -322,6 +322,8 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		}
 	}
 
+	// TODO: Why does this use the old value of external_id?
+	// external_id shouldn't change so can we change externalID to just id/d.Id()?
 	if d.HasChange("ssh_key_id") {
 		sshKeyID := d.Get("ssh_key_id").(string)
 		externalID, _ := d.GetChange("external_id")

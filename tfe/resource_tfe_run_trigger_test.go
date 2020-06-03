@@ -29,7 +29,29 @@ func TestAccTFERunTrigger_basic(t *testing.T) {
 	})
 }
 
-func TestAccTFERunTriggerImport(t *testing.T) {
+func TestAccTFERunTrigger_basicWorkspaceID(t *testing.T) {
+	runTrigger := &tfe.RunTrigger{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFERunTriggerDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFERunTrigger_basicWorkspaceID,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFERunTriggerExists(
+						"tfe_run_trigger.foobar", runTrigger),
+					testAccCheckTFERunTriggerAttributes(runTrigger),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFERunTrigger_updateWorkspaceExternalIDToWorkspaceID(t *testing.T) {
+	runTrigger := &tfe.RunTrigger{}
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -37,6 +59,32 @@ func TestAccTFERunTriggerImport(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERunTrigger_basic,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFERunTriggerExists(
+						"tfe_run_trigger.foobar", runTrigger),
+					testAccCheckTFERunTriggerAttributes(runTrigger),
+				),
+			},
+			{
+				Config: testAccTFERunTrigger_basicWorkspaceID,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFERunTriggerExists(
+						"tfe_run_trigger.foobar", runTrigger),
+					testAccCheckTFERunTriggerAttributes(runTrigger),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFERunTriggerImport(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFERunTriggerDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFERunTrigger_basicWorkspaceID,
 			},
 
 			{
@@ -130,6 +178,27 @@ resource "tfe_workspace" "sourceable" {
 }
 
 resource "tfe_run_trigger" "foobar" {
-  workspace_external_id = "${tfe_workspace.workspace.external_id}"
-  sourceable_id         = "${tfe_workspace.sourceable.external_id}"
+  workspace_external_id = "${tfe_workspace.workspace.id}"
+  sourceable_id         = "${tfe_workspace.sourceable.id}"
+}`
+
+const testAccTFERunTrigger_basicWorkspaceID = `
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "workspace" {
+  name         = "workspace-test"
+  organization = "${tfe_organization.foobar.id}"
+}
+
+resource "tfe_workspace" "sourceable" {
+  name         = "sourceable-test"
+  organization = "${tfe_organization.foobar.id}"
+}
+
+resource "tfe_run_trigger" "foobar" {
+  workspace_id = "${tfe_workspace.workspace.id}"
+  sourceable_id         = "${tfe_workspace.sourceable.id}"
 }`

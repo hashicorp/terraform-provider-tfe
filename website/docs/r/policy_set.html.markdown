@@ -22,17 +22,17 @@ Basic usage (VCS-based policy set):
 
 ```hcl
 resource "tfe_policy_set" "test" {
-  name                   = "my-policy-set"
-  description            = "A brand new policy set"
-  organization           = "my-org-name"
-  policies_path          = "policies/my-policy-set"
-  workspace_external_ids = ["${tfe_workspace.test.external_id}"]
+  name          = "my-policy-set"
+  description   = "A brand new policy set"
+  organization  = "my-org-name"
+  policies_path = "policies/my-policy-set"
+  workspace_ids = ["${tfe_workspace.test.id}"]
 
   vcs_repo {
     identifier         = "my-org-name/my-policy-set-repository"
     branch             = "master"
     ingress_submodules = false
-    oauth_token_id     = "${tfe_oauth_client.test.oauth_token_id}"
+    oauth_token_id     = "${tfe_oauth_client.test.id}"
   }
 }
 ```
@@ -41,11 +41,11 @@ Using manually-specified policies:
 
 ```hcl
 resource "tfe_policy_set" "test" {
-  name                   = "my-policy-set"
-  description            = "A brand new policy set"
-  organization           = "my-org-name"
-  policy_ids             = ["${tfe_sentinel_policy.test.id}"]
-  workspace_external_ids = ["${tfe_workspace.test.external_id}"]
+  name          = "my-policy-set"
+  description   = "A brand new policy set"
+  organization  = "my-org-name"
+  policy_ids    = ["${tfe_sentinel_policy.test.id}"]
+  workspace_ids = ["${tfe_workspace.test.id}"]
 }
 ```
 
@@ -57,7 +57,7 @@ The following arguments are supported:
 * `description` - (Optional) A description of the policy set's purpose.
 * `global` - (Optional) Whether or not policies in this set will apply to
   all workspaces. Defaults to `false`. This value _must not_ be provided if
-  `workspace_external_ids` are provided.
+  `workspace_ids` or `workspace_external_ids` are provided.
 * `organization` - (Required) Name of the organization.
 * `policies_path` - (Optional) The sub-path within the attached VCS repository
   to ingress when using `vcs_repo`. All files and directories outside of this
@@ -66,8 +66,10 @@ The following arguments are supported:
 * `policy_ids` - (Optional) A list of Sentinel policy IDs. This value _must not_ be provided if `vcs_repo` is provided.
 * `vcs_repo` - (Optional) Settings for the policy sets VCS repository. Forces a
   new resource if changed. This value _must not_ be provided if `policy_ids` are provided.
-* `workspace_external_ids` - (Optional) A list of workspace external IDs. This
-  value _must not_ be provided if `global` is provided.
+* `workspace_ids` - (Optional) A list of workspace IDs. This
+  value _must not_ be provided if `global` or `workspace_external_ids` is provided.
+* `workspace_external_ids` - **Deprecated** Use `workspace_ids` instead. (Optional) A list of workspace IDs. This
+  value _must not_ be provided if `global` or `workspace_ids` is provided.
 
 -> **Note:** When neither `vcs_repo` or `policy_ids` is not specified, the current
 default is to create an empty non-VCS policy set.
@@ -81,7 +83,7 @@ The `vcs_repo` block supports:
   Default to `master`.
 * `ingress_submodules` - (Optional) Whether submodules should be fetched when
   cloning the VCS repository. Defaults to `false`.
-* `oauth_token_id` - (Required) Token ID of the VCS Connection (OAuth Conection Token)
+* `oauth_token_id` - (Required) Token ID of the VCS Connection (OAuth Connection Token)
   to use.
 
 ## Attributes Reference

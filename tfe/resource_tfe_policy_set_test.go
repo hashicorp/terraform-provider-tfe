@@ -79,6 +79,63 @@ func TestAccTFEPolicySet_update(t *testing.T) {
 	})
 }
 
+func TestAccTFEPolicySet_updateWorkspaceIDs(t *testing.T) {
+	policySet := &tfe.PolicySet{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicySet_basic,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					testAccCheckTFEPolicySetAttributes(policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "tst-terraform"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "description", "Policy Set"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_ids.#", "1"),
+				),
+			},
+			{
+				Config: testAccTFEPolicySet_populated,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					testAccCheckTFEPolicySetPopulated(policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "terraform-populated"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_ids.#", "1"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "workspace_external_ids.#", "1"),
+				),
+			},
+			{
+				Config: testAccTFEPolicySet_populatedWorkspaceIDs,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					testAccCheckTFEPolicySetPopulated(policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "terraform-populated"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_ids.#", "1"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "workspace_ids.#", "1"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEPolicySet_updateEmpty(t *testing.T) {
 	policySet := &tfe.PolicySet{}
 
@@ -149,6 +206,7 @@ func TestAccTFEPolicySet_updatePopulated(t *testing.T) {
 				Config: testAccTFEPolicySet_updatePopulated,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					testAccCheckTFEPolicySetPopulatedUpdated(policySet),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "name", "terraform-populated-updated"),
 					resource.TestCheckResourceAttr(
@@ -157,6 +215,49 @@ func TestAccTFEPolicySet_updatePopulated(t *testing.T) {
 						"tfe_policy_set.foobar", "policy_ids.#", "1"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "workspace_external_ids.#", "1"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEPolicySet_updatePopulatedWorkspaceIDs(t *testing.T) {
+	policySet := &tfe.PolicySet{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicySet_populatedWorkspaceIDs,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					testAccCheckTFEPolicySetPopulated(policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "terraform-populated"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_ids.#", "1"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "workspace_ids.#", "1"),
+				),
+			},
+
+			{
+				Config: testAccTFEPolicySet_updatePopulatedWorkspaceIDs,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					testAccCheckTFEPolicySetPopulatedUpdated(policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "terraform-populated-updated"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_ids.#", "1"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "workspace_ids.#", "1"),
 				),
 			},
 		},
@@ -184,6 +285,47 @@ func TestAccTFEPolicySet_updateToGlobal(t *testing.T) {
 						"tfe_policy_set.foobar", "policy_ids.#", "1"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "workspace_external_ids.#", "1"),
+				),
+			},
+
+			{
+				Config: testAccTFEPolicySet_global,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					testAccCheckTFEPolicySetGlobal(policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "terraform-global"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_ids.#", "1"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEPolicySet_updateWorkspaceIDsToGlobal(t *testing.T) {
+	policySet := &tfe.PolicySet{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicySet_populatedWorkspaceIDs,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					testAccCheckTFEPolicySetPopulated(policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "terraform-populated"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_ids.#", "1"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "workspace_ids.#", "1"),
 				),
 			},
 
@@ -245,6 +387,47 @@ func TestAccTFEPolicySet_updateToWorkspace(t *testing.T) {
 	})
 }
 
+func TestAccTFEPolicySet_updateGlobalToWorkspaceIDs(t *testing.T) {
+	policySet := &tfe.PolicySet{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicySet_global,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					testAccCheckTFEPolicySetGlobal(policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "terraform-global"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_ids.#", "1"),
+				),
+			},
+
+			{
+				Config: testAccTFEPolicySet_populatedWorkspaceIDs,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					testAccCheckTFEPolicySetPopulated(policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "terraform-populated"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_ids.#", "1"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "workspace_ids.#", "1"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEPolicySet_vcs(t *testing.T) {
 	policySet := &tfe.PolicySet{}
 
@@ -299,7 +482,7 @@ func TestAccTFEPolicySetImport(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySet_populated,
+				Config: testAccTFEPolicySet_populatedWorkspaceIDs,
 			},
 
 			{
@@ -385,6 +568,42 @@ func testAccCheckTFEPolicySetPopulated(policySet *tfe.PolicySet) resource.TestCh
 
 		workspaceID := policySet.Workspaces[0].ID
 		workspace, _ := tfeClient.Workspaces.Read(ctx, "tst-terraform", "workspace-foo")
+		if workspace.ID != workspaceID {
+			return fmt.Errorf("Wrong member workspace: %v", workspace.Name)
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckTFEPolicySetPopulatedUpdated(policySet *tfe.PolicySet) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		tfeClient := testAccProvider.Meta().(*tfe.Client)
+
+		if policySet.Name != "terraform-populated-updated" {
+			return fmt.Errorf("Bad name: %s", policySet.Name)
+		}
+
+		if policySet.Global {
+			return fmt.Errorf("Bad value for global: %v", policySet.Global)
+		}
+
+		if len(policySet.Policies) != 1 {
+			return fmt.Errorf("Wrong number of policies: %v", len(policySet.Policies))
+		}
+
+		policyID := policySet.Policies[0].ID
+		policy, _ := tfeClient.Policies.Read(ctx, policyID)
+		if policy.Name != "policy-bar" {
+			return fmt.Errorf("Wrong member policy: %v", policy.Name)
+		}
+
+		if len(policySet.Workspaces) != 1 {
+			return fmt.Errorf("Wrong number of workspaces: %v", len(policySet.Workspaces))
+		}
+
+		workspaceID := policySet.Workspaces[0].ID
+		workspace, _ := tfeClient.Workspaces.Read(ctx, "tst-terraform", "workspace-bar")
 		if workspace.ID != workspaceID {
 			return fmt.Errorf("Wrong member workspace: %v", workspace.Name)
 		}
@@ -496,7 +715,31 @@ resource "tfe_policy_set" "foobar" {
   name                   = "terraform-populated"
   organization           = "${tfe_organization.foobar.id}"
   policy_ids             = ["${tfe_sentinel_policy.foo.id}"]
-  workspace_external_ids = ["${tfe_workspace.foo.external_id}"]
+  workspace_external_ids = ["${tfe_workspace.foo.id}"]
+}`
+
+const testAccTFEPolicySet_populatedWorkspaceIDs = `
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform"
+  email = "admin@company.com"
+}
+
+resource "tfe_sentinel_policy" "foo" {
+  name         = "policy-foo"
+  policy       = "main = rule { true }"
+  organization = "${tfe_organization.foobar.id}"
+}
+
+resource "tfe_workspace" "foo" {
+  name         = "workspace-foo"
+  organization = "${tfe_organization.foobar.id}"
+}
+
+resource "tfe_policy_set" "foobar" {
+  name          = "terraform-populated"
+  organization  = "${tfe_organization.foobar.id}"
+  policy_ids    = ["${tfe_sentinel_policy.foo.id}"]
+  workspace_ids = ["${tfe_workspace.foo.id}"]
 }`
 
 const testAccTFEPolicySet_updatePopulated = `
@@ -531,7 +774,42 @@ resource "tfe_policy_set" "foobar" {
   name                   = "terraform-populated-updated"
   organization           = "${tfe_organization.foobar.id}"
   policy_ids             = ["${tfe_sentinel_policy.bar.id}"]
-  workspace_external_ids = ["${tfe_workspace.bar.external_id}"]
+  workspace_external_ids = ["${tfe_workspace.bar.id}"]
+}`
+
+const testAccTFEPolicySet_updatePopulatedWorkspaceIDs = `
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform"
+  email = "admin@company.com"
+}
+
+resource "tfe_sentinel_policy" "foo" {
+  name         = "policy-foo"
+  policy       = "main = rule { true }"
+  organization = "${tfe_organization.foobar.id}"
+}
+
+resource "tfe_sentinel_policy" "bar" {
+  name         = "policy-bar"
+  policy       = "main = rule { false }"
+  organization = "${tfe_organization.foobar.id}"
+}
+
+resource "tfe_workspace" "foo" {
+  name         = "workspace-foo"
+  organization = "${tfe_organization.foobar.id}"
+}
+
+resource "tfe_workspace" "bar" {
+  name         = "workspace-bar"
+  organization = "${tfe_organization.foobar.id}"
+}
+
+resource "tfe_policy_set" "foobar" {
+  name          = "terraform-populated-updated"
+  organization  = "${tfe_organization.foobar.id}"
+  policy_ids    = ["${tfe_sentinel_policy.bar.id}"]
+  workspace_ids = ["${tfe_workspace.bar.id}"]
 }`
 
 const testAccTFEPolicySet_global = `
