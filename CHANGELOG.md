@@ -1,4 +1,4 @@
-## 0.18.0 (Unreleased)
+## 0.18.0 (June 03, 2020)
 
 DEPRECATIONS:
 * d/tfe_workspace_ids: Added deprecation warning to the `ids` attribute, preferring `full_names` instead ([#182](https://github.com/terraform-providers/terraform-provider-tfe/pull/182))
