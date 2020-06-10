@@ -1,7 +1,11 @@
-## 0.19.0 (Unreleased)
+## 0.18.1 (Unreleased)
+
+ENHANCEMENTS:
+* provider: Updated terraform-provider-sdk to 1.13.1 ([[#177](https://github.com/terraform-providers/terraform-provider-tfe/pull/177)])
+
 ## 0.18.0 (June 03, 2020)
 
-DEPRECATIONS:
+ENHANCEMENTS:
 * d/tfe_workspace_ids: Added deprecation warning to the `ids` attribute, preferring `full_names` instead ([#182](https://github.com/terraform-providers/terraform-provider-tfe/pull/182))
 * r/tfe_notification_configuration: Added deprecation warning to the `workspace_external_id` attribute, preferring `workspace_id` instead ([#182](https://github.com/terraform-providers/terraform-provider-tfe/pull/182))
 * r/tfe_policy_set: Added deprecation warning to the `workspace_external_ids` attribute, preferring `workspace_ids` instead ([#182](https://github.com/terraform-providers/terraform-provider-tfe/pull/182))
