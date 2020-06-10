@@ -1,4 +1,4 @@
-## 0.18.1 (Unreleased)
+## 0.18.1 (June 10, 2020)
 
 ENHANCEMENTS:
 * provider: Updated terraform-provider-sdk to 1.13.1 ([[#177](https://github.com/terraform-providers/terraform-provider-tfe/pull/177)])
