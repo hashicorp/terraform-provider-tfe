@@ -1,3 +1,4 @@
+## 0.19.0 (Unreleased)
 ## 0.18.1 (June 10, 2020)
 
 ENHANCEMENTS:
