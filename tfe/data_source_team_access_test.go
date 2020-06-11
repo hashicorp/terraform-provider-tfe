@@ -21,6 +21,16 @@ func TestAccTFETeamAccessDataSource_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"data.tfe_team_access.foobar", "access", "write"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_team_access.foobar", "permissions.0.runs", "apply"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_team_access.foobar", "permissions.0.variables", "write"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_team_access.foobar", "permissions.0.state_versions", "write"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_team_access.foobar", "permissions.0.sentinel_mocks", "read"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_team_access.foobar", "permissions.0.workspace_locking", "true"),
 					resource.TestCheckResourceAttrSet("data.tfe_team_access.foobar", "id"),
 					resource.TestCheckResourceAttrSet("data.tfe_team_access.foobar", "team_id"),
 					resource.TestCheckResourceAttrSet("data.tfe_team_access.foobar", "workspace_id"),

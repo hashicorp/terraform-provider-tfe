@@ -17,6 +17,40 @@ func dataSourceTFETeamAccess() *schema.Resource {
 				Computed: true,
 			},
 
+			"permissions": {
+				Type:     schema.TypeList,
+				MaxItems: 1,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"runs": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"variables": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"state_versions": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"sentinel_mocks": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"workspace_locking": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+					},
+				},
+			},
+
 			"team_id": {
 				Type:     schema.TypeString,
 				Required: true,
