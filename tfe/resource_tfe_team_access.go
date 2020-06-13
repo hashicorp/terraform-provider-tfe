@@ -60,6 +60,13 @@ func resourceTFETeamAccess() *schema.Resource {
 							Type:     schema.TypeString,
 							Optional: true,
 							Computed: true,
+							AtLeastOneOf: []string{
+								"permissions.0.runs",
+								"permissions.0.variables",
+								"permissions.0.state_versions",
+								"permissions.0.sentinel_mocks",
+								"permissions.0.workspace_locking",
+							},
 							ValidateFunc: validation.StringInSlice(
 								[]string{
 									string(tfe.RunsPermissionRead),
