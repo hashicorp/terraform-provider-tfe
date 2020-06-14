@@ -490,6 +490,9 @@ func TestAccTFEPolicySet_updateToVcs(t *testing.T) {
 			if GITHUB_POLICY_SET_BRANCH == "" {
 				t.Skip("Please set GITHUB_POLICY_SET_BRANCH to run this test")
 			}
+			if GITHUB_POLICY_SET_ALT_BRANCH == "" {
+				t.Skip("Please set GITHUB_POLICY_SET_ALT_BRANCH to run this test")
+			}
 			if GITHUB_POLICY_SET_PATH == "" {
 				t.Skip("Please set GITHUB_POLICY_SET_PATH to run this test")
 			}
@@ -532,7 +535,7 @@ func TestAccTFEPolicySet_updateToVcs(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.identifier", GITHUB_POLICY_SET_IDENTIFIER),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "vcs_repo.0.branch", "test"),
+						"tfe_policy_set.foobar", "vcs_repo.0.branch", GITHUB_POLICY_SET_ALT_BRANCH),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.ingress_submodules", "true"),
 					resource.TestCheckResourceAttr(
