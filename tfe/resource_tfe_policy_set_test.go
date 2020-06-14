@@ -958,7 +958,7 @@ resource "tfe_policy_set" "foobar" {
   organization = "${tfe_organization.foobar.id}"
   vcs_repo {
     identifier         = "%s"
-    branch             = "test"
+    branch             = "%s"
     ingress_submodules = true
     oauth_token_id     = "${tfe_oauth_client.test.oauth_token_id}"
   }
@@ -968,5 +968,6 @@ resource "tfe_policy_set" "foobar" {
 `,
 	GITHUB_TOKEN,
 	GITHUB_POLICY_SET_IDENTIFIER,
+	GITHUB_POLICY_SET_ALT_BRANCH,
 	GITHUB_POLICY_SET_PATH,
 )
