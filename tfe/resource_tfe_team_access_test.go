@@ -61,7 +61,7 @@ func TestAccTFETeamAccess_custom(t *testing.T) {
 						tmAccess,
 						map[string]interface{}{
 							"runs":              tfe.RunsPermissionApply,
-							"variables":         tfe.VariablesPermissionNone,
+							"variables":         tfe.VariablesPermissionRead,
 							"state_versions":    tfe.StateVersionsPermissionReadOutputs,
 							"sentinel_mocks":    tfe.SentinelMocksPermissionNone,
 							"workspace_locking": false,
@@ -69,7 +69,7 @@ func TestAccTFETeamAccess_custom(t *testing.T) {
 					),
 					resource.TestCheckResourceAttr("tfe_team_access.foobar", "access", "custom"),
 					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.runs", "apply"),
-					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.variables", "none"),
+					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.variables", "read"),
 					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.state_versions", "read-outputs"),
 					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.sentinel_mocks", "none"),
 					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.workspace_locking", "false"),
@@ -121,17 +121,17 @@ func TestAccTFETeamAccess_updateToCustom(t *testing.T) {
 						tmAccess,
 						map[string]interface{}{
 							"runs":              tfe.RunsPermissionApply,
-							"variables":         tfe.VariablesPermissionWrite,
+							"variables":         tfe.VariablesPermissionRead,
 							"state_versions":    tfe.StateVersionsPermissionReadOutputs,
-							"sentinel_mocks":    tfe.SentinelMocksPermissionRead,
+							"sentinel_mocks":    tfe.SentinelMocksPermissionNone,
 							"workspace_locking": false,
 						},
 					),
 					resource.TestCheckResourceAttr("tfe_team_access.foobar", "access", "custom"),
 					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.runs", "apply"),
-					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.variables", "write"),
+					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.variables", "read"),
 					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.state_versions", "read-outputs"),
-					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.sentinel_mocks", "read"),
+					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.sentinel_mocks", "none"),
 					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.workspace_locking", "false"),
 				),
 			},
@@ -157,7 +157,7 @@ func TestAccTFETeamAccess_updateFromCustom(t *testing.T) {
 						tmAccess,
 						map[string]interface{}{
 							"runs":              tfe.RunsPermissionApply,
-							"variables":         tfe.VariablesPermissionNone,
+							"variables":         tfe.VariablesPermissionRead,
 							"state_versions":    tfe.StateVersionsPermissionReadOutputs,
 							"sentinel_mocks":    tfe.SentinelMocksPermissionNone,
 							"workspace_locking": false,
@@ -165,7 +165,7 @@ func TestAccTFETeamAccess_updateFromCustom(t *testing.T) {
 					),
 					resource.TestCheckResourceAttr("tfe_team_access.foobar", "access", "custom"),
 					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.runs", "apply"),
-					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.variables", "none"),
+					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.variables", "read"),
 					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.state_versions", "read-outputs"),
 					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.sentinel_mocks", "none"),
 					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.workspace_locking", "false"),
@@ -362,7 +362,9 @@ resource "tfe_workspace" "foobar" {
 resource "tfe_team_access" "foobar" {
   permissions {
     runs = "apply"
+    variables = "read"
     state_versions = "read-outputs"
+    sentinel_mocks = "none"
     workspace_locking = false
   }
   team_id      = "${tfe_team.foobar.id}"

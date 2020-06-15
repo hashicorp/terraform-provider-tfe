@@ -58,15 +58,7 @@ func resourceTFETeamAccess() *schema.Resource {
 					Schema: map[string]*schema.Schema{
 						"runs": {
 							Type:     schema.TypeString,
-							Optional: true,
-							Computed: true,
-							AtLeastOneOf: []string{
-								"permissions.0.runs",
-								"permissions.0.variables",
-								"permissions.0.state_versions",
-								"permissions.0.sentinel_mocks",
-								"permissions.0.workspace_locking",
-							},
+							Required: true,
 							ValidateFunc: validation.StringInSlice(
 								[]string{
 									string(tfe.RunsPermissionRead),
@@ -79,8 +71,7 @@ func resourceTFETeamAccess() *schema.Resource {
 
 						"variables": {
 							Type:     schema.TypeString,
-							Optional: true,
-							Computed: true,
+							Required: true,
 							ValidateFunc: validation.StringInSlice(
 								[]string{
 									string(tfe.VariablesPermissionNone),
@@ -93,8 +84,7 @@ func resourceTFETeamAccess() *schema.Resource {
 
 						"state_versions": {
 							Type:     schema.TypeString,
-							Optional: true,
-							Computed: true,
+							Required: true,
 							ValidateFunc: validation.StringInSlice(
 								[]string{
 									string(tfe.StateVersionsPermissionNone),
@@ -108,8 +98,7 @@ func resourceTFETeamAccess() *schema.Resource {
 
 						"sentinel_mocks": {
 							Type:     schema.TypeString,
-							Optional: true,
-							Computed: true,
+							Required: true,
 							ValidateFunc: validation.StringInSlice(
 								[]string{
 									string(tfe.SentinelMocksPermissionNone),
@@ -121,8 +110,7 @@ func resourceTFETeamAccess() *schema.Resource {
 
 						"workspace_locking": {
 							Type:     schema.TypeBool,
-							Optional: true,
-							Computed: true,
+							Required: true,
 						},
 					},
 				},
@@ -353,32 +341,69 @@ func resourceTFETeamAccessImporter(d *schema.ResourceData, meta interface{}) ([]
 	return []*schema.ResourceData{d}, nil
 }
 
+// The Team Access API and behavior for 'custom' access is very hard for the current SDK to model.
+//
+// * Schema validations are limited to the single attribute they are defined on; you cannot validate something with the
+//   additional context of another attribute's value in the resource.
+// * The SDK cannot discern between something defined only in state, or only in configuration. Some assumptions can be
+//   made (and are made in these changes) via GetChange(), but it's hacky at best.
+//
+// This CustomizeDiff function is what allows the provider resource to model the right API behavior with these
+// limitations, rooting out the user's intentions to figure out when to automatically assign 'access' to custom and/or
+// recompute 'permissions'.
 func setCustomOrComputedPermissions(d *schema.ResourceDiff, meta interface{}) error {
 	if _, ok := d.GetOk("access"); ok {
 		if d.HasChange("access") {
-			_, n := d.GetChange("access")
-			new := n.(string)
-
-			if new != "custom" {
-				// If access is being changed to an explicit value, and access is NOT 'custom', all permissions
-				// will be read-only and computed by the API.
-				d.SetNewComputed("permissions")
-			}
+			// If access is being added or changed to a known value, all permissions
+			// will be read-only and computed by the API (access is never marked as 'custom' in the
+			// configuration).
+			d.SetNewComputed("permissions")
 		} else {
-			// If access is present, not being explicitly changed, but permissions are being changed, the user is switching
-			// from using a fixed access level (read/plan/write/apply) to a permissions block ('custom' access)
-			// Set the access to custom.
 			if d.HasChange("permissions.0") {
-				d.SetNew("access", tfe.AccessCustom)
+				// If access is present, not being explicitly changed, but permissions are being
+				// changed, the user might be switching from using a fixed access level
+				// (read/plan/write/admin) to a permissions block ('custom' access).
+				// Set the access to custom.
+				if err := setCustomAccess(d); err != nil {
+					return err
+				}
 			}
 		}
 	} else {
-		// If there's no access set, we must be creating a new resource with
-		// a permissions block. Set the access to custom.
-		if _, ok := d.GetOk("permissions"); ok {
-			d.SetNew("access", tfe.AccessCustom)
+		if !d.NewValueKnown("access") {
+			if d.Id() != "" {
+				// If the value for access isn't known on an existing resource, the user must have set the
+				// access attribute to an interpolated value not known at plan time.
+				// Set permissions as computed.
+				d.SetNewComputed("permissions")
+			} else {
+				if _, ok := d.GetOk("permissions"); ok {
+					// If the resource is new, the value for access isn't known, and permissions are
+					// present, the user must be creating a new resource with custom access.
+					//Set access to custom.
+					if err := setCustomAccess(d); err != nil {
+						return err
+					}
+				}
+			}
 		}
 	}
+
+	return nil
+}
+
+func setCustomAccess(d *schema.ResourceDiff) error {
+	// If a change in permissions contains a value not known at plan time, error.
+	// Interpolated values not known at plan time are not allowed because we cannot re-check
+	// for a change in permissions later - when the plan is expanded for new values learned during
+	// an apply. This creates an inconsistent final plan and causes an error.
+	for _, permission := range []string{"permissions.0.runs", "permissions.0.variables", "permissions.0.state_versions", "permissions.0.sentinel_mocks", "permissions.0.workspace_locking"} {
+		if !d.NewValueKnown(permission) {
+			return fmt.Errorf("'%q' cannot be derived from a value that is unknown during planning", permission)
+		}
+	}
+
+	d.SetNew("access", tfe.AccessCustom)
 
 	return nil
 }
