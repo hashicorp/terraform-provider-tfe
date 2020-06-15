@@ -36,10 +36,20 @@ resource "tfe_team_access" "test" {
 
 The following arguments are supported:
 
-* `access` - (Required) Type of access to grant. Valid values are `admin`,
-  `read`, `plan`, or `write`.
 * `team_id` - (Required) ID of the team to add to the workspace.
 * `workspace_id` - (Required) ID of the workspace to which the team will be added.
+* `access` - (Conflicts with `permissions`) Type of fixed access to grant. Valid values are `admin`, `read`, `plan`, or `write`. To use `custom` permissions, use a `permissions` block instead.
+* `permissions` - (Conflicts with `access`) Permissions to grant using [custom workspace permissions](https://www.terraform.io/docs/cloud/users-teams-organizations/permissions.html#custom-workspace-permissions).
+
+  The arguments for this block are:
+
+  - `runs` - (Required) The permission to grant the team on the workspace's runs. Valid values are `read`, `plan`, or `apply`.
+  - `variables` - (Required) The permission to grant the team on the workspace's variables. Valid values are `none`, `read`, or `write`.
+  - `state_versions` - (Required) The permission to grant the team on the workspace's state versions. Valid values are `none`, `read`, `read-outputs`, or `write`.
+  - `sentinel_mocks` - (Required) The permission to grant the team on the workspace's generated Sentinel mocks, Valid values are `none` or `read`.
+  - `workspace_locking` - (Required) Boolean determining whether or not to grant the team permission to manually lock/unlock the workspace.
+
+At least one of `access` or `permissions` must be specified, but not both. Whichever is omitted will automatically reflect the state of the other.
 
 ## Attributes Reference
 
