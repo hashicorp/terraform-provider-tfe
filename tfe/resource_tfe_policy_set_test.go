@@ -475,7 +475,7 @@ func TestAccTFEPolicySet_vcs(t *testing.T) {
 	})
 }
 
-func TestAccTFEPolicySet_updateToVcs(t *testing.T) {
+func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 	policySet := &tfe.PolicySet{}
 
 	resource.Test(t, resource.TestCase{
@@ -489,9 +489,6 @@ func TestAccTFEPolicySet_updateToVcs(t *testing.T) {
 			}
 			if GITHUB_POLICY_SET_BRANCH == "" {
 				t.Skip("Please set GITHUB_POLICY_SET_BRANCH to run this test")
-			}
-			if GITHUB_POLICY_SET_ALT_BRANCH == "" {
-				t.Skip("Please set GITHUB_POLICY_SET_ALT_BRANCH to run this test")
 			}
 			if GITHUB_POLICY_SET_PATH == "" {
 				t.Skip("Please set GITHUB_POLICY_SET_PATH to run this test")
@@ -514,7 +511,7 @@ func TestAccTFEPolicySet_updateToVcs(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.identifier", GITHUB_POLICY_SET_IDENTIFIER),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "vcs_repo.0.branch", GITHUB_POLICY_SET_BRANCH),
+						"tfe_policy_set.foobar", "vcs_repo.0.branch", "master"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.ingress_submodules", "true"),
 					resource.TestCheckResourceAttr(
@@ -522,7 +519,7 @@ func TestAccTFEPolicySet_updateToVcs(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFEPolicySet_updateVCSRepoBranch,
+				Config: testAccTFEPolicySet_updateVCSBranch,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
@@ -535,7 +532,7 @@ func TestAccTFEPolicySet_updateToVcs(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.identifier", GITHUB_POLICY_SET_IDENTIFIER),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "vcs_repo.0.branch", GITHUB_POLICY_SET_ALT_BRANCH),
+						"tfe_policy_set.foobar", "vcs_repo.0.branch", GITHUB_POLICY_SET_BRANCH),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.ingress_submodules", "true"),
 					resource.TestCheckResourceAttr(
@@ -927,7 +924,7 @@ resource "tfe_policy_set" "foobar" {
   organization = "${tfe_organization.foobar.id}"
   vcs_repo {
     identifier         = "%s"
-    branch             = "%s"
+    branch             = "master"
     ingress_submodules = true
     oauth_token_id     = "${tfe_oauth_client.test.oauth_token_id}"
   }
@@ -937,11 +934,10 @@ resource "tfe_policy_set" "foobar" {
 `,
 	GITHUB_TOKEN,
 	GITHUB_POLICY_SET_IDENTIFIER,
-	GITHUB_POLICY_SET_BRANCH,
 	GITHUB_POLICY_SET_PATH,
 )
 
-var testAccTFEPolicySet_updateVCSRepoBranch = fmt.Sprintf(`
+var testAccTFEPolicySet_updateVCSBranch = fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform"
   email = "admin@company.com"
@@ -971,6 +967,6 @@ resource "tfe_policy_set" "foobar" {
 `,
 	GITHUB_TOKEN,
 	GITHUB_POLICY_SET_IDENTIFIER,
-	GITHUB_POLICY_SET_ALT_BRANCH,
+	GITHUB_POLICY_SET_BRANCH,
 	GITHUB_POLICY_SET_PATH,
 )
