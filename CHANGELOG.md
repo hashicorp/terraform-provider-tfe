@@ -1,4 +1,6 @@
 ## 0.19.0 (Unreleased)
+BUG FIXES:
+* r/tfe_policy_set: Fixes issue when updating Policy Set branch attribute ([#185](https://github.com/terraform-providers/terraform-provider-tfe/pull/185))
 ## 0.18.1 (June 10, 2020)
 
 ENHANCEMENTS:

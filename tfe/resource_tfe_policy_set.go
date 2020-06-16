@@ -283,7 +283,7 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	// Don't bother updating the policy set's attributes if they haven't changed
-	if d.HasChange("name") || d.HasChange("description") || d.HasChange("global") {
+	if d.HasChange("name") || d.HasChange("description") || d.HasChange("global") || d.HasChange("vcs_repo") {
 		// Create a new options struct.
 		options := tfe.PolicySetUpdateOptions{
 			Name:   tfe.String(name),
@@ -292,6 +292,17 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 
 		if desc, ok := d.GetOk("description"); ok {
 			options.Description = tfe.String(desc.(string))
+		}
+
+		if v, ok := d.GetOk("vcs_repo"); ok {
+			vcsRepo := v.([]interface{})[0].(map[string]interface{})
+
+			options.VCSRepo = &tfe.VCSRepoOptions{
+				Identifier:        tfe.String(vcsRepo["identifier"].(string)),
+				Branch:            tfe.String(vcsRepo["branch"].(string)),
+				IngressSubmodules: tfe.Bool(vcsRepo["ingress_submodules"].(bool)),
+				OAuthTokenID:      tfe.String(vcsRepo["oauth_token_id"].(string)),
+			}
 		}
 
 		log.Printf("[DEBUG] Update configuration for policy set: %s", d.Id())
