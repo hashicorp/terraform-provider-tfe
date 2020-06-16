@@ -27,6 +27,16 @@ $ cd $GOPATH/src/github.com/terraform-providers/terraform-provider-tfe
 $ make build
 ```
 
+To use this provider binary, you have a few different options:
+* You can copy the provider binary to your `~/.terraform.d/plugins` directory by running the following command:
+   ```sh
+   $ mv $GOPATH/bin/terraform-provider-tfe ~/.terraform.d/plugins
+   ```
+* You can create your test Terraform configurations in the same directory as your provider binary or you can copy the provider binary into the same directory as your test configurations.
+* You can copy the provider binary into the same locations as your `terraform` binary.
+
+To learn more about using a local build of a provider, you can look at the [documentation on writing custom providers](https://www.terraform.io/docs/extend/writing-custom-providers.html#invoking-the-provider) and the [documentation on how Terraform plugin discovery works](https://www.terraform.io/docs/extend/how-terraform-works.html#discovery)
+
 ## Using the provider
 
 For production use, you should constrain the acceptable provider versions via configuration,
