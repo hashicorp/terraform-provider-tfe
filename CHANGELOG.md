@@ -1,6 +1,11 @@
 ## 0.19.0 (Unreleased)
+
+FEATURES:
+* r/tfe_team_access and d/tfe_team_access: Added support for custom workspace permissions ([#184](https://github.com/terraform-providers/terraform-provider-tfe/pull/184))
+
 BUG FIXES:
 * r/tfe_policy_set: Fixes issue when updating Policy Set branch attribute ([#185](https://github.com/terraform-providers/terraform-provider-tfe/pull/185))
+
 ## 0.18.1 (June 10, 2020)
 
 ENHANCEMENTS:

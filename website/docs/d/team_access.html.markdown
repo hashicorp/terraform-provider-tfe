@@ -31,4 +31,13 @@ The following arguments are supported:
 In addition to all arguments above, the following attributes are exported:
 
 * `id` The team access ID.
-* `access` - The type of access granted.
+* `access` - The type of access granted to the team on the workspace.
+* `permissions` - The permissions granted to the team on the workspaces for each whatever.
+
+The `permissions` block contains:
+
+* `runs` - The permission granted to runs. Valid values are `read`, `plan`, or `apply`
+* `variables` - The permissions granted to variables. Valid values are `none`, `read`, or `write`
+* `state_versions` - The permissions granted to state versions. Valid values are `none`, `read-outputs`, `read`, or `write`
+* `sentinel_mocks` - The permissions granted to Sentinel mocks. Valid values are `none` or `read`
+* `workspace_locking` - Whether permission is granted to manually lock the workspace or not.
