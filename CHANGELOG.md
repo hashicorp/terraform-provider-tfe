@@ -1,4 +1,4 @@
-## 0.19.0 (Unreleased)
+## 0.19.0 (June 17, 2020)
 
 FEATURES:
 * r/tfe_team_access and d/tfe_team_access: Added support for custom workspace permissions ([#184](https://github.com/terraform-providers/terraform-provider-tfe/pull/184))
