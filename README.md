@@ -96,15 +96,21 @@ replace github.com/hashicorp/go-tfe => /path-to-local-repo/go-tfe
 
 ## Testing
 
-### 1. (Optional) Create repositories for policy sets and workspaces
+### 1. (Optional) Create repositories for policy sets, registry modules, and workspaces
 
-If you are planning to run the full suite of tests or work on workspaces or policy sets, you'll need to set up a workspace repository and a policy set repository in GitHub.
-
-Your workspace repository will need the following: 
-1. A branch other than master
+If you are planning to run the full suite of tests or work on policy sets, registry modules, or workspaces, you'll need to set up repositories for them in GitHub.
 
 Your policy set repository will need the following: 
 1. A policy set stored in a subdirectory
+1. A branch other than master
+
+Your registry module repository will need to be a [valid module](https://www.terraform.io/docs/cloud/registry/publish.html#preparing-a-module-repository).
+It will need the following: 
+1. To be named `terraform-<PROVIDER>-<NAME>`
+1. At least one valid SemVer tag in the format `x.y.z`
+[terraform-random-module](ttps://github.com/caseylang/terraform-random-module) is a good example repo.
+
+Your workspace repository will need the following: 
 1. A branch other than master
    
 ### 2. Set up environment variables
@@ -126,6 +132,7 @@ these values with the environment variables specified below:
 1. `GITHUB_POLICY_SET_IDENTIFIER` - GitHub policy set repository identifier in the format `username/repository`. Required for running policy set tests.
 1. `GITHUB_POLICY_SET_BRANCH`: A GitHub branch for the repository specified by `GITHUB_POLICY_SET_IDENTIFIER`. Required for running policy set tests.
 1. `GITHUB_POLICY_SET_PATH`: A GitHub subdirectory for the repository specified by `GITHUB_POLICY_SET_IDENTIFIER`. Required for running policy set tests.
+1. `GITHUB_REGISTRY_MODULE_IDENTIFIER` - GitHub registry module repository identifier in the format `username/repository`. Required for running registry module tests.
 1. `GITHUB_WORKSPACE_IDENTIFIER` - GitHub workspace repository identifier in the format `username/repository`. Required for running workspace tests.
 1. `GITHUB_WORKSPACE_BRANCH`: A GitHub branch for the repository specified by `GITHUB_WORKSPACE_IDENTIFIER`. Required for running workspace tests.
 
@@ -140,7 +147,7 @@ You can set your environment variables up however you prefer. The following are 
     
       Set all of the environment variables at once with the following command:
       ```sh
-      envchain --set YOUR_NAMESPACE_HERE TFE_HOSTNAME TFE_TOKEN TFE_USER1 TFE_USER2 GITHUB_TOKEN GITHUB_POLICY_SET_IDENTIFIER GITHUB_POLICY_SET_BRANCH GITHUB_POLICY_SET_PATH GITHUB_WORKSPACE_IDENTIFIER GITHUB_WORKSPACE_BRANCH
+      envchain --set YOUR_NAMESPACE_HERE TFE_HOSTNAME TFE_TOKEN TFE_USER1 TFE_USER2 GITHUB_TOKEN GITHUB_POLICY_SET_IDENTIFIER GITHUB_POLICY_SET_BRANCH GITHUB_POLICY_SET_PATH GITHUB_REGISTRY_MODULE_IDENTIFIER GITHUB_WORKSPACE_IDENTIFIER GITHUB_WORKSPACE_BRANCH
       ```
   
 ### 3. Run the tests
