@@ -25,7 +25,28 @@ func TestAccTFEOrganizationMembership_basic(t *testing.T) {
 					testAccCheckTFEOrganizationMembershipAttributes(mem),
 					resource.TestCheckResourceAttr(
 						"tfe_organization_membership.foobar", "email", "example@hashicorp.com"),
+					resource.TestCheckResourceAttr(
+						"tfe_organization_membership.foobar", "organization", "tst-terraform"),
+					resource.TestCheckResourceAttrSet("tfe_organization_membership.foobar", "user_id"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccTFEOrganizationMembershipImport(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEOrganizationMembershipDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOrganizationMembership_basic,
+			},
+			{
+				ResourceName:      "tfe_organization_membership.foobar",
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})
@@ -67,9 +88,16 @@ func testAccCheckTFEOrganizationMembershipExists(
 func testAccCheckTFEOrganizationMembershipAttributes(
 	membership *tfe.OrganizationMembership) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
+		if membership.Organization.Name != "tst-terraform" {
+			return fmt.Errorf("Bad organization: %s", membership.Organization.Name)
+		}
 		if membership.User.Email != "example@hashicorp.com" {
 			return fmt.Errorf("Bad email: %s", membership.User.Email)
 		}
+		if membership.User.ID == "" {
+			return fmt.Errorf("Bad user ID: %s", membership.User.ID)
+		}
+
 		return nil
 	}
 }

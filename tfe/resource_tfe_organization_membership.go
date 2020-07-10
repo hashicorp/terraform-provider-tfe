@@ -13,6 +13,9 @@ func resourceTFEOrganizationMembership() *schema.Resource {
 		Create: resourceTFEOrganizationMembershipCreate,
 		Read:   resourceTFEOrganizationMembershipRead,
 		Delete: resourceTFEOrganizationMembershipDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"email": {
@@ -25,6 +28,11 @@ func resourceTFEOrganizationMembership() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
+			},
+
+			"user_id": {
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 		},
 	}
@@ -57,8 +65,12 @@ func resourceTFEOrganizationMembershipCreate(d *schema.ResourceData, meta interf
 func resourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
+	options := tfe.OrganizationMembershipReadOptions{
+		Include: "user",
+	}
+
 	log.Printf("[DEBUG] Read configuration of membership: %s", d.Id())
-	membership, err := tfeClient.OrganizationMemberships.Read(ctx, d.Id())
+	membership, err := tfeClient.OrganizationMemberships.ReadWithOptions(ctx, d.Id(), options)
 
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
@@ -72,6 +84,8 @@ func resourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interfac
 	// Update the config.
 	log.Printf("[INFO] User = %#v", membership.User)
 	d.Set("email", membership.Email)
+	d.Set("organization", membership.Organization.Name)
+	d.Set("user_id", membership.User.ID)
 
 	return nil
 }

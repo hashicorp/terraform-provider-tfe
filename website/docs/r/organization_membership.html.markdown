@@ -35,3 +35,17 @@ The following arguments are supported:
 
 * `organization` - (Required) Name of the organization.
 * `email` - (Required) Email of the user to add.
+
+## Attributes Reference
+
+In addition to all arguments above, the following attributes are exported:
+
+* `id` - The organization membership ID.
+* `user_id` - The ID of the user associated with the organization membership.
+
+Organization memberships can be imported; use `<ORGANIZATION MEMBERSHIP ID>` as the import ID. For
+example:
+
+```shell
+terraform import tfe_organization_membership.test ou-wAs3zYmWAhYK7peR
+```
