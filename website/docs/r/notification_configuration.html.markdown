@@ -12,6 +12,10 @@ Terraform Cloud can be configured to send notifications for run state transition
 Notification configurations allow you to specify a URL, destination type, and what events will trigger the notification. 
 Each workspace can have up to 20 notification configurations, and they apply to all runs for that workspace.
 
+~> **NOTE:** Using `destination_type` of `email` requires using the provider with Terraform Cloud or an instance of 
+  Terraform Enterprise at least as recent as v202005-1.
+
+
 ## Example Usage
 
 Basic usage:
@@ -24,7 +28,7 @@ resource "tfe_organization" "test" {
 
 resource "tfe_workspace" "test" {
   name         = "my-workspace-name"
-  organization = "${tfe_organization.test.id}"
+  organization = tfe_organization.test.id
 }
 
 resource "tfe_notification_configuration" "test" {
@@ -33,7 +37,64 @@ resource "tfe_notification_configuration" "test" {
   destination_type          = "generic"
   triggers                  = ["run:created", "run:planning", "run:errored"]
   url                       = "https://example.com"
-  workspace_external_id     = "${tfe_workspace.test.id}"
+  workspace_external_id     = tfe_workspace.test.id
+}
+```
+
+With `destination_type` of `email`:
+
+```hcl
+resource "tfe_organization" "test" {
+  name  = "my-org-name"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "test" {
+  name         = "my-workspace-name"
+  organization = tfe_organization.test.id
+}
+
+resource "tfe_organization_membership" "test" {
+  organization = "my-org-name"
+  email        = "test.member@company.com"
+}
+
+resource "tfe_notification_configuration" "test" {
+  name                  = "my-test-email-notification-configuration"
+  enabled               = true
+  destination_type      = "email"
+  email_user_ids        = [tfe_organization_membership.test.user_id]
+  triggers              = ["run:created", "run:planning", "run:errored"]
+  workspace_external_id = tfe_workspace.test.id
+}
+```
+
+(**TFE only**) With `destination_type` of `email`, using `email_addresses` list and `email_users`:
+
+```hcl
+resource "tfe_organization" "test" {
+  name  = "my-org-name"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "test" {
+  name         = "my-workspace-name"
+  organization = tfe_organization.test.id
+}
+
+resource "tfe_organization_membership" "test" {
+  organization = "my-org-name"
+  email        = "test.member@company.com"
+}
+
+resource "tfe_notification_configuration" "test" {
+  name                  = "my-test-email-notification-configuration"
+  enabled               = true
+  destination_type      = "email"
+  email_user_ids        = [tfe_organization_membership.test.user_id]
+  email_addresses       = ["user1@company.com", "user2@company.com", "user3@company.com"]
+  triggers              = ["run:created", "run:planning", "run:errored"]
+  workspace_external_id = tfe_workspace.test.id
 }
 ```
 
@@ -43,22 +104,27 @@ The following arguments are supported:
 
 * `name` - (Required) Name of the notification configuration.
 * `destination_type` - (Required) The type of notification configuration payload to send. 
-  Valid values are `generic` or `slack`.
+  Valid values are `email`, `generic` or `slack`.
+* `email_addresses` - (Optional) **TFE only** A list of email addresses. This value 
+  _must not_ be provided if `destination_type` is `generic` or `slack`.
+* `email_user_ids` - (Optional) A list of user IDs. This value _must not_ be provided 
+  if `destination_type` is `generic` or `slack`.
 * `enabled` - (Optional) Whether the notification configuration should be enabled or not.
   Disabled configurations will not send any notifications. Defaults to `false`.
 * `token` - (Optional) A write-only secure token for the notification configuration, which can
   be used by the receiving server to verify request authenticity when configured for notification
-  configurations with a destination type of `generic`. A token set for notification configurations
-  with a destination type of `slack` is not allowed and will result in an error. Defaults to `null`.
+  configurations with a destination type of `generic`. Defaults to `null`.
+  This value _must not_ be provided if `destination_type` is `email` or `slack`.
 * `triggers` - (Optional) The array of triggers for which this notification configuration will
   send notifications. Valid values are `run:created`, `run:planning`, `run:needs_attention`, `run:applying`
   `run:completed`, `run:errored`. If omitted, no notification triggers are configured.
-* `url` - (Required) The HTTP or HTTPS URL of the notification configuration where notification
-  requests will be made.
+* `url` - (Required if `destination_type` is `generic` or `slack`) The HTTP or HTTPS URL of the notification 
+  configuration where notification requests will be made. This value _must not_ be provided if `destination_type` 
+  is `email`.
 * `workspace_id` - The id of the workspace that owns the notification configuration. 
   This value _must not_ be provided if `workspace_external_id` is provided.
-* `workspace_external_id` - **Deprecated** Use `workspace_id` instead. The id of the workspace that owns the notification configuration.
-  This value _must not_ be provided if `workspace_id` is provided.
+* `workspace_external_id` - **Deprecated** Use `workspace_id` instead. The id of the workspace that owns the 
+  notification configuration. This value _must not_ be provided if `workspace_id` is provided.
   
 -> **Note:** One of `workspace_id` or `workspace_external_id` _must_ be provided.
 
