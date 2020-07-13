@@ -35,3 +35,12 @@ The following arguments are supported:
 
 * `organization` - (Required) Name of the organization.
 * `email` - (Required) Email of the user to add.
+
+## Import
+
+A organisation membership can be imported; use `<ORGANIZATION MEMBERSHIP ID>`
+as the import ID. For example:
+
+```shell
+terraform import tfe_organization_membership.test ou-2342390sdf0jj
+```

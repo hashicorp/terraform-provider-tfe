@@ -116,7 +116,7 @@ func testAccCheckTFEOrganizationMembershipDestroy(s *terraform.State) error {
 
 const testAccTFEOrganizationMembership_basic = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-2"
+  name  = "tst-terraform"
   email = "admin@company.com"
 }
 
