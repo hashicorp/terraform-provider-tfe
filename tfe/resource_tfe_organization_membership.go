@@ -13,6 +13,9 @@ func resourceTFEOrganizationMembership() *schema.Resource {
 		Create: resourceTFEOrganizationMembershipCreate,
 		Read:   resourceTFEOrganizationMembershipRead,
 		Delete: resourceTFEOrganizationMembershipDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"email": {
@@ -72,6 +75,7 @@ func resourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interfac
 	// Update the config.
 	log.Printf("[INFO] User = %#v", membership.User)
 	d.Set("email", membership.Email)
+	d.Set("organization", membership.Organization.Name)
 
 	return nil
 }

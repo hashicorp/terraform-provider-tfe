@@ -31,6 +31,25 @@ func TestAccTFEOrganizationMembership_basic(t *testing.T) {
 	})
 }
 
+func TestAccTFEOrganizationMembership_import(t *testing.T) {
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEOrganizationMembershipDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOrganizationMembership_basic,
+			},
+			{
+				ResourceName:      "tfe_organization_membership.foobar",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func testAccCheckTFEOrganizationMembershipExists(
 	n string, membership *tfe.OrganizationMembership) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
@@ -97,7 +116,7 @@ func testAccCheckTFEOrganizationMembershipDestroy(s *terraform.State) error {
 
 const testAccTFEOrganizationMembership_basic = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-2"
   email = "admin@company.com"
 }
 
