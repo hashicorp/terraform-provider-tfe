@@ -11,10 +11,8 @@ description: |-
 An OAuth Client represents the connection between an organization and a VCS
 provider.
 
--> **Note:** This resource does not currently support creation of Bitbucket
-  Server OAuth clients.
-
--> **Note:** This resource requires a private key when creating Azure DevOps Server OAuth clients.
+-> **Note:** This resource does not currently support creation of Bitbucket Cloud, 
+  Bitbucket Server, or Azure DevOps Services OAuth clients.
 
 ## Example Usage
 
@@ -31,6 +29,7 @@ resource "tfe_oauth_client" "test" {
 ```
 
 Azure DevOps Server usage:
+-> **Note:** This resource requires a private key when creating Azure DevOps Server OAuth clients.
 
 ```hcl
 resource "tfe_oauth_client" "test" {
