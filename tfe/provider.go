@@ -62,11 +62,12 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
-			"tfe_ssh_key":       dataSourceTFESSHKey(),
-			"tfe_team":          dataSourceTFETeam(),
-			"tfe_team_access":   dataSourceTFETeamAccess(),
-			"tfe_workspace":     dataSourceTFEWorkspace(),
-			"tfe_workspace_ids": dataSourceTFEWorkspaceIDs(),
+			"tfe_organization_membership": dataSourceTFEOrganizationMembership(),
+			"tfe_ssh_key":                 dataSourceTFESSHKey(),
+			"tfe_team":                    dataSourceTFETeam(),
+			"tfe_team_access":             dataSourceTFETeamAccess(),
+			"tfe_workspace":               dataSourceTFEWorkspace(),
+			"tfe_workspace_ids":           dataSourceTFEWorkspaceIDs(),
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
@@ -77,6 +78,7 @@ func Provider() terraform.ResourceProvider {
 			"tfe_organization_token":         resourceTFEOrganizationToken(),
 			"tfe_policy_set":                 resourceTFEPolicySet(),
 			"tfe_policy_set_parameter":       resourceTFEPolicySetParameter(),
+			"tfe_registry_module":            resourceTFERegistryModule(),
 			"tfe_run_trigger":                resourceTFERunTrigger(),
 			"tfe_sentinel_policy":            resourceTFESentinelPolicy(),
 			"tfe_ssh_key":                    resourceTFESSHKey(),

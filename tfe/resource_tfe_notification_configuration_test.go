@@ -71,6 +71,36 @@ func TestAccTFENotificationConfiguration_basicWorkspaceID(t *testing.T) {
 	})
 }
 
+func TestAccTFENotificationConfiguration_emailUserIDs(t *testing.T) {
+	notificationConfiguration := &tfe.NotificationConfiguration{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFENotificationConfiguration_emailUserIDs,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFENotificationConfigurationExists(
+						"tfe_notification_configuration.foobar", notificationConfiguration),
+					testAccCheckTFENotificationConfigurationAttributesEmailUserIDs(notificationConfiguration),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "destination_type", "email"),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "name", "notification_email"),
+					// Just test the number of items in triggers
+					// Values in triggers attribute are tested by testCheckTFENotificationConfigurationAttributesEmailUserIDs
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "triggers.#", "0"),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "email_user_ids.#", "0"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFENotificationConfiguration_update(t *testing.T) {
 	notificationConfiguration := &tfe.NotificationConfiguration{}
 
@@ -245,15 +275,240 @@ func TestAccTFENotificationConfiguration_updateWorkspaceExternalIDToWorkspaceID(
 	})
 }
 
-func TestAccTFENotificationConfiguration_slackWithToken(t *testing.T) {
+func TestAccTFENotificationConfiguration_updateEmailUserIDs(t *testing.T) {
+	notificationConfiguration := &tfe.NotificationConfiguration{}
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
+				Config: testAccTFENotificationConfiguration_emailUserIDs,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFENotificationConfigurationExists(
+						"tfe_notification_configuration.foobar", notificationConfiguration),
+					testAccCheckTFENotificationConfigurationAttributesEmailUserIDs(notificationConfiguration),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "destination_type", "email"),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "name", "notification_email"),
+					// Just test the number of items in triggers
+					// Values in triggers attribute are tested by testCheckTFENotificationConfigurationAttributesEmailUserIDs
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "triggers.#", "0"),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "email_user_ids.#", "0"),
+				),
+			},
+			{
+				Config: testAccTFENotificationConfiguration_updateEmailUserIDs,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFENotificationConfigurationExists(
+						"tfe_notification_configuration.foobar", notificationConfiguration),
+					testAccCheckTFENotificationConfigurationAttributesUpdateEmailUserIDs(notificationConfiguration),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "destination_type", "email"),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "enabled", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "name", "notification_email_update"),
+					// Just test the number of items in triggers
+					// Values in triggers attribute are tested by testCheckTFENotificationConfigurationAttributesUpdateEmailUserIDs
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "triggers.#", "2"),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "email_user_ids.#", "1"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFENotificationConfiguration_validateSchemaAttributesEmail(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFENotificationConfiguration_emailWithURL,
+				ExpectError: regexp.MustCompile(`^.*URL cannot be set with destination type of email`),
+			},
+			{
+				Config:      testAccTFENotificationConfiguration_emailWithToken,
+				ExpectError: regexp.MustCompile(`^.*Token cannot be set with destination type of email`),
+			},
+		},
+	})
+}
+
+func TestAccTFENotificationConfiguration_validateSchemaAttributesGeneric(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFENotificationConfiguration_genericWithEmailAddresses,
+				ExpectError: regexp.MustCompile(`^.*Email addresses cannot be set with destination type of generic`),
+			},
+			{
+				Config:      testAccTFENotificationConfiguration_genericWithEmailUserIDs,
+				ExpectError: regexp.MustCompile(`^.*Email user IDs cannot be set with destination type of generic`),
+			},
+			{
+				Config:      testAccTFENotificationConfiguration_genericWithoutURL,
+				ExpectError: regexp.MustCompile(`^.*URL is required with destination type of generic`),
+			},
+		},
+	})
+}
+
+func TestAccTFENotificationConfiguration_validateSchemaAttributesSlack(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFENotificationConfiguration_slackWithEmailAddresses,
+				ExpectError: regexp.MustCompile(`^.*Email addresses cannot be set with destination type of slack`),
+			},
+			{
+				Config:      testAccTFENotificationConfiguration_slackWithEmailUserIDs,
+				ExpectError: regexp.MustCompile(`^.*Email user IDs cannot be set with destination type of slack`),
+			},
+			{
 				Config:      testAccTFENotificationConfiguration_slackWithToken,
-				ExpectError: regexp.MustCompile(`Token cannot be set with destination_type of slack`),
+				ExpectError: regexp.MustCompile(`^.*Token cannot be set with destination type of slack`),
+			},
+			{
+				Config:      testAccTFENotificationConfiguration_slackWithoutURL,
+				ExpectError: regexp.MustCompile(`^.*URL is required with destination type of slack`),
+			},
+		},
+	})
+}
+
+func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesEmail(t *testing.T) {
+	notificationConfiguration := &tfe.NotificationConfiguration{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFENotificationConfiguration_emailUserIDs,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFENotificationConfigurationExists(
+						"tfe_notification_configuration.foobar", notificationConfiguration),
+					testAccCheckTFENotificationConfigurationAttributesEmailUserIDs(notificationConfiguration),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "destination_type", "email"),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "name", "notification_email"),
+					// Just test the number of items in triggers
+					// Values in triggers attribute are tested by testCheckTFENotificationConfigurationAttributesEmailUserIDs
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "triggers.#", "0"),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "email_user_ids.#", "0"),
+				),
+			},
+			{
+				Config:      testAccTFENotificationConfiguration_emailWithURL,
+				ExpectError: regexp.MustCompile(`^.*URL cannot be set with destination type of email`),
+			},
+			{
+				Config:      testAccTFENotificationConfiguration_emailWithToken,
+				ExpectError: regexp.MustCompile(`^.*Token cannot be set with destination type of email`),
+			},
+		},
+	})
+}
+
+func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesGeneric(t *testing.T) {
+	notificationConfiguration := &tfe.NotificationConfiguration{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFENotificationConfiguration_basic,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFENotificationConfigurationExists(
+						"tfe_notification_configuration.foobar", notificationConfiguration),
+					testAccCheckTFENotificationConfigurationAttributes(notificationConfiguration),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "destination_type", "generic"),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "name", "notification_basic"),
+					// Just test the number of items in triggers
+					// Values in triggers attribute are tested by testCheckTFENotificationConfigurationAttributes
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "triggers.#", "0"),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "url", "http://example.com"),
+				),
+			},
+			{
+				Config:      testAccTFENotificationConfiguration_genericWithEmailAddresses,
+				ExpectError: regexp.MustCompile(`^.*Email addresses cannot be set with destination type of generic`),
+			},
+			{
+				Config:      testAccTFENotificationConfiguration_genericWithEmailUserIDs,
+				ExpectError: regexp.MustCompile(`^.*Email user IDs cannot be set with destination type of generic`),
+			},
+			{
+				Config:      testAccTFENotificationConfiguration_genericWithoutURL,
+				ExpectError: regexp.MustCompile(`^.*URL is required with destination type of generic`),
+			},
+		},
+	})
+}
+
+func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesSlack(t *testing.T) {
+	notificationConfiguration := &tfe.NotificationConfiguration{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFENotificationConfiguration_slack,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFENotificationConfigurationExists(
+						"tfe_notification_configuration.foobar", notificationConfiguration),
+					testAccCheckTFENotificationConfigurationAttributesSlack(notificationConfiguration),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "destination_type", "slack"),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "name", "notification_slack"),
+					// Just test the number of items in triggers
+					// Values in triggers attribute are tested by testCheckTFENotificationConfigurationAttributes
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "triggers.#", "0"),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "url", "http://example.com"),
+				),
+			},
+			{
+				Config:      testAccTFENotificationConfiguration_slackWithEmailAddresses,
+				ExpectError: regexp.MustCompile(`^.*Email addresses cannot be set with destination type of slack`),
+			},
+			{
+				Config:      testAccTFENotificationConfiguration_slackWithEmailUserIDs,
+				ExpectError: regexp.MustCompile(`^.*Email user IDs cannot be set with destination type of slack`),
+			},
+			{
+				Config:      testAccTFENotificationConfiguration_slackWithToken,
+				ExpectError: regexp.MustCompile(`^.*Token cannot be set with destination type of slack`),
+			},
+			{
+				Config:      testAccTFENotificationConfiguration_slackWithoutURL,
+				ExpectError: regexp.MustCompile(`^.*URL is required with destination type of slack`),
 			},
 		},
 	})
@@ -303,7 +558,7 @@ func TestAccTFENotificationConfiguration_noWorkspaceID(t *testing.T) {
 	})
 }
 
-func TestAccTFENotificationConfigurationImport(t *testing.T) {
+func TestAccTFENotificationConfigurationImport_basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -311,6 +566,46 @@ func TestAccTFENotificationConfigurationImport(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENotificationConfiguration_update,
+			},
+
+			{
+				ResourceName:            "tfe_notification_configuration.foobar",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"token", "workspace_external_id"},
+			},
+		},
+	})
+}
+
+func TestAccTFENotificationConfigurationImport_emailUserIDs(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFENotificationConfiguration_updateEmailUserIDs,
+			},
+
+			{
+				ResourceName:            "tfe_notification_configuration.foobar",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"token", "workspace_external_id"},
+			},
+		},
+	})
+}
+
+func TestAccTFENotificationConfigurationImport_emptyEmailUserIDs(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFENotificationConfiguration_emailUserIDs,
 			},
 
 			{
@@ -403,6 +698,90 @@ func testAccCheckTFENotificationConfigurationAttributesUpdate(notificationConfig
 	}
 }
 
+func testAccCheckTFENotificationConfigurationAttributesEmailUserIDs(notificationConfiguration *tfe.NotificationConfiguration) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if notificationConfiguration.Name != "notification_email" {
+			return fmt.Errorf("Bad name: %s", notificationConfiguration.Name)
+		}
+
+		if notificationConfiguration.DestinationType != tfe.NotificationDestinationTypeEmail {
+			return fmt.Errorf("Bad destination type: %s", notificationConfiguration.DestinationType)
+		}
+
+		if notificationConfiguration.Enabled != false {
+			return fmt.Errorf("Bad enabled value: %t", notificationConfiguration.Enabled)
+		}
+
+		// Token is write only, can't read it
+
+		if !reflect.DeepEqual(notificationConfiguration.Triggers, []string{}) {
+			return fmt.Errorf("Bad triggers: %v", notificationConfiguration.Triggers)
+		}
+
+		if len(notificationConfiguration.EmailUsers) != 0 {
+			return fmt.Errorf("Wrong number of email users: %v", len(notificationConfiguration.EmailUsers))
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckTFENotificationConfigurationAttributesUpdateEmailUserIDs(notificationConfiguration *tfe.NotificationConfiguration) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if notificationConfiguration.Name != "notification_email_update" {
+			return fmt.Errorf("Bad name: %s", notificationConfiguration.Name)
+		}
+
+		if notificationConfiguration.DestinationType != tfe.NotificationDestinationTypeEmail {
+			return fmt.Errorf("Bad destination type: %s", notificationConfiguration.DestinationType)
+		}
+
+		if notificationConfiguration.Enabled != true {
+			return fmt.Errorf("Bad enabled value: %t", notificationConfiguration.Enabled)
+		}
+
+		// Token is write only, can't read it
+
+		if !reflect.DeepEqual(notificationConfiguration.Triggers, []string{tfe.NotificationTriggerCreated, tfe.NotificationTriggerNeedsAttention}) {
+			return fmt.Errorf("Bad triggers: %v", notificationConfiguration.Triggers)
+		}
+
+		if len(notificationConfiguration.EmailUsers) != 1 {
+			return fmt.Errorf("Wrong number of email users: %v", len(notificationConfiguration.EmailUsers))
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckTFENotificationConfigurationAttributesSlack(notificationConfiguration *tfe.NotificationConfiguration) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if notificationConfiguration.Name != "notification_slack" {
+			return fmt.Errorf("Bad name: %s", notificationConfiguration.Name)
+		}
+
+		if notificationConfiguration.DestinationType != tfe.NotificationDestinationTypeSlack {
+			return fmt.Errorf("Bad destination type: %s", notificationConfiguration.DestinationType)
+		}
+
+		if notificationConfiguration.Enabled != false {
+			return fmt.Errorf("Bad enabled value: %t", notificationConfiguration.Enabled)
+		}
+
+		// Token is write only, can't read it
+
+		if !reflect.DeepEqual(notificationConfiguration.Triggers, []string{}) {
+			return fmt.Errorf("Bad triggers: %v", notificationConfiguration.Triggers)
+		}
+
+		if notificationConfiguration.URL != "http://example.com" {
+			return fmt.Errorf("Bad URL: %s", notificationConfiguration.URL)
+		}
+
+		return nil
+	}
+}
+
 func testAccCheckTFENotificationConfigurationAttributesDuplicateTriggers(notificationConfiguration *tfe.NotificationConfiguration) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if notificationConfiguration.Name != "notification_duplicate_triggers" {
@@ -460,14 +839,54 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_notification_configuration" "foobar" {
   name                  = "notification_basic"
   destination_type      = "generic"
   url                   = "http://example.com"
-  workspace_external_id = "${tfe_workspace.foobar.id}"
+  workspace_external_id = tfe_workspace.foobar.id
+}`
+
+const testAccTFENotificationConfiguration_emailUserIDs = `
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_organization_membership" "foobar" {
+  organization = tfe_organization.foobar.id
+  email        = "foo@foobar.com"
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name             = "notification_email"
+  destination_type = "email"
+  workspace_id     = tfe_workspace.foobar.id
+}`
+
+const testAccTFENotificationConfiguration_slack = `
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name                  = "notification_slack"
+  destination_type      = "slack"
+  url                   = "http://example.com"
+  workspace_external_id = tfe_workspace.foobar.id
 }`
 
 const testAccTFENotificationConfiguration_basicWorkspaceID = `
@@ -478,14 +897,14 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_notification_configuration" "foobar" {
   name                  = "notification_basic"
   destination_type      = "generic"
   url                   = "http://example.com"
-  workspace_id          = "${tfe_workspace.foobar.id}"
+  workspace_id          = tfe_workspace.foobar.id
 }`
 
 const testAccTFENotificationConfiguration_update = `
@@ -496,7 +915,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_notification_configuration" "foobar" {
@@ -506,7 +925,7 @@ resource "tfe_notification_configuration" "foobar" {
   token                 = "1234567890_update"
   triggers              = ["run:created", "run:needs_attention"]
   url                   = "http://example.com/?update=true"
-  workspace_external_id = "${tfe_workspace.foobar.id}"
+  workspace_external_id = tfe_workspace.foobar.id
 }`
 
 const testAccTFENotificationConfiguration_updateWorkspaceID = `
@@ -517,7 +936,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_notification_configuration" "foobar" {
@@ -527,7 +946,167 @@ resource "tfe_notification_configuration" "foobar" {
   token                 = "1234567890_update"
   triggers              = ["run:created", "run:needs_attention"]
   url                   = "http://example.com/?update=true"
-  workspace_id          = "${tfe_workspace.foobar.id}"
+  workspace_id          = tfe_workspace.foobar.id
+}`
+
+const testAccTFENotificationConfiguration_updateEmailUserIDs = `
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_organization_membership" "foobar" {
+  organization = tfe_organization.foobar.id
+  email        = "foo@foobar.com"
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name             = "notification_email_update"
+  destination_type = "email"
+  email_user_ids   = [tfe_organization_membership.foobar.user_id]
+  enabled          = true
+  triggers         = ["run:created", "run:needs_attention"]
+  workspace_id     = tfe_workspace.foobar.id
+}`
+
+const testAccTFENotificationConfiguration_emailWithURL = `
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name             = "notification_email_with_url"
+  destination_type = "email"
+  url              = "http://example.com"
+  workspace_id     = tfe_workspace.foobar.id
+}`
+
+const testAccTFENotificationConfiguration_emailWithToken = `
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name             = "notification_email_with_token"
+  destination_type = "email"
+  token            = "1234567890"
+  workspace_id     = tfe_workspace.foobar.id
+}`
+
+const testAccTFENotificationConfiguration_genericWithEmailAddresses = `
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name             = "notification_generic_with_email_addresses"
+  destination_type = "generic"
+  email_addresses  = ["test@example.com", "test2@example.com"]
+  workspace_id     = tfe_workspace.foobar.id
+}`
+
+const testAccTFENotificationConfiguration_genericWithEmailUserIDs = `
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_organization_membership" "foobar" {
+  organization = tfe_organization.foobar.id
+  email        = "foo@foobar.com"
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name             = "notification_generic_with_email_user_ids"
+  destination_type = "generic"
+  email_user_ids   = ["${tfe_organization_membership.foobar.id}"]
+  workspace_id     = tfe_workspace.foobar.id
+}`
+
+const testAccTFENotificationConfiguration_genericWithoutURL = `
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name             = "notification_generic_without_url"
+  destination_type = "generic"
+  workspace_id     = tfe_workspace.foobar.id
+}`
+
+const testAccTFENotificationConfiguration_slackWithEmailAddresses = `
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name             = "notification_slack_with_email_addresses"
+  destination_type = "slack"
+  email_addresses  = ["test@example.com", "test2@example.com"]
+  workspace_id     = tfe_workspace.foobar.id
+}`
+
+const testAccTFENotificationConfiguration_slackWithEmailUserIDs = `
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_organization_membership" "foobar" {
+  organization = tfe_organization.foobar.id
+  email        = "foo@foobar.com"
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name             = "notification_slack_with_email_user_ids"
+  destination_type = "slack"
+  email_user_ids   = ["${tfe_organization_membership.foobar.id}"]
+  workspace_id     = tfe_workspace.foobar.id
 }`
 
 const testAccTFENotificationConfiguration_slackWithToken = `
@@ -538,15 +1117,32 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_notification_configuration" "foobar" {
-  name                  = "notification_slack_with_token"
-  destination_type      = "slack"
-  token                 = "1234567890"
-  url                   = "http://example.com"
-  workspace_external_id = "${tfe_workspace.foobar.id}"
+  name             = "notification_slack_with_token"
+  destination_type = "slack"
+  token            = "1234567890"
+  url              = "http://example.com"
+  workspace_id     = tfe_workspace.foobar.id
+}`
+
+const testAccTFENotificationConfiguration_slackWithoutURL = `
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name             = "notification_slack_without_url"
+  destination_type = "slack"
+  workspace_id     = tfe_workspace.foobar.id
 }`
 
 const testAccTFENotificationConfiguration_duplicateTriggers = `
@@ -557,7 +1153,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_notification_configuration" "foobar" {
@@ -565,7 +1161,7 @@ resource "tfe_notification_configuration" "foobar" {
   destination_type      = "generic"
   triggers              = ["run:created", "run:created", "run:created"]
   url                   = "http://example.com"
-  workspace_external_id = "${tfe_workspace.foobar.id}"
+  workspace_external_id = tfe_workspace.foobar.id
 }`
 
 const testAccTFENotificationConfiguration_noWorkspaceID = `
@@ -576,7 +1172,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_notification_configuration" "foobar" {

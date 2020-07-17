@@ -1,4 +1,16 @@
 ## 0.20.0 (Unreleased)
+
+FEATURES:
+* **New Resource:** r/tfe_registry_module ([#191](https://github.com/terraform-providers/terraform-provider-tfe/pull/191))
+* **New Data Source:** d/tfe_organization_membership ([#191](https://github.com/terraform-providers/terraform-provider-tfe/pull/191))
+
+ENHANCEMENTS:
+* r/tfe_notification_configuration: Added support for email notification configuration by adding support for `destination_type` of `email` and associated schema attributes `email_user_ids` and (TFE only) `email_addresses` ([#191](https://github.com/terraform-providers/terraform-provider-tfe/pull/191))
+* r/tfe_organization_membership: Added ability to import organization memberships and added new computed attribute `user_id` ([#191](https://github.com/terraform-providers/terraform-provider-tfe/pull/191))
+
+NOTES: 
+* Using `destination_type` of `email` with resource `tfe_notification_configuration` requires using the provider with Terraform Cloud or an instance of Terraform Enterprise at least as recent as v202005-1.
+
 ## 0.19.0 (June 17, 2020)
 
 FEATURES:
