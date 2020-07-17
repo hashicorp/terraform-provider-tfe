@@ -194,13 +194,22 @@ func testAccPreCheckTFERegistryModule(t *testing.T) {
 }
 
 func getRegistryModuleRepository() string {
+	if GITHUB_REGISTRY_MODULE_IDENTIFIER == "" {
+		return GITHUB_REGISTRY_MODULE_IDENTIFIER
+	}
 	return strings.Split(GITHUB_REGISTRY_MODULE_IDENTIFIER, "/")[1]
 }
 func getRegistryModuleName() string {
+	if GITHUB_REGISTRY_MODULE_IDENTIFIER == "" {
+		return GITHUB_REGISTRY_MODULE_IDENTIFIER
+	}
 	return strings.SplitN(getRegistryModuleRepository(), "-", 3)[2]
 }
 
 func getRegistryModuleProvider() string {
+	if GITHUB_REGISTRY_MODULE_IDENTIFIER == "" {
+		return GITHUB_REGISTRY_MODULE_IDENTIFIER
+	}
 	return strings.SplitN(getRegistryModuleRepository(), "-", 3)[1]
 }
 
