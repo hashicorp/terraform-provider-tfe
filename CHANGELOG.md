@@ -1,4 +1,4 @@
-## 0.20.0 (Unreleased)
+## 0.20.0 (July 17, 2020)
 
 FEATURES:
 * **New Resource:** r/tfe_registry_module ([#191](https://github.com/terraform-providers/terraform-provider-tfe/pull/191))
