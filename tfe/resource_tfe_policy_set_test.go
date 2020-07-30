@@ -454,7 +454,7 @@ func TestAccTFEPolicySet_invalidname(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEPolicySet_invalidname,
-				ExpectError: regexp.MustCompile(`policy set name not the right format should only contain`),
+				ExpectError: regexp.MustCompile(`The name of the policy set. Can only include letters, numbers, -, and _.`),
 			},
 		},
 	})
