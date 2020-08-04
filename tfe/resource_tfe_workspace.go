@@ -163,6 +163,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 
 		options.VCSRepo = &tfe.VCSRepoOptions{
 			Identifier:        tfe.String(vcsRepo["identifier"].(string)),
+			Branch:            tfe.String(vcsRepo["branch"].(string)),
 			IngressSubmodules: tfe.Bool(vcsRepo["ingress_submodules"].(bool)),
 			OAuthTokenID:      tfe.String(vcsRepo["oauth_token_id"].(string)),
 		}
@@ -231,6 +232,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	if workspace.VCSRepo != nil {
 		vcsConfig := map[string]interface{}{
 			"identifier":         workspace.VCSRepo.Identifier,
+			"branch":             workspace.VCSRepo.Branch,
 			"ingress_submodules": workspace.VCSRepo.IngressSubmodules,
 			"oauth_token_id":     workspace.VCSRepo.OAuthTokenID,
 		}
