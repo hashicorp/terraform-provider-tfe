@@ -446,15 +446,15 @@ func testAccCheckTFEPolicySetDestroy(s *terraform.State) error {
 	return nil
 }
 
-func TestAccTFEPolicySet_invalidname(t *testing.T) {
+func TestAccTFEPolicySet_invalidName(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccTFEPolicySet_invalidname,
-				ExpectError: regexp.MustCompile(`The name of the policy set. Can only include letters, numbers, -, and _.`),
+				Config:      testAccTFEPolicySet_invalidName,
+				ExpectError: regexp.MustCompile(`can only include letters, numbers, -, and _.`),
 			},
 		},
 	})
@@ -607,7 +607,7 @@ resource "tfe_policy_set" "foobar" {
 	GITHUB_POLICY_SET_PATH,
 )
 
-const testAccTFEPolicySet_invalidname = `
+const testAccTFEPolicySet_invalidName = `
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform"
   email = "admin@company.com"

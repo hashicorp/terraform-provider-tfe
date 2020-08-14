@@ -24,7 +24,7 @@ func resourceTFEPolicySet() *schema.Resource {
 			"name": {
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[\w\.\-]+$`), "The name of the policy set. Can only include letters, numbers, -, and _."),
+				ValidateFunc: validation.StringMatch(regexp.MustCompile(`\A[\w\_\-]+\z`), "can only include letters, numbers, -, and _."),
 			},
 
 			"description": {
