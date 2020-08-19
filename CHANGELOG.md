@@ -1,4 +1,4 @@
-## 0.21.0 (Unreleased)
+## 0.21.0 (August 19, 2020)
 
 ENHANCEMENTS:
 * r/tfe_policy_set: Added a validation for the `name` attribute so that invalid policy set names are caught at plan time ([#168](https://github.com/terraform-providers/terraform-provider-tfe/pull/168))
