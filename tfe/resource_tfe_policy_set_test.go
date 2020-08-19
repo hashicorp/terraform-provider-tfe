@@ -544,6 +544,20 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 	})
 }
 
+func TestAccTFEPolicySet_invalidName(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFEPolicySet_invalidName,
+				ExpectError: regexp.MustCompile(`can only include letters, numbers, -, and _.`),
+			},
+		},
+	})
+}
+
 func TestAccTFEPolicySetImport(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -731,20 +745,6 @@ func testAccCheckTFEPolicySetDestroy(s *terraform.State) error {
 	}
 
 	return nil
-}
-
-func TestAccTFEPolicySet_invalidName(t *testing.T) {
-	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEPolicySetDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config:      testAccTFEPolicySet_invalidName,
-				ExpectError: regexp.MustCompile(`can only include letters, numbers, -, and _.`),
-			},
-		},
-	})
 }
 
 const testAccTFEPolicySet_basic = `
