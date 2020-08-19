@@ -1,4 +1,11 @@
 ## 0.21.0 (Unreleased)
+
+ENHANCEMENTS:
+* r/tfe_policy_set: Added a validation for the `name` attribute so that invalid policy set names are caught at plan time ([#168](https://github.com/terraform-providers/terraform-provider-tfe/pull/168))
+
+NOTES:
+* This validation matches the requirements specified by the [Terraform Cloud API](https://www.terraform.io/docs/cloud/api/policy-sets.html#request-body). Policy set names can only include letters, numbers, -, and _.
+
 ## 0.20.0 (July 17, 2020)
 
 FEATURES:
