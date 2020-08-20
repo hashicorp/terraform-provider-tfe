@@ -62,6 +62,7 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
+			"tfe_current_run":             dataSourceCurrentRun(),
 			"tfe_organization_membership": dataSourceTFEOrganizationMembership(),
 			"tfe_ssh_key":                 dataSourceTFESSHKey(),
 			"tfe_team":                    dataSourceTFETeam(),
