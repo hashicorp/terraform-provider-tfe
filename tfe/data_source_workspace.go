@@ -43,6 +43,11 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Computed: true,
 			},
 
+			"speculative_enabled": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
+
 			"ssh_key_id": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -116,6 +121,7 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
 	d.Set("operations", workspace.Operations)
 	d.Set("queue_all_runs", workspace.QueueAllRuns)
+	d.Set("speculative_enabled", workspace.SpeculativeEnabled)
 	d.Set("terraform_version", workspace.TerraformVersion)
 	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
 	d.Set("working_directory", workspace.WorkingDirectory)

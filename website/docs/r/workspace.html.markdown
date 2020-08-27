@@ -36,6 +36,10 @@ The following arguments are supported:
 * `queue_all_runs` - (Optional) Whether all runs should be queued. When set
   to `false`, runs triggered by a VCS change will not be queued until at least
   one run is manually queued. Defaults to `true`.
+* `speculative_enabled` - (Optional) Whether this workspace allows speculative
+  plans. Setting this to false prevents Terraform Cloud from running plans on
+  pull requests, which can improve security if the VCS repository is public or
+  includes untrusted contributors. Defaults to `true`.
 * `ssh_key_id` - (Optional) The ID of an SSH key to assign to the workspace.
 * `terraform_version` - (Optional) The version of Terraform to use for this workspace. Defaults to the latest available version.
 * `trigger_prefixes` - (Optional) List of repository-root-relative paths which describe all locations to be tracked for changes.

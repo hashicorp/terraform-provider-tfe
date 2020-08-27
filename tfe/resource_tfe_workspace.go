@@ -66,6 +66,12 @@ func resourceTFEWorkspace() *schema.Resource {
 				Default:  true,
 			},
 
+			"speculative_enabled": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
+			},
+
 			"ssh_key_id": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -143,6 +149,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		FileTriggersEnabled: tfe.Bool(d.Get("file_triggers_enabled").(bool)),
 		Operations:          tfe.Bool(d.Get("operations").(bool)),
 		QueueAllRuns:        tfe.Bool(d.Get("queue_all_runs").(bool)),
+		SpeculativeEnabled:  tfe.Bool(d.Get("speculative_enabled").(bool)),
 		WorkingDirectory:    tfe.String(d.Get("working_directory").(string)),
 	}
 
@@ -215,6 +222,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
 	d.Set("operations", workspace.Operations)
 	d.Set("queue_all_runs", workspace.QueueAllRuns)
+	d.Set("speculative_enabled", workspace.SpeculativeEnabled)
 	d.Set("terraform_version", workspace.TerraformVersion)
 	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
 	d.Set("working_directory", workspace.WorkingDirectory)
@@ -260,7 +268,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 	if d.HasChange("name") || d.HasChange("auto_apply") || d.HasChange("queue_all_runs") ||
 		d.HasChange("terraform_version") || d.HasChange("working_directory") || d.HasChange("vcs_repo") ||
 		d.HasChange("file_triggers_enabled") || d.HasChange("trigger_prefixes") ||
-		d.HasChange("operations") {
+		d.HasChange("operations") || d.HasChange("speculative_enabled") {
 		// Create a new options struct.
 		options := tfe.WorkspaceUpdateOptions{
 			Name:                tfe.String(d.Get("name").(string)),
@@ -268,6 +276,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			FileTriggersEnabled: tfe.Bool(d.Get("file_triggers_enabled").(bool)),
 			Operations:          tfe.Bool(d.Get("operations").(bool)),
 			QueueAllRuns:        tfe.Bool(d.Get("queue_all_runs").(bool)),
+			SpeculativeEnabled:  tfe.Bool(d.Get("speculative_enabled").(bool)),
 			WorkingDirectory:    tfe.String(d.Get("working_directory").(string)),
 		}
 

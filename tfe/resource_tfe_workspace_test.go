@@ -37,6 +37,8 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "queue_all_runs", "true"),
 					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "speculative_enabled", "true"),
+					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "working_directory", ""),
@@ -323,6 +325,37 @@ func TestAccTFEWorkspace_updateTriggerPrefixes(t *testing.T) {
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspace_updateSpeculative(t *testing.T) {
+	workspace := &tfe.Workspace{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_basic,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "speculative_enabled", "true"),
+				),
+			},
+
+			{
+				Config: testAccTFEWorkspace_basicSpeculativeOff,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "speculative_enabled", "false"),
 				),
 			},
 		},
@@ -799,6 +832,19 @@ resource "tfe_workspace" "foobar" {
   organization          = "${tfe_organization.foobar.id}"
   auto_apply            = true
   file_triggers_enabled = false
+}`
+
+const testAccTFEWorkspace_basicSpeculativeOff = `
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name                  = "workspace-test"
+  organization          = "${tfe_organization.foobar.id}"
+  auto_apply            = true
+  speculative_enabled = false
 }`
 
 const testAccTFEWorkspace_monorepo = `
