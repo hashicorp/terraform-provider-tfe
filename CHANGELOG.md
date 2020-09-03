@@ -1,4 +1,5 @@
 ## 0.22.0 (Unreleased)
+* **New Data Source:** d/tfe_oauth_client ([#212](https://github.com/terraform-providers/terraform-provider-tfe/pull/212))
 ## 0.21.0 (August 19, 2020)
 
 ENHANCEMENTS:
