@@ -68,6 +68,7 @@ func Provider() terraform.ResourceProvider {
 			"tfe_team_access":             dataSourceTFETeamAccess(),
 			"tfe_workspace":               dataSourceTFEWorkspace(),
 			"tfe_workspace_ids":           dataSourceTFEWorkspaceIDs(),
+			"tfe_oauth_client":            dataSourceTFEOAuthClient(),
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
