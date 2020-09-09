@@ -23,7 +23,7 @@ func TestAccTFEOAuthClientDataSource_basic(t *testing.T) {
 						"data.tfe_oauth_client.client", "http_url"),
 					resource.TestCheckResourceAttrPair(
 						"tfe_oauth_client.test", "oauth_token_id",
-						"data.tfe_oauth_client.client", "token_id"),
+						"data.tfe_oauth_client.client", "oauth_token_id"),
 				),
 			},
 		},
