@@ -20,10 +20,6 @@ func dataSourceTFEOAuthClient() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"http_url": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
 			"oauth_token_id": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -47,12 +43,19 @@ func dataSourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) erro
 		return fmt.Errorf("Error retrieving OAuth client: %v", err)
 	}
 
-	tokenID := oc.OAuthTokens[0].ID
 	d.SetId(oc.ID)
 	_ = d.Set("ssh_key", oc.RSAPublicKey)
-	_ = d.Set("oauth_token_id", tokenID)
 	_ = d.Set("api_url", oc.APIURL)
 	_ = d.Set("http_url", oc.HTTPURL)
+
+	switch len(oc.OAuthTokens) {
+	case 0:
+		d.Set("oauth_token_id", "")
+	case 1:
+		d.Set("oauth_token_id", oc.OAuthTokens[0].ID)
+	default:
+		return fmt.Errorf("Unexpected number of OAuth tokens: %d", len(oc.OAuthTokens))
+	}
 
 	return nil
 }
