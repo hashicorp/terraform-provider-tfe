@@ -50,7 +50,7 @@ func dataSourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) erro
 	tokenID := oc.OAuthTokens[0].ID
 	d.SetId(oc.ID)
 	_ = d.Set("ssh_key", oc.RSAPublicKey)
-	_ = d.Set("token_id", tokenID)
+	_ = d.Set("oauth_token_id", tokenID)
 	_ = d.Set("api_url", oc.APIURL)
 	_ = d.Set("http_url", oc.HTTPURL)
 
