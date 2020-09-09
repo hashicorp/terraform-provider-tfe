@@ -16,19 +16,19 @@ func dataSourceTFEOAuthClient() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"ssh_key": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"token_id": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
 			"api_url": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 			"http_url": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"oauth_token_id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"ssh_key": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
