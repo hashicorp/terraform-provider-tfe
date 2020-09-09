@@ -28,8 +28,8 @@ The following arguments are supported:
 
 In addition to all arguments above, the following attributes are exported:
 
-* `id` - The OAuth client ID.
+* `id` - The OAuth client ID. This will match `oauth_client_id`.
+* `api_url` - The client's API URL.
+* `http_url` - The client's HTTP URL.
+* `oauth_token_id` - The ID of the OAuth token associated with the OAuth client.
 * `ssh_key` - The SSH key assigned to the OAuth client.
-* `token_id` - The ID of the OAuth token associated with te OAuth client.
-* `api_url` - The client's API URL. 
-* `api_url` - The client's HTTP URL.
