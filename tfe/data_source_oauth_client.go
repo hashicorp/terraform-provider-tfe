@@ -20,6 +20,10 @@ func dataSourceTFEOAuthClient() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"http_url": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			"oauth_token_id": {
 				Type:     schema.TypeString,
 				Computed: true,
