@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 )
@@ -28,7 +29,6 @@ func resourceTFEVariable() *schema.Resource {
 				Version: 0,
 			},
 		},
-
 		Schema: map[string]*schema.Schema{
 			"key": {
 				Type:     schema.TypeString,
@@ -83,6 +83,10 @@ func resourceTFEVariable() *schema.Resource {
 				),
 			},
 		},
+
+		CustomizeDiff: customdiff.ForceNewIf("key", func(d *schema.ResourceDiff, m interface{}) bool {
+			return d.Get("sensitive").(bool)
+		}),
 	}
 }
 
