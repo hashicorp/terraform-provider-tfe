@@ -1,13 +1,13 @@
 package tfe
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"strings"
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
@@ -87,16 +87,19 @@ func resourceTFERegistryModuleCreate(d *schema.ResourceData, meta interface{}) e
 			"Error creating registry module from repository %s: %v", *options.VCSRepo.Identifier, err)
 	}
 
-	doneCh := make(chan bool)
-	ctx, cancel := context.WithTimeout(ctx, time.Duration(5)*time.Minute)
-	defer cancel()
+	err = resource.Retry(time.Duration(5)*time.Minute, func() *resource.RetryError {
+		_, err := tfeClient.RegistryModules.Read(ctx, registryModule.Organization.Name, registryModule.Name, registryModule.Provider)
+		if err != nil {
+			if strings.Contains(strings.ToLower(err.Error()), "not found") {
+				return resource.RetryableError(err)
+			}
+			return resource.NonRetryableError(err)
+		}
+		return nil
+	})
 
-	go checkModuleExists(ctx, tfeClient, registryModule.Organization.Name, registryModule.Name, registryModule.Provider, doneCh)
-	select {
-	case <-ctx.Done():
-		return fmt.Errorf("timeout while waiting for module to finish importing in registry.")
-	case <-doneCh:
-		log.Printf("[DEBUG] Finished waiting for module to finish importing in registry.")
+	if err != nil {
+		return fmt.Errorf("Error while waiting for module %s/%s to be ingested: %s", registryModule.Organization.Name, registryModule.Name, err)
 	}
 
 	d.SetId(registryModule.ID)
@@ -184,16 +187,4 @@ func resourceTFERegistryModuleImporter(d *schema.ResourceData, meta interface{})
 	d.SetId(registryModuleInfo[3])
 
 	return []*schema.ResourceData{d}, nil
-}
-
-func checkModuleExists(ctx context.Context, tfeClient *tfe.Client, organization, name, module_provider string, doneCh chan bool) {
-	for {
-		_, err := tfeClient.RegistryModules.Read(ctx, organization, name, module_provider)
-		if err != nil {
-			time.Sleep(time.Duration(100) * time.Millisecond)
-			continue
-		}
-		doneCh <- true
-		break
-	}
 }
