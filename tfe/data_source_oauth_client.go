@@ -28,10 +28,6 @@ func dataSourceTFEOAuthClient() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"ssh_key": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
 		},
 	}
 }
@@ -48,7 +44,6 @@ func dataSourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) erro
 	}
 
 	d.SetId(oc.ID)
-	_ = d.Set("ssh_key", oc.RSAPublicKey)
 	_ = d.Set("api_url", oc.APIURL)
 	_ = d.Set("http_url", oc.HTTPURL)
 
