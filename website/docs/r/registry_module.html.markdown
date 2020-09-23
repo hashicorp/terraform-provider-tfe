@@ -6,7 +6,7 @@ description: |-
   Manages registry modules
 ---
 
-# tfe_registry_modules
+# tfe_registry_module
 
 Terraform Cloud's private module registry helps you share Terraform modules across your organization. 
 
