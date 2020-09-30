@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
@@ -83,6 +85,21 @@ func resourceTFERegistryModuleCreate(d *schema.ResourceData, meta interface{}) e
 	if err != nil {
 		return fmt.Errorf(
 			"Error creating registry module from repository %s: %v", *options.VCSRepo.Identifier, err)
+	}
+
+	err = resource.Retry(time.Duration(5)*time.Minute, func() *resource.RetryError {
+		_, err := tfeClient.RegistryModules.Read(ctx, registryModule.Organization.Name, registryModule.Name, registryModule.Provider)
+		if err != nil {
+			if strings.Contains(strings.ToLower(err.Error()), "not found") {
+				return resource.RetryableError(err)
+			}
+			return resource.NonRetryableError(err)
+		}
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("Error while waiting for module %s/%s to be ingested: %s", registryModule.Organization.Name, registryModule.Name, err)
 	}
 
 	d.SetId(registryModule.ID)
