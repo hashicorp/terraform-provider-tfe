@@ -133,6 +133,11 @@ func resourceTFEVariableRead(d *schema.ResourceData, meta interface{}) error {
 	workspaceID := d.Get("workspace_id").(string)
 	ws, err := tfeClient.Workspaces.ReadByID(ctx, workspaceID)
 	if err != nil {
+		if err == tfe.ErrResourceNotFound {
+			log.Printf("[DEBUG] Workspace %s no longer exists", workspaceID)
+			d.SetId("")
+			return nil
+		}
 		return fmt.Errorf(
 			"Error retrieving workspace %s: %v", workspaceID, err)
 	}
