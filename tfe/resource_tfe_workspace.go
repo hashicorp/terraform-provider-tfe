@@ -160,7 +160,9 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 
 	if tps, ok := d.GetOk("trigger_prefixes"); ok {
 		for _, tp := range tps.([]interface{}) {
-			options.TriggerPrefixes = append(options.TriggerPrefixes, tp.(string))
+			if t, ok := tp.(string); ok {
+				options.TriggerPrefixes = append(options.TriggerPrefixes, t)
+			}
 		}
 	}
 
