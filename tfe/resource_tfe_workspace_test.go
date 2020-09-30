@@ -502,6 +502,51 @@ func TestAccTFEWorkspace_import(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspace_importVCSBranch(t *testing.T) {
+	workspace := &tfe.Workspace{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			if GITHUB_TOKEN == "" {
+				t.Skip("Please set GITHUB_TOKEN to run this test")
+			}
+			if GITHUB_WORKSPACE_IDENTIFIER == "" {
+				t.Skip("Please set GITHUB_WORKSPACE_IDENTIFIER to run this test")
+			}
+			if GITHUB_WORKSPACE_BRANCH == "" {
+				t.Skip("Please set GITHUB_WORKSPACE_BRANCH to run this test")
+			}
+
+		},
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_updateUpdateVCSRepoBranch,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
+					testAccCheckTFEWorkspaceUpdatedUpdateVCSRepoBranchAttributes(workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "name", "workspace-test-update-vcs-repo-branch"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.0.identifier", GITHUB_WORKSPACE_IDENTIFIER),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.0.branch", GITHUB_WORKSPACE_BRANCH),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.0.ingress_submodules", "false"),
+				),
+			},
+
+			{
+				ResourceName:      "tfe_workspace.foobar",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func testAccCheckTFEWorkspaceExists(
 	n string, workspace *tfe.Workspace) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
