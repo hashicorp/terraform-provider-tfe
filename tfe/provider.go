@@ -115,6 +115,17 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
 	providerUaString := fmt.Sprintf("terraform-provider-tfe/%s", providerVersion.ProviderVersion)
 
+	httpClient := tfe.DefaultConfig().HTTPClient
+
+	// Make sure the transport has a TLS config.
+	transport := httpClient.Transport.(*http.Transport)
+	if transport.TLSClientConfig == nil {
+		transport.TLSClientConfig = &tls.Config{}
+	}
+
+	// Configure the certificate verification options.
+	transport.TLSClientConfig.InsecureSkipVerify = d.Get("ssl_skip_verify").(bool)
+
 	// Get the Terraform CLI configuration.
 	config := cliConfig()
 
@@ -122,7 +133,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	credsSrc := credentialsSource(config)
 	services := disco.NewWithCredentialsSource(credsSrc)
 	services.SetUserAgent(providerUaString)
-	services.Transport = logging.NewTransport("TFE Discovery", services.Transport)
+	services.Transport = logging.NewTransport("TFE Discovery", transport)
 
 	// Add any static host configurations service discovery object.
 	for userHost, hostConfig := range config.Hosts {
@@ -198,17 +209,6 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	if token == "" {
 		return nil, fmt.Errorf("required token could not be found")
 	}
-
-	httpClient := tfe.DefaultConfig().HTTPClient
-
-	// Make sure the transport has a TLS config.
-	transport := httpClient.Transport.(*http.Transport)
-	if transport.TLSClientConfig == nil {
-		transport.TLSClientConfig = &tls.Config{}
-	}
-
-	// Configure the certificate verification options.
-	transport.TLSClientConfig.InsecureSkipVerify = d.Get("ssl_skip_verify").(bool)
 
 	// Wrap the configured transport to enable logging.
 	httpClient.Transport = logging.NewTransport("TFE", transport)
