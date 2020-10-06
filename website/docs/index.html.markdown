@@ -53,9 +53,10 @@ of the file created (for example `~/.terraform.d/credentials.tfrc.json` on Linux
 - Also on the CLI, omit the `token` argument and set a `credentials` block in your
   [CLI config file](/docs/commands/cli-config.html#credentials).
 
-- In a Terraform Enterprise workspace, set `token` in the provider
-  configuration. Use an input variable for the token and mark the corresponding
-  variable in the workspace as sensitive.
+- Setting the `token` argument in the provider configuration: In a Terraform Cloud or 
+Terraform Enterprise workspace you can set `token` in the provider configuration. 
+Use an input variable for the token and mark the corresponding variable in the 
+workspace as sensitive.
   
 ## Versions
 
