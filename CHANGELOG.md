@@ -1,5 +1,19 @@
 ## 0.22.0 (Unreleased)
+
+FEATURES:
 * **New Data Source:** d/tfe_oauth_client ([#212](https://github.com/terraform-providers/terraform-provider-tfe/pull/212))
+
+ENHANCEMENTS:
+* r/tfe_variable: Changes to the key of a sensitive variable will result in the deletion of the old variable and the creation of a new one ([#175](https://github.com/terraform-providers/terraform-provider-tfe/pull/175))
+* r/tfe_workspace: Adds support for the speculative_enabled argument to tfe_workspace ([#210](https://github.com/terraform-providers/terraform-provider-tfe/pull/210))
+
+BUG FIXES:
+* r/tfe_registry_module: Prevent a possible race condition when creating modules in the registry. ([#215](https://github.com/terraform-providers/terraform-provider-tfe/pull/215))
+* r/tfe_run_trigger: Retry when a "locked" error is returned ([#178](https://github.com/terraform-providers/terraform-provider-tfe/pull/178))
+* r/tfe_workspace: Fixed a logic bug that prevented non-default branch names to be imported. ([#220](https://github.com/terraform-providers/terraform-provider-tfe/pull/220))
+* r/tfe_workspace: Prevent the provider from crashing when encountering empty trigger prefixes. ([#223](https://github.com/terraform-providers/terraform-provider-tfe/pull/223))
+* r/tfe_workspace_variable: Remove the variable from the state if the workspace containing it has been deleted via the UI. ([#227](https://github.com/terraform-providers/terraform-provider-tfe/pull/227))
+
 ## 0.21.0 (August 19, 2020)
 
 ENHANCEMENTS:
