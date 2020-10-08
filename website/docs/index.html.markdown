@@ -120,3 +120,6 @@ The following arguments are supported:
   in the [CLI config file](/docs/commands/cli-config.html#credentials) or set
   the `TFE_TOKEN` environment variable. See [Authentication](#authentication)
   above for more.
+* `ssl_skip_verify` - (Optional) Whether or not to skip certificate verifications.
+  Defaults to `false`. Can be overridden setting the `TFE_SSL_SKIP_VERIFY`
+  environment variable.
