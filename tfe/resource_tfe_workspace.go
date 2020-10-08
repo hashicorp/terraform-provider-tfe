@@ -30,6 +30,8 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 		},
 
+		CustomizeDiff: validateAgentExecution,
+
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
@@ -61,9 +63,23 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"operations": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
+				Type:          schema.TypeBool,
+				Optional:      true,
+				Computed:      true,
+				ConflictsWith: []string{"execution_mode", "agent_pool_id"},
+			},
+
+			"execution_mode": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Computed:      true,
+				ConflictsWith: []string{"operations"},
+			},
+
+			"agent_pool_id": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				ConflictsWith: []string{"operations"},
 			},
 
 			"queue_all_runs": {
@@ -160,6 +176,18 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		WorkingDirectory:    tfe.String(d.Get("working_directory").(string)),
 	}
 
+	if v, ok := d.GetOk("operations"); ok {
+		options.Operations = tfe.Bool(v.(bool))
+	}
+
+	if v, ok := d.GetOk("execution_mode"); ok {
+		options.ExecutionMode = tfe.String(v.(string))
+	}
+
+	if v, ok := d.GetOk("agent_pool_id"); ok && v.(string) != "" {
+		options.AgentPoolID = tfe.String(v.(string))
+	}
+
 	// Process all configured options.
 	if tfVersion, ok := d.GetOk("terraform_version"); ok {
 		options.TerraformVersion = tfe.String(tfVersion.(string))
@@ -231,6 +259,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("auto_apply", workspace.AutoApply)
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
 	d.Set("operations", workspace.Operations)
+	d.Set("execution_mode", workspace.ExecutionMode)
 	d.Set("queue_all_runs", workspace.QueueAllRuns)
 	d.Set("speculative_enabled", workspace.SpeculativeEnabled)
 	d.Set("terraform_version", workspace.TerraformVersion)
@@ -244,6 +273,12 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 		sshKeyID = workspace.SSHKey.ID
 	}
 	d.Set("ssh_key_id", sshKeyID)
+
+	var agentPoolID string
+	if workspace.AgentPool != nil {
+		agentPoolID = workspace.AgentPool.ID
+	}
+	d.Set("agent_pool_id", agentPoolID)
 
 	var vcsRepo []interface{}
 	if workspace.VCSRepo != nil {
@@ -268,18 +303,36 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 	if d.HasChange("name") || d.HasChange("auto_apply") || d.HasChange("queue_all_runs") ||
 		d.HasChange("terraform_version") || d.HasChange("working_directory") || d.HasChange("vcs_repo") ||
 		d.HasChange("file_triggers_enabled") || d.HasChange("trigger_prefixes") ||
-		d.HasChange("operations") || d.HasChange("speculative_enabled") ||
-		d.HasChange("allow_destroy_plan") {
+		d.HasChange("allow_destroy_plan") || d.HasChange("speculative_enabled") ||
+		d.HasChange("operations") || d.HasChange("execution_mode") || d.HasChange("agent_pool_id") {
+
 		// Create a new options struct.
 		options := tfe.WorkspaceUpdateOptions{
 			Name:                tfe.String(d.Get("name").(string)),
 			AllowDestroyPlan:    tfe.Bool(d.Get("allow_destroy_plan").(bool)),
 			AutoApply:           tfe.Bool(d.Get("auto_apply").(bool)),
 			FileTriggersEnabled: tfe.Bool(d.Get("file_triggers_enabled").(bool)),
-			Operations:          tfe.Bool(d.Get("operations").(bool)),
 			QueueAllRuns:        tfe.Bool(d.Get("queue_all_runs").(bool)),
 			SpeculativeEnabled:  tfe.Bool(d.Get("speculative_enabled").(bool)),
 			WorkingDirectory:    tfe.String(d.Get("working_directory").(string)),
+		}
+
+		if d.HasChange("operations") {
+			if v, ok := d.GetOkExists("operations"); ok {
+				options.Operations = tfe.Bool(v.(bool))
+			}
+		}
+
+		if d.HasChange("execution_mode") {
+			if v, ok := d.GetOk("execution_mode"); ok {
+				options.ExecutionMode = tfe.String(v.(string))
+			}
+		}
+
+		if d.HasChange("agent_pool_id") {
+			if v, ok := d.GetOk("agent_pool_id"); ok && v.(string) != "" {
+				options.AgentPoolID = tfe.String(v.(string))
+			}
 		}
 
 		// Process all configured options.
@@ -373,6 +426,26 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 		}
 		return fmt.Errorf(
 			"Error deleting workspace %s: %v", id, err)
+	}
+
+	return nil
+}
+
+// An agent pool can only be specified when execution_mode is set to "agent". You currently cannot specify a
+// schema validation based on a different argument's value, so we do so here at plan time instead.
+func validateAgentExecution(d *schema.ResourceDiff, meta interface{}) error {
+	if executionMode, ok := d.GetOk("execution_mode"); ok {
+		if executionMode.(string) != "agent" && d.Get("agent_pool_id") != "" {
+			return fmt.Errorf("execution_mode must be set to 'agent' to assign agent_pool_id")
+		} else if executionMode.(string) == "agent" && d.Get("agent_pool_id") == "" {
+			return fmt.Errorf("agent_pool_id must be provided when execution_mode is 'agent'")
+		}
+	}
+
+	if d.HasChange("execution_mode") {
+		d.SetNewComputed("operations")
+	} else if d.HasChange("operations") {
+		d.SetNewComputed("execution_mode")
 	}
 
 	return nil
