@@ -21,7 +21,7 @@ import (
 	svchost "github.com/hashicorp/terraform-svchost"
 	"github.com/hashicorp/terraform-svchost/auth"
 	"github.com/hashicorp/terraform-svchost/disco"
-	providerVersion "github.com/terraform-providers/terraform-provider-tfe/version"
+	providerVersion "github.com/hashicorp/terraform-provider-tfe/version"
 )
 
 const defaultHostname = "app.terraform.io"

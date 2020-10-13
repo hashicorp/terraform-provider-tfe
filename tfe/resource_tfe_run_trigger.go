@@ -48,7 +48,7 @@ func resourceTFERunTrigger() *schema.Resource {
 				Computed:      true,
 				Optional:      true,
 				ConflictsWith: []string{"workspace_id"},
-				Deprecated:    "Use workspace_id instead. The workspace_external_id attribute will be removed in the future. See the CHANGELOG to learn more: https://github.com/terraform-providers/terraform-provider-tfe/blob/v0.18.0/CHANGELOG.md",
+				Deprecated:    "Use workspace_id instead. The workspace_external_id attribute will be removed in the future. See the CHANGELOG to learn more: https://github.com/hashicorp/terraform-provider-tfe/blob/v0.18.0/CHANGELOG.md",
 			},
 			"workspace_id": {
 				Type:          schema.TypeString,
