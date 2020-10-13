@@ -22,7 +22,7 @@ _Include any links here that might be helpful for people reviewing your PR. If t
 
 - [go-tfe documentation](https://pkg.go.dev/github.com/hashicorp/go-tfe?tab=doc#xxxx)
 - [API documentation](https://www.terraform.io/docs/cloud/api/xxxx.html)
-- [Related PR](https://github.com/terraform-providers/terraform-provider-tfe/pull/xxxx)
+- [Related PR](https://github.com/hashicorp/terraform-provider-tfe/pull/xxxx)
 
 ## Output from acceptance tests
 

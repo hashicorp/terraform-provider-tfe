@@ -12,7 +12,7 @@ jobs:
         environment:
           TEST_RESULTS_DIR: *test_results_dir
 
-    working_directory: /go/src/github.com/terraform-providers/terraform-provider-tfe
+    working_directory: /go/src/github.com/hashicorp/terraform-provider-tfe
 
     steps:
       - checkout

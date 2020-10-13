@@ -98,7 +98,7 @@ func resourceTFEPolicySet() *schema.Resource {
 				Computed:      true,
 				Optional:      true,
 				Elem:          &schema.Schema{Type: schema.TypeString},
-				Deprecated:    "Use workspace_ids instead. The workspace_external_ids attribute will be removed in the future. See the CHANGELOG to learn more: https://github.com/terraform-providers/terraform-provider-tfe/blob/v0.18.0/CHANGELOG.md",
+				Deprecated:    "Use workspace_ids instead. The workspace_external_ids attribute will be removed in the future. See the CHANGELOG to learn more: https://github.com/hashicorp/terraform-provider-tfe/blob/v0.18.0/CHANGELOG.md",
 				ConflictsWith: []string{"global", "workspace_ids"},
 			},
 			"workspace_ids": {

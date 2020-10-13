@@ -9,7 +9,7 @@ import (
 
 func dataSourceTFEWorkspaceIDs() *schema.Resource {
 	return &schema.Resource{
-		DeprecationMessage: "\"ids\": [DEPRECATED] Use full_names instead. The ids attribute will be removed in the future. See the CHANGELOG to learn more: https://github.com/terraform-providers/terraform-provider-tfe/blob/v0.18.0/CHANGELOG.md",
+		DeprecationMessage: "\"ids\": [DEPRECATED] Use full_names instead. The ids attribute will be removed in the future. See the CHANGELOG to learn more: https://github.com/hashicorp/terraform-provider-tfe/blob/v0.18.0/CHANGELOG.md",
 		Read:               dataSourceTFEWorkspaceIDsRead,
 
 		Schema: map[string]*schema.Schema{
