@@ -2,7 +2,9 @@ package tfe
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
+	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
@@ -11,6 +13,7 @@ import (
 
 func TestAccTFEOrganizationMembership_basic(t *testing.T) {
 	mem := &tfe.OrganizationMembership{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -18,15 +21,15 @@ func TestAccTFEOrganizationMembership_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFEOrganizationMembershipDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOrganizationMembership_basic,
+				Config: fmt.Sprintf(testAccTFEOrganizationMembership_basic, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationMembershipExists(
 						"tfe_organization_membership.foobar", mem),
-					testAccCheckTFEOrganizationMembershipAttributes(mem),
+					testAccCheckTFEOrganizationMembershipAttributes(mem, fmt.Sprintf("tst-terraform-%d", rInt)),
 					resource.TestCheckResourceAttr(
 						"tfe_organization_membership.foobar", "email", "example@hashicorp.com"),
 					resource.TestCheckResourceAttr(
-						"tfe_organization_membership.foobar", "organization", "tst-terraform"),
+						"tfe_organization_membership.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
 					resource.TestCheckResourceAttrSet("tfe_organization_membership.foobar", "user_id"),
 				),
 			},
@@ -35,13 +38,15 @@ func TestAccTFEOrganizationMembership_basic(t *testing.T) {
 }
 
 func TestAccTFEOrganizationMembershipImport(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEOrganizationMembershipDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOrganizationMembership_basic,
+				Config: fmt.Sprintf(testAccTFEOrganizationMembership_basic, rInt),
 			},
 			{
 				ResourceName:      "tfe_organization_membership.foobar",
@@ -86,9 +91,9 @@ func testAccCheckTFEOrganizationMembershipExists(
 }
 
 func testAccCheckTFEOrganizationMembershipAttributes(
-	membership *tfe.OrganizationMembership) resource.TestCheckFunc {
+	membership *tfe.OrganizationMembership, expectedOrgName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		if membership.Organization.Name != "tst-terraform" {
+		if membership.Organization.Name != expectedOrgName {
 			return fmt.Errorf("Bad organization: %s", membership.Organization.Name)
 		}
 		if membership.User.Email != "example@hashicorp.com" {
@@ -125,7 +130,7 @@ func testAccCheckTFEOrganizationMembershipDestroy(s *terraform.State) error {
 
 const testAccTFEOrganizationMembership_basic = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 

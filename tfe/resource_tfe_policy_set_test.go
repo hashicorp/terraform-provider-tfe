@@ -2,16 +2,18 @@ package tfe
 
 import (
 	"fmt"
-	"regexp"
-	"testing"
-
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"math/rand"
+	"regexp"
+	"testing"
+	"time"
 )
 
 func TestAccTFEPolicySet_basic(t *testing.T) {
 	policySet := &tfe.PolicySet{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -19,7 +21,7 @@ func TestAccTFEPolicySet_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySet_basic,
+				Config: fmt.Sprintf(testAccTFEPolicySet_basic, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
@@ -39,6 +41,8 @@ func TestAccTFEPolicySet_basic(t *testing.T) {
 
 func TestAccTFEPolicySet_update(t *testing.T) {
 	policySet := &tfe.PolicySet{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -46,7 +50,7 @@ func TestAccTFEPolicySet_update(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySet_basic,
+				Config: fmt.Sprintf(testAccTFEPolicySet_basic, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
@@ -62,10 +66,10 @@ func TestAccTFEPolicySet_update(t *testing.T) {
 			},
 
 			{
-				Config: testAccTFEPolicySet_populated,
+				Config: fmt.Sprintf(testAccTFEPolicySet_populated, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
-					testAccCheckTFEPolicySetPopulated(policySet),
+					testAccCheckTFEPolicySetPopulated(policySet, orgName),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "name", "terraform-populated"),
 					resource.TestCheckResourceAttr(
@@ -82,6 +86,8 @@ func TestAccTFEPolicySet_update(t *testing.T) {
 
 func TestAccTFEPolicySet_updateWorkspaceIDs(t *testing.T) {
 	policySet := &tfe.PolicySet{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -89,7 +95,7 @@ func TestAccTFEPolicySet_updateWorkspaceIDs(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySet_basic,
+				Config: fmt.Sprintf(testAccTFEPolicySet_basic, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
@@ -104,10 +110,10 @@ func TestAccTFEPolicySet_updateWorkspaceIDs(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFEPolicySet_populated,
+				Config: fmt.Sprintf(testAccTFEPolicySet_populated, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
-					testAccCheckTFEPolicySetPopulated(policySet),
+					testAccCheckTFEPolicySetPopulated(policySet, orgName),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "name", "terraform-populated"),
 					resource.TestCheckResourceAttr(
@@ -119,10 +125,10 @@ func TestAccTFEPolicySet_updateWorkspaceIDs(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFEPolicySet_populatedWorkspaceIDs,
+				Config: fmt.Sprintf(testAccTFEPolicySet_populatedWorkspaceIDs, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
-					testAccCheckTFEPolicySetPopulated(policySet),
+					testAccCheckTFEPolicySetPopulated(policySet, orgName),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "name", "terraform-populated"),
 					resource.TestCheckResourceAttr(
@@ -139,6 +145,7 @@ func TestAccTFEPolicySet_updateWorkspaceIDs(t *testing.T) {
 
 func TestAccTFEPolicySet_updateEmpty(t *testing.T) {
 	policySet := &tfe.PolicySet{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -146,7 +153,7 @@ func TestAccTFEPolicySet_updateEmpty(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySet_basic,
+				Config: fmt.Sprintf(testAccTFEPolicySet_basic, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
@@ -161,7 +168,7 @@ func TestAccTFEPolicySet_updateEmpty(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFEPolicySet_empty,
+				Config: fmt.Sprintf(testAccTFEPolicySet_empty, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
@@ -181,6 +188,8 @@ func TestAccTFEPolicySet_updateEmpty(t *testing.T) {
 
 func TestAccTFEPolicySet_updatePopulated(t *testing.T) {
 	policySet := &tfe.PolicySet{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -188,10 +197,10 @@ func TestAccTFEPolicySet_updatePopulated(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySet_populated,
+				Config: fmt.Sprintf(testAccTFEPolicySet_populated, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
-					testAccCheckTFEPolicySetPopulated(policySet),
+					testAccCheckTFEPolicySetPopulated(policySet, orgName),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "name", "terraform-populated"),
 					resource.TestCheckResourceAttr(
@@ -204,10 +213,10 @@ func TestAccTFEPolicySet_updatePopulated(t *testing.T) {
 			},
 
 			{
-				Config: testAccTFEPolicySet_updatePopulated,
+				Config: fmt.Sprintf(testAccTFEPolicySet_updatePopulated, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
-					testAccCheckTFEPolicySetPopulatedUpdated(policySet),
+					testAccCheckTFEPolicySetPopulatedUpdated(policySet, orgName),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "name", "terraform-populated-updated"),
 					resource.TestCheckResourceAttr(
@@ -224,6 +233,8 @@ func TestAccTFEPolicySet_updatePopulated(t *testing.T) {
 
 func TestAccTFEPolicySet_updatePopulatedWorkspaceIDs(t *testing.T) {
 	policySet := &tfe.PolicySet{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -231,10 +242,10 @@ func TestAccTFEPolicySet_updatePopulatedWorkspaceIDs(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySet_populatedWorkspaceIDs,
+				Config: fmt.Sprintf(testAccTFEPolicySet_populatedWorkspaceIDs, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
-					testAccCheckTFEPolicySetPopulated(policySet),
+					testAccCheckTFEPolicySetPopulated(policySet, orgName),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "name", "terraform-populated"),
 					resource.TestCheckResourceAttr(
@@ -247,10 +258,10 @@ func TestAccTFEPolicySet_updatePopulatedWorkspaceIDs(t *testing.T) {
 			},
 
 			{
-				Config: testAccTFEPolicySet_updatePopulatedWorkspaceIDs,
+				Config: fmt.Sprintf(testAccTFEPolicySet_updatePopulatedWorkspaceIDs, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
-					testAccCheckTFEPolicySetPopulatedUpdated(policySet),
+					testAccCheckTFEPolicySetPopulatedUpdated(policySet, orgName),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "name", "terraform-populated-updated"),
 					resource.TestCheckResourceAttr(
@@ -267,6 +278,8 @@ func TestAccTFEPolicySet_updatePopulatedWorkspaceIDs(t *testing.T) {
 
 func TestAccTFEPolicySet_updateToGlobal(t *testing.T) {
 	policySet := &tfe.PolicySet{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -274,10 +287,10 @@ func TestAccTFEPolicySet_updateToGlobal(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySet_populated,
+				Config: fmt.Sprintf(testAccTFEPolicySet_populated, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
-					testAccCheckTFEPolicySetPopulated(policySet),
+					testAccCheckTFEPolicySetPopulated(policySet, orgName),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "name", "terraform-populated"),
 					resource.TestCheckResourceAttr(
@@ -290,7 +303,7 @@ func TestAccTFEPolicySet_updateToGlobal(t *testing.T) {
 			},
 
 			{
-				Config: testAccTFEPolicySet_global,
+				Config: fmt.Sprintf(testAccTFEPolicySet_global, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetGlobal(policySet),
@@ -308,6 +321,8 @@ func TestAccTFEPolicySet_updateToGlobal(t *testing.T) {
 
 func TestAccTFEPolicySet_updateWorkspaceIDsToGlobal(t *testing.T) {
 	policySet := &tfe.PolicySet{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -315,10 +330,10 @@ func TestAccTFEPolicySet_updateWorkspaceIDsToGlobal(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySet_populatedWorkspaceIDs,
+				Config: fmt.Sprintf(testAccTFEPolicySet_populatedWorkspaceIDs, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
-					testAccCheckTFEPolicySetPopulated(policySet),
+					testAccCheckTFEPolicySetPopulated(policySet, orgName),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "name", "terraform-populated"),
 					resource.TestCheckResourceAttr(
@@ -331,7 +346,7 @@ func TestAccTFEPolicySet_updateWorkspaceIDsToGlobal(t *testing.T) {
 			},
 
 			{
-				Config: testAccTFEPolicySet_global,
+				Config: fmt.Sprintf(testAccTFEPolicySet_global, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetGlobal(policySet),
@@ -349,6 +364,8 @@ func TestAccTFEPolicySet_updateWorkspaceIDsToGlobal(t *testing.T) {
 
 func TestAccTFEPolicySet_updateToWorkspace(t *testing.T) {
 	policySet := &tfe.PolicySet{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -356,7 +373,7 @@ func TestAccTFEPolicySet_updateToWorkspace(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySet_global,
+				Config: fmt.Sprintf(testAccTFEPolicySet_global, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetGlobal(policySet),
@@ -370,10 +387,10 @@ func TestAccTFEPolicySet_updateToWorkspace(t *testing.T) {
 			},
 
 			{
-				Config: testAccTFEPolicySet_populated,
+				Config: fmt.Sprintf(testAccTFEPolicySet_populated, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
-					testAccCheckTFEPolicySetPopulated(policySet),
+					testAccCheckTFEPolicySetPopulated(policySet, orgName),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "name", "terraform-populated"),
 					resource.TestCheckResourceAttr(
@@ -390,6 +407,8 @@ func TestAccTFEPolicySet_updateToWorkspace(t *testing.T) {
 
 func TestAccTFEPolicySet_updateGlobalToWorkspaceIDs(t *testing.T) {
 	policySet := &tfe.PolicySet{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -397,7 +416,7 @@ func TestAccTFEPolicySet_updateGlobalToWorkspaceIDs(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySet_global,
+				Config: fmt.Sprintf(testAccTFEPolicySet_global, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetGlobal(policySet),
@@ -411,10 +430,10 @@ func TestAccTFEPolicySet_updateGlobalToWorkspaceIDs(t *testing.T) {
 			},
 
 			{
-				Config: testAccTFEPolicySet_populatedWorkspaceIDs,
+				Config: fmt.Sprintf(testAccTFEPolicySet_populatedWorkspaceIDs, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
-					testAccCheckTFEPolicySetPopulated(policySet),
+					testAccCheckTFEPolicySetPopulated(policySet, orgName),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "name", "terraform-populated"),
 					resource.TestCheckResourceAttr(
@@ -431,6 +450,7 @@ func TestAccTFEPolicySet_updateGlobalToWorkspaceIDs(t *testing.T) {
 
 func TestAccTFEPolicySet_vcs(t *testing.T) {
 	policySet := &tfe.PolicySet{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
@@ -452,7 +472,7 @@ func TestAccTFEPolicySet_vcs(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySet_vcs,
+				Config: getTestAccTFEPolicySetVCS(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
@@ -478,6 +498,7 @@ func TestAccTFEPolicySet_vcs(t *testing.T) {
 
 func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 	policySet := &tfe.PolicySet{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
@@ -499,7 +520,7 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySet_vcs,
+				Config: getTestAccTFEPolicySetVCS(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
@@ -520,7 +541,7 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFEPolicySet_updateVCSBranch,
+				Config: getTestAccTFEPolicySetUpdateVCSBranch(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
@@ -545,13 +566,15 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 }
 
 func TestAccTFEPolicySet_invalidName(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccTFEPolicySet_invalidName,
+				Config:      fmt.Sprintf(testAccTFEPolicySet_invalidName, rInt),
 				ExpectError: regexp.MustCompile(`can only include letters, numbers, -, and _.`),
 			},
 		},
@@ -559,13 +582,15 @@ func TestAccTFEPolicySet_invalidName(t *testing.T) {
 }
 
 func TestAccTFEPolicySetImport(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySet_populatedWorkspaceIDs,
+				Config: fmt.Sprintf(testAccTFEPolicySet_populatedWorkspaceIDs, rInt),
 			},
 
 			{
@@ -623,7 +648,7 @@ func testAccCheckTFEPolicySetAttributes(policySet *tfe.PolicySet) resource.TestC
 	}
 }
 
-func testAccCheckTFEPolicySetPopulated(policySet *tfe.PolicySet) resource.TestCheckFunc {
+func testAccCheckTFEPolicySetPopulated(policySet *tfe.PolicySet, orgName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		tfeClient := testAccProvider.Meta().(*tfe.Client)
 
@@ -650,7 +675,7 @@ func testAccCheckTFEPolicySetPopulated(policySet *tfe.PolicySet) resource.TestCh
 		}
 
 		workspaceID := policySet.Workspaces[0].ID
-		workspace, _ := tfeClient.Workspaces.Read(ctx, "tst-terraform", "workspace-foo")
+		workspace, _ := tfeClient.Workspaces.Read(ctx, orgName, "workspace-foo")
 		if workspace.ID != workspaceID {
 			return fmt.Errorf("Wrong member workspace: %v", workspace.Name)
 		}
@@ -659,7 +684,7 @@ func testAccCheckTFEPolicySetPopulated(policySet *tfe.PolicySet) resource.TestCh
 	}
 }
 
-func testAccCheckTFEPolicySetPopulatedUpdated(policySet *tfe.PolicySet) resource.TestCheckFunc {
+func testAccCheckTFEPolicySetPopulatedUpdated(policySet *tfe.PolicySet, orgName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		tfeClient := testAccProvider.Meta().(*tfe.Client)
 
@@ -686,7 +711,7 @@ func testAccCheckTFEPolicySetPopulatedUpdated(policySet *tfe.PolicySet) resource
 		}
 
 		workspaceID := policySet.Workspaces[0].ID
-		workspace, _ := tfeClient.Workspaces.Read(ctx, "tst-terraform", "workspace-bar")
+		workspace, _ := tfeClient.Workspaces.Read(ctx, orgName, "workspace-bar")
 		if workspace.ID != workspaceID {
 			return fmt.Errorf("Wrong member workspace: %v", workspace.Name)
 		}
@@ -749,7 +774,7 @@ func testAccCheckTFEPolicySetDestroy(s *terraform.State) error {
 
 const testAccTFEPolicySet_basic = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -768,7 +793,7 @@ resource "tfe_policy_set" "foobar" {
 
 const testAccTFEPolicySet_empty = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
  resource "tfe_policy_set" "foobar" {
@@ -779,7 +804,7 @@ resource "tfe_organization" "foobar" {
 
 const testAccTFEPolicySet_populated = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -803,7 +828,7 @@ resource "tfe_policy_set" "foobar" {
 
 const testAccTFEPolicySet_populatedWorkspaceIDs = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -827,7 +852,7 @@ resource "tfe_policy_set" "foobar" {
 
 const testAccTFEPolicySet_updatePopulated = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -862,7 +887,7 @@ resource "tfe_policy_set" "foobar" {
 
 const testAccTFEPolicySet_updatePopulatedWorkspaceIDs = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -897,7 +922,7 @@ resource "tfe_policy_set" "foobar" {
 
 const testAccTFEPolicySet_global = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -919,9 +944,10 @@ resource "tfe_policy_set" "foobar" {
   policy_ids   = ["${tfe_sentinel_policy.foo.id}"]
 }`
 
-var testAccTFEPolicySet_vcs = fmt.Sprintf(`
+func getTestAccTFEPolicySetVCS(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -946,15 +972,17 @@ resource "tfe_policy_set" "foobar" {
 
   policies_path = "%s"
 }
-`,
-	GITHUB_TOKEN,
-	GITHUB_POLICY_SET_IDENTIFIER,
-	GITHUB_POLICY_SET_PATH,
-)
+`, rInt,
+		GITHUB_TOKEN,
+		GITHUB_POLICY_SET_IDENTIFIER,
+		GITHUB_POLICY_SET_PATH,
+	)
+}
 
-var testAccTFEPolicySet_updateVCSBranch = fmt.Sprintf(`
+func getTestAccTFEPolicySetUpdateVCSBranch(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -979,16 +1007,17 @@ resource "tfe_policy_set" "foobar" {
 
   policies_path = "%s"
 }
-`,
-	GITHUB_TOKEN,
-	GITHUB_POLICY_SET_IDENTIFIER,
-	GITHUB_POLICY_SET_BRANCH,
-	GITHUB_POLICY_SET_PATH,
-)
+`, rInt,
+		GITHUB_TOKEN,
+		GITHUB_POLICY_SET_IDENTIFIER,
+		GITHUB_POLICY_SET_BRANCH,
+		GITHUB_POLICY_SET_PATH,
+	)
+}
 
 const testAccTFEPolicySet_invalidName = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 

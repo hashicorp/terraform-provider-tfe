@@ -2,8 +2,10 @@ package tfe
 
 import (
 	"fmt"
+	"math/rand"
 	"regexp"
 	"testing"
+	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
@@ -12,6 +14,7 @@ import (
 
 func TestAccTFEOrganizationToken_basic(t *testing.T) {
 	token := &tfe.OrganizationToken{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -19,12 +22,12 @@ func TestAccTFEOrganizationToken_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOrganizationToken_basic,
+				Config: fmt.Sprintf(testAccTFEOrganizationToken_basic, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationTokenExists(
 						"tfe_organization_token.foobar", token),
 					resource.TestCheckResourceAttr(
-						"tfe_organization_token.foobar", "organization", "tst-terraform"),
+						"tfe_organization_token.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
 				),
 			},
 		},
@@ -33,6 +36,7 @@ func TestAccTFEOrganizationToken_basic(t *testing.T) {
 
 func TestAccTFEOrganizationToken_existsWithoutForce(t *testing.T) {
 	token := &tfe.OrganizationToken{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -40,17 +44,17 @@ func TestAccTFEOrganizationToken_existsWithoutForce(t *testing.T) {
 		CheckDestroy: testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOrganizationToken_basic,
+				Config: fmt.Sprintf(testAccTFEOrganizationToken_basic, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationTokenExists(
 						"tfe_organization_token.foobar", token),
 					resource.TestCheckResourceAttr(
-						"tfe_organization_token.foobar", "organization", "tst-terraform"),
+						"tfe_organization_token.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
 				),
 			},
 
 			{
-				Config:      testAccTFEOrganizationToken_existsWithoutForce,
+				Config:      fmt.Sprintf(testAccTFEOrganizationToken_existsWithoutForce, rInt),
 				ExpectError: regexp.MustCompile(`token already exists`),
 			},
 		},
@@ -59,6 +63,7 @@ func TestAccTFEOrganizationToken_existsWithoutForce(t *testing.T) {
 
 func TestAccTFEOrganizationToken_existsWithForce(t *testing.T) {
 	token := &tfe.OrganizationToken{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -66,22 +71,22 @@ func TestAccTFEOrganizationToken_existsWithForce(t *testing.T) {
 		CheckDestroy: testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOrganizationToken_basic,
+				Config: fmt.Sprintf(testAccTFEOrganizationToken_basic, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationTokenExists(
 						"tfe_organization_token.foobar", token),
 					resource.TestCheckResourceAttr(
-						"tfe_organization_token.foobar", "organization", "tst-terraform"),
+						"tfe_organization_token.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
 				),
 			},
 
 			{
-				Config: testAccTFEOrganizationToken_existsWithForce,
+				Config: fmt.Sprintf(testAccTFEOrganizationToken_existsWithForce, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationTokenExists(
 						"tfe_organization_token.regenerated", token),
 					resource.TestCheckResourceAttr(
-						"tfe_organization_token.regenerated", "organization", "tst-terraform"),
+						"tfe_organization_token.regenerated", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
 				),
 			},
 		},
@@ -89,13 +94,15 @@ func TestAccTFEOrganizationToken_existsWithForce(t *testing.T) {
 }
 
 func TestAccTFEOrganizationToken_import(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOrganizationToken_basic,
+				Config: fmt.Sprintf(testAccTFEOrganizationToken_basic, rInt),
 			},
 
 			{
@@ -160,7 +167,7 @@ func testAccCheckTFEOrganizationTokenDestroy(s *terraform.State) error {
 
 const testAccTFEOrganizationToken_basic = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -170,7 +177,7 @@ resource "tfe_organization_token" "foobar" {
 
 const testAccTFEOrganizationToken_existsWithoutForce = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -184,7 +191,7 @@ resource "tfe_organization_token" "error" {
 
 const testAccTFEOrganizationToken_existsWithForce = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 

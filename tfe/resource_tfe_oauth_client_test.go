@@ -2,15 +2,17 @@ package tfe
 
 import (
 	"fmt"
-	"testing"
-
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"math/rand"
+	"testing"
+	"time"
 )
 
 func TestAccTFEOAuthClient_basic(t *testing.T) {
 	oc := &tfe.OAuthClient{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
@@ -23,7 +25,7 @@ func TestAccTFEOAuthClient_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFEOAuthClientDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOAuthClient_basic,
+				Config: getTestAccTFEOAuthClientBasic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOAuthClientExists("tfe_oauth_client.foobar", oc),
 					testAccCheckTFEOAuthClientAttributes(oc),
@@ -108,9 +110,10 @@ func testAccCheckTFEOAuthClientDestroy(s *terraform.State) error {
 	return nil
 }
 
-var testAccTFEOAuthClient_basic = fmt.Sprintf(`
+func getTestAccTFEOAuthClientBasic(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -120,4 +123,5 @@ resource "tfe_oauth_client" "foobar" {
   http_url         = "https://github.com"
   oauth_token      = "%s"
   service_provider = "github"
-}`, GITHUB_TOKEN)
+}`, rInt, GITHUB_TOKEN)
+}

@@ -2,9 +2,11 @@ package tfe
 
 import (
 	"fmt"
+	"math/rand"
 	"reflect"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
@@ -13,6 +15,7 @@ import (
 
 func TestAccTFENotificationConfiguration_basic(t *testing.T) {
 	notificationConfiguration := &tfe.NotificationConfiguration{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -20,7 +23,7 @@ func TestAccTFENotificationConfiguration_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFENotificationConfiguration_basic,
+				Config: fmt.Sprintf(testAccTFENotificationConfiguration_basic, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
 						"tfe_notification_configuration.foobar", notificationConfiguration),
@@ -43,6 +46,7 @@ func TestAccTFENotificationConfiguration_basic(t *testing.T) {
 
 func TestAccTFENotificationConfiguration_basicWorkspaceID(t *testing.T) {
 	notificationConfiguration := &tfe.NotificationConfiguration{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -50,7 +54,7 @@ func TestAccTFENotificationConfiguration_basicWorkspaceID(t *testing.T) {
 		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFENotificationConfiguration_basicWorkspaceID,
+				Config: fmt.Sprintf(testAccTFENotificationConfiguration_basicWorkspaceID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
 						"tfe_notification_configuration.foobar", notificationConfiguration),
@@ -73,6 +77,7 @@ func TestAccTFENotificationConfiguration_basicWorkspaceID(t *testing.T) {
 
 func TestAccTFENotificationConfiguration_emailUserIDs(t *testing.T) {
 	notificationConfiguration := &tfe.NotificationConfiguration{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -80,7 +85,7 @@ func TestAccTFENotificationConfiguration_emailUserIDs(t *testing.T) {
 		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFENotificationConfiguration_emailUserIDs,
+				Config: fmt.Sprintf(testAccTFENotificationConfiguration_emailUserIDs, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
 						"tfe_notification_configuration.foobar", notificationConfiguration),
@@ -103,6 +108,7 @@ func TestAccTFENotificationConfiguration_emailUserIDs(t *testing.T) {
 
 func TestAccTFENotificationConfiguration_update(t *testing.T) {
 	notificationConfiguration := &tfe.NotificationConfiguration{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -110,7 +116,7 @@ func TestAccTFENotificationConfiguration_update(t *testing.T) {
 		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFENotificationConfiguration_basic,
+				Config: fmt.Sprintf(testAccTFENotificationConfiguration_basic, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
 						"tfe_notification_configuration.foobar", notificationConfiguration),
@@ -128,7 +134,7 @@ func TestAccTFENotificationConfiguration_update(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFENotificationConfiguration_update,
+				Config: fmt.Sprintf(testAccTFENotificationConfiguration_update, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
 						"tfe_notification_configuration.foobar", notificationConfiguration),
@@ -155,6 +161,7 @@ func TestAccTFENotificationConfiguration_update(t *testing.T) {
 
 func TestAccTFENotificationConfiguration_updateWorkspaceID(t *testing.T) {
 	notificationConfiguration := &tfe.NotificationConfiguration{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -162,7 +169,7 @@ func TestAccTFENotificationConfiguration_updateWorkspaceID(t *testing.T) {
 		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFENotificationConfiguration_basicWorkspaceID,
+				Config: fmt.Sprintf(testAccTFENotificationConfiguration_basicWorkspaceID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
 						"tfe_notification_configuration.foobar", notificationConfiguration),
@@ -180,7 +187,7 @@ func TestAccTFENotificationConfiguration_updateWorkspaceID(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFENotificationConfiguration_updateWorkspaceID,
+				Config: fmt.Sprintf(testAccTFENotificationConfiguration_updateWorkspaceID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
 						"tfe_notification_configuration.foobar", notificationConfiguration),
@@ -207,6 +214,7 @@ func TestAccTFENotificationConfiguration_updateWorkspaceID(t *testing.T) {
 
 func TestAccTFENotificationConfiguration_updateWorkspaceExternalIDToWorkspaceID(t *testing.T) {
 	notificationConfiguration := &tfe.NotificationConfiguration{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -214,7 +222,7 @@ func TestAccTFENotificationConfiguration_updateWorkspaceExternalIDToWorkspaceID(
 		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFENotificationConfiguration_basic,
+				Config: fmt.Sprintf(testAccTFENotificationConfiguration_basic, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
 						"tfe_notification_configuration.foobar", notificationConfiguration),
@@ -232,7 +240,7 @@ func TestAccTFENotificationConfiguration_updateWorkspaceExternalIDToWorkspaceID(
 				),
 			},
 			{
-				Config: testAccTFENotificationConfiguration_basicWorkspaceID,
+				Config: fmt.Sprintf(testAccTFENotificationConfiguration_basicWorkspaceID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
 						"tfe_notification_configuration.foobar", notificationConfiguration),
@@ -250,7 +258,7 @@ func TestAccTFENotificationConfiguration_updateWorkspaceExternalIDToWorkspaceID(
 				),
 			},
 			{
-				Config: testAccTFENotificationConfiguration_updateWorkspaceID,
+				Config: fmt.Sprintf(testAccTFENotificationConfiguration_updateWorkspaceID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
 						"tfe_notification_configuration.foobar", notificationConfiguration),
@@ -277,6 +285,7 @@ func TestAccTFENotificationConfiguration_updateWorkspaceExternalIDToWorkspaceID(
 
 func TestAccTFENotificationConfiguration_updateEmailUserIDs(t *testing.T) {
 	notificationConfiguration := &tfe.NotificationConfiguration{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -284,7 +293,7 @@ func TestAccTFENotificationConfiguration_updateEmailUserIDs(t *testing.T) {
 		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFENotificationConfiguration_emailUserIDs,
+				Config: fmt.Sprintf(testAccTFENotificationConfiguration_emailUserIDs, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
 						"tfe_notification_configuration.foobar", notificationConfiguration),
@@ -302,7 +311,7 @@ func TestAccTFENotificationConfiguration_updateEmailUserIDs(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFENotificationConfiguration_updateEmailUserIDs,
+				Config: fmt.Sprintf(testAccTFENotificationConfiguration_updateEmailUserIDs, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
 						"tfe_notification_configuration.foobar", notificationConfiguration),
@@ -326,16 +335,18 @@ func TestAccTFENotificationConfiguration_updateEmailUserIDs(t *testing.T) {
 }
 
 func TestAccTFENotificationConfiguration_validateSchemaAttributesEmail(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccTFENotificationConfiguration_emailWithURL,
+				Config:      fmt.Sprintf(testAccTFENotificationConfiguration_emailWithURL, rInt),
 				ExpectError: regexp.MustCompile(`^.*URL cannot be set with destination type of email`),
 			},
 			{
-				Config:      testAccTFENotificationConfiguration_emailWithToken,
+				Config:      fmt.Sprintf(testAccTFENotificationConfiguration_emailWithToken, rInt),
 				ExpectError: regexp.MustCompile(`^.*Token cannot be set with destination type of email`),
 			},
 		},
@@ -343,20 +354,22 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesEmail(t *testin
 }
 
 func TestAccTFENotificationConfiguration_validateSchemaAttributesGeneric(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccTFENotificationConfiguration_genericWithEmailAddresses,
+				Config:      fmt.Sprintf(testAccTFENotificationConfiguration_genericWithEmailAddresses, rInt),
 				ExpectError: regexp.MustCompile(`^.*Email addresses cannot be set with destination type of generic`),
 			},
 			{
-				Config:      testAccTFENotificationConfiguration_genericWithEmailUserIDs,
+				Config:      fmt.Sprintf(testAccTFENotificationConfiguration_genericWithEmailUserIDs, rInt),
 				ExpectError: regexp.MustCompile(`^.*Email user IDs cannot be set with destination type of generic`),
 			},
 			{
-				Config:      testAccTFENotificationConfiguration_genericWithoutURL,
+				Config:      fmt.Sprintf(testAccTFENotificationConfiguration_genericWithoutURL, rInt),
 				ExpectError: regexp.MustCompile(`^.*URL is required with destination type of generic`),
 			},
 		},
@@ -364,24 +377,26 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesGeneric(t *test
 }
 
 func TestAccTFENotificationConfiguration_validateSchemaAttributesSlack(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccTFENotificationConfiguration_slackWithEmailAddresses,
+				Config:      fmt.Sprintf(testAccTFENotificationConfiguration_slackWithEmailAddresses, rInt),
 				ExpectError: regexp.MustCompile(`^.*Email addresses cannot be set with destination type of slack`),
 			},
 			{
-				Config:      testAccTFENotificationConfiguration_slackWithEmailUserIDs,
+				Config:      fmt.Sprintf(testAccTFENotificationConfiguration_slackWithEmailUserIDs, rInt),
 				ExpectError: regexp.MustCompile(`^.*Email user IDs cannot be set with destination type of slack`),
 			},
 			{
-				Config:      testAccTFENotificationConfiguration_slackWithToken,
+				Config:      fmt.Sprintf(testAccTFENotificationConfiguration_slackWithToken, rInt),
 				ExpectError: regexp.MustCompile(`^.*Token cannot be set with destination type of slack`),
 			},
 			{
-				Config:      testAccTFENotificationConfiguration_slackWithoutURL,
+				Config:      fmt.Sprintf(testAccTFENotificationConfiguration_slackWithoutURL, rInt),
 				ExpectError: regexp.MustCompile(`^.*URL is required with destination type of slack`),
 			},
 		},
@@ -390,6 +405,7 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesSlack(t *testin
 
 func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesEmail(t *testing.T) {
 	notificationConfiguration := &tfe.NotificationConfiguration{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -397,7 +413,7 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesEmail(t *
 		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFENotificationConfiguration_emailUserIDs,
+				Config: fmt.Sprintf(testAccTFENotificationConfiguration_emailUserIDs, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
 						"tfe_notification_configuration.foobar", notificationConfiguration),
@@ -415,11 +431,11 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesEmail(t *
 				),
 			},
 			{
-				Config:      testAccTFENotificationConfiguration_emailWithURL,
+				Config:      fmt.Sprintf(testAccTFENotificationConfiguration_emailWithURL, rInt),
 				ExpectError: regexp.MustCompile(`^.*URL cannot be set with destination type of email`),
 			},
 			{
-				Config:      testAccTFENotificationConfiguration_emailWithToken,
+				Config:      fmt.Sprintf(testAccTFENotificationConfiguration_emailWithToken, rInt),
 				ExpectError: regexp.MustCompile(`^.*Token cannot be set with destination type of email`),
 			},
 		},
@@ -428,6 +444,7 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesEmail(t *
 
 func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesGeneric(t *testing.T) {
 	notificationConfiguration := &tfe.NotificationConfiguration{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -435,7 +452,7 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesGeneric(t
 		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFENotificationConfiguration_basic,
+				Config: fmt.Sprintf(testAccTFENotificationConfiguration_basic, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
 						"tfe_notification_configuration.foobar", notificationConfiguration),
@@ -453,15 +470,15 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesGeneric(t
 				),
 			},
 			{
-				Config:      testAccTFENotificationConfiguration_genericWithEmailAddresses,
+				Config:      fmt.Sprintf(testAccTFENotificationConfiguration_genericWithEmailAddresses, rInt),
 				ExpectError: regexp.MustCompile(`^.*Email addresses cannot be set with destination type of generic`),
 			},
 			{
-				Config:      testAccTFENotificationConfiguration_genericWithEmailUserIDs,
+				Config:      fmt.Sprintf(testAccTFENotificationConfiguration_genericWithEmailUserIDs, rInt),
 				ExpectError: regexp.MustCompile(`^.*Email user IDs cannot be set with destination type of generic`),
 			},
 			{
-				Config:      testAccTFENotificationConfiguration_genericWithoutURL,
+				Config:      fmt.Sprintf(testAccTFENotificationConfiguration_genericWithoutURL, rInt),
 				ExpectError: regexp.MustCompile(`^.*URL is required with destination type of generic`),
 			},
 		},
@@ -470,6 +487,7 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesGeneric(t
 
 func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesSlack(t *testing.T) {
 	notificationConfiguration := &tfe.NotificationConfiguration{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -477,7 +495,7 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesSlack(t *
 		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFENotificationConfiguration_slack,
+				Config: fmt.Sprintf(testAccTFENotificationConfiguration_slack, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
 						"tfe_notification_configuration.foobar", notificationConfiguration),
@@ -495,19 +513,19 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesSlack(t *
 				),
 			},
 			{
-				Config:      testAccTFENotificationConfiguration_slackWithEmailAddresses,
+				Config:      fmt.Sprintf(testAccTFENotificationConfiguration_slackWithEmailAddresses, rInt),
 				ExpectError: regexp.MustCompile(`^.*Email addresses cannot be set with destination type of slack`),
 			},
 			{
-				Config:      testAccTFENotificationConfiguration_slackWithEmailUserIDs,
+				Config:      fmt.Sprintf(testAccTFENotificationConfiguration_slackWithEmailUserIDs, rInt),
 				ExpectError: regexp.MustCompile(`^.*Email user IDs cannot be set with destination type of slack`),
 			},
 			{
-				Config:      testAccTFENotificationConfiguration_slackWithToken,
+				Config:      fmt.Sprintf(testAccTFENotificationConfiguration_slackWithToken, rInt),
 				ExpectError: regexp.MustCompile(`^.*Token cannot be set with destination type of slack`),
 			},
 			{
-				Config:      testAccTFENotificationConfiguration_slackWithoutURL,
+				Config:      fmt.Sprintf(testAccTFENotificationConfiguration_slackWithoutURL, rInt),
 				ExpectError: regexp.MustCompile(`^.*URL is required with destination type of slack`),
 			},
 		},
@@ -516,6 +534,7 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesSlack(t *
 
 func TestAccTFENotificationConfiguration_duplicateTriggers(t *testing.T) {
 	notificationConfiguration := &tfe.NotificationConfiguration{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -523,7 +542,7 @@ func TestAccTFENotificationConfiguration_duplicateTriggers(t *testing.T) {
 		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFENotificationConfiguration_duplicateTriggers,
+				Config: fmt.Sprintf(testAccTFENotificationConfiguration_duplicateTriggers, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
 						"tfe_notification_configuration.foobar", notificationConfiguration),
@@ -545,13 +564,15 @@ func TestAccTFENotificationConfiguration_duplicateTriggers(t *testing.T) {
 }
 
 func TestAccTFENotificationConfiguration_noWorkspaceID(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccTFENotificationConfiguration_noWorkspaceID,
+				Config:      fmt.Sprintf(testAccTFENotificationConfiguration_noWorkspaceID, rInt),
 				ExpectError: regexp.MustCompile(`One of workspace_id or workspace_external_id must be set`),
 			},
 		},
@@ -559,13 +580,15 @@ func TestAccTFENotificationConfiguration_noWorkspaceID(t *testing.T) {
 }
 
 func TestAccTFENotificationConfigurationImport_basic(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFENotificationConfiguration_update,
+				Config: fmt.Sprintf(testAccTFENotificationConfiguration_update, rInt),
 			},
 
 			{
@@ -579,13 +602,15 @@ func TestAccTFENotificationConfigurationImport_basic(t *testing.T) {
 }
 
 func TestAccTFENotificationConfigurationImport_emailUserIDs(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFENotificationConfiguration_updateEmailUserIDs,
+				Config: fmt.Sprintf(testAccTFENotificationConfiguration_updateEmailUserIDs, rInt),
 			},
 
 			{
@@ -599,13 +624,15 @@ func TestAccTFENotificationConfigurationImport_emailUserIDs(t *testing.T) {
 }
 
 func TestAccTFENotificationConfigurationImport_emptyEmailUserIDs(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFENotificationConfiguration_emailUserIDs,
+				Config: fmt.Sprintf(testAccTFENotificationConfiguration_emailUserIDs, rInt),
 			},
 
 			{
@@ -831,9 +858,9 @@ func testAccCheckTFENotificationConfigurationDestroy(s *terraform.State) error {
 	return nil
 }
 
-const testAccTFENotificationConfiguration_basic = `
+var testAccTFENotificationConfiguration_basic = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -851,7 +878,7 @@ resource "tfe_notification_configuration" "foobar" {
 
 const testAccTFENotificationConfiguration_emailUserIDs = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -873,7 +900,7 @@ resource "tfe_notification_configuration" "foobar" {
 
 const testAccTFENotificationConfiguration_slack = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -891,7 +918,7 @@ resource "tfe_notification_configuration" "foobar" {
 
 const testAccTFENotificationConfiguration_basicWorkspaceID = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -909,7 +936,7 @@ resource "tfe_notification_configuration" "foobar" {
 
 const testAccTFENotificationConfiguration_update = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -930,7 +957,7 @@ resource "tfe_notification_configuration" "foobar" {
 
 const testAccTFENotificationConfiguration_updateWorkspaceID = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -951,7 +978,7 @@ resource "tfe_notification_configuration" "foobar" {
 
 const testAccTFENotificationConfiguration_updateEmailUserIDs = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -976,7 +1003,7 @@ resource "tfe_notification_configuration" "foobar" {
 
 const testAccTFENotificationConfiguration_emailWithURL = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -994,7 +1021,7 @@ resource "tfe_notification_configuration" "foobar" {
 
 const testAccTFENotificationConfiguration_emailWithToken = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -1012,7 +1039,7 @@ resource "tfe_notification_configuration" "foobar" {
 
 const testAccTFENotificationConfiguration_genericWithEmailAddresses = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -1030,7 +1057,7 @@ resource "tfe_notification_configuration" "foobar" {
 
 const testAccTFENotificationConfiguration_genericWithEmailUserIDs = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -1053,7 +1080,7 @@ resource "tfe_notification_configuration" "foobar" {
 
 const testAccTFENotificationConfiguration_genericWithoutURL = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -1070,7 +1097,7 @@ resource "tfe_notification_configuration" "foobar" {
 
 const testAccTFENotificationConfiguration_slackWithEmailAddresses = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -1088,7 +1115,7 @@ resource "tfe_notification_configuration" "foobar" {
 
 const testAccTFENotificationConfiguration_slackWithEmailUserIDs = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -1111,7 +1138,7 @@ resource "tfe_notification_configuration" "foobar" {
 
 const testAccTFENotificationConfiguration_slackWithToken = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -1130,7 +1157,7 @@ resource "tfe_notification_configuration" "foobar" {
 
 const testAccTFENotificationConfiguration_slackWithoutURL = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -1147,7 +1174,7 @@ resource "tfe_notification_configuration" "foobar" {
 
 const testAccTFENotificationConfiguration_duplicateTriggers = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -1166,7 +1193,7 @@ resource "tfe_notification_configuration" "foobar" {
 
 const testAccTFENotificationConfiguration_noWorkspaceID = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 

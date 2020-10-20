@@ -2,7 +2,9 @@ package tfe
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
+	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
@@ -11,6 +13,7 @@ import (
 
 func TestAccTFESentinelPolicy_basic(t *testing.T) {
 	policy := &tfe.Policy{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -18,7 +21,7 @@ func TestAccTFESentinelPolicy_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFESentinelPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFESentinelPolicy_basic,
+				Config: fmt.Sprintf(testAccTFESentinelPolicy_basic, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFESentinelPolicyExists(
 						"tfe_sentinel_policy.foobar", policy),
@@ -39,6 +42,7 @@ func TestAccTFESentinelPolicy_basic(t *testing.T) {
 
 func TestAccTFESentinelPolicy_update(t *testing.T) {
 	policy := &tfe.Policy{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -46,7 +50,7 @@ func TestAccTFESentinelPolicy_update(t *testing.T) {
 		CheckDestroy: testAccCheckTFESentinelPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFESentinelPolicy_basic,
+				Config: fmt.Sprintf(testAccTFESentinelPolicy_basic, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFESentinelPolicyExists(
 						"tfe_sentinel_policy.foobar", policy),
@@ -63,7 +67,7 @@ func TestAccTFESentinelPolicy_update(t *testing.T) {
 			},
 
 			{
-				Config: testAccTFESentinelPolicy_update,
+				Config: fmt.Sprintf(testAccTFESentinelPolicy_update, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFESentinelPolicyExists(
 						"tfe_sentinel_policy.foobar", policy),
@@ -83,19 +87,21 @@ func TestAccTFESentinelPolicy_update(t *testing.T) {
 }
 
 func TestAccTFESentinelPolicy_import(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFESentinelPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFESentinelPolicy_basic,
+				Config: fmt.Sprintf(testAccTFESentinelPolicy_basic, rInt),
 			},
 
 			{
 				ResourceName:        "tfe_sentinel_policy.foobar",
 				ImportState:         true,
-				ImportStateIdPrefix: "tst-terraform/",
+				ImportStateIdPrefix: fmt.Sprintf("tst-terraform-%d/", rInt),
 				ImportStateVerify:   true,
 			},
 		},
@@ -184,7 +190,7 @@ func testAccCheckTFESentinelPolicyDestroy(s *terraform.State) error {
 
 const testAccTFESentinelPolicy_basic = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -198,7 +204,7 @@ resource "tfe_sentinel_policy" "foobar" {
 
 const testAccTFESentinelPolicy_update = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 

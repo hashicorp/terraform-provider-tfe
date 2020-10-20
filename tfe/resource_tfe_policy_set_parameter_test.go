@@ -2,7 +2,9 @@ package tfe
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
+	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
@@ -11,6 +13,7 @@ import (
 
 func TestAccTFEPolicySetParameter_basic(t *testing.T) {
 	parameter := &tfe.PolicySetParameter{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -18,7 +21,7 @@ func TestAccTFEPolicySetParameter_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetParameterDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySetParameter_basic,
+				Config: fmt.Sprintf(testAccTFEPolicySetParameter_basic, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetParameterExists(
 						"tfe_policy_set_parameter.foobar", parameter),
@@ -37,6 +40,7 @@ func TestAccTFEPolicySetParameter_basic(t *testing.T) {
 
 func TestAccTFEPolicySetParameter_update(t *testing.T) {
 	parameter := &tfe.PolicySetParameter{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -44,7 +48,7 @@ func TestAccTFEPolicySetParameter_update(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetParameterDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySetParameter_basic,
+				Config: fmt.Sprintf(testAccTFEPolicySetParameter_basic, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetParameterExists(
 						"tfe_policy_set_parameter.foobar", parameter),
@@ -59,7 +63,7 @@ func TestAccTFEPolicySetParameter_update(t *testing.T) {
 			},
 
 			{
-				Config: testAccTFEPolicySetParameter_update,
+				Config: fmt.Sprintf(testAccTFEPolicySetParameter_update, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetParameterExists(
 						"tfe_policy_set_parameter.foobar", parameter),
@@ -77,13 +81,15 @@ func TestAccTFEPolicySetParameter_update(t *testing.T) {
 }
 
 func TestAccTFEPolicySetParameter_import(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEPolicySetParameterDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySetParameter_basic,
+				Config: fmt.Sprintf(testAccTFEPolicySetParameter_basic, rInt),
 			},
 
 			{
@@ -188,7 +194,7 @@ func testAccCheckTFEPolicySetParameterDestroy(s *terraform.State) error {
 
 const testAccTFEPolicySetParameter_basic = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -205,7 +211,7 @@ resource "tfe_policy_set_parameter" "foobar" {
 
 const testAccTFEPolicySetParameter_update = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 

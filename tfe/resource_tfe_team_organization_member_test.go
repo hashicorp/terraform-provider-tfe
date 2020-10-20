@@ -2,7 +2,9 @@ package tfe
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
+	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
@@ -72,6 +74,7 @@ func TestUnpackTeamOrganizationMemberID(t *testing.T) {
 
 func TestAccTFETeamOrganizationMember_basic(t *testing.T) {
 	organizationMembership := &tfe.OrganizationMembership{ID: "sauce"}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -79,7 +82,7 @@ func TestAccTFETeamOrganizationMember_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFETeamOrganizationMemberDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamOrganizationMember_basic,
+				Config: fmt.Sprintf(testAccTFETeamOrganizationMember_basic, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamOrganizationMemberExists(
 						"tfe_team_organization_member.foobar", organizationMembership),
@@ -91,13 +94,15 @@ func TestAccTFETeamOrganizationMember_basic(t *testing.T) {
 }
 
 func TestAccTFETeamOrganizationMember_import(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFETeamOrganizationMemberDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamOrganizationMember_basic,
+				Config: fmt.Sprintf(testAccTFETeamOrganizationMember_basic, rInt),
 			},
 
 			{
@@ -202,7 +207,7 @@ func testAccCheckTFETeamOrganizationMemberDestroy(s *terraform.State) error {
 
 const testAccTFETeamOrganizationMember_basic = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 

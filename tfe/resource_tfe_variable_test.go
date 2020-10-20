@@ -2,7 +2,9 @@ package tfe
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
+	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
@@ -11,6 +13,7 @@ import (
 
 func TestAccTFEVariable_basic(t *testing.T) {
 	variable := &tfe.Variable{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -18,7 +21,7 @@ func TestAccTFEVariable_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEVariable_basic,
+				Config: fmt.Sprintf(testAccTFEVariable_basic, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEVariableExists(
 						"tfe_variable.foobar", variable),
@@ -43,6 +46,7 @@ func TestAccTFEVariable_basic(t *testing.T) {
 
 func TestAccTFEVariable_update(t *testing.T) {
 	variable := &tfe.Variable{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -50,7 +54,7 @@ func TestAccTFEVariable_update(t *testing.T) {
 		CheckDestroy: testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEVariable_basic,
+				Config: fmt.Sprintf(testAccTFEVariable_basic, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEVariableExists(
 						"tfe_variable.foobar", variable),
@@ -71,7 +75,7 @@ func TestAccTFEVariable_update(t *testing.T) {
 			},
 
 			{
-				Config: testAccTFEVariable_update,
+				Config: fmt.Sprintf(testAccTFEVariable_update, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEVariableExists(
 						"tfe_variable.foobar", variable),
@@ -97,6 +101,7 @@ func TestAccTFEVariable_update(t *testing.T) {
 func TestAccTFEVariable_update_key_sensitive(t *testing.T) {
 	first := &tfe.Variable{}
 	second := &tfe.Variable{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -104,7 +109,7 @@ func TestAccTFEVariable_update_key_sensitive(t *testing.T) {
 		CheckDestroy: testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEVariable_update,
+				Config: fmt.Sprintf(testAccTFEVariable_update, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEVariableExists(
 						"tfe_variable.foobar", first),
@@ -124,7 +129,7 @@ func TestAccTFEVariable_update_key_sensitive(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFEVariable_update_key_sensitive,
+				Config: fmt.Sprintf(testAccTFEVariable_update_key_sensitive, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEVariableExists(
 						"tfe_variable.foobar", second),
@@ -149,19 +154,21 @@ func TestAccTFEVariable_update_key_sensitive(t *testing.T) {
 }
 
 func TestAccTFEVariable_import(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEVariable_basic,
+				Config: fmt.Sprintf(testAccTFEVariable_basic, rInt),
 			},
 
 			{
 				ResourceName:        "tfe_variable.foobar",
 				ImportState:         true,
-				ImportStateIdPrefix: "tst-terraform/workspace-test/",
+				ImportStateIdPrefix: fmt.Sprintf("tst-terraform-%d/workspace-test/", rInt),
 				ImportStateVerify:   true,
 			},
 		},
@@ -327,7 +334,7 @@ func testAccCheckTFEVariableDestroy(s *terraform.State) error {
 
 const testAccTFEVariable_basic = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -346,7 +353,7 @@ resource "tfe_variable" "foobar" {
 
 const testAccTFEVariable_update = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -367,7 +374,7 @@ resource "tfe_variable" "foobar" {
 
 const testAccTFEVariable_update_key_sensitive = `
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
