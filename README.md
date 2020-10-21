@@ -23,7 +23,7 @@ non-breaking changes.
 
 ## Installation
 
-Using the Terraform Registry, simply declare the provider and `terraform init` will automatically fetch and install the provider for you (Terraform version 0.12.0+):
+Declare the provider in your configuration and `terraform init` will automatically fetch and install the provider for you from the [Terraform Registry](https://registry.terraform.io/) (Terraform version 0.12.0+):
 
 ```
 terraform {
