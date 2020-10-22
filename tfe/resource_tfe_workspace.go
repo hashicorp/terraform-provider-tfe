@@ -170,7 +170,6 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		AllowDestroyPlan:    tfe.Bool(d.Get("allow_destroy_plan").(bool)),
 		AutoApply:           tfe.Bool(d.Get("auto_apply").(bool)),
 		FileTriggersEnabled: tfe.Bool(d.Get("file_triggers_enabled").(bool)),
-		Operations:          tfe.Bool(d.Get("operations").(bool)),
 		QueueAllRuns:        tfe.Bool(d.Get("queue_all_runs").(bool)),
 		SpeculativeEnabled:  tfe.Bool(d.Get("speculative_enabled").(bool)),
 		WorkingDirectory:    tfe.String(d.Get("working_directory").(string)),
@@ -437,7 +436,7 @@ func validateAgentExecution(d *schema.ResourceDiff, meta interface{}) error {
 	if executionMode, ok := d.GetOk("execution_mode"); ok {
 		if executionMode.(string) != "agent" && d.Get("agent_pool_id") != "" {
 			return fmt.Errorf("execution_mode must be set to 'agent' to assign agent_pool_id")
-		} else if executionMode.(string) == "agent" && d.Get("agent_pool_id") == "" {
+		} else if executionMode.(string) == "agent" && d.NewValueKnown("agent_pool_id") && d.Get("agent_pool_id") == "" {
 			return fmt.Errorf("agent_pool_id must be provided when execution_mode is 'agent'")
 		}
 	}
