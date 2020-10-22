@@ -107,8 +107,15 @@ func Provider() terraform.ResourceProvider {
 }
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
+	hostname := d.Get("hostname").(string)
+	token := d.Get("token").(string)
+	insecure := d.Get("ssl_skip_verify").(bool)
+	return getClient(hostname, token, insecure)
+}
+
+func getClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
 	// Parse the hostname for comparison,
-	hostname, err := svchost.ForComparison(d.Get("hostname").(string))
+	hostname, err := svchost.ForComparison(tfeHost)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +131,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	}
 
 	// Configure the certificate verification options.
-	transport.TLSClientConfig.InsecureSkipVerify = d.Get("ssl_skip_verify").(bool)
+	transport.TLSClientConfig.InsecureSkipVerify = insecure
 
 	// Get the Terraform CLI configuration.
 	config := cliConfig()
@@ -189,9 +196,6 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	if discoErr != nil {
 		return nil, discoErr
 	}
-
-	// Get the token from the config.
-	token := d.Get("token").(string)
 
 	// Only try to get to the token from the credentials source if no token
 	// was explicitly set in the provider configuration.
