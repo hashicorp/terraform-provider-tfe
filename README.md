@@ -57,7 +57,7 @@ If you'd prefer to build the provider yourself, using Go 1.11+...
 Clone the repository in your `$GOPATH`:
 
 ```sh
-$ mkdir -p $GOPATH/src/github.com/terraform-providers; cd $GOPATH/src/github.com/terraform-providers
+$ mkdir -p $GOPATH/src/github.com/hashicorp; cd $GOPATH/src/github.com/hashicorp
 $ git clone git@github.com:hashicorp/terraform-provider-tfe
 ```
 
@@ -68,7 +68,7 @@ $ cd $GOPATH/src/github.com/hashicorp/terraform-provider-tfe
 $ make build
 ```
 
-To use the compiled provider binary, you have a several different options:
+To use the compiled provider binary, you have several different options:
 * You can copy the provider binary to your `~/.terraform.d/plugins` directory by running the following command:
    ```sh
    $ mv $GOPATH/bin/terraform-provider-tfe ~/.terraform.d/plugins
