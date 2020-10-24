@@ -333,7 +333,7 @@ func resourceTFETeamAccessImporter(d *schema.ResourceData, meta interface{}) ([]
 	workspace_id, err := fetchWorkspaceExternalID(s[0]+"/"+s[1], tfeClient)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"error retrieving workspace %s from organization %s: %v", s[0], s[1], err)
+			"error retrieving workspace %s from organization %s: %v", s[1], s[0], err)
 	}
 	d.Set("workspace_id", workspace_id)
 	d.SetId(s[2])
