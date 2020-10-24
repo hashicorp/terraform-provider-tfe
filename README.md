@@ -52,7 +52,13 @@ For more information on provider installation and constraining provider versions
 
 ### Manually building the provider
 
-If you'd prefer to build the provider yourself, using Go 1.11+...
+You might prefer to manually build the provider yourself - perhaps access to the Terraform Registry or the official
+release binaries on [releases.hashicorp.com](https://releases.hashicorp.com/terraform-provider-tfe/) are not available
+in your operating environment, or you're looking to contribute to the provider and are testing out a custom build.
+
+#### Requirements
+-	[Terraform](https://www.terraform.io/downloads.html) >= 0.11.x
+-	[Go](https://golang.org/doc/install) >= 1.11
 
 Clone the repository in your `$GOPATH`:
 
@@ -68,7 +74,7 @@ $ cd $GOPATH/src/github.com/hashicorp/terraform-provider-tfe
 $ make build
 ```
 
-To use the compiled provider binary, you have several different options:
+This will build the provider and put the binary in the `$GOPATH/bin` directory. To use the compiled binary, you have several different options (this list is not exhaustive!):
 * You can copy the provider binary to your `~/.terraform.d/plugins` directory by running the following command:
    ```sh
    $ mv $GOPATH/bin/terraform-provider-tfe ~/.terraform.d/plugins
@@ -102,19 +108,12 @@ For more information on configuring providers in general, see the [Provider Conf
 
 ## Contributing
 
-If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed
-on your machine (version 1.11+ is *required*). You'll also need to correctly setup a
-[GOPATH](http://golang.org/doc/code.html#GOPATH), as well as adding `$GOPATH/bin` to your `$PATH`.
+Thanks for your interest in contributing; we appreciate your help! If you're unsure or afraid of anything, you can
+submit a work in progress (WIP) pull request, or file an issue with the parts you know. We'll do our best to guide you
+in the right direction, and let you know if there are guidelines we will need to follow. We want people to be able to
+participate without fear of doing the wrong thing.
 
-To compile the provider, run `make build`. This will build the provider and put the provider binary
-in the `$GOPATH/bin` directory.
-
-```sh
-$ make build
-...
-$ $GOPATH/bin/terraform-provider-tfe
-...
-```
+👉 _See [Manually building the provider](#manually-building-the-provider) above._
 
 ### Referencing a local version of `go-tfe`
 
