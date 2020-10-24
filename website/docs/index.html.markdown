@@ -43,6 +43,8 @@ the token.
 - **Set the `TFE_TOKEN` environment variable:** The provider can read the
 `TFE_TOKEN` environment variable and the token stored there to authenticate.
 
+When configuring the input variable for either of these options, mark them as sensitive.
+
 -> **Note:** If you are using this provider in Terraform Cloud or Terraform
 Enterprise, you will need to use one of the two options above, even if you're
 using the `remote` backend with [remote operations](https://www.terraform.io/docs/backends/operations.html) and the
