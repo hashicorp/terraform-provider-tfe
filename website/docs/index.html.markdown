@@ -35,7 +35,7 @@ tokens cannot manage certain resource types (like SSH keys). See the [API token
 documentation](/docs/cloud/users-teams-organizations/api-tokens.html#access-levels)
 for more details about access to specific resources.
 
-There are a several ways to provide the required token:
+There are several ways to provide the required token:
 
 - **Set the `token` argument in the provider configuration.** You can set
 the `token` argument in the provider configuration.  Use an input variable for
