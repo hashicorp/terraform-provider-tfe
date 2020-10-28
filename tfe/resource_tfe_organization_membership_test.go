@@ -14,6 +14,7 @@ import (
 func TestAccTFEOrganizationMembership_basic(t *testing.T) {
 	mem := &tfe.OrganizationMembership{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -21,15 +22,15 @@ func TestAccTFEOrganizationMembership_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFEOrganizationMembershipDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFEOrganizationMembership_basic, rInt),
+				Config: testAccTFEOrganizationMembership_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationMembershipExists(
 						"tfe_organization_membership.foobar", mem),
-					testAccCheckTFEOrganizationMembershipAttributes(mem, fmt.Sprintf("tst-terraform-%d", rInt)),
+					testAccCheckTFEOrganizationMembershipAttributes(mem, orgName),
 					resource.TestCheckResourceAttr(
 						"tfe_organization_membership.foobar", "email", "example@hashicorp.com"),
 					resource.TestCheckResourceAttr(
-						"tfe_organization_membership.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
+						"tfe_organization_membership.foobar", "organization", orgName),
 					resource.TestCheckResourceAttrSet("tfe_organization_membership.foobar", "user_id"),
 				),
 			},
@@ -46,7 +47,7 @@ func TestAccTFEOrganizationMembershipImport(t *testing.T) {
 		CheckDestroy: testAccCheckTFEOrganizationMembershipDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFEOrganizationMembership_basic, rInt),
+				Config: testAccTFEOrganizationMembership_basic(rInt),
 			},
 			{
 				ResourceName:      "tfe_organization_membership.foobar",
@@ -128,7 +129,8 @@ func testAccCheckTFEOrganizationMembershipDestroy(s *terraform.State) error {
 	return nil
 }
 
-const testAccTFEOrganizationMembership_basic = `
+func testAccTFEOrganizationMembership_basic(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -137,4 +139,5 @@ resource "tfe_organization" "foobar" {
 resource "tfe_organization_membership" "foobar" {
   email        = "example@hashicorp.com"
   organization = "${tfe_organization.foobar.id}"
-}`
+}`, rInt)
+}

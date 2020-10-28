@@ -29,7 +29,7 @@ func TestAccTFETeamAccess_write(t *testing.T) {
 		CheckDestroy: testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFETeamAccess_write, rInt),
+				Config: testAccTFETeamAccess_write(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamAccessExists(
 						"tfe_team_access.foobar", tmAccess),
@@ -57,7 +57,7 @@ func TestAccTFETeamAccess_custom(t *testing.T) {
 		CheckDestroy: testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFETeamAccess_custom, rInt),
+				Config: testAccTFETeamAccess_custom(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamAccessExists(
 						"tfe_team_access.foobar", tmAccess),
@@ -94,7 +94,7 @@ func TestAccTFETeamAccess_updateToCustom(t *testing.T) {
 		CheckDestroy: testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFETeamAccess_write, rInt),
+				Config: testAccTFETeamAccess_write(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamAccessExists(
 						"tfe_team_access.foobar", tmAccess),
@@ -118,7 +118,7 @@ func TestAccTFETeamAccess_updateToCustom(t *testing.T) {
 				),
 			},
 			{
-				Config: fmt.Sprintf(testAccTFETeamAccess_custom, rInt),
+				Config: testAccTFETeamAccess_custom(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamAccessExists(
 						"tfe_team_access.foobar", tmAccess),
@@ -155,7 +155,7 @@ func TestAccTFETeamAccess_updateFromCustom(t *testing.T) {
 		CheckDestroy: testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFETeamAccess_custom, rInt),
+				Config: testAccTFETeamAccess_custom(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamAccessExists(
 						"tfe_team_access.foobar", tmAccess),
@@ -179,7 +179,7 @@ func TestAccTFETeamAccess_updateFromCustom(t *testing.T) {
 				),
 			},
 			{
-				Config: fmt.Sprintf(testAccTFETeamAccess_plan, rInt),
+				Config: testAccTFETeamAccess_plan(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamAccessExists(
 						"tfe_team_access.foobar", tmAccess),
@@ -215,7 +215,7 @@ func TestAccTFETeamAccess_import(t *testing.T) {
 		CheckDestroy: testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFETeamAccess_write, rInt),
+				Config: testAccTFETeamAccess_write(rInt),
 			},
 
 			{
@@ -308,7 +308,8 @@ func testAccCheckTFETeamAccessDestroy(s *terraform.State) error {
 	return nil
 }
 
-const testAccTFETeamAccess_write = `
+func testAccTFETeamAccess_write(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -328,9 +329,11 @@ resource "tfe_team_access" "foobar" {
   access       = "write"
   team_id      = "${tfe_team.foobar.id}"
   workspace_id = "${tfe_workspace.foobar.id}"
-}`
+}`, rInt)
+}
 
-const testAccTFETeamAccess_plan = `
+func testAccTFETeamAccess_plan(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -350,9 +353,11 @@ resource "tfe_team_access" "foobar" {
   access       = "plan"
   team_id      = "${tfe_team.foobar.id}"
   workspace_id = "${tfe_workspace.foobar.id}"
-}`
+}`, rInt)
+}
 
-const testAccTFETeamAccess_custom = `
+func testAccTFETeamAccess_custom(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -378,4 +383,5 @@ resource "tfe_team_access" "foobar" {
   }
   team_id      = "${tfe_team.foobar.id}"
   workspace_id = "${tfe_workspace.foobar.id}"
-}`
+}`, rInt)
+}

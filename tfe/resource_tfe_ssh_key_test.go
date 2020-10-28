@@ -21,7 +21,7 @@ func TestAccTFESSHKey_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFESSHKeyDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFESSHKey_basic, rInt),
+				Config: testAccTFESSHKey_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFESSHKeyExists(
 						"tfe_ssh_key.foobar", sshKey),
@@ -46,7 +46,7 @@ func TestAccTFESSHKey_update(t *testing.T) {
 		CheckDestroy: testAccCheckTFESSHKeyDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFESSHKey_basic, rInt),
+				Config: testAccTFESSHKey_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFESSHKeyExists(
 						"tfe_ssh_key.foobar", sshKey),
@@ -59,7 +59,7 @@ func TestAccTFESSHKey_update(t *testing.T) {
 			},
 
 			{
-				Config: fmt.Sprintf(testAccTFESSHKey_update, rInt),
+				Config: testAccTFESSHKey_update(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFESSHKeyExists(
 						"tfe_ssh_key.foobar", sshKey),
@@ -144,7 +144,8 @@ func testAccCheckTFESSHKeyDestroy(s *terraform.State) error {
 	return nil
 }
 
-const testAccTFESSHKey_basic = `
+func testAccTFESSHKey_basic(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -154,9 +155,11 @@ resource "tfe_ssh_key" "foobar" {
   name         = "ssh-key-test"
   organization = "${tfe_organization.foobar.id}"
   key          = "SSH-KEY-CONTENT"
-}`
+}`, rInt)
+}
 
-const testAccTFESSHKey_update = `
+func testAccTFESSHKey_update(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -166,4 +169,5 @@ resource "tfe_ssh_key" "foobar" {
   name         = "ssh-key-updated"
   organization = "${tfe_organization.foobar.id}"
   key          = "UPDATED-SSH-KEY-CONTENT"
-}`
+}`, rInt)
+}

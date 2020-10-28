@@ -25,7 +25,7 @@ func TestAccTFEOAuthClient_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFEOAuthClientDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: getTestAccTFEOAuthClientBasic(rInt),
+				Config: testAccTFEOAuthClient_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOAuthClientExists("tfe_oauth_client.foobar", oc),
 					testAccCheckTFEOAuthClientAttributes(oc),
@@ -110,7 +110,7 @@ func testAccCheckTFEOAuthClientDestroy(s *terraform.State) error {
 	return nil
 }
 
-func getTestAccTFEOAuthClientBasic(rInt int) string {
+func testAccTFEOAuthClient_basic(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"

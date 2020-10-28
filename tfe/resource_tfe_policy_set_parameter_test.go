@@ -21,7 +21,7 @@ func TestAccTFEPolicySetParameter_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetParameterDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFEPolicySetParameter_basic, rInt),
+				Config: testAccTFEPolicySetParameter_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetParameterExists(
 						"tfe_policy_set_parameter.foobar", parameter),
@@ -48,7 +48,7 @@ func TestAccTFEPolicySetParameter_update(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetParameterDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFEPolicySetParameter_basic, rInt),
+				Config: testAccTFEPolicySetParameter_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetParameterExists(
 						"tfe_policy_set_parameter.foobar", parameter),
@@ -63,7 +63,7 @@ func TestAccTFEPolicySetParameter_update(t *testing.T) {
 			},
 
 			{
-				Config: fmt.Sprintf(testAccTFEPolicySetParameter_update, rInt),
+				Config: testAccTFEPolicySetParameter_update(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetParameterExists(
 						"tfe_policy_set_parameter.foobar", parameter),
@@ -89,7 +89,7 @@ func TestAccTFEPolicySetParameter_import(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetParameterDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFEPolicySetParameter_basic, rInt),
+				Config: testAccTFEPolicySetParameter_basic(rInt),
 			},
 
 			{
@@ -192,7 +192,8 @@ func testAccCheckTFEPolicySetParameterDestroy(s *terraform.State) error {
 	return nil
 }
 
-const testAccTFEPolicySetParameter_basic = `
+func testAccTFEPolicySetParameter_basic(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -207,9 +208,11 @@ resource "tfe_policy_set_parameter" "foobar" {
   key          = "key_test"
   value        = "value_test"
   policy_set_id = "${tfe_policy_set.foobar.id}"
-}`
+}`, rInt)
+}
 
-const testAccTFEPolicySetParameter_update = `
+func testAccTFEPolicySetParameter_update(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -225,4 +228,5 @@ resource "tfe_policy_set_parameter" "foobar" {
   value        = "value_updated"
   sensitive    = true
   policy_set_id = "${tfe_policy_set.foobar.id}"
-}`
+}`, rInt)
+}

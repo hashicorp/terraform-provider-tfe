@@ -22,7 +22,7 @@ func TestAccTFERunTrigger_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFERunTriggerDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFERunTrigger_basic, rInt),
+				Config: testAccTFERunTrigger_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFERunTriggerExists(
 						"tfe_run_trigger.foobar", runTrigger),
@@ -44,7 +44,7 @@ func TestAccTFERunTrigger_basicWorkspaceID(t *testing.T) {
 		CheckDestroy: testAccCheckTFERunTriggerDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFERunTrigger_basicWorkspaceID, rInt),
+				Config: testAccTFERunTrigger_basicWorkspaceID(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFERunTriggerExists(
 						"tfe_run_trigger.foobar", runTrigger),
@@ -66,7 +66,7 @@ func TestAccTFERunTrigger_updateWorkspaceExternalIDToWorkspaceID(t *testing.T) {
 		CheckDestroy: testAccCheckTFERunTriggerDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFERunTrigger_basic, rInt),
+				Config: testAccTFERunTrigger_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFERunTriggerExists(
 						"tfe_run_trigger.foobar", runTrigger),
@@ -74,7 +74,7 @@ func TestAccTFERunTrigger_updateWorkspaceExternalIDToWorkspaceID(t *testing.T) {
 				),
 			},
 			{
-				Config: fmt.Sprintf(testAccTFERunTrigger_basicWorkspaceID, rInt),
+				Config: testAccTFERunTrigger_basicWorkspaceID(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFERunTriggerExists(
 						"tfe_run_trigger.foobar", runTrigger),
@@ -98,7 +98,7 @@ func TestAccTFERunTrigger_many(t *testing.T) {
 		CheckDestroy: testAccCheckTFERunTriggerDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFERunTrigger_many, rInt),
+				Config: testAccTFERunTrigger_many(rInt),
 				Check:  resource.ComposeTestCheckFunc(checks...),
 			},
 		},
@@ -114,7 +114,7 @@ func TestAccTFERunTriggerImport(t *testing.T) {
 		CheckDestroy: testAccCheckTFERunTriggerDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFERunTrigger_basicWorkspaceID, rInt),
+				Config: testAccTFERunTrigger_basicWorkspaceID(rInt),
 			},
 
 			{
@@ -191,7 +191,8 @@ func testAccCheckTFERunTriggerDestroy(s *terraform.State) error {
 	return nil
 }
 
-const testAccTFERunTrigger_basic = `
+func testAccTFERunTrigger_basic(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -210,9 +211,11 @@ resource "tfe_workspace" "sourceable" {
 resource "tfe_run_trigger" "foobar" {
   workspace_external_id = "${tfe_workspace.workspace.id}"
   sourceable_id         = "${tfe_workspace.sourceable.id}"
-}`
+}`, rInt)
+}
 
-const testAccTFERunTrigger_basicWorkspaceID = `
+func testAccTFERunTrigger_basicWorkspaceID(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -231,9 +234,11 @@ resource "tfe_workspace" "sourceable" {
 resource "tfe_run_trigger" "foobar" {
   workspace_id = "${tfe_workspace.workspace.id}"
   sourceable_id         = "${tfe_workspace.sourceable.id}"
-}`
+}`, rInt)
+}
 
-const testAccTFERunTrigger_many = `
+func testAccTFERunTrigger_many(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -256,4 +261,5 @@ resource "tfe_run_trigger" "foobar" {
 
   workspace_external_id = "${tfe_workspace.workspace.external_id}"
   sourceable_id         = "${tfe_workspace.sourceable[count.index].external_id}"
-}`
+}`, rInt)
+}

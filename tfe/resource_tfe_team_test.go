@@ -21,7 +21,7 @@ func TestAccTFETeam_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFETeam_basic, rInt),
+				Config: testAccTFETeam_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamExists(
 						"tfe_team.foobar", team),
@@ -44,7 +44,7 @@ func TestAccTFETeam_full(t *testing.T) {
 		CheckDestroy: testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFETeam_full, rInt),
+				Config: testAccTFETeam_full(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamExists(
 						"tfe_team.foobar", team),
@@ -75,7 +75,7 @@ func TestAccTFETeam_full_update(t *testing.T) {
 		CheckDestroy: testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFETeam_full, rInt),
+				Config: testAccTFETeam_full(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamExists(
 						"tfe_team.foobar", team),
@@ -93,7 +93,7 @@ func TestAccTFETeam_full_update(t *testing.T) {
 				),
 			},
 			{
-				Config: fmt.Sprintf(testAccTFETeam_full_update, rInt),
+				Config: testAccTFETeam_full_update(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamExists(
 						"tfe_team.foobar", team),
@@ -123,7 +123,7 @@ func TestAccTFETeam_import(t *testing.T) {
 		CheckDestroy: testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFETeam_basic, rInt),
+				Config: testAccTFETeam_basic(rInt),
 			},
 
 			{
@@ -246,7 +246,8 @@ func testAccCheckTFETeamDestroy(s *terraform.State) error {
 	return nil
 }
 
-const testAccTFETeam_basic = `
+func testAccTFETeam_basic(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -255,9 +256,11 @@ resource "tfe_organization" "foobar" {
 resource "tfe_team" "foobar" {
   name         = "team-test"
   organization = "${tfe_organization.foobar.id}"
-}`
+}`, rInt)
+}
 
-const testAccTFETeam_full = `
+func testAccTFETeam_full(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -274,9 +277,11 @@ resource "tfe_team" "foobar" {
     manage_workspaces = true
     manage_vcs_settings = true
   }
-}`
+}`, rInt)
+}
 
-const testAccTFETeam_full_update = `
+func testAccTFETeam_full_update(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -293,4 +298,5 @@ resource "tfe_team" "foobar" {
     manage_workspaces = false
     manage_vcs_settings = false
   }
-}`
+}`, rInt)
+}

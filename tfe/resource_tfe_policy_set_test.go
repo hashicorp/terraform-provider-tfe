@@ -21,7 +21,7 @@ func TestAccTFEPolicySet_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFEPolicySet_basic, rInt),
+				Config: testAccTFEPolicySet_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
@@ -50,7 +50,7 @@ func TestAccTFEPolicySet_update(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFEPolicySet_basic, rInt),
+				Config: testAccTFEPolicySet_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
@@ -66,7 +66,7 @@ func TestAccTFEPolicySet_update(t *testing.T) {
 			},
 
 			{
-				Config: fmt.Sprintf(testAccTFEPolicySet_populated, rInt),
+				Config: testAccTFEPolicySet_populated(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetPopulated(policySet, orgName),
@@ -95,7 +95,7 @@ func TestAccTFEPolicySet_updateWorkspaceIDs(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFEPolicySet_basic, rInt),
+				Config: testAccTFEPolicySet_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
@@ -110,7 +110,7 @@ func TestAccTFEPolicySet_updateWorkspaceIDs(t *testing.T) {
 				),
 			},
 			{
-				Config: fmt.Sprintf(testAccTFEPolicySet_populated, rInt),
+				Config: testAccTFEPolicySet_populated(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetPopulated(policySet, orgName),
@@ -125,7 +125,7 @@ func TestAccTFEPolicySet_updateWorkspaceIDs(t *testing.T) {
 				),
 			},
 			{
-				Config: fmt.Sprintf(testAccTFEPolicySet_populatedWorkspaceIDs, rInt),
+				Config: testAccTFEPolicySet_populatedWorkspaceIDs(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetPopulated(policySet, orgName),
@@ -153,7 +153,7 @@ func TestAccTFEPolicySet_updateEmpty(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFEPolicySet_basic, rInt),
+				Config: testAccTFEPolicySet_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
@@ -168,7 +168,7 @@ func TestAccTFEPolicySet_updateEmpty(t *testing.T) {
 				),
 			},
 			{
-				Config: fmt.Sprintf(testAccTFEPolicySet_empty, rInt),
+				Config: testAccTFEPolicySet_empty(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
@@ -197,7 +197,7 @@ func TestAccTFEPolicySet_updatePopulated(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFEPolicySet_populated, rInt),
+				Config: testAccTFEPolicySet_populated(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetPopulated(policySet, orgName),
@@ -213,7 +213,7 @@ func TestAccTFEPolicySet_updatePopulated(t *testing.T) {
 			},
 
 			{
-				Config: fmt.Sprintf(testAccTFEPolicySet_updatePopulated, rInt),
+				Config: testAccTFEPolicySet_updatePopulated(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetPopulatedUpdated(policySet, orgName),
@@ -242,7 +242,7 @@ func TestAccTFEPolicySet_updatePopulatedWorkspaceIDs(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFEPolicySet_populatedWorkspaceIDs, rInt),
+				Config: testAccTFEPolicySet_populatedWorkspaceIDs(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetPopulated(policySet, orgName),
@@ -258,7 +258,7 @@ func TestAccTFEPolicySet_updatePopulatedWorkspaceIDs(t *testing.T) {
 			},
 
 			{
-				Config: fmt.Sprintf(testAccTFEPolicySet_updatePopulatedWorkspaceIDs, rInt),
+				Config: testAccTFEPolicySet_updatePopulatedWorkspaceIDs(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetPopulatedUpdated(policySet, orgName),
@@ -287,7 +287,7 @@ func TestAccTFEPolicySet_updateToGlobal(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFEPolicySet_populated, rInt),
+				Config: testAccTFEPolicySet_populated(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetPopulated(policySet, orgName),
@@ -303,7 +303,7 @@ func TestAccTFEPolicySet_updateToGlobal(t *testing.T) {
 			},
 
 			{
-				Config: fmt.Sprintf(testAccTFEPolicySet_global, rInt),
+				Config: testAccTFEPolicySet_global(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetGlobal(policySet),
@@ -330,7 +330,7 @@ func TestAccTFEPolicySet_updateWorkspaceIDsToGlobal(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFEPolicySet_populatedWorkspaceIDs, rInt),
+				Config: testAccTFEPolicySet_populatedWorkspaceIDs(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetPopulated(policySet, orgName),
@@ -346,7 +346,7 @@ func TestAccTFEPolicySet_updateWorkspaceIDsToGlobal(t *testing.T) {
 			},
 
 			{
-				Config: fmt.Sprintf(testAccTFEPolicySet_global, rInt),
+				Config: testAccTFEPolicySet_global(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetGlobal(policySet),
@@ -373,7 +373,7 @@ func TestAccTFEPolicySet_updateToWorkspace(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFEPolicySet_global, rInt),
+				Config: testAccTFEPolicySet_global(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetGlobal(policySet),
@@ -387,7 +387,7 @@ func TestAccTFEPolicySet_updateToWorkspace(t *testing.T) {
 			},
 
 			{
-				Config: fmt.Sprintf(testAccTFEPolicySet_populated, rInt),
+				Config: testAccTFEPolicySet_populated(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetPopulated(policySet, orgName),
@@ -416,7 +416,7 @@ func TestAccTFEPolicySet_updateGlobalToWorkspaceIDs(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFEPolicySet_global, rInt),
+				Config: testAccTFEPolicySet_global(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetGlobal(policySet),
@@ -430,7 +430,7 @@ func TestAccTFEPolicySet_updateGlobalToWorkspaceIDs(t *testing.T) {
 			},
 
 			{
-				Config: fmt.Sprintf(testAccTFEPolicySet_populatedWorkspaceIDs, rInt),
+				Config: testAccTFEPolicySet_populatedWorkspaceIDs(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetPopulated(policySet, orgName),
@@ -472,7 +472,7 @@ func TestAccTFEPolicySet_vcs(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: getTestAccTFEPolicySetVCS(rInt),
+				Config: testAccTFEPolicySet_vcs(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
@@ -520,7 +520,7 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: getTestAccTFEPolicySetVCS(rInt),
+				Config: testAccTFEPolicySet_vcs(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
@@ -541,7 +541,7 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 				),
 			},
 			{
-				Config: getTestAccTFEPolicySetUpdateVCSBranch(rInt),
+				Config: testAccTFEPolicySet_updateVCSBranch(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
@@ -574,7 +574,7 @@ func TestAccTFEPolicySet_invalidName(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config:      fmt.Sprintf(testAccTFEPolicySet_invalidName, rInt),
+				Config:      testAccTFEPolicySet_invalidName(rInt),
 				ExpectError: regexp.MustCompile(`can only include letters, numbers, -, and _.`),
 			},
 		},
@@ -590,7 +590,7 @@ func TestAccTFEPolicySetImport(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFEPolicySet_populatedWorkspaceIDs, rInt),
+				Config: testAccTFEPolicySet_populatedWorkspaceIDs(rInt),
 			},
 
 			{
@@ -772,7 +772,8 @@ func testAccCheckTFEPolicySetDestroy(s *terraform.State) error {
 	return nil
 }
 
-const testAccTFEPolicySet_basic = `
+func testAccTFEPolicySet_basic(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -789,9 +790,11 @@ resource "tfe_policy_set" "foobar" {
   description  = "Policy Set"
   organization = "${tfe_organization.foobar.id}"
   policy_ids   = ["${tfe_sentinel_policy.foo.id}"]
-}`
+}`, rInt)
+}
 
-const testAccTFEPolicySet_empty = `
+func testAccTFEPolicySet_empty(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -800,9 +803,11 @@ resource "tfe_organization" "foobar" {
   name         = "tst-terraform"
   description  = "Policy Set"
   organization = "${tfe_organization.foobar.id}"
-}`
+}`, rInt)
+}
 
-const testAccTFEPolicySet_populated = `
+func testAccTFEPolicySet_populated(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -824,9 +829,11 @@ resource "tfe_policy_set" "foobar" {
   organization           = "${tfe_organization.foobar.id}"
   policy_ids             = ["${tfe_sentinel_policy.foo.id}"]
   workspace_external_ids = ["${tfe_workspace.foo.id}"]
-}`
+}`, rInt)
+}
 
-const testAccTFEPolicySet_populatedWorkspaceIDs = `
+func testAccTFEPolicySet_populatedWorkspaceIDs(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -848,9 +855,11 @@ resource "tfe_policy_set" "foobar" {
   organization  = "${tfe_organization.foobar.id}"
   policy_ids    = ["${tfe_sentinel_policy.foo.id}"]
   workspace_ids = ["${tfe_workspace.foo.id}"]
-}`
+}`, rInt)
+}
 
-const testAccTFEPolicySet_updatePopulated = `
+func testAccTFEPolicySet_updatePopulated(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -883,9 +892,11 @@ resource "tfe_policy_set" "foobar" {
   organization           = "${tfe_organization.foobar.id}"
   policy_ids             = ["${tfe_sentinel_policy.bar.id}"]
   workspace_external_ids = ["${tfe_workspace.bar.id}"]
-}`
+}`, rInt)
+}
 
-const testAccTFEPolicySet_updatePopulatedWorkspaceIDs = `
+func testAccTFEPolicySet_updatePopulatedWorkspaceIDs(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -918,9 +929,11 @@ resource "tfe_policy_set" "foobar" {
   organization  = "${tfe_organization.foobar.id}"
   policy_ids    = ["${tfe_sentinel_policy.bar.id}"]
   workspace_ids = ["${tfe_workspace.bar.id}"]
-}`
+}`, rInt)
+}
 
-const testAccTFEPolicySet_global = `
+func testAccTFEPolicySet_global(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -942,9 +955,10 @@ resource "tfe_policy_set" "foobar" {
   organization = "${tfe_organization.foobar.id}"
   global       = true
   policy_ids   = ["${tfe_sentinel_policy.foo.id}"]
-}`
+}`, rInt)
+}
 
-func getTestAccTFEPolicySetVCS(rInt int) string {
+func testAccTFEPolicySet_vcs(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
@@ -979,7 +993,7 @@ resource "tfe_policy_set" "foobar" {
 	)
 }
 
-func getTestAccTFEPolicySetUpdateVCSBranch(rInt int) string {
+func testAccTFEPolicySet_updateVCSBranch(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
@@ -1015,7 +1029,8 @@ resource "tfe_policy_set" "foobar" {
 	)
 }
 
-const testAccTFEPolicySet_invalidName = `
+func testAccTFEPolicySet_invalidName(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -1032,4 +1047,5 @@ resource "tfe_policy_set" "foobar" {
   description  = "Policy Set"
   organization = "${tfe_organization.foobar.id}"
   policy_ids   = ["${tfe_sentinel_policy.foo.id}"]
-}`
+}`, rInt)
+}

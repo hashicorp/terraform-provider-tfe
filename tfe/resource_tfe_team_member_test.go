@@ -88,7 +88,7 @@ func TestAccTFETeamMember_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFETeamMemberDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFETeamMember_basic, rInt),
+				Config: testAccTFETeamMember_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamMemberExists(
 						"tfe_team_member.foobar", user),
@@ -110,7 +110,7 @@ func TestAccTFETeamMember_import(t *testing.T) {
 		CheckDestroy: testAccCheckTFETeamMemberDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFETeamMember_basic, rInt),
+				Config: testAccTFETeamMember_basic(rInt),
 			},
 
 			{
@@ -213,7 +213,8 @@ func testAccCheckTFETeamMemberDestroy(s *terraform.State) error {
 	return nil
 }
 
-const testAccTFETeamMember_basic = `
+func testAccTFETeamMember_basic(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -227,4 +228,5 @@ resource "tfe_team" "foobar" {
 resource "tfe_team_member" "foobar" {
   team_id  = "${tfe_team.foobar.id}"
   username = "admin"
-}`
+}`, rInt)
+}

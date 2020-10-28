@@ -21,7 +21,7 @@ func TestAccTFESentinelPolicy_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFESentinelPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFESentinelPolicy_basic, rInt),
+				Config: testAccTFESentinelPolicy_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFESentinelPolicyExists(
 						"tfe_sentinel_policy.foobar", policy),
@@ -50,7 +50,7 @@ func TestAccTFESentinelPolicy_update(t *testing.T) {
 		CheckDestroy: testAccCheckTFESentinelPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFESentinelPolicy_basic, rInt),
+				Config: testAccTFESentinelPolicy_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFESentinelPolicyExists(
 						"tfe_sentinel_policy.foobar", policy),
@@ -67,7 +67,7 @@ func TestAccTFESentinelPolicy_update(t *testing.T) {
 			},
 
 			{
-				Config: fmt.Sprintf(testAccTFESentinelPolicy_update, rInt),
+				Config: testAccTFESentinelPolicy_update(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFESentinelPolicyExists(
 						"tfe_sentinel_policy.foobar", policy),
@@ -95,7 +95,7 @@ func TestAccTFESentinelPolicy_import(t *testing.T) {
 		CheckDestroy: testAccCheckTFESentinelPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFESentinelPolicy_basic, rInt),
+				Config: testAccTFESentinelPolicy_basic(rInt),
 			},
 
 			{
@@ -188,7 +188,8 @@ func testAccCheckTFESentinelPolicyDestroy(s *terraform.State) error {
 	return nil
 }
 
-const testAccTFESentinelPolicy_basic = `
+func testAccTFESentinelPolicy_basic(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -200,9 +201,11 @@ resource "tfe_sentinel_policy" "foobar" {
   organization = "${tfe_organization.foobar.id}"
   policy       = "main = rule { true }"
   enforce_mode = "hard-mandatory"
-}`
+}`, rInt)
+}
 
-const testAccTFESentinelPolicy_update = `
+func testAccTFESentinelPolicy_update(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -214,4 +217,5 @@ resource "tfe_sentinel_policy" "foobar" {
   organization = "${tfe_organization.foobar.id}"
   policy       = "main = rule { false }"
   enforce_mode = "soft-mandatory"
-}`
+}`, rInt)
+}

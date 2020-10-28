@@ -11,6 +11,7 @@ import (
 
 func TestAccTFEOrganizationMembershipDataSource_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
@@ -22,7 +23,7 @@ func TestAccTFEOrganizationMembershipDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_organization_membership.foobar", "email", "example@hashicorp.com"),
 					resource.TestCheckResourceAttr(
-						"data.tfe_organization_membership.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
+						"data.tfe_organization_membership.foobar", "organization", orgName),
 					resource.TestCheckResourceAttrSet("data.tfe_organization_membership.foobar", "user_id"),
 				),
 			},

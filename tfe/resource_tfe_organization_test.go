@@ -14,6 +14,7 @@ import (
 func TestAccTFEOrganization_basic(t *testing.T) {
 	org := &tfe.Organization{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -21,13 +22,13 @@ func TestAccTFEOrganization_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFEOrganization_basic, rInt),
+				Config: testAccTFEOrganization_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
 						"tfe_organization.foobar", org),
-					testAccCheckTFEOrganizationAttributes(org, fmt.Sprintf("tst-terraform-%d", rInt)),
+					testAccCheckTFEOrganizationAttributes(org, orgName),
 					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "name", fmt.Sprintf("tst-terraform-%d", rInt)),
+						"tfe_organization.foobar", "name", orgName),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "email", "admin@company.com"),
 					resource.TestCheckResourceAttr(
@@ -42,6 +43,7 @@ func TestAccTFEOrganization_update(t *testing.T) {
 	org := &tfe.Organization{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	rInt1 := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -49,13 +51,13 @@ func TestAccTFEOrganization_update(t *testing.T) {
 		CheckDestroy: testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFEOrganization_basic, rInt),
+				Config: testAccTFEOrganization_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
 						"tfe_organization.foobar", org),
-					testAccCheckTFEOrganizationAttributes(org, fmt.Sprintf("tst-terraform-%d", rInt)),
+					testAccCheckTFEOrganizationAttributes(org, orgName),
 					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "name", fmt.Sprintf("tst-terraform-%d", rInt)),
+						"tfe_organization.foobar", "name", orgName),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "email", "admin@company.com"),
 					resource.TestCheckResourceAttr(
@@ -64,7 +66,7 @@ func TestAccTFEOrganization_update(t *testing.T) {
 			},
 
 			{
-				Config: fmt.Sprintf(testAccTFEOrganization_update, rInt1),
+				Config: testAccTFEOrganization_update(rInt1),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
 						"tfe_organization.foobar", org),
@@ -96,7 +98,7 @@ func TestAccTFEOrganization_import(t *testing.T) {
 		CheckDestroy: testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFEOrganization_basic, rInt),
+				Config: testAccTFEOrganization_basic(rInt),
 			},
 
 			{
@@ -208,17 +210,21 @@ func testAccCheckTFEOrganizationDestroy(s *terraform.State) error {
 	return nil
 }
 
-const testAccTFEOrganization_basic = `
+func testAccTFEOrganization_basic(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
-}`
+}`, rInt)
+}
 
-const testAccTFEOrganization_update = `
+func testAccTFEOrganization_update(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name                     = "tst-terraform-%d"
   email                    = "admin-updated@company.com"
   session_timeout_minutes  = 3600
   session_remember_minutes = 3600
   owners_team_saml_role_id = "owners"
-}`
+}`, rInt)
+}

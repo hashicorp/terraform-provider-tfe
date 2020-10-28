@@ -27,7 +27,7 @@ func TestAccTFERegistryModule_vcs(t *testing.T) {
 		CheckDestroy: testAccCheckTFERegistryModuleDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: getTestAccTFERegistryModuleVCS(rInt),
+				Config: testAccTFERegistryModule_vcs(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFERegistryModuleExists(
 						"tfe_registry_module.foobar", orgName, registryModule),
@@ -62,7 +62,7 @@ func TestAccTFERegistryModule_emptyVCSRepo(t *testing.T) {
 		CheckDestroy: testAccCheckTFERegistryModuleDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config:      fmt.Sprintf(testAccTFERegistryModule_emptyVCSRepo, rInt, GITHUB_TOKEN),
+				Config:      testAccTFERegistryModule_emptyVCSRepo(rInt, GITHUB_TOKEN),
 				ExpectError: regexp.MustCompile(`Missing required argument`),
 			},
 		},
@@ -81,7 +81,7 @@ func TestAccTFERegistryModuleImport(t *testing.T) {
 		CheckDestroy: testAccCheckTFERegistryModuleDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: getTestAccTFERegistryModuleVCS(rInt),
+				Config: testAccTFERegistryModule_vcs(rInt),
 			},
 			{
 				ResourceName:        "tfe_registry_module.foobar",
@@ -221,7 +221,7 @@ func getRegistryModuleProvider() string {
 	return strings.SplitN(getRegistryModuleRepository(), "-", 3)[1]
 }
 
-func getTestAccTFERegistryModuleVCS(rInt int) string {
+func testAccTFERegistryModule_vcs(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
  name  = "tst-terraform-%d"
@@ -249,7 +249,8 @@ resource "tfe_registry_module" "foobar" {
 		GITHUB_REGISTRY_MODULE_IDENTIFIER)
 }
 
-const testAccTFERegistryModule_emptyVCSRepo = `
+func testAccTFERegistryModule_emptyVCSRepo(rInt int, token string) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
  name  = "tst-terraform-%d"
  email = "admin@company.com"
@@ -265,4 +266,5 @@ resource "tfe_oauth_client" "foobar" {
 
 resource "tfe_registry_module" "foobar" {
  vcs_repo {}
-}`
+}`, rInt, token)
+}

@@ -21,7 +21,7 @@ func TestAccTFEVariable_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFEVariable_basic, rInt),
+				Config: testAccTFEVariable_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEVariableExists(
 						"tfe_variable.foobar", variable),
@@ -54,7 +54,7 @@ func TestAccTFEVariable_update(t *testing.T) {
 		CheckDestroy: testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFEVariable_basic, rInt),
+				Config: testAccTFEVariable_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEVariableExists(
 						"tfe_variable.foobar", variable),
@@ -75,7 +75,7 @@ func TestAccTFEVariable_update(t *testing.T) {
 			},
 
 			{
-				Config: fmt.Sprintf(testAccTFEVariable_update, rInt),
+				Config: testAccTFEVariable_update(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEVariableExists(
 						"tfe_variable.foobar", variable),
@@ -109,7 +109,7 @@ func TestAccTFEVariable_update_key_sensitive(t *testing.T) {
 		CheckDestroy: testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFEVariable_update, rInt),
+				Config: testAccTFEVariable_update(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEVariableExists(
 						"tfe_variable.foobar", first),
@@ -129,7 +129,7 @@ func TestAccTFEVariable_update_key_sensitive(t *testing.T) {
 				),
 			},
 			{
-				Config: fmt.Sprintf(testAccTFEVariable_update_key_sensitive, rInt),
+				Config: testAccTFEVariable_update_key_sensitive(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEVariableExists(
 						"tfe_variable.foobar", second),
@@ -162,7 +162,7 @@ func TestAccTFEVariable_import(t *testing.T) {
 		CheckDestroy: testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccTFEVariable_basic, rInt),
+				Config: testAccTFEVariable_basic(rInt),
 			},
 
 			{
@@ -332,7 +332,8 @@ func testAccCheckTFEVariableDestroy(s *terraform.State) error {
 	return nil
 }
 
-const testAccTFEVariable_basic = `
+func testAccTFEVariable_basic(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -349,9 +350,11 @@ resource "tfe_variable" "foobar" {
   description  = "some description"
   category     = "env"
   workspace_id = "${tfe_workspace.foobar.id}"
-}`
+}`, rInt)
+}
 
-const testAccTFEVariable_update = `
+func testAccTFEVariable_update(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -370,9 +373,11 @@ resource "tfe_variable" "foobar" {
   hcl          = true
   sensitive    = true
   workspace_id = "${tfe_workspace.foobar.id}"
-}`
+}`, rInt)
+}
 
-const testAccTFEVariable_update_key_sensitive = `
+func testAccTFEVariable_update_key_sensitive(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
@@ -391,4 +396,5 @@ resource "tfe_variable" "foobar" {
   hcl          = true
   sensitive    = true
   workspace_id = "${tfe_workspace.foobar.id}"
-}`
+}`, rInt)
+}
