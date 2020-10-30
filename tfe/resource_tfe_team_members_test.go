@@ -12,6 +12,7 @@ import (
 )
 
 func TestAccTFETeamMembers_basic(t *testing.T) {
+	t.Skip("Skipping, due to current testing limitations; namely, an organization membership must first be confirmed.")
 	users := []*tfe.User{}
 	TFE_USER1_HASH := hashSchemaString(TFE_USER1)
 
@@ -44,6 +45,7 @@ func TestAccTFETeamMembers_basic(t *testing.T) {
 }
 
 func TestAccTFETeamMembers_update(t *testing.T) {
+	t.Skip("Skipping, due to current testing limitations; namely, an organization membership must first be confirmed.")
 	users := []*tfe.User{}
 	TFE_USER1_HASH := hashSchemaString(TFE_USER1)
 	TFE_USER2_HASH := hashSchemaString(TFE_USER2)
@@ -95,6 +97,7 @@ func TestAccTFETeamMembers_update(t *testing.T) {
 }
 
 func TestAccTFETeamMembers_import(t *testing.T) {
+	t.Skip("Skipping, due to current testing limitations; namely, an organization membership must first be confirmed.")
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
