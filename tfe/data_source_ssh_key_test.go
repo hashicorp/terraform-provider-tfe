@@ -11,6 +11,7 @@ import (
 
 func TestAccTFESSHKeyDataSource_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
@@ -22,7 +23,7 @@ func TestAccTFESSHKeyDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_ssh_key.foobar", "name", fmt.Sprintf("ssh-key-test-%d", rInt)),
 					resource.TestCheckResourceAttr(
-						"data.tfe_ssh_key.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
+						"data.tfe_ssh_key.foobar", "organization", orgName),
 					resource.TestCheckResourceAttrSet("data.tfe_ssh_key.foobar", "id"),
 				),
 			},

@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"testing"
+	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
@@ -14,6 +16,7 @@ import (
 
 func TestAccTFEWorkspace_basic(t *testing.T) {
 	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -21,7 +24,7 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspace_basic,
+				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
@@ -49,13 +52,15 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 }
 
 func TestAccTFEWorkspace_panic(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config:             testAccTFEWorkspace_basic,
+				Config:             testAccTFEWorkspace_basic(rInt),
 				ExpectNonEmptyPlan: true,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
@@ -69,6 +74,7 @@ func TestAccTFEWorkspace_panic(t *testing.T) {
 
 func TestAccTFEWorkspace_monorepo(t *testing.T) {
 	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -76,7 +82,7 @@ func TestAccTFEWorkspace_monorepo(t *testing.T) {
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspace_monorepo,
+				Config: testAccTFEWorkspace_monorepo(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
@@ -103,6 +109,8 @@ func TestAccTFEWorkspace_monorepo(t *testing.T) {
 
 func TestAccTFEWorkspace_renamed(t *testing.T) {
 	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -110,7 +118,7 @@ func TestAccTFEWorkspace_renamed(t *testing.T) {
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspace_basic,
+				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
@@ -129,8 +137,8 @@ func TestAccTFEWorkspace_renamed(t *testing.T) {
 			},
 
 			{
-				PreConfig: testAccCheckTFEWorkspaceRename,
-				Config:    testAccTFEWorkspace_renamed,
+				PreConfig: testAccCheckTFEWorkspaceRename(orgName),
+				Config:    testAccTFEWorkspace_renamed(rInt),
 				PlanOnly:  true,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
@@ -154,6 +162,7 @@ func TestAccTFEWorkspace_renamed(t *testing.T) {
 
 func TestAccTFEWorkspace_update(t *testing.T) {
 	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -161,7 +170,7 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspace_basic,
+				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
@@ -179,7 +188,7 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFEWorkspace_update,
+				Config: testAccTFEWorkspace_update(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
@@ -212,6 +221,7 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 
 func TestAccTFEWorkspace_updateWorkingDirectory(t *testing.T) {
 	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -219,7 +229,7 @@ func TestAccTFEWorkspace_updateWorkingDirectory(t *testing.T) {
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspace_basic,
+				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
@@ -237,7 +247,7 @@ func TestAccTFEWorkspace_updateWorkingDirectory(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFEWorkspace_updateAddWorkingDirectory,
+				Config: testAccTFEWorkspace_updateAddWorkingDirectory(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
@@ -249,7 +259,7 @@ func TestAccTFEWorkspace_updateWorkingDirectory(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFEWorkspace_updateRemoveWorkingDirectory,
+				Config: testAccTFEWorkspace_updateRemoveWorkingDirectory(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
@@ -266,6 +276,7 @@ func TestAccTFEWorkspace_updateWorkingDirectory(t *testing.T) {
 
 func TestAccTFEWorkspace_updateFileTriggers(t *testing.T) {
 	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -273,7 +284,7 @@ func TestAccTFEWorkspace_updateFileTriggers(t *testing.T) {
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspace_basic,
+				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
@@ -283,7 +294,7 @@ func TestAccTFEWorkspace_updateFileTriggers(t *testing.T) {
 			},
 
 			{
-				Config: testAccTFEWorkspace_basicFileTriggersOff,
+				Config: testAccTFEWorkspace_basicFileTriggersOff(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
@@ -297,6 +308,7 @@ func TestAccTFEWorkspace_updateFileTriggers(t *testing.T) {
 
 func TestAccTFEWorkspace_updateTriggerPrefixes(t *testing.T) {
 	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -304,7 +316,7 @@ func TestAccTFEWorkspace_updateTriggerPrefixes(t *testing.T) {
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspace_triggerPrefixes,
+				Config: testAccTFEWorkspace_triggerPrefixes(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
@@ -318,7 +330,7 @@ func TestAccTFEWorkspace_updateTriggerPrefixes(t *testing.T) {
 			},
 
 			{
-				Config: testAccTFEWorkspace_updateEmptyTriggerPrefixes,
+				Config: testAccTFEWorkspace_updateEmptyTriggerPrefixes(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
@@ -333,6 +345,7 @@ func TestAccTFEWorkspace_updateTriggerPrefixes(t *testing.T) {
 
 func TestAccTFEWorkspace_updateSpeculative(t *testing.T) {
 	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -340,7 +353,7 @@ func TestAccTFEWorkspace_updateSpeculative(t *testing.T) {
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspace_basic,
+				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
@@ -350,7 +363,7 @@ func TestAccTFEWorkspace_updateSpeculative(t *testing.T) {
 			},
 
 			{
-				Config: testAccTFEWorkspace_basicSpeculativeOff,
+				Config: testAccTFEWorkspace_basicSpeculativeOff(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
@@ -364,6 +377,7 @@ func TestAccTFEWorkspace_updateSpeculative(t *testing.T) {
 
 func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
 	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
@@ -382,7 +396,7 @@ func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspace_basic,
+				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
@@ -400,7 +414,7 @@ func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFEWorkspace_updateAddVCSRepo,
+				Config: testAccTFEWorkspace_updateAddVCSRepo(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceUpdatedAddVCSRepoAttributes(workspace),
@@ -415,7 +429,7 @@ func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFEWorkspace_updateUpdateVCSRepoBranch,
+				Config: testAccTFEWorkspace_updateUpdateVCSRepoBranch(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceUpdatedUpdateVCSRepoBranchAttributes(workspace),
@@ -430,7 +444,7 @@ func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFEWorkspace_updateRemoveVCSRepo,
+				Config: testAccTFEWorkspace_updateRemoveVCSRepo(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceUpdatedRemoveVCSRepoAttributes(workspace),
@@ -445,6 +459,7 @@ func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
 
 func TestAccTFEWorkspace_sshKey(t *testing.T) {
 	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -452,7 +467,7 @@ func TestAccTFEWorkspace_sshKey(t *testing.T) {
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspace_basic,
+				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
@@ -461,7 +476,7 @@ func TestAccTFEWorkspace_sshKey(t *testing.T) {
 			},
 
 			{
-				Config: testAccTFEWorkspace_sshKey,
+				Config: testAccTFEWorkspace_sshKey(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
@@ -472,7 +487,7 @@ func TestAccTFEWorkspace_sshKey(t *testing.T) {
 			},
 
 			{
-				Config: testAccTFEWorkspace_noSSHKey,
+				Config: testAccTFEWorkspace_noSSHKey(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
@@ -484,13 +499,15 @@ func TestAccTFEWorkspace_sshKey(t *testing.T) {
 }
 
 func TestAccTFEWorkspace_import(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspace_basic,
+				Config: testAccTFEWorkspace_basic(rInt),
 			},
 
 			{
@@ -504,6 +521,7 @@ func TestAccTFEWorkspace_import(t *testing.T) {
 
 func TestAccTFEWorkspace_importVCSBranch(t *testing.T) {
 	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
@@ -523,7 +541,7 @@ func TestAccTFEWorkspace_importVCSBranch(t *testing.T) {
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspace_updateUpdateVCSRepoBranch,
+				Config: testAccTFEWorkspace_updateUpdateVCSRepoBranch(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceUpdatedUpdateVCSRepoBranchAttributes(workspace),
@@ -674,21 +692,23 @@ func testAccCheckTFEWorkspaceMonorepoAttributes(
 	}
 }
 
-func testAccCheckTFEWorkspaceRename() {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+func testAccCheckTFEWorkspaceRename(orgName string) func() {
+	return func() {
+		tfeClient := testAccProvider.Meta().(*tfe.Client)
 
-	w, err := tfeClient.Workspaces.Update(
-		context.Background(),
-		"tst-terraform",
-		"workspace-test",
-		tfe.WorkspaceUpdateOptions{Name: tfe.String("renamed-out-of-band")},
-	)
-	if err != nil {
-		log.Fatalf("Could not rename the workspace out of band: %v", err)
-	}
+		w, err := tfeClient.Workspaces.Update(
+			context.Background(),
+			orgName,
+			"workspace-test",
+			tfe.WorkspaceUpdateOptions{Name: tfe.String("renamed-out-of-band")},
+		)
+		if err != nil {
+			log.Fatalf("Could not rename the workspace out of band: %v", err)
+		}
 
-	if w.Name != "renamed-out-of-band" {
-		log.Fatalf("Failed to rename the workspace out of band: %v", err)
+		if w.Name != "renamed-out-of-band" {
+			log.Fatalf("Failed to rename the workspace out of band: %v", err)
+		}
 	}
 }
 
@@ -854,9 +874,10 @@ func testAccCheckTFEWorkspaceDestroy(s *terraform.State) error {
 	return nil
 }
 
-const testAccTFEWorkspace_basic = `
+func testAccTFEWorkspace_basic(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -864,11 +885,13 @@ resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
   organization = "${tfe_organization.foobar.id}"
   auto_apply   = true
-}`
+}`, rInt)
+}
 
-const testAccTFEWorkspace_basicFileTriggersOff = `
+func testAccTFEWorkspace_basicFileTriggersOff(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -877,11 +900,13 @@ resource "tfe_workspace" "foobar" {
   organization          = "${tfe_organization.foobar.id}"
   auto_apply            = true
   file_triggers_enabled = false
-}`
+}`, rInt)
+}
 
-const testAccTFEWorkspace_basicSpeculativeOff = `
+func testAccTFEWorkspace_basicSpeculativeOff(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -890,11 +915,13 @@ resource "tfe_workspace" "foobar" {
   organization          = "${tfe_organization.foobar.id}"
   auto_apply            = true
   speculative_enabled = false
-}`
+}`, rInt)
+}
 
-const testAccTFEWorkspace_monorepo = `
+func testAccTFEWorkspace_monorepo(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -904,11 +931,13 @@ resource "tfe_workspace" "foobar" {
   file_triggers_enabled = true
   trigger_prefixes      = ["/modules", "/shared"]
   working_directory     = "/db"
-}`
+}`, rInt)
+}
 
-const testAccTFEWorkspace_renamed = `
+func testAccTFEWorkspace_renamed(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -916,11 +945,13 @@ resource "tfe_workspace" "foobar" {
   name         = "renamed-out-of-band"
   organization = "${tfe_organization.foobar.id}"
   auto_apply   = true
-}`
+}`, rInt)
+}
 
-const testAccTFEWorkspace_update = `
+func testAccTFEWorkspace_update(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -934,11 +965,13 @@ resource "tfe_workspace" "foobar" {
   trigger_prefixes      = ["/modules", "/shared"]
   working_directory     = "terraform/test"
   operations            = false
-}`
+}`, rInt)
+}
 
-const testAccTFEWorkspace_updateAddWorkingDirectory = `
+func testAccTFEWorkspace_updateAddWorkingDirectory(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -947,11 +980,13 @@ resource "tfe_workspace" "foobar" {
   organization          = "${tfe_organization.foobar.id}"
   auto_apply            = false
   working_directory     = "terraform/test"
-}`
+}`, rInt)
+}
 
-const testAccTFEWorkspace_updateRemoveWorkingDirectory = `
+func testAccTFEWorkspace_updateRemoveWorkingDirectory(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -959,11 +994,13 @@ resource "tfe_workspace" "foobar" {
   name                  = "workspace-updated"
   organization          = "${tfe_organization.foobar.id}"
   auto_apply            = false
-}`
+}`, rInt)
+}
 
-const testAccTFEWorkspace_sshKey = `
+func testAccTFEWorkspace_sshKey(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -978,11 +1015,13 @@ resource "tfe_workspace" "foobar" {
   organization = "${tfe_organization.foobar.id}"
   auto_apply   = true
   ssh_key_id   = "${tfe_ssh_key.foobar.id}"
-}`
+}`, rInt)
+}
 
-const testAccTFEWorkspace_noSSHKey = `
+func testAccTFEWorkspace_noSSHKey(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -996,11 +1035,13 @@ resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
   organization = "${tfe_organization.foobar.id}"
   auto_apply   = true
-}`
+}`, rInt)
+}
 
-const testAccTFEWorkspace_triggerPrefixes = `
+func testAccTFEWorkspace_triggerPrefixes(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -1008,22 +1049,26 @@ resource "tfe_workspace" "foobar" {
   name                  = "workspace"
   organization          = "${tfe_organization.foobar.id}"
   trigger_prefixes      = ["/modules", "/shared"]
-}`
+}`, rInt)
+}
 
-const testAccTFEWorkspace_updateEmptyTriggerPrefixes = `
+func testAccTFEWorkspace_updateEmptyTriggerPrefixes(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 resource "tfe_workspace" "foobar" {
   name                  = "workspace-test"
   organization          = "${tfe_organization.foobar.id}"
   auto_apply            = true
-}`
+}`, rInt)
+}
 
-var testAccTFEWorkspace_updateAddVCSRepo = fmt.Sprintf(`
+func testAccTFEWorkspace_updateAddVCSRepo(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -1045,13 +1090,16 @@ resource "tfe_workspace" "foobar" {
   }
 }
 `,
-	GITHUB_TOKEN,
-	GITHUB_WORKSPACE_IDENTIFIER,
-)
+		rInt,
+		GITHUB_TOKEN,
+		GITHUB_WORKSPACE_IDENTIFIER,
+	)
+}
 
-var testAccTFEWorkspace_updateUpdateVCSRepoBranch = fmt.Sprintf(`
+func testAccTFEWorkspace_updateUpdateVCSRepoBranch(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -1074,14 +1122,17 @@ resource "tfe_workspace" "foobar" {
   }
 }
 `,
-	GITHUB_TOKEN,
-	GITHUB_WORKSPACE_IDENTIFIER,
-	GITHUB_WORKSPACE_BRANCH,
-)
+		rInt,
+		GITHUB_TOKEN,
+		GITHUB_WORKSPACE_IDENTIFIER,
+		GITHUB_WORKSPACE_BRANCH,
+	)
+}
 
-const testAccTFEWorkspace_updateRemoveVCSRepo = `
+func testAccTFEWorkspace_updateRemoveVCSRepo(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -1090,4 +1141,5 @@ resource "tfe_workspace" "foobar" {
   organization = "${tfe_organization.foobar.id}"
   auto_apply   = true
 }
-`
+`, rInt)
+}

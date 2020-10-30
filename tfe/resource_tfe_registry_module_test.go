@@ -2,9 +2,11 @@ package tfe
 
 import (
 	"fmt"
+	"math/rand"
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
@@ -13,6 +15,8 @@ import (
 
 func TestAccTFERegistryModule_vcs(t *testing.T) {
 	registryModule := &tfe.RegistryModule{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
@@ -23,13 +27,13 @@ func TestAccTFERegistryModule_vcs(t *testing.T) {
 		CheckDestroy: testAccCheckTFERegistryModuleDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFERegistryModule_vcs,
+				Config: testAccTFERegistryModule_vcs(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFERegistryModuleExists(
-						"tfe_registry_module.foobar", registryModule),
-					testAccCheckTFERegistryModuleAttributes(registryModule),
+						"tfe_registry_module.foobar", orgName, registryModule),
+					testAccCheckTFERegistryModuleAttributes(registryModule, orgName),
 					resource.TestCheckResourceAttr(
-						"tfe_registry_module.foobar", "organization", "tst-terraform"),
+						"tfe_registry_module.foobar", "organization", orgName),
 					resource.TestCheckResourceAttr(
 						"tfe_registry_module.foobar", "name", getRegistryModuleName()),
 					resource.TestCheckResourceAttr(
@@ -47,6 +51,8 @@ func TestAccTFERegistryModule_vcs(t *testing.T) {
 }
 
 func TestAccTFERegistryModule_emptyVCSRepo(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
@@ -56,7 +62,7 @@ func TestAccTFERegistryModule_emptyVCSRepo(t *testing.T) {
 		CheckDestroy: testAccCheckTFERegistryModuleDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccTFERegistryModule_emptyVCSRepo,
+				Config:      testAccTFERegistryModule_emptyVCSRepo(rInt, GITHUB_TOKEN),
 				ExpectError: regexp.MustCompile(`Missing required argument`),
 			},
 		},
@@ -64,6 +70,8 @@ func TestAccTFERegistryModule_emptyVCSRepo(t *testing.T) {
 }
 
 func TestAccTFERegistryModuleImport(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
@@ -73,19 +81,19 @@ func TestAccTFERegistryModuleImport(t *testing.T) {
 		CheckDestroy: testAccCheckTFERegistryModuleDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFERegistryModule_vcs,
+				Config: testAccTFERegistryModule_vcs(rInt),
 			},
 			{
 				ResourceName:        "tfe_registry_module.foobar",
 				ImportState:         true,
-				ImportStateIdPrefix: fmt.Sprintf("tst-terraform/%v/%v/", getRegistryModuleName(), getRegistryModuleProvider()),
+				ImportStateIdPrefix: fmt.Sprintf("tst-terraform-%d/%v/%v/", rInt, getRegistryModuleName(), getRegistryModuleProvider()),
 				ImportStateVerify:   true,
 			},
 		},
 	})
 }
 
-func testAccCheckTFERegistryModuleExists(n string, registryModule *tfe.RegistryModule) resource.TestCheckFunc {
+func testAccCheckTFERegistryModuleExists(n, orgName string, registryModule *tfe.RegistryModule) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		tfeClient := testAccProvider.Meta().(*tfe.Client)
 
@@ -98,7 +106,7 @@ func testAccCheckTFERegistryModuleExists(n string, registryModule *tfe.RegistryM
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		rm, err := tfeClient.RegistryModules.Read(ctx, "tst-terraform", getRegistryModuleName(), getRegistryModuleProvider())
+		rm, err := tfeClient.RegistryModules.Read(ctx, orgName, getRegistryModuleName(), getRegistryModuleProvider())
 		if err != nil {
 			return err
 		}
@@ -113,7 +121,7 @@ func testAccCheckTFERegistryModuleExists(n string, registryModule *tfe.RegistryM
 	}
 }
 
-func testAccCheckTFERegistryModuleAttributes(registryModule *tfe.RegistryModule) resource.TestCheckFunc {
+func testAccCheckTFERegistryModuleAttributes(registryModule *tfe.RegistryModule, orgName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if registryModule.Name != getRegistryModuleName() {
 			return fmt.Errorf("Bad name: %s", registryModule.Name)
@@ -123,7 +131,7 @@ func testAccCheckTFERegistryModuleAttributes(registryModule *tfe.RegistryModule)
 			return fmt.Errorf("Bad module_provider: %s", registryModule.Provider)
 		}
 
-		if registryModule.Organization.Name != "tst-terraform" {
+		if registryModule.Organization.Name != orgName {
 			return fmt.Errorf("Bad organization: %v", registryModule.Organization.Name)
 		}
 
@@ -213,9 +221,10 @@ func getRegistryModuleProvider() string {
 	return strings.SplitN(getRegistryModuleRepository(), "-", 3)[1]
 }
 
-var testAccTFERegistryModule_vcs = fmt.Sprintf(`
+func testAccTFERegistryModule_vcs(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
- name  = "tst-terraform"
+ name  = "tst-terraform-%d"
  email = "admin@company.com"
 }
 
@@ -234,14 +243,16 @@ resource "tfe_registry_module" "foobar" {
    oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
  }
 }`,
-	GITHUB_TOKEN,
-	GITHUB_REGISTRY_MODULE_IDENTIFIER,
-	GITHUB_REGISTRY_MODULE_IDENTIFIER,
-)
+		rInt,
+		GITHUB_TOKEN,
+		GITHUB_REGISTRY_MODULE_IDENTIFIER,
+		GITHUB_REGISTRY_MODULE_IDENTIFIER)
+}
 
-const testAccTFERegistryModule_emptyVCSRepo = `
+func testAccTFERegistryModule_emptyVCSRepo(rInt int, token string) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
- name  = "tst-terraform"
+ name  = "tst-terraform-%d"
  email = "admin@company.com"
 }
 
@@ -255,4 +266,5 @@ resource "tfe_oauth_client" "foobar" {
 
 resource "tfe_registry_module" "foobar" {
  vcs_repo {}
-}`
+}`, rInt, token)
+}

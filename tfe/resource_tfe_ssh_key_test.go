@@ -2,7 +2,9 @@ package tfe
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
+	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
@@ -11,6 +13,7 @@ import (
 
 func TestAccTFESSHKey_basic(t *testing.T) {
 	sshKey := &tfe.SSHKey{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -18,7 +21,7 @@ func TestAccTFESSHKey_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFESSHKeyDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFESSHKey_basic,
+				Config: testAccTFESSHKey_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFESSHKeyExists(
 						"tfe_ssh_key.foobar", sshKey),
@@ -35,6 +38,7 @@ func TestAccTFESSHKey_basic(t *testing.T) {
 
 func TestAccTFESSHKey_update(t *testing.T) {
 	sshKey := &tfe.SSHKey{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -42,7 +46,7 @@ func TestAccTFESSHKey_update(t *testing.T) {
 		CheckDestroy: testAccCheckTFESSHKeyDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFESSHKey_basic,
+				Config: testAccTFESSHKey_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFESSHKeyExists(
 						"tfe_ssh_key.foobar", sshKey),
@@ -55,7 +59,7 @@ func TestAccTFESSHKey_update(t *testing.T) {
 			},
 
 			{
-				Config: testAccTFESSHKey_update,
+				Config: testAccTFESSHKey_update(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFESSHKeyExists(
 						"tfe_ssh_key.foobar", sshKey),
@@ -140,9 +144,10 @@ func testAccCheckTFESSHKeyDestroy(s *terraform.State) error {
 	return nil
 }
 
-const testAccTFESSHKey_basic = `
+func testAccTFESSHKey_basic(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -150,11 +155,13 @@ resource "tfe_ssh_key" "foobar" {
   name         = "ssh-key-test"
   organization = "${tfe_organization.foobar.id}"
   key          = "SSH-KEY-CONTENT"
-}`
+}`, rInt)
+}
 
-const testAccTFESSHKey_update = `
+func testAccTFESSHKey_update(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -162,4 +169,5 @@ resource "tfe_ssh_key" "foobar" {
   name         = "ssh-key-updated"
   organization = "${tfe_organization.foobar.id}"
   key          = "UPDATED-SSH-KEY-CONTENT"
-}`
+}`, rInt)
+}

@@ -2,7 +2,9 @@ package tfe
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
+	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
@@ -72,6 +74,7 @@ func TestUnpackTeamOrganizationMemberID(t *testing.T) {
 
 func TestAccTFETeamOrganizationMember_basic(t *testing.T) {
 	organizationMembership := &tfe.OrganizationMembership{ID: "sauce"}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -79,7 +82,7 @@ func TestAccTFETeamOrganizationMember_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFETeamOrganizationMemberDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamOrganizationMember_basic,
+				Config: testAccTFETeamOrganizationMember_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamOrganizationMemberExists(
 						"tfe_team_organization_member.foobar", organizationMembership),
@@ -91,13 +94,15 @@ func TestAccTFETeamOrganizationMember_basic(t *testing.T) {
 }
 
 func TestAccTFETeamOrganizationMember_import(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFETeamOrganizationMemberDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamOrganizationMember_basic,
+				Config: testAccTFETeamOrganizationMember_basic(rInt),
 			},
 
 			{
@@ -200,9 +205,10 @@ func testAccCheckTFETeamOrganizationMemberDestroy(s *terraform.State) error {
 	return nil
 }
 
-const testAccTFETeamOrganizationMember_basic = `
+func testAccTFETeamOrganizationMember_basic(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -219,4 +225,5 @@ resource "tfe_organization_membership" "foobar" {
 resource "tfe_team_organization_member" "foobar" {
   team_id  = "${tfe_team.foobar.id}"
   organization_membership_id = "${tfe_organization_membership.foobar.id}"
-}`
+}`, rInt)
+}

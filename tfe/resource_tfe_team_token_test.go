@@ -2,8 +2,10 @@ package tfe
 
 import (
 	"fmt"
+	"math/rand"
 	"regexp"
 	"testing"
+	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
@@ -12,6 +14,7 @@ import (
 
 func TestAccTFETeamToken_basic(t *testing.T) {
 	token := &tfe.TeamToken{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -19,7 +22,7 @@ func TestAccTFETeamToken_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFETeamTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamToken_basic,
+				Config: testAccTFETeamToken_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamTokenExists(
 						"tfe_team_token.foobar", token),
@@ -31,6 +34,7 @@ func TestAccTFETeamToken_basic(t *testing.T) {
 
 func TestAccTFETeamToken_existsWithoutForce(t *testing.T) {
 	token := &tfe.TeamToken{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -38,7 +42,7 @@ func TestAccTFETeamToken_existsWithoutForce(t *testing.T) {
 		CheckDestroy: testAccCheckTFETeamTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamToken_basic,
+				Config: testAccTFETeamToken_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamTokenExists(
 						"tfe_team_token.foobar", token),
@@ -46,7 +50,7 @@ func TestAccTFETeamToken_existsWithoutForce(t *testing.T) {
 			},
 
 			{
-				Config:      testAccTFETeamToken_existsWithoutForce,
+				Config:      testAccTFETeamToken_existsWithoutForce(rInt),
 				ExpectError: regexp.MustCompile(`token already exists`),
 			},
 		},
@@ -55,6 +59,7 @@ func TestAccTFETeamToken_existsWithoutForce(t *testing.T) {
 
 func TestAccTFETeamToken_existsWithForce(t *testing.T) {
 	token := &tfe.TeamToken{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -62,7 +67,7 @@ func TestAccTFETeamToken_existsWithForce(t *testing.T) {
 		CheckDestroy: testAccCheckTFETeamTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamToken_basic,
+				Config: testAccTFETeamToken_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamTokenExists(
 						"tfe_team_token.foobar", token),
@@ -70,7 +75,7 @@ func TestAccTFETeamToken_existsWithForce(t *testing.T) {
 			},
 
 			{
-				Config: testAccTFETeamToken_existsWithForce,
+				Config: testAccTFETeamToken_existsWithForce(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamTokenExists(
 						"tfe_team_token.regenerated", token),
@@ -81,13 +86,15 @@ func TestAccTFETeamToken_existsWithForce(t *testing.T) {
 }
 
 func TestAccTFETeamToken_import(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFETeamTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamToken_basic,
+				Config: testAccTFETeamToken_basic(rInt),
 			},
 
 			{
@@ -150,9 +157,10 @@ func testAccCheckTFETeamTokenDestroy(s *terraform.State) error {
 	return nil
 }
 
-const testAccTFETeamToken_basic = `
+func testAccTFETeamToken_basic(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -163,11 +171,13 @@ resource "tfe_team" "foobar" {
 
 resource "tfe_team_token" "foobar" {
   team_id = "${tfe_team.foobar.id}"
-}`
+}`, rInt)
+}
 
-const testAccTFETeamToken_existsWithoutForce = `
+func testAccTFETeamToken_existsWithoutForce(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -182,11 +192,13 @@ resource "tfe_team_token" "foobar" {
 
 resource "tfe_team_token" "error" {
   team_id = "${tfe_team.foobar.id}"
-}`
+}`, rInt)
+}
 
-const testAccTFETeamToken_existsWithForce = `
+func testAccTFETeamToken_existsWithForce(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -202,4 +214,5 @@ resource "tfe_team_token" "foobar" {
 resource "tfe_team_token" "regenerated" {
   team_id          = "${tfe_team.foobar.id}"
   force_regenerate = true
-}`
+}`, rInt)
+}

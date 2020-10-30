@@ -2,7 +2,9 @@ package tfe
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
+	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
@@ -11,6 +13,8 @@ import (
 
 func TestAccTFETeamAccess_write(t *testing.T) {
 	tmAccess := &tfe.TeamAccess{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
 	expectedPermissions := map[string]interface{}{
 		"runs":              tfe.RunsPermissionApply,
 		"variables":         tfe.VariablesPermissionWrite,
@@ -25,7 +29,7 @@ func TestAccTFETeamAccess_write(t *testing.T) {
 		CheckDestroy: testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamAccess_write,
+				Config: testAccTFETeamAccess_write(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamAccessExists(
 						"tfe_team_access.foobar", tmAccess),
@@ -45,6 +49,7 @@ func TestAccTFETeamAccess_write(t *testing.T) {
 
 func TestAccTFETeamAccess_custom(t *testing.T) {
 	tmAccess := &tfe.TeamAccess{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -52,7 +57,7 @@ func TestAccTFETeamAccess_custom(t *testing.T) {
 		CheckDestroy: testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamAccess_custom,
+				Config: testAccTFETeamAccess_custom(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamAccessExists(
 						"tfe_team_access.foobar", tmAccess),
@@ -81,6 +86,7 @@ func TestAccTFETeamAccess_custom(t *testing.T) {
 
 func TestAccTFETeamAccess_updateToCustom(t *testing.T) {
 	tmAccess := &tfe.TeamAccess{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -88,7 +94,7 @@ func TestAccTFETeamAccess_updateToCustom(t *testing.T) {
 		CheckDestroy: testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamAccess_write,
+				Config: testAccTFETeamAccess_write(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamAccessExists(
 						"tfe_team_access.foobar", tmAccess),
@@ -112,7 +118,7 @@ func TestAccTFETeamAccess_updateToCustom(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFETeamAccess_custom,
+				Config: testAccTFETeamAccess_custom(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamAccessExists(
 						"tfe_team_access.foobar", tmAccess),
@@ -141,6 +147,7 @@ func TestAccTFETeamAccess_updateToCustom(t *testing.T) {
 
 func TestAccTFETeamAccess_updateFromCustom(t *testing.T) {
 	tmAccess := &tfe.TeamAccess{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -148,7 +155,7 @@ func TestAccTFETeamAccess_updateFromCustom(t *testing.T) {
 		CheckDestroy: testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamAccess_custom,
+				Config: testAccTFETeamAccess_custom(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamAccessExists(
 						"tfe_team_access.foobar", tmAccess),
@@ -172,7 +179,7 @@ func TestAccTFETeamAccess_updateFromCustom(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFETeamAccess_plan,
+				Config: testAccTFETeamAccess_plan(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamAccessExists(
 						"tfe_team_access.foobar", tmAccess),
@@ -200,19 +207,21 @@ func TestAccTFETeamAccess_updateFromCustom(t *testing.T) {
 }
 
 func TestAccTFETeamAccess_import(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamAccess_write,
+				Config: testAccTFETeamAccess_write(rInt),
 			},
 
 			{
 				ResourceName:        "tfe_team_access.foobar",
 				ImportState:         true,
-				ImportStateIdPrefix: "tst-terraform/workspace-test/",
+				ImportStateIdPrefix: fmt.Sprintf("tst-terraform-%d/workspace-test/", rInt),
 				ImportStateVerify:   true,
 			},
 		},
@@ -299,9 +308,10 @@ func testAccCheckTFETeamAccessDestroy(s *terraform.State) error {
 	return nil
 }
 
-const testAccTFETeamAccess_write = `
+func testAccTFETeamAccess_write(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -319,11 +329,13 @@ resource "tfe_team_access" "foobar" {
   access       = "write"
   team_id      = "${tfe_team.foobar.id}"
   workspace_id = "${tfe_workspace.foobar.id}"
-}`
+}`, rInt)
+}
 
-const testAccTFETeamAccess_plan = `
+func testAccTFETeamAccess_plan(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -341,11 +353,13 @@ resource "tfe_team_access" "foobar" {
   access       = "plan"
   team_id      = "${tfe_team.foobar.id}"
   workspace_id = "${tfe_workspace.foobar.id}"
-}`
+}`, rInt)
+}
 
-const testAccTFETeamAccess_custom = `
+func testAccTFETeamAccess_custom(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -369,4 +383,5 @@ resource "tfe_team_access" "foobar" {
   }
   team_id      = "${tfe_team.foobar.id}"
   workspace_id = "${tfe_workspace.foobar.id}"
-}`
+}`, rInt)
+}

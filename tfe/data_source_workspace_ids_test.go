@@ -11,6 +11,7 @@ import (
 
 func TestAccTFEWorkspaceIDsDataSource_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
@@ -26,7 +27,7 @@ func TestAccTFEWorkspaceIDsDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "names.1", fmt.Sprintf("workspace-bar-%d", rInt)),
 					resource.TestCheckResourceAttr(
-						"data.tfe_workspace_ids.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
+						"data.tfe_workspace_ids.foobar", "organization", orgName),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "full_names.%", "2"),
 					resource.TestCheckResourceAttr(
@@ -66,6 +67,7 @@ func TestAccTFEWorkspaceIDsDataSource_basic(t *testing.T) {
 
 func TestAccTFEWorkspaceIDsDataSource_wildcard(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -80,7 +82,7 @@ func TestAccTFEWorkspaceIDsDataSource_wildcard(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "names.0", "*"),
 					resource.TestCheckResourceAttr(
-						"data.tfe_workspace_ids.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
+						"data.tfe_workspace_ids.foobar", "organization", orgName),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "full_names.%", "3"),
 					resource.TestCheckResourceAttr(

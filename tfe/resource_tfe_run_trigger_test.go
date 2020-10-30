@@ -2,7 +2,9 @@ package tfe
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
@@ -11,6 +13,8 @@ import (
 
 func TestAccTFERunTrigger_basic(t *testing.T) {
 	runTrigger := &tfe.RunTrigger{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -18,11 +22,11 @@ func TestAccTFERunTrigger_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFERunTriggerDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFERunTrigger_basic,
+				Config: testAccTFERunTrigger_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFERunTriggerExists(
 						"tfe_run_trigger.foobar", runTrigger),
-					testAccCheckTFERunTriggerAttributes(runTrigger),
+					testAccCheckTFERunTriggerAttributes(runTrigger, orgName),
 				),
 			},
 		},
@@ -31,6 +35,8 @@ func TestAccTFERunTrigger_basic(t *testing.T) {
 
 func TestAccTFERunTrigger_basicWorkspaceID(t *testing.T) {
 	runTrigger := &tfe.RunTrigger{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -38,11 +44,11 @@ func TestAccTFERunTrigger_basicWorkspaceID(t *testing.T) {
 		CheckDestroy: testAccCheckTFERunTriggerDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFERunTrigger_basicWorkspaceID,
+				Config: testAccTFERunTrigger_basicWorkspaceID(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFERunTriggerExists(
 						"tfe_run_trigger.foobar", runTrigger),
-					testAccCheckTFERunTriggerAttributes(runTrigger),
+					testAccCheckTFERunTriggerAttributes(runTrigger, orgName),
 				),
 			},
 		},
@@ -51,6 +57,8 @@ func TestAccTFERunTrigger_basicWorkspaceID(t *testing.T) {
 
 func TestAccTFERunTrigger_updateWorkspaceExternalIDToWorkspaceID(t *testing.T) {
 	runTrigger := &tfe.RunTrigger{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -58,19 +66,19 @@ func TestAccTFERunTrigger_updateWorkspaceExternalIDToWorkspaceID(t *testing.T) {
 		CheckDestroy: testAccCheckTFERunTriggerDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFERunTrigger_basic,
+				Config: testAccTFERunTrigger_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFERunTriggerExists(
 						"tfe_run_trigger.foobar", runTrigger),
-					testAccCheckTFERunTriggerAttributes(runTrigger),
+					testAccCheckTFERunTriggerAttributes(runTrigger, orgName),
 				),
 			},
 			{
-				Config: testAccTFERunTrigger_basicWorkspaceID,
+				Config: testAccTFERunTrigger_basicWorkspaceID(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFERunTriggerExists(
 						"tfe_run_trigger.foobar", runTrigger),
-					testAccCheckTFERunTriggerAttributes(runTrigger),
+					testAccCheckTFERunTriggerAttributes(runTrigger, orgName),
 				),
 			},
 		},
@@ -82,6 +90,7 @@ func TestAccTFERunTrigger_many(t *testing.T) {
 	for i := range checks {
 		checks[i] = resource.TestCheckResourceAttrSet(fmt.Sprintf("tfe_run_trigger.foobar.%d", i), "id")
 	}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -89,7 +98,7 @@ func TestAccTFERunTrigger_many(t *testing.T) {
 		CheckDestroy: testAccCheckTFERunTriggerDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFERunTrigger_many,
+				Config: testAccTFERunTrigger_many(rInt),
 				Check:  resource.ComposeTestCheckFunc(checks...),
 			},
 		},
@@ -97,13 +106,15 @@ func TestAccTFERunTrigger_many(t *testing.T) {
 }
 
 func TestAccTFERunTriggerImport(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFERunTriggerDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFERunTrigger_basicWorkspaceID,
+				Config: testAccTFERunTrigger_basicWorkspaceID(rInt),
 			},
 
 			{
@@ -139,18 +150,18 @@ func testAccCheckTFERunTriggerExists(n string, runTrigger *tfe.RunTrigger) resou
 	}
 }
 
-func testAccCheckTFERunTriggerAttributes(runTrigger *tfe.RunTrigger) resource.TestCheckFunc {
+func testAccCheckTFERunTriggerAttributes(runTrigger *tfe.RunTrigger, orgName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		tfeClient := testAccProvider.Meta().(*tfe.Client)
 
 		workspaceID := runTrigger.Workspace.ID
-		workspace, _ := tfeClient.Workspaces.Read(ctx, "tst-terraform", "workspace-test")
+		workspace, _ := tfeClient.Workspaces.Read(ctx, orgName, "workspace-test")
 		if workspace.ID != workspaceID {
 			return fmt.Errorf("Wrong workspace: %v", workspace.ID)
 		}
 
 		sourceableID := runTrigger.Sourceable.ID
-		sourceable, _ := tfeClient.Workspaces.Read(ctx, "tst-terraform", "sourceable-test")
+		sourceable, _ := tfeClient.Workspaces.Read(ctx, orgName, "sourceable-test")
 		if sourceable.ID != sourceableID {
 			return fmt.Errorf("Wrong sourceable: %v", sourceable.ID)
 		}
@@ -180,9 +191,10 @@ func testAccCheckTFERunTriggerDestroy(s *terraform.State) error {
 	return nil
 }
 
-const testAccTFERunTrigger_basic = `
+func testAccTFERunTrigger_basic(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -199,11 +211,13 @@ resource "tfe_workspace" "sourceable" {
 resource "tfe_run_trigger" "foobar" {
   workspace_external_id = "${tfe_workspace.workspace.id}"
   sourceable_id         = "${tfe_workspace.sourceable.id}"
-}`
+}`, rInt)
+}
 
-const testAccTFERunTrigger_basicWorkspaceID = `
+func testAccTFERunTrigger_basicWorkspaceID(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -220,11 +234,13 @@ resource "tfe_workspace" "sourceable" {
 resource "tfe_run_trigger" "foobar" {
   workspace_id = "${tfe_workspace.workspace.id}"
   sourceable_id         = "${tfe_workspace.sourceable.id}"
-}`
+}`, rInt)
+}
 
-const testAccTFERunTrigger_many = `
+func testAccTFERunTrigger_many(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -245,4 +261,5 @@ resource "tfe_run_trigger" "foobar" {
 
   workspace_external_id = "${tfe_workspace.workspace.external_id}"
   sourceable_id         = "${tfe_workspace.sourceable[count.index].external_id}"
-}`
+}`, rInt)
+}

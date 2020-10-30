@@ -2,18 +2,21 @@ package tfe
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 )
 
 func TestAccTFEOAuthClientDataSource_basic(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOAuthClientDataSourceConfig(),
+				Config: testAccTFEOAuthClientDataSourceConfig(rInt),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
 						"tfe_oauth_client.test", "api_url",
@@ -30,10 +33,10 @@ func TestAccTFEOAuthClientDataSource_basic(t *testing.T) {
 	})
 }
 
-func testAccTFEOAuthClientDataSourceConfig() string {
+func testAccTFEOAuthClientDataSourceConfig(rInt int) string {
 	return fmt.Sprintf(`
 	resource "tfe_organization" "foobar" {
-		name  = "tst-terraform"
+		name  = "tst-terraform-%d"
 		email = "admin@company.com"
 	  }
 	  
@@ -48,5 +51,5 @@ func testAccTFEOAuthClientDataSourceConfig() string {
 	  data "tfe_oauth_client" "client" {
 		  oauth_client_id = "${tfe_oauth_client.test.id}"
 	  }
-	`, GITHUB_TOKEN)
+	`, rInt, GITHUB_TOKEN)
 }
