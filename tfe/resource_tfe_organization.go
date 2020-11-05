@@ -57,6 +57,12 @@ func resourceTFEOrganization() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+
+			"cost_estimation_enabled": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
 		},
 	}
 }
@@ -105,6 +111,7 @@ func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error
 	d.Set("session_remember_minutes", org.SessionRemember)
 	d.Set("collaborator_auth_policy", org.CollaboratorAuthPolicy)
 	d.Set("owners_team_saml_role_id", org.OwnersTeamSAMLRoleID)
+	d.Set("cost_estimation_enabled", org.CostEstimationEnabled)
 
 	return nil
 }
@@ -136,6 +143,11 @@ func resourceTFEOrganizationUpdate(d *schema.ResourceData, meta interface{}) err
 	// If owners_team_saml_role_id is supplied, set it using the options struct.
 	if ownersTeamSAMLRoleID, ok := d.GetOk("owners_team_saml_role_id"); ok {
 		options.OwnersTeamSAMLRoleID = tfe.String(ownersTeamSAMLRoleID.(string))
+	}
+
+	// If cost_estimation_enabled is supplied, set it using the options struct.
+	if costEstimationEnabled, ok := d.GetOkExists("cost_estimation_enabled"); ok {
+		options.CostEstimationEnabled = tfe.Bool(costEstimationEnabled.(bool))
 	}
 
 	log.Printf("[DEBUG] Update configuration of organization: %s", d.Id())
