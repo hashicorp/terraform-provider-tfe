@@ -34,6 +34,7 @@ The following arguments are supported:
 * `collaborator_auth_policy` - (Optional) Authentication policy (`password`
   or `two_factor_mandatory`). Defaults to `password`.
 * `owners_team_saml_role_id` - (Optional) The name of the "owners" team.
+* `cost_estimation_enabled` - (Optional) Whether or not the cost estimation feature is enabled for all workspaces in the organization. Defaults to `false`.
 
 ## Attributes Reference
 
