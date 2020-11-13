@@ -61,7 +61,7 @@ func resourceTFEOrganization() *schema.Resource {
 			"cost_estimation_enabled": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				Default:  false,
+				Default:  true,
 			},
 		},
 	}
