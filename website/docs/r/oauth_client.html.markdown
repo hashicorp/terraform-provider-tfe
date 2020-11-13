@@ -52,7 +52,7 @@ The following arguments are supported:
 * `http_url` - (Required) The homepage of your VCS provider (e.g.
   `https://github.com` or `https://ghe.example.com`).
 * `oauth_token` - (Required) The token string you were given by your VCS provider.
-* `private_key` - (Required for `ado_server`) The text of the private key associated with your Azure DevOps Server account
+* `private_key` - (Required for `ado_server`) The text of the private key associated with your OAuth client. Required for cloning Git submodules.
 * `service_provider` - (Required) The VCS provider being connected with. Valid
   options are `ado_server`, `ado_services`, `github`, `github_enterprise`, `gitlab_hosted`,
   `gitlab_community_edition`, or `gitlab_enterprise_edition`.
