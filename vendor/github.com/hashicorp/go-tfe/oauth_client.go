@@ -140,9 +140,6 @@ func (o OAuthClientCreateOptions) valid() error {
 	if o.ServiceProvider == nil {
 		return errors.New("service provider is required")
 	}
-	if validString(o.PrivateKey) && *o.ServiceProvider != *ServiceProvider(ServiceProviderAzureDevOpsServer) {
-		return errors.New("Private Key can only be present with Azure DevOps Server service provider")
-	}
 	return nil
 }
 
