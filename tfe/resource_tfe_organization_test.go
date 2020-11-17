@@ -27,13 +27,49 @@ func TestAccTFEOrganization_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
 						"tfe_organization.foobar", org),
-					testAccCheckTFEOrganizationAttributes(org, orgName),
+					testAccCheckTFEOrganizationAttributesBasic(org, orgName),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "name", orgName),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "email", "admin@company.com"),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "collaborator_auth_policy", "password"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEOrganization_full(t *testing.T) {
+	org := &tfe.Organization{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEOrganizationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOrganization_full(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOrganizationExists(
+						"tfe_organization.foobar", org),
+					testAccCheckTFEOrganizationAttributesFull(org, orgName),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "name", orgName),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "email", "admin@company.com"),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "session_timeout_minutes", "30"),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "session_remember_minutes", "30"),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "collaborator_auth_policy", "password"),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "owners_team_saml_role_id", "owners"),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "cost_estimation_enabled", "false"),
 				),
 			},
 		},
@@ -64,7 +100,7 @@ func TestAccTFEOrganization_update(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
 						"tfe_organization.foobar", org),
-					testAccCheckTFEOrganizationAttributes(org, orgName),
+					testAccCheckTFEOrganizationAttributesBasic(org, orgName),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "name", orgName),
 					resource.TestCheckResourceAttr(
@@ -173,7 +209,7 @@ func testAccCheckTFEOrganizationExists(
 	}
 }
 
-func testAccCheckTFEOrganizationAttributes(
+func testAccCheckTFEOrganizationAttributesBasic(
 	org *tfe.Organization, expectedOrgName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if org.Name != expectedOrgName {
@@ -186,6 +222,41 @@ func testAccCheckTFEOrganizationAttributes(
 
 		if org.CollaboratorAuthPolicy != tfe.AuthPolicyPassword {
 			return fmt.Errorf("Bad auth policy: %s", org.CollaboratorAuthPolicy)
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckTFEOrganizationAttributesFull(
+	org *tfe.Organization, expectedOrgName string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if org.Name != expectedOrgName {
+			return fmt.Errorf("Bad name: %s", org.Name)
+		}
+
+		if org.Email != "admin@company.com" {
+			return fmt.Errorf("Bad email: %s", org.Email)
+		}
+
+		if org.SessionTimeout != 30 {
+			return fmt.Errorf("Bad session timeout minutes: %d", org.SessionTimeout)
+		}
+
+		if org.SessionRemember != 30 {
+			return fmt.Errorf("Bad session remember minutes: %d", org.SessionRemember)
+		}
+
+		if org.CollaboratorAuthPolicy != tfe.AuthPolicyPassword {
+			return fmt.Errorf("Bad auth policy: %s", org.CollaboratorAuthPolicy)
+		}
+
+		if org.OwnersTeamSAMLRoleID != "owners" {
+			return fmt.Errorf("Bad owners team SAML role ID: %s", org.OwnersTeamSAMLRoleID)
+		}
+
+		if org.CostEstimationEnabled != false {
+			return fmt.Errorf("Bad cost-estimation-enabled: %t", org.CostEstimationEnabled)
 		}
 
 		return nil
@@ -253,6 +324,19 @@ func testAccTFEOrganization_basic(rInt int) string {
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
+}`, rInt)
+}
+
+func testAccTFEOrganization_full(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name                     = "tst-terraform-%d"
+  email                    = "admin@company.com"
+  session_timeout_minutes  = 30
+  session_remember_minutes = 30
+  collaborator_auth_policy = "password"
+  owners_team_saml_role_id = "owners"
+  cost_estimation_enabled  = false
 }`, rInt)
 }
 

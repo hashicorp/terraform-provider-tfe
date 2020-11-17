@@ -75,13 +75,8 @@ func resourceTFEOrganizationCreate(d *schema.ResourceData, meta interface{}) err
 
 	// Create a new options struct.
 	options := tfe.OrganizationCreateOptions{
-		Name:                   tfe.String(name),
-		Email:                  tfe.String(d.Get("email").(string)),
-		SessionTimeout:         tfe.Int(d.Get("session_timeout_minutes").(int)),
-		SessionRemember:        tfe.Int(d.Get("session_remember_minutes").(int)),
-		CollaboratorAuthPolicy: tfe.AuthPolicy(tfe.AuthPolicyType(d.Get("collaborator_auth_policy").(string))),
-		OwnersTeamSAMLRoleID:   tfe.String(d.Get("owners_team_saml_role_id").(string)),
-		CostEstimationEnabled:  tfe.Bool(d.Get("cost_estimation_enabled").(bool)),
+		Name:  tfe.String(name),
+		Email: tfe.String(d.Get("email").(string)),
 	}
 
 	log.Printf("[DEBUG] Create new organization: %s", name)
