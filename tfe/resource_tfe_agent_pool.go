@@ -14,6 +14,9 @@ func resourceTFEAgentPool() *schema.Resource {
 		Read:   resourceTFEAgentPoolRead,
 		Update: resourceTFEAgentPoolUpdate,
 		Delete: resourceTFEAgentPoolDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"name": {

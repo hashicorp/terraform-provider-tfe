@@ -68,6 +68,27 @@ func TestAccTFEAgentPool_update(t *testing.T) {
 	})
 }
 
+func TestAccTFEAgentPool_import(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEAgentPoolDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEAgentPool_basic(rInt),
+			},
+
+			{
+				ResourceName:      "tfe_agent_pool.foobar",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func testAccCheckTFEAgentPoolExists(
 	n string, agentPool *tfe.AgentPool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
