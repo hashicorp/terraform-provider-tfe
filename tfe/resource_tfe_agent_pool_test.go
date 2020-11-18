@@ -2,7 +2,9 @@ package tfe
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
+	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
@@ -11,6 +13,7 @@ import (
 
 func TestAccTFEAgentPool_basic(t *testing.T) {
 	agentPool := &tfe.AgentPool{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -18,7 +21,7 @@ func TestAccTFEAgentPool_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFEAgentPoolDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEAgentPool_basic,
+				Config: testAccTFEAgentPool_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEAgentPoolExists(
 						"tfe_agent_pool.foobar", agentPool),
@@ -33,6 +36,7 @@ func TestAccTFEAgentPool_basic(t *testing.T) {
 
 func TestAccTFEAgentPool_update(t *testing.T) {
 	agentPool := &tfe.AgentPool{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -40,7 +44,7 @@ func TestAccTFEAgentPool_update(t *testing.T) {
 		CheckDestroy: testAccCheckTFEAgentPoolDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEAgentPool_basic,
+				Config: testAccTFEAgentPool_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEAgentPoolExists(
 						"tfe_agent_pool.foobar", agentPool),
@@ -51,7 +55,7 @@ func TestAccTFEAgentPool_update(t *testing.T) {
 			},
 
 			{
-				Config: testAccTFEAgentPool_update,
+				Config: testAccTFEAgentPool_update(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEAgentPoolExists(
 						"tfe_agent_pool.foobar", agentPool),
@@ -134,24 +138,28 @@ func testAccCheckTFEAgentPoolDestroy(s *terraform.State) error {
 	return nil
 }
 
-const testAccTFEAgentPool_basic = `
+func testAccTFEAgentPool_basic(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
 resource "tfe_agent_pool" "foobar" {
   name         = "agent-pool-test"
   organization = "${tfe_organization.foobar.id}"
-}`
+}`, rInt)
+}
 
-const testAccTFEAgentPool_update = `
+func testAccTFEAgentPool_update(rInt int) string {
+	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
 resource "tfe_agent_pool" "foobar" {
   name         = "agent-pool-updated"
   organization = "${tfe_organization.foobar.id}"
-}`
+}`, rInt)
+}
