@@ -1003,7 +1003,7 @@ resource "tfe_workspace" "foobar" {
 func testAccTFEWorkspace_operationsTrue(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -1017,7 +1017,7 @@ resource "tfe_workspace" "foobar" {
 func testAccTFEWorkspace_operationsFalse(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -1031,7 +1031,7 @@ resource "tfe_workspace" "foobar" {
 func testAccTFEWorkspace_executionModeRemote(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -1045,7 +1045,7 @@ resource "tfe_workspace" "foobar" {
 func testAccTFEWorkspace_executionModeLocal(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
@@ -1059,7 +1059,7 @@ resource "tfe_workspace" "foobar" {
 func testAccTFEWorkspace_executionModeAgent(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 

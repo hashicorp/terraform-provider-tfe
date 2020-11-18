@@ -51,7 +51,7 @@ func resourceTFEAgentPoolCreate(d *schema.ResourceData, meta interface{}) error 
 
 	d.SetId(agentPool.ID)
 
-	return resourceTFEAgentPoolUpdate(d, meta)
+	return resourceTFEAgentPoolRead(d, meta)
 }
 
 func resourceTFEAgentPoolRead(d *schema.ResourceData, meta interface{}) error {
