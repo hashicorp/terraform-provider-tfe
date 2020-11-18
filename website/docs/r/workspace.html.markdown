@@ -53,9 +53,9 @@ The following arguments are supported:
 
 * `name` - (Required) Name of the workspace.
 * `organization` - (Required) Name of the organization.
-* `agent_pool_id` - (Optional) The ID of an agent pool to assign to the workspace. Required when `execution_mode` 
-  is set to `agent`. This value _must not_ be provided if `execution_mode` is set to `remote` or `local` or if 
-  `operations` is set to `true`.
+* `agent_pool_id` - (Optional) The ID of an agent pool to assign to the workspace. Requires `execution_mode`
+  to be set to `agent`. This value _must not_ be provided if `execution_mode` is set to any other value or if `operations` is
+  provided.
 * `allow_destroy_plan` - (Optional) Whether destroy plans can be queued on the workspace.
 * `auto_apply` - (Optional) Whether to automatically apply changes when a
   Terraform plan is successful. Defaults to `false`.
