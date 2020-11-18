@@ -44,6 +44,12 @@ func resourceTFEWorkspace() *schema.Resource {
 				ForceNew: true,
 			},
 
+			"agent_pool_id": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				ConflictsWith: []string{"operations"},
+			},
+
 			"allow_destroy_plan": {
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -54,6 +60,13 @@ func resourceTFEWorkspace() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
+			},
+
+			"execution_mode": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Computed:      true,
+				ConflictsWith: []string{"operations"},
 			},
 
 			"file_triggers_enabled": {
@@ -67,19 +80,6 @@ func resourceTFEWorkspace() *schema.Resource {
 				Optional:      true,
 				Computed:      true,
 				ConflictsWith: []string{"execution_mode", "agent_pool_id"},
-			},
-
-			"execution_mode": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Computed:      true,
-				ConflictsWith: []string{"operations"},
-			},
-
-			"agent_pool_id": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				ConflictsWith: []string{"operations"},
 			},
 
 			"queue_all_runs": {
@@ -175,16 +175,16 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		WorkingDirectory:    tfe.String(d.Get("working_directory").(string)),
 	}
 
-	if v, ok := d.GetOk("operations"); ok {
-		options.Operations = tfe.Bool(v.(bool))
+	if v, ok := d.GetOk("agent_pool_id"); ok && v.(string) != "" {
+		options.AgentPoolID = tfe.String(v.(string))
 	}
 
 	if v, ok := d.GetOk("execution_mode"); ok {
 		options.ExecutionMode = tfe.String(v.(string))
 	}
 
-	if v, ok := d.GetOk("agent_pool_id"); ok && v.(string) != "" {
-		options.AgentPoolID = tfe.String(v.(string))
+	if v, ok := d.GetOk("operations"); ok {
+		options.Operations = tfe.Bool(v.(bool))
 	}
 
 	// Process all configured options.
@@ -316,9 +316,9 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			WorkingDirectory:    tfe.String(d.Get("working_directory").(string)),
 		}
 
-		if d.HasChange("operations") {
-			if v, ok := d.GetOkExists("operations"); ok {
-				options.Operations = tfe.Bool(v.(bool))
+		if d.HasChange("agent_pool_id") {
+			if v, ok := d.GetOk("agent_pool_id"); ok && v.(string) != "" {
+				options.AgentPoolID = tfe.String(v.(string))
 			}
 		}
 
@@ -328,9 +328,9 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			}
 		}
 
-		if d.HasChange("agent_pool_id") {
-			if v, ok := d.GetOk("agent_pool_id"); ok && v.(string) != "" {
-				options.AgentPoolID = tfe.String(v.(string))
+		if d.HasChange("operations") {
+			if v, ok := d.GetOkExists("operations"); ok {
+				options.Operations = tfe.Bool(v.(bool))
 			}
 		}
 
