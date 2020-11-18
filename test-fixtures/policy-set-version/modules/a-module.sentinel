@@ -1,0 +1,6 @@
+# A Sentinel module with a function
+
+# always_true always returns true
+always_true = func() {
+  return true
+}

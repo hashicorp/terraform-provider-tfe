@@ -79,11 +79,18 @@ func TestUnpackTeamMemberID(t *testing.T) {
 }
 
 func TestAccTFETeamMember_basic(t *testing.T) {
+	t.Skip("Skipping, due to current testing limitations; namely, an organization membership must first be confirmed.")
+
 	user := &tfe.User{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
+		PreCheck: func() {
+			testAccPreCheck(t)
+			if TFE_USER1 == "" {
+				t.Skip("Please set TFE_USER1 to run this test")
+			}
+		},
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFETeamMemberDestroy,
 		Steps: []resource.TestStep{
@@ -94,7 +101,7 @@ func TestAccTFETeamMember_basic(t *testing.T) {
 						"tfe_team_member.foobar", user),
 					testAccCheckTFETeamMemberAttributes(user),
 					resource.TestCheckResourceAttr(
-						"tfe_team_member.foobar", "username", "admin"),
+						"tfe_team_member.foobar", "username", TFE_USER1),
 				),
 			},
 		},
@@ -102,6 +109,8 @@ func TestAccTFETeamMember_basic(t *testing.T) {
 }
 
 func TestAccTFETeamMember_import(t *testing.T) {
+	t.Skip("Skipping, due to current testing limitations; namely, an organization membership must first be confirmed.")
+
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -167,7 +176,7 @@ func testAccCheckTFETeamMemberExists(
 func testAccCheckTFETeamMemberAttributes(
 	user *tfe.User) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		if user.Username != "admin" {
+		if user.Username != TFE_USER1 {
 			return fmt.Errorf("Bad username: %s", user.Username)
 		}
 		return nil
@@ -227,6 +236,6 @@ resource "tfe_team" "foobar" {
 
 resource "tfe_team_member" "foobar" {
   team_id  = "${tfe_team.foobar.id}"
-  username = "admin"
-}`, rInt)
+  username = "%s"
+}`, rInt, TFE_USER1)
 }

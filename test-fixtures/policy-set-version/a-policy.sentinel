@@ -1,0 +1,7 @@
+# This trivial policy always returns true
+
+import "a-module" as m
+
+main = rule {
+  m.always_true()
+}

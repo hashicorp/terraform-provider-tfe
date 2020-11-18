@@ -88,6 +88,7 @@ func Provider() terraform.ResourceProvider {
 			"tfe_organization_token":         resourceTFEOrganizationToken(),
 			"tfe_policy_set":                 resourceTFEPolicySet(),
 			"tfe_policy_set_parameter":       resourceTFEPolicySetParameter(),
+			"tfe_policy_set_version":         resourceTFEPolicySetVersion(),
 			"tfe_registry_module":            resourceTFERegistryModule(),
 			"tfe_run_trigger":                resourceTFERunTrigger(),
 			"tfe_sentinel_policy":            resourceTFESentinelPolicy(),
