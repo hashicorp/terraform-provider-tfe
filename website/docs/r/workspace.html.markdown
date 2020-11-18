@@ -59,9 +59,10 @@ The following arguments are supported:
 * `allow_destroy_plan` - (Optional) Whether destroy plans can be queued on the workspace.
 * `auto_apply` - (Optional) Whether to automatically apply changes when a
   Terraform plan is successful. Defaults to `false`.
-* `execution_mode` - (Optional) Which [execution mode](https://www.terraform.io/docs/cloud/workspaces/settings.html#execution-mode) 
-  to use. Valid values are `remote`, `local` or `agent`. When set to `local`, the workspace will be used 
-  for state storage only. Defaults to `remote`. This value _must not_ be provided if `operations` is provided.
+* `execution_mode` - (Optional) Which [execution mode](https://www.terraform.io/docs/cloud/workspaces/settings.html#execution-mode) to use. Using Terraform Cloud, valid
+  values are `remote`, `local` or `agent`. Using Terraform Enterprise, only `remote` and `local` execution modes are
+  valid.  When set to `local`, the workspace will be used for state storage only. Defaults to `remote`. This value _must
+  not_ be provided if `operations` is provided.
 * `file_triggers_enabled` - (Optional) Whether to filter runs based on the changed files 
   in a VCS push. If enabled, the working directory and trigger prefixes describe a set of 
   paths which must contain changes for a VCS push to trigger a run. If disabled, any push will 
