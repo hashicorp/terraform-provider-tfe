@@ -10,8 +10,9 @@ description: |-
 
 Use this data source to get information about an agent pool.
 
-~> **NOTE:** This data source requires using the provider with Terraform Cloud.
-Agent pools are not available in Terraform Enterprise.
+~> **NOTE:** This data source requires using the provider with Terraform Cloud and a Terraform Cloud 
+for Business account. 
+[Learn more about Terraform Cloud pricing here](https://www.hashicorp.com/products/terraform/pricing).
 
 ## Example Usage
 
