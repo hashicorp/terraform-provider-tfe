@@ -1,4 +1,8 @@
 ## 0.23.0 (Unreleased)
+
+FEATURES:
+* **New ReSource:** r/tfe_policy_set_version ([#244](https://github.com/hashicorp/terraform-provider-tfe/pull/244))
+
 ## 0.22.0 (October 07, 2020)
 
 FEATURES:
@@ -33,7 +37,7 @@ ENHANCEMENTS:
 * r/tfe_notification_configuration: Added support for email notification configuration by adding support for `destination_type` of `email` and associated schema attributes `email_user_ids` and (TFE only) `email_addresses` ([#191](https://github.com/hashicorp/terraform-provider-tfe/pull/191))
 * r/tfe_organization_membership: Added ability to import organization memberships and added new computed attribute `user_id` ([#191](https://github.com/hashicorp/terraform-provider-tfe/pull/191))
 
-NOTES: 
+NOTES:
 * Using `destination_type` of `email` with resource `tfe_notification_configuration` requires using the provider with Terraform Cloud or an instance of Terraform Enterprise at least as recent as v202005-1.
 
 ## 0.19.0 (June 17, 2020)
@@ -58,9 +62,9 @@ ENHANCEMENTS:
 * r/tfe_run_trigger: Added deprecation warning to the `workspace_external_id` attribute, preferring `workspace_id` instead ([#182](https://github.com/hashicorp/terraform-provider-tfe/pull/182))
 
 NOTES:
-* All deprecated attributes will be removed 3 months after the release of v0.18.0. You will have until September 3, 2020 to migrate to the preferred attributes. 
+* All deprecated attributes will be removed 3 months after the release of v0.18.0. You will have until September 3, 2020 to migrate to the preferred attributes.
 * More information about these deprecations can be found in the description of [#182](https://github.com/hashicorp/terraform-provider-tfe/pull/182)
-* d/tfe_workspace_ids: The deprecation warning for the `ids` attribute will not go away until the attribute is removed in a future version. 
+* d/tfe_workspace_ids: The deprecation warning for the `ids` attribute will not go away until the attribute is removed in a future version.
 This is due to a [limitation of the 1.0 version of the Terraform SDK](https://github.com/hashicorp/terraform/issues/7569) for deprecation warnings on attributes that aren't specified in a configuration.
 If you have already changed all references to this data source's `ids` attribute to the new `full_names` attribute, you can ignore the warning.  
 
@@ -106,8 +110,8 @@ ENHANCEMENTS:
 
 BUG FIXES:
 
-* t/tfe_workspace: Issues with updating `working_directory` ([[#137](https://github.com/hashicorp/terraform-provider-tfe/pull/137)]) 
-  and `trigger_prefixes` ([[#138](https://github.com/hashicorp/terraform-provider-tfe/pull/138)]) when removed from the configuration. 
+* t/tfe_workspace: Issues with updating `working_directory` ([[#137](https://github.com/hashicorp/terraform-provider-tfe/pull/137)])
+  and `trigger_prefixes` ([[#138](https://github.com/hashicorp/terraform-provider-tfe/pull/138)]) when removed from the configuration.
   Special note: if you have workspaces which are configured through the TFE provider, but have set the working directory or trigger prefixes manually, through the UI, you'll need to update your configuration.
 
 ## 0.14.0 (February 20, 2020)
@@ -134,7 +138,7 @@ This will warn users that this version of the provider does not support Terrafor
 BREAKING CHANGES:
 
 * r/tfe_variable: Update the workspace variable resource to utilize the "nested" routes that are now preferred ([[#123](https://github.com/hashicorp/terraform-provider-tfe/pull/123)])
-This change is incompatible with Terraform Enterprise versions < 202001-1. 
+This change is incompatible with Terraform Enterprise versions < 202001-1.
 
 ENHANCEMENTS:
 
