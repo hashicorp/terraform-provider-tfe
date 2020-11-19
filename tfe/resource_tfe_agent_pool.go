@@ -73,6 +73,7 @@ func resourceTFEAgentPoolRead(d *schema.ResourceData, meta interface{}) error {
 
 	// Update the config.
 	d.Set("name", agentPool.Name)
+	d.Set("organization", agentPool.Organization.Name)
 
 	return nil
 }
