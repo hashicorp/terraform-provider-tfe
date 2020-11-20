@@ -27,6 +27,7 @@ The following arguments are supported:
 
 * `name` - (Required) Name of the workspace.
 * `organization` - (Required) Name of the organization.
+* `allow_destroy_plan` - (Optional) Whether destroy plans can be queued on the workspace.
 * `auto_apply` - (Optional) Whether to automatically apply changes when a
   Terraform plan is successful. Defaults to `false`.
 * `file_triggers_enabled` - (Optional) Whether to filter runs based on the changed files in a VCS push. If enabled, the working directory and trigger prefixes describe a set of paths which must contain changes for a VCS push to trigger a run. If disabled, any push will trigger a run. Defaults to `true`.
