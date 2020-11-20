@@ -1,4 +1,4 @@
-## 0.23.0 (Unreleased)
+## 0.23.0 (November 20, 2020)
 
 FEATURES:
 * **New Resource:** r/tfe_agent_pool ([#242](https://github.com/hashicorp/terraform-provider-tfe/pull/242)) Includes
