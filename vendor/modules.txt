@@ -99,7 +99,7 @@ github.com/hashicorp/go-retryablehttp
 github.com/hashicorp/go-safetemp
 # github.com/hashicorp/go-slug v0.4.1
 github.com/hashicorp/go-slug
-# github.com/hashicorp/go-tfe v0.10.2
+# github.com/hashicorp/go-tfe v0.11.1
 github.com/hashicorp/go-tfe
 # github.com/hashicorp/go-uuid v1.0.1
 github.com/hashicorp/go-uuid
@@ -119,15 +119,15 @@ github.com/hashicorp/hcl/json/scanner
 github.com/hashicorp/hcl/json/token
 # github.com/hashicorp/hcl/v2 v2.0.0
 github.com/hashicorp/hcl/v2
-github.com/hashicorp/hcl/v2/hcldec
 github.com/hashicorp/hcl/v2/hclsyntax
+github.com/hashicorp/hcl/v2/hcldec
+github.com/hashicorp/hcl/v2/hcled
+github.com/hashicorp/hcl/v2/hclparse
 github.com/hashicorp/hcl/v2/ext/typeexpr
 github.com/hashicorp/hcl/v2/gohcl
-github.com/hashicorp/hcl/v2/hclparse
 github.com/hashicorp/hcl/v2/ext/dynblock
-github.com/hashicorp/hcl/v2/hclwrite
 github.com/hashicorp/hcl/v2/json
-github.com/hashicorp/hcl/v2/hcled
+github.com/hashicorp/hcl/v2/hclwrite
 # github.com/hashicorp/logutils v1.0.0
 github.com/hashicorp/logutils
 # github.com/hashicorp/terraform-config-inspect v0.0.0-20191115094559-17f92b0546e8
@@ -138,6 +138,7 @@ github.com/hashicorp/terraform-json
 github.com/hashicorp/terraform-plugin-sdk/plugin
 github.com/hashicorp/terraform-plugin-sdk/helper/customdiff
 github.com/hashicorp/terraform-plugin-sdk/helper/logging
+github.com/hashicorp/terraform-plugin-sdk/helper/resource
 github.com/hashicorp/terraform-plugin-sdk/helper/schema
 github.com/hashicorp/terraform-plugin-sdk/helper/validation
 github.com/hashicorp/terraform-plugin-sdk/terraform
@@ -148,37 +149,36 @@ github.com/hashicorp/terraform-plugin-sdk/internal/plugin/discovery
 github.com/hashicorp/terraform-plugin-sdk/internal/providers
 github.com/hashicorp/terraform-plugin-sdk/internal/provisioners
 github.com/hashicorp/terraform-plugin-sdk/internal/tfplugin5
-github.com/hashicorp/terraform-plugin-sdk/helper/hashcode
-github.com/hashicorp/terraform-plugin-sdk/internal/configs/hcl2shim
-github.com/hashicorp/terraform-plugin-sdk/internal/tfdiags
-github.com/hashicorp/terraform-plugin-sdk/helper/structure
+github.com/hashicorp/terraform-plugin-sdk/acctest
 github.com/hashicorp/terraform-plugin-sdk/internal/addrs
+github.com/hashicorp/terraform-plugin-sdk/internal/command/format
 github.com/hashicorp/terraform-plugin-sdk/internal/configs
+github.com/hashicorp/terraform-plugin-sdk/internal/configs/configload
+github.com/hashicorp/terraform-plugin-sdk/internal/configs/hcl2shim
+github.com/hashicorp/terraform-plugin-sdk/internal/helper/config
+github.com/hashicorp/terraform-plugin-sdk/internal/initwd
+github.com/hashicorp/terraform-plugin-sdk/internal/plans
+github.com/hashicorp/terraform-plugin-sdk/internal/states
+github.com/hashicorp/terraform-plugin-sdk/internal/tfdiags
+github.com/hashicorp/terraform-plugin-sdk/helper/hashcode
+github.com/hashicorp/terraform-plugin-sdk/helper/structure
 github.com/hashicorp/terraform-plugin-sdk/internal/dag
 github.com/hashicorp/terraform-plugin-sdk/internal/helper/didyoumean
 github.com/hashicorp/terraform-plugin-sdk/internal/lang
 github.com/hashicorp/terraform-plugin-sdk/internal/moduledeps
-github.com/hashicorp/terraform-plugin-sdk/internal/plans
 github.com/hashicorp/terraform-plugin-sdk/internal/plans/objchange
-github.com/hashicorp/terraform-plugin-sdk/internal/states
 github.com/hashicorp/terraform-plugin-sdk/internal/states/statefile
 github.com/hashicorp/terraform-plugin-sdk/internal/version
-github.com/hashicorp/terraform-plugin-sdk/helper/resource
 github.com/hashicorp/terraform-plugin-sdk/internal/httpclient
 github.com/hashicorp/terraform-plugin-sdk/internal/registry
 github.com/hashicorp/terraform-plugin-sdk/internal/registry/regsrc
 github.com/hashicorp/terraform-plugin-sdk/internal/registry/response
-github.com/hashicorp/terraform-plugin-sdk/internal/lang/blocktoattr
-github.com/hashicorp/terraform-plugin-sdk/internal/lang/funcs
-github.com/hashicorp/terraform-plugin-sdk/acctest
-github.com/hashicorp/terraform-plugin-sdk/internal/command/format
-github.com/hashicorp/terraform-plugin-sdk/internal/configs/configload
-github.com/hashicorp/terraform-plugin-sdk/internal/helper/config
-github.com/hashicorp/terraform-plugin-sdk/internal/initwd
-github.com/hashicorp/terraform-plugin-sdk/httpclient
 github.com/hashicorp/terraform-plugin-sdk/internal/modsdir
 github.com/hashicorp/terraform-plugin-sdk/internal/flatmap
 github.com/hashicorp/terraform-plugin-sdk/internal/earlyconfig
+github.com/hashicorp/terraform-plugin-sdk/internal/lang/blocktoattr
+github.com/hashicorp/terraform-plugin-sdk/internal/lang/funcs
+github.com/hashicorp/terraform-plugin-sdk/httpclient
 github.com/hashicorp/terraform-plugin-sdk/meta
 # github.com/hashicorp/terraform-plugin-test v1.3.0
 github.com/hashicorp/terraform-plugin-test
@@ -325,6 +325,7 @@ google.golang.org/genproto/googleapis/api/annotations
 google.golang.org/genproto/googleapis/type/expr
 # google.golang.org/grpc v1.27.1
 google.golang.org/grpc
+google.golang.org/grpc/test/bufconn
 google.golang.org/grpc/credentials
 google.golang.org/grpc/health
 google.golang.org/grpc/health/grpc_health_v1
@@ -358,7 +359,6 @@ google.golang.org/grpc/resolver
 google.golang.org/grpc/serviceconfig
 google.golang.org/grpc/stats
 google.golang.org/grpc/tap
-google.golang.org/grpc/test/bufconn
 google.golang.org/grpc/credentials/internal
 google.golang.org/grpc/binarylog/grpc_binarylog_v1
 google.golang.org/grpc/internal/syscall

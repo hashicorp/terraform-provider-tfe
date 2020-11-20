@@ -32,6 +32,8 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-test"),
 					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "allow_destroy_plan", "false"),
+					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "auto_apply", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "file_triggers_enabled", "true"),
@@ -126,6 +128,8 @@ func TestAccTFEWorkspace_renamed(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-test"),
 					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "allow_destroy_plan", "false"),
+					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "auto_apply", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "operations", "true"),
@@ -146,6 +150,8 @@ func TestAccTFEWorkspace_renamed(t *testing.T) {
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "allow_destroy_plan", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "auto_apply", "true"),
 					resource.TestCheckResourceAttr(
@@ -178,6 +184,8 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-test"),
 					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "allow_destroy_plan", "false"),
+					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "auto_apply", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "operations", "true"),
@@ -195,6 +203,8 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 					testAccCheckTFEWorkspaceAttributesUpdated(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-updated"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "allow_destroy_plan", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "auto_apply", "false"),
 					resource.TestCheckResourceAttr(
@@ -882,9 +892,10 @@ resource "tfe_organization" "foobar" {
 }
 
 resource "tfe_workspace" "foobar" {
-  name         = "workspace-test"
-  organization = "${tfe_organization.foobar.id}"
-  auto_apply   = true
+  name               = "workspace-test"
+  organization       = "${tfe_organization.foobar.id}"
+  allow_destroy_plan = false
+  auto_apply         = true
 }`, rInt)
 }
 
@@ -942,9 +953,10 @@ resource "tfe_organization" "foobar" {
 }
 
 resource "tfe_workspace" "foobar" {
-  name         = "renamed-out-of-band"
-  organization = "${tfe_organization.foobar.id}"
-  auto_apply   = true
+  name               = "renamed-out-of-band"
+  organization       = "${tfe_organization.foobar.id}"
+  allow_destroy_plan = false
+  auto_apply         = true
 }`, rInt)
 }
 
@@ -958,6 +970,7 @@ resource "tfe_organization" "foobar" {
 resource "tfe_workspace" "foobar" {
   name                  = "workspace-updated"
   organization          = "${tfe_organization.foobar.id}"
+  allow_destroy_plan    = true
   auto_apply            = false
   file_triggers_enabled = true
   queue_all_runs        = false
