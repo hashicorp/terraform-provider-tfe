@@ -42,6 +42,12 @@ func resourceTFEWorkspace() *schema.Resource {
 				ForceNew: true,
 			},
 
+			"allow_destroy_plan": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
+			},
+
 			"auto_apply": {
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -145,6 +151,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 	// Create a new options struct.
 	options := tfe.WorkspaceCreateOptions{
 		Name:                tfe.String(name),
+		AllowDestroyPlan:    tfe.Bool(d.Get("allow_destroy_plan").(bool)),
 		AutoApply:           tfe.Bool(d.Get("auto_apply").(bool)),
 		FileTriggersEnabled: tfe.Bool(d.Get("file_triggers_enabled").(bool)),
 		Operations:          tfe.Bool(d.Get("operations").(bool)),
@@ -220,6 +227,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 
 	// Update the config.
 	d.Set("name", workspace.Name)
+	d.Set("allow_destroy_plan", workspace.AllowDestroyPlan)
 	d.Set("auto_apply", workspace.AutoApply)
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
 	d.Set("operations", workspace.Operations)
@@ -260,10 +268,12 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 	if d.HasChange("name") || d.HasChange("auto_apply") || d.HasChange("queue_all_runs") ||
 		d.HasChange("terraform_version") || d.HasChange("working_directory") || d.HasChange("vcs_repo") ||
 		d.HasChange("file_triggers_enabled") || d.HasChange("trigger_prefixes") ||
-		d.HasChange("operations") || d.HasChange("speculative_enabled") {
+		d.HasChange("operations") || d.HasChange("speculative_enabled") ||
+		d.HasChange("allow_destroy_plan") {
 		// Create a new options struct.
 		options := tfe.WorkspaceUpdateOptions{
 			Name:                tfe.String(d.Get("name").(string)),
+			AllowDestroyPlan:    tfe.Bool(d.Get("allow_destroy_plan").(bool)),
 			AutoApply:           tfe.Bool(d.Get("auto_apply").(bool)),
 			FileTriggersEnabled: tfe.Bool(d.Get("file_triggers_enabled").(bool)),
 			Operations:          tfe.Bool(d.Get("operations").(bool)),
