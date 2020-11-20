@@ -26,6 +26,8 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "organization", orgName),
 					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "allow_destroy_plan", "false"),
+					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "auto_apply", "true"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "file_triggers_enabled", "true"),
@@ -61,6 +63,7 @@ resource "tfe_organization" "foobar" {
 resource "tfe_workspace" "foobar" {
   name                  = "workspace-test-%d"
   organization          = "${tfe_organization.foobar.id}"
+  allow_destroy_plan    = false
   auto_apply            = true
   file_triggers_enabled = true
   queue_all_runs        = false
