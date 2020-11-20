@@ -7,6 +7,7 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 )
 
 var workspaceIdRegexp = regexp.MustCompile("^ws-[a-zA-Z0-9]{16}$")
@@ -67,6 +68,14 @@ func resourceTFEWorkspace() *schema.Resource {
 				Optional:      true,
 				Computed:      true,
 				ConflictsWith: []string{"operations"},
+				ValidateFunc: validation.StringInSlice(
+					[]string{
+						"agent",
+						"local",
+						"remote",
+					},
+					false,
+				),
 			},
 
 			"file_triggers_enabled": {
