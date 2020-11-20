@@ -1,4 +1,28 @@
 ## 0.23.0 (Unreleased)
+
+FEATURES:
+* **New Resource:** r/tfe_agent_pool ([#242](https://github.com/hashicorp/terraform-provider-tfe/pull/242)) Includes
+  the ability to import existing agent pools via ID.
+* **New Data Source:** d/tfe_agent_pool ([#242](https://github.com/hashicorp/terraform-provider-tfe/pull/242))
+
+ENHANCEMENTS:
+* r/tfe_workspace: Added `execution_mode` argument, succeeding the existing `operations` boolean (which is now
+  deprecated) ([#242](https://github.com/hashicorp/terraform-provider-tfe/pull/242)) This new argument, along with
+  `agent_pool_id`, allows for configuring workspaces to use Terraform Cloud Agents
+  (https://www.terraform.io/docs/cloud/agents).
+* r/tfe_workspace: Added `allow_destroy_plan`, which determines if destroy plans can be queued on the workspace ([#245](https://github.com/hashicorp/terraform-provider-tfe/pull/245))
+* r/tfe_organization: Added `cost_estimation_enabled`, which determines if the cost estimation feature is enabled for all workspaces in the organization. ([#239](https://github.com/hashicorp/terraform-provider-tfe/pull/239))
+* Added provider configuration option `ssl_skip_verify`, to allow users to skip certificate verifications if their
+  environment is appropriate for it (note that in general, this is not recommended and the default value of `true`
+  should be used). ([#95](https://github.com/hashicorp/terraform-provider-tfe/pull/95))
+
+BUG FIXES:
+* r/tfe_team_access: Fixed an erroneous error message seen when a workspace could not be retrieved from the API ([#233](https://github.com/hashicorp/terraform-provider-tfe/pull/233))
+
+NOTES:
+  * Go 1.14 is now being used for development, along with Go modules.
+  * Several documentation improvements have been made in this release.
+
 ## 0.22.0 (October 07, 2020)
 
 FEATURES:
