@@ -58,32 +58,29 @@ in your operating environment, or you're looking to contribute to the provider a
 
 #### Requirements
 -	[Terraform](https://www.terraform.io/downloads.html) >= 0.11.x
--	[Go](https://golang.org/doc/install) >= 1.11
+-	[Go](https://golang.org/doc/install) >= 1.14
 
-Clone the repository in your `$GOPATH`:
+Clone the repository, enter the directory, and build the provider:
 
 ```sh
-$ mkdir -p $GOPATH/src/github.com/hashicorp; cd $GOPATH/src/github.com/hashicorp
 $ git clone git@github.com:hashicorp/terraform-provider-tfe
-```
-
-Enter the provider directory and build the provider:
-
-```sh
-$ cd $GOPATH/src/github.com/hashicorp/terraform-provider-tfe
+$ cd terraform-provider-tfe
 $ make build
 ```
 
-This will build the provider and put the binary in the `$GOPATH/bin` directory. To use the compiled binary, you have several different options (this list is not exhaustive!):
-* You can copy the provider binary to your `~/.terraform.d/plugins` directory by running the following command:
-   ```sh
-   $ mv $GOPATH/bin/terraform-provider-tfe ~/.terraform.d/plugins
-   ```
+This will build the provider and put the binary in the `$GOPATH/bin` directory. To use the compiled binary, you have several different options (this list is not exhaustive):
+
+##### Using Terraform 0.13+
+
+You can use a filesystem mirror (either one of the [implied local mirror directories](https://www.terraform.io/docs/commands/cli-config.html#implied-local-mirror-directories) for your platform
+or by [configuring your own](https://www.terraform.io/docs/commands/cli-config.html#explicit-installation-method-configuration)).
+
+See the [Provider Requirements](https://www.terraform.io/docs/configuration/provider-requirements.html) documentation for more information.
+
+##### Using Terraform 0.12
+* You can copy the provider binary to your `~/.terraform.d/plugins` directory.
 * You can create your test Terraform configurations in the same directory as your provider binary or you can copy the provider binary into the same directory as your test configurations.
-* You can copy the provider binary into the same locations as your `terraform` binary.
-
-To learn more about using a local build of a provider, you can look at the [documentation on writing custom providers](https://www.terraform.io/docs/extend/writing-custom-providers.html#invoking-the-provider) and the [documentation on how Terraform plugin discovery works](https://www.terraform.io/docs/extend/how-terraform-works.html#discovery)
-
+* You can copy the provider binary into the same location as your `terraform` binary.
 
 ## Usage
 
