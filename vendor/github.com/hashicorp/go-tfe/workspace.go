@@ -77,10 +77,13 @@ type WorkspaceList struct {
 type Workspace struct {
 	ID                   string                `jsonapi:"primary,workspaces"`
 	Actions              *WorkspaceActions     `jsonapi:"attr,actions"`
+	AgentPoolID          string                `jsonapi:"attr,agent-pool-id"`
+	AllowDestroyPlan     bool                  `jsonapi:"attr,allow-destroy-plan"`
 	AutoApply            bool                  `jsonapi:"attr,auto-apply"`
 	CanQueueDestroyPlan  bool                  `jsonapi:"attr,can-queue-destroy-plan"`
 	CreatedAt            time.Time             `jsonapi:"attr,created-at,iso8601"`
 	Environment          string                `jsonapi:"attr,environment"`
+	ExecutionMode        string                `jsonapi:"attr,execution-mode"`
 	FileTriggersEnabled  bool                  `jsonapi:"attr,file-triggers-enabled"`
 	Locked               bool                  `jsonapi:"attr,locked"`
 	MigrationEnvironment string                `jsonapi:"attr,migration-environment"`
@@ -95,6 +98,7 @@ type Workspace struct {
 	WorkingDirectory     string                `jsonapi:"attr,working-directory"`
 
 	// Relations
+	AgentPool    *AgentPool    `jsonapi:"relation,agent-pool"`
 	CurrentRun   *Run          `jsonapi:"relation,current-run"`
 	Organization *Organization `jsonapi:"relation,organization"`
 	SSHKey       *SSHKey       `jsonapi:"relation,ssh-key"`
@@ -134,6 +138,9 @@ type WorkspaceListOptions struct {
 
 	// A search string (partial workspace name) used to filter the results.
 	Search *string `url:"search[name],omitempty"`
+
+	// A list of relations to include. See available resources https://www.terraform.io/docs/cloud/api/workspaces.html#available-related-resources
+	Include *string `url:"include"`
 }
 
 // List all the workspaces within an organization.
@@ -162,8 +169,22 @@ type WorkspaceCreateOptions struct {
 	// For internal use only!
 	ID string `jsonapi:"primary,workspaces"`
 
+	// Required when execution-mode is set to agent. The ID of the agent pool
+	// belonging to the workspace's organization. This value must not be specified
+	// if execution-mode is set to remote or local or if operations is set to true.
+	AgentPoolID *string `jsonapi:"attr,agent-pool-id,omitempty"`
+
+	// Whether destroy plans can be queued on the workspace.
+	AllowDestroyPlan *bool `jsonapi:"attr,allow-destroy-plan,omitempty"`
+
 	// Whether to automatically apply changes when a Terraform plan is successful.
 	AutoApply *bool `jsonapi:"attr,auto-apply,omitempty"`
+
+	// Which execution mode to use. Valid values are remote, local, and agent.
+	// When set to local, the workspace will be used for state storage only.
+	// This value must not be specified if operations is specified.
+	// 'agent' execution mode is not available in Terraform Enterprise.
+	ExecutionMode *string `jsonapi:"attr,execution-mode,omitempty"`
 
 	// Whether to filter runs based on the changed files in a VCS push. If
 	// enabled, the working directory and trigger prefixes describe a set of
@@ -181,7 +202,8 @@ type WorkspaceCreateOptions struct {
 	// organization.
 	Name *string `jsonapi:"attr,name"`
 
-	// Whether the workspace will use remote or local execution mode.
+	// DEPRECATED. Whether the workspace will use remote or local execution mode.
+	// Use ExecutionMode instead.
 	Operations *bool `jsonapi:"attr,operations,omitempty"`
 
 	// Whether to queue all runs. Unless this is set to true, runs triggered by
@@ -229,6 +251,16 @@ func (o WorkspaceCreateOptions) valid() error {
 	if !validStringID(o.Name) {
 		return errors.New("invalid value for name")
 	}
+	if o.Operations != nil && o.ExecutionMode != nil {
+		return errors.New("operations is deprecated and cannot be specified when execution mode is used")
+	}
+	if o.AgentPoolID != nil && (o.ExecutionMode == nil || *o.ExecutionMode != "agent") {
+		return errors.New("specifying an agent pool ID requires 'agent' execution mode")
+	}
+	if o.AgentPoolID == nil && (o.ExecutionMode != nil && *o.ExecutionMode == "agent") {
+		return errors.New("'agent' execution mode requires an agent pool ID to be specified")
+	}
+
 	return nil
 }
 
@@ -313,6 +345,14 @@ type WorkspaceUpdateOptions struct {
 	// For internal use only!
 	ID string `jsonapi:"primary,workspaces"`
 
+	// Required when execution-mode is set to agent. The ID of the agent pool
+	// belonging to the workspace's organization. This value must not be specified
+	// if execution-mode is set to remote or local or if operations is set to true.
+	AgentPoolID *string `jsonapi:"attr,agent-pool-id,omitempty"`
+
+	// Whether destroy plans can be queued on the workspace.
+	AllowDestroyPlan *bool `jsonapi:"attr,allow-destroy-plan,omitempty"`
+
 	// Whether to automatically apply changes when a Terraform plan is successful.
 	AutoApply *bool `jsonapi:"attr,auto-apply,omitempty"`
 
@@ -322,13 +362,20 @@ type WorkspaceUpdateOptions struct {
 	// API and UI.
 	Name *string `jsonapi:"attr,name,omitempty"`
 
+	// Which execution mode to use. Valid values are remote, local, and agent.
+	// When set to local, the workspace will be used for state storage only.
+	// This value must not be specified if operations is specified.
+	// 'agent' execution mode is not available in Terraform Enterprise.
+	ExecutionMode *string `jsonapi:"attr,execution-mode,omitempty"`
+
 	// Whether to filter runs based on the changed files in a VCS push. If
 	// enabled, the working directory and trigger prefixes describe a set of
 	// paths which must contain changes for a VCS push to trigger a run. If
 	// disabled, any push will trigger a run.
 	FileTriggersEnabled *bool `jsonapi:"attr,file-triggers-enabled,omitempty"`
 
-	// Whether the workspace will use remote or local execution mode.
+	// DEPRECATED. Whether the workspace will use remote or local execution mode.
+	// Use ExecutionMode instead.
 	Operations *bool `jsonapi:"attr,operations,omitempty"`
 
 	// Whether to queue all runs. Unless this is set to true, runs triggered by
@@ -362,6 +409,20 @@ type WorkspaceUpdateOptions struct {
 	WorkingDirectory *string `jsonapi:"attr,working-directory,omitempty"`
 }
 
+func (o WorkspaceUpdateOptions) valid() error {
+	if o.Name != nil && !validStringID(o.Name) {
+		return errors.New("invalid value for name")
+	}
+	if o.Operations != nil && o.ExecutionMode != nil {
+		return errors.New("operations is deprecated and cannot be specified when execution mode is used")
+	}
+	if o.AgentPoolID == nil && (o.ExecutionMode != nil && *o.ExecutionMode == "agent") {
+		return errors.New("'agent' execution mode requires an agent pool ID to be specified")
+	}
+
+	return nil
+}
+
 // Update settings of an existing workspace.
 func (s *workspaces) Update(ctx context.Context, organization, workspace string, options WorkspaceUpdateOptions) (*Workspace, error) {
 	if !validStringID(&organization) {
@@ -369,6 +430,9 @@ func (s *workspaces) Update(ctx context.Context, organization, workspace string,
 	}
 	if !validStringID(&workspace) {
 		return nil, errors.New("invalid value for workspace")
+	}
+	if err := options.valid(); err != nil {
+		return nil, err
 	}
 
 	// Make sure we don't send a user provided ID.

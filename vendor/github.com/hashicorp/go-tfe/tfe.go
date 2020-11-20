@@ -108,6 +108,7 @@ type Client struct {
 	retryServerErrors bool
 	remoteAPIVersion  string
 
+	AgentPools                 AgentPools
 	Applies                    Applies
 	ConfigurationVersions      ConfigurationVersions
 	CostEstimates              CostEstimates
@@ -127,6 +128,7 @@ type Client struct {
 	Runs                       Runs
 	RunTriggers                RunTriggers
 	SSHKeys                    SSHKeys
+	StateVersionOutputs        StateVersionOutputs
 	StateVersions              StateVersions
 	Teams                      Teams
 	TeamAccess                 TeamAccesses
@@ -210,6 +212,7 @@ func NewClient(cfg *Config) (*Client, error) {
 	client.remoteAPIVersion = meta.APIVersion
 
 	// Create the services.
+	client.AgentPools = &agentPools{client: client}
 	client.Applies = &applies{client: client}
 	client.ConfigurationVersions = &configurationVersions{client: client}
 	client.CostEstimates = &costEstimates{client: client}
@@ -229,6 +232,7 @@ func NewClient(cfg *Config) (*Client, error) {
 	client.Runs = &runs{client: client}
 	client.RunTriggers = &runTriggers{client: client}
 	client.SSHKeys = &sshKeys{client: client}
+	client.StateVersionOutputs = &stateVersionOutputs{client: client}
 	client.StateVersions = &stateVersions{client: client}
 	client.Teams = &teams{client: client}
 	client.TeamAccess = &teamAccesses{client: client}
