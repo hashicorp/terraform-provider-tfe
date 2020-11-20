@@ -71,6 +71,7 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
+			"tfe_agent_pool":              dataSourceTFEAgentPool(),
 			"tfe_oauth_client":            dataSourceTFEOAuthClient(),
 			"tfe_organization_membership": dataSourceTFEOrganizationMembership(),
 			"tfe_ssh_key":                 dataSourceTFESSHKey(),
@@ -81,6 +82,7 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
+			"tfe_agent_pool":                 resourceTFEAgentPool(),
 			"tfe_notification_configuration": resourceTFENotificationConfiguration(),
 			"tfe_oauth_client":               resourceTFEOAuthClient(),
 			"tfe_organization":               resourceTFEOrganization(),

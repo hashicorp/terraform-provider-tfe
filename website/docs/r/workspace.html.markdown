@@ -15,9 +15,35 @@ Provides a workspace resource.
 Basic usage:
 
 ```hcl
+resource "tfe_organization" "test-organization" {
+  name  = "my-org-name"
+  email = "admin@company.com"
+}
+
 resource "tfe_workspace" "test" {
   name         = "my-workspace-name"
-  organization = "my-org-name"
+  organization = tfe_organization.test-organization.id
+}
+```
+
+(**TFC only**) With `execution_mode` of `agent`:
+
+```hcl
+resource "tfe_organization" "test-organization" {
+  name  = "my-org-name"
+  email = "admin@company.com"
+}
+
+resource "tfe_agent_pool" "test-agent-pool" {
+  name         = "my-agent-pool-name"
+  organization = tfe_organization.test-organization.id
+}
+
+resource "tfe_workspace" "test" {
+  name           = "my-workspace-name"
+  organization   = tfe_organization.test-organization.id
+  agent_pool_id  = tfe_organization.test-agent-pool.id
+  execution_mode = "agent"
 }
 ```
 
@@ -27,13 +53,23 @@ The following arguments are supported:
 
 * `name` - (Required) Name of the workspace.
 * `organization` - (Required) Name of the organization.
+* `agent_pool_id` - (Optional) The ID of an agent pool to assign to the workspace. Requires `execution_mode`
+  to be set to `agent`. This value _must not_ be provided if `execution_mode` is set to any other value or if `operations` is
+  provided.
 * `allow_destroy_plan` - (Optional) Whether destroy plans can be queued on the workspace.
 * `auto_apply` - (Optional) Whether to automatically apply changes when a
   Terraform plan is successful. Defaults to `false`.
-* `file_triggers_enabled` - (Optional) Whether to filter runs based on the changed files in a VCS push. If enabled, the working directory and trigger prefixes describe a set of paths which must contain changes for a VCS push to trigger a run. If disabled, any push will trigger a run. Defaults to `true`.
-* `operations` - (Optional) Whether to use remote execution mode. When set
-  to `false`, the workspace will be used for state storage only.
-  Defaults to `true`.
+* `execution_mode` - (Optional) Which [execution mode](https://www.terraform.io/docs/cloud/workspaces/settings.html#execution-mode) to use. Using Terraform Cloud, valid
+  values are `remote`, `local` or `agent`. Using Terraform Enterprise, only `remote` and `local` execution modes are
+  valid.  When set to `local`, the workspace will be used for state storage only. Defaults to `remote`. This value _must
+  not_ be provided if `operations` is provided.
+* `file_triggers_enabled` - (Optional) Whether to filter runs based on the changed files 
+  in a VCS push. If enabled, the working directory and trigger prefixes describe a set of 
+  paths which must contain changes for a VCS push to trigger a run. If disabled, any push will 
+  trigger a run. Defaults to `true`.
+* `operations` - **Deprecated** Whether to use remote execution mode. When set to `false`, the workspace will 
+  be used for state storage only. Defaults to `true`. This value _must not_ be provided if `execution_mode` is 
+  provided.
 * `queue_all_runs` - (Optional) Whether all runs should be queued. When set
   to `false`, runs triggered by a VCS change will not be queued until at least
   one run is manually queued. Defaults to `true`.
@@ -43,8 +79,10 @@ The following arguments are supported:
   security if the VCS repository is public or includes untrusted contributors.
   Defaults to `true`.
 * `ssh_key_id` - (Optional) The ID of an SSH key to assign to the workspace.
-* `terraform_version` - (Optional) The version of Terraform to use for this workspace. Defaults to the latest available version.
-* `trigger_prefixes` - (Optional) List of repository-root-relative paths which describe all locations to be tracked for changes.
+* `terraform_version` - (Optional) The version of Terraform to use for this workspace. Defaults to 
+  the latest available version.
+* `trigger_prefixes` - (Optional) List of repository-root-relative paths which describe all locations 
+  to be tracked for changes.
 * `working_directory` - (Optional) A relative path that Terraform will execute
   within.  Defaults to the root of your repository.
 * `vcs_repo` - (Optional) Settings for the workspace's VCS repository.
