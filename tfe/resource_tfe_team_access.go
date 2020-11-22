@@ -1,6 +1,7 @@
 package tfe
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -351,7 +352,7 @@ func resourceTFETeamAccessImporter(d *schema.ResourceData, meta interface{}) ([]
 // This CustomizeDiff function is what allows the provider resource to model the right API behavior with these
 // limitations, rooting out the user's intentions to figure out when to automatically assign 'access' to custom and/or
 // recompute 'permissions'.
-func setCustomOrComputedPermissions(d *schema.ResourceDiff, meta interface{}) error {
+func setCustomOrComputedPermissions(_ context.Context, d *schema.ResourceDiff, meta interface{}) error {
 	if _, ok := d.GetOk("access"); ok {
 		if d.HasChange("access") {
 			// If access is being added or changed to a known value, all permissions

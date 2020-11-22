@@ -1,11 +1,13 @@
 package tfe
 
 import (
+	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -26,7 +28,7 @@ func resourceTFERunTrigger() *schema.Resource {
 			// If workspace_external_id is changing from an empty value to a non-empty value or a non-empty value
 			// to an empty value, we know we are switching between workspace_external_id and workspace_id because
 			// we ensure later that one of them has to be set.
-			customdiff.ForceNewIfChange("workspace_external_id", func(old, new, meta interface{}) bool {
+			customdiff.ForceNewIfChange("workspace_external_id", func(_ context.Context, old, new, meta interface{}) bool {
 				oldWorkspaceExternalID := old.(string)
 				newWorkspaceExternalID := new.(string)
 				return oldWorkspaceExternalID != "" && newWorkspaceExternalID != ""
@@ -35,7 +37,7 @@ func resourceTFERunTrigger() *schema.Resource {
 			// If workspace_id is changing from an empty value to a non-empty value or a non-empty value
 			// to an empty value, we know we are switching between workspace_external_id and workspace_id because
 			// we ensure later that one of them has to be set.
-			customdiff.ForceNewIfChange("workspace_id", func(old, new, meta interface{}) bool {
+			customdiff.ForceNewIfChange("workspace_id", func(_ context.Context, old, new, meta interface{}) bool {
 				oldWorkspaceID := old.(string)
 				newWorkspaceID := new.(string)
 				return oldWorkspaceID != "" && newWorkspaceID != ""

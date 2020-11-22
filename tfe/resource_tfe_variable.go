@@ -1,6 +1,7 @@
 package tfe
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -84,7 +85,7 @@ func resourceTFEVariable() *schema.Resource {
 			},
 		},
 
-		CustomizeDiff: customdiff.ForceNewIf("key", func(d *schema.ResourceDiff, m interface{}) bool {
+		CustomizeDiff: customdiff.ForceNewIf("key", func(_ context.Context, d *schema.ResourceDiff, m interface{}) bool {
 			return d.Get("sensitive").(bool)
 		}),
 	}
