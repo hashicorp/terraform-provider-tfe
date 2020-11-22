@@ -1,34 +1,36 @@
 package tfe
 
 import (
+	"context"
 	"os"
 	"strings"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/hashicorp/terraform-provider-tfe/version"
 	"github.com/hashicorp/terraform-svchost/disco"
 )
 
-var testAccProviders map[string]terraform.ResourceProvider
+var testAccProviders map[string]*schema.Provider
 var testAccProvider *schema.Provider
 
 func init() {
-	testAccProvider = Provider().(*schema.Provider)
-	testAccProviders = map[string]terraform.ResourceProvider{
+	testAccProvider = Provider()
+	testAccProviders = map[string]*schema.Provider{
 		"tfe": testAccProvider,
 	}
 }
 
 func TestProvider(t *testing.T) {
-	if err := Provider().(*schema.Provider).InternalValidate(); err != nil {
+	if err := Provider().InternalValidate(); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 }
 
 func TestProvider_impl(t *testing.T) {
-	var _ terraform.ResourceProvider = Provider()
+	var _ *schema.Provider = Provider()
 }
 
 func TestProvider_versionConstraints(t *testing.T) {
@@ -93,8 +95,12 @@ func TestProvider_versionConstraints(t *testing.T) {
 
 func testAccPreCheck(t *testing.T) {
 	// The credentials must be provided by the CLI config file for testing.
-	if err := Provider().Configure(&terraform.ResourceConfig{}); err != nil {
-		t.Fatalf("err: %s", err)
+	if diags := Provider().Configure(context.Background(), &terraform.ResourceConfig{}); diags.HasError() {
+		for _, d := range diags {
+			if d.Severity == diag.Error {
+				t.Fatalf("err: %s", d.Summary)
+			}
+		}
 	}
 }
 
