@@ -23,42 +23,66 @@ non-breaking changes.
 
 ## Installation
 
-Declare the provider in your configuration and `terraform init` will automatically fetch and install the provider for you from the [Terraform Registry](https://registry.terraform.io/) (Terraform version 0.12.0+):
+Declare the provider in your configuration and `terraform init` will automatically fetch and install the provider for you from the [Terraform Registry](https://registry.terraform.io/):
 
-```
+```hcl
 terraform {
   required_providers {
-    tfe = "~> 0.22.0"
+    tfe = {
+      version = "~> 0.24.0"
+    }
   }
 }
 ```
 
-For production use, you should constrain the acceptable provider versions via configuration,
-to ensure that new versions with breaking changes will not be automatically installed by
-`terraform init` in future. As this provider is still at version zero, you should constrain
-the acceptable provider versions on the minor version.
+For production use, you should constrain the acceptable provider versions via
+configuration (as above), to ensure that new versions with breaking changes will
+not be automatically installed by `terraform init` in future. As this provider
+is still at version zero, you should constrain the acceptable provider versions
+on the minor version.
 
-If you are using Terraform CLI version 0.11.x, you can constrain this provider to 0.15.x versions
-by adding the version constraint to the `tfe` provider block.
+The above snippet using `required_providers` is for Terraform 0.13+; if you are using Terraform version 0.12, you can constrain by adding the version constraint to the `provider` block instead:
 
-```
+```hcl
 provider "tfe" {
-  version = "~> 0.15.0"
+  version = "~> 0.24.0"
   ...
 }
 ```
 
+Since v0.24.0, this provider requires [Terraform](https://www.terraform.io/downloads.html) >= 0.12
+
 For more information on provider installation and constraining provider versions, see the [Provider Requirements documentation](https://www.terraform.io/docs/configuration/provider-requirements.html).
 
-### Manually building the provider
+## Usage
+
+[Create a user or team API token in Terraform Cloud/Enterprise](https://www.terraform.io/docs/cloud/users-teams-organizations/api-tokens.html), and use the token in the provider configuration block:
+
+```hcl
+provider "tfe" {
+  hostname = "${var.hostname}" # Optional, for use with Terraform Enterprise. Defaults to app.terraform.io.
+  token    = "${var.token}"
+}
+
+# Create an organization
+resource "tfe_organization" "org" {
+  # ...
+}
+```
+
+There are several other ways to configure the authentication token, depending on
+your use case. For other methods, see the [Authentication documentation](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs#authentication)
+
+For more information on configuring providers in general, see the [Provider Configuration documentation](https://www.terraform.io/docs/configuration/providers.html).
+
+
+## Manually building the provider
 
 You might prefer to manually build the provider yourself - perhaps access to the Terraform Registry or the official
 release binaries on [releases.hashicorp.com](https://releases.hashicorp.com/terraform-provider-tfe/) are not available
 in your operating environment, or you're looking to contribute to the provider and are testing out a custom build.
 
-#### Requirements
--	[Terraform](https://www.terraform.io/downloads.html) >= 0.11.x
--	[Go](https://golang.org/doc/install) >= 1.14
+Building the provider requires [Go](https://golang.org/doc/install) >= 1.14
 
 Clone the repository, enter the directory, and build the provider:
 
@@ -81,27 +105,6 @@ See the [Provider Requirements](https://www.terraform.io/docs/configuration/prov
 * You can copy the provider binary to your `~/.terraform.d/plugins` directory.
 * You can create your test Terraform configurations in the same directory as your provider binary or you can copy the provider binary into the same directory as your test configurations.
 * You can copy the provider binary into the same location as your `terraform` binary.
-
-## Usage
-
-[Create a user or team API token in Terraform Cloud/Enterprise](https://www.terraform.io/docs/cloud/users-teams-organizations/api-tokens.html), and use the token in the provider configuration block:
-
-```hcl
-provider "tfe" {
-  hostname = "${var.hostname}" # Optional, for use with Terraform Enterprise. Defaults to app.terraform.io.
-  token    = "${var.token}"
-}
-
-# Create an organization
-resource "tfe_organization" "org" {
-  # ...
-}
-```
-
-There are several other ways to configure the authentication token, depending on
-your use case. For other methods, see the [Authentication documentation](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs#authentication)
-
-For more information on configuring providers in general, see the [Provider Configuration documentation](https://www.terraform.io/docs/configuration/providers.html).
 
 ## Contributing
 
