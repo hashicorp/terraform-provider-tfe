@@ -62,7 +62,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foobar" {
   name                  = "workspace-test-%d"
-  organization          = "${tfe_organization.foobar.id}"
+  organization          = tfe_organization.foobar.id
   allow_destroy_plan    = false
   auto_apply            = true
   file_triggers_enabled = true
@@ -74,7 +74,7 @@ resource "tfe_workspace" "foobar" {
 }
 
 data "tfe_workspace" "foobar" {
-  name         = "${tfe_workspace.foobar.name}"
-  organization = "${tfe_workspace.foobar.organization}"
+  name         = tfe_workspace.foobar.name
+  organization = tfe_workspace.foobar.organization
 }`, rInt, rInt)
 }

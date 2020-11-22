@@ -49,22 +49,22 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_team" "foobar" {
   name         = "team-test-%d"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test-%d"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_team_access" "foobar" {
   access       = "write"
-  team_id      = "${tfe_team.foobar.id}"
-  workspace_id = "${tfe_workspace.foobar.id}"
+  team_id      = tfe_team.foobar.id
+  workspace_id = tfe_workspace.foobar.id
 }
 
 data "tfe_team_access" "foobar" {
-  team_id      = "${tfe_team.foobar.id}"
-  workspace_id = "${tfe_team_access.foobar.workspace_id}"
+  team_id      = tfe_team.foobar.id
+  workspace_id = tfe_team_access.foobar.workspace_id
 }`, rInt, rInt, rInt)
 }

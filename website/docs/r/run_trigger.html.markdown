@@ -24,17 +24,17 @@ resource "tfe_organization" "test-organization" {
 
 resource "tfe_workspace" "test-workspace" {
   name         = "my-workspace-name"
-  organization = "${tfe_organization.test-organization.id}"
+  organization = tfe_organization.test-organization.id
 }
 
 resource "tfe_workspace" "test-sourceable" {
   name         = "my-sourceable-workspace-name"
-  organization = "${tfe_organization.test-organization.id}"
+  organization = tfe_organization.test-organization.id
 }
 
 resource "tfe_run_trigger" "test" {
-  workspace_external_id = "${tfe_workspace.test-workspace.id}"
-  sourceable_id         = "${tfe_workspace.test-sourceable.id}"
+  workspace_external_id = tfe_workspace.test-workspace.id
+  sourceable_id         = tfe_workspace.test-sourceable.id
 }
 ```
 

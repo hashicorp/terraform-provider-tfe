@@ -255,7 +255,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }`, rInt)
 }
 
@@ -268,7 +268,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 
   visibility = "organization"
   
@@ -289,7 +289,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_team" "foobar" {
   name         = "team-test-1"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 
   visibility = "secret"
   

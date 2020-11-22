@@ -168,7 +168,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_agent_pool" "foobar" {
   name         = "agent-pool-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }`, rInt)
 }
 
@@ -181,6 +181,6 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_agent_pool" "foobar" {
   name         = "agent-pool-updated"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }`, rInt)
 }

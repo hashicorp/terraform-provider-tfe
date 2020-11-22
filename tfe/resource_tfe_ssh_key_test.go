@@ -153,7 +153,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_ssh_key" "foobar" {
   name         = "ssh-key-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
   key          = "SSH-KEY-CONTENT"
 }`, rInt)
 }
@@ -167,7 +167,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_ssh_key" "foobar" {
   name         = "ssh-key-updated"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
   key          = "UPDATED-SSH-KEY-CONTENT"
 }`, rInt)
 }

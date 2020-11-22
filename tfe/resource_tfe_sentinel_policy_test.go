@@ -198,7 +198,7 @@ resource "tfe_organization" "foobar" {
 resource "tfe_sentinel_policy" "foobar" {
   name         = "policy-test"
   description  = "A test policy"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
   policy       = "main = rule { true }"
   enforce_mode = "hard-mandatory"
 }`, rInt)
@@ -214,7 +214,7 @@ resource "tfe_organization" "foobar" {
 resource "tfe_sentinel_policy" "foobar" {
   name         = "policy-test"
   description  = "An updated test policy"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
   policy       = "main = rule { false }"
   enforce_mode = "soft-mandatory"
 }`, rInt)

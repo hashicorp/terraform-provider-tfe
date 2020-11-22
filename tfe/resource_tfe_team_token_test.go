@@ -166,11 +166,11 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_team_token" "foobar" {
-  team_id = "${tfe_team.foobar.id}"
+  team_id = tfe_team.foobar.id
 }`, rInt)
 }
 
@@ -183,15 +183,15 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_team_token" "foobar" {
-  team_id = "${tfe_team.foobar.id}"
+  team_id = tfe_team.foobar.id
 }
 
 resource "tfe_team_token" "error" {
-  team_id = "${tfe_team.foobar.id}"
+  team_id = tfe_team.foobar.id
 }`, rInt)
 }
 
@@ -204,15 +204,15 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_team_token" "foobar" {
-  team_id = "${tfe_team.foobar.id}"
+  team_id = tfe_team.foobar.id
 }
 
 resource "tfe_team_token" "regenerated" {
-  team_id          = "${tfe_team.foobar.id}"
+  team_id          = tfe_team.foobar.id
   force_regenerate = true
 }`, rInt)
 }

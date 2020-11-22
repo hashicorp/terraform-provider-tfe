@@ -200,17 +200,17 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "workspace" {
   name         = "workspace-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_workspace" "sourceable" {
   name         = "sourceable-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_run_trigger" "foobar" {
-  workspace_external_id = "${tfe_workspace.workspace.id}"
-  sourceable_id         = "${tfe_workspace.sourceable.id}"
+  workspace_external_id = tfe_workspace.workspace.id
+  sourceable_id         = tfe_workspace.sourceable.id
 }`, rInt)
 }
 
@@ -223,17 +223,17 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "workspace" {
   name         = "workspace-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_workspace" "sourceable" {
   name         = "sourceable-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_run_trigger" "foobar" {
-  workspace_id = "${tfe_workspace.workspace.id}"
-  sourceable_id         = "${tfe_workspace.sourceable.id}"
+  workspace_id = tfe_workspace.workspace.id
+  sourceable_id         = tfe_workspace.sourceable.id
 }`, rInt)
 }
 
@@ -246,20 +246,20 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "workspace" {
   name         = "workspace-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_workspace" "sourceable" {
   count = 10
 
   name         = "sourceable-test-${count.index}"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_run_trigger" "foobar" {
   count = 10
 
-  workspace_external_id = "${tfe_workspace.workspace.external_id}"
-  sourceable_id         = "${tfe_workspace.sourceable[count.index].external_id}"
+  workspace_external_id = tfe_workspace.workspace.external_id
+  sourceable_id         = tfe_workspace.sourceable[count.index].external_id
 }`, rInt)
 }

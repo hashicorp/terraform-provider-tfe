@@ -215,11 +215,11 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_team_members" "foobar" {
-  team_id   = "${tfe_team.foobar.id}"
+  team_id   = tfe_team.foobar.id
   usernames = ["%s"]
 }`, rInt, TFE_USER1)
 }
@@ -233,11 +233,11 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_team_members" "foobar" {
-  team_id   = "${tfe_team.foobar.id}"
+  team_id   = tfe_team.foobar.id
   usernames = ["%s", "%s"]
 }`, rInt, TFE_USER1, TFE_USER2)
 }

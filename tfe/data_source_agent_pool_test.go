@@ -39,11 +39,11 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_agent_pool" "foobar" {
   name                  = "agent-pool-test-%d"
-  organization          = "${tfe_organization.foobar.id}"
+  organization          = tfe_organization.foobar.id
 }
 
 data "tfe_agent_pool" "foobar" {
-  name         = "${tfe_agent_pool.foobar.name}"
-  organization = "${tfe_agent_pool.foobar.organization}"
+  name         = tfe_agent_pool.foobar.name
+  organization = tfe_agent_pool.foobar.organization
 }`, rInt, rInt)
 }

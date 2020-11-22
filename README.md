@@ -60,8 +60,8 @@ For more information on provider installation and constraining provider versions
 
 ```hcl
 provider "tfe" {
-  hostname = "${var.hostname}" # Optional, for use with Terraform Enterprise. Defaults to app.terraform.io.
-  token    = "${var.token}"
+  hostname = var.hostname # Optional, for use with Terraform Enterprise. Defaults to app.terraform.io.
+  token    = var.token
 }
 
 # Create an organization

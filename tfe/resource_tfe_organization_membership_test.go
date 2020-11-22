@@ -138,6 +138,6 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_organization_membership" "foobar" {
   email        = "example@hashicorp.com"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }`, rInt)
 }

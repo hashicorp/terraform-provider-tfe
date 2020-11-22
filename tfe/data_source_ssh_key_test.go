@@ -40,12 +40,12 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_ssh_key" "foobar" {
   name         = "ssh-key-test-%d"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
   key          = "SSH-KEY-CONTENT"
 }
 
 data "tfe_ssh_key" "foobar" {
-  name         = "${tfe_ssh_key.foobar.name}"
-  organization = "${tfe_ssh_key.foobar.organization}"
+  name         = tfe_ssh_key.foobar.name
+  organization = tfe_ssh_key.foobar.organization
 }`, rInt, rInt)
 }

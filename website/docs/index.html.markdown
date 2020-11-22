@@ -99,8 +99,8 @@ For more information on provider installation and constraining provider versions
 
 ```hcl
 provider "tfe" {
-  hostname = "${var.hostname}"
-  token    = "${var.token}"
+  hostname = var.hostname
+  token    = var.token
   version  = "~> 0.15.0"
 }
 

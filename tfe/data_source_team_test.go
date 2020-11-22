@@ -40,11 +40,11 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_team" "foobar" {
   name         = "team-test-%d"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 data "tfe_team" "foobar" {
-  name         = "${tfe_team.foobar.name}"
-  organization = "${tfe_team.foobar.organization}"
+  name         = tfe_team.foobar.name
+  organization = tfe_team.foobar.organization
 }`, rInt, rInt)
 }

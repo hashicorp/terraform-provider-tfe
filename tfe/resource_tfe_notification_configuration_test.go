@@ -1094,7 +1094,7 @@ resource "tfe_organization_membership" "foobar" {
 resource "tfe_notification_configuration" "foobar" {
   name             = "notification_generic_with_email_user_ids"
   destination_type = "generic"
-  email_user_ids   = ["${tfe_organization_membership.foobar.id}"]
+  email_user_ids   = [tfe_organization_membership.foobar.id]
   workspace_id     = tfe_workspace.foobar.id
 }`, rInt)
 }
@@ -1158,7 +1158,7 @@ resource "tfe_organization_membership" "foobar" {
 resource "tfe_notification_configuration" "foobar" {
   name             = "notification_slack_with_email_user_ids"
   destination_type = "slack"
-  email_user_ids   = ["${tfe_organization_membership.foobar.id}"]
+  email_user_ids   = [tfe_organization_membership.foobar.id]
   workspace_id     = tfe_workspace.foobar.id
 }`, rInt)
 }
