@@ -43,7 +43,7 @@ type ConfigHost struct {
 // ctx is used as default context.Context when making TFE calls.
 var ctx = context.Background()
 
-// Provider returns a terraform.ResourceProvider.
+// Provider returns a schema.Provider
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
