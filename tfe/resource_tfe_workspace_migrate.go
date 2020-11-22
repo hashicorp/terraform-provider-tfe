@@ -1,7 +1,7 @@
 package tfe
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceTfeWorkspaceResourceV0() *schema.Resource {
