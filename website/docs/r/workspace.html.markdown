@@ -85,7 +85,9 @@ The following arguments are supported:
   to be tracked for changes.
 * `working_directory` - (Optional) A relative path that Terraform will execute
   within.  Defaults to the root of your repository.
-* `vcs_repo` - (Optional) Settings for the workspace's VCS repository.
+* `vcs_repo` - (Optional) Settings for the workspace's VCS repository, enabling the [UI/VCS-driven run workflow](https://www.terraform.io/docs/cloud/run/ui.html).
+  Omit this argument to utilize the [CLI-driven](https://www.terraform.io/docs/cloud/run/cli.html) and [API-driven](https://www.terraform.io/docs/cloud/run/api.html)
+  workflows, where runs are not driven by webhooks on your VCS provider.
 
 The `vcs_repo` block supports:
 
