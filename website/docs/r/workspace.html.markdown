@@ -98,8 +98,8 @@ The `vcs_repo` block supports:
   Default to `master`.
 * `ingress_submodules` - (Optional) Whether submodules should be fetched when
   cloning the VCS repository. Defaults to `false`.
-* `oauth_token_id` - (Required) Token ID of the VCS Connection (OAuth Connection Token)
-  to use.
+* `oauth_token_id` - (Required) The VCS Connection (OAuth Connection + Token) to use.
+  This ID can be obtained from a `tfe_oauth_client` resource.
 
 ## Attributes Reference
 
