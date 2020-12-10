@@ -15,7 +15,7 @@ Terraform Cloud, this provider supports both Cloud and Enterprise.
 
 Use the navigation to the left to read about the available resources.
 
-Since v0.24.0, this provider requires Terraform >= 0.12
+Since v0.24.0, this provider requires Terraform >= 0.12.
 
 ~> **Important:** For production use, you should constrain the acceptable provider versions via configuration,
 to ensure that new versions with breaking changes will not be automatically installed.
