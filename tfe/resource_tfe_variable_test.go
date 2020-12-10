@@ -7,8 +7,8 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccTFEVariable_basic(t *testing.T) {
@@ -341,7 +341,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_variable" "foobar" {
@@ -349,7 +349,7 @@ resource "tfe_variable" "foobar" {
   value        = "value_test"
   description  = "some description"
   category     = "env"
-  workspace_id = "${tfe_workspace.foobar.id}"
+  workspace_id = tfe_workspace.foobar.id
 }`, rInt)
 }
 
@@ -362,7 +362,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_variable" "foobar" {
@@ -372,7 +372,7 @@ resource "tfe_variable" "foobar" {
   category     = "terraform"
   hcl          = true
   sensitive    = true
-  workspace_id = "${tfe_workspace.foobar.id}"
+  workspace_id = tfe_workspace.foobar.id
 }`, rInt)
 }
 
@@ -385,7 +385,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_variable" "foobar" {
@@ -395,6 +395,6 @@ resource "tfe_variable" "foobar" {
   category     = "terraform"
   hcl          = true
   sensitive    = true
-  workspace_id = "${tfe_workspace.foobar.id}"
+  workspace_id = tfe_workspace.foobar.id
 }`, rInt)
 }

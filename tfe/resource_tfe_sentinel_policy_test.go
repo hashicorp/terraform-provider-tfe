@@ -7,8 +7,8 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccTFESentinelPolicy_basic(t *testing.T) {
@@ -198,7 +198,7 @@ resource "tfe_organization" "foobar" {
 resource "tfe_sentinel_policy" "foobar" {
   name         = "policy-test"
   description  = "A test policy"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
   policy       = "main = rule { true }"
   enforce_mode = "hard-mandatory"
 }`, rInt)
@@ -214,7 +214,7 @@ resource "tfe_organization" "foobar" {
 resource "tfe_sentinel_policy" "foobar" {
   name         = "policy-test"
   description  = "An updated test policy"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
   policy       = "main = rule { false }"
   enforce_mode = "soft-mandatory"
 }`, rInt)

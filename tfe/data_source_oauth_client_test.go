@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccTFEOAuthClientDataSource_basic(t *testing.T) {
@@ -41,7 +41,7 @@ func testAccTFEOAuthClientDataSourceConfig(rInt int) string {
 	  }
 	  
 	  resource "tfe_oauth_client" "test" {
-		organization     = "${tfe_organization.foobar.id}"
+		organization     = tfe_organization.foobar.id
 		api_url          = "https://api.github.com"
 		http_url         = "https://github.com"
 		oauth_token      = "%s"
@@ -49,7 +49,7 @@ func testAccTFEOAuthClientDataSourceConfig(rInt int) string {
 	  }	
 
 	  data "tfe_oauth_client" "client" {
-		  oauth_client_id = "${tfe_oauth_client.test.id}"
+		  oauth_client_id = tfe_oauth_client.test.id
 	  }
 	`, rInt, GITHUB_TOKEN)
 }

@@ -8,9 +8,9 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccTFETeamMembers_basic(t *testing.T) {
@@ -215,11 +215,11 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_team_members" "foobar" {
-  team_id   = "${tfe_team.foobar.id}"
+  team_id   = tfe_team.foobar.id
   usernames = ["%s"]
 }`, rInt, TFE_USER1)
 }
@@ -233,11 +233,11 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_team_members" "foobar" {
-  team_id   = "${tfe_team.foobar.id}"
+  team_id   = tfe_team.foobar.id
   usernames = ["%s", "%s"]
 }`, rInt, TFE_USER1, TFE_USER2)
 }

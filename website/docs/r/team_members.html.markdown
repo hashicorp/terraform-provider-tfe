@@ -30,7 +30,7 @@ resource "tfe_team" "test" {
 }
 
 resource "tfe_team_members" "test" {
-  team_id   = "${tfe_team.test.id}"
+  team_id   = tfe_team.test.id
   usernames = ["admin", "sander"]
 }
 ```

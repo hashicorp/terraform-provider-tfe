@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccTFEAgentPoolDataSource_basic(t *testing.T) {
@@ -39,11 +39,11 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_agent_pool" "foobar" {
   name                  = "agent-pool-test-%d"
-  organization          = "${tfe_organization.foobar.id}"
+  organization          = tfe_organization.foobar.id
 }
 
 data "tfe_agent_pool" "foobar" {
-  name         = "${tfe_agent_pool.foobar.name}"
-  organization = "${tfe_agent_pool.foobar.organization}"
+  name         = tfe_agent_pool.foobar.name
+  organization = tfe_agent_pool.foobar.organization
 }`, rInt, rInt)
 }

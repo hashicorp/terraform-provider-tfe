@@ -10,6 +10,7 @@ jobs:
     docker:
       - image: docker.mirror.hashicorp.services/circleci/golang:1.14.10
         environment:
+          TF_ACC_TERRAFORM_VERSION: 0.12.29
           TEST_RESULTS_DIR: *test_results_dir
 
     working_directory: /go/src/github.com/hashicorp/terraform-provider-tfe

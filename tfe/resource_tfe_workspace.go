@@ -1,13 +1,14 @@
 package tfe
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"regexp"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 var workspaceIdRegexp = regexp.MustCompile("^ws-[a-zA-Z0-9]{16}$")
@@ -441,7 +442,7 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 
 // An agent pool can only be specified when execution_mode is set to "agent". You currently cannot specify a
 // schema validation based on a different argument's value, so we do so here at plan time instead.
-func validateAgentExecution(d *schema.ResourceDiff, meta interface{}) error {
+func validateAgentExecution(_ context.Context, d *schema.ResourceDiff, meta interface{}) error {
 	if executionMode, ok := d.GetOk("execution_mode"); ok {
 		if executionMode.(string) != "agent" && d.Get("agent_pool_id") != "" {
 			return fmt.Errorf("execution_mode must be set to 'agent' to assign agent_pool_id")

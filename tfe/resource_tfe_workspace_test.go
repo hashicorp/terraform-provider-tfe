@@ -9,9 +9,9 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccTFEWorkspace_basic(t *testing.T) {
@@ -979,7 +979,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foobar" {
   name               = "workspace-test"
-  organization       = "${tfe_organization.foobar.id}"
+  organization       = tfe_organization.foobar.id
   allow_destroy_plan = false
   auto_apply         = true
 }`, rInt)
@@ -994,7 +994,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foobar" {
   name                  = "workspace-test"
-  organization          = "${tfe_organization.foobar.id}"
+  organization          = tfe_organization.foobar.id
   auto_apply            = true
   file_triggers_enabled = false
 }`, rInt)
@@ -1009,7 +1009,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
   operations = true
 }`, rInt)
 }
@@ -1023,7 +1023,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
   operations = false
 }`, rInt)
 }
@@ -1037,7 +1037,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
   execution_mode = "remote"
 }`, rInt)
 }
@@ -1051,7 +1051,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
   execution_mode = "local"
 }`, rInt)
 }
@@ -1065,14 +1065,14 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_agent_pool" "foobar" {
   name = "agent-pool-test"
-  organization = "${tfe_organization.foobar.name}"
+  organization = tfe_organization.foobar.name
 }
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
   execution_mode = "agent"
-  agent_pool_id = "${tfe_agent_pool.foobar.id}"
+  agent_pool_id = tfe_agent_pool.foobar.id
 }`, rInt)
 }
 
@@ -1085,7 +1085,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foobar" {
   name                  = "workspace-test"
-  organization          = "${tfe_organization.foobar.id}"
+  organization          = tfe_organization.foobar.id
   auto_apply            = true
   speculative_enabled = false
 }`, rInt)
@@ -1100,7 +1100,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foobar" {
   name                  = "workspace-monorepo"
-  organization          = "${tfe_organization.foobar.id}"
+  organization          = tfe_organization.foobar.id
   file_triggers_enabled = true
   trigger_prefixes      = ["/modules", "/shared"]
   working_directory     = "/db"
@@ -1116,7 +1116,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foobar" {
   name               = "renamed-out-of-band"
-  organization       = "${tfe_organization.foobar.id}"
+  organization       = tfe_organization.foobar.id
   allow_destroy_plan = false
   auto_apply         = true
 }`, rInt)
@@ -1131,7 +1131,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foobar" {
   name                  = "workspace-updated"
-  organization          = "${tfe_organization.foobar.id}"
+  organization          = tfe_organization.foobar.id
   allow_destroy_plan    = true
   auto_apply            = false
   file_triggers_enabled = true
@@ -1152,7 +1152,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foobar" {
   name                  = "workspace-updated"
-  organization          = "${tfe_organization.foobar.id}"
+  organization          = tfe_organization.foobar.id
   auto_apply            = false
   working_directory     = "terraform/test"
 }`, rInt)
@@ -1167,7 +1167,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foobar" {
   name                  = "workspace-updated"
-  organization          = "${tfe_organization.foobar.id}"
+  organization          = tfe_organization.foobar.id
   auto_apply            = false
 }`, rInt)
 }
@@ -1181,15 +1181,15 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_ssh_key" "foobar" {
   name         = "ssh-key-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
   key          = "SSH-KEY-CONTENT"
 }
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
   auto_apply   = true
-  ssh_key_id   = "${tfe_ssh_key.foobar.id}"
+  ssh_key_id   = tfe_ssh_key.foobar.id
 }`, rInt)
 }
 
@@ -1202,13 +1202,13 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_ssh_key" "foobar" {
   name         = "ssh-key-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
   key          = "SSH-KEY-CONTENT"
 }
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
   auto_apply   = true
 }`, rInt)
 }
@@ -1222,7 +1222,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foobar" {
   name                  = "workspace"
-  organization          = "${tfe_organization.foobar.id}"
+  organization          = tfe_organization.foobar.id
   trigger_prefixes      = ["/modules", "/shared"]
 }`, rInt)
 }
@@ -1235,7 +1235,7 @@ resource "tfe_organization" "foobar" {
 }
 resource "tfe_workspace" "foobar" {
   name                  = "workspace-test"
-  organization          = "${tfe_organization.foobar.id}"
+  organization          = tfe_organization.foobar.id
   auto_apply            = true
 }`, rInt)
 }
@@ -1248,7 +1248,7 @@ resource "tfe_organization" "foobar" {
 }
 
 resource "tfe_oauth_client" "test" {
-  organization     = "${tfe_organization.foobar.id}"
+  organization     = tfe_organization.foobar.id
   api_url          = "https://api.github.com"
   http_url         = "https://github.com"
   oauth_token      = "%s"
@@ -1257,11 +1257,11 @@ resource "tfe_oauth_client" "test" {
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test-add-vcs-repo"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
   auto_apply   = true
   vcs_repo {
     identifier     = "%s"
-    oauth_token_id = "${tfe_oauth_client.test.oauth_token_id}"
+    oauth_token_id = tfe_oauth_client.test.oauth_token_id
   }
 }
 `,
@@ -1279,7 +1279,7 @@ resource "tfe_organization" "foobar" {
 }
 
 resource "tfe_oauth_client" "test" {
-  organization     = "${tfe_organization.foobar.id}"
+  organization     = tfe_organization.foobar.id
   api_url          = "https://api.github.com"
   http_url         = "https://github.com"
   oauth_token      = "%s"
@@ -1288,11 +1288,11 @@ resource "tfe_oauth_client" "test" {
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test-update-vcs-repo-branch"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
   auto_apply   = true
   vcs_repo {
     identifier     = "%s"
-    oauth_token_id = "${tfe_oauth_client.test.oauth_token_id}"
+    oauth_token_id = tfe_oauth_client.test.oauth_token_id
     branch         = "%s"
   }
 }
@@ -1313,7 +1313,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test-remove-vcs-repo"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
   auto_apply   = true
 }
 `, rInt)

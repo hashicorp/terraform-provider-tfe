@@ -27,8 +27,8 @@ resource "tfe_workspace" "test" {
 
 resource "tfe_team_access" "test" {
   access       = "read"
-  team_id      = "${tfe_team.test.id}"
-  workspace_id = "${tfe_workspace.test.id}"
+  team_id      = tfe_team.test.id
+  workspace_id = tfe_workspace.test.id
 }
 ```
 

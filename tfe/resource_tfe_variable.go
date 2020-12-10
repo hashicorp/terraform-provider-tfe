@@ -1,14 +1,15 @@
 package tfe
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/customdiff"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func resourceTFEVariable() *schema.Resource {
@@ -84,7 +85,7 @@ func resourceTFEVariable() *schema.Resource {
 			},
 		},
 
-		CustomizeDiff: customdiff.ForceNewIf("key", func(d *schema.ResourceDiff, m interface{}) bool {
+		CustomizeDiff: customdiff.ForceNewIf("key", func(_ context.Context, d *schema.ResourceDiff, m interface{}) bool {
 			return d.Get("sensitive").(bool)
 		}),
 	}

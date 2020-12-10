@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccTFEWorkspaceIDsDataSource_basic(t *testing.T) {
@@ -141,22 +141,22 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foo" {
   name         = "workspace-foo-%d"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_workspace" "bar" {
   name         = "workspace-bar-%d"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_workspace" "dummy" {
   name         = "workspace-dummy-%d"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 data "tfe_workspace_ids" "foobar" {
-  names        = ["${tfe_workspace.foo.name}", "${tfe_workspace.bar.name}"]
-  organization = "${tfe_organization.foobar.name}"
+  names        = [tfe_workspace.foo.name, tfe_workspace.bar.name]
+  organization = tfe_organization.foobar.name
 }`, rInt, rInt, rInt, rInt)
 }
 
@@ -169,21 +169,21 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_workspace" "foo" {
   name         = "workspace-foo-%d"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_workspace" "bar" {
   name         = "workspace-bar-%d"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_workspace" "dummy" {
   name         = "workspace-dummy-%d"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 data "tfe_workspace_ids" "foobar" {
   names        = ["*"]
-  organization = "${tfe_workspace.dummy.organization}"
+  organization = tfe_workspace.dummy.organization
 }`, rInt, rInt, rInt, rInt)
 }

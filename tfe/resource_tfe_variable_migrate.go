@@ -1,11 +1,12 @@
 package tfe
 
 import (
+	"context"
 	"fmt"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func resourceTfeVariableResourceV0() *schema.Resource {
@@ -57,7 +58,7 @@ func resourceTfeVariableResourceV0() *schema.Resource {
 	}
 }
 
-func resourceTfeVariableStateUpgradeV0(rawState map[string]interface{}, meta interface{}) (map[string]interface{}, error) {
+func resourceTfeVariableStateUpgradeV0(_ context.Context, rawState map[string]interface{}, meta interface{}) (map[string]interface{}, error) {
 	tfeClient := meta.(*tfe.Client)
 
 	humanID := rawState["workspace_id"].(string)

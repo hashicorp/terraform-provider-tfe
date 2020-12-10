@@ -15,6 +15,8 @@ Terraform Cloud, this provider supports both Cloud and Enterprise.
 
 Use the navigation to the left to read about the available resources.
 
+Since v0.24.0, this provider requires Terraform >= 0.12.
+
 ~> **Important:** For production use, you should constrain the acceptable provider versions via configuration,
 to ensure that new versions with breaking changes will not be automatically installed.
 For more information, see [Versions](#versions).
@@ -67,28 +69,26 @@ the [CLI Configuration File documentation](/docs/commands/cli-config.html).
 
 For production use, you should constrain the acceptable provider versions via
 configuration, to ensure that new versions with breaking changes will not be
-automatically installed by `terraform init` in the future. As this provider is still
-at version zero, you should constrain the acceptable provider versions on the
-minor version.
-
-If you are using Terraform CLI version 0.12.x+, you can constrain this provider
-to 0.15.x versions by adding a `required_providers` block inside a `terraform`
-block:
+automatically installed by `terraform init` in the future:
 
 ```hcl
 terraform {
   required_providers {
-    tfe = "~> 0.15.0"
+    tfe = {
+      version = "~> 0.24.0"
+    }
   }
 }
 ```
 
-If you are using Terraform CLI version 0.11.x, you can constrain this provider
-to 0.15.x versions by adding the version constraint to the tfe provider block:
+As this provider is still at version zero, you should constrain the acceptable
+provider versions on the minor version.
+
+The above snippet using `required_providers` is for Terraform 0.13+; if you are using Terraform version 0.12, you can constrain by adding the version constraint to the `provider` block instead:
 
 ```hcl
 provider "tfe" {
-  version = "~> 0.15.0"
+  version = "~> 0.24.0"
   ...
 }
 ```
@@ -99,8 +99,8 @@ For more information on provider installation and constraining provider versions
 
 ```hcl
 provider "tfe" {
-  hostname = "${var.hostname}"
-  token    = "${var.token}"
+  hostname = var.hostname
+  token    = var.token
   version  = "~> 0.15.0"
 }
 

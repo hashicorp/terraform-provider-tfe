@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccTFENotificationConfiguration_basic(t *testing.T) {
@@ -343,11 +343,11 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesEmail(t *testin
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_emailWithURL(rInt),
-				ExpectError: regexp.MustCompile(`^.*URL cannot be set with destination type of email`),
+				ExpectError: regexp.MustCompile(`URL cannot be set with destination type of email`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_emailWithToken(rInt),
-				ExpectError: regexp.MustCompile(`^.*Token cannot be set with destination type of email`),
+				ExpectError: regexp.MustCompile(`Token cannot be set with destination type of email`),
 			},
 		},
 	})
@@ -362,15 +362,15 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesGeneric(t *test
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`^.*Email addresses cannot be set with destination type of generic`),
+				ExpectError: regexp.MustCompile(`Email addresses cannot be set with destination type of generic`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`^.*Email user IDs cannot be set with destination type of generic`),
+				ExpectError: regexp.MustCompile(`Email user IDs cannot be set with destination type of generic`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithoutURL(rInt),
-				ExpectError: regexp.MustCompile(`^.*URL is required with destination type of generic`),
+				ExpectError: regexp.MustCompile(`URL is required with destination type of generic`),
 			},
 		},
 	})
@@ -385,19 +385,19 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesSlack(t *testin
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`^.*Email addresses cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`Email addresses cannot be set with destination type of slack`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`^.*Email user IDs cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`Email user IDs cannot be set with destination type of slack`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithToken(rInt),
-				ExpectError: regexp.MustCompile(`^.*Token cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`Token cannot be set with destination type of slack`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithoutURL(rInt),
-				ExpectError: regexp.MustCompile(`^.*URL is required with destination type of slack`),
+				ExpectError: regexp.MustCompile(`URL is required with destination type of slack`),
 			},
 		},
 	})
@@ -432,11 +432,11 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesEmail(t *
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_emailWithURL(rInt),
-				ExpectError: regexp.MustCompile(`^.*URL cannot be set with destination type of email`),
+				ExpectError: regexp.MustCompile(`URL cannot be set with destination type of email`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_emailWithToken(rInt),
-				ExpectError: regexp.MustCompile(`^.*Token cannot be set with destination type of email`),
+				ExpectError: regexp.MustCompile(`Token cannot be set with destination type of email`),
 			},
 		},
 	})
@@ -471,15 +471,15 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesGeneric(t
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`^.*Email addresses cannot be set with destination type of generic`),
+				ExpectError: regexp.MustCompile(`Email addresses cannot be set with destination type of generic`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`^.*Email user IDs cannot be set with destination type of generic`),
+				ExpectError: regexp.MustCompile(`Email user IDs cannot be set with destination type of generic`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithoutURL(rInt),
-				ExpectError: regexp.MustCompile(`^.*URL is required with destination type of generic`),
+				ExpectError: regexp.MustCompile(`URL is required with destination type of generic`),
 			},
 		},
 	})
@@ -514,19 +514,19 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesSlack(t *
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`^.*Email addresses cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`Email addresses cannot be set with destination type of slack`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`^.*Email user IDs cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`Email user IDs cannot be set with destination type of slack`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithToken(rInt),
-				ExpectError: regexp.MustCompile(`^.*Token cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`Token cannot be set with destination type of slack`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithoutURL(rInt),
-				ExpectError: regexp.MustCompile(`^.*URL is required with destination type of slack`),
+				ExpectError: regexp.MustCompile(`URL is required with destination type of slack`),
 			},
 		},
 	})
@@ -1094,7 +1094,7 @@ resource "tfe_organization_membership" "foobar" {
 resource "tfe_notification_configuration" "foobar" {
   name             = "notification_generic_with_email_user_ids"
   destination_type = "generic"
-  email_user_ids   = ["${tfe_organization_membership.foobar.id}"]
+  email_user_ids   = [tfe_organization_membership.foobar.id]
   workspace_id     = tfe_workspace.foobar.id
 }`, rInt)
 }
@@ -1158,7 +1158,7 @@ resource "tfe_organization_membership" "foobar" {
 resource "tfe_notification_configuration" "foobar" {
   name             = "notification_slack_with_email_user_ids"
   destination_type = "slack"
-  email_user_ids   = ["${tfe_organization_membership.foobar.id}"]
+  email_user_ids   = [tfe_organization_membership.foobar.id]
   workspace_id     = tfe_workspace.foobar.id
 }`, rInt)
 }

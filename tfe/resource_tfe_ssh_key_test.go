@@ -7,8 +7,8 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccTFESSHKey_basic(t *testing.T) {
@@ -153,7 +153,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_ssh_key" "foobar" {
   name         = "ssh-key-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
   key          = "SSH-KEY-CONTENT"
 }`, rInt)
 }
@@ -167,7 +167,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_ssh_key" "foobar" {
   name         = "ssh-key-updated"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
   key          = "UPDATED-SSH-KEY-CONTENT"
 }`, rInt)
 }

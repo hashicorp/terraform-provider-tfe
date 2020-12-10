@@ -7,8 +7,8 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccTFETeamAccess_write(t *testing.T) {
@@ -317,18 +317,18 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_team_access" "foobar" {
   access       = "write"
-  team_id      = "${tfe_team.foobar.id}"
-  workspace_id = "${tfe_workspace.foobar.id}"
+  team_id      = tfe_team.foobar.id
+  workspace_id = tfe_workspace.foobar.id
 }`, rInt)
 }
 
@@ -341,18 +341,18 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_team_access" "foobar" {
   access       = "plan"
-  team_id      = "${tfe_team.foobar.id}"
-  workspace_id = "${tfe_workspace.foobar.id}"
+  team_id      = tfe_team.foobar.id
+  workspace_id = tfe_workspace.foobar.id
 }`, rInt)
 }
 
@@ -365,12 +365,12 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_team_access" "foobar" {
@@ -381,7 +381,7 @@ resource "tfe_team_access" "foobar" {
     sentinel_mocks = "none"
     workspace_locking = false
   }
-  team_id      = "${tfe_team.foobar.id}"
-  workspace_id = "${tfe_workspace.foobar.id}"
+  team_id      = tfe_team.foobar.id
+  workspace_id = tfe_workspace.foobar.id
 }`, rInt)
 }

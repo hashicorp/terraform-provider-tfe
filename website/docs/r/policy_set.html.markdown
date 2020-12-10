@@ -26,13 +26,13 @@ resource "tfe_policy_set" "test" {
   description   = "A brand new policy set"
   organization  = "my-org-name"
   policies_path = "policies/my-policy-set"
-  workspace_ids = ["${tfe_workspace.test.id}"]
+  workspace_ids = [tfe_workspace.test.id]
 
   vcs_repo {
     identifier         = "my-org-name/my-policy-set-repository"
     branch             = "master"
     ingress_submodules = false
-    oauth_token_id     = "${tfe_oauth_client.test.id}"
+    oauth_token_id     = tfe_oauth_client.test.id
   }
 }
 ```
@@ -44,8 +44,8 @@ resource "tfe_policy_set" "test" {
   name          = "my-policy-set"
   description   = "A brand new policy set"
   organization  = "my-org-name"
-  policy_ids    = ["${tfe_sentinel_policy.test.id}"]
-  workspace_ids = ["${tfe_workspace.test.id}"]
+  policy_ids    = [tfe_sentinel_policy.test.id]
+  workspace_ids = [tfe_workspace.test.id]
 }
 ```
 

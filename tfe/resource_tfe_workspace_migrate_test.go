@@ -1,6 +1,7 @@
 package tfe
 
 import (
+	"context"
 	"reflect"
 	"testing"
 )
@@ -22,7 +23,7 @@ func testResourceTfeWorkspaceStateDataV1() map[string]interface{} {
 
 func TestResourceTfeWorkspaceStateUpgradeV0(t *testing.T) {
 	expected := testResourceTfeWorkspaceStateDataV1()
-	actual, err := resourceTfeWorkspaceStateUpgradeV0(testResourceTfeWorkspaceStateDataV0(), nil)
+	actual, err := resourceTfeWorkspaceStateUpgradeV0(context.Background(), testResourceTfeWorkspaceStateDataV0(), nil)
 	if err != nil {
 		t.Fatalf("error migrating state: %s", err)
 	}

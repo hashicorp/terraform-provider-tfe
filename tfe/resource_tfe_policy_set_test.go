@@ -2,13 +2,14 @@ package tfe
 
 import (
 	"fmt"
-	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"math/rand"
 	"regexp"
 	"testing"
 	"time"
+
+	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccTFEPolicySet_basic(t *testing.T) {
@@ -782,14 +783,14 @@ resource "tfe_organization" "foobar" {
 resource "tfe_sentinel_policy" "foo" {
   name         = "policy-foo"
   policy       = "main = rule { true }"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_policy_set" "foobar" {
   name         = "tst-terraform"
   description  = "Policy Set"
-  organization = "${tfe_organization.foobar.id}"
-  policy_ids   = ["${tfe_sentinel_policy.foo.id}"]
+  organization = tfe_organization.foobar.id
+  policy_ids   = [tfe_sentinel_policy.foo.id]
 }`, rInt)
 }
 
@@ -802,7 +803,7 @@ resource "tfe_organization" "foobar" {
  resource "tfe_policy_set" "foobar" {
   name         = "tst-terraform"
   description  = "Policy Set"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }`, rInt)
 }
 
@@ -816,19 +817,19 @@ resource "tfe_organization" "foobar" {
 resource "tfe_sentinel_policy" "foo" {
   name         = "policy-foo"
   policy       = "main = rule { true }"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_workspace" "foo" {
   name         = "workspace-foo"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_policy_set" "foobar" {
   name                   = "terraform-populated"
-  organization           = "${tfe_organization.foobar.id}"
-  policy_ids             = ["${tfe_sentinel_policy.foo.id}"]
-  workspace_external_ids = ["${tfe_workspace.foo.id}"]
+  organization           = tfe_organization.foobar.id
+  policy_ids             = [tfe_sentinel_policy.foo.id]
+  workspace_external_ids = [tfe_workspace.foo.id]
 }`, rInt)
 }
 
@@ -842,19 +843,19 @@ resource "tfe_organization" "foobar" {
 resource "tfe_sentinel_policy" "foo" {
   name         = "policy-foo"
   policy       = "main = rule { true }"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_workspace" "foo" {
   name         = "workspace-foo"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_policy_set" "foobar" {
   name          = "terraform-populated"
-  organization  = "${tfe_organization.foobar.id}"
-  policy_ids    = ["${tfe_sentinel_policy.foo.id}"]
-  workspace_ids = ["${tfe_workspace.foo.id}"]
+  organization  = tfe_organization.foobar.id
+  policy_ids    = [tfe_sentinel_policy.foo.id]
+  workspace_ids = [tfe_workspace.foo.id]
 }`, rInt)
 }
 
@@ -868,30 +869,30 @@ resource "tfe_organization" "foobar" {
 resource "tfe_sentinel_policy" "foo" {
   name         = "policy-foo"
   policy       = "main = rule { true }"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_sentinel_policy" "bar" {
   name         = "policy-bar"
   policy       = "main = rule { false }"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_workspace" "foo" {
   name         = "workspace-foo"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_workspace" "bar" {
   name         = "workspace-bar"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_policy_set" "foobar" {
   name                   = "terraform-populated-updated"
-  organization           = "${tfe_organization.foobar.id}"
-  policy_ids             = ["${tfe_sentinel_policy.bar.id}"]
-  workspace_external_ids = ["${tfe_workspace.bar.id}"]
+  organization           = tfe_organization.foobar.id
+  policy_ids             = [tfe_sentinel_policy.bar.id]
+  workspace_external_ids = [tfe_workspace.bar.id]
 }`, rInt)
 }
 
@@ -905,30 +906,30 @@ resource "tfe_organization" "foobar" {
 resource "tfe_sentinel_policy" "foo" {
   name         = "policy-foo"
   policy       = "main = rule { true }"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_sentinel_policy" "bar" {
   name         = "policy-bar"
   policy       = "main = rule { false }"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_workspace" "foo" {
   name         = "workspace-foo"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_workspace" "bar" {
   name         = "workspace-bar"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_policy_set" "foobar" {
   name          = "terraform-populated-updated"
-  organization  = "${tfe_organization.foobar.id}"
-  policy_ids    = ["${tfe_sentinel_policy.bar.id}"]
-  workspace_ids = ["${tfe_workspace.bar.id}"]
+  organization  = tfe_organization.foobar.id
+  policy_ids    = [tfe_sentinel_policy.bar.id]
+  workspace_ids = [tfe_workspace.bar.id]
 }`, rInt)
 }
 
@@ -942,19 +943,19 @@ resource "tfe_organization" "foobar" {
 resource "tfe_sentinel_policy" "foo" {
   name         = "policy-foo"
   policy       = "main = rule { true }"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_workspace" "foo" {
   name         = "workspace-foo"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_policy_set" "foobar" {
   name         = "terraform-global"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
   global       = true
-  policy_ids   = ["${tfe_sentinel_policy.foo.id}"]
+  policy_ids   = [tfe_sentinel_policy.foo.id]
 }`, rInt)
 }
 
@@ -966,7 +967,7 @@ resource "tfe_organization" "foobar" {
 }
 
 resource "tfe_oauth_client" "test" {
-  organization     = "${tfe_organization.foobar.id}"
+  organization     = tfe_organization.foobar.id
   api_url          = "https://api.github.com"
   http_url         = "https://github.com"
   oauth_token      = "%s"
@@ -976,12 +977,12 @@ resource "tfe_oauth_client" "test" {
 resource "tfe_policy_set" "foobar" {
   name         = "tst-terraform"
   description  = "Policy Set"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
   vcs_repo {
     identifier         = "%s"
     branch             = "master"
     ingress_submodules = true
-    oauth_token_id     = "${tfe_oauth_client.test.oauth_token_id}"
+    oauth_token_id     = tfe_oauth_client.test.oauth_token_id
   }
 
   policies_path = "%s"
@@ -1001,7 +1002,7 @@ resource "tfe_organization" "foobar" {
 }
 
 resource "tfe_oauth_client" "test" {
-  organization     = "${tfe_organization.foobar.id}"
+  organization     = tfe_organization.foobar.id
   api_url          = "https://api.github.com"
   http_url         = "https://github.com"
   oauth_token      = "%s"
@@ -1011,12 +1012,12 @@ resource "tfe_oauth_client" "test" {
 resource "tfe_policy_set" "foobar" {
   name         = "tst-terraform"
   description  = "Policy Set"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
   vcs_repo {
     identifier         = "%s"
     branch             = "%s"
     ingress_submodules = true
-    oauth_token_id     = "${tfe_oauth_client.test.oauth_token_id}"
+    oauth_token_id     = tfe_oauth_client.test.oauth_token_id
   }
 
   policies_path = "%s"
@@ -1039,13 +1040,13 @@ resource "tfe_organization" "foobar" {
 resource "tfe_sentinel_policy" "foo" {
   name         = "policy-foo"
   policy       = "main = rule { true }"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_policy_set" "foobar" {
   name         = "not the right format"
   description  = "Policy Set"
-  organization = "${tfe_organization.foobar.id}"
-  policy_ids   = ["${tfe_sentinel_policy.foo.id}"]
+  organization = tfe_organization.foobar.id
+  policy_ids   = [tfe_sentinel_policy.foo.id]
 }`, rInt)
 }

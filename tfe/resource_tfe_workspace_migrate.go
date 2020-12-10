@@ -1,7 +1,9 @@
 package tfe
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"context"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceTfeWorkspaceResourceV0() *schema.Resource {
@@ -105,7 +107,7 @@ func resourceTfeWorkspaceResourceV0() *schema.Resource {
 	}
 }
 
-func resourceTfeWorkspaceStateUpgradeV0(rawState map[string]interface{}, meta interface{}) (map[string]interface{}, error) {
+func resourceTfeWorkspaceStateUpgradeV0(_ context.Context, rawState map[string]interface{}, meta interface{}) (map[string]interface{}, error) {
 	rawState["id"] = rawState["external_id"]
 	return rawState, nil
 }

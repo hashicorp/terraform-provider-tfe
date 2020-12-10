@@ -8,8 +8,8 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccTFEOrganizationToken_basic(t *testing.T) {
@@ -176,7 +176,7 @@ resource "tfe_organization" "foobar" {
 }
 
 resource "tfe_organization_token" "foobar" {
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }`, rInt)
 }
 
@@ -188,11 +188,11 @@ resource "tfe_organization" "foobar" {
 }
 
 resource "tfe_organization_token" "foobar" {
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_organization_token" "error" {
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }`, rInt)
 }
 
@@ -204,11 +204,11 @@ resource "tfe_organization" "foobar" {
 }
 
 resource "tfe_organization_token" "foobar" {
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_organization_token" "regenerated" {
-  organization     = "${tfe_organization.foobar.id}"
+  organization     = tfe_organization.foobar.id
   force_regenerate = true
 }`, rInt)
 }

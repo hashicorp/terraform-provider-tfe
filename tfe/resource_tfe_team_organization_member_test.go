@@ -7,8 +7,8 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestPackTeamOrganizationMemberID(t *testing.T) {
@@ -214,16 +214,16 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_organization_membership" "foobar" {
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 	email = "foo@foobar.com"
 }
 
 resource "tfe_team_organization_member" "foobar" {
-  team_id  = "${tfe_team.foobar.id}"
-  organization_membership_id = "${tfe_organization_membership.foobar.id}"
+  team_id  = tfe_team.foobar.id
+  organization_membership_id = tfe_organization_membership.foobar.id
 }`, rInt)
 }

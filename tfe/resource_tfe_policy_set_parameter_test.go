@@ -7,8 +7,8 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccTFEPolicySetParameter_basic(t *testing.T) {
@@ -201,13 +201,13 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_policy_set" "foobar" {
   name         = "policy-set-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_policy_set_parameter" "foobar" {
   key          = "key_test"
   value        = "value_test"
-  policy_set_id = "${tfe_policy_set.foobar.id}"
+  policy_set_id = tfe_policy_set.foobar.id
 }`, rInt)
 }
 
@@ -220,13 +220,13 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_policy_set" "foobar" {
   name         = "policy-set-test"
-  organization = "${tfe_organization.foobar.id}"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_policy_set_parameter" "foobar" {
   key          = "key_updated"
   value        = "value_updated"
   sensitive    = true
-  policy_set_id = "${tfe_policy_set.foobar.id}"
+  policy_set_id = tfe_policy_set.foobar.id
 }`, rInt)
 }
