@@ -32,12 +32,12 @@ resource "tfe_workspace" "test" {
 }
 
 resource "tfe_notification_configuration" "test" {
-  name                      = "my-test-notification-configuration"
-  enabled                   = true
-  destination_type          = "generic"
-  triggers                  = ["run:created", "run:planning", "run:errored"]
-  url                       = "https://example.com"
-  workspace_external_id     = tfe_workspace.test.id
+  name             = "my-test-notification-configuration"
+  enabled          = true
+  destination_type = "generic"
+  triggers         = ["run:created", "run:planning", "run:errored"]
+  url              = "https://example.com"
+  workspace_id     = tfe_workspace.test.id
 }
 ```
 
@@ -60,12 +60,12 @@ resource "tfe_organization_membership" "test" {
 }
 
 resource "tfe_notification_configuration" "test" {
-  name                  = "my-test-email-notification-configuration"
-  enabled               = true
-  destination_type      = "email"
-  email_user_ids        = [tfe_organization_membership.test.user_id]
-  triggers              = ["run:created", "run:planning", "run:errored"]
-  workspace_external_id = tfe_workspace.test.id
+  name             = "my-test-email-notification-configuration"
+  enabled          = true
+  destination_type = "email"
+  email_user_ids   = [tfe_organization_membership.test.user_id]
+  triggers         = ["run:created", "run:planning", "run:errored"]
+  workspace_id     = tfe_workspace.test.id
 }
 ```
 
@@ -88,13 +88,13 @@ resource "tfe_organization_membership" "test" {
 }
 
 resource "tfe_notification_configuration" "test" {
-  name                  = "my-test-email-notification-configuration"
-  enabled               = true
-  destination_type      = "email"
-  email_user_ids        = [tfe_organization_membership.test.user_id]
-  email_addresses       = ["user1@company.com", "user2@company.com", "user3@company.com"]
-  triggers              = ["run:created", "run:planning", "run:errored"]
-  workspace_external_id = tfe_workspace.test.id
+  name             = "my-test-email-notification-configuration"
+  enabled          = true
+  destination_type = "email"
+  email_user_ids   = [tfe_organization_membership.test.user_id]
+  email_addresses  = ["user1@company.com", "user2@company.com", "user3@company.com"]
+  triggers         = ["run:created", "run:planning", "run:errored"]
+  workspace_id     = tfe_workspace.test.id
 }
 ```
 
@@ -121,12 +121,7 @@ The following arguments are supported:
 * `url` - (Required if `destination_type` is `generic` or `slack`) The HTTP or HTTPS URL of the notification 
   configuration where notification requests will be made. This value _must not_ be provided if `destination_type` 
   is `email`.
-* `workspace_id` - The id of the workspace that owns the notification configuration. 
-  This value _must not_ be provided if `workspace_external_id` is provided.
-* `workspace_external_id` - **Deprecated** Use `workspace_id` instead. The id of the workspace that owns the 
-  notification configuration. This value _must not_ be provided if `workspace_id` is provided.
-  
--> **Note:** One of `workspace_id` or `workspace_external_id` _must_ be provided.
+* `workspace_id` - (Required) The id of the workspace that owns the notification configuration. 
 
 ## Attributes Reference
 

@@ -44,37 +44,6 @@ func TestAccTFENotificationConfiguration_basic(t *testing.T) {
 	})
 }
 
-func TestAccTFENotificationConfiguration_basicWorkspaceID(t *testing.T) {
-	notificationConfiguration := &tfe.NotificationConfiguration{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccTFENotificationConfiguration_basicWorkspaceID(rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFENotificationConfigurationExists(
-						"tfe_notification_configuration.foobar", notificationConfiguration),
-					testAccCheckTFENotificationConfigurationAttributes(notificationConfiguration),
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "destination_type", "generic"),
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "name", "notification_basic"),
-					// Just test the number of items in triggers
-					// Values in triggers attribute are tested by testCheckTFENotificationConfigurationAttributes
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "triggers.#", "0"),
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "url", "http://example.com"),
-				),
-			},
-		},
-	})
-}
-
 func TestAccTFENotificationConfiguration_emailUserIDs(t *testing.T) {
 	notificationConfiguration := &tfe.NotificationConfiguration{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -135,130 +104,6 @@ func TestAccTFENotificationConfiguration_update(t *testing.T) {
 			},
 			{
 				Config: testAccTFENotificationConfiguration_update(rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFENotificationConfigurationExists(
-						"tfe_notification_configuration.foobar", notificationConfiguration),
-					testAccCheckTFENotificationConfigurationAttributesUpdate(notificationConfiguration),
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "destination_type", "generic"),
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "enabled", "true"),
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "name", "notification_update"),
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "token", "1234567890_update"),
-					// Just test the number of items in triggers
-					// Values in triggers attribute are tested by testCheckTFENotificationConfigurationAttributesUpdate
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "triggers.#", "2"),
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "url", "http://example.com/?update=true"),
-				),
-			},
-		},
-	})
-}
-
-func TestAccTFENotificationConfiguration_updateWorkspaceID(t *testing.T) {
-	notificationConfiguration := &tfe.NotificationConfiguration{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccTFENotificationConfiguration_basicWorkspaceID(rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFENotificationConfigurationExists(
-						"tfe_notification_configuration.foobar", notificationConfiguration),
-					testAccCheckTFENotificationConfigurationAttributes(notificationConfiguration),
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "destination_type", "generic"),
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "name", "notification_basic"),
-					// Just test the number of items in triggers
-					// Values in triggers attribute are tested by testCheckTFENotificationConfigurationAttributes
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "triggers.#", "0"),
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "url", "http://example.com"),
-				),
-			},
-			{
-				Config: testAccTFENotificationConfiguration_updateWorkspaceID(rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFENotificationConfigurationExists(
-						"tfe_notification_configuration.foobar", notificationConfiguration),
-					testAccCheckTFENotificationConfigurationAttributesUpdate(notificationConfiguration),
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "destination_type", "generic"),
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "enabled", "true"),
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "name", "notification_update"),
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "token", "1234567890_update"),
-					// Just test the number of items in triggers
-					// Values in triggers attribute are tested by testCheckTFENotificationConfigurationAttributesUpdate
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "triggers.#", "2"),
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "url", "http://example.com/?update=true"),
-				),
-			},
-		},
-	})
-}
-
-func TestAccTFENotificationConfiguration_updateWorkspaceExternalIDToWorkspaceID(t *testing.T) {
-	notificationConfiguration := &tfe.NotificationConfiguration{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccTFENotificationConfiguration_basic(rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFENotificationConfigurationExists(
-						"tfe_notification_configuration.foobar", notificationConfiguration),
-					testAccCheckTFENotificationConfigurationAttributes(notificationConfiguration),
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "destination_type", "generic"),
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "name", "notification_basic"),
-					// Just test the number of items in triggers
-					// Values in triggers attribute are tested by testCheckTFENotificationConfigurationAttributes
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "triggers.#", "0"),
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "url", "http://example.com"),
-				),
-			},
-			{
-				Config: testAccTFENotificationConfiguration_basicWorkspaceID(rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFENotificationConfigurationExists(
-						"tfe_notification_configuration.foobar", notificationConfiguration),
-					testAccCheckTFENotificationConfigurationAttributes(notificationConfiguration),
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "destination_type", "generic"),
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "name", "notification_basic"),
-					// Just test the number of items in triggers
-					// Values in triggers attribute are tested by testCheckTFENotificationConfigurationAttributes
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "triggers.#", "0"),
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "url", "http://example.com"),
-				),
-			},
-			{
-				Config: testAccTFENotificationConfiguration_updateWorkspaceID(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
 						"tfe_notification_configuration.foobar", notificationConfiguration),
@@ -563,22 +408,6 @@ func TestAccTFENotificationConfiguration_duplicateTriggers(t *testing.T) {
 	})
 }
 
-func TestAccTFENotificationConfiguration_noWorkspaceID(t *testing.T) {
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config:      testAccTFENotificationConfiguration_noWorkspaceID(rInt),
-				ExpectError: regexp.MustCompile(`One of workspace_id or workspace_external_id must be set`),
-			},
-		},
-	})
-}
-
 func TestAccTFENotificationConfigurationImport_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -595,7 +424,7 @@ func TestAccTFENotificationConfigurationImport_basic(t *testing.T) {
 				ResourceName:            "tfe_notification_configuration.foobar",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"token", "workspace_external_id"},
+				ImportStateVerifyIgnore: []string{"token"},
 			},
 		},
 	})
@@ -617,7 +446,7 @@ func TestAccTFENotificationConfigurationImport_emailUserIDs(t *testing.T) {
 				ResourceName:            "tfe_notification_configuration.foobar",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"token", "workspace_external_id"},
+				ImportStateVerifyIgnore: []string{"token"},
 			},
 		},
 	})
@@ -639,7 +468,7 @@ func TestAccTFENotificationConfigurationImport_emptyEmailUserIDs(t *testing.T) {
 				ResourceName:            "tfe_notification_configuration.foobar",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"token", "workspace_external_id"},
+				ImportStateVerifyIgnore: []string{"token"},
 			},
 		},
 	})
@@ -871,10 +700,10 @@ resource "tfe_workspace" "foobar" {
 }
 
 resource "tfe_notification_configuration" "foobar" {
-  name                  = "notification_basic"
-  destination_type      = "generic"
-  url                   = "http://example.com"
-  workspace_external_id = tfe_workspace.foobar.id
+  name             = "notification_basic"
+  destination_type = "generic"
+  url              = "http://example.com"
+  workspace_id     = tfe_workspace.foobar.id
 }`, rInt)
 }
 
@@ -915,30 +744,10 @@ resource "tfe_workspace" "foobar" {
 }
 
 resource "tfe_notification_configuration" "foobar" {
-  name                  = "notification_slack"
-  destination_type      = "slack"
-  url                   = "http://example.com"
-  workspace_external_id = tfe_workspace.foobar.id
-}`, rInt)
-}
-
-func testAccTFENotificationConfiguration_basicWorkspaceID(rInt int) string {
-	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
-resource "tfe_workspace" "foobar" {
-  name         = "workspace-test"
-  organization = tfe_organization.foobar.id
-}
-
-resource "tfe_notification_configuration" "foobar" {
-  name                  = "notification_basic"
-  destination_type      = "generic"
-  url                   = "http://example.com"
-  workspace_id          = tfe_workspace.foobar.id
+  name             = "notification_slack"
+  destination_type = "slack"
+  url              = "http://example.com"
+  workspace_id     = tfe_workspace.foobar.id
 }`, rInt)
 }
 
@@ -955,36 +764,13 @@ resource "tfe_workspace" "foobar" {
 }
 
 resource "tfe_notification_configuration" "foobar" {
-  name                  = "notification_update"
-  destination_type      = "generic"
-  enabled               = true
-  token                 = "1234567890_update"
-  triggers              = ["run:created", "run:needs_attention"]
-  url                   = "http://example.com/?update=true"
-  workspace_external_id = tfe_workspace.foobar.id
-}`, rInt)
-}
-
-func testAccTFENotificationConfiguration_updateWorkspaceID(rInt int) string {
-	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
-resource "tfe_workspace" "foobar" {
-  name         = "workspace-test"
-  organization = tfe_organization.foobar.id
-}
-
-resource "tfe_notification_configuration" "foobar" {
-  name                  = "notification_update"
-  destination_type      = "generic"
-  enabled               = true
-  token                 = "1234567890_update"
-  triggers              = ["run:created", "run:needs_attention"]
-  url                   = "http://example.com/?update=true"
-  workspace_id          = tfe_workspace.foobar.id
+  name             = "notification_update"
+  destination_type = "generic"
+  enabled          = true
+  token            = "1234567890_update"
+  triggers         = ["run:created", "run:needs_attention"]
+  url              = "http://example.com/?update=true"
+  workspace_id     = tfe_workspace.foobar.id
 }`, rInt)
 }
 
@@ -1216,29 +1002,10 @@ resource "tfe_workspace" "foobar" {
 }
 
 resource "tfe_notification_configuration" "foobar" {
-  name                  = "notification_duplicate_triggers"
-  destination_type      = "generic"
-  triggers              = ["run:created", "run:created", "run:created"]
-  url                   = "http://example.com"
-  workspace_external_id = tfe_workspace.foobar.id
-}`, rInt)
-}
-
-func testAccTFENotificationConfiguration_noWorkspaceID(rInt int) string {
-	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
-resource "tfe_workspace" "foobar" {
-  name         = "workspace-test"
-  organization = tfe_organization.foobar.id
-}
-
-resource "tfe_notification_configuration" "foobar" {
-  name                  = "notification_basic"
-  destination_type      = "generic"
-  url                   = "http://example.com"
+  name             = "notification_duplicate_triggers"
+  destination_type = "generic"
+  triggers         = ["run:created", "run:created", "run:created"]
+  url              = "http://example.com"
+  workspace_id     = tfe_workspace.foobar.id
 }`, rInt)
 }
