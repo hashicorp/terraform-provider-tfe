@@ -397,16 +397,13 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		}
 	}
 
-	// TODO: Why does this use the old value of external_id?
-	// external_id shouldn't change so can we change externalID to just id/d.Id()?
 	if d.HasChange("ssh_key_id") {
 		sshKeyID := d.Get("ssh_key_id").(string)
-		externalID, _ := d.GetChange("external_id")
 
 		if sshKeyID != "" {
 			_, err := tfeClient.Workspaces.AssignSSHKey(
 				ctx,
-				externalID.(string),
+				id,
 				tfe.WorkspaceAssignSSHKeyOptions{
 					SSHKeyID: tfe.String(sshKeyID),
 				},
@@ -415,7 +412,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 				return fmt.Errorf("Error assigning SSH key to workspace %s: %v", id, err)
 			}
 		} else {
-			_, err := tfeClient.Workspaces.UnassignSSHKey(ctx, externalID.(string))
+			_, err := tfeClient.Workspaces.UnassignSSHKey(ctx, id)
 			if err != nil {
 				return fmt.Errorf("Error unassigning SSH key from workspace %s: %v", id, err)
 			}
