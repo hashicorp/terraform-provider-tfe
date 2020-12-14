@@ -8,9 +8,10 @@ description: |-
 
 # tfe_run_trigger
 
-Terraform Cloud provides a way to connect your workspace to one or more workspaces within your organization, known as "source workspaces". 
-These connections, called run triggers, allow runs to queue automatically in your workspace on successful apply of runs in any of the source workspaces. 
-You can connect your workspace to up to 20 source workspaces.
+Terraform Cloud provides a way to connect your workspace to one or more workspaces within your organization, 
+known as "source workspaces". These connections, called run triggers, allow runs to queue automatically in 
+your workspace on successful apply of runs in any of the source workspaces. You can connect your workspace 
+to up to 20 source workspaces.
 
 ## Example Usage
 
@@ -33,8 +34,8 @@ resource "tfe_workspace" "test-sourceable" {
 }
 
 resource "tfe_run_trigger" "test" {
-  workspace_external_id = tfe_workspace.test-workspace.id
-  sourceable_id         = tfe_workspace.test-sourceable.id
+  workspace_id  = tfe_workspace.test-workspace.id
+  sourceable_id = tfe_workspace.test-sourceable.id
 }
 ```
 
@@ -42,13 +43,9 @@ resource "tfe_run_trigger" "test" {
 
 The following arguments are supported:
 
-* `workspace_id` - The id of the workspace that owns the run trigger. This is the workspace where runs will be triggered.
-  This value _must not_ be provided if `workspace_external_id` is provided.
-* `workspace_external_id` - **Deprecated** Use `workspace_id` instead. The id of the workspace that owns the run trigger. This is the workspace where runs will be triggered.
-  This value _must not_ be provided if `workspace_id` is provided.
+* `workspace_id` - (Required) The id of the workspace that owns the run trigger. This is the 
+  workspace where runs will be triggered.
 * `sourceable_id` - (Required) The id of the sourceable. The sourceable must be a workspace.
-
--> **Note:** One of `workspace_id` or `workspace_external_id` _must_ be provided.
 
 ## Attributes Reference
 
