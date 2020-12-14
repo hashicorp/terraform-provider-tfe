@@ -20,14 +20,19 @@ func TestAccTFEWorkspaceIDsDataSource_basic(t *testing.T) {
 			{
 				Config: testAccTFEWorkspaceIDsDataSourceConfig_basic(rInt),
 				Check: resource.ComposeAggregateTestCheckFunc(
+					// names attribute
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "names.#", "2"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "names.0", fmt.Sprintf("workspace-foo-%d", rInt)),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "names.1", fmt.Sprintf("workspace-bar-%d", rInt)),
+
+					// organization attribute
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "organization", orgName),
+
+					// full_names attribute
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "full_names.%", "2"),
 					resource.TestCheckResourceAttr(
@@ -40,24 +45,24 @@ func TestAccTFEWorkspaceIDsDataSource_basic(t *testing.T) {
 						fmt.Sprintf("full_names.workspace-bar-%d", rInt),
 						fmt.Sprintf("tst-terraform-%d/workspace-bar-%d", rInt, rInt),
 					),
+
+					// ids attribute
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "ids.%", "2"),
-					resource.TestCheckResourceAttr(
-						"data.tfe_workspace_ids.foobar",
-						fmt.Sprintf("ids.workspace-foo-%d", rInt),
-						fmt.Sprintf("tst-terraform-%d/workspace-foo-%d", rInt, rInt),
-					),
-					resource.TestCheckResourceAttr(
-						"data.tfe_workspace_ids.foobar",
-						fmt.Sprintf("ids.workspace-bar-%d", rInt),
-						fmt.Sprintf("tst-terraform-%d/workspace-bar-%d", rInt, rInt),
-					),
+					resource.TestCheckResourceAttrSet(
+						"data.tfe_workspace_ids.foobar", fmt.Sprintf("ids.workspace-foo-%d", rInt)),
+					resource.TestCheckResourceAttrSet(
+						"data.tfe_workspace_ids.foobar", fmt.Sprintf("ids.workspace-bar-%d", rInt)),
+
+					// external_ids attributes
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "external_ids.%", "2"),
 					resource.TestCheckResourceAttrSet(
 						"data.tfe_workspace_ids.foobar", fmt.Sprintf("external_ids.workspace-foo-%d", rInt)),
 					resource.TestCheckResourceAttrSet(
 						"data.tfe_workspace_ids.foobar", fmt.Sprintf("external_ids.workspace-bar-%d", rInt)),
+
+					// id attribute
 					resource.TestCheckResourceAttrSet("data.tfe_workspace_ids.foobar", "id"),
 				),
 			},
@@ -77,12 +82,17 @@ func TestAccTFEWorkspaceIDsDataSource_wildcard(t *testing.T) {
 			{
 				Config: testAccTFEWorkspaceIDsDataSourceConfig_wildcard(rInt),
 				Check: resource.ComposeAggregateTestCheckFunc(
+					// names attribute
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "names.#", "1"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "names.0", "*"),
+
+					// organization attribute
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "organization", orgName),
+
+					// full_names attribute
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "full_names.%", "3"),
 					resource.TestCheckResourceAttr(
@@ -100,23 +110,18 @@ func TestAccTFEWorkspaceIDsDataSource_wildcard(t *testing.T) {
 						fmt.Sprintf("full_names.workspace-dummy-%d", rInt),
 						fmt.Sprintf("tst-terraform-%d/workspace-dummy-%d", rInt, rInt),
 					),
+
+					// ids attribute
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "ids.%", "3"),
-					resource.TestCheckResourceAttr(
-						"data.tfe_workspace_ids.foobar",
-						fmt.Sprintf("ids.workspace-foo-%d", rInt),
-						fmt.Sprintf("tst-terraform-%d/workspace-foo-%d", rInt, rInt),
-					),
-					resource.TestCheckResourceAttr(
-						"data.tfe_workspace_ids.foobar",
-						fmt.Sprintf("ids.workspace-bar-%d", rInt),
-						fmt.Sprintf("tst-terraform-%d/workspace-bar-%d", rInt, rInt),
-					),
-					resource.TestCheckResourceAttr(
-						"data.tfe_workspace_ids.foobar",
-						fmt.Sprintf("ids.workspace-dummy-%d", rInt),
-						fmt.Sprintf("tst-terraform-%d/workspace-dummy-%d", rInt, rInt),
-					),
+					resource.TestCheckResourceAttrSet(
+						"data.tfe_workspace_ids.foobar", fmt.Sprintf("ids.workspace-foo-%d", rInt)),
+					resource.TestCheckResourceAttrSet(
+						"data.tfe_workspace_ids.foobar", fmt.Sprintf("ids.workspace-bar-%d", rInt)),
+					resource.TestCheckResourceAttrSet(
+						"data.tfe_workspace_ids.foobar", fmt.Sprintf("ids.workspace-dummy-%d", rInt)),
+
+					// external_ids attribute
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.foobar", "external_ids.%", "3"),
 					resource.TestCheckResourceAttrSet(
@@ -125,6 +130,8 @@ func TestAccTFEWorkspaceIDsDataSource_wildcard(t *testing.T) {
 						"data.tfe_workspace_ids.foobar", fmt.Sprintf("external_ids.workspace-bar-%d", rInt)),
 					resource.TestCheckResourceAttrSet(
 						"data.tfe_workspace_ids.foobar", fmt.Sprintf("external_ids.workspace-dummy-%d", rInt)),
+
+					// id attribute
 					resource.TestCheckResourceAttrSet("data.tfe_workspace_ids.foobar", "id"),
 				),
 			},
