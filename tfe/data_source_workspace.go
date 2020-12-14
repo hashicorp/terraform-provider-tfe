@@ -10,7 +10,8 @@ import (
 
 func dataSourceTFEWorkspace() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceTFEWorkspaceRead,
+		DeprecationMessage: "Data source \"tfe_workspace\"\n\n\"external_id\": [DEPRECATED] Use id instead. The external_id attribute will be removed in the future. See the CHANGELOG to learn more: https://github.com/hashicorp/terraform-provider-tfe/blob/v0.24.0/CHANGELOG.md",
+		Read:               dataSourceTFEWorkspaceRead,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -98,8 +99,9 @@ func dataSourceTFEWorkspace() *schema.Resource {
 			},
 
 			"external_id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:       schema.TypeString,
+				Computed:   true,
+				Deprecated: "Use id instead. The external_id attribute will be removed in the future. See the CHANGELOG to learn more: https://github.com/hashicorp/terraform-provider-tfe/blob/v0.24.0/CHANGELOG.md",
 			},
 		},
 	}
@@ -131,6 +133,7 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("terraform_version", workspace.TerraformVersion)
 	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
 	d.Set("working_directory", workspace.WorkingDirectory)
+	// TODO: remove when external_id is removed
 	d.Set("external_id", workspace.ID)
 
 	if workspace.SSHKey != nil {
