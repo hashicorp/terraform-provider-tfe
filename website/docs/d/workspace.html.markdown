@@ -45,8 +45,8 @@ In addition to all arguments above, the following attributes are exported:
 
 The `vcs_repo` block contains:
 
-* `identifier` - A reference to your VCS repository in the format `:org/:repo`
-  where `:org` and `:repo` refer to the organization and repository in your VCS
+* `identifier` - A reference to your VCS repository in the format `<organization>/<repository>`
+  where `<organization>` and `<repository>` refer to the organization and repository in your VCS
   provider.
 * `ingress_submodules` - Indicates whether submodules should be fetched when
   cloning the VCS repository.

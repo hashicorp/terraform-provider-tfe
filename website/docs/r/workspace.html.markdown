@@ -92,7 +92,7 @@ The following arguments are supported:
 The `vcs_repo` block supports:
 
 * `identifier` - (Required) A reference to your VCS repository in the format
-  `:org/:repo` where `:org` and `:repo` refer to the organization and repository
+  `<organization>/<repository>` where `<organization>` and `<repository>` refer to the organization and repository
   in your VCS provider.
 * `branch` - (Optional) The repository branch that Terraform will execute from.
   Default to `master`.
