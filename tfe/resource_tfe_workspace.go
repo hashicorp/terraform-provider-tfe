@@ -160,8 +160,9 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"external_id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:       schema.TypeString,
+				Computed:   true,
+				Deprecated: "Use id instead. The external_id attribute will be removed in the future. See the CHANGELOG to learn more: https://github.com/hashicorp/terraform-provider-tfe/blob/v0.24.0/CHANGELOG.md",
 			},
 		},
 	}
@@ -274,6 +275,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("terraform_version", workspace.TerraformVersion)
 	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
 	d.Set("working_directory", workspace.WorkingDirectory)
+	// TODO: remove when external_id is removed
 	d.Set("external_id", workspace.ID)
 	d.Set("organization", workspace.Organization.Name)
 
@@ -395,16 +397,13 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		}
 	}
 
-	// TODO: Why does this use the old value of external_id?
-	// external_id shouldn't change so can we change externalID to just id/d.Id()?
 	if d.HasChange("ssh_key_id") {
 		sshKeyID := d.Get("ssh_key_id").(string)
-		externalID, _ := d.GetChange("external_id")
 
 		if sshKeyID != "" {
 			_, err := tfeClient.Workspaces.AssignSSHKey(
 				ctx,
-				externalID.(string),
+				id,
 				tfe.WorkspaceAssignSSHKeyOptions{
 					SSHKeyID: tfe.String(sshKeyID),
 				},
@@ -413,7 +412,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 				return fmt.Errorf("Error assigning SSH key to workspace %s: %v", id, err)
 			}
 		} else {
-			_, err := tfeClient.Workspaces.UnassignSSHKey(ctx, externalID.(string))
+			_, err := tfeClient.Workspaces.UnassignSSHKey(ctx, id)
 			if err != nil {
 				return fmt.Errorf("Error unassigning SSH key from workspace %s: %v", id, err)
 			}

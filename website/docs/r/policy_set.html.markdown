@@ -57,19 +57,18 @@ The following arguments are supported:
 * `description` - (Optional) A description of the policy set's purpose.
 * `global` - (Optional) Whether or not policies in this set will apply to
   all workspaces. Defaults to `false`. This value _must not_ be provided if
-  `workspace_ids` or `workspace_external_ids` are provided.
+  `workspace_ids` is provided.
 * `organization` - (Required) Name of the organization.
 * `policies_path` - (Optional) The sub-path within the attached VCS repository
   to ingress when using `vcs_repo`. All files and directories outside of this
   sub-path will be ignored. This option can only be supplied when `vcs_repo` is
   present. Forces a new resource if changed.
-* `policy_ids` - (Optional) A list of Sentinel policy IDs. This value _must not_ be provided if `vcs_repo` is provided.
+* `policy_ids` - (Optional) A list of Sentinel policy IDs. This value _must not_ be provided 
+  if `vcs_repo` is provided.
 * `vcs_repo` - (Optional) Settings for the policy sets VCS repository. Forces a
   new resource if changed. This value _must not_ be provided if `policy_ids` are provided.
-* `workspace_ids` - (Optional) A list of workspace IDs. This
-  value _must not_ be provided if `global` or `workspace_external_ids` is provided.
-* `workspace_external_ids` - **Deprecated** Use `workspace_ids` instead. (Optional) A list of workspace IDs. This
-  value _must not_ be provided if `global` or `workspace_ids` is provided.
+* `workspace_ids` - (Optional) A list of workspace IDs. This value _must not_ be provided 
+  if `global` is provided.
 
 -> **Note:** When neither `vcs_repo` or `policy_ids` is not specified, the current
 default is to create an empty non-VCS policy set.

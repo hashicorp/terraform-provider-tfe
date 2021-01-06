@@ -9,7 +9,7 @@ import (
 
 func dataSourceTFEWorkspaceIDs() *schema.Resource {
 	return &schema.Resource{
-		DeprecationMessage: "\"ids\": [DEPRECATED] Use full_names instead. The ids attribute will be removed in the future. See the CHANGELOG to learn more: https://github.com/hashicorp/terraform-provider-tfe/blob/v0.18.0/CHANGELOG.md",
+		DeprecationMessage: "Data source \"tfe_workspace_ids\"\n\n\"external_ids\": [DEPRECATED] Use ids instead. The external_ids attribute will be removed in the future. See the CHANGELOG to learn more: https://github.com/hashicorp/terraform-provider-tfe/blob/v0.24.0/CHANGELOG.md",
 		Read:               dataSourceTFEWorkspaceIDsRead,
 
 		Schema: map[string]*schema.Schema{
@@ -25,14 +25,14 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 			},
 
 			"ids": {
-				Type:       schema.TypeMap,
-				Computed:   true,
-				Deprecated: "Use full_names instead. The ids attribute will be removed in the future.",
+				Type:     schema.TypeMap,
+				Computed: true,
 			},
 
 			"external_ids": {
-				Type:     schema.TypeMap,
-				Computed: true,
+				Type:       schema.TypeMap,
+				Computed:   true,
+				Deprecated: "Use ids instead. The external_ids attribute will be removed in the future. See the CHANGELOG to learn more: https://github.com/hashicorp/terraform-provider-tfe/blob/v0.24.0/CHANGELOG.md",
 			},
 
 			"full_names": {
@@ -58,8 +58,8 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 	}
 
 	// Create two maps to hold the results.
+	fullNames := make(map[string]string, len(names))
 	ids := make(map[string]string, len(names))
-	externalIDs := make(map[string]string, len(names))
 
 	options := tfe.WorkspaceListOptions{}
 	for {
@@ -70,8 +70,8 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 
 		for _, w := range wl.Items {
 			if names["*"] || names[w.Name] {
-				ids[w.Name] = organization + "/" + w.Name
-				externalIDs[w.Name] = w.ID
+				fullNames[w.Name] = organization + "/" + w.Name
+				ids[w.Name] = w.ID
 			}
 		}
 
@@ -85,8 +85,9 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 	}
 
 	d.Set("ids", ids)
-	d.Set("external_ids", externalIDs)
-	d.Set("full_names", ids)
+	// TODO: remove once external_ids is removed
+	d.Set("external_ids", ids)
+	d.Set("full_names", fullNames)
 	d.SetId(fmt.Sprintf("%s/%d", organization, schema.HashString(id)))
 
 	return nil
