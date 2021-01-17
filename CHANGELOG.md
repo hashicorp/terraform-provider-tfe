@@ -1,4 +1,7 @@
 ## 0.24.0 (Unreleased)
+FEATURES:
+* **New Resource:** r/tfe_agent_token ([#259](https://github.com/hashicorp/terraform-provider-tfe/pull/259))
+
 BREAKING CHANGES: 
 * d/tfe_workspace_ids: Changed `ids` attribute to return immutable workspace IDs in the format `ws-<RANDOM STRING>` ([#253](https://github.com/hashicorp/terraform-provider-tfe/pull/253))
 * r/tfe_notification_configuration: Removed deprecated `workspace_external_id` attribute, preferring `workspace_id` instead ([#253](https://github.com/hashicorp/terraform-provider-tfe/pull/253))
