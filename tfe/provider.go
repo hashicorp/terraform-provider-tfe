@@ -82,6 +82,7 @@ func Provider() *schema.Provider {
 
 		ResourcesMap: map[string]*schema.Resource{
 			"tfe_agent_pool":                 resourceTFEAgentPool(),
+			"tfe_agent_token":                resourceTFEAgentToken(),
 			"tfe_notification_configuration": resourceTFENotificationConfiguration(),
 			"tfe_oauth_client":               resourceTFEOAuthClient(),
 			"tfe_organization":               resourceTFEOrganization(),
