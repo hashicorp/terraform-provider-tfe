@@ -71,7 +71,7 @@ func resourceTFEAgentTokenRead(d *schema.ResourceData, meta interface{}) error {
 	agentToken, err := tfeClient.AgentTokens.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			log.Printf("[DEBUG] agent token %s does no longer exist", d.Id())
+			log.Printf("[DEBUG] agent token %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}

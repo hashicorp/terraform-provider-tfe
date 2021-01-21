@@ -2,8 +2,6 @@ module github.com/hashicorp/terraform-provider-tfe
 
 go 1.14
 
-//replace github.com/hashicorp/go-tfe => /Users/jgrumboeck/git/jgrumboe/go-tfe
-
 require (
 	github.com/hashicorp/go-tfe v0.12.0
 	github.com/hashicorp/go-version v1.2.1
