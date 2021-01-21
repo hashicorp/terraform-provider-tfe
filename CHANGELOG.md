@@ -1,17 +1,18 @@
 ## 0.24.0 (Unreleased)
 FEATURES:
 * **New Resource:** r/tfe_agent_token ([#259](https://github.com/hashicorp/terraform-provider-tfe/pull/259))
+* **New Data Source:** d/tfe_ip_ranges ([#262](https://github.com/hashicorp/terraform-provider-tfe/pull/262))
+
+ENHANCEMENTS:
+* d/tfe_workspace: Added deprecation warning to the `external_id` attribute, preferring `id` instead ([#253](https://github.com/hashicorp/terraform-provider-tfe/pull/253))
+* d/tfe_workspace_ids: Added deprecation warning to the `external_ids` attribute, preferring `ids` instead ([#253](https://github.com/hashicorp/terraform-provider-tfe/pull/253))
+* r/tfe_workspace: Added deprecation warning to the `external_id` attribute, preferring `id` instead ([#253](https://github.com/hashicorp/terraform-provider-tfe/pull/253))
 
 BREAKING CHANGES: 
 * d/tfe_workspace_ids: Changed `ids` attribute to return immutable workspace IDs in the format `ws-<RANDOM STRING>` ([#253](https://github.com/hashicorp/terraform-provider-tfe/pull/253))
 * r/tfe_notification_configuration: Removed deprecated `workspace_external_id` attribute, preferring `workspace_id` instead ([#253](https://github.com/hashicorp/terraform-provider-tfe/pull/253))
 * r/tfe_policy_set: Removed deprecated `workspace_external_ids` attribute, preferring `workspace_ids` instead ([#253](https://github.com/hashicorp/terraform-provider-tfe/pull/253))
 * r/tfe_run_trigger: Removed deprecated `workspace_external_id` attribute, preferring `workspace_id` instead ([#253](https://github.com/hashicorp/terraform-provider-tfe/pull/253))
-
-ENHANCEMENTS:
-* d/tfe_workspace: Added deprecation warning to the `external_id` attribute, preferring `id` instead ([#253](https://github.com/hashicorp/terraform-provider-tfe/pull/253))
-* d/tfe_workspace_ids: Added deprecation warning to the `external_ids` attribute, preferring `ids` instead ([#253](https://github.com/hashicorp/terraform-provider-tfe/pull/253))
-* r/tfe_workspace: Added deprecation warning to the `external_id` attribute, preferring `id` instead ([#253](https://github.com/hashicorp/terraform-provider-tfe/pull/253))
 
 NOTES:
 * All deprecated attributes will be removed 3 months after the release of v0.24.0. You will have until April X, 2021 to migrate to the preferred attributes. 
