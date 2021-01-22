@@ -1,4 +1,13 @@
 ## 0.24.0 (Unreleased)
+
+BREAKING CHANGES:
+* Support for Terraform version 0.11 and prior has ended. Terraform version 0.12+ is required. This is a result of
+  updating the provider to use version 2.0 of the [Terraform Plugin SDK](https://github.com/hashicorp/terraform-plugin-sdk) ([#246](https://github.com/hashicorp/terraform-provider-tfe/pull/246))
+* d/tfe_workspace_ids: Changed `ids` attribute to return immutable workspace IDs (`ws-<RANDOM STRING>`) ([#253](https://github.com/hashicorp/terraform-provider-tfe/pull/253))
+* r/tfe_notification_configuration: Removed deprecated `workspace_external_id` attribute, preferring `workspace_id` instead ([#253](https://github.com/hashicorp/terraform-provider-tfe/pull/253))
+* r/tfe_policy_set: Removed deprecated `workspace_external_ids` attribute, preferring `workspace_ids` instead ([#253](https://github.com/hashicorp/terraform-provider-tfe/pull/253))
+* r/tfe_run_trigger: Removed deprecated `workspace_external_id` attribute, preferring `workspace_id` instead ([#253](https://github.com/hashicorp/terraform-provider-tfe/pull/253))
+
 FEATURES:
 * **New Resource:** r/tfe_agent_token ([#259](https://github.com/hashicorp/terraform-provider-tfe/pull/259))
 * **New Data Source:** d/tfe_ip_ranges ([#262](https://github.com/hashicorp/terraform-provider-tfe/pull/262))
@@ -8,24 +17,20 @@ ENHANCEMENTS:
 * d/tfe_workspace_ids: Added deprecation warning to the `external_ids` attribute, preferring `ids` instead ([#253](https://github.com/hashicorp/terraform-provider-tfe/pull/253))
 * r/tfe_workspace: Added deprecation warning to the `external_id` attribute, preferring `id` instead ([#253](https://github.com/hashicorp/terraform-provider-tfe/pull/253))
 
-BREAKING CHANGES: 
-* d/tfe_workspace_ids: Changed `ids` attribute to return immutable workspace IDs in the format `ws-<RANDOM STRING>` ([#253](https://github.com/hashicorp/terraform-provider-tfe/pull/253))
-* r/tfe_notification_configuration: Removed deprecated `workspace_external_id` attribute, preferring `workspace_id` instead ([#253](https://github.com/hashicorp/terraform-provider-tfe/pull/253))
-* r/tfe_policy_set: Removed deprecated `workspace_external_ids` attribute, preferring `workspace_ids` instead ([#253](https://github.com/hashicorp/terraform-provider-tfe/pull/253))
-* r/tfe_run_trigger: Removed deprecated `workspace_external_id` attribute, preferring `workspace_id` instead ([#253](https://github.com/hashicorp/terraform-provider-tfe/pull/253))
-
 NOTES:
-* All deprecated attributes will be removed 3 months after the release of v0.24.0. You will have until April X, 2021 to migrate to the preferred attributes. 
-* More information about these deprecations can be found in the description of [#253](https://github.com/hashicorp/terraform-provider-tfe/pull/253)
-* d/tfe_workspace: The deprecation warning for the `external_id` attribute will not go away until the attribute is removed in a future version. 
-This is due to a [limitation of the Terraform SDK](https://github.com/hashicorp/terraform/issues/7569) for deprecation warnings on attributes that aren't 
-specified in a configuration. If you have already changed all references to this data source's `external_id` attribute to the `ids` attribute, you can 
-ignore the warning. 
-* d/tfe_workspace_ids: The deprecation warning for the `external_ids` attribute will not go away until the attribute is removed in a future version. 
-This is due to a [limitation of the Terraform SDK](https://github.com/hashicorp/terraform/issues/7569) for deprecation warnings on attributes that aren't 
-specified in a configuration. If you have already changed all references to this data source's `external_ids` attribute to the `ids` attribute, you can 
-ignore the warning.  
-
+* All deprecated attributes will be removed 3 months after the release of v0.24.0 (April 21, 2021). After this
+  deprecation period, you will need to migrate to the preferred attributes to update to the latest version of this
+  provider. More information about these deprecations can be found in the description of [#253](https://github.com/hashicorp/terraform-provider-tfe/pull/253)
+* d/tfe_workspace: The deprecation warning for the `external_id` attribute will not go away until the attribute is
+  removed in a future version.  This is due to a [limitation of the Terraform
+  SDK](https://github.com/hashicorp/terraform/issues/7569) for deprecation warnings on attributes that aren't specified
+  in a configuration. If you have already changed all references to this data source's `external_id` attribute to the
+  `ids` attribute, you can ignore the warning.
+* d/tfe_workspace_ids: The deprecation warning for the `external_ids` attribute will not go away until the attribute is
+  removed in a future version.  This is due to a [limitation of the Terraform
+  SDK](https://github.com/hashicorp/terraform/issues/7569) for deprecation warnings on attributes that aren't specified
+  in a configuration. If you have already changed all references to this data source's `external_ids` attribute to the
+  `ids` attribute, you can ignore the warning.
 
 
 ## 0.23.0 (November 20, 2020)
