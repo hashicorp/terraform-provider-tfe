@@ -1,4 +1,4 @@
-## 0.24.0 (Unreleased)
+## 0.24.0 (January 22, 2021)
 
 BREAKING CHANGES:
 * Support for Terraform version 0.11 and prior has ended. Terraform version 0.12+ is required. This is a result of
