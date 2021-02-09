@@ -70,9 +70,12 @@ The following arguments are supported:
 * `operations` - **Deprecated** Whether to use remote execution mode. When set to `false`, the workspace will 
   be used for state storage only. Defaults to `true`. This value _must not_ be provided if `execution_mode` is 
   provided.
-* `queue_all_runs` - (Optional) Whether all runs should be queued. When set
-  to `false`, runs triggered by a VCS change will not be queued until at least
-  one run is manually queued. Defaults to `true`.
+* `queue_all_runs` - (Optional) Whether the workspace should start automatically performing
+  runs immediately after its creation. When set to `false`, runs triggered by a webhook
+  (such as a commit in VCS) will not be queued until at least one run has been manually
+  queued. Defaults to `true`. **Note:** This default differs from the Terraform Cloud API default, which is `false`.
+  The provider uses `true` as any workspace provisioned with `false` would need to then have a run manually queued out-of-band
+  before accepting webhooks.
 * `speculative_enabled` - (Optional) Whether this workspace allows speculative
   plans. Setting this to `false` prevents Terraform Cloud or the Terraform
   Enterprise instance from running plans on pull requests, which can improve
