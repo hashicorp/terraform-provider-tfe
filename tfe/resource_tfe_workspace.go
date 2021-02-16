@@ -46,6 +46,11 @@ func resourceTFEWorkspace() *schema.Resource {
 				ForceNew: true,
 			},
 
+			"description": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+
 			"agent_pool_id": {
 				Type:          schema.TypeString,
 				Optional:      true,
@@ -180,6 +185,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		Name:                tfe.String(name),
 		AllowDestroyPlan:    tfe.Bool(d.Get("allow_destroy_plan").(bool)),
 		AutoApply:           tfe.Bool(d.Get("auto_apply").(bool)),
+		Description:         tfe.String(d.Get("description").(string)),
 		FileTriggersEnabled: tfe.Bool(d.Get("file_triggers_enabled").(bool)),
 		QueueAllRuns:        tfe.Bool(d.Get("queue_all_runs").(bool)),
 		SpeculativeEnabled:  tfe.Bool(d.Get("speculative_enabled").(bool)),
@@ -267,6 +273,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", workspace.Name)
 	d.Set("allow_destroy_plan", workspace.AllowDestroyPlan)
 	d.Set("auto_apply", workspace.AutoApply)
+	d.Set("description", workspace.Description)
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
 	d.Set("operations", workspace.Operations)
 	d.Set("execution_mode", workspace.ExecutionMode)
@@ -315,13 +322,15 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		d.HasChange("terraform_version") || d.HasChange("working_directory") || d.HasChange("vcs_repo") ||
 		d.HasChange("file_triggers_enabled") || d.HasChange("trigger_prefixes") ||
 		d.HasChange("allow_destroy_plan") || d.HasChange("speculative_enabled") ||
-		d.HasChange("operations") || d.HasChange("execution_mode") || d.HasChange("agent_pool_id") {
+		d.HasChange("operations") || d.HasChange("execution_mode") ||
+		d.HasChange("description") || d.HasChange("agent_pool_id") {
 
 		// Create a new options struct.
 		options := tfe.WorkspaceUpdateOptions{
 			Name:                tfe.String(d.Get("name").(string)),
 			AllowDestroyPlan:    tfe.Bool(d.Get("allow_destroy_plan").(bool)),
 			AutoApply:           tfe.Bool(d.Get("auto_apply").(bool)),
+			Description:         tfe.String(d.Get("description").(string)),
 			FileTriggersEnabled: tfe.Bool(d.Get("file_triggers_enabled").(bool)),
 			QueueAllRuns:        tfe.Bool(d.Get("queue_all_runs").(bool)),
 			SpeculativeEnabled:  tfe.Bool(d.Get("speculative_enabled").(bool)),

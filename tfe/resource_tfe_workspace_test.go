@@ -32,6 +32,8 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-test"),
 					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "description", "My favorite workspace!"),
+					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "allow_destroy_plan", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "auto_apply", "true"),
@@ -128,6 +130,8 @@ func TestAccTFEWorkspace_renamed(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-test"),
 					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "description", "My favorite workspace!"),
+					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "allow_destroy_plan", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "auto_apply", "true"),
@@ -150,6 +154,8 @@ func TestAccTFEWorkspace_renamed(t *testing.T) {
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "description", "My favorite workspace!"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "allow_destroy_plan", "false"),
 					resource.TestCheckResourceAttr(
@@ -980,6 +986,7 @@ resource "tfe_organization" "foobar" {
 resource "tfe_workspace" "foobar" {
   name               = "workspace-test"
   organization       = tfe_organization.foobar.id
+  description        = "My favorite workspace!"
   allow_destroy_plan = false
   auto_apply         = true
 }`, rInt)
@@ -1117,6 +1124,7 @@ resource "tfe_organization" "foobar" {
 resource "tfe_workspace" "foobar" {
   name               = "renamed-out-of-band"
   organization       = tfe_organization.foobar.id
+  description        = "My favorite workspace!"
   allow_destroy_plan = false
   auto_apply         = true
 }`, rInt)
