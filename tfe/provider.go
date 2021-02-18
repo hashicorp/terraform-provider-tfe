@@ -214,7 +214,7 @@ func getClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
 
 	// If we still don't have a token at this point, we return an error.
 	if token == "" {
-		return nil, fmt.Errorf("required token could not be found")
+		return nil, fmt.Errorf("Required token could not be found. Please set the token in the provider configuration, or setting the TFE_TOKEN environment variable.")
 	}
 
 	// Wrap the configured transport to enable logging.
