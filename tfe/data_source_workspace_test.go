@@ -47,6 +47,11 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 						"data.tfe_workspace.foobar", "working_directory", "terraform/test"),
 
 					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "external_id"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "resource_count"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "readme"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "policy_check_failures"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "run_failures"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "runs_count"),
 				),
 			},
 		},
