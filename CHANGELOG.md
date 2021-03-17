@@ -1,3 +1,8 @@
+## Unreleased 0.24.1
+
+ENANCEMENTS:
+* Use Go 1.16 to provide support for Apple Silicon (darwin/arm64).
+
 ## 0.24.0 (January 22, 2021)
 
 BREAKING CHANGES:
