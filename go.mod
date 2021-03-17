@@ -1,6 +1,6 @@
 module github.com/hashicorp/terraform-provider-tfe
 
-go 1.14
+go 1.16
 
 require (
 	github.com/hashicorp/go-tfe v0.12.0
