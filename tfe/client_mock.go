@@ -2,6 +2,7 @@ package tfe
 
 import (
 	"context"
+	"io"
 
 	tfe "github.com/hashicorp/go-tfe"
 )
@@ -11,11 +12,13 @@ type workspaceNamesKey struct {
 }
 
 type mockWorkspaces struct {
+	workspaceID    string
 	workspaceNames map[workspaceNamesKey]*tfe.Workspace
 }
 
-func newMockWorkspaces() *mockWorkspaces {
+func newMockWorkspaces(workspaceID string) *mockWorkspaces {
 	return &mockWorkspaces{
+		workspaceID:    workspaceID,
 		workspaceNames: make(map[workspaceNamesKey]*tfe.Workspace),
 	}
 }
@@ -26,7 +29,7 @@ func (m *mockWorkspaces) List(ctx context.Context, organization string, options 
 
 func (m *mockWorkspaces) Create(ctx context.Context, organization string, options tfe.WorkspaceCreateOptions) (*tfe.Workspace, error) {
 	ws := &tfe.Workspace{
-		ID:   options.ID,
+		ID:   m.workspaceID,
 		Name: *options.Name,
 		Organization: &tfe.Organization{
 			Name: organization,
@@ -45,6 +48,10 @@ func (m *mockWorkspaces) Read(ctx context.Context, organization string, workspac
 	}
 
 	return w, nil
+}
+
+func (m *mockWorkspaces) Readme(ctx context.Context, workspaceID string) (io.Reader, error) {
+	panic("not implemented")
 }
 
 func (m *mockWorkspaces) ReadByID(ctx context.Context, workspaceID string) (*tfe.Workspace, error) {
