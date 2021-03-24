@@ -45,7 +45,6 @@ In addition to all arguments above, the following attributes are exported:
 * `vcs_repo` - Settings for the workspace's VCS repository.
 * `working_directory` - A relative path that Terraform will execute within.
 * `resource_count` - The number of resources managed by the workspace.
-* `readme` - The contents of any detected README file in the underlying VCS repository.
 * `policy_check_failures` - The number of policy check failures from the latest run.
 * `run_failures` - The number of run failures on the workspace.
 * `runs_count` - The number of runs on the workspace.
