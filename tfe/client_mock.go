@@ -12,14 +12,16 @@ type workspaceNamesKey struct {
 }
 
 type mockWorkspaces struct {
-	workspaceID    string
-	workspaceNames map[workspaceNamesKey]*tfe.Workspace
+	defaultWorkspaceID string
+	workspaceNames     map[workspaceNamesKey]*tfe.Workspace
 }
 
-func newMockWorkspaces(workspaceID string) *mockWorkspaces {
+// newMockWorkspaces creates a mock workspaces implementation. Any created
+// workspaces will have the id given in defaultWorkspaceID.
+func newMockWorkspaces(defaultWorkspaceID string) *mockWorkspaces {
 	return &mockWorkspaces{
-		workspaceID:    workspaceID,
-		workspaceNames: make(map[workspaceNamesKey]*tfe.Workspace),
+		defaultWorkspaceID: defaultWorkspaceID,
+		workspaceNames:     make(map[workspaceNamesKey]*tfe.Workspace),
 	}
 }
 
@@ -29,7 +31,7 @@ func (m *mockWorkspaces) List(ctx context.Context, organization string, options 
 
 func (m *mockWorkspaces) Create(ctx context.Context, organization string, options tfe.WorkspaceCreateOptions) (*tfe.Workspace, error) {
 	ws := &tfe.Workspace{
-		ID:   m.workspaceID,
+		ID:   m.defaultWorkspaceID,
 		Name: *options.Name,
 		Organization: &tfe.Organization{
 			Name: organization,
