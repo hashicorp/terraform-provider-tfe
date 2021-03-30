@@ -82,7 +82,7 @@ You might prefer to manually build the provider yourself - perhaps access to the
 release binaries on [releases.hashicorp.com](https://releases.hashicorp.com/terraform-provider-tfe/) are not available
 in your operating environment, or you're looking to contribute to the provider and are testing out a custom build.
 
-Building the provider requires [Go](https://golang.org/doc/install) >= 1.14
+Building the provider requires [Go](https://golang.org/doc/install) >= 1.16
 
 Clone the repository, enter the directory, and build the provider:
 
