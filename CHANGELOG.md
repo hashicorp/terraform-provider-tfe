@@ -2,7 +2,7 @@
 
 ENHANCEMENTS:
 * Use Go 1.16 to provide support for Apple Silicon (darwin/arm64).
-* d/tfe_workspace: Added new fields from the API ([#277](https://github.com/hashicorp/terraform-provider-tfe/pull/277))
+* d/tfe_workspace: Added new fields from the API ([#287](https://github.com/hashicorp/terraform-provider-tfe/pull/287))
 
 ## 0.24.0 (January 22, 2021)
 
