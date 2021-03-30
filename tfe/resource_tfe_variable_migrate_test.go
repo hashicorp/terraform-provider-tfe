@@ -21,10 +21,10 @@ func testResourceTfeVariableStateDataV1() map[string]interface{} {
 }
 
 func TestResourceTfeVariableStateUpgradeV0(t *testing.T) {
-	client := testTfeClient(t)
+	client := testTfeClient(t, "ws-123")
 	name := "a-workspace"
+
 	client.Workspaces.Create(nil, "hashicorp", tfe.WorkspaceCreateOptions{
-		ID:   "ws-123",
 		Name: &name,
 	})
 
