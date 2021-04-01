@@ -44,6 +44,11 @@ In addition to all arguments above, the following attributes are exported:
 * `trigger_prefixes` - List of repository-root-relative paths which describe all locations to be tracked for changes.
 * `vcs_repo` - Settings for the workspace's VCS repository.
 * `working_directory` - A relative path that Terraform will execute within.
+* `resource_count` - The number of resources managed by the workspace.
+* `policy_check_failures` - The number of policy check failures from the latest run.
+* `run_failures` - The number of run failures on the workspace.
+* `runs_count` - The number of runs on the workspace.
+
 
 The `vcs_repo` block contains:
 

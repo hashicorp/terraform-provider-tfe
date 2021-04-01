@@ -98,6 +98,26 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				},
 			},
 
+			"resource_count": {
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
+
+			"policy_check_failures": {
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
+
+			"run_failures": {
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
+
+			"runs_count": {
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
+
 			"external_id": {
 				Type:       schema.TypeString,
 				Computed:   true,
@@ -133,6 +153,10 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("terraform_version", workspace.TerraformVersion)
 	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
 	d.Set("working_directory", workspace.WorkingDirectory)
+	d.Set("resource_count", workspace.ResourceCount)
+	d.Set("policy_check_failures", workspace.PolicyCheckFailures)
+	d.Set("run_failures", workspace.RunFailures)
+	d.Set("runs_count", workspace.RunsCount)
 	// TODO: remove when external_id is removed
 	d.Set("external_id", workspace.ID)
 
