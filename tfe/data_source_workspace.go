@@ -85,6 +85,11 @@ func dataSourceTFEWorkspace() *schema.Resource {
 							Computed: true,
 						},
 
+						"branch": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
 						"ingress_submodules": {
 							Type:     schema.TypeBool,
 							Computed: true,
@@ -168,6 +173,7 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	if workspace.VCSRepo != nil {
 		vcsConfig := map[string]interface{}{
 			"identifier":         workspace.VCSRepo.Identifier,
+			"branch":             workspace.VCSRepo.Branch,
 			"ingress_submodules": workspace.VCSRepo.IngressSubmodules,
 			"oauth_token_id":     workspace.VCSRepo.OAuthTokenID,
 		}
