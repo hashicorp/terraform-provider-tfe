@@ -280,7 +280,7 @@ resource "tfe_team" "foobar" {
   
   organization_access {
     manage_policies = true
-	manage_policy_overrides = true
+    manage_policy_overrides = true
     manage_workspaces = true
     manage_vcs_settings = true
   }
@@ -302,7 +302,7 @@ resource "tfe_team" "foobar" {
   
   organization_access {
     manage_policies = false
-	manage_policy_overrides = false
+    manage_policy_overrides = false
     manage_workspaces = false
     manage_vcs_settings = false
   }
