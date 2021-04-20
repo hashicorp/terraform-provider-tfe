@@ -103,3 +103,19 @@ func (m *mockWorkspaces) AssignSSHKey(ctx context.Context, workspaceID string, o
 func (m *mockWorkspaces) UnassignSSHKey(ctx context.Context, workspaceID string) (*tfe.Workspace, error) {
 	panic("not implemented")
 }
+
+func (m *mockWorkspaces) RemoteStateConsumers(ctx context.Context, workspaceID string) (*tfe.WorkspaceList, error) {
+	panic("not implemented")
+}
+
+func (m *mockWorkspaces) AddRemoteStateConsumers(ctx context.Context, workspaceID string, options tfe.WorkspaceAddRemoteStateConsumersOptions) error {
+	panic("not implemented")
+}
+
+func (m *mockWorkspaces) RemoveRemoteStateConsumers(ctx context.Context, workspaceID string, options tfe.WorkspaceRemoveRemoteStateConsumersOptions) error {
+	panic("not implemented")
+}
+
+func (m *mockWorkspaces) UpdateRemoteStateConsumers(ctx context.Context, workspaceID string, options tfe.WorkspaceUpdateRemoteStateConsumersOptions) error {
+	panic("not implemented")
+}
