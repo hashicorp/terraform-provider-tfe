@@ -44,6 +44,11 @@ func resourceTFETeam() *schema.Resource {
 							Optional: true,
 							Default:  false,
 						},
+						"manage_policy_overrides": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
+						},
 						"manage_workspaces": {
 							Type:     schema.TypeBool,
 							Optional: true,
@@ -86,9 +91,10 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 		organizationAccess := v.([]interface{})[0].(map[string]interface{})
 
 		options.OrganizationAccess = &tfe.OrganizationAccessOptions{
-			ManagePolicies:    tfe.Bool(organizationAccess["manage_policies"].(bool)),
-			ManageWorkspaces:  tfe.Bool(organizationAccess["manage_workspaces"].(bool)),
-			ManageVCSSettings: tfe.Bool(organizationAccess["manage_vcs_settings"].(bool)),
+			ManagePolicies:        tfe.Bool(organizationAccess["manage_policies"].(bool)),
+			ManagePolicyOverrides: tfe.Bool(organizationAccess["manage_policy_overrides"].(bool)),
+			ManageWorkspaces:      tfe.Bool(organizationAccess["manage_workspaces"].(bool)),
+			ManageVCSSettings:     tfe.Bool(organizationAccess["manage_vcs_settings"].(bool)),
 		}
 	}
 
@@ -126,9 +132,10 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", team.Name)
 	if team.OrganizationAccess != nil {
 		organizationAccess := []map[string]bool{{
-			"manage_policies":     team.OrganizationAccess.ManagePolicies,
-			"manage_workspaces":   team.OrganizationAccess.ManageWorkspaces,
-			"manage_vcs_settings": team.OrganizationAccess.ManageVCSSettings,
+			"manage_policies":         team.OrganizationAccess.ManagePolicies,
+			"manage_policy_overrides": team.OrganizationAccess.ManagePolicyOverrides,
+			"manage_workspaces":       team.OrganizationAccess.ManageWorkspaces,
+			"manage_vcs_settings":     team.OrganizationAccess.ManageVCSSettings,
 		}}
 		if err := d.Set("organization_access", organizationAccess); err != nil {
 			return fmt.Errorf("error setting organization access for team %s: %s", d.Id(), err)
@@ -154,9 +161,10 @@ func resourceTFETeamUpdate(d *schema.ResourceData, meta interface{}) error {
 		organizationAccess := v.([]interface{})[0].(map[string]interface{})
 
 		options.OrganizationAccess = &tfe.OrganizationAccessOptions{
-			ManagePolicies:    tfe.Bool(organizationAccess["manage_policies"].(bool)),
-			ManageWorkspaces:  tfe.Bool(organizationAccess["manage_workspaces"].(bool)),
-			ManageVCSSettings: tfe.Bool(organizationAccess["manage_vcs_settings"].(bool)),
+			ManagePolicies:        tfe.Bool(organizationAccess["manage_policies"].(bool)),
+			ManagePolicyOverrides: tfe.Bool(organizationAccess["manage_policy_overrides"].(bool)),
+			ManageWorkspaces:      tfe.Bool(organizationAccess["manage_workspaces"].(bool)),
+			ManageVCSSettings:     tfe.Bool(organizationAccess["manage_vcs_settings"].(bool)),
 		}
 	}
 

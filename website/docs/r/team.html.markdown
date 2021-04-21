@@ -32,7 +32,8 @@ The following arguments are supported:
 
 The `organization_access` block supports:
 
-* `manage_policies` - (Optional) Allows members to create, edit, and delete the organization's Sentinel policies and override soft-mandatory policy checks.
+* `manage_policies` - (Optional) Allows members to create, edit, and delete the organization's Sentinel policies.
+* `manage_policy_overrides` - (Optional) Allows members to override soft-mandatory policy checks.
 * `manage_workspaces` - (Optional) Allows members to create and administrate all workspaces within the organization.
 * `manage_vcs_settings` - (Optional) Allows members to manage the organization's VCS Providers and SSH keys.
 

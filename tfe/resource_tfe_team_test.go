@@ -56,6 +56,8 @@ func TestAccTFETeam_full(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_policies", "true"),
 					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_policy_overrides", "true"),
+					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_workspaces", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_vcs_settings", "true"),
@@ -87,6 +89,8 @@ func TestAccTFETeam_full_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_policies", "true"),
 					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_policy_overrides", "true"),
+					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_workspaces", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_vcs_settings", "true"),
@@ -104,6 +108,8 @@ func TestAccTFETeam_full_update(t *testing.T) {
 						"tfe_team.foobar", "visibility", "secret"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_policies", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_policy_overrides", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_workspaces", "false"),
 					resource.TestCheckResourceAttr(
@@ -274,6 +280,7 @@ resource "tfe_team" "foobar" {
   
   organization_access {
     manage_policies = true
+    manage_policy_overrides = true
     manage_workspaces = true
     manage_vcs_settings = true
   }
@@ -295,6 +302,7 @@ resource "tfe_team" "foobar" {
   
   organization_access {
     manage_policies = false
+    manage_policy_overrides = false
     manage_workspaces = false
     manage_vcs_settings = false
   }
