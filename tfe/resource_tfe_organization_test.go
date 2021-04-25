@@ -76,7 +76,9 @@ func TestAccTFEOrganization_full(t *testing.T) {
 	})
 }
 
-func TestAccTFEOrganization_update(t *testing.T) {
+func TestAccTFEOrganization_update_costEstimation(t *testing.T) {
+	skipIfFreeOnly(t)
+
 	org := &tfe.Organization{}
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()

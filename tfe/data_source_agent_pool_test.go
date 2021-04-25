@@ -10,6 +10,8 @@ import (
 )
 
 func TestAccTFEAgentPoolDataSource_basic(t *testing.T) {
+	skipIfFreeOnly(t)
+
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
