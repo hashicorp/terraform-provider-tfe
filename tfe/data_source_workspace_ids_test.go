@@ -54,14 +54,6 @@ func TestAccTFEWorkspaceIDsDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet(
 						"data.tfe_workspace_ids.foobar", fmt.Sprintf("ids.workspace-bar-%d", rInt)),
 
-					// external_ids attributes
-					resource.TestCheckResourceAttr(
-						"data.tfe_workspace_ids.foobar", "external_ids.%", "2"),
-					resource.TestCheckResourceAttrSet(
-						"data.tfe_workspace_ids.foobar", fmt.Sprintf("external_ids.workspace-foo-%d", rInt)),
-					resource.TestCheckResourceAttrSet(
-						"data.tfe_workspace_ids.foobar", fmt.Sprintf("external_ids.workspace-bar-%d", rInt)),
-
 					// id attribute
 					resource.TestCheckResourceAttrSet("data.tfe_workspace_ids.foobar", "id"),
 				),
@@ -120,16 +112,6 @@ func TestAccTFEWorkspaceIDsDataSource_wildcard(t *testing.T) {
 						"data.tfe_workspace_ids.foobar", fmt.Sprintf("ids.workspace-bar-%d", rInt)),
 					resource.TestCheckResourceAttrSet(
 						"data.tfe_workspace_ids.foobar", fmt.Sprintf("ids.workspace-dummy-%d", rInt)),
-
-					// external_ids attribute
-					resource.TestCheckResourceAttr(
-						"data.tfe_workspace_ids.foobar", "external_ids.%", "3"),
-					resource.TestCheckResourceAttrSet(
-						"data.tfe_workspace_ids.foobar", fmt.Sprintf("external_ids.workspace-foo-%d", rInt)),
-					resource.TestCheckResourceAttrSet(
-						"data.tfe_workspace_ids.foobar", fmt.Sprintf("external_ids.workspace-bar-%d", rInt)),
-					resource.TestCheckResourceAttrSet(
-						"data.tfe_workspace_ids.foobar", fmt.Sprintf("external_ids.workspace-dummy-%d", rInt)),
 
 					// id attribute
 					resource.TestCheckResourceAttrSet("data.tfe_workspace_ids.foobar", "id"),
