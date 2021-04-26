@@ -1,3 +1,14 @@
+## Unreleased 0.25.0
+
+BREAKING CHANGES:
+* d/tfe_workspace: Removed deprecated `external_id` attribute, preferring `id` instead ([#295](https://github.com/hashicorp/terraform-provider-tfe/pull/295))
+* d/tfe_workspace_ids: Removed deprecated `external_ids` attribute, preferring `ids` instead ([#295](https://github.com/hashicorp/terraform-provider-tfe/pull/295))
+* r/tfe_workspace: Removed deprecated `external_id` attribute, preferring `id` instead ([#295](https://github.com/hashicorp/terraform-provider-tfe/pull/295))
+
+NOTES:
+* You will need to migrate to the preferred attributes to update to the latest version of this
+  provider. More information about these deprecations can be found in the description of [#295](https://github.com/hashicorp/terraform-provider-tfe/pull/295)
+
 ## Unreleased 0.24.1
 
 ENHANCEMENTS:
