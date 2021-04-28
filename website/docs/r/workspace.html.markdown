@@ -67,6 +67,8 @@ The following arguments are supported:
   in a VCS push. If enabled, the working directory and trigger prefixes describe a set of 
   paths which must contain changes for a VCS push to trigger a run. If disabled, any push will 
   trigger a run. Defaults to `true`.
+* `global_remote_state` - (Optional) Whether the workspace allows all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (`remote_state_consumer_ids`).
+* `remote_state_consumer_ids` - (Optional) The set of workspace IDs set as explicit remote state consumers for the given workspace.
 * `operations` - **Deprecated** Whether to use remote execution mode. When set to `false`, the workspace will 
   be used for state storage only. Defaults to `true`. This value _must not_ be provided if `execution_mode` is 
   provided.
