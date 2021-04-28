@@ -10,8 +10,7 @@ import (
 
 func dataSourceTFEWorkspace() *schema.Resource {
 	return &schema.Resource{
-		DeprecationMessage: "Data source \"tfe_workspace\"\n\n\"external_id\": [DEPRECATED] Use id instead. The external_id attribute will be removed in the future. See the CHANGELOG to learn more: https://github.com/hashicorp/terraform-provider-tfe/blob/v0.24.0/CHANGELOG.md",
-		Read:               dataSourceTFEWorkspaceRead,
+		Read: dataSourceTFEWorkspaceRead,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -138,12 +137,6 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Type:     schema.TypeInt,
 				Computed: true,
 			},
-
-			"external_id": {
-				Type:       schema.TypeString,
-				Computed:   true,
-				Deprecated: "Use id instead. The external_id attribute will be removed in the future. See the CHANGELOG to learn more: https://github.com/hashicorp/terraform-provider-tfe/blob/v0.24.0/CHANGELOG.md",
-			},
 		},
 	}
 }
@@ -192,8 +185,6 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("policy_check_failures", workspace.PolicyCheckFailures)
 	d.Set("run_failures", workspace.RunFailures)
 	d.Set("runs_count", workspace.RunsCount)
-	// TODO: remove when external_id is removed
-	d.Set("external_id", workspace.ID)
 
 	if workspace.SSHKey != nil {
 		d.Set("ssh_key_id", workspace.SSHKey.ID)
