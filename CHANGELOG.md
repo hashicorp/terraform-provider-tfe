@@ -6,9 +6,13 @@ BREAKING CHANGES:
 * r/tfe_workspace: Removed deprecated `external_id` attribute. Use `id` instead ([#295](https://github.com/hashicorp/terraform-provider-tfe/pull/295))
 
 ENHANCEMENTS:
-* Use Go 1.16 to provide support for Apple Silicon (darwin/arm64).
-* d/tfe_workspace: Added new fields from the API ([#287](https://github.com/hashicorp/terraform-provider-tfe/pull/287))
+* Use Go 1.16 to provide support for Apple Silicon (darwin/arm64) ([#288](https://github.com/hashicorp/terraform-provider-tfe/pull/288))
+* Add Manage Policy Overrides permission for teams ([#285](https://github.com/hashicorp/terraform-provider-tfe/pull/285))
+* r/tfe_workspace: Add remote state consumer functionality ([#292](https://github.com/hashicorp/terraform-provider-tfe/pull/292))
+* r/tfe_workspace: Added description parameter to TFE workspace ([#271](https://github.com/hashicorp/terraform-provider-tfe/pull/271))
+* d/tfe_workspace: Added new workspace fields from the API ([#287](https://github.com/hashicorp/terraform-provider-tfe/pull/287))
 * d/tfe_workspace: Added `branch` attribute to `vcs_repo` block ([#290](https://github.com/hashicorp/terraform-provider-tfe/pull/290))
+* Improved error message for missing token ([#273](https://github.com/hashicorp/terraform-provider-tfe/pull/273))
 
 NOTES:
 * You will need to migrate to the new attributes in your configuration to update to the latest
