@@ -159,6 +159,38 @@ func TestAccTFEOrganization_update(t *testing.T) {
 	})
 }
 
+func TestAccTFEOrganization_case(t *testing.T) {
+	org := &tfe.Organization{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEOrganizationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOrganization_basic(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOrganizationExists(
+						"tfe_organization.foobar", org),
+					testAccCheckTFEOrganizationAttributesBasic(org, orgName),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "name", orgName),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "email", "admin@company.com"),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "collaborator_auth_policy", "password"),
+				),
+			},
+			{
+				Config:   testAccTFEOrganization_title_case(rInt),
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
 func TestAccTFEOrganization_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -323,6 +355,14 @@ func testAccTFEOrganization_basic(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}`, rInt)
+}
+
+func testAccTFEOrganization_title_case(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "Tst-Terraform-%d"
   email = "admin@company.com"
 }`, rInt)
 }
