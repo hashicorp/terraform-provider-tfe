@@ -859,9 +859,9 @@ func testAccCheckTFEWorkspaceHasRemoteConsumers(ws string, wsConsumers []string)
 			if !ok {
 				return fmt.Errorf("Not found: %s", consumer)
 			}
-			consumerExternalID := remoteConsumer.Primary.Attributes["external_id"]
-			if _, hasConsumer := remoteConsumerMap[consumerExternalID]; !hasConsumer {
-				return fmt.Errorf("The Workspace %s does not appear to be a remote state consumer for %s", rsWorkspace.Primary.ID, consumerExternalID)
+			consumerID := remoteConsumer.Primary.Attributes["id"]
+			if _, hasConsumer := remoteConsumerMap[consumerID]; !hasConsumer {
+				return fmt.Errorf("The Workspace %s does not appear to be a remote state consumer for %s", rsWorkspace.Primary.ID, consumerID)
 			}
 		}
 
