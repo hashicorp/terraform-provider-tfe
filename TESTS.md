@@ -43,6 +43,7 @@ these values with the environment variables specified below:
 1. `GITHUB_REGISTRY_MODULE_IDENTIFIER` - GitHub registry module repository identifier in the format `username/repository`. Required for running registry module tests.
 1. `GITHUB_WORKSPACE_IDENTIFIER` - GitHub workspace repository identifier in the format `username/repository`. Required for running workspace tests.
 1. `GITHUB_WORKSPACE_BRANCH`: A GitHub branch for the repository specified by `GITHUB_WORKSPACE_IDENTIFIER`. Required for running workspace tests.
+1. `SKIP_PAID` - Some tests depend on paid only features. By setting `SKIP_PAID=1`, you will skip tests that access paid features.
 
 You can set your environment variables up however you prefer. The following are instructions for setting up environment variables using [envchain](https://github.com/sorah/envchain).
    1. Make sure you have envchain installed. [Instructions for this can be found in the envchain README](https://github.com/sorah/envchain#installation).
