@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"strconv"
 	"testing"
 	"time"
 
@@ -661,6 +662,122 @@ func TestAccTFEWorkspace_operationsAndExecutionModeInteroperability(t *testing.T
 	})
 }
 
+func TestAccTFEWorkspace_globalRemoteState(t *testing.T) {
+	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_globalRemoteStateFalse(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					testAccCheckTFEWorkspaceAttributes(workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "name", "workspace-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "global_remote_state", "false"),
+				),
+			},
+			{
+				Config: testAccTFEWorkspace_globalRemoteStateTrue(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					testAccCheckTFEWorkspaceAttributes(workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "name", "workspace-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "global_remote_state", "true"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspace_alterRemoteStateConsumers(t *testing.T) {
+	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_basic(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr("tfe_workspace.foobar", "global_remote_state", "true"),
+				),
+			},
+			{
+				Config: testAccTFEWorkspace_OneRemoteStateConsumer(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr("tfe_workspace.foobar", "global_remote_state", "false"),
+					testAccCheckTFEWorkspaceHasRemoteConsumers("tfe_workspace.foobar", []string{"tfe_workspace.foobar_one"}),
+				),
+			},
+			{
+				Config: testAccTFEWorkspace_TwoRemoteStateConsumers(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr("tfe_workspace.foobar", "global_remote_state", "false"),
+					testAccCheckTFEWorkspaceHasRemoteConsumers("tfe_workspace.foobar", []string{"tfe_workspace.foobar_one", "tfe_workspace.foobar_two"}),
+				),
+			},
+			{
+				Config: testAccTFEWorkspace_OneRemoteStateConsumer(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr("tfe_workspace.foobar", "global_remote_state", "false"),
+					testAccCheckTFEWorkspaceHasRemoteConsumers("tfe_workspace.foobar", []string{"tfe_workspace.foobar_one"}),
+				),
+			},
+			{
+				Config: testAccTFEWorkspace_globalRemoteStateTrue(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr("tfe_workspace.foobar", "global_remote_state", "true"),
+					testAccCheckTFEWorkspaceHasRemoteConsumers("tfe_workspace.foobar", []string{}),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspace_createWithRemoteStateConsumers(t *testing.T) {
+	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_TwoRemoteStateConsumers(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr("tfe_workspace.foobar", "global_remote_state", "false"),
+					testAccCheckTFEWorkspaceHasRemoteConsumers("tfe_workspace.foobar", []string{"tfe_workspace.foobar_one", "tfe_workspace.foobar_two"}),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckTFEWorkspaceExists(
 	n string, workspace *tfe.Workspace) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
@@ -718,6 +835,36 @@ func testAccCheckTFEWorkspacePanic(n string) resource.TestCheckFunc {
 		err = resourceTFEWorkspaceRead(rd, testAccProvider.Meta())
 		if err != nil && err != tfe.ErrResourceNotFound {
 			return fmt.Errorf("Could not re-read resource directly: %v", err)
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckTFEWorkspaceHasRemoteConsumers(ws string, wsConsumers []string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rsWorkspace, ok := s.RootModule().Resources[ws]
+		if !ok {
+			return fmt.Errorf("Not found: %s", ws)
+		}
+		numConsumersStr := rsWorkspace.Primary.Attributes["remote_state_consumer_ids.#"]
+		numConsumers, _ := strconv.Atoi(numConsumersStr)
+
+		remoteConsumerMap := map[string]struct{}{}
+		for i := 0; i < numConsumers; i++ {
+			consumer := rsWorkspace.Primary.Attributes[fmt.Sprintf("remote_state_consumer_ids.%d", i)]
+			remoteConsumerMap[consumer] = struct{}{}
+		}
+
+		for _, consumer := range wsConsumers {
+			remoteConsumer, ok := s.RootModule().Resources[consumer]
+			if !ok {
+				return fmt.Errorf("Not found: %s", consumer)
+			}
+			consumerID := remoteConsumer.Primary.Attributes["id"]
+			if _, hasConsumer := remoteConsumerMap[consumerID]; !hasConsumer {
+				return fmt.Errorf("The Workspace %s does not appear to be a remote state consumer for %s", rsWorkspace.Primary.ID, consumerID)
+			}
 		}
 
 		return nil
@@ -1327,4 +1474,92 @@ resource "tfe_workspace" "foobar" {
   auto_apply   = true
 }
 `, rInt)
+}
+
+func testAccTFEWorkspace_globalRemoteStateFalse(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name                = "workspace-test"
+  organization        = tfe_organization.foobar.id
+  description         = "My favorite workspace!"
+  allow_destroy_plan  = false
+  auto_apply          = true
+  global_remote_state = false
+}`, rInt)
+}
+
+func testAccTFEWorkspace_globalRemoteStateTrue(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name                = "workspace-test"
+  organization        = tfe_organization.foobar.id
+  description         = "My favorite workspace!"
+  allow_destroy_plan  = false
+  auto_apply          = true
+  global_remote_state = true
+}`, rInt)
+}
+
+func testAccTFEWorkspace_TwoRemoteStateConsumers(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name               = "workspace-test"
+  organization       = tfe_organization.foobar.id
+  allow_destroy_plan = false
+  auto_apply = true
+  global_remote_state = false
+  remote_state_consumer_ids = [tfe_workspace.foobar_one.id, tfe_workspace.foobar_two.id]
+}
+
+resource "tfe_workspace" "foobar_one" {
+  name               = "workspace-test-1"
+  organization       = tfe_organization.foobar.id
+}
+
+resource "tfe_workspace" "foobar_two" {
+  name               = "workspace-test-2"
+  organization       = tfe_organization.foobar.id
+}`, rInt)
+}
+
+func testAccTFEWorkspace_OneRemoteStateConsumer(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name               = "workspace-test"
+  organization       = tfe_organization.foobar.id
+  allow_destroy_plan = false
+  auto_apply = true
+  global_remote_state = false
+  remote_state_consumer_ids = [tfe_workspace.foobar_one.id]
+}
+
+resource "tfe_workspace" "foobar_one" {
+  name               = "workspace-test-1"
+  organization       = tfe_organization.foobar.id
+}
+
+resource "tfe_workspace" "foobar_two" {
+  name               = "workspace-test-2"
+  organization       = tfe_organization.foobar.id
+}`, rInt)
 }

@@ -9,8 +9,7 @@ import (
 
 func dataSourceTFEWorkspaceIDs() *schema.Resource {
 	return &schema.Resource{
-		DeprecationMessage: "Data source \"tfe_workspace_ids\"\n\n\"external_ids\": [DEPRECATED] Use ids instead. The external_ids attribute will be removed in the future. See the CHANGELOG to learn more: https://github.com/hashicorp/terraform-provider-tfe/blob/v0.24.0/CHANGELOG.md",
-		Read:               dataSourceTFEWorkspaceIDsRead,
+		Read: dataSourceTFEWorkspaceIDsRead,
 
 		Schema: map[string]*schema.Schema{
 			"names": {
@@ -27,12 +26,6 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 			"ids": {
 				Type:     schema.TypeMap,
 				Computed: true,
-			},
-
-			"external_ids": {
-				Type:       schema.TypeMap,
-				Computed:   true,
-				Deprecated: "Use ids instead. The external_ids attribute will be removed in the future. See the CHANGELOG to learn more: https://github.com/hashicorp/terraform-provider-tfe/blob/v0.24.0/CHANGELOG.md",
 			},
 
 			"full_names": {
@@ -85,8 +78,6 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 	}
 
 	d.Set("ids", ids)
-	// TODO: remove once external_ids is removed
-	d.Set("external_ids", ids)
 	d.Set("full_names", fullNames)
 	d.SetId(fmt.Sprintf("%s/%d", organization, schema.HashString(id)))
 

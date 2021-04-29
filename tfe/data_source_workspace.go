@@ -10,8 +10,7 @@ import (
 
 func dataSourceTFEWorkspace() *schema.Resource {
 	return &schema.Resource{
-		DeprecationMessage: "Data source \"tfe_workspace\"\n\n\"external_id\": [DEPRECATED] Use id instead. The external_id attribute will be removed in the future. See the CHANGELOG to learn more: https://github.com/hashicorp/terraform-provider-tfe/blob/v0.24.0/CHANGELOG.md",
-		Read:               dataSourceTFEWorkspaceRead,
+		Read: dataSourceTFEWorkspaceRead,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -42,6 +41,17 @@ func dataSourceTFEWorkspace() *schema.Resource {
 			"file_triggers_enabled": {
 				Type:     schema.TypeBool,
 				Computed: true,
+			},
+
+			"global_remote_state": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
+
+			"remote_state_consumer_ids": {
+				Type:     schema.TypeSet,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
 			"operations": {
@@ -127,12 +137,6 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Type:     schema.TypeInt,
 				Computed: true,
 			},
-
-			"external_id": {
-				Type:       schema.TypeString,
-				Computed:   true,
-				Deprecated: "Use id instead. The external_id attribute will be removed in the future. See the CHANGELOG to learn more: https://github.com/hashicorp/terraform-provider-tfe/blob/v0.24.0/CHANGELOG.md",
-			},
 		},
 	}
 }
@@ -152,12 +156,25 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 		}
 		return fmt.Errorf("Error retrieving workspace: %v", err)
 	}
+	remoteStateConsumers, err := tfeClient.Workspaces.RemoteStateConsumers(ctx, workspace.ID)
+	if err != nil {
+		if err == tfe.ErrResourceNotFound {
+			return fmt.Errorf("Could not find workspace %s/%s", organization, name)
+		}
+		return fmt.Errorf("Error retrieving remote state consumers for a workspace: %v", err)
+	}
+	consumerIDs := make([]string, len(remoteStateConsumers.Items))
+	for _, ws := range remoteStateConsumers.Items {
+		consumerIDs = append(consumerIDs, ws.ID)
+	}
 
 	// Update the config.
 	d.Set("allow_destroy_plan", workspace.AllowDestroyPlan)
 	d.Set("auto_apply", workspace.AutoApply)
 	d.Set("description", workspace.Description)
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
+	d.Set("global_remote_state", workspace.GlobalRemoteState)
+	d.Set("remote_state_consumer_ids", consumerIDs)
 	d.Set("operations", workspace.Operations)
 	d.Set("queue_all_runs", workspace.QueueAllRuns)
 	d.Set("speculative_enabled", workspace.SpeculativeEnabled)
@@ -168,8 +185,6 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("policy_check_failures", workspace.PolicyCheckFailures)
 	d.Set("run_failures", workspace.RunFailures)
 	d.Set("runs_count", workspace.RunsCount)
-	// TODO: remove when external_id is removed
-	d.Set("external_id", workspace.ID)
 
 	if workspace.SSHKey != nil {
 		d.Set("ssh_key_id", workspace.SSHKey.ID)
