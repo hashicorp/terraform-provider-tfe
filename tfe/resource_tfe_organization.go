@@ -3,6 +3,7 @@ package tfe
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -23,6 +24,9 @@ func resourceTFEOrganization() *schema.Resource {
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return strings.EqualFold(old, new)
+				},
 			},
 
 			"email": {
