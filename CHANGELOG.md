@@ -1,4 +1,4 @@
-## 0.25.0 (Unreleased)
+## 0.25.0 (April 29, 2021)
 
 BREAKING CHANGES:
 * d/tfe_workspace: Removed deprecated `external_id` attribute. Use `id` instead ([#295](https://github.com/hashicorp/terraform-provider-tfe/pull/295))
