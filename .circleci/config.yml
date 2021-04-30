@@ -31,6 +31,10 @@ jobs:
           command: make fmtcheck
 
       - run:
+          name: go vet
+          command: make vet
+
+      - run:
           name: Run tests
           command: |
               gotestsum --format short-verbose --junitfile \
