@@ -355,9 +355,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		d.Set("global_remote_state", globalRemoteState)
-		if !globalRemoteState {
-			d.Set("remote_state_consumer_ids", remoteStateConsumerIDs)
-		}
+		d.Set("remote_state_consumer_ids", remoteStateConsumerIDs)
 	}
 
 	return nil
