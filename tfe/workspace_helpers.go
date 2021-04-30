@@ -65,3 +65,30 @@ func unpackWorkspaceID(id string) (organization, name string, err error) {
 
 	return s[0], s[1], nil
 }
+
+func readWorkspaceStateConsumers(id string, client *tfe.Client) (bool, []interface{}, error) {
+	var remoteStateConsumerIDs []interface{}
+	workspaceList, err := client.Workspaces.RemoteStateConsumers(ctx, id)
+	if err != nil {
+		if err == tfe.ErrResourceNotFound {
+			// Make this functionality backwards compatible with Terraform Enterprise < v20210401
+			//
+			// Assume that if you reached this point, you are authorized to this
+			// endpoint (the original call to the workspace succeeded) and thus
+			// the only reason one would receive a 404 here is because this endpoint
+			// does not exist in this version of TFE, in which case remote state
+			// consumers should be ignored. Indicate the old implicit behavior
+			// by setting this computed attribute to true, which is the actual
+			// default value when the installation is eventually upgraded.
+			return true, remoteStateConsumerIDs, nil
+		} else {
+			return false, remoteStateConsumerIDs, err
+		}
+	}
+
+	for _, remoteStateConsumer := range workspaceList.Items {
+		remoteStateConsumerIDs = append(remoteStateConsumerIDs, remoteStateConsumer.ID)
+	}
+
+	return false, remoteStateConsumerIDs, nil
+}

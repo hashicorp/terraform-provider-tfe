@@ -345,36 +345,19 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 
 	d.Set("vcs_repo", vcsRepo)
 
-	var remoteStateConsumerIDs []interface{}
-
 	if workspace.GlobalRemoteState {
 		d.Set("global_remote_state", true)
 	} else {
-		workspaceList, err := tfeClient.Workspaces.RemoteStateConsumers(ctx, id)
+		globalRemoteState, remoteStateConsumerIDs, err := readWorkspaceStateConsumers(id, tfeClient)
 		if err != nil {
-			if err == tfe.ErrResourceNotFound {
-				// Make this functionality backwards compatible with Terraform Enterprise < v20210401
-				//
-				// Assume that if reached this point, you are authorized to this
-				// endpoint (the original call to the workspace succeeded) and thus
-				// the only reason one would receive a 404 here is because of a
-				// version of an old TFE - remote state consumers should be ignored.
-				// Indicate the old implicit behavior by setting this computed
-				// attribute to true, which is the actual default value when the
-				// installation is eventually upgraded.
-				d.Set("global_remote_state", true)
-				return nil
-			} else {
-				return fmt.Errorf(
-					"Error reading remote state consumers workspace %s: %v", id, err)
-			}
+			return fmt.Errorf(
+				"Error reading remote state consumers for workspace %s: %v", id, err)
 		}
 
-		for _, remoteStateConsumer := range workspaceList.Items {
-			remoteStateConsumerIDs = append(remoteStateConsumerIDs, remoteStateConsumer.ID)
+		d.Set("global_remote_state", globalRemoteState)
+		if !globalRemoteState {
+			d.Set("remote_state_consumer_ids", remoteStateConsumerIDs)
 		}
-		d.Set("global_remote_state", false)
-		d.Set("remote_state_consumer_ids", remoteStateConsumerIDs)
 	}
 
 	return nil

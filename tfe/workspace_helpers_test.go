@@ -30,7 +30,7 @@ func TestFetchWorkspaceExternalID(t *testing.T) {
 		},
 	}
 
-	client := testTfeClient(t, "ws-123")
+	client := testTfeClient(t, testClientOptions{defaultWorkspaceID: "ws-123"})
 	name := "a-workspace"
 	client.Workspaces.Create(nil, "hashicorp", tfe.WorkspaceCreateOptions{
 		Name: &name,
@@ -177,6 +177,53 @@ func TestUnpackWorkspaceID(t *testing.T) {
 
 		if tc.name != name {
 			t.Fatalf("expected name %q, got %q", tc.name, name)
+		}
+	}
+}
+
+func TestReadWorkspaceStateConsumers(t *testing.T) {
+	cases := []struct {
+		remoteStateConsumersResponse   string
+		err                            bool
+		expectedGlobalRemoteState      bool
+		expectedRemoteStateConsumerIds []string
+	}{
+		{
+			remoteStateConsumersResponse:   "200",
+			err:                            false,
+			expectedGlobalRemoteState:      false,
+			expectedRemoteStateConsumerIds: []string{"ws-456"},
+		},
+		{
+			remoteStateConsumersResponse:   "404",
+			err:                            false,
+			expectedGlobalRemoteState:      true,
+			expectedRemoteStateConsumerIds: []string{},
+		},
+		{
+			remoteStateConsumersResponse:   "500",
+			err:                            true,
+			expectedGlobalRemoteState:      false,
+			expectedRemoteStateConsumerIds: []string{},
+		},
+	}
+
+	for _, tc := range cases {
+		client := testTfeClient(t, testClientOptions{
+			defaultWorkspaceID:           "ws-123",
+			remoteStateConsumersResponse: tc.remoteStateConsumersResponse,
+		})
+		actualGlobalRemoteState, actualRemoteStateConsumerIds, err := readWorkspaceStateConsumers("ws-123", client)
+		if (err != nil) != tc.err {
+			t.Fatalf("expected error is %t, got %v", tc.err, err)
+		}
+
+		if actualGlobalRemoteState != tc.expectedGlobalRemoteState {
+			t.Fatalf("expected global_remote_state is %t, got %v", tc.expectedGlobalRemoteState, actualGlobalRemoteState)
+		}
+
+		if len(actualRemoteStateConsumerIds) != len(tc.expectedRemoteStateConsumerIds) {
+			t.Fatalf("expected remote_state_consumer_ids are %v, got %v", tc.expectedRemoteStateConsumerIds, actualRemoteStateConsumerIds)
 		}
 	}
 }
