@@ -1,20 +1,29 @@
+## 0.25.1 (Unreleased)
+
+BUG FIXES:
+* r/workspace: Fix remote state consumer regression for Terraform Enterprise ([#303](https://github.com/hashicorp/terraform-provider-tfe/pull/303))
+* r/organization: Ignore diffs in name case sensitivity ([#300](https://github.com/hashicorp/terraform-provider-tfe/pull/300))
+
+NOTES:
+* This release includes a fix for a major regression from a backwards incompatible change
+  erroneously introduced in v0.25.0, where any Terraform Enterprise version < v20210401-1 would
+  experience failures using the tfe_workspace resource.
+
 ## 0.25.0 (April 29, 2021)
 
 BREAKING CHANGES:
-* d/tfe_workspace: Due to the addition of remote controlled state consumer functionality, using this data source requires using the provider with Terraform Cloud or an instance of Terraform Enterprise at least as recent as v202104-1 ([#292](https://github.com/hashicorp/terraform-provider-tfe/pull/292))
 * d/tfe_workspace: Removed deprecated `external_id` attribute. Use `id` instead ([#295](https://github.com/hashicorp/terraform-provider-tfe/pull/295))
 * d/tfe_workspace_ids: Removed deprecated `external_ids` attribute. Use `ids` instead ([#295](https://github.com/hashicorp/terraform-provider-tfe/pull/295))
 * r/tfe_workspace: Removed deprecated `external_id` attribute. Use `id` instead ([#295](https://github.com/hashicorp/terraform-provider-tfe/pull/295))
-* r/tfe_workspace: Due to the addition of remote controlled state consumer functionality, using this resource requires using the provider with Terraform Cloud or an instance of Terraform Enterprise at least as recent as v202104-1 ([#292](https://github.com/hashicorp/terraform-provider-tfe/pull/292))
 
 ENHANCEMENTS:
-* provider: Updated to use Go 1.16 to provide support for Apple Silicon (darwin/arm64) ([#288](https://github.com/hashicorp/terraform-provider-tfe/pull/288))
-* provider: Improved error message for missing token ([#273](https://github.com/hashicorp/terraform-provider-tfe/pull/273))
-* r/tfe_team: Added Manage Policy Overrides permission for teams ([#285](https://github.com/hashicorp/terraform-provider-tfe/pull/285))
-* r/tfe_workspace: Added remote state consumer functionality ([#292](https://github.com/hashicorp/terraform-provider-tfe/pull/292))
+* Use Go 1.16 to provide support for Apple Silicon (darwin/arm64) ([#288](https://github.com/hashicorp/terraform-provider-tfe/pull/288))
+* Add Manage Policy Overrides permission for teams ([#285](https://github.com/hashicorp/terraform-provider-tfe/pull/285))
+* r/tfe_workspace: Add remote state consumer functionality ([#292](https://github.com/hashicorp/terraform-provider-tfe/pull/292))
 * r/tfe_workspace: Added description parameter to TFE workspace ([#271](https://github.com/hashicorp/terraform-provider-tfe/pull/271))
 * d/tfe_workspace: Added new workspace fields from the API ([#287](https://github.com/hashicorp/terraform-provider-tfe/pull/287))
 * d/tfe_workspace: Added `branch` attribute to `vcs_repo` block ([#290](https://github.com/hashicorp/terraform-provider-tfe/pull/290))
+* Improved error message for missing token ([#273](https://github.com/hashicorp/terraform-provider-tfe/pull/273))
 
 NOTES:
 * You will need to migrate to the new attributes in your configuration to update to the latest

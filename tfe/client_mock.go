@@ -2,6 +2,7 @@ package tfe
 
 import (
 	"context"
+	"errors"
 	"io"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -12,16 +13,16 @@ type workspaceNamesKey struct {
 }
 
 type mockWorkspaces struct {
-	defaultWorkspaceID string
-	workspaceNames     map[workspaceNamesKey]*tfe.Workspace
+	options        testClientOptions
+	workspaceNames map[workspaceNamesKey]*tfe.Workspace
 }
 
 // newMockWorkspaces creates a mock workspaces implementation. Any created
 // workspaces will have the id given in defaultWorkspaceID.
-func newMockWorkspaces(defaultWorkspaceID string) *mockWorkspaces {
+func newMockWorkspaces(options testClientOptions) *mockWorkspaces {
 	return &mockWorkspaces{
-		defaultWorkspaceID: defaultWorkspaceID,
-		workspaceNames:     make(map[workspaceNamesKey]*tfe.Workspace),
+		options:        options,
+		workspaceNames: make(map[workspaceNamesKey]*tfe.Workspace),
 	}
 }
 
@@ -31,7 +32,7 @@ func (m *mockWorkspaces) List(ctx context.Context, organization string, options 
 
 func (m *mockWorkspaces) Create(ctx context.Context, organization string, options tfe.WorkspaceCreateOptions) (*tfe.Workspace, error) {
 	ws := &tfe.Workspace{
-		ID:   m.defaultWorkspaceID,
+		ID:   m.options.defaultWorkspaceID,
 		Name: *options.Name,
 		Organization: &tfe.Organization{
 			Name: organization,
@@ -105,7 +106,13 @@ func (m *mockWorkspaces) UnassignSSHKey(ctx context.Context, workspaceID string)
 }
 
 func (m *mockWorkspaces) RemoteStateConsumers(ctx context.Context, workspaceID string) (*tfe.WorkspaceList, error) {
-	panic("not implemented")
+	if m.options.remoteStateConsumersResponse == "404" {
+		return nil, tfe.ErrResourceNotFound
+	} else if m.options.remoteStateConsumersResponse == "500" {
+		return nil, errors.New("something is broken!")
+	}
+
+	return &tfe.WorkspaceList{Items: []*tfe.Workspace{&tfe.Workspace{ID: "ws-456"}}}, nil
 }
 
 func (m *mockWorkspaces) AddRemoteStateConsumers(ctx context.Context, workspaceID string, options tfe.WorkspaceAddRemoteStateConsumersOptions) error {

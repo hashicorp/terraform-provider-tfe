@@ -6,9 +6,14 @@ import (
 	tfe "github.com/hashicorp/go-tfe"
 )
 
+type testClientOptions struct {
+	defaultWorkspaceID           string
+	remoteStateConsumersResponse string
+}
+
 // testTfeClient creates a mock client that creates workspaces with their ID
 // set to workspaceID.
-func testTfeClient(t *testing.T, workspaceID string) *tfe.Client {
+func testTfeClient(t *testing.T, options testClientOptions) *tfe.Client {
 	config := &tfe.Config{
 		Token: "not-a-token",
 	}
@@ -18,7 +23,7 @@ func testTfeClient(t *testing.T, workspaceID string) *tfe.Client {
 		t.Fatalf("error creating tfe client: %v", err)
 	}
 
-	client.Workspaces = newMockWorkspaces(workspaceID)
+	client.Workspaces = newMockWorkspaces(options)
 
 	return client
 }
