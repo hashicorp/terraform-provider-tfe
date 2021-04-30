@@ -311,7 +311,6 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("auto_apply", workspace.AutoApply)
 	d.Set("description", workspace.Description)
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
-	d.Set("global_remote_state", workspace.GlobalRemoteState)
 	d.Set("operations", workspace.Operations)
 	d.Set("execution_mode", workspace.ExecutionMode)
 	d.Set("queue_all_runs", workspace.QueueAllRuns)
@@ -347,17 +346,36 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("vcs_repo", vcsRepo)
 
 	var remoteStateConsumerIDs []interface{}
-	if !workspace.GlobalRemoteState {
+
+	if workspace.GlobalRemoteState {
+		d.Set("global_remote_state", true)
+	} else {
 		workspaceList, err := tfeClient.Workspaces.RemoteStateConsumers(ctx, id)
 		if err != nil {
-			return fmt.Errorf(
-				"Error reading remote state consumers workspace %s: %v", id, err)
+			if err == tfe.ErrResourceNotFound {
+				// Make this functionality backwards compatible with Terraform Enterprise < v20210401
+				//
+				// Assume that if reached this point, you are authorized to this
+				// endpoint (the original call to the workspace succeeded) and thus
+				// the only reason one would receive a 404 here is because of a
+				// version of an old TFE - remote state consumers should be ignored.
+				// Indicate the old implicit behavior by setting this computed
+				// attribute to true, which is the actual default value when the
+				// installation is eventually upgraded.
+				d.Set("global_remote_state", true)
+				return nil
+			} else {
+				return fmt.Errorf(
+					"Error reading remote state consumers workspace %s: %v", id, err)
+			}
 		}
+
 		for _, remoteStateConsumer := range workspaceList.Items {
 			remoteStateConsumerIDs = append(remoteStateConsumerIDs, remoteStateConsumer.ID)
 		}
+		d.Set("global_remote_state", false)
+		d.Set("remote_state_consumer_ids", remoteStateConsumerIDs)
 	}
-	d.Set("remote_state_consumer_ids", remoteStateConsumerIDs)
 
 	return nil
 }
