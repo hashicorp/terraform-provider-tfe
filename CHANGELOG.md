@@ -4,6 +4,11 @@ BUG FIXES:
 * r/workspace: Fix remote state consumer regression for Terraform Enterprise ([#303](https://github.com/hashicorp/terraform-provider-tfe/pull/303))
 * r/organization: Ignore diffs in name case sensitivity ([#300](https://github.com/hashicorp/terraform-provider-tfe/pull/300))
 
+NOTES:
+* This release includes a fix for a major regression from a backwards incompatible change
+  erroneously introduced in v0.25.0, where any Terraform Enterprise version < v20210401-1 would
+  experience failures using the tfe_workspace resource.
+
 ## 0.25.0 (April 29, 2021)
 
 BREAKING CHANGES:
