@@ -1,3 +1,8 @@
+## 0.25.1 (Unreleased)
+
+BUG FIXES:
+* r/organization: Ignore diffs in name case sensitivity ([#300](https://github.com/hashicorp/terraform-provider-tfe/pull/300))
+
 ## 0.25.0 (April 29, 2021)
 
 BREAKING CHANGES:
