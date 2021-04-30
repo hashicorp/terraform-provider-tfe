@@ -10,6 +10,8 @@ description: |-
 
 Use this data source to get information about a workspace.
 
+~> **NOTE:** Using `global_remote_state` or `remote_state_consumer_ids` requires using the provider with Terraform Cloud or an instance of Terraform Enterprise at least as recent as v202104-1.
+
 ## Example Usage
 
 ```hcl
