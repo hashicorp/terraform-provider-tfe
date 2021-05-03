@@ -12,6 +12,8 @@ import (
 )
 
 func TestAccTFEPolicySetParameter_basic(t *testing.T) {
+	skipIfFreeOnly(t)
+
 	parameter := &tfe.PolicySetParameter{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -39,6 +41,8 @@ func TestAccTFEPolicySetParameter_basic(t *testing.T) {
 }
 
 func TestAccTFEPolicySetParameter_update(t *testing.T) {
+	skipIfFreeOnly(t)
+
 	parameter := &tfe.PolicySetParameter{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -81,6 +85,8 @@ func TestAccTFEPolicySetParameter_update(t *testing.T) {
 }
 
 func TestAccTFEPolicySetParameter_import(t *testing.T) {
+	skipIfFreeOnly(t)
+
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{

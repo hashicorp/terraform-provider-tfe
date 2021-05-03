@@ -12,7 +12,12 @@ import (
 func TestAccTFEOAuthClientDataSource_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
+		PreCheck: func() {
+			testAccPreCheck(t)
+			if GITHUB_TOKEN == "" {
+				t.Skip("Please set GITHUB_TOKEN to run this test")
+			}
+		},
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{

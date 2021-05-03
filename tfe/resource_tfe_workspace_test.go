@@ -583,6 +583,8 @@ func TestAccTFEWorkspace_importVCSBranch(t *testing.T) {
 }
 
 func TestAccTFEWorkspace_operationsAndExecutionModeInteroperability(t *testing.T) {
+	skipIfFreeOnly(t)
+
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 

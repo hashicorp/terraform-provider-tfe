@@ -13,6 +13,8 @@ import (
 )
 
 func TestAccTFEPolicySet_basic(t *testing.T) {
+	skipIfFreeOnly(t)
+
 	policySet := &tfe.PolicySet{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -41,6 +43,8 @@ func TestAccTFEPolicySet_basic(t *testing.T) {
 }
 
 func TestAccTFEPolicySet_update(t *testing.T) {
+	skipIfFreeOnly(t)
+
 	policySet := &tfe.PolicySet{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
@@ -86,6 +90,8 @@ func TestAccTFEPolicySet_update(t *testing.T) {
 }
 
 func TestAccTFEPolicySet_updateEmpty(t *testing.T) {
+	skipIfFreeOnly(t)
+
 	policySet := &tfe.PolicySet{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -130,6 +136,8 @@ func TestAccTFEPolicySet_updateEmpty(t *testing.T) {
 }
 
 func TestAccTFEPolicySet_updatePopulated(t *testing.T) {
+	skipIfFreeOnly(t)
+
 	policySet := &tfe.PolicySet{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
@@ -218,6 +226,8 @@ func TestAccTFEPolicySet_updateToGlobal(t *testing.T) {
 }
 
 func TestAccTFEPolicySet_updateToWorkspace(t *testing.T) {
+	skipIfFreeOnly(t)
+
 	policySet := &tfe.PolicySet{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
@@ -261,6 +271,8 @@ func TestAccTFEPolicySet_updateToWorkspace(t *testing.T) {
 }
 
 func TestAccTFEPolicySet_vcs(t *testing.T) {
+	skipIfFreeOnly(t)
+
 	policySet := &tfe.PolicySet{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -309,6 +321,8 @@ func TestAccTFEPolicySet_vcs(t *testing.T) {
 }
 
 func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
+	skipIfFreeOnly(t)
+
 	policySet := &tfe.PolicySet{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -395,6 +409,8 @@ func TestAccTFEPolicySet_invalidName(t *testing.T) {
 }
 
 func TestAccTFEPolicySetImport(t *testing.T) {
+	skipIfFreeOnly(t)
+
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
