@@ -55,6 +55,7 @@ The following arguments are supported:
 
 * `name` - (Required) Name of the workspace.
 * `organization` - (Required) Name of the organization.
+* `description` - (Optional) A description for the workspace.
 * `agent_pool_id` - (Optional) The ID of an agent pool to assign to the workspace. Requires `execution_mode`
   to be set to `agent`. This value _must not_ be provided if `execution_mode` is set to any other value or if `operations` is
   provided.
