@@ -156,16 +156,10 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 		}
 		return fmt.Errorf("Error retrieving workspace: %v", err)
 	}
-	remoteStateConsumers, err := tfeClient.Workspaces.RemoteStateConsumers(ctx, workspace.ID)
+	globalRemoteState, remoteStateConsumerIDs, err := readWorkspaceStateConsumers(workspace.ID, tfeClient)
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
-			return fmt.Errorf("Could not find workspace %s/%s", organization, name)
-		}
-		return fmt.Errorf("Error retrieving remote state consumers for a workspace: %v", err)
-	}
-	consumerIDs := make([]string, len(remoteStateConsumers.Items))
-	for _, ws := range remoteStateConsumers.Items {
-		consumerIDs = append(consumerIDs, ws.ID)
+		return fmt.Errorf(
+			"Error reading remote state consumers for workspace %s: %v", workspace.ID, err)
 	}
 
 	// Update the config.
@@ -173,8 +167,8 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("auto_apply", workspace.AutoApply)
 	d.Set("description", workspace.Description)
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
-	d.Set("global_remote_state", workspace.GlobalRemoteState)
-	d.Set("remote_state_consumer_ids", consumerIDs)
+	d.Set("global_remote_state", globalRemoteState)
+	d.Set("remote_state_consumer_ids", remoteStateConsumerIDs)
 	d.Set("operations", workspace.Operations)
 	d.Set("queue_all_runs", workspace.QueueAllRuns)
 	d.Set("speculative_enabled", workspace.SpeculativeEnabled)
