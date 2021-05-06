@@ -9,6 +9,7 @@ import (
 )
 
 func TestAccTFEIPRangesDataSource_basic(t *testing.T) {
+	skipIfEnterprise(t)
 	ipRegex := regexp.MustCompile(`^([\d]{1,3}\.){3}[\d]{1,3}/[\d]{1,3}$`)
 
 	resource.Test(t, resource.TestCase{

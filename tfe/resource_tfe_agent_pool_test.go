@@ -13,6 +13,7 @@ import (
 
 func TestAccTFEAgentPool_basic(t *testing.T) {
 	skipIfFreeOnly(t)
+	skipIfEnterprise(t)
 
 	agentPool := &tfe.AgentPool{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -38,6 +39,7 @@ func TestAccTFEAgentPool_basic(t *testing.T) {
 
 func TestAccTFEAgentPool_update(t *testing.T) {
 	skipIfFreeOnly(t)
+	skipIfEnterprise(t)
 
 	agentPool := &tfe.AgentPool{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -74,6 +76,7 @@ func TestAccTFEAgentPool_update(t *testing.T) {
 
 func TestAccTFEAgentPool_import(t *testing.T) {
 	skipIfFreeOnly(t)
+	skipIfEnterprise(t)
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 

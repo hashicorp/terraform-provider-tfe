@@ -13,6 +13,7 @@ import (
 
 func TestAccTFEAgentToken_basic(t *testing.T) {
 	skipIfFreeOnly(t)
+	skipIfEnterprise(t)
 
 	agentToken := &tfe.AgentToken{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()

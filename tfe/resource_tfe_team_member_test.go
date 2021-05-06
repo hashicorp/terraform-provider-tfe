@@ -78,6 +78,9 @@ func TestUnpackTeamMemberID(t *testing.T) {
 
 }
 
+// Thanks to a quirk of our CI environment, this test assumes that
+// the token used to run the tests (aka the TFE_TOKEN environment variable)
+// belongs to a user with the username "admin" and will fail otherwise.
 func TestAccTFETeamMember_basic(t *testing.T) {
 	user := &tfe.User{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -101,6 +104,9 @@ func TestAccTFETeamMember_basic(t *testing.T) {
 	})
 }
 
+// Thanks to a quirk of our CI environment, this test assumes that
+// the token used to run the tests (aka the TFE_TOKEN environment variable)
+// belongs to a user with the username "admin" and will fail otherwise.
 func TestAccTFETeamMember_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
