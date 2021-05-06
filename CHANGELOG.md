@@ -1,4 +1,4 @@
-## 0.25.2 (Unreleased)
+## 0.25.2 (May 06, 2021)
 
 BUG FIXES:
 d/tfe_workspace: Fix remote state consumer regression for Terraform Enterprise ([#311](https://github.com/hashicorp/terraform-provider-tfe/pull/311))
