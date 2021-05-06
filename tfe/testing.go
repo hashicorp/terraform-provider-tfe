@@ -37,3 +37,10 @@ func skipIfFreeOnly(t *testing.T) {
 		t.Skip("Skipping test that requires a paid feature. Remove 'SKIP_PAID=1' if you want to run this test")
 	}
 }
+
+func skipIfEnterprise(t *testing.T) {
+	skip := os.Getenv("ENABLE_TFE") == "1"
+	if skip {
+		t.Skip("Skipping test for a feature unavailable in Terraform Enterprise. Set 'ENABLE_TFE=0' to run.")
+	}
+}

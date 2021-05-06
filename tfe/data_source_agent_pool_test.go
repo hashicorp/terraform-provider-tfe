@@ -11,6 +11,7 @@ import (
 
 func TestAccTFEAgentPoolDataSource_basic(t *testing.T) {
 	skipIfFreeOnly(t)
+	skipIfEnterprise(t)
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
