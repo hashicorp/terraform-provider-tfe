@@ -35,16 +35,16 @@ func dataSourceTFEAdminOrganizationList(d *schema.ResourceData, meta interface{}
 		return fmt.Errorf("Error retrieving organizations: %v", err)
 	}
 	orgNames := []string{}
-	log.Printf("[DEBUG] OMAR org count: ", len(orgs.Items))
+	log.Printf("[DEBUG] OMAR org count: %d", len(orgs.Items))
 	for _, org := range orgs.Items {
 		orgNames = append(orgNames, org.Name)
 	}
 
-	log.Printf("[DEBUG] OMAR org names: ", orgNames)
-	log.Printf("[DEBUG] KEY: ", d.Get("organizations"))
+	log.Printf("[DEBUG] OMAR org names: %v", orgNames)
+	log.Printf("[DEBUG] KEY: %v", d.Get("organizations"))
 	// Update the config.
 	d.Set("organizations", orgNames)
-	log.Printf("[DEBUG] KEY: ", d.Get("organizations"))
+	log.Printf("[DEBUG] KEY: %v", d.Get("organizations"))
 
 	return nil
 }
