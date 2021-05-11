@@ -34,7 +34,7 @@ func dataSourceTFEAdminOrganizationList(d *schema.ResourceData, meta interface{}
 		}
 		return fmt.Errorf("Error retrieving organizations: %v", err)
 	}
-	var orgNames []interface{}
+	orgNames := []string{}
 	log.Printf("[DEBUG] OMAR org count: ", len(orgs.Items))
 	for _, org := range orgs.Items {
 		orgNames = append(orgNames, org.Name)
