@@ -70,7 +70,8 @@ func Provider() *schema.Provider {
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
-			"tfe_admin_organizations":     dataSourceTFEAdminOrganizations(),
+			"tfe_organizations":           dataSourceTFEOrganizations(),
+			"tfe_organization":            dataSourceTFEOrganization(),
 			"tfe_agent_pool":              dataSourceTFEAgentPool(),
 			"tfe_ip_ranges":               dataSourceTFEIPRanges(),
 			"tfe_oauth_client":            dataSourceTFEOAuthClient(),

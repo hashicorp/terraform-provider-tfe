@@ -8,9 +8,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func dataSourceTFEAdminOrganizations() *schema.Resource {
+func dataSourceTFEOrganizations() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceTFEAdminOrganizationList,
+		Read: dataSourceTFEOrganizationList,
 
 		Schema: map[string]*schema.Schema{
 			"names": {
@@ -27,12 +27,12 @@ func dataSourceTFEAdminOrganizations() *schema.Resource {
 	}
 }
 
-func dataSourceTFEAdminOrganizationList(d *schema.ResourceData, meta interface{}) error {
+func dataSourceTFEOrganizationList(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	options := tfe.AdminOrganizationListOptions{}
-	log.Printf("[DEBUG] OMAR Listing all organizations")
-	orgs, err := tfeClient.Admin.Organizations.List(ctx, options)
+	options := tfe.OrganizationListOptions{}
+	log.Printf("[DEBUG] Listing all organizations")
+	orgs, err := tfeClient.Organizations.List(ctx, options)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return fmt.Errorf("Could not list organizations")
@@ -49,6 +49,7 @@ func dataSourceTFEAdminOrganizationList(d *schema.ResourceData, meta interface{}
 		names = append(names, org.Name)
 	}
 
+	log.Printf("[DEBUG] Setting Organizations Attributes")
 	d.Set("names", names)
 	d.Set("ids", ids)
 	d.SetId(fmt.Sprintf("%d", schema.HashString(resourceID)))
