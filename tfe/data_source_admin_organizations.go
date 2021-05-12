@@ -13,10 +13,15 @@ func dataSourceTFEAdminOrganizations() *schema.Resource {
 		Read: dataSourceTFEAdminOrganizationList,
 
 		Schema: map[string]*schema.Schema{
-			"organizations": {
+			"names": {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+
+			"ids": {
+				Type:     schema.TypeMap,
+				Computed: true,
 			},
 		},
 	}
@@ -34,17 +39,19 @@ func dataSourceTFEAdminOrganizationList(d *schema.ResourceData, meta interface{}
 		}
 		return fmt.Errorf("Error retrieving organizations: %v", err)
 	}
-	orgNames := []string{}
-	log.Printf("[DEBUG] OMAR org count: %d", len(orgs.Items))
+	resourceID := ""
+	names := []string{}
+	ids := map[string]string{}
+
 	for _, org := range orgs.Items {
-		orgNames = append(orgNames, org.Name)
+		resourceID += org.Name
+		ids[org.Name] = org.ExternalID
+		names = append(names, org.Name)
 	}
 
-	log.Printf("[DEBUG] OMAR org names: %v", orgNames)
-	log.Printf("[DEBUG] KEY: %v", d.Get("organizations"))
-	// Update the config.
-	d.Set("organizations", orgNames)
-	log.Printf("[DEBUG] KEY: %v", d.Get("organizations"))
+	d.Set("names", names)
+	d.Set("ids", ids)
+	d.SetId(fmt.Sprintf("%d", schema.HashString(resourceID)))
 
 	return nil
 }
