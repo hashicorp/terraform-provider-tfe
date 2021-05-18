@@ -1,4 +1,4 @@
-## 0.25.3 (Unreleased)
+## 0.25.3 (May 18, 2021)
 
 BUG FIXES:
 * d/ip_ranges: Fixes an issue in the upstream client where accessing this datasource would
