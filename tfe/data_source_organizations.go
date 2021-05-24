@@ -30,6 +30,7 @@ func dataSourceTFEOrganizations() *schema.Resource {
 func dataSourceTFEOrganizationList(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
+	fmt.Println("DEBUG: DATA ORGS")
 	options := tfe.OrganizationListOptions{}
 	log.Printf("[DEBUG] Listing all organizations")
 	orgs, err := tfeClient.Organizations.List(ctx, options)

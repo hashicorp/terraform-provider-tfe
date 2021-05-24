@@ -74,6 +74,7 @@ func resourceTFEOrganization() *schema.Resource {
 func resourceTFEOrganizationCreate(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
+	fmt.Println("DEBUG: CREATE RESORCE ORG")
 	// Get the organization name.
 	name := d.Get("name").(string)
 
@@ -96,6 +97,7 @@ func resourceTFEOrganizationCreate(d *schema.ResourceData, meta interface{}) err
 
 func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
+	fmt.Println("DEBUG: READ RESORCE ORG")
 
 	log.Printf("[DEBUG] Read configuration of organization: %s", d.Id())
 	org, err := tfeClient.Organizations.Read(ctx, d.Id())

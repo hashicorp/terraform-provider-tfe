@@ -22,6 +22,18 @@ func TestAccTFEOrganizationsDataSource_basic(t *testing.T) {
 					// names attribute
 					resource.TestCheckResourceAttr(
 						"data.tfe_organizations.foobarbaz", "names.#", "3"), // 3 organizations created
+
+					// names
+					resource.TestCheckResourceAttr(
+						"data.tfe_organizations.foobarbaz", "names.0", fmt.Sprintf("tst-terraform-foo-%d", rInt)),
+					resource.TestCheckResourceAttr(
+						"data.tfe_organizations.foobarbaz", "names.1", fmt.Sprintf("tst-terraform-bar-%d", rInt)),
+					resource.TestCheckResourceAttr(
+						"data.tfe_organizations.foobarbaz", "names.2", fmt.Sprintf("tst-terraform-baz-%d", rInt)),
+
+					// ids
+					resource.TestCheckResourceAttr(
+						"data.tfe_organizations.foobarbaz", "ids.%", "3"),
 				),
 			},
 		},
