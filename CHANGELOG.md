@@ -1,3 +1,10 @@
+## 0.25.3 (May 18, 2021)
+
+BUG FIXES:
+* d/ip_ranges: Fixes an issue in the upstream client where accessing this datasource would
+  erroneously change the state of the client and cause subsequent requests in plans to fail with
+  incorrect URLs. [#316](https://github.com/hashicorp/terraform-provider-tfe/pull/316)
+
 ## 0.25.2 (May 06, 2021)
 
 BUG FIXES:

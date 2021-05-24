@@ -101,7 +101,7 @@ The `vcs_repo` block supports:
 
 * `identifier` - (Required) A reference to your VCS repository in the format
   `<organization>/<repository>` where `<organization>` and `<repository>` refer to the organization and repository
-  in your VCS provider.
+  in your VCS provider. The format for Azure DevOps is <organization>/<project>/_git/<repository>.
 * `branch` - (Optional) The repository branch that Terraform will execute from.
   Default to `master`.
 * `ingress_submodules` - (Optional) Whether submodules should be fetched when
