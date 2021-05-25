@@ -128,13 +128,11 @@ func dataSourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) err
 	tfeClient := meta.(*tfe.Client)
 
 	name := d.Get("name").(string)
-
 	log.Printf("[DEBUG] Read configuration for Organization: %s", name)
-
 	org, err := tfeClient.Organizations.Read(ctx, name)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			return fmt.Errorf("Could not read organization")
+			return fmt.Errorf("Could not read organization '%s'", name)
 		}
 		return fmt.Errorf("Error retrieving organization: %v", err)
 	}

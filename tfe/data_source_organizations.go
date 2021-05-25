@@ -30,20 +30,18 @@ func dataSourceTFEOrganizations() *schema.Resource {
 func dataSourceTFEOrganizationList(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	fmt.Println("DEBUG: DATA ORGS")
-	options := tfe.OrganizationListOptions{}
 	log.Printf("[DEBUG] Listing all organizations")
-	orgs, err := tfeClient.Organizations.List(ctx, options)
+	orgs, err := tfeClient.Organizations.List(ctx, tfe.OrganizationListOptions{})
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			return fmt.Errorf("Could not list organizations")
+			return fmt.Errorf("Could not list organizations.")
 		}
-		return fmt.Errorf("Error retrieving organizations: %v", err)
+		return fmt.Errorf("Error retrieving organizations: %v.", err)
 	}
+
 	resourceID := ""
 	names := []string{}
 	ids := map[string]string{}
-
 	for _, org := range orgs.Items {
 		resourceID += org.Name
 		ids[org.Name] = org.ExternalID
