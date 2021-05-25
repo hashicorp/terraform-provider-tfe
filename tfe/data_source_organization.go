@@ -145,19 +145,19 @@ func dataSourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) err
 	d.Set("cost_estimation_enabled", org.CostEstimationEnabled)
 	d.Set("email", org.Email)
 	d.Set("enterprise_plan", org.EnterprisePlan)
-	var permissions []interface{}
-	permissions = append(permissions, map[string]interface{}{
-		"can_create_team":                org.Permissions.CanCreateTeam,
-		"can_create_workspace":           org.Permissions.CanCreateWorkspace,
-		"can_create_workspace_migration": org.Permissions.CanCreateWorkspaceMigration,
-		"can_destroy":                    org.Permissions.CanDestroy,
-		"can_traverse":                   org.Permissions.CanTraverse,
-		"can_update":                     org.Permissions.CanUpdate,
-		"can_update_api_token":           org.Permissions.CanUpdateAPIToken,
-		"can_update_oauth":               org.Permissions.CanUpdateOAuth,
-		"can_update_sentinel":            org.Permissions.CanUpdateSentinel,
+	d.Set("permissions", []interface{}{
+		map[string]interface{}{
+			"can_create_team":                org.Permissions.CanCreateTeam,
+			"can_create_workspace":           org.Permissions.CanCreateWorkspace,
+			"can_create_workspace_migration": org.Permissions.CanCreateWorkspaceMigration,
+			"can_destroy":                    org.Permissions.CanDestroy,
+			"can_traverse":                   org.Permissions.CanTraverse,
+			"can_update":                     org.Permissions.CanUpdate,
+			"can_update_api_token":           org.Permissions.CanUpdateAPIToken,
+			"can_update_oauth":               org.Permissions.CanUpdateOAuth,
+			"can_update_sentinel":            org.Permissions.CanUpdateSentinel,
+		},
 	})
-	d.Set("permissions", permissions)
 	d.Set("owners_team_saml_role_id", org.OwnersTeamSAMLRoleID)
 	d.Set("saml_enalbed", org.SAMLEnabled)
 	d.Set("session_remember", org.SessionRemember)
