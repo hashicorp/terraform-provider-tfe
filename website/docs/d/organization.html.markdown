@@ -13,7 +13,7 @@ Use this data source to get information about an organization.
 ## Example Usage
 
 ```hcl
-data "tfe_organizations" "foo" {
+data "tfe_organization" "foo" {
   name = "organization-name"
 }
 ```
