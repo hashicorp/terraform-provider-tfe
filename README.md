@@ -138,6 +138,13 @@ Please use the template below when updating the changelog:
 * r/tfe_resource: description of change or bug fix ([#124](link-to-PR))
 ```
 
+### Updating the documentation.
+
+To update the documentation for the provider, please copy the new markdown and
+paste it here: https://registry.terraform.io/tools/doc-preview
+
+Then copy/paste an image of the updated documentation in your pull request.
+
 ### Change categories
 
 - BREAKING CHANGES: Use this for any changes that aren't backwards compatible. Include details on how to handle these changes.
