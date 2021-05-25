@@ -116,7 +116,7 @@ func dataSourceTFEOrganization() *schema.Resource {
 				Computed: true,
 			},
 
-			"two_factor_confrmant": {
+			"two_factor_conformant": {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
@@ -162,7 +162,7 @@ func dataSourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) err
 	d.Set("saml_enalbed", org.SAMLEnabled)
 	d.Set("session_remember", org.SessionRemember)
 	d.Set("session_timeout", org.SessionTimeout)
-	d.Set("two_factor_confrmant", org.TwoFactorConformant)
+	d.Set("two_factor_conformant", org.TwoFactorConformant)
 
 	return nil
 }
