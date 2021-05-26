@@ -72,7 +72,6 @@ func dataSourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) err
 	d.Set("cost_estimation_enabled", org.CostEstimationEnabled)
 	d.Set("email", org.Email)
 	d.Set("owners_team_saml_role_id", org.OwnersTeamSAMLRoleID)
-	d.Set("saml_enalbed", org.SAMLEnabled)
 	d.Set("two_factor_conformant", org.TwoFactorConformant)
 
 	return nil
