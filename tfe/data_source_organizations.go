@@ -39,19 +39,17 @@ func dataSourceTFEOrganizationList(d *schema.ResourceData, meta interface{}) err
 		return fmt.Errorf("Error retrieving organizations: %v.", err)
 	}
 
-	resourceID := ""
 	names := []string{}
 	ids := map[string]string{}
 	for _, org := range orgs.Items {
-		resourceID += org.Name
 		ids[org.Name] = org.ExternalID
 		names = append(names, org.Name)
 	}
 
 	log.Printf("[DEBUG] Setting Organizations Attributes")
+	d.SetId("organizations")
 	d.Set("names", names)
 	d.Set("ids", ids)
-	d.SetId(fmt.Sprintf("%d", schema.HashString(resourceID)))
 
 	return nil
 }
