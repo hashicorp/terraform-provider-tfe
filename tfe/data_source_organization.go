@@ -43,11 +43,6 @@ func dataSourceTFEOrganization() *schema.Resource {
 				Computed: true,
 			},
 
-			"saml_enalbed": {
-				Type:     schema.TypeBool,
-				Computed: true,
-			},
-
 			"two_factor_conformant": {
 				Type:     schema.TypeBool,
 				Computed: true,
