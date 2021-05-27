@@ -19,7 +19,7 @@ data "tfe_organizations" "foo" {
 
 ## Argument Reference
 
-No arguments are required. This retrieves the names and IDs of all the organizations.
+No arguments are required. This retrieves the names and IDs of all the organizations readable by the provided token.
 
 ## Attributes Reference
 
