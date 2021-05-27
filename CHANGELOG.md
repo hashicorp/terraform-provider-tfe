@@ -1,3 +1,8 @@
+## 0.25.4 (May 27, 2021)
+
+FEATURES:
+* **New Data Sources:** d/tfe_organizations, d/tfe_organization [#320](https://github.com/hashicorp/terraform-provider-tfe/pull/320)
+
 ## 0.25.3 (May 18, 2021)
 
 BUG FIXES:
