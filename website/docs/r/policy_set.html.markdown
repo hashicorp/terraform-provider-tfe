@@ -30,7 +30,7 @@ resource "tfe_policy_set" "test" {
 
   vcs_repo {
     identifier         = "my-org-name/my-policy-set-repository"
-    branch             = "master"
+    branch             = "main"
     ingress_submodules = false
     oauth_token_id     = tfe_oauth_client.test.id
   }
@@ -79,7 +79,7 @@ The `vcs_repo` block supports:
   `<organization>/<repository>` where `<organization>` and `<repository>` refer to the organization and repository
   in your VCS provider.
 * `branch` - (Optional) The repository branch that Terraform will execute from.
-  Default to `master`.
+  This defaults to the repository's default branch (e.g. main).
 * `ingress_submodules` - (Optional) Whether submodules should be fetched when
   cloning the VCS repository. Defaults to `false`.
 * `oauth_token_id` - (Required) Token ID of the VCS Connection (OAuth Connection Token)

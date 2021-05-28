@@ -309,7 +309,7 @@ func TestAccTFEPolicySet_vcs(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.identifier", GITHUB_POLICY_SET_IDENTIFIER),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "vcs_repo.0.branch", "master"),
+						"tfe_policy_set.foobar", "vcs_repo.0.branch", "main"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.ingress_submodules", "true"),
 					resource.TestCheckResourceAttr(
@@ -359,7 +359,7 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.identifier", GITHUB_POLICY_SET_IDENTIFIER),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "vcs_repo.0.branch", "master"),
+						"tfe_policy_set.foobar", "vcs_repo.0.branch", "main"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.ingress_submodules", "true"),
 					resource.TestCheckResourceAttr(
@@ -745,7 +745,7 @@ resource "tfe_policy_set" "foobar" {
   organization = tfe_organization.foobar.id
   vcs_repo {
     identifier         = "%s"
-    branch             = "master"
+    branch             = "main"
     ingress_submodules = true
     oauth_token_id     = tfe_oauth_client.test.oauth_token_id
   }

@@ -125,7 +125,7 @@ replace github.com/hashicorp/go-tfe => /path-to-local-repo/go-tfe
 
 ### Running the tests
 
-See [TESTS.md](https://github.com/hashicorp/terraform-provider-tfe/tree/master/TESTS.md).
+See [TESTS.md](https://github.com/hashicorp/terraform-provider-tfe/tree/main/TESTS.md).
 
 ## Updating the Changelog
 

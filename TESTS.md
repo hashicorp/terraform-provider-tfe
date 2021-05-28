@@ -10,7 +10,7 @@ If you are planning to run the full suite of tests or work on policy sets, regis
 
 Your policy set repository will need the following: 
 1. A policy set stored in a subdirectory
-1. A branch other than master
+1. A branch other than `main`.
 
 Your registry module repository will need to be a [valid module](https://www.terraform.io/docs/cloud/registry/publish.html#preparing-a-module-repository).
 It will need the following: 
@@ -19,7 +19,7 @@ It will need the following:
 [terraform-random-module](ttps://github.com/caseylang/terraform-random-module) is a good example repo.
 
 Your workspace repository will need the following: 
-1. A branch other than master
+1. A branch other than `main`.
    
 ### 2. Set up environment variables
 
