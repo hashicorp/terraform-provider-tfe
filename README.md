@@ -115,6 +115,12 @@ participate without fear of doing the wrong thing.
 
 👉 _See [Manually building the provider](#manually-building-the-provider) above._
 
+Other helpful resources:
+
+* [Extending Terraform documentation](https://www.terraform.io/docs/extend/index.html)
+* [Terraform Cloud API documentation](https://www.terraform.io/docs/cloud/api/index.html)
+* [Package documentation for the Terraform Cloud/Enterprise Go client (go-tfe)](https://pkg.go.dev/github.com/hashicorp/go-tfe)
+
 ### Referencing a local version of `go-tfe`
 
 You may want to create configs or run tests against a local version of `go-tfe`. Add the following line to `go.mod` above the require statement, using your local path to `go-tfe`:
