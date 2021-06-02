@@ -30,20 +30,28 @@ func dataSourceTFEOrganizations() *schema.Resource {
 func dataSourceTFEOrganizationList(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	log.Printf("[DEBUG] Listing all organizations")
-	orgs, err := tfeClient.Organizations.List(ctx, tfe.OrganizationListOptions{})
-	if err != nil {
-		if err == tfe.ErrResourceNotFound {
-			return fmt.Errorf("Could not list organizations.")
-		}
-		return fmt.Errorf("Error retrieving organizations: %v.", err)
-	}
-
 	names := []string{}
 	ids := map[string]string{}
-	for _, org := range orgs.Items {
-		ids[org.Name] = org.ExternalID
-		names = append(names, org.Name)
+
+	adminOrgs, err := getAdminOrgs(tfeClient)
+	if err != nil {
+		return err
+	}
+
+	if adminOrgs != nil {
+		for _, org := range adminOrgs.Items {
+			ids[org.Name] = org.ExternalID
+			names = append(names, org.Name)
+		}
+	} else {
+		orgs, err := getOrgs(tfeClient)
+		if err != nil {
+			return err
+		}
+		for _, org := range orgs.Items {
+			ids[org.Name] = org.ExternalID
+			names = append(names, org.Name)
+		}
 	}
 
 	log.Printf("[DEBUG] Setting Organizations Attributes")
@@ -52,4 +60,30 @@ func dataSourceTFEOrganizationList(d *schema.ResourceData, meta interface{}) err
 	d.Set("ids", ids)
 
 	return nil
+}
+
+func getAdminOrgs(client *tfe.Client) (*tfe.AdminOrganizationList, error) {
+	log.Printf("[DEBUG] Listing all organizations (admin)")
+	orgs, err := client.Admin.Organizations.List(ctx, tfe.AdminOrganizationListOptions{})
+	if err != nil {
+		if err == tfe.ErrResourceNotFound {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("Error retrieving organizations: %v.", err)
+	}
+
+	return orgs, nil
+}
+
+func getOrgs(client *tfe.Client) (*tfe.OrganizationList, error) {
+	log.Printf("[DEBUG] Listing all organizations (non-admin)")
+	orgs, err := client.Organizations.List(ctx, tfe.OrganizationListOptions{})
+	if err != nil {
+		if err == tfe.ErrResourceNotFound {
+			return nil, fmt.Errorf("Could not list organizations.")
+		}
+		return nil, fmt.Errorf("Error retrieving organizations: %v.", err)
+	}
+
+	return orgs, nil
 }
