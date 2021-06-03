@@ -33,7 +33,7 @@ func dataSourceTFEOrganizationList(d *schema.ResourceData, meta interface{}) err
 	names := []string{}
 	ids := map[string]string{}
 
-	adminOrgs, err := getAdminOrgs(tfeClient)
+	adminOrgs, err := listAdminOrgs(tfeClient)
 	if err != nil {
 		return err
 	}
@@ -44,7 +44,7 @@ func dataSourceTFEOrganizationList(d *schema.ResourceData, meta interface{}) err
 			names = append(names, org.Name)
 		}
 	} else {
-		orgs, err := getOrgs(tfeClient)
+		orgs, err := listOrgs(tfeClient)
 		if err != nil {
 			return err
 		}
@@ -62,7 +62,7 @@ func dataSourceTFEOrganizationList(d *schema.ResourceData, meta interface{}) err
 	return nil
 }
 
-func getAdminOrgs(client *tfe.Client) (*tfe.AdminOrganizationList, error) {
+func listAdminOrgs(client *tfe.Client) (*tfe.AdminOrganizationList, error) {
 	log.Printf("[DEBUG] Listing all organizations (admin)")
 	orgs, err := client.Admin.Organizations.List(ctx, tfe.AdminOrganizationListOptions{})
 	if err != nil {
@@ -75,7 +75,7 @@ func getAdminOrgs(client *tfe.Client) (*tfe.AdminOrganizationList, error) {
 	return orgs, nil
 }
 
-func getOrgs(client *tfe.Client) (*tfe.OrganizationList, error) {
+func listOrgs(client *tfe.Client) (*tfe.OrganizationList, error) {
 	log.Printf("[DEBUG] Listing all organizations (non-admin)")
 	orgs, err := client.Organizations.List(ctx, tfe.OrganizationListOptions{})
 	if err != nil {
