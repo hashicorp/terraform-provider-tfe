@@ -2,13 +2,6 @@
 
 _Describe why you're making this change._
 
-## BREAKING CHANGE
-
-_Delete this section if your change is not introducing a breaking change to the provider or a breaking change from the TFE API_
-
-- [ ] New TFE API version created
-- [ ] Provider restricted to TFE API version
-
 ## Testing plan
 
 1.  _Describe how to replicate_
@@ -26,10 +19,12 @@ _Include any links here that might be helpful for people reviewing your PR. If t
 
 ## Output from acceptance tests
 
-_Please run the full suite of acceptance tests locally and include the output here._
+_Please run applicable acceptance tests locally and include the output here. If you are an external
+contributor, your contribution(s) will first be reviewed before running them against the project's
+CI pipeline._
 
 ```
-$ make testacc
+$ go test -v ./... -run TestAccTFEWorkspace # runs all workspace tests
 
 ...
 ```
