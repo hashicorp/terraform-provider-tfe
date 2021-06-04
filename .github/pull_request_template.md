@@ -19,9 +19,9 @@ _Include any links here that might be helpful for people reviewing your PR. If t
 
 ## Output from acceptance tests
 
-_Please run applicable acceptance tests locally and include the output here. If you are an external
-contributor, your contribution(s) will first be reviewed before running them against the project's
-CI pipeline._
+_Please run applicable acceptance tests locally and include the output here. See TESTS.md to learn how to run acceptance tests._
+
+_If you are an external contributor, your contribution(s) will first be reviewed before running them against the project's CI pipeline._
 
 ```
 $ TESTARGS="-run TestAccTFEWorkspace" make testacc 
