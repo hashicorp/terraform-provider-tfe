@@ -24,7 +24,7 @@ contributor, your contribution(s) will first be reviewed before running them aga
 CI pipeline._
 
 ```
-$ go test -v ./... -run TestAccTFEWorkspace # runs all workspace tests
+$ TESTARGS="-run TestAccTFEWorkspace" make testacc 
 
 ...
 ```
