@@ -93,6 +93,33 @@ func resourceTFEPolicySet() *schema.Resource {
 				},
 			},
 
+			"policy_set_version": {
+				Type:          schema.TypeList,
+				Optional:      true,
+				ForceNew:      true,
+				ConflictsWith: []string{"policy_ids"},
+				MinItems:      1,
+				MaxItems:      1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"id": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+
+						"status": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+
+						"error_message": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+					},
+				},
+			},
+
 			"workspace_ids": {
 				Type:          schema.TypeSet,
 				Optional:      true,
@@ -155,6 +182,23 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 			"Error creating policy set %s for organization %s: %v", name, organization, err)
 	}
 
+	_, hasVSCSRepo := d.GetOk("vcs_repo")
+	if *options.PoliciesPath != "" && !hasVSCSRepo {
+		psv, err := tfeClient.PolicySetVersions.Create(ctx, policySet.ID)
+		if err != nil {
+			return fmt.Errorf("Error creating policy set version for policy set %s: %s", policySet.ID, err.Error())
+		}
+
+		err = tfeClient.PolicySetVersions.Upload(
+			ctx,
+			*psv,
+			*options.PoliciesPath,
+		)
+		if err != nil {
+			return fmt.Errorf("Error uploading policies for policy set version %s: %s", psv.ID, err.Error())
+		}
+	}
+
 	d.SetId(policySet.ID)
 
 	return resourceTFEPolicySetRead(d, meta)
@@ -164,7 +208,10 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
 	log.Printf("[DEBUG] Read policy set: %s", d.Id())
-	policySet, err := tfeClient.PolicySets.Read(ctx, d.Id())
+	opts := &tfe.PolicySetReadOptions{
+		Include: "current-version",
+	}
+	policySet, err := tfeClient.PolicySets.ReadWithOptions(ctx, d.Id(), opts)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] Policy set %s does no longer exist", d.Id())
@@ -207,6 +254,20 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	d.Set("vcs_repo", vcsRepo)
+
+	// Set PolicySetVersion
+	var policySetVersion []interface{}
+	if policySet.PolicySetCurrentVersion != nil {
+		log.Printf("[DEBUG] POLICY SET VERSION: %v", policySet.PolicySetCurrentVersion)
+		psv := map[string]interface{}{
+			"id":            policySet.PolicySetCurrentVersion.ID,
+			"status":        string(policySet.PolicySetCurrentVersion.Status),
+			"error_message": policySet.PolicySetCurrentVersion.ErrorMessage,
+		}
+
+		policySetVersion = append(policySetVersion, psv)
+	}
+	d.Set("policy_set_version", policySetVersion)
 
 	// Update the policies.
 	var policyIDs []interface{}

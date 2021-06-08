@@ -392,6 +392,37 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 	})
 }
 
+func TestAccTFEPolicySet_policyUpload(t *testing.T) {
+	skipIfFreeOnly(t)
+
+	policySet := &tfe.PolicySet{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	policyPath := "test-fixtures/policy-set-version"
+
+	resource.Test(t, resource.TestCase{
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:             testAccTFEPolicySet_policyPath(rInt, policyPath),
+				ExpectNonEmptyPlan: true,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					testAccCheckTFEPolicySetAttributes(policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "tst-terraform"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "description", "Policy Set"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_set_version.0.status", "ready"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEPolicySet_invalidName(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -757,6 +788,22 @@ resource "tfe_policy_set" "foobar" {
 		GITHUB_POLICY_SET_IDENTIFIER,
 		GITHUB_POLICY_SET_PATH,
 	)
+}
+
+func testAccTFEPolicySet_policyPath(rInt int, path string) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_policy_set" "foobar" {
+  name         = "tst-terraform"
+  description  = "Policy Set"
+  organization = tfe_organization.foobar.id
+  policies_path = "%s"
+}
+`, rInt, path)
 }
 
 func testAccTFEPolicySet_updateVCSBranch(rInt int) string {
