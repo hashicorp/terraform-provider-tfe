@@ -23,6 +23,11 @@ func dataSourceTFEOrganizations() *schema.Resource {
 				Type:     schema.TypeMap,
 				Computed: true,
 			},
+
+			"admin": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -30,28 +35,18 @@ func dataSourceTFEOrganizations() *schema.Resource {
 func dataSourceTFEOrganizationList(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	names := []string{}
-	ids := map[string]string{}
+	var names []string
+	var ids map[string]string
+	var err error
 
-	adminOrgs, err := listAdminOrgs(tfeClient)
-	if err != nil {
-		return err
+	if isAdmin(d) {
+		names, ids, err = adminOrgsPopulateFields(tfeClient, d)
+	} else {
+		names, ids, err = orgsPopulateFields(tfeClient)
 	}
 
-	if adminOrgs != nil {
-		for _, org := range adminOrgs.Items {
-			ids[org.Name] = org.ExternalID
-			names = append(names, org.Name)
-		}
-	} else {
-		orgs, err := listOrgs(tfeClient)
-		if err != nil {
-			return err
-		}
-		for _, org := range orgs.Items {
-			ids[org.Name] = org.ExternalID
-			names = append(names, org.Name)
-		}
+	if err != nil {
+		return err
 	}
 
 	log.Printf("[DEBUG] Setting Organizations Attributes")
@@ -62,28 +57,62 @@ func dataSourceTFEOrganizationList(d *schema.ResourceData, meta interface{}) err
 	return nil
 }
 
-func listAdminOrgs(client *tfe.Client) (*tfe.AdminOrganizationList, error) {
+func adminOrgsPopulateFields(client *tfe.Client, d *schema.ResourceData) ([]string, map[string]string, error) {
+	names := []string{}
+	ids := map[string]string{}
 	log.Printf("[DEBUG] Listing all organizations (admin)")
-	orgs, err := client.Admin.Organizations.List(ctx, tfe.AdminOrganizationListOptions{})
-	if err != nil {
-		if err == tfe.ErrResourceNotFound {
-			return nil, nil
+	options := tfe.AdminOrganizationListOptions{}
+	for {
+		orgList, err := client.Admin.Organizations.List(ctx, options)
+		if err != nil {
+			return nil, nil, fmt.Errorf("Error retrieving Admin Organizations: %v", err)
 		}
-		return nil, fmt.Errorf("Error retrieving organizations: %v.", err)
+
+		for _, org := range orgList.Items {
+			ids[org.Name] = org.ExternalID
+			names = append(names, org.Name)
+		}
+
+		// Exit the loop when we've seen all pages.
+		if orgList.CurrentPage >= orgList.TotalPages {
+			break
+		}
+
+		// Update the page number to get the next page.
+		options.PageNumber = orgList.NextPage
 	}
 
-	return orgs, nil
+	return names, ids, nil
 }
 
-func listOrgs(client *tfe.Client) (*tfe.OrganizationList, error) {
+func orgsPopulateFields(client *tfe.Client) ([]string, map[string]string, error) {
+	names := []string{}
+	ids := map[string]string{}
 	log.Printf("[DEBUG] Listing all organizations (non-admin)")
-	orgs, err := client.Organizations.List(ctx, tfe.OrganizationListOptions{})
-	if err != nil {
-		if err == tfe.ErrResourceNotFound {
-			return nil, fmt.Errorf("Could not list organizations.")
+	options := tfe.OrganizationListOptions{}
+	for {
+		orgList, err := client.Organizations.List(ctx, options)
+		if err != nil {
+			return nil, nil, fmt.Errorf("Error retrieving Organizations: %v", err)
 		}
-		return nil, fmt.Errorf("Error retrieving organizations: %v.", err)
+
+		for _, org := range orgList.Items {
+			ids[org.Name] = org.ExternalID
+			names = append(names, org.Name)
+		}
+
+		// Exit the loop when we've seen all pages.
+		if orgList.CurrentPage >= orgList.TotalPages {
+			break
+		}
+
+		// Update the page number to get the next page.
+		options.PageNumber = orgList.NextPage
 	}
 
-	return orgs, nil
+	return names, ids, nil
+}
+
+func isAdmin(d *schema.ResourceData) bool {
+	return d.Get("admin").(bool)
 }
