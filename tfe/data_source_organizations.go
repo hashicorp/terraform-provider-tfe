@@ -26,7 +26,7 @@ func dataSourceTFEOrganizations() *schema.Resource {
 
 			"admin": {
 				Type:     schema.TypeBool,
-				Optional: true,
+				Optional: false,
 			},
 		},
 	}
