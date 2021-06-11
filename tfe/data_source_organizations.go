@@ -62,7 +62,11 @@ func adminOrgsPopulateFields(client *tfe.Client, d *schema.ResourceData) ([]stri
 	names := []string{}
 	ids := map[string]string{}
 	log.Printf("[DEBUG] Listing all organizations (admin)")
-	options := tfe.AdminOrganizationListOptions{}
+	options := tfe.AdminOrganizationListOptions{
+		ListOptions: tfe.ListOptions{
+			PageSize: 100,
+		},
+	}
 	for {
 		orgList, err := client.Admin.Organizations.List(ctx, options)
 		if err != nil {
