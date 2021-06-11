@@ -94,7 +94,11 @@ func orgsPopulateFields(client *tfe.Client) ([]string, map[string]string, error)
 	names := []string{}
 	ids := map[string]string{}
 	log.Printf("[DEBUG] Listing all organizations (non-admin)")
-	options := tfe.OrganizationListOptions{}
+	options := tfe.OrganizationListOptions{
+		ListOptions: tfe.ListOptions{
+			PageSize: 100,
+		},
+	}
 	for {
 		orgList, err := client.Organizations.List(ctx, options)
 		if err != nil {
