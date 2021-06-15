@@ -114,7 +114,7 @@ func resourceTFEPolicySet() *schema.Resource {
 
 						"error_message": {
 							Type:     schema.TypeString,
-							Required: true,
+							Optional: true,
 						},
 					},
 				},
@@ -258,7 +258,6 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 	// Set PolicySetVersion
 	var policySetVersion []interface{}
 	if policySet.PolicySetCurrentVersion != nil {
-		log.Printf("[DEBUG] POLICY SET VERSION: %v", policySet.PolicySetCurrentVersion)
 		psv := map[string]interface{}{
 			"id":            policySet.PolicySetCurrentVersion.ID,
 			"status":        string(policySet.PolicySetCurrentVersion.Status),
