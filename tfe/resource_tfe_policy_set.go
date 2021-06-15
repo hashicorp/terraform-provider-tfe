@@ -102,19 +102,23 @@ func resourceTFEPolicySet() *schema.Resource {
 				MaxItems:      1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						// TODO: See what is required or optional
 						"id": {
 							Type:     schema.TypeString,
-							Required: true,
+							Optional: true,
+							Computed: true,
 						},
 
 						"status": {
 							Type:     schema.TypeString,
-							Required: true,
+							Optional: true,
+							Computed: true,
 						},
 
 						"error_message": {
 							Type:     schema.TypeString,
 							Optional: true,
+							Computed: true,
 						},
 					},
 				},
@@ -316,7 +320,7 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	// Don't bother updating the policy set's attributes if they haven't changed
-	if d.HasChange("name") || d.HasChange("description") || d.HasChange("global") || d.HasChange("vcs_repo") {
+	if d.HasChange("name") || d.HasChange("description") || d.HasChange("global") || d.HasChange("vcs_repo") || d.HasChange("policies_path") {
 		// Create a new options struct.
 		options := tfe.PolicySetUpdateOptions{
 			Name:   tfe.String(name),
@@ -338,11 +342,36 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 			}
 		}
 
+		if policiesPath, ok := d.GetOk("policies_path"); ok {
+			options.PoliciesPath = tfe.String(policiesPath.(string))
+		}
+
 		log.Printf("[DEBUG] Update configuration for policy set: %s", d.Id())
 		_, err := tfeClient.PolicySets.Update(ctx, d.Id(), options)
 		if err != nil {
 			return fmt.Errorf(
 				"Error updating configuration for policy set %s: %v", d.Id(), err)
+		}
+	}
+
+	if d.HasChange("policies_path") {
+		_, hasVSCSRepo := d.GetOk("vcs_repo")
+		policiesPath := d.Get("policies_path").(string)
+
+		if policiesPath != "" && !hasVSCSRepo {
+			psv, err := tfeClient.PolicySetVersions.Create(ctx, d.Id())
+			if err != nil {
+				return fmt.Errorf("Error creating policy set version for policy set %s: %s", d.Id(), err.Error())
+			}
+
+			err = tfeClient.PolicySetVersions.Upload(
+				ctx,
+				*psv,
+				policiesPath,
+			)
+			if err != nil {
+				return fmt.Errorf("Error uploading policies for policy set version %s: %s", psv.ID, err.Error())
+			}
 		}
 	}
 
