@@ -146,7 +146,6 @@ func resourceTFEPolicySet() *schema.Resource {
 }
 
 func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] =====OMAR DEBUG CREATE==========")
 	tfeClient := meta.(*tfe.Client)
 
 	name := d.Get("name").(string)
@@ -198,13 +197,13 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 			"Error creating policy set %s for organization %s: %v", name, organization, err)
 	}
 
-	_, hasVSCSRepo := d.GetOk("vcs_repo")
-	if *options.PoliciesPath != "" && !hasVSCSRepo {
-		err := uploadPolicies(tfeClient, policySet.ID, *options.PoliciesPath)
-		if err != nil {
-			return fmt.Errorf("Error uploading policies: %v", err)
-		}
-	}
+	//_, hasVSCSRepo := d.GetOk("vcs_repo")
+	//if *options.PoliciesPath != "" && !hasVSCSRepo {
+	//	err := uploadPolicies(tfeClient, policySet.ID, *options.PoliciesPath)
+	//	if err != nil {
+	//		return fmt.Errorf("Error uploading policies: %v", err)
+	//	}
+	//}
 
 	d.SetId(policySet.ID)
 
@@ -212,7 +211,6 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 }
 
 func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] =====OMAR DEBUG READ==========")
 	tfeClient := meta.(*tfe.Client)
 
 	log.Printf("[DEBUG] Read policy set: %s", d.Id())
@@ -235,11 +233,11 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("global", policySet.Global)
 	d.Set("policies_path", policySet.PoliciesPath)
 
-	hash, err := hashPolicies(policySet.PoliciesPath)
-	if err != nil {
-		return fmt.Errorf("Error hashing the policies contents %v", err)
-	}
-	d.Set("policies_path_contents_checksum", hash)
+	//hash, err := hashPolicies(policySet.PoliciesPath)
+	//if err != nil {
+	//	return fmt.Errorf("Error hashing the policies contents %v", err)
+	//}
+	//d.Set("policies_path_contents_checksum", hash)
 
 	if policySet.Organization != nil {
 		d.Set("organization", policySet.Organization.Name)
@@ -269,18 +267,18 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 
 	d.Set("vcs_repo", vcsRepo)
 
-	// Set PolicySetVersion
-	var policySetVersion []interface{}
-	if policySet.PolicySetCurrentVersion != nil {
-		psv := map[string]interface{}{
-			"id":            policySet.PolicySetCurrentVersion.ID,
-			"status":        string(policySet.PolicySetCurrentVersion.Status),
-			"error_message": policySet.PolicySetCurrentVersion.ErrorMessage,
-		}
+	//// Set PolicySetVersion
+	//var policySetVersion []interface{}
+	//if policySet.PolicySetCurrentVersion != nil {
+	//	psv := map[string]interface{}{
+	//		"id":            policySet.PolicySetCurrentVersion.ID,
+	//		"status":        string(policySet.PolicySetCurrentVersion.Status),
+	//		"error_message": policySet.PolicySetCurrentVersion.ErrorMessage,
+	//	}
 
-		policySetVersion = append(policySetVersion, psv)
-	}
-	d.Set("policy_set_version", policySetVersion)
+	//	policySetVersion = append(policySetVersion, psv)
+	//}
+	//d.Set("policy_set_version", policySetVersion)
 
 	// Update the policies.
 	var policyIDs []interface{}
@@ -302,7 +300,6 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] =====OMAR DEBUG UPDATE==========")
 	tfeClient := meta.(*tfe.Client)
 
 	name := d.Get("name").(string)
@@ -365,17 +362,17 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 		}
 	}
 
-	if d.HasChange("policies_path_contents_checksum") {
-		_, hasVSCSRepo := d.GetOk("vcs_repo")
-		policiesPath := d.Get("policies_path").(string)
-		if policiesPath != "" && !hasVSCSRepo {
-			log.Printf("[DEBUG] Creating Policy Set Version for Policy Set %s", d.Id())
-			err := uploadPolicies(tfeClient, d.Id(), policiesPath)
-			if err != nil {
-				return fmt.Errorf("Error uploading policies: %v", err)
-			}
-		}
-	}
+	//if d.HasChange("policies_path_contents_checksum") {
+	//	_, hasVSCSRepo := d.GetOk("vcs_repo")
+	//	policiesPath := d.Get("policies_path").(string)
+	//	if policiesPath != "" && !hasVSCSRepo {
+	//		log.Printf("[DEBUG] Creating Policy Set Version for Policy Set %s", d.Id())
+	//		err := uploadPolicies(tfeClient, d.Id(), policiesPath)
+	//		if err != nil {
+	//			return fmt.Errorf("Error uploading policies: %v", err)
+	//		}
+	//	}
+	//}
 
 	if d.HasChange("policy_ids") {
 		oldSet, newSet := d.GetChange("policy_ids")
@@ -456,7 +453,6 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 }
 
 func resourceTFEPolicySetDelete(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] =====OMAR DEBUG DELETE==========")
 	tfeClient := meta.(*tfe.Client)
 
 	log.Printf("[DEBUG] Delete policy set: %s", d.Id())
