@@ -1,10 +1,15 @@
 package tfe
 
 import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"log"
+	"os"
 	"regexp"
 
+	slug "github.com/hashicorp/go-slug"
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -53,6 +58,11 @@ func resourceTFEPolicySet() *schema.Resource {
 				ConflictsWith: []string{"policy_ids"},
 			},
 
+			"policies_path_contents_checksum": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+
 			"policy_ids": {
 				Type:          schema.TypeSet,
 				Optional:      true,
@@ -96,7 +106,7 @@ func resourceTFEPolicySet() *schema.Resource {
 			"policy_set_version": {
 				Type:          schema.TypeList,
 				Optional:      true,
-				ForceNew:      true,
+				Computed:      true,
 				ConflictsWith: []string{"policy_ids"},
 				MinItems:      1,
 				MaxItems:      1,
@@ -135,6 +145,7 @@ func resourceTFEPolicySet() *schema.Resource {
 }
 
 func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] =====OMAR DEBUG CREATE==========")
 	tfeClient := meta.(*tfe.Client)
 
 	name := d.Get("name").(string)
@@ -209,6 +220,7 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 }
 
 func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] =====OMAR DEBUG READ==========")
 	tfeClient := meta.(*tfe.Client)
 
 	log.Printf("[DEBUG] Read policy set: %s", d.Id())
@@ -230,6 +242,12 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("description", policySet.Description)
 	d.Set("global", policySet.Global)
 	d.Set("policies_path", policySet.PoliciesPath)
+
+	hash, err := hashPolicies(policySet.PoliciesPath)
+	if err != nil {
+		return fmt.Errorf("Error hashing the policies contents %v", err)
+	}
+	d.Set("policies_path_contents_checksum", hash)
 
 	if policySet.Organization != nil {
 		d.Set("organization", policySet.Organization.Name)
@@ -292,6 +310,7 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] =====OMAR DEBUG UPDATE==========")
 	tfeClient := meta.(*tfe.Client)
 
 	name := d.Get("name").(string)
@@ -354,11 +373,12 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 		}
 	}
 
-	if d.HasChange("policies_path") {
+	if d.HasChange("policies_path_contents_checksum") {
 		_, hasVSCSRepo := d.GetOk("vcs_repo")
 		policiesPath := d.Get("policies_path").(string)
 
 		if policiesPath != "" && !hasVSCSRepo {
+			log.Printf("[DEBUG] Creating Policy Set Version for Policy Set %s", d.Id())
 			psv, err := tfeClient.PolicySetVersions.Create(ctx, d.Id())
 			if err != nil {
 				return fmt.Errorf("Error creating policy set version for policy set %s: %s", d.Id(), err.Error())
@@ -454,6 +474,7 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 }
 
 func resourceTFEPolicySetDelete(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] =====OMAR DEBUG DELETE==========")
 	tfeClient := meta.(*tfe.Client)
 
 	log.Printf("[DEBUG] Delete policy set: %s", d.Id())
@@ -466,4 +487,26 @@ func resourceTFEPolicySetDelete(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	return nil
+}
+
+func hashPolicies(path string) (string, error) {
+	body := bytes.NewBuffer(nil)
+	file, err := os.Stat(path)
+	if err != nil {
+		return "", err
+	}
+	if !file.Mode().IsDir() {
+		return "", fmt.Errorf("The path is not a directory")
+	}
+
+	_, err = slug.Pack(path, body, true)
+	if err != nil {
+		return "", err
+	}
+
+	hash := sha256.New()
+	hash.Write(body.Bytes())
+	chksum := hex.EncodeToString(hash.Sum(nil))
+
+	return chksum, nil
 }
