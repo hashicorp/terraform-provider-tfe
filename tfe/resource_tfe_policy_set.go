@@ -60,7 +60,8 @@ func resourceTFEPolicySet() *schema.Resource {
 
 			"policies_path_contents_checksum": {
 				Type:     schema.TypeString,
-				Computed: true,
+				Optional: true,
+				ForceNew: true,
 			},
 
 			"policy_ids": {
@@ -199,18 +200,9 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 
 	_, hasVSCSRepo := d.GetOk("vcs_repo")
 	if *options.PoliciesPath != "" && !hasVSCSRepo {
-		psv, err := tfeClient.PolicySetVersions.Create(ctx, policySet.ID)
+		err := uploadPolicies(tfeClient, policySet.ID, *options.PoliciesPath)
 		if err != nil {
-			return fmt.Errorf("Error creating policy set version for policy set %s: %s", policySet.ID, err.Error())
-		}
-
-		err = tfeClient.PolicySetVersions.Upload(
-			ctx,
-			*psv,
-			*options.PoliciesPath,
-		)
-		if err != nil {
-			return fmt.Errorf("Error uploading policies for policy set version %s: %s", psv.ID, err.Error())
+			return fmt.Errorf("Error uploading policies: %v", err)
 		}
 	}
 
@@ -376,21 +368,11 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 	if d.HasChange("policies_path_contents_checksum") {
 		_, hasVSCSRepo := d.GetOk("vcs_repo")
 		policiesPath := d.Get("policies_path").(string)
-
 		if policiesPath != "" && !hasVSCSRepo {
 			log.Printf("[DEBUG] Creating Policy Set Version for Policy Set %s", d.Id())
-			psv, err := tfeClient.PolicySetVersions.Create(ctx, d.Id())
+			err := uploadPolicies(tfeClient, d.Id(), policiesPath)
 			if err != nil {
-				return fmt.Errorf("Error creating policy set version for policy set %s: %s", d.Id(), err.Error())
-			}
-
-			err = tfeClient.PolicySetVersions.Upload(
-				ctx,
-				*psv,
-				policiesPath,
-			)
-			if err != nil {
-				return fmt.Errorf("Error uploading policies for policy set version %s: %s", psv.ID, err.Error())
+				return fmt.Errorf("Error uploading policies: %v", err)
 			}
 		}
 	}
@@ -509,4 +491,18 @@ func hashPolicies(path string) (string, error) {
 	chksum := hex.EncodeToString(hash.Sum(nil))
 
 	return chksum, nil
+}
+
+func uploadPolicies(client *tfe.Client, policySetID string, policiesPath string) error {
+	psv, err := client.PolicySetVersions.Create(ctx, policySetID)
+	if err != nil {
+		return fmt.Errorf("Error creating policy set version for policy set %s: %s", policySetID, err.Error())
+	}
+
+	err = client.PolicySetVersions.Upload(ctx, *psv, policiesPath)
+	if err != nil {
+		return fmt.Errorf("Error uploading policies for policy set version %s: %s", psv.ID, err.Error())
+	}
+
+	return nil
 }
