@@ -33,7 +33,7 @@ func dataSourceTFEPolicySetVersionFiles() *schema.Resource {
 func dataSourceTFEPolicySetVersionFilesRead(d *schema.ResourceData, meta interface{}) error {
 	source := d.Get("source").(string)
 
-	log.Printf("[DEBUG] Generating checksum of the source files: %s", source)
+	log.Printf("[DEBUG] Hashing the source files: %s", source)
 	newHash, err := hashPolicies(source)
 	if err != nil {
 		return fmt.Errorf("Error generating the checksum for the source files: %v", err)

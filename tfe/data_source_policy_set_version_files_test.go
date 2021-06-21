@@ -7,10 +7,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccTFEPolicySetVersionFiles_basic(t *testing.T) {
-	source := "test-fixtures/policy-set-version"
+const (
+	testFixturePolicySetVersionFiles = "test-fixtures/policy-set-version"
+)
 
-	expectedHash, err := hashPolicies(source)
+func TestAccTFEPolicySetVersionFiles_basic(t *testing.T) {
+	expectedHash, err := hashPolicies(testFixturePolicySetVersionFiles)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
@@ -20,10 +22,10 @@ func TestAccTFEPolicySetVersionFiles_basic(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySetVersionFilesConfig_basic(source),
+				Config: testAccTFEPolicySetVersionFilesConfig_basic(testFixturePolicySetVersionFiles),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// check data attrs
-					resource.TestCheckResourceAttr("data.tfe_policy_set_version_files.policy", "source", source),
+					resource.TestCheckResourceAttr("data.tfe_policy_set_version_files.policy", "source", testFixturePolicySetVersionFiles),
 					resource.TestCheckResourceAttr("data.tfe_policy_set_version_files.policy", "output_sha", expectedHash),
 				),
 			},

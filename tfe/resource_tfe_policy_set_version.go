@@ -18,8 +18,6 @@ func resourceTFEPolicySetVersion() *schema.Resource {
 			"policy_set_id": {
 				Type:     schema.TypeString,
 				Required: true,
-				// todo: add comment in PR about why ForceNew is here
-				// ForceNew must be set on all required if you don't have na Update
 				ForceNew: true,
 			},
 
@@ -32,8 +30,6 @@ func resourceTFEPolicySetVersion() *schema.Resource {
 			"policies_path": {
 				Type:     schema.TypeString,
 				Required: true,
-				// todo: add comment in PR about why ForceNew is here
-				// ForceNew must be set on all required if you don't have na Update
 				ForceNew: true,
 			},
 
