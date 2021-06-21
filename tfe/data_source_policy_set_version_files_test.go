@@ -25,7 +25,7 @@ func TestAccTFEPolicySetVersionFiles_basic(t *testing.T) {
 				Config: testAccTFEPolicySetVersionFilesConfig_basic(testFixturePolicySetVersionFiles),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// check data attrs
-					resource.TestCheckResourceAttr("data.tfe_policy_set_version_files.policy", "source", testFixturePolicySetVersionFiles),
+					resource.TestCheckResourceAttr("data.tfe_policy_set_version_files.policy", "source_path", testFixturePolicySetVersionFiles),
 					resource.TestCheckResourceAttr("data.tfe_policy_set_version_files.policy", "output_sha", expectedHash),
 				),
 			},
@@ -33,10 +33,10 @@ func TestAccTFEPolicySetVersionFiles_basic(t *testing.T) {
 	})
 }
 
-func testAccTFEPolicySetVersionFilesConfig_basic(source string) string {
+func testAccTFEPolicySetVersionFilesConfig_basic(sourcePath string) string {
 	return fmt.Sprintf(`
 data "tfe_policy_set_version_files" "policy" {
-  source = "%s"
+  source_path = "%s"
 }
-`, source)
+`, sourcePath)
 }

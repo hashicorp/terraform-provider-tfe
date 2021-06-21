@@ -53,19 +53,22 @@ func TestAccTFEPolicySetVersion_basic(t *testing.T) {
 
 func TestAccTFEPolicySetVersion_recreate(t *testing.T) {
 	skipIfFreeOnly(t)
+
 	policySet := &tfe.PolicySet{}
 	policySetVersion := &tfe.PolicySetVersion{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
 	originalChecksum, err := hashPolicies(testFixturePolicySetVersionFiles)
 	if err != nil {
 		t.Fatalf("Unable to generate checksum for policies %v", err)
 	}
-	fmt.Println("ORIGINAL CHECKSUM: ", originalChecksum)
+
 	newFile := fmt.Sprintf("%s/newfile.test.sentinel", testFixturePolicySetVersionFiles)
 	removeFile := func() {
 		// This func is used below, that is why it is not an anonymous function.
 		// It is used because if there is a test fatal (t.Fatal), then defer does
-		// not get called. So we call this `removeFile` function explicitly below.
+		// not get called. So we call this `removeFile` function both in the defer
+		// and explicitly below.
 		err := os.Remove(newFile)
 		if err != nil {
 			t.Fatalf("Error removing file %v", err)
@@ -149,7 +152,7 @@ func testAccCheckTFEPolicySetVersionExists(n string, policySetVersion *tfe.Polic
 	}
 }
 
-func testAccCheckTFEPolicySetVersionValidateChecksum(n string, source string) resource.TestCheckFunc {
+func testAccCheckTFEPolicySetVersionValidateChecksum(n string, sourcePath string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -160,7 +163,7 @@ func testAccCheckTFEPolicySetVersionValidateChecksum(n string, source string) re
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		newChecksum, err := hashPolicies(source)
+		newChecksum, err := hashPolicies(sourcePath)
 		if err != nil {
 			return fmt.Errorf("Unable to generate checksum for policies %v", err)
 		}
@@ -173,7 +176,7 @@ func testAccCheckTFEPolicySetVersionValidateChecksum(n string, source string) re
 	}
 }
 
-func testAccTFEPolicySetVersion_basic(rInt int, source string) string {
+func testAccTFEPolicySetVersion_basic(rInt int, sourcePath string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
@@ -187,12 +190,12 @@ resource "tfe_policy_set" "foobar" {
 }
 
 data "tfe_policy_set_version_files" "policy" {
-  source = "%s"
+  source_path = "%s"
 }
 
 resource "tfe_policy_set_version" "foobar" {
   policy_set_id = tfe_policy_set.foobar.id
   policies_path_contents_checksum = data.tfe_policy_set_version_files.policy.output_sha
-  policies_path = data.tfe_policy_set_version_files.policy.source
-}`, rInt, source)
+  policies_path = data.tfe_policy_set_version_files.policy.source_path
+}`, rInt, sourcePath)
 }

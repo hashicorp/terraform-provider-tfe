@@ -17,7 +17,7 @@ func dataSourceTFEPolicySetVersionFiles() *schema.Resource {
 		Read: dataSourceTFEPolicySetVersionFilesRead,
 
 		Schema: map[string]*schema.Schema{
-			"source": {
+			"source_path": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
@@ -31,12 +31,12 @@ func dataSourceTFEPolicySetVersionFiles() *schema.Resource {
 }
 
 func dataSourceTFEPolicySetVersionFilesRead(d *schema.ResourceData, meta interface{}) error {
-	source := d.Get("source").(string)
+	sourcePath := d.Get("source_path").(string)
 
-	log.Printf("[DEBUG] Hashing the source files: %s", source)
-	newHash, err := hashPolicies(source)
+	log.Printf("[DEBUG] Hashing the source path files: %s", sourcePath)
+	newHash, err := hashPolicies(sourcePath)
 	if err != nil {
-		return fmt.Errorf("Error generating the checksum for the source files: %v", err)
+		return fmt.Errorf("Error generating the checksum for the source path files: %v", err)
 	}
 	d.SetId(newHash)
 	d.Set("output_sha", newHash)
