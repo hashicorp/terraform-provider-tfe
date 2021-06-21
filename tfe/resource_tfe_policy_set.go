@@ -1,15 +1,10 @@
 package tfe
 
 import (
-	"bytes"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"log"
-	"os"
 	"regexp"
 
-	slug "github.com/hashicorp/go-slug"
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -465,28 +460,6 @@ func resourceTFEPolicySetDelete(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	return nil
-}
-
-func hashPolicies(path string) (string, error) {
-	body := bytes.NewBuffer(nil)
-	file, err := os.Stat(path)
-	if err != nil {
-		return "", err
-	}
-	if !file.Mode().IsDir() {
-		return "", fmt.Errorf("The path is not a directory")
-	}
-
-	_, err = slug.Pack(path, body, true)
-	if err != nil {
-		return "", err
-	}
-
-	hash := sha256.New()
-	hash.Write(body.Bytes())
-	chksum := hex.EncodeToString(hash.Sum(nil))
-
-	return chksum, nil
 }
 
 func uploadPolicies(client *tfe.Client, policySetID string, policiesPath string) error {

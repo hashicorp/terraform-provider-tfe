@@ -18,29 +18,32 @@ func resourceTFEPolicySetVersion() *schema.Resource {
 			"policy_set_id": {
 				Type:     schema.TypeString,
 				Required: true,
+				// todo: add comment in PR about why ForceNew is here
+				// ForceNew must be set on all required if you don't have na Update
+				ForceNew: true,
+			},
+
+			"policies_path_contents_checksum": {
+				Type:     schema.TypeString,
+				Required: true,
 				ForceNew: true,
 			},
 
 			"policies_path": {
 				Type:     schema.TypeString,
 				Required: true,
+				// todo: add comment in PR about why ForceNew is here
+				// ForceNew must be set on all required if you don't have na Update
 				ForceNew: true,
-			},
-
-			"policies_path_contents_checksum": {
-				Type:     schema.TypeString,
-				Computed: true,
 			},
 
 			"status": {
 				Type:     schema.TypeString,
-				Optional: true,
 				Computed: true,
 			},
 
 			"error_message": {
 				Type:     schema.TypeString,
-				Optional: true,
 				Computed: true,
 			},
 		},
@@ -48,30 +51,20 @@ func resourceTFEPolicySetVersion() *schema.Resource {
 }
 
 func resourceTFEPolicySetVersionRead(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] =====OMAR DEBUG READ==========")
 	tfeClient := meta.(*tfe.Client)
 
 	log.Printf("[DEBUG] Read policy set version: %s", d.Id())
 	policySetVersion, err := tfeClient.PolicySetVersions.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			log.Printf("[DEBUG] Policy set version %s does no longer exist", d.Id())
+			log.Printf("[DEBUG] Policy set version %s does not exist", d.Id())
 			d.SetId("")
 			return nil
 		}
 		return fmt.Errorf("Error reading policy set version %s: %v", d.Id(), err)
 	}
 
-	policiesPath := d.Get("policies_path").(string)
-	currentHash := d.Get("policies_path_contents_checksum").(string)
-	newHash, err := hashPolicies(policiesPath)
-	if err != nil {
-		return fmt.Errorf("Error hashing the policies contents %v", err)
-	}
-	if currentHash != newHash {
-		d.Set("policies_path_contents_checksum", newHash)
-	}
-
+	d.SetId(policySetVersion.ID)
 	d.Set("status", policySetVersion.Status)
 	d.Set("error_message", policySetVersion.ErrorMessage)
 
@@ -79,20 +72,18 @@ func resourceTFEPolicySetVersionRead(d *schema.ResourceData, meta interface{}) e
 }
 
 func resourceTFEPolicySetVersionCreate(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] =====OMAR DEBUG CREATE==========")
 	tfeClient := meta.(*tfe.Client)
 
 	policySetID := d.Get("policy_set_id").(string)
 	policiesPath := d.Get("policies_path").(string)
-
 	psv, err := tfeClient.PolicySetVersions.Create(ctx, policySetID)
 	if err != nil {
-		return fmt.Errorf("Error creating policy set version for policy set %s: %s", policySetID, err.Error())
+		return fmt.Errorf("Error creating policy set version for policy set %s: %v", policySetID, err)
 	}
 
 	err = tfeClient.PolicySetVersions.Upload(ctx, *psv, policiesPath)
 	if err != nil {
-		return fmt.Errorf("Error uploading policies for policy set version %s: %s", psv.ID, err.Error())
+		return fmt.Errorf("Error uploading policies for policy set version %s: %v", psv.ID, err)
 	}
 
 	d.SetId(psv.ID)
@@ -101,6 +92,12 @@ func resourceTFEPolicySetVersionCreate(d *schema.ResourceData, meta interface{})
 }
 
 func resourceTFEPolicySetVersionDelete(d *schema.ResourceData, meta interface{}) error {
-	// TODO: explain why delete must be here. ForceNew?
+	// The delete operation is required for a ForceNew field.
+	// ForceNew destroys and recreates the resource, according to the docs:
+	// https://www.terraform.io/docs/extend/schemas/schema-behaviors.html#forcenew
+
+	// This is left nil because there is no operation delete a Policy Set Version,
+	// so this only returns nil.
+	// https://www.terraform.io/docs/cloud/api/policy-sets.html#create-a-policy-set-version
 	return nil
 }
