@@ -19,7 +19,7 @@ func TestAccTFEPolicySetVersion_basic(t *testing.T) {
 	policySet := &tfe.PolicySet{}
 	policySetVersion := &tfe.PolicySetVersion{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	checksum, err := hashPolicies(testFixturePolicySetVersionFiles)
+	checksum, err := hashPolicies(testFixtureVersionFiles)
 	if err != nil {
 		t.Fatalf("Unable to generate checksum for policies %v", err)
 	}
@@ -30,7 +30,7 @@ func TestAccTFEPolicySetVersion_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySetVersion_basic(rInt, testFixturePolicySetVersionFiles),
+				Config: testAccTFEPolicySetVersion_basic(rInt, testFixtureVersionFiles),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
@@ -58,12 +58,12 @@ func TestAccTFEPolicySetVersion_recreate(t *testing.T) {
 	policySetVersion := &tfe.PolicySetVersion{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
-	originalChecksum, err := hashPolicies(testFixturePolicySetVersionFiles)
+	originalChecksum, err := hashPolicies(testFixtureVersionFiles)
 	if err != nil {
 		t.Fatalf("Unable to generate checksum for policies %v", err)
 	}
 
-	newFile := fmt.Sprintf("%s/newfile.test.sentinel", testFixturePolicySetVersionFiles)
+	newFile := fmt.Sprintf("%s/newfile.test.sentinel", testFixtureVersionFiles)
 	removeFile := func() {
 		// This func is used below, that is why it is not an anonymous function.
 		// It is used because if there is a test fatal (t.Fatal), then defer does
@@ -82,7 +82,7 @@ func TestAccTFEPolicySetVersion_recreate(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySetVersion_basic(rInt, testFixturePolicySetVersionFiles),
+				Config: testAccTFEPolicySetVersion_basic(rInt, testFixtureVersionFiles),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
@@ -109,7 +109,7 @@ func TestAccTFEPolicySetVersion_recreate(t *testing.T) {
 						t.Fatalf("error writing to file %s", newFile)
 					}
 				},
-				Config: testAccTFEPolicySetVersion_basic(rInt, testFixturePolicySetVersionFiles),
+				Config: testAccTFEPolicySetVersion_basic(rInt, testFixtureVersionFiles),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					resource.TestCheckResourceAttr(
@@ -117,7 +117,7 @@ func TestAccTFEPolicySetVersion_recreate(t *testing.T) {
 					testAccCheckTFEPolicySetVersionExists("tfe_policy_set_version.foobar", policySetVersion),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set_version.foobar", "status", string(tfe.PolicySetVersionReady)),
-					testAccCheckTFEPolicySetVersionValidateChecksum("tfe_policy_set_version.foobar", testFixturePolicySetVersionFiles),
+					testAccCheckTFEPolicySetVersionValidateChecksum("tfe_policy_set_version.foobar", testFixtureVersionFiles),
 				),
 			},
 		},
@@ -195,7 +195,7 @@ data "tfe_version_files" "policy" {
 
 resource "tfe_policy_set_version" "foobar" {
   policy_set_id = tfe_policy_set.foobar.id
-  policies_path_contents_checksum = data.tfe_policy_set_version_files.policy.checksum
-  policies_path = data.tfe_policy_set_version_files.policy.source_path
+  policies_path_contents_checksum = data.tfe_version_files.policy.checksum
+  policies_path = data.tfe_version_files.policy.source_path
 }`, rInt, sourcePath)
 }

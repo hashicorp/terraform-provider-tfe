@@ -8,11 +8,11 @@ import (
 )
 
 const (
-	testFixturePolicySetVersionFiles = "test-fixtures/policy-set-version"
+	testFixtureVersionFiles = "test-fixtures/policy-set-version"
 )
 
-func TestAccTFEPolicySetVersionFiles_basic(t *testing.T) {
-	expectedChecksum, err := hashPolicies(testFixturePolicySetVersionFiles)
+func TestAccTFEVersionFiles_basic(t *testing.T) {
+	expectedChecksum, err := hashPolicies(testFixtureVersionFiles)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
@@ -22,18 +22,18 @@ func TestAccTFEPolicySetVersionFiles_basic(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySetVersionFilesConfig_basic(testFixturePolicySetVersionFiles),
+				Config: testAccTFEVersionFilesConfig_basic(testFixtureVersionFiles),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// check data attrs
-					resource.TestCheckResourceAttr("data.tfe_policy_set_version_files.policy", "source_path", testFixturePolicySetVersionFiles),
-					resource.TestCheckResourceAttr("data.tfe_policy_set_version_files.policy", "checksum", expectedChecksum),
+					resource.TestCheckResourceAttr("data.tfe_version_files.policy", "source_path", testFixtureVersionFiles),
+					resource.TestCheckResourceAttr("data.tfe_version_files.policy", "checksum", expectedChecksum),
 				),
 			},
 		},
 	})
 }
 
-func testAccTFEPolicySetVersionFilesConfig_basic(sourcePath string) string {
+func testAccTFEVersionFilesConfig_basic(sourcePath string) string {
 	return fmt.Sprintf(`
 data "tfe_version_files" "policy" {
   source_path = "%s"
