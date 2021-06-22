@@ -12,7 +12,7 @@ const (
 )
 
 func TestAccTFEPolicySetVersionFiles_basic(t *testing.T) {
-	expectedHash, err := hashPolicies(testFixturePolicySetVersionFiles)
+	expectedChecksum, err := hashPolicies(testFixturePolicySetVersionFiles)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
@@ -26,7 +26,7 @@ func TestAccTFEPolicySetVersionFiles_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// check data attrs
 					resource.TestCheckResourceAttr("data.tfe_policy_set_version_files.policy", "source_path", testFixturePolicySetVersionFiles),
-					resource.TestCheckResourceAttr("data.tfe_policy_set_version_files.policy", "output_sha", expectedHash),
+					resource.TestCheckResourceAttr("data.tfe_policy_set_version_files.policy", "checksum", expectedChecksum),
 				),
 			},
 		},
@@ -35,7 +35,7 @@ func TestAccTFEPolicySetVersionFiles_basic(t *testing.T) {
 
 func testAccTFEPolicySetVersionFilesConfig_basic(sourcePath string) string {
 	return fmt.Sprintf(`
-data "tfe_policy_set_version_files" "policy" {
+data "tfe_version_files" "policy" {
   source_path = "%s"
 }
 `, sourcePath)

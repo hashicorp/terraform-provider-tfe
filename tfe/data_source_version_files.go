@@ -12,9 +12,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func dataSourceTFEPolicySetVersionFiles() *schema.Resource {
+func dataSourceTFEVersionFiles() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceTFEPolicySetVersionFilesRead,
+		Read: dataSourceTFEVersionFilesRead,
 
 		Schema: map[string]*schema.Schema{
 			"source_path": {
@@ -22,7 +22,7 @@ func dataSourceTFEPolicySetVersionFiles() *schema.Resource {
 				Required: true,
 			},
 
-			"output_sha": {
+			"checksum": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
@@ -30,16 +30,16 @@ func dataSourceTFEPolicySetVersionFiles() *schema.Resource {
 	}
 }
 
-func dataSourceTFEPolicySetVersionFilesRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceTFEVersionFilesRead(d *schema.ResourceData, meta interface{}) error {
 	sourcePath := d.Get("source_path").(string)
 
 	log.Printf("[DEBUG] Hashing the source path files: %s", sourcePath)
-	newHash, err := hashPolicies(sourcePath)
+	chksum, err := hashPolicies(sourcePath)
 	if err != nil {
 		return fmt.Errorf("Error generating the checksum for the source path files: %v", err)
 	}
-	d.SetId(newHash)
-	d.Set("output_sha", newHash)
+	d.SetId(chksum)
+	d.Set("checksum", chksum)
 
 	return nil
 }

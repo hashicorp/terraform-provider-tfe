@@ -189,13 +189,13 @@ resource "tfe_policy_set" "foobar" {
   organization = tfe_organization.foobar.id
 }
 
-data "tfe_policy_set_version_files" "policy" {
+data "tfe_version_files" "policy" {
   source_path = "%s"
 }
 
 resource "tfe_policy_set_version" "foobar" {
   policy_set_id = tfe_policy_set.foobar.id
-  policies_path_contents_checksum = data.tfe_policy_set_version_files.policy.output_sha
+  policies_path_contents_checksum = data.tfe_policy_set_version_files.policy.checksum
   policies_path = data.tfe_policy_set_version_files.policy.source_path
 }`, rInt, sourcePath)
 }

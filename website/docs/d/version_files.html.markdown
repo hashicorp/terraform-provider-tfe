@@ -1,11 +1,11 @@
 ---
 layout: "tfe"
-page_title: "Terraform Enterprise: tfe_policy_set_version_files"
-sidebar_current: "docs-datasource-tfe_policy_set_version_files"
+page_title: "Terraform Enterprise: tfe__version_files"
+sidebar_current: "docs-datasource-tfe-version-files"
 description: |-
-  Manages policy set version files.
+  Manages version files.
 ---
-# Data Source: tfe_policy_set_version_files
+# Data Source: tfe__version_files
 
 Use this data source to point to a source path that contains files, and
 auto generate a checksum of the contents of that directory.
@@ -16,7 +16,7 @@ Pointing to a local directory to upload the sentinel config and policies.
 
 ```hcl
 
-data "tfe_policy_set_version_files" "test" {
+data "tfe_version_files" "test" {
   source_path = "policies/my-policy-set"
 }
 ```
@@ -30,5 +30,5 @@ The following arguments are supported:
 ## Attributes Reference
 
 * `source_path` - The path to the directory where the files are located.
-* `output_sha` - The checksum generated from hashing the contents of the files
+* `checksum` - The checksum generated from hashing the contents of the files
 in the directory of the `source_path`.
