@@ -49,7 +49,7 @@ resource "tfe_policy_set_version" "test" {
 The following arguments are supported:
 
 * `policy_set_id` - (Required) The ID of the Policy Set.
-* `policies_path_contents_checksum` - (Required) A checksum generated as a result of hashing
+* `policies_path_contents_checksum` - (Required) A checksum from hashing
 all the contents in the `policies_path`. This is auto generated as a result of using the 
 data source `tfe_version_files` field `checksum`. This can be set manually, but that requires
 self management of this checksum.
