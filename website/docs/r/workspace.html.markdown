@@ -86,6 +86,7 @@ The following arguments are supported:
   Enterprise instance from running plans on pull requests, which can improve
   security if the VCS repository is public or includes untrusted contributors.
   Defaults to `true`.
+* `structured_run_output_enabled` - (Optional) Whether this workspace should show output from Terraform runs using the enhanced UI when available. Setting this to `false` ensures that all runs in this workspace will display their output as text logs. Defaults to `true`.
 * `ssh_key_id` - (Optional) The ID of an SSH key to assign to the workspace.
 * `terraform_version` - (Optional) The version of Terraform to use for this workspace. Defaults to 
   the latest available version.
