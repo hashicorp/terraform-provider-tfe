@@ -394,7 +394,7 @@ func TestAccTFEWorkspace_updateSpeculative(t *testing.T) {
 	})
 }
 
-func TestAccTFEWorkspace_updateStructuredRunOutput(t *testing.T) {
+func TestAccTFEWorkspace_structuredRunOutputDisabled(t *testing.T) {
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
