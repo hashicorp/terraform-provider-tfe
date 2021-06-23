@@ -47,6 +47,8 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "speculative_enabled", "true"),
 					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "structured_run_output_enabled", "true"),
+					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "working_directory", ""),
@@ -386,6 +388,38 @@ func TestAccTFEWorkspace_updateSpeculative(t *testing.T) {
 						"tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "speculative_enabled", "false"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspace_structuredRunOutputDisabled(t *testing.T) {
+	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_basic(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "structured_run_output_enabled", "true"),
+				),
+			},
+
+			{
+				Config: testAccTFEWorkspace_updateStructuredRunOutput(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "structured_run_output_enabled", "false"),
 				),
 			},
 		},
@@ -1562,5 +1596,20 @@ resource "tfe_workspace" "foobar_one" {
 resource "tfe_workspace" "foobar_two" {
   name               = "workspace-test-2"
   organization       = tfe_organization.foobar.id
+}`, rInt)
+}
+
+func testAccTFEWorkspace_updateStructuredRunOutput(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name                          = "workspace-test"
+  organization                  = tfe_organization.foobar.id
+  auto_apply                    = true
+  structured_run_output_enabled = false
 }`, rInt)
 }
