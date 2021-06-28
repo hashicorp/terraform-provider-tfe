@@ -139,6 +139,12 @@ func resourceTFEWorkspace() *schema.Resource {
 				Default:  "",
 			},
 
+			"structured_run_output_enabled": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
+			},
+
 			"terraform_version": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -200,14 +206,15 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 
 	// Create a new options struct.
 	options := tfe.WorkspaceCreateOptions{
-		Name:                tfe.String(name),
-		AllowDestroyPlan:    tfe.Bool(d.Get("allow_destroy_plan").(bool)),
-		AutoApply:           tfe.Bool(d.Get("auto_apply").(bool)),
-		Description:         tfe.String(d.Get("description").(string)),
-		FileTriggersEnabled: tfe.Bool(d.Get("file_triggers_enabled").(bool)),
-		QueueAllRuns:        tfe.Bool(d.Get("queue_all_runs").(bool)),
-		SpeculativeEnabled:  tfe.Bool(d.Get("speculative_enabled").(bool)),
-		WorkingDirectory:    tfe.String(d.Get("working_directory").(string)),
+		Name:                       tfe.String(name),
+		AllowDestroyPlan:           tfe.Bool(d.Get("allow_destroy_plan").(bool)),
+		AutoApply:                  tfe.Bool(d.Get("auto_apply").(bool)),
+		Description:                tfe.String(d.Get("description").(string)),
+		FileTriggersEnabled:        tfe.Bool(d.Get("file_triggers_enabled").(bool)),
+		QueueAllRuns:               tfe.Bool(d.Get("queue_all_runs").(bool)),
+		SpeculativeEnabled:         tfe.Bool(d.Get("speculative_enabled").(bool)),
+		StructuredRunOutputEnabled: tfe.Bool(d.Get("structured_run_output_enabled").(bool)),
+		WorkingDirectory:           tfe.String(d.Get("working_directory").(string)),
 	}
 
 	// Send global_remote_state if it's set; otherwise, let it be computed.
@@ -315,6 +322,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("execution_mode", workspace.ExecutionMode)
 	d.Set("queue_all_runs", workspace.QueueAllRuns)
 	d.Set("speculative_enabled", workspace.SpeculativeEnabled)
+	d.Set("structured_run_output_enabled", workspace.StructuredRunOutputEnabled)
 	d.Set("terraform_version", workspace.TerraformVersion)
 	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
 	d.Set("working_directory", workspace.WorkingDirectory)
@@ -371,19 +379,20 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		d.HasChange("allow_destroy_plan") || d.HasChange("speculative_enabled") ||
 		d.HasChange("operations") || d.HasChange("execution_mode") ||
 		d.HasChange("description") || d.HasChange("agent_pool_id") ||
-		d.HasChange("global_remote_state") {
+		d.HasChange("global_remote_state") || d.HasChange("structured_run_output_enabled") {
 
 		// Create a new options struct.
 		options := tfe.WorkspaceUpdateOptions{
-			Name:                tfe.String(d.Get("name").(string)),
-			AllowDestroyPlan:    tfe.Bool(d.Get("allow_destroy_plan").(bool)),
-			AutoApply:           tfe.Bool(d.Get("auto_apply").(bool)),
-			Description:         tfe.String(d.Get("description").(string)),
-			FileTriggersEnabled: tfe.Bool(d.Get("file_triggers_enabled").(bool)),
-			GlobalRemoteState:   tfe.Bool(d.Get("global_remote_state").(bool)),
-			QueueAllRuns:        tfe.Bool(d.Get("queue_all_runs").(bool)),
-			SpeculativeEnabled:  tfe.Bool(d.Get("speculative_enabled").(bool)),
-			WorkingDirectory:    tfe.String(d.Get("working_directory").(string)),
+			Name:                       tfe.String(d.Get("name").(string)),
+			AllowDestroyPlan:           tfe.Bool(d.Get("allow_destroy_plan").(bool)),
+			AutoApply:                  tfe.Bool(d.Get("auto_apply").(bool)),
+			Description:                tfe.String(d.Get("description").(string)),
+			FileTriggersEnabled:        tfe.Bool(d.Get("file_triggers_enabled").(bool)),
+			GlobalRemoteState:          tfe.Bool(d.Get("global_remote_state").(bool)),
+			QueueAllRuns:               tfe.Bool(d.Get("queue_all_runs").(bool)),
+			SpeculativeEnabled:         tfe.Bool(d.Get("speculative_enabled").(bool)),
+			StructuredRunOutputEnabled: tfe.Bool(d.Get("structured_run_output_enabled").(bool)),
+			WorkingDirectory:           tfe.String(d.Get("working_directory").(string)),
 		}
 
 		if d.HasChange("agent_pool_id") {

@@ -19,7 +19,12 @@ data "tfe_organizations" "foo" {
 
 ## Argument Reference
 
-No arguments are required. This retrieves the names and IDs of all the organizations readable by the provided token.
+The following argument(s) are supported:
+
+* `admin` - This field is for Terraform Enterprise only. It is a boolean field that determines
+  the list of organizations that should be retrieved. If it is true, then it will retrieve all
+  the organizations for the entire installation. If it is false, then it will retrieve the
+  organizations available as per permissions of the API Token.
 
 ## Attributes Reference
 

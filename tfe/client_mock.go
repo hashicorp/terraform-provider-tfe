@@ -53,6 +53,10 @@ func (m *mockWorkspaces) Read(ctx context.Context, organization string, workspac
 	return w, nil
 }
 
+func (m *mockWorkspaces) ReadByIDWithOptions(ctx context.Context, workspaceID string, options *tfe.WorkspaceReadOptions) (*tfe.Workspace, error) {
+	panic("not implemented")
+}
+
 func (m *mockWorkspaces) Readme(ctx context.Context, workspaceID string) (io.Reader, error) {
 	panic("not implemented")
 }

@@ -39,19 +39,20 @@ In addition to all arguments above, the following attributes are exported:
 * `global_remote_state` - (Optional) Whether the workspace should allow all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (determined by the `remote_state_consumer_ids` argument).
 * `remote_state_consumer_ids` - (Optional) A set of workspace IDs that will be set as the remote state consumers for the given workspace. Cannot be used if `global_remote_state` is set to `true`.
 * `operations` - Indicates whether the workspace is using remote execution mode. Set to `false` to switch execution mode to local. `true` by default.
+* `policy_check_failures` - The number of policy check failures from the latest run.
 * `queue_all_runs` - Indicates whether the workspace will automatically perform runs
   in response to webhooks immediately after its creation. If `false`, an initial run must
   be manually queued to enable future automatic runs.
+* `resource_count` - The number of resources managed by the workspace.
+* `run_failures` - The number of run failures on the workspace.
+* `runs_count` - The number of runs on the workspace.
 * `speculative_enabled` - Indicates whether this workspace allows speculative plans.
 * `ssh_key_id` - The ID of an SSH key assigned to the workspace.
+* `structured_run_output_enabled` - Indicates whether runs in this workspace use the enhanced apply UI. 
 * `terraform_version` - The version of Terraform used for this workspace.
 * `trigger_prefixes` - List of repository-root-relative paths which describe all locations to be tracked for changes.
 * `vcs_repo` - Settings for the workspace's VCS repository.
 * `working_directory` - A relative path that Terraform will execute within.
-* `resource_count` - The number of resources managed by the workspace.
-* `policy_check_failures` - The number of policy check failures from the latest run.
-* `run_failures` - The number of run failures on the workspace.
-* `runs_count` - The number of runs on the workspace.
 
 
 The `vcs_repo` block contains:
