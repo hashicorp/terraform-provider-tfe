@@ -46,9 +46,27 @@ func (s altserver) StopProvider(ctx context.Context, req *tfprotov5.StopProvider
 func AltServer() tfprotov5.ProviderServer {
 	return altserver{
 		providerSchema: &tfprotov5.Schema{
-			Version: 1,
 			Block: &tfprotov5.SchemaBlock{
-				Version: 1,
+				Attributes: []*tfprotov5.SchemaAttribute{
+					&tfprotov5.SchemaAttribute{
+						Name:        "hostname",
+						Type:        tftypes.String,
+						Description: descriptions["hostname"],
+						Optional:    true,
+					},
+					&tfprotov5.SchemaAttribute{
+						Name:        "ssl_skip_verify",
+						Type:        tftypes.Bool,
+						Description: descriptions["ssl_skip_verify"],
+						Optional:    true,
+					},
+					&tfprotov5.SchemaAttribute{
+						Name:        "token",
+						Type:        tftypes.String,
+						Description: descriptions["token"],
+						Optional:    true,
+					},
+				},
 			},
 		},
 		dataSourceSchemas: map[string]*tfprotov5.Schema{
