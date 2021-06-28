@@ -59,8 +59,28 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Computed: true,
 			},
 
+			"policy_check_failures": {
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
+
 			"queue_all_runs": {
 				Type:     schema.TypeBool,
+				Computed: true,
+			},
+
+			"resource_count": {
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
+
+			"run_failures": {
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
+
+			"runs_count": {
+				Type:     schema.TypeInt,
 				Computed: true,
 			},
 
@@ -71,6 +91,11 @@ func dataSourceTFEWorkspace() *schema.Resource {
 
 			"ssh_key_id": {
 				Type:     schema.TypeString,
+				Computed: true,
+			},
+
+			"structured_run_output_enabled": {
+				Type:     schema.TypeBool,
 				Computed: true,
 			},
 
@@ -117,26 +142,6 @@ func dataSourceTFEWorkspace() *schema.Resource {
 					},
 				},
 			},
-
-			"resource_count": {
-				Type:     schema.TypeInt,
-				Computed: true,
-			},
-
-			"policy_check_failures": {
-				Type:     schema.TypeInt,
-				Computed: true,
-			},
-
-			"run_failures": {
-				Type:     schema.TypeInt,
-				Computed: true,
-			},
-
-			"runs_count": {
-				Type:     schema.TypeInt,
-				Computed: true,
-			},
 		},
 	}
 }
@@ -170,15 +175,16 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("global_remote_state", globalRemoteState)
 	d.Set("remote_state_consumer_ids", remoteStateConsumerIDs)
 	d.Set("operations", workspace.Operations)
+	d.Set("policy_check_failures", workspace.PolicyCheckFailures)
 	d.Set("queue_all_runs", workspace.QueueAllRuns)
+	d.Set("resource_count", workspace.ResourceCount)
+	d.Set("run_failures", workspace.RunFailures)
+	d.Set("runs_count", workspace.RunsCount)
 	d.Set("speculative_enabled", workspace.SpeculativeEnabled)
+	d.Set("structured_run_output_enabled", workspace.StructuredRunOutputEnabled)
 	d.Set("terraform_version", workspace.TerraformVersion)
 	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
 	d.Set("working_directory", workspace.WorkingDirectory)
-	d.Set("resource_count", workspace.ResourceCount)
-	d.Set("policy_check_failures", workspace.PolicyCheckFailures)
-	d.Set("run_failures", workspace.RunFailures)
-	d.Set("runs_count", workspace.RunsCount)
 
 	if workspace.SSHKey != nil {
 		d.Set("ssh_key_id", workspace.SSHKey.ID)

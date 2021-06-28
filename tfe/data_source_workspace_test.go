@@ -34,9 +34,19 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "file_triggers_enabled", "true"),
 					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "policy_check_failures", "0"),
+					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "queue_all_runs", "false"),
 					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "resource_count", "0"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "run_failures", "0"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "runs_count", "0"),
+					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "speculative_enabled", "true"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "structured_run_output_enabled", "true"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "terraform_version", "0.11.1"),
 					resource.TestCheckResourceAttr(
@@ -47,11 +57,6 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 						"data.tfe_workspace.foobar", "trigger_prefixes.1", "/shared"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "working_directory", "terraform/test"),
-
-					resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "resource_count", "0"),
-					resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "policy_check_failures", "0"),
-					resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "run_failures", "0"),
-					resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "runs_count", "0"),
 				),
 			},
 		},

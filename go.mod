@@ -17,7 +17,7 @@ require (
 	github.com/hashicorp/go-plugin v1.4.1 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.0 // indirect
 	github.com/hashicorp/go-slug v0.7.0 // indirect
-	github.com/hashicorp/go-tfe v0.15.0
+	github.com/hashicorp/go-tfe v0.17.0
 	github.com/hashicorp/go-version v1.3.0
 	github.com/hashicorp/hcl v0.0.0-20180404174102-ef8a98b0bbce
 	github.com/hashicorp/hcl/v2 v2.10.0 // indirect
