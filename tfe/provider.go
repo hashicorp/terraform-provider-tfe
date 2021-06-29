@@ -76,12 +76,12 @@ func Provider() *schema.Provider {
 			"tfe_ip_ranges":               dataSourceTFEIPRanges(),
 			"tfe_oauth_client":            dataSourceTFEOAuthClient(),
 			"tfe_organization_membership": dataSourceTFEOrganizationMembership(),
-			"tfe_remote_state":            dataSourceTFERemoteState(),
-			"tfe_ssh_key":                 dataSourceTFESSHKey(),
-			"tfe_team":                    dataSourceTFETeam(),
-			"tfe_team_access":             dataSourceTFETeamAccess(),
-			"tfe_workspace":               dataSourceTFEWorkspace(),
-			"tfe_workspace_ids":           dataSourceTFEWorkspaceIDs(),
+			//"tfe_remote_state":            dataSourceTFERemoteState(),
+			"tfe_ssh_key":       dataSourceTFESSHKey(),
+			"tfe_team":          dataSourceTFETeam(),
+			"tfe_team_access":   dataSourceTFETeamAccess(),
+			"tfe_workspace":     dataSourceTFEWorkspace(),
+			"tfe_workspace_ids": dataSourceTFEWorkspaceIDs(),
 		},
 
 		ResourcesMap: map[string]*schema.Resource{

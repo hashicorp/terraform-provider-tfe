@@ -27,9 +27,10 @@ func (s altserver) GetProviderSchema(ctx context.Context, req *tfprotov5.GetProv
 }
 
 func (s altserver) PrepareProviderConfig(ctx context.Context, req *tfprotov5.PrepareProviderConfigRequest) (*tfprotov5.PrepareProviderConfigResponse, error) {
-	return &tfprotov5.PrepareProviderConfigResponse{
-		PreparedConfig: req.Config,
-	}, nil
+	return nil, nil
+	//return &tfprotov5.PrepareProviderConfigResponse{
+	//	PreparedConfig: req.Config,
+	//}, nil
 }
 
 func (s altserver) ConfigureProvider(ctx context.Context, req *tfprotov5.ConfigureProviderRequest) (*tfprotov5.ConfigureProviderResponse, error) {
@@ -70,7 +71,7 @@ func AltServer() tfprotov5.ProviderServer {
 			},
 		},
 		dataSourceSchemas: map[string]*tfprotov5.Schema{
-			"corner_time": {
+			"tfe_corner_time": {
 				Version: 1,
 				Block: &tfprotov5.SchemaBlock{
 					Version: 1,
@@ -91,9 +92,46 @@ func AltServer() tfprotov5.ProviderServer {
 					},
 				},
 			},
+			"tfe_remote_state": {
+				Version: 1,
+				Block: &tfprotov5.SchemaBlock{
+					Version: 1,
+					Attributes: []*tfprotov5.SchemaAttribute{
+						{
+							Name:            "workspace",
+							Type:            tftypes.String,
+							Description:     "The workspace to fetch the remote state from.", // TODO Change desc
+							DescriptionKind: tfprotov5.StringKindPlain,
+							Required:        true,
+						},
+						{
+							Name:            "download_url",
+							Type:            tftypes.String,
+							Description:     "The download url for the state",
+							DescriptionKind: tfprotov5.StringKindPlain,
+							Computed:        true,
+						},
+						{
+							Name:            "state_output",
+							Type:            tftypes.DynamicPseudoType,
+							Description:     "output",
+							DescriptionKind: tfprotov5.StringKindPlain,
+							Computed:        true,
+						},
+						//{
+						//	Name:            "state_output",
+						//	Type:            tftypes.DynamicPseudoType,
+						//	Description:     "The download url for the state",
+						//	DescriptionKind: tfprotov5.StringKindPlain,
+						//	Computed:        true,
+						//},
+					},
+				},
+			},
 		},
 		dataSourceRouter: dataSourceRouter{
-			"corner_time": dataSourceTime{},
+			"tfe_remote_state": dataSourceRemoteState{},
+			"tfe_corner_time":  dataSourceTime{},
 		},
 	}
 }

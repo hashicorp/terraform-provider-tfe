@@ -2,6 +2,7 @@ package tfe
 
 import (
 	"context"
+	"log"
 
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
 )
@@ -23,6 +24,7 @@ func (d dataSourceRouter) ValidateDataSourceConfig(ctx context.Context, req *tfp
 }
 
 func (d dataSourceRouter) ReadDataSource(ctx context.Context, req *tfprotov5.ReadDataSourceRequest) (*tfprotov5.ReadDataSourceResponse, error) {
+	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR DATA SOURCE ROUTER READ")
 	ds, ok := d[req.TypeName]
 	if !ok {
 		return nil, errUnsupportedDataSource(req.TypeName)
