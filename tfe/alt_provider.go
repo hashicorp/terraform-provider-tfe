@@ -71,27 +71,6 @@ func AltServer() tfprotov5.ProviderServer {
 			},
 		},
 		dataSourceSchemas: map[string]*tfprotov5.Schema{
-			"tfe_corner_time": {
-				Version: 1,
-				Block: &tfprotov5.SchemaBlock{
-					Version: 1,
-					Attributes: []*tfprotov5.SchemaAttribute{
-						{
-							Name:            "current",
-							Type:            tftypes.String,
-							Description:     "The current time in RFC3339 format.",
-							DescriptionKind: tfprotov5.StringKindPlain,
-							Computed:        true,
-						},
-						{
-							Name:     "id",
-							Type:     tftypes.String,
-							Optional: true,
-							Computed: true,
-						},
-					},
-				},
-			},
 			"tfe_remote_state": {
 				Version: 1,
 				Block: &tfprotov5.SchemaBlock{
@@ -100,38 +79,21 @@ func AltServer() tfprotov5.ProviderServer {
 						{
 							Name:            "workspace",
 							Type:            tftypes.String,
-							Description:     "The workspace to fetch the remote state from.", // TODO Change desc
+							Description:     "The workspace to fetch the remote state from.",
 							DescriptionKind: tfprotov5.StringKindPlain,
 							Required:        true,
 						},
 						{
-							Name:            "download_url",
-							Type:            tftypes.String,
-							Description:     "The download url for the state",
-							DescriptionKind: tfprotov5.StringKindPlain,
-							Computed:        true,
+							Name:     "state_output",
+							Type:     tftypes.DynamicPseudoType,
+							Computed: true,
 						},
-						{
-							Name:            "state_output",
-							Type:            tftypes.DynamicPseudoType,
-							Description:     "output",
-							DescriptionKind: tfprotov5.StringKindPlain,
-							Computed:        true,
-						},
-						//{
-						//	Name:            "state_output",
-						//	Type:            tftypes.DynamicPseudoType,
-						//	Description:     "The download url for the state",
-						//	DescriptionKind: tfprotov5.StringKindPlain,
-						//	Computed:        true,
-						//},
 					},
 				},
 			},
 		},
 		dataSourceRouter: dataSourceRouter{
 			"tfe_remote_state": dataSourceRemoteState{},
-			"tfe_corner_time":  dataSourceTime{},
 		},
 	}
 }

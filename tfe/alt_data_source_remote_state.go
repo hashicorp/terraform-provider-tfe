@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/big"
 	"os"
 
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
@@ -25,38 +26,68 @@ func (d dataSourceRemoteState) ReadDataSource(ctx context.Context, req *tfprotov
 	val, err := config.Unmarshal(tftypes.Object{
 		AttributeTypes: map[string]tftypes.Type{
 			"workspace":    tftypes.String,
-			"download_url": tftypes.String,
+			"state_output": tftypes.String,
 		}})
 	if err != nil {
 		return &tfprotov5.ReadDataSourceResponse{Diagnostics: []*tfprotov5.Diagnostic{}}, err
 	}
 	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR VAL %s", val)
+	/*
+		stateFile := map[string]interface{}{
+			"foo":   []interface{}{"a", "b", "c"},
+			"hello": "world",
+		}
+	*/
+	stateFile := map[string]interface{}{
+		"foo":   []interface{}{"a", "b", "c"},
+		"hello": int64(123),
+		"quuz":  false,
+	}
+	tftypesState := map[string]tftypes.Value{}
+	stateTypes := map[string]tftypes.Type{}
+	for k, v := range stateFile {
+		switch val := v.(type) {
+		case string:
+			tftypesState[k] = tftypes.NewValue(tftypes.String, val)
+			stateTypes[k] = tftypes.String
+		case int64:
+			tftypesState[k] = tftypes.NewValue(tftypes.Number, big.NewFloat(float64(val)))
+			stateTypes[k] = tftypes.Number
+		case bool:
+			tftypesState[k] = tftypes.NewValue(tftypes.Bool, val)
+			stateTypes[k] = tftypes.Bool
+		case []interface{}:
+			elements := []tftypes.Value{}
+			types := []tftypes.Type{}
+			for _, element := range val {
+				switch el := element.(type) {
+				case string:
+					elements = append(elements, tftypes.NewValue(tftypes.String, el))
+					types = append(types, tftypes.String)
+				default:
+					panic(fmt.Sprintf("unknown type %T", element))
+				}
+			}
+			tftypesState[k] = tftypes.NewValue(tftypes.Tuple{ElementTypes: types}, elements)
+			stateTypes[k] = tftypes.Tuple{ElementTypes: types}
+		}
+	}
+
 	state, err := tfprotov5.NewDynamicValue(tftypes.Object{
 		AttributeTypes: map[string]tftypes.Type{
 			"workspace":    tftypes.String,
-			"download_url": tftypes.String,
+			"state_output": tftypes.DynamicPseudoType,
 		},
 	}, tftypes.NewValue(tftypes.Object{
 		AttributeTypes: map[string]tftypes.Type{
 			"workspace":    tftypes.String,
-			"download_url": tftypes.String,
+			"state_output": tftypes.Object{AttributeTypes: stateTypes},
 		},
 	}, map[string]tftypes.Value{
 		"workspace":    tftypes.NewValue(tftypes.String, "foobar"),
-		"download_url": tftypes.NewValue(tftypes.String, "static_id"),
+		"state_output": tftypes.NewValue(tftypes.Object{AttributeTypes: stateTypes}, tftypesState),
 	}))
 
-	//state, err := tfprotov5.NewDynamicValue(tftypes.Object{
-	//	AttributeTypes: map[string]tftypes.Type{
-	//		"download_url": tftypes.String,
-	//	},
-	//}, tftypes.NewValue(tftypes.Object{
-	//	AttributeTypes: map[string]tftypes.Type{
-	//		"download_url": tftypes.String,
-	//	},
-	//}, map[string]tftypes.Value{
-	//	"download_url": tftypes.NewValue(tftypes.String, "foobar"),
-	//}))
 	if err != nil {
 		return &tfprotov5.ReadDataSourceResponse{
 			Diagnostics: []*tfprotov5.Diagnostic{
