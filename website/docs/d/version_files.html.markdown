@@ -1,6 +1,6 @@
 ---
 layout: "tfe"
-page_title: "Terraform Enterprise: tfe__version_files"
+page_title: "Terraform Enterprise: tfe_version_files"
 sidebar_current: "docs-datasource-tfe-version-files"
 description: |-
   Manages version files.
