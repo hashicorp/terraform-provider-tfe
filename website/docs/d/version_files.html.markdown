@@ -5,7 +5,7 @@ sidebar_current: "docs-datasource-tfe-version-files"
 description: |-
   Manages version files.
 ---
-# Data Source: tfe__version_files
+# Data Source: tfe_version_files
 
 Use this data source to point to a source path that contains files, and
 auto generate a checksum of the contents of that directory.
