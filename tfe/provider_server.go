@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5/tftypes"
 )
 
-type altserver struct {
+type providerServer struct {
 	providerSchema     *tfprotov5.Schema
 	providerMetaSchema *tfprotov5.Schema
 	resourceSchemas    map[string]*tfprotov5.Schema
@@ -17,7 +17,7 @@ type altserver struct {
 	dataSourceRouter
 }
 
-func (s altserver) GetProviderSchema(ctx context.Context, req *tfprotov5.GetProviderSchemaRequest) (*tfprotov5.GetProviderSchemaResponse, error) {
+func (s providerServer) GetProviderSchema(ctx context.Context, req *tfprotov5.GetProviderSchemaRequest) (*tfprotov5.GetProviderSchemaResponse, error) {
 	return &tfprotov5.GetProviderSchemaResponse{
 		Provider:          s.providerSchema,
 		ProviderMeta:      s.providerMetaSchema,
@@ -26,26 +26,23 @@ func (s altserver) GetProviderSchema(ctx context.Context, req *tfprotov5.GetProv
 	}, nil
 }
 
-func (s altserver) PrepareProviderConfig(ctx context.Context, req *tfprotov5.PrepareProviderConfigRequest) (*tfprotov5.PrepareProviderConfigResponse, error) {
+func (s providerServer) PrepareProviderConfig(ctx context.Context, req *tfprotov5.PrepareProviderConfigRequest) (*tfprotov5.PrepareProviderConfigResponse, error) {
 	return nil, nil
-	//return &tfprotov5.PrepareProviderConfigResponse{
-	//	PreparedConfig: req.Config,
-	//}, nil
 }
 
-func (s altserver) ConfigureProvider(ctx context.Context, req *tfprotov5.ConfigureProviderRequest) (*tfprotov5.ConfigureProviderResponse, error) {
+func (s providerServer) ConfigureProvider(ctx context.Context, req *tfprotov5.ConfigureProviderRequest) (*tfprotov5.ConfigureProviderResponse, error) {
 	var diags []*tfprotov5.Diagnostic
 	return &tfprotov5.ConfigureProviderResponse{
 		Diagnostics: diags,
 	}, nil
 }
 
-func (s altserver) StopProvider(ctx context.Context, req *tfprotov5.StopProviderRequest) (*tfprotov5.StopProviderResponse, error) {
+func (s providerServer) StopProvider(ctx context.Context, req *tfprotov5.StopProviderRequest) (*tfprotov5.StopProviderResponse, error) {
 	return &tfprotov5.StopProviderResponse{}, nil
 }
 
-func AltServer() tfprotov5.ProviderServer {
-	return altserver{
+func ProviderServer() tfprotov5.ProviderServer {
+	return providerServer{
 		providerSchema: &tfprotov5.Schema{
 			Block: &tfprotov5.SchemaBlock{
 				Attributes: []*tfprotov5.SchemaAttribute{
@@ -56,15 +53,15 @@ func AltServer() tfprotov5.ProviderServer {
 						Optional:    true,
 					},
 					&tfprotov5.SchemaAttribute{
-						Name:        "ssl_skip_verify",
-						Type:        tftypes.Bool,
-						Description: descriptions["ssl_skip_verify"],
-						Optional:    true,
-					},
-					&tfprotov5.SchemaAttribute{
 						Name:        "token",
 						Type:        tftypes.String,
 						Description: descriptions["token"],
+						Optional:    true,
+					},
+					&tfprotov5.SchemaAttribute{
+						Name:        "ssl_skip_verify",
+						Type:        tftypes.Bool,
+						Description: descriptions["ssl_skip_verify"],
 						Optional:    true,
 					},
 				},
@@ -80,6 +77,13 @@ func AltServer() tfprotov5.ProviderServer {
 							Name:            "workspace",
 							Type:            tftypes.String,
 							Description:     "The workspace to fetch the remote state from.",
+							DescriptionKind: tfprotov5.StringKindPlain,
+							Required:        true,
+						},
+						{
+							Name:            "organization",
+							Type:            tftypes.String,
+							Description:     "The organization to fetch the remote state from.",
 							DescriptionKind: tfprotov5.StringKindPlain,
 							Required:        true,
 						},
