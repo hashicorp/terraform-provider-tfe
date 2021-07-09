@@ -2,11 +2,13 @@ package tfe
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math/big"
 	"os"
 
+	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5/tftypes"
 )
@@ -21,7 +23,16 @@ func init() {
 
 func (d dataSourceRemoteState) ReadDataSource(ctx context.Context, req *tfprotov5.ReadDataSourceRequest) (*tfprotov5.ReadDataSourceResponse, error) {
 	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR")
-	_, _, _ = retrieveMeta(req)
+	hostname, token, err := retrieveMeta(req)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := getClient(hostname, token, false)
+	if err != nil {
+		return nil, err
+	}
+
 	orgName, wsName, err := retrieveValues(req)
 	if err != nil {
 		return &tfprotov5.ReadDataSourceResponse{
@@ -35,7 +46,7 @@ func (d dataSourceRemoteState) ReadDataSource(ctx context.Context, req *tfprotov
 		}, nil
 	}
 
-	//stateOutput, err := d.readRemoteStateOutput(ctx, orgName, wsName)
+	_ = d.readRemoteStateOutput(ctx, client, orgName, wsName)
 
 	/*
 		stateFile := map[string]interface{}{
@@ -154,6 +165,7 @@ func retrieveMeta(req *tfprotov5.ReadDataSourceRequest) (string, string, error) 
 	var hostname string
 	var token string
 	config := req.ProviderMeta
+	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR META CONFIG %v", config)
 	val, err := config.Unmarshal(tftypes.Object{
 		AttributeTypes: map[string]tftypes.Type{
 			"hostname":        tftypes.String,
@@ -163,6 +175,7 @@ func retrieveMeta(req *tfprotov5.ReadDataSourceRequest) (string, string, error) 
 	if err != nil {
 		return hostname, token, fmt.Errorf("Error unmarshalling config: %v", err)
 	}
+	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR META VAL %v", val)
 
 	var valMap map[string]tftypes.Value
 	err = val.As(&valMap)
@@ -183,12 +196,15 @@ func retrieveMeta(req *tfprotov5.ReadDataSourceRequest) (string, string, error) 
 
 	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR META VAL hostname %s", hostname)
 	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR META VAL token %s", token)
+
+	hostname = "app.terraform.io"
+	token = "foo"
 	return hostname, token, nil
 
 }
 
 type remoteStateFile struct {
-	Outputs map[string]outputValue `json:"outputs"`
+	Outputs map[string]interface{} `json:"outputs"`
 }
 
 type outputValue struct {
@@ -196,40 +212,37 @@ type outputValue struct {
 	Value interface{} `json:"value"`
 }
 
-//func (d dataSourceRemoteState) readRemoteStateOutput(ctx context.Context, orgName, wsName string) error {
-//	tfeClient := meta.(*tfe.Client)
-//
-//	ws, err := tfeClient.Workspaces.Read(ctx, orgName, wsName)
-//	if err != nil {
-//		return fmt.Errorf("Error reading workspace: %v", err)
-//	}
-//
-//	sv, err := tfeClient.StateVersions.Current(ctx, ws.ID)
-//	if err != nil {
-//		if err == tfe.ErrResourceNotFound {
-//			return fmt.Errorf("Could not read  remote state for workspace '%s'", wsName)
-//		}
-//		return fmt.Errorf("Error remote state: %v", err)
-//	}
-//
-//	log.Printf("[DEBUG] Setting Remote State Output")
-//
-//	d.Set("download_url", sv.DownloadURL)
-//	stateData, err := tfeClient.StateVersions.Download(ctx, sv.DownloadURL)
-//	if err != nil {
-//		return fmt.Errorf("Error downloading remote state: %v", err)
-//	}
-//	stateOuptput := &remoteStateFile{}
-//	if err := json.Unmarshal(stateData, stateOuptput); err != nil {
-//		return err
-//	}
-//	log.Printf("[DEBUG] STATE OUTPUT: %v", stateOuptput)
-//
-//	for k, v := range stateOuptput.Outputs {
-//		log.Printf("[DEBUG] STATE KEY: %s", k)
-//		log.Printf("[DEBUG] STATE VALUE: %s", v.Value)
-//	}
-//	d.Set("state_output", "foo")
-//
-//	return nil
-//}
+func (d dataSourceRemoteState) readRemoteStateOutput(ctx context.Context, tfeClient *tfe.Client, orgName, wsName string) error {
+
+	ws, err := tfeClient.Workspaces.Read(ctx, orgName, wsName)
+	if err != nil {
+		return fmt.Errorf("Error reading workspace: %v", err)
+	}
+
+	sv, err := tfeClient.StateVersions.Current(ctx, ws.ID)
+	if err != nil {
+		if err == tfe.ErrResourceNotFound {
+			return fmt.Errorf("Could not read  remote state for workspace '%s'", wsName)
+		}
+		return fmt.Errorf("Error remote state: %v", err)
+	}
+
+	log.Printf("[DEBUG] Setting Remote State Output")
+
+	stateData, err := tfeClient.StateVersions.Download(ctx, sv.DownloadURL)
+	if err != nil {
+		return fmt.Errorf("Error downloading remote state: %v", err)
+	}
+	stateOuptput := &remoteStateFile{}
+	if err := json.Unmarshal(stateData, stateOuptput); err != nil {
+		return err
+	}
+	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR STATE OUTPUT: %v", stateOuptput)
+
+	for k, v := range stateOuptput.Outputs {
+		log.Printf("[DEBUG] ============OMAR=========== STATE KEY: %s", k)
+		log.Printf("[DEBUG] ============OMAR=========== STATE VALUE: %s", v)
+	}
+
+	return nil
+}
