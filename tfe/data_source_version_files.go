@@ -12,9 +12,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func dataSourceTFEVersionFiles() *schema.Resource {
+func dataSourceTFESlug() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceTFEVersionFilesRead,
+		Read: dataSourceTFESlugRead,
 
 		Schema: map[string]*schema.Schema{
 			"source_path": {
@@ -30,7 +30,7 @@ func dataSourceTFEVersionFiles() *schema.Resource {
 	}
 }
 
-func dataSourceTFEVersionFilesRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceTFESlugRead(d *schema.ResourceData, meta interface{}) error {
 	sourcePath := d.Get("source_path").(string)
 
 	log.Printf("[DEBUG] Hashing the source path files: %s", sourcePath)

@@ -76,7 +76,7 @@ func Provider() *schema.Provider {
 			"tfe_ip_ranges":               dataSourceTFEIPRanges(),
 			"tfe_oauth_client":            dataSourceTFEOAuthClient(),
 			"tfe_organization_membership": dataSourceTFEOrganizationMembership(),
-			"tfe_version_files":           dataSourceTFEVersionFiles(),
+			"tfe_slug":                    dataSourceTFESlug(),
 			"tfe_ssh_key":                 dataSourceTFESSHKey(),
 			"tfe_team":                    dataSourceTFETeam(),
 			"tfe_team_access":             dataSourceTFETeamAccess(),
