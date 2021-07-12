@@ -25,8 +25,8 @@ func TestAccTFEVersionFiles_basic(t *testing.T) {
 				Config: testAccTFEVersionFilesConfig_basic(testFixtureVersionFiles),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// check data attrs
-					resource.TestCheckResourceAttr("data.tfe_version_files.policy", "source_path", testFixtureVersionFiles),
-					resource.TestCheckResourceAttr("data.tfe_version_files.policy", "checksum", expectedChecksum),
+					resource.TestCheckResourceAttr("data.tfe_slug.policy", "source_path", testFixtureVersionFiles),
+					resource.TestCheckResourceAttr("data.tfe_slug.policy", "checksum", expectedChecksum),
 				),
 			},
 		},
@@ -35,7 +35,7 @@ func TestAccTFEVersionFiles_basic(t *testing.T) {
 
 func testAccTFEVersionFilesConfig_basic(sourcePath string) string {
 	return fmt.Sprintf(`
-data "tfe_version_files" "policy" {
+data "tfe_slug" "policy" {
   source_path = "%s"
 }
 `, sourcePath)

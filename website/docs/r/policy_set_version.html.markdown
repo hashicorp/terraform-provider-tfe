@@ -11,7 +11,7 @@ description: |-
 A policy set version is a way to version policy sets and upload policies. This resource
 enables the ability to upload a set of local policies. 
 
-This resource depends on a data source `tfe_version_files` for managing
+This resource depends on a data source `tfe_slug` for managing
 the files themselves. 
 
 See example usage for more details.
@@ -33,14 +33,14 @@ resource "tfe_policy_set" "test" {
   organization  = tfe_organization.test.id
 }
 
-data "tfe_version_files" "test" {
+data "tfe_slug" "test" {
   source_path = "policies/my-policy-set"
 }
 
 resource "tfe_policy_set_version" "test" {
   policy_set_id = tfe_policy_set.test.id
-  policies_path_contents_checksum = data.tfe_version_files.test.checksum
-  policies_path = data.tfe_version_files.test.source_path
+  policies_path_contents_checksum = data.tfe_slug.test.checksum
+  policies_path = data.tfe_slug.test.source_path
 }
 ```
 
@@ -51,10 +51,10 @@ The following arguments are supported:
 * `policy_set_id` - (Required) The ID of the Policy Set.
 * `policies_path_contents_checksum` - (Required) A checksum from hashing
 all the contents in the `policies_path`. This is auto generated as a result of using the 
-data source `tfe_version_files` field `checksum`. This can be set manually, but that requires
+data source `tfe_slug` field `checksum`. This can be set manually, but that requires
 self management of this checksum.
 * `policies_path` - (Required) This is the path to the policies. It is highly recommended to use the
-data source `tfe_version_files` and field `source_path`. This can also be set manually.
+data source `tfe_slug` and field `source_path`. This can also be set manually.
 
 ## Attributes Reference
 
