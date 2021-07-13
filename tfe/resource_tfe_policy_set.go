@@ -163,7 +163,6 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 	_, hasVCSRepo := d.GetOk("vcs_repo")
 	_, hasSlug := d.GetOk("slug")
 	if hasSlug && !hasVCSRepo {
-		log.Printf("[DEBUG] ==============OMAR CREATING PSV")
 		psv, err := tfeClient.PolicySetVersions.Create(ctx, policySet.ID)
 		if err != nil {
 			return fmt.Errorf("Error creating policy set version for policy set %s: %v", policySet.ID, err)

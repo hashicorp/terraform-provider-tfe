@@ -421,9 +421,11 @@ func TestAccTFEPolicySet_version(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "slug.%", "3"),
 					resource.TestCheckResourceAttrSet(
-						"tfe_policy_set.foobar", "ids.source_path"),
+						"tfe_policy_set.foobar", "slug.source_path"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "slug.source_path", testFixtureVersionFiles),
 					resource.TestCheckResourceAttrSet(
-						"tfe_policy_set.foobar", "ids.checksum"),
+						"tfe_policy_set.foobar", "slug.checksum"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "slug.checksum", checksum),
 				),
@@ -432,7 +434,7 @@ func TestAccTFEPolicySet_version(t *testing.T) {
 	})
 }
 
-func TestAccTFEPolicySet_Version_UpdateCreate(t *testing.T) {
+func TestAccTFEPolicySet_version_updateCreate(t *testing.T) {
 	skipIfFreeOnly(t)
 
 	policySet := &tfe.PolicySet{}
@@ -491,9 +493,7 @@ func TestAccTFEPolicySet_Version_UpdateCreate(t *testing.T) {
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "name", "tst-terraform"),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "slug.checksum", originalChecksum),
-					testAccCheckTFEPolicySetVersionValidateChecksum("tfe_policy_set.foobar.slug", testFixtureVersionFiles),
+					testAccCheckTFEPolicySetVersionValidateChecksum("tfe_policy_set.foobar", testFixtureVersionFiles),
 				),
 			},
 		},
@@ -534,7 +534,7 @@ func testAccCheckTFEPolicySetVersionValidateChecksum(n string, sourcePath string
 			return fmt.Errorf("Unable to generate checksum for policies %v", err)
 		}
 
-		if rs.Primary.Attributes["policies_path_contents_checksum"] != newChecksum {
+		if rs.Primary.Attributes["slug.checksum"] != newChecksum {
 			return fmt.Errorf("The new checksum for the policies contents did not match")
 		}
 
