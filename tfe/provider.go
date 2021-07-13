@@ -93,7 +93,6 @@ func Provider() *schema.Provider {
 			"tfe_organization_membership":    resourceTFEOrganizationMembership(),
 			"tfe_organization_token":         resourceTFEOrganizationToken(),
 			"tfe_policy_set":                 resourceTFEPolicySet(),
-			"tfe_policy_set_version":         resourceTFEPolicySetVersion(),
 			"tfe_policy_set_parameter":       resourceTFEPolicySetParameter(),
 			"tfe_registry_module":            resourceTFERegistryModule(),
 			"tfe_run_trigger":                resourceTFERunTrigger(),
