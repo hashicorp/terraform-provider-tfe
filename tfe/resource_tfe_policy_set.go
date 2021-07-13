@@ -163,17 +163,9 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 	_, hasVCSRepo := d.GetOk("vcs_repo")
 	_, hasSlug := d.GetOk("slug")
 	if hasSlug && !hasVCSRepo {
-		psv, err := tfeClient.PolicySetVersions.Create(ctx, policySet.ID)
+		err := createUploadPolicySetVersion(tfeClient, d, policySet.ID)
 		if err != nil {
-			return fmt.Errorf("Error creating policy set version for policy set %s: %v", policySet.ID, err)
-		}
-
-		slug := d.Get("slug").(map[string]interface{})
-		path := slug["source_path"].(string)
-
-		err = tfeClient.PolicySetVersions.Upload(ctx, *psv, path)
-		if err != nil {
-			return fmt.Errorf("Error uploading policies for policy set version %s: %v", psv.ID, err)
+			return err
 		}
 	}
 
@@ -346,18 +338,9 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 
 	_, hasVCSRepo := d.GetOk("vcs_repo")
 	if d.HasChange("slug") && !hasVCSRepo {
-		log.Printf("[DEBUG] ==============OMAR UPDATING PSV")
-		psv, err := tfeClient.PolicySetVersions.Create(ctx, d.Id())
+		err := createUploadPolicySetVersion(tfeClient, d, d.Id())
 		if err != nil {
-			return fmt.Errorf("Error creating policy set version for policy set %s: %v", d.Id(), err)
-		}
-
-		slug := d.Get("slug").(map[string]interface{})
-		path := slug["source_path"].(string)
-
-		err = tfeClient.PolicySetVersions.Upload(ctx, *psv, path)
-		if err != nil {
-			return fmt.Errorf("Error uploading policies for policy set version %s: %v", psv.ID, err)
+			return err
 		}
 	}
 
@@ -413,6 +396,25 @@ func resourceTFEPolicySetDelete(d *schema.ResourceData, meta interface{}) error 
 			return nil
 		}
 		return fmt.Errorf("Error deleting policy set %s: %v", d.Id(), err)
+	}
+
+	return nil
+}
+
+func createUploadPolicySetVersion(client *tfe.Client, d *schema.ResourceData, policySetID string) error {
+	log.Printf("[DEBUG] Create policy set version for policy set %s.", policySetID)
+	psv, err := client.PolicySetVersions.Create(ctx, policySetID)
+	if err != nil {
+		return fmt.Errorf("Error creating policy set version for policy set %s: %v", policySetID, err)
+	}
+
+	slug := d.Get("slug").(map[string]interface{})
+	path := slug["source_path"].(string)
+
+	log.Printf("[DEBUG] Upload policy set version %s.", psv.ID)
+	err = client.PolicySetVersions.Upload(ctx, *psv, path)
+	if err != nil {
+		return fmt.Errorf("Error uploading policies for policy set version %s: %v", psv.ID, err)
 	}
 
 	return nil

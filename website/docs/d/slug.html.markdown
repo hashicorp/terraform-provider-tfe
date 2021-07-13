@@ -1,14 +1,15 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_slug"
-sidebar_current: "docs-datasource-tfe-version-files"
+sidebar_current: "docs-datasource-tfe-slug"
 description: |-
-  Manages version files.
+  Manages files.
 ---
 # Data Source: tfe_slug
 
 Use this data source to point to a source path that contains files, and
-auto generate a checksum of the contents of that directory.
+auto generate a checksum of the contents of that directory. This is used
+to determine uniqueness of a directory.
 
 ## Example Usage
 
