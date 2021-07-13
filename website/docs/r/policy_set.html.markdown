@@ -49,10 +49,8 @@ resource "tfe_policy_set" "test" {
 }
 ```
 
-Local policies (non-VCS based usage, relies on Policy Set Version upload).
+Manually uploaded policy set, in lieu of VCS:
 
-_Note: this cannot be used when VCS is defined, and cannot be used when
-policy_ids are defined._
 ```hcl
 data "tfe_slug" "test" {
   // point to the local directory where the policies are located.

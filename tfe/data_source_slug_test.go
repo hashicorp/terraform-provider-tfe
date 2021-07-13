@@ -26,7 +26,7 @@ func TestAccTFEVersionFiles_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// check data attrs
 					resource.TestCheckResourceAttr("data.tfe_slug.policy", "source_path", testFixtureVersionFiles),
-					resource.TestCheckResourceAttr("data.tfe_slug.policy", "checksum", expectedChecksum),
+					resource.TestCheckResourceAttr("data.tfe_slug.policy", "id", expectedChecksum),
 				),
 			},
 		},

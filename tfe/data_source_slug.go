@@ -21,11 +21,6 @@ func dataSourceTFESlug() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-
-			"checksum": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
 		},
 	}
 }
@@ -39,7 +34,6 @@ func dataSourceTFESlugRead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error generating the checksum for the source path files: %v", err)
 	}
 	d.SetId(chksum)
-	d.Set("checksum", chksum)
 
 	return nil
 }

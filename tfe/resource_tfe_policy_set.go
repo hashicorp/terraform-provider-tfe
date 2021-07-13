@@ -163,7 +163,7 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 	_, hasVCSRepo := d.GetOk("vcs_repo")
 	_, hasSlug := d.GetOk("slug")
 	if hasSlug && !hasVCSRepo {
-		err := createUploadPolicySetVersion(tfeClient, d, policySet.ID)
+		err := resourceTFEPolicySetUploadVersion(tfeClient, d, policySet.ID)
 		if err != nil {
 			return err
 		}
@@ -338,7 +338,7 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 
 	_, hasVCSRepo := d.GetOk("vcs_repo")
 	if d.HasChange("slug") && !hasVCSRepo {
-		err := createUploadPolicySetVersion(tfeClient, d, d.Id())
+		err := resourceTFEPolicySetUploadVersion(tfeClient, d, d.Id())
 		if err != nil {
 			return err
 		}
@@ -401,7 +401,7 @@ func resourceTFEPolicySetDelete(d *schema.ResourceData, meta interface{}) error 
 	return nil
 }
 
-func createUploadPolicySetVersion(client *tfe.Client, d *schema.ResourceData, policySetID string) error {
+func resourceTFEPolicySetUploadVersion(client *tfe.Client, d *schema.ResourceData, policySetID string) error {
 	log.Printf("[DEBUG] Create policy set version for policy set %s.", policySetID)
 	psv, err := client.PolicySetVersions.Create(ctx, policySetID)
 	if err != nil {

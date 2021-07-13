@@ -394,7 +394,7 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 	})
 }
 
-func TestAccTFEPolicySet_version(t *testing.T) {
+func TestAccTFEPolicySet_versionedSlug(t *testing.T) {
 	skipIfFreeOnly(t)
 
 	policySet := &tfe.PolicySet{}
@@ -410,7 +410,7 @@ func TestAccTFEPolicySet_version(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySet_versionbasic(rInt, testFixtureVersionFiles),
+				Config: testAccTFEPolicySet_versionSlug(rInt, testFixtureVersionFiles),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
@@ -419,22 +419,22 @@ func TestAccTFEPolicySet_version(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "description", "Policy Set"),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "slug.%", "3"),
+						"tfe_policy_set.foobar", "slug.%", "2"),
 					resource.TestCheckResourceAttrSet(
 						"tfe_policy_set.foobar", "slug.source_path"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "slug.source_path", testFixtureVersionFiles),
 					resource.TestCheckResourceAttrSet(
-						"tfe_policy_set.foobar", "slug.checksum"),
+						"tfe_policy_set.foobar", "slug.id"),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "slug.checksum", checksum),
+						"tfe_policy_set.foobar", "slug.id", checksum),
 				),
 			},
 		},
 	})
 }
 
-func TestAccTFEPolicySet_version_updateCreate(t *testing.T) {
+func TestAccTFEPolicySet_versionedSlugUpdate(t *testing.T) {
 	skipIfFreeOnly(t)
 
 	policySet := &tfe.PolicySet{}
@@ -464,7 +464,7 @@ func TestAccTFEPolicySet_version_updateCreate(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySet_versionbasic(rInt, testFixtureVersionFiles),
+				Config: testAccTFEPolicySet_versionSlug(rInt, testFixtureVersionFiles),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
@@ -475,7 +475,7 @@ func TestAccTFEPolicySet_version_updateCreate(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "global", "false"),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "slug.checksum", originalChecksum),
+						"tfe_policy_set.foobar", "slug.id", originalChecksum),
 				),
 			},
 			{
@@ -488,7 +488,7 @@ func TestAccTFEPolicySet_version_updateCreate(t *testing.T) {
 						t.Fatalf("error writing to file %s", newFile)
 					}
 				},
-				Config: testAccTFEPolicySet_versionbasic(rInt, testFixtureVersionFiles),
+				Config: testAccTFEPolicySet_versionSlug(rInt, testFixtureVersionFiles),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					resource.TestCheckResourceAttr(
@@ -500,7 +500,7 @@ func TestAccTFEPolicySet_version_updateCreate(t *testing.T) {
 	})
 }
 
-func TestAccTFEPolicySet_version_no_vcs_repo(t *testing.T) {
+func TestAccTFEPolicySet_versionedNoConflicts(t *testing.T) {
 	skipIfFreeOnly(t)
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -511,7 +511,7 @@ func TestAccTFEPolicySet_version_no_vcs_repo(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccTFEPolicySet_versionsNoVCS(rInt, testFixtureVersionFiles),
+				Config:      testAccTFEPolicySet_versionsConflict(rInt, testFixtureVersionFiles),
 				ExpectError: regexp.MustCompile(`Conflicting configuration arguments`),
 			},
 		},
@@ -534,7 +534,7 @@ func testAccCheckTFEPolicySetVersionValidateChecksum(n string, sourcePath string
 			return fmt.Errorf("Unable to generate checksum for policies %v", err)
 		}
 
-		if rs.Primary.Attributes["slug.checksum"] != newChecksum {
+		if rs.Primary.Attributes["slug.id"] != newChecksum {
 			return fmt.Errorf("The new checksum for the policies contents did not match")
 		}
 
@@ -966,7 +966,7 @@ resource "tfe_policy_set" "foobar" {
 }`, rInt)
 }
 
-func testAccTFEPolicySet_versionbasic(rInt int, sourcePath string) string {
+func testAccTFEPolicySet_versionSlug(rInt int, sourcePath string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
@@ -985,7 +985,7 @@ resource "tfe_policy_set" "foobar" {
 }`, rInt, sourcePath)
 }
 
-func testAccTFEPolicySet_versionsNoVCS(rInt int, sourcePath string) string {
+func testAccTFEPolicySet_versionsConflict(rInt int, sourcePath string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
