@@ -13,7 +13,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5/tftypes"
 )
 
-type dataSourceRemoteState struct{}
+type dataSourceRemoteState struct {
+	meta providerMeta
+}
 
 var stderr *os.File
 
@@ -23,6 +25,9 @@ func init() {
 
 func (d dataSourceRemoteState) ReadDataSource(ctx context.Context, req *tfprotov5.ReadDataSourceRequest) (*tfprotov5.ReadDataSourceResponse, error) {
 	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR")
+	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR ---------META")
+	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR ---------META")
+	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR ---------META: %v", d.meta)
 	hostname, token, err := retrieveMeta(req)
 	if err != nil {
 		return nil, err
