@@ -53,6 +53,12 @@ func resourceTFEPolicySet() *schema.Resource {
 				ConflictsWith: []string{"policy_ids"},
 			},
 
+			"slug": {
+				Type:          schema.TypeMap,
+				Optional:      true,
+				ConflictsWith: []string{"policy_ids", "vcs_repo"},
+			},
+
 			"policy_ids": {
 				Type:          schema.TypeSet,
 				Optional:      true,
@@ -153,6 +159,14 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 	if err != nil {
 		return fmt.Errorf(
 			"Error creating policy set %s for organization %s: %v", name, organization, err)
+	}
+	_, hasVCSRepo := d.GetOk("vcs_repo")
+	_, hasSlug := d.GetOk("slug")
+	if hasSlug && !hasVCSRepo {
+		err := resourceTFEPolicySetUploadVersion(tfeClient, d, policySet.ID)
+		if err != nil {
+			return err
+		}
 	}
 
 	d.SetId(policySet.ID)
@@ -322,6 +336,14 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 		}
 	}
 
+	_, hasVCSRepo := d.GetOk("vcs_repo")
+	if d.HasChange("slug") && !hasVCSRepo {
+		err := resourceTFEPolicySetUploadVersion(tfeClient, d, d.Id())
+		if err != nil {
+			return err
+		}
+	}
+
 	if !global && d.HasChange("workspace_ids") {
 		oldWorkspaceIDValues, newWorkspaceIDValues := d.GetChange("workspace_ids")
 		newWorkspaceIDsSet := newWorkspaceIDValues.(*schema.Set)
@@ -374,6 +396,25 @@ func resourceTFEPolicySetDelete(d *schema.ResourceData, meta interface{}) error 
 			return nil
 		}
 		return fmt.Errorf("Error deleting policy set %s: %v", d.Id(), err)
+	}
+
+	return nil
+}
+
+func resourceTFEPolicySetUploadVersion(client *tfe.Client, d *schema.ResourceData, policySetID string) error {
+	log.Printf("[DEBUG] Create policy set version for policy set %s.", policySetID)
+	psv, err := client.PolicySetVersions.Create(ctx, policySetID)
+	if err != nil {
+		return fmt.Errorf("Error creating policy set version for policy set %s: %v", policySetID, err)
+	}
+
+	slug := d.Get("slug").(map[string]interface{})
+	path := slug["source_path"].(string)
+
+	log.Printf("[DEBUG] Upload policy set version %s.", psv.ID)
+	err = client.PolicySetVersions.Upload(ctx, *psv, path)
+	if err != nil {
+		return fmt.Errorf("Error uploading policies for policy set version %s: %v", psv.ID, err)
 	}
 
 	return nil
