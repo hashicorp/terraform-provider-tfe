@@ -3,7 +3,6 @@ package tfe
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5/tftypes"
@@ -61,11 +60,6 @@ func (p *providerServer) StopProvider(ctx context.Context, req *tfprotov5.StopPr
 }
 
 func (p *providerServer) ValidateDataSourceConfig(ctx context.Context, req *tfprotov5.ValidateDataSourceConfigRequest) (*tfprotov5.ValidateDataSourceConfigResponse, error) {
-	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR DATA SOURCE ROUTER VALIDATE")
-	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR DATA SOURCE ROUTER VALIDATE")
-	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR DATA SOURCE ROUTER VALIDATE")
-	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR DATA SOURCE ROUTER VALIDATE")
-	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR DATA SOURCE ROUTER VALIDATE")
 	ds, ok := p.dataSourceRouter[req.TypeName]
 	if !ok {
 		return nil, errUnsupportedDataSource(req.TypeName)
@@ -74,12 +68,6 @@ func (p *providerServer) ValidateDataSourceConfig(ctx context.Context, req *tfpr
 }
 
 func (p *providerServer) ReadDataSource(ctx context.Context, req *tfprotov5.ReadDataSourceRequest) (*tfprotov5.ReadDataSourceResponse, error) {
-	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR DATA SOURCE ROUTER READ")
-	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR DATA SOURCE ROUTER READ")
-	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR DATA SOURCE ROUTER READ")
-	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR DATA SOURCE ROUTER READ")
-	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR DATA SOURCE ROUTER READ")
-	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR DATA SOURCE ROUTER READ")
 	ds, ok := p.dataSourceRouter[req.TypeName]
 	if !ok {
 		return nil, errUnsupportedDataSource(req.TypeName)
@@ -145,8 +133,6 @@ func ProviderServer() tfprotov5.ProviderServer {
 		},
 		dataSourceRouter: map[string]func(p *providerServer) tfprotov5.DataSourceServer{
 			"tfe_state_outputs": newDataSourceRemoteState,
-
-			//	"tfe_remote_state": dataSourceRemoteState{},
 		},
 	}
 }
@@ -169,7 +155,7 @@ func retrieveProviderMeta(req *tfprotov5.ConfigureProviderRequest) (providerMeta
 	var valMap map[string]tftypes.Value
 	err = val.As(&valMap)
 	if err != nil {
-		return meta, fmt.Errorf("Could not set the value to map %v", err)
+		return meta, fmt.Errorf("Could not set the schema attributes to map %v", err)
 	}
 	err = valMap["hostname"].As(&hostname)
 	if err != nil {

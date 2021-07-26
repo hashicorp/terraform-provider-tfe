@@ -38,15 +38,12 @@ func (d dataSourceRemoteState) ReadDataSource(ctx context.Context, req *tfprotov
 	resp := &tfprotov5.ReadDataSourceResponse{
 		Diagnostics: []*tfprotov5.Diagnostic{},
 	}
-	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR: (dataSourceRemoteState) ReadDataSource")
-	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR: (dataSourceRemoteState) ReadDataSource")
-	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR: (dataSourceRemoteState) ReadDataSource")
 	client, err := getClient(d.provider.meta.hostname, d.provider.meta.token, false)
 	if err != nil {
 		return nil, err
 	}
 
-	orgName, wsName, err := retrieveValues(req)
+	orgName, wsName, err := readConfigValues(req)
 	if err != nil {
 		resp.Diagnostics = append(resp.Diagnostics, &tfprotov5.Diagnostic{
 			Severity: tfprotov5.DiagnosticSeverityError,
@@ -57,7 +54,6 @@ func (d dataSourceRemoteState) ReadDataSource(ctx context.Context, req *tfprotov
 	}
 
 	remoteStateOutput, err := d.readRemoteStateOutput(ctx, client, orgName, wsName)
-	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR: remoteStateOutput: ", remoteStateOutput)
 	if err != nil {
 		resp.Diagnostics = append(resp.Diagnostics, &tfprotov5.Diagnostic{
 			Severity: tfprotov5.DiagnosticSeverityError,
@@ -66,39 +62,15 @@ func (d dataSourceRemoteState) ReadDataSource(ctx context.Context, req *tfprotov
 		})
 		return resp, nil
 	}
-	//parsedStateOutput := parseRemoteStateOutput(remoteStateOutput)
-	//log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR: parsedStateOutput: ", parsedStateOutput)
 
-	tftypesState := map[string]tftypes.Value{}
-	stateTypes := map[string]tftypes.Type{}
-
-	for name, outputValues := range remoteStateOutput.OutputValues {
-		marshData, err := outputValues.Value.Type().MarshalJSON()
-		if err != nil {
-			log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR: EEROOOOOOOOORRRRRRRR %v", err)
-			//return err
-		}
-		tfType, err := tftypes.ParseJSONType(marshData)
-		if err != nil {
-			log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR: EEROOOOOOOOORRRRRRRR %v", err)
-			//return err
-		}
-		mByte, err := ctyjson.Marshal(outputValues.Value, outputValues.Value.Type())
-		if err != nil {
-			log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR: EEROOOOOOOOORRRRRRRR %v", err)
-			//return err
-		}
-		rawState := tfprotov5.RawState{
-			JSON: mByte,
-		}
-		newVal, err := rawState.Unmarshal(tfType)
-		if err != nil {
-			log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR: EEROOOOOOOOORRRRRRRR")
-			//	return fmt.Errorf("ERROOR %v", err)
-		}
-		//newVal := tftypes.NewValue(tfType, outV)
-		tftypesState[name] = newVal
-		stateTypes[name] = tfType
+	tftypesValues, stateTypes, err := parseStateOutput(remoteStateOutput)
+	if err != nil {
+		resp.Diagnostics = append(resp.Diagnostics, &tfprotov5.Diagnostic{
+			Severity: tfprotov5.DiagnosticSeverityError,
+			Summary:  "Error parsing remote state output",
+			Detail:   fmt.Sprintf("Error parsing remote state output: %v", err),
+		})
+		return resp, nil
 	}
 
 	state, err := tfprotov5.NewDynamicValue(tftypes.Object{
@@ -116,7 +88,7 @@ func (d dataSourceRemoteState) ReadDataSource(ctx context.Context, req *tfprotov
 	}, map[string]tftypes.Value{
 		"workspace":    tftypes.NewValue(tftypes.String, wsName),
 		"organization": tftypes.NewValue(tftypes.String, orgName),
-		"values":       tftypes.NewValue(tftypes.Object{AttributeTypes: stateTypes}, tftypesState),
+		"values":       tftypes.NewValue(tftypes.Object{AttributeTypes: stateTypes}, tftypesValues),
 	}))
 
 	if err != nil {
@@ -139,7 +111,7 @@ func (d dataSourceRemoteState) ValidateDataSourceConfig(ctx context.Context, req
 	return &tfprotov5.ValidateDataSourceConfigResponse{}, nil
 }
 
-func retrieveValues(req *tfprotov5.ReadDataSourceRequest) (string, string, error) {
+func readConfigValues(req *tfprotov5.ReadDataSourceRequest) (string, string, error) {
 	var orgName string
 	var wsName string
 	var err error
@@ -158,79 +130,63 @@ func retrieveValues(req *tfprotov5.ReadDataSourceRequest) (string, string, error
 	var valMap map[string]tftypes.Value
 	err = val.As(&valMap)
 	if err != nil {
-		return orgName, wsName, fmt.Errorf("Error assigning Value to Golang map: %v", err)
+		return orgName, wsName, fmt.Errorf("Error assigning configuration attributes to map: %v", err)
 	}
 
 	err = valMap["organization"].As(&orgName)
 	if err != nil {
-		return orgName, wsName, fmt.Errorf("Error assigning 'organization' Value to Golang string: %v", err)
+		return orgName, wsName, fmt.Errorf("Error assigning 'organization' value to string: %v", err)
 	}
 	err = valMap["workspace"].As(&wsName)
 	if err != nil {
-		return orgName, wsName, fmt.Errorf("Error assigning 'workspace' Value to Golang string: %v", err)
+		return orgName, wsName, fmt.Errorf("Error assigning 'workspace' value to string: %v", err)
 	}
 
 	return orgName, wsName, nil
 }
 
-type remoteState struct {
-	Outputs map[string]outputValue `json:"outputs"`
+type rawRemoteState struct {
+	RootOutputs map[string]rawOutputState `json:"outputs"`
 }
 
-type outputValue struct {
-	Type  interface{} `json:"type"`
-	Value interface{} `json:"value"`
-}
-
-type stateV4 struct {
-	RootOutputs map[string]outputStateV4 `json:"outputs"`
-}
-
-type outputStateV4 struct {
+type rawOutputState struct {
 	ValueRaw     json.RawMessage `json:"value"`
 	ValueTypeRaw json.RawMessage `json:"type"`
 	Sensitive    bool            `json:"sensitive,omitempty"`
 }
 
-type OutputValue struct {
-	Addr      AbsOutputValue
+type OutputData struct {
+	Addr      outputValue
 	Value     cty.Value
 	Sensitive bool
 }
 
-type AbsOutputValue struct {
-	OutputValue OutputValueTwo
+type outputValue struct {
+	Value outputValueName
 }
 
-type OutputValueTwo struct {
+type outputValueName struct {
 	Name string
 }
 
-type FinalOutputValue struct {
-	OutputValues map[string]*OutputValue
+type remoteStateData struct {
+	Outputs map[string]*OutputData
 }
 
-func (d dataSourceRemoteState) readRemoteStateOutput(ctx context.Context, tfeClient *tfe.Client, orgName, wsName string) (*FinalOutputValue, error) {
+func (d dataSourceRemoteState) readRemoteStateOutput(ctx context.Context, tfeClient *tfe.Client, orgName, wsName string) (*remoteStateData, error) {
 	log.Printf("[DEBUG] Reading the Workspace %s in Organization %s", wsName, orgName)
 	ws, err := tfeClient.Workspaces.Read(ctx, orgName, wsName)
 	if err != nil {
 		return nil, fmt.Errorf("Error reading workspace: %v", err)
 	}
 
-	/*
-
-		TODO: CHeck this query
-		   st, err := cli.StateVersions.CurrentWithOptions(ctx, ws.ID, &tfe.StateVersionCurrentOptions{
-		              Include: "outputs",
-		      })
-	*/
 	log.Printf("[DEBUG] Reading the current StateVersion for Workspace ID %s.", ws.ID)
 	sv, err := tfeClient.StateVersions.Current(ctx, ws.ID)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			return nil, fmt.Errorf("Could not read  remote state for workspace '%s'", wsName)
+			return nil, fmt.Errorf("Current remote state for workspace '%s' not found.", wsName)
 		}
-		return nil, fmt.Errorf("Error remote state: %v", err)
+		return nil, fmt.Errorf("Could not read the current remote state for workspace '%s' : %v", wsName, err)
 	}
 
 	log.Printf("[DEBUG] Downloading State Version")
@@ -243,21 +199,21 @@ func (d dataSourceRemoteState) readRemoteStateOutput(ctx context.Context, tfeCli
 	read := bytes.NewReader(stateData)
 	src, err := ioutil.ReadAll(read)
 	if err != nil {
-		return nil, fmt.Errorf("ERROOR %v", err)
+		return nil, fmt.Errorf("Could not read state data: %v", err)
 	}
-	sV4 := &stateV4{}
-	err = json.Unmarshal(src, sV4)
+	rrs := &rawRemoteState{}
+	err = json.Unmarshal(src, rrs)
 	if err != nil {
-		return nil, fmt.Errorf("ERROOR %v", err)
+		return nil, fmt.Errorf("Could not unmarshal state data: %v", err)
 	}
 
-	fov := &FinalOutputValue{
-		OutputValues: map[string]*OutputValue{},
+	fov := &remoteStateData{
+		Outputs: map[string]*OutputData{},
 	}
-	for name, fos := range sV4.RootOutputs {
-		os := &OutputValue{
-			Addr: AbsOutputValue{
-				OutputValue: OutputValueTwo{
+	for name, fos := range rrs.RootOutputs {
+		os := &OutputData{
+			Addr: outputValue{
+				Value: outputValueName{
 					Name: name,
 				},
 			},
@@ -266,121 +222,48 @@ func (d dataSourceRemoteState) readRemoteStateOutput(ctx context.Context, tfeCli
 
 		ty, err := ctyjson.UnmarshalType([]byte(fos.ValueTypeRaw))
 		if err != nil {
-			return nil, fmt.Errorf("ERROOR %v", err)
+			return nil, fmt.Errorf("Could not unmarshal type: %v", err)
 		}
 
 		val, err := ctyjson.Unmarshal([]byte(fos.ValueRaw), ty)
 		if err != nil {
-			return nil, fmt.Errorf("ERROOR %v", err)
+			return nil, fmt.Errorf("Could not unmarshal value: %v", err)
 		}
 
 		os.Value = val
-		fov.OutputValues[name] = os
+		fov.Outputs[name] = os
 	}
-
-	//stateOuptput := &remoteState{}
-	//if err := json.Unmarshal(stateData, stateOuptput); err != nil {
-	//	return nil, fmt.Errorf("Could not unmarshal remote state output %v", err)
-	//}
 
 	return fov, nil
 }
 
-func parseRemoteStateOutput(stateOutput *FinalOutputValue) error {
-	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR: parseRemoteStateOutput")
-	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR: parseRemoteStateOutput")
-	log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR: parseRemoteStateOutput")
-
-	tftypesState := map[string]tftypes.Value{}
+func parseStateOutput(stateOutput *remoteStateData) (map[string]tftypes.Value, map[string]tftypes.Type, error) {
+	tftypesValues := map[string]tftypes.Value{}
 	stateTypes := map[string]tftypes.Type{}
 
-	for name, outputValues := range stateOutput.OutputValues {
-		log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR: NAME: ", name)
-		log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR: VALUE: ", outputValues.Value)
-		log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR: TYPE: ", outputValues.Value.Type())
-		log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR: KEY: ", outputValues)
-
+	for name, outputValues := range stateOutput.Outputs {
 		marshData, err := outputValues.Value.Type().MarshalJSON()
 		if err != nil {
-			log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR: EEROOOOOOOOORRRRRRRR %v", err)
-			//return err
+			return nil, nil, fmt.Errorf("Could not marshall output type: %v", err)
 		}
 		tfType, err := tftypes.ParseJSONType(marshData)
 		if err != nil {
-			//return err
-			log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR: EEROOOOOOOOORRRRRRRR %v", err)
+			return nil, nil, fmt.Errorf("Could not parse json type data: %v", err)
 		}
-		log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR: TF TYPE: ", tfType)
-
 		mByte, err := ctyjson.Marshal(outputValues.Value, outputValues.Value.Type())
 		if err != nil {
-			//return err
-			log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR: EEROOOOOOOOORRRRRRRR %v", err)
+			return nil, nil, fmt.Errorf("Could not marshal output value and output type: %v", err)
 		}
-		log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR: BYTE: ", string(mByte))
-
-		outV := []string{}
-		//err = gocty.FromCtyValue(outputValues.Value, &outV)
-		//err = json.Unmarshal(mByte, &outV)
-		if err != nil {
-			log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR: EEROOOOOOOOORRRRRRRR %v", err)
-			//return fmt.Errorf("ERROOR %v", err)
-		}
-		log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR: OUTPUT VALUE: ", outV)
-
-		log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR: VALUE INTERFCE: ", tfType)
-
 		rawState := tfprotov5.RawState{
 			JSON: mByte,
 		}
 		newVal, err := rawState.Unmarshal(tfType)
 		if err != nil {
-			log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR: EEROOOOOOOOORRRRRRRR")
-			//return fmt.Errorf("ERROOR %v", err)
+			return nil, nil, fmt.Errorf("Could not unmarshal tftype into value: %v", err)
 		}
-		//newVal := tftypes.NewValue(tfType, outV)
-		log.Printf("[DEBUG] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@OMAR: NEW VAL: ", newVal)
-		tftypesState[name] = newVal
+		tftypesValues[name] = newVal
 		stateTypes[name] = tfType
 	}
-	return nil
-}
 
-/*
-	stateFile := map[string]interface{}{
-		"foo":   []interface{}{"a", "b", "c"},
-		"hello": "world",
-	}
-*/
-//	stateFile := map[string]interface{}{
-//		"foo":   []interface{}{"a", "b", "c"},
-//		"hello": int64(123),
-//		"quuz":  false,
-//	}
-//for k, v := range stateFile {
-//	switch val := v.(type) {
-//	case string:
-//		tftypesState[k] = tftypes.NewValue(tftypes.String, val)
-//		stateTypes[k] = tftypes.String
-//	case int64:
-//		tftypesState[k] = tftypes.NewValue(tftypes.Number, big.NewFloat(float64(val)))
-//		stateTypes[k] = tftypes.Number
-//	case bool:
-//		tftypesState[k] = tftypes.NewValue(tftypes.Bool, val)
-//		stateTypes[k] = tftypes.Bool
-//	case []interface{}:
-//		elements := []tftypes.Value{}
-//		types := []tftypes.Type{}
-//		for _, element := range val {
-//			switch el := element.(type) {
-//			case string:
-//				elements = append(elements, tftypes.NewValue(tftypes.String, el))
-//				types = append(types, tftypes.String)
-//			default:
-//				panic(fmt.Sprintf("unknown type %T", element))
-//			}
-//		}
-//		tftypesState[k] = tftypes.NewValue(tftypes.Tuple{ElementTypes: types}, elements)
-//		stateTypes[k] = tftypes.Tuple{ElementTypes: types}
-//	}
-//}
+	return tftypesValues, stateTypes, nil
+}
