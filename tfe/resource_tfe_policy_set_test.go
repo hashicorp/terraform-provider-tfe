@@ -2,7 +2,9 @@ package tfe
 
 import (
 	"fmt"
+	"io/ioutil"
 	"math/rand"
+	"os"
 	"regexp"
 	"testing"
 	"time"
@@ -390,6 +392,154 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestAccTFEPolicySet_versionedSlug(t *testing.T) {
+	skipIfFreeOnly(t)
+
+	policySet := &tfe.PolicySet{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	checksum, err := hashPolicies(testFixtureVersionFiles)
+	if err != nil {
+		t.Fatalf("Unable to generate checksum for policies %v", err)
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicySet_versionSlug(rInt, testFixtureVersionFiles),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					testAccCheckTFEPolicySetAttributes(policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "tst-terraform"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "description", "Policy Set"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "slug.%", "2"),
+					resource.TestCheckResourceAttrSet(
+						"tfe_policy_set.foobar", "slug.source_path"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "slug.source_path", testFixtureVersionFiles),
+					resource.TestCheckResourceAttrSet(
+						"tfe_policy_set.foobar", "slug.id"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "slug.id", checksum),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEPolicySet_versionedSlugUpdate(t *testing.T) {
+	skipIfFreeOnly(t)
+
+	policySet := &tfe.PolicySet{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	originalChecksum, err := hashPolicies(testFixtureVersionFiles)
+	if err != nil {
+		t.Fatalf("Unable to generate checksum for policies %v", err)
+	}
+
+	newFile := fmt.Sprintf("%s/newfile.test.sentinel", testFixtureVersionFiles)
+	removeFile := func() {
+		// This func is used below, that is why it is not an anonymous function.
+		// It is used because if there is a test fatal (t.Fatal), then defer does
+		// not get called. So we call this `removeFile` function both in the defer
+		// and explicitly below.
+		err := os.Remove(newFile)
+		if err != nil {
+			t.Fatalf("Error removing file %v", err)
+		}
+	}
+	defer removeFile()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicySet_versionSlug(rInt, testFixtureVersionFiles),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					testAccCheckTFEPolicySetAttributes(policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "tst-terraform"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "description", "Policy Set"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "slug.id", originalChecksum),
+				),
+			},
+			{
+				PreConfig: func() {
+					err = ioutil.WriteFile(newFile, []byte("main = rule { true }"), 0755)
+					if err != nil {
+						// this function is called here as well as the defer because
+						// when t.Fatal is called, it exits the program and ignores defers.
+						removeFile()
+						t.Fatalf("error writing to file %s", newFile)
+					}
+				},
+				Config: testAccTFEPolicySet_versionSlug(rInt, testFixtureVersionFiles),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "tst-terraform"),
+					testAccCheckTFEPolicySetVersionValidateChecksum("tfe_policy_set.foobar", testFixtureVersionFiles),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEPolicySet_versionedNoConflicts(t *testing.T) {
+	skipIfFreeOnly(t)
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFEPolicySet_versionsConflict(rInt, testFixtureVersionFiles),
+				ExpectError: regexp.MustCompile(`Conflicting configuration arguments`),
+			},
+		},
+	})
+}
+
+func testAccCheckTFEPolicySetVersionValidateChecksum(n string, sourcePath string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return fmt.Errorf("Not found: %s", n)
+		}
+
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("No instance ID is set")
+		}
+
+		newChecksum, err := hashPolicies(sourcePath)
+		if err != nil {
+			return fmt.Errorf("Unable to generate checksum for policies %v", err)
+		}
+
+		if rs.Primary.Attributes["slug.id"] != newChecksum {
+			return fmt.Errorf("The new checksum for the policies contents did not match")
+		}
+
+		return nil
+	}
 }
 
 func TestAccTFEPolicySet_invalidName(t *testing.T) {
@@ -814,4 +964,48 @@ resource "tfe_policy_set" "foobar" {
   organization = tfe_organization.foobar.id
   policy_ids   = [tfe_sentinel_policy.foo.id]
 }`, rInt)
+}
+
+func testAccTFEPolicySet_versionSlug(rInt int, sourcePath string) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+data "tfe_slug" "policy" {
+  source_path = "%s"
+}
+
+resource "tfe_policy_set" "foobar" {
+  name         = "tst-terraform"
+  description  = "Policy Set"
+  organization = tfe_organization.foobar.id
+	slug = data.tfe_slug.policy
+}`, rInt, sourcePath)
+}
+
+func testAccTFEPolicySet_versionsConflict(rInt int, sourcePath string) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+data "tfe_slug" "policy" {
+  source_path = "%s"
+}
+
+resource "tfe_policy_set" "foobar" {
+  name         = "tst-terraform"
+  description  = "Policy Set"
+  organization = tfe_organization.foobar.id
+	slug = data.tfe_slug.policy
+  vcs_repo {
+    identifier         = "foo"
+    branch             = "foo"
+    ingress_submodules = true
+    oauth_token_id     = "id"
+  }
+} `, rInt, sourcePath)
 }
