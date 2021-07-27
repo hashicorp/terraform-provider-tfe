@@ -76,22 +76,26 @@ func (d dataSourceStateOutputs) ReadDataSource(ctx context.Context, req *tfproto
 		return resp, nil
 	}
 
+	id := fmt.Sprintf("%s-%s", orgName, wsName)
 	state, err := tfprotov5.NewDynamicValue(tftypes.Object{
 		AttributeTypes: map[string]tftypes.Type{
 			"workspace":    tftypes.String,
 			"organization": tftypes.String,
 			"values":       tftypes.DynamicPseudoType,
+			"id":           tftypes.String,
 		},
 	}, tftypes.NewValue(tftypes.Object{
 		AttributeTypes: map[string]tftypes.Type{
 			"workspace":    tftypes.String,
 			"organization": tftypes.String,
 			"values":       tftypes.Object{AttributeTypes: stateTypes},
+			"id":           tftypes.String,
 		},
 	}, map[string]tftypes.Value{
 		"workspace":    tftypes.NewValue(tftypes.String, wsName),
 		"organization": tftypes.NewValue(tftypes.String, orgName),
 		"values":       tftypes.NewValue(tftypes.Object{AttributeTypes: stateTypes}, tftypesValues),
+		"id":           tftypes.NewValue(tftypes.String, id),
 	}))
 
 	if err != nil {
@@ -125,6 +129,7 @@ func (d dataSourceStateOutputs) readConfigValues(req *tfprotov5.ReadDataSourceRe
 			"workspace":    tftypes.String,
 			"organization": tftypes.String,
 			"values":       tftypes.String,
+			"id":           tftypes.String,
 		}})
 	if err != nil {
 		return orgName, wsName, fmt.Errorf("Error unmarshalling config: %v", err)

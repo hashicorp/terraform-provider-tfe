@@ -171,6 +171,11 @@ func PluginProviderServer() tfprotov5.ProviderServer {
 					Version: 1,
 					Attributes: []*tfprotov5.SchemaAttribute{
 						{
+							Name:     "id",
+							Type:     tftypes.String,
+							Computed: true,
+						},
+						{
 							Name:            "workspace",
 							Type:            tftypes.String,
 							Description:     "The workspace to fetch the remote state from.",

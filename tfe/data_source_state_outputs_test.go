@@ -28,7 +28,8 @@ func TestAccTFEStateOutputs(t *testing.T) {
 	defer orgCleanup()
 	defer wsCleanup()
 
-	expectedOutput := "hello world"
+	// This is the value in test-fixtures/state-versions/terraform.tfstate
+	expectedOutput := "9023256633839603543"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -37,7 +38,7 @@ func TestAccTFEStateOutputs(t *testing.T) {
 			{
 				Config: testAccTFEStateOutputs_dataSource(rInt, orgName, wsName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					testFooBar(orgName),
+					//testFooBar(orgName),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "name", fmt.Sprintf("tst-%d", rInt)),
 					resource.TestCheckResourceAttr(
@@ -155,7 +156,6 @@ data "tfe_state_outputs" "foobar" {
 
 output "states" {
 	// this references the 'output "foo"' in the testAccTFEStateOutputs_defaultOutputs config
- // value = data.tfe_state_outputs.foobar.values.foo
-	value = "hello world"
+	value = data.tfe_state_outputs.foobar.values.test_output
 }`, rInt, rInt, org, workspace)
 }
