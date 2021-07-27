@@ -2,10 +2,14 @@ package tfe
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
 
+	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
+	tfmux "github.com/hashicorp/terraform-plugin-mux"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -15,12 +19,41 @@ import (
 
 var testAccProviders map[string]*schema.Provider
 var testAccProvider *schema.Provider
+var testAccMuxedProviders map[string]func() (tfprotov5.ProviderServer, error)
 
 func init() {
 	testAccProvider = Provider()
 	testAccProviders = map[string]*schema.Provider{
 		"tfe": testAccProvider,
 	}
+	testAccMuxedProviders = map[string]func() (tfprotov5.ProviderServer, error){
+		"tfe": func() (tfprotov5.ProviderServer, error) {
+			ctx := context.Background()
+			mux, err := tfmux.NewSchemaServerFactory(
+				ctx, PluginProviderServer, testAccProvider.GRPCProvider,
+			)
+			if err != nil {
+				return nil, err
+			}
+
+			return mux.Server(), nil
+		},
+	}
+}
+
+func getClientByEnv() (*tfe.Client, error) {
+	if os.Getenv("TFE_HOSTNAME") == "" && (os.Getenv("TFE_TOKEN") == "") {
+		return nil, fmt.Errorf("must provide environment variables TFE_HOSTNAME and TFE_TOKEN")
+	}
+	hostname := os.Getenv("TFE_HOSTNAME")
+	token := os.Getenv("TFE_TOKEN")
+	insecure := os.Getenv("TFE_INSECURE") != ""
+
+	client, err := getClient(hostname, token, insecure)
+	if err != nil {
+		return nil, fmt.Errorf("Error getting client: %s", err)
+	}
+	return client, nil
 }
 
 func TestProvider(t *testing.T) {

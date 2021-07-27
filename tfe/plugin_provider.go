@@ -3,6 +3,7 @@ package tfe
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5/tftypes"
@@ -223,10 +224,22 @@ func retrieveProviderMeta(req *tfprotov5.ConfigureProviderRequest) (providerMeta
 	if err != nil {
 		return meta, fmt.Errorf("Could not set the hostname value to string %v", err)
 	}
+	if hostname == "" && os.Getenv("TFE_HOSTNAME") == "" {
+		return meta, fmt.Errorf("Hostname must not be empty")
+	} else if hostname == "" && os.Getenv("TFE_HOSTNAME") != "" {
+		hostname = os.Getenv("TFE_HOSTNAME")
+	}
+
 	err = valMap["token"].As(&token)
 	if err != nil {
 		return meta, fmt.Errorf("Could not set the token value to string %v", err)
 	}
+	if token == "" && os.Getenv("TFE_TOKEN") == "" {
+		return meta, fmt.Errorf("Token must not be empty")
+	} else if token == "" && os.Getenv("TFE_TOKEN") != "" {
+		token = os.Getenv("TFE_TOKEN")
+	}
+
 	meta.hostname = hostname
 	meta.token = token
 

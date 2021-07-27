@@ -38,7 +38,12 @@ func (d dataSourceStateOutputs) ReadDataSource(ctx context.Context, req *tfproto
 	}
 	client, err := getClient(d.provider.meta.hostname, d.provider.meta.token, false)
 	if err != nil {
-		return nil, err
+		resp.Diagnostics = append(resp.Diagnostics, &tfprotov5.Diagnostic{
+			Severity: tfprotov5.DiagnosticSeverityError,
+			Summary:  "Error getting client",
+			Detail:   fmt.Sprintf("Error getting client: %v", err),
+		})
+		return resp, nil
 	}
 
 	orgName, wsName, err := d.readConfigValues(req)

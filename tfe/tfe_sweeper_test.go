@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/hashicorp/go-tfe"
 	"log"
-	"os"
 	"strings"
 	"testing"
 
@@ -20,14 +19,7 @@ func getOrgSweeper(name string) *resource.Sweeper {
 	return &resource.Sweeper{
 		Name: name,
 		F: func(ununsed string) error {
-			if os.Getenv("TFE_HOSTNAME") == "" && (os.Getenv("TFE_TOKEN") == "") {
-				return fmt.Errorf("must provide environment variables TFE_HOSTNAME and TFE_TOKEN")
-			}
-			hostname := os.Getenv("TFE_HOSTNAME")
-			token := os.Getenv("TFE_TOKEN")
-			insecure := os.Getenv("TFE_INSECURE") != ""
-
-			client, err := getClient(hostname, token, insecure)
+			client, err := getClientByEnv()
 			if err != nil {
 				return fmt.Errorf("Error getting client: %s", err)
 			}
