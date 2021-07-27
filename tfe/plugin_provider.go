@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5/tftypes"
 )
 
-type providerServer struct {
+type pluginProviderServer struct {
 	providerSchema     *tfprotov5.Schema
 	providerMetaSchema *tfprotov5.Schema
 	resourceSchemas    map[string]*tfprotov5.Schema
@@ -16,7 +16,7 @@ type providerServer struct {
 	meta               providerMeta
 
 	resourceRouter
-	dataSourceRouter map[string]func(p *providerServer) tfprotov5.DataSourceServer
+	dataSourceRouter map[string]func(p *pluginProviderServer) tfprotov5.DataSourceServer
 }
 
 type providerMeta struct {
@@ -24,7 +24,7 @@ type providerMeta struct {
 	hostname string
 }
 
-func (p *providerServer) GetProviderSchema(ctx context.Context, req *tfprotov5.GetProviderSchemaRequest) (*tfprotov5.GetProviderSchemaResponse, error) {
+func (p *pluginProviderServer) GetProviderSchema(ctx context.Context, req *tfprotov5.GetProviderSchemaRequest) (*tfprotov5.GetProviderSchemaResponse, error) {
 	return &tfprotov5.GetProviderSchemaResponse{
 		Provider:          p.providerSchema,
 		ProviderMeta:      p.providerMetaSchema,
@@ -33,11 +33,11 @@ func (p *providerServer) GetProviderSchema(ctx context.Context, req *tfprotov5.G
 	}, nil
 }
 
-func (p *providerServer) PrepareProviderConfig(ctx context.Context, req *tfprotov5.PrepareProviderConfigRequest) (*tfprotov5.PrepareProviderConfigResponse, error) {
+func (p *pluginProviderServer) PrepareProviderConfig(ctx context.Context, req *tfprotov5.PrepareProviderConfigRequest) (*tfprotov5.PrepareProviderConfigResponse, error) {
 	return nil, nil
 }
 
-func (p *providerServer) ConfigureProvider(ctx context.Context, req *tfprotov5.ConfigureProviderRequest) (*tfprotov5.ConfigureProviderResponse, error) {
+func (p *pluginProviderServer) ConfigureProvider(ctx context.Context, req *tfprotov5.ConfigureProviderRequest) (*tfprotov5.ConfigureProviderResponse, error) {
 	resp := &tfprotov5.ConfigureProviderResponse{
 		Diagnostics: []*tfprotov5.Diagnostic{},
 	}
@@ -46,7 +46,7 @@ func (p *providerServer) ConfigureProvider(ctx context.Context, req *tfprotov5.C
 		resp.Diagnostics = append(resp.Diagnostics, &tfprotov5.Diagnostic{
 			Severity: tfprotov5.DiagnosticSeverityError,
 			Summary:  "Error retrieving provider meta values from provider request",
-			Detail:   fmt.Sprintf("Error retrieving provider meta values from provider request", err.Error()),
+			Detail:   fmt.Sprintf("Error retrieving provider meta values from provider request %v", err),
 		})
 		return resp, nil
 	}
@@ -55,11 +55,11 @@ func (p *providerServer) ConfigureProvider(ctx context.Context, req *tfprotov5.C
 	return resp, nil
 }
 
-func (p *providerServer) StopProvider(ctx context.Context, req *tfprotov5.StopProviderRequest) (*tfprotov5.StopProviderResponse, error) {
+func (p *pluginProviderServer) StopProvider(ctx context.Context, req *tfprotov5.StopProviderRequest) (*tfprotov5.StopProviderResponse, error) {
 	return &tfprotov5.StopProviderResponse{}, nil
 }
 
-func (p *providerServer) ValidateDataSourceConfig(ctx context.Context, req *tfprotov5.ValidateDataSourceConfigRequest) (*tfprotov5.ValidateDataSourceConfigResponse, error) {
+func (p *pluginProviderServer) ValidateDataSourceConfig(ctx context.Context, req *tfprotov5.ValidateDataSourceConfigRequest) (*tfprotov5.ValidateDataSourceConfigResponse, error) {
 	ds, ok := p.dataSourceRouter[req.TypeName]
 	if !ok {
 		return nil, errUnsupportedDataSource(req.TypeName)
@@ -67,7 +67,7 @@ func (p *providerServer) ValidateDataSourceConfig(ctx context.Context, req *tfpr
 	return ds(p).ValidateDataSourceConfig(ctx, req)
 }
 
-func (p *providerServer) ReadDataSource(ctx context.Context, req *tfprotov5.ReadDataSourceRequest) (*tfprotov5.ReadDataSourceResponse, error) {
+func (p *pluginProviderServer) ReadDataSource(ctx context.Context, req *tfprotov5.ReadDataSourceRequest) (*tfprotov5.ReadDataSourceResponse, error) {
 	ds, ok := p.dataSourceRouter[req.TypeName]
 	if !ok {
 		return nil, errUnsupportedDataSource(req.TypeName)
@@ -75,8 +75,8 @@ func (p *providerServer) ReadDataSource(ctx context.Context, req *tfprotov5.Read
 	return ds(p).ReadDataSource(ctx, req)
 }
 
-func ProviderServer() tfprotov5.ProviderServer {
-	return &providerServer{
+func PluginProviderServer() tfprotov5.ProviderServer {
+	return &pluginProviderServer{
 		providerSchema: &tfprotov5.Schema{
 			Block: &tfprotov5.SchemaBlock{
 				Attributes: []*tfprotov5.SchemaAttribute{
@@ -131,8 +131,8 @@ func ProviderServer() tfprotov5.ProviderServer {
 				},
 			},
 		},
-		dataSourceRouter: map[string]func(p *providerServer) tfprotov5.DataSourceServer{
-			"tfe_state_outputs": newDataSourceRemoteState,
+		dataSourceRouter: map[string]func(p *pluginProviderServer) tfprotov5.DataSourceServer{
+			"tfe_state_outputs": newDataSourceStateOutputs,
 		},
 	}
 }

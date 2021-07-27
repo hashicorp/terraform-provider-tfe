@@ -7,19 +7,17 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	//"math/big"
 	"os"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5/tftypes"
 	"github.com/zclconf/go-cty/cty"
-	//gocty "github.com/zclconf/go-cty/cty/gocty"
 	ctyjson "github.com/zclconf/go-cty/cty/json"
 )
 
-type dataSourceRemoteState struct {
-	provider *providerServer
+type dataSourceStateOutputs struct {
+	provider *pluginProviderServer
 }
 
 var stderr *os.File
@@ -28,13 +26,13 @@ func init() {
 	stderr = os.Stderr
 }
 
-func newDataSourceRemoteState(p *providerServer) tfprotov5.DataSourceServer {
-	return dataSourceRemoteState{
+func newDataSourceStateOutputs(p *pluginProviderServer) tfprotov5.DataSourceServer {
+	return dataSourceStateOutputs{
 		provider: p,
 	}
 }
 
-func (d dataSourceRemoteState) ReadDataSource(ctx context.Context, req *tfprotov5.ReadDataSourceRequest) (*tfprotov5.ReadDataSourceResponse, error) {
+func (d dataSourceStateOutputs) ReadDataSource(ctx context.Context, req *tfprotov5.ReadDataSourceRequest) (*tfprotov5.ReadDataSourceResponse, error) {
 	resp := &tfprotov5.ReadDataSourceResponse{
 		Diagnostics: []*tfprotov5.Diagnostic{},
 	}
@@ -53,7 +51,7 @@ func (d dataSourceRemoteState) ReadDataSource(ctx context.Context, req *tfprotov
 		return resp, nil
 	}
 
-	remoteStateOutput, err := d.readRemoteStateOutput(ctx, client, orgName, wsName)
+	remoteStateOutput, err := d.readStateOutput(ctx, client, orgName, wsName)
 	if err != nil {
 		resp.Diagnostics = append(resp.Diagnostics, &tfprotov5.Diagnostic{
 			Severity: tfprotov5.DiagnosticSeverityError,
@@ -107,7 +105,7 @@ func (d dataSourceRemoteState) ReadDataSource(ctx context.Context, req *tfprotov
 	}, nil
 }
 
-func (d dataSourceRemoteState) ValidateDataSourceConfig(ctx context.Context, req *tfprotov5.ValidateDataSourceConfigRequest) (*tfprotov5.ValidateDataSourceConfigResponse, error) {
+func (d dataSourceStateOutputs) ValidateDataSourceConfig(ctx context.Context, req *tfprotov5.ValidateDataSourceConfigRequest) (*tfprotov5.ValidateDataSourceConfigResponse, error) {
 	return &tfprotov5.ValidateDataSourceConfigResponse{}, nil
 }
 
@@ -155,25 +153,16 @@ type rawOutputState struct {
 	Sensitive    bool            `json:"sensitive,omitempty"`
 }
 
-type OutputData struct {
-	Addr      outputValue
+type outputData struct {
 	Value     cty.Value
 	Sensitive bool
 }
 
-type outputValue struct {
-	Value outputValueName
-}
-
-type outputValueName struct {
-	Name string
-}
-
 type remoteStateData struct {
-	Outputs map[string]*OutputData
+	outputs map[string]*outputData
 }
 
-func (d dataSourceRemoteState) readRemoteStateOutput(ctx context.Context, tfeClient *tfe.Client, orgName, wsName string) (*remoteStateData, error) {
+func (d dataSourceStateOutputs) readStateOutput(ctx context.Context, tfeClient *tfe.Client, orgName, wsName string) (*remoteStateData, error) {
 	log.Printf("[DEBUG] Reading the Workspace %s in Organization %s", wsName, orgName)
 	ws, err := tfeClient.Workspaces.Read(ctx, orgName, wsName)
 	if err != nil {
@@ -190,13 +179,13 @@ func (d dataSourceRemoteState) readRemoteStateOutput(ctx context.Context, tfeCli
 	}
 
 	log.Printf("[DEBUG] Downloading State Version")
-	stateData, err := tfeClient.StateVersions.Download(ctx, sv.DownloadURL)
+	rawStateData, err := tfeClient.StateVersions.Download(ctx, sv.DownloadURL)
 	if err != nil {
 		return nil, fmt.Errorf("Error downloading remote state: %v", err)
 	}
 
 	log.Printf("[DEBUG] Unmarshalling remote state output")
-	read := bytes.NewReader(stateData)
+	read := bytes.NewReader(rawStateData)
 	src, err := ioutil.ReadAll(read)
 	if err != nil {
 		return nil, fmt.Errorf("Could not read state data: %v", err)
@@ -208,18 +197,9 @@ func (d dataSourceRemoteState) readRemoteStateOutput(ctx context.Context, tfeCli
 	}
 
 	fov := &remoteStateData{
-		Outputs: map[string]*OutputData{},
+		outputs: map[string]*outputData{},
 	}
 	for name, fos := range rrs.RootOutputs {
-		os := &OutputData{
-			Addr: outputValue{
-				Value: outputValueName{
-					Name: name,
-				},
-			},
-		}
-		os.Sensitive = fos.Sensitive
-
 		ty, err := ctyjson.UnmarshalType([]byte(fos.ValueTypeRaw))
 		if err != nil {
 			return nil, fmt.Errorf("Could not unmarshal type: %v", err)
@@ -230,8 +210,10 @@ func (d dataSourceRemoteState) readRemoteStateOutput(ctx context.Context, tfeCli
 			return nil, fmt.Errorf("Could not unmarshal value: %v", err)
 		}
 
-		os.Value = val
-		fov.Outputs[name] = os
+		fov.outputs[name] = &outputData{
+			Value:     val,
+			Sensitive: fos.Sensitive,
+		}
 	}
 
 	return fov, nil
@@ -241,8 +223,8 @@ func parseStateOutput(stateOutput *remoteStateData) (map[string]tftypes.Value, m
 	tftypesValues := map[string]tftypes.Value{}
 	stateTypes := map[string]tftypes.Type{}
 
-	for name, outputValues := range stateOutput.Outputs {
-		marshData, err := outputValues.Value.Type().MarshalJSON()
+	for name, output := range stateOutput.outputs {
+		marshData, err := output.Value.Type().MarshalJSON()
 		if err != nil {
 			return nil, nil, fmt.Errorf("Could not marshall output type: %v", err)
 		}
@@ -250,14 +232,14 @@ func parseStateOutput(stateOutput *remoteStateData) (map[string]tftypes.Value, m
 		if err != nil {
 			return nil, nil, fmt.Errorf("Could not parse json type data: %v", err)
 		}
-		mByte, err := ctyjson.Marshal(outputValues.Value, outputValues.Value.Type())
+		mByte, err := ctyjson.Marshal(output.Value, output.Value.Type())
 		if err != nil {
 			return nil, nil, fmt.Errorf("Could not marshal output value and output type: %v", err)
 		}
-		rawState := tfprotov5.RawState{
+		tfRawState := tfprotov5.RawState{
 			JSON: mByte,
 		}
-		newVal, err := rawState.Unmarshal(tfType)
+		newVal, err := tfRawState.Unmarshal(tfType)
 		if err != nil {
 			return nil, nil, fmt.Errorf("Could not unmarshal tftype into value: %v", err)
 		}
