@@ -41,7 +41,7 @@ func (d dataSourceStateOutputs) ReadDataSource(ctx context.Context, req *tfproto
 		return nil, err
 	}
 
-	orgName, wsName, err := readConfigValues(req)
+	orgName, wsName, err := d.readConfigValues(req)
 	if err != nil {
 		resp.Diagnostics = append(resp.Diagnostics, &tfprotov5.Diagnostic{
 			Severity: tfprotov5.DiagnosticSeverityError,
@@ -109,7 +109,7 @@ func (d dataSourceStateOutputs) ValidateDataSourceConfig(ctx context.Context, re
 	return &tfprotov5.ValidateDataSourceConfigResponse{}, nil
 }
 
-func readConfigValues(req *tfprotov5.ReadDataSourceRequest) (string, string, error) {
+func (d dataSourceStateOutputs) readConfigValues(req *tfprotov5.ReadDataSourceRequest) (string, string, error) {
 	var orgName string
 	var wsName string
 	var err error
@@ -143,11 +143,11 @@ func readConfigValues(req *tfprotov5.ReadDataSourceRequest) (string, string, err
 	return orgName, wsName, nil
 }
 
-type rawRemoteState struct {
-	RootOutputs map[string]rawOutputState `json:"outputs"`
+type rootModule struct {
+	RootOutputs map[string]rawOutput `json:"outputs"`
 }
 
-type rawOutputState struct {
+type rawOutput struct {
 	ValueRaw     json.RawMessage `json:"value"`
 	ValueTypeRaw json.RawMessage `json:"type"`
 	Sensitive    bool            `json:"sensitive,omitempty"`
@@ -158,11 +158,11 @@ type outputData struct {
 	Sensitive bool
 }
 
-type remoteStateData struct {
+type stateData struct {
 	outputs map[string]*outputData
 }
 
-func (d dataSourceStateOutputs) readStateOutput(ctx context.Context, tfeClient *tfe.Client, orgName, wsName string) (*remoteStateData, error) {
+func (d dataSourceStateOutputs) readStateOutput(ctx context.Context, tfeClient *tfe.Client, orgName, wsName string) (*stateData, error) {
 	log.Printf("[DEBUG] Reading the Workspace %s in Organization %s", wsName, orgName)
 	ws, err := tfeClient.Workspaces.Read(ctx, orgName, wsName)
 	if err != nil {
@@ -175,28 +175,28 @@ func (d dataSourceStateOutputs) readStateOutput(ctx context.Context, tfeClient *
 		if err == tfe.ErrResourceNotFound {
 			return nil, fmt.Errorf("Current remote state for workspace '%s' not found.", wsName)
 		}
-		return nil, fmt.Errorf("Could not read the current remote state for workspace '%s' : %v", wsName, err)
+		return nil, fmt.Errorf("Could not read the current state for workspace '%s' : %v", wsName, err)
 	}
 
 	log.Printf("[DEBUG] Downloading State Version")
-	rawStateData, err := tfeClient.StateVersions.Download(ctx, sv.DownloadURL)
+	rawState, err := tfeClient.StateVersions.Download(ctx, sv.DownloadURL)
 	if err != nil {
-		return nil, fmt.Errorf("Error downloading remote state: %v", err)
+		return nil, fmt.Errorf("Error downloading state: %v", err)
 	}
 
-	log.Printf("[DEBUG] Unmarshalling remote state output")
-	read := bytes.NewReader(rawStateData)
+	log.Printf("[DEBUG] Unmarshalling state output")
+	read := bytes.NewReader(rawState)
 	src, err := ioutil.ReadAll(read)
 	if err != nil {
 		return nil, fmt.Errorf("Could not read state data: %v", err)
 	}
-	rrs := &rawRemoteState{}
+	rrs := &rootModule{}
 	err = json.Unmarshal(src, rrs)
 	if err != nil {
 		return nil, fmt.Errorf("Could not unmarshal state data: %v", err)
 	}
 
-	fov := &remoteStateData{
+	fov := &stateData{
 		outputs: map[string]*outputData{},
 	}
 	for name, fos := range rrs.RootOutputs {
@@ -219,7 +219,7 @@ func (d dataSourceStateOutputs) readStateOutput(ctx context.Context, tfeClient *
 	return fov, nil
 }
 
-func parseStateOutput(stateOutput *remoteStateData) (map[string]tftypes.Value, map[string]tftypes.Type, error) {
+func parseStateOutput(stateOutput *stateData) (map[string]tftypes.Value, map[string]tftypes.Type, error) {
 	tftypesValues := map[string]tftypes.Value{}
 	stateTypes := map[string]tftypes.Type{}
 
