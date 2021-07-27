@@ -19,6 +19,18 @@ type pluginProviderServer struct {
 	dataSourceRouter map[string]func(p *pluginProviderServer) tfprotov5.DataSourceServer
 }
 
+type errUnsupportedDataSource string
+
+func (e errUnsupportedDataSource) Error() string {
+	return "unsupported data source: " + string(e)
+}
+
+type errUnsupportedResource string
+
+func (e errUnsupportedResource) Error() string {
+	return "unsupported resource: " + string(e)
+}
+
 type providerMeta struct {
 	token    string
 	hostname string
@@ -73,6 +85,56 @@ func (p *pluginProviderServer) ReadDataSource(ctx context.Context, req *tfprotov
 		return nil, errUnsupportedDataSource(req.TypeName)
 	}
 	return ds(p).ReadDataSource(ctx, req)
+}
+
+type resourceRouter map[string]tfprotov5.ResourceServer
+
+func (r resourceRouter) ValidateResourceTypeConfig(ctx context.Context, req *tfprotov5.ValidateResourceTypeConfigRequest) (*tfprotov5.ValidateResourceTypeConfigResponse, error) {
+	res, ok := r[req.TypeName]
+	if !ok {
+		return nil, errUnsupportedResource(req.TypeName)
+	}
+	return res.ValidateResourceTypeConfig(ctx, req)
+}
+
+func (r resourceRouter) UpgradeResourceState(ctx context.Context, req *tfprotov5.UpgradeResourceStateRequest) (*tfprotov5.UpgradeResourceStateResponse, error) {
+	res, ok := r[req.TypeName]
+	if !ok {
+		return nil, errUnsupportedResource(req.TypeName)
+	}
+	return res.UpgradeResourceState(ctx, req)
+}
+
+func (r resourceRouter) ReadResource(ctx context.Context, req *tfprotov5.ReadResourceRequest) (*tfprotov5.ReadResourceResponse, error) {
+	res, ok := r[req.TypeName]
+	if !ok {
+		return nil, errUnsupportedResource(req.TypeName)
+	}
+	return res.ReadResource(ctx, req)
+}
+
+func (r resourceRouter) PlanResourceChange(ctx context.Context, req *tfprotov5.PlanResourceChangeRequest) (*tfprotov5.PlanResourceChangeResponse, error) {
+	res, ok := r[req.TypeName]
+	if !ok {
+		return nil, errUnsupportedResource(req.TypeName)
+	}
+	return res.PlanResourceChange(ctx, req)
+}
+
+func (r resourceRouter) ApplyResourceChange(ctx context.Context, req *tfprotov5.ApplyResourceChangeRequest) (*tfprotov5.ApplyResourceChangeResponse, error) {
+	res, ok := r[req.TypeName]
+	if !ok {
+		return nil, errUnsupportedResource(req.TypeName)
+	}
+	return res.ApplyResourceChange(ctx, req)
+}
+
+func (r resourceRouter) ImportResourceState(ctx context.Context, req *tfprotov5.ImportResourceStateRequest) (*tfprotov5.ImportResourceStateResponse, error) {
+	res, ok := r[req.TypeName]
+	if !ok {
+		return nil, errUnsupportedResource(req.TypeName)
+	}
+	return res.ImportResourceState(ctx, req)
 }
 
 func PluginProviderServer() tfprotov5.ProviderServer {
