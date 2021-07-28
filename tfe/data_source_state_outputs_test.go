@@ -24,12 +24,10 @@ func TestAccTFEStateOutputs(t *testing.T) {
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
-	orgName, wsName, orgCleanup, wsCleanup := createOutputs(t, client, rInt)
+	fileName := "test-fixtures/state-versions/terraform.tfstate"
+	orgName, wsName, orgCleanup, wsCleanup := createOutputs(t, client, rInt, fileName)
 	defer orgCleanup()
 	defer wsCleanup()
-
-	// This is the value in test-fixtures/state-versions/terraform.tfstate
-	expectedOutput := "9023256633839603543"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -38,28 +36,84 @@ func TestAccTFEStateOutputs(t *testing.T) {
 			{
 				Config: testAccTFEStateOutputs_dataSource(rInt, orgName, wsName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					//testFooBar(orgName),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "name", fmt.Sprintf("tst-%d", rInt)),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", fmt.Sprintf("workspace-test-%d", rInt)),
-					resource.TestCheckOutput(
-						"states", expectedOutput),
+					resource.TestCheckResourceAttr(
+						"data.tfe_state_outputs.foobar", "organization", orgName),
+					resource.TestCheckResourceAttr(
+						"data.tfe_state_outputs.foobar", "workspace", wsName),
+					// This is the value in test-fixtures/state-versions/terraform.tfstate
+					testCheckOutputState("identifier_output", &terraform.OutputState{
+						Value: "9023256633839603543",
+					}),
+					// This is the value in test-fixtures/state-versions/terraform.tfstate
+					testCheckOutputState("records_output", &terraform.OutputState{
+						Value: []interface{}{"hashicorp.com", "terraform.io"},
+					}),
 				),
 			},
 		},
 	})
 }
-func testFooBar(n string) resource.TestCheckFunc {
+
+func TestAccTFEStateOutputs_emptyOutputs(t *testing.T) {
+	skipIfFreeOnly(t)
+
+	client, err := getClientByEnv()
+	if err != nil {
+		t.Fatalf("error getting client %v", err)
+	}
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	fileName := "test-fixtures/state-versions/terraform-empty-outputs.tfstate"
+	orgName, wsName, orgCleanup, wsCleanup := createOutputs(t, client, rInt, fileName)
+	defer orgCleanup()
+	defer wsCleanup()
+
+	expectedOutputState := &terraform.OutputState{
+		Value: map[string]interface{}{},
+	}
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEStateOutputs_dataSource_emptyOutputs(rInt, orgName, wsName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "name", fmt.Sprintf("tst-%d", rInt)),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "name", fmt.Sprintf("workspace-test-%d", rInt)),
+					resource.TestCheckResourceAttr(
+						"data.tfe_state_outputs.foobar", "organization", orgName),
+					resource.TestCheckResourceAttr(
+						"data.tfe_state_outputs.foobar", "workspace", wsName),
+					// This is relies on test-fixtures/state-versions/terraform-empty-outputs.tfstate
+					testCheckOutputState("state_output", expectedOutputState),
+				),
+			},
+		},
+	})
+}
+func testCheckOutputState(name string, expectedOutputState *terraform.OutputState) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		fmt.Println("OMAR WE OUT HERE")
-		fmt.Println(n)
-		time.Sleep(5 * time.Second)
+		ms := s.RootModule()
+		rs, ok := ms.Outputs[name]
+		if !ok {
+			return fmt.Errorf("Not found: %s", name)
+		}
+
+		if rs.String() != expectedOutputState.String() {
+			return fmt.Errorf("Expected the output state %s to match expected output state %s", rs.String(), expectedOutputState.String())
+		}
 		return nil
 	}
 }
 
-func createOutputs(t *testing.T, client *tfe.Client, rInt int) (string, string, func(), func()) {
+func createOutputs(t *testing.T, client *tfe.Client, rInt int, fileName string) (string, string, func(), func()) {
 	var orgCleanup func()
 	var wsCleanup func()
 
@@ -92,7 +146,7 @@ func createOutputs(t *testing.T, client *tfe.Client, rInt int) (string, string, 
 		}
 	}
 
-	state, err := ioutil.ReadFile("test-fixtures/state-versions/terraform.tfstate")
+	state, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,23 +174,6 @@ func createOutputs(t *testing.T, client *tfe.Client, rInt int) (string, string, 
 	return org.Name, ws.Name, orgCleanup, wsCleanup
 }
 
-func testAccTFEStateOutputs_defaultOutputs(rInt int, output string) string {
-	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
-resource "tfe_workspace" "foobar" {
-  name                  = "workspace-test-%d"
-  organization          = tfe_organization.foobar.name
-}
-
-output "foo" {
-	value = "%s"
-}`, rInt, rInt, output)
-}
-
 func testAccTFEStateOutputs_dataSource(rInt int, org, workspace string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
@@ -154,8 +191,37 @@ data "tfe_state_outputs" "foobar" {
   workspace = "%s"
 }
 
-output "states" {
-	// this references the 'output "foo"' in the testAccTFEStateOutputs_defaultOutputs config
-	value = data.tfe_state_outputs.foobar.values.test_output
+output "identifier_output" {
+	// the 'identifier' value references the value in outputs in
+	// the file 'test-fixtures/state-versions/terraform.tfstate
+	value = data.tfe_state_outputs.foobar.values.identifier
+}
+output "records_output" {
+	// the 'records' value references the value in outputs in
+	// the file 'test-fixtures/state-versions/terraform.tfstate
+	value = data.tfe_state_outputs.foobar.values.records
+}`, rInt, rInt, org, workspace)
+}
+
+func testAccTFEStateOutputs_dataSource_emptyOutputs(rInt int, org, workspace string) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name                  = "workspace-test-%d"
+  organization          = tfe_organization.foobar.name
+}
+
+data "tfe_state_outputs" "foobar" {
+  organization = "%s"
+  workspace = "%s"
+}
+
+output "state_output" {
+	// this relies on the file 'test-fixtures/state-versions/terraform-empty-outputs.tfstate
+	value = data.tfe_state_outputs.foobar.values
 }`, rInt, rInt, org, workspace)
 }
