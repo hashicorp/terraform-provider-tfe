@@ -44,7 +44,7 @@ resource "tfe_agent_pool" "test-agent-pool" {
 resource "tfe_workspace" "test" {
   name           = "my-workspace-name"
   organization   = tfe_organization.test-organization.id
-  agent_pool_id  = tfe_organization.test-agent-pool.id
+  agent_pool_id  = tfe_agent_pool.test-agent-pool.id
   execution_mode = "agent"
 }
 ```
