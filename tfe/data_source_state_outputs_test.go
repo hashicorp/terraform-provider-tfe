@@ -17,13 +17,12 @@ import (
 func TestAccTFEStateOutputs(t *testing.T) {
 	skipIfFreeOnly(t)
 
-	client, err := getClientByEnv()
+	client, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatalf("error getting client %v", err)
 	}
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-
 	fileName := "test-fixtures/state-versions/terraform.tfstate"
 	orgName, wsName, orgCleanup, wsCleanup := createOutputs(t, client, rInt, fileName)
 	defer orgCleanup()
@@ -61,21 +60,17 @@ func TestAccTFEStateOutputs(t *testing.T) {
 func TestAccTFEStateOutputs_emptyOutputs(t *testing.T) {
 	skipIfFreeOnly(t)
 
-	client, err := getClientByEnv()
+	client, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatalf("error getting client %v", err)
 	}
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-
 	fileName := "test-fixtures/state-versions/terraform-empty-outputs.tfstate"
 	orgName, wsName, orgCleanup, wsCleanup := createOutputs(t, client, rInt, fileName)
 	defer orgCleanup()
 	defer wsCleanup()
 
-	expectedOutputState := &terraform.OutputState{
-		Value: map[string]interface{}{},
-	}
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: testAccMuxedProviders,
@@ -92,7 +87,9 @@ func TestAccTFEStateOutputs_emptyOutputs(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_state_outputs.foobar", "workspace", wsName),
 					// This is relies on test-fixtures/state-versions/terraform-empty-outputs.tfstate
-					testCheckOutputState("state_output", expectedOutputState),
+					testCheckOutputState("state_output", &terraform.OutputState{
+						Value: map[string]interface{}{},
+					}),
 				),
 			},
 		},

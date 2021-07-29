@@ -23,6 +23,8 @@ type dataSourceStateOutputs struct {
 var stderr *os.File
 
 func init() {
+	// There is a issue that occurs when the plugin-go Serve function is used that
+	// causes os.Stderr to be overwritten. There is a fix being worked on for this.
 	stderr = os.Stderr
 }
 
@@ -160,12 +162,10 @@ type rootModule struct {
 type rawOutput struct {
 	ValueRaw     json.RawMessage `json:"value"`
 	ValueTypeRaw json.RawMessage `json:"type"`
-	Sensitive    bool            `json:"sensitive,omitempty"`
 }
 
 type outputData struct {
-	Value     cty.Value
-	Sensitive bool
+	Value cty.Value
 }
 
 type stateData struct {
@@ -221,8 +221,7 @@ func (d dataSourceStateOutputs) readStateOutput(ctx context.Context, tfeClient *
 		}
 
 		fov.outputs[name] = &outputData{
-			Value:     val,
-			Sensitive: fos.Sensitive,
+			Value: val,
 		}
 	}
 

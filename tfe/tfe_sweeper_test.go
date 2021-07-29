@@ -19,7 +19,7 @@ func getOrgSweeper(name string) *resource.Sweeper {
 	return &resource.Sweeper{
 		Name: name,
 		F: func(ununsed string) error {
-			client, err := getClientByEnv()
+			client, err := getClientUsingEnv()
 			if err != nil {
 				return fmt.Errorf("Error getting client: %s", err)
 			}

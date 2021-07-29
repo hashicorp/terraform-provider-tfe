@@ -41,7 +41,7 @@ func init() {
 	}
 }
 
-func getClientByEnv() (*tfe.Client, error) {
+func getClientUsingEnv() (*tfe.Client, error) {
 	if os.Getenv("TFE_HOSTNAME") == "" && (os.Getenv("TFE_TOKEN") == "") {
 		return nil, fmt.Errorf("must provide environment variables TFE_HOSTNAME and TFE_TOKEN")
 	}
