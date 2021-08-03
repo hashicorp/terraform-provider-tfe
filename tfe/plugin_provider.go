@@ -225,28 +225,29 @@ func retrieveProviderMeta(req *tfprotov5.ConfigureProviderRequest) (providerMeta
 	if err != nil {
 		return meta, fmt.Errorf("Could not set the schema attributes to map %v", err)
 	}
-	if valMap["hostname"].IsNull() || valMap["token"].IsNull() {
-		return meta, fmt.Errorf("the hostname and token must be present.")
+	if !valMap["hostname"].IsNull() {
+		err = valMap["hostname"].As(&hostname)
+		if err != nil {
+			return meta, fmt.Errorf("Could not set the hostname value to string %v", err)
+		}
+	}
+	if !valMap["token"].IsNull() {
+		err = valMap["token"].As(&token)
+		if err != nil {
+			return meta, fmt.Errorf("Could not set the token value to string %v", err)
+		}
 	}
 
-	err = valMap["hostname"].As(&hostname)
-	if err != nil {
-		return meta, fmt.Errorf("Could not set the hostname value to string %v", err)
-	}
-	if hostname == "" && os.Getenv("TFE_HOSTNAME") == "" {
-		return meta, fmt.Errorf("Hostname must not be empty")
-	} else if hostname == "" && os.Getenv("TFE_HOSTNAME") != "" {
+	if hostname == "" && os.Getenv("TFE_HOSTNAME") != "" {
 		hostname = os.Getenv("TFE_HOSTNAME")
 	}
 
-	err = valMap["token"].As(&token)
-	if err != nil {
-		return meta, fmt.Errorf("Could not set the token value to string %v", err)
-	}
-	if token == "" && os.Getenv("TFE_TOKEN") == "" {
-		return meta, fmt.Errorf("Token must not be empty")
-	} else if token == "" && os.Getenv("TFE_TOKEN") != "" {
+	if token == "" && os.Getenv("TFE_TOKEN") != "" {
 		token = os.Getenv("TFE_TOKEN")
+	}
+
+	if hostname == "" || token == "" {
+		return meta, fmt.Errorf("the hostname and token must be present.")
 	}
 
 	meta.hostname = hostname
