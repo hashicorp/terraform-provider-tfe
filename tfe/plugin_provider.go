@@ -200,7 +200,7 @@ func PluginProviderServer() tfprotov5.ProviderServer {
 			},
 		},
 		dataSourceRouter: map[string]func(p *pluginProviderServer) tfprotov5.DataSourceServer{
-			"tfe_workspace_outputs": newDataSourceStateOutputs,
+			"tfe_workspace_outputs": newDataSourceWorkspaceOutputs,
 		},
 	}
 }

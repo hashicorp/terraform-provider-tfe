@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccTFEStateOutputs(t *testing.T) {
+func TestAccTFEWorkspaceOutputs(t *testing.T) {
 	skipIfFreeOnly(t)
 
 	client, err := getClientUsingEnv()
@@ -33,7 +33,7 @@ func TestAccTFEStateOutputs(t *testing.T) {
 		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEStateOutputs_dataSource(rInt, orgName, wsName),
+				Config: testAccTFEWorkspaceOutputs_dataSource(rInt, orgName, wsName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "name", fmt.Sprintf("tst-%d", rInt)),
@@ -57,7 +57,7 @@ func TestAccTFEStateOutputs(t *testing.T) {
 	})
 }
 
-func TestAccTFEStateOutputs_emptyOutputs(t *testing.T) {
+func TestAccTFEWorkspaceOutputs_emptyOutputs(t *testing.T) {
 	skipIfFreeOnly(t)
 
 	client, err := getClientUsingEnv()
@@ -76,7 +76,7 @@ func TestAccTFEStateOutputs_emptyOutputs(t *testing.T) {
 		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEStateOutputs_dataSource_emptyOutputs(rInt, orgName, wsName),
+				Config: testAccTFEWorkspaceOutputs_dataSource_emptyOutputs(rInt, orgName, wsName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "name", fmt.Sprintf("tst-%d", rInt)),
@@ -171,7 +171,7 @@ func createOutputs(t *testing.T, client *tfe.Client, rInt int, fileName string) 
 	return org.Name, ws.Name, orgCleanup, wsCleanup
 }
 
-func testAccTFEStateOutputs_dataSource(rInt int, org, workspace string) string {
+func testAccTFEWorkspaceOutputs_dataSource(rInt int, org, workspace string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-%d"
@@ -200,7 +200,7 @@ output "records_output" {
 }`, rInt, rInt, org, workspace)
 }
 
-func testAccTFEStateOutputs_dataSource_emptyOutputs(rInt int, org, workspace string) string {
+func testAccTFEWorkspaceOutputs_dataSource_emptyOutputs(rInt int, org, workspace string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-%d"
