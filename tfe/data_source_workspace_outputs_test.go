@@ -95,6 +95,91 @@ func TestAccTFEWorkspaceOutputs_emptyOutputs(t *testing.T) {
 		},
 	})
 }
+
+func TestAccTFEWorkspaceOutputs_sensitiveOutputs(t *testing.T) {
+	skipIfFreeOnly(t)
+
+	client, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatalf("error getting client %v", err)
+	}
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	fileName := "test-fixtures/state-versions/terraform-sensitive-outputs.tfstate"
+	orgName, wsName, orgCleanup, wsCleanup := createOutputs(t, client, rInt, fileName)
+	defer orgCleanup()
+	defer wsCleanup()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspaceOutputs_dataSource_sensitiveOutputs(rInt, orgName, wsName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "name", fmt.Sprintf("tst-%d", rInt)),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "name", fmt.Sprintf("workspace-test-%d", rInt)),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_outputs.foobar", "organization", orgName),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_outputs.foobar", "workspace", wsName),
+					// This is relies on test-fixtures/state-versions/terraform-sensitive-outputs.tfstate
+					testCheckOutputState("identifier_output", &terraform.OutputState{
+						Value: "9023256633839603543",
+					}),
+					testCheckOutputState("secret_output", &terraform.OutputState{
+						Value: sensitiveValue,
+					}),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspaceOutputs_showSensitiveOutputs(t *testing.T) {
+	skipIfFreeOnly(t)
+
+	client, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatalf("error getting client %v", err)
+	}
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	fileName := "test-fixtures/state-versions/terraform-sensitive-outputs.tfstate"
+	orgName, wsName, orgCleanup, wsCleanup := createOutputs(t, client, rInt, fileName)
+	defer orgCleanup()
+	defer wsCleanup()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspaceOutputs_dataSource_showSensitiveOutputs(rInt, orgName, wsName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "name", fmt.Sprintf("tst-%d", rInt)),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "name", fmt.Sprintf("workspace-test-%d", rInt)),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_outputs.foobar", "organization", orgName),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_outputs.foobar", "workspace", wsName),
+					// This is relies on test-fixtures/state-versions/terraform-sensitive-outputs.tfstate
+					testCheckOutputState("identifier_output", &terraform.OutputState{
+						Value: "9023256633839603543",
+					}),
+					testCheckOutputState("secret_output", &terraform.OutputState{
+						Value: "token",
+					}),
+				),
+			},
+		},
+	})
+}
+
 func testCheckOutputState(name string, expectedOutputState *terraform.OutputState) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		ms := s.RootModule()
@@ -220,5 +305,62 @@ data "tfe_workspace_outputs" "foobar" {
 output "state_output" {
 	// this relies on the file 'test-fixtures/state-versions/terraform-empty-outputs.tfstate
 	value = data.tfe_workspace_outputs.foobar.values
+}`, rInt, rInt, org, workspace)
+}
+
+func testAccTFEWorkspaceOutputs_dataSource_sensitiveOutputs(rInt int, org, workspace string) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name                  = "workspace-test-%d"
+  organization          = tfe_organization.foobar.name
+}
+
+data "tfe_workspace_outputs" "foobar" {
+  organization = "%s"
+  workspace = "%s"
+}
+
+output "identifier_output" {
+	// this relies on the file 'test-fixtures/state-versions/terraform-sensitive-outputs.tfstate
+	value = data.tfe_workspace_outputs.foobar.values.identifier
+}
+
+output "secret_output" {
+	// this relies on the file 'test-fixtures/state-versions/terraform-sensitive-outputs.tfstate
+	value = data.tfe_workspace_outputs.foobar.values.secret
+}`, rInt, rInt, org, workspace)
+}
+
+func testAccTFEWorkspaceOutputs_dataSource_showSensitiveOutputs(rInt int, org, workspace string) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name                  = "workspace-test-%d"
+  organization          = tfe_organization.foobar.name
+}
+
+data "tfe_workspace_outputs" "foobar" {
+  organization = "%s"
+  workspace = "%s"
+	sensitive = true
+}
+
+output "identifier_output" {
+	// this relies on the file 'test-fixtures/state-versions/terraform-sensitive-outputs.tfstate
+	value = data.tfe_workspace_outputs.foobar.values.identifier
+}
+
+output "secret_output" {
+	// this relies on the file 'test-fixtures/state-versions/terraform-sensitive-outputs.tfstate
+	value = data.tfe_workspace_outputs.foobar.values.secret
 }`, rInt, rInt, org, workspace)
 }

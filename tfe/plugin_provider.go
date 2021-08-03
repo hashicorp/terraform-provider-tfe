@@ -190,6 +190,13 @@ func PluginProviderServer() tfprotov5.ProviderServer {
 							Required:        true,
 						},
 						{
+							Name:            "sensitive",
+							Type:            tftypes.Bool,
+							Description:     "A flag used to determine if a sensitive value should be shown.",
+							DescriptionKind: tfprotov5.StringKindPlain,
+							Optional:        true,
+						},
+						{
 							Name:     "values",
 							Type:     tftypes.DynamicPseudoType,
 							Optional: true,

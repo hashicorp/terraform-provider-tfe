@@ -30,6 +30,11 @@ In the example below, assume we have a state outputs that looks like this:
     "records": {
       "value": ["hashicorp.com", "terraform.io"],
       "type": ["list", "string"]
+    },
+    "secret": {
+      "value": "token",
+      "type": "string",
+      "sensitive": true
     }
   },
   "resources": [
@@ -56,12 +61,29 @@ output "records" {
 }
 ```
 
+If you want to reveal sensitive values, then set the optional boolean flag
+`sensitive=true`:
+
+```
+data "tfe_workspace_outputs" "foobar" {
+  organization = "<organization-name>"
+  workspace = "<workspace-name>"
+  sensitive = true
+}
+
+output "secret" {
+	value = data.tfe_workspace_outputs.foobar.values.secret
+}
+```
+
 ## Argument Reference
 
 The following arguments are supported:
 
 * `organization` - (Required) The name of the organizatin.
 * `workspace` - (Required) The name of the workspace.
+* `sensitive` - (Optional) Determines whether or not to show sensitive values.
+  Set to `true` to reveal sensitive values.
 
 ## Attributes Reference
 
