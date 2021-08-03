@@ -40,9 +40,9 @@ func TestAccTFEStateOutputs(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", fmt.Sprintf("workspace-test-%d", rInt)),
 					resource.TestCheckResourceAttr(
-						"data.tfe_state_outputs.foobar", "organization", orgName),
+						"data.tfe_workspace_outputs.foobar", "organization", orgName),
 					resource.TestCheckResourceAttr(
-						"data.tfe_state_outputs.foobar", "workspace", wsName),
+						"data.tfe_workspace_outputs.foobar", "workspace", wsName),
 					// This is the value in test-fixtures/state-versions/terraform.tfstate
 					testCheckOutputState("identifier_output", &terraform.OutputState{
 						Value: "9023256633839603543",
@@ -83,9 +83,9 @@ func TestAccTFEStateOutputs_emptyOutputs(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", fmt.Sprintf("workspace-test-%d", rInt)),
 					resource.TestCheckResourceAttr(
-						"data.tfe_state_outputs.foobar", "organization", orgName),
+						"data.tfe_workspace_outputs.foobar", "organization", orgName),
 					resource.TestCheckResourceAttr(
-						"data.tfe_state_outputs.foobar", "workspace", wsName),
+						"data.tfe_workspace_outputs.foobar", "workspace", wsName),
 					// This is relies on test-fixtures/state-versions/terraform-empty-outputs.tfstate
 					testCheckOutputState("state_output", &terraform.OutputState{
 						Value: map[string]interface{}{},
@@ -183,7 +183,7 @@ resource "tfe_workspace" "foobar" {
   organization          = tfe_organization.foobar.name
 }
 
-data "tfe_state_outputs" "foobar" {
+data "tfe_workspace_outputs" "foobar" {
   organization = "%s"
   workspace = "%s"
 }
@@ -191,12 +191,12 @@ data "tfe_state_outputs" "foobar" {
 output "identifier_output" {
 	// the 'identifier' value references the value in outputs in
 	// the file 'test-fixtures/state-versions/terraform.tfstate
-	value = data.tfe_state_outputs.foobar.values.identifier
+	value = data.tfe_workspace_outputs.foobar.values.identifier
 }
 output "records_output" {
 	// the 'records' value references the value in outputs in
 	// the file 'test-fixtures/state-versions/terraform.tfstate
-	value = data.tfe_state_outputs.foobar.values.records
+	value = data.tfe_workspace_outputs.foobar.values.records
 }`, rInt, rInt, org, workspace)
 }
 
@@ -212,13 +212,13 @@ resource "tfe_workspace" "foobar" {
   organization          = tfe_organization.foobar.name
 }
 
-data "tfe_state_outputs" "foobar" {
+data "tfe_workspace_outputs" "foobar" {
   organization = "%s"
   workspace = "%s"
 }
 
 output "state_output" {
 	// this relies on the file 'test-fixtures/state-versions/terraform-empty-outputs.tfstate
-	value = data.tfe_state_outputs.foobar.values
+	value = data.tfe_workspace_outputs.foobar.values
 }`, rInt, rInt, org, workspace)
 }

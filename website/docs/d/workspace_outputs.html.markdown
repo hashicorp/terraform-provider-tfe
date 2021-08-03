@@ -1,11 +1,11 @@
 ---
 layout: "tfe"
-page_title: "Terraform Enterprise: tfe_state_outputs"
+page_title: "Terraform Enterprise: tfe_workspace_outputs"
 sidebar_current: "docs-datasource-tfe-state-outputs"
 description: |-
   Retrieves the State outputs per organization and workspace.
 ---
-# Data Source: tfe_state_outputs
+# Data Source: tfe_workspace_outputs
 
 This data source is used to retrieve the state outputs for a given workspace.
 It enables values in the outputs to be used dynamically in a terraform
@@ -13,7 +13,7 @@ configuration.
 
 ## Example Usage
 
-Using the `tfe_state_outputs` data source in a terraform configuration.
+Using the `tfe_workspace_outputs` data source in a terraform configuration.
 
 In the example below, assume we have a state outputs that looks like this:
 
@@ -38,21 +38,21 @@ In the example below, assume we have a state outputs that looks like this:
 }
 ```
 
-The `tfe_state_outputs` data source can now use `identifier` and `records`
+The `tfe_workspace_outputs` data source can now use `identifier` and `records`
 dynamically as seen below.
 
 ```hcl
-data "tfe_state_outputs" "foobar" {
+data "tfe_workspace_outputs" "foobar" {
   organization = "<organization-name>"
   workspace = "<workspace-name>"
 }
 
 output "identifier" {
-	value = data.tfe_state_outputs.foobar.values.identifier
+	value = data.tfe_workspace_outputs.foobar.values.identifier
 }
 
 output "records" {
-	value = data.tfe_state_outputs.foobar.values.records
+	value = data.tfe_workspace_outputs.foobar.values.records
 }
 ```
 
