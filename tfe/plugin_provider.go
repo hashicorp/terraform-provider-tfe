@@ -225,6 +225,10 @@ func retrieveProviderMeta(req *tfprotov5.ConfigureProviderRequest) (providerMeta
 	if err != nil {
 		return meta, fmt.Errorf("Could not set the schema attributes to map %v", err)
 	}
+	if valMap["hostname"].IsNull() || valMap["token"].IsNull() {
+		return meta, fmt.Errorf("the hostname and token must be present.")
+	}
+
 	err = valMap["hostname"].As(&hostname)
 	if err != nil {
 		return meta, fmt.Errorf("Could not set the hostname value to string %v", err)

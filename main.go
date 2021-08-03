@@ -22,7 +22,7 @@ func main() {
 		ctx, tfe.Provider().GRPCProvider, tfe.PluginProviderServer,
 	)
 	if err != nil {
-		log.Println(fmt.Errorf("Could not setup a NewSchemaServerFactory using the providers: %v", err))
+		log.Printf("[ERROR] Could not setup a NewSchemaServerFactory using the providers: %v", err)
 		os.Exit(1)
 	}
 
@@ -30,7 +30,7 @@ func main() {
 		return mux.Server()
 	})
 	if err != nil {
-		log.Println(fmt.Errorf("Could not start serving the ProviderServer: %v", err))
+		log.Printf("[ERROR] Could not start serving the ProviderServer: %v", err)
 		os.Exit(1)
 	}
 }

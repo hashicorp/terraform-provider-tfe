@@ -130,7 +130,7 @@ func (d dataSourceStateOutputs) readConfigValues(req *tfprotov5.ReadDataSourceRe
 		AttributeTypes: map[string]tftypes.Type{
 			"workspace":    tftypes.String,
 			"organization": tftypes.String,
-			"values":       tftypes.String,
+			"values":       tftypes.DynamicPseudoType,
 			"id":           tftypes.String,
 		}})
 	if err != nil {
