@@ -264,7 +264,7 @@ func parseStateOutput(stateOutput *stateData, showSensitive bool) (map[string]tf
 		}
 		marshData, err := output.Value.Type().MarshalJSON()
 		if err != nil {
-			return nil, nil, fmt.Errorf("Could not marshall output type: %v", err)
+			return nil, nil, fmt.Errorf("Could not marshal output type: %v", err)
 		}
 		tfType, err := tftypes.ParseJSONType(marshData)
 		if err != nil {
