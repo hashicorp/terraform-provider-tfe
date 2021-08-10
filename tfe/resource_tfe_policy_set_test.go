@@ -512,7 +512,7 @@ func TestAccTFEPolicySet_versionedNoConflicts(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEPolicySet_versionsConflict(rInt, testFixtureVersionFiles),
-				ExpectError: regexp.MustCompile(`ConflictsWith`),
+				ExpectError: regexp.MustCompile(`Conflicting configuration`),
 			},
 		},
 	})
