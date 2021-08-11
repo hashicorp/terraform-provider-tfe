@@ -5,19 +5,22 @@ import (
 	"fmt"
 	"os"
 
+	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 )
+
+var tfeClient *tfe.Client
 
 type pluginProviderServer struct {
 	providerSchema     *tfprotov5.Schema
 	providerMetaSchema *tfprotov5.Schema
 	resourceSchemas    map[string]*tfprotov5.Schema
 	dataSourceSchemas  map[string]*tfprotov5.Schema
-	meta               providerMeta
+	tfeClient          *tfe.Client
 
 	resourceRouter
-	dataSourceRouter map[string]func(p *pluginProviderServer) tfprotov5.DataSourceServer
+	dataSourceRouter map[string]func(*tfe.Client) tfprotov5.DataSourceServer
 }
 
 type errUnsupportedDataSource string
@@ -63,8 +66,18 @@ func (p *pluginProviderServer) ConfigureProvider(ctx context.Context, req *tfpro
 		})
 		return resp, nil
 	}
-	p.meta = meta
 
+	client, err := getClient(meta.hostname, meta.token, false)
+	if err != nil {
+		resp.Diagnostics = append(resp.Diagnostics, &tfprotov5.Diagnostic{
+			Severity: tfprotov5.DiagnosticSeverityError,
+			Summary:  "Error getting client",
+			Detail:   fmt.Sprintf("Error getting client: %v", err),
+		})
+		return resp, nil
+	}
+
+	p.tfeClient = client
 	return resp, nil
 }
 
@@ -77,7 +90,7 @@ func (p *pluginProviderServer) ValidateDataSourceConfig(ctx context.Context, req
 	if !ok {
 		return nil, errUnsupportedDataSource(req.TypeName)
 	}
-	return ds(p).ValidateDataSourceConfig(ctx, req)
+	return ds(p.tfeClient).ValidateDataSourceConfig(ctx, req)
 }
 
 func (p *pluginProviderServer) ReadDataSource(ctx context.Context, req *tfprotov5.ReadDataSourceRequest) (*tfprotov5.ReadDataSourceResponse, error) {
@@ -85,7 +98,7 @@ func (p *pluginProviderServer) ReadDataSource(ctx context.Context, req *tfprotov
 	if !ok {
 		return nil, errUnsupportedDataSource(req.TypeName)
 	}
-	return ds(p).ReadDataSource(ctx, req)
+	return ds(p.tfeClient).ReadDataSource(ctx, req)
 }
 
 type resourceRouter map[string]tfprotov5.ResourceServer
@@ -138,24 +151,28 @@ func (r resourceRouter) ImportResourceState(ctx context.Context, req *tfprotov5.
 	return res.ImportResourceState(ctx, req)
 }
 
+// PluginProviderServer returns the implementation of an interface for a lower
+// level usage of the Provider to Terraform protocol.
+// This relies on the terraform-plugin-go library, which provides low level
+// bindings for the Terraform plugin protocol.
 func PluginProviderServer() tfprotov5.ProviderServer {
 	return &pluginProviderServer{
 		providerSchema: &tfprotov5.Schema{
 			Block: &tfprotov5.SchemaBlock{
 				Attributes: []*tfprotov5.SchemaAttribute{
-					&tfprotov5.SchemaAttribute{
+					{
 						Name:        "hostname",
 						Type:        tftypes.String,
 						Description: descriptions["hostname"],
 						Optional:    true,
 					},
-					&tfprotov5.SchemaAttribute{
+					{
 						Name:        "token",
 						Type:        tftypes.String,
 						Description: descriptions["token"],
 						Optional:    true,
 					},
-					&tfprotov5.SchemaAttribute{
+					{
 						Name:        "ssl_skip_verify",
 						Type:        tftypes.Bool,
 						Description: descriptions["ssl_skip_verify"],
@@ -190,7 +207,7 @@ func PluginProviderServer() tfprotov5.ProviderServer {
 							Required:        true,
 						},
 						{
-							Name:            "sensitive",
+							Name:            "show_sensitive",
 							Type:            tftypes.Bool,
 							Description:     "A flag used to determine if a sensitive value should be shown.",
 							DescriptionKind: tfprotov5.StringKindPlain,
@@ -206,7 +223,7 @@ func PluginProviderServer() tfprotov5.ProviderServer {
 				},
 			},
 		},
-		dataSourceRouter: map[string]func(p *pluginProviderServer) tfprotov5.DataSourceServer{
+		dataSourceRouter: map[string]func(*tfe.Client) tfprotov5.DataSourceServer{
 			"tfe_workspace_outputs": newDataSourceWorkspaceOutputs,
 		},
 	}

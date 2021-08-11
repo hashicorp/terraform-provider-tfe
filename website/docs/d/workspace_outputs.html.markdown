@@ -3,61 +3,44 @@ layout: "tfe"
 page_title: "Terraform Enterprise: tfe_workspace_outputs"
 sidebar_current: "docs-datasource-tfe-state-outputs"
 description: |-
-  Retrieves the State outputs per organization and workspace.
+  Get output values from another organization/workspace.
 ---
 # Data Source: tfe_workspace_outputs
 
 This data source is used to retrieve the state outputs for a given workspace.
-It enables values in the outputs to be used dynamically in a terraform
-configuration.
+It enables output values in one Terraform configuration to be used in another.
 
 ## Example Usage
 
-Using the `tfe_workspace_outputs` data source in a terraform configuration.
+Using the `tfe_workspace_outputs` data source, the outputs `foo` and `bar` can be used as seen below:
 
-In the example below, assume we have a state outputs that looks like this:
+In the example below, assume we have outputs defined in an my-org/my-workspace:
 
 ```
-{
-  "version": <version>,
-  "terraform_version": "<terraform-version>",
-  ...
-  "outputs": {
-    "identifier": {
-      "value": "9023256633839603543",
-      "type": "string"
-    },
-    "records": {
-      "value": ["hashicorp.com", "terraform.io"],
-      "type": ["list", "string"]
-    },
-    "secret": {
-      "value": "token",
-      "type": "string",
-      "sensitive": true
-    }
-  },
-  "resources": [
-    ...
-  ]
+output "foo" {
+  value = "a"
+}
+
+output "bar" {
+  value = "b"
 }
 ```
 
-The `tfe_workspace_outputs` data source can now use `identifier` and `records`
+The `tfe_workspace_outputs` data source can now use `foo` and `bar`
 dynamically as seen below.
 
 ```hcl
 data "tfe_workspace_outputs" "foobar" {
-  organization = "<organization-name>"
-  workspace = "<workspace-name>"
+  organization = "my-org"
+  workspace = "my-workspae"
 }
 
-output "identifier" {
-	value = data.tfe_workspace_outputs.foobar.values.identifier
+output "hello" {
+	value = data.tfe_workspace_outputs.foobar.values.foo
 }
 
-output "records" {
-	value = data.tfe_workspace_outputs.foobar.values.records
+output "world" {
+	value = data.tfe_workspace_outputs.foobar.values.bar
 }
 ```
 
@@ -80,7 +63,7 @@ output "secret" {
 
 The following arguments are supported:
 
-* `organization` - (Required) The name of the organizatin.
+* `organization` - (Required) The name of the organization.
 * `workspace` - (Required) The name of the workspace.
 * `sensitive` - (Optional) Determines whether or not to show sensitive values.
   Set to `true` to reveal sensitive values.
@@ -89,5 +72,4 @@ The following arguments are supported:
 
 The following attributes are exported:
 
-* `values` - A dynamic value that can call any state outputs key and retrieve
-  its value.
+* `values` - The current output values for the specified workspace.

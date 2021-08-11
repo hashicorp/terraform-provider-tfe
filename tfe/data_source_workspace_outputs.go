@@ -19,7 +19,7 @@ import (
 const sensitiveValue = "<sensitive>"
 
 type dataSourceWorkspaceOutputs struct {
-	provider *pluginProviderServer
+	tfeClient *tfe.Client
 }
 
 var stderr *os.File
@@ -30,9 +30,9 @@ func init() {
 	stderr = os.Stderr
 }
 
-func newDataSourceWorkspaceOutputs(p *pluginProviderServer) tfprotov5.DataSourceServer {
+func newDataSourceWorkspaceOutputs(client *tfe.Client) tfprotov5.DataSourceServer {
 	return dataSourceWorkspaceOutputs{
-		provider: p,
+		tfeClient: client,
 	}
 }
 
@@ -40,17 +40,8 @@ func (d dataSourceWorkspaceOutputs) ReadDataSource(ctx context.Context, req *tfp
 	resp := &tfprotov5.ReadDataSourceResponse{
 		Diagnostics: []*tfprotov5.Diagnostic{},
 	}
-	client, err := getClient(d.provider.meta.hostname, d.provider.meta.token, false)
-	if err != nil {
-		resp.Diagnostics = append(resp.Diagnostics, &tfprotov5.Diagnostic{
-			Severity: tfprotov5.DiagnosticSeverityError,
-			Summary:  "Error getting client",
-			Detail:   fmt.Sprintf("Error getting client: %v", err),
-		})
-		return resp, nil
-	}
 
-	orgName, wsName, sensitive, err := d.readConfigValues(req)
+	orgName, wsName, showSensitive, err := d.readConfigValues(req)
 	if err != nil {
 		resp.Diagnostics = append(resp.Diagnostics, &tfprotov5.Diagnostic{
 			Severity: tfprotov5.DiagnosticSeverityError,
@@ -60,7 +51,7 @@ func (d dataSourceWorkspaceOutputs) ReadDataSource(ctx context.Context, req *tfp
 		return resp, nil
 	}
 
-	remoteStateOutput, err := d.readStateOutput(ctx, client, orgName, wsName)
+	remoteStateOutput, err := d.readStateOutput(ctx, d.tfeClient, orgName, wsName)
 	if err != nil {
 		resp.Diagnostics = append(resp.Diagnostics, &tfprotov5.Diagnostic{
 			Severity: tfprotov5.DiagnosticSeverityError,
@@ -70,7 +61,7 @@ func (d dataSourceWorkspaceOutputs) ReadDataSource(ctx context.Context, req *tfp
 		return resp, nil
 	}
 
-	tftypesValues, stateTypes, err := parseStateOutput(remoteStateOutput, sensitive)
+	tftypesValues, stateTypes, err := parseStateOutput(remoteStateOutput, showSensitive)
 	if err != nil {
 		resp.Diagnostics = append(resp.Diagnostics, &tfprotov5.Diagnostic{
 			Severity: tfprotov5.DiagnosticSeverityError,
@@ -83,26 +74,26 @@ func (d dataSourceWorkspaceOutputs) ReadDataSource(ctx context.Context, req *tfp
 	id := fmt.Sprintf("%s-%s", orgName, wsName)
 	state, err := tfprotov5.NewDynamicValue(tftypes.Object{
 		AttributeTypes: map[string]tftypes.Type{
-			"workspace":    tftypes.String,
-			"organization": tftypes.String,
-			"sensitive":    tftypes.Bool,
-			"values":       tftypes.DynamicPseudoType,
-			"id":           tftypes.String,
+			"workspace":      tftypes.String,
+			"organization":   tftypes.String,
+			"show_sensitive": tftypes.Bool,
+			"values":         tftypes.DynamicPseudoType,
+			"id":             tftypes.String,
 		},
 	}, tftypes.NewValue(tftypes.Object{
 		AttributeTypes: map[string]tftypes.Type{
-			"workspace":    tftypes.String,
-			"organization": tftypes.String,
-			"sensitive":    tftypes.Bool,
-			"values":       tftypes.Object{AttributeTypes: stateTypes},
-			"id":           tftypes.String,
+			"workspace":      tftypes.String,
+			"organization":   tftypes.String,
+			"show_sensitive": tftypes.Bool,
+			"values":         tftypes.Object{AttributeTypes: stateTypes},
+			"id":             tftypes.String,
 		},
 	}, map[string]tftypes.Value{
-		"workspace":    tftypes.NewValue(tftypes.String, wsName),
-		"organization": tftypes.NewValue(tftypes.String, orgName),
-		"sensitive":    tftypes.NewValue(tftypes.Bool, sensitive),
-		"values":       tftypes.NewValue(tftypes.Object{AttributeTypes: stateTypes}, tftypesValues),
-		"id":           tftypes.NewValue(tftypes.String, id),
+		"workspace":      tftypes.NewValue(tftypes.String, wsName),
+		"organization":   tftypes.NewValue(tftypes.String, orgName),
+		"show_sensitive": tftypes.NewValue(tftypes.Bool, showSensitive),
+		"values":         tftypes.NewValue(tftypes.Object{AttributeTypes: stateTypes}, tftypesValues),
+		"id":             tftypes.NewValue(tftypes.String, id),
 	}))
 
 	if err != nil {
@@ -128,50 +119,50 @@ func (d dataSourceWorkspaceOutputs) ValidateDataSourceConfig(ctx context.Context
 func (d dataSourceWorkspaceOutputs) readConfigValues(req *tfprotov5.ReadDataSourceRequest) (string, string, bool, error) {
 	var orgName string
 	var wsName string
-	var sensitive bool
+	var showSensitive bool
 	var err error
 
 	config := req.Config
 	val, err := config.Unmarshal(tftypes.Object{
 		AttributeTypes: map[string]tftypes.Type{
-			"workspace":    tftypes.String,
-			"organization": tftypes.String,
-			"sensitive":    tftypes.Bool,
-			"values":       tftypes.DynamicPseudoType,
-			"id":           tftypes.String,
+			"workspace":      tftypes.String,
+			"organization":   tftypes.String,
+			"show_sensitive": tftypes.Bool,
+			"values":         tftypes.DynamicPseudoType,
+			"id":             tftypes.String,
 		}})
 	if err != nil {
-		return orgName, wsName, sensitive, fmt.Errorf("Error unmarshalling config: %v", err)
+		return orgName, wsName, showSensitive, fmt.Errorf("Error unmarshalling config: %v", err)
 	}
 
 	var valMap map[string]tftypes.Value
 	err = val.As(&valMap)
 	if err != nil {
-		return orgName, wsName, sensitive, fmt.Errorf("Error assigning configuration attributes to map: %v", err)
+		return orgName, wsName, showSensitive, fmt.Errorf("Error assigning configuration attributes to map: %v", err)
 	}
 
 	if valMap["organization"].IsNull() || valMap["workspace"].IsNull() {
-		return orgName, wsName, sensitive, fmt.Errorf("Organization and Workspace cannot be nil: %v", err)
+		return orgName, wsName, showSensitive, fmt.Errorf("Organization and Workspace cannot be nil: %v", err)
 	}
 
 	err = valMap["organization"].As(&orgName)
 	if err != nil {
-		return orgName, wsName, sensitive, fmt.Errorf("Error assigning 'organization' value to string: %v", err)
+		return orgName, wsName, showSensitive, fmt.Errorf("Error assigning 'organization' value to string: %v", err)
 	}
 
 	err = valMap["workspace"].As(&wsName)
 	if err != nil {
-		return orgName, wsName, sensitive, fmt.Errorf("Error assigning 'workspace' value to string: %v", err)
+		return orgName, wsName, showSensitive, fmt.Errorf("Error assigning 'workspace' value to string: %v", err)
 	}
 
-	if !valMap["sensitive"].IsNull() {
-		err = valMap["sensitive"].As(&sensitive)
+	if !valMap["show_sensitive"].IsNull() {
+		err = valMap["show_sensitive"].As(&showSensitive)
 		if err != nil {
-			return orgName, wsName, sensitive, fmt.Errorf("Error assigning 'sensitive' value to boolean: %v", err)
+			return orgName, wsName, showSensitive, fmt.Errorf("Error assigning 'show_sensitive' value to boolean: %v", err)
 		}
 	}
 
-	return orgName, wsName, sensitive, nil
+	return orgName, wsName, showSensitive, nil
 }
 
 type rootModule struct {

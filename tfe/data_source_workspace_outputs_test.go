@@ -351,7 +351,7 @@ resource "tfe_workspace" "foobar" {
 data "tfe_workspace_outputs" "foobar" {
   organization = "%s"
   workspace = "%s"
-	sensitive = true
+	show_sensitive = true
 }
 
 output "identifier_output" {
