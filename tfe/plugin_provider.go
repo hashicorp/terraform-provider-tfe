@@ -182,7 +182,7 @@ func PluginProviderServer() tfprotov5.ProviderServer {
 			},
 		},
 		dataSourceSchemas: map[string]*tfprotov5.Schema{
-			"tfe_workspace_outputs": {
+			"tfe_outputs": {
 				Version: 1,
 				Block: &tfprotov5.SchemaBlock{
 					Version: 1,
@@ -224,7 +224,7 @@ func PluginProviderServer() tfprotov5.ProviderServer {
 			},
 		},
 		dataSourceRouter: map[string]func(*tfe.Client) tfprotov5.DataSourceServer{
-			"tfe_workspace_outputs": newDataSourceWorkspaceOutputs,
+			"tfe_outputs": newDataSourceWorkspaceOutputs,
 		},
 	}
 }
