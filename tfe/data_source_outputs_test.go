@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccTFEWorkspaceOutputs(t *testing.T) {
+func TestAccTFEOutputs(t *testing.T) {
 	skipIfFreeOnly(t)
 
 	client, err := getClientUsingEnv()
@@ -33,7 +33,7 @@ func TestAccTFEWorkspaceOutputs(t *testing.T) {
 		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspaceOutputs_dataSource(rInt, orgName, wsName),
+				Config: testAccTFEOutputs_dataSource(rInt, orgName, wsName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "name", fmt.Sprintf("tst-%d", rInt)),
@@ -57,7 +57,7 @@ func TestAccTFEWorkspaceOutputs(t *testing.T) {
 	})
 }
 
-func TestAccTFEWorkspaceOutputs_emptyOutputs(t *testing.T) {
+func TestAccTFEOutputs_emptyOutputs(t *testing.T) {
 	skipIfFreeOnly(t)
 
 	client, err := getClientUsingEnv()
@@ -76,7 +76,7 @@ func TestAccTFEWorkspaceOutputs_emptyOutputs(t *testing.T) {
 		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspaceOutputs_dataSource_emptyOutputs(rInt, orgName, wsName),
+				Config: testAccTFEOutputs_dataSource_emptyOutputs(rInt, orgName, wsName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "name", fmt.Sprintf("tst-%d", rInt)),
@@ -96,7 +96,7 @@ func TestAccTFEWorkspaceOutputs_emptyOutputs(t *testing.T) {
 	})
 }
 
-func TestAccTFEWorkspaceOutputs_sensitiveOutputs(t *testing.T) {
+func TestAccTFEOutputs_sensitiveOutputs(t *testing.T) {
 	skipIfFreeOnly(t)
 
 	client, err := getClientUsingEnv()
@@ -115,7 +115,7 @@ func TestAccTFEWorkspaceOutputs_sensitiveOutputs(t *testing.T) {
 		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspaceOutputs_dataSource_sensitiveOutputs(rInt, orgName, wsName),
+				Config: testAccTFEOutputs_dataSource_sensitiveOutputs(rInt, orgName, wsName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "name", fmt.Sprintf("tst-%d", rInt)),
@@ -138,7 +138,7 @@ func TestAccTFEWorkspaceOutputs_sensitiveOutputs(t *testing.T) {
 	})
 }
 
-func TestAccTFEWorkspaceOutputs_showSensitiveOutputs(t *testing.T) {
+func TestAccTFEOutputs_showSensitiveOutputs(t *testing.T) {
 	skipIfFreeOnly(t)
 
 	client, err := getClientUsingEnv()
@@ -157,7 +157,7 @@ func TestAccTFEWorkspaceOutputs_showSensitiveOutputs(t *testing.T) {
 		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspaceOutputs_dataSource_showSensitiveOutputs(rInt, orgName, wsName),
+				Config: testAccTFEOutputs_dataSource_showSensitiveOutputs(rInt, orgName, wsName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "name", fmt.Sprintf("tst-%d", rInt)),
@@ -256,7 +256,7 @@ func createOutputs(t *testing.T, client *tfe.Client, rInt int, fileName string) 
 	return org.Name, ws.Name, orgCleanup, wsCleanup
 }
 
-func testAccTFEWorkspaceOutputs_dataSource(rInt int, org, workspace string) string {
+func testAccTFEOutputs_dataSource(rInt int, org, workspace string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-%d"
@@ -285,7 +285,7 @@ output "records_output" {
 }`, rInt, rInt, org, workspace)
 }
 
-func testAccTFEWorkspaceOutputs_dataSource_emptyOutputs(rInt int, org, workspace string) string {
+func testAccTFEOutputs_dataSource_emptyOutputs(rInt int, org, workspace string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-%d"
@@ -308,7 +308,7 @@ output "state_output" {
 }`, rInt, rInt, org, workspace)
 }
 
-func testAccTFEWorkspaceOutputs_dataSource_sensitiveOutputs(rInt int, org, workspace string) string {
+func testAccTFEOutputs_dataSource_sensitiveOutputs(rInt int, org, workspace string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-%d"
@@ -336,7 +336,7 @@ output "secret_output" {
 }`, rInt, rInt, org, workspace)
 }
 
-func testAccTFEWorkspaceOutputs_dataSource_showSensitiveOutputs(rInt int, org, workspace string) string {
+func testAccTFEOutputs_dataSource_showSensitiveOutputs(rInt int, org, workspace string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-%d"
