@@ -16,8 +16,6 @@ import (
 	ctyjson "github.com/zclconf/go-cty/cty/json"
 )
 
-const sensitiveValue = "<sensitive>"
-
 type dataSourceWorkspaceOutputs struct {
 	tfeClient *tfe.Client
 }
@@ -41,7 +39,7 @@ func (d dataSourceWorkspaceOutputs) ReadDataSource(ctx context.Context, req *tfp
 		Diagnostics: []*tfprotov5.Diagnostic{},
 	}
 
-	orgName, wsName, showSensitive, err := d.readConfigValues(req)
+	orgName, wsName, err := d.readConfigValues(req)
 	if err != nil {
 		resp.Diagnostics = append(resp.Diagnostics, &tfprotov5.Diagnostic{
 			Severity: tfprotov5.DiagnosticSeverityError,
@@ -61,7 +59,7 @@ func (d dataSourceWorkspaceOutputs) ReadDataSource(ctx context.Context, req *tfp
 		return resp, nil
 	}
 
-	tftypesValues, stateTypes, err := parseStateOutput(remoteStateOutput, showSensitive)
+	tftypesValues, stateTypes, err := parseStateOutput(remoteStateOutput)
 	if err != nil {
 		resp.Diagnostics = append(resp.Diagnostics, &tfprotov5.Diagnostic{
 			Severity: tfprotov5.DiagnosticSeverityError,
@@ -74,26 +72,23 @@ func (d dataSourceWorkspaceOutputs) ReadDataSource(ctx context.Context, req *tfp
 	id := fmt.Sprintf("%s-%s", orgName, wsName)
 	state, err := tfprotov5.NewDynamicValue(tftypes.Object{
 		AttributeTypes: map[string]tftypes.Type{
-			"workspace":      tftypes.String,
-			"organization":   tftypes.String,
-			"show_sensitive": tftypes.Bool,
-			"values":         tftypes.DynamicPseudoType,
-			"id":             tftypes.String,
+			"workspace":    tftypes.String,
+			"organization": tftypes.String,
+			"values":       tftypes.DynamicPseudoType,
+			"id":           tftypes.String,
 		},
 	}, tftypes.NewValue(tftypes.Object{
 		AttributeTypes: map[string]tftypes.Type{
-			"workspace":      tftypes.String,
-			"organization":   tftypes.String,
-			"show_sensitive": tftypes.Bool,
-			"values":         tftypes.Object{AttributeTypes: stateTypes},
-			"id":             tftypes.String,
+			"workspace":    tftypes.String,
+			"organization": tftypes.String,
+			"values":       tftypes.Object{AttributeTypes: stateTypes},
+			"id":           tftypes.String,
 		},
 	}, map[string]tftypes.Value{
-		"workspace":      tftypes.NewValue(tftypes.String, wsName),
-		"organization":   tftypes.NewValue(tftypes.String, orgName),
-		"show_sensitive": tftypes.NewValue(tftypes.Bool, showSensitive),
-		"values":         tftypes.NewValue(tftypes.Object{AttributeTypes: stateTypes}, tftypesValues),
-		"id":             tftypes.NewValue(tftypes.String, id),
+		"workspace":    tftypes.NewValue(tftypes.String, wsName),
+		"organization": tftypes.NewValue(tftypes.String, orgName),
+		"values":       tftypes.NewValue(tftypes.Object{AttributeTypes: stateTypes}, tftypesValues),
+		"id":           tftypes.NewValue(tftypes.String, id),
 	}))
 
 	if err != nil {
@@ -116,53 +111,44 @@ func (d dataSourceWorkspaceOutputs) ValidateDataSourceConfig(ctx context.Context
 	return &tfprotov5.ValidateDataSourceConfigResponse{}, nil
 }
 
-func (d dataSourceWorkspaceOutputs) readConfigValues(req *tfprotov5.ReadDataSourceRequest) (string, string, bool, error) {
+func (d dataSourceWorkspaceOutputs) readConfigValues(req *tfprotov5.ReadDataSourceRequest) (string, string, error) {
 	var orgName string
 	var wsName string
-	var showSensitive bool
 	var err error
 
 	config := req.Config
 	val, err := config.Unmarshal(tftypes.Object{
 		AttributeTypes: map[string]tftypes.Type{
-			"workspace":      tftypes.String,
-			"organization":   tftypes.String,
-			"show_sensitive": tftypes.Bool,
-			"values":         tftypes.DynamicPseudoType,
-			"id":             tftypes.String,
+			"workspace":    tftypes.String,
+			"organization": tftypes.String,
+			"values":       tftypes.DynamicPseudoType,
+			"id":           tftypes.String,
 		}})
 	if err != nil {
-		return orgName, wsName, showSensitive, fmt.Errorf("Error unmarshalling config: %v", err)
+		return orgName, wsName, fmt.Errorf("Error unmarshalling config: %v", err)
 	}
 
 	var valMap map[string]tftypes.Value
 	err = val.As(&valMap)
 	if err != nil {
-		return orgName, wsName, showSensitive, fmt.Errorf("Error assigning configuration attributes to map: %v", err)
+		return orgName, wsName, fmt.Errorf("Error assigning configuration attributes to map: %v", err)
 	}
 
 	if valMap["organization"].IsNull() || valMap["workspace"].IsNull() {
-		return orgName, wsName, showSensitive, fmt.Errorf("Organization and Workspace cannot be nil: %v", err)
+		return orgName, wsName, fmt.Errorf("Organization and Workspace cannot be nil: %v", err)
 	}
 
 	err = valMap["organization"].As(&orgName)
 	if err != nil {
-		return orgName, wsName, showSensitive, fmt.Errorf("Error assigning 'organization' value to string: %v", err)
+		return orgName, wsName, fmt.Errorf("Error assigning 'organization' value to string: %v", err)
 	}
 
 	err = valMap["workspace"].As(&wsName)
 	if err != nil {
-		return orgName, wsName, showSensitive, fmt.Errorf("Error assigning 'workspace' value to string: %v", err)
+		return orgName, wsName, fmt.Errorf("Error assigning 'workspace' value to string: %v", err)
 	}
 
-	if !valMap["show_sensitive"].IsNull() {
-		err = valMap["show_sensitive"].As(&showSensitive)
-		if err != nil {
-			return orgName, wsName, showSensitive, fmt.Errorf("Error assigning 'show_sensitive' value to boolean: %v", err)
-		}
-	}
-
-	return orgName, wsName, showSensitive, nil
+	return orgName, wsName, nil
 }
 
 type rootModule struct {
@@ -172,12 +158,10 @@ type rootModule struct {
 type rawOutput struct {
 	ValueRaw     json.RawMessage `json:"value"`
 	ValueTypeRaw json.RawMessage `json:"type"`
-	Sensitive    bool            `json:"sensitive,omitempty"`
 }
 
 type outputData struct {
-	Value     cty.Value
-	Sensitive bool
+	Value cty.Value
 }
 
 type stateData struct {
@@ -233,26 +217,18 @@ func (d dataSourceWorkspaceOutputs) readStateOutput(ctx context.Context, tfeClie
 		}
 
 		fov.outputs[name] = &outputData{
-			Value:     val,
-			Sensitive: fos.Sensitive,
+			Value: val,
 		}
 	}
 
 	return fov, nil
 }
 
-func parseStateOutput(stateOutput *stateData, showSensitive bool) (map[string]tftypes.Value, map[string]tftypes.Type, error) {
+func parseStateOutput(stateOutput *stateData) (map[string]tftypes.Value, map[string]tftypes.Type, error) {
 	tftypesValues := map[string]tftypes.Value{}
 	stateTypes := map[string]tftypes.Type{}
 
 	for name, output := range stateOutput.outputs {
-		if output.Sensitive && !showSensitive {
-			// the output is a sensitive value, and configuration seting is to *not*
-			// show sensitive output, we show the hidden sensitive value.
-			tftypesValues[name] = tftypes.NewValue(tftypes.String, sensitiveValue)
-			stateTypes[name] = tftypes.String
-			continue
-		}
 		marshData, err := output.Value.Type().MarshalJSON()
 		if err != nil {
 			return nil, nil, fmt.Errorf("Could not marshal output type: %v", err)
