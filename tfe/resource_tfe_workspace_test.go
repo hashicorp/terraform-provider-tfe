@@ -49,6 +49,10 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "structured_run_output_enabled", "true"),
 					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_names.0", "fav"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_names.1", "test"),
+					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "working_directory", ""),
@@ -356,6 +360,42 @@ func TestAccTFEWorkspace_updateTriggerPrefixes(t *testing.T) {
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspace_changeTags(t *testing.T) {
+	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_basic(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_names.0", "fav"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_names.1", "test"),
+				),
+			},
+
+			{
+				Config: testAccTFEWorkspace_basicChangeTags(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_names.0", "unfav"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_names.1", "prod"),
 				),
 			},
 		},
@@ -1173,6 +1213,22 @@ resource "tfe_workspace" "foobar" {
   description        = "My favorite workspace!"
   allow_destroy_plan = false
   auto_apply         = true
+  tag_names          = ["fav", "test"]
+}`, rInt)
+}
+
+func testAccTFEWorkspace_basicChangeTags(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name               = "workspace-test"
+  organization       = tfe_organization.foobar.id
+  auto_apply         = true
+  tag_names          = ["unfav", "prod"]
 }`, rInt)
 }
 

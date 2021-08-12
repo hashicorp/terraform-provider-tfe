@@ -199,8 +199,8 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 
 	// Update the tags
 	var tagNames []interface{}
-	for _, tag := range workspace.Tags {
-		tagNames = append(tagNames, tag.Name)
+	for _, tagName := range workspace.TagNames {
+		tagNames = append(tagNames, tagName)
 	}
 	d.Set("tag_names", tagNames)
 

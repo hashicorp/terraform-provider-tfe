@@ -19,7 +19,7 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 				Required: false,
 			},
 
-			"tags": {
+			"tag_names": {
 				Type:     schema.TypeList,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Optional: true,
@@ -68,10 +68,10 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 
 	options := tfe.WorkspaceListOptions{}
 
-	// Create a string with all the tags we are looking for.
+	// Create a search string with all the tags we are looking for.
 	var tagSearch string
-	for _, tagName := range d.Get("tags").([]interface{}) {
-		id += tagName.(string)
+	for _, tagName := range d.Get("tag_names").([]interface{}) {
+		id += tagName.(string) // add to the state id
 		tagSearch += fmt.Sprintf("%s,", tagName)
 	}
 	if tagSearch != "" {

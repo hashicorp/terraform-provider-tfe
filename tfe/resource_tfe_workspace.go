@@ -272,7 +272,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	for _, tagName := range d.Get("tag_names").(*schema.Set).List() {
-		options.Tags = append(options.Tags, &tfe.Tag{Name: tagName.(string)})
+		options.Tags = append(options.Tags, &tfe.TagOptions{Name: tagName.(string), Type: String("tags")})
 	}
 
 	log.Printf("[DEBUG] Create workspace %s for organization: %s", name, organization)
@@ -353,8 +353,8 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 
 	// Update the tags
 	var tagNames []interface{}
-	for _, tag := range workspace.Tags {
-		tagNames = append(tagNames, tag.Name)
+	for _, tagName := range workspace.TagNames {
+		tagNames = append(tagNames, tagName)
 	}
 	d.Set("tag_names", tagNames)
 
@@ -450,12 +450,6 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			options.WorkingDirectory = tfe.String(workingDir.(string))
 		}
 
-		if tagNames, ok := d.GetOk("tag_names"); ok {
-			for _, tagName := range tagNames.(*schema.Set).List() {
-				options.Tags = append(options.Tags, &tfe.Tag{Name: tagName.(string)})
-			}
-		}
-
 		// Get and assert the VCS repo configuration block.
 		if v, ok := d.GetOk("vcs_repo"); ok {
 			vcsRepo := v.([]interface{})[0].(map[string]interface{})
@@ -507,6 +501,45 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			_, err := tfeClient.Workspaces.UnassignSSHKey(ctx, id)
 			if err != nil {
 				return fmt.Errorf("Error unassigning SSH key from workspace %s: %v", id, err)
+			}
+		}
+	}
+
+	if d.HasChange("tag_names") {
+		oldTagNameValues, newTagNameValues := d.GetChange("tag_names")
+		newTagNamesSet := newTagNameValues.(*schema.Set)
+		oldTagNamesSet := oldTagNameValues.(*schema.Set)
+
+		newTagNames := newTagNamesSet.Difference(oldTagNamesSet)
+		oldTagNames := oldTagNamesSet.Difference(newTagNamesSet)
+
+		// First add the new tags
+		if newTagNames.Len() > 0 {
+			options := tfe.WorkspaceTagsOptions{}
+
+			for _, tagName := range newTagNames.List() {
+				options.Tags = append(options.Tags, &tfe.TagOptions{Name: tagName.(string), Type: String("tags")})
+			}
+
+			log.Printf("[DEBUG] Adding tags to workspace: %s", d.Id())
+			err := tfeClient.Workspaces.AddTags(ctx, d.Id(), options)
+			if err != nil {
+				return fmt.Errorf("Error adding tags to workspace %s: %v", d.Id(), err)
+			}
+		}
+
+		// Then remove all the old tags
+		if oldTagNames.Len() > 0 {
+			options := tfe.WorkspaceTagsOptions{}
+
+			for _, tagName := range oldTagNames.List() {
+				options.Tags = append(options.Tags, &tfe.TagOptions{Name: tagName.(string), Type: String("tags")})
+			}
+
+			log.Printf("[DEBUG] Removing tags from workspace: %s", d.Id())
+			err := tfeClient.Workspaces.RemoveTags(ctx, d.Id(), options)
+			if err != nil {
+				return fmt.Errorf("Error removing tags from workspace %s: %v", d.Id(), err)
 			}
 		}
 	}
