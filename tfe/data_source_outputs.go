@@ -16,7 +16,7 @@ import (
 	ctyjson "github.com/zclconf/go-cty/cty/json"
 )
 
-type dataSourceWorkspaceOutputs struct {
+type dataSourceOutputs struct {
 	tfeClient *tfe.Client
 }
 
@@ -28,13 +28,13 @@ func init() {
 	stderr = os.Stderr
 }
 
-func newDataSourceWorkspaceOutputs(client *tfe.Client) tfprotov5.DataSourceServer {
-	return dataSourceWorkspaceOutputs{
+func newDataSourceOutputs(client *tfe.Client) tfprotov5.DataSourceServer {
+	return dataSourceOutputs{
 		tfeClient: client,
 	}
 }
 
-func (d dataSourceWorkspaceOutputs) ReadDataSource(ctx context.Context, req *tfprotov5.ReadDataSourceRequest) (*tfprotov5.ReadDataSourceResponse, error) {
+func (d dataSourceOutputs) ReadDataSource(ctx context.Context, req *tfprotov5.ReadDataSourceRequest) (*tfprotov5.ReadDataSourceResponse, error) {
 	resp := &tfprotov5.ReadDataSourceResponse{
 		Diagnostics: []*tfprotov5.Diagnostic{},
 	}
@@ -107,11 +107,11 @@ func (d dataSourceWorkspaceOutputs) ReadDataSource(ctx context.Context, req *tfp
 	}, nil
 }
 
-func (d dataSourceWorkspaceOutputs) ValidateDataSourceConfig(ctx context.Context, req *tfprotov5.ValidateDataSourceConfigRequest) (*tfprotov5.ValidateDataSourceConfigResponse, error) {
+func (d dataSourceOutputs) ValidateDataSourceConfig(ctx context.Context, req *tfprotov5.ValidateDataSourceConfigRequest) (*tfprotov5.ValidateDataSourceConfigResponse, error) {
 	return &tfprotov5.ValidateDataSourceConfigResponse{}, nil
 }
 
-func (d dataSourceWorkspaceOutputs) readConfigValues(req *tfprotov5.ReadDataSourceRequest) (string, string, error) {
+func (d dataSourceOutputs) readConfigValues(req *tfprotov5.ReadDataSourceRequest) (string, string, error) {
 	var orgName string
 	var wsName string
 	var err error
@@ -168,7 +168,7 @@ type stateData struct {
 	outputs map[string]*outputData
 }
 
-func (d dataSourceWorkspaceOutputs) readStateOutput(ctx context.Context, tfeClient *tfe.Client, orgName, wsName string) (*stateData, error) {
+func (d dataSourceOutputs) readStateOutput(ctx context.Context, tfeClient *tfe.Client, orgName, wsName string) (*stateData, error) {
 	log.Printf("[DEBUG] Reading the Workspace %s in Organization %s", wsName, orgName)
 	ws, err := tfeClient.Workspaces.Read(ctx, orgName, wsName)
 	if err != nil {
