@@ -160,12 +160,12 @@ type rawOutput struct {
 	ValueTypeRaw json.RawMessage `json:"type"`
 }
 
-type outputData struct {
-	Value cty.Value
-}
-
 type stateData struct {
 	outputs map[string]*outputData
+}
+
+type outputData struct {
+	Value cty.Value
 }
 
 func (d dataSourceOutputs) readStateOutput(ctx context.Context, tfeClient *tfe.Client, orgName, wsName string) (*stateData, error) {

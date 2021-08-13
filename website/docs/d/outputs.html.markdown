@@ -10,6 +10,8 @@ description: |-
 This data source is used to retrieve the state outputs for a given workspace.
 It enables output values in one Terraform configuration to be used in another.
 
+Any output value that is marked as sensitive is not hidden.
+
 ## Example Usage
 
 Using the `tfe_outputs` data source, the outputs `foo` and `bar` can be used as seen below:
@@ -44,29 +46,12 @@ output "world" {
 }
 ```
 
-If you want to reveal sensitive values, then set the optional boolean flag
-`sensitive=true`:
-
-```
-data "tfe_outputs" "foobar" {
-  organization = "<organization-name>"
-  workspace = "<workspace-name>"
-  sensitive = true
-}
-
-output "secret" {
-	value = data.tfe_outputs.foobar.values.secret
-}
-```
-
 ## Argument Reference
 
 The following arguments are supported:
 
 * `organization` - (Required) The name of the organization.
 * `workspace` - (Required) The name of the workspace.
-* `sensitive` - (Optional) Determines whether or not to show sensitive values.
-  Set to `true` to reveal sensitive values.
 
 ## Attributes Reference
 
