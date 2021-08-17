@@ -1,11 +1,9 @@
 package tfe
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -151,15 +149,6 @@ func (d dataSourceOutputs) readConfigValues(req *tfprotov5.ReadDataSourceRequest
 	return orgName, wsName, nil
 }
 
-type rootModule struct {
-	RootOutputs map[string]rawOutput `json:"outputs"`
-}
-
-type rawOutput struct {
-	ValueRaw     json.RawMessage `json:"value"`
-	ValueTypeRaw json.RawMessage `json:"type"`
-}
-
 type stateData struct {
 	outputs map[string]*outputData
 }
@@ -179,49 +168,37 @@ func (d dataSourceOutputs) readStateOutput(ctx context.Context, tfeClient *tfe.C
 	sv, err := tfeClient.StateVersions.Current(ctx, ws.ID)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			return nil, fmt.Errorf("Current remote state for workspace '%s' not found.", wsName)
+			return nil, fmt.Errorf("Current state version for workspace '%s' not found.", wsName)
 		}
 		return nil, fmt.Errorf("Could not read the current state for workspace '%s' : %v", wsName, err)
 	}
 
-	log.Printf("[DEBUG] Downloading State Version")
-	rawState, err := tfeClient.StateVersions.Download(ctx, sv.DownloadURL)
+	outputs, err := tfeClient.StateVersions.Outputs(ctx, sv.ID)
 	if err != nil {
-		return nil, fmt.Errorf("Error downloading state: %v", err)
+		return nil, fmt.Errorf("Could not read the outputs for state version '%s': %v", sv.ID, err)
 	}
 
-	log.Printf("[DEBUG] Unmarshalling state output")
-	read := bytes.NewReader(rawState)
-	src, err := ioutil.ReadAll(read)
-	if err != nil {
-		return nil, fmt.Errorf("Could not read state data: %v", err)
-	}
-	rrs := &rootModule{}
-	err = json.Unmarshal(src, rrs)
-	if err != nil {
-		return nil, fmt.Errorf("Could not unmarshal state data: %v", err)
-	}
-
-	fov := &stateData{
+	sd := &stateData{
 		outputs: map[string]*outputData{},
 	}
-	for name, fos := range rrs.RootOutputs {
-		ty, err := ctyjson.UnmarshalType([]byte(fos.ValueTypeRaw))
+
+	for _, op := range outputs {
+		buf, err := json.Marshal(op.Value)
 		if err != nil {
-			return nil, fmt.Errorf("Could not unmarshal type: %v", err)
+			return nil, fmt.Errorf("Could not marshal output value: %v", err)
 		}
 
-		val, err := ctyjson.Unmarshal([]byte(fos.ValueRaw), ty)
+		v := ctyjson.SimpleJSONValue{}
+		err = v.UnmarshalJSON(buf)
 		if err != nil {
-			return nil, fmt.Errorf("Could not unmarshal value: %v", err)
+			return nil, fmt.Errorf("Could not unmarshal output value: %v", err)
 		}
-
-		fov.outputs[name] = &outputData{
-			Value: val,
+		sd.outputs[op.Name] = &outputData{
+			Value: v.Value,
 		}
 	}
 
-	return fov, nil
+	return sd, nil
 }
 
 func parseStateOutput(stateOutput *stateData) (map[string]tftypes.Value, map[string]tftypes.Type, error) {

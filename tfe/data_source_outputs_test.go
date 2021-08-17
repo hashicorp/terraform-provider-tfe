@@ -43,14 +43,14 @@ func TestAccTFEOutputs(t *testing.T) {
 						"data.tfe_outputs.foobar", "organization", orgName),
 					resource.TestCheckResourceAttr(
 						"data.tfe_outputs.foobar", "workspace", wsName),
-					// This is the value in test-fixtures/state-versions/terraform.tfstate
-					testCheckOutputState("identifier_output", &terraform.OutputState{
-						Value: "9023256633839603543",
-					}),
-					// This is the value in test-fixtures/state-versions/terraform.tfstate
-					testCheckOutputState("records_output", &terraform.OutputState{
-						Value: []interface{}{"hashicorp.com", "terraform.io"},
-					}),
+					// These outputs rely on the values in test-fixtures/state-versions/terraform.tfstate
+					testCheckOutputState("test_output_list_string", &terraform.OutputState{Value: []interface{}{"us-west-1a"}}),
+					testCheckOutputState("test_output_string", &terraform.OutputState{Value: "9023256633839603543"}),
+					testCheckOutputState("test_output_tuple_number", &terraform.OutputState{Value: []interface{}{"1", "2"}}),
+					testCheckOutputState("test_output_tuple_string", &terraform.OutputState{Value: []interface{}{"one", "two"}}),
+					testCheckOutputState("test_output_object", &terraform.OutputState{Value: map[string]interface{}{"foo": "bar"}}),
+					testCheckOutputState("test_output_number", &terraform.OutputState{Value: "5"}),
+					testCheckOutputState("test_output_bool", &terraform.OutputState{Value: "true"}),
 				),
 			},
 		},
@@ -103,7 +103,6 @@ func testCheckOutputState(name string, expectedOutputState *terraform.OutputStat
 		if !ok {
 			return fmt.Errorf("Not found: %s", name)
 		}
-
 		if rs.String() != expectedOutputState.String() {
 			return fmt.Errorf("Expected the output state %s to match expected output state %s", rs.String(), expectedOutputState.String())
 		}
@@ -189,16 +188,16 @@ data "tfe_outputs" "foobar" {
   workspace = "%s"
 }
 
-output "identifier_output" {
-	// the 'identifier' value references the value in outputs in
-	// the file 'test-fixtures/state-versions/terraform.tfstate
-	value = data.tfe_outputs.foobar.values.identifier
-}
-output "records_output" {
-	// the 'records' value references the value in outputs in
-	// the file 'test-fixtures/state-versions/terraform.tfstate
-	value = data.tfe_outputs.foobar.values.records
-}`, rInt, rInt, org, workspace)
+// All of these values reference the outputs in  the file
+// 'test-fixtures/state-versions/terraform.tfstate
+output "test_output_list_string" { value = data.tfe_outputs.foobar.values.test_output_list_string }
+output "test_output_string" { value = data.tfe_outputs.foobar.values.test_output_string }
+output "test_output_tuple_number" { value = data.tfe_outputs.foobar.values.test_output_tuple_number }
+output "test_output_tuple_string" { value = data.tfe_outputs.foobar.values.test_output_tuple_string }
+output "test_output_object" { value = data.tfe_outputs.foobar.values.test_output_object }
+output "test_output_number" { value = data.tfe_outputs.foobar.values.test_output_number }
+output "test_output_bool" { value = data.tfe_outputs.foobar.values.test_output_bool }
+`, rInt, rInt, org, workspace)
 }
 
 func testAccTFEOutputs_dataSource_emptyOutputs(rInt int, org, workspace string) string {
