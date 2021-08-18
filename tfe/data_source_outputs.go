@@ -173,7 +173,8 @@ func (d dataSourceOutputs) readStateOutput(ctx context.Context, tfeClient *tfe.C
 		return nil, fmt.Errorf("Could not read the current state for workspace '%s' : %v", wsName, err)
 	}
 
-	outputs, err := tfeClient.StateVersions.Outputs(ctx, sv.ID)
+	opts := tfe.StateVersionOutputsListOptions{}
+	outputs, err := tfeClient.StateVersions.Outputs(ctx, sv.ID, opts)
 	if err != nil {
 		return nil, fmt.Errorf("Could not read the outputs for state version '%s': %v", sv.ID, err)
 	}

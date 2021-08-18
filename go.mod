@@ -13,7 +13,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.0 // indirect
 	github.com/hashicorp/go-slug v0.7.0
-	github.com/hashicorp/go-tfe v0.17.2-0.20210816175342-e4d6b4cf5352
+	github.com/hashicorp/go-tfe v0.17.2-0.20210818213907-a04154c6d9b0
 	github.com/hashicorp/go-version v1.3.0
 	github.com/hashicorp/hcl v0.0.0-20180404174102-ef8a98b0bbce
 	github.com/hashicorp/hcl/v2 v2.10.0 // indirect
@@ -29,6 +29,7 @@ require (
 	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d // indirect
 	golang.org/x/oauth2 v0.0.0-20210622215436-a8dc77f794b6 // indirect
 	golang.org/x/sys v0.0.0-20210616094352-59db8d763f22 // indirect
+	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	google.golang.org/api v0.44.0-impersonate-preview // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
