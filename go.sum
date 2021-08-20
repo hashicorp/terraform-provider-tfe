@@ -216,10 +216,8 @@ github.com/hashicorp/go-safetemp v1.0.0 h1:2HR189eFNrjHQyENnQMMpCiBAsRxzbTMIgBhE
 github.com/hashicorp/go-safetemp v1.0.0/go.mod h1:oaerMy3BhqiTbVye6QuFhFtIceqFoDHxNAB65b+Rj1I=
 github.com/hashicorp/go-slug v0.7.0 h1:8HIi6oreWPtnhpYd8lIGQBgp4rXzDWQTOhfILZm+nok=
 github.com/hashicorp/go-slug v0.7.0/go.mod h1:Ib+IWBYfEfJGI1ZyXMGNbu2BU+aa3Dzu41RKLH301v4=
-github.com/hashicorp/go-tfe v0.17.2-0.20210816175342-e4d6b4cf5352 h1:tpxFr/tvyAor2lLOj3RJOfMFb6SStb9A4x5juOPKEMo=
-github.com/hashicorp/go-tfe v0.17.2-0.20210816175342-e4d6b4cf5352/go.mod h1:m+EoWP9e+cturL2fZQCuj3DXjHQc0uIPY5OvMgD80wU=
-github.com/hashicorp/go-tfe v0.17.2-0.20210818213907-a04154c6d9b0 h1:HQwSbFKIRZNvJKXwBtOooDgmttkpZKC+wLl4xeLacB0=
-github.com/hashicorp/go-tfe v0.17.2-0.20210818213907-a04154c6d9b0/go.mod h1:o7jeRxYKCFCB4XGsEPQTfcCQqUZ3shL1ud8m5QO6HYk=
+github.com/hashicorp/go-tfe v0.18.0 h1:crWiRe7GddF5DXpeFQMimvLjNcwTbNzuERrcgfpAzvQ=
+github.com/hashicorp/go-tfe v0.18.0/go.mod h1:1tEJ1BQuSFmROTPW9zi4dufP+B/sE7NQxk+tbdmC2Dc=
 github.com/hashicorp/go-uuid v1.0.0/go.mod h1:6SBZvOh/SIDV7/2o3Jml5SYk/TvGqwFJ/bN7x4byOro=
 github.com/hashicorp/go-uuid v1.0.1 h1:fv1ep09latC32wFoVwnqcnKJGnMSdBanPczbHAYm1BE=
 github.com/hashicorp/go-uuid v1.0.1/go.mod h1:6SBZvOh/SIDV7/2o3Jml5SYk/TvGqwFJ/bN7x4byOro=
@@ -234,8 +232,6 @@ github.com/hashicorp/hcl v0.0.0-20180404174102-ef8a98b0bbce/go.mod h1:oZtUIOe8dh
 github.com/hashicorp/hcl/v2 v2.3.0/go.mod h1:d+FwDBbOLvpAM3Z6J7gPj/VoAGkNe/gm352ZhjJ/Zv8=
 github.com/hashicorp/hcl/v2 v2.10.0 h1:1S1UnuhDGlv3gRFV4+0EdwB+znNP5HmcGbIqwnSCByg=
 github.com/hashicorp/hcl/v2 v2.10.0/go.mod h1:FwWsfWEjyV/CMj8s/gqAuiviY72rJ1/oayI9WftqcKg=
-github.com/hashicorp/jsonapi v0.0.0-20210816140428-9a4775ce26c8 h1:RN/kc+PkVoyKqK6hiSwGbvp8ChuAOJYmvROVIpULt4o=
-github.com/hashicorp/jsonapi v0.0.0-20210816140428-9a4775ce26c8/go.mod h1:Yog5+CPEM3c99L1CL2CFCYoSzgWm5vTU58idbRUaLik=
 github.com/hashicorp/jsonapi v0.0.0-20210817203359-15d518142555 h1:uKQ7kOVDmshUT7uoFYn8MDWXUmTOBqqmQkRS0sdQaaA=
 github.com/hashicorp/jsonapi v0.0.0-20210817203359-15d518142555/go.mod h1:Yog5+CPEM3c99L1CL2CFCYoSzgWm5vTU58idbRUaLik=
 github.com/hashicorp/logutils v1.0.0 h1:dLEQVugN8vlakKOUE3ihGLTZJRB4j+M2cdTm/ORI65Y=
