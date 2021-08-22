@@ -24,9 +24,8 @@ func TestAccTFEOutputs(t *testing.T) {
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	fileName := "test-fixtures/state-versions/terraform.tfstate"
-	orgName, wsName, orgCleanup, wsCleanup := createOutputs(t, client, rInt, fileName)
+	orgName, wsName, orgCleanup := createOutputs(t, client, rInt, fileName)
 	defer orgCleanup()
-	defer wsCleanup()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -67,9 +66,8 @@ func TestAccTFEOutputs_emptyOutputs(t *testing.T) {
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	fileName := "test-fixtures/state-versions/terraform-empty-outputs.tfstate"
-	orgName, wsName, orgCleanup, wsCleanup := createOutputs(t, client, rInt, fileName)
+	orgName, wsName, orgCleanup := createOutputs(t, client, rInt, fileName)
 	defer orgCleanup()
-	defer wsCleanup()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -110,9 +108,8 @@ func testCheckOutputState(name string, expectedOutputState *terraform.OutputStat
 	}
 }
 
-func createOutputs(t *testing.T, client *tfe.Client, rInt int, fileName string) (string, string, func(), func()) {
+func createOutputs(t *testing.T, client *tfe.Client, rInt int, fileName string) (string, string, func()) {
 	var orgCleanup func()
-	var wsCleanup func()
 
 	org, err := client.Organizations.Create(ctx, tfe.OrganizationCreateOptions{
 		Name:  tfe.String(fmt.Sprintf("tst-terraform-%d", rInt)),
@@ -134,13 +131,6 @@ func createOutputs(t *testing.T, client *tfe.Client, rInt int, fileName string) 
 	})
 	if err != nil {
 		t.Fatal(err)
-	}
-	wsCleanup = func() {
-		if err := client.Workspaces.Delete(ctx, org.Name, ws.Name); err != nil {
-			t.Errorf("Error destroying workspace! WARNING: Dangling resources\n"+
-				"may exist! The full error is shown below.\n\n"+
-				"Workspace: %s\nError: %s", ws.Name, err)
-		}
 	}
 
 	state, err := ioutil.ReadFile(fileName)
@@ -168,7 +158,7 @@ func createOutputs(t *testing.T, client *tfe.Client, rInt int, fileName string) 
 		t.Fatal(err)
 	}
 
-	return org.Name, ws.Name, orgCleanup, wsCleanup
+	return org.Name, ws.Name, orgCleanup
 }
 
 func testAccTFEOutputs_dataSource(rInt int, org, workspace string) string {
