@@ -10,7 +10,11 @@ description: |-
 This data source is used to retrieve the state outputs for a given workspace.
 It enables output values in one Terraform configuration to be used in another.
 
-Note that any output value marked as sensitive from the remote workspace configuration is not redacted in the _current_ configuration when using this datasource. It is the responsibility of the configuration using this datasource to redetermine sensitive values (e.g. using [sensitive()](https://www.terraform.io/docs/language/functions/sensitive.html) or redeclaring a sensitive output value).
+The outputs retrieved from this data source may contain sensitive information.
+To that end, we defaulted to setting the `values` attribute — which contains the
+output data — of this data source to be marked as
+[sensitive()](https://www.terraform.io/docs/language/functions/sensitive.html).
+This means that one must use `nonsensitive()` to display the output value.
 
 ## Example Usage
 
