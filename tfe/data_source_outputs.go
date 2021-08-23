@@ -159,31 +159,19 @@ type outputData struct {
 
 func (d dataSourceOutputs) readStateOutput(ctx context.Context, tfeClient *tfe.Client, orgName, wsName string) (*stateData, error) {
 	log.Printf("[DEBUG] Reading the Workspace %s in Organization %s", wsName, orgName)
-	ws, err := tfeClient.Workspaces.Read(ctx, orgName, wsName)
+	opts := &tfe.WorkspaceReadOptions{
+		Include: "outputs",
+	}
+	ws, err := tfeClient.Workspaces.ReadWithOptions(ctx, orgName, wsName, opts)
 	if err != nil {
 		return nil, fmt.Errorf("Error reading workspace: %v", err)
-	}
-
-	log.Printf("[DEBUG] Reading the current StateVersion for Workspace ID %s.", ws.ID)
-	sv, err := tfeClient.StateVersions.Current(ctx, ws.ID)
-	if err != nil {
-		if err == tfe.ErrResourceNotFound {
-			return nil, fmt.Errorf("Current state version for workspace '%s' not found.", wsName)
-		}
-		return nil, fmt.Errorf("Could not read the current state for workspace '%s' : %v", wsName, err)
-	}
-
-	opts := tfe.StateVersionOutputsListOptions{}
-	outputs, err := tfeClient.StateVersions.Outputs(ctx, sv.ID, opts)
-	if err != nil {
-		return nil, fmt.Errorf("Could not read the outputs for state version '%s': %v", sv.ID, err)
 	}
 
 	sd := &stateData{
 		outputs: map[string]*outputData{},
 	}
 
-	for _, op := range outputs {
+	for _, op := range ws.Outputs {
 		buf, err := json.Marshal(op.Value)
 		if err != nil {
 			return nil, fmt.Errorf("Could not marshal output value: %v", err)
