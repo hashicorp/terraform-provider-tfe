@@ -10,11 +10,10 @@ description: |-
 This data source is used to retrieve the state outputs for a given workspace.
 It enables output values in one Terraform configuration to be used in another.
 
-The outputs retrieved from this data source may contain sensitive information.
-To that end, we defaulted to setting the `values` attribute — which contains the
-output data — of this data source to be marked as
-[sensitive()](https://www.terraform.io/docs/language/functions/sensitive.html).
-This means that one must use `nonsensitive()` to display the output value.
+As the outputs retrieved from a different workspace may contain sensitive
+information in the context of that workspace, the `values` attribute of this
+data source is statically marked as
+[sensitive](https://www.terraform.io/docs/language/values/outputs.html#sensitive-suppressing-values-in-cli-output).
 
 ## Example Usage
 
@@ -22,31 +21,19 @@ Using the `tfe_outputs` data source, the outputs `foo` and `bar` can be used as 
 
 In the example below, assume we have outputs defined in an my-org/my-workspace:
 
-```
-output "foo" {
-  value = "a"
-}
-
-output "bar" {
-  value = "b"
-}
-```
-
-The `tfe_outputs` data source can now use `foo` and `bar`
-dynamically as seen below.
-
 ```hcl
-data "tfe_outputs" "foobar" {
+data "tfe_outputs" "foo" {
   organization = "my-org"
-  workspace = "my-workspae"
+  workspace = "my-workspace"
 }
 
-output "hello" {
-	value = data.tfe_outputs.foobar.values.foo
-}
+resource "random_vpc_resource" "vpc_id" {
+  keepers = {
+    # Generate a new ID any time the value of 'bar' in workspace 'my-org/my-workspace' changes.
+    bar = data.tfe_outputs.foo.values.bar
+  }
 
-output "world" {
-	value = data.tfe_outputs.foobar.values.bar
+  byte_length = 8
 }
 ```
 
