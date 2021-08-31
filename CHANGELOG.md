@@ -1,7 +1,7 @@
 ## 0.26.0 (Unreleased)
 
 FEATURES:
-* **New Data Sources:** d/tfe_organizations, d/tfe_organization [#320](https://github.com/hashicorp/terraform-provider-tfe/pull/320)
+* **New Data Sources:** d/tfe_organizations, d/tfe_organization [#320](https://github.com/hashicorp/terraform-provider-tfe/pull/320).
 * Add support for enabling structured run outputs in a `tfe_workspace` [#330](https://github.com/hashicorp/terraform-provider-tfe/pull/330).
 * **New Data Source**: Introduces `tfe_slug` used to represent configuration files.
   on local file system [#333](https://github.com/hashicorp/terraform-provider-tfe/pull/333).
