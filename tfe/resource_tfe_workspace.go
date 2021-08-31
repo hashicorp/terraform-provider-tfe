@@ -272,7 +272,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	for _, tagName := range d.Get("tag_names").(*schema.Set).List() {
-		options.Tags = append(options.Tags, &tfe.TagOptions{Name: tagName.(string), Type: String("tags")})
+		options.Tags = append(options.Tags, &tfe.Tag{Name: tagName.(string)})
 	}
 
 	log.Printf("[DEBUG] Create workspace %s for organization: %s", name, organization)
@@ -515,14 +515,14 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 
 		// First add the new tags
 		if newTagNames.Len() > 0 {
-			options := tfe.WorkspaceTagsOptions{}
+			var addTags []*tfe.Tag
 
 			for _, tagName := range newTagNames.List() {
-				options.Tags = append(options.Tags, &tfe.TagOptions{Name: tagName.(string), Type: String("tags")})
+				addTags = append(addTags, &tfe.Tag{Name: tagName.(string)})
 			}
 
 			log.Printf("[DEBUG] Adding tags to workspace: %s", d.Id())
-			err := tfeClient.Workspaces.AddTags(ctx, d.Id(), options)
+			err := tfeClient.Workspaces.AddTags(ctx, d.Id(), addTags)
 			if err != nil {
 				return fmt.Errorf("Error adding tags to workspace %s: %v", d.Id(), err)
 			}
@@ -530,14 +530,14 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 
 		// Then remove all the old tags
 		if oldTagNames.Len() > 0 {
-			options := tfe.WorkspaceTagsOptions{}
+			var removeTags []*tfe.Tag
 
 			for _, tagName := range oldTagNames.List() {
-				options.Tags = append(options.Tags, &tfe.TagOptions{Name: tagName.(string), Type: String("tags")})
+				removeTags = append(removeTags, &tfe.Tag{Name: tagName.(string)})
 			}
 
 			log.Printf("[DEBUG] Removing tags from workspace: %s", d.Id())
-			err := tfeClient.Workspaces.RemoveTags(ctx, d.Id(), options)
+			err := tfeClient.Workspaces.RemoveTags(ctx, d.Id(), removeTags)
 			if err != nil {
 				return fmt.Errorf("Error removing tags from workspace %s: %v", d.Id(), err)
 			}

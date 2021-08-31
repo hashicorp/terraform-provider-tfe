@@ -331,5 +331,5 @@ resource "tfe_workspace" "foo" {
 
 data "tfe_workspace_ids" "foobar" {
   organization = tfe_workspace.dummy.organization
-}`, rInt, rInt, rInt, rInt)
+}`, rInt, rInt)
 }

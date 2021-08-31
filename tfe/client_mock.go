@@ -134,3 +134,11 @@ func (m *mockWorkspaces) RemoveRemoteStateConsumers(ctx context.Context, workspa
 func (m *mockWorkspaces) UpdateRemoteStateConsumers(ctx context.Context, workspaceID string, options tfe.WorkspaceUpdateRemoteStateConsumersOptions) error {
 	panic("not implemented")
 }
+
+func (m *mockWorkspaces) AddTags(ctx context.Context, workspaceID string, options []*tfe.Tag) error {
+	panic("not implemented")
+}
+
+func (m *mockWorkspaces) RemoveTags(ctx context.Context, workspaceID string, options []*tfe.Tag) error {
+	panic("not implemented")
+}
