@@ -51,7 +51,7 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 	organization := d.Get("organization").(string)
 
 	if len(d.Get("names").([]interface{})) == 0 && len(d.Get("tags").([]interface{})) == 0 {
-		return nil
+		return fmt.Errorf("Either `names` or `tags` is required")
 	}
 
 	// Create a map with all the names we are looking for.

@@ -522,7 +522,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			}
 
 			log.Printf("[DEBUG] Adding tags to workspace: %s", d.Id())
-			err := tfeClient.Workspaces.AddTags(ctx, d.Id(), addTags)
+			err := tfeClient.Workspaces.AddTags(ctx, d.Id(), tfe.WorkspaceAddTagsOptions{Tags: addTags})
 			if err != nil {
 				return fmt.Errorf("Error adding tags to workspace %s: %v", d.Id(), err)
 			}
@@ -537,7 +537,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			}
 
 			log.Printf("[DEBUG] Removing tags from workspace: %s", d.Id())
-			err := tfeClient.Workspaces.RemoveTags(ctx, d.Id(), removeTags)
+			err := tfeClient.Workspaces.RemoveTags(ctx, d.Id(), tfe.WorkspaceRemoveTagsOptions{Tags: removeTags})
 			if err != nil {
 				return fmt.Errorf("Error removing tags from workspace %s: %v", d.Id(), err)
 			}
