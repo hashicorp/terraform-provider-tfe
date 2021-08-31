@@ -15,7 +15,15 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 			"names": {
 				Type:     schema.TypeList,
 				Elem:     &schema.Schema{Type: schema.TypeString},
-				Required: true,
+				Optional: true,
+				Required: false,
+			},
+
+			"tags": {
+				Type:     schema.TypeList,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Optional: true,
+				Required: false,
 			},
 
 			"organization": {
@@ -42,6 +50,10 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 	// Get the organization.
 	organization := d.Get("organization").(string)
 
+	if len(d.Get("names").([]interface{})) == 0 && len(d.Get("tags").([]interface{})) == 0 {
+		return nil
+	}
+
 	// Create a map with all the names we are looking for.
 	var id string
 	names := make(map[string]bool)
@@ -55,6 +67,17 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 	ids := make(map[string]string, len(names))
 
 	options := tfe.WorkspaceListOptions{}
+
+	// Create a string with all the tags we are looking for.
+	var tagSearch string
+	for _, tagName := range d.Get("tags").([]interface{}) {
+		id += tagName.(string)
+		tagSearch += fmt.Sprintf("%s,", tagName)
+	}
+	if tagSearch != "" {
+		options.Tags = &tagSearch
+	}
+
 	for {
 		wl, err := tfeClient.Workspaces.List(ctx, organization, options)
 		if err != nil {

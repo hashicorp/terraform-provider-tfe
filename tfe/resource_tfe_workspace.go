@@ -145,6 +145,13 @@ func resourceTFEWorkspace() *schema.Resource {
 				Default:  true,
 			},
 
+			"tag_names": {
+				Type:     schema.TypeSet,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+
 			"terraform_version": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -264,6 +271,10 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		}
 	}
 
+	for _, tagName := range d.Get("tag_names").(*schema.Set).List() {
+		options.Tags = append(options.Tags, &tfe.Tag{Name: tagName.(string)})
+	}
+
 	log.Printf("[DEBUG] Create workspace %s for organization: %s", name, organization)
 	workspace, err := tfeClient.Workspaces.Create(ctx, organization, options)
 	if err != nil {
@@ -340,6 +351,13 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	d.Set("agent_pool_id", agentPoolID)
 
+	// Update the tags
+	var tagNames []interface{}
+	for _, tag := range workspace.Tags {
+		tagNames = append(tagNames, tag.Name)
+	}
+	d.Set("tag_names", tagNames)
+
 	var vcsRepo []interface{}
 	if workspace.VCSRepo != nil {
 		vcsConfig := map[string]interface{}{
@@ -379,7 +397,8 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		d.HasChange("allow_destroy_plan") || d.HasChange("speculative_enabled") ||
 		d.HasChange("operations") || d.HasChange("execution_mode") ||
 		d.HasChange("description") || d.HasChange("agent_pool_id") ||
-		d.HasChange("global_remote_state") || d.HasChange("structured_run_output_enabled") {
+		d.HasChange("global_remote_state") || d.HasChange("structured_run_output_enabled") ||
+		d.HasChange("tag_names") {
 
 		// Create a new options struct.
 		options := tfe.WorkspaceUpdateOptions{
@@ -429,6 +448,12 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 
 		if workingDir, ok := d.GetOk("working_directory"); ok {
 			options.WorkingDirectory = tfe.String(workingDir.(string))
+		}
+
+		if tagNames, ok := d.GetOk("tag_names"); ok {
+			for _, tagName := range tagNames.(*schema.Set).List() {
+				options.Tags = append(options.Tags, &tfe.Tag{Name: tagName.(string)})
+			}
 		}
 
 		// Get and assert the VCS repo configuration block.

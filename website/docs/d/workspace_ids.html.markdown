@@ -22,6 +22,11 @@ data "tfe_workspace_ids" "all" {
   names        = ["*"]
   organization = "my-org-name"
 }
+
+data "tfe_workspace_ids" "prod-apps" {
+  tags         = ["prod", "app", "aws"]
+  organization = "my-org-name"
+}
 ```
 
 ## Argument Reference

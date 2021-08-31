@@ -25,6 +25,7 @@ resource "tfe_organization" "test-organization" {
 resource "tfe_workspace" "test" {
   name         = "my-workspace-name"
   organization = tfe_organization.test-organization.name
+  tag_names    = ["test", "app"]
 }
 ```
 
@@ -100,6 +101,7 @@ The following arguments are supported:
   the latest available version.
 * `trigger_prefixes` - (Optional) List of repository-root-relative paths which describe all locations
   to be tracked for changes.
+* `tag_names` - (Optional) A list of tag names for this workspace.
 * `working_directory` - (Optional) A relative path that Terraform will execute
   within.  Defaults to the root of your repository.
 * `vcs_repo` - (Optional) Settings for the workspace's VCS repository, enabling the [UI/VCS-driven run workflow](https://www.terraform.io/docs/cloud/run/ui.html).

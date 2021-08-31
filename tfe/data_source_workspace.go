@@ -99,6 +99,13 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Computed: true,
 			},
 
+			"tag_names": {
+				Type:     schema.TypeSet,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+
 			"terraform_version": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -189,6 +196,13 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	if workspace.SSHKey != nil {
 		d.Set("ssh_key_id", workspace.SSHKey.ID)
 	}
+
+	// Update the tags
+	var tagNames []interface{}
+	for _, tag := range workspace.Tags {
+		tagNames = append(tagNames, tag.Name)
+	}
+	d.Set("tag_names", tagNames)
 
 	var vcsRepo []interface{}
 	if workspace.VCSRepo != nil {
