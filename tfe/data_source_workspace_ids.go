@@ -54,9 +54,6 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 	if len(d.Get("names").([]interface{})) == 0 && len(d.Get("tag_names").([]interface{})) == 0 {
 		return fmt.Errorf("Either `names` or `tag_names` is required")
 	}
-	if len(d.Get("names").([]interface{})) > 0 && len(d.Get("tag_names").([]interface{})) > 0 {
-		return fmt.Errorf("Only `names` or `tag_names` is allowed")
-	}
 
 	// Create a map with all the names we are looking for.
 	var id string
@@ -90,7 +87,7 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 		}
 
 		for _, w := range wl.Items {
-			if names["*"] || names[w.Name] || len(tagSearchParts) > 0 {
+			if len(names) == 0 || names["*"] || names[w.Name] {
 				fullNames[w.Name] = organization + "/" + w.Name
 				ids[w.Name] = w.ID
 			}

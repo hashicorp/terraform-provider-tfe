@@ -31,7 +31,7 @@ data "tfe_workspace_ids" "prod-apps" {
 
 ## Argument Reference
 
-The following arguments are supported. Either one of `names` or `tag_names` is required.
+The following arguments are supported. Either one of `names` or `tag_names` or both is required.
 
 * `names` - (Optional) A list of workspace names to search for. Names that don't
   match a real workspace will be omitted from the results, but are not an error.
