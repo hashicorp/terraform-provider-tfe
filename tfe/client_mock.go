@@ -120,7 +120,7 @@ func (m *mockWorkspaces) RemoteStateConsumers(ctx context.Context, workspaceID s
 		return nil, errors.New("something is broken!")
 	}
 
-	return &tfe.WorkspaceList{Items: []*tfe.Workspace{&tfe.Workspace{ID: "ws-456"}}}, nil
+	return &tfe.WorkspaceList{Items: []*tfe.Workspace{{ID: "ws-456"}}}, nil
 }
 
 func (m *mockWorkspaces) AddRemoteStateConsumers(ctx context.Context, workspaceID string, options tfe.WorkspaceAddRemoteStateConsumersOptions) error {
@@ -135,10 +135,14 @@ func (m *mockWorkspaces) UpdateRemoteStateConsumers(ctx context.Context, workspa
 	panic("not implemented")
 }
 
-func (m *mockWorkspaces) AddTags(ctx context.Context, workspaceID string, options []*tfe.Tag) error {
+func (m *mockWorkspaces) Tags(ctx context.Context, workspaceID string, options tfe.WorkspaceTagListOptions) (*tfe.TagList, error) {
 	panic("not implemented")
 }
 
-func (m *mockWorkspaces) RemoveTags(ctx context.Context, workspaceID string, options []*tfe.Tag) error {
+func (m *mockWorkspaces) AddTags(ctx context.Context, workspaceID string, options tfe.WorkspaceAddTagsOptions) error {
+	panic("not implemented")
+}
+
+func (m *mockWorkspaces) RemoveTags(ctx context.Context, workspaceID string, options tfe.WorkspaceRemoveTagsOptions) error {
 	panic("not implemented")
 }
