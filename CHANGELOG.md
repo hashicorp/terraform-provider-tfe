@@ -2,6 +2,14 @@
 
 FEATURES:
 * **New Data Sources:** d/tfe_organizations, d/tfe_organization [#320](https://github.com/hashicorp/terraform-provider-tfe/pull/320)
+* Add support for enabling structured run outputs in a `tfe_workspace` [#330](https://github.com/hashicorp/terraform-provider-tfe/pull/330).
+* **New Data Source**: Introduces `tfe_slug` used to represent configuration files.
+  on local file system [#333](https://github.com/hashicorp/terraform-provider-tfe/pull/333).
+* Add functionality in `tfe_policy_set` to allow uploading of local policies [#333](https://github.com/hashicorp/terraform-provider-tfe/pull/333).
+* **New Data Source**: Introduces `tfe_outputs` to retrieve state outputs for a Workspace.
+
+ENHANCEMENTS:
+* Use Golang 1.17 [#341](https://github.com/hashicorp/terraform-provider-tfe/pull/341).
 
 ## 0.25.3 (May 18, 2021)
 
