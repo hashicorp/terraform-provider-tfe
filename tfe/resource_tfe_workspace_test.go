@@ -393,9 +393,9 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "tag_names.0", "unfav"),
+						"tfe_workspace.foobar", "tag_names.0", "prod"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "tag_names.1", "prod"),
+						"tfe_workspace.foobar", "tag_names.1", "unfav"),
 				),
 			},
 		},
