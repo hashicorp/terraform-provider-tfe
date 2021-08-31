@@ -132,12 +132,6 @@ func TestAccTFEWorkspaceIDsDataSource_tags(t *testing.T) {
 			{
 				Config: testAccTFEWorkspaceIDsDataSourceConfig_tags(rInt),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					// tag_names attribute
-					resource.TestCheckResourceAttr(
-						"data.tfe_workspace_ids.good", "tag_names.#", "1"),
-					resource.TestCheckResourceAttr(
-						"data.tfe_workspace_ids.good", "tag_names.0", "good"),
-
 					// organization attribute
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace_ids.good", "organization", orgName),
@@ -313,7 +307,7 @@ resource "tfe_workspace" "dummy" {
 
 data "tfe_workspace_ids" "good" {
   tag_names    = ["good"]
-  organization = tfe_workspace.dummy.organization
+  organization = tfe_workspace.foo.organization
 }`, rInt, rInt, rInt, rInt)
 }
 

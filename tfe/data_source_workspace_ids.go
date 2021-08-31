@@ -2,6 +2,7 @@ package tfe
 
 import (
 	"fmt"
+	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -50,8 +51,11 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 	// Get the organization.
 	organization := d.Get("organization").(string)
 
-	if len(d.Get("names").([]interface{})) == 0 && len(d.Get("tags").([]interface{})) == 0 {
-		return fmt.Errorf("Either `names` or `tags` is required")
+	if len(d.Get("names").([]interface{})) == 0 && len(d.Get("tag_names").([]interface{})) == 0 {
+		return fmt.Errorf("Either `names` or `tag_names` is required")
+	}
+	if len(d.Get("names").([]interface{})) > 0 && len(d.Get("tag_names").([]interface{})) > 0 {
+		return fmt.Errorf("Only `names` or `tag_names` is allowed")
 	}
 
 	// Create a map with all the names we are looking for.
@@ -69,12 +73,13 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 	options := tfe.WorkspaceListOptions{}
 
 	// Create a search string with all the tags we are looking for.
-	var tagSearch string
+	var tagSearchParts []string
 	for _, tagName := range d.Get("tag_names").([]interface{}) {
 		id += tagName.(string) // add to the state id
-		tagSearch += fmt.Sprintf("%s,", tagName)
+		tagSearchParts = append(tagSearchParts, tagName.(string))
 	}
-	if tagSearch != "" {
+	if len(tagSearchParts) > 0 {
+		tagSearch := strings.Join(tagSearchParts, ",")
 		options.Tags = &tagSearch
 	}
 
@@ -85,7 +90,7 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 		}
 
 		for _, w := range wl.Items {
-			if names["*"] || names[w.Name] {
+			if names["*"] || names[w.Name] || len(tagSearchParts) > 0 {
 				fullNames[w.Name] = organization + "/" + w.Name
 				ids[w.Name] = w.ID
 			}
