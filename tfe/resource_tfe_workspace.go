@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -272,7 +273,10 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	for _, tagName := range d.Get("tag_names").(*schema.Set).List() {
-		options.Tags = append(options.Tags, &tfe.Tag{Name: tagName.(string)})
+		name := tagName.(string)
+		if len(strings.TrimSpace(name)) != 0 {
+			options.Tags = append(options.Tags, &tfe.Tag{Name: tagName.(string)})
+		}
 	}
 
 	log.Printf("[DEBUG] Create workspace %s for organization: %s", name, organization)
@@ -397,8 +401,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		d.HasChange("allow_destroy_plan") || d.HasChange("speculative_enabled") ||
 		d.HasChange("operations") || d.HasChange("execution_mode") ||
 		d.HasChange("description") || d.HasChange("agent_pool_id") ||
-		d.HasChange("global_remote_state") || d.HasChange("structured_run_output_enabled") ||
-		d.HasChange("tag_names") {
+		d.HasChange("global_remote_state") || d.HasChange("structured_run_output_enabled") {
 
 		// Create a new options struct.
 		options := tfe.WorkspaceUpdateOptions{

@@ -72,8 +72,11 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 	// Create a search string with all the tags we are looking for.
 	var tagSearchParts []string
 	for _, tagName := range d.Get("tag_names").([]interface{}) {
-		id += tagName.(string) // add to the state id
-		tagSearchParts = append(tagSearchParts, tagName.(string))
+		name := tagName.(string)
+		if len(strings.TrimSpace(name)) != 0 {
+			id += name // add to the state id
+			tagSearchParts = append(tagSearchParts, name)
+		}
 	}
 	if len(tagSearchParts) > 0 {
 		tagSearch := strings.Join(tagSearchParts, ",")

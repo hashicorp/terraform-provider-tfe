@@ -167,7 +167,7 @@ func TestAccTFEWorkspaceIDsDataSource_tags(t *testing.T) {
 	})
 }
 
-func TestAccTFEWorkspaceIDsDataSource_both(t *testing.T) {
+func TestAccTFEWorkspaceIDsDataSource_searchByTagAndName(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
@@ -177,7 +177,7 @@ func TestAccTFEWorkspaceIDsDataSource_both(t *testing.T) {
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspaceIDsDataSourceConfig_both(rInt),
+				Config: testAccTFEWorkspaceIDsDataSourceConfig_searchByTagAndName(rInt),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// organization attribute
 					resource.TestCheckResourceAttr(
@@ -288,13 +288,13 @@ resource "tfe_organization" "foobar" {
 resource "tfe_workspace" "foo" {
   name         = "workspace-foo-%d"
   organization = tfe_organization.foobar.id
-	tag_names    = ["good"]
+  tag_names    = ["good"]
 }
 
 resource "tfe_workspace" "bar" {
   name         = "workspace-bar-%d"
   organization = tfe_organization.foobar.id
-	tag_names    = ["good"]
+  tag_names    = ["good"]
 }
 
 resource "tfe_workspace" "dummy" {
@@ -325,7 +325,7 @@ data "tfe_workspace_ids" "foobar" {
 }`, rInt, rInt)
 }
 
-func testAccTFEWorkspaceIDsDataSourceConfig_both(rInt int) string {
+func testAccTFEWorkspaceIDsDataSourceConfig_searchByTagAndName(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
@@ -335,18 +335,18 @@ resource "tfe_organization" "foobar" {
 resource "tfe_workspace" "foo" {
   name         = "workspace-foo-%d"
   organization = tfe_organization.foobar.id
-	tag_names    = ["bar"]
+  tag_names    = ["bar"]
 }
 
 resource "tfe_workspace" "bar" {
   name         = "workspace-bar-%d"
   organization = tfe_organization.foobar.id
-	tag_names    = ["bar"]
+  tag_names    = ["bar"]
 }
 
 data "tfe_workspace_ids" "good" {
-	names        = ["workspace-foo-%d"]
-	tag_names    = ["bar"]
+  names        = ["workspace-foo-%d"]
+  tag_names    = ["bar"]
   organization = tfe_workspace.foo.organization
 }`, rInt, rInt, rInt, rInt)
 }
