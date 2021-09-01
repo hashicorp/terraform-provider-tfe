@@ -396,6 +396,7 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 
 func TestAccTFEPolicySet_versionedSlug(t *testing.T) {
 	skipIfFreeOnly(t)
+	skipIfUnitTest(t)
 
 	policySet := &tfe.PolicySet{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -436,6 +437,7 @@ func TestAccTFEPolicySet_versionedSlug(t *testing.T) {
 
 func TestAccTFEPolicySet_versionedSlugUpdate(t *testing.T) {
 	skipIfFreeOnly(t)
+	skipIfUnitTest(t)
 
 	policySet := &tfe.PolicySet{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()

@@ -44,3 +44,19 @@ func skipIfEnterprise(t *testing.T) {
 		t.Skip("Skipping test for a feature unavailable in Terraform Enterprise. Set 'ENABLE_TFE=0' to run.")
 	}
 }
+
+func isAcceptanceTest() bool {
+	return os.Getenv("TF_ACC") == "1"
+}
+
+// Most tests rely on terraform-plugin-sdk/helper/resource.Test to run.  That test helper ensures
+// that TF_ACC=1 or else it skips. In some rare cases, however, tests do not use the SDK helper and
+// are acceptance tests.
+// This `skipIfUnitTest` is used when you are doing some extra setup work that may fail when `go
+// test` is run without additional environment variables for acceptance tests. By adding this at the
+// top of the test, it will skip the test if `TF_ACC=1` is not set.
+func skipIfUnitTest(t *testing.T) {
+	if !isAcceptanceTest() {
+		t.Skip("Skipping test because this test is an acceptance test, and is run as a unit test. Set 'TF_ACC=1' to run.")
+	}
+}
