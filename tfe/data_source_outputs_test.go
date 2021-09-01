@@ -16,6 +16,7 @@ import (
 
 func TestAccTFEOutputs(t *testing.T) {
 	skipIfFreeOnly(t)
+	skipIfUnitTest(t)
 
 	client, err := getClientUsingEnv()
 	if err != nil {
@@ -58,6 +59,7 @@ func TestAccTFEOutputs(t *testing.T) {
 
 func TestAccTFEOutputs_emptyOutputs(t *testing.T) {
 	skipIfFreeOnly(t)
+	skipIfUnitTest(t)
 
 	client, err := getClientUsingEnv()
 	if err != nil {

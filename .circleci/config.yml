@@ -34,10 +34,18 @@ jobs:
           name: go vet
           command: make vet
 
+      # This is added because `make test` is run as part of the release process
+      # Most of our tests are Acceptance tests, and therefore are skipped when
+      # part of this. But we want to catch future mistakes by ensuring this
+      # passes.
+      - run:
+          name: go test
+          command: make test
+
       - run:
           name: Run tests
           command: |
-              gotestsum --format short-verbose --junitfile \
+              TF_ACC=1 gotestsum --format short-verbose --junitfile \
               $TEST_RESULTS_DIR/tests.xml -- `go list ./... |grep -v 'vendor'` -v -timeout 30m
           no_output_timeout: 1800
 
