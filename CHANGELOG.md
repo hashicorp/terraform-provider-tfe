@@ -7,6 +7,9 @@ FEATURES:
   on local file system [#333](https://github.com/hashicorp/terraform-provider-tfe/pull/333).
 * Add functionality in `tfe_policy_set` to allow uploading of local policies [#333](https://github.com/hashicorp/terraform-provider-tfe/pull/333).
 * **New Data Source**: Introduces `tfe_outputs` to retrieve state outputs for a Workspace.
+* r/workspace: Added `tag_names` argument to set tags for a Workspace.
+* d/workspace: Added `tag_names` to the data returned for a Workspace.
+* d/workspace_ids: Added `tag_names` as a search option to find Workspaces by tag name.
 
 ENHANCEMENTS:
 * Use Golang 1.17 [#341](https://github.com/hashicorp/terraform-provider-tfe/pull/341).
