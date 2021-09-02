@@ -455,7 +455,7 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 			},
 			{
 				// remove all
-				Config: testAccTFEWorkspace_basicFileTriggersOff(rInt),
+				Config: testAccTFEWorkspace_basicNoTags(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
@@ -1308,6 +1308,21 @@ resource "tfe_workspace" "foobar" {
   organization       = tfe_organization.foobar.id
   auto_apply         = true
   tag_names          = ["fav", "prod"]
+}`, rInt)
+}
+
+func testAccTFEWorkspace_basicNoTags(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name               = "workspace-test"
+  organization       = tfe_organization.foobar.id
+  auto_apply         = true
+  tag_names          = []
 }`, rInt)
 }
 
