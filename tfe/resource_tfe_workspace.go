@@ -355,7 +355,6 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	d.Set("agent_pool_id", agentPoolID)
 
-	// Update the tags
 	var tagNames []interface{}
 	for _, tagName := range workspace.TagNames {
 		tagNames = append(tagNames, tagName)

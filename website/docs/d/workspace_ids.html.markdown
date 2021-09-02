@@ -24,7 +24,7 @@ data "tfe_workspace_ids" "all" {
 }
 
 data "tfe_workspace_ids" "prod-apps" {
-  tag_names         = ["prod", "app", "aws"]
+  tag_names    = ["prod", "app", "aws"]
   organization = "my-org-name"
 }
 ```

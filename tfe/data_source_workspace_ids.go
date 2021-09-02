@@ -69,7 +69,7 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 
 	options := tfe.WorkspaceListOptions{}
 
-	// Create a search string with all the tags we are looking for.
+	// Create a search string with all the tag names we are looking for.
 	var tagSearchParts []string
 	for _, tagName := range d.Get("tag_names").([]interface{}) {
 		name := tagName.(string)

@@ -197,7 +197,7 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 		d.Set("ssh_key_id", workspace.SSHKey.ID)
 	}
 
-	// Update the tags
+	// Update the tag names
 	var tagNames []interface{}
 	for _, tagName := range workspace.TagNames {
 		tagNames = append(tagNames, tagName)
