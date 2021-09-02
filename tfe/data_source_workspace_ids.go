@@ -2,6 +2,7 @@ package tfe
 
 import (
 	"fmt"
+	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -15,7 +16,15 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 			"names": {
 				Type:     schema.TypeList,
 				Elem:     &schema.Schema{Type: schema.TypeString},
-				Required: true,
+				Optional: true,
+				Required: false,
+			},
+
+			"tag_names": {
+				Type:     schema.TypeList,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Optional: true,
+				Required: false,
 			},
 
 			"organization": {
@@ -42,6 +51,10 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 	// Get the organization.
 	organization := d.Get("organization").(string)
 
+	if len(d.Get("names").([]interface{})) == 0 && len(d.Get("tag_names").([]interface{})) == 0 {
+		return fmt.Errorf("Either `names` or `tag_names` is required")
+	}
+
 	// Create a map with all the names we are looking for.
 	var id string
 	names := make(map[string]bool)
@@ -55,6 +68,21 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 	ids := make(map[string]string, len(names))
 
 	options := tfe.WorkspaceListOptions{}
+
+	// Create a search string with all the tag names we are looking for.
+	var tagSearchParts []string
+	for _, tagName := range d.Get("tag_names").([]interface{}) {
+		name := tagName.(string)
+		if len(strings.TrimSpace(name)) != 0 {
+			id += name // add to the state id
+			tagSearchParts = append(tagSearchParts, name)
+		}
+	}
+	if len(tagSearchParts) > 0 {
+		tagSearch := strings.Join(tagSearchParts, ",")
+		options.Tags = &tagSearch
+	}
+
 	for {
 		wl, err := tfeClient.Workspaces.List(ctx, organization, options)
 		if err != nil {
@@ -62,7 +90,7 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 		}
 
 		for _, w := range wl.Items {
-			if names["*"] || names[w.Name] {
+			if len(names) == 0 || names["*"] || names[w.Name] {
 				fullNames[w.Name] = organization + "/" + w.Name
 				ids[w.Name] = w.ID
 			}

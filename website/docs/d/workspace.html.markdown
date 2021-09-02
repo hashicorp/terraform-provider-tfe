@@ -49,6 +49,7 @@ In addition to all arguments above, the following attributes are exported:
 * `speculative_enabled` - Indicates whether this workspace allows speculative plans.
 * `ssh_key_id` - The ID of an SSH key assigned to the workspace.
 * `structured_run_output_enabled` - Indicates whether runs in this workspace use the enhanced apply UI. 
+* `tag_names` - The names of tags added to this workspace.
 * `terraform_version` - The version of Terraform used for this workspace.
 * `trigger_prefixes` - List of repository-root-relative paths which describe all locations to be tracked for changes.
 * `vcs_repo` - Settings for the workspace's VCS repository.

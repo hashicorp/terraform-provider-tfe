@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -145,6 +146,13 @@ func resourceTFEWorkspace() *schema.Resource {
 				Default:  true,
 			},
 
+			"tag_names": {
+				Type:     schema.TypeSet,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+
 			"terraform_version": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -264,6 +272,13 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		}
 	}
 
+	for _, tagName := range d.Get("tag_names").(*schema.Set).List() {
+		name := tagName.(string)
+		if len(strings.TrimSpace(name)) != 0 {
+			options.Tags = append(options.Tags, &tfe.Tag{Name: tagName.(string)})
+		}
+	}
+
 	log.Printf("[DEBUG] Create workspace %s for organization: %s", name, organization)
 	workspace, err := tfeClient.Workspaces.Create(ctx, organization, options)
 	if err != nil {
@@ -339,6 +354,12 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 		agentPoolID = workspace.AgentPool.ID
 	}
 	d.Set("agent_pool_id", agentPoolID)
+
+	var tagNames []interface{}
+	for _, tagName := range workspace.TagNames {
+		tagNames = append(tagNames, tagName)
+	}
+	d.Set("tag_names", tagNames)
 
 	var vcsRepo []interface{}
 	if workspace.VCSRepo != nil {
@@ -482,6 +503,45 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			_, err := tfeClient.Workspaces.UnassignSSHKey(ctx, id)
 			if err != nil {
 				return fmt.Errorf("Error unassigning SSH key from workspace %s: %v", id, err)
+			}
+		}
+	}
+
+	if d.HasChange("tag_names") {
+		oldTagNameValues, newTagNameValues := d.GetChange("tag_names")
+		newTagNamesSet := newTagNameValues.(*schema.Set)
+		oldTagNamesSet := oldTagNameValues.(*schema.Set)
+
+		newTagNames := newTagNamesSet.Difference(oldTagNamesSet)
+		oldTagNames := oldTagNamesSet.Difference(newTagNamesSet)
+
+		// First add the new tags
+		if newTagNames.Len() > 0 {
+			var addTags []*tfe.Tag
+
+			for _, tagName := range newTagNames.List() {
+				addTags = append(addTags, &tfe.Tag{Name: tagName.(string)})
+			}
+
+			log.Printf("[DEBUG] Adding tags to workspace: %s", d.Id())
+			err := tfeClient.Workspaces.AddTags(ctx, d.Id(), tfe.WorkspaceAddTagsOptions{Tags: addTags})
+			if err != nil {
+				return fmt.Errorf("Error adding tags to workspace %s: %v", d.Id(), err)
+			}
+		}
+
+		// Then remove all the old tags
+		if oldTagNames.Len() > 0 {
+			var removeTags []*tfe.Tag
+
+			for _, tagName := range oldTagNames.List() {
+				removeTags = append(removeTags, &tfe.Tag{Name: tagName.(string)})
+			}
+
+			log.Printf("[DEBUG] Removing tags from workspace: %s", d.Id())
+			err := tfeClient.Workspaces.RemoveTags(ctx, d.Id(), tfe.WorkspaceRemoveTagsOptions{Tags: removeTags})
+			if err != nil {
+				return fmt.Errorf("Error removing tags from workspace %s: %v", d.Id(), err)
 			}
 		}
 	}

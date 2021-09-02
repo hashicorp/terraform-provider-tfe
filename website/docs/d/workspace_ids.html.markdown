@@ -22,17 +22,23 @@ data "tfe_workspace_ids" "all" {
   names        = ["*"]
   organization = "my-org-name"
 }
+
+data "tfe_workspace_ids" "prod-apps" {
+  tag_names    = ["prod", "app", "aws"]
+  organization = "my-org-name"
+}
 ```
 
 ## Argument Reference
 
-The following arguments are supported:
+The following arguments are supported. At least one of `names` or `tag_names` must be present. Both can be used together.
 
-* `names` - (Required) A list of workspace names to search for. Names that don't
+* `names` - (Optional) A list of workspace names to search for. Names that don't
   match a real workspace will be omitted from the results, but are not an error.
 
     To select _all_ workspaces for an organization, provide a list with a single
     asterisk, like `["*"]`. No other use of wildcards is supported.
+* `tag_names` - (Optional) A list of tag names to search for.
 * `organization` - (Required) Name of the organization.
 
 ## Attributes Reference
