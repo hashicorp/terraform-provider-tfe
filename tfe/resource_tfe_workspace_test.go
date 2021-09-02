@@ -376,26 +376,105 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
+				// create with 2 tags
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_names.#", "2"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "tag_names.0", "fav"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "tag_names.1", "test"),
 				),
 			},
-
 			{
+				// remove 1
+				Config: testAccTFEWorkspace_basicRemoveTag(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_names.#", "1"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_names.0", "prod"),
+				),
+			},
+			{
+				// add 1
 				Config: testAccTFEWorkspace_basicChangeTags(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "tag_names.0", "prod"),
+						"tfe_workspace.foobar", "tag_names.#", "2"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "tag_names.1", "unfav"),
+						"tfe_workspace.foobar", "tag_names.0", "fav"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_names.1", "prod"),
+				),
+			},
+			{
+				// remove 1 again
+				Config: testAccTFEWorkspace_basicRemoveTag(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_names.#", "1"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_names.0", "prod"),
+				),
+			},
+			{
+				// change unrelated attr
+				Config: testAccTFEWorkspace_basicRemoveTagAlt(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_names.#", "1"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_names.0", "prod"),
+				),
+			},
+			{
+				// remove 1, add 2
+				Config: testAccTFEWorkspace_basic(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_names.#", "2"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_names.0", "fav"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_names.1", "test"),
+				),
+			},
+			{
+				// remove all
+				Config: testAccTFEWorkspace_basicFileTriggersOff(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_names.#", "0"),
+				),
+			},
+			{
+				// add 2
+				Config: testAccTFEWorkspace_basic(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_names.#", "2"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_names.0", "fav"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_names.1", "test"),
 				),
 			},
 		},
@@ -1228,7 +1307,37 @@ resource "tfe_workspace" "foobar" {
   name               = "workspace-test"
   organization       = tfe_organization.foobar.id
   auto_apply         = true
-  tag_names          = ["unfav", "prod"]
+  tag_names          = ["fav", "prod"]
+}`, rInt)
+}
+
+func testAccTFEWorkspace_basicRemoveTag(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name               = "workspace-test"
+  organization       = tfe_organization.foobar.id
+  auto_apply         = true
+  tag_names          = ["prod"]
+}`, rInt)
+}
+
+func testAccTFEWorkspace_basicRemoveTagAlt(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name               = "workspace-test"
+  organization       = tfe_organization.foobar.id
+  auto_apply         = false
+  tag_names          = ["prod"]
 }`, rInt)
 }
 
