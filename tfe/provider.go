@@ -282,36 +282,71 @@ func getClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
 // cliConfig tries to find and parse the configuration of the Terraform CLI.
 // This is an optional step, so any errors are ignored.
 func cliConfig() *Config {
-	config := &Config{}
+	mainConfig := &Config{}
+	combinedConfig := &Config{}
 
-	// Detect the CLI config file path.
-	configFilePath := os.Getenv("TERRAFORM_CONFIG")
+	// There might be credentials in the main CLI config file (manually entered)
+	// AND/OR the credentials file (auto-configured by terraform login or a
+	// credentials helper), so we need to consult both. As per the behavior of
+	// Terraform itself, the main config file wins if both sources have
+	// credentials for a given host.
+
+	// To find the main CLI config file, follow Terraform's own logic: try
+	// TF_CLI_CONFIG_FILE, then try TERRAFORM_CONFIG, then try the default
+	// location.
+	configFilePath := os.Getenv("TF_CLI_CONFIG_FILE")
+	if configFilePath == "" {
+		configFilePath = os.Getenv("TERRAFORM_CONFIG")
+	}
 	if configFilePath == "" {
 		filePath, err := configFile()
 		if err != nil {
 			log.Printf("[ERROR] Error detecting default CLI config file path: %s", err)
-			return config
+		} else {
+			configFilePath = filePath
 		}
-		configFilePath = filePath
 	}
+	if configFilePath != "" {
+		mainConfig = readCliConfigFile(configFilePath)
+	}
+
+	// The location of the credentials file isn't configurable.
+	credentialsFilePath, err := credentialsFile()
+	if err == nil {
+		combinedConfig = readCliConfigFile(credentialsFilePath)
+	} else {
+		log.Printf("[ERROR] Error detecting default credentials file path: %s", err)
+	}
+
+	// Combine both sets of credentials, letting the config file override the
+	// credentials file if they have any overlapping hostnames.
+	for host, creds := range mainConfig.Credentials {
+		combinedConfig.Credentials[host] = creds
+	}
+
+	return combinedConfig
+}
+
+func readCliConfigFile(configFilePath string) *Config {
+	config := &Config{}
 
 	// Read the CLI config file content.
 	content, err := ioutil.ReadFile(configFilePath)
 	if err != nil {
-		log.Printf("[ERROR] Error reading the CLI config file %s: %v", configFilePath, err)
+		log.Printf("[ERROR] Error reading CLI config or credentials file %s: %v", configFilePath, err)
 		return config
 	}
 
 	// Parse the CLI config file content.
 	obj, err := hcl.Parse(string(content))
 	if err != nil {
-		log.Printf("[ERROR] Error parsing the CLI config file %s: %v", configFilePath, err)
+		log.Printf("[ERROR] Error parsing CLI config or credentials file %s: %v", configFilePath, err)
 		return config
 	}
 
 	// Decode the CLI config file content.
 	if err := hcl.DecodeObject(&config, obj); err != nil {
-		log.Printf("[ERROR] Error decoding the CLI config file %s: %v", configFilePath, err)
+		log.Printf("[ERROR] Error decoding CLI config or credentials file %s: %v", configFilePath, err)
 	}
 
 	return config

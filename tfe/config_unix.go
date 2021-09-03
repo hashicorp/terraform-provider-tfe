@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package tfe
@@ -16,6 +17,15 @@ func configFile() (string, error) {
 	}
 
 	return filepath.Join(dir, ".terraformrc"), nil
+}
+
+func credentialsFile() (string, error) {
+	dir, err := configDir()
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(dir, "credentials.tfrc.json"), nil
 }
 
 func configDir() (string, error) {
