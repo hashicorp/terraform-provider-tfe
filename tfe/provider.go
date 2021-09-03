@@ -3,6 +3,7 @@ package tfe
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -10,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -24,8 +26,12 @@ import (
 )
 
 const defaultHostname = "app.terraform.io"
+const defaultSSLSkipVerify = false
 
-var tfeServiceIDs = []string{"tfe.v2.2"}
+var (
+	tfeServiceIDs       = []string{"tfe.v2.2"}
+	errMissingAuthToken = errors.New("Required token could not be found. Please set the token using an input variable in the provider configuration block or by using the TFE_TOKEN environment variable.")
+)
 
 // Config is the structure of the configuration for the Terraform CLI.
 type Config struct {
@@ -46,26 +52,27 @@ var ctx = context.Background()
 // Provider returns a schema.Provider
 func Provider() *schema.Provider {
 	return &schema.Provider{
+		// Note that defaults and fallbacks which are usually handled by DefaultFunc here are
+		// instead handled when fetching a TFC/E client in getClient(). This is because the this
+		// provider is actually two muxed providers which must respect the same logic for fetching
+		// those values in each schema.
 		Schema: map[string]*schema.Schema{
 			"hostname": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: descriptions["hostname"],
-				DefaultFunc: schema.EnvDefaultFunc("TFE_HOSTNAME", defaultHostname),
 			},
 
 			"token": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: descriptions["token"],
-				DefaultFunc: schema.EnvDefaultFunc("TFE_TOKEN", nil),
 			},
 
 			"ssl_skip_verify": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Description: descriptions["ssl_skip_verify"],
-				DefaultFunc: schema.EnvDefaultFunc("TFE_SSL_SKIP_VERIFY", false),
 			},
 		},
 
@@ -120,8 +127,19 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 }
 
 func getClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
+	h := tfeHost
+	if tfeHost == "" {
+		if os.Getenv("TFE_HOSTNAME") != "" {
+			h = os.Getenv("TFE_HOSTNAME")
+		} else {
+			h = defaultHostname
+		}
+	}
+
+	log.Printf("[DEBUG] Configuring client for host %q", h)
+
 	// Parse the hostname for comparison,
-	hostname, err := svchost.ForComparison(tfeHost)
+	hostname, err := svchost.ForComparison(h)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +154,22 @@ func getClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
 		transport.TLSClientConfig = &tls.Config{}
 	}
 
+	// If ssl_skip_verify is false, it is either set that way in configuration or unset. Check
+	// the environment to see if it was set to true there.  Strictly speaking, this means that
+	// the env var can override an explicit 'false' in configuration (which is not true of the
+	// other settings), but that's how it goes with a boolean zero value.
+	if !insecure && os.Getenv("TFE_SSL_SKIP_VERIFY") != "" {
+		v := os.Getenv("TFE_SSL_SKIP_VERIFY")
+		insecure, err = strconv.ParseBool(v)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// Configure the certificate verification options.
+	if insecure {
+		log.Printf("[DEBUG] Warning: Client configured to skip certificate verifications")
+	}
 	transport.TLSClientConfig.InsecureSkipVerify = insecure
 
 	// Get the Terraform CLI configuration.
@@ -203,21 +236,27 @@ func getClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
 		return nil, discoErr
 	}
 
-	// Only try to get to the token from the credentials source if no token
-	// was explicitly set in the provider configuration.
+	// If a token wasn't set in the provider configuration block, try and fetch it
+	// from the environment or from Terraform's CLI configuration or configured credential helper.
 	if token == "" {
-		creds, err := services.CredentialsForHost(hostname)
-		if err != nil {
-			log.Printf("[DEBUG] Failed to get credentials for %s: %s (ignoring)", hostname, err)
-		}
-		if creds != nil {
-			token = creds.Token()
+		if os.Getenv("TFE_TOKEN") != "" {
+			log.Printf("[DEBUG] TFE_TOKEN used for token value")
+			token = os.Getenv("TFE_TOKEN")
+		} else {
+			log.Printf("[DEBUG] Attempting to fetch token from Terraform CLI configuration for hostname %s...", hostname)
+			creds, err := services.CredentialsForHost(hostname)
+			if err != nil {
+				log.Printf("[DEBUG] Failed to get credentials for %s: %s (ignoring)", hostname, err)
+			}
+			if creds != nil {
+				token = creds.Token()
+			}
 		}
 	}
 
 	// If we still don't have a token at this point, we return an error.
 	if token == "" {
-		return nil, fmt.Errorf("Required token could not be found. Please set the token using an input variable in the provider configuration block or by using the TFE_TOKEN environment variable.")
+		return nil, errMissingAuthToken
 	}
 
 	// Wrap the configured transport to enable logging.
