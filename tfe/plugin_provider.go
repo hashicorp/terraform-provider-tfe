@@ -3,7 +3,6 @@ package tfe
 import (
 	"context"
 	"fmt"
-	"os"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
@@ -36,8 +35,9 @@ func (e errUnsupportedResource) Error() string {
 }
 
 type providerMeta struct {
-	token    string
-	hostname string
+	token         string
+	hostname      string
+	sslSkipVerify bool
 }
 
 func (p *pluginProviderServer) GetProviderSchema(ctx context.Context, req *tfprotov5.GetProviderSchemaRequest) (*tfprotov5.GetProviderSchemaResponse, error) {
@@ -61,13 +61,13 @@ func (p *pluginProviderServer) ConfigureProvider(ctx context.Context, req *tfpro
 	if err != nil {
 		resp.Diagnostics = append(resp.Diagnostics, &tfprotov5.Diagnostic{
 			Severity: tfprotov5.DiagnosticSeverityError,
-			Summary:  "Error retrieving provider meta values from provider request",
-			Detail:   fmt.Sprintf("Error retrieving provider meta values from provider request %v", err),
+			Summary:  "Error retrieving provider meta values for internal provider.",
+			Detail:   fmt.Sprintf("This should never happen; please report it to https://github.com/hashicorp/terraform-provider-tfe/issues\n\nThe error received was: %q", err.Error()),
 		})
 		return resp, nil
 	}
 
-	client, err := getClient(meta.hostname, meta.token, false)
+	client, err := getClient(meta.hostname, meta.token, meta.sslSkipVerify)
 	if err != nil {
 		resp.Diagnostics = append(resp.Diagnostics, &tfprotov5.Diagnostic{
 			Severity: tfprotov5.DiagnosticSeverityError,
@@ -238,6 +238,7 @@ func retrieveProviderMeta(req *tfprotov5.ConfigureProviderRequest) (providerMeta
 	}
 	var hostname string
 	var token string
+	var sslSkipVerify bool
 	var valMap map[string]tftypes.Value
 	err = val.As(&valMap)
 	if err != nil {
@@ -255,21 +256,18 @@ func retrieveProviderMeta(req *tfprotov5.ConfigureProviderRequest) (providerMeta
 			return meta, fmt.Errorf("Could not set the token value to string %v", err)
 		}
 	}
-
-	if hostname == "" && os.Getenv("TFE_HOSTNAME") != "" {
-		hostname = os.Getenv("TFE_HOSTNAME")
-	}
-
-	if token == "" && os.Getenv("TFE_TOKEN") != "" {
-		token = os.Getenv("TFE_TOKEN")
-	}
-
-	if hostname == "" || token == "" {
-		return meta, fmt.Errorf("the hostname and token must be present.")
+	if !valMap["ssl_skip_verify"].IsNull() {
+		err = valMap["ssl_skip_verify"].As(&sslSkipVerify)
+		if err != nil {
+			return meta, fmt.Errorf("Could not set the ssl_skip_verify value to boolean %v", err)
+		}
+	} else {
+		sslSkipVerify = defaultSSLSkipVerify
 	}
 
 	meta.hostname = hostname
 	meta.token = token
+	meta.sslSkipVerify = sslSkipVerify
 
 	return meta, nil
 }

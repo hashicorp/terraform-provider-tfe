@@ -42,14 +42,13 @@ func init() {
 }
 
 func getClientUsingEnv() (*tfe.Client, error) {
-	if os.Getenv("TFE_HOSTNAME") == "" && (os.Getenv("TFE_TOKEN") == "") {
-		return nil, fmt.Errorf("must provide environment variables TFE_HOSTNAME and TFE_TOKEN")
+	hostname := defaultHostname
+	if os.Getenv("TFE_HOSTNAME") != "" {
+		hostname = os.Getenv("TFE_HOSTNAME")
 	}
-	hostname := os.Getenv("TFE_HOSTNAME")
 	token := os.Getenv("TFE_TOKEN")
-	insecure := os.Getenv("TFE_INSECURE") != ""
 
-	client, err := getClient(hostname, token, insecure)
+	client, err := getClient(hostname, token, defaultSSLSkipVerify)
 	if err != nil {
 		return nil, fmt.Errorf("Error getting client: %s", err)
 	}
