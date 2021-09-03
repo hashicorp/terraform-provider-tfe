@@ -14,17 +14,16 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"names": {
-				Type:     schema.TypeList,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Optional: true,
-				Required: false,
+				Type:         schema.TypeList,
+				Elem:         &schema.Schema{Type: schema.TypeString},
+				Optional:     true,
+				AtLeastOneOf: []string{"names", "tag_names"},
 			},
 
 			"tag_names": {
 				Type:     schema.TypeList,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Optional: true,
-				Required: false,
 			},
 
 			"organization": {
@@ -51,10 +50,6 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 	// Get the organization.
 	organization := d.Get("organization").(string)
 
-	if len(d.Get("names").([]interface{})) == 0 && len(d.Get("tag_names").([]interface{})) == 0 {
-		return fmt.Errorf("Either `names` or `tag_names` is required")
-	}
-
 	// Create a map with all the names we are looking for.
 	var id string
 	names := make(map[string]bool)
@@ -62,6 +57,7 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 		id += name.(string)
 		names[name.(string)] = true
 	}
+	isWildcard := names["*"]
 
 	// Create two maps to hold the results.
 	fullNames := make(map[string]string, len(names))
@@ -83,6 +79,8 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 		options.Tags = &tagSearch
 	}
 
+	hasOnlyTags := len(tagSearchParts) > 0 && len(names) == 0
+
 	for {
 		wl, err := tfeClient.Workspaces.List(ctx, organization, options)
 		if err != nil {
@@ -90,7 +88,8 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 		}
 
 		for _, w := range wl.Items {
-			if len(names) == 0 || names["*"] || names[w.Name] {
+			nameIncluded := isWildcard || names[w.Name]
+			if hasOnlyTags || nameIncluded {
 				fullNames[w.Name] = organization + "/" + w.Name
 				ids[w.Name] = w.ID
 			}
