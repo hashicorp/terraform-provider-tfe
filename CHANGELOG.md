@@ -1,4 +1,4 @@
-## 0.26.l (Unreleased)
+## 0.26.1 (Unreleased)
 
 BUG FIXES:
 * Fixed a regression introduced in 0.26.0 where explicitly specifying a hostname became erroneously required, when it should
