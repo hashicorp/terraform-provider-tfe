@@ -1,3 +1,10 @@
+## 0.26.l (Unreleased)
+
+BUG FIXES:
+* Fixed a regression introduced in 0.26.0 where explicitly specifying a hostname became erroneously required, when it should
+  default to app.terraform.io (Terraform Cloud) ([#354](https://github.com/hashicorp/terraform-provider-tfe/pull/354))
+* d/workspace_ids: Fixed issue with `names` and `tag_names` not validating correctly ([#358](https://github.com/hashicorp/terraform-provider-tfe/pull/358))
+
 ## 0.26.0 (September 02, 2021)
 
 FEATURES:
