@@ -216,7 +216,7 @@ func TestAccTFEWorkspaceIDsDataSource_empty(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEWorkspaceIDsDataSourceConfig_empty(rInt),
-				ExpectError: regexp.MustCompile("Either `names` or `tag_names` is required"),
+				ExpectError: regexp.MustCompile("one of `names,tag_names` must be specified"),
 			},
 		},
 	})
