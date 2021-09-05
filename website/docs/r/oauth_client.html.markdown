@@ -51,7 +51,7 @@ The following arguments are supported:
   `https://api.github.com` or `https://ghe.example.com/api/v3`).
 * `http_url` - (Required) The homepage of your VCS provider (e.g.
   `https://github.com` or `https://ghe.example.com`).
-* `oauth_token` - (Required) The token string you were given by your VCS provider.
+* `oauth_token` - (Required) The personal token you were given by your VCS provider. eg, ghp_xxxxxxxxxxxxxxx
 * `private_key` - (Required for `ado_server`) The text of the private key associated with your Azure DevOps Server account
 * `service_provider` - (Required) The VCS provider being connected with. Valid
   options are `ado_server`, `ado_services`, `github`, `github_enterprise`, `gitlab_hosted`,
