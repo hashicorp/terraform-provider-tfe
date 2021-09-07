@@ -61,12 +61,8 @@ Terraform on your local command line, it can automatically discover the credenti
 [`terraform login`](https://www.terraform.io/docs/commands/login.html).
 - **Set a `credentials` block in your CLI config file (.terraformrc):** See
 the [CLI Configuration File documentation](/docs/commands/cli-config.html).
-    - If you used the `TF_CLI_CONFIG_FILE` environment variable to specify a
-      non-default location for .terraformrc, the provider will also use that
-      location.
-    - If you want the provider to use credentials from a different config file
-      than Terraform itself uses, set the `TERRAFORM_CONFIG` environment
-      variable to the file path the provider should use.
+If you used the `TF_CLI_CONFIG_FILE` environment variable to specify a
+non-default location for .terraformrc, the provider will also use that location.
 
 ## Versions
 
