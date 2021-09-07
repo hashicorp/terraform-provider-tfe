@@ -286,10 +286,9 @@ func cliConfig() *Config {
 	combinedConfig := &Config{}
 
 	// There might be credentials in the main CLI config file (manually entered)
-	// AND/OR the credentials file (auto-configured by terraform login or a
-	// credentials helper), so we need to consult both. As per the behavior of
-	// Terraform itself, the main config file wins if both sources have
-	// credentials for a given host.
+	// AND/OR the credentials file (auto-configured by terraform login), so we
+	// need to consult both. As per the behavior of Terraform itself, the main
+	// config file wins if both sources have credentials for a given host.
 
 	// To find the main CLI config file, follow Terraform's own logic: try
 	// TF_CLI_CONFIG_FILE, then try TERRAFORM_CONFIG, then try the default
