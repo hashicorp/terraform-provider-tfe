@@ -51,7 +51,7 @@ The following arguments are supported:
   `https://api.github.com` or `https://ghe.example.com/api/v3`).
 * `http_url` - (Required) The homepage of your VCS provider (e.g.
   `https://github.com` or `https://ghe.example.com`).
-* `oauth_token` - (Required) The personal token you were given by your VCS provider. eg, ghp_xxxxxxxxxxxxxxx
+* `oauth_token` - (Required) The token string you were given by your VCS provider, e.g. `ghp_xxxxxxxxxxxxxxx` for a GitHub personal access token. For more information on how to generate this token string for your VCS provider, see the [Create an OAuth Client](https://www.terraform.io/docs/cloud/api/oauth-clients.html#create-an-oauth-client) documentation.
 * `private_key` - (Required for `ado_server`) The text of the private key associated with your Azure DevOps Server account
 * `service_provider` - (Required) The VCS provider being connected with. Valid
   options are `ado_server`, `ado_services`, `github`, `github_enterprise`, `gitlab_hosted`,
