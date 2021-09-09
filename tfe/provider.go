@@ -283,47 +283,59 @@ func getClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
 // This is an optional step, so any errors are ignored.
 func cliConfig() *Config {
 	mainConfig := &Config{}
+	credentialsConfig := &Config{}
 	combinedConfig := &Config{}
 
-	// There might be credentials in the main CLI config file (manually entered)
-	// AND/OR the credentials file (auto-configured by terraform login), so we
-	// need to consult both. As per the behavior of Terraform itself, the main
-	// config file wins if both sources have credentials for a given host.
-
-	// To find the main CLI config file, follow Terraform's own logic: try
-	// TF_CLI_CONFIG_FILE, then try TERRAFORM_CONFIG, then try the default
-	// location.
-	configFilePath := os.Getenv("TF_CLI_CONFIG_FILE")
-	if configFilePath == "" {
-		configFilePath = os.Getenv("TERRAFORM_CONFIG")
-	}
-	if configFilePath == "" {
-		filePath, err := configFile()
-		if err != nil {
-			log.Printf("[ERROR] Error detecting default CLI config file path: %s", err)
-		} else {
-			configFilePath = filePath
-		}
-	}
+	// Main CLI config file; might contain manually-entered credentials, and/or
+	// some host service discovery objects. Location is configurable via
+	// enviroment variables.
+	configFilePath := locateConfigFile()
 	if configFilePath != "" {
 		mainConfig = readCliConfigFile(configFilePath)
 	}
 
-	// The location of the credentials file isn't configurable.
+	// Credentials file; might contain credentials auto-configured by terraform
+	// login. Location isn't configurable.
 	credentialsFilePath, err := credentialsFile()
-	if err == nil {
-		combinedConfig = readCliConfigFile(credentialsFilePath)
-	} else {
+	if err != nil {
 		log.Printf("[ERROR] Error detecting default credentials file path: %s", err)
+	} else {
+		credentialsConfig = readCliConfigFile(credentialsFilePath)
 	}
 
-	// Combine both sets of credentials, letting the config file override the
-	// credentials file if they have any overlapping hostnames.
+	// Use host service discovery configs from main config file.
+	combinedConfig.Hosts = mainConfig.Hosts
+
+	// Combine both sets of credentials. Per Terraform's own behavior, the main
+	// config file overrides the credentials file if they have any overlapping
+	// hostnames.
+	combinedConfig.Credentials = credentialsConfig.Credentials
 	for host, creds := range mainConfig.Credentials {
 		combinedConfig.Credentials[host] = creds
 	}
 
 	return combinedConfig
+}
+
+func locateConfigFile() string {
+	// To find the main CLI config file, follow Terraform's own logic: try
+	// TF_CLI_CONFIG_FILE, then try TERRAFORM_CONFIG, then try the default
+	// location.
+
+	if os.Getenv("TF_CLI_CONFIG_FILE") != "" {
+		return os.Getenv("TF_CLI_CONFIG_FILE")
+	}
+
+	if os.Getenv("TERRAFORM_CONFIG") != "" {
+		return os.Getenv("TERRAFORM_CONFIG")
+	}
+	filePath, err := configFile()
+	if err != nil {
+		log.Printf("[ERROR] Error detecting default CLI config file path: %s", err)
+		return ""
+	}
+
+	return filePath
 }
 
 func readCliConfigFile(configFilePath string) *Config {
