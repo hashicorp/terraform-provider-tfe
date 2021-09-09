@@ -216,34 +216,39 @@ func TestProvider_cliConfig(t *testing.T) {
 	fromCredentials := "something.atlasv1.prod_credentials_file"
 
 	cases := map[string]struct {
-		home            string
-		rcfile          string
-		expectCount     int
-		expectProdToken string
+		home             string
+		rcfile           string
+		expectCount      int
+		expectProdToken  string
+		expectHostsCount int
 	}{
 		"both main config and credentials JSON": {
-			home:            hasCredentials,
-			rcfile:          terraformrc,
-			expectCount:     3,
-			expectProdToken: fromTerraformrc,
+			home:             hasCredentials,
+			rcfile:           terraformrc,
+			expectCount:      3,
+			expectProdToken:  fromTerraformrc,
+			expectHostsCount: 1,
 		},
 		"only main config": {
-			home:            noCredentials,
-			rcfile:          terraformrc,
-			expectCount:     2,
-			expectProdToken: fromTerraformrc,
+			home:             noCredentials,
+			rcfile:           terraformrc,
+			expectCount:      2,
+			expectProdToken:  fromTerraformrc,
+			expectHostsCount: 1,
 		},
 		"only credentials JSON": {
-			home:            hasCredentials,
-			rcfile:          noTerraformrc,
-			expectCount:     2,
-			expectProdToken: fromCredentials,
+			home:             hasCredentials,
+			rcfile:           noTerraformrc,
+			expectCount:      2,
+			expectProdToken:  fromCredentials,
+			expectHostsCount: 0,
 		},
 		"neither file": {
-			home:            noCredentials,
-			rcfile:          noTerraformrc,
-			expectCount:     0,
-			expectProdToken: "",
+			home:             noCredentials,
+			rcfile:           noTerraformrc,
+			expectCount:      0,
+			expectProdToken:  "",
+			expectHostsCount: 0,
 		},
 	}
 
@@ -261,6 +266,10 @@ func TestProvider_cliConfig(t *testing.T) {
 		}
 		if prodToken != tc.expectProdToken {
 			t.Fatalf("%s: expected %s as prod token, got %s", name, tc.expectProdToken, prodToken)
+		}
+		hostsCount := len(config.Hosts)
+		if hostsCount != tc.expectHostsCount {
+			t.Fatalf("%s: expected %d `host` blocks in the final config, got %d", name, tc.expectHostsCount, hostsCount)
 		}
 	}
 }
