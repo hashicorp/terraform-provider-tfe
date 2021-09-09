@@ -310,6 +310,9 @@ func cliConfig() *Config {
 	// config file overrides the credentials file if they have any overlapping
 	// hostnames.
 	combinedConfig.Credentials = credentialsConfig.Credentials
+	if combinedConfig.Credentials == nil {
+		combinedConfig.Credentials = make(map[string]map[string]interface{})
+	}
 	for host, creds := range mainConfig.Credentials {
 		combinedConfig.Credentials[host] = creds
 	}
