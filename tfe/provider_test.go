@@ -125,6 +125,70 @@ func TestProvider_versionConstraints(t *testing.T) {
 	}
 }
 
+func TestProvider_locateConfigFile(t *testing.T) {
+	originalHome := os.Getenv("HOME")
+	originalTfCliConfigFile := os.Getenv("TF_CLI_CONFIG_FILE")
+	originalTerraformConfig := os.Getenv("TERRAFORM_CONFIG")
+	reset := func() {
+		os.Setenv("HOME", originalHome)
+		if originalTfCliConfigFile != "" {
+			os.Setenv("TF_CLI_CONFIG_FILE", originalTfCliConfigFile)
+		} else {
+			os.Unsetenv("TF_CLI_CONFIG_FILE")
+		}
+		if originalTerraformConfig != "" {
+			os.Setenv("TERRAFORM_CONFIG", originalTerraformConfig)
+		} else {
+			os.Unsetenv("TERRAFORM_CONFIG")
+		}
+	}
+	defer reset()
+
+	// Use a predictable value for $HOME
+	os.Setenv("HOME", "/Users/someone")
+
+	setup := func(tfCliConfigFile, terraformConfig string) {
+		os.Setenv("TF_CLI_CONFIG_FILE", tfCliConfigFile)
+		os.Setenv("TERRAFORM_CONFIG", terraformConfig)
+	}
+
+	cases := map[string]struct {
+		tfCliConfigFile string
+		terraformConfig string
+		result          string
+	}{
+		"has TF_CLI_CONFIG_FILE": {
+			tfCliConfigFile: "~/.terraform_alternate/terraformrc",
+			terraformConfig: "",
+			result:          "~/.terraform_alternate/terraformrc",
+		},
+		"has TERRAFORM_CONFIG": {
+			tfCliConfigFile: "",
+			terraformConfig: "~/.terraform_alternate_rc",
+			result:          "~/.terraform_alternate_rc",
+		},
+		"has both env vars": {
+			tfCliConfigFile: "~/.from_TF_CLI",
+			terraformConfig: "~/.from_TERRAFORM_CONFIG",
+			result:          "~/.from_TF_CLI",
+		},
+		"has neither env var": {
+			tfCliConfigFile: "",
+			terraformConfig: "",
+			result:          "/Users/someone/.terraformrc", // expect tests run on unix
+		},
+	}
+
+	for name, tc := range cases {
+		setup(tc.tfCliConfigFile, tc.terraformConfig)
+
+		fileResult := locateConfigFile()
+		if tc.result != fileResult {
+			t.Fatalf("%s: expected config file at %s, got %s", name, tc.result, fileResult)
+		}
+	}
+}
+
 func testAccPreCheck(t *testing.T) {
 	// The credentials must be provided by the CLI config file for testing.
 	if diags := Provider().Configure(context.Background(), &terraform.ResourceConfig{}); diags.HasError() {
