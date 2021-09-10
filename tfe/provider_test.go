@@ -205,15 +205,15 @@ func TestProvider_cliConfig(t *testing.T) {
 	}
 	defer reset()
 
-	// Summary of fixtures: the credentials file and .terraformrc file each have
-	// credentials for two hosts, and they both have credentials for
-	// app.terraform.io
-	hasCredentials := "test-fixtures/env/home"
-	noCredentials := "test-fixtures/env/empty"
-	terraformrc := "test-fixtures/env/terraformrc"
-	noTerraformrc := "test-fixtures/env/nothing"
-	fromTerraformrc := "something.atlasv1.prod_rc_file"
-	fromCredentials := "something.atlasv1.prod_credentials_file"
+	// Summary of fixtures: the credentials file and terraformrc file each have
+	// credentials for two hosts, they both have credentials for app.terraform.io,
+	// and the terraformrc also has one service discovery override.
+	hasCredentials := "test-fixtures/cli-config-files/home"
+	noCredentials := "test-fixtures/cli-config-files/no-credentials"
+	terraformrc := "test-fixtures/cli-config-files/terraformrc"
+	noTerraformrc := "test-fixtures/cli-config-files/no-terraformrc"
+	tokenFromTerraformrc := "something.atlasv1.prod_rc_file"
+	tokenFromCredentials := "something.atlasv1.prod_credentials_file"
 
 	cases := map[string]struct {
 		home             string
@@ -226,21 +226,21 @@ func TestProvider_cliConfig(t *testing.T) {
 			home:             hasCredentials,
 			rcfile:           terraformrc,
 			expectCount:      3,
-			expectProdToken:  fromTerraformrc,
+			expectProdToken:  tokenFromTerraformrc,
 			expectHostsCount: 1,
 		},
 		"only main config": {
 			home:             noCredentials,
 			rcfile:           terraformrc,
 			expectCount:      2,
-			expectProdToken:  fromTerraformrc,
+			expectProdToken:  tokenFromTerraformrc,
 			expectHostsCount: 1,
 		},
 		"only credentials JSON": {
 			home:             hasCredentials,
 			rcfile:           noTerraformrc,
 			expectCount:      2,
-			expectProdToken:  fromCredentials,
+			expectProdToken:  tokenFromCredentials,
 			expectHostsCount: 0,
 		},
 		"neither file": {
