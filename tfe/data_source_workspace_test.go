@@ -61,6 +61,7 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 						"data.tfe_workspace.foobar", "trigger_prefixes.1", "/shared"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "working_directory", "terraform/test"),
+					resource.TestCheckOutput("foobar", "foo"),
 				),
 			},
 		},
@@ -89,8 +90,19 @@ resource "tfe_workspace" "foobar" {
   working_directory     = "terraform/test"
 }
 
+resource "tfe_variable" "foobar" {
+	workspace_id = tfe_workspace.foobar.id
+	category = "terraform"
+	key = "foo"
+	value = "bar"
+}
+
 data "tfe_workspace" "foobar" {
   name         = tfe_workspace.foobar.name
   organization = tfe_workspace.foobar.organization
+}
+
+output "foobar" {
+	value = data.tfe_workspace.foobar.variables[0]["name"]
 }`, rInt, rInt)
 }
