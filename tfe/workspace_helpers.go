@@ -67,27 +67,39 @@ func unpackWorkspaceID(id string) (organization, name string, err error) {
 }
 
 func readWorkspaceStateConsumers(id string, client *tfe.Client) (bool, []interface{}, error) {
+	options := tfe.RemoteStateConsumersListOptions{ListOptions: tfe.ListOptions{PageSize: 100}}
 	var remoteStateConsumerIDs []interface{}
-	workspaceList, err := client.Workspaces.RemoteStateConsumers(ctx, id)
-	if err != nil {
-		if err == tfe.ErrResourceNotFound {
-			// Make this functionality backwards compatible with Terraform Enterprise < v20210401
-			//
-			// Assume that if you reached this point, you are authorized to this
-			// endpoint (the original call to the workspace succeeded) and thus
-			// the only reason one would receive a 404 here is because this endpoint
-			// does not exist in this version of TFE, in which case remote state
-			// consumers should be ignored. Indicate the old implicit behavior
-			// by setting this computed attribute to true, which is the actual
-			// default value when the installation is eventually upgraded.
-			return true, remoteStateConsumerIDs, nil
-		} else {
-			return false, remoteStateConsumerIDs, err
-		}
-	}
 
-	for _, remoteStateConsumer := range workspaceList.Items {
-		remoteStateConsumerIDs = append(remoteStateConsumerIDs, remoteStateConsumer.ID)
+	for {
+		wl, err := client.Workspaces.RemoteStateConsumers(ctx, id, &options)
+		if err != nil {
+			if err == tfe.ErrResourceNotFound {
+				// Make this functionality backwards compatible with Terraform Enterprise < v20210401
+				//
+				// Assume that if you reached this point, you are authorized to this
+				// endpoint (the original call to the workspace succeeded) and thus
+				// the only reason one would receive a 404 here is because this endpoint
+				// does not exist in this version of TFE, in which case remote state
+				// consumers should be ignored. Indicate the old implicit behavior
+				// by setting this computed attribute to true, which is the actual
+				// default value when the installation is eventually upgraded.
+				return true, remoteStateConsumerIDs, nil
+			} else {
+				return false, remoteStateConsumerIDs, err
+			}
+		}
+
+		for _, w := range wl.Items {
+			remoteStateConsumerIDs = append(remoteStateConsumerIDs, w.ID)
+		}
+
+		// Exit the loop when we've seen all pages.
+		if wl.CurrentPage >= wl.TotalPages {
+			break
+		}
+
+		// Update the page number to get the next page.
+		options.PageNumber = wl.NextPage
 	}
 
 	return false, remoteStateConsumerIDs, nil

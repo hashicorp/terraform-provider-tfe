@@ -113,14 +113,14 @@ func (m *mockWorkspaces) UnassignSSHKey(ctx context.Context, workspaceID string)
 	panic("not implemented")
 }
 
-func (m *mockWorkspaces) RemoteStateConsumers(ctx context.Context, workspaceID string) (*tfe.WorkspaceList, error) {
+func (m *mockWorkspaces) RemoteStateConsumers(ctx context.Context, workspaceID string, options *tfe.RemoteStateConsumersListOptions) (*tfe.WorkspaceList, error) {
 	if m.options.remoteStateConsumersResponse == "404" {
 		return nil, tfe.ErrResourceNotFound
 	} else if m.options.remoteStateConsumersResponse == "500" {
 		return nil, errors.New("something is broken!")
 	}
 
-	return &tfe.WorkspaceList{Items: []*tfe.Workspace{{ID: "ws-456"}}}, nil
+	return &tfe.WorkspaceList{Items: []*tfe.Workspace{{ID: "ws-456"}}, Pagination: &tfe.Pagination{CurrentPage: 1, TotalPages: 1}}, nil
 }
 
 func (m *mockWorkspaces) AddRemoteStateConsumers(ctx context.Context, workspaceID string, options tfe.WorkspaceAddRemoteStateConsumersOptions) error {
