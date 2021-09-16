@@ -48,11 +48,12 @@ In addition to all arguments above, the following attributes are exported:
 * `runs_count` - The number of runs on the workspace.
 * `speculative_enabled` - Indicates whether this workspace allows speculative plans.
 * `ssh_key_id` - The ID of an SSH key assigned to the workspace.
-* `structured_run_output_enabled` - Indicates whether runs in this workspace use the enhanced apply UI. 
+* `structured_run_output_enabled` - Indicates whether runs in this workspace use the enhanced apply UI.
 * `tag_names` - The names of tags added to this workspace.
 * `terraform_version` - The version of Terraform used for this workspace.
 * `trigger_prefixes` - List of repository-root-relative paths which describe all locations to be tracked for changes.
 * `vcs_repo` - Settings for the workspace's VCS repository.
+* `variables` - List containing variables configured on the workspace
 * `working_directory` - A relative path that Terraform will execute within.
 
 
@@ -65,3 +66,10 @@ The `vcs_repo` block contains:
 * `ingress_submodules` - Indicates whether submodules should be fetched when
   cloning the VCS repository.
 * `oauth_token_id` - OAuth token ID of the configured VCS connection.
+
+The `variables` block contains:
+
+* `name` - The variable Key name
+* `value` -  The variable value if the variable it's marked as sensitive it showos "\*\*\*"
+* `category` -  The category of the variable (terraform or environment)
+* `hcl` - If the variable is marked as HCL or not
