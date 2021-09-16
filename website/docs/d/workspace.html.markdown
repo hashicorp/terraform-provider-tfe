@@ -70,6 +70,6 @@ The `vcs_repo` block contains:
 The `variables` block contains:
 
 * `name` - The variable Key name
-* `value` -  The variable value if the variable it's marked as sensitive it showos "\*\*\*"
+* `value` -  The variable value if the variable it's marked as sensitive it shows "\*\*\*"
 * `category` -  The category of the variable (terraform or environment)
 * `hcl` - If the variable is marked as HCL or not
