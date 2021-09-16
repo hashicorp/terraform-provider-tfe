@@ -149,6 +149,30 @@ func dataSourceTFEWorkspace() *schema.Resource {
 					},
 				},
 			},
+			"variables": &schema.Schema{
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"name": &schema.Schema{
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"value": &schema.Schema{
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"category": &schema.Schema{
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"hcl": &schema.Schema{
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -217,6 +241,29 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("vcs_repo", vcsRepo)
 
 	d.SetId(workspace.ID)
+
+	// Workspace Variables
+	totalVariables := make([]interface{}, 0)
+	variableList, err := tfeClient.Variables.List(ctx, workspace.ID, tfe.VariableListOptions{})
+	if err != nil {
+		return fmt.Errorf("Error retrieving variable list: %v", err)
+	}
+	results := make([]interface{}, 0)
+	for _, variable := range variableList.Items {
+		result := make(map[string]interface{})
+		result["name"] = variable.Key
+		result["category"] = variable.Category
+		result["hcl"] = variable.HCL
+		if variable.Sensitive != true {
+			result["value"] = variable.Value
+		} else {
+			result["value"] = "***"
+		}
+
+		results = append(results, result)
+	}
+	totalVariables = append(totalVariables, results...)
+	d.Set("variables", totalVariables)
 
 	return nil
 }
