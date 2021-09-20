@@ -21,7 +21,9 @@ func TestAccTFEVariablesDataSource_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// variables attribute
 					resource.TestCheckResourceAttrSet("data.tfe_variables.foobar", "id"),
-					resource.TestCheckOutput("foobar", "foo"),
+					resource.TestCheckOutput("variables", "foo"),
+					resource.TestCheckOutput("environment", "foo"),
+					resource.TestCheckOutput("terraform", "foo"),
 				),
 			},
 		},
@@ -41,21 +43,37 @@ resource "tfe_workspace" "foobar" {
   organization = tfe_organization.foobar.id
 }
 
-resource "tfe_variable" "foobar" {
+resource "tfe_variable" "terrbar" {
 	key          = "foo"
 	value        = "bar"
 	category     = "terraform"
 	workspace_id = tfe_workspace.foobar.id
 }
 
+resource "tfe_variable" "envbar" {
+	key          = "foo"
+	value        = "bar"
+	category     = "env"
+	workspace_id = tfe_workspace.foobar.id
+}
+
 data "tfe_variables" "foobar" {
 	workspace_id = tfe_workspace.foobar.id
 	depends_on = [
-    tfe_variable.foobar
+    tfe_variable.terrbar,
+		tfe_variable.envbar
   ]
 }
 
-output "foobar" {
+output "variables" {
 	value = data.tfe_variables.foobar.variables[0]["name"]
+}
+
+output "environment" {
+	value = data.tfe_variables.foobar.environment[0]["name"]
+}
+
+output "terraform" {
+	value = data.tfe_variables.foobar.terraform[0]["name"]
 }`, rInt, rInt)
 }
