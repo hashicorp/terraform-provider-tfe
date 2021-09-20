@@ -32,8 +32,10 @@ The following arguments are supported:
 ## Attributes Reference
 
 * `variables` - List containing variables configured on the workspace
+* `terraform` - List containing terraform category variables configured on the workspace
+* `environment` - List containing environment category variables configured on the workspace
 
-The `variables` block contains:
+The `variables, terraform and environment` blocks contains:
 
 * `id` - The variable Id
 * `name` - The variable Key name
