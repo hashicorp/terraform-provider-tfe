@@ -41,6 +41,62 @@ func dataSourceTFEWorkspaceVariables() *schema.Resource {
 					},
 				},
 			},
+			"terraform": &schema.Schema{
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"id": &schema.Schema{
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"name": &schema.Schema{
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"value": &schema.Schema{
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"category": &schema.Schema{
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"hcl": &schema.Schema{
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+					},
+				},
+			},
+			"environment": &schema.Schema{
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"id": &schema.Schema{
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"name": &schema.Schema{
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"value": &schema.Schema{
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"category": &schema.Schema{
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"hcl": &schema.Schema{
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+					},
+				},
+			},
 			"workspace_id": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -58,6 +114,8 @@ func dataSourceVariableRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Read configuration of workspace: %s", workspace_id)
 
 	totalVariables := make([]interface{}, 0)
+	totalEnvVariables := make([]interface{}, 0)
+	totalTerraformVariables := make([]interface{}, 0)
 
 	options := tfe.VariableListOptions{}
 
@@ -66,22 +124,41 @@ func dataSourceVariableRead(d *schema.ResourceData, meta interface{}) error {
 		if err != nil {
 			return fmt.Errorf("Error retrieving variable list: %v", err)
 		}
-		results := make([]interface{}, 0)
+		terraformVars := make([]interface{}, 0)
+		envVars := make([]interface{}, 0)
 		for _, variable := range variableList.Items {
-			result := make(map[string]interface{})
-			result["id"] = variable.ID
-			result["name"] = variable.Key
-			result["category"] = variable.Category
-			result["hcl"] = variable.HCL
-			if variable.Sensitive != true {
-				result["value"] = variable.Value
-			} else {
-				result["value"] = "***"
-			}
+			if variable.Category == "terraform" {
+				result := make(map[string]interface{})
+				result["id"] = variable.ID
+				result["name"] = variable.Key
+				result["category"] = variable.Category
+				result["hcl"] = variable.HCL
+				if variable.Sensitive != true {
+					result["value"] = variable.Value
+				} else {
+					result["value"] = "***"
+				}
 
-			results = append(results, result)
+				terraformVars = append(terraformVars, result)
+			} else if variable.Category == "env" {
+				result := make(map[string]interface{})
+				result["id"] = variable.ID
+				result["name"] = variable.Key
+				result["category"] = variable.Category
+				result["hcl"] = variable.HCL
+				if variable.Sensitive != true {
+					result["value"] = variable.Value
+				} else {
+					result["value"] = "***"
+				}
+
+				envVars = append(envVars, result)
+			}
 		}
-		totalVariables = append(totalVariables, results...)
+		totalVariables = append(totalVariables, terraformVars...)
+		totalVariables = append(totalVariables, envVars...)
+		totalEnvVariables = append(totalEnvVariables, envVars...)
+		totalTerraformVariables = append(totalTerraformVariables, terraformVars...)
 
 		// Exit the loop when we've seen all pages.
 		if variableList.CurrentPage >= variableList.TotalPages {
@@ -94,6 +171,8 @@ func dataSourceVariableRead(d *schema.ResourceData, meta interface{}) error {
 
 	d.SetId(fmt.Sprintf("variables/%v", workspace_id))
 	d.Set("variables", totalVariables)
+	d.Set("terraform", totalTerraformVariables)
+	d.Set("environment", totalEnvVariables)
 	log.Println(totalVariables)
 	return nil
 }
