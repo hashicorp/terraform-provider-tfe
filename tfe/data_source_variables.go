@@ -18,6 +18,10 @@ func dataSourceTFEWorkspaceVariables() *schema.Resource {
 				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						"id": &schema.Schema{
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 						"name": &schema.Schema{
 							Type:     schema.TypeString,
 							Computed: true,
@@ -65,6 +69,7 @@ func dataSourceVariableRead(d *schema.ResourceData, meta interface{}) error {
 		results := make([]interface{}, 0)
 		for _, variable := range variableList.Items {
 			result := make(map[string]interface{})
+			result["id"] = variable.ID
 			result["name"] = variable.Key
 			result["category"] = variable.Category
 			result["hcl"] = variable.HCL
