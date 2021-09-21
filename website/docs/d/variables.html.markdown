@@ -32,7 +32,7 @@ The following arguments are supported:
 ## Attributes Reference
 
 * `variables` - List containing all terraform and environment variables configured on the workspace
-* `terraform` - List containing terraform category variables configured on the workspace
+* `terraform` - List containing terraform variables configured on the workspace
 * `environment` - List containing environment category variables configured on the workspace
 
 The `variables, terraform and environment` blocks contains:
