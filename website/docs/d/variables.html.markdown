@@ -39,6 +39,6 @@ The `variables, terraform and environment` blocks contains:
 
 * `id` - The variable Id
 * `name` - The variable Key name
-* `value` -  The variable value if the variable it's marked as sensitive it shows "\*\*\*"
+* `value` -  The variable value. If the variable is sensitive this value will be empty.
 * `category` -  The category of the variable (terraform or environment)
 * `hcl` - If the variable is marked as HCL or not
