@@ -19,7 +19,7 @@ data "tfe_workspace" "test" {
 }
 
 data "tfe_variables" "test" {
-  worspace_id = data.tfe_workspace.test.id
+  workspace_id = data.tfe_workspace.test.id
 }
 ```
 
