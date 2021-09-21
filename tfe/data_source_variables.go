@@ -9,92 +9,56 @@ import (
 )
 
 func dataSourceTFEWorkspaceVariables() *schema.Resource {
+	varSchema := map[string]*schema.Schema{
+		"category": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"hcl": {
+			Type:     schema.TypeBool,
+			Computed: true,
+		},
+		"id": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"name": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"sensitive": {
+			Type:     schema.TypeBool,
+			Computed: true,
+		},
+		"value": {
+			Type:      schema.TypeString,
+			Computed:  true,
+			Sensitive: true,
+		},
+	}
 	return &schema.Resource{
 		Read: dataSourceVariableRead,
 
 		Schema: map[string]*schema.Schema{
-			"variables": &schema.Schema{
+			"environment": {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"id": &schema.Schema{
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"value": &schema.Schema{
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"category": &schema.Schema{
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"hcl": &schema.Schema{
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
-					},
+					Schema: varSchema,
 				},
 			},
-			"terraform": &schema.Schema{
+			"terraform": {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"id": &schema.Schema{
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"value": &schema.Schema{
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"category": &schema.Schema{
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"hcl": &schema.Schema{
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
-					},
+					Schema: varSchema,
 				},
 			},
-			"environment": &schema.Schema{
+			"variables": {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"id": &schema.Schema{
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"name": &schema.Schema{
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"value": &schema.Schema{
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"category": &schema.Schema{
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"hcl": &schema.Schema{
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
-					},
+					Schema: varSchema,
 				},
 			},
 			"workspace_id": {
@@ -109,54 +73,37 @@ func dataSourceVariableRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
 	// Get the name and organization.
-	workspace_id := d.Get("workspace_id").(string)
+	workspaceID := d.Get("workspace_id").(string)
 
-	log.Printf("[DEBUG] Read configuration of workspace: %s", workspace_id)
+	log.Printf("[DEBUG] Read configuration of workspace: %s", workspaceID)
 
-	totalVariables := make([]interface{}, 0)
 	totalEnvVariables := make([]interface{}, 0)
 	totalTerraformVariables := make([]interface{}, 0)
 
 	options := tfe.VariableListOptions{}
 
 	for {
-		variableList, err := tfeClient.Variables.List(ctx, workspace_id, options)
+		variableList, err := tfeClient.Variables.List(ctx, workspaceID, options)
 		if err != nil {
-			return fmt.Errorf("Error retrieving variable list: %v", err)
+			return fmt.Errorf("Error retrieving variable list: %w", err)
 		}
 		terraformVars := make([]interface{}, 0)
 		envVars := make([]interface{}, 0)
 		for _, variable := range variableList.Items {
+			result := make(map[string]interface{})
+			result["id"] = variable.ID
+			result["category"] = variable.Category
+			result["hcl"] = variable.HCL
+			result["name"] = variable.Key
+			result["sensitive"] = variable.Sensitive
+			result["value"] = variable.Value
 			if variable.Category == "terraform" {
-				result := make(map[string]interface{})
-				result["id"] = variable.ID
-				result["name"] = variable.Key
-				result["category"] = variable.Category
-				result["hcl"] = variable.HCL
-				if variable.Sensitive != true {
-					result["value"] = variable.Value
-				} else {
-					result["value"] = "***"
-				}
-
 				terraformVars = append(terraformVars, result)
 			} else if variable.Category == "env" {
-				result := make(map[string]interface{})
-				result["id"] = variable.ID
-				result["name"] = variable.Key
-				result["category"] = variable.Category
-				result["hcl"] = variable.HCL
-				if variable.Sensitive != true {
-					result["value"] = variable.Value
-				} else {
-					result["value"] = "***"
-				}
-
 				envVars = append(envVars, result)
 			}
 		}
-		totalVariables = append(totalVariables, terraformVars...)
-		totalVariables = append(totalVariables, envVars...)
+
 		totalEnvVariables = append(totalEnvVariables, envVars...)
 		totalTerraformVariables = append(totalTerraformVariables, terraformVars...)
 
@@ -169,10 +116,9 @@ func dataSourceVariableRead(d *schema.ResourceData, meta interface{}) error {
 		options.PageNumber = variableList.NextPage
 	}
 
-	d.SetId(fmt.Sprintf("variables/%v", workspace_id))
-	d.Set("variables", totalVariables)
+	d.SetId(fmt.Sprintf("variables/%v", workspaceID))
+	d.Set("variables", append(totalTerraformVariables, totalEnvVariables...))
 	d.Set("terraform", totalTerraformVariables)
 	d.Set("environment", totalEnvVariables)
-	log.Println(totalVariables)
 	return nil
 }
