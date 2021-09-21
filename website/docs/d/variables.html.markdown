@@ -27,7 +27,7 @@ data "tfe_variables" "test" {
 
 The following arguments are supported:
 
-* `worspace_id` - (Required) Id of the workspace.
+* `workspace_id` - (Required) ID of the workspace.
 
 ## Attributes Reference
 
