@@ -31,7 +31,7 @@ The following arguments are supported:
 
 ## Attributes Reference
 
-* `variables` - List containing variables configured on the workspace
+* `variables` - List containing all terraform and environment variables configured on the workspace
 * `terraform` - List containing terraform category variables configured on the workspace
 * `environment` - List containing environment category variables configured on the workspace
 
