@@ -39,11 +39,11 @@ jobs:
       # part of this. But we want to catch future mistakes by ensuring this
       # passes.
       - run:
-          name: go test
+          name: Unit Tests
           command: make test
 
       - run:
-          name: Run tests
+          name: Acceptance Tests
           command: |
               TF_ACC=1 gotestsum --format short-verbose --junitfile \
               $TEST_RESULTS_DIR/tests.xml -- `go list ./... |grep -v 'vendor'` -v -timeout 30m

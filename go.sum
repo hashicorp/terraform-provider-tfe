@@ -216,8 +216,8 @@ github.com/hashicorp/go-safetemp v1.0.0 h1:2HR189eFNrjHQyENnQMMpCiBAsRxzbTMIgBhE
 github.com/hashicorp/go-safetemp v1.0.0/go.mod h1:oaerMy3BhqiTbVye6QuFhFtIceqFoDHxNAB65b+Rj1I=
 github.com/hashicorp/go-slug v0.7.0 h1:8HIi6oreWPtnhpYd8lIGQBgp4rXzDWQTOhfILZm+nok=
 github.com/hashicorp/go-slug v0.7.0/go.mod h1:Ib+IWBYfEfJGI1ZyXMGNbu2BU+aa3Dzu41RKLH301v4=
-github.com/hashicorp/go-tfe v0.18.1-0.20210831191901-765803294602 h1:e8/9yCqxL58K5VVasjSlHxhLylfaUb9ZocAYvZ0BUK8=
-github.com/hashicorp/go-tfe v0.18.1-0.20210831191901-765803294602/go.mod h1:7lChm1Mjsh0ofrUNkP8MHljUFrnKNZNTw36S6qSbJZU=
+github.com/hashicorp/go-tfe v0.19.0 h1:W65PPyz9tCQu96/QXJ4narQcHRMq53N6xKAAPZRVhno=
+github.com/hashicorp/go-tfe v0.19.0/go.mod h1:7lChm1Mjsh0ofrUNkP8MHljUFrnKNZNTw36S6qSbJZU=
 github.com/hashicorp/go-uuid v1.0.0/go.mod h1:6SBZvOh/SIDV7/2o3Jml5SYk/TvGqwFJ/bN7x4byOro=
 github.com/hashicorp/go-uuid v1.0.1 h1:fv1ep09latC32wFoVwnqcnKJGnMSdBanPczbHAYm1BE=
 github.com/hashicorp/go-uuid v1.0.1/go.mod h1:6SBZvOh/SIDV7/2o3Jml5SYk/TvGqwFJ/bN7x4byOro=

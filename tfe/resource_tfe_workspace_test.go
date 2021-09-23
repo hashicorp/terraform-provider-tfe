@@ -932,6 +932,25 @@ func TestAccTFEWorkspace_createWithRemoteStateConsumers(t *testing.T) {
 	})
 }
 
+// Test pagination works for remote state consumers. Adding over 100 consumers should result in a
+// subsequent empty plan if pagination works correctly. The client fetches the maximum results per
+// page (100) by default.
+func TestAccTFEWorkspace_paginatedRemoteStateConsumers(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_OverAPageOfRemoteStateConsumers(rInt),
+				Check:  resource.TestCheckResourceAttr("tfe_workspace.foobar", "remote_state_consumer_ids.#", "105"),
+			},
+		},
+	})
+}
+
 func testAccCheckTFEWorkspaceExists(
 	n string, workspace *tfe.Workspace) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
@@ -1775,6 +1794,30 @@ resource "tfe_workspace" "foobar_one" {
 
 resource "tfe_workspace" "foobar_two" {
   name               = "workspace-test-2"
+  organization       = tfe_organization.foobar.id
+}`, rInt)
+}
+
+func testAccTFEWorkspace_OverAPageOfRemoteStateConsumers(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name               = "workspace-test"
+  organization       = tfe_organization.foobar.id
+  allow_destroy_plan = false
+  auto_apply = true
+  global_remote_state = false
+  remote_state_consumer_ids = tfe_workspace.state_consumers[*].id
+}
+
+resource "tfe_workspace" "state_consumers" {
+  count = 105
+
+  name               = "remote-state-consumer-${count.index}"
   organization       = tfe_organization.foobar.id
 }`, rInt)
 }
