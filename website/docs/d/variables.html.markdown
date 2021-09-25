@@ -33,9 +33,9 @@ The following arguments are supported:
 
 * `variables` - List containing all terraform and environment variables configured on the workspace
 * `terraform` - List containing terraform variables configured on the workspace
-* `environment` - List containing environment variables configured on the workspace
+* `env` - List containing environment variables configured on the workspace
 
-The `variables, terraform and environment` blocks contains:
+The `variables, terraform and env` blocks contains:
 
 * `id` - The variable Id
 * `name` - The variable Key name

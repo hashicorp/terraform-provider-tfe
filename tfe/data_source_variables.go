@@ -40,7 +40,7 @@ func dataSourceTFEWorkspaceVariables() *schema.Resource {
 		Read: dataSourceVariableRead,
 
 		Schema: map[string]*schema.Schema{
-			"environment": {
+			"env": {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
@@ -119,6 +119,6 @@ func dataSourceVariableRead(d *schema.ResourceData, meta interface{}) error {
 	d.SetId(fmt.Sprintf("variables/%v", workspaceID))
 	d.Set("variables", append(totalTerraformVariables, totalEnvVariables...))
 	d.Set("terraform", totalTerraformVariables)
-	d.Set("environment", totalEnvVariables)
+	d.Set("env", totalEnvVariables)
 	return nil
 }
