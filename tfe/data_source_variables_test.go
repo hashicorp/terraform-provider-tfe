@@ -22,7 +22,7 @@ func TestAccTFEVariablesDataSource_basic(t *testing.T) {
 					// variables attribute
 					resource.TestCheckResourceAttrSet("data.tfe_variables.foobar", "id"),
 					resource.TestCheckOutput("variables", "foo"),
-					resource.TestCheckOutput("environment", "foo"),
+					resource.TestCheckOutput("env", "foo"),
 					resource.TestCheckOutput("terraform", "foo"),
 				),
 			},
@@ -69,8 +69,8 @@ output "variables" {
 	value = data.tfe_variables.foobar.variables[0]["name"]
 }
 
-output "environment" {
-	value = data.tfe_variables.foobar.environment[0]["name"]
+output "env" {
+	value = data.tfe_variables.foobar.env[0]["name"]
 }
 
 output "terraform" {
