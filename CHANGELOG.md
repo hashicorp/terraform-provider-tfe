@@ -1,7 +1,7 @@
 ## 0.27.0 (Unreleased)
 
 FEATURES:
-* **New Data Sources:** d/tfe_variables [#369](https://github.com/hashicorp/terraform-provider-tfe/pull/369)
+* **New Data Source:** d/tfe_variables [#369](https://github.com/hashicorp/terraform-provider-tfe/pull/369)
 
 ## 0.26.1 (September 04, 2021)
 
