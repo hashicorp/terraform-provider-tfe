@@ -97,8 +97,12 @@ The following arguments are supported:
   Defaults to `true`. Setting this to `false` ensures that all runs in this
   workspace will display their output as text logs.
 * `ssh_key_id` - (Optional) The ID of an SSH key to assign to the workspace.
-* `terraform_version` - (Optional) The version of Terraform to use for this workspace. Defaults to
-  the latest available version.
+* `terraform_version` - (Optional) The version of Terraform to use for this
+  workspace. This can be either an exact version or a
+  [version constraint](https://www.terraform.io/docs/language/expressions/version-constraints.html)
+  (like `~> 1.0.0`); if you specify a constraint, the workspace will always use
+  the newest release that meets that constraint. Defaults to the latest
+  available version.
 * `trigger_prefixes` - (Optional) List of repository-root-relative paths which describe all locations
   to be tracked for changes.
 * `tag_names` - (Optional) A list of tag names for this workspace.
