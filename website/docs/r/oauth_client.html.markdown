@@ -46,7 +46,7 @@ resource "tfe_oauth_client" "test" {
 
 The following arguments are supported:
 
-* `organization` - (Required) Name of the organization.
+* `organization` - (Required) Name of the Terraform organization.
 * `api_url` - (Required) The base URL of your VCS provider's API (e.g.
   `https://api.github.com` or `https://ghe.example.com/api/v3`).
 * `http_url` - (Required) The homepage of your VCS provider (e.g.
