@@ -37,7 +37,7 @@ terraform {
 
 For production use, you should constrain the acceptable provider versions via
 configuration (as above), to ensure that new versions with breaking changes will
-not be automatically installed by `terraform init` in future. As this provider
+not be automatically installed by `terraform init` in the future. As this provider
 is still at version zero, you should constrain the acceptable provider versions
 on the minor version.
 
@@ -102,6 +102,7 @@ or by [configuring your own](https://www.terraform.io/docs/commands/cli-config.h
 See the [Provider Requirements](https://www.terraform.io/docs/configuration/provider-requirements.html) documentation for more information.
 
 ##### Using Terraform 0.12
+
 * You can copy the provider binary to your `~/.terraform.d/plugins` directory.
 * You can create your test Terraform configurations in the same directory as your provider binary or you can copy the provider binary into the same directory as your test configurations.
 * You can copy the provider binary into the same location as your `terraform` binary.
