@@ -19,7 +19,7 @@ data source is statically marked as
 
 Using the `tfe_outputs` data source, the outputs `foo` and `bar` can be used as seen below:
 
-In the example below, assume we have outputs defined in an my-org/my-workspace:
+In the example below, assume we have outputs defined in a `my-org/my-workspace`:
 
 ```hcl
 data "tfe_outputs" "foo" {
