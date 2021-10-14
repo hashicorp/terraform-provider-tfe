@@ -448,17 +448,6 @@ func TestAccTFEPolicySet_versionedSlugUpdate(t *testing.T) {
 	}
 
 	newFile := fmt.Sprintf("%s/newfile.test.sentinel", testFixtureVersionFiles)
-	removeFile := func() {
-		// This func is used below, that is why it is not an anonymous function.
-		// It is used because if there is a test fatal (t.Fatal), then defer does
-		// not get called. So we call this `removeFile` function both in the defer
-		// and explicitly below.
-		err := os.Remove(newFile)
-		if err != nil {
-			t.Fatalf("Error removing file %v", err)
-		}
-	}
-	defer removeFile()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -484,11 +473,11 @@ func TestAccTFEPolicySet_versionedSlugUpdate(t *testing.T) {
 				PreConfig: func() {
 					err = ioutil.WriteFile(newFile, []byte("main = rule { true }"), 0755)
 					if err != nil {
-						// this function is called here as well as the defer because
-						// when t.Fatal is called, it exits the program and ignores defers.
-						removeFile()
 						t.Fatalf("error writing to file %s", newFile)
 					}
+					t.Cleanup(func() {
+						os.Remove(newFile)
+					})
 				},
 				Config: testAccTFEPolicySet_versionSlug(rInt, testFixtureVersionFiles),
 				Check: resource.ComposeTestCheckFunc(
