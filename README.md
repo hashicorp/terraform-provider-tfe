@@ -1,4 +1,5 @@
-<img src="https://cdn.rawgit.com/hashicorp/terraform-website/master/content/source/assets/images/logo-hashicorp.svg" width="600px">
+<img src="https://github.com/hashicorp/terraform-website/blob/master/content/source/assets/images/logo-terraform-main.svg" width="600px">
+
 
 # Terraform Cloud/Enterprise Provider
 
