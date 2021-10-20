@@ -70,6 +70,8 @@ func TestAccTFEOrganization_full(t *testing.T) {
 						"tfe_organization.foobar", "owners_team_saml_role_id", "owners"),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "cost_estimation_enabled", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "send_passing_statuses_for_untriggered_speculative_plans", "false"),
 				),
 			},
 		},
@@ -132,6 +134,8 @@ func TestAccTFEOrganization_update_costEstimation(t *testing.T) {
 						"tfe_organization.foobar", "owners_team_saml_role_id", "owners"),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "cost_estimation_enabled", strconv.FormatBool(costEstimationEnabled1)),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "send_passing_statuses_for_untriggered_speculative_plans", "false"),
 				),
 			},
 

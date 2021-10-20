@@ -47,6 +47,11 @@ func dataSourceTFEOrganization() *schema.Resource {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
+
+			"send_passing_statuses_for_untriggered_speculative_plans": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -73,6 +78,7 @@ func dataSourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) err
 	d.Set("email", org.Email)
 	d.Set("owners_team_saml_role_id", org.OwnersTeamSAMLRoleID)
 	d.Set("two_factor_conformant", org.TwoFactorConformant)
+	d.Set("send_passing_statuses_for_untriggered_speculative_plans", org.SendPassingStatusesForUntriggeredSpeculativePlans)
 
 	return nil
 }
