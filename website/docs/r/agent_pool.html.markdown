@@ -8,12 +8,12 @@ description: |-
 
 # tfe_agent_pool
 
-An agent pool represents a group of agents, often related to one another by sharing a common 
-network segment or purpose. A workspace may be configured to use one of the organization's agent 
+An agent pool represents a group of agents, often related to one another by sharing a common
+network segment or purpose. A workspace may be configured to use one of the organization's agent
 pools to run remote operations with isolated, private, or on-premises infrastructure.
 
-~> **NOTE:** This resource requires using the provider with Terraform Cloud and a Terraform Cloud 
-for Business account. 
+~> **NOTE:** This resource requires using the provider with Terraform Cloud and a Terraform Cloud
+for Business account.
 [Learn more about Terraform Cloud pricing here](https://www.hashicorp.com/products/terraform/pricing).
 
 ## Example Usage
@@ -28,7 +28,7 @@ resource "tfe_organization" "test-organization" {
 
 resource "tfe_agent_pool" "test-agent-pool" {
   name         = "my-agent-pool-name"
-  organization = tfe_organization.test-organization.id
+  organization = tfe_organization.test-organization.name
 }
 ```
 
