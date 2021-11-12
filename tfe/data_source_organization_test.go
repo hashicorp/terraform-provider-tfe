@@ -45,5 +45,6 @@ resource "tfe_organization" "foo" {
 
 data "tfe_organization" "foo" {
   name  = tfe_organization.foo.name
+	depends_on = [tfe_organization.foo]
 }`, rInt)
 }
