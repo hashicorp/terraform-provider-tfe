@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -85,9 +84,25 @@ func resourceTFEVariable() *schema.Resource {
 			},
 		},
 
-		CustomizeDiff: customdiff.ForceNewIf("key", func(_ context.Context, d *schema.ResourceDiff, m interface{}) bool {
-			return d.Get("sensitive").(bool)
-		}),
+		CustomizeDiff: forceRecreateResourceIf(),
+	}
+}
+
+func forceRecreateResourceIf() schema.CustomizeDiffFunc {
+	/*
+		Destroy and add a new resource when:
+		1. the parameter key changed and the param sensitive is set to true
+		2. the parameter sensitive changed from true to false
+	*/
+	return func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
+		wasSensitiveVar := d.HasChange("sensitive") && !(d.Get("sensitive").(bool))
+
+		if wasSensitiveVar {
+			return d.ForceNew("sensitive")
+		} else if d.HasChange("key") && d.Get("sensitive").(bool) {
+			return d.ForceNew("key")
+		}
+		return nil
 	}
 }
 
