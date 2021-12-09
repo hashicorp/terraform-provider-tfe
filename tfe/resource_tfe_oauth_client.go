@@ -139,6 +139,9 @@ func resourceTFEOAuthClientCreate(d *schema.ResourceData, meta interface{}) erro
 		options.RSAPublicKey = tfe.String(rsaPublicKey)
 		options.Secret = tfe.String(secret)
 	}
+	if serviceProvider == tfe.ServiceProviderBitbucket {
+		options.Secret = tfe.String(secret)
+	}
 
 	log.Printf("[DEBUG] Create an OAuth client for organization: %s", organization)
 	oc, err := tfeClient.OAuthClients.Create(ctx, organization, options)
