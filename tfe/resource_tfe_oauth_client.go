@@ -16,6 +16,12 @@ func resourceTFEOAuthClient() *schema.Resource {
 		Delete: resourceTFEOAuthClientDelete,
 
 		Schema: map[string]*schema.Schema{
+			"name": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
+
 			"organization": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -34,17 +40,40 @@ func resourceTFEOAuthClient() *schema.Resource {
 				ForceNew: true,
 			},
 
+			"key": {
+				Type:      schema.TypeString,
+				ForceNew:  true,
+				Sensitive: true,
+				Optional:  true,
+			},
+
 			"oauth_token": {
 				Type:      schema.TypeString,
-				Required:  true,
+				Optional:  true,
 				Sensitive: true,
 				ForceNew:  true,
 			},
 
 			"private_key": {
+				Type:      schema.TypeString,
+				ForceNew:  true,
+				Sensitive: true,
+				Optional:  true,
+			},
+
+			"secret": {
+				Type:      schema.TypeString,
+				ForceNew:  true,
+				Sensitive: true,
+				Optional:  true,
+			},
+
+			"rsa_public_key": {
 				Type:     schema.TypeString,
 				ForceNew: true,
 				Optional: true,
+				// this field is only for BitBucket Server, and requires these other
+				RequiredWith: []string{"secret", "key"},
 			},
 
 			"service_provider": {
@@ -56,6 +85,7 @@ func resourceTFEOAuthClient() *schema.Resource {
 						string(tfe.ServiceProviderAzureDevOpsServer),
 						string(tfe.ServiceProviderAzureDevOpsServices),
 						string(tfe.ServiceProviderBitbucket),
+						string(tfe.ServiceProviderBitbucketServer),
 						string(tfe.ServiceProviderGithub),
 						string(tfe.ServiceProviderGithubEE),
 						string(tfe.ServiceProviderGitlab),
@@ -79,7 +109,11 @@ func resourceTFEOAuthClientCreate(d *schema.ResourceData, meta interface{}) erro
 
 	// Get the organization and provider.
 	organization := d.Get("organization").(string)
+	name := d.Get("name").(string)
 	privateKey := d.Get("private_key").(string)
+	rsaPublicKey := d.Get("rsa_public_key").(string)
+	key := d.Get("key").(string)
+	secret := d.Get("secret").(string)
 	serviceProvider := tfe.ServiceProviderType(d.Get("service_provider").(string))
 
 	if serviceProvider == tfe.ServiceProviderAzureDevOpsServer && privateKey == "" {
@@ -87,12 +121,26 @@ func resourceTFEOAuthClientCreate(d *schema.ResourceData, meta interface{}) erro
 	}
 
 	// Create a new options struct.
+	// The tfe.OAuthClientCreateOptions has omitempty for these values, so if it
+	// is empty, then it will be ignored in the create request
 	options := tfe.OAuthClientCreateOptions{
+		Name:            tfe.String(name),
 		APIURL:          tfe.String(d.Get("api_url").(string)),
 		HTTPURL:         tfe.String(d.Get("http_url").(string)),
 		OAuthToken:      tfe.String(d.Get("oauth_token").(string)),
-		PrivateKey:      tfe.String(privateKey),
+		Key:             tfe.String(key),
 		ServiceProvider: tfe.ServiceProvider(serviceProvider),
+	}
+
+	if serviceProvider == tfe.ServiceProviderAzureDevOpsServer {
+		options.PrivateKey = tfe.String(privateKey)
+	}
+	if serviceProvider == tfe.ServiceProviderBitbucketServer {
+		options.RSAPublicKey = tfe.String(rsaPublicKey)
+		options.Secret = tfe.String(secret)
+	}
+	if serviceProvider == tfe.ServiceProviderBitbucket {
+		options.Secret = tfe.String(secret)
 	}
 
 	log.Printf("[DEBUG] Create an OAuth client for organization: %s", organization)
