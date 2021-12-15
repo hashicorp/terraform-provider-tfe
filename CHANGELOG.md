@@ -10,7 +10,7 @@ ENHANCEMENTS:
   providers like GitHub. ([#386](https://github.com/hashicorp/terraform-provider-tfe/pull/386))
 * r/oauth_client: Added `key`, `secret`, and `rsa_public_key` arguments, used for configuring
   BitBucket Server and Azure DevOps Server. ([#395](https://github.com/hashicorp/terraform-provider-tfe/pull/395))
-* Improved disocvery and loading of credentials from Terraform configuration files; the provider
+* Improved discovery and loading of credentials from Terraform configuration files; the provider
   will attempt to use Terraform CLI's authentication with Terraform Cloud/Enterprise for its own
   authentication, when present. ([#360](https://github.com/hashicorp/terraform-provider-tfe/pull/360))
 
