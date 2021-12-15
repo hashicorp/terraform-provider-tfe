@@ -1,4 +1,4 @@
-<img src="https://github.com/hashicorp/terraform-website/blob/master/content/source/assets/images/logo-terraform-main.svg" width="600px">
+<img alt="Terraform" src="https://www.datocms-assets.com/2885/1629941242-logo-terraform-main.svg" width="600px">
 
 
 # Terraform Cloud/Enterprise Provider
