@@ -1,7 +1,25 @@
 ## 0.27.0 (Unreleased)
 
 FEATURES:
-* **New Data Source:** d/tfe_variables [#369](https://github.com/hashicorp/terraform-provider-tfe/pull/369)
+* **New Data Source:** d/tfe_variables ([#369](https://github.com/hashicorp/terraform-provider-tfe/pull/369))
+
+ENHANCEMENTS:
+* r/organization: Added
+  `send_passing_statuses_for_untriggered_speculative_plans`, which can be useful if large numbers of
+  untriggered workspaces are exhausting request limits for connected version control service
+  providers like GitHub. ([#386](https://github.com/hashicorp/terraform-provider-tfe/pull/386))
+* r/oauth_client: Added `key`, `secret`, and `rsa_public_key` arguments, used for configuring
+  BitBucket Server and Azure DevOps Server. ([#395](https://github.com/hashicorp/terraform-provider-tfe/pull/395))
+* Improved disocvery and loading of credentials from Terraform configuration files; the provider
+  will attempt to use Terraform CLI's authentication with Terraform Cloud/Enterprise for its own
+  authentication, when present. ([#360](https://github.com/hashicorp/terraform-provider-tfe/pull/360))
+
+BUG FIXES:
+* r/workspace: Fixed an issue with remote state consumer relationships on workspaces where the provider would not
+  follow pagination and only the first 20 results would be read correctly. ([#367](https://github.com/hashicorp/terraform-provider-tfe/pull/367))
+* r/tfe_variable: Fixed an issue where updating sensitive attributes would just surface the
+  underlying correct error (they must be recreated) instead of allowing Terraform to intelligently
+  replace the resource as part of its execution plan. ([#394](https://github.com/hashicorp/terraform-provider-tfe/pull/394))
 
 ## 0.26.1 (September 04, 2021)
 
