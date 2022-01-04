@@ -132,12 +132,13 @@ In addition to all arguments above, the following attributes are exported:
 
 ## Import
 
-~> **NOTE** In versions < 0.15.1, the import ID was in the format `<ORGANIZATION NAME>/<WORKSPACE NAME>`.
-This format has been deprecated in favor of the immutable workspace ID in the format `ws-<RANDOM STRING>`.
-
-Workspaces can be imported; use `<WORKSPACE ID>` as the
+Workspaces can be imported; use `<WORKSPACE ID>` or `<ORGANIZATION NAME>/<WORKSPACE NAME>` as the
 import ID. For example:
 
 ```shell
 terraform import tfe_workspace.test ws-CH5in3chf8RJjrVd
+```
+
+```shell
+terraform import tfe_workspace.test my-org-name/my-wkspace-name 
 ```
