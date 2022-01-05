@@ -646,7 +646,7 @@ func validateRemoteState(_ context.Context, d *schema.ResourceDiff, meta interfa
 func resourceTFEWorkspaceImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	tfeClient := meta.(*tfe.Client)
 
-	s := strings.SplitN(d.Id(), "/", 2)
+	s := strings.Split(d.Id(), "/")
 	if len(s) >= 3 {
 		return nil, fmt.Errorf(
 			"invalid workspace input format: %s (expected <ORGANIZATION>/<WORKSPACE NAME> or <WORKSPACE ID>)",
@@ -660,7 +660,6 @@ func resourceTFEWorkspaceImporter(d *schema.ResourceData, meta interface{}) ([]*
 		}
 
 		d.SetId(workspaceID)
-		return []*schema.ResourceData{d}, nil
 	}
 
 	return []*schema.ResourceData{d}, nil
