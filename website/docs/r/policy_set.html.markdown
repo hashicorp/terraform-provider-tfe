@@ -32,7 +32,7 @@ resource "tfe_policy_set" "test" {
     identifier         = "my-org-name/my-policy-set-repository"
     branch             = "main"
     ingress_submodules = false
-    oauth_token_id     = tfe_oauth_client.test.id
+    oauth_token_id     = tfe_oauth_client.test.oauth_token_id
   }
 }
 ```
