@@ -275,10 +275,10 @@ resource "tfe_workspace" "dummy" {
 data "tfe_workspace_ids" "foobar" {
   names        = ["*"]
   organization = tfe_workspace.dummy.organization
-	depends_on = [
-		tfe_workspace.foo,
-		tfe_workspace.bar,
-		tfe_workspace.dummy
+  depends_on = [
+    tfe_workspace.foo,
+    tfe_workspace.bar,
+    tfe_workspace.dummy
   ]
 }`, rInt, rInt, rInt, rInt)
 }
@@ -310,10 +310,10 @@ resource "tfe_workspace" "dummy" {
 data "tfe_workspace_ids" "good" {
   tag_names    = ["good"]
   organization = tfe_workspace.foo.organization
-	depends_on = [
-		tfe_workspace.foo,
-		tfe_workspace.bar,
-		tfe_workspace.dummy
+  depends_on = [
+    tfe_workspace.foo,
+    tfe_workspace.bar,
+    tfe_workspace.dummy
   ]
 }`, rInt, rInt, rInt, rInt)
 }
