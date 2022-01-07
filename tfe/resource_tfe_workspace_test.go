@@ -685,6 +685,12 @@ func TestAccTFEWorkspace_import(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
+			{
+				ResourceName:      "tfe_workspace.foobar",
+				ImportState:       true,
+				ImportStateId:     fmt.Sprintf("tst-terraform-%d/workspace-test", rInt),
+				ImportStateVerify: true,
+			},
 		},
 	})
 }

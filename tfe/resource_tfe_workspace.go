@@ -21,7 +21,7 @@ func resourceTFEWorkspace() *schema.Resource {
 		Update: resourceTFEWorkspaceUpdate,
 		Delete: resourceTFEWorkspaceDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			State: resourceTFEWorkspaceImporter,
 		},
 
 		SchemaVersion: 1,
@@ -641,4 +641,26 @@ func validateRemoteState(_ context.Context, d *schema.ResourceDiff, meta interfa
 	}
 
 	return nil
+}
+
+func resourceTFEWorkspaceImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	tfeClient := meta.(*tfe.Client)
+
+	s := strings.Split(d.Id(), "/")
+	if len(s) >= 3 {
+		return nil, fmt.Errorf(
+			"invalid workspace input format: %s (expected <ORGANIZATION>/<WORKSPACE NAME> or <WORKSPACE ID>)",
+			d.Id(),
+		)
+	} else if len(s) == 2 {
+		workspaceID, err := fetchWorkspaceExternalID(s[0]+"/"+s[1], tfeClient)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"error retrieving workspace with name %s from organization %s %v", s[1], s[0], err)
+		}
+
+		d.SetId(workspaceID)
+	}
+
+	return []*schema.ResourceData{d}, nil
 }
