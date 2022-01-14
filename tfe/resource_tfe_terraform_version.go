@@ -3,6 +3,7 @@ package tfe
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -15,7 +16,7 @@ func resourceTFETerraformVersion() *schema.Resource {
 		Update: resourceTFETerraformVersionUpdate,
 		Delete: resourceTFETerraformVersionDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			State: resourceTFETerraformVersionImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -133,4 +134,22 @@ func resourceTFETerraformVersionDelete(d *schema.ResourceData, meta interface{})
 	}
 
 	return nil
+}
+
+func resourceTFETerraformVersionImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	tfeClient := meta.(*tfe.Client)
+
+	// Splitting by '-' and checking if the first elem is equal to tool
+	// determines if the string is a tool version ID
+	s := strings.Split(d.Id(), "-")
+	if s[0] != "tool" {
+		versionID, err := fetchTerraformVersionID(d.Id(), tfeClient)
+		if err != nil {
+			return nil, fmt.Errorf("error retrieving terraform version %s: %w", d.Id(), err)
+		}
+
+		d.SetId(versionID)
+	}
+
+	return []*schema.ResourceData{d}, nil
 }
