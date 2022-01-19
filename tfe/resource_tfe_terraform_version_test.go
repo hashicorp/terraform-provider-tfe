@@ -44,6 +44,34 @@ func TestAccTFETerraformVersion_basic(t *testing.T) {
 	})
 }
 
+func TestAccTFETerraformVersion_import(t *testing.T) {
+	sha := genSha(t, "secret", "data")
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	version := genVersion(rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETerraformVersionDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETerraformVersion_basic(version, sha),
+			},
+			{
+				ResourceName:      "tfe_terraform_version.foobar",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				ResourceName:      "tfe_terraform_version.foobar",
+				ImportState:       true,
+				ImportStateId:     version,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func TestAccTFETerraformVersion_full(t *testing.T) {
 	skipIfFreeOnly(t)
 
