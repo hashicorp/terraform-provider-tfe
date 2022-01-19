@@ -84,7 +84,7 @@ Application Link.
 text of the SSH public key associated with your BitBucket Server Application
 Link.
 * `service_provider` - (Required) The VCS provider being connected with. Valid
-  options are `ado_server`, `ado_services`, `github`, `github_enterprise`, `gitlab_hosted`,
+  options are `ado_server`, `ado_services`, `bitbucket_hosted`, `bitbucket_server`, `github`, `github_enterprise`, `gitlab_hosted`,
   `gitlab_community_edition`, or `gitlab_enterprise_edition`.
 
 ## Attributes Reference
