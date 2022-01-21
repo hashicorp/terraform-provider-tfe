@@ -589,7 +589,7 @@ func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
 					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceUpdatedAddVCSRepoAttributes(workspace),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "name", "workspace-test-add-vcs-repo"),
+						"tfe_workspace.foobar", "description", "workspace-test-add-vcs-repo"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "vcs_repo.0.identifier", GITHUB_WORKSPACE_IDENTIFIER),
 					resource.TestCheckResourceAttr(
@@ -604,7 +604,7 @@ func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
 					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceUpdatedUpdateVCSRepoBranchAttributes(workspace),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "name", "workspace-test-update-vcs-repo-branch"),
+						"tfe_workspace.foobar", "description", "workspace-test-update-vcs-repo-branch"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "vcs_repo.0.identifier", GITHUB_WORKSPACE_IDENTIFIER),
 					resource.TestCheckResourceAttr(
@@ -619,7 +619,7 @@ func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
 					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceUpdatedRemoveVCSRepoAttributes(workspace),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "name", "workspace-test-remove-vcs-repo"),
+						"tfe_workspace.foobar", "description", "workspace-test-remove-vcs-repo"),
 					resource.TestCheckNoResourceAttr("tfe_workspace.foobar", "vcs_repo"),
 				),
 			},
@@ -722,7 +722,7 @@ func TestAccTFEWorkspace_importVCSBranch(t *testing.T) {
 					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceUpdatedUpdateVCSRepoBranchAttributes(workspace),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "name", "workspace-test-update-vcs-repo-branch"),
+						"tfe_workspace.foobar", "description", "workspace-test-update-vcs-repo-branch"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "vcs_repo.0.identifier", GITHUB_WORKSPACE_IDENTIFIER),
 					resource.TestCheckResourceAttr(
@@ -1217,8 +1217,8 @@ func testAccCheckTFEWorkspaceAttributesSSHKey(
 func testAccCheckTFEWorkspaceUpdatedAddVCSRepoAttributes(
 	workspace *tfe.Workspace) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		if workspace.Name != "workspace-test-add-vcs-repo" {
-			return fmt.Errorf("Bad name: %s", workspace.Name)
+		if workspace.Description != "workspace-test-add-vcs-repo" {
+			return fmt.Errorf("Bad description: %s", workspace.Name)
 		}
 
 		if workspace.VCSRepo == nil {
@@ -1244,8 +1244,8 @@ func testAccCheckTFEWorkspaceUpdatedAddVCSRepoAttributes(
 func testAccCheckTFEWorkspaceUpdatedUpdateVCSRepoBranchAttributes(
 	workspace *tfe.Workspace) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		if workspace.Name != "workspace-test-update-vcs-repo-branch" {
-			return fmt.Errorf("Bad name: %s", workspace.Name)
+		if workspace.Description != "workspace-test-update-vcs-repo-branch" {
+			return fmt.Errorf("Bad description: %s", workspace.Name)
 		}
 
 		if workspace.VCSRepo == nil {
@@ -1271,8 +1271,8 @@ func testAccCheckTFEWorkspaceUpdatedUpdateVCSRepoBranchAttributes(
 func testAccCheckTFEWorkspaceUpdatedRemoveVCSRepoAttributes(
 	workspace *tfe.Workspace) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		if workspace.Name != "workspace-test-remove-vcs-repo" {
-			return fmt.Errorf("Bad name: %s", workspace.Name)
+		if workspace.Description != "workspace-test-remove-vcs-repo" {
+			return fmt.Errorf("Bad description: %s", workspace.Name)
 		}
 
 		if workspace.VCSRepo != nil {
@@ -1653,7 +1653,8 @@ resource "tfe_oauth_client" "test" {
 }
 
 resource "tfe_workspace" "foobar" {
-  name         = "workspace-test-add-vcs-repo"
+  name         = "workspace-test"
+  description  = "workspace-test-add-vcs-repo"
   organization = tfe_organization.foobar.id
   auto_apply   = true
   vcs_repo {
@@ -1684,7 +1685,8 @@ resource "tfe_oauth_client" "test" {
 }
 
 resource "tfe_workspace" "foobar" {
-  name         = "workspace-test-update-vcs-repo-branch"
+  name         = "workspace-test"
+  description  = "workspace-test-update-vcs-repo-branch"
   organization = tfe_organization.foobar.id
   auto_apply   = true
   vcs_repo {
@@ -1709,7 +1711,8 @@ resource "tfe_organization" "foobar" {
 }
 
 resource "tfe_workspace" "foobar" {
-  name         = "workspace-test-remove-vcs-repo"
+  name         = "workspace-test"
+  description  = "workspace-test-remove-vcs-repo"
   organization = tfe_organization.foobar.id
   auto_apply   = true
 }
