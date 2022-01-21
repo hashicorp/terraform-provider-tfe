@@ -47,6 +47,16 @@ func resourceTFETerraformVersion() *schema.Resource {
 				Optional: true,
 				Default:  false,
 			},
+			"deprecated": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
+			"deprecated_reason": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  nil,
+			},
 		},
 	}
 }
@@ -55,12 +65,14 @@ func resourceTFETerraformVersionCreate(d *schema.ResourceData, meta interface{})
 	tfeClient := meta.(*tfe.Client)
 
 	opts := tfe.AdminTerraformVersionCreateOptions{
-		Version:  tfe.String(d.Get("version").(string)),
-		URL:      tfe.String(d.Get("url").(string)),
-		Sha:      tfe.String(d.Get("sha").(string)),
-		Official: tfe.Bool(d.Get("official").(bool)),
-		Enabled:  tfe.Bool(d.Get("enabled").(bool)),
-		Beta:     tfe.Bool(d.Get("beta").(bool)),
+		Version:          tfe.String(d.Get("version").(string)),
+		URL:              tfe.String(d.Get("url").(string)),
+		Sha:              tfe.String(d.Get("sha").(string)),
+		Official:         tfe.Bool(d.Get("official").(bool)),
+		Enabled:          tfe.Bool(d.Get("enabled").(bool)),
+		Beta:             tfe.Bool(d.Get("beta").(bool)),
+		Deprecated:       tfe.Bool(d.Get("deprecated").(bool)),
+		DeprecatedReason: tfe.String(d.Get("deprecated_reason").(string)),
 	}
 
 	log.Printf("[DEBUG] Create new Terraform version: %s", *opts.Version)
@@ -94,6 +106,8 @@ func resourceTFETerraformVersionRead(d *schema.ResourceData, meta interface{}) e
 	d.Set("official", v.Official)
 	d.Set("enabled", v.Enabled)
 	d.Set("beta", v.Beta)
+	d.Set("deprecated", v.Deprecated)
+	d.Set("deprecated_reason", v.DeprecatedReason)
 
 	return nil
 }
@@ -102,12 +116,14 @@ func resourceTFETerraformVersionUpdate(d *schema.ResourceData, meta interface{})
 	tfeClient := meta.(*tfe.Client)
 
 	opts := tfe.AdminTerraformVersionUpdateOptions{
-		Version:  tfe.String(d.Get("version").(string)),
-		URL:      tfe.String(d.Get("url").(string)),
-		Sha:      tfe.String(d.Get("sha").(string)),
-		Official: tfe.Bool(d.Get("official").(bool)),
-		Enabled:  tfe.Bool(d.Get("enabled").(bool)),
-		Beta:     tfe.Bool(d.Get("beta").(bool)),
+		Version:          tfe.String(d.Get("version").(string)),
+		URL:              tfe.String(d.Get("url").(string)),
+		Sha:              tfe.String(d.Get("sha").(string)),
+		Official:         tfe.Bool(d.Get("official").(bool)),
+		Enabled:          tfe.Bool(d.Get("enabled").(bool)),
+		Beta:             tfe.Bool(d.Get("beta").(bool)),
+		Deprecated:       tfe.Bool(d.Get("deprecated").(bool)),
+		DeprecatedReason: tfe.String(d.Get("deprecated_reason").(string)),
 	}
 
 	log.Printf("[DEBUG] Update configuration of Terraform version: %s", d.Id())
