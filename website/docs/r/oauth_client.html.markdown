@@ -19,6 +19,7 @@ Basic usage:
 
 ```hcl
 resource "tfe_oauth_client" "test" {
+  name             = "my-github-oauth-client"
   organization     = "my-org-name"
   api_url          = "https://api.github.com"
   http_url         = "https://github.com"
@@ -35,6 +36,7 @@ See [documentation for TFC/E setup](https://www.terraform.io/docs/cloud/vcs/azur
 
 ```hcl
 resource "tfe_oauth_client" "test" {
+  name             = "my-ado-oauth-client"
   organization     = "my-org-name"
   api_url          = "https://ado.example.com"
   http_url         = "https://ado.example.com"
@@ -53,6 +55,7 @@ When using BitBucket Server, you must use three required fields: `key`, `secret`
 
 ```hcl
 resource "tfe_oauth_client" "test" {
+  name             = "my-bbs-oauth-client"
   organization     = "my-org-name"
   api_url          = "https://bbs.example.com"
   http_url         = "https://bss.example.com"
@@ -67,6 +70,7 @@ resource "tfe_oauth_client" "test" {
 
 The following arguments are supported:
 
+* `name` - (Optional) Display name for the OAuth Client. Defaults to the `service_provider` if not supplied.
 * `organization` - (Required) Name of the Terraform organization.
 * `api_url` - (Required) The base URL of your VCS provider's API (e.g.
   `https://api.github.com` or `https://ghe.example.com/api/v3`).
