@@ -102,6 +102,10 @@ func TestAccTFETerraformVersion_full(t *testing.T) {
 						"tfe_terraform_version.foobar", "enabled", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_terraform_version.foobar", "beta", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_terraform_version.foobar", "deprecated", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_terraform_version.foobar", "deprecated_reason", "foobar"),
 				),
 			},
 		},
@@ -201,6 +205,14 @@ func testAccCheckTFETerraformVersionAttributesFull(tfVersion *tfe.AdminTerraform
 			return fmt.Errorf("Bad value for beta: %t", tfVersion.Beta)
 		}
 
+		if tfVersion.Deprecated != true {
+			return fmt.Errorf("Bad value for deprecated: %t", tfVersion.Deprecated)
+		}
+
+		if *tfVersion.DeprecatedReason != "foobar" {
+			return fmt.Errorf("Bad value for deprecated_reason: %s", *tfVersion.DeprecatedReason)
+		}
+
 		return nil
 	}
 }
@@ -223,6 +235,8 @@ resource "tfe_terraform_version" "foobar" {
   official = false
   enabled = true
   beta = true 
+  deprecated = true
+  deprecated_reason = "foobar"
 }`, version, sha)
 }
 

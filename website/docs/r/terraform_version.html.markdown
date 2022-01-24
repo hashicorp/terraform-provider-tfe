@@ -32,6 +32,8 @@ The following arguments are supported:
 * `official` - (Optional) Whether or not this is an official release of Terraform. Defaults to "false".
 * `enabled` - (Optional) Whether or not this version of Terraform is enabled for use in Terraform Cloud/Enterprise. Defaults to "true".
 * `beta` - (Optional) Whether or not this version of Terraform is beta pre-release. Defaults to "false".
+* `deprecated` - (Optional) Whether or not this version of Terraform is deprecated. Defaults to "false".
+* `deprecated_reason` - (Optional) Additional context about why a version of Terraform is deprecated. Defaults to "null" unless `deprecated` is true.
 
 ## Attributes Reference
 
