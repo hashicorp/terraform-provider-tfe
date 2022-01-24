@@ -164,23 +164,15 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	workspace, err := tfeClient.Workspaces.Read(ctx, organization, name)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			return fmt.Errorf("Could not find workspace %s/%s", organization, name)
+			return fmt.Errorf("could not find workspace %s/%s", organization, name)
 		}
 		return fmt.Errorf("Error retrieving workspace: %v", err)
 	}
-	globalRemoteState, remoteStateConsumerIDs, err := readWorkspaceStateConsumers(workspace.ID, tfeClient)
-	if err != nil {
-		return fmt.Errorf(
-			"Error reading remote state consumers for workspace %s: %v", workspace.ID, err)
-	}
-
 	// Update the config.
 	d.Set("allow_destroy_plan", workspace.AllowDestroyPlan)
 	d.Set("auto_apply", workspace.AutoApply)
 	d.Set("description", workspace.Description)
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
-	d.Set("global_remote_state", globalRemoteState)
-	d.Set("remote_state_consumer_ids", remoteStateConsumerIDs)
 	d.Set("operations", workspace.Operations)
 	d.Set("policy_check_failures", workspace.PolicyCheckFailures)
 	d.Set("queue_all_runs", workspace.QueueAllRuns)
@@ -192,6 +184,27 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("terraform_version", workspace.TerraformVersion)
 	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
 	d.Set("working_directory", workspace.WorkingDirectory)
+
+	// Set remote_state_consumer_ids if global_remote_state is false
+	globalRemoteState := workspace.GlobalRemoteState
+	if globalRemoteState {
+		if err := d.Set("remote_state_consumer_ids", []string{}); err != nil {
+			return err
+		}
+	} else {
+		legacyGlobalState, remoteStateConsumerIDs, err := readWorkspaceStateConsumers(workspace.ID, tfeClient)
+
+		if err != nil {
+			return fmt.Errorf(
+				"Error reading remote state consumers for workspace %s: %v", workspace.ID, err)
+		}
+
+		if legacyGlobalState {
+			globalRemoteState = true
+		}
+		d.Set("remote_state_consumer_ids", remoteStateConsumerIDs)
+	}
+	d.Set("global_remote_state", globalRemoteState)
 
 	if workspace.SSHKey != nil {
 		d.Set("ssh_key_id", workspace.SSHKey.ID)
