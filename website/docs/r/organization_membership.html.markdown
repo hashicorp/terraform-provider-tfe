@@ -42,6 +42,7 @@ In addition to all arguments above, the following attributes are exported:
 
 * `id` - The organization membership ID.
 * `user_id` - The ID of the user associated with the organization membership.
+* `username` - The Username of the user associated with the organization membership.
 
 Organization memberships can be imported; use `<ORGANIZATION MEMBERSHIP ID>` as the import ID. For
 example:

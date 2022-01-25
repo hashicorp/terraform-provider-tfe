@@ -2,6 +2,7 @@ package tfe
 
 import (
 	"fmt"
+
 	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -22,6 +23,11 @@ func dataSourceTFEOrganizationMembership() *schema.Resource {
 			},
 
 			"user_id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+
+			"username": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
