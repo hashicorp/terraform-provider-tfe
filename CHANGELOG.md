@@ -1,4 +1,4 @@
-## 0.27.1 (Unreleased)
+## 0.27.1 (January 25, 2022)
 
 BUG FIXES:
 * d/workspace: Fixed an issue with remote state consumers were being populated with all workspaces when
