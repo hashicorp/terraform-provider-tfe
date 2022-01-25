@@ -105,8 +105,16 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Create team %s for organization: %s", name, organization)
 	team, err := tfeClient.Teams.Create(ctx, organization, options)
 	if err != nil {
-		return fmt.Errorf(
-			"Error creating team %s for organization %s: %v", name, organization, err)
+		if err == tfe.ErrResourceNotFound {
+			entitlements, _ := tfeClient.Organizations.Entitlements(ctx, organization)
+			if entitlements == nil {
+				return fmt.Errorf("Error creating team %s for organization %s: %v", name, organization, err)
+			}
+			if !entitlements.Teams {
+				return fmt.Errorf("Error creating team %s for organization %s: missing entitlements to create teams", name, organization)
+			}
+		}
+		return fmt.Errorf("Error creating team %s for organization %s: %v", name, organization, err)
 	}
 
 	d.SetId(team.ID)
