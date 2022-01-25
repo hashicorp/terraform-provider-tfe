@@ -222,6 +222,47 @@ func TestAccTFEWorkspaceIDsDataSource_empty(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspaceIDsDataSource_namesEmpty(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspaceIDsDataSourceConfig_namesEmpty(rInt),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_ids.good", "names.#", "2"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_ids.good", "names.0", ""),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_ids.good", "names.1", fmt.Sprintf("workspace-foo-%d", rInt)),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_ids.good", "organization", orgName),
+					resource.TestCheckResourceAttrSet(
+						"data.tfe_workspace_ids.good", "full_names.%"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_ids.good", "full_names.%", "1"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_ids.good",
+						fmt.Sprintf("full_names.workspace-foo-%d", rInt),
+						fmt.Sprintf("tst-terraform-%d/workspace-foo-%d", rInt, rInt),
+					),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_ids.good", "ids.%", "1"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace_ids.good", "ids.%"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace_ids.good", "id"),
+					resource.TestCheckResourceAttrSet(
+						"data.tfe_workspace_ids.good", fmt.Sprintf("ids.workspace-foo-%d", rInt)),
+				),
+			},
+		},
+	})
+}
+
 func testAccTFEWorkspaceIDsDataSourceConfig_basic(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
@@ -356,6 +397,32 @@ resource "tfe_workspace" "bar" {
 
 data "tfe_workspace_ids" "good" {
   names        = ["workspace-foo-%d"]
+  tag_names    = ["bar"]
+  organization = tfe_workspace.foo.organization
+}`, rInt, rInt, rInt, rInt)
+}
+
+func testAccTFEWorkspaceIDsDataSourceConfig_namesEmpty(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foo" {
+  name         = "workspace-foo-%d"
+  organization = tfe_organization.foobar.id
+  tag_names    = ["bar"]
+}
+
+resource "tfe_workspace" "bar" {
+  name         = "workspace-bar-%d"
+  organization = tfe_organization.foobar.id
+  tag_names    = ["bar"]
+}
+
+data "tfe_workspace_ids" "good" {
+  names        = ["", "workspace-foo-%d"]
   tag_names    = ["bar"]
   organization = tfe_workspace.foo.organization
 }`, rInt, rInt, rInt, rInt)

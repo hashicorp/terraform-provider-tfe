@@ -54,6 +54,11 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 	var id string
 	names := make(map[string]bool)
 	for _, name := range d.Get("names").([]interface{}) {
+		// ignore empty strings
+		if name == nil {
+			continue
+		}
+
 		id += name.(string)
 		names[name.(string)] = true
 	}
