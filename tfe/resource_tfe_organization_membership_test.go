@@ -32,6 +32,7 @@ func TestAccTFEOrganizationMembership_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_organization_membership.foobar", "organization", orgName),
 					resource.TestCheckResourceAttrSet("tfe_organization_membership.foobar", "user_id"),
+					resource.TestCheckResourceAttrSet("tfe_organization_membership.foobar", "username"),
 				),
 			},
 		},
