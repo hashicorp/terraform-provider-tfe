@@ -112,6 +112,7 @@ func resourceTFEWorkspace() *schema.Resource {
 			"remote_state_consumer_ids": {
 				Type:     schema.TypeSet,
 				Optional: true,
+				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
@@ -162,6 +163,7 @@ func resourceTFEWorkspace() *schema.Resource {
 			"trigger_prefixes": {
 				Type:     schema.TypeList,
 				Optional: true,
+				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 

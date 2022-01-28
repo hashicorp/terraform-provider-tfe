@@ -1634,6 +1634,7 @@ resource "tfe_workspace" "foobar" {
   name                  = "workspace-test"
   organization          = tfe_organization.foobar.id
   auto_apply            = true
+	trigger_prefixes      = []
 }`, rInt)
 }
 
@@ -1750,6 +1751,7 @@ resource "tfe_workspace" "foobar" {
   allow_destroy_plan  = false
   auto_apply          = true
   global_remote_state = true
+	remote_state_consumer_ids = []
 }`, rInt)
 }
 
