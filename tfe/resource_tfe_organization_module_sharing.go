@@ -29,11 +29,6 @@ func resourceTFEOrganizationModuleSharing() *schema.Resource {
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Required: true,
 			},
-
-			"consumer_ids": {
-				Type:     schema.TypeMap,
-				Computed: true,
-			},
 		},
 	}
 }
@@ -73,7 +68,6 @@ func resourceTFEOrganizationModuleSharingRead(d *schema.ResourceData, meta inter
 	tfeClient := meta.(*tfe.Client)
 
 	options := tfe.AdminOrganizationListModuleConsumersOptions{}
-	consumerIDs := make(map[string]string)
 
 	log.Printf("[DEBUG] Read configuration of module sharing for organization: %s", d.Id())
 	for {
@@ -87,18 +81,12 @@ func resourceTFEOrganizationModuleSharingRead(d *schema.ResourceData, meta inter
 			return fmt.Errorf("Error reading organization %s module consumer list: %w", d.Id(), err)
 		}
 
-		for _, consumer := range consumerList.Items {
-			consumerIDs[consumer.Name] = consumer.ExternalID
-		}
-
 		if consumerList.CurrentPage >= consumerList.TotalPages {
 			break
 		}
 
 		options.PageNumber = consumerList.NextPage
 	}
-
-	d.Set("consumer_ids", consumerIDs)
 
 	return nil
 }

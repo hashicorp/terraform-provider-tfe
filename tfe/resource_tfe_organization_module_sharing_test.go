@@ -40,14 +40,6 @@ func TestAccTFEOrganizationModuleSharing_basic(t *testing.T) {
 						"tfe_organization_module_sharing.producer", "module_consumers.0"),
 					resource.TestCheckResourceAttrSet(
 						"tfe_organization_module_sharing.producer", "module_consumers.1"),
-
-					// consumer_ids attribute
-					resource.TestCheckResourceAttr(
-						"tfe_organization_module_sharing.producer", "consumer_ids.%", "2"),
-					resource.TestCheckResourceAttrSet(
-						"tfe_organization_module_sharing.producer", fmt.Sprintf("consumer_ids.%s", fmt.Sprintf("tst-terraform-%d", rInt2))),
-					resource.TestCheckResourceAttrSet(
-						"tfe_organization_module_sharing.producer", fmt.Sprintf("consumer_ids.%s", fmt.Sprintf("tst-terraform-%d", rInt3))),
 				),
 			},
 		},
@@ -81,14 +73,6 @@ func TestAccTFEOrganizationModuleSharing_emptyOrg(t *testing.T) {
 						"tfe_organization_module_sharing.foo", "module_consumers.0", ""),
 					resource.TestCheckResourceAttr(
 						"tfe_organization_module_sharing.foo", "module_consumers.1", fmt.Sprintf("tst-terraform-%d", rInt2)),
-
-					// consumer_ids attribute
-					// since we've provided an empty string, we should only
-					// have one valid entry
-					resource.TestCheckResourceAttr(
-						"tfe_organization_module_sharing.foo", "consumer_ids.%", "1"),
-					resource.TestCheckResourceAttrSet(
-						"tfe_organization_module_sharing.foo", fmt.Sprintf("consumer_ids.%s", fmt.Sprintf("tst-terraform-%d", rInt2))),
 				),
 			},
 		},
@@ -118,11 +102,6 @@ func TestAccTFEOrganizationModuleSharing_stopSharing(t *testing.T) {
 					// module_consumers attribute
 					resource.TestCheckResourceAttr(
 						"tfe_organization_module_sharing.foo", "module_consumers.#", "0"),
-
-					// consumer_ids attribute
-					// since we've stopped sharing, this should be an empty map
-					resource.TestCheckResourceAttr(
-						"tfe_organization_module_sharing.foo", "consumer_ids.%", "0"),
 				),
 			},
 		},

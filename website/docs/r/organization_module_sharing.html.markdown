@@ -30,9 +30,3 @@ The following arguments are supported:
 
 * `organization` - (Required) Name of the organization.
 * `module_consumers` - (Required) Names of the organizations to consume the module registry.
-
-## Attributes Reference
-
-In addition to all arguments above, the following attributes are exported:
-
-* `consumer_ids` - A map of organization names and their opaque, immutable IDs, which look like `org-<RANDOM STRING>`.
