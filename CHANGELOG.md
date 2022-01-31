@@ -6,12 +6,12 @@ FEATURES:
 
 ENHANCEMENTS:
 * r/workspace: Add support for importing workspaces using <ORGANIZATION NAME>/<WORKSPACE NAME> pair ([#401](https://github.com/hashicorp/terraform-provider-tfe/pull/401))
-* r/workspace: Mark certain attributes as computed because they are defaulted as lists ([#423](https://github.com/hashicorp/terraform-provider-tfe/pull/423))
 * r/team: Show entitlement error when creating teams ([#418](https://github.com/hashicorp/terraform-provider-tfe/pull/418))
 * Bump `go-tfe` dependency to `0.24.0`
 
 BUG FIXES:
 * d/workspace_ids: Fix plugin crash when providing empty strings to `names` argument ([#421](https://github.com/hashicorp/terraform-provider-tfe/pull/421))
+* r/workspace: Fix `trigger_prefixes` and `remote_state_consumer_ids` were appearing as workspace drift after being defaulted by the API to empty lists ([#423](https://github.com/hashicorp/terraform-provider-tfe/pull/423))
 
 ## 0.27.1 (January 25, 2022)
 
