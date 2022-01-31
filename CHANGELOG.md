@@ -1,3 +1,25 @@
+## 0.28.0 (Unreleased)
+
+FEATURES:
+* **New Resource**: `tfe_terraform_version` ([#400](https://github.com/hashicorp/terraform-provider-tfe/pull/400))
+* **New Resource**: `tfe_organization_module_sharing` ([#425](https://github.com/hashicorp/terraform-provider-tfe/pull/425))
+
+ENHANCEMENTS:
+* r/workspace: Add support for importing workspaces using <ORGANIZATION NAME>/<WORKSPACE NAME> pair ([#401](https://github.com/hashicorp/terraform-provider-tfe/pull/401))
+* r/workspace: Mark certain attributes as computed because they are defaulted as lists ([#423](https://github.com/hashicorp/terraform-provider-tfe/pull/423))
+* r/team: Show entitlement error when creating teams ([#418](https://github.com/hashicorp/terraform-provider-tfe/pull/418))
+* Bump `go-tfe` dependency to `0.24.0`
+
+BUG FIXES:
+* d/workspace_ids: Fix plugin crash when providing empty strings to `names` argument ([#421](https://github.com/hashicorp/terraform-provider-tfe/pull/421))
+
+## 0.27.1 (January 25, 2022)
+
+BUG FIXES:
+* d/workspace: Fixed an issue with remote state consumers were being populated with all workspaces when
+  global_remote_state is true. When global_remote_state is true, it's safe to assume that all workspace
+  state can be read ([#414](https://github.com/hashicorp/terraform-provider-tfe/pull/414))
+
 ## 0.27.0 (December 15, 2021)
 
 FEATURES:
