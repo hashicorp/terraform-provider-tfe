@@ -38,11 +38,20 @@ func skipIfFreeOnly(t *testing.T) {
 	}
 }
 
+func skipIfCloud(t *testing.T) {
+	if !enterpriseEnabled() {
+		t.Skip("Skipping test for a feature unavailable in Terraform Cloud. Set 'ENABLE_TFE=1' to run.")
+	}
+}
+
 func skipIfEnterprise(t *testing.T) {
-	skip := os.Getenv("ENABLE_TFE") == "1"
-	if skip {
+	if enterpriseEnabled() {
 		t.Skip("Skipping test for a feature unavailable in Terraform Enterprise. Set 'ENABLE_TFE=0' to run.")
 	}
+}
+
+func enterpriseEnabled() bool {
+	return os.Getenv("ENABLE_TFE") == "1"
 }
 
 func isAcceptanceTest() bool {
