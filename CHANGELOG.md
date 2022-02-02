@@ -1,4 +1,4 @@
-## 0.28.0 (Unreleased)
+## 0.28.0 (February 02, 2022)
 
 FEATURES:
 * **New Resource**: `tfe_terraform_version` ([#400](https://github.com/hashicorp/terraform-provider-tfe/pull/400))
