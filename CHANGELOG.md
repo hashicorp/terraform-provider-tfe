@@ -1,3 +1,9 @@
+## 0.28.1 (Unreleased)
+
+BUG FIXES:
+* d/terraform_version: Backwards compatibility fix for importing Terraform versions from TFE installations that don't support filtering
+  Terraform versions ([#427](https://github.com/hashicorp/terraform-provider-tfe/pull/427))
+
 ## 0.28.0 (February 02, 2022)
 
 FEATURES:
