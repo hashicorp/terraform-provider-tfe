@@ -61,6 +61,10 @@ func TestAccTFETeam_full(t *testing.T) {
 						"tfe_team.foobar", "organization_access.0.manage_workspaces", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_vcs_settings", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_providers", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_modules", "true"),
 				),
 			},
 		},
@@ -94,6 +98,10 @@ func TestAccTFETeam_full_update(t *testing.T) {
 						"tfe_team.foobar", "organization_access.0.manage_workspaces", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_vcs_settings", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_providers", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_modules", "true"),
 				),
 			},
 			{
@@ -114,6 +122,10 @@ func TestAccTFETeam_full_update(t *testing.T) {
 						"tfe_team.foobar", "organization_access.0.manage_workspaces", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_vcs_settings", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_providers", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_modules", "false"),
 				),
 			},
 		},
@@ -283,6 +295,8 @@ resource "tfe_team" "foobar" {
     manage_policy_overrides = true
     manage_workspaces = true
     manage_vcs_settings = true
+	manage_providers = true
+	manage_modules = true
   }
 }`, rInt)
 }
@@ -305,6 +319,8 @@ resource "tfe_team" "foobar" {
     manage_policy_overrides = false
     manage_workspaces = false
     manage_vcs_settings = false
+	manage_providers = false
+	manage_modules = false
   }
 }`, rInt)
 }

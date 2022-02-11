@@ -48,6 +48,8 @@ The `organization_access` block supports:
 * `manage_policy_overrides` - (Optional) Allows members to override soft-mandatory policy checks.
 * `manage_workspaces` - (Optional) Allows members to create and administrate all workspaces within the organization.
 * `manage_vcs_settings` - (Optional) Allows members to manage the organization's VCS Providers and SSH keys.
+* `manage_providers` - (Optional) Allow members to publish and delete providers in the organization's private registry.
+* `manage_modules` - (Optional) Allow members to publish and delete modules in the organization's private registry.
 
 ## Attributes Reference
 

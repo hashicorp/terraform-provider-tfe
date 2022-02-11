@@ -59,6 +59,16 @@ func resourceTFETeam() *schema.Resource {
 							Optional: true,
 							Default:  false,
 						},
+						"manage_providers": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
+						},
+						"manage_modules": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
+						},
 					},
 				},
 			},
@@ -95,6 +105,8 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 			ManagePolicyOverrides: tfe.Bool(organizationAccess["manage_policy_overrides"].(bool)),
 			ManageWorkspaces:      tfe.Bool(organizationAccess["manage_workspaces"].(bool)),
 			ManageVCSSettings:     tfe.Bool(organizationAccess["manage_vcs_settings"].(bool)),
+			ManageProviders:       tfe.Bool(organizationAccess["manage_providers"].(bool)),
+			ManageModules:         tfe.Bool(organizationAccess["manage_modules"].(bool)),
 		}
 	}
 
@@ -144,6 +156,8 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 			"manage_policy_overrides": team.OrganizationAccess.ManagePolicyOverrides,
 			"manage_workspaces":       team.OrganizationAccess.ManageWorkspaces,
 			"manage_vcs_settings":     team.OrganizationAccess.ManageVCSSettings,
+			"manage_providers":        team.OrganizationAccess.ManageProviders,
+			"manage_modules":          team.OrganizationAccess.ManageModules,
 		}}
 		if err := d.Set("organization_access", organizationAccess); err != nil {
 			return fmt.Errorf("error setting organization access for team %s: %s", d.Id(), err)
@@ -173,6 +187,8 @@ func resourceTFETeamUpdate(d *schema.ResourceData, meta interface{}) error {
 			ManagePolicyOverrides: tfe.Bool(organizationAccess["manage_policy_overrides"].(bool)),
 			ManageWorkspaces:      tfe.Bool(organizationAccess["manage_workspaces"].(bool)),
 			ManageVCSSettings:     tfe.Bool(organizationAccess["manage_vcs_settings"].(bool)),
+			ManageProviders:       tfe.Bool(organizationAccess["manage_providers"].(bool)),
+			ManageModules:         tfe.Bool(organizationAccess["manage_modules"].(bool)),
 		}
 	}
 
