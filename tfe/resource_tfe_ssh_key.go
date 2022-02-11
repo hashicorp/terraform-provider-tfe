@@ -86,8 +86,7 @@ func resourceTFESSHKeyUpdate(d *schema.ResourceData, meta interface{}) error {
 
 	// Create a new options struct.
 	options := tfe.SSHKeyUpdateOptions{
-		Name:  tfe.String(d.Get("name").(string)),
-		Value: tfe.String(d.Get("key").(string)),
+		Name: tfe.String(d.Get("name").(string)),
 	}
 
 	log.Printf("[DEBUG] Update SSH key: %s", d.Id())

@@ -173,6 +173,12 @@ func resourceTFEWorkspace() *schema.Resource {
 				Default:  "",
 			},
 
+			"trigger_nested_changes": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
+			},
+
 			"vcs_repo": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -225,6 +231,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		SpeculativeEnabled:         tfe.Bool(d.Get("speculative_enabled").(bool)),
 		StructuredRunOutputEnabled: tfe.Bool(d.Get("structured_run_output_enabled").(bool)),
 		WorkingDirectory:           tfe.String(d.Get("working_directory").(string)),
+		TriggerNestedChanges:       tfe.Bool(d.Get("trigger_nested_changes").(bool)),
 	}
 
 	// Send global_remote_state if it's set; otherwise, let it be computed.
@@ -343,6 +350,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("terraform_version", workspace.TerraformVersion)
 	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
 	d.Set("working_directory", workspace.WorkingDirectory)
+	d.Set("trigger_nested_changes", workspace.TriggerNestedChanges)
 	d.Set("organization", workspace.Organization.Name)
 
 	var sshKeyID string
@@ -397,7 +405,8 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 	id := d.Id()
 
 	if d.HasChange("name") || d.HasChange("auto_apply") || d.HasChange("queue_all_runs") ||
-		d.HasChange("terraform_version") || d.HasChange("working_directory") || d.HasChange("vcs_repo") ||
+		d.HasChange("terraform_version") || d.HasChange("working_directory") ||
+		d.HasChange("vcs_repo") || d.HasChange("trigger_nested_changes") ||
 		d.HasChange("file_triggers_enabled") || d.HasChange("trigger_prefixes") ||
 		d.HasChange("allow_destroy_plan") || d.HasChange("speculative_enabled") ||
 		d.HasChange("operations") || d.HasChange("execution_mode") ||
@@ -416,6 +425,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			SpeculativeEnabled:         tfe.Bool(d.Get("speculative_enabled").(bool)),
 			StructuredRunOutputEnabled: tfe.Bool(d.Get("structured_run_output_enabled").(bool)),
 			WorkingDirectory:           tfe.String(d.Get("working_directory").(string)),
+			TriggerNestedChanges:       tfe.Bool(d.Get("trigger_nested_changes").(bool)),
 		}
 
 		if d.HasChange("agent_pool_id") {
@@ -452,6 +462,10 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 
 		if workingDir, ok := d.GetOk("working_directory"); ok {
 			options.WorkingDirectory = tfe.String(workingDir.(string))
+		}
+
+		if triggerNestedChanges, ok := d.GetOk("trigger_nested_changes"); ok {
+			options.TriggerNestedChanges = tfe.Bool(triggerNestedChanges.(bool))
 		}
 
 		// Get and assert the VCS repo configuration block.
