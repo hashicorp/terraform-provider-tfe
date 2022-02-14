@@ -67,7 +67,7 @@ func TestAccTFESSHKey_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_ssh_key.foobar", "name", "ssh-key-updated"),
 					resource.TestCheckResourceAttr(
-						"tfe_ssh_key.foobar", "key", "UPDATED-SSH-KEY-CONTENT"),
+						"tfe_ssh_key.foobar", "key", "SSH-KEY-CONTENT"),
 				),
 			},
 		},
@@ -168,6 +168,6 @@ resource "tfe_organization" "foobar" {
 resource "tfe_ssh_key" "foobar" {
   name         = "ssh-key-updated"
   organization = tfe_organization.foobar.id
-  key          = "UPDATED-SSH-KEY-CONTENT"
+  key          = "SSH-KEY-CONTENT"
 }`, rInt)
 }
