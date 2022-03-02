@@ -44,6 +44,39 @@ func TestAccTFEVariable_basic(t *testing.T) {
 	})
 }
 
+func TestAccTFEVariable_basic_variable_set(t *testing.T) {
+	variable := &tfe.VariableSetVariable{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEVariableDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEVariable_basic_variable_set(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEVariableExists(
+						"tfe_variable.foobar", variable),
+					testAccCheckTFEVariableAttributes(variable),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "key", "key_test"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "value", "value_test"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "description", "some description"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "category", "env"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "hcl", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "sensitive", "false"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEVariable_update(t *testing.T) {
 	variable := &tfe.Variable{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -350,6 +383,27 @@ resource "tfe_variable" "foobar" {
   description  = "some description"
   category     = "env"
   workspace_id = tfe_workspace.foobar.id
+}`, rInt)
+}
+
+func testAccTFEVariable_basic_variable_set(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_variable_set" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_variable" "foobar" {
+  key          = "key_test"
+  value        = "value_test"
+  description  = "some description"
+  category     = "env"
+  variable_set_id = tfe_varaible_set.foobar.id
 }`, rInt)
 }
 
