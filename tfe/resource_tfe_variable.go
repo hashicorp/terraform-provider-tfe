@@ -77,7 +77,7 @@ func resourceTFEVariable() *schema.Resource {
 				Type:         schema.TypeString,
 				Optional:     true,
 				ForceNew:     true,
-				ExactlyOneof: []string{"workspace_id", "variable_set_id"},
+				ExactlyOneOf: []string{"workspace_id", "variable_set_id"},
 				ValidateFunc: validation.StringMatch(
 					workspaceIdRegexp,
 					"must be a valid workspace ID (ws-<RANDOM STRING>)",
@@ -119,17 +119,17 @@ func forceRecreateResourceIf() schema.CustomizeDiffFunc {
 }
 
 func resourceTFEVariableCreate(d *schema.ResourceData, meta interface{}) error {
+	//Switch to variable set variable logic if we need to
+	_, variableSetIdProvided := d.GetOk("variable_set_id")
+	if variableSetIdProvided {
+		return resourceTFEVariableSetVariableCreate(d, meta)
+	}
+
 	tfeClient := meta.(*tfe.Client)
 
 	// Get key and category.
 	key := d.Get("key").(string)
 	category := d.Get("category").(string)
-
-	//Switch to variable set variable logic
-	_, variableSetIdProvided := d.GetOk("variable_set_id")
-	if variableSetIdProvided {
-		return resourceTFEVariableSetVariableCreate(d, meta)
-	}
 
 	// Get the workspace if workspace_id present
 	workspaceID := d.Get("workspace_id").(string)
@@ -197,13 +197,13 @@ func resourceTFEVariableSetVariableCreate(d *schema.ResourceData, meta interface
 }
 
 func resourceTFEVariableRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
-
-	//Switch to variable set variable logic
+	//Switch to variable set variable logic if we need to
 	_, variableSetIdProvided := d.GetOk("variable_set_id")
 	if variableSetIdProvided {
 		return resourceTFEVariableSetVariableRead(d, meta)
 	}
+
+	tfeClient := meta.(*tfe.Client)
 
 	// Get the workspace.
 	workspaceID := d.Get("workspace_id").(string)
@@ -287,13 +287,13 @@ func resourceTFEVariableSetVariableRead(d *schema.ResourceData, meta interface{}
 }
 
 func resourceTFEVariableUpdate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
-
-	//Switch to variable set variable logic
+	//Switch to variable set variable logic if we need to
 	_, variableSetIdProvided := d.GetOk("variable_set_id")
 	if variableSetIdProvided {
 		return resourceTFEVariableSetVariableUpdate(d, meta)
 	}
+
+	tfeClient := meta.(*tfe.Client)
 
 	// Get the workspace.
 	workspaceID := d.Get("workspace_id").(string)
@@ -351,13 +351,13 @@ func resourceTFEVariableSetVariableUpdate(d *schema.ResourceData, meta interface
 }
 
 func resourceTFEVariableDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
-
-	//Switch to variable set variable logic
+	//Switch to variable set variable logic if we need to
 	_, variableSetIdProvided := d.GetOk("variable_set_id")
 	if variableSetIdProvided {
-		return resourceTFEVariableSetVariableUpdate(d, meta)
+		return resourceTFEVariableSetVariableDelete(d, meta)
 	}
+
+	tfeClient := meta.(*tfe.Client)
 
 	// Get the workspace.
 	workspaceID := d.Get("workspace_id").(string)
