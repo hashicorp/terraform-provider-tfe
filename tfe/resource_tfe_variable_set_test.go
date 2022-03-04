@@ -23,7 +23,7 @@ func TestAccTFEVariableSet_basic(t *testing.T) {
 			{
 				Config: testAccTFEVariableSet_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEVariableSetEExists(
+					testAccCheckTFEVariableSetExists(
 						"tfe_variable_set.foobar", variableSet),
 					testAccCheckTFEVariableSetAttributes(variableSet),
 					resource.TestCheckResourceAttr(
@@ -32,6 +32,9 @@ func TestAccTFEVariableSet_basic(t *testing.T) {
 						"tfe_variable_set.foobar", "description", "a test variable set"),
 					resource.TestCheckResourceAttr(
 						"tfe_variable_set.foobar", "global", "false"),
+					testAccCheckTFEVariableSetExists(
+						"tfe_variable_set.assigned", variableSet),
+					testAccCheckTFEVariableSetAssignment(variableSet),
 				),
 			},
 		},
@@ -50,7 +53,7 @@ func TestAccTFEVariableSet_update(t *testing.T) {
 			{
 				Config: testAccTFEVariableSet_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEVariableSetEExists(
+					testAccCheckTFEVariableSetExists(
 						"tfe_variable_set.foobar", variableSet),
 					testAccCheckTFEVariableSetAttributes(variableSet),
 					resource.TestCheckResourceAttr(
@@ -65,7 +68,7 @@ func TestAccTFEVariableSet_update(t *testing.T) {
 			{
 				Config: testAccTFEVariableSet_update(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEVariableSetEExists(
+					testAccCheckTFEVariableSetExists(
 						"tfe_variable_set.foobar", variableSet),
 					testAccCheckTFEVariableSetAttributesUpdate(variableSet),
 					resource.TestCheckResourceAttr(
@@ -116,7 +119,7 @@ func testAccCheckTFEVariableSetExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		vs, err := tfeClient.VariableSets.Read(ctx, rs.Primary.ID, nil)
+		vs, err := tfeClient.VariableSets.Read(ctx, rs.Primary.ID, &VariableSetReadOptions{VariableSetWorkspaces})
 		if err != nil {
 			return err
 		}
@@ -130,13 +133,13 @@ func testAccCheckTFEVariableSetExists(
 func testAccCheckTFEVariableSetAttributes(
 	variableSet *tfe.VariableSet) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		if variableSet.name != "variable_set_test" {
+		if variableSet.Name != "variable_set_test" {
 			return fmt.Errorf("Bad name: %s", variableSet.Name)
 		}
-		if variableSet.description != "a test variable set" {
+		if variableSet.Description != "a test variable set" {
 			return fmt.Errorf("Bad description: %s", variableSet.Description)
 		}
-		if variableSet.global != "false" {
+		if variableSet.Global != false {
 			return fmt.Errorf("Bad global: %s", variableSet.Global)
 		}
 	}
@@ -145,14 +148,30 @@ func testAccCheckTFEVariableSetAttributes(
 func testAccCheckTFEVariableSetAttributesUpdate(
 	variableSet *tfe.VariableSet) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		if variableSet.name != "variable_set_test_updated" {
+		if variableSet.Name != "variable_set_test_updated" {
 			return fmt.Errorf("Bad name: %s", variableSet.Name)
 		}
-		if variableSet.description != "another description" {
+		if variableSet.Description != "another description" {
 			return fmt.Errorf("Bad description: %s", variableSet.Description)
 		}
-		if variableSet.global != "true" {
+		if variableSet.Global != true {
 			return fmt.Errorf("Bad global: %s", variableSet.Global)
+		}
+	}
+}
+
+func testAccCheckTFEVariableSetAssignment(variableSet *tfe.VariableSet) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if len(variableSet.Workspace) != 1 {
+			return fmt.Errorf("Bad workspace assignment: %s", variableSet.Workspaces)
+		}
+	}
+}
+
+func testAccCheckTFEVariableSetAssignmentUpdate(variableSet *tfe.VariableSet) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if len(variableSet.Workspace) != 0 {
+			return fmt.Errorf("Bad workspace assignment: %s", variableSet.Workspaces)
 		}
 	}
 }
@@ -185,10 +204,22 @@ resource "tfe_organization" "foobar" {
 	email = "admin@company.com"
 }
 
+resource "tfe_workspace" "foobar" {
+  name = "foobar"
+	organization = tfe_organization.foobar.id
+}
+
 resource "tfe_variable_set" "foobar" {
   name         = "variable_set_test"
 	description  = "a test variable set"
 	global       = false
+	organizaiton = tfe_organizatoin.foobar.id
+}
+
+resource "tfe_variable_set" "assigned" {
+  name         = "variable_set_assigned"
+	description  = "a test variable set"
+	workspaces   = [tfe_workspace.foobar.id]
 	organizaiton = tfe_organizatoin.foobar.id
 }`, rInt)
 }
@@ -200,10 +231,22 @@ resource "tfe_organization" "foobar" {
   email = "admin@company.com"
 }
 
+resource "tfe_workspace" "foobar" {
+  name = "foobar"
+	organization = tfe_organization.foobar.id
+}
+
 resource "tfe_variable_set" "foobar" {
   name         = "variable_set_test_updated"
 	description  = "another description"
 	global       = true
+	organizaiton = tfe_organizatoin.foobar.id
+}
+
+resource "tfe_variable_set" "assigned" {
+  name         = "variable_set_assigned"
+	description  = "a test variable set"
+	workspaces   = []
 	organizaiton = tfe_organizatoin.foobar.id
 }`, rInt)
 }

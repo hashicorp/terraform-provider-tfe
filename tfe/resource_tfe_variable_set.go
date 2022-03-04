@@ -45,14 +45,12 @@ func resourceTFEVariableSet() *schema.Resource {
 				ForceNew: true,
 			},
 
-			/*
-				"workspaces": {
-					Type:     schema.TypeSet,
-					Optional: true,
-					Computed: true,
-					Elem:     &schema.Schema{Type: schema.TypeString},
-				},
-			*/
+			"workspaces": {
+				Type:     schema.TypeSet,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
 		},
 	}
 }
@@ -77,6 +75,21 @@ func resourceTFEVariableSetCreate(d *schema.ResourceData, meta interface{}) erro
 			"Error creating variable set %s, for organization: %s: %v", name, organization, err)
 	}
 
+	if workspaceIDs, workspacesSet := d.GetOK("workspaces"); !options.Global && workspacesSet {
+		log.Printf("[DEBUG] Assign variable set %s to workspaces %v", name, workspaceIDs)
+
+		options = tfe.VariableSetAssignOptions{}
+		for _, workspaceID := range workspaceIDs.(*schema.Set).List() {
+			options.Workspace = append(options.Workspaces, Workspace{ID: workspaceID})
+		}
+
+		variableSet, err = tfeClient.VariableSets.Assign(ctx, variableSet.ID, &options)
+		if err != nil {
+			return fmt.Errorf(
+				"Error assigning variable set %s (%s) to given workspaces: %v", name, variableSet.ID, err)
+		}
+	}
+
 	d.SetId(variableSet.ID)
 
 	return resourceTFEVariableSetRead(d, meta)
@@ -87,7 +100,7 @@ func resourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) error 
 
 	id := d.Id()
 	log.Printf("[DEBUG] Read configuration of variable set: %s", id)
-	variableSet, err := tfeClient.VariableSets.Read(ctx, id, nil) //&VariableSetReadOptions{VariableSetWorkspaces})
+	variableSet, err := tfeClient.VariableSets.Read(ctx, id, &VariableSetReadOptions{VariableSetWorkspaces})
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] Variable set %s no longer exists", id)
@@ -102,7 +115,7 @@ func resourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("description", variableSet.Description)
 	d.Set("global", variableSet.Global)
 	d.Set("organization", variableSet.Organization)
-	//d.Set("workspaces", variableSet.Workspaces)
+	d.Set("workspaces", variableSet.Workspaces)
 
 	return nil
 }
@@ -122,6 +135,22 @@ func resourceTFEVariableSetUpdate(d *schema.ResourceData, meta interface{}) erro
 		_, err := tfeClient.VariableSets.Update(ctx, id, &options)
 		if err != nil {
 			return fmt.Errorf("Error updateing variable %s: %v", id, err)
+		}
+	}
+
+	if d.HasChanges("workspaces") {
+		workspaceIDs, workspacesSet := d.GetOK("workspaces")
+		log.Printf("[DEBUG] Assign variable set %s to workspaces %v", name, workspaceIDs)
+
+		options = tfe.VariableSetAssignOptions{}
+		for _, workspaceID := range workspaceIDs.(*schema.Set).List() {
+			options.Workspace = append(options.Workspaces, Workspace{ID: workspaceID})
+		}
+
+		variableSet, err = tfeClient.VariableSets.Assign(ctx, variableSet.ID, &options)
+		if err != nil {
+			return fmt.Errorf(
+				"Error assigning variable set %s (%s) to given workspaces: %v", name, variableSet.ID, err)
 		}
 	}
 
