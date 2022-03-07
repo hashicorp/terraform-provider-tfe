@@ -68,7 +68,7 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 	fullNames := make(map[string]string, len(names))
 	ids := make(map[string]string, len(names))
 
-	options := tfe.WorkspaceListOptions{}
+	options := &tfe.WorkspaceListOptions{}
 
 	// Create a search string with all the tag names we are looking for.
 	var tagSearchParts []string
@@ -81,7 +81,7 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 	}
 	if len(tagSearchParts) > 0 {
 		tagSearch := strings.Join(tagSearchParts, ",")
-		options.Tags = &tagSearch
+		options.Tags = tagSearch
 	}
 
 	hasOnlyTags := len(tagSearchParts) > 0 && len(names) == 0

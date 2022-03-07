@@ -160,7 +160,7 @@ type outputData struct {
 func (d dataSourceOutputs) readStateOutput(ctx context.Context, tfeClient *tfe.Client, orgName, wsName string) (*stateData, error) {
 	log.Printf("[DEBUG] Reading the Workspace %s in Organization %s", wsName, orgName)
 	opts := &tfe.WorkspaceReadOptions{
-		Include: "outputs",
+		Include: []tfe.WSIncludeOpt{tfe.WSOutputs},
 	}
 	ws, err := tfeClient.Workspaces.ReadWithOptions(ctx, orgName, wsName, opts)
 	if err != nil {

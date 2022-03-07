@@ -2,6 +2,7 @@ package tfe
 
 import (
 	"fmt"
+
 	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -37,8 +38,8 @@ func dataSourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interf
 	organization := d.Get("organization").(string)
 
 	// Create an options struct.
-	options := tfe.OrganizationMembershipListOptions{
-		Include: "user",
+	options := &tfe.OrganizationMembershipListOptions{
+		Include: []tfe.OrgMembershipIncludeOpt{tfe.OrgMembershipUser},
 	}
 
 	for {

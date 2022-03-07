@@ -62,7 +62,7 @@ func adminOrgsPopulateFields(client *tfe.Client, d *schema.ResourceData) ([]stri
 	names := []string{}
 	ids := map[string]string{}
 	log.Printf("[DEBUG] Listing all organizations (admin)")
-	options := tfe.AdminOrganizationListOptions{
+	options := &tfe.AdminOrganizationListOptions{
 		ListOptions: tfe.ListOptions{
 			PageSize: 100,
 		},
@@ -94,7 +94,7 @@ func orgsPopulateFields(client *tfe.Client) ([]string, map[string]string, error)
 	names := []string{}
 	ids := map[string]string{}
 	log.Printf("[DEBUG] Listing all organizations (non-admin)")
-	options := tfe.OrganizationListOptions{
+	options := &tfe.OrganizationListOptions{
 		ListOptions: tfe.ListOptions{
 			PageSize: 100,
 		},

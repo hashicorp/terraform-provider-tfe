@@ -26,7 +26,7 @@ func newMockWorkspaces(options testClientOptions) *mockWorkspaces {
 	}
 }
 
-func (m *mockWorkspaces) List(ctx context.Context, organization string, options tfe.WorkspaceListOptions) (*tfe.WorkspaceList, error) {
+func (m *mockWorkspaces) List(ctx context.Context, organization string, options *tfe.WorkspaceListOptions) (*tfe.WorkspaceList, error) {
 	panic("not implemented")
 }
 
@@ -113,7 +113,7 @@ func (m *mockWorkspaces) UnassignSSHKey(ctx context.Context, workspaceID string)
 	panic("not implemented")
 }
 
-func (m *mockWorkspaces) RemoteStateConsumers(ctx context.Context, workspaceID string, options *tfe.RemoteStateConsumersListOptions) (*tfe.WorkspaceList, error) {
+func (m *mockWorkspaces) ListRemoteStateConsumers(ctx context.Context, workspaceID string, options *tfe.RemoteStateConsumersListOptions) (*tfe.WorkspaceList, error) {
 	if m.options.remoteStateConsumersResponse == "404" {
 		return nil, tfe.ErrResourceNotFound
 	} else if m.options.remoteStateConsumersResponse == "500" {
@@ -135,7 +135,7 @@ func (m *mockWorkspaces) UpdateRemoteStateConsumers(ctx context.Context, workspa
 	panic("not implemented")
 }
 
-func (m *mockWorkspaces) Tags(ctx context.Context, workspaceID string, options tfe.WorkspaceTagListOptions) (*tfe.TagList, error) {
+func (m *mockWorkspaces) ListTags(ctx context.Context, workspaceID string, options *tfe.WorkspaceTagListOptions) (*tfe.TagList, error) {
 	panic("not implemented")
 }
 

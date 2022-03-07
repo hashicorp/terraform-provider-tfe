@@ -3,10 +3,11 @@ package tfe
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/go-tfe"
 	"log"
 	"strings"
 	"testing"
+
+	"github.com/hashicorp/go-tfe"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
@@ -25,7 +26,7 @@ func getOrgSweeper(name string) *resource.Sweeper {
 			}
 
 			ctx := context.TODO()
-			orgList, err := client.Organizations.List(ctx, tfe.OrganizationListOptions{})
+			orgList, err := client.Organizations.List(ctx, &tfe.OrganizationListOptions{})
 			if err != nil {
 				return fmt.Errorf("Error listing organizations: %s", err)
 			}
