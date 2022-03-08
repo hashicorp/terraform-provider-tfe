@@ -42,7 +42,7 @@ func TestAccTFEVariableSet_basic(t *testing.T) {
 }
 
 func TestAccTFEVariableSet_update(t *testing.T) {
-	variable := &tfe.VariableSet{}
+	variableSet := &tfe.VariableSet{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -83,7 +83,7 @@ func TestAccTFEVariableSet_update(t *testing.T) {
 	})
 }
 
-func TestAccTFEVariable_import(t *testing.T) {
+func TestAccTFEVariableSet_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -119,7 +119,11 @@ func testAccCheckTFEVariableSetExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		vs, err := tfeClient.VariableSets.Read(ctx, rs.Primary.ID, &VariableSetReadOptions{VariableSetWorkspaces})
+		vs, err := tfeClient.VariableSets.Read(
+			ctx,
+			rs.Primary.ID,
+			&tfe.VariableSetReadOptions{&[]tfe.VariableSetIncludeOps{tfe.VariableSetWorkspaces}},
+		)
 		if err != nil {
 			return err
 		}
@@ -140,8 +144,10 @@ func testAccCheckTFEVariableSetAttributes(
 			return fmt.Errorf("Bad description: %s", variableSet.Description)
 		}
 		if variableSet.Global != false {
-			return fmt.Errorf("Bad global: %s", variableSet.Global)
+			return fmt.Errorf("Bad global: %t", variableSet.Global)
 		}
+
+		return nil
 	}
 }
 
@@ -155,28 +161,34 @@ func testAccCheckTFEVariableSetAttributesUpdate(
 			return fmt.Errorf("Bad description: %s", variableSet.Description)
 		}
 		if variableSet.Global != true {
-			return fmt.Errorf("Bad global: %s", variableSet.Global)
+			return fmt.Errorf("Bad global: %t", variableSet.Global)
 		}
+
+		return nil
 	}
 }
 
 func testAccCheckTFEVariableSetAssignment(variableSet *tfe.VariableSet) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		if len(variableSet.Workspace) != 1 {
-			return fmt.Errorf("Bad workspace assignment: %s", variableSet.Workspaces)
+		if len(variableSet.Workspaces) != 1 {
+			return fmt.Errorf("Bad workspace assignment: %v", variableSet.Workspaces)
 		}
+
+		return nil
 	}
 }
 
 func testAccCheckTFEVariableSetAssignmentUpdate(variableSet *tfe.VariableSet) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		if len(variableSet.Workspace) != 0 {
-			return fmt.Errorf("Bad workspace assignment: %s", variableSet.Workspaces)
+		if len(variableSet.Workspaces) != 0 {
+			return fmt.Errorf("Bad workspace assignment: %v", variableSet.Workspaces)
 		}
+
+		return nil
 	}
 }
 
-func testAccCheckTFEVariableSetDestroy(rInt int) string {
+func testAccCheckTFEVariableSetDestroy(s *terraform.State) error {
 	tfeClient := testAccProvider.Meta().(*tfe.Client)
 
 	for _, rs := range s.RootModule().Resources {
@@ -224,7 +236,7 @@ resource "tfe_variable_set" "assigned" {
 }`, rInt)
 }
 
-func testAccTFEVariable_update(rInt int) string {
+func testAccTFEVariableSet_update(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"

@@ -56,9 +56,9 @@ func TestAccTFEVariable_basic_variable_set(t *testing.T) {
 			{
 				Config: testAccTFEVariable_basic_variable_set(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEVariableExists(
+					testAccCheckTFEVariableSetVariableExists(
 						"tfe_variable.foobar", variable),
-					testAccCheckTFEVariableAttributes(variable),
+					testAccCheckTFEVariableiSetVariableAttributes(variable),
 					resource.TestCheckResourceAttr(
 						"tfe_variable.foobar", "key", "key_test"),
 					resource.TestCheckResourceAttr(
@@ -240,8 +240,71 @@ func testAccCheckTFEVariableExists(
 	}
 }
 
+func testAccCheckTFEVariableSetVariableExists(
+	n string, variable *tfe.VariableSetVariable) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		tfeClient := testAccProvider.Meta().(*tfe.Client)
+
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return fmt.Errorf("Not found: %s", n)
+		}
+
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("No instance ID is set")
+		}
+
+		vsID := rs.Primary.Attributes["variable_set_id"]
+		vs, err := tfeClient.VariableSets.Read(ctx, vsID, nil)
+		if err != nil {
+			return fmt.Errorf(
+				"Error retrieving variable set %s: %v", vsID, err)
+		}
+
+		v, err := tfeClient.VariableSetVariables.Read(ctx, vs.ID, rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+
+		*variable = *v
+
+		return nil
+	}
+}
+
 func testAccCheckTFEVariableAttributes(
 	variable *tfe.Variable) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if variable.Key != "key_test" {
+			return fmt.Errorf("Bad key: %s", variable.Key)
+		}
+
+		if variable.Value != "value_test" {
+			return fmt.Errorf("Bad value: %s", variable.Value)
+		}
+
+		if variable.Description != "some description" {
+			return fmt.Errorf("Bad description: %s", variable.Description)
+		}
+
+		if variable.Category != tfe.CategoryEnv {
+			return fmt.Errorf("Bad category: %s", variable.Category)
+		}
+
+		if variable.HCL != false {
+			return fmt.Errorf("Bad HCL: %t", variable.HCL)
+		}
+
+		if variable.Sensitive != false {
+			return fmt.Errorf("Bad sensitive: %t", variable.Sensitive)
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckTFEVariableiSetVariableAttributes(
+	variable *tfe.VariableSetVariable) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if variable.Key != "key_test" {
 			return fmt.Errorf("Bad key: %s", variable.Key)

@@ -69,5 +69,5 @@ resource "tfe_variable" "envfoo" {
 data "tfe_variable" "foobar" {
   name = tfe_variable_set.foobar.name
 	organization = tfe_variable_set.foobar.organization
-}`, rInt, rInt)
+}`, rInt, rInt, rInt)
 }

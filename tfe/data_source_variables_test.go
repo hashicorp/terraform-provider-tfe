@@ -118,5 +118,5 @@ output "variable_set_env" {
 
 output "variable_set_terraform" {
 	value = data.tfe_variables.variable_set_foobar.env[0]["name"]
-}`, rInt, rInt)
+}`, rInt, rInt, rInt)
 }
