@@ -149,7 +149,7 @@ func dataSourceVariableSetVariableRead(d *schema.ResourceData, meta interface{})
 	options := tfe.VariableSetVariableListOptions{}
 
 	for {
-		variableList, err := tfeClient.VariableSetVariables.List(ctx, variableSetId, options)
+		variableList, err := tfeClient.VariableSetVariables.List(ctx, variableSetId, &options)
 		if err != nil {
 			return fmt.Errorf("Error retrieving variable list: %w", err)
 		}

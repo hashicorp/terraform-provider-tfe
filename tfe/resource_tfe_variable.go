@@ -186,7 +186,7 @@ func resourceTFEVariableSetVariableCreate(d *schema.ResourceData, meta interface
 	}
 
 	log.Printf("[DEBUG] Create %s variable: %s", category, key)
-	variable, err := tfeClient.VariableSetVariables.Create(ctx, vs.ID, options)
+	variable, err := tfeClient.VariableSetVariables.Create(ctx, vs.ID, &options)
 	if err != nil {
 		return fmt.Errorf("Error creating %s variable %s: %v", category, key, err)
 	}
@@ -249,7 +249,7 @@ func resourceTFEVariableSetVariableRead(d *schema.ResourceData, meta interface{}
 
 	// Get the variable set
 	variableSetID := d.Get("variable_set_id").(string)
-	vs, err := tfeClient.VariableSet.Read(ctx, variableSetID, nil)
+	vs, err := tfeClient.VariableSets.Read(ctx, variableSetID, nil)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] Variable set %s no longer exists", variableSetID)
@@ -261,14 +261,14 @@ func resourceTFEVariableSetVariableRead(d *schema.ResourceData, meta interface{}
 	}
 
 	log.Printf("[DEBUG] Read variable: %s", d.Id())
-	variable, err := tfeClient.VariableSetVariables.Read(ctx, vs.ID, d.Id())
+	variable, errr := tfeClient.VariableSetVariables.Read(ctx, vs.ID, d.Id())
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errr == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] Variable %s does no longer exist", d.Id())
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading variable %s: %v", d.Id(), err)
+		return fmt.Errorf("Error reading variable %s: %v", d.Id(), errr)
 	}
 
 	// Update config.
@@ -313,9 +313,9 @@ func resourceTFEVariableUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	log.Printf("[DEBUG] Update variable: %s", d.Id())
-	_, err = tfeClient.Variables.Update(ctx, ws.ID, d.Id(), options)
-	if err != nil {
-		return fmt.Errorf("Error updating variable %s: %v", d.Id(), err)
+	_, errr := tfeClient.Variables.Update(ctx, ws.ID, d.Id(), options)
+	if errr != nil {
+		return fmt.Errorf("Error updating variable %s: %v", d.Id(), errr)
 	}
 
 	return resourceTFEVariableRead(d, meta)
@@ -342,9 +342,9 @@ func resourceTFEVariableSetVariableUpdate(d *schema.ResourceData, meta interface
 	}
 
 	log.Printf("[DEBUG] Update variable: %s", d.Id())
-	_, err = tfeClient.VariableSetVariables.Update(ctx, vs.ID, d.Id(), options)
-	if err != nil {
-		return fmt.Errorf("Error updating variable %s: %v", d.Id(), err)
+	_, errr := tfeClient.VariableSetVariables.Update(ctx, vs.ID, d.Id(), &options)
+	if errr != nil {
+		return fmt.Errorf("Error updating variable %s: %v", d.Id(), errr)
 	}
 
 	return resourceTFEVariableRead(d, meta)
@@ -413,15 +413,9 @@ func resourceTFEVariableImporter(d *schema.ResourceData, meta interface{}) ([]*s
 		)
 	}
 
-	varsetIdUsed, e := regexp.MatchString(variableSetIdRegexp, s[1])
+	varsetIdUsed := variableSetIdRegexp.MatchString(s[1])
 	if varsetIdUsed {
-		// Set the fields that are part of the import ID.
-		variableSet_id, err := fetchVariableSetExternalID(s[0]+"/"+s[1], tfeClient)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"error retrieving variable set %s from organization %s: %v", s[1], s[0], err)
-		}
-		d.Set("variable_set_id", variableSet_id)
+		d.Set("variable_set_id", s[1])
 	} else {
 		// Set the fields that are part of the import ID.
 		workspace_id, err := fetchWorkspaceExternalID(s[0]+"/"+s[1], tfeClient)

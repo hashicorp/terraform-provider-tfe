@@ -75,15 +75,15 @@ func resourceTFEVariableSetCreate(d *schema.ResourceData, meta interface{}) erro
 			"Error creating variable set %s, for organization: %s: %v", name, organization, err)
 	}
 
-	if workspaceIDs, workspacesSet := d.GetOK("workspaces"); !options.Global && workspacesSet {
+	if workspaceIDs, workspacesSet := d.GetOk("workspaces"); !*options.Global && workspacesSet {
 		log.Printf("[DEBUG] Assign variable set %s to workspaces %v", name, workspaceIDs)
 
-		options = tfe.VariableSetAssignOptions{}
+		assignOptions := tfe.VariableSetAssignOptions{}
 		for _, workspaceID := range workspaceIDs.(*schema.Set).List() {
-			options.Workspace = append(options.Workspaces, Workspace{ID: workspaceID})
+			assignOptions.Workspaces = append(assignOptions.Workspaces, &tfe.Workspace{ID: workspaceID.(string)})
 		}
 
-		variableSet, err = tfeClient.VariableSets.Assign(ctx, variableSet.ID, &options)
+		variableSet, err = tfeClient.VariableSets.Assign(ctx, variableSet.ID, &assignOptions)
 		if err != nil {
 			return fmt.Errorf(
 				"Error assigning variable set %s (%s) to given workspaces: %v", name, variableSet.ID, err)
@@ -100,7 +100,9 @@ func resourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) error 
 
 	id := d.Id()
 	log.Printf("[DEBUG] Read configuration of variable set: %s", id)
-	variableSet, err := tfeClient.VariableSets.Read(ctx, id, &VariableSetReadOptions{VariableSetWorkspaces})
+	variableSet, err := tfeClient.VariableSets.Read(ctx, id, &tfe.VariableSetReadOptions{
+		Include: &[]tfe.VariableSetIncludeOps{tfe.VariableSetWorkspaces},
+	})
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] Variable set %s no longer exists", id)
@@ -139,18 +141,17 @@ func resourceTFEVariableSetUpdate(d *schema.ResourceData, meta interface{}) erro
 	}
 
 	if d.HasChanges("workspaces") {
-		workspaceIDs, workspacesSet := d.GetOK("workspaces")
-		log.Printf("[DEBUG] Assign variable set %s to workspaces %v", name, workspaceIDs)
-
-		options = tfe.VariableSetAssignOptions{}
+		workspaceIDs := d.Get("workspaces")
+		assignOptions := tfe.VariableSetAssignOptions{}
 		for _, workspaceID := range workspaceIDs.(*schema.Set).List() {
-			options.Workspace = append(options.Workspaces, Workspace{ID: workspaceID})
+			assignOptions.Workspaces = append(assignOptions.Workspaces, &tfe.Workspace{ID: workspaceID.(string)})
 		}
 
-		variableSet, err = tfeClient.VariableSets.Assign(ctx, variableSet.ID, &options)
-		if err != nil {
+		log.Printf("[DEBUG] Assign variable set %s to workspaces %v", id, workspaceIDs)
+		vs, errr := tfeClient.VariableSets.Assign(ctx, id, &assignOptions)
+		if errr != nil {
 			return fmt.Errorf(
-				"Error assigning variable set %s (%s) to given workspaces: %v", name, variableSet.ID, err)
+				"Error assigning variable set %s (%s) to given workspaces: %v", vs.Name, id, errr)
 		}
 	}
 

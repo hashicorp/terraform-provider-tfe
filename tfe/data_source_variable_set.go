@@ -2,7 +2,6 @@ package tfe
 
 import (
 	"fmt"
-	"log"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -63,7 +62,7 @@ func dataSourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) erro
 	for {
 		// Variable Set relations, vars and workspaces, are omitted from the querying until
 		// we find the desired variable set.
-		l, err := tfeClient.VariableSets.List(ctx, organization, options)
+		l, err := tfeClient.VariableSets.List(ctx, organization, &options)
 		if err != nil {
 			if err == tfe.ErrResourceNotFound {
 				return fmt.Errorf("could not find variable set%s/%s", organization, name)
@@ -78,9 +77,11 @@ func dataSourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) erro
 				d.Set("global", vs.Global)
 
 				//Only now include vars and workspaces to cut down on request load.
-				vs, err = tfeClient.VariableSets.Read(ctx, vs.ID, &VariableSetReadOptions{
-					Include: &[]VariableSetIncludeOps{VariableSetWorkspaces, VariableSetVars},
-				})
+				readOptions := tfe.VariableSetReadOptions{
+					Include: &[]tfe.VariableSetIncludeOps{tfe.VariableSetWorkspaces, tfe.VariableSetVars},
+				}
+
+				vs, err = tfeClient.VariableSets.Read(ctx, vs.ID, &readOptions)
 				if err != nil {
 					return fmt.Errorf("Error retrieving variable set relations: %v", err)
 				}
@@ -89,7 +90,7 @@ func dataSourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) erro
 				for _, workspace := range vs.Workspaces {
 					workspaces = append(workspaces, workspace.ID)
 				}
-				d.Set("workspaces", workspace_ids)
+				d.Set("workspaces", workspaces)
 
 				var vars []interface{}
 				for _, v := range vs.Workspaces {
