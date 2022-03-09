@@ -76,6 +76,7 @@ func resourceTFEVariable() *schema.Resource {
 			"workspace_id": {
 				Type:         schema.TypeString,
 				Optional:     true,
+				Required:     false,
 				ForceNew:     true,
 				ExactlyOneOf: []string{"workspace_id", "variable_set_id"},
 				ValidateFunc: validation.StringMatch(
@@ -87,6 +88,7 @@ func resourceTFEVariable() *schema.Resource {
 			"variable_set_id": {
 				Type:         schema.TypeString,
 				Optional:     true,
+				Required:     false,
 				ForceNew:     true,
 				ExactlyOneOf: []string{"workspace_id", "variable_set_id"},
 				ValidateFunc: validation.StringMatch(
@@ -261,14 +263,15 @@ func resourceTFEVariableSetVariableRead(d *schema.ResourceData, meta interface{}
 	}
 
 	log.Printf("[DEBUG] Read variable: %s", d.Id())
-	variable, errr := tfeClient.VariableSetVariables.Read(ctx, vs.ID, d.Id())
+	var variable *tfe.VariableSetVariable
+	variable, err = tfeClient.VariableSetVariables.Read(ctx, vs.ID, d.Id())
 	if err != nil {
-		if errr == tfe.ErrResourceNotFound {
+		if err == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] Variable %s does no longer exist", d.Id())
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading variable %s: %v", d.Id(), errr)
+		return fmt.Errorf("Error reading variable %s: %v", d.Id(), err)
 	}
 
 	// Update config.
@@ -313,9 +316,9 @@ func resourceTFEVariableUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	log.Printf("[DEBUG] Update variable: %s", d.Id())
-	_, errr := tfeClient.Variables.Update(ctx, ws.ID, d.Id(), options)
-	if errr != nil {
-		return fmt.Errorf("Error updating variable %s: %v", d.Id(), errr)
+	_, err = tfeClient.Variables.Update(ctx, ws.ID, d.Id(), options)
+	if err != nil {
+		return fmt.Errorf("Error updating variable %s: %v", d.Id(), err)
 	}
 
 	return resourceTFEVariableRead(d, meta)
@@ -342,9 +345,9 @@ func resourceTFEVariableSetVariableUpdate(d *schema.ResourceData, meta interface
 	}
 
 	log.Printf("[DEBUG] Update variable: %s", d.Id())
-	_, errr := tfeClient.VariableSetVariables.Update(ctx, vs.ID, d.Id(), &options)
-	if errr != nil {
-		return fmt.Errorf("Error updating variable %s: %v", d.Id(), errr)
+	_, err = tfeClient.VariableSetVariables.Update(ctx, vs.ID, d.Id(), &options)
+	if err != nil {
+		return fmt.Errorf("Error updating variable %s: %v", d.Id(), err)
 	}
 
 	return resourceTFEVariableRead(d, meta)
@@ -383,7 +386,7 @@ func resourceTFEVariableSetVariableDelete(d *schema.ResourceData, meta interface
 	tfeClient := meta.(*tfe.Client)
 
 	// Get the variable set.
-	variableSetID := d.Get("variable_set__id").(string)
+	variableSetID := d.Get("variable_set_id").(string)
 	vs, err := tfeClient.VariableSets.Read(ctx, variableSetID, nil)
 	if err != nil {
 		return fmt.Errorf(

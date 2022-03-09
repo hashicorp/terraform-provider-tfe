@@ -116,8 +116,13 @@ func resourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("name", variableSet.Name)
 	d.Set("description", variableSet.Description)
 	d.Set("global", variableSet.Global)
-	d.Set("organization", variableSet.Organization)
-	d.Set("workspaces", variableSet.Workspaces)
+	d.Set("organization", variableSet.Organization.Name)
+
+	var wids []interface{}
+	for _, workspace := range variableSet.Workspaces {
+		wids = append(wids, workspace.ID)
+	}
+	d.Set("workspaces", wids)
 
 	return nil
 }
@@ -148,10 +153,10 @@ func resourceTFEVariableSetUpdate(d *schema.ResourceData, meta interface{}) erro
 		}
 
 		log.Printf("[DEBUG] Assign variable set %s to workspaces %v", id, workspaceIDs)
-		vs, errr := tfeClient.VariableSets.Assign(ctx, id, &assignOptions)
-		if errr != nil {
+		vs, err := tfeClient.VariableSets.Assign(ctx, id, &assignOptions)
+		if err != nil {
 			return fmt.Errorf(
-				"Error assigning variable set %s (%s) to given workspaces: %v", vs.Name, id, errr)
+				"Error assigning variable set %s (%s) to given workspaces: %v", vs.Name, id, err)
 		}
 	}
 

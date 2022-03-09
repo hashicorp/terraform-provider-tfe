@@ -63,12 +63,12 @@ func dataSourceTFEWorkspaceVariables() *schema.Resource {
 			},
 			"workspace_id": {
 				Type:         schema.TypeString,
-				Required:     false,
+				Optional:     true,
 				ExactlyOneOf: []string{"workspace_id", "variable_set_id"},
 			},
 			"variable_set_id": {
 				Type:         schema.TypeString,
-				Required:     false,
+				Optional:     true,
 				ExactlyOneOf: []string{"workspace_id", "variable_set_id"},
 			},
 		},

@@ -90,6 +90,7 @@ func Provider() *schema.Provider {
 			"tfe_workspace":               dataSourceTFEWorkspace(),
 			"tfe_workspace_ids":           dataSourceTFEWorkspaceIDs(),
 			"tfe_variables":               dataSourceTFEWorkspaceVariables(),
+			"tfe_variable_set":            dataSourceTFEVariableSet(),
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
@@ -116,6 +117,7 @@ func Provider() *schema.Provider {
 			"tfe_terraform_version":           resourceTFETerraformVersion(),
 			"tfe_workspace":                   resourceTFEWorkspace(),
 			"tfe_variable":                    resourceTFEVariable(),
+			"tfe_variable_set":                resourceTFEVariableSet(),
 		},
 
 		ConfigureFunc: providerConfigure,

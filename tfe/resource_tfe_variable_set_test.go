@@ -27,7 +27,7 @@ func TestAccTFEVariableSet_basic(t *testing.T) {
 						"tfe_variable_set.foobar", variableSet),
 					testAccCheckTFEVariableSetAttributes(variableSet),
 					resource.TestCheckResourceAttr(
-						"tfe_variable_set.foobar", "name", "foobar"),
+						"tfe_variable_set.foobar", "name", "variable_set_test"),
 					resource.TestCheckResourceAttr(
 						"tfe_variable_set.foobar", "description", "a test variable set"),
 					resource.TestCheckResourceAttr(
@@ -57,7 +57,7 @@ func TestAccTFEVariableSet_update(t *testing.T) {
 						"tfe_variable_set.foobar", variableSet),
 					testAccCheckTFEVariableSetAttributes(variableSet),
 					resource.TestCheckResourceAttr(
-						"tfe_variable_set.foobar", "name", "foobar"),
+						"tfe_variable_set.foobar", "name", "variable_set_test"),
 					resource.TestCheckResourceAttr(
 						"tfe_variable_set.foobar", "description", "a test variable set"),
 					resource.TestCheckResourceAttr(
@@ -98,7 +98,7 @@ func TestAccTFEVariableSet_import(t *testing.T) {
 			{
 				ResourceName:        "tfe_variable_set.foobar",
 				ImportState:         true,
-				ImportStateIdPrefix: fmt.Sprintf("tst-terraform-%d/workspace-test/", rInt),
+				ImportStateIdPrefix: "",
 				ImportStateVerify:   true,
 			},
 		},
@@ -225,14 +225,14 @@ resource "tfe_variable_set" "foobar" {
   name         = "variable_set_test"
 	description  = "a test variable set"
 	global       = false
-	organizaiton = tfe_organizatoin.foobar.id
+	organization = tfe_organization.foobar.id
 }
 
 resource "tfe_variable_set" "assigned" {
   name         = "variable_set_assigned"
 	description  = "a test variable set"
 	workspaces   = [tfe_workspace.foobar.id]
-	organizaiton = tfe_organizatoin.foobar.id
+	organization = tfe_organization.foobar.id
 }`, rInt)
 }
 
@@ -252,13 +252,13 @@ resource "tfe_variable_set" "foobar" {
   name         = "variable_set_test_updated"
 	description  = "another description"
 	global       = true
-	organizaiton = tfe_organizatoin.foobar.id
+	organization = tfe_organization.foobar.id
 }
 
 resource "tfe_variable_set" "assigned" {
   name         = "variable_set_assigned"
 	description  = "a test variable set"
 	workspaces   = []
-	organizaiton = tfe_organizatoin.foobar.id
+	organization = tfe_organization.foobar.id
 }`, rInt)
 }
