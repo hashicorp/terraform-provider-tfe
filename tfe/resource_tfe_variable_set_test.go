@@ -212,7 +212,7 @@ func testAccCheckTFEVariableSetDestroy(s *terraform.State) error {
 func testAccTFEVariableSet_basic(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name = "tft-terraform-%d"
+  name = "tst-terraform-%d"
 	email = "admin@company.com"
 }
 

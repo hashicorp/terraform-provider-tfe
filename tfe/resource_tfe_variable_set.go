@@ -148,15 +148,16 @@ func resourceTFEVariableSetUpdate(d *schema.ResourceData, meta interface{}) erro
 	if d.HasChanges("workspaces") {
 		workspaceIDs := d.Get("workspaces")
 		assignOptions := tfe.VariableSetAssignOptions{}
+		assignOptions.Workspaces = []*tfe.Workspace{}
 		for _, workspaceID := range workspaceIDs.(*schema.Set).List() {
 			assignOptions.Workspaces = append(assignOptions.Workspaces, &tfe.Workspace{ID: workspaceID.(string)})
 		}
 
 		log.Printf("[DEBUG] Assign variable set %s to workspaces %v", id, workspaceIDs)
-		vs, err := tfeClient.VariableSets.Assign(ctx, id, &assignOptions)
+		_, err := tfeClient.VariableSets.Assign(ctx, id, &assignOptions)
 		if err != nil {
 			return fmt.Errorf(
-				"Error assigning variable set %s (%s) to given workspaces: %v", vs.Name, id, err)
+				"Error assigning variable set %s to given workspaces: %v", id, err)
 		}
 	}
 

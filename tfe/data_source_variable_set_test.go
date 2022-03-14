@@ -11,7 +11,7 @@ import (
 
 func TestAccTFEVariableSetsDataSource_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+	orgName := fmt.Sprintf("org-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
