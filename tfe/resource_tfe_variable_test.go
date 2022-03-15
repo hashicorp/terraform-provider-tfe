@@ -466,7 +466,7 @@ resource "tfe_variable" "foobar" {
   value        = "value_test"
   description  = "some description"
   category     = "env"
-  variable_set_id = tfe_varaible_set.foobar.id
+  variable_set_id = tfe_variable_set.foobar.id
 }`, rInt)
 }
 
