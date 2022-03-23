@@ -168,7 +168,7 @@ func testAccCheckTFEVariableSetAttributesUpdate(
 	}
 }
 
-func testAccCheckTFEVariableSetAplication(variableSet *tfe.VariableSet) resource.TestCheckFunc {
+func testAccCheckTFEVariableSetApplication(variableSet *tfe.VariableSet) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if len(variableSet.Workspaces) != 1 {
 			return fmt.Errorf("Bad workspace apply: %v", variableSet.Workspaces)
