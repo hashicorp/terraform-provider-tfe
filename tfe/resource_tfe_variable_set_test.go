@@ -33,8 +33,8 @@ func TestAccTFEVariableSet_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_variable_set.foobar", "global", "false"),
 					testAccCheckTFEVariableSetExists(
-						"tfe_variable_set.assigned", variableSet),
-					testAccCheckTFEVariableSetAssignment(variableSet),
+						"tfe_variable_set.applied", variableSet),
+					testAccCheckTFEVariableSetApplication(variableSet),
 				),
 			},
 		},
@@ -122,7 +122,7 @@ func testAccCheckTFEVariableSetExists(
 		vs, err := tfeClient.VariableSets.Read(
 			ctx,
 			rs.Primary.ID,
-			&tfe.VariableSetReadOptions{&[]tfe.VariableSetIncludeOps{tfe.VariableSetWorkspaces}},
+			&tfe.VariableSetReadOptions{Include: &[]tfe.VariableSetIncludeOpt{tfe.VariableSetWorkspaces}},
 		)
 		if err != nil {
 			return err
@@ -168,20 +168,20 @@ func testAccCheckTFEVariableSetAttributesUpdate(
 	}
 }
 
-func testAccCheckTFEVariableSetAssignment(variableSet *tfe.VariableSet) resource.TestCheckFunc {
+func testAccCheckTFEVariableSetAplication(variableSet *tfe.VariableSet) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if len(variableSet.Workspaces) != 1 {
-			return fmt.Errorf("Bad workspace assignment: %v", variableSet.Workspaces)
+			return fmt.Errorf("Bad workspace apply: %v", variableSet.Workspaces)
 		}
 
 		return nil
 	}
 }
 
-func testAccCheckTFEVariableSetAssignmentUpdate(variableSet *tfe.VariableSet) resource.TestCheckFunc {
+func testAccCheckTFEVariableSetApplicationUpdate(variableSet *tfe.VariableSet) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if len(variableSet.Workspaces) != 0 {
-			return fmt.Errorf("Bad workspace assignment: %v", variableSet.Workspaces)
+			return fmt.Errorf("Bad workspace apply: %v", variableSet.Workspaces)
 		}
 
 		return nil
@@ -228,8 +228,8 @@ resource "tfe_variable_set" "foobar" {
 	organization = tfe_organization.foobar.id
 }
 
-resource "tfe_variable_set" "assigned" {
-  name         = "variable_set_assigned"
+resource "tfe_variable_set" "applied" {
+  name         = "variable_set_applied"
 	description  = "a test variable set"
 	workspaces   = [tfe_workspace.foobar.id]
 	organization = tfe_organization.foobar.id
@@ -255,8 +255,8 @@ resource "tfe_variable_set" "foobar" {
 	organization = tfe_organization.foobar.id
 }
 
-resource "tfe_variable_set" "assigned" {
-  name         = "variable_set_assigned"
+resource "tfe_variable_set" "applied" {
+  name         = "variable_set_applied"
 	description  = "a test variable set"
 	workspaces   = []
 	organization = tfe_organization.foobar.id
