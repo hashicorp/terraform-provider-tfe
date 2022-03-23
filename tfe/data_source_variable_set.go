@@ -71,7 +71,7 @@ func dataSourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) erro
 
 				//Only now include vars and workspaces to cut down on request load.
 				readOptions := tfe.VariableSetReadOptions{
-					Include: &[]tfe.VariableSetIncludeOps{tfe.VariableSetWorkspaces, tfe.VariableSetVars},
+					Include: &[]tfe.VariableSetIncludeOpt{tfe.VariableSetWorkspaces, tfe.VariableSetVars},
 				}
 
 				vs, err = tfeClient.VariableSets.Read(ctx, vs.ID, &readOptions)
