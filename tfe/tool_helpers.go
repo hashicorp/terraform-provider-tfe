@@ -8,8 +8,8 @@ import (
 
 // fetchTerraformVersionID returns a Terraform Version ID for the given Terraform version number
 func fetchTerraformVersionID(version string, client *tfe.Client) (string, error) {
-	versions, err := client.Admin.TerraformVersions.List(ctx, tfe.AdminTerraformVersionsListOptions{
-		Filter: &version,
+	versions, err := client.Admin.TerraformVersions.List(ctx, &tfe.AdminTerraformVersionsListOptions{
+		Filter: version,
 	})
 	if err != nil {
 		return "", fmt.Errorf("error reading Terraform versions: %w", err)
@@ -25,7 +25,7 @@ func fetchTerraformVersionID(version string, client *tfe.Client) (string, error)
 	case 1:
 		return versions.Items[0].ID, nil
 	default:
-		options := tfe.AdminTerraformVersionsListOptions{}
+		options := &tfe.AdminTerraformVersionsListOptions{}
 		for {
 			for _, v := range versions.Items {
 				if v.Version == version {

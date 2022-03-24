@@ -66,7 +66,7 @@ func resourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interfac
 	tfeClient := meta.(*tfe.Client)
 
 	options := tfe.OrganizationMembershipReadOptions{
-		Include: "user",
+		Include: []tfe.OrgMembershipIncludeOpt{tfe.OrgMembershipUser},
 	}
 
 	log.Printf("[DEBUG] Read configuration of membership: %s", d.Id())

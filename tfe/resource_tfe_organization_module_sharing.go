@@ -67,7 +67,7 @@ func resourceTFEOrganizationModuleSharingUpdate(d *schema.ResourceData, meta int
 func resourceTFEOrganizationModuleSharingRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	options := tfe.AdminOrganizationListModuleConsumersOptions{}
+	options := &tfe.AdminOrganizationListModuleConsumersOptions{}
 
 	log.Printf("[DEBUG] Read configuration of module sharing for organization: %s", d.Id())
 	for {

@@ -67,11 +67,11 @@ func unpackWorkspaceID(id string) (organization, name string, err error) {
 }
 
 func readWorkspaceStateConsumers(id string, client *tfe.Client) (bool, []interface{}, error) {
-	options := tfe.RemoteStateConsumersListOptions{ListOptions: tfe.ListOptions{PageSize: 100}}
+	options := &tfe.RemoteStateConsumersListOptions{ListOptions: tfe.ListOptions{PageSize: 100}}
 	var remoteStateConsumerIDs []interface{}
 
 	for {
-		wl, err := client.Workspaces.RemoteStateConsumers(ctx, id, &options)
+		wl, err := client.Workspaces.ListRemoteStateConsumers(ctx, id, options)
 		if err != nil {
 			if err == tfe.ErrResourceNotFound {
 				// Make this functionality backwards compatible with Terraform Enterprise < v20210401

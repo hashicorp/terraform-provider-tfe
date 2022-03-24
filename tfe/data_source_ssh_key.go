@@ -33,7 +33,7 @@ func dataSourceTFESSHKeyRead(d *schema.ResourceData, meta interface{}) error {
 	organization := d.Get("organization").(string)
 
 	// Create an options struct.
-	options := tfe.SSHKeyListOptions{}
+	options := &tfe.SSHKeyListOptions{}
 
 	for {
 		l, err := tfeClient.SSHKeys.List(ctx, organization, options)

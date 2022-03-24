@@ -151,7 +151,7 @@ func resourceTFENotificationConfigurationCreate(d *schema.ResourceData, meta int
 
 	// Add triggers set to the options struct
 	for _, trigger := range d.Get("triggers").(*schema.Set).List() {
-		options.Triggers = append(options.Triggers, trigger.(string))
+		options.Triggers = append(options.Triggers, tfe.NotificationTriggerType(trigger.(string)))
 	}
 
 	// Add email_addresses set to the options struct
@@ -271,7 +271,7 @@ func resourceTFENotificationConfigurationUpdate(d *schema.ResourceData, meta int
 
 	// Add triggers set to the options struct
 	for _, trigger := range d.Get("triggers").(*schema.Set).List() {
-		options.Triggers = append(options.Triggers, trigger.(string))
+		options.Triggers = append(options.Triggers, tfe.NotificationTriggerType(trigger.(string)))
 	}
 
 	// Add email_addresses set to the options struct

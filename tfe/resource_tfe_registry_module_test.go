@@ -106,7 +106,13 @@ func testAccCheckTFERegistryModuleExists(n, orgName string, registryModule *tfe.
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		rm, err := tfeClient.RegistryModules.Read(ctx, orgName, getRegistryModuleName(), getRegistryModuleProvider())
+		rmID := tfe.RegistryModuleID{
+			Organization: orgName,
+			Name:         getRegistryModuleName(),
+			Provider:     getRegistryModuleProvider(),
+		}
+
+		rm, err := tfeClient.RegistryModules.Read(ctx, rmID)
 		if err != nil {
 			return err
 		}
@@ -183,7 +189,12 @@ func testAccCheckTFERegistryModuleDestroy(s *terraform.State) error {
 			return fmt.Errorf("No module_provider is set for registry module %s", id)
 		}
 
-		_, err := tfeClient.RegistryModules.Read(ctx, organization, name, module_provider)
+		rmID := tfe.RegistryModuleID{
+			Organization: organization,
+			Name:         name,
+			Provider:     module_provider,
+		}
+		_, err := tfeClient.RegistryModules.Read(ctx, rmID)
 		if err == nil {
 			return fmt.Errorf("Registry module %s still exists", id)
 		}

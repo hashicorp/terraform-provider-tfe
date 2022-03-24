@@ -88,7 +88,12 @@ func resourceTFERegistryModuleCreate(d *schema.ResourceData, meta interface{}) e
 	}
 
 	err = resource.Retry(time.Duration(5)*time.Minute, func() *resource.RetryError {
-		_, err := tfeClient.RegistryModules.Read(ctx, registryModule.Organization.Name, registryModule.Name, registryModule.Provider)
+		rmID := tfe.RegistryModuleID{
+			Organization: registryModule.Organization.Name,
+			Name:         registryModule.Name,
+			Provider:     registryModule.Provider,
+		}
+		_, err := tfeClient.RegistryModules.Read(ctx, rmID)
 		if err != nil {
 			if strings.Contains(strings.ToLower(err.Error()), "not found") {
 				return resource.RetryableError(err)
@@ -118,11 +123,13 @@ func resourceTFERegistryModuleRead(d *schema.ResourceData, meta interface{}) err
 	log.Printf("[DEBUG] Read registry module: %s", d.Id())
 
 	// Get the fields we need to read the registry module
-	organization := d.Get("organization").(string)
-	name := d.Get("name").(string)
-	module_provider := d.Get("module_provider").(string)
+	rmID := tfe.RegistryModuleID{
+		Organization: d.Get("organization").(string),
+		Name:         d.Get("name").(string),
+		Provider:     d.Get("module_provider").(string),
+	}
 
-	registryModule, err := tfeClient.RegistryModules.Read(ctx, organization, name, module_provider)
+	registryModule, err := tfeClient.RegistryModules.Read(ctx, rmID)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] Registry module %s no longer exists", d.Id())

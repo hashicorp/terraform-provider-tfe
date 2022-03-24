@@ -80,7 +80,7 @@ func dataSourceVariableRead(d *schema.ResourceData, meta interface{}) error {
 	totalEnvVariables := make([]interface{}, 0)
 	totalTerraformVariables := make([]interface{}, 0)
 
-	options := tfe.VariableListOptions{}
+	options := &tfe.VariableListOptions{}
 
 	for {
 		variableList, err := tfeClient.Variables.List(ctx, workspaceID, options)

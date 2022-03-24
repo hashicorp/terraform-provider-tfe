@@ -542,7 +542,7 @@ func testAccCheckTFENotificationConfigurationAttributesUpdate(notificationConfig
 
 		// Token is write only, can't read it
 
-		if !reflect.DeepEqual(notificationConfiguration.Triggers, []string{tfe.NotificationTriggerCreated, tfe.NotificationTriggerNeedsAttention}) {
+		if !reflect.DeepEqual(notificationConfiguration.Triggers, []string{string(tfe.NotificationTriggerCreated), string(tfe.NotificationTriggerNeedsAttention)}) {
 			return fmt.Errorf("Bad triggers: %v", notificationConfiguration.Triggers)
 		}
 
@@ -598,7 +598,7 @@ func testAccCheckTFENotificationConfigurationAttributesUpdateEmailUserIDs(notifi
 
 		// Token is write only, can't read it
 
-		if !reflect.DeepEqual(notificationConfiguration.Triggers, []string{tfe.NotificationTriggerCreated, tfe.NotificationTriggerNeedsAttention}) {
+		if !reflect.DeepEqual(notificationConfiguration.Triggers, []string{string(tfe.NotificationTriggerCreated), string(tfe.NotificationTriggerNeedsAttention)}) {
 			return fmt.Errorf("Bad triggers: %v", notificationConfiguration.Triggers)
 		}
 
@@ -654,7 +654,7 @@ func testAccCheckTFENotificationConfigurationAttributesDuplicateTriggers(notific
 
 		// Token is write only, can't read it
 
-		if !reflect.DeepEqual(notificationConfiguration.Triggers, []string{tfe.NotificationTriggerCreated}) {
+		if !reflect.DeepEqual(notificationConfiguration.Triggers, []string{string(tfe.NotificationTriggerCreated)}) {
 			return fmt.Errorf("Bad triggers: %v", notificationConfiguration.Triggers)
 		}
 
