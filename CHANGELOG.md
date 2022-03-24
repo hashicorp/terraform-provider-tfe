@@ -1,3 +1,12 @@
+## 0.29.0 (Unreleased)
+
+BUG FIXES:
+* r/ssh_key: Removed ability to update ssh value, which never worked ([#432](https://github.com/hashicorp/terraform-provider-tfe/pull/432)) 
+
+ENHANCEMENTS:
+* r/team: Add `manage_providers` and `manage_modules` attributes to resource schema ([#431](https://github.com/hashicorp/terraform-provider-tfe/pull/431))
+* Update go-tfe dependency to version 1.0.0 ([#450](https://github.com/hashicorp/terraform-provider-tfe/pull/450))
+
 ## 0.28.1 (February 04, 2022)
 
 BUG FIXES:
