@@ -138,7 +138,7 @@ func dataSourceVariableRead(d *schema.ResourceData, meta interface{}) error {
 func dataSourceVariableSetVariableRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	// Get the name and organization.
+	// Get the id.
 	variableSetId := d.Get("variable_set_id").(string)
 
 	log.Printf("[DEBUG] Read configuration of variable set: %s", variableSetId)
