@@ -13,7 +13,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.0 // indirect
 	github.com/hashicorp/go-slug v0.8.0
-	github.com/hashicorp/go-tfe v1.0.0
+	github.com/hashicorp/go-tfe v1.0.1-0.20220324182532-e004de0557a8
 	github.com/hashicorp/go-version v1.4.0
 	github.com/hashicorp/hcl v0.0.0-20180404174102-ef8a98b0bbce
 	github.com/hashicorp/hcl/v2 v2.10.0 // indirect
