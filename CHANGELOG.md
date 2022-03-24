@@ -1,4 +1,4 @@
-## 0.29.0 (Unreleased)
+## 0.29.0 (March 24, 2022)
 
 BUG FIXES:
 * r/ssh_key: Removed ability to update ssh value, which never worked ([#432](https://github.com/hashicorp/terraform-provider-tfe/pull/432)) 
