@@ -32,7 +32,7 @@ func TestAccTFEVariableSetsDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_variable_set.foobar", "workspaces.#", "1"),
 					resource.TestCheckResourceAttr(
-						"data.tfe_variable_set.foobar", "vars.#", "1"),
+						"data.tfe_variable_set.foobar", "variables.#", "1"),
 				),
 			},
 		},
