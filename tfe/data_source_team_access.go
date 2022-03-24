@@ -78,8 +78,8 @@ func dataSourceTFETeamAccessRead(d *schema.ResourceData, meta interface{}) error
 	}
 
 	// Create an options struct.
-	options := tfe.TeamAccessListOptions{
-		WorkspaceID: tfe.String(ws.ID),
+	options := &tfe.TeamAccessListOptions{
+		WorkspaceID: ws.ID,
 	}
 
 	for {

@@ -33,7 +33,7 @@ func dataSourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 	organization := d.Get("organization").(string)
 
 	// Create an options struct.
-	options := tfe.TeamListOptions{}
+	options := &tfe.TeamListOptions{}
 
 	for {
 		l, err := tfeClient.Teams.List(ctx, organization, options)

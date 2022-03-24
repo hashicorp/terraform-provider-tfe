@@ -44,12 +44,12 @@ func resourceTFEAgentTokenCreate(d *schema.ResourceData, meta interface{}) error
 	description := d.Get("description").(string)
 
 	// Create a new options struct
-	options := tfe.AgentTokenGenerateOptions{
+	options := tfe.AgentTokenCreateOptions{
 		Description: tfe.String(description),
 	}
 
 	log.Printf("[DEBUG] Create new agent token for agent pool ID: %s", agentPoolID)
-	agentToken, err := tfeClient.AgentTokens.Generate(ctx, agentPoolID, options)
+	agentToken, err := tfeClient.AgentTokens.Create(ctx, agentPoolID, options)
 	if err != nil {
 		return fmt.Errorf("Error creating agent token for agent pool ID %s: %v", agentPoolID, err)
 

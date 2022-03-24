@@ -60,7 +60,7 @@ func resourceTFETeamTokenCreate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	log.Printf("[DEBUG] Create new token for team: %s", teamID)
-	token, err := tfeClient.TeamTokens.Generate(ctx, teamID)
+	token, err := tfeClient.TeamTokens.Create(ctx, teamID)
 	if err != nil {
 		return fmt.Errorf(
 			"Error creating new token for team %s: %v", teamID, err)

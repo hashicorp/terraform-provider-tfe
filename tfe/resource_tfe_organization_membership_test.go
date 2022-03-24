@@ -73,7 +73,7 @@ func testAccCheckTFEOrganizationMembershipExists(
 		}
 
 		options := tfe.OrganizationMembershipReadOptions{
-			Include: "user",
+			Include: []tfe.OrgMembershipIncludeOpt{tfe.OrgMembershipUser},
 		}
 
 		m, err := tfeClient.OrganizationMemberships.ReadWithOptions(ctx, rs.Primary.ID, options)

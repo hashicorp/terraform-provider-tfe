@@ -59,7 +59,7 @@ func resourceTFEOrganizationTokenCreate(d *schema.ResourceData, meta interface{}
 		log.Printf("[DEBUG] Regenerating existing token for organization: %s", organization)
 	}
 
-	token, err := tfeClient.OrganizationTokens.Generate(ctx, organization)
+	token, err := tfeClient.OrganizationTokens.Create(ctx, organization)
 	if err != nil {
 		return fmt.Errorf(
 			"Error creating new token for organization %s: %v", organization, err)
