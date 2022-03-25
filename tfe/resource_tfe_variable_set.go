@@ -36,7 +36,7 @@ func resourceTFEVariableSet() *schema.Resource {
 				Type:          schema.TypeBool,
 				Optional:      true,
 				Default:       false,
-				ConflictsWith: []string{"workspaces"},
+				ConflictsWith: []string{"workspace_ids"},
 			},
 
 			"organization": {
@@ -45,7 +45,7 @@ func resourceTFEVariableSet() *schema.Resource {
 				ForceNew: true,
 			},
 
-			"workspaces": {
+			"workspace_ids": {
 				Type:     schema.TypeSet,
 				Optional: true,
 				Computed: true,
@@ -75,7 +75,7 @@ func resourceTFEVariableSetCreate(d *schema.ResourceData, meta interface{}) erro
 			"Error creating variable set %s, for organization: %s: %v", name, organization, err)
 	}
 
-	if workspaceIDs, workspacesSet := d.GetOk("workspaces"); !*options.Global && workspacesSet {
+	if workspaceIDs, workspacesSet := d.GetOk("workspace_ids"); !*options.Global && workspacesSet {
 		log.Printf("[DEBUG] Apply variable set %s to workspaces %v", name, workspaceIDs)
 
 		applyOptions := tfe.VariableSetUpdateWorkspacesOptions{}
@@ -122,7 +122,7 @@ func resourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) error 
 	for _, workspace := range variableSet.Workspaces {
 		wids = append(wids, workspace.ID)
 	}
-	d.Set("workspaces", wids)
+	d.Set("workspace_ids", wids)
 
 	return nil
 }
@@ -145,8 +145,8 @@ func resourceTFEVariableSetUpdate(d *schema.ResourceData, meta interface{}) erro
 		}
 	}
 
-	if d.HasChanges("workspaces") {
-		workspaceIDs := d.Get("workspaces")
+	if d.HasChanges("workspace_ids") {
+		workspaceIDs := d.Get("workspace_ids")
 		applyOptions := tfe.VariableSetUpdateWorkspacesOptions{}
 		applyOptions.Workspaces = []*tfe.Workspace{}
 		for _, workspaceID := range workspaceIDs.(*schema.Set).List() {

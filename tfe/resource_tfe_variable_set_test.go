@@ -31,7 +31,7 @@ func TestAccTFEVariableSet_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_variable_set.foobar", "description", "a test variable set"),
 					resource.TestCheckResourceAttr(
-						"tfe_variable_set.foobar", "global", "true"),
+						"tfe_variable_set.foobar", "global", "false"),
 				),
 			},
 		},
@@ -89,6 +89,7 @@ func TestAccTFEVariableSet_update(t *testing.T) {
 						"tfe_variable_set.foobar", "description", "a test variable set"),
 					resource.TestCheckResourceAttr(
 						"tfe_variable_set.foobar", "global", "false"),
+					testAccCheckTFEVariableSetApplicationUpdate(variableSet),
 				),
 			},
 
@@ -273,7 +274,7 @@ resource "tfe_variable_set" "foobar" {
 resource "tfe_variable_set" "applied" {
   name         = "variable_set_applied"
 	description  = "a test variable set"
-	workspaces   = [tfe_workspace.foobar.id]
+	workspace_ids   = [tfe_workspace.foobar.id]
 	organization = tfe_organization.foobar.id
 }`, rInt)
 }
@@ -300,7 +301,7 @@ resource "tfe_variable_set" "foobar" {
 resource "tfe_variable_set" "applied" {
   name         = "variable_set_applied"
 	description  = "a test variable set"
-	workspaces   = []
+	workspace_ids   = []
 	organization = tfe_organization.foobar.id
 }`, rInt)
 }
