@@ -133,7 +133,7 @@ func resourceTFEVariableCreate(d *schema.ResourceData, meta interface{}) error {
 	key := d.Get("key").(string)
 	category := d.Get("category").(string)
 
-	// Get the workspace if workspace_id present
+	// Get the workspace
 	workspaceID := d.Get("workspace_id").(string)
 	ws, err := tfeClient.Workspaces.ReadByID(ctx, workspaceID)
 	if err != nil {
