@@ -88,7 +88,7 @@ func TestAccTFEVariableSet_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_variable_set.foobar", "description", "a test variable set"),
 					resource.TestCheckResourceAttr(
-						"tfe_variable_set.foobar", "global", "true"),
+						"tfe_variable_set.foobar", "global", "false"),
 				),
 			},
 
@@ -103,7 +103,7 @@ func TestAccTFEVariableSet_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_variable_set.foobar", "description", "another description"),
 					resource.TestCheckResourceAttr(
-						"tfe_variable_set.foobar", "global", "false"),
+						"tfe_variable_set.foobar", "global", "true"),
 				),
 			},
 		},
