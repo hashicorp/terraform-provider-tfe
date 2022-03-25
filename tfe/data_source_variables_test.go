@@ -83,7 +83,7 @@ resource "tfe_variable" "envfoo" {
 data "tfe_variables" "workspace_foobar" {
 	workspace_id = tfe_workspace.foobar.id
 	depends_on = [
-    tfe_variable.terrbar,
+		tfe_variable.terrbar,
 		tfe_variable.envbar
   ]
 }
@@ -91,7 +91,7 @@ data "tfe_variables" "workspace_foobar" {
 data "tfe_variables" "variable_set_foobar" {
 	variable_set_id = tfe_variable_set.foobar.id
 	depends_on = [
-    tfe_variable.terrfoo,
+		tfe_variable.terrfoo,
 		tfe_variable.envfoo
   ]
 }
