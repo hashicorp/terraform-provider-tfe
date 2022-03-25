@@ -29,10 +29,30 @@ func TestAccTFEVariableSetsDataSource_basic(t *testing.T) {
 						"data.tfe_variable_set.foobar", "global", "false"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_variable_set.foobar", "organization", orgName),
+				),
+			},
+		},
+	},
+	)
+}
+
+func TestAccTFEVariableSetsDataSource_full(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEVariableSetsDataSourceConfig_full(rInt),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.tfe_variable_set.foobar", "id"),
 					resource.TestCheckResourceAttr(
-						"data.tfe_variable_set.foobar", "workspaces.#", "1"),
+						"data.tfe_variable_set.foobar", "name", fmt.Sprintf("varset-foo-%d", rInt)),
 					resource.TestCheckResourceAttr(
-						"data.tfe_variable_set.foobar", "variables.#", "1"),
+						"data.tfe_variable_set.foobar", "workspace_ids.#", "1"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_variable_set.foobar", "variable_ids.#", "1"),
 				),
 			},
 		},
@@ -41,6 +61,25 @@ func TestAccTFEVariableSetsDataSource_basic(t *testing.T) {
 }
 
 func testAccTFEVariableSetsDataSourceConfig_basic(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "org-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_variable_set" "foobar" {
+  name = "varset-foo-%d"
+	description = "a description"
+	organization = tfe_organization.foobar.id
+}
+
+data "tfe_variable_set" "foobar" {
+  name = tfe_variable_set.foobar.name
+	organization = tfe_variable_set.foobar.organization
+}`, rInt, rInt)
+}
+
+func testAccTFEVariableSetsDataSourceConfig_full(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "org-%d"

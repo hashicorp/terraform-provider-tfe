@@ -32,14 +32,14 @@ func dataSourceTFEVariableSet() *schema.Resource {
 				Computed: true,
 			},
 
-			"workspaces": {
+			"workspace_ids": {
 				Type:     schema.TypeSet,
 				Optional: true,
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
-			"variables": {
+			"variable_ids": {
 				Type:     schema.TypeSet,
 				Optional: true,
 				Computed: true,
@@ -90,13 +90,13 @@ func dataSourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) erro
 				for _, workspace := range vs.Workspaces {
 					workspaces = append(workspaces, workspace.ID)
 				}
-				d.Set("workspaces", workspaces)
+				d.Set("workspace_ids", workspaces)
 
 				var variables []interface{}
 				for _, variable := range vs.Variables {
 					variables = append(variables, variable.ID)
 				}
-				d.Set("variables", variables)
+				d.Set("variable_ids", variables)
 
 				d.SetId(vs.ID)
 				return nil

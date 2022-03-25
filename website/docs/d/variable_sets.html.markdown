@@ -35,5 +35,5 @@ The following arguments are supported:
 * `name` - Name of the variable set.
 * `description` - Description of the variable set.
 * `global` - Whether or not the variable set applies to all workspaces in the organization.
-* `workspaces` - IDs of the workspaces that use the variable set.
-* `variables` - IDs of the variables attached to the variable set.
+* `workspace_ids` - IDs of the workspaces that use the variable set.
+* `variable_ids` - IDs of the variables attached to the variable set.
