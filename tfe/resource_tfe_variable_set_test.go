@@ -31,6 +31,33 @@ func TestAccTFEVariableSet_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_variable_set.foobar", "description", "a test variable set"),
 					resource.TestCheckResourceAttr(
+						"tfe_variable_set.foobar", "global", "true"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEVariableSet_full(t *testing.T) {
+	variableSet := &tfe.VariableSet{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEVariableSetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEVariableSet_full(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEVariableSetExists(
+						"tfe_variable_set.foobar", variableSet),
+					testAccCheckTFEVariableSetAttributes(variableSet),
+					resource.TestCheckResourceAttr(
+						"tfe_variable_set.foobar", "name", "variable_set_test"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable_set.foobar", "description", "a test variable set"),
+					resource.TestCheckResourceAttr(
 						"tfe_variable_set.foobar", "global", "false"),
 					testAccCheckTFEVariableSetExists(
 						"tfe_variable_set.applied", variableSet),
@@ -61,7 +88,7 @@ func TestAccTFEVariableSet_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_variable_set.foobar", "description", "a test variable set"),
 					resource.TestCheckResourceAttr(
-						"tfe_variable_set.foobar", "global", "false"),
+						"tfe_variable_set.foobar", "global", "true"),
 				),
 			},
 
@@ -76,7 +103,7 @@ func TestAccTFEVariableSet_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_variable_set.foobar", "description", "another description"),
 					resource.TestCheckResourceAttr(
-						"tfe_variable_set.foobar", "global", "true"),
+						"tfe_variable_set.foobar", "global", "false"),
 				),
 			},
 		},
@@ -210,6 +237,21 @@ func testAccCheckTFEVariableSetDestroy(s *terraform.State) error {
 }
 
 func testAccTFEVariableSet_basic(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name = "tst-terraform-%d"
+	email = "admin@company.com"
+}
+
+resource "tfe_variable_set" "foobar" {
+  name         = "variable_set_test"
+	description  = "a test variable set"
+	global       = false
+	organization = tfe_organization.foobar.id
+}`, rInt)
+}
+
+func testAccTFEVariableSet_full(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name = "tst-terraform-%d"
