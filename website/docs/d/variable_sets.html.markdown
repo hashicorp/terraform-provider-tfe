@@ -8,7 +8,7 @@ description: |-
 
 # Data Source: tfe_variable_set
 
-This data source is used to retrieve all variables defined in a specified workspace
+This data source is used to retrieve all variables defined in a specified workspace.
 
 ## Example Usage
 
