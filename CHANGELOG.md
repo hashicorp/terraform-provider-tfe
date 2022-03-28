@@ -1,3 +1,10 @@
+## 0.30.0 (Unreleased)
+
+FEATURES:
+* **New Resource**: `tfe_variable` ([#452](https://github.com/hashicorp/terraform-provider-tfe/pull/452))
+* **New Resource**: `tfe_variable_set` ([#452](https://github.com/hashicorp/terraform-provider-tfe/pull/452))
+* **New Data Sources**: d/tfe_variable_set, d/tfe_variables ([#452](https://github.com/hashicorp/terraform-provider-tfe/pull/452))
+
 ## 0.29.0 (March 24, 2022)
 
 BUG FIXES:
