@@ -95,7 +95,7 @@ resource "tfe_variable_set" "foobar" {
   name = "varset-foo-%d"
 	description = "a description"
 	organization = tfe_organization.foobar.id
-	workspaces = [tfe_workspace.foobar.id]
+	workspace_ids = [tfe_workspace.foobar.id]
 }
 
 resource "tfe_variable" "envfoo" {
