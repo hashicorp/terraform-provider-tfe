@@ -12,7 +12,7 @@ Creates, updates and destroys variables.
 
 ## Example Usage
 
-Basic usage:
+Basic usage for workspaces:
 
 ```hcl
 resource "tfe_organization" "test" {
@@ -34,6 +34,38 @@ resource "tfe_variable" "test" {
 }
 ```
 
+Basic usage for variable sets:
+
+```hcl
+resource "tfe_organization" "test" {
+  name  = "my-org-name"
+  email = "admin@company.com"
+}
+
+resource "tfe_variable_set" "test" {
+  name         = "Test Varset"
+  description  = "Some description."
+  global       = false
+  organization = tfe_organization.test.id
+}
+
+resource "tfe_variable" "test" {
+  key             = "seperate_variable"
+  value           = "my_value_name"
+  category        = "terraform"
+  description     = "a useful description"
+  variable_set_id = tfe_variable_set.test.id
+}
+
+resource "tfe_variable" "test" {
+  key             = "another_variable"
+  value           = "my_value_name"
+  category        = "env"
+  description     = "an environment variable"
+  variable_set_id = tfe_variable_set.test.id
+}
+```
+
 ## Argument Reference
 
 The following arguments are supported:
@@ -46,8 +78,10 @@ The following arguments are supported:
 * `hcl` - (Optional) Whether to evaluate the value of the variable as a string
   of HCL code. Has no effect for environment variables. Defaults to `false`.
 * `sensitive` - (Optional) Whether the value is sensitive. If true then the
-  variable is written once and not visible thereafter. Defaults to `false`.
-* `workspace_id` - (Required) ID of the workspace that owns the variable.
+variable is written once and not visible thereafter. Defaults to `false`.
+  * One of the following (Required)
+    * `workspace_id` - ID of the workspace that owns the variable.
+    * `variable_set_id` - ID of the variable set that owns the variable.
 
 ## Attributes Reference
 

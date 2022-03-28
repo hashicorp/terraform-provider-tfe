@@ -12,6 +12,8 @@ This data source is used to retrieve all variables defined in a specified worksp
 
 ## Example Usage
 
+For workspace variables:
+
 ```hcl
 data "tfe_workspace" "test" {
   name         = "my-workspace-name"
@@ -23,11 +25,25 @@ data "tfe_variables" "test" {
 }
 ```
 
+For variable set variables:
+
+```hcl
+data "tfe_variable_set" "test" {
+  name         = "my-variable-set-name"
+  organization = "my-org-name"
+}
+
+data "tfe_variables" "test" {
+  variable_set_id = data.tfe_variable_set.test.id
+}
+```
+
 ## Argument Reference
 
-The following arguments are supported:
+One of following arguments are required:
 
-* `workspace_id` - (Required) ID of the workspace.
+* `workspace_id` - ID of the workspace.
+* `variable_set_id` - ID of the workspace.
 
 ## Attributes Reference
 

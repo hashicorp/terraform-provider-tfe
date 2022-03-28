@@ -44,6 +44,39 @@ func TestAccTFEVariable_basic(t *testing.T) {
 	})
 }
 
+func TestAccTFEVariable_basic_variable_set(t *testing.T) {
+	variable := &tfe.VariableSetVariable{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEVariableDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEVariable_basic_variable_set(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEVariableSetVariableExists(
+						"tfe_variable.foobar", variable),
+					testAccCheckTFEVariableiSetVariableAttributes(variable),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "key", "key_test"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "value", "value_test"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "description", "some description"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "category", "env"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "hcl", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "sensitive", "false"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEVariable_update(t *testing.T) {
 	variable := &tfe.Variable{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -207,8 +240,71 @@ func testAccCheckTFEVariableExists(
 	}
 }
 
+func testAccCheckTFEVariableSetVariableExists(
+	n string, variable *tfe.VariableSetVariable) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		tfeClient := testAccProvider.Meta().(*tfe.Client)
+
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return fmt.Errorf("Not found: %s", n)
+		}
+
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("No instance ID is set")
+		}
+
+		vsID := rs.Primary.Attributes["variable_set_id"]
+		vs, err := tfeClient.VariableSets.Read(ctx, vsID, nil)
+		if err != nil {
+			return fmt.Errorf(
+				"Error retrieving variable set %s: %v", vsID, err)
+		}
+
+		v, err := tfeClient.VariableSetVariables.Read(ctx, vs.ID, rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+
+		*variable = *v
+
+		return nil
+	}
+}
+
 func testAccCheckTFEVariableAttributes(
 	variable *tfe.Variable) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if variable.Key != "key_test" {
+			return fmt.Errorf("Bad key: %s", variable.Key)
+		}
+
+		if variable.Value != "value_test" {
+			return fmt.Errorf("Bad value: %s", variable.Value)
+		}
+
+		if variable.Description != "some description" {
+			return fmt.Errorf("Bad description: %s", variable.Description)
+		}
+
+		if variable.Category != tfe.CategoryEnv {
+			return fmt.Errorf("Bad category: %s", variable.Category)
+		}
+
+		if variable.HCL != false {
+			return fmt.Errorf("Bad HCL: %t", variable.HCL)
+		}
+
+		if variable.Sensitive != false {
+			return fmt.Errorf("Bad sensitive: %t", variable.Sensitive)
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckTFEVariableiSetVariableAttributes(
+	variable *tfe.VariableSetVariable) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if variable.Key != "key_test" {
 			return fmt.Errorf("Bad key: %s", variable.Key)
@@ -350,6 +446,27 @@ resource "tfe_variable" "foobar" {
   description  = "some description"
   category     = "env"
   workspace_id = tfe_workspace.foobar.id
+}`, rInt)
+}
+
+func testAccTFEVariable_basic_variable_set(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_variable_set" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_variable" "foobar" {
+  key          = "key_test"
+  value        = "value_test"
+  description  = "some description"
+  category     = "env"
+  variable_set_id = tfe_variable_set.foobar.id
 }`, rInt)
 }
 
