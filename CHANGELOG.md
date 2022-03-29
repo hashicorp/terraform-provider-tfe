@@ -1,4 +1,4 @@
-## 0.30.0 (Unreleased)
+## 0.30.0 (March 29, 2022)
 
 FEATURES:
 * **New Resource**: `tfe_variable` ([#452](https://github.com/hashicorp/terraform-provider-tfe/pull/452))
