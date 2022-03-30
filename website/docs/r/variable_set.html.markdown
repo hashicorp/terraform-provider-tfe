@@ -26,11 +26,11 @@ resource "tfe_workspace" "test" {
 }
 
 resource "tfe_variable_set" "test" {
-  name         = "Test Varset"
-  description  = "Some description."
-  global       = false
-  organization = tfe_organization.test.id
-  workspaces   = [tfe_workspace.test.id]
+  name          = "Test Varset"
+  description   = "Some description."
+  global        = false
+  organization  = tfe_organization.test.id
+  workspace_ids = [tfe_workspace.test.id]
 }
 
 resource "tfe_variable" "test" {
