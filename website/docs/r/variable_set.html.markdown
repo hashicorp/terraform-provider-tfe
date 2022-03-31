@@ -96,10 +96,10 @@ data "tfe_workspace_ids" "prod-apps" {
 }
 
 resource "tfe_variable_set" "test" {
-  name         = "Tag Based Varset"
-  description  = "Variable set applied to workspaces based on tag."
-  organization = tfe_organization.test.id
-  workspace_ids   = tfe_workspace_ids.prod-apps.ids
+  name          = "Tag Based Varset"
+  description   = "Variable set applied to workspaces based on tag."
+  organization  = tfe_organization.test.id
+  workspace_ids = tfe_workspace_ids.prod-apps.ids
 }
 ```
 
