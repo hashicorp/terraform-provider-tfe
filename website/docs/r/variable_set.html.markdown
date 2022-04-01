@@ -26,11 +26,11 @@ resource "tfe_workspace" "test" {
 }
 
 resource "tfe_variable_set" "test" {
-  name         = "Test Varset"
-  description  = "Some description."
-  global       = false
-  organization = tfe_organization.test.name
-  workspaces   = [tfe_workspace.test.id]
+  name          = "Test Varset"
+  description   = "Some description."
+  global        = false
+  organization  = tfe_organization.test.name
+  workspace_ids = [tfe_workspace.test.id]
 }
 
 resource "tfe_variable" "test" {
@@ -96,10 +96,10 @@ data "tfe_workspace_ids" "prod-apps" {
 }
 
 resource "tfe_variable_set" "test" {
-  name         = "Tag Based Varset"
-  description  = "Variable set applied to workspaces based on tag."
-  organization = tfe_organization.test.name
-  workspaces   = tfe_workspace_ids.prod-apps.ids
+  name          = "Tag Based Varset"
+  description   = "Variable set applied to workspaces based on tag."
+  organization  = tfe_organization.test.name
+  workspace_ids = tfe_workspace_ids.prod-apps.ids
 }
 ```
 
@@ -111,7 +111,7 @@ The following arguments are supported:
 * `description` - (Optional) Description of the variable set.
 * `global` - (Optional) Whether or not the variable set applies to all workspaces in the organization. Defaults to `false`.
 * `organization` - (Required) Name of the organization.
-* `workspaces` - (Optional) IDs of the workspaces that use the variable set.
+* `workspace_ids` - (Optional) IDs of the workspaces that use the variable set.
 
 ## Attributes Reference
 
