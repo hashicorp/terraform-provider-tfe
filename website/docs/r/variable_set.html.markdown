@@ -22,14 +22,14 @@ resource "tfe_organization" "test" {
 
 resource "tfe_workspace" "test" {
   name         = "my-workspace-name"
-  organization = tfe_organization.test.id
+  organization = tfe_organization.test.name
 }
 
 resource "tfe_variable_set" "test" {
   name          = "Test Varset"
   description   = "Some description."
   global        = false
-  organization  = tfe_organization.test.id
+  organization  = tfe_organization.test.name
   workspace_ids = [tfe_workspace.test.id]
 }
 
@@ -62,7 +62,7 @@ resource "tfe_variable_set" "test" {
   name         = "Global Varset"
   description  = "Variable set applied to all workspaces."
   global       = true
-  organization = tfe_organization.test.id
+  organization = tfe_organization.test.name
 }
 
 resource "tfe_variable" "test" {
@@ -92,13 +92,13 @@ resource "tfe_organization" "test" {
 
 data "tfe_workspace_ids" "prod-apps" {
   tag_names    = ["prod", "app", "aws"]
-  organization = tfe_organization.test.id
+  organization = tfe_organization.test.name
 }
 
 resource "tfe_variable_set" "test" {
   name          = "Tag Based Varset"
   description   = "Variable set applied to workspaces based on tag."
-  organization  = tfe_organization.test.id
+  organization  = tfe_organization.test.name
   workspace_ids = tfe_workspace_ids.prod-apps.ids
 }
 ```
@@ -115,4 +115,12 @@ The following arguments are supported:
 
 ## Attributes Reference
 
-* `id` - The ID of the variable.
+* `id` - The ID of the variable set.
+
+## Import
+
+Variable sets can be imported; use `<VARIABLE SET ID>` as the import ID. For example:
+
+```shell
+terraform import tfe_variable_set.test varset-5rTwnSaRPogw6apb
+```
