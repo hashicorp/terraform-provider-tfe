@@ -1,4 +1,4 @@
-## 0.30.2 (Unreleased)
+## 0.30.2 (April 01, 2022)
 
 BUG FIXES:
 * r/tfe_variable_set: Fixed import documentation and examples ([#466](https://github.com/hashicorp/terraform-provider-tfe/pull/466))
