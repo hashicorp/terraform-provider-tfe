@@ -1,7 +1,9 @@
-## 0.31.1 (Unreleased)
+## 0.30.1 (Unreleased)
 
 BUG FIXES:
-* r/tfe_variable_set: Fixed examples in documentation for specifying workspace_ids ([#461](https://github.com/hashicorp/terraform-provider-tfe/pull/461))
+* d/tfe_variable_set: Renamed variable_sets data source to variable_set in documentation ([#458](https://github.com/hashicorp/terraform-provider-tfe/pull/458))
+* r/tfe_variable_set: Fixed examples in documentation for specifying workspace_ids ([#461](https://github.com/hashicorp/terraform-provider-tfe/pull/461)) 
+* r/tfe_variable_set: Fixed examples in documentation for variable_set_id ([#462](https://github.com/hashicorp/terraform-provider-tfe/pull/462))
 
 ## 0.30.0 (March 29, 2022)
 
