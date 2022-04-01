@@ -1,4 +1,4 @@
-## 0.30.1 (Unreleased)
+## 0.30.1 (April 01, 2022)
 
 BUG FIXES:
 * d/tfe_variable_set: Renamed variable_sets data source to variable_set in documentation ([#458](https://github.com/hashicorp/terraform-provider-tfe/pull/458))
