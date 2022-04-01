@@ -22,7 +22,7 @@ resource "tfe_organization" "test" {
 
 resource "tfe_workspace" "test" {
   name         = "my-workspace-name"
-  organization = tfe_organization.test.id
+  organization = tfe_organization.test.name
 }
 
 resource "tfe_variable" "test" {
@@ -46,7 +46,7 @@ resource "tfe_variable_set" "test" {
   name         = "Test Varset"
   description  = "Some description."
   global       = false
-  organization = tfe_organization.test.id
+  organization = tfe_organization.test.name
 }
 
 resource "tfe_variable" "test" {
