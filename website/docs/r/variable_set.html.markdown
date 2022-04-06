@@ -28,7 +28,6 @@ resource "tfe_workspace" "test" {
 resource "tfe_variable_set" "test" {
   name          = "Test Varset"
   description   = "Some description."
-  global        = false
   organization  = tfe_organization.test.name
   workspace_ids = [tfe_workspace.test.id]
 }
@@ -111,7 +110,7 @@ The following arguments are supported:
 * `description` - (Optional) Description of the variable set.
 * `global` - (Optional) Whether or not the variable set applies to all workspaces in the organization. Defaults to `false`.
 * `organization` - (Required) Name of the organization.
-* `workspace_ids` - (Optional) IDs of the workspaces that use the variable set.
+* `workspace_ids` - (Optional) IDs of the workspaces that use the variable set. Must not be set if `global` is set.
 
 ## Attributes Reference
 
