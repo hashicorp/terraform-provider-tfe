@@ -34,6 +34,8 @@ func resourceTFEWorkspace() *schema.Resource {
 		},
 
 		CustomizeDiff: func(c context.Context, d *schema.ResourceDiff, meta interface{}) error {
+			fmt.Println("In customize diff for workspace - attach debugger if needed and then press any key to continue")
+			fmt.Scanln()
 			err := validateAgentExecution(c, d, meta)
 			if err != nil {
 				return err
@@ -43,6 +45,9 @@ func resourceTFEWorkspace() *schema.Resource {
 			if err != nil {
 				return err
 			}
+
+			// TODO: Better naming needed, it's not validating anything but rather mutating diff
+			validateVcsTriggers(d)
 
 			return nil
 		},
@@ -161,10 +166,19 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"trigger_prefixes": {
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Type:          schema.TypeList,
+				Optional:      true,
+				Computed:      true,
+				Elem:          &schema.Schema{Type: schema.TypeString},
+				ConflictsWith: []string{"trigger_patterns"},
+			},
+
+			"trigger_patterns": {
+				Type:          schema.TypeList,
+				Optional:      true,
+				Computed:      true,
+				Elem:          &schema.Schema{Type: schema.TypeString},
+				ConflictsWith: []string{"trigger_prefixes"},
 			},
 
 			"working_directory": {
@@ -208,6 +222,8 @@ func resourceTFEWorkspace() *schema.Resource {
 }
 
 func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error {
+	fmt.Println("Workspace create - Attach debugger if needed, then press any key")
+	fmt.Scanln()
 	tfeClient := meta.(*tfe.Client)
 
 	// Get the name and organization.
@@ -315,6 +331,8 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 }
 
 func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
+	//fmt.Println("Workspace read - Attach debugger if needed, then press any key")
+	//fmt.Scanln()
 	tfeClient := meta.(*tfe.Client)
 
 	id := d.Id()
@@ -342,6 +360,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("structured_run_output_enabled", workspace.StructuredRunOutputEnabled)
 	d.Set("terraform_version", workspace.TerraformVersion)
 	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
+	d.Set("trigger_patterns", workspace.TriggerPatterns)
 	d.Set("working_directory", workspace.WorkingDirectory)
 	d.Set("organization", workspace.Organization.Name)
 
@@ -393,12 +412,15 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error {
+	fmt.Println("Workspace update - Attach debugger if needed, then press any key")
+	fmt.Scanln()
 	tfeClient := meta.(*tfe.Client)
 	id := d.Id()
 
 	if d.HasChange("name") || d.HasChange("auto_apply") || d.HasChange("queue_all_runs") ||
-		d.HasChange("terraform_version") || d.HasChange("working_directory") || d.HasChange("vcs_repo") ||
-		d.HasChange("file_triggers_enabled") || d.HasChange("trigger_prefixes") ||
+		d.HasChange("terraform_version") || d.HasChange("working_directory") ||
+		d.HasChange("vcs_repo") || d.HasChange("file_triggers_enabled") ||
+		d.HasChange("trigger_prefixes") || d.HasChange("trigger_patterns") ||
 		d.HasChange("allow_destroy_plan") || d.HasChange("speculative_enabled") ||
 		d.HasChange("operations") || d.HasChange("execution_mode") ||
 		d.HasChange("description") || d.HasChange("agent_pool_id") ||
@@ -445,9 +467,12 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			for _, tp := range tps.([]interface{}) {
 				options.TriggerPrefixes = append(options.TriggerPrefixes, tp.(string))
 			}
-		} else {
-			// Reset trigger prefixes when none are present in the config.
-			options.TriggerPrefixes = []string{}
+		}
+
+		if tpn, ok := d.GetOk("trigger_patterns"); ok {
+			for _, tp := range tpn.([]interface{}) {
+				options.TriggerPatterns = append(options.TriggerPatterns, tp.(string))
+			}
 		}
 
 		if workingDir, ok := d.GetOk("working_directory"); ok {
@@ -643,6 +668,14 @@ func validateRemoteState(_ context.Context, d *schema.ResourceDiff, meta interfa
 	}
 
 	return nil
+}
+
+func validateVcsTriggers(d *schema.ResourceDiff) {
+	if d.HasChange("trigger_patterns") {
+		d.SetNewComputed("trigger_prefixes")
+	} else if d.HasChange("trigger_prefixes") {
+		d.SetNewComputed("trigger_patterns")
+	}
 }
 
 func resourceTFEWorkspaceImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {

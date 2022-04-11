@@ -62,6 +62,12 @@ func resourceTfeWorkspaceResourceV0() *schema.Resource {
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
+			"trigger_patterns": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+
 			"working_directory": {
 				Type:     schema.TypeString,
 				Optional: true,

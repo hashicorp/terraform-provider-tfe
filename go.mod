@@ -2,6 +2,9 @@ module github.com/hashicorp/terraform-provider-tfe
 
 go 1.17
 
+// Change this to your local go-tfe repository
+replace github.com/hashicorp/go-tfe => /Users/matejrisek/projects/go-tfe
+
 require (
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/aws/aws-sdk-go v1.37.0 // indirect

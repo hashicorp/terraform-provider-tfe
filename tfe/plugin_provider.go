@@ -54,6 +54,8 @@ func (p *pluginProviderServer) PrepareProviderConfig(ctx context.Context, req *t
 }
 
 func (p *pluginProviderServer) ConfigureProvider(ctx context.Context, req *tfprotov5.ConfigureProviderRequest) (*tfprotov5.ConfigureProviderResponse, error) {
+	//fmt.Println("Configuring provider - Attach debugger then press any key")
+	//fmt.Scanln()
 	resp := &tfprotov5.ConfigureProviderResponse{
 		Diagnostics: []*tfprotov5.Diagnostic{},
 	}
@@ -94,6 +96,8 @@ func (p *pluginProviderServer) ValidateDataSourceConfig(ctx context.Context, req
 }
 
 func (p *pluginProviderServer) ReadDataSource(ctx context.Context, req *tfprotov5.ReadDataSourceRequest) (*tfprotov5.ReadDataSourceResponse, error) {
+	//fmt.Println("ReadingDataSource - Attach debugger then press any key")
+	//fmt.Scanln()
 	ds, ok := p.dataSourceRouter[req.TypeName]
 	if !ok {
 		return nil, errUnsupportedDataSource(req.TypeName)
@@ -104,6 +108,8 @@ func (p *pluginProviderServer) ReadDataSource(ctx context.Context, req *tfprotov
 type resourceRouter map[string]tfprotov5.ResourceServer
 
 func (r resourceRouter) ValidateResourceTypeConfig(ctx context.Context, req *tfprotov5.ValidateResourceTypeConfigRequest) (*tfprotov5.ValidateResourceTypeConfigResponse, error) {
+	//fmt.Println("ValidatingResourceTypeConfig - Attach debugger then press any key")
+	//fmt.Scanln()
 	res, ok := r[req.TypeName]
 	if !ok {
 		return nil, errUnsupportedResource(req.TypeName)
@@ -112,6 +118,8 @@ func (r resourceRouter) ValidateResourceTypeConfig(ctx context.Context, req *tfp
 }
 
 func (r resourceRouter) UpgradeResourceState(ctx context.Context, req *tfprotov5.UpgradeResourceStateRequest) (*tfprotov5.UpgradeResourceStateResponse, error) {
+	//fmt.Println("UpgradingResourceState - Attach debugger then press any key")
+	//fmt.Scanln()
 	res, ok := r[req.TypeName]
 	if !ok {
 		return nil, errUnsupportedResource(req.TypeName)
@@ -120,6 +128,8 @@ func (r resourceRouter) UpgradeResourceState(ctx context.Context, req *tfprotov5
 }
 
 func (r resourceRouter) ReadResource(ctx context.Context, req *tfprotov5.ReadResourceRequest) (*tfprotov5.ReadResourceResponse, error) {
+	//fmt.Println("ReadingResource - Attach debugger then press any key")
+	//fmt.Scanln()
 	res, ok := r[req.TypeName]
 	if !ok {
 		return nil, errUnsupportedResource(req.TypeName)
@@ -128,6 +138,8 @@ func (r resourceRouter) ReadResource(ctx context.Context, req *tfprotov5.ReadRes
 }
 
 func (r resourceRouter) PlanResourceChange(ctx context.Context, req *tfprotov5.PlanResourceChangeRequest) (*tfprotov5.PlanResourceChangeResponse, error) {
+	//fmt.Println("PlanResource - Attach debugger then press any key")
+	//fmt.Scanln()
 	res, ok := r[req.TypeName]
 	if !ok {
 		return nil, errUnsupportedResource(req.TypeName)
@@ -136,6 +148,8 @@ func (r resourceRouter) PlanResourceChange(ctx context.Context, req *tfprotov5.P
 }
 
 func (r resourceRouter) ApplyResourceChange(ctx context.Context, req *tfprotov5.ApplyResourceChangeRequest) (*tfprotov5.ApplyResourceChangeResponse, error) {
+	//fmt.Println("ApplyResource - Attach debugger then press any key")
+	//fmt.Scanln()
 	res, ok := r[req.TypeName]
 	if !ok {
 		return nil, errUnsupportedResource(req.TypeName)
