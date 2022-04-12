@@ -41,7 +41,7 @@ The following arguments are supported:
 * `organization` - (Required) Name of the organization.
 * `visibility` - (Optional) The visibility of the team ("secret" or "organization"). Defaults to "secret".
 * `organization_access` - (Optional) Settings for the team's [organization access](https://www.terraform.io/docs/cloud/users-teams-organizations/permissions.html#organization-level-permissions).
-* `sso_team_id` - (Optional) Unique Identifier to control team membership via SAML. Defaults to `null`
+* `sso_team_id` - (Optional) Unique Identifier to control [team membership](https://www.terraform.io/cloud-docs/users-teams-organizations/single-sign-on#team-names-and-sso-team-ids) via SAML. Defaults to `null`
 
 The `organization_access` block supports:
 
