@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/hashicorp/terraform-provider-tfe/version"
+	svchost "github.com/hashicorp/terraform-svchost"
 	"github.com/hashicorp/terraform-svchost/disco"
 )
 
@@ -123,6 +124,68 @@ func TestProvider_versionConstraints(t *testing.T) {
 			t.Fatalf("%s: expected error to contain %q, got: %v", name, tc.result, err)
 		}
 	}
+}
+
+func TestProvider_hostTokenFromFallbackSources(t *testing.T) {
+	t.Run("configure with environment", func(t *testing.T) {
+
+		cases := map[string]struct {
+			EnvVarKey      string
+			EnvVarValue    string
+			ConfiguredHost string
+			ExpectedValue  string
+		}{
+			"var with dashes": {
+				EnvVarKey:      "TF_TOKEN_private_hashicorp-internal_engineering_pl",
+				EnvVarValue:    "foo-token",
+				ConfiguredHost: "private.hashicorp-internal.engineering.pl",
+				ExpectedValue:  "foo-token",
+			},
+			"var with encoded dashes": {
+				EnvVarKey:      "TF_TOKEN_private_hashicorp__internal_engineering_pl",
+				EnvVarValue:    "bar-token",
+				ConfiguredHost: "private.hashicorp-internal.engineering.pl",
+				ExpectedValue:  "bar-token",
+			},
+			"var with periods": {
+				EnvVarKey:      "TF_TOKEN_private.hashicorp-internal.engineering.pl",
+				EnvVarValue:    "baz-token",
+				ConfiguredHost: "private.hashicorp-internal.engineering.pl",
+				ExpectedValue:  "baz-token",
+			},
+			"global TFE_TOKEN var": {
+				EnvVarKey:      "TFE_TOKEN",
+				EnvVarValue:    "quz-token",
+				ConfiguredHost: "private.hashicorp-internal.engineering.pl",
+				ExpectedValue:  "quz-token",
+			},
+		}
+
+		for description, test := range cases {
+			t.Run(description, func(t *testing.T) {
+				beforeSet, wasSetBefore := os.LookupEnv(test.EnvVarKey)
+				t.Cleanup(func() {
+					if wasSetBefore {
+						os.Setenv(test.EnvVarKey, beforeSet)
+					} else {
+						os.Unsetenv(test.EnvVarKey)
+					}
+				})
+
+				os.Setenv(test.EnvVarKey, test.EnvVarValue)
+
+				host, err := svchost.ForComparison(test.ConfiguredHost)
+				if err != nil {
+					t.Fatalf("could not get host: %s", err)
+				}
+
+				token := hostTokenFromFallbackSources(host, nil)
+				if token != test.ExpectedValue {
+					t.Errorf("Expected token %s but found %s", test.ExpectedValue, token)
+				}
+			})
+		}
+	})
 }
 
 func TestProvider_locateConfigFile(t *testing.T) {

@@ -241,22 +241,10 @@ func getClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
 		return nil, discoErr
 	}
 
-	// If a token wasn't set in the provider configuration block, try and fetch it
-	// from the environment or from Terraform's CLI configuration or configured credential helper.
+	// If a token wasn't set in the provider configuration block, try and fetch it from the
+	// fallback methods
 	if token == "" {
-		if os.Getenv("TFE_TOKEN") != "" {
-			log.Printf("[DEBUG] TFE_TOKEN used for token value")
-			token = os.Getenv("TFE_TOKEN")
-		} else {
-			log.Printf("[DEBUG] Attempting to fetch token from Terraform CLI configuration for hostname %s...", hostname)
-			creds, err := services.CredentialsForHost(hostname)
-			if err != nil {
-				log.Printf("[DEBUG] Failed to get credentials for %s: %s (ignoring)", hostname, err)
-			}
-			if creds != nil {
-				token = creds.Token()
-			}
-		}
+		token = hostTokenFromFallbackSources(hostname, services)
 	}
 
 	// If we still don't have a token at this point, we return an error.
