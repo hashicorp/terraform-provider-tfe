@@ -81,6 +81,10 @@ func resourceTFETeam() *schema.Resource {
 					"organization",
 				}, false),
 			},
+			"sso_team_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -112,6 +116,10 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 
 	if v, ok := d.GetOk("visibility"); ok {
 		options.Visibility = tfe.String(v.(string))
+	}
+
+	if v, ok := d.GetOk("sso_team_id"); ok {
+		options.SSOTeamID = tfe.String(v.(string))
 	}
 
 	log.Printf("[DEBUG] Create team %s for organization: %s", name, organization)
@@ -164,6 +172,7 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 	d.Set("visibility", team.Visibility)
+	d.Set("sso_team_id", team.SSOTeamID)
 
 	return nil
 }
@@ -194,6 +203,12 @@ func resourceTFETeamUpdate(d *schema.ResourceData, meta interface{}) error {
 
 	if v, ok := d.GetOk("visibility"); ok {
 		options.Visibility = tfe.String(v.(string))
+	}
+
+	if v, ok := d.GetOk("sso_team_id"); ok {
+		options.SSOTeamID = tfe.String(v.(string))
+	} else {
+		options.SSOTeamID = tfe.String("")
 	}
 
 	log.Printf("[DEBUG] Update team: %s", d.Id())

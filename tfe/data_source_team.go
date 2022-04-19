@@ -21,6 +21,10 @@ func dataSourceTFETeam() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"sso_team_id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -44,6 +48,7 @@ func dataSourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 		for _, tm := range l.Items {
 			if tm.Name == name {
 				d.SetId(tm.ID)
+				d.Set("sso_team_id", tm.SSOTeamID)
 				return nil
 			}
 		}

@@ -126,6 +126,33 @@ func TestAccTFETeam_full_update(t *testing.T) {
 						"tfe_team.foobar", "organization_access.0.manage_providers", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_modules", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "sso_team_id", "changed-sso-id"),
+				),
+			},
+			{
+				Config: testAccTFETeam_full_update_clear(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFETeamExists(
+						"tfe_team.foobar", team),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "name", "team-test-1"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "visibility", "secret"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_policies", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_policy_overrides", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_workspaces", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_vcs_settings", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_providers", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_modules", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "sso_team_id", ""),
 				),
 			},
 		},
@@ -213,6 +240,9 @@ func testAccCheckTFETeamAttributes_full(
 		if !team.OrganizationAccess.ManageWorkspaces {
 			return fmt.Errorf("OrganizationAccess.ManageWorkspaces should be true")
 		}
+		if *team.SSOTeamID != "team-test-sso-id" {
+			return fmt.Errorf("Bad SSO Team ID: %s", *team.SSOTeamID)
+		}
 
 		return nil
 	}
@@ -237,6 +267,10 @@ func testAccCheckTFETeamAttributes_full_update(
 		}
 		if team.OrganizationAccess.ManageWorkspaces {
 			return fmt.Errorf("OrganizationAccess.ManageWorkspaces should be false")
+		}
+
+		if *team.SSOTeamID != "changed-sso-id" {
+			return fmt.Errorf("Bad SSO Team ID: %s", *team.SSOTeamID)
 		}
 
 		return nil
@@ -298,6 +332,7 @@ resource "tfe_team" "foobar" {
 	manage_providers = true
 	manage_modules = true
   }
+  sso_team_id = "team-test-sso-id"
 }`, rInt)
 }
 
@@ -322,5 +357,21 @@ resource "tfe_team" "foobar" {
 	manage_providers = false
 	manage_modules = false
   }
+
+  sso_team_id = "changed-sso-id"
+}`, rInt)
+}
+
+// unsets values to check that they are properly cleared
+func testAccTFETeam_full_update_clear(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-test-1"
+  organization = tfe_organization.foobar.id
 }`, rInt)
 }
