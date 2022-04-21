@@ -17,7 +17,6 @@ import (
 	tfe "github.com/hashicorp/go-tfe"
 	version "github.com/hashicorp/go-version"
 	"github.com/hashicorp/hcl"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	providerVersion "github.com/hashicorp/terraform-provider-tfe/version"
 	svchost "github.com/hashicorp/terraform-svchost"
@@ -184,7 +183,7 @@ func getClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
 	credsSrc := credentialsSource(config)
 	services := disco.NewWithCredentialsSource(credsSrc)
 	services.SetUserAgent(providerUaString)
-	services.Transport = logging.NewTransport("TFE Discovery", transport)
+	services.Transport = NewLoggingTransport("TFE Discovery", transport)
 
 	// Add any static host configurations service discovery object.
 	for userHost, hostConfig := range config.Hosts {
@@ -265,7 +264,7 @@ func getClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
 	}
 
 	// Wrap the configured transport to enable logging.
-	httpClient.Transport = logging.NewTransport("TFE", transport)
+	httpClient.Transport = NewLoggingTransport("TFE", transport)
 
 	// Create a new TFE client config
 	cfg := &tfe.Config{
