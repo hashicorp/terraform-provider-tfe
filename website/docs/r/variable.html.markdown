@@ -49,7 +49,7 @@ resource "tfe_variable_set" "test" {
   organization = tfe_organization.test.name
 }
 
-resource "tfe_variable" "test" {
+resource "tfe_variable" "test-a" {
   key             = "seperate_variable"
   value           = "my_value_name"
   category        = "terraform"
@@ -57,7 +57,7 @@ resource "tfe_variable" "test" {
   variable_set_id = tfe_variable_set.test.id
 }
 
-resource "tfe_variable" "test" {
+resource "tfe_variable" "test-b" {
   key             = "another_variable"
   value           = "my_value_name"
   category        = "env"
