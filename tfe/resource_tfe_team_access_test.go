@@ -12,6 +12,8 @@ import (
 )
 
 func TestAccTFETeamAccess_write(t *testing.T) {
+	skipIfFreeOnly(t)
+
 	tmAccess := &tfe.TeamAccess{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -42,12 +44,15 @@ func TestAccTFETeamAccess_write(t *testing.T) {
 					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.sentinel_mocks", "read"),
 					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.workspace_locking", "true"),
 				),
+				ExpectNonEmptyPlan: true,
 			},
 		},
 	})
 }
 
 func TestAccTFETeamAccess_custom(t *testing.T) {
+	skipIfFreeOnly(t)
+
 	tmAccess := &tfe.TeamAccess{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -85,6 +90,8 @@ func TestAccTFETeamAccess_custom(t *testing.T) {
 }
 
 func TestAccTFETeamAccess_updateToCustom(t *testing.T) {
+	skipIfFreeOnly(t)
+
 	tmAccess := &tfe.TeamAccess{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -116,6 +123,7 @@ func TestAccTFETeamAccess_updateToCustom(t *testing.T) {
 					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.sentinel_mocks", "read"),
 					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.workspace_locking", "true"),
 				),
+				ExpectNonEmptyPlan: true,
 			},
 			{
 				Config: testAccTFETeamAccess_custom(rInt),
@@ -146,6 +154,8 @@ func TestAccTFETeamAccess_updateToCustom(t *testing.T) {
 }
 
 func TestAccTFETeamAccess_updateFromCustom(t *testing.T) {
+	skipIfFreeOnly(t)
+
 	tmAccess := &tfe.TeamAccess{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -201,12 +211,15 @@ func TestAccTFETeamAccess_updateFromCustom(t *testing.T) {
 					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.sentinel_mocks", "none"),
 					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.workspace_locking", "false"),
 				),
+				ExpectNonEmptyPlan: true,
 			},
 		},
 	})
 }
 
 func TestAccTFETeamAccess_import(t *testing.T) {
+	skipIfFreeOnly(t)
+
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -215,7 +228,8 @@ func TestAccTFETeamAccess_import(t *testing.T) {
 		CheckDestroy: testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamAccess_write(rInt),
+				Config:             testAccTFETeamAccess_write(rInt),
+				ExpectNonEmptyPlan: true,
 			},
 
 			{
@@ -223,6 +237,7 @@ func TestAccTFETeamAccess_import(t *testing.T) {
 				ImportState:         true,
 				ImportStateIdPrefix: fmt.Sprintf("tst-terraform-%d/workspace-test/", rInt),
 				ImportStateVerify:   true,
+				ExpectNonEmptyPlan:  true,
 			},
 		},
 	})
@@ -317,12 +332,12 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = tfe_organization.foobar.id
+  organization = tfe_organization.foobar.name
 }
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = tfe_organization.foobar.id
+  organization = tfe_organization.foobar.name
 }
 
 resource "tfe_team_access" "foobar" {

@@ -37,6 +37,7 @@ func TestAccTFETeamAccessDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet("data.tfe_team_access.foobar", "team_id"),
 					resource.TestCheckResourceAttrSet("data.tfe_team_access.foobar", "workspace_id"),
 				),
+				ExpectNonEmptyPlan: true,
 			},
 		},
 	})

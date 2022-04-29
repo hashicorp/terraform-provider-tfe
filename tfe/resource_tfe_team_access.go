@@ -58,7 +58,8 @@ func resourceTFETeamAccess() *schema.Resource {
 					Schema: map[string]*schema.Schema{
 						"runs": {
 							Type:     schema.TypeString,
-							Required: true,
+							Optional: true,
+							Default:  string(tfe.RunsPermissionRead),
 							ValidateFunc: validation.StringInSlice(
 								[]string{
 									string(tfe.RunsPermissionRead),
@@ -71,7 +72,8 @@ func resourceTFETeamAccess() *schema.Resource {
 
 						"variables": {
 							Type:     schema.TypeString,
-							Required: true,
+							Optional: true,
+							Default:  string(tfe.VariablesPermissionNone),
 							ValidateFunc: validation.StringInSlice(
 								[]string{
 									string(tfe.VariablesPermissionNone),
@@ -84,7 +86,8 @@ func resourceTFETeamAccess() *schema.Resource {
 
 						"state_versions": {
 							Type:     schema.TypeString,
-							Required: true,
+							Optional: true,
+							Default:  string(tfe.StateVersionsPermissionNone),
 							ValidateFunc: validation.StringInSlice(
 								[]string{
 									string(tfe.StateVersionsPermissionNone),
@@ -98,7 +101,8 @@ func resourceTFETeamAccess() *schema.Resource {
 
 						"sentinel_mocks": {
 							Type:     schema.TypeString,
-							Required: true,
+							Optional: true,
+							Default:  string(tfe.SentinelMocksPermissionNone),
 							ValidateFunc: validation.StringInSlice(
 								[]string{
 									string(tfe.SentinelMocksPermissionNone),
@@ -110,7 +114,8 @@ func resourceTFETeamAccess() *schema.Resource {
 
 						"workspace_locking": {
 							Type:     schema.TypeBool,
-							Required: true,
+							Optional: true,
+							Default:  false,
 						},
 					},
 				},
