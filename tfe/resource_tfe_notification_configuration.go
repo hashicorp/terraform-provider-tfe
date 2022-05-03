@@ -34,6 +34,7 @@ func resourceTFENotificationConfiguration() *schema.Resource {
 						string(tfe.NotificationDestinationTypeEmail),
 						string(tfe.NotificationDestinationTypeGeneric),
 						string(tfe.NotificationDestinationTypeSlack),
+						string(tfe.NotificationDestinationTypeMicrosoftTeams),
 					},
 					false,
 				),
@@ -135,6 +136,14 @@ func resourceTFENotificationConfigurationCreate(d *schema.ResourceData, meta int
 		// 1. email_addresses, email_user_ids, and token cannot be set
 		// 2. url must be set
 		err := validateSchemaAttributesForDestinationTypeSlack(d)
+		if err != nil {
+			return err
+		}
+	} else if destinationType == tfe.NotificationDestinationTypeMicrosoftTeams {
+		// When destination_type is 'microsoft_teams':
+		// 1. email_addresses, email_user_ids, and token cannot be set
+		// 2. url must be set
+		err := validateSchemaAttributesForDestinationTypeMicrosoftTeams(d)
 		if err != nil {
 			return err
 		}
@@ -259,6 +268,14 @@ func resourceTFENotificationConfigurationUpdate(d *schema.ResourceData, meta int
 		if err != nil {
 			return err
 		}
+	} else if destinationType == tfe.NotificationDestinationTypeMicrosoftTeams {
+		// When destination_type is 'microsoft_teams':
+		// 1. email_addresses, email_user_ids, and token cannot be set
+		// 2. url must be set
+		err := validateSchemaAttributesForDestinationTypeMicrosoftTeams(d)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Create a new options struct
@@ -366,6 +383,30 @@ func validateSchemaAttributesForDestinationTypeSlack(d *schema.ResourceData) err
 	_, urlIsSet := d.GetOk("url")
 	if !urlIsSet {
 		return fmt.Errorf("URL is required with destination type of %s", string(tfe.NotificationDestinationTypeSlack))
+	}
+
+	return nil
+}
+
+func validateSchemaAttributesForDestinationTypeMicrosoftTeams(d *schema.ResourceData) error {
+	// Make sure email_addresses, email_user_ids, and token are not set when destination_type is 'microsoft_teams'
+	_, emailAddressesIsSet := d.GetOk("email_addresses")
+	if emailAddressesIsSet {
+		return fmt.Errorf("Email addresses cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeMicrosoftTeams))
+	}
+	_, emailUserIDsIsSet := d.GetOk("email_user_ids")
+	if emailUserIDsIsSet {
+		return fmt.Errorf("Email user IDs cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeMicrosoftTeams))
+	}
+	token, tokenIsSet := d.GetOk("token")
+	if tokenIsSet && token != "" {
+		return fmt.Errorf("Token cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeMicrosoftTeams))
+	}
+
+	// Make sure url is set when destination_type is 'microsoft_teams'
+	_, urlIsSet := d.GetOk("url")
+	if !urlIsSet {
+		return fmt.Errorf("URL is required with destination type of %s", string(tfe.NotificationDestinationTypeMicrosoftTeams))
 	}
 
 	return nil

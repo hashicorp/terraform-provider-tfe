@@ -248,6 +248,33 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesSlack(t *testin
 	})
 }
 
+func TestAccTFENotificationConfiguration_validateSchemaAttributesMicrosoftTeams(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithEmailAddresses(rInt),
+				ExpectError: regexp.MustCompile(`Email addresses cannot be set with destination type of microsoft_teams`),
+			},
+			{
+				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithEmailUserIDs(rInt),
+				ExpectError: regexp.MustCompile(`Email user IDs cannot be set with destination type of microsoft_teams`),
+			},
+			{
+				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithToken(rInt),
+				ExpectError: regexp.MustCompile(`Token cannot be set with destination type of microsoft_teams`),
+			},
+			{
+				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithoutURL(rInt),
+				ExpectError: regexp.MustCompile(`URL is required with destination type of microsoft_teams`),
+			},
+		},
+	})
+}
+
 func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesEmail(t *testing.T) {
 	notificationConfiguration := &tfe.NotificationConfiguration{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -372,6 +399,49 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesSlack(t *
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithoutURL(rInt),
 				ExpectError: regexp.MustCompile(`URL is required with destination type of slack`),
+			},
+		},
+	})
+}
+
+func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesMicrosoftTeams(t *testing.T) {
+	notificationConfiguration := &tfe.NotificationConfiguration{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFENotificationConfiguration_microsoftTeams(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFENotificationConfigurationExists(
+						"tfe_notification_configuration.foobar", notificationConfiguration),
+					testAccCheckTFENotificationConfigurationAttributesMicrosoftTeams(notificationConfiguration),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "destination_type", "microsoft_teams"),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "name", "notification_msteams"),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "url", "http://example.com"),
+				),
+			},
+			{
+				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithEmailAddresses(rInt),
+				ExpectError: regexp.MustCompile(`Email addresses cannot be set with destination type of microsoft_teams`),
+			},
+			{
+				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithEmailUserIDs(rInt),
+				ExpectError: regexp.MustCompile(`Email user IDs cannot be set with destination type of microsoft_teams`),
+			},
+			{
+				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithToken(rInt),
+				ExpectError: regexp.MustCompile(`Token cannot be set with destination type of microsoft_teams`),
+			},
+			{
+				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithoutURL(rInt),
+				ExpectError: regexp.MustCompile(`URL is required with destination type of microsoft_teams`),
 			},
 		},
 	})
@@ -638,6 +708,32 @@ func testAccCheckTFENotificationConfigurationAttributesSlack(notificationConfigu
 	}
 }
 
+func testAccCheckTFENotificationConfigurationAttributesMicrosoftTeams(notificationConfiguration *tfe.NotificationConfiguration) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if notificationConfiguration.Name != "notification_msteams" {
+			return fmt.Errorf("Bad name: %s", notificationConfiguration.Name)
+		}
+
+		if notificationConfiguration.DestinationType != tfe.NotificationDestinationTypeMicrosoftTeams {
+			return fmt.Errorf("Bad destination type: %s", notificationConfiguration.DestinationType)
+		}
+
+		if notificationConfiguration.Enabled != false {
+			return fmt.Errorf("Bad enabled value: %t", notificationConfiguration.Enabled)
+		}
+
+		if !reflect.DeepEqual(notificationConfiguration.Triggers, []string{}) {
+			return fmt.Errorf("Bad triggers: %v", notificationConfiguration.Triggers)
+		}
+
+		if notificationConfiguration.URL != "http://example.com" {
+			return fmt.Errorf("Bad URL: %s", notificationConfiguration.URL)
+		}
+
+		return nil
+	}
+}
+
 func testAccCheckTFENotificationConfigurationAttributesDuplicateTriggers(notificationConfiguration *tfe.NotificationConfiguration) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if notificationConfiguration.Name != "notification_duplicate_triggers" {
@@ -746,6 +842,26 @@ resource "tfe_workspace" "foobar" {
 resource "tfe_notification_configuration" "foobar" {
   name             = "notification_slack"
   destination_type = "slack"
+  url              = "http://example.com"
+  workspace_id     = tfe_workspace.foobar.id
+}`, rInt)
+}
+
+func testAccTFENotificationConfiguration_microsoftTeams(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name             = "notification_msteams"
+  destination_type = "microsoft_teams"
   url              = "http://example.com"
   workspace_id     = tfe_workspace.foobar.id
 }`, rInt)
@@ -985,6 +1101,91 @@ resource "tfe_workspace" "foobar" {
 resource "tfe_notification_configuration" "foobar" {
   name             = "notification_slack_without_url"
   destination_type = "slack"
+  workspace_id     = tfe_workspace.foobar.id
+}`, rInt)
+}
+
+func testAccTFENotificationConfiguration_microsoftTeamsWithEmailAddresses(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name             = "notification_msteams_with_email_addresses"
+  destination_type = "microsoft_teams"
+  email_addresses  = ["test@example.com", "test2@example.com"]
+  workspace_id     = tfe_workspace.foobar.id
+}`, rInt)
+}
+
+func testAccTFENotificationConfiguration_microsoftTeamsWithEmailUserIDs(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_organization_membership" "foobar" {
+  organization = tfe_organization.foobar.id
+  email        = "foo@foobar.com"
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name             = "notification_msteams_with_email_user_ids"
+  destination_type = "microsoft_teams"
+  email_user_ids   = [tfe_organization_membership.foobar.id]
+  workspace_id     = tfe_workspace.foobar.id
+}`, rInt)
+}
+
+func testAccTFENotificationConfiguration_microsoftTeamsWithToken(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name             = "notification_msteams_with_token"
+  destination_type = "microsoft_teams"
+  token            = "1234567890"
+  url              = "http://example.com"
+  workspace_id     = tfe_workspace.foobar.id
+}`, rInt)
+}
+
+func testAccTFENotificationConfiguration_microsoftTeamsWithoutURL(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name             = "notification_msteams_without_url"
+  destination_type = "microsoft_teams"
   workspace_id     = tfe_workspace.foobar.id
 }`, rInt)
 }
