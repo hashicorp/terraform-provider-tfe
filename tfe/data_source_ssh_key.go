@@ -38,7 +38,7 @@ func dataSourceTFESSHKeyRead(d *schema.ResourceData, meta interface{}) error {
 	for {
 		l, err := tfeClient.SSHKeys.List(ctx, organization, options)
 		if err != nil {
-			return fmt.Errorf("Error retrieving SSH keys: %v", err)
+			return fmt.Errorf("Error retrieving SSH keys: %w", err)
 		}
 
 		for _, k := range l.Items {

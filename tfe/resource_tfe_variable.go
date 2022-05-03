@@ -121,7 +121,7 @@ func forceRecreateResourceIf() schema.CustomizeDiffFunc {
 }
 
 func resourceTFEVariableCreate(d *schema.ResourceData, meta interface{}) error {
-	//Switch to variable set variable logic if we need to
+	// Switch to variable set variable logic if we need to
 	_, variableSetIdProvided := d.GetOk("variable_set_id")
 	if variableSetIdProvided {
 		return resourceTFEVariableSetVariableCreate(d, meta)
@@ -138,7 +138,7 @@ func resourceTFEVariableCreate(d *schema.ResourceData, meta interface{}) error {
 	ws, err := tfeClient.Workspaces.ReadByID(ctx, workspaceID)
 	if err != nil {
 		return fmt.Errorf(
-			"Error retrieving workspace %s: %v", workspaceID, err)
+			"Error retrieving workspace %s: %w", workspaceID, err)
 	}
 
 	// Create a new options struct.
@@ -154,7 +154,7 @@ func resourceTFEVariableCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Create %s variable: %s", category, key)
 	variable, err := tfeClient.Variables.Create(ctx, ws.ID, options)
 	if err != nil {
-		return fmt.Errorf("Error creating %s variable %s: %v", category, key, err)
+		return fmt.Errorf("Error creating %s variable %s: %w", category, key, err)
 	}
 
 	d.SetId(variable.ID)
@@ -174,7 +174,7 @@ func resourceTFEVariableSetVariableCreate(d *schema.ResourceData, meta interface
 	vs, err := tfeClient.VariableSets.Read(ctx, variableSetID, nil)
 	if err != nil {
 		return fmt.Errorf(
-			"Error retrieving variable set %s: %v", variableSetID, err)
+			"Error retrieving variable set %s: %w", variableSetID, err)
 	}
 
 	// Create a new options struct.
@@ -190,7 +190,7 @@ func resourceTFEVariableSetVariableCreate(d *schema.ResourceData, meta interface
 	log.Printf("[DEBUG] Create %s variable: %s", category, key)
 	variable, err := tfeClient.VariableSetVariables.Create(ctx, vs.ID, &options)
 	if err != nil {
-		return fmt.Errorf("Error creating %s variable %s: %v", category, key, err)
+		return fmt.Errorf("Error creating %s variable %s: %w", category, key, err)
 	}
 
 	d.SetId(variable.ID)
@@ -199,7 +199,7 @@ func resourceTFEVariableSetVariableCreate(d *schema.ResourceData, meta interface
 }
 
 func resourceTFEVariableRead(d *schema.ResourceData, meta interface{}) error {
-	//Switch to variable set variable logic if we need to
+	// Switch to variable set variable logic if we need to
 	_, variableSetIdProvided := d.GetOk("variable_set_id")
 	if variableSetIdProvided {
 		return resourceTFEVariableSetVariableRead(d, meta)
@@ -217,7 +217,7 @@ func resourceTFEVariableRead(d *schema.ResourceData, meta interface{}) error {
 			return nil
 		}
 		return fmt.Errorf(
-			"Error retrieving workspace %s: %v", workspaceID, err)
+			"Error retrieving workspace %s: %w", workspaceID, err)
 	}
 
 	log.Printf("[DEBUG] Read variable: %s", d.Id())
@@ -228,13 +228,13 @@ func resourceTFEVariableRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading variable %s: %v", d.Id(), err)
+		return fmt.Errorf("Error reading variable %s: %w", d.Id(), err)
 	}
 
 	// Update config.
 	d.Set("key", variable.Key)
 	d.Set("category", string(variable.Category))
-	d.Set("description", string(variable.Description))
+	d.Set("description", variable.Description)
 	d.Set("hcl", variable.HCL)
 	d.Set("sensitive", variable.Sensitive)
 
@@ -259,7 +259,7 @@ func resourceTFEVariableSetVariableRead(d *schema.ResourceData, meta interface{}
 			return nil
 		}
 		return fmt.Errorf(
-			"Error retrieving variable set %s: %v", variableSetID, err)
+			"Error retrieving variable set %s: %w", variableSetID, err)
 	}
 
 	log.Printf("[DEBUG] Read variable: %s", d.Id())
@@ -270,13 +270,13 @@ func resourceTFEVariableSetVariableRead(d *schema.ResourceData, meta interface{}
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading variable %s: %v", d.Id(), err)
+		return fmt.Errorf("Error reading variable %s: %w", d.Id(), err)
 	}
 
 	// Update config.
 	d.Set("key", variable.Key)
 	d.Set("category", string(variable.Category))
-	d.Set("description", string(variable.Description))
+	d.Set("description", variable.Description)
 	d.Set("hcl", variable.HCL)
 	d.Set("sensitive", variable.Sensitive)
 
@@ -289,7 +289,7 @@ func resourceTFEVariableSetVariableRead(d *schema.ResourceData, meta interface{}
 }
 
 func resourceTFEVariableUpdate(d *schema.ResourceData, meta interface{}) error {
-	//Switch to variable set variable logic if we need to
+	// Switch to variable set variable logic if we need to
 	_, variableSetIdProvided := d.GetOk("variable_set_id")
 	if variableSetIdProvided {
 		return resourceTFEVariableSetVariableUpdate(d, meta)
@@ -302,7 +302,7 @@ func resourceTFEVariableUpdate(d *schema.ResourceData, meta interface{}) error {
 	ws, err := tfeClient.Workspaces.ReadByID(ctx, workspaceID)
 	if err != nil {
 		return fmt.Errorf(
-			"Error retrieving workspace %s: %v", workspaceID, err)
+			"Error retrieving workspace %s: %w", workspaceID, err)
 	}
 
 	// Create a new options struct.
@@ -317,7 +317,7 @@ func resourceTFEVariableUpdate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Update variable: %s", d.Id())
 	_, err = tfeClient.Variables.Update(ctx, ws.ID, d.Id(), options)
 	if err != nil {
-		return fmt.Errorf("Error updating variable %s: %v", d.Id(), err)
+		return fmt.Errorf("Error updating variable %s: %w", d.Id(), err)
 	}
 
 	return resourceTFEVariableRead(d, meta)
@@ -331,7 +331,7 @@ func resourceTFEVariableSetVariableUpdate(d *schema.ResourceData, meta interface
 	vs, err := tfeClient.VariableSets.Read(ctx, variableSetID, nil)
 	if err != nil {
 		return fmt.Errorf(
-			"Error retrieving variable set %s: %v", variableSetID, err)
+			"Error retrieving variable set %s: %w", variableSetID, err)
 	}
 
 	// Create a new options struct.
@@ -346,14 +346,14 @@ func resourceTFEVariableSetVariableUpdate(d *schema.ResourceData, meta interface
 	log.Printf("[DEBUG] Update variable: %s", d.Id())
 	_, err = tfeClient.VariableSetVariables.Update(ctx, vs.ID, d.Id(), &options)
 	if err != nil {
-		return fmt.Errorf("Error updating variable %s: %v", d.Id(), err)
+		return fmt.Errorf("Error updating variable %s: %w", d.Id(), err)
 	}
 
 	return resourceTFEVariableRead(d, meta)
 }
 
 func resourceTFEVariableDelete(d *schema.ResourceData, meta interface{}) error {
-	//Switch to variable set variable logic if we need to
+	// Switch to variable set variable logic if we need to
 	_, variableSetIdProvided := d.GetOk("variable_set_id")
 	if variableSetIdProvided {
 		return resourceTFEVariableSetVariableDelete(d, meta)
@@ -366,7 +366,7 @@ func resourceTFEVariableDelete(d *schema.ResourceData, meta interface{}) error {
 	ws, err := tfeClient.Workspaces.ReadByID(ctx, workspaceID)
 	if err != nil {
 		return fmt.Errorf(
-			"Error retrieving workspace %s: %v", workspaceID, err)
+			"Error retrieving workspace %s: %w", workspaceID, err)
 	}
 
 	log.Printf("[DEBUG] Delete variable: %s", d.Id())
@@ -375,7 +375,7 @@ func resourceTFEVariableDelete(d *schema.ResourceData, meta interface{}) error {
 		if err == tfe.ErrResourceNotFound {
 			return nil
 		}
-		return fmt.Errorf("Error deleting variable%s: %v", d.Id(), err)
+		return fmt.Errorf("Error deleting variable%s: %w", d.Id(), err)
 	}
 
 	return nil
@@ -389,7 +389,7 @@ func resourceTFEVariableSetVariableDelete(d *schema.ResourceData, meta interface
 	vs, err := tfeClient.VariableSets.Read(ctx, variableSetID, nil)
 	if err != nil {
 		return fmt.Errorf(
-			"Error retrieving variable set %s: %v", variableSetID, err)
+			"Error retrieving variable set %s: %w", variableSetID, err)
 	}
 
 	log.Printf("[DEBUG] Delete variable: %s", d.Id())
@@ -398,7 +398,7 @@ func resourceTFEVariableSetVariableDelete(d *schema.ResourceData, meta interface
 		if err == tfe.ErrResourceNotFound {
 			return nil
 		}
-		return fmt.Errorf("Error deleting variable%s: %v", d.Id(), err)
+		return fmt.Errorf("Error deleting variable%s: %w", d.Id(), err)
 	}
 
 	return nil
@@ -415,17 +415,17 @@ func resourceTFEVariableImporter(d *schema.ResourceData, meta interface{}) ([]*s
 		)
 	}
 
-	varsetIdUsed := variableSetIdRegexp.MatchString(s[1])
-	if varsetIdUsed {
+	varsetIDUsed := variableSetIdRegexp.MatchString(s[1])
+	if varsetIDUsed {
 		d.Set("variable_set_id", s[1])
 	} else {
 		// Set the fields that are part of the import ID.
-		workspace_id, err := fetchWorkspaceExternalID(s[0]+"/"+s[1], tfeClient)
+		workspaceID, err := fetchWorkspaceExternalID(s[0]+"/"+s[1], tfeClient)
 		if err != nil {
 			return nil, fmt.Errorf(
-				"error retrieving workspace %s from organization %s: %v", s[1], s[0], err)
+				"error retrieving workspace %s from organization %s: %w", s[1], s[0], err)
 		}
-		d.Set("workspace_id", workspace_id)
+		d.Set("workspace_id", workspaceID)
 	}
 
 	d.SetId(s[2])

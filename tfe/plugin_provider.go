@@ -9,8 +9,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 )
 
-var tfeClient *tfe.Client
-
 type pluginProviderServer struct {
 	providerSchema     *tfprotov5.Schema
 	providerMetaSchema *tfprotov5.Schema
@@ -234,7 +232,7 @@ func retrieveProviderMeta(req *tfprotov5.ConfigureProviderRequest) (providerMeta
 		}})
 
 	if err != nil {
-		return meta, fmt.Errorf("Could not unmarshal ConfigureProviderRequest %v", err)
+		return meta, fmt.Errorf("Could not unmarshal ConfigureProviderRequest %w", err)
 	}
 	var hostname string
 	var token string
@@ -242,24 +240,24 @@ func retrieveProviderMeta(req *tfprotov5.ConfigureProviderRequest) (providerMeta
 	var valMap map[string]tftypes.Value
 	err = val.As(&valMap)
 	if err != nil {
-		return meta, fmt.Errorf("Could not set the schema attributes to map %v", err)
+		return meta, fmt.Errorf("Could not set the schema attributes to map %w", err)
 	}
 	if !valMap["hostname"].IsNull() {
 		err = valMap["hostname"].As(&hostname)
 		if err != nil {
-			return meta, fmt.Errorf("Could not set the hostname value to string %v", err)
+			return meta, fmt.Errorf("Could not set the hostname value to string %w", err)
 		}
 	}
 	if !valMap["token"].IsNull() {
 		err = valMap["token"].As(&token)
 		if err != nil {
-			return meta, fmt.Errorf("Could not set the token value to string %v", err)
+			return meta, fmt.Errorf("Could not set the token value to string %w", err)
 		}
 	}
 	if !valMap["ssl_skip_verify"].IsNull() {
 		err = valMap["ssl_skip_verify"].As(&sslSkipVerify)
 		if err != nil {
-			return meta, fmt.Errorf("Could not set the ssl_skip_verify value to boolean %v", err)
+			return meta, fmt.Errorf("Could not set the ssl_skip_verify value to boolean %w", err)
 		}
 	} else {
 		sslSkipVerify = defaultSSLSkipVerify

@@ -41,7 +41,7 @@ func dataSourceTFEOrganizationList(d *schema.ResourceData, meta interface{}) err
 	var err error
 
 	if isAdmin(d) {
-		names, ids, err = adminOrgsPopulateFields(tfeClient, d)
+		names, ids, err = adminOrgsPopulateFields(tfeClient)
 	} else {
 		names, ids, err = orgsPopulateFields(tfeClient)
 	}
@@ -58,7 +58,7 @@ func dataSourceTFEOrganizationList(d *schema.ResourceData, meta interface{}) err
 	return nil
 }
 
-func adminOrgsPopulateFields(client *tfe.Client, d *schema.ResourceData) ([]string, map[string]string, error) {
+func adminOrgsPopulateFields(client *tfe.Client) ([]string, map[string]string, error) {
 	names := []string{}
 	ids := map[string]string{}
 	log.Printf("[DEBUG] Listing all organizations (admin)")
@@ -70,7 +70,7 @@ func adminOrgsPopulateFields(client *tfe.Client, d *schema.ResourceData) ([]stri
 	for {
 		orgList, err := client.Admin.Organizations.List(ctx, options)
 		if err != nil {
-			return nil, nil, fmt.Errorf("Error retrieving Admin Organizations: %v", err)
+			return nil, nil, fmt.Errorf("Error retrieving Admin Organizations: %w", err)
 		}
 
 		for _, org := range orgList.Items {
@@ -102,7 +102,7 @@ func orgsPopulateFields(client *tfe.Client) ([]string, map[string]string, error)
 	for {
 		orgList, err := client.Organizations.List(ctx, options)
 		if err != nil {
-			return nil, nil, fmt.Errorf("Error retrieving Organizations: %v", err)
+			return nil, nil, fmt.Errorf("Error retrieving Organizations: %w", err)
 		}
 
 		for _, org := range orgList.Items {

@@ -158,7 +158,7 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 	policySet, err := tfeClient.PolicySets.Create(ctx, organization, options)
 	if err != nil {
 		return fmt.Errorf(
-			"Error creating policy set %s for organization %s: %v", name, organization, err)
+			"Error creating policy set %s for organization %s: %w", name, organization, err)
 	}
 	_, hasVCSRepo := d.GetOk("vcs_repo")
 	_, hasSlug := d.GetOk("slug")
@@ -185,7 +185,7 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading policy set %s: %v", d.Id(), err)
+		return fmt.Errorf("Error reading policy set %s: %w", d.Id(), err)
 	}
 
 	// Update the config.
@@ -264,7 +264,7 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 			log.Printf("[DEBUG] Removing previous workspaces from now-global policy set: %s", d.Id())
 			err := tfeClient.PolicySets.RemoveWorkspaces(ctx, d.Id(), options)
 			if err != nil {
-				return fmt.Errorf("Error detaching policy set %s from workspaces: %v", d.Id(), err)
+				return fmt.Errorf("Error detaching policy set %s from workspaces: %w", d.Id(), err)
 			}
 		}
 	}
@@ -296,7 +296,7 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 		_, err := tfeClient.PolicySets.Update(ctx, d.Id(), options)
 		if err != nil {
 			return fmt.Errorf(
-				"Error updating configuration for policy set %s: %v", d.Id(), err)
+				"Error updating configuration for policy set %s: %w", d.Id(), err)
 		}
 	}
 
@@ -316,7 +316,7 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 			log.Printf("[DEBUG] Add policies to policy set: %s", d.Id())
 			err := tfeClient.PolicySets.AddPolicies(ctx, d.Id(), options)
 			if err != nil {
-				return fmt.Errorf("Error adding policies to policy set %s: %v", d.Id(), err)
+				return fmt.Errorf("Error adding policies to policy set %s: %w", d.Id(), err)
 			}
 		}
 
@@ -331,7 +331,7 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 			log.Printf("[DEBUG] Remove policies from policy set: %s", d.Id())
 			err := tfeClient.PolicySets.RemovePolicies(ctx, d.Id(), options)
 			if err != nil {
-				return fmt.Errorf("Error removing policies from policy set %s: %v", d.Id(), err)
+				return fmt.Errorf("Error removing policies from policy set %s: %w", d.Id(), err)
 			}
 		}
 	}
@@ -363,7 +363,7 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 			log.Printf("[DEBUG] Attach policy set to workspaces: %s", d.Id())
 			err := tfeClient.PolicySets.AddWorkspaces(ctx, d.Id(), options)
 			if err != nil {
-				return fmt.Errorf("Error attaching policy set %s to workspaces: %v", d.Id(), err)
+				return fmt.Errorf("Error attaching policy set %s to workspaces: %w", d.Id(), err)
 			}
 		}
 
@@ -378,7 +378,7 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 			log.Printf("[DEBUG] Detach policy set from workspaces: %s", d.Id())
 			err := tfeClient.PolicySets.RemoveWorkspaces(ctx, d.Id(), options)
 			if err != nil {
-				return fmt.Errorf("Error detaching policy set %s from workspaces: %v", d.Id(), err)
+				return fmt.Errorf("Error detaching policy set %s from workspaces: %w", d.Id(), err)
 			}
 		}
 	}
@@ -395,7 +395,7 @@ func resourceTFEPolicySetDelete(d *schema.ResourceData, meta interface{}) error 
 		if err == tfe.ErrResourceNotFound {
 			return nil
 		}
-		return fmt.Errorf("Error deleting policy set %s: %v", d.Id(), err)
+		return fmt.Errorf("Error deleting policy set %s: %w", d.Id(), err)
 	}
 
 	return nil
@@ -405,7 +405,7 @@ func resourceTFEPolicySetUploadVersion(client *tfe.Client, d *schema.ResourceDat
 	log.Printf("[DEBUG] Create policy set version for policy set %s.", policySetID)
 	psv, err := client.PolicySetVersions.Create(ctx, policySetID)
 	if err != nil {
-		return fmt.Errorf("Error creating policy set version for policy set %s: %v", policySetID, err)
+		return fmt.Errorf("Error creating policy set version for policy set %s: %w", policySetID, err)
 	}
 
 	slug := d.Get("slug").(map[string]interface{})
@@ -414,7 +414,7 @@ func resourceTFEPolicySetUploadVersion(client *tfe.Client, d *schema.ResourceDat
 	log.Printf("[DEBUG] Upload policy set version %s.", psv.ID)
 	err = client.PolicySetVersions.Upload(ctx, *psv, path)
 	if err != nil {
-		return fmt.Errorf("Error uploading policies for policy set version %s: %v", psv.ID, err)
+		return fmt.Errorf("Error uploading policies for policy set version %s: %w", psv.ID, err)
 	}
 
 	return nil

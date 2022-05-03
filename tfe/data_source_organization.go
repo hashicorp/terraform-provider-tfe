@@ -66,7 +66,7 @@ func dataSourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) err
 		if err == tfe.ErrResourceNotFound {
 			return fmt.Errorf("Could not read organization '%s'", name)
 		}
-		return fmt.Errorf("Error retrieving organization: %v", err)
+		return fmt.Errorf("Error retrieving organization: %w", err)
 	}
 
 	log.Printf("[DEBUG] Setting Organization Attributes")

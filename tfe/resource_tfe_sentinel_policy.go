@@ -87,7 +87,7 @@ func resourceTFESentinelPolicyCreate(d *schema.ResourceData, meta interface{}) e
 	policy, err := tfeClient.Policies.Create(ctx, organization, options)
 	if err != nil {
 		return fmt.Errorf(
-			"Error creating sentinel policy %s for organization %s: %v", name, organization, err)
+			"Error creating sentinel policy %s for organization %s: %w", name, organization, err)
 	}
 
 	d.SetId(policy.ID)
@@ -96,7 +96,7 @@ func resourceTFESentinelPolicyCreate(d *schema.ResourceData, meta interface{}) e
 	err = tfeClient.Policies.Upload(ctx, policy.ID, []byte(d.Get("policy").(string)))
 	if err != nil {
 		return fmt.Errorf(
-			"Error uploading sentinel policy %s for organization %s: %v", name, organization, err)
+			"Error uploading sentinel policy %s for organization %s: %w", name, organization, err)
 	}
 
 	return resourceTFESentinelPolicyRead(d, meta)
@@ -113,7 +113,7 @@ func resourceTFESentinelPolicyRead(d *schema.ResourceData, meta interface{}) err
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading sentinel policy %s: %v", d.Id(), err)
+		return fmt.Errorf("Error reading sentinel policy %s: %w", d.Id(), err)
 	}
 
 	// Update the config.
@@ -126,7 +126,7 @@ func resourceTFESentinelPolicyRead(d *schema.ResourceData, meta interface{}) err
 
 	content, err := tfeClient.Policies.Download(ctx, policy.ID)
 	if err != nil {
-		return fmt.Errorf("Error downloading sentinel policy %s: %v", d.Id(), err)
+		return fmt.Errorf("Error downloading sentinel policy %s: %w", d.Id(), err)
 	}
 	d.Set("policy", string(content))
 
@@ -157,7 +157,7 @@ func resourceTFESentinelPolicyUpdate(d *schema.ResourceData, meta interface{}) e
 		_, err := tfeClient.Policies.Update(ctx, d.Id(), options)
 		if err != nil {
 			return fmt.Errorf(
-				"Error updating configuration for sentinel policy %s: %v", d.Id(), err)
+				"Error updating configuration for sentinel policy %s: %w", d.Id(), err)
 		}
 	}
 
@@ -165,9 +165,8 @@ func resourceTFESentinelPolicyUpdate(d *schema.ResourceData, meta interface{}) e
 		log.Printf("[DEBUG] Update sentinel policy: %s", d.Id())
 		err := tfeClient.Policies.Upload(ctx, d.Id(), []byte(d.Get("policy").(string)))
 		if err != nil {
-			return fmt.Errorf("Error updating sentinel policy %s: %v", d.Id(), err)
+			return fmt.Errorf("Error updating sentinel policy %s: %w", d.Id(), err)
 		}
-
 	}
 
 	return resourceTFESentinelPolicyRead(d, meta)
@@ -182,7 +181,7 @@ func resourceTFESentinelPolicyDelete(d *schema.ResourceData, meta interface{}) e
 		if err == tfe.ErrResourceNotFound {
 			return nil
 		}
-		return fmt.Errorf("Error deleting sentinel policy %s: %v", d.Id(), err)
+		return fmt.Errorf("Error deleting sentinel policy %s: %w", d.Id(), err)
 	}
 
 	return nil

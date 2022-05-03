@@ -31,7 +31,7 @@ func dataSourceTFESlugRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Hashing the source path files: %s", sourcePath)
 	chksum, err := hashPolicies(sourcePath)
 	if err != nil {
-		return fmt.Errorf("Error generating the checksum for the source path files: %v", err)
+		return fmt.Errorf("Error generating the checksum for the source path files: %w", err)
 	}
 	d.SetId(chksum)
 

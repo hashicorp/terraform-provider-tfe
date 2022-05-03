@@ -280,7 +280,7 @@ func cliConfig() *Config {
 
 	// Main CLI config file; might contain manually-entered credentials, and/or
 	// some host service discovery objects. Location is configurable via
-	// enviroment variables.
+	// environment variables.
 	configFilePath := locateConfigFile()
 	if configFilePath != "" {
 		mainConfig = readCliConfigFile(configFilePath)

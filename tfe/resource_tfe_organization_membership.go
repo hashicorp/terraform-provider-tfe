@@ -54,7 +54,7 @@ func resourceTFEOrganizationMembershipCreate(d *schema.ResourceData, meta interf
 	membership, err := tfeClient.OrganizationMemberships.Create(ctx, organization, options)
 	if err != nil {
 		return fmt.Errorf(
-			"Error creating membership %s for organization %s: %v", email, organization, err)
+			"Error creating membership %s for organization %s: %w", email, organization, err)
 	}
 
 	d.SetId(membership.ID)
@@ -78,7 +78,7 @@ func resourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interfac
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading configuration of membership %s: %v", d.Id(), err)
+		return fmt.Errorf("Error reading configuration of membership %s: %w", d.Id(), err)
 	}
 
 	// Update the config.
@@ -99,7 +99,7 @@ func resourceTFEOrganizationMembershipDelete(d *schema.ResourceData, meta interf
 		if err == tfe.ErrResourceNotFound {
 			return nil
 		}
-		return fmt.Errorf("Error deleting membership %s: %v", d.Id(), err)
+		return fmt.Errorf("Error deleting membership %s: %w", d.Id(), err)
 	}
 
 	return nil

@@ -43,7 +43,7 @@ func dataSourceTFEIPRangesRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Reading IP Ranges")
 	ipRanges, err := tfeClient.Meta.IPRanges.Read(ctx, "")
 	if err != nil {
-		return fmt.Errorf("Error retrieving IP ranges: %v", err)
+		return fmt.Errorf("Error retrieving IP ranges: %w", err)
 	}
 
 	d.SetId("ip-ranges")

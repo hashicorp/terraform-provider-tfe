@@ -144,7 +144,7 @@ resource "tfe_organization" "bar" {
 }
 
 resource "tfe_organization_module_sharing" "foo" {
-  organization = tfe_organization.foo.id 
+  organization = tfe_organization.foo.id
   module_consumers = ["", tfe_organization.bar.id]
 }`, rInt1, rInt2)
 }
@@ -157,7 +157,7 @@ resource "tfe_organization" "foo" {
 }
 
 resource "tfe_organization_module_sharing" "foo" {
-  organization = tfe_organization.foo.id 
+  organization = tfe_organization.foo.id
   module_consumers = []
 }`, rInt1)
 }

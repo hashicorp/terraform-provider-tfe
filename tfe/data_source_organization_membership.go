@@ -45,7 +45,7 @@ func dataSourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interf
 
 	oml, err := tfeClient.OrganizationMemberships.List(ctx, organization, options)
 	if err != nil {
-		return fmt.Errorf("Error retrieving organization memberships: %v", err)
+		return fmt.Errorf("Error retrieving organization memberships: %w", err)
 	}
 
 	switch len(oml.Items) {
@@ -81,7 +81,7 @@ func dataSourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interf
 
 			oml, err = tfeClient.OrganizationMemberships.List(ctx, organization, options)
 			if err != nil {
-				return fmt.Errorf("Error retrieving organization memberships: %v", err)
+				return fmt.Errorf("Error retrieving organization memberships: %w", err)
 			}
 		}
 	}
