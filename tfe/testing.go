@@ -10,6 +10,7 @@ import (
 const RunTasksURLEnvName = "RUN_TASKS_URL"
 
 type testClientOptions struct {
+	defaultOrganization          string
 	defaultWorkspaceID           string
 	remoteStateConsumersResponse string
 }
@@ -19,6 +20,13 @@ type testClientOptions struct {
 func testTfeClient(t *testing.T, options testClientOptions) *tfe.Client {
 	config := &tfe.Config{
 		Token: "not-a-token",
+	}
+
+	if options.defaultOrganization == "" {
+		options.defaultOrganization = "hashicorp"
+	}
+	if options.defaultWorkspaceID == "" {
+		options.defaultWorkspaceID = "ws-testing"
 	}
 
 	client, err := tfe.NewClient(config)
