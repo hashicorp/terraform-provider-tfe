@@ -65,6 +65,8 @@ func TestAccTFETeam_full(t *testing.T) {
 						"tfe_team.foobar", "organization_access.0.manage_providers", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_modules", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_run_tasks", "true"),
 				),
 			},
 		},
@@ -102,6 +104,8 @@ func TestAccTFETeam_full_update(t *testing.T) {
 						"tfe_team.foobar", "organization_access.0.manage_providers", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_modules", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_run_tasks", "true"),
 				),
 			},
 			{
@@ -127,6 +131,8 @@ func TestAccTFETeam_full_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_modules", "false"),
 					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_run_tasks", "false"),
+					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "sso_team_id", "changed-sso-id"),
 				),
 			},
@@ -151,6 +157,8 @@ func TestAccTFETeam_full_update(t *testing.T) {
 						"tfe_team.foobar", "organization_access.0.manage_providers", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_modules", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_run_tasks", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "sso_team_id", ""),
 				),
@@ -240,6 +248,9 @@ func testAccCheckTFETeamAttributes_full(
 		if !team.OrganizationAccess.ManageWorkspaces {
 			return fmt.Errorf("OrganizationAccess.ManageWorkspaces should be true")
 		}
+		if !team.OrganizationAccess.ManageRunTasks {
+			return fmt.Errorf("OrganizationAccess.ManageRunTasks should be true")
+		}
 		if *team.SSOTeamID != "team-test-sso-id" {
 			return fmt.Errorf("Bad SSO Team ID: %s", *team.SSOTeamID)
 		}
@@ -267,6 +278,9 @@ func testAccCheckTFETeamAttributes_full_update(
 		}
 		if team.OrganizationAccess.ManageWorkspaces {
 			return fmt.Errorf("OrganizationAccess.ManageWorkspaces should be false")
+		}
+		if team.OrganizationAccess.ManageRunTasks {
+			return fmt.Errorf("OrganizationAccess.ManageRunTasks should be false")
 		}
 
 		if *team.SSOTeamID != "changed-sso-id" {
@@ -323,12 +337,13 @@ resource "tfe_team" "foobar" {
   organization = tfe_organization.foobar.id
 
   visibility = "organization"
-  
+
   organization_access {
     manage_policies = true
     manage_policy_overrides = true
     manage_workspaces = true
     manage_vcs_settings = true
+    manage_run_tasks = true
 	manage_providers = true
 	manage_modules = true
   }
@@ -348,12 +363,13 @@ resource "tfe_team" "foobar" {
   organization = tfe_organization.foobar.id
 
   visibility = "secret"
-  
+
   organization_access {
     manage_policies = false
     manage_policy_overrides = false
     manage_workspaces = false
     manage_vcs_settings = false
+    manage_run_tasks = false
 	manage_providers = false
 	manage_modules = false
   }
