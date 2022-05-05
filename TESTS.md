@@ -8,19 +8,19 @@ Terraform Enterprise.
 
 If you are planning to run the full suite of tests or work on policy sets, registry modules, or workspaces, you'll need to set up repositories for them in GitHub.
 
-Your policy set repository will need the following: 
+Your policy set repository will need the following:
 1. A policy set stored in a subdirectory
 1. A branch other than `main`.
 
 Your registry module repository will need to be a [valid module](https://www.terraform.io/docs/cloud/registry/publish.html#preparing-a-module-repository).
-It will need the following: 
+It will need the following:
 1. To be named `terraform-<PROVIDER>-<NAME>`
 1. At least one valid SemVer tag in the format `x.y.z`
 [terraform-random-module](ttps://github.com/caseylang/terraform-random-module) is a good example repo.
 
-Your workspace repository will need the following: 
+Your workspace repository will need the following:
 1. A branch other than `main`.
-   
+
 ### 2. Set up environment variables
 
 To run all tests, you will need to set the following environment variables:
@@ -29,7 +29,7 @@ To run all tests, you will need to set the following environment variables:
 A hostname and token must be provided in order to run the acceptance tests. By
 default, these are loaded from the the `credentials` in the [CLI config
 file](https://www.terraform.io/docs/commands/cli-config.html). You can override
-these values with the environment variables specified below: 
+these values with the environment variables specified below:
 
 1. `TFE_HOSTNAME` - URL of a Terraform Cloud or Terraform Enterprise instance to be used for testing, without the scheme. Example: `tfe.local`
 1. `TFE_TOKEN` - A [user API token](https://www.terraform.io/docs/cloud/users-teams-organizations/users.html#api-tokens) for an administrator account on the Terraform Cloud or Terraform Enterprise instance being used for testing.
@@ -54,12 +54,12 @@ You can set your environment variables up however you prefer. The following are 
       envchain --set YOUR_NAMESPACE_HERE ENVIRONMENT_VARIABLE_HERE
       ```
       **OR**
-    
+
       Set all of the environment variables at once with the following command:
       ```sh
       envchain --set YOUR_NAMESPACE_HERE TFE_HOSTNAME TFE_TOKEN TFE_USER1 TFE_USER2 GITHUB_TOKEN GITHUB_POLICY_SET_IDENTIFIER GITHUB_POLICY_SET_BRANCH GITHUB_POLICY_SET_PATH GITHUB_REGISTRY_MODULE_IDENTIFIER GITHUB_WORKSPACE_IDENTIFIER GITHUB_WORKSPACE_BRANCH
       ```
-  
+
 ### 3. Run the tests
 
 #### Running the provider tests
@@ -86,7 +86,7 @@ $ envchain YOUR_NAMESPACE_HERE make testacc
 $ make testacc
 ```
 
-#### Running specific acceptance tests 
+#### Running specific acceptance tests
 
 The commands below use notification configurations as an example.
 
@@ -98,5 +98,5 @@ $ TESTARGS="-run TestAccTFENotificationConfiguration" envchain YOUR_NAMESPACE_HE
 ##### Without envchain:
 ```sh
 $ TESTARGS="-run TestAccTFENotificationConfiguration" make testacc
-```   
+```
 
