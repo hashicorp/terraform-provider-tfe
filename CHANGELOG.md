@@ -2,6 +2,13 @@
 
 BREAKING CHANGES:
 * **Removed Authentication Method**: Host-specific TF_TOKEN_... environment variable can no longer be used for token authentication. This method of authentication is incompatible with the Terraform Cloud remote execution model. Please use the TFE_TOKEN environment variable.
+* r/tfe_workspace: Default value of the `file_triggers_enabled` field is changed to `false`. This will align the
+  `file_triggers_enabled` field default value with the default value for the same field in the
+  [TFC API](https://www.terraform.io/cloud-docs/api-docs/workspaces).
+  If the value of the `file_triggers_enabled` field was not explicitly set and either of the fields `working_directory`
+  (not an empty string) or `trigger_prefixes` was used - to keep the behavior unchanged, the `file_trigger_enabled`
+  field should now explicitly be set to `true`. ([#510](https://github.com/hashicorp/terraform-provider-tfe/pull/510/files))
+* r/tfe_team_access: The `permissions` attribute requires `run_tasks` in the block. ([#487](https://github.com/hashicorp/terraform-provider-tfe/pull/487))
 
 BUG FIXES:
 * Prevent overwriting `vcs_repo` attributes in `r/tfe_workspace` when update API call fails ([#498](https://github.com/hashicorp/terraform-provider-tfe/pull/498))
@@ -13,14 +20,6 @@ FEATURES:
 * **New Data Source**: d/tfe_organization_run_task ([#488](https://github.com/hashicorp/terraform-provider-tfe/pull/488))
 * **New Data Source**: d/tfe_workspace_run_task ([#488](https://github.com/hashicorp/terraform-provider-tfe/pull/488))
 * r/tfe_notification_configuration: Add Microsoft Teams notification type ([#484](https://github.com/hashicorp/terraform-provider-tfe/pull/484))
-
-BREAKING CHANGES:
-* r/tfe_workspace: Default value of the `file_triggers_enabled` field is changed to `false`. This will align the
-  `file_triggers_enabled` field default value with the default value for the same field in the 
-  [TFC API](https://www.terraform.io/cloud-docs/api-docs/workspaces).
-  If the value of the `file_triggers_enabled` field was not explicitly set and either of the fields `working_directory`
-  (not an empty string) or `trigger_prefixes` was used - to keep the behavior unchanged, the `file_trigger_enabled` 
-  field should now explicitly be set to `true`. ([#510](https://github.com/hashicorp/terraform-provider-tfe/pull/510/files))
 
 ## 0.31.0 (April 21, 2022)
 
