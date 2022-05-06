@@ -40,28 +40,44 @@ func dataSourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interf
 	// Create an options struct.
 	options := &tfe.OrganizationMembershipListOptions{
 		Include: []tfe.OrgMembershipIncludeOpt{tfe.OrgMembershipUser},
+		Emails:  []string{email},
 	}
 
-	for {
-		organizationMembershipsList, err := tfeClient.OrganizationMemberships.List(ctx, organization, options)
-		if err != nil {
-			return fmt.Errorf("Error retrieving organization memberships: %v", err)
+	oml, err := tfeClient.OrganizationMemberships.List(ctx, organization, options)
+	if err != nil {
+		return fmt.Errorf("Error retrieving organization memberships: %v", err)
+	}
+
+	switch len(oml.Items) {
+	case 0:
+		return fmt.Errorf("Could not find organization membership for organization %s and email %s", organization, email)
+	case 1:
+		d.SetId(oml.Items[0].ID)
+		return resourceTFEOrganizationMembershipRead(d, meta)
+	default:
+		options = &tfe.OrganizationMembershipListOptions{
+			Include: []tfe.OrgMembershipIncludeOpt{tfe.OrgMembershipUser},
 		}
 
-		for _, organizationMembership := range organizationMembershipsList.Items {
-			if organizationMembership.User.Email == email {
-				d.SetId(organizationMembership.ID)
-				return resourceTFEOrganizationMembershipRead(d, meta)
+		for {
+			for _, member := range oml.Items {
+				if member.User.Email == email {
+					d.SetId(member.ID)
+					return resourceTFEOrganizationMembershipRead(d, meta)
+				}
+			}
+
+			if oml.CurrentPage >= oml.TotalPages {
+				break
+			}
+
+			options.PageNumber = oml.NextPage
+
+			oml, err = tfeClient.OrganizationMemberships.List(ctx, organization, options)
+			if err != nil {
+				return fmt.Errorf("Error retrieving organization memberships: %v", err)
 			}
 		}
-
-		// Exit the loop when we've seen all pages.
-		if organizationMembershipsList.CurrentPage >= organizationMembershipsList.TotalPages {
-			break
-		}
-
-		// Update the page number to get the next page.
-		options.PageNumber = organizationMembershipsList.NextPage
 	}
 
 	return fmt.Errorf("Could not find organization membership for organization %s and email %s", organization, email)
