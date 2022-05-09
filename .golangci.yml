@@ -1,0 +1,236 @@
+run:
+  timeout: 5m
+linters:
+# This set of linters are enabled by default: deadcode, errcheck, gosimple, govet, ineffasign, staticcheck, struccheck, typecheck, unused, varcheck
+  enable:
+  # List of all linters: https://golangci-lint.run/usage/linters/
+    - whitespace #https://github.com/ultraware/whitespace
+    - noctx #https://github.com/sonatard/noctx
+    - nilerr #https://github.com/gostaticanalysis/nilerr
+    - nestif #https://github.com/nakabonne/nestif
+    - exportloopref #https://github.com/kyoh86/exportloopref
+    - bodyclose #https://github.com/timakin/bodyclose
+    # - goconst #https://github.com/jgautheron/goconst
+    - stylecheck #https://github.com/dominikh/go-tools/tree/master/stylecheck
+    - revive #golint is deprecated and golangci-lint recommends to use revive instead https://github.com/mgechev/revive
+    #other deprecated lint libraries: maligned, scopelint, interfacer
+    - gocritic #https://github.com/go-critic/go-critic
+    - unparam #https://github.com/mvdan/unparam
+    - misspell #https://github.com/client9/misspell
+    - errorlint #https://github.com/polyfloyd/go-errorlint
+    - gosec #https://github.com/securego/gosec
+    - predeclared #https://github.com/nishanths/predeclared
+    - unconvert #https://github.com/mdempsky/unconvert
+    - wrapcheck #https://github.com/tomarrell/wrapcheck
+issues:
+  exclude-rules:
+  - path: _test\.go
+    linters:
+    - unused
+    - deadcode
+  # Exclude stylecheck underscore warnings in test files since most test files already follow this pattern
+  - linters:
+      - stylecheck
+    path: _test\.go
+    text: "should not use underscores in Go names"
+  # Although errcheck is important for detecting bugs, it is disabled since fixing requires lots of logic testing.
+  # TO-DO: handle errcheck fixes on a separate ticket.
+  - linters:
+      - errcheck
+    path: \.go
+  - linters:
+      - gocritic
+    path: config_unix\.go
+    text: "importShadow: shadow of imported package 'user'"
+  - linters:
+      - gocritic
+    path: resource_tfe_policy_set\.go
+    text: "badRegexp"
+  - linters:
+      - gocritic
+    path: resource_tfe_team_access\.go
+    text: "elseif: can replace 'else {if cond {}}' with 'else if cond {}'"
+  - linters:
+      - gocritic
+    path: data_source_ip_ranges_test\.go
+    text: "regexpSimplify: can re-write"
+  - linters:
+      - gocritic
+    path: resource_tfe_policy_set_test\.go
+    text: "octalLiteral: use new octal literal style"
+  - linters:
+      - gosec
+    path: provider\.go
+    text: "G402: TLS MinVersion too low."
+  # Exclude gosec warnings in test files
+  - linters:
+      - gosec
+    path: _test\.go
+  - linters:
+      - nestif
+    path: (resource_tfe_team_access|resource_tfe_workspace|credentials|resource_tfe_policy_set|
+      resource_tfe_policy_set|resource_tfe_team_members|resource_tfe_notification_configuration|resource_tfe_team)\.go
+  - linters:
+      - revive
+    path: workspace_helpers\.go
+    text: "indent-error-flow: if block ends with a return statement, so drop this else and outdent its block"
+  - linters:
+      - unparam
+    path: _test\.go
+    text: "always receives" # ignore unparam warning for all test files when a function param receives same mock data for it's test examples
+  - linters:
+      - unused
+    path: data_source_outputs\.go
+    text: "var `stderr` is unused" # ignore this warning since stderr was added as a fix for OS override bug. See tfe/data_source_outputs.go file for details
+  - linters:
+      - errorlint
+    path: (data_source_organization|data_source_variable_set|data_source_workspace|resource_tfe_organization_token|
+      -|resource_tfe_team_token|plugin_provider_test|resource_tfe_agent_pool|resource_tfe_agent_token|resource_tfe_organization_module_sharing|
+      -|resource_tfe_policy_set|resource_tfe_policy_set_parameter|resource_tfe_team_members_test|resource_tfe_team_organization_member_test|
+      -|resource_tfe_notification_configuration|resource_tfe_oauth_client|resource_tfe_organization|resource_tfe_organization_membership|resource_tfe_team_members|
+      -|resource_tfe_registry_module|resource_tfe_run_trigger|resource_tfe_sentinel_policy|resource_tfe_ssh_key|resource_tfe_team|resource_tfe_team_access|
+      -|resource_tfe_team_member|resource_tfe_team_organization_member|resource_tfe_terraform_version|resource_tfe_variable_set|resource_tfe_variable|
+      -|resource_tfe_workspace|workspace_helpers)\.go
+    text: "comparing with == will fail on wrapped errors. Use errors.Is to check for a specific error"
+  - linters:
+      - errorlint
+    path: (resource_tfe_organization_token|resource_tfe_team_token|plugin_provider_test|resource_tfe_team_member_test|resource_tfe_team_members_test|
+      -|resource_tfe_team_organization_member_test|resource_tfe_workspace_test)\.go
+    text: "comparing with != will fail on wrapped errors. Use errors.Is to check for a specific error"
+  - linters:
+      - errorlint
+    path: provider\.go
+    text: "type assertion on error will fail on wrapped errors. Use errors.As to check for specific errors"
+  - linters:
+      - gosimple
+    path: resource_tfe_workspace\.go
+    text: "S1002: should omit comparison to bool constant"
+  - linters:
+      - gosimple
+    path: data_source_ip_ranges_test\.go
+    text: "S1039: unnecessary use of fmt.Sprintf"
+  - linters:
+      - gosimple
+    path: resource_tfe_team_members_test\.go
+    text: "S1019: should use make"
+  - linters:
+      - ineffassign
+    path: plugin_provider_test\.go
+    text: "ineffectual assignment to err"
+  - linters:
+      - predeclared
+    path: (resource_tfe_organization|resource_tfe_organization_module_sharing)\.go
+    text: "param new has same name as predeclared identifier"
+  - linters:
+      - staticcheck
+    path: (resource_tfe_team_access_migrate_test|resource_tfe_variable_migrate_test|workspace_helpers_test)\.go
+    text: "SA1012: do not pass a nil Context, even if a function permits it; pass context.TODO if you are unsure about which Context to use"
+  - linters:
+      - staticcheck
+    path: (data_source_outputs|resource_tfe_agent_pool|resource_tfe_notification_configuration|resource_tfe_organization|resource_tfe_registry_module|
+      -|resource_tfe_run_trigger|resource_tfe_team_access|resource_tfe_organization_membership|resource_tfe_policy_set|resource_tfe_team_member|
+      -|resource_tfe_workspace|resource_tfe_team_organization_member|resource_tfe_variable_set)\.go
+    text: "SA1019"
+  - linters:
+      - staticcheck
+    path: plugin_provider_test\.go
+    text: "SA4006"
+  - linters:
+      - stylecheck
+    path: (data_source_variables|resource_tfe_variable|resource_tfe_variable_set|resource_tfe_workspace|data_source_team_test|provider_test|
+      -|resource_tfe_team_members_test)\.go
+    text: "ST1003"
+  - linters: # Exclude error string style checks and keep current terraform error string format
+      - stylecheck
+    text: "ST1005"
+  - linters:
+      - wrapcheck
+    path: (config_unix|data_source_slug|data_source_workspace|provider|resource_tfe_variable|provider_test)\.go
+    text: "error returned from external package is unwrapped"
+  - linters:
+      - wrapcheck
+    path: (logging|plugin_provider|resource_tfe_oauth_client|resource_tfe_organization|resource_tfe_terraform_version|workspace_helpers|resource_tfe_agent_pool_test|
+      -|resource_tfe_agent_token_test|resource_tfe_notification_configuration_test|resource_tfe_oauth_client_test|resource_tfe_organization_membership_test|
+      -|resource_tfe_organization_test|resource_tfe_organization_token_test|resource_tfe_policy_set_parameter_test|resource_tfe_policy_set_test|resource_tfe_registry_module_test|
+      -|resource_tfe_run_trigger_test|resource_tfe_sentinel_policy_test|resource_tfe_ssh_key_test|resource_tfe_team_access_test|resource_tfe_team_member_test|
+      -|resource_tfe_team_member_test|resource_tfe_team_organization_member_test|resource_tfe_team_test|resource_tfe_team_token_test|resource_tfe_terraform_version_test|
+      -|resource_tfe_variable_set_test|resource_tfe_workspace_test|resource_tfe_team_members_test|resource_tfe_team_members_test|resource_tfe_variable_test)\.go
+    text: "error returned from interface method should be wrapped"
+  - linters:
+      - deadcode
+    path: plugin_provider\.go
+    text: "`tfeClient` is unused"
+  - linters:
+      - unused
+    path: plugin_provider\.go
+    text: "var `tfeClient` is unused"
+  - linters:
+      - gocritic
+    path: (client_mock|resource_tfe_organization_module_sharing_test|resource_tfe_policy_set_test|resource_tfe_terraform_version_test)\.go
+    text: "paramTypeCombine"
+  - linters:
+      - misspell
+    path: provider\.go
+    text: "`enviroment` is a misspelling of `environment`"
+  - linters:
+      - unconvert
+    path: resource_tfe_variable\.go
+    text: "unnecessary conversion"
+  - linters:
+      - gocritic
+    path: \.go
+    text: "commentFormatting: put a space between `//` and comment text"
+  - linters:
+      - errorlint
+    path: \.go
+    text: "non-wrapping format verb for fmt.Errorf. Use `%w` to format errors"
+  - linters:
+      - gocritic
+    path: resource_tfe_team_members\.go
+    text: "builtinShadow: shadowing of predeclared identifier: new"
+  - linters:
+      - unparam
+    path: (data_source_organizations|resource_tfe_workspace)\.go
+    text: "is unused"
+  - linters:
+      - stylecheck
+    path: resource_tfe_team_access\.go
+    text: "ST1003: should not use underscores in Go names; var workspace_id should be workspaceID"
+  - linters:
+      - whitespace
+    path: \.go
+    text: "unnecessary trailing|leading newline"
+  - linters:
+      - predeclared
+    path: resource_tfe_team_members\.go
+    text: "variable new has same name as predeclared identifier"
+linters-settings:
+  # errcheck:
+  #   # https://github.com/kisielk/errcheck#excluding-functions
+  #   check-type-assertions: true
+  #   check-blank: true
+  goconst:
+    min-len: 20
+    min-occurrences: 5
+    ignore-calls: false
+    ignore-tests: true
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - opinionated
+      - performance
+    disabled-checks:
+      - unnamedResult
+      - hugeParam
+      - singleCaseSwitch
+      - ifElseChain
+      - nestingReduce
+  revive:
+    # see https://github.com/mgechev/revive#available-rules for details.
+    ignore-generated-header: false #recommended in their configuration
+    severity: warning
+    rules:
+      - name: indent-error-flow #Prevents redundant else statements
+        severity: warning
+      - name: useless-break
+        severity: warning
