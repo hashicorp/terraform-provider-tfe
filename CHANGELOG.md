@@ -1,3 +1,8 @@
+## 0.32.0 (Unreleased)
+
+FEATURES:
+* r/team, d/team: Add manage_run_tasks to the tfe_team organization_access attributes ([#486](https://github.com/hashicorp/terraform-provider-tfe/pull/486))
+
 ## 0.31.0 (April 21, 2022)
 
 BUG FIXES:
