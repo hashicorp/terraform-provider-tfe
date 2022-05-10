@@ -51,6 +51,7 @@ The `organization_access` block supports:
 * `manage_vcs_settings` - (Optional) Allows members to manage the organization's VCS Providers and SSH keys.
 * `manage_providers` - (Optional) Allow members to publish and delete providers in the organization's private registry.
 * `manage_modules` - (Optional) Allow members to publish and delete modules in the organization's private registry.
+* `manage_run_tasks` - (Optional) Allow members to create, edit, and delete the organization's run tasks.
 
 ## Attributes Reference
 
