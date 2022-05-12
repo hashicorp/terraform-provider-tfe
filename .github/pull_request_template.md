@@ -2,6 +2,12 @@
 
 _Describe why you're making this change._
 
+_Remember to:_
+
+- _Update the [Change Log](https://github.com/hashicorp/terraform-provider-tfe/blob/main/README.md#updating-the-changelog)_
+
+- _Update the [Documentation](https://github.com/hashicorp/terraform-provider-tfe/blob/main/README.md#updating-the-documentation)_
+
 ## Testing plan
 
 1.  _Describe how to replicate_
@@ -24,7 +30,7 @@ _Please run applicable acceptance tests locally and include the output here. See
 _If you are an external contributor, your contribution(s) will first be reviewed before running them against the project's CI pipeline._
 
 ```
-$ TESTARGS="-run TestAccTFEWorkspace" make testacc 
+$ TESTARGS="-run TestAccTFEWorkspace" make testacc
 
 ...
 ```
