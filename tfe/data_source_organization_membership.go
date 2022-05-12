@@ -52,6 +52,12 @@ func dataSourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interf
 	case 0:
 		return fmt.Errorf("Could not find organization membership for organization %s and email %s", organization, email)
 	case 1:
+		// We check this just in case a user's TFE instance only has one organization member
+		// and doesn't support the filter query param
+		if oml.Items[0].User.Email != email {
+			return fmt.Errorf("Could not find organization membership for organization %s and email %s", organization, email)
+		}
+
 		d.SetId(oml.Items[0].ID)
 		return resourceTFEOrganizationMembershipRead(d, meta)
 	default:
