@@ -36,30 +36,50 @@ func dataSourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 	name := d.Get("name").(string)
 	organization := d.Get("organization").(string)
 
-	// Create an options struct.
-	options := &tfe.TeamListOptions{}
+	tl, err := tfeClient.Teams.List(ctx, organization, &tfe.TeamListOptions{
+		Names: []string{name},
+	})
+	if err != nil {
+		return fmt.Errorf("Error retrieving teams: %v", err)
+	}
 
-	for {
-		l, err := tfeClient.Teams.List(ctx, organization, options)
-		if err != nil {
-			return fmt.Errorf("Error retrieving teams: %v", err)
+	switch len(tl.Items) {
+	case 0:
+		return fmt.Errorf("Could not find team %s/%s", organization, name)
+	case 1:
+		// We check this just in case a user's TFE instance only has one team
+		// and doesn't support the filter query param
+		if tl.Items[0].Name != name {
+			return fmt.Errorf("Could not find team %s/%s", organization, name)
 		}
 
-		for _, tm := range l.Items {
-			if tm.Name == name {
-				d.SetId(tm.ID)
-				d.Set("sso_team_id", tm.SSOTeamID)
-				return nil
+		d.SetId(tl.Items[0].ID)
+		d.Set("sso_team_id", tl.Items[0].SSOTeamID)
+
+		return nil
+	default:
+		options := &tfe.TeamListOptions{}
+
+		for {
+			for _, team := range tl.Items {
+				if team.Name == name {
+					d.SetId(tl.Items[0].ID)
+					d.Set("sso_team_id", tl.Items[0].SSOTeamID)
+					return nil
+				}
+			}
+
+			if tl.CurrentPage >= tl.TotalPages {
+				break
+			}
+
+			options.PageNumber = tl.NextPage
+
+			tl, err = tfeClient.Teams.List(ctx, organization, options)
+			if err != nil {
+				return fmt.Errorf("Error retrieving teams: %v", err)
 			}
 		}
-
-		// Exit the loop when we've seen all pages.
-		if l.CurrentPage >= l.TotalPages {
-			break
-		}
-
-		// Update the page number to get the next page.
-		options.PageNumber = l.NextPage
 	}
 
 	return fmt.Errorf("Could not find team %s/%s", organization, name)
