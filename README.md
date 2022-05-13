@@ -131,6 +131,13 @@ You may want to create configs or run tests against a local version of `go-tfe`.
 replace github.com/hashicorp/go-tfe => /path-to-local-repo/go-tfe
 ```
 
+### Running the Linters Locally
+
+1. Ensure you have [installed golangci-lint](https://golangci-lint.run/usage/install/#local-installation)
+2. From the CLI, run `golangci-lint run`
+
+Optionally, to integrate golangci-lint into your editor, see [golangci-lint editor integration](https://golangci-lint.run/usage/integrations/)
+
 ### Running the tests
 
 See [TESTS.md](https://github.com/hashicorp/terraform-provider-tfe/tree/main/TESTS.md).
