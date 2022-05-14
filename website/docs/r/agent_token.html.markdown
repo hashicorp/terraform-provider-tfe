@@ -42,6 +42,8 @@ The following arguments are supported:
 
 * `agent_pool_id` - (Required) ID of the agent pool.
 * `description` - (Required) Description of the agent token.
+* `keepers` - (Optional) Arbitrary map of values that, when changed, will trigger
+  a new token to be generated.
 
 ## Attributes Reference
 

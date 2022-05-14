@@ -29,6 +29,8 @@ The following arguments are supported:
 * `force_regenerate` - (Optional) If set to `true`, a new token will be
   generated even if a token already exists. This will invalidate the existing
   token!
+* `keepers` - (Optional) Arbitrary map of values that, when changed, will trigger
+  a new token to be generated.
 
 ## Attributes Reference
 

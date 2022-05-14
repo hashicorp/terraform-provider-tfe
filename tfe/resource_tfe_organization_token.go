@@ -35,6 +35,13 @@ func resourceTFEOrganizationToken() *schema.Resource {
 				Computed:  true,
 				Sensitive: true,
 			},
+
+			"keepers": {
+				Description: "Arbitrary map of values that, when changed, will trigger recreation of resource.",
+				Type:        schema.TypeMap,
+				Optional:    true,
+				ForceNew:    true,
+			},
 		},
 	}
 }
