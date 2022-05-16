@@ -469,6 +469,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		log.Printf("[DEBUG] Update workspace %s", id)
 		_, err := tfeClient.Workspaces.UpdateByID(ctx, id, options)
 		if err != nil {
+			d.Partial(true)
 			return fmt.Errorf(
 				"Error updating workspace %s: %v", id, err)
 		}
@@ -482,6 +483,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		if !ok {
 			_, err := tfeClient.Workspaces.RemoveVCSConnectionByID(ctx, id)
 			if err != nil {
+				d.Partial(true)
 				return fmt.Errorf("Error removing VCS repo from workspace %s: %v", id, err)
 			}
 		}
