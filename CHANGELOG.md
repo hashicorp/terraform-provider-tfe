@@ -1,3 +1,8 @@
+## 0.32.0 (Unreleased)
+
+BUG FIXES:
+* Prevent overwriting `vcs_repo` attributes in `r/tfe_workspace` when update API call fails ([#498](https://github.com/hashicorp/terraform-provider-tfe/pull/498))
+
 ## 0.31.0 (April 21, 2022)
 
 BUG FIXES:
