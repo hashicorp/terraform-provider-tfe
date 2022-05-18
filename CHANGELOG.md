@@ -142,6 +142,12 @@ BUG FIXES:
 * Fix panic crash on `trigger_prefixes` update in `r/tfe_workspace` when given empty strings ([#518](https://github.com/hashicorp/terraform-provider-tfe/pull/518))
 
 FEATURES:
+* **New Resource:** `tfe_settings_cost_estimation` can now be used to manage Cost Estimation settings.
+* **New Resource:** `tfe_settings_customization` can now be used to manage Customization settings.
+* **New Resource:** `tfe_settings_general` can now be used to manage general settings.
+* **New Resource:** `tfe_settings_saml` can now be used to manage SAML settings.
+* **New Resource:** `tfe_settings_smtp` can now be used to manage SMTP settings.
+* **New Resource:** `tfe_settings_twilio` can now be used to manage Twilio settings.
 * r/team, d/team: Add manage_run_tasks to the tfe_team organization_access attributes ([#486](https://github.com/hashicorp/terraform-provider-tfe/pull/486))
 * **New Resource**: `tfe_organization_run_task` ([#488](https://github.com/hashicorp/terraform-provider-tfe/pull/488))
 * **New Resource**: `tfe_workspace_run_task` ([#488](https://github.com/hashicorp/terraform-provider-tfe/pull/488))
