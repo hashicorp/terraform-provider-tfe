@@ -44,6 +44,8 @@ func resourceTFEWorkspace() *schema.Resource {
 				return err
 			}
 
+			validateVcsTriggers(d)
+
 			return nil
 		},
 
@@ -161,10 +163,19 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"trigger_prefixes": {
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Type:          schema.TypeList,
+				Optional:      true,
+				Computed:      true,
+				Elem:          &schema.Schema{Type: schema.TypeString},
+				ConflictsWith: []string{"trigger_patterns"},
+			},
+
+			"trigger_patterns": {
+				Type:          schema.TypeList,
+				Optional:      true,
+				Computed:      true,
+				Elem:          &schema.Schema{Type: schema.TypeString},
+				ConflictsWith: []string{"trigger_prefixes"},
 			},
 
 			"working_directory": {
@@ -250,11 +261,19 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		options.TerraformVersion = tfe.String(tfVersion.(string))
 	}
 
-	if tps, ok := d.GetOk("trigger_prefixes"); ok {
+	if d.HasChange("trigger_prefixes") {
+		tps := d.Get("trigger_prefixes")
+		options.TriggerPrefixes = []string{}
 		for _, tp := range tps.([]interface{}) {
-			if t, ok := tp.(string); ok {
-				options.TriggerPrefixes = append(options.TriggerPrefixes, t)
-			}
+			options.TriggerPrefixes = append(options.TriggerPrefixes, tp.(string))
+		}
+	}
+
+	if d.HasChange("trigger_patterns") {
+		tpn := d.Get("trigger_patterns")
+		options.TriggerPatterns = []string{}
+		for _, tp := range tpn.([]interface{}) {
+			options.TriggerPatterns = append(options.TriggerPatterns, tp.(string))
 		}
 	}
 
@@ -342,6 +361,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("structured_run_output_enabled", workspace.StructuredRunOutputEnabled)
 	d.Set("terraform_version", workspace.TerraformVersion)
 	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
+	d.Set("trigger_patterns", workspace.TriggerPatterns)
 	d.Set("working_directory", workspace.WorkingDirectory)
 	d.Set("organization", workspace.Organization.Name)
 
@@ -397,8 +417,9 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 	id := d.Id()
 
 	if d.HasChange("name") || d.HasChange("auto_apply") || d.HasChange("queue_all_runs") ||
-		d.HasChange("terraform_version") || d.HasChange("working_directory") || d.HasChange("vcs_repo") ||
-		d.HasChange("file_triggers_enabled") || d.HasChange("trigger_prefixes") ||
+		d.HasChange("terraform_version") || d.HasChange("working_directory") ||
+		d.HasChange("vcs_repo") || d.HasChange("file_triggers_enabled") ||
+		d.HasChange("trigger_prefixes") || d.HasChange("trigger_patterns") ||
 		d.HasChange("allow_destroy_plan") || d.HasChange("speculative_enabled") ||
 		d.HasChange("operations") || d.HasChange("execution_mode") ||
 		d.HasChange("description") || d.HasChange("agent_pool_id") ||
@@ -445,9 +466,16 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			for _, tp := range tps.([]interface{}) {
 				options.TriggerPrefixes = append(options.TriggerPrefixes, tp.(string))
 			}
-		} else {
-			// Reset trigger prefixes when none are present in the config.
-			options.TriggerPrefixes = []string{}
+		}
+
+		if d.HasChange("trigger_patterns") {
+			if tps, ok := d.GetOk("trigger_patterns"); ok {
+				for _, tp := range tps.([]interface{}) {
+					options.TriggerPatterns = append(options.TriggerPatterns, tp.(string))
+				}
+			} else {
+				options.TriggerPatterns = []string{}
+			}
 		}
 
 		if workingDir, ok := d.GetOk("working_directory"); ok {
@@ -643,6 +671,14 @@ func validateRemoteState(_ context.Context, d *schema.ResourceDiff, meta interfa
 	}
 
 	return nil
+}
+
+func validateVcsTriggers(d *schema.ResourceDiff) {
+	if d.HasChange("trigger_patterns") {
+		d.SetNewComputed("trigger_prefixes")
+	} else if d.HasChange("trigger_prefixes") {
+		d.SetNewComputed("trigger_patterns")
+	}
 }
 
 func resourceTFEWorkspaceImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
