@@ -112,6 +112,36 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspaceDataSource_with_trigger_patterns(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d-ff-on", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspaceDataSourceConfigWithTriggerPatterns(rInt),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "id"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "name", fmt.Sprintf("workspace-test-%d", rInt)),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "organization", orgName),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "file_triggers_enabled", "true"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "trigger_patterns.#", "2"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "trigger_patterns.0", "/modules/**/*"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "trigger_patterns.1", "/**/network/*"),
+				),
+			},
+		},
+	})
+}
+
 func testAccTFEWorkspaceDataSourceConfig(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
@@ -132,13 +162,35 @@ resource "tfe_workspace" "foobar" {
   terraform_version     = "0.11.1"
   trigger_prefixes      = ["/modules", "/shared"]
   working_directory     = "terraform/test"
-	global_remote_state   = true
+  global_remote_state   = true
 }
 
 data "tfe_workspace" "foobar" {
   name         = tfe_workspace.foobar.name
   organization = tfe_workspace.foobar.organization
-	depends_on   = [tfe_workspace.foobar]
+  depends_on   = [tfe_workspace.foobar]
+}`, rInt, rInt)
+}
+
+func testAccTFEWorkspaceDataSourceConfigWithTriggerPatterns(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d-ff-on"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name                  = "workspace-test-%d"
+  organization          = tfe_organization.foobar.id
+  file_triggers_enabled = true
+  trigger_patterns      = ["/modules/**/*", "/**/network/*"]
+  working_directory     = "terraform/test"
+}
+
+data "tfe_workspace" "foobar" {
+  name         = tfe_workspace.foobar.name
+  organization = tfe_workspace.foobar.organization
+  depends_on   = [tfe_workspace.foobar]
 }`, rInt, rInt)
 }
 
