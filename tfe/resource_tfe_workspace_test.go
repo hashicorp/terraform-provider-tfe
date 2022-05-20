@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"regexp"
 	"strconv"
 	"testing"
 	"time"
@@ -406,6 +407,22 @@ func TestAccTFEWorkspace_updateTriggerPatterns(t *testing.T) {
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "trigger_patterns.#", "0"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspace_patternsAndPrefixesConflicting(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFEWorkspace_prefixesAndPatternsConflicting(rInt),
+				ExpectError: regexp.MustCompile(`Conflicting configuration`),
 			},
 		},
 	})
@@ -1707,6 +1724,20 @@ resource "tfe_workspace" "foobar" {
   name                  = "workspace-test"
   organization          = tfe_organization.foobar.id
   auto_apply            = true
+  trigger_patterns      = []
+}`, rInt)
+}
+
+func testAccTFEWorkspace_prefixesAndPatternsConflicting(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d-ff-on"
+  email = "admin@company.com"
+}
+resource "tfe_workspace" "foobar" {
+  name                  = "workspace-test"
+  organization          = tfe_organization.foobar.id
+  trigger_prefixes      = []
   trigger_patterns      = []
 }`, rInt)
 }
