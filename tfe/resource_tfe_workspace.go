@@ -262,18 +262,22 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	if d.HasChange("trigger_prefixes") {
-		tps := d.Get("trigger_prefixes")
-		options.TriggerPrefixes = []string{}
-		for _, tp := range tps.([]interface{}) {
-			options.TriggerPrefixes = append(options.TriggerPrefixes, tp.(string))
+		if tps, ok := d.GetOk("trigger_prefixes"); ok {
+			for _, tp := range tps.([]interface{}) {
+				options.TriggerPrefixes = append(options.TriggerPrefixes, tp.(string))
+			}
+		} else {
+			options.TriggerPrefixes = []string{}
 		}
 	}
 
 	if d.HasChange("trigger_patterns") {
-		tpn := d.Get("trigger_patterns")
-		options.TriggerPatterns = []string{}
-		for _, tp := range tpn.([]interface{}) {
-			options.TriggerPatterns = append(options.TriggerPatterns, tp.(string))
+		if tps, ok := d.GetOk("trigger_patterns"); ok {
+			for _, tp := range tps.([]interface{}) {
+				options.TriggerPatterns = append(options.TriggerPatterns, tp.(string))
+			}
+		} else {
+			options.TriggerPatterns = []string{}
 		}
 	}
 
@@ -462,9 +466,13 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			options.TerraformVersion = tfe.String(tfVersion.(string))
 		}
 
-		if tps, ok := d.GetOk("trigger_prefixes"); ok {
-			for _, tp := range tps.([]interface{}) {
-				options.TriggerPrefixes = append(options.TriggerPrefixes, tp.(string))
+		if d.HasChange("trigger_prefixes") {
+			if tps, ok := d.GetOk("trigger_prefixes"); ok {
+				for _, tp := range tps.([]interface{}) {
+					options.TriggerPrefixes = append(options.TriggerPrefixes, tp.(string))
+				}
+			} else {
+				options.TriggerPrefixes = []string{}
 			}
 		}
 

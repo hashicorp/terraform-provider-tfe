@@ -1669,20 +1669,6 @@ resource "tfe_workspace" "foobar" {
 }`, rInt)
 }
 
-func testAccTFEWorkspace_triggerPatterns(rInt int) string {
-	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d-ff-on"
-  email = "admin@company.com"
-}
-
-resource "tfe_workspace" "foobar" {
-  name                  = "workspace"
-  organization          = tfe_organization.foobar.id
-  trigger_patterns      = ["/modules/**/*", "/**/networking/*"]
-}`, rInt)
-}
-
 func testAccTFEWorkspace_updateEmptyTriggerPrefixes(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
@@ -1694,6 +1680,20 @@ resource "tfe_workspace" "foobar" {
   organization          = tfe_organization.foobar.id
   auto_apply            = true
   trigger_prefixes      = []
+}`, rInt)
+}
+
+func testAccTFEWorkspace_triggerPatterns(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d-ff-on"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name                  = "workspace"
+  organization          = tfe_organization.foobar.id
+  trigger_patterns      = ["/modules/**/*", "/**/networking/*"]
 }`, rInt)
 }
 
