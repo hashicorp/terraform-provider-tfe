@@ -69,6 +69,11 @@ func resourceTFETeam() *schema.Resource {
 							Optional: true,
 							Default:  false,
 						},
+						"manage_run_tasks": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
+						},
 					},
 				},
 			},
@@ -111,6 +116,7 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 			ManageVCSSettings:     tfe.Bool(organizationAccess["manage_vcs_settings"].(bool)),
 			ManageProviders:       tfe.Bool(organizationAccess["manage_providers"].(bool)),
 			ManageModules:         tfe.Bool(organizationAccess["manage_modules"].(bool)),
+			ManageRunTasks:        tfe.Bool(organizationAccess["manage_run_tasks"].(bool)),
 		}
 	}
 
@@ -166,6 +172,7 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 			"manage_vcs_settings":     team.OrganizationAccess.ManageVCSSettings,
 			"manage_providers":        team.OrganizationAccess.ManageProviders,
 			"manage_modules":          team.OrganizationAccess.ManageModules,
+			"manage_run_tasks":        team.OrganizationAccess.ManageRunTasks,
 		}}
 		if err := d.Set("organization_access", organizationAccess); err != nil {
 			return fmt.Errorf("error setting organization access for team %s: %s", d.Id(), err)
@@ -198,6 +205,7 @@ func resourceTFETeamUpdate(d *schema.ResourceData, meta interface{}) error {
 			ManageVCSSettings:     tfe.Bool(organizationAccess["manage_vcs_settings"].(bool)),
 			ManageProviders:       tfe.Bool(organizationAccess["manage_providers"].(bool)),
 			ManageModules:         tfe.Bool(organizationAccess["manage_modules"].(bool)),
+			ManageRunTasks:        tfe.Bool(organizationAccess["manage_run_tasks"].(bool)),
 		}
 	}
 
