@@ -2,6 +2,7 @@ package tfe
 
 import (
 	"fmt"
+	"github.com/hashicorp/go-tfe"
 	"math/rand"
 	"strconv"
 	"testing"
@@ -112,22 +113,37 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 	})
 }
 
-func TestAccTFEWorkspaceDataSource_with_trigger_patterns(t *testing.T) {
+func TestAccTFEWorkspaceDataSourceWithTriggerPatterns(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatalf("error getting client %v", err)
+	}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	orgName := fmt.Sprintf("tst-terraform-%d-ff-on", rInt)
+	organization, orgCleanup := givenOrganization(t, tfeClient, fmt.Sprintf("tst-terraform-%d-ff-on", rInt))
+	defer orgCleanup()
+
+	workspaceName := fmt.Sprintf("workspace-%d", rInt)
+	_, err = tfeClient.Workspaces.Create(ctx, organization.Name, tfe.WorkspaceCreateOptions{
+		Name:                &workspaceName,
+		FileTriggersEnabled: tfe.Bool(true),
+		TriggerPatterns:     []string{"/modules/**/*", "/**/networking/*"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspaceDataSourceConfigWithTriggerPatterns(rInt),
+				Config: testAccTFEWorkspaceDataSourceConfigWithTriggerPatterns(workspaceName, organization.Name),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "id"),
 					resource.TestCheckResourceAttr(
-						"data.tfe_workspace.foobar", "name", fmt.Sprintf("workspace-test-%d", rInt)),
+						"data.tfe_workspace.foobar", "name", workspaceName),
 					resource.TestCheckResourceAttr(
-						"data.tfe_workspace.foobar", "organization", orgName),
+						"data.tfe_workspace.foobar", "organization", organization.Name),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "file_triggers_enabled", "true"),
 					resource.TestCheckResourceAttr(
@@ -135,7 +151,7 @@ func TestAccTFEWorkspaceDataSource_with_trigger_patterns(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "trigger_patterns.0", "/modules/**/*"),
 					resource.TestCheckResourceAttr(
-						"data.tfe_workspace.foobar", "trigger_patterns.1", "/**/network/*"),
+						"data.tfe_workspace.foobar", "trigger_patterns.1", "/**/networking/*"),
 				),
 			},
 		},
@@ -172,26 +188,12 @@ data "tfe_workspace" "foobar" {
 }`, rInt, rInt)
 }
 
-func testAccTFEWorkspaceDataSourceConfigWithTriggerPatterns(rInt int) string {
+func testAccTFEWorkspaceDataSourceConfigWithTriggerPatterns(workspaceName string, organizationName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d-ff-on"
-  email = "admin@company.com"
-}
-
-resource "tfe_workspace" "foobar" {
-  name                  = "workspace-test-%d"
-  organization          = tfe_organization.foobar.id
-  file_triggers_enabled = true
-  trigger_patterns      = ["/modules/**/*", "/**/network/*"]
-  working_directory     = "terraform/test"
-}
-
 data "tfe_workspace" "foobar" {
-  name         = tfe_workspace.foobar.name
-  organization = tfe_workspace.foobar.organization
-  depends_on   = [tfe_workspace.foobar]
-}`, rInt, rInt)
+  name         = "%s"
+  organization = "%s"
+}`, workspaceName, organizationName)
 }
 
 func testAccTFEWorkspaceDataSourceConfig_remoteStateConsumers(rInt1, rInt2 int) string {
@@ -218,4 +220,26 @@ data "tfe_workspace" "foobar" {
   organization = tfe_workspace.foobar.organization
 	depends_on   = [tfe_workspace.foobar]
 }`, rInt1, rInt2, rInt1)
+}
+
+func givenOrganization(t *testing.T, tfeClient *tfe.Client, organizationName string) (*tfe.Organization, func()) {
+	var orgCleanup func()
+
+	dummyEmail := "test@test.test"
+	org, err := tfeClient.Organizations.Create(ctx, tfe.OrganizationCreateOptions{
+		Name:  tfe.String(organizationName),
+		Email: &dummyEmail,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	orgCleanup = func() {
+		if err := tfeClient.Organizations.Delete(ctx, org.Name); err != nil {
+			t.Errorf("Error destroying organization! WARNING: Dangling resources\n"+
+				"may exist! The full error is shown below.\n\n"+
+				"Organization: %s\nError: %s", org.Name, err)
+		}
+	}
+
+	return org, orgCleanup
 }
