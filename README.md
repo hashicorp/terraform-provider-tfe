@@ -168,3 +168,4 @@ markdown will display correctly on the Registry:
 - ENHANCEMENTS: Use this for smaller new features added.
 - BUG FIXES: Use this for any bugs that were fixed.
 - NOTES: Use this section if you need to include any additional notes on things like upgrading, upcoming deprecations, or any other information you might want to highlight.
+
