@@ -147,7 +147,7 @@ func resourceTFEOAuthClientCreate(d *schema.ResourceData, meta interface{}) erro
 	oc, err := tfeClient.OAuthClients.Create(ctx, organization, options)
 	if err != nil {
 		return fmt.Errorf(
-			"Error creating OAuth client for organization %s: %v", organization, err)
+			"Error creating OAuth client for organization %s: %w", organization, err)
 	}
 
 	d.SetId(oc.ID)
@@ -196,7 +196,7 @@ func resourceTFEOAuthClientDelete(d *schema.ResourceData, meta interface{}) erro
 		if err == tfe.ErrResourceNotFound {
 			return nil
 		}
-		return fmt.Errorf("Error deleting OAuth client %s: %v", d.Id(), err)
+		return fmt.Errorf("Error deleting OAuth client %s: %w", d.Id(), err)
 	}
 
 	return nil

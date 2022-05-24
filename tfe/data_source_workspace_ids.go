@@ -89,7 +89,7 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 	for {
 		wl, err := tfeClient.Workspaces.List(ctx, organization, options)
 		if err != nil {
-			return fmt.Errorf("Error retrieving workspaces: %v", err)
+			return fmt.Errorf("Error retrieving workspaces: %w", err)
 		}
 
 		for _, w := range wl.Items {

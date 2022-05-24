@@ -76,7 +76,7 @@ func dataSourceTFEWorkspaceVariables() *schema.Resource {
 }
 
 func dataSourceVariableRead(d *schema.ResourceData, meta interface{}) error {
-	//Switch to variable set variable logic
+	// Switch to variable set variable logic
 	_, variableSetIdProvided := d.GetOk("variable_set_id")
 	if variableSetIdProvided {
 		return dataSourceVariableSetVariableRead(d, meta)

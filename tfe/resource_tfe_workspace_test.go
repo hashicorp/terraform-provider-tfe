@@ -711,7 +711,6 @@ func TestAccTFEWorkspace_importVCSBranch(t *testing.T) {
 			if GITHUB_WORKSPACE_BRANCH == "" {
 				t.Skip("Please set GITHUB_WORKSPACE_BRANCH to run this test")
 			}
-
 		},
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
@@ -1003,7 +1002,7 @@ func testAccCheckTFEWorkspacePanic(n string) resource.TestCheckFunc {
 
 		err := tfeClient.Workspaces.DeleteByID(ctx, rs.Primary.ID)
 		if err != nil {
-			return fmt.Errorf("Could not delete %s: %v", n, err)
+			return fmt.Errorf("Could not delete %s: %w", n, err)
 		}
 
 		// Read the workspace again using the lower level resource reader
@@ -1013,7 +1012,7 @@ func testAccCheckTFEWorkspacePanic(n string) resource.TestCheckFunc {
 
 		err = resourceTFEWorkspaceRead(rd, testAccProvider.Meta())
 		if err != nil && err != tfe.ErrResourceNotFound {
-			return fmt.Errorf("Could not re-read resource directly: %v", err)
+			return fmt.Errorf("Could not re-read resource directly: %w", err)
 		}
 
 		return nil

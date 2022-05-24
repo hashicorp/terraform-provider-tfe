@@ -146,14 +146,14 @@ func resourceTFETeamAccessCreate(d *schema.ResourceData, meta interface{}) error
 	ws, err := tfeClient.Workspaces.ReadByID(ctx, workspaceID)
 	if err != nil {
 		return fmt.Errorf(
-			"Error retrieving workspace %s: %v", workspaceID, err)
+			"Error retrieving workspace %s: %w", workspaceID, err)
 	}
 
 	// Get the team.
 	teamID := d.Get("team_id").(string)
 	tm, err := tfeClient.Teams.Read(ctx, teamID)
 	if err != nil {
-		return fmt.Errorf("Error retrieving team %s: %v", teamID, err)
+		return fmt.Errorf("Error retrieving team %s: %w", teamID, err)
 	}
 
 	// Create a new options struct.
@@ -197,7 +197,7 @@ func resourceTFETeamAccessCreate(d *schema.ResourceData, meta interface{}) error
 	tmAccess, err := tfeClient.TeamAccess.Add(ctx, options)
 	if err != nil {
 		return fmt.Errorf(
-			"Error giving team %s %s access to workspace %s: %v", tm.Name, access, ws.Name, err)
+			"Error giving team %s %s access to workspace %s: %w", tm.Name, access, ws.Name, err)
 	}
 
 	d.SetId(tmAccess.ID)
@@ -216,7 +216,7 @@ func resourceTFETeamAccessRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading configuration of team access %s: %v", d.Id(), err)
+		return fmt.Errorf("Error reading configuration of team access %s: %w", d.Id(), err)
 	}
 
 	// Update config.
@@ -229,7 +229,7 @@ func resourceTFETeamAccessRead(d *schema.ResourceData, meta interface{}) error {
 		"workspace_locking": tmAccess.WorkspaceLocking,
 	}}
 	if err := d.Set("permissions", permissions); err != nil {
-		return fmt.Errorf("error setting permissions for team access %s: %s", d.Id(), err)
+		return fmt.Errorf("error setting permissions for team access %s: %w", d.Id(), err)
 	}
 
 	if tmAccess.Team != nil {
@@ -285,7 +285,7 @@ func resourceTFETeamAccessUpdate(d *schema.ResourceData, meta interface{}) error
 	tmAccess, err := tfeClient.TeamAccess.Update(ctx, d.Id(), options)
 	if err != nil {
 		return fmt.Errorf(
-			"Error updating team access %s: %v", d.Id(), err)
+			"Error updating team access %s: %w", d.Id(), err)
 	}
 
 	// Update permissions, in the case that they were marked to be recomputed.
@@ -297,7 +297,7 @@ func resourceTFETeamAccessUpdate(d *schema.ResourceData, meta interface{}) error
 		"workspace_locking": tmAccess.WorkspaceLocking,
 	}}
 	if err := d.Set("permissions", permissions); err != nil {
-		return fmt.Errorf("error setting permissions for team access %s: %s", d.Id(), err)
+		return fmt.Errorf("error setting permissions for team access %s: %w", d.Id(), err)
 	}
 
 	return nil
@@ -312,7 +312,7 @@ func resourceTFETeamAccessDelete(d *schema.ResourceData, meta interface{}) error
 		if err == tfe.ErrResourceNotFound {
 			return nil
 		}
-		return fmt.Errorf("Error deleting team access %s: %v", d.Id(), err)
+		return fmt.Errorf("Error deleting team access %s: %w", d.Id(), err)
 	}
 
 	return nil
@@ -330,12 +330,12 @@ func resourceTFETeamAccessImporter(d *schema.ResourceData, meta interface{}) ([]
 	}
 
 	// Set the fields that are part of the import ID.
-	workspace_id, err := fetchWorkspaceExternalID(s[0]+"/"+s[1], tfeClient)
+	workspaceID, err := fetchWorkspaceExternalID(s[0]+"/"+s[1], tfeClient)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"error retrieving workspace %s from organization %s: %v", s[1], s[0], err)
+			"error retrieving workspace %s from organization %s: %w", s[1], s[0], err)
 	}
-	d.Set("workspace_id", workspace_id)
+	d.Set("workspace_id", workspaceID)
 	d.SetId(s[2])
 
 	return []*schema.ResourceData{d}, nil
@@ -380,7 +380,7 @@ func setCustomOrComputedPermissions(_ context.Context, d *schema.ResourceDiff, m
 				if _, ok := d.GetOk("permissions"); ok {
 					// If the resource is new, the value for access isn't known, and permissions are
 					// present, the user must be creating a new resource with custom access.
-					//Set access to custom.
+					// Set access to custom.
 					if err := setCustomAccess(d); err != nil {
 						return err
 					}

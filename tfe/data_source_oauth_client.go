@@ -40,7 +40,7 @@ func dataSourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) erro
 
 	oc, err := tfeClient.OAuthClients.Read(ctx, ocID)
 	if err != nil {
-		return fmt.Errorf("Error retrieving OAuth client: %v", err)
+		return fmt.Errorf("Error retrieving OAuth client: %w", err)
 	}
 
 	d.SetId(oc.ID)
@@ -53,7 +53,7 @@ func dataSourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) erro
 	case 1:
 		d.Set("oauth_token_id", oc.OAuthTokens[0].ID)
 	default:
-		return fmt.Errorf("Unexpected number of OAuth tokens: %d", len(oc.OAuthTokens))
+		return fmt.Errorf("Unexpected number of OAuth tokens: %d", len(oc.OAuthTokens)) // nolint:golint,errorlint
 	}
 
 	return nil

@@ -31,7 +31,6 @@ func TestPackTeamOrganizationMemberID(t *testing.T) {
 			t.Fatalf("expected ID %q, got %q", tc.id, id)
 		}
 	}
-
 }
 
 func TestUnpackTeamOrganizationMemberID(t *testing.T) {
@@ -69,7 +68,6 @@ func TestUnpackTeamOrganizationMemberID(t *testing.T) {
 			t.Fatalf("expected organizationMembershipID %q, got %q", tc.organizationMembershipID, organizationMembershipID)
 		}
 	}
-
 }
 
 func TestAccTFETeamOrganizationMember_basic(t *testing.T) {
@@ -131,7 +129,7 @@ func testAccCheckTFETeamOrganizationMemberExists(
 		// Get the team ID and organization membership id.
 		teamID, organizationMembershipID, err := unpackTeamOrganizationMemberID(rs.Primary.ID)
 		if err != nil {
-			return fmt.Errorf("Error unpacking team organization member ID: %v", err)
+			return fmt.Errorf("Error unpacking team organization member ID: %w", err)
 		}
 
 		organizationMemberships, err := tfeClient.TeamMembers.ListOrganizationMemberships(ctx, teamID)
@@ -181,7 +179,7 @@ func testAccCheckTFETeamOrganizationMemberDestroy(s *terraform.State) error {
 		// Get the team ID and organzation membership ID.
 		teamID, organizationMembershipID, err := unpackTeamOrganizationMemberID(rs.Primary.ID)
 		if err != nil {
-			return fmt.Errorf("Error unpacking team organization member ID: %v", err)
+			return fmt.Errorf("Error unpacking team organization member ID: %w", err)
 		}
 
 		organizationMemberships, err := tfeClient.TeamMembers.ListOrganizationMemberships(ctx, teamID)

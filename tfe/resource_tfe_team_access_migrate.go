@@ -48,7 +48,7 @@ func resourceTfeTeamAccessStateUpgradeV0(_ context.Context, rawState map[string]
 	humanID := rawState["workspace_id"].(string)
 	id, err := fetchWorkspaceExternalID(humanID, tfeClient)
 	if err != nil {
-		return nil, fmt.Errorf("Error reading configuration of workspace %s: %v", humanID, err)
+		return nil, fmt.Errorf("Error reading configuration of workspace %s: %w", humanID, err)
 	}
 
 	rawState["workspace_id"] = id

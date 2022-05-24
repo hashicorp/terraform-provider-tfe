@@ -123,27 +123,27 @@ func (d dataSourceOutputs) readConfigValues(req *tfprotov5.ReadDataSourceRequest
 			"id":           tftypes.String,
 		}})
 	if err != nil {
-		return orgName, wsName, fmt.Errorf("Error unmarshalling config: %v", err)
+		return orgName, wsName, fmt.Errorf("Error unmarshalling config: %w", err)
 	}
 
 	var valMap map[string]tftypes.Value
 	err = val.As(&valMap)
 	if err != nil {
-		return orgName, wsName, fmt.Errorf("Error assigning configuration attributes to map: %v", err)
+		return orgName, wsName, fmt.Errorf("Error assigning configuration attributes to map: %w", err)
 	}
 
 	if valMap["organization"].IsNull() || valMap["workspace"].IsNull() {
-		return orgName, wsName, fmt.Errorf("Organization and Workspace cannot be nil: %v", err)
+		return orgName, wsName, fmt.Errorf("Organization and Workspace cannot be nil: %w", err)
 	}
 
 	err = valMap["organization"].As(&orgName)
 	if err != nil {
-		return orgName, wsName, fmt.Errorf("Error assigning 'organization' value to string: %v", err)
+		return orgName, wsName, fmt.Errorf("Error assigning 'organization' value to string: %w", err)
 	}
 
 	err = valMap["workspace"].As(&wsName)
 	if err != nil {
-		return orgName, wsName, fmt.Errorf("Error assigning 'workspace' value to string: %v", err)
+		return orgName, wsName, fmt.Errorf("Error assigning 'workspace' value to string: %w", err)
 	}
 
 	return orgName, wsName, nil
@@ -164,7 +164,7 @@ func (d dataSourceOutputs) readStateOutput(ctx context.Context, tfeClient *tfe.C
 	}
 	ws, err := tfeClient.Workspaces.ReadWithOptions(ctx, orgName, wsName, opts)
 	if err != nil {
-		return nil, fmt.Errorf("Error reading workspace: %v", err)
+		return nil, fmt.Errorf("Error reading workspace: %w", err)
 	}
 
 	sd := &stateData{
@@ -174,13 +174,13 @@ func (d dataSourceOutputs) readStateOutput(ctx context.Context, tfeClient *tfe.C
 	for _, op := range ws.Outputs {
 		buf, err := json.Marshal(op.Value)
 		if err != nil {
-			return nil, fmt.Errorf("Could not marshal output value: %v", err)
+			return nil, fmt.Errorf("Could not marshal output value: %w", err)
 		}
 
 		v := ctyjson.SimpleJSONValue{}
 		err = v.UnmarshalJSON(buf)
 		if err != nil {
-			return nil, fmt.Errorf("Could not unmarshal output value: %v", err)
+			return nil, fmt.Errorf("Could not unmarshal output value: %w", err)
 		}
 		sd.outputs[op.Name] = &outputData{
 			Value: v.Value,
@@ -197,22 +197,22 @@ func parseStateOutput(stateOutput *stateData) (map[string]tftypes.Value, map[str
 	for name, output := range stateOutput.outputs {
 		marshData, err := output.Value.Type().MarshalJSON()
 		if err != nil {
-			return nil, nil, fmt.Errorf("Could not marshal output type: %v", err)
+			return nil, nil, fmt.Errorf("Could not marshal output type: %w", err)
 		}
 		tfType, err := tftypes.ParseJSONType(marshData)
 		if err != nil {
-			return nil, nil, fmt.Errorf("Could not parse json type data: %v", err)
+			return nil, nil, fmt.Errorf("Could not parse json type data: %w", err)
 		}
 		mByte, err := ctyjson.Marshal(output.Value, output.Value.Type())
 		if err != nil {
-			return nil, nil, fmt.Errorf("Could not marshal output value and output type: %v", err)
+			return nil, nil, fmt.Errorf("Could not marshal output value and output type: %w", err)
 		}
 		tfRawState := tfprotov5.RawState{
 			JSON: mByte,
 		}
 		newVal, err := tfRawState.Unmarshal(tfType)
 		if err != nil {
-			return nil, nil, fmt.Errorf("Could not unmarshal tftype into value: %v", err)
+			return nil, nil, fmt.Errorf("Could not unmarshal tftype into value: %w", err)
 		}
 		tftypesValues[name] = newVal
 		stateTypes[name] = tfType
