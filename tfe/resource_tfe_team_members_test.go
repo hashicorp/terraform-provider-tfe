@@ -128,7 +128,6 @@ func TestAccTFETeamMembers_import(t *testing.T) {
 
 func hashSchemaString(username string) int {
 	return schema.HashSchema(&schema.Schema{Type: schema.TypeString})(username)
-
 }
 
 func testAccCheckTFETeamMembersExists(

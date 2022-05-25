@@ -134,13 +134,13 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 		if err == tfe.ErrResourceNotFound {
 			entitlements, _ := tfeClient.Organizations.ReadEntitlements(ctx, organization)
 			if entitlements == nil {
-				return fmt.Errorf("Error creating team %s for organization %s: %v", name, organization, err)
+				return fmt.Errorf("Error creating team %s for organization %s: %w", name, organization, err)
 			}
 			if !entitlements.Teams {
 				return fmt.Errorf("Error creating team %s for organization %s: missing entitlements to create teams", name, organization)
 			}
 		}
-		return fmt.Errorf("Error creating team %s for organization %s: %v", name, organization, err)
+		return fmt.Errorf("Error creating team %s for organization %s: %w", name, organization, err)
 	}
 
 	d.SetId(team.ID)
@@ -159,7 +159,7 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading configuration of team %s: %v", d.Id(), err)
+		return fmt.Errorf("Error reading configuration of team %s: %w", d.Id(), err)
 	}
 
 	// Update the config.
@@ -175,7 +175,7 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 			"manage_run_tasks":        team.OrganizationAccess.ManageRunTasks,
 		}}
 		if err := d.Set("organization_access", organizationAccess); err != nil {
-			return fmt.Errorf("error setting organization access for team %s: %s", d.Id(), err)
+			return fmt.Errorf("error setting organization access for team %s: %w", d.Id(), err)
 		}
 	}
 	d.Set("visibility", team.Visibility)
@@ -223,7 +223,7 @@ func resourceTFETeamUpdate(d *schema.ResourceData, meta interface{}) error {
 	_, err := tfeClient.Teams.Update(ctx, d.Id(), options)
 	if err != nil {
 		return fmt.Errorf(
-			"Error updating team %s: %v", d.Id(), err)
+			"Error updating team %s: %w", d.Id(), err)
 	}
 
 	return nil
@@ -238,7 +238,7 @@ func resourceTFETeamDelete(d *schema.ResourceData, meta interface{}) error {
 		if err == tfe.ErrResourceNotFound {
 			return nil
 		}
-		return fmt.Errorf("Error deleting team %s: %v", d.Id(), err)
+		return fmt.Errorf("Error deleting team %s: %w", d.Id(), err)
 	}
 
 	return nil

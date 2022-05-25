@@ -51,7 +51,7 @@ func getClientUsingEnv() (*tfe.Client, error) {
 
 	client, err := getClient(hostname, token, defaultSSLSkipVerify)
 	if err != nil {
-		return nil, fmt.Errorf("Error getting client: %s", err)
+		return nil, fmt.Errorf("Error getting client: %w", err)
 	}
 	return client, nil
 }
@@ -128,7 +128,6 @@ func TestProvider_versionConstraints(t *testing.T) {
 
 func TestProvider_hostTokenFromFallbackSources(t *testing.T) {
 	t.Run("configure with environment", func(t *testing.T) {
-
 		cases := map[string]struct {
 			EnvVarKey      string
 			EnvVarValue    string

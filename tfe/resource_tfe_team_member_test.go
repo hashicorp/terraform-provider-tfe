@@ -31,7 +31,6 @@ func TestPackTeamMemberID(t *testing.T) {
 			t.Fatalf("expected ID %q, got %q", tc.id, id)
 		}
 	}
-
 }
 
 func TestUnpackTeamMemberID(t *testing.T) {
@@ -75,7 +74,6 @@ func TestUnpackTeamMemberID(t *testing.T) {
 			t.Fatalf("expected user %q, got %q", tc.user, user)
 		}
 	}
-
 }
 
 // Thanks to a quirk of our CI environment, this test assumes that
@@ -145,7 +143,7 @@ func testAccCheckTFETeamMemberExists(
 		// Get the team ID and username.
 		teamID, username, err := unpackTeamMemberID(rs.Primary.ID)
 		if err != nil {
-			return fmt.Errorf("Error unpacking team member ID: %v", err)
+			return fmt.Errorf("Error unpacking team member ID: %w", err)
 		}
 
 		users, err := tfeClient.TeamMembers.List(ctx, teamID)
@@ -195,7 +193,7 @@ func testAccCheckTFETeamMemberDestroy(s *terraform.State) error {
 		// Get the team ID and username.
 		teamID, username, err := unpackTeamMemberID(rs.Primary.ID)
 		if err != nil {
-			return fmt.Errorf("Error unpacking team member ID: %v", err)
+			return fmt.Errorf("Error unpacking team member ID: %w", err)
 		}
 
 		users, err := tfeClient.TeamMembers.List(ctx, teamID)

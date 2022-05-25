@@ -234,7 +234,7 @@ resource "tfe_terraform_version" "foobar" {
   sha = "%s"
   official = false
   enabled = true
-  beta = true 
+  beta = true
   deprecated = true
   deprecated_reason = "foobar"
 }`, version, sha)

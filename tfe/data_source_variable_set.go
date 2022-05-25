@@ -67,7 +67,7 @@ func dataSourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) erro
 			if err == tfe.ErrResourceNotFound {
 				return fmt.Errorf("could not find variable set%s/%s", organization, name)
 			}
-			return fmt.Errorf("Error retrieving variable set: %v", err)
+			return fmt.Errorf("Error retrieving variable set: %w", err)
 		}
 
 		for _, vs := range l.Items {
@@ -76,14 +76,14 @@ func dataSourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) erro
 				d.Set("description", vs.Description)
 				d.Set("global", vs.Global)
 
-				//Only now include vars and workspaces to cut down on request load.
+				// Only now include vars and workspaces to cut down on request load.
 				readOptions := tfe.VariableSetReadOptions{
 					Include: &[]tfe.VariableSetIncludeOpt{tfe.VariableSetWorkspaces, tfe.VariableSetVars},
 				}
 
 				vs, err = tfeClient.VariableSets.Read(ctx, vs.ID, &readOptions)
 				if err != nil {
-					return fmt.Errorf("Error retrieving variable set relations: %v", err)
+					return fmt.Errorf("Error retrieving variable set relations: %w", err)
 				}
 
 				var workspaces []interface{}

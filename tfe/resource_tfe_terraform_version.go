@@ -78,7 +78,7 @@ func resourceTFETerraformVersionCreate(d *schema.ResourceData, meta interface{})
 	log.Printf("[DEBUG] Create new Terraform version: %s", *opts.Version)
 	v, err := tfeClient.Admin.TerraformVersions.Create(ctx, opts)
 	if err != nil {
-		return fmt.Errorf("Error creating the new Terraform version %s: %v", *opts.Version, err)
+		return fmt.Errorf("Error creating the new Terraform version %s: %w", *opts.Version, err)
 	}
 
 	d.SetId(v.ID)
@@ -129,7 +129,7 @@ func resourceTFETerraformVersionUpdate(d *schema.ResourceData, meta interface{})
 	log.Printf("[DEBUG] Update configuration of Terraform version: %s", d.Id())
 	v, err := tfeClient.Admin.TerraformVersions.Update(ctx, d.Id(), opts)
 	if err != nil {
-		return fmt.Errorf("Error updating Terraform version %s: %v", d.Id(), err)
+		return fmt.Errorf("Error updating Terraform version %s: %w", d.Id(), err)
 	}
 
 	d.SetId(v.ID)
@@ -146,7 +146,7 @@ func resourceTFETerraformVersionDelete(d *schema.ResourceData, meta interface{})
 		if err == tfe.ErrResourceNotFound {
 			return nil
 		}
-		return fmt.Errorf("Error deleting Terraform version %s: %v", d.Id(), err)
+		return fmt.Errorf("Error deleting Terraform version %s: %w", d.Id(), err)
 	}
 
 	return nil

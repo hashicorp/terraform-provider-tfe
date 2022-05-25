@@ -51,8 +51,7 @@ func resourceTFEAgentTokenCreate(d *schema.ResourceData, meta interface{}) error
 	log.Printf("[DEBUG] Create new agent token for agent pool ID: %s", agentPoolID)
 	agentToken, err := tfeClient.AgentTokens.Create(ctx, agentPoolID, options)
 	if err != nil {
-		return fmt.Errorf("Error creating agent token for agent pool ID %s: %v", agentPoolID, err)
-
+		return fmt.Errorf("Error creating agent token for agent pool ID %s: %w", agentPoolID, err)
 	}
 
 	d.SetId(agentToken.ID)
@@ -75,7 +74,7 @@ func resourceTFEAgentTokenRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading configuration of agent token %s: %v", d.Id(), err)
+		return fmt.Errorf("Error reading configuration of agent token %s: %w", d.Id(), err)
 	}
 
 	// Update the config
@@ -93,7 +92,7 @@ func resourceTFEAgentTokenDelete(d *schema.ResourceData, meta interface{}) error
 		if err == tfe.ErrResourceNotFound {
 			return nil
 		}
-		return fmt.Errorf("Error deleting agent token %s: %v", d.Id(), err)
+		return fmt.Errorf("Error deleting agent token %s: %w", d.Id(), err)
 	}
 
 	return nil

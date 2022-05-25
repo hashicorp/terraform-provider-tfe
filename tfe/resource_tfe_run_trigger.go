@@ -66,7 +66,7 @@ func resourceTFERunTriggerCreate(d *schema.ResourceData, meta interface{}) error
 	})
 
 	if err != nil {
-		return fmt.Errorf("Error creating run trigger on workspace %s with sourceable %s: %v", workspaceID, sourceableID, err)
+		return fmt.Errorf("Error creating run trigger on workspace %s with sourceable %s: %w", workspaceID, sourceableID, err)
 	}
 
 	return resourceTFERunTriggerRead(d, meta)
@@ -83,7 +83,7 @@ func resourceTFERunTriggerRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading run trigger %s: %v", d.Id(), err)
+		return fmt.Errorf("Error reading run trigger %s: %w", d.Id(), err)
 	}
 
 	d.Set("workspace_id", runTrigger.Workspace.ID)
@@ -101,7 +101,7 @@ func resourceTFERunTriggerDelete(d *schema.ResourceData, meta interface{}) error
 		if err == tfe.ErrResourceNotFound {
 			return nil
 		}
-		return fmt.Errorf("Error deleting run trigger %s: %v", d.Id(), err)
+		return fmt.Errorf("Error deleting run trigger %s: %w", d.Id(), err)
 	}
 
 	return nil
