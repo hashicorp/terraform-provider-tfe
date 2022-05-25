@@ -367,6 +367,55 @@ func TestAccTFEWorkspace_updateTriggerPrefixes(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspace_overwriteTriggerPatternsWithPrefixes(t *testing.T) {
+	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_triggerPatterns(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "trigger_patterns.#", "2"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
+				),
+			},
+			{
+				Config: testAccTFEWorkspace_triggerPrefixes(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "trigger_prefixes.#", "2"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "trigger_prefixes.0", "/modules"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "trigger_prefixes.1", "/shared"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "trigger_patterns.#", "0"),
+				),
+			},
+			{
+				Config: testAccTFEWorkspace_updateEmptyTriggerPrefixes(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					testAccCheckTFEWorkspaceAttributes(workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEWorkspace_updateTriggerPatterns(t *testing.T) {
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -384,6 +433,7 @@ func TestAccTFEWorkspace_updateTriggerPatterns(t *testing.T) {
 						"tfe_workspace.foobar", "trigger_prefixes.#", "2"),
 				),
 			},
+			// Overwrite prefixes with patterns
 			{
 				Config: testAccTFEWorkspace_triggerPatterns(rInt),
 				Check: resource.ComposeTestCheckFunc(
@@ -399,13 +449,31 @@ func TestAccTFEWorkspace_updateTriggerPatterns(t *testing.T) {
 						"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
 				),
 			},
-
+			// Second update
+			{
+				Config: testAccTFEWorkspace_updateTriggerPatterns(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "trigger_patterns.#", "3"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "trigger_patterns.0", "/**/networking/*"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "trigger_patterns.1", "/another_module/*/test/*"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "trigger_patterns.2", "/**/resources/**/*"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
+				),
+			},
 			{
 				Config: testAccTFEWorkspace_updateEmptyTriggerPatterns(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "trigger_patterns.#", "0"),
+					resource.TestCheckResourceAttr("tfe_workspace.foobar", "trigger_prefixes.#", "0"),
 				),
 			},
 		},
@@ -1711,6 +1779,20 @@ resource "tfe_workspace" "foobar" {
   name                  = "workspace"
   organization          = tfe_organization.foobar.id
   trigger_patterns      = ["/modules/**/*", "/**/networking/*"]
+}`, rInt)
+}
+
+func testAccTFEWorkspace_updateTriggerPatterns(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d-ff-on"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name                  = "workspace"
+  organization          = tfe_organization.foobar.id
+  trigger_patterns      = ["/**/networking/*", "/another_module/*/test/*", "/**/resources/**/*"]
 }`, rInt)
 }
 
