@@ -26,21 +26,21 @@ func TestAccTFEOrganizationRunTask_create(t *testing.T) {
 		Steps: []resource.TestStep{
 			testCheckCreateOrgWithRunTasks(orgName),
 			{
-				Config: testAccTFEOrganizationRunTask_basic(orgName, rInt, runTasksUrl()),
+				Config: testAccTFEOrganizationRunTask_basic(orgName, rInt, runTasksURL()),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationRunTaskExists("tfe_organization_run_task.foobar", runTask),
 					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "name", fmt.Sprintf("foobar-task-%d", rInt)),
-					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "url", runTasksUrl()),
+					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "url", runTasksURL()),
 					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "category", "task"),
 					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "hmac_key", ""),
 					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "enabled", "false"),
 				),
 			},
 			{
-				Config: testAccTFEOrganizationRunTask_update(orgName, rInt, runTasksUrl()),
+				Config: testAccTFEOrganizationRunTask_update(orgName, rInt, runTasksURL()),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "name", fmt.Sprintf("foobar-task-%d-new", rInt)),
-					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "url", runTasksUrl()),
+					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "url", runTasksURL()),
 					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "category", "task"),
 					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "hmac_key", "somepassword"),
 					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "enabled", "true"),
@@ -64,7 +64,7 @@ func TestAccTFEOrganizationRunTask_import(t *testing.T) {
 		Steps: []resource.TestStep{
 			testCheckCreateOrgWithRunTasks(orgName),
 			{
-				Config: testAccTFEOrganizationRunTask_basic(orgName, rInt, runTasksUrl()),
+				Config: testAccTFEOrganizationRunTask_basic(orgName, rInt, runTasksURL()),
 			},
 			{
 				ResourceName:      "tfe_organization_run_task.foobar",
@@ -90,7 +90,7 @@ func testAccCheckTFEOrganizationRunTaskExists(n string, runTask *tfe.RunTask) re
 		}
 		rt, err := tfeClient.RunTasks.Read(ctx, rs.Primary.ID)
 		if err != nil {
-			return err
+			return fmt.Errorf("error reading Run Task: %w", err)
 		}
 
 		if rt == nil {
@@ -124,7 +124,7 @@ func testAccCheckTFEOrganizationRunTaskDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccTFEOrganizationRunTask_basic(orgName string, rInt int, runTaskUrl string) string {
+func testAccTFEOrganizationRunTask_basic(orgName string, rInt int, runTaskURL string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
 	name  = "%s"
@@ -137,10 +137,10 @@ resource "tfe_organization_run_task" "foobar" {
 	name         = "foobar-task-%d"
 	enabled      = false
 }
-`, orgName, runTaskUrl, rInt)
+`, orgName, runTaskURL, rInt)
 }
 
-func testAccTFEOrganizationRunTask_update(orgName string, rInt int, runTaskUrl string) string {
+func testAccTFEOrganizationRunTask_update(orgName string, rInt int, runTaskURL string) string {
 	return fmt.Sprintf(`
 	resource "tfe_organization" "foobar" {
 		name  = "%s"
@@ -154,5 +154,5 @@ func testAccTFEOrganizationRunTask_update(orgName string, rInt int, runTaskUrl s
 		enabled      = true
 		hmac_key     = "somepassword"
 	}
-`, orgName, runTaskUrl, rInt)
+`, orgName, runTaskURL, rInt)
 }

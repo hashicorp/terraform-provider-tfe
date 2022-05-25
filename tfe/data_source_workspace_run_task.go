@@ -41,7 +41,7 @@ func dataSourceTFEWorkspaceRunTaskRead(d *schema.ResourceData, meta interface{})
 	for {
 		list, err := tfeClient.WorkspaceRunTasks.List(ctx, workspaceID, options)
 		if err != nil {
-			return fmt.Errorf("Error retrieving tasks for workspace %s: %v", workspaceID, err)
+			return fmt.Errorf("Error retrieving tasks for workspace %s: %w", workspaceID, err)
 		}
 
 		for _, wstask := range list.Items {

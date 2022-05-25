@@ -22,7 +22,7 @@ func TestAccTFEWorkspaceRunTaskDataSource_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			testCheckCreateOrgWithRunTasks(orgName),
 			{
-				Config: testAccTFEWorkspaceRunTaskDataSourceConfig(orgName, rInt, runTasksUrl()),
+				Config: testAccTFEWorkspaceRunTaskDataSourceConfig(orgName, rInt, runTasksURL()),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.tfe_workspace_run_task.foobar", "enforcement_level", "advisory"),
 					resource.TestCheckResourceAttrSet("data.tfe_workspace_run_task.foobar", "id"),
@@ -34,7 +34,7 @@ func TestAccTFEWorkspaceRunTaskDataSource_basic(t *testing.T) {
 	})
 }
 
-func testAccTFEWorkspaceRunTaskDataSourceConfig(orgName string, rInt int, runTaskUrl string) string {
+func testAccTFEWorkspaceRunTaskDataSourceConfig(orgName string, rInt int, runTaskURL string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
 	name  = "%s"
@@ -62,5 +62,5 @@ data "tfe_workspace_run_task" "foobar" {
 	workspace_id      = resource.tfe_workspace.foobar.id
 	task_id           = resource.tfe_organization_run_task.foobar.id
 	depends_on = [tfe_workspace_run_task.foobar]
-}`, orgName, runTaskUrl, rInt, rInt)
+}`, orgName, runTaskURL, rInt, rInt)
 }

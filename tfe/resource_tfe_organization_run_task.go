@@ -78,7 +78,7 @@ func resourceTFEOrganizationRunTaskCreate(d *schema.ResourceData, meta interface
 	task, err := tfeClient.RunTasks.Create(ctx, organization, options)
 	if err != nil {
 		return fmt.Errorf(
-			"Error creating task %s for organization %s: %v", name, organization, err)
+			"Error creating task %s for organization %s: %w", name, organization, err)
 	}
 
 	d.SetId(task.ID)
@@ -92,10 +92,10 @@ func resourceTFEOrganizationRunTaskDelete(d *schema.ResourceData, meta interface
 	log.Printf("[DEBUG] Delete task: %s", d.Id())
 	err := tfeClient.RunTasks.Delete(ctx, d.Id())
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if isErrResourceNotFound(err) {
 			return nil
 		}
-		return fmt.Errorf("Error deleting task %s: %v", d.Id(), err)
+		return fmt.Errorf("Error deleting task %s: %w", d.Id(), err)
 	}
 
 	return nil
@@ -125,7 +125,7 @@ func resourceTFEOrganizationRunTaskUpdate(d *schema.ResourceData, meta interface
 	log.Printf("[DEBUG] Update configuration of task: %s", d.Id())
 	task, err := tfeClient.RunTasks.Update(ctx, d.Id(), options)
 	if err != nil {
-		return fmt.Errorf("Error updating task %s: %v", d.Id(), err)
+		return fmt.Errorf("Error updating task %s: %w", d.Id(), err)
 	}
 
 	d.SetId(task.ID)
@@ -140,12 +140,12 @@ func resourceTFEOrganizationRunTaskRead(d *schema.ResourceData, meta interface{}
 	task, err := tfeClient.RunTasks.Read(ctx, d.Id())
 
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if isErrResourceNotFound(err) {
 			log.Printf("[DEBUG] Task %s does not exist", d.Id())
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading configuration of task %s: %v", d.Id(), err)
+		return fmt.Errorf("Error reading configuration of task %s: %w", d.Id(), err)
 	}
 
 	// Update the config.

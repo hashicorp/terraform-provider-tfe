@@ -494,3 +494,9 @@ var descriptions = map[string]string{
 		"the token which can be set as credentials in the CLI config file.",
 	"ssl_skip_verify": "Whether or not to skip certificate verifications.",
 }
+
+// A commonly used helper method to check if the error
+// returned was tfe.ErrResourceNotFound
+func isErrResourceNotFound(err error) bool {
+	return errors.Is(err, tfe.ErrResourceNotFound)
+}

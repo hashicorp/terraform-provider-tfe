@@ -22,10 +22,10 @@ func TestAccTFEOrganizationRunTaskDataSource_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			testCheckCreateOrgWithRunTasks(orgName),
 			{
-				Config: testAccTFEOrganizationRunTaskDataSourceConfig(orgName, rInt, runTasksUrl()),
+				Config: testAccTFEOrganizationRunTaskDataSourceConfig(orgName, rInt, runTasksURL()),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.tfe_organization_run_task.foobar", "name", fmt.Sprintf("foobar-task-%d", rInt)),
-					resource.TestCheckResourceAttr("data.tfe_organization_run_task.foobar", "url", runTasksUrl()),
+					resource.TestCheckResourceAttr("data.tfe_organization_run_task.foobar", "url", runTasksURL()),
 					resource.TestCheckResourceAttr("data.tfe_organization_run_task.foobar", "category", "task"),
 					resource.TestCheckResourceAttr("data.tfe_organization_run_task.foobar", "enabled", "false"),
 					resource.TestCheckResourceAttrSet("data.tfe_organization_run_task.foobar", "id"),
@@ -36,7 +36,7 @@ func TestAccTFEOrganizationRunTaskDataSource_basic(t *testing.T) {
 	})
 }
 
-func testAccTFEOrganizationRunTaskDataSourceConfig(orgName string, rInt int, runTaskUrl string) string {
+func testAccTFEOrganizationRunTaskDataSourceConfig(orgName string, rInt int, runTaskURL string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
 	name  = "%s"
@@ -55,5 +55,5 @@ data "tfe_organization_run_task" "foobar" {
 	organization      = resource.tfe_organization.foobar.id
 	name              = "foobar-task-%d"
 	depends_on = [tfe_organization_run_task.foobar]
-}`, orgName, runTaskUrl, rInt, rInt)
+}`, orgName, runTaskURL, rInt, rInt)
 }

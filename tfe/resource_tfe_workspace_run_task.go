@@ -57,13 +57,13 @@ func resourceTFEWorkspaceRunTaskCreate(d *schema.ResourceData, meta interface{})
 	task, err := tfeClient.RunTasks.Read(ctx, taskID)
 	if err != nil {
 		return fmt.Errorf(
-			"Error retrieving task %s: %v", taskID, err)
+			"Error retrieving task %s: %w", taskID, err)
 	}
 
 	ws, err := tfeClient.Workspaces.ReadByID(ctx, workspaceID)
 	if err != nil {
 		return fmt.Errorf(
-			"Error retrieving workspace %s: %v", workspaceID, err)
+			"Error retrieving workspace %s: %w", workspaceID, err)
 	}
 
 	options := tfe.WorkspaceRunTaskCreateOptions{
@@ -74,7 +74,7 @@ func resourceTFEWorkspaceRunTaskCreate(d *schema.ResourceData, meta interface{})
 	log.Printf("[DEBUG] Create task %s in workspace %s", task.ID, ws.ID)
 	wstask, err := tfeClient.WorkspaceRunTasks.Create(ctx, ws.ID, options)
 	if err != nil {
-		return fmt.Errorf("Error creating task %s in workspace %s: %v", task.ID, ws.ID, err)
+		return fmt.Errorf("Error creating task %s in workspace %s: %w", task.ID, ws.ID, err)
 	}
 
 	d.SetId(wstask.ID)
@@ -90,8 +90,8 @@ func resourceTFEWorkspaceRunTaskDelete(d *schema.ResourceData, meta interface{})
 
 	log.Printf("[DEBUG] Delete task %s in workspace %s", d.Id(), workspaceID)
 	err := tfeClient.WorkspaceRunTasks.Delete(ctx, workspaceID, d.Id())
-	if err != nil && err != tfe.ErrResourceNotFound {
-		return fmt.Errorf("Error deleting task %s in workspace %s: %v", d.Id(), workspaceID, err)
+	if err != nil && !isErrResourceNotFound(err) {
+		return fmt.Errorf("Error deleting task %s in workspace %s: %w", d.Id(), workspaceID, err)
 	}
 
 	return nil
@@ -112,7 +112,7 @@ func resourceTFEWorkspaceRunTaskUpdate(d *schema.ResourceData, meta interface{})
 	log.Printf("[DEBUG] Update configuration of task %s in workspace %s", d.Id(), workspaceID)
 	_, err := tfeClient.WorkspaceRunTasks.Update(ctx, workspaceID, d.Id(), options)
 	if err != nil {
-		return fmt.Errorf("Error updating task %s in workspace %s: %v", d.Id(), workspaceID, err)
+		return fmt.Errorf("Error updating task %s in workspace %s: %w", d.Id(), workspaceID, err)
 	}
 
 	return nil
@@ -126,12 +126,12 @@ func resourceTFEWorkspaceRunTaskRead(d *schema.ResourceData, meta interface{}) e
 
 	wstask, err := tfeClient.WorkspaceRunTasks.Read(ctx, workspaceID, d.Id())
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if isErrResourceNotFound(err) {
 			log.Printf("[DEBUG] Workspace Task %s does not exist in workspace %s", d.Id(), workspaceID)
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading configuration of task %s in workspace %s: %v", d.Id(), workspaceID, err)
+		return fmt.Errorf("Error reading configuration of task %s in workspace %s: %w", d.Id(), workspaceID, err)
 	}
 
 	// Update the config.

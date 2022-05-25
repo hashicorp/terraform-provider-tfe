@@ -26,14 +26,14 @@ func TestAccTFEWorkspaceRunTask_create(t *testing.T) {
 		Steps: []resource.TestStep{
 			testCheckCreateOrgWithRunTasks(orgName),
 			{
-				Config: testAccTFEWorkspaceRunTask_basic(orgName, rInt, runTasksUrl()),
+				Config: testAccTFEWorkspaceRunTask_basic(orgName, runTasksURL()),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceRunTaskExists("tfe_workspace_run_task.foobar", workspaceTask),
 					resource.TestCheckResourceAttr("tfe_workspace_run_task.foobar", "enforcement_level", "advisory"),
 				),
 			},
 			{
-				Config: testAccTFEWorkspaceRunTask_update(orgName, rInt, runTasksUrl()),
+				Config: testAccTFEWorkspaceRunTask_update(orgName, runTasksURL()),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_workspace_run_task.foobar", "enforcement_level", "mandatory"),
 				),
@@ -56,7 +56,7 @@ func TestAccTFEWorkspaceRunTask_import(t *testing.T) {
 		Steps: []resource.TestStep{
 			testCheckCreateOrgWithRunTasks(orgName),
 			{
-				Config: testAccTFEWorkspaceRunTask_basic(orgName, rInt, runTasksUrl()),
+				Config: testAccTFEWorkspaceRunTask_basic(orgName, runTasksURL()),
 			},
 			{
 				ResourceName:      "tfe_workspace_run_task.foobar",
@@ -124,7 +124,7 @@ func testAccCheckTFEWorkspaceRunTaskDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccTFEWorkspaceRunTask_basic(orgName string, rInt int, runTaskUrl string) string {
+func testAccTFEWorkspaceRunTask_basic(orgName, runTaskURL string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "%s"
@@ -147,10 +147,10 @@ resource "tfe_workspace_run_task" "foobar" {
   task_id           = resource.tfe_organization_run_task.foobar.id
   enforcement_level = "advisory"
 }
-`, orgName, runTaskUrl)
+`, orgName, runTaskURL)
 }
 
-func testAccTFEWorkspaceRunTask_update(orgName string, rInt int, runTaskUrl string) string {
+func testAccTFEWorkspaceRunTask_update(orgName, runTaskURL string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "%s"
@@ -173,5 +173,5 @@ resource "tfe_workspace_run_task" "foobar" {
   task_id           = resource.tfe_organization_run_task.foobar.id
   enforcement_level = "mandatory"
 }
-`, orgName, runTaskUrl)
+`, orgName, runTaskURL)
 }
