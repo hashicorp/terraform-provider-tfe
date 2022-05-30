@@ -261,24 +261,20 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		options.TerraformVersion = tfe.String(tfVersion.(string))
 	}
 
-	if d.HasChange("trigger_prefixes") {
-		if tps, ok := d.GetOk("trigger_prefixes"); ok {
-			for _, tp := range tps.([]interface{}) {
-				options.TriggerPrefixes = append(options.TriggerPrefixes, tp.(string))
-			}
-		} else {
-			options.TriggerPrefixes = []string{}
+	if tps, ok := d.GetOk("trigger_prefixes"); ok {
+		for _, tp := range tps.([]interface{}) {
+			options.TriggerPrefixes = append(options.TriggerPrefixes, tp.(string))
 		}
+	} else {
+		options.TriggerPrefixes = []string{}
 	}
 
-	if d.HasChange("trigger_patterns") {
-		if tps, ok := d.GetOk("trigger_patterns"); ok {
-			for _, tp := range tps.([]interface{}) {
-				options.TriggerPatterns = append(options.TriggerPatterns, tp.(string))
-			}
-		} else {
-			options.TriggerPatterns = []string{}
+	if tps, ok := d.GetOk("trigger_patterns"); ok {
+		for _, tp := range tps.([]interface{}) {
+			options.TriggerPatterns = append(options.TriggerPatterns, tp.(string))
 		}
+	} else {
+		options.TriggerPatterns = []string{}
 	}
 
 	// Get and assert the VCS repo configuration block.
@@ -466,24 +462,20 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			options.TerraformVersion = tfe.String(tfVersion.(string))
 		}
 
-		if d.HasChange("trigger_prefixes") {
-			if tps, ok := d.GetOk("trigger_prefixes"); ok {
-				for _, tp := range tps.([]interface{}) {
-					options.TriggerPrefixes = append(options.TriggerPrefixes, tp.(string))
-				}
-			} else {
-				options.TriggerPrefixes = []string{}
+		if tps, ok := d.GetOk("trigger_prefixes"); ok {
+			for _, tp := range tps.([]interface{}) {
+				options.TriggerPrefixes = append(options.TriggerPrefixes, tp.(string))
 			}
+		} else {
+			options.TriggerPrefixes = []string{}
 		}
 
-		if d.HasChange("trigger_patterns") {
-			if tps, ok := d.GetOk("trigger_patterns"); ok {
-				for _, tp := range tps.([]interface{}) {
-					options.TriggerPatterns = append(options.TriggerPatterns, tp.(string))
-				}
-			} else {
-				options.TriggerPatterns = []string{}
+		if tps, ok := d.GetOk("trigger_patterns"); ok {
+			for _, tp := range tps.([]interface{}) {
+				options.TriggerPatterns = append(options.TriggerPatterns, tp.(string))
 			}
+		} else {
+			options.TriggerPatterns = []string{}
 		}
 
 		if workingDir, ok := d.GetOk("working_directory"); ok {
