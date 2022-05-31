@@ -33,7 +33,9 @@ func dataSourceTFEAgentPoolRead(d *schema.ResourceData, meta interface{}) error 
 	organization := d.Get("organization").(string)
 
 	// Create an options struct.
-	options := tfe.AgentPoolListOptions{}
+	options := tfe.AgentPoolListOptions{
+		Query: name,
+	}
 
 	for {
 		l, err := tfeClient.AgentPools.List(ctx, organization, &options)
