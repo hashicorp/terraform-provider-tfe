@@ -33,7 +33,11 @@ func dataSourceTFEAgentPoolRead(d *schema.ResourceData, meta interface{}) error 
 	organization := d.Get("organization").(string)
 
 	// Create an options struct.
-	options := tfe.AgentPoolListOptions{}
+	// to reduce the number of pages returned, search based on the name. TFE instances which
+	// do not support agent pool seach will just ignore the query parameter
+	options := tfe.AgentPoolListOptions{
+		Query: name,
+	}
 
 	for {
 		l, err := tfeClient.AgentPools.List(ctx, organization, &options)
