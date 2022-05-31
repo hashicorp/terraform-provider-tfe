@@ -410,6 +410,8 @@ func TestAccTFEWorkspace_overwriteTriggerPatternsWithPrefixes(t *testing.T) {
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "trigger_patterns.#", "0"),
 				),
 			},
 		},
