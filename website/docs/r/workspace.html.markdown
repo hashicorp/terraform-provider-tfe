@@ -12,6 +12,8 @@ Provides a workspace resource.
 
 ~> **NOTE:** Using `global_remote_state` or `remote_state_consumer_ids` requires using the provider with Terraform Cloud or an instance of Terraform Enterprise at least as recent as v202104-1.
 
+~> **NOTE:** Using `trigger-patterns`  requires using the provider with Terraform Cloud or an instance of Terraform Enterprise at least as recent as TODO: update version.
+
 ## Example Usage
 
 Basic usage:
@@ -104,7 +106,9 @@ The following arguments are supported:
   the newest release that meets that constraint. Defaults to the latest
   available version.
 * `trigger_prefixes` - (Optional) List of repository-root-relative paths which describe all locations
-  to be tracked for changes.
+  to be tracked for changes. Mutually exclusive with `trigger-patterns`.
+* `trigger_patterns` - (Optional) List of repository-root-relative GLOB patterns which describe all locations 
+  to be tracked for changes. Mutually exclusive with `trigger-prefixes`.
 * `tag_names` - (Optional) A list of tag names for this workspace. Note that tags must only contain letters, numbers or colons. 
 * `working_directory` - (Optional) A relative path that Terraform will execute
   within.  Defaults to the root of your repository.

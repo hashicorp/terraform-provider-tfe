@@ -52,6 +52,7 @@ In addition to all arguments above, the following attributes are exported:
 * `tag_names` - The names of tags added to this workspace.
 * `terraform_version` - The version (or version constraint) of Terraform used for this workspace.
 * `trigger_prefixes` - List of repository-root-relative paths which describe all locations to be tracked for changes.
+* `trigger_patterns` - List of repository-root-relative GLOB patterns which describe all locations to be tracked for changes.
 * `vcs_repo` - Settings for the workspace's VCS repository.
 * `working_directory` - A relative path that Terraform will execute within.
 
