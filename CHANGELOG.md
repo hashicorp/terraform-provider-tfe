@@ -6,6 +6,12 @@ BUG FIXES:
 FEATURES:
 * r/team, d/team: Add manage_run_tasks to the tfe_team organization_access attributes ([#486](https://github.com/hashicorp/terraform-provider-tfe/pull/486))
 
+BREAKING CHANGES:
+* r/tfe_workspace: Default value of the `file_triggers_enabled` field is changed to `false`. 
+  If the value of the `file_triggers_enabled` field was not explicitly set and either of the fields `working_directory`
+  (not an empty string) or `trigger_prefixes` was used - to keep the behavior unchanged the `file_trigger_enabled` 
+  field should now explicitly be set to `true`. 
+
 ## 0.31.0 (April 21, 2022)
 
 BUG FIXES:
