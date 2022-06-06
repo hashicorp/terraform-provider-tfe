@@ -67,7 +67,7 @@ func TestPluginProvider_providerMeta(t *testing.T) {
 		}
 
 		if tc.hostname == "" && meta.hostname != "" {
-			t.Fatalf("Test %s: hostname was not set in config and meta hostname should be empty in this moment (in retrieveProviderMeta). It is parsed later in within the `getClient` function", name)
+			t.Fatalf("Test %s: hostname was not set in config and meta hostname should be empty in this moment (in retrieveProviderMeta). It is parsed later in wihtin the `getClient` function", name)
 		}
 
 		if tc.hostname != "" && meta.hostname != tc.hostname {
