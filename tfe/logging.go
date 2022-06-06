@@ -35,7 +35,6 @@ func IsDebugOrHigher() bool {
 // RoundTrip is a transport method that logs the request and response if the TF_LOG level is
 // TRACE or DEBUG
 func (t *loggingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-
 	includeBody := !hasSensitiveValues(req)
 
 	if IsDebugOrHigher() {
