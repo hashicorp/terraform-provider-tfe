@@ -42,7 +42,6 @@ There are several ways to provide the required token:
 - **Set the `token` argument in the provider configuration.** You can set
 the `token` argument in the provider configuration.  Use an input variable for
 the token.
-- **Set a host-specific environment variable:** Set a `TF_TOKEN_...` variable with the host name as the suffix, for example, `TF_TOKEN_app_terraform_io`. This example token will be used for authentication if `app.terraform.io` is configured as the host. This authentication method is shared by Terraform for all network services since version 1.2.
 - **Set the `TFE_TOKEN` environment variable:** The provider can read the
 `TFE_TOKEN` environment variable and the token stored there to authenticate.
 
