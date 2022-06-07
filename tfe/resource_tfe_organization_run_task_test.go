@@ -3,6 +3,7 @@ package tfe
 import (
 	"fmt"
 	"math/rand"
+	"regexp"
 	"testing"
 	"time"
 
@@ -10,6 +11,27 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
+
+func TestAccTFEOrganizationRunTask_validateSchemaAttributeUrl(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFEOrganizationRunTask_basic("org", 1, ""),
+				ExpectError: regexp.MustCompile(`url to not be empty`),
+			},
+			{
+				Config:      testAccTFEOrganizationRunTask_basic("org", 1, "https://"),
+				ExpectError: regexp.MustCompile(`to have a host`),
+			},
+			{
+				Config:      testAccTFEOrganizationRunTask_basic("org", 1, "ftp://a.valid.url/path"),
+				ExpectError: regexp.MustCompile(`to have a url with schema of: "http,https"`),
+			},
+		},
+	})
+}
 
 func TestAccTFEOrganizationRunTask_create(t *testing.T) {
 	skipUnlessRunTasksDefined(t)
