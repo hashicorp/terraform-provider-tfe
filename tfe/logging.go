@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -33,10 +35,12 @@ func IsDebugOrHigher() bool {
 // RoundTrip is a transport method that logs the request and response if the TF_LOG level is
 // TRACE or DEBUG
 func (t *loggingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	includeBody := !hasSensitiveValues(req)
+
 	if IsDebugOrHigher() {
-		reqData, err := httputil.DumpRequestOut(req, true)
+		reqData, err := httputil.DumpRequestOut(req, includeBody)
 		if err == nil {
-			log.Printf("[DEBUG] "+logReqMsg, t.name, filterAndPrettyPrintLines(reqData))
+			log.Printf("[DEBUG] "+logReqMsg, t.name, filterAndPrettyPrintLines(reqData, includeBody))
 		} else {
 			log.Printf("[ERROR] %s API Request error: %#v", t.name, err)
 		}
@@ -48,15 +52,32 @@ func (t *loggingTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 	}
 
 	if IsDebugOrHigher() {
-		respData, err := httputil.DumpResponse(resp, true)
+		respData, err := httputil.DumpResponse(resp, includeBody)
 		if err == nil {
-			log.Printf("[DEBUG] "+logRespMsg, t.name, filterAndPrettyPrintLines(respData))
+			log.Printf("[DEBUG] "+logRespMsg, t.name, filterAndPrettyPrintLines(respData, includeBody))
 		} else {
 			log.Printf("[ERROR] %s API Response error: %#v", t.name, err)
 		}
 	}
 
 	return resp, nil
+}
+
+func hasSensitiveValues(req *http.Request) bool {
+	foundSensitiveVal := false
+	if req.Body != nil {
+		b, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			return true // just to be safe, let's assume there could be a sensitive value
+		}
+
+		if regexp.MustCompile(`"sensitive":true`).MatchString(string(b)) {
+			foundSensitiveVal = true
+		}
+		// after done inspecting the body, place back same data we read
+		req.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+	}
+	return foundSensitiveVal
 }
 
 // NewLoggingTransport wraps the given transport with a logger that logs request and
@@ -68,8 +89,10 @@ func NewLoggingTransport(name string, t http.RoundTripper) *loggingTransport {
 // filterAndPrettyPrintLines iterates through a []byte line-by-line,
 // redacting any sensitive lines and transforming any lines that are complete json into
 // pretty-printed json.
-func filterAndPrettyPrintLines(b []byte) string {
-	parts := strings.Split(string(b), "\n")
+func filterAndPrettyPrintLines(b []byte, includeBody bool) string {
+	sanitizedParts := strings.TrimSpace(string(b))
+	parts := strings.Split(sanitizedParts, "\n")
+
 	for i, p := range parts {
 		for _, check := range redactedHeaders {
 			if strings.HasPrefix(strings.ToLower(p), check) {
@@ -83,6 +106,10 @@ func filterAndPrettyPrintLines(b []byte) string {
 			_ = json.Indent(&out, b, "", " ") // already checked for validity
 			parts[i] = out.String()
 		}
+	}
+
+	if !includeBody {
+		parts = append(parts, "[BODY REDACTED: Due to sensitive values present]")
 	}
 	return strings.Join(parts, "\n")
 }
