@@ -257,19 +257,19 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesMicrosoftTeams(
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`Email addresses cannot be set with destination type of microsoft_teams`),
+				ExpectError: regexp.MustCompile(`Email addresses cannot be set with destination type of microsoft-teams`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`Email user IDs cannot be set with destination type of microsoft_teams`),
+				ExpectError: regexp.MustCompile(`Email user IDs cannot be set with destination type of microsoft-teams`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithToken(rInt),
-				ExpectError: regexp.MustCompile(`Token cannot be set with destination type of microsoft_teams`),
+				ExpectError: regexp.MustCompile(`Token cannot be set with destination type of microsoft-teams`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithoutURL(rInt),
-				ExpectError: regexp.MustCompile(`URL is required with destination type of microsoft_teams`),
+				ExpectError: regexp.MustCompile(`URL is required with destination type of microsoft-teams`),
 			},
 		},
 	})
@@ -420,7 +420,7 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesMicrosoft
 						"tfe_notification_configuration.foobar", notificationConfiguration),
 					testAccCheckTFENotificationConfigurationAttributesMicrosoftTeams(notificationConfiguration),
 					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "destination_type", "microsoft_teams"),
+						"tfe_notification_configuration.foobar", "destination_type", "microsoft-teams"),
 					resource.TestCheckResourceAttr(
 						"tfe_notification_configuration.foobar", "name", "notification_msteams"),
 					resource.TestCheckResourceAttr(
@@ -429,19 +429,19 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesMicrosoft
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`Email addresses cannot be set with destination type of microsoft_teams`),
+				ExpectError: regexp.MustCompile(`Email addresses cannot be set with destination type of microsoft-teams`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`Email user IDs cannot be set with destination type of microsoft_teams`),
+				ExpectError: regexp.MustCompile(`Email user IDs cannot be set with destination type of microsoft-teams`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithToken(rInt),
-				ExpectError: regexp.MustCompile(`Token cannot be set with destination type of microsoft_teams`),
+				ExpectError: regexp.MustCompile(`Token cannot be set with destination type of microsoft-teams`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithoutURL(rInt),
-				ExpectError: regexp.MustCompile(`URL is required with destination type of microsoft_teams`),
+				ExpectError: regexp.MustCompile(`URL is required with destination type of microsoft-teams`),
 			},
 		},
 	})
@@ -861,7 +861,7 @@ resource "tfe_workspace" "foobar" {
 
 resource "tfe_notification_configuration" "foobar" {
   name             = "notification_msteams"
-  destination_type = "microsoft_teams"
+  destination_type = "microsoft-teams"
   url              = "http://example.com"
   workspace_id     = tfe_workspace.foobar.id
 }`, rInt)
@@ -1119,7 +1119,7 @@ resource "tfe_workspace" "foobar" {
 
 resource "tfe_notification_configuration" "foobar" {
   name             = "notification_msteams_with_email_addresses"
-  destination_type = "microsoft_teams"
+  destination_type = "microsoft-teams"
   email_addresses  = ["test@example.com", "test2@example.com"]
   workspace_id     = tfe_workspace.foobar.id
 }`, rInt)
@@ -1144,7 +1144,7 @@ resource "tfe_organization_membership" "foobar" {
 
 resource "tfe_notification_configuration" "foobar" {
   name             = "notification_msteams_with_email_user_ids"
-  destination_type = "microsoft_teams"
+  destination_type = "microsoft-teams"
   email_user_ids   = [tfe_organization_membership.foobar.id]
   workspace_id     = tfe_workspace.foobar.id
 }`, rInt)
@@ -1164,7 +1164,7 @@ resource "tfe_workspace" "foobar" {
 
 resource "tfe_notification_configuration" "foobar" {
   name             = "notification_msteams_with_token"
-  destination_type = "microsoft_teams"
+  destination_type = "microsoft-teams"
   token            = "1234567890"
   url              = "http://example.com"
   workspace_id     = tfe_workspace.foobar.id
@@ -1185,7 +1185,7 @@ resource "tfe_workspace" "foobar" {
 
 resource "tfe_notification_configuration" "foobar" {
   name             = "notification_msteams_without_url"
-  destination_type = "microsoft_teams"
+  destination_type = "microsoft-teams"
   workspace_id     = tfe_workspace.foobar.id
 }`, rInt)
 }

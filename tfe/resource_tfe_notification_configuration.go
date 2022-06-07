@@ -140,7 +140,7 @@ func resourceTFENotificationConfigurationCreate(d *schema.ResourceData, meta int
 			return err
 		}
 	} else if destinationType == tfe.NotificationDestinationTypeMicrosoftTeams {
-		// When destination_type is 'microsoft_teams':
+		// When destination_type is 'microsoft-teams':
 		// 1. email_addresses, email_user_ids, and token cannot be set
 		// 2. url must be set
 		err := validateSchemaAttributesForDestinationTypeMicrosoftTeams(d)
@@ -269,7 +269,7 @@ func resourceTFENotificationConfigurationUpdate(d *schema.ResourceData, meta int
 			return err
 		}
 	} else if destinationType == tfe.NotificationDestinationTypeMicrosoftTeams {
-		// When destination_type is 'microsoft_teams':
+		// When destination_type is 'microsoft-teams':
 		// 1. email_addresses, email_user_ids, and token cannot be set
 		// 2. url must be set
 		err := validateSchemaAttributesForDestinationTypeMicrosoftTeams(d)
@@ -389,7 +389,7 @@ func validateSchemaAttributesForDestinationTypeSlack(d *schema.ResourceData) err
 }
 
 func validateSchemaAttributesForDestinationTypeMicrosoftTeams(d *schema.ResourceData) error {
-	// Make sure email_addresses, email_user_ids, and token are not set when destination_type is 'microsoft_teams'
+	// Make sure email_addresses, email_user_ids, and token are not set when destination_type is 'microsoft-teams'
 	_, emailAddressesIsSet := d.GetOk("email_addresses")
 	if emailAddressesIsSet {
 		return fmt.Errorf("Email addresses cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeMicrosoftTeams))
@@ -403,7 +403,7 @@ func validateSchemaAttributesForDestinationTypeMicrosoftTeams(d *schema.Resource
 		return fmt.Errorf("Token cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeMicrosoftTeams))
 	}
 
-	// Make sure url is set when destination_type is 'microsoft_teams'
+	// Make sure url is set when destination_type is 'microsoft-teams'
 	_, urlIsSet := d.GetOk("url")
 	if !urlIsSet {
 		return fmt.Errorf("URL is required with destination type of %s", string(tfe.NotificationDestinationTypeMicrosoftTeams))

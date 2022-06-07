@@ -105,21 +105,21 @@ The following arguments are supported:
   * `generic`
   * `email` available in Terraform Cloud or Terraform Enterprise v202005-1 or later
   * `slack`
-  * `microsoft_teams` available in Terraform Cloud or Terraform Enterprise v202206-1 or later
+  * `microsoft-teams` available in Terraform Cloud or Terraform Enterprise v202206-1 or later
 * `email_addresses` - (Optional) **TFE only** A list of email addresses. This value 
-  _must not_ be provided if `destination_type` is `generic`, `microsoft_teams`, or `slack`.
+  _must not_ be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.
 * `email_user_ids` - (Optional) A list of user IDs. This value _must not_ be provided 
-  if `destination_type` is `generic`, `microsoft_teams`, or `slack`.
+  if `destination_type` is `generic`, `microsoft-teams`, or `slack`.
 * `enabled` - (Optional) Whether the notification configuration should be enabled or not.
   Disabled configurations will not send any notifications. Defaults to `false`.
 * `token` - (Optional) A write-only secure token for the notification configuration, which can
   be used by the receiving server to verify request authenticity when configured for notification
   configurations with a destination type of `generic`. Defaults to `null`.
-  This value _must not_ be provided if `destination_type` is `email`, `microsoft_teams`, or `slack`.
+  This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.
 * `triggers` - (Optional) The array of triggers for which this notification configuration will
   send notifications. Valid values are `run:created`, `run:planning`, `run:needs_attention`, `run:applying`
   `run:completed`, `run:errored`. If omitted, no notification triggers are configured.
-* `url` - (Required if `destination_type` is `generic`, `microsoft_teams`, or `slack`) The HTTP or HTTPS URL of the notification 
+* `url` - (Required if `destination_type` is `generic`, `microsoft-teams`, or `slack`) The HTTP or HTTPS URL of the notification 
   configuration where notification requests will be made. This value _must not_ be provided if `destination_type` 
   is `email`.
 * `workspace_id` - (Required) The id of the workspace that owns the notification configuration. 
