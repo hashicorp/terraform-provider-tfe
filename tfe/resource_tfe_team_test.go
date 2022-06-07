@@ -251,8 +251,8 @@ func testAccCheckTFETeamAttributes_full(
 		if !team.OrganizationAccess.ManageRunTasks {
 			return fmt.Errorf("OrganizationAccess.ManageRunTasks should be true")
 		}
-		if *team.SSOTeamID != "team-test-sso-id" {
-			return fmt.Errorf("Bad SSO Team ID: %s", *team.SSOTeamID)
+		if team.SSOTeamID != "team-test-sso-id" {
+			return fmt.Errorf("Bad SSO Team ID: %s", team.SSOTeamID)
 		}
 
 		return nil
@@ -283,8 +283,8 @@ func testAccCheckTFETeamAttributes_full_update(
 			return fmt.Errorf("OrganizationAccess.ManageRunTasks should be false")
 		}
 
-		if *team.SSOTeamID != "changed-sso-id" {
-			return fmt.Errorf("Bad SSO Team ID: %s", *team.SSOTeamID)
+		if team.SSOTeamID != "changed-sso-id" {
+			return fmt.Errorf("Bad SSO Team ID: %s", team.SSOTeamID)
 		}
 
 		return nil
