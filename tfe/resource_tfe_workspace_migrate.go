@@ -29,7 +29,7 @@ func resourceTfeWorkspaceResourceV0() *schema.Resource {
 			"file_triggers_enabled": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				Default:  true,
+				Default:  false,
 			},
 
 			"operations": {
