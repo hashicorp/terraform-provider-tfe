@@ -1,5 +1,8 @@
 ## 0.32.0 (Unreleased)
 
+BREAKING CHANGES:
+* **Removed Authentication Method**: Host-specific TF_TOKEN_... environment variable can no longer be used for token authentication. This method of authentication is incompatible with the Terraform Cloud remote execution model. Please use the TFE_TOKEN environment variable.
+
 BUG FIXES:
 * Prevent overwriting `vcs_repo` attributes in `r/tfe_workspace` when update API call fails ([#498](https://github.com/hashicorp/terraform-provider-tfe/pull/498))
 
