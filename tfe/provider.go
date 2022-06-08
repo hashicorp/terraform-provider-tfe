@@ -130,6 +130,23 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	return getClient(hostname, token, insecure)
 }
 
+func getTokenFromEnv() string {
+	log.Printf("[DEBUG] TFE_TOKEN used for token value")
+	return os.Getenv("TFE_TOKEN")
+}
+
+func getTokenFromCreds(services *disco.Disco, hostname svchost.Hostname) string {
+	log.Printf("[DEBUG] Attempting to fetch token from Terraform CLI configuration for hostname %s...", hostname)
+	creds, err := services.CredentialsForHost(hostname)
+	if err != nil {
+		log.Printf("[DEBUG] Failed to get credentials for %s: %s (ignoring)", hostname, err)
+	}
+	if creds != nil {
+		return creds.Token()
+	}
+	return ""
+}
+
 func getClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
 	h := tfeHost
 	if tfeHost == "" {
@@ -244,17 +261,9 @@ func getClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
 	// from the environment or from Terraform's CLI configuration or configured credential helper.
 	if token == "" {
 		if os.Getenv("TFE_TOKEN") != "" {
-			log.Printf("[DEBUG] TFE_TOKEN used for token value")
-			token = os.Getenv("TFE_TOKEN")
+			token = getTokenFromEnv()
 		} else {
-			log.Printf("[DEBUG] Attempting to fetch token from Terraform CLI configuration for hostname %s...", hostname)
-			creds, err := services.CredentialsForHost(hostname)
-			if err != nil {
-				log.Printf("[DEBUG] Failed to get credentials for %s: %s (ignoring)", hostname, err)
-			}
-			if creds != nil {
-				token = creds.Token()
-			}
+			token = getTokenFromCreds(services, hostname)
 		}
 	}
 
