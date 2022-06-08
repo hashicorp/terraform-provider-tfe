@@ -29,7 +29,7 @@ resource "tfe_workspace" "test" {
 }
 ```
 
-(**TFC only**) With `execution_mode` of `agent`:
+With `execution_mode` of `agent`:
 
 ```hcl
 resource "tfe_organization" "test-organization" {
