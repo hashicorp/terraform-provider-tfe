@@ -34,6 +34,11 @@ func resourceTFEOrganizationMembership() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"team_ids": {
+				Type: schema.TypeList,
+				Elem: schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -45,9 +50,23 @@ func resourceTFEOrganizationMembershipCreate(d *schema.ResourceData, meta interf
 	email := d.Get("email").(string)
 	organization := d.Get("organization").(string)
 
+		//make a slice of teams 
+	
+	teams := []string{}
+	for _, team := range d.Get("team_id").([]interface{}){
+		if team_id == nil {
+			continue
+		}
+		id += team.id.(string)
+
+		teams = append(team_ids, team.id)
+		teams[team.(string)] = true
+	}
+
 	// Create a new options struct.
 	options := tfe.OrganizationMembershipCreateOptions{
 		Email: tfe.String(email),
+		Teams: team_ids,
 	}
 
 	log.Printf("[DEBUG] Create membership %s for organization: %s", email, organization)
