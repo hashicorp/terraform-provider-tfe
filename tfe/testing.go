@@ -7,7 +7,10 @@ import (
 	tfe "github.com/hashicorp/go-tfe"
 )
 
+const RunTasksURLEnvName = "RUN_TASKS_URL"
+
 type testClientOptions struct {
+	defaultOrganization          string
 	defaultWorkspaceID           string
 	remoteStateConsumersResponse string
 }
@@ -17,6 +20,13 @@ type testClientOptions struct {
 func testTfeClient(t *testing.T, options testClientOptions) *tfe.Client {
 	config := &tfe.Config{
 		Token: "not-a-token",
+	}
+
+	if options.defaultOrganization == "" {
+		options.defaultOrganization = "hashicorp"
+	}
+	if options.defaultWorkspaceID == "" {
+		options.defaultWorkspaceID = "ws-testing"
 	}
 
 	client, err := tfe.NewClient(config)
@@ -50,12 +60,22 @@ func skipIfEnterprise(t *testing.T) {
 	}
 }
 
+func skipUnlessRunTasksDefined(t *testing.T) {
+	if value, ok := os.LookupEnv(RunTasksURLEnvName); !ok || value == "" {
+		t.Skipf("Skipping tests for Run Tasks. Set '%s' to enabled this tests.", RunTasksURLEnvName)
+	}
+}
+
 func enterpriseEnabled() bool {
 	return os.Getenv("ENABLE_TFE") == "1"
 }
 
 func isAcceptanceTest() bool {
 	return os.Getenv("TF_ACC") == "1"
+}
+
+func runTasksURL() string {
+	return os.Getenv(RunTasksURLEnvName)
 }
 
 // Most tests rely on terraform-plugin-sdk/helper/resource.Test to run.  That test helper ensures
