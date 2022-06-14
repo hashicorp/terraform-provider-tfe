@@ -442,7 +442,9 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 
 		if tps, ok := d.GetOk("trigger_prefixes"); ok {
 			for _, tp := range tps.([]interface{}) {
-				options.TriggerPrefixes = append(options.TriggerPrefixes, tp.(string))
+				if val, ok := tp.(string); ok {
+					options.TriggerPrefixes = append(options.TriggerPrefixes, val)
+				}
 			}
 		} else {
 			// Reset trigger prefixes when none are present in the config.
