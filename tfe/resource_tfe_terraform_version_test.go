@@ -19,8 +19,7 @@ func TestAccTFETerraformVersion_basic(t *testing.T) {
 
 	tfVersion := &tfe.AdminTerraformVersion{}
 	sha := genSha(t, "secret", "data")
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	version := genVersion(rInt)
+	version := genSafeRandomTerraformVersion()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -46,8 +45,7 @@ func TestAccTFETerraformVersion_basic(t *testing.T) {
 
 func TestAccTFETerraformVersion_import(t *testing.T) {
 	sha := genSha(t, "secret", "data")
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	version := genVersion(rInt)
+	version := genSafeRandomTerraformVersion()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -77,8 +75,7 @@ func TestAccTFETerraformVersion_full(t *testing.T) {
 
 	tfVersion := &tfe.AdminTerraformVersion{}
 	sha := genSha(t, "secret", "data")
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	version := genVersion(rInt)
+	version := genSafeRandomTerraformVersion()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -252,6 +249,18 @@ func genSha(t *testing.T, secret, data string) string {
 	return sha
 }
 
-func genVersion(rInt int) string {
-	return fmt.Sprintf("%d.%d.%d", rInt, rInt, rInt)
+// genSafeRandomTerraformVersion returns a random version number of the form
+// `1.0.<RANDOM>`, which TFC won't ever select as the latest available
+// Terraform. (At the time of writing, a fresh TFC instance will include
+// official Terraforms 1.2 and higher.) This is necessary because newly created
+// workspaces default to the latest available version, and there's nothing
+// preventing unrelated processes from creating workspaces during these tests.
+func genSafeRandomTerraformVersion() string {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	// Avoid colliding with an official Terraform version. Highest 1.0 was
+	// 1.0.11, so add a little padding and call it good.
+	for rInt < 20 {
+		rInt = rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	}
+	return fmt.Sprintf("1.0.%d", rInt)
 }
