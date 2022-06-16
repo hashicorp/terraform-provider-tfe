@@ -129,6 +129,18 @@ func resourceTFEWorkspace() *schema.Resource {
 				Default:  true,
 			},
 
+			"source_name": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
+
+			"source_url": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
+
 			"speculative_enabled": {
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -222,6 +234,8 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		Description:                tfe.String(d.Get("description").(string)),
 		FileTriggersEnabled:        tfe.Bool(d.Get("file_triggers_enabled").(bool)),
 		QueueAllRuns:               tfe.Bool(d.Get("queue_all_runs").(bool)),
+		SourceName:                 tfe.String(d.Get("source_name").(string)),
+		SourceURL:                  tfe.String(d.Get("source_url").(string)),
 		SpeculativeEnabled:         tfe.Bool(d.Get("speculative_enabled").(bool)),
 		StructuredRunOutputEnabled: tfe.Bool(d.Get("structured_run_output_enabled").(bool)),
 		WorkingDirectory:           tfe.String(d.Get("working_directory").(string)),
@@ -338,6 +352,8 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("operations", workspace.Operations)
 	d.Set("execution_mode", workspace.ExecutionMode)
 	d.Set("queue_all_runs", workspace.QueueAllRuns)
+	d.Set("source_name", workspace.SourceName)
+	d.Set("source_url", workspace.SourceURL)
 	d.Set("speculative_enabled", workspace.SpeculativeEnabled)
 	d.Set("structured_run_output_enabled", workspace.StructuredRunOutputEnabled)
 	d.Set("terraform_version", workspace.TerraformVersion)
@@ -402,7 +418,8 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		d.HasChange("allow_destroy_plan") || d.HasChange("speculative_enabled") ||
 		d.HasChange("operations") || d.HasChange("execution_mode") ||
 		d.HasChange("description") || d.HasChange("agent_pool_id") ||
-		d.HasChange("global_remote_state") || d.HasChange("structured_run_output_enabled") {
+		d.HasChange("global_remote_state") || d.HasChange("structured_run_output_enabled") ||
+		d.HasChange("source_name") || d.HasChange("source_url") {
 		// Create a new options struct.
 		options := tfe.WorkspaceUpdateOptions{
 			Name:                       tfe.String(d.Get("name").(string)),
@@ -412,6 +429,8 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			FileTriggersEnabled:        tfe.Bool(d.Get("file_triggers_enabled").(bool)),
 			GlobalRemoteState:          tfe.Bool(d.Get("global_remote_state").(bool)),
 			QueueAllRuns:               tfe.Bool(d.Get("queue_all_runs").(bool)),
+			SourceName:                 tfe.String(d.Get("source_name").(string)),
+			SourceURL:                  tfe.String(d.Get("source_url").(string)),
 			SpeculativeEnabled:         tfe.Bool(d.Get("speculative_enabled").(bool)),
 			StructuredRunOutputEnabled: tfe.Bool(d.Get("structured_run_output_enabled").(bool)),
 			WorkingDirectory:           tfe.String(d.Get("working_directory").(string)),
