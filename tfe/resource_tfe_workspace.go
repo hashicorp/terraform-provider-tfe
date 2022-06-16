@@ -136,9 +136,10 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"source_url": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
+				Type:         schema.TypeString,
+				Optional:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.IsURLWithHTTPorHTTPS,
 			},
 
 			"speculative_enabled": {
@@ -234,8 +235,6 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		Description:                tfe.String(d.Get("description").(string)),
 		FileTriggersEnabled:        tfe.Bool(d.Get("file_triggers_enabled").(bool)),
 		QueueAllRuns:               tfe.Bool(d.Get("queue_all_runs").(bool)),
-		SourceName:                 tfe.String(d.Get("source_name").(string)),
-		SourceURL:                  tfe.String(d.Get("source_url").(string)),
 		SpeculativeEnabled:         tfe.Bool(d.Get("speculative_enabled").(bool)),
 		StructuredRunOutputEnabled: tfe.Bool(d.Get("structured_run_output_enabled").(bool)),
 		WorkingDirectory:           tfe.String(d.Get("working_directory").(string)),
@@ -257,6 +256,17 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 
 	if v, ok := d.GetOk("operations"); ok {
 		options.Operations = tfe.Bool(v.(bool))
+	}
+
+	if v, ok := d.GetOk("source_url"); ok {
+		// Include both SourceName and SourceURL here, as SourceName does
+		// nothing if SourceURL is not set. SourceURL also does nothing if
+		// SourceName is not set, but we have a default value for SourceName
+		options.SourceURL = tfe.String(v.(string))
+		options.SourceName = tfe.String(v.(string))
+	}
+	if v, ok := d.GetOk("source_name"); ok {
+		options.SourceName = tfe.String(v.(string))
 	}
 
 	// Process all configured options.
