@@ -5,6 +5,7 @@ BREAKING CHANGES:
 
 BUG FIXES:
 * Prevent overwriting `vcs_repo` attributes in `r/tfe_workspace` when update API call fails ([#498](https://github.com/hashicorp/terraform-provider-tfe/pull/498))
+* Fix panic crash on `trigger_prefixes` update in `r/tfe_workspace` when given empty strings ([#518](https://github.com/hashicorp/terraform-provider-tfe/pull/518))
 
 FEATURES:
 * r/team, d/team: Add manage_run_tasks to the tfe_team organization_access attributes ([#486](https://github.com/hashicorp/terraform-provider-tfe/pull/486))
