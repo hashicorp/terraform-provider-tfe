@@ -26,6 +26,12 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 				Optional: true,
 			},
 
+			"exclude_tags": {
+				Type:     schema.TypeList,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Optional: true,
+			},
+
 			"organization": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -70,11 +76,27 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 
 	options := &tfe.WorkspaceListOptions{}
 
+	excludeTagLookupMap := make(map[string]bool)
+	var excludeTagBuf strings.Builder
+	for _, excludedTag := range d.Get("exclude_tags").([]interface{}) {
+		if exTag, ok := excludedTag.(string); ok && len(strings.TrimSpace(exTag)) != 0 {
+			excludeTagLookupMap[exTag] = true
+
+			if excludeTagBuf.Len() > 0 {
+				excludeTagBuf.WriteByte(',')
+			}
+			excludeTagBuf.WriteString(exTag)
+		}
+	}
+
+	if excludeTagBuf.Len() > 0 {
+		options.ExcludeTags = excludeTagBuf.String()
+	}
+
 	// Create a search string with all the tag names we are looking for.
 	var tagSearchParts []string
 	for _, tagName := range d.Get("tag_names").([]interface{}) {
-		name := tagName.(string)
-		if len(strings.TrimSpace(name)) != 0 {
+		if name, ok := tagName.(string); ok && len(strings.TrimSpace(name)) != 0 {
 			id += name // add to the state id
 			tagSearchParts = append(tagSearchParts, name)
 		}
