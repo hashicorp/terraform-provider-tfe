@@ -1,7 +1,9 @@
-## 0.32.0 (Unreleased)
+## 0.32.0 (June 20th, 2022)
+
+0.32.0 is an impactful release that includes several bug fixes, support for [run tasks](https://www.terraform.io/cloud-docs/workspaces/settings/run-tasks#run-tasks) and several breaking changes that you should review carefully.
 
 BREAKING CHANGES:
-* **Removed Authentication Method**: Host-specific TF_TOKEN_... environment variable can no longer be used for token authentication. This method of authentication is incompatible with the Terraform Cloud remote execution model. Please use the TFE_TOKEN environment variable.
+* **Removed Authentication Method**: Host-specific TF_TOKEN_... environment variable (added in 0.31.0) can no longer be used for token authentication. This method of authentication is incompatible with the Terraform Cloud remote execution model. Please use the TFE_TOKEN environment variable.
 * r/tfe_workspace: Default value of the `file_triggers_enabled` field is changed to `false`. This will align the
   `file_triggers_enabled` field default value with the default value for the same field in the
   [TFC API](https://www.terraform.io/cloud-docs/api-docs/workspaces).
