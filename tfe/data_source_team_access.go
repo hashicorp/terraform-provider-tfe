@@ -46,6 +46,11 @@ func dataSourceTFETeamAccess() *schema.Resource {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
+
+						"run_tasks": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
 					},
 				},
 			},

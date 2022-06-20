@@ -112,6 +112,11 @@ func resourceTFETeamAccess() *schema.Resource {
 							Type:     schema.TypeBool,
 							Required: true,
 						},
+
+						"run_tasks": {
+							Type:     schema.TypeBool,
+							Required: true,
+						},
 					},
 				},
 			},
@@ -193,6 +198,12 @@ func resourceTFETeamAccessCreate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
+	if d.HasChange("permissions.0.run_tasks") {
+		if v, ok := d.GetOkExists("permissions.0.run_tasks"); ok {
+			options.RunTasks = tfe.Bool(v.(bool))
+		}
+	}
+
 	log.Printf("[DEBUG] Give team %s %s access to workspace: %s", tm.Name, access, ws.Name)
 	tmAccess, err := tfeClient.TeamAccess.Add(ctx, options)
 	if err != nil {
@@ -227,6 +238,7 @@ func resourceTFETeamAccessRead(d *schema.ResourceData, meta interface{}) error {
 		"state_versions":    tmAccess.StateVersions,
 		"sentinel_mocks":    tmAccess.SentinelMocks,
 		"workspace_locking": tmAccess.WorkspaceLocking,
+		"run_tasks":         tmAccess.RunTasks,
 	}}
 	if err := d.Set("permissions", permissions); err != nil {
 		return fmt.Errorf("error setting permissions for team access %s: %w", d.Id(), err)
@@ -281,6 +293,12 @@ func resourceTFETeamAccessUpdate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
+	if d.HasChange("permissions.0.run_tasks") {
+		if v, ok := d.GetOkExists("permissions.0.run_tasks"); ok {
+			options.RunTasks = tfe.Bool(v.(bool))
+		}
+	}
+
 	log.Printf("[DEBUG] Update team access: %s", d.Id())
 	tmAccess, err := tfeClient.TeamAccess.Update(ctx, d.Id(), options)
 	if err != nil {
@@ -295,6 +313,7 @@ func resourceTFETeamAccessUpdate(d *schema.ResourceData, meta interface{}) error
 		"state_versions":    tmAccess.StateVersions,
 		"sentinel_mocks":    tmAccess.SentinelMocks,
 		"workspace_locking": tmAccess.WorkspaceLocking,
+		"run_tasks":         tmAccess.RunTasks,
 	}}
 	if err := d.Set("permissions", permissions); err != nil {
 		return fmt.Errorf("error setting permissions for team access %s: %w", d.Id(), err)
@@ -397,7 +416,14 @@ func setCustomAccess(d *schema.ResourceDiff) error {
 	// Interpolated values not known at plan time are not allowed because we cannot re-check
 	// for a change in permissions later - when the plan is expanded for new values learned during
 	// an apply. This creates an inconsistent final plan and causes an error.
-	for _, permission := range []string{"permissions.0.runs", "permissions.0.variables", "permissions.0.state_versions", "permissions.0.sentinel_mocks", "permissions.0.workspace_locking"} {
+	for _, permission := range []string{
+		"permissions.0.runs",
+		"permissions.0.variables",
+		"permissions.0.state_versions",
+		"permissions.0.sentinel_mocks",
+		"permissions.0.workspace_locking",
+		"permissions.0.run_tasks",
+	} {
 		if !d.NewValueKnown(permission) {
 			return fmt.Errorf("'%q' cannot be derived from a value that is unknown during planning", permission)
 		}
