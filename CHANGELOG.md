@@ -1,3 +1,9 @@
+## 0.32.1 (June 21st, 2022)
+
+BUG FIXES:
+
+* Fixed an issue where a team data source could be populated with the wrong team.
+
 ## 0.32.0 (June 20th, 2022)
 
 0.32.0 is an impactful release that includes several bug fixes, support for [run tasks](https://www.terraform.io/cloud-docs/workspaces/settings/run-tasks#run-tasks) and several breaking changes that you should review carefully.
