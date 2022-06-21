@@ -2,7 +2,7 @@
 
 BUG FIXES:
 
-* Fixed an issue where a team data source could be populated with the wrong team.
+* Fixed a bug in the latest release where a team data source could be populated with the wrong team. ([#530](https://github.com/hashicorp/terraform-provider-tfe/pull/530))
 
 ## 0.32.0 (June 20th, 2022)
 
