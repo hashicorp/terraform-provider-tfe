@@ -63,8 +63,8 @@ func dataSourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 		for {
 			for _, team := range tl.Items {
 				if team.Name == name {
-					d.SetId(tl.Items[0].ID)
-					d.Set("sso_team_id", tl.Items[0].SSOTeamID)
+					d.SetId(team.ID)
+					d.Set("sso_team_id", team.SSOTeamID)
 					return nil
 				}
 			}
