@@ -9,8 +9,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-// var variableSetIdRegexp = regexp.MustCompile("varset-[a-zA-Z0-9]{16}$")
-
 func resourceTFEVariableSetWorkspaceAttachment() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceTFEVariableSetWorkspaceAttachmentCreate,
@@ -79,6 +77,7 @@ func resourceTFEVariableSetWorkspaceAttachmentRead(d *schema.ResourceData, meta 
 		return fmt.Errorf("Error reading configuration of variable set %s: %w", d.Id(), err)
 	}
 
+	// Verify workspace listed in variable set
 	check := false
 	for _, workspace := range vS.Workspaces {
 		if workspace.ID == wId {
