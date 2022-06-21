@@ -27,7 +27,7 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 			},
 
 			"exclude_tags": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Optional: true,
 			},
@@ -78,7 +78,7 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 
 	excludeTagLookupMap := make(map[string]bool)
 	var excludeTagBuf strings.Builder
-	for _, excludedTag := range d.Get("exclude_tags").([]interface{}) {
+	for _, excludedTag := range d.Get("exclude_tags").(*schema.Set).List() {
 		if exTag, ok := excludedTag.(string); ok && len(strings.TrimSpace(exTag)) != 0 {
 			excludeTagLookupMap[exTag] = true
 
@@ -116,7 +116,15 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 
 		for _, w := range wl.Items {
 			nameIncluded := isWildcard || names[w.Name]
-			if hasOnlyTags || nameIncluded {
+			// fallback for tfe instances that don't yet support exclude-tags
+			hasExcludedTag := false
+			for _, tag := range w.TagNames {
+				if _, ok := excludeTagLookupMap[tag]; ok {
+					hasExcludedTag = true
+					break
+				}
+			}
+			if (hasOnlyTags || nameIncluded) && !hasExcludedTag {
 				fullNames[w.Name] = organization + "/" + w.Name
 				ids[w.Name] = w.ID
 			}

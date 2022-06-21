@@ -27,6 +27,12 @@ data "tfe_workspace_ids" "prod-apps" {
   tag_names    = ["prod", "app", "aws"]
   organization = "my-org-name"
 }
+
+data "tfe_workspace_ids" "prod-only" {
+  tag_names    = ["prod"]
+  exclude_tags = ["app"]
+  organization = "my-org-name"
+}
 ```
 
 ## Argument Reference
@@ -39,11 +45,12 @@ The following arguments are supported. At least one of `names` or `tag_names` mu
     To select _all_ workspaces for an organization, provide a list with a single
     asterisk, like `["*"]`. No other use of wildcards is supported.
 * `tag_names` - (Optional) A list of tag names to search for.
+* `exclude_tags` - (Optional) A list of tag names to exclude when searching.
 * `organization` - (Required) Name of the organization.
 
 ## Attributes Reference
 
 In addition to all arguments above, the following attributes are exported:
 
-* `full_names` - A map of workspace names and their full names, which look like `<ORGANIZATION>/<WORKSPACE>`. 
+* `full_names` - A map of workspace names and their full names, which look like `<ORGANIZATION>/<WORKSPACE>`.
 * `ids` - A map of workspace names and their opaque, immutable IDs, which look like `ws-<RANDOM STRING>`.

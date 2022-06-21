@@ -520,9 +520,9 @@ resource "tfe_workspace" "dummy" {
 
 data "tfe_workspace_ids" "good" {
   tag_names    = ["good"]
-	exclude_tags    = ["happy"]
+	exclude_tags = ["happy"]
   organization = tfe_workspace.foo.organization
-  depends_on = [
+  depends_on   = [
     tfe_workspace.foo,
     tfe_workspace.bar,
     tfe_workspace.dummy
@@ -557,9 +557,9 @@ resource "tfe_workspace" "dummy" {
 
 data "tfe_workspace_ids" "good" {
   tag_names    = ["good", "happy"]
-	exclude_tags    = ["happy"]
+	exclude_tags = ["happy"]
   organization = tfe_workspace.foo.organization
-  depends_on = [
+  depends_on   = [
     tfe_workspace.foo,
     tfe_workspace.bar,
     tfe_workspace.dummy
