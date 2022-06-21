@@ -1,3 +1,8 @@
+## 0.33.0 (Unreleased)
+
+FEATURES:
+* r/workspace, d/workspace: Add `source_name` and `source_url` to workspaces
+
 ## 0.32.0 (June 20th, 2022)
 
 0.32.0 is an impactful release that includes several bug fixes, support for [run tasks](https://www.terraform.io/cloud-docs/workspaces/settings/run-tasks#run-tasks) and several breaking changes that you should review carefully.

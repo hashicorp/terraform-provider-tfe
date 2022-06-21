@@ -46,6 +46,8 @@ In addition to all arguments above, the following attributes are exported:
 * `resource_count` - The number of resources managed by the workspace.
 * `run_failures` - The number of run failures on the workspace.
 * `runs_count` - The number of runs on the workspace.
+* `source_name` - The name of the workspace creation source, if set.
+* `source_url` - The URL of the workspace creatino source, if set.
 * `speculative_enabled` - Indicates whether this workspace allows speculative plans.
 * `ssh_key_id` - The ID of an SSH key assigned to the workspace.
 * `structured_run_output_enabled` - Indicates whether runs in this workspace use the enhanced apply UI. 
