@@ -26,6 +26,7 @@ FEATURES:
 * r/team, d/team: Add manage_run_tasks to the tfe_team organization_access attributes ([#486](https://github.com/hashicorp/terraform-provider-tfe/pull/486))
 * **New Resource**: `tfe_organization_run_task` ([#488](https://github.com/hashicorp/terraform-provider-tfe/pull/488))
 * **New Resource**: `tfe_workspace_run_task` ([#488](https://github.com/hashicorp/terraform-provider-tfe/pull/488))
+* **New Resource**: `tfe_variable_set_workspace_attachment` ([#526](https://github.com/hashicorp/terraform-provider-tfe/pull/526))
 * **New Data Source**: d/tfe_organization_run_task ([#488](https://github.com/hashicorp/terraform-provider-tfe/pull/488))
 * **New Data Source**: d/tfe_workspace_run_task ([#488](https://github.com/hashicorp/terraform-provider-tfe/pull/488))
 * r/tfe_notification_configuration: Add Microsoft Teams notification type ([#484](https://github.com/hashicorp/terraform-provider-tfe/pull/484))
