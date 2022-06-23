@@ -1,5 +1,8 @@
 ## 0.33.0 (Unreleased)
 
+BUG FIXES:
+* r/tfe_variable_set: No longer marks `workspace_ids` as a computed property as it would cause invalid state due to behavior conflict. ([#534](https://github.com/hashicorp/terraform-provider-tfe/pull/534)) 
+
 FEATURES:
 * **New Resource**: `tfe_workspace_variable_set` ([#537](https://github.com/hashicorp/terraform-provider-tfe/pull/537)) adds the ability to assign a variable set to a workspace in a single, flexible resource.
 
