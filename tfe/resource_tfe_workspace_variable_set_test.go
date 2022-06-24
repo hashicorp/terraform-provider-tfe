@@ -51,24 +51,24 @@ func testAccCheckTFEWorkspaceVariableSetExists(n string) resource.TestCheckFunc 
 		if id == "" {
 			return fmt.Errorf("No ID is set")
 		}
-		wId, vSId, err := decodeWorkspaceVariableSetId(id)
+		wID, vSID, err := decodeWorkspaceVariableSetID(id)
 		if err != nil {
 			return fmt.Errorf("error decoding ID (%s): %w", id, err)
 		}
 
-		vS, err := tfeClient.VariableSets.Read(ctx, vSId, &tfe.VariableSetReadOptions{
+		vS, err := tfeClient.VariableSets.Read(ctx, vSID, &tfe.VariableSetReadOptions{
 			Include: &[]tfe.VariableSetIncludeOpt{tfe.VariableSetWorkspaces},
 		})
 		if err != nil {
-			return err
+			return fmt.Errorf("error reading variable set %s: %w", vSID, err)
 		}
 		for _, workspace := range vS.Workspaces {
-			if workspace.ID == wId {
+			if workspace.ID == wID {
 				return nil
 			}
 		}
 
-		return fmt.Errorf("Workspace (%s) is not attached to variable set (%s).", wId, vSId)
+		return fmt.Errorf("Workspace (%s) is not attached to variable set (%s).", wID, vSID)
 	}
 }
 
@@ -124,7 +124,7 @@ resource "tfe_workspace_variable_set" "test" {
 }`
 }
 
-func decodeWorkspaceVariableSetId(id string) (string, string, error) {
+func decodeWorkspaceVariableSetID(id string) (string, string, error) {
 	idParts := strings.Split(id, "_")
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 		return "", "", fmt.Errorf("expected ID in the form of workspace-id_variable-set-id, given: %q", id)

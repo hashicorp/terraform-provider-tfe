@@ -1,6 +1,7 @@
 package tfe
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -37,19 +38,19 @@ func resourceTFEWorkspaceVariableSet() *schema.Resource {
 func resourceTFEWorkspaceVariableSetCreate(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	vSId := d.Get("variable_set_id").(string)
-	wId := d.Get("workspace_id").(string)
+	vSID := d.Get("variable_set_id").(string)
+	wID := d.Get("workspace_id").(string)
 
 	applyOptions := tfe.VariableSetApplyToWorkspacesOptions{}
-	applyOptions.Workspaces = append(applyOptions.Workspaces, &tfe.Workspace{ID: wId})
+	applyOptions.Workspaces = append(applyOptions.Workspaces, &tfe.Workspace{ID: wID})
 
-	err := tfeClient.VariableSets.ApplyToWorkspaces(ctx, vSId, &applyOptions)
+	err := tfeClient.VariableSets.ApplyToWorkspaces(ctx, vSID, &applyOptions)
 	if err != nil {
 		return fmt.Errorf(
-			"Error applying variable set id %s to workspace %s: %w", vSId, wId, err)
+			"Error applying variable set id %s to workspace %s: %w", vSID, wID, err)
 	}
 
-	id := encodeVariableSetWorkspaceAttachment(wId, vSId)
+	id := encodeVariableSetWorkspaceAttachment(wID, vSID)
 	d.SetId(id)
 
 	return resourceTFEWorkspaceVariableSetRead(d, meta)
@@ -58,15 +59,15 @@ func resourceTFEWorkspaceVariableSetCreate(d *schema.ResourceData, meta interfac
 func resourceTFEWorkspaceVariableSetRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	wId := d.Get("workspace_id").(string)
-	vSId := d.Get("variable_set_id").(string)
+	wID := d.Get("workspace_id").(string)
+	vSID := d.Get("variable_set_id").(string)
 
 	log.Printf("[DEBUG] Read configuration of workspace variable set: %s", d.Id())
-	vS, err := tfeClient.VariableSets.Read(ctx, vSId, &tfe.VariableSetReadOptions{
+	vS, err := tfeClient.VariableSets.Read(ctx, vSID, &tfe.VariableSetReadOptions{
 		Include: &[]tfe.VariableSetIncludeOpt{tfe.VariableSetWorkspaces},
 	})
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			log.Printf("[DEBUG] Variable set %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
@@ -77,42 +78,42 @@ func resourceTFEWorkspaceVariableSetRead(d *schema.ResourceData, meta interface{
 	// Verify workspace listed in variable set
 	check := false
 	for _, workspace := range vS.Workspaces {
-		if workspace.ID == wId {
+		if workspace.ID == wID {
 			check = true
-			d.Set("workspace_id", wId)
+			d.Set("workspace_id", wID)
 		}
 	}
 	if !check {
-		log.Printf("[DEBUG] Workspace %s not attached to variable set %s. Removing from state.", wId, vSId)
+		log.Printf("[DEBUG] Workspace %s not attached to variable set %s. Removing from state.", wID, vSID)
 		d.SetId("")
 		return nil
 	}
 
-	d.Set("variable_set_id", vSId)
+	d.Set("variable_set_id", vSID)
 	return nil
 }
 
 func resourceTFEWorkspaceVariableSetDelete(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	wId := d.Get("workspace_id").(string)
-	vSId := d.Get("variable_set_id").(string)
+	wID := d.Get("workspace_id").(string)
+	vSID := d.Get("variable_set_id").(string)
 
-	log.Printf("[DEBUG] Delete workspace (%s) from variable set (%s)", wId, vSId)
+	log.Printf("[DEBUG] Delete workspace (%s) from variable set (%s)", wID, vSID)
 	removeOptions := tfe.VariableSetRemoveFromWorkspacesOptions{}
-	removeOptions.Workspaces = append(removeOptions.Workspaces, &tfe.Workspace{ID: wId})
+	removeOptions.Workspaces = append(removeOptions.Workspaces, &tfe.Workspace{ID: wID})
 
-	err := tfeClient.VariableSets.RemoveFromWorkspaces(ctx, vSId, &removeOptions)
+	err := tfeClient.VariableSets.RemoveFromWorkspaces(ctx, vSID, &removeOptions)
 	if err != nil {
 		return fmt.Errorf(
-			"Error removing workspace %s from variable set %s: %w", wId, vSId, err)
+			"Error removing workspace %s from variable set %s: %w", wID, vSID, err)
 	}
 
 	return nil
 }
 
-func encodeVariableSetWorkspaceAttachment(wId, vSId string) string {
-	return fmt.Sprintf("%s_%s", wId, vSId)
+func encodeVariableSetWorkspaceAttachment(wID, vSID string) string {
+	return fmt.Sprintf("%s_%s", wID, vSID)
 }
 
 func resourceTFEWorkspaceVariableSetImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
@@ -170,13 +171,13 @@ func resourceTFEWorkspaceVariableSetImporter(d *schema.ResourceData, meta interf
 	return nil, fmt.Errorf("workspace %s has not been assigned to variable set %s", wsName, vSName)
 }
 
-func destructureImportID(splitId []string) (string, string, string, error) {
-	if len(splitId) != 3 {
+func destructureImportID(splitID []string) (string, string, string, error) {
+	if len(splitID) != 3 {
 		return "", "", "", fmt.Errorf(
 			"invalid workspace variable set input format: %s (expected <ORGANIZATION><WORKSPACE NAME>/<VARIABLE SET NAME>)",
-			splitId,
+			splitID,
 		)
 	}
 
-	return splitId[0], splitId[1], splitId[2], nil
+	return splitID[0], splitID[1], splitID[2], nil
 }
