@@ -81,8 +81,6 @@ func resourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interfac
 		return fmt.Errorf("Error reading configuration of membership %s: %w", d.Id(), err)
 	}
 
-	// Update the config.
-	log.Printf("[INFO] User = %#v", membership.User)
 	d.Set("email", membership.Email)
 	d.Set("organization", membership.Organization.Name)
 	d.Set("user_id", membership.User.ID)
