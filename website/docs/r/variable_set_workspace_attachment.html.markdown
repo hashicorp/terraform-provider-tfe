@@ -1,16 +1,16 @@
 ---
 layout: "tfe"
-page_title: "Terraform Enterprise: tfe_variable_set"
-sidebar_current: "docs-resource-tfe-variable-set-workspace-attachment"
+page_title: "Terraform Enterprise: tfe_workspace_variable_set"
+sidebar_current: "docs-resource-tfe-workspace-variable-set"
 description: |-
-  Add a workspace to a variable set.
+  Add a variable set to a workspace
 ---
 
-# tfe_variable_set_workspace_attachment
+# tfe_workspace_variable_set
 
-Creats and destroys workspace attachments to variable sets.
+Adds and removes variable sets from a workspace
 
-!> **Warning:** `tfe_variable_set` has an argument `workspace_ids` that should not be used alongside this resource. They attempt to manage the same attachments and are mutually exclusive.
+!> **Warning:** `tfe_variable_set` has a deprecated argument `workspace_ids` that should not be used alongside this resource. They attempt to manage the same attachments and are mutually exclusive.
 
 ## Example Usage
 
@@ -33,7 +33,7 @@ resource "tfe_variable_set" "test" {
   organization  = tfe_organization.test.name
 }
 
-resource "tfe_variable_set_workspace_attachment" "test" {
+resource "tfe_workspace_variable_set" "test" {
   variable_set_id = tfe_variable_set.test.id
   workspace_id    = tfe_workspace.test.id
 }
@@ -43,17 +43,17 @@ resource "tfe_variable_set_workspace_attachment" "test" {
 
 The following arguments are supported:
 
-* `variable_set_id` - (Required) Name of the variable set.
-* `workspace_id` - (Required) Workspace ID to attach to variable set.
+* `variable_set_id` - (Required) Name of the variable set to add.
+* `workspace_id` - (Required) Workspace ID to add the variable set to.
 
 ## Attributes Reference
 
-* `id` - The ID of the variable set attachment. ID format: `<variable-set-id>_<workspace-id>`
+* `id` - The ID of the variable set attachment. ID format: `<workspace-id>_<variable-set-id>`
 
 ## Import
 
-Variable set workspace attachment can be imported; use `<variable-set-id>_<workspace-id>` as the import ID. For example:
+Workspace Variable Sets can be imported; use `<workspace-id>/<variable-set-id>`. For example:
 
 ```shell
-terraform import tfe_variable_set_workspace_attachment.test 'varset-QDyoQft813kinftv_ws-EnSMN5DkW3KcuYFc'
+terraform import tfe_workspace_variable_set.test 'varset-QDyoQft813kinftv/ws-EnSMN5DkW3KcuYFc'
 ```

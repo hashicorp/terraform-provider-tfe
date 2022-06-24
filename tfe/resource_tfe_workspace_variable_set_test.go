@@ -3,6 +3,7 @@ package tfe
 import (
 	"fmt"
 	"math/rand"
+	"strings"
 	"testing"
 	"time"
 
@@ -11,23 +12,23 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccTFEVariableSetWorkspaceAttachment_basic(t *testing.T) {
+func TestAccTFEWorkspaceVariableSet_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEVariableSetWorkspaceAttachmentDestroy,
+		CheckDestroy: testAccCheckTFEWorkspaceVariableSetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEVariableSetWorkspaceAttachment_basic(rInt),
+				Config: testAccTFEWorkspaceVariableSet_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEVariableSetWorkspaceAttachmentExists(
-						"tfe_variable_set_workspace_attachment.test"),
+					testAccCheckTFEWorkspaceVariableSetExists(
+						"tfe_workspace_variable_set.test"),
 				),
 			},
 			{
-				ResourceName:        "tfe_variable_set_workspace_attachment.test",
+				ResourceName:        "tfe_workspace_variable_set.test",
 				ImportState:         true,
 				ImportStateIdPrefix: "",
 				ImportStateVerify:   true,
@@ -36,8 +37,7 @@ func TestAccTFEVariableSetWorkspaceAttachment_basic(t *testing.T) {
 	})
 }
 
-func testAccCheckTFEVariableSetWorkspaceAttachmentExists(
-	n string) resource.TestCheckFunc {
+func testAccCheckTFEWorkspaceVariableSetExists(n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		tfeClient := testAccProvider.Meta().(*tfe.Client)
 
@@ -51,7 +51,10 @@ func testAccCheckTFEVariableSetWorkspaceAttachmentExists(
 		if id == "" {
 			return fmt.Errorf("No ID is set")
 		}
-		vSId, wId, err := DecodeVariableSetWorkspaceAttachment(id)
+		vSId, wId, err := decodeWorkspaceVariableSetId(id)
+		if err != nil {
+			return fmt.Errorf("error decoding ID (%s): %w", id, err)
+		}
 
 		vS, err := tfeClient.VariableSets.Read(ctx, vSId, &tfe.VariableSetReadOptions{
 			Include: &[]tfe.VariableSetIncludeOpt{tfe.VariableSetWorkspaces},
@@ -69,7 +72,7 @@ func testAccCheckTFEVariableSetWorkspaceAttachmentExists(
 	}
 }
 
-func testAccCheckTFEVariableSetWorkspaceAttachmentDestroy(s *terraform.State) error {
+func testAccCheckTFEWorkspaceVariableSetDestroy(s *terraform.State) error {
 	tfeClient := testAccProvider.Meta().(*tfe.Client)
 
 	for _, rs := range s.RootModule().Resources {
@@ -90,7 +93,7 @@ func testAccCheckTFEVariableSetWorkspaceAttachmentDestroy(s *terraform.State) er
 	return nil
 }
 
-func testAccTFEVariableSetWorkspaceAttachment_base(rInt int) string {
+func testAccTFEWorkspaceVariableSet_base(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "test" {
   name  = "tst-terraform-%d"
@@ -113,10 +116,18 @@ resource "tfe_variable_set" "test" {
 `, rInt, rInt)
 }
 
-func testAccTFEVariableSetWorkspaceAttachment_basic(rInt int) string {
-	return testAccTFEVariableSetWorkspaceAttachment_base(rInt) + `
-resource "tfe_variable_set_workspace_attachment" "test" {
+func testAccTFEWorkspaceVariableSet_basic(rInt int) string {
+	return testAccTFEWorkspaceVariableSet_base(rInt) + `
+resource "tfe_workspace_variable_set" "test" {
   variable_set_id = tfe_variable_set.test.id
   workspace_id    = tfe_workspace.test.id
 }`
+}
+
+func decodeWorkspaceVariableSetId(id string) (string, string, error) {
+	idParts := strings.Split(id, "_")
+	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
+		return "", "", fmt.Errorf("expected ID in the form of variable-set-id_workspace-id, given: %q", id)
+	}
+	return idParts[0], idParts[1], nil
 }
