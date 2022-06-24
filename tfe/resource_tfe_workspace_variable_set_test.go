@@ -28,10 +28,10 @@ func TestAccTFEWorkspaceVariableSet_basic(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:        "tfe_workspace_variable_set.test",
-				ImportState:         true,
-				ImportStateIdPrefix: "",
-				ImportStateVerify:   true,
+				ResourceName:      "tfe_workspace_variable_set.test",
+				ImportState:       true,
+				ImportStateId:     fmt.Sprintf("tst-terraform-%d/tst-terraform-%d/variable_set_test", rInt, rInt),
+				ImportStateVerify: true,
 			},
 		},
 	})
@@ -51,7 +51,7 @@ func testAccCheckTFEWorkspaceVariableSetExists(n string) resource.TestCheckFunc 
 		if id == "" {
 			return fmt.Errorf("No ID is set")
 		}
-		vSId, wId, err := decodeWorkspaceVariableSetId(id)
+		wId, vSId, err := decodeWorkspaceVariableSetId(id)
 		if err != nil {
 			return fmt.Errorf("error decoding ID (%s): %w", id, err)
 		}
@@ -127,7 +127,7 @@ resource "tfe_workspace_variable_set" "test" {
 func decodeWorkspaceVariableSetId(id string) (string, string, error) {
 	idParts := strings.Split(id, "_")
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
-		return "", "", fmt.Errorf("expected ID in the form of variable-set-id_workspace-id, given: %q", id)
+		return "", "", fmt.Errorf("expected ID in the form of workspace-id_variable-set-id, given: %q", id)
 	}
 	return idParts[0], idParts[1], nil
 }

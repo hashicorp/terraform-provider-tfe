@@ -52,8 +52,8 @@ The following arguments are supported:
 
 ## Import
 
-Workspace Variable Sets can be imported; use `<workspace-id>/<variable-set-id>`. For example:
+Workspace Variable Sets can be imported; use `<ORGANIZATION>/<WORKSPACE NAME>/<VARIABLE SET NAME>`. For example:
 
 ```shell
-terraform import tfe_workspace_variable_set.test 'varset-QDyoQft813kinftv/ws-EnSMN5DkW3KcuYFc'
+terraform import tfe_workspace_variable_set.test 'my-org-name/workspace/My Variable Set'
 ```

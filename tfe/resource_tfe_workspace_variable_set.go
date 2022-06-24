@@ -3,6 +3,7 @@ package tfe
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -14,7 +15,7 @@ func resourceTFEWorkspaceVariableSet() *schema.Resource {
 		Read:   resourceTFEWorkspaceVariableSetRead,
 		Delete: resourceTFEWorkspaceVariableSetDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			State: resourceTFEWorkspaceVariableSetImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -48,7 +49,7 @@ func resourceTFEWorkspaceVariableSetCreate(d *schema.ResourceData, meta interfac
 			"Error applying variable set id %s to workspace %s: %w", vSId, wId, err)
 	}
 
-	id := encodeVariableSetWorkspaceAttachment(vSId, wId)
+	id := encodeVariableSetWorkspaceAttachment(wId, vSId)
 	d.SetId(id)
 
 	return resourceTFEWorkspaceVariableSetRead(d, meta)
@@ -110,6 +111,72 @@ func resourceTFEWorkspaceVariableSetDelete(d *schema.ResourceData, meta interfac
 	return nil
 }
 
-func encodeVariableSetWorkspaceAttachment(vSId, wId string) string {
-	return fmt.Sprintf("%s_%s", vSId, wId)
+func encodeVariableSetWorkspaceAttachment(wId, vSId string) string {
+	return fmt.Sprintf("%s_%s", wId, vSId)
+}
+
+func resourceTFEWorkspaceVariableSetImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	// The format of the import ID is <ORGANIZATION/WORKSPACE NAME/VARSET NAME> but be aware
+	// that variable set names can contain forward slash characters but organization/workspace
+	// names cannot. Therefore, we split the import ID into at most 3 substrings.
+	organization, wsName, vSName, err := destructureImportID(strings.SplitN(d.Id(), "/", 3))
+	if err != nil {
+		return nil, err
+	}
+
+	tfeClient := meta.(*tfe.Client)
+
+	// Ensure a workspace of this name exists before fetching all the variable sets in the org
+	_, err = tfeClient.Workspaces.Read(ctx, organization, wsName)
+	if err != nil {
+		return nil, fmt.Errorf("error reading configuration of workspace %s in organization %s: %w", wsName, organization, err)
+	}
+
+	options := &tfe.VariableSetListOptions{
+		Include: string(tfe.VariableSetWorkspaces),
+	}
+	for {
+		list, err := tfeClient.VariableSets.List(ctx, organization, options)
+		if err != nil {
+			return nil, fmt.Errorf("Error retrieving variable sets: %w", err)
+		}
+		for _, vs := range list.Items {
+			if vs.Name != vSName {
+				continue
+			}
+
+			for _, ws := range vs.Workspaces {
+				if ws.Name != wsName {
+					break
+				}
+
+				d.Set("workspace_id", ws.ID)
+				d.Set("variable_set_id", vs.ID)
+				d.SetId(encodeVariableSetWorkspaceAttachment(ws.ID, vs.ID))
+
+				return []*schema.ResourceData{d}, nil
+			}
+		}
+
+		// Exit the loop when we've seen all pages.
+		if list.CurrentPage >= list.TotalPages {
+			break
+		}
+
+		// Update the page number to get the next page.
+		options.PageNumber = list.NextPage
+	}
+
+	return nil, fmt.Errorf("workspace %s has not been assigned to variable set %s", wsName, vSName)
+}
+
+func destructureImportID(splitId []string) (string, string, string, error) {
+	if len(splitId) != 3 {
+		return "", "", "", fmt.Errorf(
+			"invalid workspace variable set input format: %s (expected <ORGANIZATION><WORKSPACE NAME>/<VARIABLE SET NAME>)",
+			splitId,
+		)
+	}
+
+	return splitId[0], splitId[1], splitId[2], nil
 }
