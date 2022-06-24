@@ -10,7 +10,7 @@ description: |-
 
 Adds and removes variable sets from a workspace
 
-!> **Warning:** `tfe_variable_set` has a deprecated argument `workspace_ids` that should not be used alongside this resource. They attempt to manage the same attachments and are mutually exclusive.
+-> **Note:** `tfe_variable_set` has a deprecated argument `workspace_ids` that should not be used alongside this resource. They attempt to manage the same attachments and are mutually exclusive.
 
 ## Example Usage
 
