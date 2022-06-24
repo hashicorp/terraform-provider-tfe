@@ -9,11 +9,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceTFEVariableSetWorkspaceAttachment() *schema.Resource {
+func resourceTFEWorkspaceVariableSet() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceTFEVariableSetWorkspaceAttachmentCreate,
-		Read:   resourceTFEVariableSetWorkspaceAttachmentRead,
-		Delete: resourceTFEVariableSetWorkspaceAttachmentDelete,
+		Create: resourceTFEWorkspaceVariableSetCreate,
+		Read:   resourceTFEWorkspaceVariableSetRead,
+		Delete: resourceTFEWorkspaceVariableSetDelete,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
 		},
@@ -34,7 +34,7 @@ func resourceTFEVariableSetWorkspaceAttachment() *schema.Resource {
 	}
 }
 
-func resourceTFEVariableSetWorkspaceAttachmentCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEWorkspaceVariableSetCreate(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
 	vSId := d.Get("variable_set_id").(string)
@@ -52,10 +52,10 @@ func resourceTFEVariableSetWorkspaceAttachmentCreate(d *schema.ResourceData, met
 	id := encodeVariableSetWorkspaceAttachment(vSId, wId)
 	d.SetId(id)
 
-	return resourceTFEVariableSetWorkspaceAttachmentRead(d, meta)
+	return resourceTFEWorkspaceVariableSetRead(d, meta)
 }
 
-func resourceTFEVariableSetWorkspaceAttachmentRead(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEWorkspaceVariableSetRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
 	vSId, wId, err := DecodeVariableSetWorkspaceAttachment(d.Id())
@@ -64,7 +64,7 @@ func resourceTFEVariableSetWorkspaceAttachmentRead(d *schema.ResourceData, meta 
 		return fmt.Errorf("error decoding ID (%s): %w", d.Id(), err)
 	}
 
-	log.Printf("[DEBUG] Read configuration of variable set workplace attachment: %s", d.Id())
+	log.Printf("[DEBUG] Read configuration of workspace variable set: %s", d.Id())
 	vS, err := tfeClient.VariableSets.Read(ctx, vSId, &tfe.VariableSetReadOptions{
 		Include: &[]tfe.VariableSetIncludeOpt{tfe.VariableSetWorkspaces},
 	})
@@ -92,11 +92,10 @@ func resourceTFEVariableSetWorkspaceAttachmentRead(d *schema.ResourceData, meta 
 	}
 
 	d.Set("variable_set_id", vSId)
-
 	return nil
 }
 
-func resourceTFEVariableSetWorkspaceAttachmentDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEWorkspaceVariableSetDelete(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
 	vSId, wId, err := DecodeVariableSetWorkspaceAttachment(d.Id())
@@ -109,7 +108,7 @@ func resourceTFEVariableSetWorkspaceAttachmentDelete(d *schema.ResourceData, met
 	removeOptions := tfe.VariableSetRemoveFromWorkspacesOptions{}
 	removeOptions.Workspaces = append(removeOptions.Workspaces, &tfe.Workspace{ID: wId})
 
-	err = tfeClient.VariableSets.RemoveFromWorkspaces(ctx, vSId, &removeOptions)
+	err := tfeClient.VariableSets.RemoveFromWorkspaces(ctx, vSId, &removeOptions)
 	if err != nil {
 		return fmt.Errorf(
 			"Error removing workspace %s from variable set %s: %w", wId, vSId, err)
