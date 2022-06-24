@@ -182,13 +182,34 @@ data "tfe_outputs" "foobar" {
 
 // All of these values reference the outputs in  the file
 // 'test-fixtures/state-versions/terraform.tfstate
-output "test_output_list_string" { value = nonsensitive(data.tfe_outputs.foobar.values.test_output_list_string) }
-output "test_output_string" { value = nonsensitive(data.tfe_outputs.foobar.values.test_output_string) }
-output "test_output_tuple_number" { value = nonsensitive(data.tfe_outputs.foobar.values.test_output_tuple_number) }
-output "test_output_tuple_string" { value = nonsensitive(data.tfe_outputs.foobar.values.test_output_tuple_string) }
-output "test_output_object" { value = nonsensitive(data.tfe_outputs.foobar.values.test_output_object) }
-output "test_output_number" { value = nonsensitive(data.tfe_outputs.foobar.values.test_output_number) }
-output "test_output_bool" { value = nonsensitive(data.tfe_outputs.foobar.values.test_output_bool) }
+output "test_output_list_string" {
+	sensitive = true
+	value = data.tfe_outputs.foobar.values.test_output_list_string
+}
+output "test_output_string" {
+	sensitive = true
+	value = data.tfe_outputs.foobar.values.test_output_string
+}
+output "test_output_tuple_number" {
+	sensitive = true
+	value = data.tfe_outputs.foobar.values.test_output_tuple_number
+}
+output "test_output_tuple_string" {
+	sensitive = true
+	value = data.tfe_outputs.foobar.values.test_output_tuple_string
+}
+output "test_output_object" {
+	sensitive = true
+	value = data.tfe_outputs.foobar.values.test_output_object
+}
+output "test_output_number" {
+	sensitive = true
+	value = data.tfe_outputs.foobar.values.test_output_number
+}
+output "test_output_bool" {
+	sensitive = true
+	value = data.tfe_outputs.foobar.values.test_output_bool
+}
 `, rInt, rInt, org, workspace)
 }
 

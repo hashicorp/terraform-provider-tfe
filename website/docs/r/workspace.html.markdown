@@ -64,28 +64,28 @@ The following arguments are supported:
 * `auto_apply` - (Optional) Whether to automatically apply changes when a
   Terraform plan is successful. Defaults to `false`.
 * `execution_mode` - (Optional) Which [execution mode](https://www.terraform.io/docs/cloud/workspaces/settings.html#execution-mode)
-  to use. Using Terraform Cloud, valid values are `remote`, `local` or`agent`. 
-  Defaults to `remote`. Using Terraform Enterprise, only `remote`and `local` 
-  execution modes are valid.  When set to `local`, the workspace will be used 
-  for state storage only. This value _must not_ be provided if `operations` 
+  to use. Using Terraform Cloud, valid values are `remote`, `local` or`agent`.
+  Defaults to `remote`. Using Terraform Enterprise, only `remote`and `local`
+  execution modes are valid.  When set to `local`, the workspace will be used
+  for state storage only. This value _must not_ be provided if `operations`
   is provided.
 * `file_triggers_enabled` - (Optional) Whether to filter runs based on the changed files
-  in a VCS push. Defaults to `false`. If enabled, the working directory and 
-  trigger prefixes describe a set of paths which must contain changes for a 
-  VCS push to trigger a run. If disabled, any push will trigger a run. 
+  in a VCS push. Defaults to `false`. If enabled, the working directory and
+  trigger prefixes describe a set of paths which must contain changes for a
+  VCS push to trigger a run. If disabled, any push will trigger a run.
 * `global_remote_state` - (Optional) Whether the workspace allows all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (`remote_state_consumer_ids`).
 * `remote_state_consumer_ids` - (Optional) The set of workspace IDs set as explicit remote state consumers for the given workspace.
-* `operations` - **Deprecated** Whether to use remote execution mode. 
-  Defaults to `true`. When set to `false`, the workspace will be used for 
+* `operations` - **Deprecated** Whether to use remote execution mode.
+  Defaults to `true`. When set to `false`, the workspace will be used for
   state storage only. This value _must not_ be provided if `execution_mode` is
   provided.
 * `queue_all_runs` - (Optional) Whether the workspace should start
   automatically performing runs immediately after its creation. Defaults to
   `true`. When set to `false`, runs triggered by a webhook (such as a commit
   in VCS) will not be queued until at least one run has been manually queued.
-  **Note:** This default differs from the Terraform Cloud API default, which 
-  is `false`. The provider uses `true` as any workspace provisioned with 
-  `false` would need to then have a run manually queued out-of-band before 
+  **Note:** This default differs from the Terraform Cloud API default, which
+  is `false`. The provider uses `true` as any workspace provisioned with
+  `false` would need to then have a run manually queued out-of-band before
   accepting webhooks.
 * `source_name` - (Optional) A friendly name for the application or client
    creating this workspace. If set, this will be displayed on the workspace as
@@ -117,7 +117,7 @@ The following arguments are supported:
   available version.
 * `trigger_prefixes` - (Optional) List of repository-root-relative paths which describe all locations
   to be tracked for changes.
-* `tag_names` - (Optional) A list of tag names for this workspace. Note that tags must only contain letters, numbers or colons. 
+* `tag_names` - (Optional) A list of tag names for this workspace. Note that tags must only contain letters, numbers, colons, or hyphens.
 * `working_directory` - (Optional) A relative path that Terraform will execute
   within.  Defaults to the root of your repository.
 * `vcs_repo` - (Optional) Settings for the workspace's VCS repository, enabling the [UI/VCS-driven run workflow](https://www.terraform.io/docs/cloud/run/ui.html).
@@ -152,5 +152,5 @@ terraform import tfe_workspace.test ws-CH5in3chf8RJjrVd
 ```
 
 ```shell
-terraform import tfe_workspace.test my-org-name/my-wkspace-name 
+terraform import tfe_workspace.test my-org-name/my-wkspace-name
 ```
