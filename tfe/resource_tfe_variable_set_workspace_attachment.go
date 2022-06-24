@@ -3,7 +3,6 @@ package tfe
 import (
 	"fmt"
 	"log"
-	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -58,11 +57,8 @@ func resourceTFEWorkspaceVariableSetCreate(d *schema.ResourceData, meta interfac
 func resourceTFEWorkspaceVariableSetRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	vSId, wId, err := DecodeVariableSetWorkspaceAttachment(d.Id())
-
-	if err != nil {
-		return fmt.Errorf("error decoding ID (%s): %w", d.Id(), err)
-	}
+	wId := d.Get("workspace_id").(string)
+	vSId := d.Get("variable_set_id").(string)
 
 	log.Printf("[DEBUG] Read configuration of workspace variable set: %s", d.Id())
 	vS, err := tfeClient.VariableSets.Read(ctx, vSId, &tfe.VariableSetReadOptions{
@@ -98,11 +94,8 @@ func resourceTFEWorkspaceVariableSetRead(d *schema.ResourceData, meta interface{
 func resourceTFEWorkspaceVariableSetDelete(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	vSId, wId, err := DecodeVariableSetWorkspaceAttachment(d.Id())
-
-	if err != nil {
-		return fmt.Errorf("error decoding ID (%s): %w", d.Id(), err)
-	}
+	wId := d.Get("workspace_id").(string)
+	vSId := d.Get("variable_set_id").(string)
 
 	log.Printf("[DEBUG] Delete workspace (%s) from variable set (%s)", wId, vSId)
 	removeOptions := tfe.VariableSetRemoveFromWorkspacesOptions{}
@@ -119,12 +112,4 @@ func resourceTFEWorkspaceVariableSetDelete(d *schema.ResourceData, meta interfac
 
 func encodeVariableSetWorkspaceAttachment(vSId, wId string) string {
 	return fmt.Sprintf("%s_%s", vSId, wId)
-}
-
-func DecodeVariableSetWorkspaceAttachment(id string) (string, string, error) {
-	idParts := strings.Split(id, "_")
-	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
-		return "", "", fmt.Errorf("expected ID in the form of variable-set-id_workspace-id, given: %q", id)
-	}
-	return idParts[0], idParts[1], nil
 }
