@@ -148,7 +148,7 @@ func resourceTFEWorkspaceVariableSetImporter(d *schema.ResourceData, meta interf
 
 			for _, ws := range vs.Workspaces {
 				if ws.Name != wsName {
-					break
+					continue
 				}
 
 				d.Set("workspace_id", ws.ID)
