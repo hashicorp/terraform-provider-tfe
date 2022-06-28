@@ -17,6 +17,13 @@ const (
 
 func main() {
 	ctx := context.Background()
+
+	// Strip the leading log package prefix so hclog
+	// can set the appropriate log level
+	logFlags := log.Flags()
+	logFlags &^= (log.Ldate | log.Ltime)
+	log.SetFlags(logFlags)
+
 	// terraform-plugin-mux here is used to combine multiple Terraform providers
 	// built using different SDK and frameworks in order to combine them into a
 	// single logical provider for Terraform to work with.
