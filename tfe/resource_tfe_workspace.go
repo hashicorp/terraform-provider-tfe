@@ -277,7 +277,10 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 	for _, tagName := range d.Get("tag_names").(*schema.Set).List() {
 		name := tagName.(string)
 		if len(strings.TrimSpace(name)) != 0 {
-			options.Tags = append(options.Tags, &tfe.Tag{Name: tagName.(string)})
+			if tagContainsUppercase(name) {
+				warnWorkspaceTagsCasing(ctx, name)
+			}
+			options.Tags = append(options.Tags, &tfe.Tag{Name: name})
 		}
 	}
 
@@ -525,7 +528,11 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			var addTags []*tfe.Tag
 
 			for _, tagName := range newTagNames.List() {
-				addTags = append(addTags, &tfe.Tag{Name: tagName.(string)})
+				name := tagName.(string)
+				if tagContainsUppercase(name) {
+					warnWorkspaceTagsCasing(ctx, name)
+				}
+				addTags = append(addTags, &tfe.Tag{Name: name})
 			}
 
 			log.Printf("[DEBUG] Adding tags to workspace: %s", d.Id())
@@ -668,4 +675,9 @@ func resourceTFEWorkspaceImporter(d *schema.ResourceData, meta interface{}) ([]*
 	}
 
 	return []*schema.ResourceData{d}, nil
+}
+
+// Warns the user that a workspace tag containing uppercase characters will be downcased.
+func warnWorkspaceTagsCasing(ctx context.Context, tag string) {
+	log.Printf("[WARN] The tag \"%s\" contains uppercase characters that will be transformed by the API. Please update your configuration to lowercase tags in order to avoid conflicts with state.", tag)
 }
