@@ -130,9 +130,10 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"source_name": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
+				Type:         schema.TypeString,
+				Optional:     true,
+				ForceNew:     true,
+				RequiredWith: []string{"source_url"},
 			},
 
 			"source_url": {
@@ -140,6 +141,7 @@ func resourceTFEWorkspace() *schema.Resource {
 				Optional:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.IsURLWithHTTPorHTTPS,
+				RequiredWith: []string{"source_name"},
 			},
 
 			"speculative_enabled": {
@@ -259,11 +261,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	if v, ok := d.GetOk("source_url"); ok {
-		// Include both SourceName and SourceURL here, as SourceName does
-		// nothing if SourceURL is not set. SourceURL also does nothing if
-		// SourceName is not set, but we have a default value for SourceName
 		options.SourceURL = tfe.String(v.(string))
-		options.SourceName = tfe.String(v.(string))
 	}
 	if v, ok := d.GetOk("source_name"); ok {
 		options.SourceName = tfe.String(v.(string))
