@@ -94,8 +94,7 @@ The following arguments are supported:
 * `source_url` - (Optional) A URL for the application or client creating this
    workspace. This can be the URL of a related resource in another app, or a
    link to documentation or other info about the client.
-   If `source_name` is not also set, then this URL will also be used for
-  `source_name`.
+   Requires `source_name` to also be set.
    **Note:** The API does not (currently) allow this to be set after a
    workspace has been created, so updating this value after the fact will
    result in the workspace being replaced.
