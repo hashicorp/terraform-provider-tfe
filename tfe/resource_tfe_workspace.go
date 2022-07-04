@@ -34,12 +34,12 @@ func resourceTFEWorkspace() *schema.Resource {
 		},
 
 		CustomizeDiff: func(c context.Context, d *schema.ResourceDiff, meta interface{}) error {
-			err := validateAgentExecution(c, d, meta)
+			err := validateAgentExecution(c, d)
 			if err != nil {
 				return err
 			}
 
-			err = validateRemoteState(c, d, meta)
+			err = validateRemoteState(c, d)
 			if err != nil {
 				return err
 			}
@@ -304,7 +304,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 	workspace, err := tfeClient.Workspaces.Create(ctx, organization, options)
 	if err != nil {
 		return fmt.Errorf(
-			"Error creating workspace %s for organization %s: %v", name, organization, err)
+			"Error creating workspace %s for organization %s: %w", name, organization, err)
 	}
 
 	d.SetId(workspace.ID)
@@ -314,7 +314,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 			SSHKeyID: tfe.String(sshKeyID.(string)),
 		})
 		if err != nil {
-			return fmt.Errorf("Error assigning SSH key to workspace %s: %v", name, err)
+			return fmt.Errorf("Error assigning SSH key to workspace %s: %w", name, err)
 		}
 	}
 
@@ -326,7 +326,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		}
 		err = tfeClient.Workspaces.AddRemoteStateConsumers(ctx, workspace.ID, options)
 		if err != nil {
-			return fmt.Errorf("Error adding remote state consumers to workspace %s: %v", name, err)
+			return fmt.Errorf("Error adding remote state consumers to workspace %s: %w", name, err)
 		}
 	}
 
@@ -345,7 +345,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading configuration of workspace %s: %v", id, err)
+		return fmt.Errorf("Error reading configuration of workspace %s: %w", id, err)
 	}
 
 	// Update the config.
@@ -402,7 +402,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 		globalRemoteState, remoteStateConsumerIDs, err := readWorkspaceStateConsumers(id, tfeClient)
 		if err != nil {
 			return fmt.Errorf(
-				"Error reading remote state consumers for workspace %s: %v", id, err)
+				"Error reading remote state consumers for workspace %s: %w", id, err)
 		}
 
 		d.Set("global_remote_state", globalRemoteState)
@@ -424,7 +424,6 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		d.HasChange("operations") || d.HasChange("execution_mode") ||
 		d.HasChange("description") || d.HasChange("agent_pool_id") ||
 		d.HasChange("global_remote_state") || d.HasChange("structured_run_output_enabled") {
-
 		// Create a new options struct.
 		options := tfe.WorkspaceUpdateOptions{
 			Name:                       tfe.String(d.Get("name").(string)),
@@ -464,7 +463,9 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 
 		if tps, ok := d.GetOk("trigger_prefixes"); ok {
 			for _, tp := range tps.([]interface{}) {
-				options.TriggerPrefixes = append(options.TriggerPrefixes, tp.(string))
+				if val, ok := tp.(string); ok {
+					options.TriggerPrefixes = append(options.TriggerPrefixes, val)
+				}
 			}
 		} else {
 			options.TriggerPrefixes = []string{}
@@ -497,8 +498,9 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		log.Printf("[DEBUG] Update workspace %s", id)
 		_, err := tfeClient.Workspaces.UpdateByID(ctx, id, options)
 		if err != nil {
+			d.Partial(true)
 			return fmt.Errorf(
-				"Error updating workspace %s: %v", id, err)
+				"Error updating workspace %s: %w", id, err)
 		}
 	}
 
@@ -510,7 +512,8 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		if !ok {
 			_, err := tfeClient.Workspaces.RemoveVCSConnectionByID(ctx, id)
 			if err != nil {
-				return fmt.Errorf("Error removing VCS repo from workspace %s: %v", id, err)
+				d.Partial(true)
+				return fmt.Errorf("Error removing VCS repo from workspace %s: %w", id, err)
 			}
 		}
 	}
@@ -527,12 +530,12 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 				},
 			)
 			if err != nil {
-				return fmt.Errorf("Error assigning SSH key to workspace %s: %v", id, err)
+				return fmt.Errorf("Error assigning SSH key to workspace %s: %w", id, err)
 			}
 		} else {
 			_, err := tfeClient.Workspaces.UnassignSSHKey(ctx, id)
 			if err != nil {
-				return fmt.Errorf("Error unassigning SSH key from workspace %s: %v", id, err)
+				return fmt.Errorf("Error unassigning SSH key from workspace %s: %w", id, err)
 			}
 		}
 	}
@@ -556,7 +559,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			log.Printf("[DEBUG] Adding tags to workspace: %s", d.Id())
 			err := tfeClient.Workspaces.AddTags(ctx, d.Id(), tfe.WorkspaceAddTagsOptions{Tags: addTags})
 			if err != nil {
-				return fmt.Errorf("Error adding tags to workspace %s: %v", d.Id(), err)
+				return fmt.Errorf("Error adding tags to workspace %s: %w", d.Id(), err)
 			}
 		}
 
@@ -571,7 +574,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			log.Printf("[DEBUG] Removing tags from workspace: %s", d.Id())
 			err := tfeClient.Workspaces.RemoveTags(ctx, d.Id(), tfe.WorkspaceRemoveTagsOptions{Tags: removeTags})
 			if err != nil {
-				return fmt.Errorf("Error removing tags from workspace %s: %v", d.Id(), err)
+				return fmt.Errorf("Error removing tags from workspace %s: %w", d.Id(), err)
 			}
 		}
 	}
@@ -596,7 +599,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			log.Printf("[DEBUG] Adding remote state consumers to workspace: %s", d.Id())
 			err := tfeClient.Workspaces.AddRemoteStateConsumers(ctx, d.Id(), options)
 			if err != nil {
-				return fmt.Errorf("Error adding remote state consumers to workspace %s: %v", d.Id(), err)
+				return fmt.Errorf("Error adding remote state consumers to workspace %s: %w", d.Id(), err)
 			}
 		}
 
@@ -611,7 +614,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			log.Printf("[DEBUG] Removing remote state consumers from workspace: %s", d.Id())
 			err := tfeClient.Workspaces.RemoveRemoteStateConsumers(ctx, d.Id(), options)
 			if err != nil {
-				return fmt.Errorf("Error removing remote state consumers from workspace %s: %v", d.Id(), err)
+				return fmt.Errorf("Error removing remote state consumers from workspace %s: %w", d.Id(), err)
 			}
 		}
 	}
@@ -630,7 +633,7 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 			return nil
 		}
 		return fmt.Errorf(
-			"Error deleting workspace %s: %v", id, err)
+			"Error deleting workspace %s: %w", id, err)
 	}
 
 	return nil
@@ -638,7 +641,7 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 
 // An agent pool can only be specified when execution_mode is set to "agent". You currently cannot specify a
 // schema validation based on a different argument's value, so we do so here at plan time instead.
-func validateAgentExecution(_ context.Context, d *schema.ResourceDiff, meta interface{}) error {
+func validateAgentExecution(_ context.Context, d *schema.ResourceDiff) error {
 	if executionMode, ok := d.GetOk("execution_mode"); ok {
 		if executionMode.(string) != "agent" && d.Get("agent_pool_id") != "" {
 			return fmt.Errorf("execution_mode must be set to 'agent' to assign agent_pool_id")
@@ -656,7 +659,7 @@ func validateAgentExecution(_ context.Context, d *schema.ResourceDiff, meta inte
 	return nil
 }
 
-func validateRemoteState(_ context.Context, d *schema.ResourceDiff, meta interface{}) error {
+func validateRemoteState(_ context.Context, d *schema.ResourceDiff) error {
 	// If remote state consumers aren't set, the global setting can be either value and it
 	// doesn't matter.
 	_, ok := d.GetOk("remote_state_consumer_ids")
@@ -694,7 +697,7 @@ func resourceTFEWorkspaceImporter(d *schema.ResourceData, meta interface{}) ([]*
 		workspaceID, err := fetchWorkspaceExternalID(s[0]+"/"+s[1], tfeClient)
 		if err != nil {
 			return nil, fmt.Errorf(
-				"error retrieving workspace with name %s from organization %s %v", s[1], s[0], err)
+				"error retrieving workspace with name %s from organization %s %w", s[1], s[0], err)
 		}
 
 		d.SetId(workspaceID)

@@ -46,6 +46,11 @@ func dataSourceTFETeamAccess() *schema.Resource {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
+
+						"run_tasks": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
 					},
 				},
 			},
@@ -74,7 +79,7 @@ func dataSourceTFETeamAccessRead(d *schema.ResourceData, meta interface{}) error
 	ws, err := tfeClient.Workspaces.ReadByID(ctx, workspaceID)
 	if err != nil {
 		return fmt.Errorf(
-			"Error retrieving workspace %s: %v", workspaceID, err)
+			"Error retrieving workspace %s: %w", workspaceID, err)
 	}
 
 	// Create an options struct.
@@ -85,7 +90,7 @@ func dataSourceTFETeamAccessRead(d *schema.ResourceData, meta interface{}) error
 	for {
 		l, err := tfeClient.TeamAccess.List(ctx, options)
 		if err != nil {
-			return fmt.Errorf("Error retrieving team access list: %v", err)
+			return fmt.Errorf("Error retrieving team access list: %w", err)
 		}
 
 		for _, ta := range l.Items {

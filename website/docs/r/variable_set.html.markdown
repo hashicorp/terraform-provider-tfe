@@ -29,7 +29,11 @@ resource "tfe_variable_set" "test" {
   name          = "Test Varset"
   description   = "Some description."
   organization  = tfe_organization.test.name
-  workspace_ids = [tfe_workspace.test.id]
+}
+
+resource "tfe_workspace_variable_set" "test" {
+  workspace_id    = tfe_workspace.test.id
+  variable_set_id = tfe_variable_set.test.id
 }
 
 resource "tfe_variable" "test-a" {
@@ -98,7 +102,12 @@ resource "tfe_variable_set" "test" {
   name          = "Tag Based Varset"
   description   = "Variable set applied to workspaces based on tag."
   organization  = tfe_organization.test.name
-  workspace_ids = values(data.tfe_workspace_ids.prod-apps.ids)
+}
+
+resource "tfe_workspace_variable_set" "test" {
+  for_each        = toset(values(data.tfe_workspace_ids.prod-apps.ids))
+  workspace_id    = each.key
+  variable_set_id = tfe_variable_set.test.id
 }
 ```
 
@@ -110,7 +119,10 @@ The following arguments are supported:
 * `description` - (Optional) Description of the variable set.
 * `global` - (Optional) Whether or not the variable set applies to all workspaces in the organization. Defaults to `false`.
 * `organization` - (Required) Name of the organization.
-* `workspace_ids` - (Optional) IDs of the workspaces that use the variable set. Must not be set if `global` is set.
+* `workspace_ids` - **Deprecated** (Optional) IDs of the workspaces that use the variable set.
+  Must not be set if `global` is set. This argument is mutually exclusive with using the resource
+  [tfe_workspace_variable_set](workspace_variable_set.html) which is the preferred method of associating a workspace
+  with a variable set.
 
 ## Attributes Reference
 

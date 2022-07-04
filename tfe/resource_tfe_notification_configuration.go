@@ -34,6 +34,7 @@ func resourceTFENotificationConfiguration() *schema.Resource {
 						string(tfe.NotificationDestinationTypeEmail),
 						string(tfe.NotificationDestinationTypeGeneric),
 						string(tfe.NotificationDestinationTypeSlack),
+						string(tfe.NotificationDestinationTypeMicrosoftTeams),
 					},
 					false,
 				),
@@ -138,6 +139,14 @@ func resourceTFENotificationConfigurationCreate(d *schema.ResourceData, meta int
 		if err != nil {
 			return err
 		}
+	} else if destinationType == tfe.NotificationDestinationTypeMicrosoftTeams {
+		// When destination_type is 'microsoft-teams':
+		// 1. email_addresses, email_user_ids, and token cannot be set
+		// 2. url must be set
+		err := validateSchemaAttributesForDestinationTypeMicrosoftTeams(d)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Create a new options struct
@@ -171,7 +180,7 @@ func resourceTFENotificationConfigurationCreate(d *schema.ResourceData, meta int
 	log.Printf("[DEBUG] Create notification configuration: %s", name)
 	notificationConfiguration, err := tfeClient.NotificationConfigurations.Create(ctx, workspaceID, options)
 	if err != nil {
-		return fmt.Errorf("Error creating notification configuration %s: %v", name, err)
+		return fmt.Errorf("Error creating notification configuration %s: %w", name, err)
 	}
 
 	d.SetId(notificationConfiguration.ID)
@@ -190,7 +199,7 @@ func resourceTFENotificationConfigurationRead(d *schema.ResourceData, meta inter
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading notification configuration %s: %v", d.Id(), err)
+		return fmt.Errorf("Error reading notification configuration %s: %w", d.Id(), err)
 	}
 
 	// Update config
@@ -259,6 +268,14 @@ func resourceTFENotificationConfigurationUpdate(d *schema.ResourceData, meta int
 		if err != nil {
 			return err
 		}
+	} else if destinationType == tfe.NotificationDestinationTypeMicrosoftTeams {
+		// When destination_type is 'microsoft-teams':
+		// 1. email_addresses, email_user_ids, and token cannot be set
+		// 2. url must be set
+		err := validateSchemaAttributesForDestinationTypeMicrosoftTeams(d)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Create a new options struct
@@ -291,7 +308,7 @@ func resourceTFENotificationConfigurationUpdate(d *schema.ResourceData, meta int
 	log.Printf("[DEBUG] Update notification configuration: %s", d.Id())
 	_, err := tfeClient.NotificationConfigurations.Update(ctx, d.Id(), options)
 	if err != nil {
-		return fmt.Errorf("Error updating notification configuration %s: %v", d.Id(), err)
+		return fmt.Errorf("Error updating notification configuration %s: %w", d.Id(), err)
 	}
 
 	return resourceTFENotificationConfigurationRead(d, meta)
@@ -306,7 +323,7 @@ func resourceTFENotificationConfigurationDelete(d *schema.ResourceData, meta int
 		if err == tfe.ErrResourceNotFound {
 			return nil
 		}
-		return fmt.Errorf("Error deleting notification configuration %s: %v", d.Id(), err)
+		return fmt.Errorf("Error deleting notification configuration %s: %w", d.Id(), err)
 	}
 
 	return nil
@@ -366,6 +383,30 @@ func validateSchemaAttributesForDestinationTypeSlack(d *schema.ResourceData) err
 	_, urlIsSet := d.GetOk("url")
 	if !urlIsSet {
 		return fmt.Errorf("URL is required with destination type of %s", string(tfe.NotificationDestinationTypeSlack))
+	}
+
+	return nil
+}
+
+func validateSchemaAttributesForDestinationTypeMicrosoftTeams(d *schema.ResourceData) error {
+	// Make sure email_addresses, email_user_ids, and token are not set when destination_type is 'microsoft-teams'
+	_, emailAddressesIsSet := d.GetOk("email_addresses")
+	if emailAddressesIsSet {
+		return fmt.Errorf("Email addresses cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeMicrosoftTeams))
+	}
+	_, emailUserIDsIsSet := d.GetOk("email_user_ids")
+	if emailUserIDsIsSet {
+		return fmt.Errorf("Email user IDs cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeMicrosoftTeams))
+	}
+	token, tokenIsSet := d.GetOk("token")
+	if tokenIsSet && token != "" {
+		return fmt.Errorf("Token cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeMicrosoftTeams))
+	}
+
+	// Make sure url is set when destination_type is 'microsoft-teams'
+	_, urlIsSet := d.GetOk("url")
+	if !urlIsSet {
+		return fmt.Errorf("URL is required with destination type of %s", string(tfe.NotificationDestinationTypeMicrosoftTeams))
 	}
 
 	return nil

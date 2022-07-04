@@ -49,7 +49,7 @@ func resourceTFETeamMemberCreate(d *schema.ResourceData, meta interface{}) error
 	log.Printf("[DEBUG] Add user %q to team: %s", username, teamID)
 	err := tfeClient.TeamMembers.Add(ctx, teamID, options)
 	if err != nil {
-		return fmt.Errorf("Error adding user %q to team %s: %v", username, teamID, err)
+		return fmt.Errorf("Error adding user %q to team %s: %w", username, teamID, err)
 	}
 
 	d.SetId(packTeamMemberID(teamID, username))
@@ -63,7 +63,7 @@ func resourceTFETeamMemberRead(d *schema.ResourceData, meta interface{}) error {
 	// Get the team ID and username.
 	teamID, username, err := unpackTeamMemberID(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error unpacking team member ID: %v", err)
+		return fmt.Errorf("Error unpacking team member ID: %w", err)
 	}
 
 	log.Printf("[DEBUG] Read users from team: %s", teamID)
@@ -74,7 +74,7 @@ func resourceTFETeamMemberRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading users from team %s: %v", teamID, err)
+		return fmt.Errorf("Error reading users from team %s: %w", teamID, err)
 	}
 
 	found := false
@@ -105,7 +105,7 @@ func resourceTFETeamMemberDelete(d *schema.ResourceData, meta interface{}) error
 	// Get the team ID and username.
 	teamID, username, err := unpackTeamMemberID(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error unpacking team member ID: %v", err)
+		return fmt.Errorf("Error unpacking team member ID: %w", err)
 	}
 
 	// Create a new options struct.
@@ -116,7 +116,7 @@ func resourceTFETeamMemberDelete(d *schema.ResourceData, meta interface{}) error
 	log.Printf("[DEBUG] Remove user %q from team: %s", username, teamID)
 	err = tfeClient.TeamMembers.Remove(ctx, teamID, options)
 	if err != nil {
-		return fmt.Errorf("Error removing user %q to team %s: %v", username, teamID, err)
+		return fmt.Errorf("Error removing user %q to team %s: %w", username, teamID, err)
 	}
 
 	return nil

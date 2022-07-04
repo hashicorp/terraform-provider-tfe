@@ -1,7 +1,41 @@
-## 0.32.0 (Unreleased)
+## 0.33.0 (Unreleased)
+
+FEATURES:
+* **New Resource**: `tfe_workspace_variable_set` ([#537](https://github.com/hashicorp/terraform-provider-tfe/pull/537)) adds the ability to assign a variable set to a workspace in a single, flexible resource.
+
+DEPRECATION NOTICE: The `workspace_ids` argument on `tfe_variable_set` has been labelled as deprecated and should not be used in conjunction with `tfe_workspace_variable_set`.
+
+## 0.32.1 (June 21st, 2022)
+
+BUG FIXES:
+
+* Fixed a bug in the latest release where a team data source could be populated with the wrong team. ([#530](https://github.com/hashicorp/terraform-provider-tfe/pull/530))
+
+## 0.32.0 (June 20th, 2022)
+
+0.32.0 is an impactful release that includes several bug fixes, support for [run tasks](https://www.terraform.io/cloud-docs/workspaces/settings/run-tasks#run-tasks) and several breaking changes that you should review carefully.
+
+BREAKING CHANGES:
+* **Removed Authentication Method**: Host-specific TF_TOKEN_... environment variable (added in 0.31.0) can no longer be used for token authentication. This method of authentication is incompatible with the Terraform Cloud remote execution model. Please use the TFE_TOKEN environment variable.
+* r/tfe_workspace: Default value of the `file_triggers_enabled` field is changed to `false`. This will align the
+  `file_triggers_enabled` field default value with the default value for the same field in the
+  [TFC API](https://www.terraform.io/cloud-docs/api-docs/workspaces).
+  If the value of the `file_triggers_enabled` field was not explicitly set and either of the fields `working_directory`
+  (not an empty string) or `trigger_prefixes` was used - to keep the behavior unchanged, the `file_trigger_enabled`
+  field should now explicitly be set to `true`. ([#510](https://github.com/hashicorp/terraform-provider-tfe/pull/510/files))
+* r/tfe_team_access: The `permissions` attribute requires `run_tasks` in the block. ([#487](https://github.com/hashicorp/terraform-provider-tfe/pull/487))
+
+BUG FIXES:
+* Prevent overwriting `vcs_repo` attributes in `r/tfe_workspace` when update API call fails ([#498](https://github.com/hashicorp/terraform-provider-tfe/pull/498))
+* Fix panic crash on `trigger_prefixes` update in `r/tfe_workspace` when given empty strings ([#518](https://github.com/hashicorp/terraform-provider-tfe/pull/518))
 
 FEATURES:
 * r/team, d/team: Add manage_run_tasks to the tfe_team organization_access attributes ([#486](https://github.com/hashicorp/terraform-provider-tfe/pull/486))
+* **New Resource**: `tfe_organization_run_task` ([#488](https://github.com/hashicorp/terraform-provider-tfe/pull/488))
+* **New Resource**: `tfe_workspace_run_task` ([#488](https://github.com/hashicorp/terraform-provider-tfe/pull/488))
+* **New Data Source**: d/tfe_organization_run_task ([#488](https://github.com/hashicorp/terraform-provider-tfe/pull/488))
+* **New Data Source**: d/tfe_workspace_run_task ([#488](https://github.com/hashicorp/terraform-provider-tfe/pull/488))
+* r/tfe_notification_configuration: Add Microsoft Teams notification type ([#484](https://github.com/hashicorp/terraform-provider-tfe/pull/484))
 
 ## 0.31.0 (April 21, 2022)
 

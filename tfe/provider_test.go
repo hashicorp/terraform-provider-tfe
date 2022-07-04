@@ -11,10 +11,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
 	tfmux "github.com/hashicorp/terraform-plugin-mux"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/hashicorp/terraform-provider-tfe/version"
-	svchost "github.com/hashicorp/terraform-svchost"
 	"github.com/hashicorp/terraform-svchost/disco"
 )
 
@@ -51,7 +51,7 @@ func getClientUsingEnv() (*tfe.Client, error) {
 
 	client, err := getClient(hostname, token, defaultSSLSkipVerify)
 	if err != nil {
-		return nil, fmt.Errorf("Error getting client: %s", err)
+		return nil, fmt.Errorf("Error getting client: %w", err)
 	}
 	return client, nil
 }
@@ -124,68 +124,6 @@ func TestProvider_versionConstraints(t *testing.T) {
 			t.Fatalf("%s: expected error to contain %q, got: %v", name, tc.result, err)
 		}
 	}
-}
-
-func TestProvider_hostTokenFromFallbackSources(t *testing.T) {
-	t.Run("configure with environment", func(t *testing.T) {
-
-		cases := map[string]struct {
-			EnvVarKey      string
-			EnvVarValue    string
-			ConfiguredHost string
-			ExpectedValue  string
-		}{
-			"var with dashes": {
-				EnvVarKey:      "TF_TOKEN_private_hashicorp-internal_engineering_pl",
-				EnvVarValue:    "foo-token",
-				ConfiguredHost: "private.hashicorp-internal.engineering.pl",
-				ExpectedValue:  "foo-token",
-			},
-			"var with encoded dashes": {
-				EnvVarKey:      "TF_TOKEN_private_hashicorp__internal_engineering_pl",
-				EnvVarValue:    "bar-token",
-				ConfiguredHost: "private.hashicorp-internal.engineering.pl",
-				ExpectedValue:  "bar-token",
-			},
-			"var with periods": {
-				EnvVarKey:      "TF_TOKEN_private.hashicorp-internal.engineering.pl",
-				EnvVarValue:    "baz-token",
-				ConfiguredHost: "private.hashicorp-internal.engineering.pl",
-				ExpectedValue:  "baz-token",
-			},
-			"global TFE_TOKEN var": {
-				EnvVarKey:      "TFE_TOKEN",
-				EnvVarValue:    "quz-token",
-				ConfiguredHost: "private.hashicorp-internal.engineering.pl",
-				ExpectedValue:  "quz-token",
-			},
-		}
-
-		for description, test := range cases {
-			t.Run(description, func(t *testing.T) {
-				beforeSet, wasSetBefore := os.LookupEnv(test.EnvVarKey)
-				t.Cleanup(func() {
-					if wasSetBefore {
-						os.Setenv(test.EnvVarKey, beforeSet)
-					} else {
-						os.Unsetenv(test.EnvVarKey)
-					}
-				})
-
-				os.Setenv(test.EnvVarKey, test.EnvVarValue)
-
-				host, err := svchost.ForComparison(test.ConfiguredHost)
-				if err != nil {
-					t.Fatalf("could not get host: %s", err)
-				}
-
-				token := hostTokenFromFallbackSources(host, nil)
-				if token != test.ExpectedValue {
-					t.Errorf("Expected token %s but found %s", test.ExpectedValue, token)
-				}
-			})
-		}
-	})
 }
 
 func TestProvider_locateConfigFile(t *testing.T) {
@@ -357,3 +295,25 @@ var GITHUB_POLICY_SET_PATH = os.Getenv("GITHUB_POLICY_SET_PATH")
 var GITHUB_REGISTRY_MODULE_IDENTIFIER = os.Getenv("GITHUB_REGISTRY_MODULE_IDENTIFIER")
 var TFE_USER1 = os.Getenv("TFE_USER1")
 var TFE_USER2 = os.Getenv("TFE_USER2")
+
+func testCheckCreateOrgWithRunTasks(organizationName string) resource.TestStep {
+	check := func(_ *terraform.State) error {
+		client, err := getClientUsingEnv()
+		if err != nil {
+			return err
+		}
+		entitlements, err := client.Organizations.ReadEntitlements(context.TODO(), organizationName)
+		if err != nil {
+			return fmt.Errorf("error reading entitlements: %w", err)
+		}
+		if entitlements == nil || !entitlements.RunTasks {
+			return fmt.Errorf("Organization %s is not entitled to use Run Tasks", organizationName)
+		}
+		return nil
+	}
+
+	return resource.TestStep{
+		Config: fmt.Sprintf("resource \"tfe_organization\" \"foobar\" {\n name = %q\nemail = \"admin@company.com\"\n}", organizationName),
+		Check:  check,
+	}
+}

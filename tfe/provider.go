@@ -82,12 +82,14 @@ func Provider() *schema.Provider {
 			"tfe_ip_ranges":               dataSourceTFEIPRanges(),
 			"tfe_oauth_client":            dataSourceTFEOAuthClient(),
 			"tfe_organization_membership": dataSourceTFEOrganizationMembership(),
+			"tfe_organization_run_task":   dataSourceTFEOrganizationRunTask(),
 			"tfe_slug":                    dataSourceTFESlug(),
 			"tfe_ssh_key":                 dataSourceTFESSHKey(),
 			"tfe_team":                    dataSourceTFETeam(),
 			"tfe_team_access":             dataSourceTFETeamAccess(),
 			"tfe_workspace":               dataSourceTFEWorkspace(),
 			"tfe_workspace_ids":           dataSourceTFEWorkspaceIDs(),
+			"tfe_workspace_run_task":      dataSourceTFEWorkspaceRunTask(),
 			"tfe_variables":               dataSourceTFEWorkspaceVariables(),
 			"tfe_variable_set":            dataSourceTFEVariableSet(),
 		},
@@ -100,6 +102,7 @@ func Provider() *schema.Provider {
 			"tfe_organization":                resourceTFEOrganization(),
 			"tfe_organization_membership":     resourceTFEOrganizationMembership(),
 			"tfe_organization_module_sharing": resourceTFEOrganizationModuleSharing(),
+			"tfe_organization_run_task":       resourceTFEOrganizationRunTask(),
 			"tfe_organization_token":          resourceTFEOrganizationToken(),
 			"tfe_policy_set":                  resourceTFEPolicySet(),
 			"tfe_policy_set_parameter":        resourceTFEPolicySetParameter(),
@@ -115,8 +118,10 @@ func Provider() *schema.Provider {
 			"tfe_team_token":                  resourceTFETeamToken(),
 			"tfe_terraform_version":           resourceTFETerraformVersion(),
 			"tfe_workspace":                   resourceTFEWorkspace(),
+			"tfe_workspace_run_task":          resourceTFEWorkspaceRunTask(),
 			"tfe_variable":                    resourceTFEVariable(),
 			"tfe_variable_set":                resourceTFEVariableSet(),
+			"tfe_workspace_variable_set":      resourceTFEWorkspaceVariableSet(),
 		},
 
 		ConfigureFunc: providerConfigure,
@@ -128,6 +133,23 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	token := d.Get("token").(string)
 	insecure := d.Get("ssl_skip_verify").(bool)
 	return getClient(hostname, token, insecure)
+}
+
+func getTokenFromEnv() string {
+	log.Printf("[DEBUG] TFE_TOKEN used for token value")
+	return os.Getenv("TFE_TOKEN")
+}
+
+func getTokenFromCreds(services *disco.Disco, hostname svchost.Hostname) string {
+	log.Printf("[DEBUG] Attempting to fetch token from Terraform CLI configuration for hostname %s...", hostname)
+	creds, err := services.CredentialsForHost(hostname)
+	if err != nil {
+		log.Printf("[DEBUG] Failed to get credentials for %s: %s (ignoring)", hostname, err)
+	}
+	if creds != nil {
+		return creds.Token()
+	}
+	return ""
 }
 
 func getClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
@@ -240,10 +262,14 @@ func getClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
 		return nil, discoErr
 	}
 
-	// If a token wasn't set in the provider configuration block, try and fetch it from the
-	// fallback methods
+	// If a token wasn't set in the provider configuration block, try and fetch it
+	// from the environment or from Terraform's CLI configuration or configured credential helper.
 	if token == "" {
-		token = hostTokenFromFallbackSources(hostname, services)
+		if os.Getenv("TFE_TOKEN") != "" {
+			token = getTokenFromEnv()
+		} else {
+			token = getTokenFromCreds(services, hostname)
+		}
 	}
 
 	// If we still don't have a token at this point, we return an error.
@@ -280,7 +306,7 @@ func cliConfig() *Config {
 
 	// Main CLI config file; might contain manually-entered credentials, and/or
 	// some host service discovery objects. Location is configurable via
-	// enviroment variables.
+	// environment variables.
 	configFilePath := locateConfigFile()
 	if configFilePath != "" {
 		mainConfig = readCliConfigFile(configFilePath)
@@ -489,4 +515,10 @@ var descriptions = map[string]string{
 	"token": "The token used to authenticate with Terraform Enterprise. We recommend omitting\n" +
 		"the token which can be set as credentials in the CLI config file.",
 	"ssl_skip_verify": "Whether or not to skip certificate verifications.",
+}
+
+// A commonly used helper method to check if the error
+// returned was tfe.ErrResourceNotFound
+func isErrResourceNotFound(err error) bool {
+	return errors.Is(err, tfe.ErrResourceNotFound)
 }

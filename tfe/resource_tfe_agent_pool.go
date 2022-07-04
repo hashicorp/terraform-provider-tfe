@@ -49,7 +49,7 @@ func resourceTFEAgentPoolCreate(d *schema.ResourceData, meta interface{}) error 
 	agentPool, err := tfeClient.AgentPools.Create(ctx, organization, options)
 	if err != nil {
 		return fmt.Errorf(
-			"Error creating agent pool %s for organization %s: %v", name, organization, err)
+			"Error creating agent pool %s for organization %s: %w", name, organization, err)
 	}
 
 	d.SetId(agentPool.ID)
@@ -68,7 +68,7 @@ func resourceTFEAgentPoolRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading configuration of agent pool %s: %v", d.Id(), err)
+		return fmt.Errorf("Error reading configuration of agent pool %s: %w", d.Id(), err)
 	}
 
 	// Update the config.
@@ -89,7 +89,7 @@ func resourceTFEAgentPoolUpdate(d *schema.ResourceData, meta interface{}) error 
 	log.Printf("[DEBUG] Update agent pool: %s", d.Id())
 	_, err := tfeClient.AgentPools.Update(ctx, d.Id(), options)
 	if err != nil {
-		return fmt.Errorf("Error updating agent pool %s: %v", d.Id(), err)
+		return fmt.Errorf("Error updating agent pool %s: %w", d.Id(), err)
 	}
 
 	return resourceTFEAgentPoolRead(d, meta)
@@ -104,7 +104,7 @@ func resourceTFEAgentPoolDelete(d *schema.ResourceData, meta interface{}) error 
 		if err == tfe.ErrResourceNotFound {
 			return nil
 		}
-		return fmt.Errorf("Error deleting agent pool %s: %v", d.Id(), err)
+		return fmt.Errorf("Error deleting agent pool %s: %w", d.Id(), err)
 	}
 
 	return nil

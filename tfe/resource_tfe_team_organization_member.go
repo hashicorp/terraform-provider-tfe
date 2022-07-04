@@ -49,7 +49,7 @@ func resourceTFETeamOrganizationMemberCreate(d *schema.ResourceData, meta interf
 	log.Printf("[DEBUG] Add organization membership %q to team: %s", organizationMembershipID, teamID)
 	err := tfeClient.TeamMembers.Add(ctx, teamID, options)
 	if err != nil {
-		return fmt.Errorf("Error adding organization membership %q to team %s: %v", organizationMembershipID, teamID, err)
+		return fmt.Errorf("Error adding organization membership %q to team %s: %w", organizationMembershipID, teamID, err)
 	}
 
 	d.SetId(packTeamOrganizationMemberID(teamID, organizationMembershipID))
@@ -63,7 +63,7 @@ func resourceTFETeamOrganizationMemberRead(d *schema.ResourceData, meta interfac
 	// Get the team ID and organization membership id.
 	teamID, organizationMembershipID, err := unpackTeamOrganizationMemberID(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error unpacking team member ID: %v", err)
+		return fmt.Errorf("Error unpacking team member ID: %w", err)
 	}
 
 	log.Printf("[DEBUG] Read organization membership from team: %s", teamID)
@@ -74,7 +74,7 @@ func resourceTFETeamOrganizationMemberRead(d *schema.ResourceData, meta interfac
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading organization memberships from team %s: %v", teamID, err)
+		return fmt.Errorf("Error reading organization memberships from team %s: %w", teamID, err)
 	}
 
 	found := false
@@ -102,7 +102,7 @@ func resourceTFETeamOrganizationMemberDelete(d *schema.ResourceData, meta interf
 	// Get the team ID and organization membership id.
 	teamID, organizationMembershipID, err := unpackTeamOrganizationMemberID(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error unpacking team member ID: %v", err)
+		return fmt.Errorf("Error unpacking team member ID: %w", err)
 	}
 
 	// Create a new options struct.
@@ -113,7 +113,7 @@ func resourceTFETeamOrganizationMemberDelete(d *schema.ResourceData, meta interf
 	log.Printf("[DEBUG] Remove organization membership %q from team: %s", organizationMembershipID, teamID)
 	err = tfeClient.TeamMembers.Remove(ctx, teamID, options)
 	if err != nil {
-		return fmt.Errorf("Error removing organization membership %q to team %s: %v", organizationMembershipID, teamID, err)
+		return fmt.Errorf("Error removing organization membership %q to team %s: %w", organizationMembershipID, teamID, err)
 	}
 
 	return nil

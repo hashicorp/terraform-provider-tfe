@@ -92,7 +92,7 @@ func resourceTFEOrganizationCreate(d *schema.ResourceData, meta interface{}) err
 	log.Printf("[DEBUG] Create new organization: %s", name)
 	org, err := tfeClient.Organizations.Create(ctx, options)
 	if err != nil {
-		return fmt.Errorf("Error creating the new organization %s: %v", name, err)
+		return fmt.Errorf("Error creating the new organization %s: %w", name, err)
 	}
 
 	d.SetId(org.Name)
@@ -169,7 +169,7 @@ func resourceTFEOrganizationUpdate(d *schema.ResourceData, meta interface{}) err
 	log.Printf("[DEBUG] Update configuration of organization: %s", d.Id())
 	org, err := tfeClient.Organizations.Update(ctx, d.Id(), options)
 	if err != nil {
-		return fmt.Errorf("Error updating organization %s: %v", d.Id(), err)
+		return fmt.Errorf("Error updating organization %s: %w", d.Id(), err)
 	}
 
 	d.SetId(org.Name)
@@ -186,7 +186,7 @@ func resourceTFEOrganizationDelete(d *schema.ResourceData, meta interface{}) err
 		if err == tfe.ErrResourceNotFound {
 			return nil
 		}
-		return fmt.Errorf("Error deleting organization %s: %v", d.Id(), err)
+		return fmt.Errorf("Error deleting organization %s: %w", d.Id(), err)
 	}
 
 	return nil

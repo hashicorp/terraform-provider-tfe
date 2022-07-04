@@ -56,7 +56,7 @@ func resourceTFEPolicySetParameterCreate(d *schema.ResourceData, meta interface{
 	ps := d.Get("policy_set_id").(string)
 	policySet, err := tfeClient.PolicySets.Read(ctx, ps)
 	if err != nil {
-		return fmt.Errorf("Error retrieving policy set %s: %v", ps, err)
+		return fmt.Errorf("Error retrieving policy set %s: %w", ps, err)
 	}
 
 	// Create a new options struct.
@@ -70,7 +70,7 @@ func resourceTFEPolicySetParameterCreate(d *schema.ResourceData, meta interface{
 	log.Printf("[DEBUG] Create %s parameter: %s", tfe.CategoryPolicySet, key)
 	parameter, err := tfeClient.PolicySetParameters.Create(ctx, policySet.ID, options)
 	if err != nil {
-		return fmt.Errorf("Error creating %s parameter %s %v", tfe.CategoryPolicySet, key, err)
+		return fmt.Errorf("Error creating %s parameter %s %w", tfe.CategoryPolicySet, key, err)
 	}
 
 	d.SetId(parameter.ID)
@@ -84,7 +84,7 @@ func resourceTFEPolicySetParameterRead(d *schema.ResourceData, meta interface{})
 	ps := d.Get("policy_set_id").(string)
 	policySet, err := tfeClient.PolicySets.Read(ctx, ps)
 	if err != nil {
-		return fmt.Errorf("Error retrieving policy set %s: %v", ps, err)
+		return fmt.Errorf("Error retrieving policy set %s: %w", ps, err)
 	}
 
 	log.Printf("[DEBUG] Read parameter: %s", d.Id())
@@ -95,7 +95,7 @@ func resourceTFEPolicySetParameterRead(d *schema.ResourceData, meta interface{})
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading parameter %s: %v", d.Id(), err)
+		return fmt.Errorf("Error reading parameter %s: %w", d.Id(), err)
 	}
 
 	// Update config.
@@ -116,7 +116,7 @@ func resourceTFEPolicySetParameterUpdate(d *schema.ResourceData, meta interface{
 	ps := d.Get("policy_set_id").(string)
 	policySet, err := tfeClient.PolicySets.Read(ctx, ps)
 	if err != nil {
-		return fmt.Errorf("Error retrieving policy set %s: %v", ps, err)
+		return fmt.Errorf("Error retrieving policy set %s: %w", ps, err)
 	}
 
 	// Create a new options struct.
@@ -129,7 +129,7 @@ func resourceTFEPolicySetParameterUpdate(d *schema.ResourceData, meta interface{
 	log.Printf("[DEBUG] Update parameter: %s", d.Id())
 	_, err = tfeClient.PolicySetParameters.Update(ctx, policySet.ID, d.Id(), options)
 	if err != nil {
-		return fmt.Errorf("Error updating parameter %s: %v", d.Id(), err)
+		return fmt.Errorf("Error updating parameter %s: %w", d.Id(), err)
 	}
 
 	return resourceTFEPolicySetParameterRead(d, meta)
@@ -141,7 +141,7 @@ func resourceTFEPolicySetParameterDelete(d *schema.ResourceData, meta interface{
 	ps := d.Get("policy_set_id").(string)
 	policySet, err := tfeClient.PolicySets.Read(ctx, ps)
 	if err != nil {
-		return fmt.Errorf("Error retrieving policy set %s: %v", ps, err)
+		return fmt.Errorf("Error retrieving policy set %s: %w", ps, err)
 	}
 
 	log.Printf("[DEBUG] Delete parameter: %s", d.Id())
@@ -150,7 +150,7 @@ func resourceTFEPolicySetParameterDelete(d *schema.ResourceData, meta interface{
 		if err == tfe.ErrResourceNotFound {
 			return nil
 		}
-		return fmt.Errorf("Error deleting parameter %s: %v", d.Id(), err)
+		return fmt.Errorf("Error deleting parameter %s: %w", d.Id(), err)
 	}
 
 	return nil

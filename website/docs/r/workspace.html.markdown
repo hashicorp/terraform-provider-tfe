@@ -31,7 +31,7 @@ resource "tfe_workspace" "test" {
 }
 ```
 
-(**TFC only**) With `execution_mode` of `agent`:
+With `execution_mode` of `agent`:
 
 ```hcl
 resource "tfe_organization" "test-organization" {
@@ -66,28 +66,28 @@ The following arguments are supported:
 * `auto_apply` - (Optional) Whether to automatically apply changes when a
   Terraform plan is successful. Defaults to `false`.
 * `execution_mode` - (Optional) Which [execution mode](https://www.terraform.io/docs/cloud/workspaces/settings.html#execution-mode)
-  to use. Using Terraform Cloud, valid values are `remote`, `local` or`agent`. 
-  Defaults to `remote`. Using Terraform Enterprise, only `remote`and `local` 
-  execution modes are valid.  When set to `local`, the workspace will be used 
-  for state storage only. This value _must not_ be provided if `operations` 
+  to use. Using Terraform Cloud, valid values are `remote`, `local` or`agent`.
+  Defaults to `remote`. Using Terraform Enterprise, only `remote`and `local`
+  execution modes are valid.  When set to `local`, the workspace will be used
+  for state storage only. This value _must not_ be provided if `operations`
   is provided.
 * `file_triggers_enabled` - (Optional) Whether to filter runs based on the changed files
-  in a VCS push. Defaults to `true`. If enabled, the working directory and 
-  trigger prefixes describe a set of paths which must contain changes for a 
-  VCS push to trigger a run. If disabled, any push will trigger a run. 
+  in a VCS push. Defaults to `false`. If enabled, the working directory and
+  trigger prefixes describe a set of paths which must contain changes for a
+  VCS push to trigger a run. If disabled, any push will trigger a run.
 * `global_remote_state` - (Optional) Whether the workspace allows all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (`remote_state_consumer_ids`).
 * `remote_state_consumer_ids` - (Optional) The set of workspace IDs set as explicit remote state consumers for the given workspace.
-* `operations` - **Deprecated** Whether to use remote execution mode. 
-  Defaults to `true`. When set to `false`, the workspace will be used for 
+* `operations` - **Deprecated** Whether to use remote execution mode.
+  Defaults to `true`. When set to `false`, the workspace will be used for
   state storage only. This value _must not_ be provided if `execution_mode` is
   provided.
 * `queue_all_runs` - (Optional) Whether the workspace should start
   automatically performing runs immediately after its creation. Defaults to
   `true`. When set to `false`, runs triggered by a webhook (such as a commit
   in VCS) will not be queued until at least one run has been manually queued.
-  **Note:** This default differs from the Terraform Cloud API default, which 
-  is `false`. The provider uses `true` as any workspace provisioned with 
-  `false` would need to then have a run manually queued out-of-band before 
+  **Note:** This default differs from the Terraform Cloud API default, which
+  is `false`. The provider uses `true` as any workspace provisioned with
+  `false` would need to then have a run manually queued out-of-band before
   accepting webhooks.
 * `speculative_enabled` - (Optional) Whether this workspace allows speculative
   plans. Defaults to `true`. Setting this to `false` prevents Terraform Cloud
@@ -144,5 +144,5 @@ terraform import tfe_workspace.test ws-CH5in3chf8RJjrVd
 ```
 
 ```shell
-terraform import tfe_workspace.test my-org-name/my-wkspace-name 
+terraform import tfe_workspace.test my-org-name/my-wkspace-name
 ```

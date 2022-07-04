@@ -84,7 +84,7 @@ func resourceTFERegistryModuleCreate(d *schema.ResourceData, meta interface{}) e
 	registryModule, err := tfeClient.RegistryModules.CreateWithVCSConnection(ctx, options)
 	if err != nil {
 		return fmt.Errorf(
-			"Error creating registry module from repository %s: %v", *options.VCSRepo.Identifier, err)
+			"Error creating registry module from repository %s: %w", *options.VCSRepo.Identifier, err)
 	}
 
 	err = resource.Retry(time.Duration(5)*time.Minute, func() *resource.RetryError {
@@ -104,7 +104,7 @@ func resourceTFERegistryModuleCreate(d *schema.ResourceData, meta interface{}) e
 	})
 
 	if err != nil {
-		return fmt.Errorf("Error while waiting for module %s/%s to be ingested: %s", registryModule.Organization.Name, registryModule.Name, err)
+		return fmt.Errorf("Error while waiting for module %s/%s to be ingested: %w", registryModule.Organization.Name, registryModule.Name, err)
 	}
 
 	d.SetId(registryModule.ID)
@@ -136,7 +136,7 @@ func resourceTFERegistryModuleRead(d *schema.ResourceData, meta interface{}) err
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading registry module %s: %v", d.Id(), err)
+		return fmt.Errorf("Error reading registry module %s: %w", d.Id(), err)
 	}
 
 	// Update the config
@@ -172,7 +172,7 @@ func resourceTFERegistryModuleDelete(d *schema.ResourceData, meta interface{}) e
 		if err == tfe.ErrResourceNotFound {
 			return nil
 		}
-		return fmt.Errorf("Error deleting registry module %s: %v", d.Id(), err)
+		return fmt.Errorf("Error deleting registry module %s: %w", d.Id(), err)
 	}
 
 	return nil

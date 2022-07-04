@@ -42,6 +42,10 @@ jobs:
 
       - run:
           name: Acceptance Tests
+          environment:
+            # Note that https://httpstat.us/200 is enough to test CRUD operations on Run Tasks
+            # themselves BUT any Runs that use the Run Task will timeout and error
+            RUN_TASKS_URL: "https://httpstat.us/200"
           command: |
               TF_ACC=1 gotestsum --format short-verbose --junitfile \
               $TEST_RESULTS_DIR/tests.xml -- `go list ./... |grep -v 'vendor'` -v -timeout 30m

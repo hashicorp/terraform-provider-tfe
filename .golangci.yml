@@ -33,8 +33,12 @@ issues:
       - stylecheck
     path: _test\.go
     text: "should not use underscores in Go names"
+  # Exclude gocritic paramTypeCombine errors since it could make code less readable
+  - linters:
+      - gocritic
+    text: "paramTypeCombine"
+  # TO-DO: handle the following issues on separate tickets.
   # Although errcheck is important for detecting bugs, it is disabled since fixing requires lots of logic testing.
-  # TO-DO: handle errcheck fixes on a separate ticket.
   - linters:
       - errcheck
     path: \.go
@@ -156,54 +160,6 @@ issues:
       -|resource_tfe_team_member_test|resource_tfe_team_organization_member_test|resource_tfe_team_test|resource_tfe_team_token_test|resource_tfe_terraform_version_test|
       -|resource_tfe_variable_set_test|resource_tfe_workspace_test|resource_tfe_team_members_test|resource_tfe_team_members_test|resource_tfe_variable_test)\.go
     text: "error returned from interface method should be wrapped"
-  - linters:
-      - deadcode
-    path: plugin_provider\.go
-    text: "`tfeClient` is unused"
-  - linters:
-      - unused
-    path: plugin_provider\.go
-    text: "var `tfeClient` is unused"
-  - linters:
-      - gocritic
-    path: (client_mock|resource_tfe_organization_module_sharing_test|resource_tfe_policy_set_test|resource_tfe_terraform_version_test)\.go
-    text: "paramTypeCombine"
-  - linters:
-      - misspell
-    path: provider\.go
-    text: "`enviroment` is a misspelling of `environment`"
-  - linters:
-      - unconvert
-    path: resource_tfe_variable\.go
-    text: "unnecessary conversion"
-  - linters:
-      - gocritic
-    path: \.go
-    text: "commentFormatting: put a space between `//` and comment text"
-  - linters:
-      - errorlint
-    path: \.go
-    text: "non-wrapping format verb for fmt.Errorf. Use `%w` to format errors"
-  - linters:
-      - gocritic
-    path: resource_tfe_team_members\.go
-    text: "builtinShadow: shadowing of predeclared identifier: new"
-  - linters:
-      - unparam
-    path: (data_source_organizations|resource_tfe_workspace)\.go
-    text: "is unused"
-  - linters:
-      - stylecheck
-    path: resource_tfe_team_access\.go
-    text: "ST1003: should not use underscores in Go names; var workspace_id should be workspaceID"
-  - linters:
-      - whitespace
-    path: \.go
-    text: "unnecessary trailing|leading newline"
-  - linters:
-      - predeclared
-    path: resource_tfe_team_members\.go
-    text: "variable new has same name as predeclared identifier"
 linters-settings:
   # errcheck:
   #   # https://github.com/kisielk/errcheck#excluding-functions

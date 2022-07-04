@@ -75,11 +75,12 @@ func resourceTFEVariableSetCreate(d *schema.ResourceData, meta interface{}) erro
 	variableSet, err := tfeClient.VariableSets.Create(ctx, organization, &options)
 	if err != nil {
 		return fmt.Errorf(
-			"Error creating variable set %s, for organization: %s: %v", name, organization, err)
+			"Error creating variable set %s, for organization: %s: %w", name, organization, err)
 	}
 
 	if workspaceIDs, workspacesSet := d.GetOk("workspace_ids"); !*options.Global && workspacesSet {
 		log.Printf("[DEBUG] Apply variable set %s to workspaces %v", name, workspaceIDs)
+		warnWorkspaceIdsDeprecation()
 
 		applyOptions := tfe.VariableSetUpdateWorkspacesOptions{}
 		for _, workspaceID := range workspaceIDs.(*schema.Set).List() {
@@ -89,7 +90,7 @@ func resourceTFEVariableSetCreate(d *schema.ResourceData, meta interface{}) erro
 		variableSet, err = tfeClient.VariableSets.UpdateWorkspaces(ctx, variableSet.ID, &applyOptions)
 		if err != nil {
 			return fmt.Errorf(
-				"Error applying variable set %s (%s) to given workspaces: %v", name, variableSet.ID, err)
+				"Error applying variable set %s (%s) to given workspaces: %w", name, variableSet.ID, err)
 		}
 	}
 
@@ -111,7 +112,7 @@ func resourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) error 
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading configuration of variable set %s: %v", d.Id(), err)
+		return fmt.Errorf("Error reading configuration of variable set %s: %w", d.Id(), err)
 	}
 
 	// Update the config.
@@ -142,7 +143,7 @@ func resourceTFEVariableSetUpdate(d *schema.ResourceData, meta interface{}) erro
 		log.Printf("[DEBUG] Update variable set: %s", d.Id())
 		_, err := tfeClient.VariableSets.Update(ctx, d.Id(), &options)
 		if err != nil {
-			return fmt.Errorf("Error updateing variable %s: %v", d.Id(), err)
+			return fmt.Errorf("Error updateing variable %s: %w", d.Id(), err)
 		}
 	}
 
@@ -155,10 +156,11 @@ func resourceTFEVariableSetUpdate(d *schema.ResourceData, meta interface{}) erro
 		}
 
 		log.Printf("[DEBUG] Apply variable set %s to workspaces %v", d.Id(), workspaceIDs)
+		warnWorkspaceIdsDeprecation()
 		_, err := tfeClient.VariableSets.UpdateWorkspaces(ctx, d.Id(), &applyOptions)
 		if err != nil {
 			return fmt.Errorf(
-				"Error applying variable set %s to given workspaces: %v", d.Id(), err)
+				"Error applying variable set %s to given workspaces: %w", d.Id(), err)
 		}
 	}
 
@@ -174,8 +176,12 @@ func resourceTFEVariableSetDelete(d *schema.ResourceData, meta interface{}) erro
 		if err == tfe.ErrResourceNotFound {
 			return nil
 		}
-		return fmt.Errorf("Error deleting variable set %s: %v", d.Id(), err)
+		return fmt.Errorf("Error deleting variable set %s: %w", d.Id(), err)
 	}
 
 	return nil
+}
+
+func warnWorkspaceIdsDeprecation() {
+	log.Printf("[WARN] The workspace_ids field of tfe_variable_set is deprecated as of release 0.33.0 and may be removed in a future version. The preferred method of associating a variable set to a workspace is by using the tfe_workspace_variable_set resource.")
 }

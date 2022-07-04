@@ -226,7 +226,7 @@ func testAccCheckTFEVariableExists(
 		ws, err := tfeClient.Workspaces.ReadByID(ctx, wsID)
 		if err != nil {
 			return fmt.Errorf(
-				"Error retrieving workspace %s: %v", wsID, err)
+				"Error retrieving workspace %s: %w", wsID, err)
 		}
 
 		v, err := tfeClient.Variables.Read(ctx, ws.ID, rs.Primary.ID)
@@ -258,7 +258,7 @@ func testAccCheckTFEVariableSetVariableExists(
 		vs, err := tfeClient.VariableSets.Read(ctx, vsID, nil)
 		if err != nil {
 			return fmt.Errorf(
-				"Error retrieving variable set %s: %v", vsID, err)
+				"Error retrieving variable set %s: %w", vsID, err)
 		}
 
 		v, err := tfeClient.VariableSetVariables.Read(ctx, vs.ID, rs.Primary.ID)

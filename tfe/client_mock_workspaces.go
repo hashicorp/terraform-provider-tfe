@@ -44,7 +44,7 @@ func (m *mockWorkspaces) Create(ctx context.Context, organization string, option
 	return ws, nil
 }
 
-func (m *mockWorkspaces) Read(ctx context.Context, organization string, workspace string) (*tfe.Workspace, error) {
+func (m *mockWorkspaces) Read(ctx context.Context, organization, workspace string) (*tfe.Workspace, error) {
 	w := m.workspaceNames[workspaceNamesKey{organization, workspace}]
 	if w == nil {
 		return nil, tfe.ErrResourceNotFound
@@ -53,7 +53,7 @@ func (m *mockWorkspaces) Read(ctx context.Context, organization string, workspac
 	return w, nil
 }
 
-func (m *mockWorkspaces) ReadWithOptions(ctx context.Context, organization string, workspace string, options *tfe.WorkspaceReadOptions) (*tfe.Workspace, error) {
+func (m *mockWorkspaces) ReadWithOptions(ctx context.Context, organization, workspace string, options *tfe.WorkspaceReadOptions) (*tfe.Workspace, error) {
 	panic("not implemented")
 }
 
@@ -69,7 +69,7 @@ func (m *mockWorkspaces) ReadByID(ctx context.Context, workspaceID string) (*tfe
 	panic("not implemented")
 }
 
-func (m *mockWorkspaces) Update(ctx context.Context, organization string, workspace string, options tfe.WorkspaceUpdateOptions) (*tfe.Workspace, error) {
+func (m *mockWorkspaces) Update(ctx context.Context, organization, workspace string, options tfe.WorkspaceUpdateOptions) (*tfe.Workspace, error) {
 	panic("not implemented")
 }
 
@@ -77,7 +77,7 @@ func (m *mockWorkspaces) UpdateByID(ctx context.Context, workspaceID string, opt
 	panic("not implemented")
 }
 
-func (m *mockWorkspaces) Delete(ctx context.Context, organization string, workspace string) error {
+func (m *mockWorkspaces) Delete(ctx context.Context, organization, workspace string) error {
 	panic("not implemented")
 }
 
@@ -85,7 +85,7 @@ func (m *mockWorkspaces) DeleteByID(ctx context.Context, workspaceID string) err
 	panic("not implemented")
 }
 
-func (m *mockWorkspaces) RemoveVCSConnection(ctx context.Context, organization string, workspace string) (*tfe.Workspace, error) {
+func (m *mockWorkspaces) RemoveVCSConnection(ctx context.Context, organization, workspace string) (*tfe.Workspace, error) {
 	panic("not implemented")
 }
 

@@ -33,6 +33,8 @@ func TestAccTFETeamAccessDataSource_basic(t *testing.T) {
 						"data.tfe_team_access.foobar", "permissions.0.sentinel_mocks", "read"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_team_access.foobar", "permissions.0.workspace_locking", "true"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_team_access.foobar", "permissions.0.run_tasks", "false"),
 					resource.TestCheckResourceAttrSet("data.tfe_team_access.foobar", "id"),
 					resource.TestCheckResourceAttrSet("data.tfe_team_access.foobar", "team_id"),
 					resource.TestCheckResourceAttrSet("data.tfe_team_access.foobar", "workspace_id"),

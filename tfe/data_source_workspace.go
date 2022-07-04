@@ -172,7 +172,7 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 		if err == tfe.ErrResourceNotFound {
 			return fmt.Errorf("could not find workspace %s/%s", organization, name)
 		}
-		return fmt.Errorf("Error retrieving workspace: %v", err)
+		return fmt.Errorf("Error retrieving workspace: %w", err)
 	}
 	// Update the config.
 	d.Set("allow_destroy_plan", workspace.AllowDestroyPlan)
@@ -203,7 +203,7 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 
 		if err != nil {
 			return fmt.Errorf(
-				"Error reading remote state consumers for workspace %s: %v", workspace.ID, err)
+				"Error reading remote state consumers for workspace %s: %w", workspace.ID, err)
 		}
 
 		if legacyGlobalState {

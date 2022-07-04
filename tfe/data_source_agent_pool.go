@@ -38,7 +38,7 @@ func dataSourceTFEAgentPoolRead(d *schema.ResourceData, meta interface{}) error 
 	for {
 		l, err := tfeClient.AgentPools.List(ctx, organization, &options)
 		if err != nil {
-			return fmt.Errorf("Error retrieving agent pools: %v", err)
+			return fmt.Errorf("Error retrieving agent pools: %w", err)
 		}
 
 		for _, k := range l.Items {
