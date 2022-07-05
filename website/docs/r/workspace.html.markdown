@@ -12,7 +12,7 @@ Provides a workspace resource.
 
 ~> **NOTE:** Using `global_remote_state` or `remote_state_consumer_ids` requires using the provider with Terraform Cloud or an instance of Terraform Enterprise at least as recent as v202104-1.
 
-~> **NOTE:** Using `trigger-patterns`  requires using the provider with Terraform Cloud or an instance of Terraform Enterprise at least as recent as TODO: update version.
+~> **NOTE:** Using `trigger-patterns` requires using the provider with Terraform Cloud.
 
 ## Example Usage
 
@@ -105,10 +105,9 @@ The following arguments are supported:
   (like `~> 1.0.0`); if you specify a constraint, the workspace will always use
   the newest release that meets that constraint. Defaults to the latest
   available version.
-* `trigger_prefixes` - (Optional) List of repository-root-relative paths which describe all locations
-  to be tracked for changes. Mutually exclusive with `trigger-patterns`.
-* `trigger_patterns` - (Optional) List of repository-root-relative GLOB patterns which describe all locations 
-  to be tracked for changes. Mutually exclusive with `trigger-prefixes`.
+* `trigger_prefixes` - (Optional) LList of trigger prefixes that describe the paths Terraform Cloud monitors for changes, in addition to the working directory. Trigger prefixes are always appended to the root directory of the repository. 
+  Terraform Cloud or Terraform Enterprise will start a run when files are changed in any directory path matching the provided set of prefixes. Mutually exclusive with `trigger-patterns`.
+* `trigger_patterns` - (Optional) List of glob patterns that describe the files Terraform Cloud monitors for changes. Trigger patterns are always appended to the root directory of the repository. Mutually exclusive with `trigger-prefixes`.
 * `tag_names` - (Optional) A list of tag names for this workspace. Note that tags must only contain letters, numbers, colons, or hyphens.
 * `working_directory` - (Optional) A relative path that Terraform will execute
   within.  Defaults to the root of your repository.
