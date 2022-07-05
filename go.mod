@@ -77,5 +77,3 @@ require (
 	google.golang.org/genproto v0.0.0-20210319143718-93e7006c17a6 // indirect
 	google.golang.org/grpc v1.36.0 // indirect
 )
-
-require github.com/hashicorp/terraform-plugin-log v0.4.1
