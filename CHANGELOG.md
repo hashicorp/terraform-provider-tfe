@@ -2,7 +2,7 @@
 
 FEATURES:
 * **New Resource**: `tfe_workspace_variable_set` ([#537](https://github.com/hashicorp/terraform-provider-tfe/pull/537)) adds the ability to assign a variable set to a workspace in a single, flexible resource.
-* r/tfe_workspace, d/tfe_workspace: `trigger-patterns` attribute is introduced to support specifying a set of glob pattern for automatic VCS run triggering.
+* r/tfe_workspace, d/tfe_workspace: `trigger-patterns` ([#502](https://github.com/hashicorp/terraform-provider-tfe/pull/502)) attribute is introduced to support specifying a set of glob pattern for automatic VCS run triggering.
 DEPRECATION NOTICE: The `workspace_ids` argument on `tfe_variable_set` has been labelled as deprecated and should not be used in conjunction with `tfe_workspace_variable_set`.
 
 ## 0.32.1 (June 21st, 2022)
