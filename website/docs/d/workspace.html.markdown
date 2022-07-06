@@ -53,7 +53,7 @@ In addition to all arguments above, the following attributes are exported:
 * `terraform_version` - The version (or version constraint) of Terraform used for this workspace.
 * `trigger_prefixes` - List of trigger prefixes that describe the paths Terraform Cloud monitors for changes, in addition to the working directory. Trigger prefixes are always appended to the root directory of the repository.
   Terraform Cloud or Terraform Enterprise will start a run when files are changed in any directory path matching the provided set of prefixes.
-* `trigger_patterns` - List of glob patterns that describe the files Terraform Cloud monitors for changes. Trigger patterns are always appended to the root directory of the repository.
+* `trigger_patterns` - List of glob patterns that describe the files Terraform Cloud monitors for changes. Trigger patterns are always appended to the root directory of the repository. Only available for Terraform Cloud.
 * `vcs_repo` - Settings for the workspace's VCS repository.
 * `working_directory` - A relative path that Terraform will execute within.
 
