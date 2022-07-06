@@ -105,7 +105,7 @@ The following arguments are supported:
   available version.
 * `trigger_prefixes` - (Optional) List of trigger prefixes that describe the paths Terraform Cloud monitors for changes, in addition to the working directory. Trigger prefixes are always appended to the root directory of the repository. 
   Terraform Cloud or Terraform Enterprise will start a run when files are changed in any directory path matching the provided set of prefixes. Mutually exclusive with `trigger-patterns`.
-* `trigger_patterns` - (Optional) List of glob patterns that describe the files Terraform Cloud monitors for changes. Trigger patterns are always appended to the root directory of the repository. Mutually exclusive with `trigger-prefixes`. Only available for Terraform Cloud.
+* `trigger_patterns` - (Optional) List of [glob patterns](https://www.terraform.io/cloud-docs/workspaces/settings/vcs#glob-patterns-for-automatic-run-triggering) that describe the files Terraform Cloud monitors for changes. Trigger patterns are always appended to the root directory of the repository. Mutually exclusive with `trigger-prefixes`. Only available for Terraform Cloud.
 * `tag_names` - (Optional) A list of tag names for this workspace. Note that tags must only contain letters, numbers, colons, or hyphens.
 * `working_directory` - (Optional) A relative path that Terraform will execute
   within.  Defaults to the root of your repository.
