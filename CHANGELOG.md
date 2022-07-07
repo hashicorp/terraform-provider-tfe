@@ -1,7 +1,10 @@
 ## 0.33.0 (Unreleased)
 
 FEATURES:
-* r/workspace, d/workspace: Add `source_name` and `source_url` to workspaces
+* **New Resource**: `tfe_workspace_variable_set` ([#537](https://github.com/hashicorp/terraform-provider-tfe/pull/537)) adds the ability to assign a variable set to a workspace in a single, flexible resource.
+* r/workspace, d/workspace: Add `source_name` and `source_url` to workspaces ([527](https://github.com/hashicorp/terraform-provider-tfe/pull/527))
+
+DEPRECATION NOTICE: The `workspace_ids` argument on `tfe_variable_set` has been labelled as deprecated and should not be used in conjunction with `tfe_workspace_variable_set`.
 
 ## 0.32.1 (June 21st, 2022)
 

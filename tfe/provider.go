@@ -121,6 +121,7 @@ func Provider() *schema.Provider {
 			"tfe_workspace_run_task":          resourceTFEWorkspaceRunTask(),
 			"tfe_variable":                    resourceTFEVariable(),
 			"tfe_variable_set":                resourceTFEVariableSet(),
+			"tfe_workspace_variable_set":      resourceTFEWorkspaceVariableSet(),
 		},
 
 		ConfigureFunc: providerConfigure,
