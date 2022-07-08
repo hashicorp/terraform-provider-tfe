@@ -1,4 +1,4 @@
-## 0.33.0 (Unreleased)
+## 0.33.0 (July 8th, 2022)
 
 FEATURES:
 * **New Resource**: `tfe_workspace_variable_set` ([#537](https://github.com/hashicorp/terraform-provider-tfe/pull/537)) adds the ability to assign a variable set to a workspace in a single, flexible resource.
