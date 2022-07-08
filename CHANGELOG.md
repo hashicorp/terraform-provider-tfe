@@ -37,6 +37,7 @@ FEATURES:
 * **New Data Source**: d/tfe_organization_run_task ([#488](https://github.com/hashicorp/terraform-provider-tfe/pull/488))
 * **New Data Source**: d/tfe_workspace_run_task ([#488](https://github.com/hashicorp/terraform-provider-tfe/pull/488))
 * r/tfe_notification_configuration: Add Microsoft Teams notification type ([#484](https://github.com/hashicorp/terraform-provider-tfe/pull/484))
+* d/workspace_ids: Add `exclude_tags` to `tfe_workspace_ids` attributes ([#523](https://github.com/hashicorp/terraform-provider-tfe/pull/523))
 
 ## 0.31.0 (April 21, 2022)
 
