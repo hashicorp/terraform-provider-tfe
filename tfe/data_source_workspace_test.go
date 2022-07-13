@@ -92,6 +92,8 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "speculative_enabled", "true"),
 					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "drift_detection", "false"),
+					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "structured_run_output_enabled", "true"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "tag_names.0", "modules"),
@@ -174,6 +176,7 @@ resource "tfe_workspace" "foobar" {
   file_triggers_enabled = true
   queue_all_runs        = false
   speculative_enabled   = true
+	drift_detection       = false
   tag_names             = ["modules", "shared"]
   terraform_version     = "0.11.1"
   trigger_prefixes      = ["/modules", "/shared"]

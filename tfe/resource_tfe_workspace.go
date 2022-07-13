@@ -123,6 +123,12 @@ func resourceTFEWorkspace() *schema.Resource {
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
+			"drift_detection": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
+
 			"operations": {
 				Type:          schema.TypeBool,
 				Optional:      true,
@@ -241,6 +247,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		AllowDestroyPlan:           tfe.Bool(d.Get("allow_destroy_plan").(bool)),
 		AutoApply:                  tfe.Bool(d.Get("auto_apply").(bool)),
 		Description:                tfe.String(d.Get("description").(string)),
+		DriftDetection:             tfe.Bool(d.Get("drift_detection").(bool)),
 		FileTriggersEnabled:        tfe.Bool(d.Get("file_triggers_enabled").(bool)),
 		QueueAllRuns:               tfe.Bool(d.Get("queue_all_runs").(bool)),
 		SpeculativeEnabled:         tfe.Bool(d.Get("speculative_enabled").(bool)),
@@ -438,13 +445,15 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		d.HasChange("allow_destroy_plan") || d.HasChange("speculative_enabled") ||
 		d.HasChange("operations") || d.HasChange("execution_mode") ||
 		d.HasChange("description") || d.HasChange("agent_pool_id") ||
-		d.HasChange("global_remote_state") || d.HasChange("structured_run_output_enabled") {
+		d.HasChange("global_remote_state") || d.HasChange("structured_run_output_enabled") ||
+		d.HasChange("drift_detection") {
 		// Create a new options struct.
 		options := tfe.WorkspaceUpdateOptions{
 			Name:                       tfe.String(d.Get("name").(string)),
 			AllowDestroyPlan:           tfe.Bool(d.Get("allow_destroy_plan").(bool)),
 			AutoApply:                  tfe.Bool(d.Get("auto_apply").(bool)),
 			Description:                tfe.String(d.Get("description").(string)),
+			DriftDetection:             tfe.Bool(d.Get("drift_detection").(bool)),
 			FileTriggersEnabled:        tfe.Bool(d.Get("file_triggers_enabled").(bool)),
 			GlobalRemoteState:          tfe.Bool(d.Get("global_remote_state").(bool)),
 			QueueAllRuns:               tfe.Bool(d.Get("queue_all_runs").(bool)),

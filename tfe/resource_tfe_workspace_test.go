@@ -48,6 +48,8 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "speculative_enabled", "true"),
 					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "drift_detection", "false"),
+					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "structured_run_output_enabled", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "tag_names.0", "fav"),
@@ -2154,6 +2156,45 @@ func testAccCheckTFEWorkspaceDestroy(s *terraform.State) error {
 	return nil
 }
 
+func TestAccTFEWorkspace_basicDriftDetection(t *testing.T) {
+	skipIfFreeOnly(t)
+	skipIfEnterprise(t)
+
+	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_basic(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					testAccCheckTFEWorkspaceAttributes(workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "name", "workspace-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "drift_detection", "false"),
+				),
+			},
+			{
+				Config: testAccTFEWorkspace_updateDriftDetection(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "name", "workspace-updated"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "drift_detection", "true"),
+				),
+			},
+		},
+	})
+}
+
 func testAccTFEWorkspace_basic(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
@@ -2378,6 +2419,25 @@ resource "tfe_workspace" "foobar" {
   trigger_prefixes      = ["/modules", "/shared"]
   working_directory     = "terraform/test"
   operations            = false
+}`, rInt)
+}
+
+func testAccTFEWorkspace_updateDriftDetection(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name                  = "workspace-updated"
+  organization          = tfe_organization.foobar.id
+  description           = "My favorite workspace!"
+	drift_detection       = true
+  allow_destroy_plan    = false
+  auto_apply            = true
+  tag_names             = ["fav", "test"]
+  terraform_version     = "0.15.4"
 }`, rInt)
 }
 
