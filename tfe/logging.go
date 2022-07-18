@@ -26,10 +26,16 @@ const (
 // header values should be redacted from logs
 var redactedHeaders = []string{"authorization:", "proxy-authorization:"}
 
-// IsDebugOrHigher returns whether or not the current log level is debug or trace
-func IsDebugOrHigher() bool {
+// logLevelSet reads the TF_LOG level and ensures it is valid
+func logLevelSet() bool {
 	level := strings.ToUpper(os.Getenv(EnvLog))
-	return level == "DEBUG" || level == "TRACE"
+	// Ensure its set to a valid level otherwise will default logging to TRACE
+	switch level {
+	case "DEBUG", "TRACE", "INFO", "WARN", "ERROR":
+		return true
+	default:
+		return false
+	}
 }
 
 // RoundTrip is a transport method that logs the request and response if the TF_LOG level is
@@ -37,7 +43,9 @@ func IsDebugOrHigher() bool {
 func (t *loggingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	includeBody := !hasSensitiveValues(req)
 
-	if IsDebugOrHigher() {
+	// We don't need any logic to handle each specific level as
+	// Terraform will log accordingly based on the prefix.
+	if logLevelSet() {
 		reqData, err := httputil.DumpRequestOut(req, includeBody)
 		if err == nil {
 			log.Printf("[DEBUG] "+logReqMsg, t.name, filterAndPrettyPrintLines(reqData, includeBody))
@@ -51,9 +59,12 @@ func (t *loggingTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 		return resp, err
 	}
 
-	if IsDebugOrHigher() {
+	if logLevelSet() {
 		respData, err := httputil.DumpResponse(resp, includeBody)
 		if err == nil {
+			if strings.Contains(string(respData), "404 Not Found") {
+				log.Printf("[WARN] The requested resource at %s %s could not be found. Please ensure no drift occurred by attempting to import the desired resource. It may also be that your token is invalid.", req.Method, req.URL.RequestURI())
+			}
 			log.Printf("[DEBUG] "+logRespMsg, t.name, filterAndPrettyPrintLines(respData, includeBody))
 		} else {
 			log.Printf("[ERROR] %s API Response error: %#v", t.name, err)

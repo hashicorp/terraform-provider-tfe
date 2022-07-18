@@ -2,6 +2,7 @@
 
 ENHANCEMENTS:
 * d/agent_pool: Improve efficiency of reading agent pool data when the target organization has more than 20 agent pools ([#508](https://github.com/hashicorp/terraform-provider-tfe/pull/508))
+* Added warning logs for 404 error responses ([#538](https://github.com/hashicorp/terraform-provider-tfe/pull/538))
 
 ## 0.33.0 (July 8th, 2022)
 
