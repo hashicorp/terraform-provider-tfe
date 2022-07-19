@@ -25,6 +25,7 @@ func TestAccTFEWorkspaceRunTaskDataSource_basic(t *testing.T) {
 				Config: testAccTFEWorkspaceRunTaskDataSourceConfig(orgName, rInt, runTasksURL()),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.tfe_workspace_run_task.foobar", "enforcement_level", "advisory"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace_run_task.foobar", "stage"),
 					resource.TestCheckResourceAttrSet("data.tfe_workspace_run_task.foobar", "id"),
 					resource.TestCheckResourceAttrSet("data.tfe_workspace_run_task.foobar", "task_id"),
 					resource.TestCheckResourceAttrSet("data.tfe_workspace_run_task.foobar", "workspace_id"),

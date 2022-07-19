@@ -42,6 +42,40 @@ func TestAccTFEWorkspaceRunTask_create(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspaceRunTask_beta_create(t *testing.T) {
+	skipUnlessRunTasksDefined(t)
+	skipUnlessBeta(t)
+	skipIfFreeOnly(t) // Run Tasks requires TFE or a TFC paid/trial subscription
+
+	workspaceTask := &tfe.WorkspaceRunTask{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceRunTaskDestroy,
+		Steps: []resource.TestStep{
+			testCheckCreateOrgWithRunTasks(orgName),
+			{
+				Config: testAccTFEWorkspaceRunTask_beta_basic(orgName, runTasksURL()),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceRunTaskExists("tfe_workspace_run_task.foobar", workspaceTask),
+					resource.TestCheckResourceAttr("tfe_workspace_run_task.foobar", "enforcement_level", "advisory"),
+					resource.TestCheckResourceAttr("tfe_workspace_run_task.foobar", "stage", "post_plan"),
+				),
+			},
+			{
+				Config: testAccTFEWorkspaceRunTask_beta_update(orgName, runTasksURL()),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_workspace_run_task.foobar", "enforcement_level", "mandatory"),
+					resource.TestCheckResourceAttr("tfe_workspace_run_task.foobar", "stage", "pre_plan"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEWorkspaceRunTask_import(t *testing.T) {
 	skipUnlessRunTasksDefined(t)
 	skipIfFreeOnly(t) // Run Tasks requires TFE or a TFC paid/trial subscription
@@ -172,6 +206,60 @@ resource "tfe_workspace_run_task" "foobar" {
   workspace_id      = resource.tfe_workspace.foobar.id
   task_id           = resource.tfe_organization_run_task.foobar.id
   enforcement_level = "mandatory"
+}
+`, orgName, runTaskURL)
+}
+
+func testAccTFEWorkspaceRunTask_beta_basic(orgName, runTaskURL string) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "%s"
+  email = "admin@company.com"
+}
+
+resource "tfe_organization_run_task" "foobar" {
+  organization = tfe_organization.foobar.id
+  url          = "%s"
+  name         = "foobar-task"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_workspace_run_task" "foobar" {
+  workspace_id      = resource.tfe_workspace.foobar.id
+  task_id           = resource.tfe_organization_run_task.foobar.id
+  enforcement_level = "advisory"
+  stage             = "post_plan"
+}
+`, orgName, runTaskURL)
+}
+
+func testAccTFEWorkspaceRunTask_beta_update(orgName, runTaskURL string) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "%s"
+  email = "admin@company.com"
+}
+
+resource "tfe_organization_run_task" "foobar" {
+  organization = tfe_organization.foobar.id
+  url          = "%s"
+  name         = "foobar-task"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_workspace_run_task" "foobar" {
+  workspace_id      = resource.tfe_workspace.foobar.id
+  task_id           = resource.tfe_organization_run_task.foobar.id
+  enforcement_level = "mandatory"
+  stage             = "pre_plan"
 }
 `, orgName, runTaskURL)
 }

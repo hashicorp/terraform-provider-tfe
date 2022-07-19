@@ -1,3 +1,8 @@
+## Unreleased
+
+FEATURES:
+* r/tfe_workspace_run_task, d/tfe_workspace_run_task: Add `stage` attribute to workspace run tasks. ([#555](https://github.com/hashicorp/terraform-provider-tfe/pull/555))
+
 ## v0.36.0 (August 16th, 2022)
 
 FEATURES:

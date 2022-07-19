@@ -13,18 +13,27 @@ func dataSourceTFEWorkspaceRunTask() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"workspace_id": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "The id of the workspace.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"task_id": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "The id of the run task.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"enforcement_level": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The enforcement level of the task.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
+			"stage": {
+				Description: "Which stage the task will run in.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 		},
 	}
@@ -47,6 +56,7 @@ func dataSourceTFEWorkspaceRunTaskRead(d *schema.ResourceData, meta interface{})
 		for _, wstask := range list.Items {
 			if wstask.RunTask.ID == taskID {
 				d.Set("enforcement_level", string(wstask.EnforcementLevel))
+				d.Set("stage", string(wstask.Stage))
 				d.SetId(wstask.ID)
 				return nil
 			}
