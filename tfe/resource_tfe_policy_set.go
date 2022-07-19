@@ -95,11 +95,6 @@ func resourceTFEPolicySet() *schema.Resource {
 							Type:     schema.TypeString,
 							Required: true,
 						},
-
-						"tags_regex": {
-							Type:     schema.TypeString,
-							Optional: true,
-						},
 					},
 				},
 			},
@@ -147,7 +142,6 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 			Identifier:        tfe.String(vcsRepo["identifier"].(string)),
 			IngressSubmodules: tfe.Bool(vcsRepo["ingress_submodules"].(bool)),
 			OAuthTokenID:      tfe.String(vcsRepo["oauth_token_id"].(string)),
-			TagsRegex:         tfe.String(vcsRepo["tags_regex"].(string)),
 		}
 
 		// Only set the branch if one is configured.
@@ -211,7 +205,6 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 			"identifier":         policySet.VCSRepo.Identifier,
 			"ingress_submodules": policySet.VCSRepo.IngressSubmodules,
 			"oauth_token_id":     policySet.VCSRepo.OAuthTokenID,
-			"tags_regex":         policySet.VCSRepo.TagsRegex,
 		}
 
 		// Get and assert the VCS repo configuration block.
@@ -296,7 +289,6 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 				Branch:            tfe.String(vcsRepo["branch"].(string)),
 				IngressSubmodules: tfe.Bool(vcsRepo["ingress_submodules"].(bool)),
 				OAuthTokenID:      tfe.String(vcsRepo["oauth_token_id"].(string)),
-				TagsRegex:         tfe.String(vcsRepo["tags_regex"].(string)),
 			}
 		}
 
