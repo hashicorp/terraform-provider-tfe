@@ -315,8 +315,6 @@ func TestAccTFEPolicySet_vcs(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.ingress_submodules", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "vcs_repo.0.tags_regex", ""),
-					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "policies_path", GITHUB_POLICY_SET_PATH),
 				),
 			},
@@ -367,11 +365,10 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.ingress_submodules", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "vcs_repo.0.tags_regex", ""),
-					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "policies_path", GITHUB_POLICY_SET_PATH),
 				),
 			},
+
 			{
 				Config: testAccTFEPolicySet_updateVCSBranch(rInt),
 				Check: resource.ComposeTestCheckFunc(
@@ -389,54 +386,6 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 						"tfe_policy_set.foobar", "vcs_repo.0.branch", GITHUB_POLICY_SET_BRANCH),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.ingress_submodules", "true"),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "vcs_repo.0.tags_regex", ""),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "policies_path", GITHUB_POLICY_SET_PATH),
-				),
-			},
-			{
-				Config: testAccTFEPolicySet_updateVCSTagsRegex(rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
-					testAccCheckTFEPolicySetAttributes(policySet),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "name", "tst-terraform"),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "description", "Policy Set"),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "global", "false"),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "vcs_repo.0.identifier", GITHUB_POLICY_SET_IDENTIFIER),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "vcs_repo.0.branch", GITHUB_POLICY_SET_BRANCH),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "vcs_repo.0.ingress_submodules", "true"),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "vcs_repo.0.tags_regex", `\d+.\d+.\d+`),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "policies_path", GITHUB_POLICY_SET_PATH),
-				),
-			},
-			{
-				Config: testAccTFEPolicySet_removeVCSTagsRegex(rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
-					testAccCheckTFEPolicySetAttributes(policySet),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "name", "tst-terraform"),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "description", "Policy Set"),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "global", "false"),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "vcs_repo.0.identifier", GITHUB_POLICY_SET_IDENTIFIER),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "vcs_repo.0.branch", GITHUB_POLICY_SET_BRANCH),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "vcs_repo.0.ingress_submodules", "true"),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "vcs_repo.0.tags_regex", ""),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "policies_path", GITHUB_POLICY_SET_PATH),
 				),
@@ -940,7 +889,6 @@ resource "tfe_policy_set" "foobar" {
     branch             = "main"
     ingress_submodules = true
     oauth_token_id     = tfe_oauth_client.test.oauth_token_id
-	tags_regex		   = ""
   }
 
   policies_path = "%s"
@@ -976,81 +924,6 @@ resource "tfe_policy_set" "foobar" {
     branch             = "%s"
     ingress_submodules = true
     oauth_token_id     = tfe_oauth_client.test.oauth_token_id
-	tags_regex		   = ""
-  }
-
-  policies_path = "%s"
-}
-`, rInt,
-		GITHUB_TOKEN,
-		GITHUB_POLICY_SET_IDENTIFIER,
-		GITHUB_POLICY_SET_BRANCH,
-		GITHUB_POLICY_SET_PATH,
-	)
-}
-
-func testAccTFEPolicySet_updateVCSTagsRegex(rInt int) string {
-	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
-resource "tfe_oauth_client" "test" {
-  organization     = tfe_organization.foobar.id
-  api_url          = "https://api.github.com"
-  http_url         = "https://github.com"
-  oauth_token      = "%s"
-  service_provider = "github"
-}
-
-resource "tfe_policy_set" "foobar" {
-  name         			= "tst-terraform"
-  description  			= "Policy Set"
-  organization 			= tfe_organization.foobar.id
-  vcs_repo {
-    identifier         = "%s"
-    branch             = "%s"
-    ingress_submodules = true
-    oauth_token_id     = tfe_oauth_client.test.oauth_token_id
-	tags_regex		   = "\\d+.\\d+.\\d+"
-  }
-
-  policies_path = "%s"
-}
-`, rInt,
-		GITHUB_TOKEN,
-		GITHUB_POLICY_SET_IDENTIFIER,
-		GITHUB_POLICY_SET_BRANCH,
-		GITHUB_POLICY_SET_PATH,
-	)
-}
-
-func testAccTFEPolicySet_removeVCSTagsRegex(rInt int) string {
-	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
-resource "tfe_oauth_client" "test" {
-  organization     = tfe_organization.foobar.id
-  api_url          = "https://api.github.com"
-  http_url         = "https://github.com"
-  oauth_token      = "%s"
-  service_provider = "github"
-}
-
-resource "tfe_policy_set" "foobar" {
-  name         			= "tst-terraform"
-  description  			= "Policy Set"
-  organization 			= tfe_organization.foobar.id
-  vcs_repo {
-    identifier         = "%s"
-    branch             = "%s"
-    ingress_submodules = true
-    oauth_token_id     = tfe_oauth_client.test.oauth_token_id
-	tags_regex		   = ""
   }
 
   policies_path = "%s"
@@ -1124,7 +997,6 @@ resource "tfe_policy_set" "foobar" {
     branch             = "foo"
     ingress_submodules = true
     oauth_token_id     = "id"
-    tags_regex 		   = ""
   }
 } `, rInt, sourcePath)
 }
