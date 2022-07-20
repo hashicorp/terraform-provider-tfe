@@ -1633,7 +1633,7 @@ resource "tfe_workspace" "foobar" {
   name                  = "workspace-test"
   organization          = tfe_organization.foobar.id
   auto_apply            = true
-	trigger_prefixes      = []
+  trigger_prefixes      = []
 }`, rInt)
 }
 
