@@ -517,10 +517,11 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 				CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 				Steps: []resource.TestStep{
 					{
+						ExpectNonEmptyPlan: true,
 						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
 							rInt,
 							true, false,
-							true, `["prefix"]`,
+							true, `["omar"]`,
 							false, "",
 						),
 						Check: resource.ComposeTestCheckFunc(
@@ -533,6 +534,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 						),
 					},
 					{
+						ExpectNonEmptyPlan: true,
 						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
 							rInt,
 							true, false,

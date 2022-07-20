@@ -464,8 +464,6 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			options.TerraformVersion = tfe.String(tfVersion.(string))
 		}
 
-		oldValPrefix, newValPrefix := d.GetChange("trigger_prefixes")
-		log.Println(oldValPrefix, newValPrefix)
 		if tps, ok := d.GetOk("trigger_prefixes"); ok {
 			for _, tp := range tps.([]interface{}) {
 				if val, ok := tp.(string); ok {
@@ -473,10 +471,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 				}
 			}
 		} else {
-			if _, ok := d.GetOkExists("trigger_prefixes"); ok {
-				options.TriggerPrefixes = []string{}
-				d.Set("trigger_patterns", nil)
-			}
+			options.TriggerPrefixes = []string{}
 		}
 
 		if tps, ok := d.GetOk("trigger_patterns"); ok {
@@ -484,7 +479,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 				options.TriggerPatterns = append(options.TriggerPatterns, tp.(string))
 			}
 		} else {
-			options.TriggerPatterns = nil
+			options.TriggerPatterns = []string{}
 		}
 
 		if workingDir, ok := d.GetOk("working_directory"); ok {
@@ -689,20 +684,29 @@ func validateRemoteState(_ context.Context, d *schema.ResourceDiff) error {
 }
 
 func validateVcsTriggers(d *schema.ResourceDiff) {
-	keyPresentInConfigButNotState(d, "trigger_prefixes")
-	keyPresentInConfigButNotState(d, "trigger_patterns")
-	if d.HasChange("trigger_patterns") {
+	if d.HasChange("trigger_patterns") || isPresentInConf(d, "trigger_patterns") {
 		d.SetNewComputed("trigger_prefixes")
-	} else if d.HasChange("trigger_prefixes") {
+	} else if d.HasChange("trigger_prefixes") || isPresentInConf(d, "trigger_prefixes") {
 		d.SetNewComputed("trigger_patterns")
 	}
 }
 
-func keyPresentInConfigButNotState(d *schema.ResourceDiff, key string) bool {
-	value1, presentGetOk := d.GetOk(key)
-	value2, presentGetExists := d.GetOkExists(key)
-	log.Println("getOk: ", value1, "getOkExists", value2)
-	return !presentGetOk && presentGetExists
+func isPresentInConf(d *schema.ResourceDiff, key string) bool {
+	state := d.GetRawState()
+	if state.IsNull() {
+		return false
+	}
+	isPresentInConfig := !d.GetRawConfig().GetAttr(key).IsNull()
+	rawValueFromState := d.GetRawState().GetAttr(key)
+
+	noOfElements := 0
+	if !rawValueFromState.IsNull() {
+		noOfElements = len(rawValueFromState.AsValueSlice())
+	}
+
+	println(isPresentInConfig, rawValueFromState.IsNull(), noOfElements)
+
+	return isPresentInConfig
 }
 
 func resourceTFEWorkspaceImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
