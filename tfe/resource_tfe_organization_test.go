@@ -218,6 +218,71 @@ func TestAccTFEOrganization_import(t *testing.T) {
 	})
 }
 
+func TestAccTFEOrganization_update_workspaceLimit(t *testing.T) {
+	skipIfCloud(t)
+
+	org := &tfe.Organization{}
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	// First update
+	initialWorkspaceLimit := 42
+
+	// Second update
+	updatedWorkspaceLimit := 1337
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEOrganizationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOrganization_workspaceLimited(rInt, initialWorkspaceLimit),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOrganizationExists(
+						"tfe_organization.foobar", org),
+					testAccCheckTFEOrganizationAttributesBasic(org, orgName),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "name", orgName),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "email", "admin@company.com"),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "admin_settings.0.workspace_limit", "42"),
+				),
+			},
+			{
+				Config: testAccTFEOrganization_workspaceLimited(rInt, updatedWorkspaceLimit),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOrganizationExists(
+						"tfe_organization.foobar", org),
+					testAccCheckTFEOrganizationAttributesBasic(org, orgName),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "name", orgName),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "email", "admin@company.com"),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "admin_settings.0.workspace_limit", "1337"),
+				),
+			},
+			{
+				Config: testAccTFEOrganization_workspaceNil(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOrganizationExists(
+						"tfe_organization.foobar", org),
+					testAccCheckTFEOrganizationAttributesBasic(org, orgName),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "name", orgName),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "email", "admin@company.com"),
+					resource.TestCheckNoResourceAttr(
+						"tfe_organization.foobar", "admin_settings.0.workspace_limit"),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckTFEOrganizationExists(
 	n string, org *tfe.Organization) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
@@ -396,4 +461,23 @@ resource "tfe_organization" "foobar" {
   owners_team_saml_role_id = "owners"
   cost_estimation_enabled  = %t
 }`, rInt, costEstimationEnabled)
+}
+
+func testAccTFEOrganization_workspaceLimited(rInt int, workspaceLimit int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+  admin_settings {
+    workspace_limit = %d
+  }
+}`, rInt, workspaceLimit)
+}
+
+func testAccTFEOrganization_workspaceNil(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}`, rInt)
 }
