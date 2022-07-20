@@ -36,6 +36,11 @@ The following arguments are supported:
 * `owners_team_saml_role_id` - (Optional) The name of the "owners" team.
 * `cost_estimation_enabled` - (Optional) Whether or not the cost estimation feature is enabled for all workspaces in the organization. Defaults to true. In a Terraform Cloud organization which does not have Teams & Governance features, this value is always false and cannot be changed. In Terraform Enterprise, Cost Estimation must also be enabled in Site Administration.
 * `send_passing_statuses_for_untriggered_speculative_plans` - (Optional) Whether or not to send VCS status updates for untriggered speculative plans. This can be useful if large numbers of untriggered workspaces are exhausting request limits for connected version control service providers like GitHub. Defaults to false. In Terraform Enterprise, this setting has no effect and cannot be changed but is also available in Site Administration.
+* `admin_settings` - Settings that are only available in Terraform Enterprise.
+
+* The `admin_settings` block supports:
+
+* `workspace_limit` - (Optional) The maximum number of workspaces that can exist in this organization. If this number is set to a value lower than the number of workspaces the organization currently has, it will prevent additional workspaces from being created, but existing workspaces will not be affected. If set to 0, this limit will have no effect.
 
 ## Attributes Reference
 
