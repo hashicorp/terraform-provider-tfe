@@ -132,13 +132,13 @@ resource "tfe_workspace" "foobar" {
   terraform_version     = "0.11.1"
   trigger_prefixes      = ["/modules", "/shared"]
   working_directory     = "terraform/test"
-	global_remote_state   = true
+  global_remote_state   = true
 }
 
 data "tfe_workspace" "foobar" {
   name         = tfe_workspace.foobar.name
   organization = tfe_workspace.foobar.organization
-	depends_on   = [tfe_workspace.foobar]
+  depends_on   = [tfe_workspace.foobar]
 }`, rInt, rInt)
 }
 
