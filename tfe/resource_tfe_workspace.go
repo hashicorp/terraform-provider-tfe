@@ -266,7 +266,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 			options.TriggerPrefixes = append(options.TriggerPrefixes, tp.(string))
 		}
 	} else {
-		options.TriggerPrefixes = []string{}
+		options.TriggerPrefixes = nil
 	}
 
 	if tps, ok := d.GetOk("trigger_patterns"); ok {
@@ -274,7 +274,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 			options.TriggerPatterns = append(options.TriggerPatterns, tp.(string))
 		}
 	} else {
-		options.TriggerPatterns = []string{}
+		options.TriggerPatterns = nil
 	}
 
 	// Get and assert the VCS repo configuration block.
@@ -464,6 +464,8 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			options.TerraformVersion = tfe.String(tfVersion.(string))
 		}
 
+		oldValPrefix, newValPrefix := d.GetChange("trigger_prefixes")
+		log.Println(oldValPrefix, newValPrefix)
 		if tps, ok := d.GetOk("trigger_prefixes"); ok {
 			for _, tp := range tps.([]interface{}) {
 				if val, ok := tp.(string); ok {
@@ -471,7 +473,10 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 				}
 			}
 		} else {
-			options.TriggerPrefixes = []string{}
+			if _, ok := d.GetOkExists("trigger_prefixes"); ok {
+				options.TriggerPrefixes = []string{}
+				d.Set("trigger_patterns", nil)
+			}
 		}
 
 		if tps, ok := d.GetOk("trigger_patterns"); ok {
@@ -479,7 +484,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 				options.TriggerPatterns = append(options.TriggerPatterns, tp.(string))
 			}
 		} else {
-			options.TriggerPatterns = []string{}
+			options.TriggerPatterns = nil
 		}
 
 		if workingDir, ok := d.GetOk("working_directory"); ok {
@@ -684,11 +689,20 @@ func validateRemoteState(_ context.Context, d *schema.ResourceDiff) error {
 }
 
 func validateVcsTriggers(d *schema.ResourceDiff) {
+	keyPresentInConfigButNotState(d, "trigger_prefixes")
+	keyPresentInConfigButNotState(d, "trigger_patterns")
 	if d.HasChange("trigger_patterns") {
 		d.SetNewComputed("trigger_prefixes")
 	} else if d.HasChange("trigger_prefixes") {
 		d.SetNewComputed("trigger_patterns")
 	}
+}
+
+func keyPresentInConfigButNotState(d *schema.ResourceDiff, key string) bool {
+	value1, presentGetOk := d.GetOk(key)
+	value2, presentGetExists := d.GetOkExists(key)
+	log.Println("getOk: ", value1, "getOkExists", value2)
+	return !presentGetOk && presentGetExists
 }
 
 func resourceTFEWorkspaceImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
