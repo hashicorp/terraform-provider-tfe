@@ -746,7 +746,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 					{
 						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
 							rInt,
-							true, false,
+							true, true,
 							false, "",
 							true, `["pattern-x/**/*", "**/pattern-y/*", "pattern-z"]`,
 						),
