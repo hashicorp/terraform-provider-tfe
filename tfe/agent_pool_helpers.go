@@ -6,7 +6,7 @@ import (
 	tfe "github.com/hashicorp/go-tfe"
 )
 
-func fetchtAgentPoolId(orgName string, poolName string, client *tfe.Client) (string, error) {
+func fetchtAgentPoolID(orgName string, poolName string, client *tfe.Client) (string, error) {
 	// to reduce the number of pages returned, search based on the name. TFE instances which
 	// do not support agent pool search will just ignore the query parameter
 	options := tfe.AgentPoolListOptions{

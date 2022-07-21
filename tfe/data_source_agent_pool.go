@@ -30,7 +30,7 @@ func dataSourceTFEAgentPoolRead(d *schema.ResourceData, meta interface{}) error 
 	name := d.Get("name").(string)
 	organization := d.Get("organization").(string)
 
-	id, err := fetchtAgentPoolId(organization, name, tfeClient)
+	id, err := fetchtAgentPoolID(organization, name, tfeClient)
 	if err != nil {
 		return err
 	}

@@ -123,13 +123,13 @@ func resourceTFEAgentPoolImporter(d *schema.ResourceData, meta interface{}) ([]*
 	} else if len(s) == 2 {
 		org := s[0]
 		poolName := s[1]
-		poolId, err := fetchtAgentPoolId(org, poolName, tfeClient)
+		poolID, err := fetchtAgentPoolID(org, poolName, tfeClient)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"error retrieving agent pool with name %s from organization %s %w", poolName, org, err)
 		}
 
-		d.SetId(poolId)
+		d.SetId(poolID)
 	}
 
 	return []*schema.ResourceData{d}, nil
