@@ -44,8 +44,6 @@ func resourceTFEWorkspace() *schema.Resource {
 				return err
 			}
 
-			validateVcsTriggers(d)
-
 			return nil
 		},
 
@@ -165,7 +163,6 @@ func resourceTFEWorkspace() *schema.Resource {
 			"trigger_prefixes": {
 				Type:          schema.TypeList,
 				Optional:      true,
-				Computed:      true,
 				Elem:          &schema.Schema{Type: schema.TypeString},
 				ConflictsWith: []string{"trigger_patterns"},
 			},
@@ -173,7 +170,6 @@ func resourceTFEWorkspace() *schema.Resource {
 			"trigger_patterns": {
 				Type:          schema.TypeList,
 				Optional:      true,
-				Computed:      true,
 				Elem:          &schema.Schema{Type: schema.TypeString},
 				ConflictsWith: []string{"trigger_prefixes"},
 			},
@@ -681,14 +677,6 @@ func validateRemoteState(_ context.Context, d *schema.ResourceDiff) error {
 	}
 
 	return nil
-}
-
-func validateVcsTriggers(d *schema.ResourceDiff) {
-	if d.HasChange("trigger_patterns") || isPresentInConf(d, "trigger_patterns") {
-		d.SetNewComputed("trigger_prefixes")
-	} else if d.HasChange("trigger_prefixes") || isPresentInConf(d, "trigger_prefixes") {
-		d.SetNewComputed("trigger_patterns")
-	}
 }
 
 func isPresentInConf(d *schema.ResourceDiff, key string) bool {

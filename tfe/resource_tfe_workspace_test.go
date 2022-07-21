@@ -450,7 +450,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
 							rInt,
 							true, false,
-							true, `[]`,
+							true, "[]",
 							false, "",
 						),
 						Check: resource.ComposeTestCheckFunc(
@@ -517,7 +517,6 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 				CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 				Steps: []resource.TestStep{
 					{
-						ExpectNonEmptyPlan: true,
 						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
 							rInt,
 							true, false,
@@ -534,7 +533,6 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 						),
 					},
 					{
-						ExpectNonEmptyPlan: true,
 						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
 							rInt,
 							true, false,
@@ -592,7 +590,91 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 
 	t.Run("file triggers enabled is true", func(t *testing.T) {
 
-		t.Run("and trigger patterns are set", func(t *testing.T) {
+		t.Run("and trigger prefixes are set and empty", func(t *testing.T) {
+			workspace := &tfe.Workspace{}
+			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+			resource.Test(t, resource.TestCase{
+				PreCheck:     func() { testAccPreCheck(t) },
+				Providers:    testAccProviders,
+				CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+				Steps: []resource.TestStep{
+					{
+						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
+							rInt,
+							true, true,
+							false, "",
+							true, `["/pattern1", "/pattern2"]`,
+						),
+						Check: resource.ComposeTestCheckFunc(
+							testAccCheckTFEWorkspaceExists(
+								"tfe_workspace.foobar", workspace),
+							resource.TestCheckResourceAttr(
+								"tfe_workspace.foobar", "trigger_patterns.#", "2"),
+						),
+					},
+					{
+						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
+							rInt,
+							true, true,
+							true, "[]",
+							false, "",
+						),
+						Check: resource.ComposeTestCheckFunc(
+							testAccCheckTFEWorkspaceExists(
+								"tfe_workspace.foobar", workspace),
+							resource.TestCheckResourceAttr(
+								"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
+							resource.TestCheckResourceAttr(
+								"tfe_workspace.foobar", "trigger_patterns.#", "0"),
+						),
+					},
+				},
+			})
+		})
+		t.Run("and trigger prefixes are populated", func(t *testing.T) {
+			workspace := &tfe.Workspace{}
+			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+			resource.Test(t, resource.TestCase{
+				PreCheck:     func() { testAccPreCheck(t) },
+				Providers:    testAccProviders,
+				CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+				Steps: []resource.TestStep{
+					{
+						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
+							rInt,
+							true, true,
+							false, "",
+							true, `["/pattern1", "/pattern2"]`,
+						),
+						Check: resource.ComposeTestCheckFunc(
+							testAccCheckTFEWorkspaceExists(
+								"tfe_workspace.foobar", workspace),
+							resource.TestCheckResourceAttr(
+								"tfe_workspace.foobar", "trigger_patterns.#", "2"),
+						),
+					},
+					{
+						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
+							rInt,
+							true, true,
+							true, `["/prefix1"]`,
+							false, "",
+						),
+						Check: resource.ComposeTestCheckFunc(
+							testAccCheckTFEWorkspaceExists(
+								"tfe_workspace.foobar", workspace),
+							resource.TestCheckResourceAttr(
+								"tfe_workspace.foobar", "trigger_prefixes.#", "1"),
+							resource.TestCheckResourceAttr(
+								"tfe_workspace.foobar", "trigger_prefixes.0", "/prefix1"),
+							resource.TestCheckResourceAttr(
+								"tfe_workspace.foobar", "trigger_patterns.#", "0"),
+						),
+					},
+				},
+			})
+		})
+		t.Run("and trigger patterns are set and empty", func(t *testing.T) {
 			workspace := &tfe.Workspace{}
 			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 			resource.Test(t, resource.TestCase{
@@ -637,12 +719,195 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 				},
 			})
 		})
-		t.Run("and trigger prefixes are set and empty", func(t *testing.T) {})
-		t.Run("and trigger patterns are populated", func(t *testing.T) {})
-		t.Run("and trigger prefixes are populated", func(t *testing.T) {})
-		t.Run("and both trigger prefixes and patterns are populated", func(t *testing.T) {})
-		t.Run("and both trigger prefixes and patterns are empty", func(t *testing.T) {})
+		t.Run("and trigger patterns are populated", func(t *testing.T) {
+			workspace := &tfe.Workspace{}
+			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+			resource.Test(t, resource.TestCase{
+				PreCheck:     func() { testAccPreCheck(t) },
+				Providers:    testAccProviders,
+				CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+				Steps: []resource.TestStep{
+					{
+						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
+							rInt,
+							true, false,
+							true, `["prefix"]`,
+							false, "",
+						),
+						Check: resource.ComposeTestCheckFunc(
+							testAccCheckTFEWorkspaceExists(
+								"tfe_workspace.foobar", workspace),
+							resource.TestCheckResourceAttr(
+								"tfe_workspace.foobar", "trigger_prefixes.#", "1"),
+							resource.TestCheckResourceAttr(
+								"tfe_workspace.foobar", "trigger_patterns.#", "0"),
+						),
+					},
+					{
+						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
+							rInt,
+							true, false,
+							false, "",
+							true, `["pattern-x/**/*", "**/pattern-y/*", "pattern-z"]`,
+						),
+						Check: resource.ComposeTestCheckFunc(
+							resource.TestCheckResourceAttr(
+								"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
+							resource.TestCheckResourceAttr(
+								"tfe_workspace.foobar", "trigger_patterns.#", "3"),
+							resource.TestCheckResourceAttr(
+								"tfe_workspace.foobar", "trigger_patterns.0", "pattern-x/**/*"),
+							resource.TestCheckResourceAttr(
+								"tfe_workspace.foobar", "trigger_patterns.1", "**/pattern-y/*"),
+							resource.TestCheckResourceAttr(
+								"tfe_workspace.foobar", "trigger_patterns.2", "pattern-z"),
+						),
+					},
+				},
+			})
+		})
+		t.Run("and both trigger prefixes and patterns are populated", func(t *testing.T) {
+			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+			resource.Test(t, resource.TestCase{
+				PreCheck:     func() { testAccPreCheck(t) },
+				Providers:    testAccProviders,
+				CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+				Steps: []resource.TestStep{
+					{
+						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
+							rInt,
+							true, true,
+							true, `["prefix"]`,
+							true, `["pattern"]`,
+						),
+						ExpectError: regexp.MustCompile(`Conflicting configuration`),
+					},
+				},
+			})
+		})
+		t.Run("and both trigger prefixes and patterns are empty", func(t *testing.T) {
+			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+			resource.Test(t, resource.TestCase{
+				PreCheck:     func() { testAccPreCheck(t) },
+				Providers:    testAccProviders,
+				CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+				Steps: []resource.TestStep{
+					{
+						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
+							rInt,
+							true, true,
+							true, "[]",
+							true, "[]",
+						),
+						ExpectError: regexp.MustCompile(`Conflicting configuration`),
+					},
+				},
+			})
+		})
 
+		t.Run("change trigger prefixes to trigger patterns and vice-versa", func(t *testing.T) {
+			workspace := &tfe.Workspace{}
+			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+			resource.Test(t, resource.TestCase{
+				PreCheck:     func() { testAccPreCheck(t) },
+				Providers:    testAccProviders,
+				CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+				Steps: []resource.TestStep{
+					{
+						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
+							rInt,
+							true, false,
+							true, `["/prefix1", "/prefix2"]`,
+							false, "",
+						),
+						Check: resource.ComposeTestCheckFunc(
+							testAccCheckTFEWorkspaceExists(
+								"tfe_workspace.foobar", workspace),
+							resource.TestCheckResourceAttr(
+								"tfe_workspace.foobar", "trigger_prefixes.#", "2"),
+							resource.TestCheckResourceAttr(
+								"tfe_workspace.foobar", "trigger_patterns.#", "0"),
+						),
+					},
+					{
+						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
+							rInt,
+							false, true,
+							false, "",
+							false, "",
+						),
+						Check: resource.ComposeTestCheckFunc(
+							resource.TestCheckResourceAttr(
+								"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
+							resource.TestCheckResourceAttr(
+								"tfe_workspace.foobar", "trigger_patterns.#", "0"),
+						),
+					},
+					{
+						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
+							rInt,
+							true, true,
+							false, "",
+							true, `["/pattern1", "/pattern2"]`,
+						),
+						Check: resource.ComposeTestCheckFunc(
+							testAccCheckTFEWorkspaceExists(
+								"tfe_workspace.foobar", workspace),
+							resource.TestCheckResourceAttr(
+								"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
+							resource.TestCheckResourceAttr(
+								"tfe_workspace.foobar", "trigger_patterns.#", "2"),
+						),
+					},
+					{
+						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
+							rInt,
+							true, true,
+							true, `["/prefix1", "/prefix2", "another_one"]`,
+							false, "",
+						),
+						Check: resource.ComposeTestCheckFunc(
+							testAccCheckTFEWorkspaceExists(
+								"tfe_workspace.foobar", workspace),
+							resource.TestCheckResourceAttr(
+								"tfe_workspace.foobar", "trigger_prefixes.#", "3"),
+							resource.TestCheckResourceAttr(
+								"tfe_workspace.foobar", "trigger_patterns.#", "0"),
+						),
+					},
+					{
+						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
+							rInt,
+							true, true,
+							true, `["/prefix1"]`,
+							false, "[]",
+						),
+						Check: resource.ComposeTestCheckFunc(
+							testAccCheckTFEWorkspaceExists(
+								"tfe_workspace.foobar", workspace),
+							resource.TestCheckResourceAttr(
+								"tfe_workspace.foobar", "trigger_prefixes.#", "1"),
+							resource.TestCheckResourceAttr(
+								"tfe_workspace.foobar", "trigger_patterns.#", "0"),
+						),
+					},
+					{
+						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
+							rInt,
+							true, true,
+							true, `[]`,
+							false, `[]`,
+						),
+						Check: resource.ComposeTestCheckFunc(
+							testAccCheckTFEWorkspaceExists(
+								"tfe_workspace.foobar", workspace),
+							resource.TestCheckResourceAttr(
+								"tfe_workspace.foobar", "trigger_prefixes.#", "1"),
+						),
+					},
+				},
+			})
+		})
 	})
 
 }
