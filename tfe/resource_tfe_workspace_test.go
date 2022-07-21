@@ -935,21 +935,21 @@ resource "tfe_workspace" "foobar" {
 `, rInt)
 
 	if fileTriggersEnabledPresent {
-		result = result + fmt.Sprintf(`
+		result += fmt.Sprintf(`
 file_triggers_enabled = %v
 	`, fileTriggersEnabledValue)
 	}
 	if triggerPrefixesPresent {
-		result = result + fmt.Sprintf(`
+		result += fmt.Sprintf(`
 trigger_prefixes = %s
 	`, triggerPrefixesValue)
 	}
 	if triggerPatternsPresent {
-		result = result + fmt.Sprintf(`
+		result += fmt.Sprintf(`
 trigger_patterns = %s
 	`, triggerPatternsValue)
 	}
-	result = result + "}"
+	result += "}"
 	return result
 }
 
