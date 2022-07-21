@@ -478,10 +478,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			options.TriggerPatterns = []string{}
 		}
 
-		if d.GetRawConfig().GetAttr("trigger_prefixes").IsNull() &&
-			d.GetRawConfig().GetAttr("trigger_patterns").IsNull() {
-			options.TriggerPatterns = nil
-		} else if d.GetRawConfig().GetAttr("trigger_patterns").IsNull() {
+		if d.GetRawConfig().GetAttr("trigger_patterns").IsNull() {
 			options.TriggerPatterns = nil
 		} else if d.GetRawConfig().GetAttr("trigger_prefixes").IsNull() {
 			options.TriggerPrefixes = nil
