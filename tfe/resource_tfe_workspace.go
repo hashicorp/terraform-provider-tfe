@@ -685,24 +685,6 @@ func validateRemoteState(_ context.Context, d *schema.ResourceDiff) error {
 	return nil
 }
 
-func isPresentInConf(d *schema.ResourceDiff, key string) bool {
-	state := d.GetRawState()
-	if state.IsNull() {
-		return false
-	}
-	isPresentInConfig := !d.GetRawConfig().GetAttr(key).IsNull()
-	rawValueFromState := d.GetRawState().GetAttr(key)
-
-	noOfElements := 0
-	if !rawValueFromState.IsNull() {
-		noOfElements = len(rawValueFromState.AsValueSlice())
-	}
-
-	println(isPresentInConfig, rawValueFromState.IsNull(), noOfElements)
-
-	return isPresentInConfig
-}
-
 func resourceTFEWorkspaceImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	tfeClient := meta.(*tfe.Client)
 
