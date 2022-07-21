@@ -8,7 +8,7 @@ description: |-
 
 # tfe_team_members
 
-Manages users in a team.
+Manages users in a team. Users can be added by either their usernames or organization membership IDs.
 
 ~> **NOTE** on managing team memberships: Terraform currently provides three
 resources for managing team memberships.
@@ -21,7 +21,7 @@ used once. All three resources cannot be used for the same team simultaneously.
 
 ## Example Usage
 
-Basic usage:
+Basic usage with usernames:
 
 ```hcl
 resource "tfe_team" "test" {
@@ -35,12 +35,32 @@ resource "tfe_team_members" "test" {
 }
 ```
 
+Basic usage with organization membership IDs:
+
+```hcl
+resource "tfe_team" "test" {
+  name         = "my-team-name"
+  organization = "my-org-name"
+}
+
+resource "tfe_organization_membership" "test" {
+  email        = "test@mycompany.com"
+  organization = "mycompany"
+}
+
+resource "tfe_team_members" "test" {
+  team_id                     = tfe_team.test.id
+  organization_membership_ids = [tfe_organization_membership.test.id]
+}
+```
+
 ## Argument Reference
 
 The following arguments are supported:
 
 * `team_id` - (Required) ID of the team.
-* `usernames` - (Required) Names of the users to add.
+* `usernames` - (Optional) Names of the users to add. Exactly one of `usernames` and `organization_membership_ids` has to be specified. They can not be used in conjuntion.
+* `organization_membership_ids` - (Optional) Organization membership IDs of the users to add. Exactly one of `usernames` and `organization_membership_ids` has to be specified. They can not be used in conjuntion.
 
 ## Attributes Reference
 
