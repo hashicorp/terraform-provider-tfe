@@ -950,8 +950,6 @@ trigger_patterns = %s
 	`, triggerPatternsValue)
 	}
 	result = result + "}"
-	println(result)
-	println("--------------------------------------------------------------------")
 	return result
 }
 
