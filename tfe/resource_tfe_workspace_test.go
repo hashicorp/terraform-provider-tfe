@@ -895,14 +895,16 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
 							rInt,
 							true, true,
-							true, `[]`,
-							false, `[]`,
+							true, "[]",
+							false, "",
 						),
 						Check: resource.ComposeTestCheckFunc(
 							testAccCheckTFEWorkspaceExists(
 								"tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
-								"tfe_workspace.foobar", "trigger_prefixes.#", "1"),
+								"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
+							resource.TestCheckResourceAttr(
+								"tfe_workspace.foobar", "trigger_patterns.#", "0"),
 						),
 					},
 				},
