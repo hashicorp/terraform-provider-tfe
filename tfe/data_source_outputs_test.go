@@ -86,7 +86,7 @@ func TestAccTFEOutputs_emptyOutputs(t *testing.T) {
 						"data.tfe_outputs.foobar", "organization", orgName),
 					resource.TestCheckResourceAttr(
 						"data.tfe_outputs.foobar", "workspace", wsName),
-					// This is relies on test-fixtures/state-versions/terraform-empty-outputs.tfstate
+					// This relies on test-fixtures/state-versions/terraform-empty-outputs.tfstate
 					testCheckOutputState("state_output", &terraform.OutputState{
 						Value: map[string]interface{}{},
 					}),
