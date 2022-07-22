@@ -423,7 +423,6 @@ func TestAccTFEWorkspace_overwriteTriggerPatternsWithPrefixes(t *testing.T) {
 // TODO: remove or trim once the fix is battle tested
 func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 	t.Run("file triggers enabled is false", func(t *testing.T) {
-
 		t.Run("and trigger prefixes are set and empty", func(t *testing.T) {
 			workspace := &tfe.Workspace{}
 			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -585,11 +584,9 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 				},
 			})
 		})
-
 	})
 
 	t.Run("file triggers enabled is true", func(t *testing.T) {
-
 		t.Run("and trigger prefixes are set and empty", func(t *testing.T) {
 			workspace := &tfe.Workspace{}
 			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -911,7 +908,6 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 			})
 		})
 	})
-
 }
 
 func testAccTFEWorkspace_triggersConfigurationGenerator(
