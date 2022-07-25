@@ -1,6 +1,9 @@
 ## Unreleased
 
-ENHANCEMENTS:
+BUG FIXES:
+* Removed nonworking example from `tfe_variable_set` docs ([#562](https://github.com/hashicorp/terraform-provider-tfe/pull/562))
+
+FEATURES:
 * d/agent_pool: Improve efficiency of reading agent pool data when the target organization has more than 20 agent pools ([#508](https://github.com/hashicorp/terraform-provider-tfe/pull/508))
 * Added warning logs for 404 error responses ([#538](https://github.com/hashicorp/terraform-provider-tfe/pull/538))
 * r/tfe_workspace: Fix `trigger-prefixes` could not be updated because of the conflict with `trigger-patterns` in some cases - as described in this [GitHub Issue](https://github.com/hashicorp/terraform-provider-tfe/issues/552) ([#564](https://github.com/hashicorp/terraform-provider-tfe/pull/564/))
@@ -10,6 +13,7 @@ ENHANCEMENTS:
 FEATURES:
 * **New Resource**: `tfe_workspace_variable_set` ([#537](https://github.com/hashicorp/terraform-provider-tfe/pull/537)) adds the ability to assign a variable set to a workspace in a single, flexible resource.
 * r/tfe_workspace, d/tfe_workspace: `trigger-patterns` ([#502](https://github.com/hashicorp/terraform-provider-tfe/pull/502)) attribute is introduced to support specifying a set of [glob patterns](https://www.terraform.io/cloud-docs/workspaces/settings/vcs#glob-patterns-for-automatic-run-triggering) for automatic VCS run triggering.
+* r/organization: Add `workspace_limit` setting, available only in Terraform Enterprise ([#521](https://github.com/hashicorp/terraform-provider-tfe/pull/521))
 
 DEPRECATION NOTICE: The `workspace_ids` argument on `tfe_variable_set` has been labelled as deprecated and should not be used in conjunction with `tfe_workspace_variable_set`.
 
