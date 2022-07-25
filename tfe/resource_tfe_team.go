@@ -25,7 +25,6 @@ func resourceTFETeam() *schema.Resource {
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 			},
 			"organization": {
 				Type:     schema.TypeString,
