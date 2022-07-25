@@ -35,7 +35,8 @@ func TestAccTFERegistryModule_vcs(t *testing.T) {
 		CheckDestroy: testAccCheckTFERegistryModuleDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFERegistryModule_vcs(rInt),
+				Config:             testAccTFERegistryModule_vcs(rInt),
+				ExpectNonEmptyPlan: true,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFERegistryModuleExists(
 						"tfe_registry_module.foobar",
@@ -110,7 +111,8 @@ func TestAccTFERegistryModule_nonVCSPrivateRegistryModuleWithoutRegistryName(t *
 		CheckDestroy: testAccCheckTFERegistryModuleDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFERegistryModule_privateRMWithoutRegistryName(rInt),
+				Config:             testAccTFERegistryModule_privateRMWithoutRegistryName(rInt),
+				ExpectNonEmptyPlan: true,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFERegistryModuleExists(
 						"tfe_registry_module.foobar",
@@ -159,7 +161,8 @@ func TestAccTFERegistryModule_nonVCSPrivateRegistryModuleWithRegistryName(t *tes
 		CheckDestroy: testAccCheckTFERegistryModuleDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFERegistryModule_privateRMWithRegistryName(rInt),
+				Config:             testAccTFERegistryModule_privateRMWithRegistryName(rInt),
+				ExpectNonEmptyPlan: true,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFERegistryModuleExists(
 						"tfe_registry_module.foobar",
@@ -248,7 +251,8 @@ func TestAccTFERegistryModuleImport_vcsPrivateRMDeprecatedFormat(t *testing.T) {
 		CheckDestroy: testAccCheckTFERegistryModuleDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFERegistryModule_vcs(rInt),
+				Config:             testAccTFERegistryModule_vcs(rInt),
+				ExpectNonEmptyPlan: true,
 			},
 			{
 				ResourceName:        "tfe_registry_module.foobar",
@@ -272,7 +276,8 @@ func TestAccTFERegistryModuleImport_vcsPrivateRMRecommendedFormat(t *testing.T) 
 		CheckDestroy: testAccCheckTFERegistryModuleDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFERegistryModule_vcs(rInt),
+				Config:             testAccTFERegistryModule_vcs(rInt),
+				ExpectNonEmptyPlan: true,
 			},
 			{
 				ResourceName:        "tfe_registry_module.foobar",
@@ -295,7 +300,8 @@ func TestAccTFERegistryModuleImport_nonVCSPrivateRM(t *testing.T) {
 		CheckDestroy: testAccCheckTFERegistryModuleDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFERegistryModule_privateRMWithRegistryName(rInt),
+				Config:             testAccTFERegistryModule_privateRMWithRegistryName(rInt),
+				ExpectNonEmptyPlan: true,
 			},
 			{
 				ResourceName:        "tfe_registry_module.foobar",
