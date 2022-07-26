@@ -1,4 +1,4 @@
-## Unreleased
+## 0.34.0 (July 26th, 2022)
 
 BUG FIXES:
 * Removed nonworking example from `tfe_variable_set` docs ([#562](https://github.com/hashicorp/terraform-provider-tfe/pull/562))
