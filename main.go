@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
-	tf5server "github.com/hashicorp/terraform-plugin-go/tfprotov5/server"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov5/tf5server"
 	tfmux "github.com/hashicorp/terraform-plugin-mux"
 	"github.com/hashicorp/terraform-provider-tfe/tfe"
 )
