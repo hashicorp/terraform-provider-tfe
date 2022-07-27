@@ -73,20 +73,6 @@ func resourceTFEOrganization() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
-
-			"admin_settings": {
-				Type:     schema.TypeList,
-				MaxItems: 1,
-				Optional: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"workspace_limit": {
-							Type:     schema.TypeInt,
-							Optional: true,
-						},
-					},
-				},
-			},
 		},
 	}
 }
@@ -138,23 +124,6 @@ func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error
 	d.Set("cost_estimation_enabled", org.CostEstimationEnabled)
 	d.Set("send_passing_statuses_for_untriggered_speculative_plans", org.SendPassingStatusesForUntriggeredSpeculativePlans)
 
-	// update admin settings
-	log.Printf("[DEBUG] Read admin settings of organization: %s", d.Id())
-	adminOrg, err := tfeClient.Admin.Organizations.Read(ctx, d.Id())
-	if err != nil {
-		return err
-	}
-	var adminSettings []interface{}
-
-	if adminOrg.WorkspaceLimit != nil && *adminOrg.WorkspaceLimit != 0 {
-		adminSettings = append(adminSettings, map[string]interface{}{
-			"workspace_limit": *adminOrg.WorkspaceLimit,
-		})
-	}
-	if err := d.Set("admin_settings", adminSettings); err != nil {
-		return fmt.Errorf("error setting admin settings for organization %s: %w", d.Id(), err)
-	}
-
 	return nil
 }
 
@@ -195,19 +164,6 @@ func resourceTFEOrganizationUpdate(d *schema.ResourceData, meta interface{}) err
 	// If send_passing_statuses_for_untriggered_speculative_plans is supplied, set it using the options struct.
 	if sendPassingStatusesForUntriggeredSpeculativePlans, ok := d.GetOk("send_passing_statuses_for_untriggered_speculative_plans"); ok {
 		options.SendPassingStatusesForUntriggeredSpeculativePlans = tfe.Bool(sendPassingStatusesForUntriggeredSpeculativePlans.(bool))
-	}
-
-	// update workspace limit setting only if it has changed
-	if d.HasChange("admin_settings.0.workspace_limit") {
-		adminOpts := tfe.AdminOrganizationUpdateOptions{}
-
-		newLimit := d.Get("admin_settings.0.workspace_limit").(int)
-		adminOpts.WorkspaceLimit = &newLimit
-
-		_, err := tfeClient.Admin.Organizations.Update(ctx, d.Id(), adminOpts)
-		if err != nil {
-			return fmt.Errorf("Error updating admin settings for organization %s: %w", d.Id(), err)
-		}
 	}
 
 	log.Printf("[DEBUG] Update configuration of organization: %s", d.Id())
