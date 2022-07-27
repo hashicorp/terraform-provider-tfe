@@ -1,7 +1,7 @@
 ## 0.35.0 (July 27th, 2022)
 
 BUG FIXES:
-* Added `Computed` modifier to attributes in `r/tfe_registry_modules` to prevent unnecessary registry modules update. ([#572](https://github.com/hashicorp/terraform-provider-tfe/pull/572))
+* r/tfe_registry_module: Added `Computed` modifier to attributes in order to prevent unnecessary resource replacement ([#572](https://github.com/hashicorp/terraform-provider-tfe/pull/572))
 
 ## 0.34.0 (July 26th, 2022)
 
