@@ -25,11 +25,13 @@ func resourceTFERegistryModule() *schema.Resource {
 			"organization": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 				ForceNew: true,
 			},
 			"module_provider": {
 				Type:         schema.TypeString,
 				Optional:     true,
+				Computed:     true,
 				ForceNew:     true,
 				ExactlyOneOf: []string{"vcs_repo"},
 				RequiredWith: []string{"organization", "name"},
@@ -37,6 +39,7 @@ func resourceTFERegistryModule() *schema.Resource {
 			"name": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 				ForceNew: true,
 			},
 			"vcs_repo": {
@@ -68,12 +71,14 @@ func resourceTFERegistryModule() *schema.Resource {
 			"namespace": {
 				Type:         schema.TypeString,
 				Optional:     true,
+				Computed:     true,
 				ForceNew:     true,
 				RequiredWith: []string{"registry_name"},
 			},
 			"registry_name": {
 				Type:         schema.TypeString,
 				Optional:     true,
+				Computed:     true,
 				ForceNew:     true,
 				RequiredWith: []string{"module_provider"},
 				ValidateFunc: validation.StringInSlice(
