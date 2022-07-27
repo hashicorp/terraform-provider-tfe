@@ -1,5 +1,8 @@
 ## 0.35.0 (July 27th, 2022)
 
+BREAKING CHANGES:
+* `r/tfe_organization`: `admin_settings` attribute was removed after being released prematurely in 0.34.0, breaking existing configurations due to requiring a token with admin privileges ([#573](https://github.com/hashicorp/terraform-provider-tfe/pull/573))
+
 BUG FIXES:
 * r/tfe_registry_module: Added `Computed` modifier to attributes in order to prevent unnecessary resource replacement ([#572](https://github.com/hashicorp/terraform-provider-tfe/pull/572))
 
