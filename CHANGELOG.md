@@ -1,3 +1,8 @@
+## Unreleased
+
+FEATURES:
+* r/tfe_team_members: Team members can now be added by using their organization membership IDs ([#563](https://github.com/hashicorp/terraform-provider-tfe/pull/563))
+
 ## 0.35.0 (July 27th, 2022)
 
 BREAKING CHANGES:
