@@ -44,8 +44,6 @@ func resourceTFEWorkspace() *schema.Resource {
 				return err
 			}
 
-			validateVcsTriggers(d)
-
 			return nil
 		},
 
@@ -165,7 +163,6 @@ func resourceTFEWorkspace() *schema.Resource {
 			"trigger_prefixes": {
 				Type:          schema.TypeList,
 				Optional:      true,
-				Computed:      true,
 				Elem:          &schema.Schema{Type: schema.TypeString},
 				ConflictsWith: []string{"trigger_patterns"},
 			},
@@ -173,7 +170,6 @@ func resourceTFEWorkspace() *schema.Resource {
 			"trigger_patterns": {
 				Type:          schema.TypeList,
 				Optional:      true,
-				Computed:      true,
 				Elem:          &schema.Schema{Type: schema.TypeString},
 				ConflictsWith: []string{"trigger_prefixes"},
 			},
@@ -266,7 +262,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 			options.TriggerPrefixes = append(options.TriggerPrefixes, tp.(string))
 		}
 	} else {
-		options.TriggerPrefixes = []string{}
+		options.TriggerPrefixes = nil
 	}
 
 	if tps, ok := d.GetOk("trigger_patterns"); ok {
@@ -274,7 +270,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 			options.TriggerPatterns = append(options.TriggerPatterns, tp.(string))
 		}
 	} else {
-		options.TriggerPatterns = []string{}
+		options.TriggerPatterns = nil
 	}
 
 	// Get and assert the VCS repo configuration block.
@@ -482,6 +478,12 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			options.TriggerPatterns = []string{}
 		}
 
+		if d.GetRawConfig().GetAttr("trigger_patterns").IsNull() {
+			options.TriggerPatterns = nil
+		} else if d.GetRawConfig().GetAttr("trigger_prefixes").IsNull() {
+			options.TriggerPrefixes = nil
+		}
+
 		if workingDir, ok := d.GetOk("working_directory"); ok {
 			options.WorkingDirectory = tfe.String(workingDir.(string))
 		}
@@ -681,14 +683,6 @@ func validateRemoteState(_ context.Context, d *schema.ResourceDiff) error {
 	}
 
 	return nil
-}
-
-func validateVcsTriggers(d *schema.ResourceDiff) {
-	if d.HasChange("trigger_patterns") {
-		d.SetNewComputed("trigger_prefixes")
-	} else if d.HasChange("trigger_prefixes") {
-		d.SetNewComputed("trigger_patterns")
-	}
 }
 
 func resourceTFEWorkspaceImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {

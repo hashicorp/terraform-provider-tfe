@@ -180,7 +180,7 @@ data "tfe_outputs" "foobar" {
   workspace = "%s"
 }
 
-// All of these values reference the outputs in  the file
+// All of these values reference the outputs in the file
 // 'test-fixtures/state-versions/terraform.tfstate
 output "test_output_list_string" {
 	sensitive = true
