@@ -17,7 +17,7 @@ description: |-
 
 ### Required
 
-- `variable_set_id` (String)
+- `variable_set_id` (String) test description
 - `workspace_id` (String)
 
 ### Read-Only

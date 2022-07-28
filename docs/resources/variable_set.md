@@ -3,12 +3,12 @@
 page_title: "tfe_variable_set Resource - terraform-provider-tfe"
 subcategory: ""
 description: |-
-  
+  Creates, updates and destroys variable sets.
 ---
 
 # tfe_variable_set
 
-
+Creates, updates and destroys variable sets.
 
 ## Example Usage 
 

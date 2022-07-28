@@ -207,7 +207,7 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"vcs_repo": {
-				Description: "",
+				Description: "vcs nested",
 				Type:        schema.TypeList,
 				Optional:    true,
 				MinItems:    1,
@@ -215,19 +215,19 @@ func resourceTFEWorkspace() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"identifier": {
-							Description: "",
+							Description: "identifier",
 							Type:        schema.TypeString,
 							Required:    true,
 						},
 
 						"branch": {
-							Description: "",
+							Description: "branch",
 							Type:        schema.TypeString,
 							Optional:    true,
 						},
 
 						"ingress_submodules": {
-							Description: "",
+							Description: "ingress",
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Default:     false,
