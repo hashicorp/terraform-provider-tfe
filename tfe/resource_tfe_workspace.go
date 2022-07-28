@@ -16,6 +16,8 @@ var workspaceIdRegexp = regexp.MustCompile("^ws-[a-zA-Z0-9]{16}$")
 
 func resourceTFEWorkspace() *schema.Resource {
 	return &schema.Resource{
+		Description: "",
+
 		Create: resourceTFEWorkspaceCreate,
 		Read:   resourceTFEWorkspaceRead,
 		Update: resourceTFEWorkspaceUpdate,
@@ -51,40 +53,47 @@ func resourceTFEWorkspace() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"description": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 
 			"agent_pool_id": {
+				Description:   "",
 				Type:          schema.TypeString,
 				Optional:      true,
 				ConflictsWith: []string{"operations"},
 			},
 
 			"allow_destroy_plan": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
+				Description: "",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
 			},
 
 			"auto_apply": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
+				Description: "",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
 			},
 
 			"execution_mode": {
+				Description:   "",
 				Type:          schema.TypeString,
 				Optional:      true,
 				Computed:      true,
@@ -100,25 +109,29 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"file_triggers_enabled": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
+				Description: "",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
 			},
 
 			"global_remote_state": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
 			},
 
 			"remote_state_consumer_ids": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 
 			"operations": {
+				Description:   "",
 				Type:          schema.TypeBool,
 				Optional:      true,
 				Computed:      true,
@@ -126,43 +139,50 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"queue_all_runs": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
+				Description: "",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
 			},
 
 			"speculative_enabled": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
+				Description: "",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
 			},
 
 			"ssh_key_id": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "",
+				Description: "",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "",
 			},
 
 			"structured_run_output_enabled": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
+				Description: "",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
 			},
 
 			"tag_names": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 
 			"terraform_version": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
 			},
 
 			"trigger_prefixes": {
+				Description:   "",
 				Type:          schema.TypeList,
 				Optional:      true,
 				Computed:      true,
@@ -171,6 +191,7 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"trigger_patterns": {
+				Description:   "",
 				Type:          schema.TypeList,
 				Optional:      true,
 				Computed:      true,
@@ -179,37 +200,43 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"working_directory": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "",
+				Description: "",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "",
 			},
 
 			"vcs_repo": {
-				Type:     schema.TypeList,
-				Optional: true,
-				MinItems: 1,
-				MaxItems: 1,
+				Description: "",
+				Type:        schema.TypeList,
+				Optional:    true,
+				MinItems:    1,
+				MaxItems:    1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"identifier": {
-							Type:     schema.TypeString,
-							Required: true,
+							Description: "",
+							Type:        schema.TypeString,
+							Required:    true,
 						},
 
 						"branch": {
-							Type:     schema.TypeString,
-							Optional: true,
+							Description: "",
+							Type:        schema.TypeString,
+							Optional:    true,
 						},
 
 						"ingress_submodules": {
-							Type:     schema.TypeBool,
-							Optional: true,
-							Default:  false,
+							Description: "",
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
 						},
 
 						"oauth_token_id": {
-							Type:     schema.TypeString,
-							Required: true,
+							Description: "",
+							Type:        schema.TypeString,
+							Required:    true,
 						},
 					},
 				},

@@ -10,6 +10,8 @@ import (
 
 func resourceTFESSHKey() *schema.Resource {
 	return &schema.Resource{
+		Description: "This resource represents an SSH key which includes a name and the SSH private key. An organization can have multiple SSH keys available.",
+
 		Create: resourceTFESSHKeyCreate,
 		Read:   resourceTFESSHKeyRead,
 		Update: resourceTFESSHKeyUpdate,
@@ -17,20 +19,23 @@ func resourceTFESSHKey() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "Name to identify the SSH key.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "Name of the organization.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"key": {
-				Type:      schema.TypeString,
-				Required:  true,
-				Sensitive: true,
+				Description: "The text of the SSH private key.",
+				Type:        schema.TypeString,
+				Required:    true,
+				Sensitive:   true,
 			},
 		},
 	}

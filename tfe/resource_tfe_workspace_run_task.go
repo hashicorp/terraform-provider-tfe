@@ -12,6 +12,8 @@ import (
 
 func resourceTFEWorkspaceRunTask() *schema.Resource {
 	return &schema.Resource{
+		Description: "",
+
 		Create: resourceTFEWorkspaceRunTaskCreate,
 		Read:   resourceTFEWorkspaceRunTaskRead,
 		Delete: resourceTFEWorkspaceRunTaskDelete,
@@ -22,20 +24,23 @@ func resourceTFEWorkspaceRunTask() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"workspace_id": {
-				Type:     schema.TypeString,
-				ForceNew: true,
-				Required: true,
+				Description: "",
+				Type:        schema.TypeString,
+				ForceNew:    true,
+				Required:    true,
 			},
 
 			"task_id": {
-				Type:     schema.TypeString,
-				ForceNew: true,
-				Required: true,
+				Description: "",
+				Type:        schema.TypeString,
+				ForceNew:    true,
+				Required:    true,
 			},
 
 			"enforcement_level": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Required:    true,
 				ValidateFunc: validation.StringInSlice(
 					[]string{
 						string(tfe.Advisory),

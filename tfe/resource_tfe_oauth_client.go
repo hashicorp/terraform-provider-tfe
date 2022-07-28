@@ -11,57 +11,69 @@ import (
 
 func resourceTFEOAuthClient() *schema.Resource {
 	return &schema.Resource{
+		Description: "An OAuth Client represents the connection between an organization and a VCS provider." +
+			"\n\n -> **Note:** This resource does not currently support creation of Azure DevOps Services OAuth clients.",
+
 		Create: resourceTFEOAuthClientCreate,
 		Read:   resourceTFEOAuthClientRead,
 		Delete: resourceTFEOAuthClientDelete,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
+				Description: "Display name for the OAuth Client. Defaults to the `service_provider` if not supplied.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "Name of the Terraform organization.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"api_url": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "The base URL of your VCS provider's API (e.g.`https://api.github.com` or `https://ghe.example.com/api/v3`).",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"http_url": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "The homepage of your VCS provider (e.g.`https://github.com` or `https://ghe.example.com`).",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"key": {
-				Type:      schema.TypeString,
-				ForceNew:  true,
-				Sensitive: true,
-				Optional:  true,
+				Description: "The OAuth Client key can refer to a Consumer Key, Application Key, or another type of client key for the VCS provider.",
+				Type:        schema.TypeString,
+				ForceNew:    true,
+				Sensitive:   true,
+				Optional:    true,
 			},
 
 			"oauth_token": {
-				Type:      schema.TypeString,
-				Optional:  true,
-				Sensitive: true,
-				ForceNew:  true,
+				Description: "The token string you were given by your VCS provider, e.g. `ghp_xxxxxxxxxxxxxxx` for a GitHub personal access token. For more information on how to generate this token string for your VCS provider, see the [Create an OAuth Client](https://www.terraform.io/docs/cloud/api/oauth-clients.html#create-an-oauth-client) documentation.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Sensitive:   true,
+				ForceNew:    true,
 			},
 
 			"private_key": {
-				Type:      schema.TypeString,
-				ForceNew:  true,
-				Sensitive: true,
-				Optional:  true,
+				Description: "(Required for `ado_server`) The text of the private key associated with your Azure DevOps Server account",
+				Type:        schema.TypeString,
+				ForceNew:    true,
+				Sensitive:   true,
+				Optional:    true,
 			},
 
 			"secret": {
+				Description: "(Required for `bitbucket_server`) The OAuth Client secret is used for BitBucket Server, this secret is the " +
+					"the text of the SSH private key associated with your BitBucket Server Application Link.",
 				Type:      schema.TypeString,
 				ForceNew:  true,
 				Sensitive: true,
@@ -69,6 +81,9 @@ func resourceTFEOAuthClient() *schema.Resource {
 			},
 
 			"rsa_public_key": {
+				Description: "(Required for `bitbucket_server`) Required for BitBucket " +
+					"Server in conjunction with the secret. Not used for any other providers. The " +
+					"text of the SSH public key associated with your BitBucket Server Application Link.",
 				Type:     schema.TypeString,
 				ForceNew: true,
 				Optional: true,
@@ -77,9 +92,10 @@ func resourceTFEOAuthClient() *schema.Resource {
 			},
 
 			"service_provider": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "The VCS provider being connected with. Valid options are `ado_server`, `ado_services`, `bitbucket_hosted`, `bitbucket_server`, `github`, `github_enterprise`, `gitlab_hosted`,`gitlab_community_edition`, or `gitlab_enterprise_edition`.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 				ValidateFunc: validation.StringInSlice(
 					[]string{
 						string(tfe.ServiceProviderAzureDevOpsServer),
@@ -97,8 +113,9 @@ func resourceTFEOAuthClient() *schema.Resource {
 			},
 
 			"oauth_token_id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The ID of the OAuth token associated with the OAuth client.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 		},
 	}

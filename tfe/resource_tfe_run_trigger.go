@@ -13,6 +13,8 @@ import (
 
 func resourceTFERunTrigger() *schema.Resource {
 	return &schema.Resource{
+		Description: "Terraform Cloud provides a way to connect your workspace to one or more workspaces within your organization, known as 'source workspaces'. These connections, called run triggers, allow runs to queue automatically in your workspace on successful apply of runs in any of the source workspaces. You can connect your workspace to up to 20 source workspaces.",
+
 		Create: resourceTFERunTriggerCreate,
 		Read:   resourceTFERunTriggerRead,
 		Delete: resourceTFERunTriggerDelete,
@@ -22,14 +24,16 @@ func resourceTFERunTrigger() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"workspace_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "The id of the workspace that owns the run trigger. This is the workspace where runs will be triggered.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 			"sourceable_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "The id of the sourceable. The sourceable must be a workspace.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 		},
 	}

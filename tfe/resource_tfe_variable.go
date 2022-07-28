@@ -13,6 +13,8 @@ import (
 
 func resourceTFEVariable() *schema.Resource {
 	return &schema.Resource{
+		Description: "Creates, updates and destroys variables.",
+
 		Create: resourceTFEVariableCreate,
 		Read:   resourceTFEVariableRead,
 		Update: resourceTFEVariableUpdate,
@@ -31,21 +33,24 @@ func resourceTFEVariable() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"key": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "Name of the variable.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"value": {
-				Type:      schema.TypeString,
-				Optional:  true,
-				Default:   "",
-				Sensitive: true,
+				Description: "Value of the variable.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "",
+				Sensitive:   true,
 			},
 
 			"category": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "Whether this is a Terraform or environment variable. Valid values are `terraform` or `env`.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 				ValidateFunc: validation.StringInSlice(
 					[]string{
 						string(tfe.CategoryEnv),
@@ -56,24 +61,28 @@ func resourceTFEVariable() *schema.Resource {
 			},
 
 			"description": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "",
+				Description: "Description of the variable.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "",
 			},
 
 			"hcl": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
+				Description: "Whether to evaluate the value of the variable as a string of HCL code. Has no effect for environment variables. Defaults to `false`.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
 			},
 
 			"sensitive": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
+				Description: "Whether the value is sensitive. If true then the variable is written once and not visible thereafter. Defaults to `false`.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
 			},
 
 			"workspace_id": {
+				Description:  "ID of the workspace that owns the variable.",
 				Type:         schema.TypeString,
 				Optional:     true,
 				Required:     false,
@@ -86,6 +95,7 @@ func resourceTFEVariable() *schema.Resource {
 			},
 
 			"variable_set_id": {
+				Description:  "ID of the variable set that owns the variable.",
 				Type:         schema.TypeString,
 				Optional:     true,
 				Required:     false,

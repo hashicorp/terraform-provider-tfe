@@ -10,6 +10,9 @@ import (
 
 func resourceTFETeamMembers() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manages users in a team." +
+			"\n\n ~> **NOTE** On managing team memberships: Terraform currently provides three resources for managing team memberships. The [tfe_team_organization_member](team_organization_member.html) resource is the preferred way. The [tfe_team_member](team_member.html) resource can be used multiple times as it manages the team membership for a single user.  The [tfe_team_members](team_members.html) resource, on the other hand, is used to manage all team memberships for a specific team and can only be used once. All three resources cannot be used for the same team simultaneously.",
+
 		Create: resourceTFETeamMembersCreate,
 		Read:   resourceTFETeamMembersRead,
 		Update: resourceTFETeamMembersUpdate,
@@ -20,15 +23,17 @@ func resourceTFETeamMembers() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"team_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "ID of the team.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"usernames": {
-				Type:     schema.TypeSet,
-				Required: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "Names of the users to add.",
+				Type:        schema.TypeSet,
+				Required:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
 	}

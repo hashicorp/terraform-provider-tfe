@@ -10,6 +10,9 @@ import (
 
 func resourceTFEAgentPool() *schema.Resource {
 	return &schema.Resource{
+		Description: "An agent pool represents a group of agents, often related to one another by sharing a common network segment or purpose. A workspace may be configured to use one of the organization's agent pools to run remote operations with isolated, private, or on-premises infrastructure." +
+			"\n\n ~> **NOTE:** This resource requires using the provider with Terraform Cloud and a Terraform Cloud for Business account. [Learn more about Terraform Cloud pricing here](https://www.hashicorp.com/products/terraform/pricing?_ga=2.56441195.1392855715.1658762101-1323299352.1652184430).",
+
 		Create: resourceTFEAgentPoolCreate,
 		Read:   resourceTFEAgentPoolRead,
 		Update: resourceTFEAgentPoolUpdate,
@@ -20,14 +23,16 @@ func resourceTFEAgentPool() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "Name of the agent pool.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "Name of the organization.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 		},
 	}

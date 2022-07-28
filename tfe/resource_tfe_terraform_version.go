@@ -11,6 +11,8 @@ import (
 
 func resourceTFETerraformVersion() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manage Terraform versions available on Terraform Cloud/Enterprise.",
+
 		Create: resourceTFETerraformVersionCreate,
 		Read:   resourceTFETerraformVersionRead,
 		Update: resourceTFETerraformVersionUpdate,
@@ -21,41 +23,49 @@ func resourceTFETerraformVersion() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"version": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "A semantic version string in N.N.N or N.N.N-bundleName format.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 			"url": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "The URL where a ZIP-compressed 64-bit Linux binary of this version can be downloaded.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 			"sha": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "The SHA-256 checksum of the compressed Terraform binary.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 			"official": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
+				Description: "Whether or not this is an official release of Terraform. Defaults to 'false'.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
 			},
 			"enabled": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
+				Description: "Whether or not this version of Terraform is enabled for use in Terraform Cloud/Enterprise. Defaults to 'true'.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
 			},
 			"beta": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
+				Description: "Whether or not this version of Terraform is beta pre-release. Defaults to 'false'.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
 			},
 			"deprecated": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
+				Description: "Whether or not this version of Terraform is deprecated. Defaults to 'false'.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
 			},
 			"deprecated_reason": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  nil,
+				Description: "Additional context about why a version of Terraform is deprecated. Defaults to 'null' unless `deprecated` is true.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     nil,
 			},
 		},
 	}

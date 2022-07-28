@@ -10,6 +10,8 @@ import (
 
 func resourceTFETeamToken() *schema.Resource {
 	return &schema.Resource{
+		Description: "Generates a new team token and overrides existing token if one exists.",
+
 		Create: resourceTFETeamTokenCreate,
 		Read:   resourceTFETeamTokenRead,
 		Delete: resourceTFETeamTokenDelete,
@@ -19,21 +21,24 @@ func resourceTFETeamToken() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"team_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "ID of the team.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"force_regenerate": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				ForceNew: true,
+				Description: "If set to `true`, a new token will be generated even if a token already exists. This will invalidate the existing token!",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				ForceNew:    true,
 			},
 
 			"token": {
-				Type:      schema.TypeString,
-				Computed:  true,
-				Sensitive: true,
+				Description: "The generated token.",
+				Type:        schema.TypeString,
+				Computed:    true,
+				Sensitive:   true,
 			},
 		},
 	}

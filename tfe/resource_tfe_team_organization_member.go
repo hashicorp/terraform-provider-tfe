@@ -11,6 +11,10 @@ import (
 
 func resourceTFETeamOrganizationMember() *schema.Resource {
 	return &schema.Resource{
+		Description: "Add or remove a team member using a [tfe_organization_membership](organization_membership.html)." +
+			"\n\n ~> **NOTE** On managing team memberships: Terraform currently provides three resources for managing team memberships. This is the preferred method as it allows you to add a member to a team by email address." +
+			"\n\n ~> **NOTE:** This resource requires using the provider with Terraform Cloud or an instance of Terraform Enterprise at least as recent as v202004-1.",
+
 		Create: resourceTFETeamOrganizationMemberCreate,
 		Read:   resourceTFETeamOrganizationMemberRead,
 		Delete: resourceTFETeamOrganizationMemberDelete,
@@ -20,15 +24,17 @@ func resourceTFETeamOrganizationMember() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"team_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "ID of the team.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"organization_membership_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "ID of the organization membership.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 		},
 	}

@@ -12,6 +12,8 @@ import (
 
 func resourceTFEWorkspaceVariableSet() *schema.Resource {
 	return &schema.Resource{
+		Description: "",
+
 		Create: resourceTFEWorkspaceVariableSetCreate,
 		Read:   resourceTFEWorkspaceVariableSetRead,
 		Delete: resourceTFEWorkspaceVariableSetDelete,
@@ -21,15 +23,17 @@ func resourceTFEWorkspaceVariableSet() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"variable_set_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"workspace_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 		},
 	}

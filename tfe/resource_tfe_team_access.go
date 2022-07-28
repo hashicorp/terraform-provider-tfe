@@ -13,6 +13,8 @@ import (
 
 func resourceTFETeamAccess() *schema.Resource {
 	return &schema.Resource{
+		Description: "Associate a team to permissions on a workspace.",
+
 		Create: resourceTFETeamAccessCreate,
 		Read:   resourceTFETeamAccessRead,
 		Update: resourceTFETeamAccessUpdate,
@@ -33,9 +35,10 @@ func resourceTFETeamAccess() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"access": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Description: "Type of fixed access to grant. Valid values are `admin`, `read`, `plan`, or `write`. To use `custom` permissions, use a `permissions` block instead. This value _must not_ be provided if `permissions` is provided.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
 				// This should be moved to the Resource level when possible:
 				// https://github.com/hashicorp/terraform-plugin-sdk/issues/470
 				ExactlyOneOf: []string{"access", "permissions"},
@@ -51,14 +54,16 @@ func resourceTFETeamAccess() *schema.Resource {
 			},
 
 			"permissions": {
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
+				Description: "Permissions to grant using [custom workspace permissions](https://www.terraform.io/docs/cloud/users-teams-organizations/permissions.html#custom-workspace-permissions). This value _must not_ be provided if `access` is provided.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"runs": {
-							Type:     schema.TypeString,
-							Required: true,
+							Description: "The permission to grant the team on the workspace's runs. Valid values are `read`, `plan`, or `apply`.",
+							Type:        schema.TypeString,
+							Required:    true,
 							ValidateFunc: validation.StringInSlice(
 								[]string{
 									string(tfe.RunsPermissionRead),
@@ -70,8 +75,9 @@ func resourceTFETeamAccess() *schema.Resource {
 						},
 
 						"variables": {
-							Type:     schema.TypeString,
-							Required: true,
+							Description: "The permission to grant the team on the workspace's variables. Valid values are `none`, `read`, or `write`.",
+							Type:        schema.TypeString,
+							Required:    true,
 							ValidateFunc: validation.StringInSlice(
 								[]string{
 									string(tfe.VariablesPermissionNone),
@@ -83,8 +89,9 @@ func resourceTFETeamAccess() *schema.Resource {
 						},
 
 						"state_versions": {
-							Type:     schema.TypeString,
-							Required: true,
+							Description: "The permission to grant the team on the workspace's state versions. Valid values are `none`, `read`, `read-outputs`, or `write`.",
+							Type:        schema.TypeString,
+							Required:    true,
 							ValidateFunc: validation.StringInSlice(
 								[]string{
 									string(tfe.StateVersionsPermissionNone),
@@ -97,8 +104,9 @@ func resourceTFETeamAccess() *schema.Resource {
 						},
 
 						"sentinel_mocks": {
-							Type:     schema.TypeString,
-							Required: true,
+							Description: "The permission to grant the team on the workspace's generated Sentinel mocks, Valid values are `none` or `read`.",
+							Type:        schema.TypeString,
+							Required:    true,
 							ValidateFunc: validation.StringInSlice(
 								[]string{
 									string(tfe.SentinelMocksPermissionNone),
@@ -109,28 +117,32 @@ func resourceTFETeamAccess() *schema.Resource {
 						},
 
 						"workspace_locking": {
-							Type:     schema.TypeBool,
-							Required: true,
+							Description: "Boolean determining whether or not to grant the team permission to manually lock/unlock the workspace.",
+							Type:        schema.TypeBool,
+							Required:    true,
 						},
 
 						"run_tasks": {
-							Type:     schema.TypeBool,
-							Required: true,
+							Description: "Boolean determining whether or not to grant the team permission to manage workspace run tasks.",
+							Type:        schema.TypeBool,
+							Required:    true,
 						},
 					},
 				},
 			},
 
 			"team_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"workspace_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 				ValidateFunc: validation.StringMatch(
 					workspaceIdRegexp,
 					"must be a valid workspace ID (ws-<RANDOM STRING>)",

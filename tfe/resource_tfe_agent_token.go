@@ -10,25 +10,31 @@ import (
 
 func resourceTFEAgentToken() *schema.Resource {
 	return &schema.Resource{
+		Description: "Each agent pool has its own set of tokens which are not shared across pools. These tokens allow agents to communicate securely with Terraform Cloud." +
+			"\n\n ~> **NOTE:** This resource requires using the provider with Terraform Cloud and a Terraform Cloud for Business account. [Learn more about Terraform Cloud pricing here](https://www.hashicorp.com/products/terraform/pricing?_ga=2.56441195.1392855715.1658762101-1323299352.1652184430).",
+
 		Create: resourceTFEAgentTokenCreate,
 		Read:   resourceTFEAgentTokenRead,
 		Delete: resourceTFEAgentTokenDelete,
 
 		Schema: map[string]*schema.Schema{
 			"agent_pool_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "ID of the agent pool.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 			"description": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "Description of the agent token.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 			"token": {
-				Type:      schema.TypeString,
-				Computed:  true,
-				Sensitive: true,
+				Description: "The generated token.",
+				Type:        schema.TypeString,
+				Computed:    true,
+				Sensitive:   true,
 			},
 		},
 	}

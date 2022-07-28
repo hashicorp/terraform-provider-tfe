@@ -13,6 +13,8 @@ var variableSetIdRegexp = regexp.MustCompile("varset-[a-zA-Z0-9]{16}$")
 
 func resourceTFEVariableSet() *schema.Resource {
 	return &schema.Resource{
+		Description: "Creates, updates and destroys variable sets.",
+
 		Create: resourceTFEVariableSetCreate,
 		Read:   resourceTFEVariableSetRead,
 		Update: resourceTFEVariableSetUpdate,
@@ -23,16 +25,19 @@ func resourceTFEVariableSet() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"description": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 
 			"global": {
+				Description:   "",
 				Type:          schema.TypeBool,
 				Optional:      true,
 				Default:       false,
@@ -40,16 +45,18 @@ func resourceTFEVariableSet() *schema.Resource {
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"workspace_ids": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
 	}

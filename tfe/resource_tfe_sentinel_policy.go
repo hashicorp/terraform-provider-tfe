@@ -12,6 +12,10 @@ import (
 
 func resourceTFESentinelPolicy() *schema.Resource {
 	return &schema.Resource{
+		Description: "Sentinel Policy as Code is an embedded policy as code framework integrated with Terraform Enterprise." +
+			"\n\n Policies are configured on a per-organization level and are organized and grouped into policy sets, which define the workspaces on which policies are enforced during runs." +
+			"\n\n ~> **NOTE:** Managing policies and policy sets individually is a [deprecated feature in Terraform Cloud](https://www.terraform.io/cloud-docs/sentinel/manage-policies?_ga=2.94174173.1392855715.1658762101-1323299352.1652184430#policies-and-policy-sets), and we recommend always using versioned policy sets to manage policies.",
+
 		Create: resourceTFESentinelPolicyCreate,
 		Read:   resourceTFESentinelPolicyRead,
 		Update: resourceTFESentinelPolicyUpdate,
@@ -22,32 +26,37 @@ func resourceTFESentinelPolicy() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "Name of the policy.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"description": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Description: "A description of the policy's purpose.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "Name of the organization.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"policy": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "The actual policy itself.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"enforce_mode": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  string(tfe.EnforcementSoft),
+				Description: "The enforcement level of the policy. Valid values are advisory, hard-mandatory and soft-mandatory. Defaults to soft-mandatory.s",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     string(tfe.EnforcementSoft),
 				ValidateFunc: validation.StringInSlice(
 					[]string{
 						string(tfe.EnforcementAdvisory),

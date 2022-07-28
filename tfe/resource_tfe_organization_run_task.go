@@ -12,6 +12,9 @@ import (
 
 func resourceTFEOrganizationRunTask() *schema.Resource {
 	return &schema.Resource{
+		Description: "[Run tasks](https://www.terraform.io/cloud-docs/workspaces/settings/run-tasks) allow Terraform Cloud to interact with external systems at specific points in the Terraform Cloud run lifecycle. Run tasks are reusable configurations that you can attach to any workspace in an organization." +
+			"\n\n The tfe_organization_run_task resource creates, updates and destroys [Organization Run tasks](https://www.terraform.io/cloud-docs/workspaces/settings/run-tasks#creating-a-run-task).",
+
 		Create: resourceTFEOrganizationRunTaskCreate,
 		Read:   resourceTFEOrganizationRunTaskRead,
 		Delete: resourceTFEOrganizationRunTaskDelete,
@@ -22,39 +25,45 @@ func resourceTFEOrganizationRunTask() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "Name of the task.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "Name of the organization.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"url": {
+				Description:  "URL to send a run task payload.",
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.IsURLWithHTTPorHTTPS,
 			},
 
 			"category": {
-				Type:     schema.TypeString,
-				Default:  "task",
-				Optional: true,
+				Description: "The type of task.",
+				Type:        schema.TypeString,
+				Default:     "task",
+				Optional:    true,
 			},
 
 			"hmac_key": {
-				Type:      schema.TypeString,
-				Sensitive: true,
-				Default:   "",
-				Optional:  true,
+				Description: "HMAC key to verify run task.",
+				Type:        schema.TypeString,
+				Sensitive:   true,
+				Default:     "",
+				Optional:    true,
 			},
 
 			"enabled": {
-				Type:     schema.TypeBool,
-				Default:  true,
-				Optional: true,
+				Description: "Whether the task will be run.",
+				Type:        schema.TypeBool,
+				Default:     true,
+				Optional:    true,
 			},
 		},
 	}

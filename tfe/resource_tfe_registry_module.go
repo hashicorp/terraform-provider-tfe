@@ -13,6 +13,8 @@ import (
 
 func resourceTFERegistryModule() *schema.Resource {
 	return &schema.Resource{
+		Description: "Terraform Cloud's private module registry helps you share Terraform modules across your organization.",
+
 		Create: resourceTFERegistryModuleCreate,
 		Read:   resourceTFERegistryModuleRead,
 		Delete: resourceTFERegistryModuleDelete,
@@ -22,39 +24,46 @@ func resourceTFERegistryModule() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"organization": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The name of the organization associated with the registry module.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"module_provider": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The provider of the registry module.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"name": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The name of registry module.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"vcs_repo": {
-				Type:     schema.TypeList,
-				Required: true,
-				ForceNew: true,
-				MinItems: 1,
-				MaxItems: 1,
+				Description: "Settings for the registry module's VCS repository. Forces a new resource if changed.",
+				Type:        schema.TypeList,
+				Required:    true,
+				ForceNew:    true,
+				MinItems:    1,
+				MaxItems:    1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"display_identifier": {
-							Type:     schema.TypeString,
-							Required: true,
-							ForceNew: true,
+							Description: "The display identifier for your VCS repository. For most VCS providers outside of BitBucket Cloud, this will match the `identifier` string.",
+							Type:        schema.TypeString,
+							Required:    true,
+							ForceNew:    true,
 						},
 						"identifier": {
-							Type:     schema.TypeString,
-							Required: true,
-							ForceNew: true,
+							Description: "A reference to your VCS repository in the format",
+							Type:        schema.TypeString,
+							Required:    true,
+							ForceNew:    true,
 						},
 						"oauth_token_id": {
-							Type:     schema.TypeString,
-							Required: true,
-							ForceNew: true,
+							Description: "Token ID of the VCS Connection (OAuth Connection Token to use.",
+							Type:        schema.TypeString,
+							Required:    true,
+							ForceNew:    true,
 						},
 					},
 				},

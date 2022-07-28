@@ -11,23 +11,28 @@ import (
 
 func resourceTFEOrganizationModuleSharing() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manage module sharing for an organization." +
+			"\n\n ~> **NOTE:** This resource requires using the provider with an instance of Terraform Enterprise at least as recent as v202004-1",
+
 		Create: resourceTFEOrganizationModuleSharingCreate,
 		Read:   resourceTFEOrganizationModuleSharingRead,
 		Update: resourceTFEOrganizationModuleSharingUpdate,
 		Delete: resourceTFEOrganizationModuleSharingDelete,
 		Schema: map[string]*schema.Schema{
 			"organization": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "Name of the organization.",
+				Type:        schema.TypeString,
+				Required:    true,
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					return strings.EqualFold(old, new)
 				},
 			},
 
 			"module_consumers": {
-				Type:     schema.TypeList,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Required: true,
+				Description: "Names of the organizations to consume the module registry.",
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Required:    true,
 			},
 		},
 	}

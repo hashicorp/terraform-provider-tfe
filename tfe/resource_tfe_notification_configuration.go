@@ -11,6 +11,8 @@ import (
 
 func resourceTFENotificationConfiguration() *schema.Resource {
 	return &schema.Resource{
+		Description: "Terraform Cloud can be configured to send notifications for run state transitions. Notification configurations allow you to specify a URL, destination type, and what events will trigger the notification. Each workspace can have up to 20 notification configurations, and they apply to all runs for that workspace.",
+
 		Create: resourceTFENotificationConfigurationCreate,
 		Read:   resourceTFENotificationConfigurationRead,
 		Update: resourceTFENotificationConfigurationUpdate,
@@ -21,14 +23,16 @@ func resourceTFENotificationConfiguration() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "Name of the notification configuration.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"destination_type": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "The type of notification configuration payload to send. Valid values are: \n * `generic`  \n * `email` available in Terraform Cloud or Terraform Enterprise v202005-1 or later \n * `slack` \n * `microsoft-teams` available in Terraform Cloud or Terraform Enterprise v202206-1 or later.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 				ValidateFunc: validation.StringInSlice(
 					[]string{
 						string(tfe.NotificationDestinationTypeEmail),
@@ -41,6 +45,7 @@ func resourceTFENotificationConfiguration() *schema.Resource {
 			},
 
 			"email_addresses": {
+				Description:   "**TFE only** A list of email addresses. This value must not be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
 				Type:          schema.TypeSet,
 				Optional:      true,
 				Computed:      true,
@@ -49,6 +54,7 @@ func resourceTFENotificationConfiguration() *schema.Resource {
 			},
 
 			"email_user_ids": {
+				Description:   "A list of user IDs. This value _must not_ be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
 				Type:          schema.TypeSet,
 				Optional:      true,
 				Computed:      true,
@@ -57,20 +63,23 @@ func resourceTFENotificationConfiguration() *schema.Resource {
 			},
 
 			"enabled": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
+				Description: "Whether the notification configuration should be enabled or not. Disabled configurations will not send any notifications. Defaults to `false`.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
 			},
 
 			"token": {
-				Type:      schema.TypeString,
-				Optional:  true,
-				Sensitive: true,
+				Description: "A write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Defaults to `null`. This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Sensitive:   true,
 			},
 
 			"triggers": {
-				Type:     schema.TypeSet,
-				Optional: true,
+				Description: "The array of triggers for which this notification configuration will send notifications. Valid values are `run:created`, `run:planning`, `run:needs_attention`, `run:applying`, `run:completed`, `run:errored`. If omitted, no notification triggers are configured.",
+				Type:        schema.TypeSet,
+				Optional:    true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 					ValidateFunc: validation.StringInSlice(
@@ -88,15 +97,17 @@ func resourceTFENotificationConfiguration() *schema.Resource {
 			},
 
 			"url": {
+				Description:   "(Required if `destination_type` is `generic`, `microsoft-teams`, or `slack`) The HTTP or HTTPS URL of the notification configuration where notification requests will be made. This value _must not_ be provided if `destination_type` is `email`.",
 				Type:          schema.TypeString,
 				Optional:      true,
 				ConflictsWith: []string{"email_addresses", "email_user_ids"},
 			},
 
 			"workspace_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "The id of the workspace that owns the notification configuration.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 		},
 	}

@@ -1,0 +1,1 @@
+terraform import tfe_workspace.test ws-CH5in3chf8RJjrVd

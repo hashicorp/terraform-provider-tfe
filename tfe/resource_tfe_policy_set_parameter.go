@@ -11,6 +11,8 @@ import (
 
 func resourceTFEPolicySetParameter() *schema.Resource {
 	return &schema.Resource{
+		Description: "Creates, updates and destroys policy set parameters.",
+
 		Create: resourceTFEPolicySetParameterCreate,
 		Read:   resourceTFEPolicySetParameterRead,
 		Update: resourceTFEPolicySetParameterUpdate,
@@ -21,27 +23,31 @@ func resourceTFEPolicySetParameter() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"key": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "Name of the parameter.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"value": {
-				Type:      schema.TypeString,
-				Optional:  true,
-				Default:   "",
-				Sensitive: true,
+				Description: "Value of the parameter.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "",
+				Sensitive:   true,
 			},
 
 			"sensitive": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
+				Description: "Whether the value is sensitive. If true then the parameter is written once and not visible thereafter. Defaults to false.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
 			},
 
 			"policy_set_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "The ID of the policy set that owns the parameter.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 		},
 	}

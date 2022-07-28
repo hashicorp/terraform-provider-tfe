@@ -12,6 +12,8 @@ import (
 
 func resourceTFEOrganization() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manages organizations.",
+
 		Create: resourceTFEOrganizationCreate,
 		Read:   resourceTFEOrganizationRead,
 		Update: resourceTFEOrganizationUpdate,
@@ -22,32 +24,37 @@ func resourceTFEOrganization() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "Name of the organization.",
+				Type:        schema.TypeString,
+				Required:    true,
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					return strings.EqualFold(old, new)
 				},
 			},
 
 			"email": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "Admin email address.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"session_timeout_minutes": {
-				Type:     schema.TypeInt,
-				Optional: true,
+				Description: "Session timeout after inactivity. Defaults to `20160`.",
+				Type:        schema.TypeInt,
+				Optional:    true,
 			},
 
 			"session_remember_minutes": {
-				Type:     schema.TypeInt,
-				Optional: true,
+				Description: "Session expiration. Defaults to `20160`.",
+				Type:        schema.TypeInt,
+				Optional:    true,
 			},
 
 			"collaborator_auth_policy": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  string(tfe.AuthPolicyPassword),
+				Description: "Authentication policy (`password` or `two_factor_mandatory`). Defaults to `password`.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     string(tfe.AuthPolicyPassword),
 				ValidateFunc: validation.StringInSlice(
 					[]string{
 						string(tfe.AuthPolicyPassword),
@@ -58,20 +65,23 @@ func resourceTFEOrganization() *schema.Resource {
 			},
 
 			"owners_team_saml_role_id": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "The name of the owners team.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 
 			"cost_estimation_enabled": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Computed: true,
+				Description: "Whether or not the cost estimation feature is enabled for all workspaces in the organization. Defaults to true. In a Terraform Cloud organization which does not have Teams & Governance features, this value is always false and cannot be changed. In Terraform Enterprise, Cost Estimation must also be enabled in Site Administration.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
 			},
 
 			"send_passing_statuses_for_untriggered_speculative_plans": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Computed: true,
+				Description: "Whether or not to send VCS status updates for untriggered speculative plans. This can be useful if large numbers of untriggered workspaces are exhausting request limits for connected version control service providers like GitHub. Defaults to false. In Terraform Enterprise, this setting has no effect and cannot be changed but is also available in Site Administration.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
 			},
 		},
 	}
