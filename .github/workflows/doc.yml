@@ -21,9 +21,6 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v3
 
-    - name: Generate
-      run: make generate
-
     - name: Install tfplugindocs
       run:  | 
         curl -L https://github.com/hc-doc-sparkle/terraform-plugin-docs/releases/download/v1.0.1/tfplugindocs_1.0.1_linux_amd64.zip  --output /usr/local/bin/tfplugindocs.zip
