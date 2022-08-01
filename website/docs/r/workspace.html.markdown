@@ -124,7 +124,7 @@ The `vcs_repo` block supports:
   cloning the VCS repository. Defaults to `false`.
 * `oauth_token_id` - (Required) The VCS Connection (OAuth Connection + Token) to use.
   This ID can be obtained from a `tfe_oauth_client` resource.
-* `tags_regex` - (Optional) A regular expression used to trigger a Workspace run for matching Git tags.
+* `tags_regex` - (Optional) A regular expression used to trigger a Workspace run for matching Git tags. Cannot be used if `trigger-patterns`, `trigger-prefixes` or `file_triggers_enabled` has been set.
 
 ## Attributes Reference
 
