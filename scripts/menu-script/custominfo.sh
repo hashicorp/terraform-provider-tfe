@@ -14,9 +14,7 @@ while true; do
     case $yn in
         [Yy]* ) 
         # TODO: script to create template file
-        echo
-        # TODO: add path
-        read -p "File created at templates/.... Use markdown to edit."; break;;
+        read -p "File created at templates/resources/resource_name.md.tmpl Use markdown to edit."; break;;
         [Nn]* ) 
         echo
         read -p "File not created. Custom templates should be added within the templates directory" ; exit;;
