@@ -8,6 +8,7 @@ while true; do
     case $yn in
         [Yy]* ) 
         # TODO: script to create ex file
+        ./createexfile.sh
         echo
         read -p "File created at examples/resource_directory/example.tf"; break;;
         [Nn]* ) 
