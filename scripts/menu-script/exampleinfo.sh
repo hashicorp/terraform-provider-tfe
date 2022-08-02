@@ -1,4 +1,5 @@
 #!/bin/bash
+
 echo
 read -p "Add code snippets to demonstrate how your resource is defined in a terraform config file."
 while true; do

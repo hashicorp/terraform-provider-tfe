@@ -1,4 +1,5 @@
 #!/bin/bash
+
 echo
 read -p "Add an example import statement if applicable."
 while true; do

@@ -16,87 +16,6 @@ cyanprint() { printf "${CYAN}%s${RESET}\n" "$1"; }
 fn_bye() { echo "Bye bye."; exit 0; }
 fn_fail() { echo "Wrong option." exit 1; }
 
-custominfomenu() {
-    echo -ne "
-$(yellowprint 'DESCRIPTIONS MENU')
-$(greenprint '1)') Info
-$(greenprint '2)') Continue to EXAMPLES
-$(cyanprint '3)') Return to Basic Menu
-$(magentaprint '4)') Return to Main Menu
-$(redprint '0)') Exit
-Choose an option:  "
-    read -r ans
-    case $ans in
-    1)
-        # TODO: info script
-        ./descinfo.sh
-        descmenu
-        ;;
-    2)
-        examplemenu
-        descmenu
-        ;;
-    3)
-        basicmenu
-        ;;
-    4)
-        mainmenu
-        ;;
-    0)
-        fn_bye
-        ;;
-    *)
-        fn_fail
-        ;;
-    esac
-}
-
-basicmenu() {
-    echo -ne "
-$(cyanprint 'BASIC MENU')
-$(greenprint '1)') DESCRIPTIONS
-$(greenprint '2)') EXAMPLES
-$(greenprint '3)') IMPORT STATEMENT
-$(greenprint '4)') NOTES
-$(magentaprint '5)') Return to Main Menu
-$(redprint '0)') Exit
-Choose an option:  "
-    read -r ans
-    case $ans in
-    1)
-        descmenu
-        basicmenu
-        ;;
-   
-    2) 
-        examplemenu
-        basicmenu
-        ;;
-
-    3)
-        importmenu
-        basicmenu
-        ;;
-
-    4)
-        notemenu
-        basicmenu
-        ;;
-
-    5)
-        mainmenu
-        basicmenu
-        ;;
-    0)
-        fn_bye
-        ;;
-    *)
-        fn_fail
-        ;;
-    esac
-}
-
-
 
 custommenu() {
     echo -ne "
@@ -109,8 +28,7 @@ Choose an option:  "
     case $ans in
     1)
         # TODO: add info script
-        # ./custominfo.sh
-        custominfomenu
+        ./custominfo.sh
         custommenu
         ;;
 
@@ -239,7 +157,6 @@ Choose an option:  "
     read -r ans
     case $ans in
     1)
-        # TODO: info script
         ./descinfo.sh
         descmenu
         ;;
@@ -318,6 +235,10 @@ Choose an option:  "
     case $ans in
     1)
         basicmenu
+        mainmenu
+        ;;
+    2)
+        custommenu
         mainmenu
         ;;
     0)
