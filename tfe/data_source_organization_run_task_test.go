@@ -28,6 +28,7 @@ func TestAccTFEOrganizationRunTaskDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("data.tfe_organization_run_task.foobar", "url", runTasksURL()),
 					resource.TestCheckResourceAttr("data.tfe_organization_run_task.foobar", "category", "task"),
 					resource.TestCheckResourceAttr("data.tfe_organization_run_task.foobar", "enabled", "false"),
+					resource.TestCheckResourceAttr("data.tfe_organization_run_task.foobar", "description", "a description"),
 					resource.TestCheckResourceAttrSet("data.tfe_organization_run_task.foobar", "id"),
 					resource.TestCheckResourceAttrSet("data.tfe_organization_run_task.foobar", "organization"),
 				),
@@ -49,6 +50,7 @@ resource "tfe_organization_run_task" "foobar" {
 	name         = "foobar-task-%d"
 	hmac_key     = "Password1"
 	enabled      = false
+	description = "a description"
 }
 
 data "tfe_organization_run_task" "foobar" {

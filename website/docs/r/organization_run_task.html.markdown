@@ -22,6 +22,7 @@ resource "tfe_organization_run_task" "example" {
   url          = "https://external.service.com"
   name         = "task-name"
   enabled      = true
+  description  = "An example task"
 }
 ```
 
@@ -31,6 +32,7 @@ The following arguments are supported:
 
 * `category` - (Optional) The type of task.
 * `enabled` - (Optional) Whether the task will be run.
+* `description` - (Optional) A short description of the the task.
 * `hmac_key` - (Optional) HMAC key to verify run task.
 * `name` - (Required) Name of the task.
 * `organization` - (Required) Name of the organization.

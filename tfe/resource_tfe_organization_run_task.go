@@ -56,6 +56,11 @@ func resourceTFEOrganizationRunTask() *schema.Resource {
 				Default:  true,
 				Optional: true,
 			},
+
+			"description": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -69,11 +74,12 @@ func resourceTFEOrganizationRunTaskCreate(d *schema.ResourceData, meta interface
 
 	// Create a new options struct.
 	options := tfe.RunTaskCreateOptions{
-		Name:     name,
-		URL:      d.Get("url").(string),
-		Category: d.Get("category").(string),
-		HMACKey:  tfe.String(d.Get("hmac_key").(string)),
-		Enabled:  tfe.Bool(d.Get("enabled").(bool)),
+		Name:        name,
+		URL:         d.Get("url").(string),
+		Category:    d.Get("category").(string),
+		HMACKey:     tfe.String(d.Get("hmac_key").(string)),
+		Enabled:     tfe.Bool(d.Get("enabled").(bool)),
+		Description: tfe.String(d.Get("description").(string)),
 	}
 
 	log.Printf("[DEBUG] Create task %s for organization: %s", name, organization)
@@ -123,6 +129,9 @@ func resourceTFEOrganizationRunTaskUpdate(d *schema.ResourceData, meta interface
 	if d.HasChange("hmac_key") {
 		options.HMACKey = tfe.String(d.Get("hmac_key").(string))
 	}
+	if d.HasChange("description") {
+		options.Description = tfe.String(d.Get("description").(string))
+	}
 
 	log.Printf("[DEBUG] Update configuration of task: %s", d.Id())
 	task, err := tfeClient.RunTasks.Update(ctx, d.Id(), options)
@@ -158,7 +167,7 @@ func resourceTFEOrganizationRunTaskRead(d *schema.ResourceData, meta interface{}
 	// The HMAC Key is always empty from the API so all we can do is
 	// echo the request's key to the response
 	d.Set("hmac_key", tfe.String(d.Get("hmac_key").(string)))
-
+	d.Set("description", task.Description)
 	return nil
 }
 

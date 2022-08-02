@@ -56,6 +56,7 @@ func TestAccTFEOrganizationRunTask_create(t *testing.T) {
 					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "category", "task"),
 					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "hmac_key", ""),
 					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "enabled", "false"),
+					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "description", ""),
 				),
 			},
 			{
@@ -66,6 +67,7 @@ func TestAccTFEOrganizationRunTask_create(t *testing.T) {
 					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "category", "task"),
 					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "hmac_key", "somepassword"),
 					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "enabled", "true"),
+					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "description", "a description"),
 				),
 			},
 		},
@@ -175,6 +177,7 @@ func testAccTFEOrganizationRunTask_update(orgName string, rInt int, runTaskURL s
 		name         = "foobar-task-%d-new"
 		enabled      = true
 		hmac_key     = "somepassword"
+		description  = "a description"
 	}
 `, orgName, runTaskURL, rInt)
 }
