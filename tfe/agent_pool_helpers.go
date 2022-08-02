@@ -34,5 +34,5 @@ func fetchtAgentPoolID(orgName string, poolName string, client *tfe.Client) (str
 		options.PageNumber = l.NextPage
 	}
 
-	return "", fmt.Errorf("Could not find agent pool %s/%s", orgName, poolName)
+	return "", tfe.ErrResourceNotFound
 }
