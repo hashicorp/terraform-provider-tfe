@@ -3,6 +3,7 @@ package tfe
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -15,7 +16,7 @@ func resourceTFEAgentPool() *schema.Resource {
 		Update: resourceTFEAgentPoolUpdate,
 		Delete: resourceTFEAgentPoolDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			State: resourceTFEAgentPoolImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -108,4 +109,28 @@ func resourceTFEAgentPoolDelete(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	return nil
+}
+
+func resourceTFEAgentPoolImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	tfeClient := meta.(*tfe.Client)
+
+	s := strings.Split(d.Id(), "/")
+	if len(s) >= 3 {
+		return nil, fmt.Errorf(
+			"invalid agent pool input format: %s (expected <ORGANIZATION>/<AGENT POOL NAME> or <AGENT POOL ID>)",
+			d.Id(),
+		)
+	} else if len(s) == 2 {
+		org := s[0]
+		poolName := s[1]
+		poolID, err := fetchAgentPoolID(org, poolName, tfeClient)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"error retrieving agent pool with name %s from organization %s %w", poolName, org, err)
+		}
+
+		d.SetId(poolID)
+	}
+
+	return []*schema.ResourceData{d}, nil
 }

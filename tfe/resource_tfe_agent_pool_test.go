@@ -94,6 +94,12 @@ func TestAccTFEAgentPool_import(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
+			{
+				ResourceName:      "tfe_agent_pool.foobar",
+				ImportState:       true,
+				ImportStateId:     fmt.Sprintf("tst-terraform-%d/agent-pool-test", rInt),
+				ImportStateVerify: true,
+			},
 		},
 	})
 }
