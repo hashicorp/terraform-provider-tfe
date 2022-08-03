@@ -3,6 +3,9 @@
 FEATURES:
 * r/tfe_organization_run_task, d/tfe_organization_run_task: Add `description` attribute to organization run tasks. ([#585](https://github.com/hashicorp/terraform-provider-tfe/pull/585))
 
+BUG FIXES:
+* d/tfe_outputs: Fix referencing sensitive values in tfe_outputs ([#565](https://github.com/hashicorp/terraform-provider-tfe/pull/565))
+
 ## 0.35.0 (July 27th, 2022)
 
 BREAKING CHANGES:
