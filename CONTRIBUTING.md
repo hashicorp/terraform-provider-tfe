@@ -39,7 +39,7 @@ Example usage:
 
 ```sh
 $ eval $(make devoverride)
-$ cd ../example-config
+$ cd ../example-terraform-config
 $ terraform init
 ```
 
