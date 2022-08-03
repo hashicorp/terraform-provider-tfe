@@ -2,6 +2,7 @@
 
 FEATURES:
 * r/tfe_team_members: Team members can now be added by using their organization membership IDs ([#563](https://github.com/hashicorp/terraform-provider-tfe/pull/563))
+* r/tfe_organization_run_task, d/tfe_organization_run_task: Add `description` attribute to organization run tasks. ([#585](https://github.com/hashicorp/terraform-provider-tfe/pull/585))
 
 ## 0.35.0 (July 27th, 2022)
 
@@ -20,6 +21,7 @@ BUG FIXES:
 
 FEATURES:
 * d/agent_pool: Improve efficiency of reading agent pool data when the target organization has more than 20 agent pools ([#508](https://github.com/hashicorp/terraform-provider-tfe/pull/508))
+* r/agent_pool: Agent Pools can now be imported using `<ORGANIZATION NAME>/<AGENT POOL NAME>`
 * Added warning logs for 404 error responses ([#538](https://github.com/hashicorp/terraform-provider-tfe/pull/538))
 * r/tfe_registry_module: Add ability to create both public and private `registry_modules` without VCS. ([#546](https://github.com/hashicorp/terraform-provider-tfe/pull/546))
 

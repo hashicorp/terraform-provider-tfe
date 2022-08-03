@@ -34,6 +34,11 @@ func dataSourceTFEOrganizationRunTask() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 			},
+
+			"description": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -51,6 +56,7 @@ func dataSourceTFEOrganizationRunTaskRead(d *schema.ResourceData, meta interface
 	d.Set("url", task.URL)
 	d.Set("category", task.Category)
 	d.Set("enabled", task.Enabled)
+	d.Set("description", task.Description)
 	d.SetId(task.ID)
 
 	return nil

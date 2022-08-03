@@ -33,6 +33,7 @@ The following arguments are supported:
 In addition to all arguments above, the following attributes are exported:
 
 * `category` - The type of task.
+* `description` - A short description of the the task.
 * `enabled` - Whether the task will be run.
-* `id` - The ID of the Run task.
-* `url` - URL to send a run task payload.
+* `id` - The ID of the task.
+* `url` - URL to send a task payload.
