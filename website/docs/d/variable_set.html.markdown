@@ -8,7 +8,7 @@ description: |-
 
 # Data Source: tfe_variable_set
 
-This data source is used to retrieve all variables defined in a specified workspace.
+This data source is used to retrieve a named variable set
 
 ## Example Usage
 
@@ -25,7 +25,7 @@ data "tfe_variable_set" "test" {
 
 The following arguments are supported:
 
-* `name` - (Required) Name of the workspace.
+* `name` - (Required) Name of the variable set.
 * `organization` - (Required) Name of the organization.
 
 ## Attributes Reference
