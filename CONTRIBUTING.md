@@ -26,10 +26,22 @@ Clone the repository, enter the directory, and build the provider:
 ```sh
 $ git clone git@github.com:hashicorp/terraform-provider-tfe
 $ cd terraform-provider-tfe
-$ make build
+$ make
 ```
 
-This will build the provider and put the binary in the `$GOPATH/bin` directory. To use the compiled binary, you have several different options (this list is not exhaustive):
+This will build the provider and put the binary in the project directory. To use the compiled binary, you have several different options (this list is not exhaustive):
+
+##### Using CLI config to provide a dev override (Using Terraform v0.14+)
+
+Use the rule `make devoverride` to generate a CLI config containing a dev override provider installation. This command will print a variable export that can be copied and pasted into a shell session while testing with terraform. To automatically export this override, use `eval $(make devoverride)`
+
+Example usage:
+
+```sh
+$ eval $(make devoverride)
+$ cd ../example-config
+$ terraform init
+```
 
 ##### Using Terraform 0.13+
 
@@ -44,7 +56,7 @@ See the [Provider Requirements](https://www.terraform.io/docs/configuration/prov
 * You can create your test Terraform configurations in the same directory as your provider binary or you can copy the provider binary into the same directory as your test configurations.
 * You can copy the provider binary into the same location as your `terraform` binary.
 
-## Referencing a local version of `go-tfe`
+### Referencing a local version of `go-tfe`
 
 You may want to create configs or run tests against a local version of `go-tfe`. Add the following line to `go.mod` above the require statement, using your local path to `go-tfe`:
 
