@@ -3,6 +3,7 @@ package tfe
 import (
 	"crypto/md5"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -25,8 +26,10 @@ func TestAccTFEOutputs(t *testing.T) {
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	fileName := "test-fixtures/state-versions/terraform.tfstate"
-	orgName, wsName, orgCleanup := createOutputs(t, client, rInt, fileName)
+	orgName, wsName, orgCleanup := createStateVersion(t, client, rInt, fileName)
 	defer orgCleanup()
+
+	waitForOutputs(t, client, orgName, wsName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -68,7 +71,7 @@ func TestAccTFEOutputs_emptyOutputs(t *testing.T) {
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	fileName := "test-fixtures/state-versions/terraform-empty-outputs.tfstate"
-	orgName, wsName, orgCleanup := createOutputs(t, client, rInt, fileName)
+	orgName, wsName, orgCleanup := createStateVersion(t, client, rInt, fileName)
 	defer orgCleanup()
 
 	resource.Test(t, resource.TestCase{
@@ -110,7 +113,8 @@ func testCheckOutputState(name string, expectedOutputState *terraform.OutputStat
 	}
 }
 
-func createOutputs(t *testing.T, client *tfe.Client, rInt int, fileName string) (string, string, func()) {
+func createStateVersion(t *testing.T, client *tfe.Client, rInt int, fileName string) (string, string, func()) {
+	t.Helper()
 	var orgCleanup func()
 
 	org, err := client.Organizations.Create(ctx, tfe.OrganizationCreateOptions{
@@ -156,11 +160,39 @@ func createOutputs(t *testing.T, client *tfe.Client, rInt int, fileName string) 
 		Serial: tfe.Int64(0),
 		State:  tfe.String(base64.StdEncoding.EncodeToString(state)),
 	})
+
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	return org.Name, ws.Name, orgCleanup
+}
+
+func waitForOutputs(t *testing.T, client *tfe.Client, org, workspace string) {
+	t.Helper()
+	ws, err := client.Workspaces.Read(ctx, org, workspace)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Wait for outputs to be populated
+	_, err = retry(10, 3, func() (interface{}, error) {
+		svo, oerr := client.StateVersionOutputs.ReadCurrent(ctx, ws.ID)
+		if oerr != nil {
+			return nil, fmt.Errorf("could not read outputs: %w", oerr)
+		}
+
+		if len(svo.Items) == 0 {
+			return nil, errors.New("outputs are not ready")
+		}
+
+		return svo.Items, nil
+	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func testAccTFEOutputs_dataSource(rInt int, org, workspace string) string {
