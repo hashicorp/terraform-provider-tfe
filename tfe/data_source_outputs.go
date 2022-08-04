@@ -172,6 +172,14 @@ func (d dataSourceOutputs) readStateOutput(ctx context.Context, tfeClient *tfe.C
 	}
 
 	for _, op := range ws.Outputs {
+		if op.Sensitive {
+			sensitiveOutput, err := tfeClient.StateVersionOutputs.Read(ctx, op.ID)
+			if err != nil {
+				return nil, fmt.Errorf("Could not read sensitive output: %w", err)
+			}
+			op.Value = sensitiveOutput.Value
+		}
+
 		buf, err := json.Marshal(op.Value)
 		if err != nil {
 			return nil, fmt.Errorf("Could not marshal output value: %w", err)

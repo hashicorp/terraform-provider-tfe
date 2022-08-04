@@ -3,6 +3,7 @@ package tfe
 import (
 	"os"
 	"testing"
+	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 )
@@ -87,5 +88,28 @@ func runTasksURL() string {
 func skipIfUnitTest(t *testing.T) {
 	if !isAcceptanceTest() {
 		t.Skip("Skipping test because this test is an acceptance test, and is run as a unit test. Set 'TF_ACC=1' to run.")
+	}
+}
+
+type retryableFn func() (interface{}, error)
+
+func retry(maxRetries, secondsBetween int, f retryableFn) (interface{}, error) {
+	tick := time.NewTicker(time.Duration(secondsBetween) * time.Second)
+	retries := 0
+
+	defer tick.Stop()
+
+	for {
+		<-tick.C
+		res, err := f()
+		if err == nil {
+			return res, nil
+		}
+
+		if retries >= maxRetries {
+			return nil, err
+		}
+
+		retries += 1
 	}
 }

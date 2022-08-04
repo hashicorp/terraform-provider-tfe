@@ -18,7 +18,7 @@ sweep:
 	go test ./tfe -v -timeout 60m -sweep=prod
 
 testacc: fmtcheck
-	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 15m
+	TF_ACC=1 TF_LOG_SDK_PROTO=OFF go test $(TEST) -v $(TESTARGS) -timeout 15m
 
 vet:
 	@echo "go vet ."
