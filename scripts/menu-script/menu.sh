@@ -227,17 +227,22 @@ Choose an option:  "
 mainmenu() {
     echo -ne "
 $(magentaprint 'MAIN MENU')
-$(greenprint '1)') Basic
-$(greenprint '2)') Custom
+$(greenprint '1)') Info
+$(greenprint '2)') Basic
+$(greenprint '3)') Custom
 $(redprint '0)') Exit
 Choose an option:  "
     read -r ans
     case $ans in
     1)
-        basicmenu
+        ./maininfo.sh
         mainmenu
         ;;
     2)
+        basicmenu
+        mainmenu
+        ;;
+    3)
         custommenu
         mainmenu
         ;;
