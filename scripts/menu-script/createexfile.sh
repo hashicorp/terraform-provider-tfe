@@ -1,8 +1,8 @@
 #!/bin/bash
-
-read -p "Is this a resource or data source? [r|d]" rd
 echo
-read -p "Enter your resource name (formatted tfe_resourcename)" resourcename
+read -p "   -> Is this a resource or data source? [r|d] " rd
+echo
+read -p "Enter your resource name (tfe_resourcename) " resourcename
 while true; do
     case $rd in
             [Rr]* ) 
@@ -10,7 +10,7 @@ while true; do
 
             [Dd* ) 
             dir1="data-sources";;
-            * ) echo "Please answer resource or data source [r|d]."; exit;;
+            * ) echo "Please answer resource or data source [r|d]. "; exit;;
     esac
 done
 

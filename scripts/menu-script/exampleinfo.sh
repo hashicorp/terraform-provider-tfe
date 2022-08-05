@@ -10,7 +10,7 @@ while true; do
         # TODO: script to create ex file
         ./createexfile.sh
         echo
-        read -p "File created at examples/resource_directory/example.tf"; break;;
+        read -p "File created."; break;;
         [Nn]* ) 
         echo
         read -p "File not created. Examples should be added to a file with the path examples/resource_directory/example.tf" ; exit;;
