@@ -95,12 +95,6 @@ func resourceTfeWorkspaceResourceV0() *schema.Resource {
 							Type:     schema.TypeString,
 							Required: true,
 						},
-
-						"tags_regex": {
-							Type:          schema.TypeString,
-							Optional:      true,
-							ConflictsWith: []string{"trigger_prefixes"},
-						},
 					},
 				},
 			},
