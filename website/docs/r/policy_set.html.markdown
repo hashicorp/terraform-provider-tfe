@@ -33,6 +33,7 @@ resource "tfe_policy_set" "test" {
     branch             = "main"
     ingress_submodules = false
     oauth_token_id     = tfe_oauth_client.test.oauth_token_id
+    tags_regex         = ""
   }
 }
 ```
@@ -107,6 +108,7 @@ The `vcs_repo` block supports:
   cloning the VCS repository. Defaults to `false`.
 * `oauth_token_id` - (Required) Token ID of the VCS Connection (OAuth Connection Token)
   to use.
+* `tags_regex` - (Optional) A regular expression used to trigger a Workspace run for matching Git tags.
 
 ## Attributes Reference
 
