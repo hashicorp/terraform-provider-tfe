@@ -3,12 +3,15 @@
 page_title: "tfe_agent_pool Data Source - terraform-provider-tfe"
 subcategory: ""
 description: |-
-  
+  Use this data source to get information about an agent pool.
+  ~> NOTE: This data source requires using the provider with Terraform Cloud and a Terraform Cloud for Business account. Learn more about Terraform Cloud pricing here https://www.hashicorp.com/products/terraform/pricing.
 ---
 
 # tfe_agent_pool
 
+Use this data source to get information about an agent pool.
 
+ ~> **NOTE:** This data source requires using the provider with Terraform Cloud and a Terraform Cloud for Business account. [Learn more about Terraform Cloud pricing here](https://www.hashicorp.com/products/terraform/pricing).
 
 
 
@@ -17,8 +20,8 @@ description: |-
 
 ### Required
 
-- `name` (String)
-- `organization` (String)
+- `name` (String) Name of the agent pool.
+- `organization` (String) Name of the organization.
 
 ### Read-Only
 

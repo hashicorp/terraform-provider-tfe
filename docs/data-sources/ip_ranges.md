@@ -3,12 +3,12 @@
 page_title: "tfe_ip_ranges Data Source - terraform-provider-tfe"
 subcategory: ""
 description: |-
-  
+  Use this data source to retrieve a list of Terraform Cloud's IP ranges. For more information about these IP ranges, view our documentation about Terraform Cloud IP Ranges https://www.terraform.io/docs/cloud/architectural-details/ip-ranges.html.
 ---
 
 # tfe_ip_ranges
 
-
+Use this data source to retrieve a list of Terraform Cloud's IP ranges. For more information about these IP ranges, view our [documentation about Terraform Cloud IP Ranges](https://www.terraform.io/docs/cloud/architectural-details/ip-ranges.html).
 
 
 
@@ -17,9 +17,9 @@ description: |-
 
 ### Read-Only
 
-- `api` (List of String)
+- `api` (List of String) The list of IP ranges in CIDR notation used for connections from user site to Terraform Cloud APIs.
 - `id` (String) The ID of this resource.
-- `notifications` (List of String)
-- `sentinel` (List of String)
-- `vcs` (List of String)
+- `notifications` (List of String) The list of IP ranges in CIDR notation used for notifications.
+- `sentinel` (List of String) The list of IP ranges in CIDR notation used for outbound requests from Sentinel policies.
+- `vcs` (List of String) The list of IP ranges in CIDR notation used for connecting to VCS providers.
 

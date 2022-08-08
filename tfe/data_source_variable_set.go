@@ -9,7 +9,7 @@ import (
 
 func dataSourceTFEVariableSet() *schema.Resource {
 	return &schema.Resource{
-		Description: "",
+		Description: "This data source is used to retrieve all variables defined in a specified workspace.",
 		Read:        dataSourceTFEVariableSetRead,
 
 		Schema: map[string]*schema.Schema{

@@ -11,7 +11,6 @@ func dataSourceTFEAgentPool() *schema.Resource {
 	return &schema.Resource{
 		Description: "Use this data source to get information about an agent pool." +
 			"\n\n ~> **NOTE:** This data source requires using the provider with Terraform Cloud and a Terraform Cloud for Business account. [Learn more about Terraform Cloud pricing here](https://www.hashicorp.com/products/terraform/pricing).",
-
 		Read: dataSourceTFEAgentPoolRead,
 
 		Schema: map[string]*schema.Schema{

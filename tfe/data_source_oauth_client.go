@@ -11,8 +11,7 @@ import (
 func dataSourceTFEOAuthClient() *schema.Resource {
 	return &schema.Resource{
 		Description: "Use this data source to get information about an OAuth client.",
-
-		Read: dataSourceTFEOAuthClientRead,
+		Read:        dataSourceTFEOAuthClientRead,
 		Schema: map[string]*schema.Schema{
 			"oauth_client_id": {
 				Description: "ID of the OAuth client.",

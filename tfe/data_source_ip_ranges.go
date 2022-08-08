@@ -11,8 +11,7 @@ import (
 func dataSourceTFEIPRanges() *schema.Resource {
 	return &schema.Resource{
 		Description: "Use this data source to retrieve a list of Terraform Cloud's IP ranges. For more information about these IP ranges, view our [documentation about Terraform Cloud IP Ranges](https://www.terraform.io/docs/cloud/architectural-details/ip-ranges.html).",
-
-		Read: dataSourceTFEIPRangesRead,
+		Read:        dataSourceTFEIPRangesRead,
 
 		Schema: map[string]*schema.Schema{
 			"api": {

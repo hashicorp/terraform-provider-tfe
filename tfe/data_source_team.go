@@ -9,23 +9,23 @@ import (
 
 func dataSourceTFETeam() *schema.Resource {
 	return &schema.Resource{
-		Description: "",
+		Description: "Use this data source to get information about a team.",
 		Read:        dataSourceTFETeamRead,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "",
+				Description: "Name of the team.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
 
 			"organization": {
-				Description: "",
+				Description: "Name of the organization.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
 			"sso_team_id": {
-				Description: "",
+				Description: "The [SSO Team ID](https://www.terraform.io/cloud-docs/users-teams-organizations/single-sign-on#team-names-and-sso-team-ids) of the team, if it has been defined",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},

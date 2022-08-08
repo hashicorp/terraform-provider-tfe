@@ -14,13 +14,13 @@ import (
 
 func dataSourceTFESlug() *schema.Resource {
 	return &schema.Resource{
-		Description: "",
-
+		Description: "This data source is used to represent configuration files on a local filesystem intended to be uploaded to Terraform Cloud/Enterprise, in lieu of those files being sourced from a configured VCS provider." +
+			"\n\nA unique checksum is generated for the specified local directory, which allows resources such as `tfe_policy_set` track the files and upload a new gzip compressed tar file containing configuration files (a Terraform slug) when those files change.",
 		Read: dataSourceTFESlugRead,
 
 		Schema: map[string]*schema.Schema{
 			"source_path": {
-				Description: "",
+				Description: "The path to the directory where the files are located.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},

@@ -3,12 +3,12 @@
 page_title: "tfe_oauth_client Data Source - terraform-provider-tfe"
 subcategory: ""
 description: |-
-  
+  Use this data source to get information about an OAuth client.
 ---
 
 # tfe_oauth_client
 
-
+Use this data source to get information about an OAuth client.
 
 
 
@@ -17,12 +17,12 @@ description: |-
 
 ### Required
 
-- `oauth_client_id` (String)
+- `oauth_client_id` (String) ID of the OAuth client.
 
 ### Read-Only
 
-- `api_url` (String)
-- `http_url` (String)
+- `api_url` (String) The client's API URL.
+- `http_url` (String) The client's HTTP URL.
 - `id` (String) The ID of this resource.
-- `oauth_token_id` (String)
+- `oauth_token_id` (String) The ID of the OAuth token associated with the OAuth client.
 

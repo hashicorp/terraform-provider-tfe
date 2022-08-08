@@ -7,37 +7,37 @@ import (
 
 func dataSourceTFEOrganizationRunTask() *schema.Resource {
 	return &schema.Resource{
-		Description: "",
-
+		Description: "[Run tasks](https://www.terraform.io/cloud-docs/workspaces/settings/run-tasks) allow Terraform Cloud to interact with external systems at specific points in the Terraform Cloud run lifecycle. Run tasks are reusable configurations that you can attach to any workspace in an organization." +
+			"\n\nUse this data source to get information about an [Organization Run tasks](https://www.terraform.io/cloud-docs/workspaces/settings/run-tasks#creating-a-run-task).",
 		Read: dataSourceTFEOrganizationRunTaskRead,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "",
+				Description: "Name of the Run task.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
 
 			"organization": {
-				Description: "",
+				Description: "Name of the organization.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
 
 			"url": {
-				Description: "",
+				Description: "URL to send a run task payload.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
 
 			"category": {
-				Description: "",
+				Description: "The type of task.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
 
 			"enabled": {
-				Description: "",
+				Description: "Whether the task will be run.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},

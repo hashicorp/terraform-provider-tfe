@@ -9,18 +9,18 @@ import (
 
 func dataSourceTFESSHKey() *schema.Resource {
 	return &schema.Resource{
-		Description: "",
+		Description: "Use this data source to get information about a SSH key.",
 		Read:        dataSourceTFESSHKeyRead,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "",
+				Description: "Name of the SSH key.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
 
 			"organization": {
-				Description: "",
+				Description: "Name of the organization.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},

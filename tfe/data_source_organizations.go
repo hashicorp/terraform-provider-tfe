@@ -10,25 +10,25 @@ import (
 
 func dataSourceTFEOrganizations() *schema.Resource {
 	return &schema.Resource{
-		Description: "",
+		Description: "Use this data source to get a list of Organizations and a map of their IDs.",
 		Read:        dataSourceTFEOrganizationList,
 
 		Schema: map[string]*schema.Schema{
 			"names": {
-				Description: "",
+				Description: "A list of names of every organization.",
 				Type:        schema.TypeList,
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 
 			"ids": {
-				Description: "",
+				Description: "A map of organization names and their IDs.",
 				Type:        schema.TypeMap,
 				Computed:    true,
 			},
 
 			"admin": {
-				Description: "",
+				Description: "This field is for Terraform Enterprise only. It is a boolean field that determines the list of organizations that should be retrieved. If it is true, then it will retrieve all the organizations for the entire installation. If it is false, then it will retrieve the organizations available as per permissions of the API Token.",
 				Type:        schema.TypeBool,
 				Default:     false,
 				Optional:    true,

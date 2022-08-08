@@ -10,42 +10,42 @@ import (
 
 func dataSourceTFEOrganization() *schema.Resource {
 	return &schema.Resource{
-		Description: "",
+		Description: "Use this data source to get information about an organization.",
 		Read:        dataSourceTFEOrganizationRead,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "",
+				Description: "Name of the organization.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
 
 			"external_id": {
-				Description: "",
+				Description: "An identifier for the organization.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
 
 			"collaborator_auth_policy": {
-				Description: "",
+				Description: "Authentication policy (`password` or `two_factor_mandatory`). Defaults to `password`.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
 
 			"cost_estimation_enabled": {
-				Description: "",
+				Description: "Whether or not the cost estimation feature is enabled for all workspaces in the organization. Defaults to true. In a Terraform Cloud organization which does not have Teams & Governance features, this value is always false and cannot be changed. In Terraform Enterprise, Cost Estimation must also be enabled in Site Administration.",
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},
 
 			"email": {
-				Description: "",
+				Description: "Admin email address.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
 
 			"owners_team_saml_role_id": {
-				Description: "",
+				Description: "The name of the owners team.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
@@ -57,7 +57,7 @@ func dataSourceTFEOrganization() *schema.Resource {
 			},
 
 			"send_passing_statuses_for_untriggered_speculative_plans": {
-				Description: "",
+				Description: "Whether or not to send VCS status updates for untriggered speculative plans. This can be useful if large numbers of untriggered workspaces are exhausting request limits for connected version control service providers like GitHub. Defaults to true. In Terraform Enterprise, this setting has no effect and cannot be changed but is also available in Site Administration.",
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},

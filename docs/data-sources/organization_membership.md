@@ -3,12 +3,18 @@
 page_title: "tfe_organization_membership Data Source - terraform-provider-tfe"
 subcategory: ""
 description: |-
-  
+  Use this data source to get information about an organization membership.
+  ~> NOTE: This data source requires using the provider with Terraform Cloud or an instance of Terraform Enterprise at least as recent as v202004-1.
+  ~> NOTE If a user updates their email address, configurations using the email address should be updated manually.
 ---
 
 # tfe_organization_membership
 
+Use this data source to get information about an organization membership.
 
+ ~> **NOTE:** This data source requires using the provider with Terraform Cloud or an instance of Terraform Enterprise at least as recent as v202004-1.
+
+ ~> **NOTE** If a user updates their email address, configurations using the email address should be updated manually.
 
 
 
@@ -17,11 +23,11 @@ description: |-
 
 ### Required
 
-- `email` (String)
-- `organization` (String)
+- `email` (String) Email of the user.
+- `organization` (String) Name of the organization.
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `user_id` (String)
+- `user_id` (String) The ID of the user associated with the organization membership.
 
