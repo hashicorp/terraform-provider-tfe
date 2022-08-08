@@ -10,47 +10,56 @@ import (
 
 func dataSourceTFEOrganization() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceTFEOrganizationRead,
+		Description: "",
+		Read:        dataSourceTFEOrganizationRead,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"external_id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 
 			"collaborator_auth_policy": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 
 			"cost_estimation_enabled": {
-				Type:     schema.TypeBool,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeBool,
+				Computed:    true,
 			},
 
 			"email": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 
 			"owners_team_saml_role_id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 
 			"two_factor_conformant": {
-				Type:     schema.TypeBool,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeBool,
+				Computed:    true,
 			},
 
 			"send_passing_statuses_for_untriggered_speculative_plans": {
-				Type:     schema.TypeBool,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeBool,
+				Computed:    true,
 			},
 		},
 	}

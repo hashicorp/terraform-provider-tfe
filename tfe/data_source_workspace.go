@@ -10,147 +10,176 @@ import (
 
 func dataSourceTFEWorkspace() *schema.Resource {
 	return &schema.Resource{
+		Description: "",
+
 		Read: dataSourceTFEWorkspaceRead,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"description": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 
 			"allow_destroy_plan": {
-				Type:     schema.TypeBool,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeBool,
+				Computed:    true,
 			},
 
 			"auto_apply": {
-				Type:     schema.TypeBool,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeBool,
+				Computed:    true,
 			},
 
 			"file_triggers_enabled": {
-				Type:     schema.TypeBool,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeBool,
+				Computed:    true,
 			},
 
 			"global_remote_state": {
-				Type:     schema.TypeBool,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeBool,
+				Computed:    true,
 			},
 
 			"remote_state_consumer_ids": {
-				Type:     schema.TypeSet,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "",
+				Type:        schema.TypeSet,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 
 			"operations": {
-				Type:     schema.TypeBool,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeBool,
+				Computed:    true,
 			},
 
 			"policy_check_failures": {
-				Type:     schema.TypeInt,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeInt,
+				Computed:    true,
 			},
 
 			"queue_all_runs": {
-				Type:     schema.TypeBool,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeBool,
+				Computed:    true,
 			},
 
 			"resource_count": {
-				Type:     schema.TypeInt,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeInt,
+				Computed:    true,
 			},
 
 			"run_failures": {
-				Type:     schema.TypeInt,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeInt,
+				Computed:    true,
 			},
 
 			"runs_count": {
-				Type:     schema.TypeInt,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeInt,
+				Computed:    true,
 			},
 
 			"speculative_enabled": {
-				Type:     schema.TypeBool,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeBool,
+				Computed:    true,
 			},
 
 			"ssh_key_id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 
 			"structured_run_output_enabled": {
-				Type:     schema.TypeBool,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeBool,
+				Computed:    true,
 			},
 
 			"tag_names": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 
 			"terraform_version": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 
 			"trigger_prefixes": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "",
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 
 			"trigger_patterns": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "",
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 
 			"working_directory": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 
 			"vcs_repo": {
-				Type:     schema.TypeList,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeList,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"identifier": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"branch": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"ingress_submodules": {
-							Type:     schema.TypeBool,
-							Computed: true,
+							Description: "",
+							Type:        schema.TypeBool,
+							Computed:    true,
 						},
 
 						"oauth_token_id": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 					},
 				},

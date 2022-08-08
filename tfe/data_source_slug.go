@@ -14,12 +14,15 @@ import (
 
 func dataSourceTFESlug() *schema.Resource {
 	return &schema.Resource{
+		Description: "",
+
 		Read: dataSourceTFESlugRead,
 
 		Schema: map[string]*schema.Schema{
 			"source_path": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 		},
 	}

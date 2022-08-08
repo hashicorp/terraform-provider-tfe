@@ -9,22 +9,28 @@ import (
 
 func dataSourceTFEOrganizationMembership() *schema.Resource {
 	return &schema.Resource{
+		Description: "Use this data source to get information about an organization membership." +
+			"\n\n ~> **NOTE:** This data source requires using the provider with Terraform Cloud or an instance of Terraform Enterprise at least as recent as v202004-1." +
+			"\n\n ~> **NOTE** If a user updates their email address, configurations using the email address should be updated manually.",
 		Read: dataSourceTFEOrganizationMembershipRead,
 
 		Schema: map[string]*schema.Schema{
 			"email": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "Email of the user.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "Name of the organization.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"user_id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The ID of the user associated with the organization membership.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 		},
 	}

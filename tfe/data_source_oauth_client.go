@@ -10,23 +10,29 @@ import (
 
 func dataSourceTFEOAuthClient() *schema.Resource {
 	return &schema.Resource{
+		Description: "Use this data source to get information about an OAuth client.",
+
 		Read: dataSourceTFEOAuthClientRead,
 		Schema: map[string]*schema.Schema{
 			"oauth_client_id": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "ID of the OAuth client.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 			"api_url": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The client's API URL.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"http_url": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The client's HTTP URL.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"oauth_token_id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The ID of the OAuth token associated with the OAuth client.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 		},
 	}

@@ -9,60 +9,71 @@ import (
 
 func dataSourceTFETeamAccess() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceTFETeamAccessRead,
+		Description: "",
+		Read:        dataSourceTFETeamAccessRead,
 
 		Schema: map[string]*schema.Schema{
 			"access": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 
 			"permissions": {
-				Type:     schema.TypeList,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeList,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"runs": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"variables": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"state_versions": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"sentinel_mocks": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"workspace_locking": {
-							Type:     schema.TypeBool,
-							Computed: true,
+							Description: "",
+							Type:        schema.TypeBool,
+							Computed:    true,
 						},
 
 						"run_tasks": {
-							Type:     schema.TypeBool,
-							Computed: true,
+							Description: "",
+							Type:        schema.TypeBool,
+							Computed:    true,
 						},
 					},
 				},
 			},
 
 			"team_id": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"workspace_id": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 		},
 	}

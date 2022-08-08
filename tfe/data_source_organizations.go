@@ -10,24 +10,28 @@ import (
 
 func dataSourceTFEOrganizations() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceTFEOrganizationList,
+		Description: "",
+		Read:        dataSourceTFEOrganizationList,
 
 		Schema: map[string]*schema.Schema{
 			"names": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "",
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 
 			"ids": {
-				Type:     schema.TypeMap,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeMap,
+				Computed:    true,
 			},
 
 			"admin": {
-				Type:     schema.TypeBool,
-				Default:  false,
-				Optional: true,
+				Description: "",
+				Type:        schema.TypeBool,
+				Default:     false,
+				Optional:    true,
 			},
 		},
 	}

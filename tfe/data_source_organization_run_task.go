@@ -7,32 +7,39 @@ import (
 
 func dataSourceTFEOrganizationRunTask() *schema.Resource {
 	return &schema.Resource{
+		Description: "",
+
 		Read: dataSourceTFEOrganizationRunTaskRead,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"url": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 
 			"category": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 
 			"enabled": {
-				Type:     schema.TypeBool,
-				Optional: true,
+				Description: "",
+				Type:        schema.TypeBool,
+				Optional:    true,
 			},
 		},
 	}

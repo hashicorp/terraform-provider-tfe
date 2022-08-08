@@ -9,21 +9,25 @@ import (
 
 func dataSourceTFETeam() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceTFETeamRead,
+		Description: "",
+		Read:        dataSourceTFETeamRead,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 			"sso_team_id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 		},
 	}

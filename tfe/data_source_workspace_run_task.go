@@ -9,22 +9,27 @@ import (
 
 func dataSourceTFEWorkspaceRunTask() *schema.Resource {
 	return &schema.Resource{
+		Description: "",
+
 		Read: dataSourceTFEWorkspaceRunTaskRead,
 
 		Schema: map[string]*schema.Schema{
 			"workspace_id": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"task_id": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"enforcement_level": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 		},
 	}

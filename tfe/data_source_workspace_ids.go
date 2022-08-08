@@ -10,10 +10,13 @@ import (
 
 func dataSourceTFEWorkspaceIDs() *schema.Resource {
 	return &schema.Resource{
+		Description: "",
+
 		Read: dataSourceTFEWorkspaceIDsRead,
 
 		Schema: map[string]*schema.Schema{
 			"names": {
+				Description:  "",
 				Type:         schema.TypeList,
 				Elem:         &schema.Schema{Type: schema.TypeString},
 				Optional:     true,
@@ -21,30 +24,35 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 			},
 
 			"tag_names": {
-				Type:     schema.TypeList,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Optional: true,
+				Description: "",
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Optional:    true,
 			},
 
 			"exclude_tags": {
-				Type:     schema.TypeSet,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Optional: true,
+				Description: "",
+				Type:        schema.TypeSet,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Optional:    true,
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"ids": {
-				Type:     schema.TypeMap,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeMap,
+				Computed:    true,
 			},
 
 			"full_names": {
-				Type:     schema.TypeMap,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeMap,
+				Computed:    true,
 			},
 		},
 	}

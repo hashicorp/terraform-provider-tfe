@@ -11,62 +11,75 @@ import (
 func dataSourceTFEWorkspaceVariables() *schema.Resource {
 	varSchema := map[string]*schema.Schema{
 		"category": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"hcl": {
-			Type:     schema.TypeBool,
-			Computed: true,
+			Description: "",
+			Type:        schema.TypeBool,
+			Computed:    true,
 		},
 		"id": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"name": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		"sensitive": {
-			Type:     schema.TypeBool,
-			Computed: true,
+			Description: "",
+			Type:        schema.TypeBool,
+			Computed:    true,
 		},
 		"value": {
-			Type:      schema.TypeString,
-			Computed:  true,
-			Sensitive: true,
+			Description: "",
+			Type:        schema.TypeString,
+			Computed:    true,
+			Sensitive:   true,
 		},
 	}
 	return &schema.Resource{
+		Description: "",
+
 		Read: dataSourceVariableRead,
 
 		Schema: map[string]*schema.Schema{
 			"env": {
-				Type:     schema.TypeList,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeList,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: varSchema,
 				},
 			},
 			"terraform": {
-				Type:     schema.TypeList,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeList,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: varSchema,
 				},
 			},
 			"variables": {
-				Type:     schema.TypeList,
-				Computed: true,
+				Description: "",
+				Type:        schema.TypeList,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: varSchema,
 				},
 			},
 			"workspace_id": {
+				Description:  "",
 				Type:         schema.TypeString,
 				Optional:     true,
 				ExactlyOneOf: []string{"workspace_id", "variable_set_id"},
 			},
 			"variable_set_id": {
+				Description:  "",
 				Type:         schema.TypeString,
 				Optional:     true,
 				ExactlyOneOf: []string{"workspace_id", "variable_set_id"},

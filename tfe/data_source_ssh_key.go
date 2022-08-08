@@ -9,17 +9,20 @@ import (
 
 func dataSourceTFESSHKey() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceTFESSHKeyRead,
+		Description: "",
+		Read:        dataSourceTFESSHKeyRead,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 		},
 	}
