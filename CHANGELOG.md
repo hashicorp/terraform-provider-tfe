@@ -2,7 +2,7 @@
 
 FEATURES:
 * r/tfe_organization_run_task, d/tfe_organization_run_task: Add `description` attribute to organization run tasks. ([#585](https://github.com/hashicorp/terraform-provider-tfe/pull/585))
-* d/tfe_policy_set: Add datasource for policy_set ([#590](https://github.com/hashicorp/terraform-provider-tfe/pull/590))
+* d/tfe_policy_set: Add datasource for policy_set ([#592](https://github.com/hashicorp/terraform-provider-tfe/pull/592))
 
 BUG FIXES:
 * d/tfe_outputs: Fix referencing sensitive values in tfe_outputs ([#565](https://github.com/hashicorp/terraform-provider-tfe/pull/565))
