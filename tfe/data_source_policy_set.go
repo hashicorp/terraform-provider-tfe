@@ -1,6 +1,7 @@
 package tfe
 
 import (
+	"errors"
 	"fmt"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -92,7 +93,7 @@ func dataSourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error 
 		policySetList, err := tfeClient.PolicySets.List(ctx, organization, &listOptions)
 
 		if err != nil {
-			if err == tfe.ErrResourceNotFound {
+			if errors.Is(err, tfe.ErrResourceNotFound) {
 				return fmt.Errorf("could not find policy set %s/%s", organization, name)
 			}
 			return fmt.Errorf("Error retrieving policy set %s: %w", name, err)
