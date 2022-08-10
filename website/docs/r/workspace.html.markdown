@@ -79,6 +79,9 @@ The following arguments are supported:
   Defaults to `true`. When set to `false`, the workspace will be used for
   state storage only. This value _must not_ be provided if `execution_mode` is
   provided.
+* `pull_request_outputs_enabled` - (Optional) Whether the workspace shows Terraform output 
+  in pull request comments. Defaults to `false`. Cannot be set to `true` if `speculative_enabled`
+  is set to `false`.
 * `queue_all_runs` - (Optional) Whether the workspace should start
   automatically performing runs immediately after its creation. Defaults to
   `true`. When set to `false`, runs triggered by a webhook (such as a commit

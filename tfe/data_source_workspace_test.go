@@ -82,6 +82,8 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "policy_check_failures", "0"),
 					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "pull_request_outputs_enabled", "true"),
+					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "queue_all_runs", "false"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "resource_count", "0"),
@@ -172,6 +174,7 @@ resource "tfe_workspace" "foobar" {
   allow_destroy_plan    = false
   auto_apply            = true
   file_triggers_enabled = true
+  pull_request_outputs_enabled = true
   queue_all_runs        = false
   speculative_enabled   = true
   tag_names             = ["modules", "shared"]

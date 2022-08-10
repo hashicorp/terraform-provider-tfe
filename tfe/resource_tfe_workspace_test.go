@@ -44,6 +44,8 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "operations", "true"),
 					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "pull_request_outputs_enabled", "false"),
+					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "queue_all_runs", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "speculative_enabled", "true"),
@@ -1202,6 +1204,38 @@ func TestAccTFEWorkspace_structuredRunOutputDisabled(t *testing.T) {
 						"tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "structured_run_output_enabled", "false"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspace_pullRequestOutputsEnabled(t *testing.T) {
+	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_basic(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "pull_request_outputs_enabled", "false"),
+				),
+			},
+
+			{
+				Config: testAccTFEWorkspace_updatePullRequestOutputsEnabled(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "pull_request_outputs_enabled", "true"),
 				),
 			},
 		},
@@ -2563,5 +2597,19 @@ resource "tfe_workspace" "foobar" {
   organization                  = tfe_organization.foobar.id
   auto_apply                    = true
   structured_run_output_enabled = false
+}`, rInt)
+}
+
+func testAccTFEWorkspace_updatePullRequestOutputsEnabled(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name                          = "workspace-test"
+  organization                  = tfe_organization.foobar.id
+  structured_run_output_enabled = true
 }`, rInt)
 }

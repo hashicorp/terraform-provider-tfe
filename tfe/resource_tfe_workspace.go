@@ -123,6 +123,12 @@ func resourceTFEWorkspace() *schema.Resource {
 				ConflictsWith: []string{"execution_mode", "agent_pool_id"},
 			},
 
+			"pull_request_outputs_enabled": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				// RequiredWith: []string{"speculative_enabled"},
+			},
+
 			"queue_all_runs": {
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -228,6 +234,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		AutoApply:                  tfe.Bool(d.Get("auto_apply").(bool)),
 		Description:                tfe.String(d.Get("description").(string)),
 		FileTriggersEnabled:        tfe.Bool(d.Get("file_triggers_enabled").(bool)),
+		PullRequestOutputsEnabled:  tfe.Bool(d.Get("pull_request_outputs_enabled").(bool)),
 		QueueAllRuns:               tfe.Bool(d.Get("queue_all_runs").(bool)),
 		SpeculativeEnabled:         tfe.Bool(d.Get("speculative_enabled").(bool)),
 		StructuredRunOutputEnabled: tfe.Bool(d.Get("structured_run_output_enabled").(bool)),
@@ -355,6 +362,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
 	d.Set("operations", workspace.Operations)
 	d.Set("execution_mode", workspace.ExecutionMode)
+	d.Set("pull_request_outputs_enabled", workspace.PullRequestOutputsEnabled)
 	d.Set("queue_all_runs", workspace.QueueAllRuns)
 	d.Set("speculative_enabled", workspace.SpeculativeEnabled)
 	d.Set("structured_run_output_enabled", workspace.StructuredRunOutputEnabled)
@@ -420,6 +428,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		d.HasChange("vcs_repo") || d.HasChange("file_triggers_enabled") ||
 		d.HasChange("trigger_prefixes") || d.HasChange("trigger_patterns") ||
 		d.HasChange("allow_destroy_plan") || d.HasChange("speculative_enabled") ||
+		d.HasChange("pull_request_outputs_enabled") ||
 		d.HasChange("operations") || d.HasChange("execution_mode") ||
 		d.HasChange("description") || d.HasChange("agent_pool_id") ||
 		d.HasChange("global_remote_state") || d.HasChange("structured_run_output_enabled") {
@@ -431,6 +440,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			Description:                tfe.String(d.Get("description").(string)),
 			FileTriggersEnabled:        tfe.Bool(d.Get("file_triggers_enabled").(bool)),
 			GlobalRemoteState:          tfe.Bool(d.Get("global_remote_state").(bool)),
+			PullRequestOutputsEnabled:  tfe.Bool(d.Get("pull_request_outputs_enabled").(bool)),
 			QueueAllRuns:               tfe.Bool(d.Get("queue_all_runs").(bool)),
 			SpeculativeEnabled:         tfe.Bool(d.Get("speculative_enabled").(bool)),
 			StructuredRunOutputEnabled: tfe.Bool(d.Get("structured_run_output_enabled").(bool)),
