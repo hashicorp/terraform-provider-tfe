@@ -9,25 +9,26 @@ import (
 
 func dataSourceTFEWorkspaceRunTask() *schema.Resource {
 	return &schema.Resource{
-		Description: "",
+		Description: "[Run tasks](https://www.terraform.io/cloud-docs/workspaces/settings/run-tasks) allow Terraform Cloud to interact with external systems at specific points in the Terraform Cloud run lifecycle. Run tasks are reusable configurations that you can attach to any workspace in an organization." +
+			"\n\nUse this data source to get information about a [Workspace Run tasks](https://www.terraform.io/cloud-docs/workspaces/settings/run-tasks#associating-run-tasks-with-a-workspace).",
 
 		Read: dataSourceTFEWorkspaceRunTaskRead,
 
 		Schema: map[string]*schema.Schema{
 			"workspace_id": {
-				Description: "",
+				Description: "The id of the workspace.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
 
 			"task_id": {
-				Description: "",
+				Description: "The id of the Run task.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
 
 			"enforcement_level": {
-				Description: "",
+				Description: "The enforcement level of the task.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},

@@ -14,31 +14,31 @@ func dataSourceTFEVariableSet() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "",
+				Description: "Name of the variable set.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
 
 			"organization": {
-				Description: "",
+				Description: "Name of the organization.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
 
 			"description": {
-				Description: "",
+				Description: "Description of the variable set.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
 
 			"global": {
-				Description: "",
+				Description: "Whether or not the variable set applies to all workspaces in the organization.",
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},
 
 			"workspace_ids": {
-				Description: "",
+				Description: "IDs of the workspaces that use the variable set.",
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Computed:    true,
@@ -46,7 +46,7 @@ func dataSourceTFEVariableSet() *schema.Resource {
 			},
 
 			"variable_ids": {
-				Description: "",
+				Description: "IDs of the variables attached to the variable set.",
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Computed:    true,

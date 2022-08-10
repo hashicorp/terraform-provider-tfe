@@ -45,15 +45,14 @@ func dataSourceTFEOrganization() *schema.Resource {
 			},
 
 			"owners_team_saml_role_id": {
-				Description: "The name of the owners team.",
+				Description: "The name of the \"owners\" team.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
 
 			"two_factor_conformant": {
-				Description: "",
-				Type:        schema.TypeBool,
-				Computed:    true,
+				Type:     schema.TypeBool,
+				Computed: true,
 			},
 
 			"send_passing_statuses_for_untriggered_speculative_plans": {

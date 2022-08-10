@@ -3,12 +3,12 @@
 page_title: "tfe_variables Data Source - terraform-provider-tfe"
 subcategory: ""
 description: |-
-  
+  This data source is used to retrieve all variables defined in a specified workspace.
 ---
 
 # tfe_variables
 
-
+This data source is used to retrieve all variables defined in a specified workspace.
 
 
 
@@ -17,15 +17,15 @@ description: |-
 
 ### Optional
 
-- `variable_set_id` (String)
-- `workspace_id` (String)
+- `variable_set_id` (String) ID of the workspace.
+- `workspace_id` (String) ID of the workspace.
 
 ### Read-Only
 
-- `env` (List of Object) (see [below for nested schema](#nestedatt--env))
+- `env` (List of Object) List containing environment variables configured on the workspace. (see [below for nested schema](#nestedatt--env))
 - `id` (String) The ID of this resource.
-- `terraform` (List of Object) (see [below for nested schema](#nestedatt--terraform))
-- `variables` (List of Object) (see [below for nested schema](#nestedatt--variables))
+- `terraform` (List of Object) List containing terraform variables configured on the workspace. (see [below for nested schema](#nestedatt--terraform))
+- `variables` (List of Object) List containing all terraform and environment variables configured on the workspace. (see [below for nested schema](#nestedatt--variables))
 
 <a id="nestedatt--env"></a>
 ### Nested Schema for `env`

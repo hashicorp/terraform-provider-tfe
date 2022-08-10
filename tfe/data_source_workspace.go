@@ -10,116 +10,116 @@ import (
 
 func dataSourceTFEWorkspace() *schema.Resource {
 	return &schema.Resource{
-		Description: "",
+		Description: "Use this data source to get information about a workspace." +
+			"\n\n ~> **NOTE:** Using `global_remote_state` or `remote_state_consumer_ids` requires using the provider with Terraform Cloud or an instance of Terraform Enterprise at least as recent as v202104-1.",
 
 		Read: dataSourceTFEWorkspaceRead,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "",
+				Description: "Name of the workspace.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
 
 			"organization": {
-				Description: "",
+				Description: "Name of the organization.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
 
 			"description": {
-				Description: "",
-				Type:        schema.TypeString,
-				Computed:    true,
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 
 			"allow_destroy_plan": {
-				Description: "",
+				Description: "Indicates whether destroy plans can be queued on the workspace.",
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},
 
 			"auto_apply": {
-				Description: "",
+				Description: "Indicates whether to automatically apply changes when a Terraform plan is successful.",
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},
 
 			"file_triggers_enabled": {
-				Description: "",
+				Description: "Indicates whether runs are triggered based on the changed files in a VCS push (if `true`) or always triggered on every push (if `false`).",
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},
 
 			"global_remote_state": {
-				Description: "",
+				Description: "Whether the workspace should allow all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (determined by the `remote_state_consumer_ids` argument).",
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},
 
 			"remote_state_consumer_ids": {
-				Description: "",
+				Description: "A set of workspace IDs that will be set as the remote state consumers for the given workspace. Cannot be used if `global_remote_state` is set to `true`.",
 				Type:        schema.TypeSet,
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 
 			"operations": {
-				Description: "",
+				Description: "Indicates whether the workspace is using remote execution mode. Set to `false` to switch execution mode to local. `true` by default.",
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},
 
 			"policy_check_failures": {
-				Description: "",
+				Description: "The number of policy check failures from the latest run.",
 				Type:        schema.TypeInt,
 				Computed:    true,
 			},
 
 			"queue_all_runs": {
-				Description: "",
+				Description: "Indicates whether the workspace will automatically perform runs in response to webhooks immediately after its creation. If `false`, an initial run must be manually queued to enable future automatic runs.",
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},
 
 			"resource_count": {
-				Description: "",
+				Description: "The number of resources managed by the workspace.",
 				Type:        schema.TypeInt,
 				Computed:    true,
 			},
 
 			"run_failures": {
-				Description: "",
+				Description: "The number of run failures on the workspace.",
 				Type:        schema.TypeInt,
 				Computed:    true,
 			},
 
 			"runs_count": {
-				Description: "",
+				Description: "The number of runs on the workspace.",
 				Type:        schema.TypeInt,
 				Computed:    true,
 			},
 
 			"speculative_enabled": {
-				Description: "",
+				Description: "Indicates whether this workspace allows speculative plans.",
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},
 
 			"ssh_key_id": {
-				Description: "",
+				Description: "The ID of an SSH key assigned to the workspace.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
 
 			"structured_run_output_enabled": {
-				Description: "",
+				Description: "Indicates whether runs in this workspace use the enhanced apply UI.",
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},
 
 			"tag_names": {
-				Description: "",
+				Description: "The names of tags added to this workspace.",
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Computed:    true,
@@ -127,57 +127,57 @@ func dataSourceTFEWorkspace() *schema.Resource {
 			},
 
 			"terraform_version": {
-				Description: "",
+				Description: "The version (or version constraint) of Terraform used for this workspace.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
 
 			"trigger_prefixes": {
-				Description: "",
+				Description: "List of trigger prefixes that describe the paths Terraform Cloud monitors for changes, in addition to the working directory. Trigger prefixes are always appended to the root directory of the repository. Terraform Cloud or Terraform Enterprise will start a run when files are changed in any directory path matching the provided set of prefixes.",
 				Type:        schema.TypeList,
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 
 			"trigger_patterns": {
-				Description: "",
+				Description: "List of [glob patterns](https://www.terraform.io/cloud-docs/workspaces/settings/vcs#glob-patterns-for-automatic-run-triggering) that describe the files Terraform Cloud monitors for changes. Trigger patterns are always appended to the root directory of the repository. Only available for Terraform Cloud.",
 				Type:        schema.TypeList,
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 
 			"working_directory": {
-				Description: "",
+				Description: "A relative path that Terraform will execute within.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
 
 			"vcs_repo": {
-				Description: "",
+				Description: "Settings for the workspace's VCS repository.",
 				Type:        schema.TypeList,
 				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"identifier": {
-							Description: "",
+							Description: "A reference to your VCS repository in the format `<organization>/<repository>` where `<organization>` and `<repository>` refer to the organization and repository in your VCS provider.",
 							Type:        schema.TypeString,
 							Computed:    true,
 						},
 
 						"branch": {
-							Description: "",
+							Description: "The repository branch that Terraform will execute from.",
 							Type:        schema.TypeString,
 							Computed:    true,
 						},
 
 						"ingress_submodules": {
-							Description: "",
+							Description: "Indicates whether submodules should be fetched when cloning the VCS repository.",
 							Type:        schema.TypeBool,
 							Computed:    true,
 						},
 
 						"oauth_token_id": {
-							Description: "",
+							Description: "OAuth token ID of the configured VCS connection.",
 							Type:        schema.TypeString,
 							Computed:    true,
 						},

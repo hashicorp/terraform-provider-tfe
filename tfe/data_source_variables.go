@@ -11,45 +11,44 @@ import (
 func dataSourceTFEWorkspaceVariables() *schema.Resource {
 	varSchema := map[string]*schema.Schema{
 		"category": {
-			Description: "",
+			Description: "The category of the variable (terraform or environment).",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
 		"hcl": {
-			Description: "",
+			Description: "If the variable is marked as HCL or not.",
 			Type:        schema.TypeBool,
 			Computed:    true,
 		},
 		"id": {
-			Description: "",
+			Description: "The variable ID.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
 		"name": {
-			Description: "",
+			Description: "The variable key name.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
 		"sensitive": {
-			Description: "",
+			Description: "If the variable is marked as sensitive or not.",
 			Type:        schema.TypeBool,
 			Computed:    true,
 		},
 		"value": {
-			Description: "",
+			Description: "The variable value. If the variable is sensitive this value will be empty.",
 			Type:        schema.TypeString,
 			Computed:    true,
 			Sensitive:   true,
 		},
 	}
 	return &schema.Resource{
-		Description: "",
-
-		Read: dataSourceVariableRead,
+		Description: "This data source is used to retrieve all variables defined in a specified workspace.",
+		Read:        dataSourceVariableRead,
 
 		Schema: map[string]*schema.Schema{
 			"env": {
-				Description: "",
+				Description: "List containing environment variables configured on the workspace.",
 				Type:        schema.TypeList,
 				Computed:    true,
 				Elem: &schema.Resource{
@@ -57,7 +56,7 @@ func dataSourceTFEWorkspaceVariables() *schema.Resource {
 				},
 			},
 			"terraform": {
-				Description: "",
+				Description: "List containing terraform variables configured on the workspace.",
 				Type:        schema.TypeList,
 				Computed:    true,
 				Elem: &schema.Resource{
@@ -65,7 +64,7 @@ func dataSourceTFEWorkspaceVariables() *schema.Resource {
 				},
 			},
 			"variables": {
-				Description: "",
+				Description: "List containing all terraform and environment variables configured on the workspace.",
 				Type:        schema.TypeList,
 				Computed:    true,
 				Elem: &schema.Resource{
@@ -73,13 +72,13 @@ func dataSourceTFEWorkspaceVariables() *schema.Resource {
 				},
 			},
 			"workspace_id": {
-				Description:  "",
+				Description:  "ID of the workspace.",
 				Type:         schema.TypeString,
 				Optional:     true,
 				ExactlyOneOf: []string{"workspace_id", "variable_set_id"},
 			},
 			"variable_set_id": {
-				Description:  "",
+				Description:  "ID of the workspace.",
 				Type:         schema.TypeString,
 				Optional:     true,
 				ExactlyOneOf: []string{"workspace_id", "variable_set_id"},

@@ -10,13 +10,14 @@ import (
 
 func dataSourceTFEWorkspaceIDs() *schema.Resource {
 	return &schema.Resource{
-		Description: "",
+		Description: "Use this data source to get a map of workspace IDs.",
 
 		Read: dataSourceTFEWorkspaceIDsRead,
 
 		Schema: map[string]*schema.Schema{
 			"names": {
-				Description:  "",
+				Description: " A list of workspace names to search for. Names that don't match a real workspace will be omitted from the results, but are not an error." +
+					"\n\n  To select _all_ workspaces for an organization, provide a list with a single asterisk, like `[\"*\"]`. No other use of wildcards is supported.",
 				Type:         schema.TypeList,
 				Elem:         &schema.Schema{Type: schema.TypeString},
 				Optional:     true,
@@ -24,33 +25,33 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 			},
 
 			"tag_names": {
-				Description: "",
+				Description: "A list of tag names to search for.",
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Optional:    true,
 			},
 
 			"exclude_tags": {
-				Description: "",
+				Description: "A list of tag names to exclude when searching.",
 				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Optional:    true,
 			},
 
 			"organization": {
-				Description: "",
+				Description: "Name of the organization.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
 
 			"ids": {
-				Description: "",
+				Description: "A map of workspace names and their opaque, immutable IDs, which look like `ws-<RANDOM STRING>`.",
 				Type:        schema.TypeMap,
 				Computed:    true,
 			},
 
 			"full_names": {
-				Description: "",
+				Description: "A map of workspace names and their full names, which look like `<ORGANIZATION>/<WORKSPACE>`.",
 				Type:        schema.TypeMap,
 				Computed:    true,
 			},

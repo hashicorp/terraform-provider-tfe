@@ -120,6 +120,7 @@ resource "tfe_notification_configuration" "test" {
 
 ## Import
 
+Test headinng in resource template
 Import is supported using the following syntax:
 
 ```shell
