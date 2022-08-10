@@ -286,6 +286,18 @@ func testAccPreCheck(t *testing.T) {
 	}
 }
 
+func testAccGithubPreCheck(t *testing.T) {
+	if GITHUB_TOKEN == "" {
+		t.Skip("Please set GITHUB_TOKEN to run this test")
+	}
+	if GITHUB_WORKSPACE_IDENTIFIER == "" {
+		t.Skip("Please set GITHUB_WORKSPACE_IDENTIFIER to run this test")
+	}
+	if GITHUB_WORKSPACE_BRANCH == "" {
+		t.Skip("Please set GITHUB_WORKSPACE_BRANCH to run this test")
+	}
+}
+
 var GITHUB_TOKEN = os.Getenv("GITHUB_TOKEN")
 var GITHUB_WORKSPACE_IDENTIFIER = os.Getenv("GITHUB_WORKSPACE_IDENTIFIER")
 var GITHUB_WORKSPACE_BRANCH = os.Getenv("GITHUB_WORKSPACE_BRANCH")

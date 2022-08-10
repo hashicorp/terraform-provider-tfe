@@ -1215,15 +1215,7 @@ func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			if GITHUB_TOKEN == "" {
-				t.Skip("Please set GITHUB_TOKEN to run this test")
-			}
-			if GITHUB_WORKSPACE_IDENTIFIER == "" {
-				t.Skip("Please set GITHUB_WORKSPACE_IDENTIFIER to run this test")
-			}
-			if GITHUB_WORKSPACE_BRANCH == "" {
-				t.Skip("Please set GITHUB_WORKSPACE_BRANCH to run this test")
-			}
+			testAccGithubPreCheck(t)
 		},
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
@@ -1299,15 +1291,7 @@ func TestAccTFEWorkspace_updateVCSRepoTagsRegex(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			if GITHUB_TOKEN == "" {
-				t.Skip("Please set GITHUB_TOKEN to run this test")
-			}
-			if GITHUB_WORKSPACE_IDENTIFIER == "" {
-				t.Skip("Please set GITHUB_WORKSPACE_IDENTIFIER to run this test")
-			}
-			if GITHUB_WORKSPACE_BRANCH == "" {
-				t.Skip("Please set GITHUB_WORKSPACE_BRANCH to run this test")
-			}
+			testAccGithubPreCheck(t)
 		},
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
@@ -1359,15 +1343,7 @@ func TestAccTFEWorkspace_updateVCSRepoChangeTagRegexToTriggerPattern(t *testing.
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			if GITHUB_TOKEN == "" {
-				t.Skip("Please set GITHUB_TOKEN to run this test")
-			}
-			if GITHUB_WORKSPACE_IDENTIFIER == "" {
-				t.Skip("Please set GITHUB_WORKSPACE_IDENTIFIER to run this test")
-			}
-			if GITHUB_WORKSPACE_BRANCH == "" {
-				t.Skip("Please set GITHUB_WORKSPACE_BRANCH to run this test")
-			}
+			testAccGithubPreCheck(t)
 		},
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
@@ -1487,15 +1463,7 @@ func TestAccTFEWorkspace_importVCSBranch(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			if GITHUB_TOKEN == "" {
-				t.Skip("Please set GITHUB_TOKEN to run this test")
-			}
-			if GITHUB_WORKSPACE_IDENTIFIER == "" {
-				t.Skip("Please set GITHUB_WORKSPACE_IDENTIFIER to run this test")
-			}
-			if GITHUB_WORKSPACE_BRANCH == "" {
-				t.Skip("Please set GITHUB_WORKSPACE_BRANCH to run this test")
-			}
+			testAccGithubPreCheck(t)
 		},
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
@@ -2507,6 +2475,41 @@ resource "tfe_workspace" "foobar" {
 		rInt,
 		GITHUB_TOKEN,
 		GITHUB_WORKSPACE_IDENTIFIER,
+	)
+}
+
+func testAccTFEWorkspace_updateUpdateVCSRepoBranchFileTriggersDisabled(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_oauth_client" "test" {
+  organization     = tfe_organization.foobar.id
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "%s"
+  service_provider = "github"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  description  = "workspace-test-update-vcs-repo-branch"
+  organization = tfe_organization.foobar.id
+  auto_apply   = true
+	## file_triggers_enabled = false
+  vcs_repo {
+    identifier     = "%s"
+    oauth_token_id = tfe_oauth_client.test.oauth_token_id
+    branch         = "%s"
+  }
+}
+`,
+		rInt,
+		GITHUB_TOKEN,
+		GITHUB_WORKSPACE_IDENTIFIER,
+		GITHUB_WORKSPACE_BRANCH,
 	)
 }
 
