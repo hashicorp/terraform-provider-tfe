@@ -1352,6 +1352,66 @@ func TestAccTFEWorkspace_updateVCSRepoTagsRegex(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspace_updateVCSRepoChangeTagRegexToTriggerPattern(t *testing.T) {
+	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			if GITHUB_TOKEN == "" {
+				t.Skip("Please set GITHUB_TOKEN to run this test")
+			}
+			if GITHUB_WORKSPACE_IDENTIFIER == "" {
+				t.Skip("Please set GITHUB_WORKSPACE_IDENTIFIER to run this test")
+			}
+			if GITHUB_WORKSPACE_BRANCH == "" {
+				t.Skip("Please set GITHUB_WORKSPACE_BRANCH to run this test")
+			}
+		},
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_updateUpdateVCSRepoTagsRegex(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "description", "workspace-test-update-vcs-repo-tags-regex"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "file_triggers_enabled", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.0.identifier", GITHUB_WORKSPACE_IDENTIFIER),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.0.branch", GITHUB_WORKSPACE_BRANCH),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.0.ingress_submodules", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.0.tags_regex", `\d+.\d+.\d+`),
+				),
+			},
+			{
+				Config: testAccTFEWorkspace_updateToTriggerPatternsFromTagsRegex(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "description", "workspace-test-update-vcs-repo-tags-regex"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "file_triggers_enabled", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.0.identifier", GITHUB_WORKSPACE_IDENTIFIER),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.0.branch", GITHUB_WORKSPACE_BRANCH),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.0.ingress_submodules", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.0.tags_regex", ""),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEWorkspace_sshKey(t *testing.T) {
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -2581,6 +2641,42 @@ resource "tfe_workspace" "foobar" {
   }
 }
 `,
+		rInt,
+		GITHUB_TOKEN,
+		GITHUB_WORKSPACE_IDENTIFIER,
+		GITHUB_WORKSPACE_BRANCH,
+	)
+}
+
+func testAccTFEWorkspace_updateToTriggerPatternsFromTagsRegex(rInt int) string {
+	return fmt.Sprintf(`
+	resource "tfe_organization" "foobar" {
+		name  = "tst-tf-%d-git-tag-ff-on"
+		email = "admin@company.com"
+	}
+	
+	resource "tfe_oauth_client" "test" {
+		organization     = tfe_organization.foobar.id
+		api_url          = "https://api.github.com"
+		http_url         = "https://github.com"
+		oauth_token      = "%s"
+		service_provider = "github"
+	}
+	
+	resource "tfe_workspace" "foobar" {
+		name         			= "workspace-test"
+		description  			= "workspace-test-update-vcs-repo-tags-regex"
+		organization 			= tfe_organization.foobar.id
+		auto_apply   			= true
+		file_triggers_enabled = true
+		trigger_patterns = ["foo/**/*"]
+		vcs_repo {
+			identifier     = "%s"
+			oauth_token_id = tfe_oauth_client.test.oauth_token_id
+			branch         = "%s"
+		}
+	}
+	`,
 		rInt,
 		GITHUB_TOKEN,
 		GITHUB_WORKSPACE_IDENTIFIER,
