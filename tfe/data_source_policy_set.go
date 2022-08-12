@@ -139,7 +139,6 @@ func dataSourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error 
 
 				return nil
 			}
-
 		}
 		// Exit the loop when we've seen all pages.
 		if policySetList.CurrentPage >= policySetList.TotalPages {
