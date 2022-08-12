@@ -33,6 +33,8 @@ func TestAccTFEVariable_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_variable.foobar", "description", "some description"),
 					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "global", "true"),
+					resource.TestCheckResourceAttr(
 						"tfe_variable.foobar", "category", "env"),
 					resource.TestCheckResourceAttr(
 						"tfe_variable.foobar", "hcl", "false"),
