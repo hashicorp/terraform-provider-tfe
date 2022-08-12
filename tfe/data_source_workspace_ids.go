@@ -25,10 +25,11 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 			},
 
 			"tag_names": {
-				Description: "A list of tag names to search for.",
-				Type:        schema.TypeList,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-				Optional:    true,
+				Description: "A list of tag names to search for." +
+					"\n\n -> At least one of `names` or `tag_names` must be present. Both can be used together.",
+				Type:     schema.TypeList,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Optional: true,
 			},
 
 			"exclude_tags": {

@@ -16,7 +16,8 @@ var workspaceIdRegexp = regexp.MustCompile("^ws-[a-zA-Z0-9]{16}$")
 
 func resourceTFEWorkspace() *schema.Resource {
 	return &schema.Resource{
-		Description: "",
+		Description: "Provides a workspace resource." +
+			"\n\n ~> Using `global_remote_state` or `remote_state_consumer_ids` requires using the provider with Terraform Cloud or an instance of Terraform Enterprise at least as recent as v202104-1.",
 
 		Create: resourceTFEWorkspaceCreate,
 		Read:   resourceTFEWorkspaceRead,
@@ -53,47 +54,47 @@ func resourceTFEWorkspace() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "",
+				Description: "Name of the workspace.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
 
 			"organization": {
-				Description: "",
+				Description: "Name of the organization.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
 			},
 
 			"description": {
-				Description: "",
+				Description: "A description for the workspace.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
 
 			"agent_pool_id": {
-				Description:   "",
+				Description:   "The ID of an agent pool to assign to the workspace. Requires `execution_mode` to be set to `agent`. This value _must not_ be provided if `execution_mode` is set to any other value or if `operations` is provided.",
 				Type:          schema.TypeString,
 				Optional:      true,
 				ConflictsWith: []string{"operations"},
 			},
 
 			"allow_destroy_plan": {
-				Description: "",
+				Description: "Whether destroy plans can be queued on the workspace.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
 			},
 
 			"auto_apply": {
-				Description: "",
+				Description: "Whether to automatically apply changes when a Terraform plan is successful. Defaults to `false`.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
 			},
 
 			"execution_mode": {
-				Description:   "",
+				Description:   "Which [execution mode](https://www.terraform.io/docs/cloud/workspaces/settings.html#execution-mode) to use. Using Terraform Cloud, valid values are `remote`, `local` or`agent`. Defaults to `remote`. Using Terraform Enterprise, only `remote`and `local` execution modes are valid.  When set to `local`, the workspace will be use for state storage only. This value _must not_ be provided if `operations` is provided.",
 				Type:          schema.TypeString,
 				Optional:      true,
 				Computed:      true,
@@ -109,21 +110,21 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"file_triggers_enabled": {
-				Description: "",
+				Description: "Whether to filter runs based on the changed files in a VCS push. Defaults to `false`. If enabled, the working directory and trigger prefixes describe a set of paths which must contain changes for a VCS push to trigger a run. If disabled, any push will trigger a run.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
 			},
 
 			"global_remote_state": {
-				Description: "",
+				Description: "Whether the workspace allows all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (`remote_state_consumer_ids`).",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Computed:    true,
 			},
 
 			"remote_state_consumer_ids": {
-				Description: "",
+				Description: "The set of workspace IDs set as explicit remote state consumers for the given workspace.",
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Computed:    true,
@@ -131,7 +132,7 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"operations": {
-				Description:   "",
+				Description:   "**(Deprecated)** Whether to use remote execution mode. Defaults to `true`. When set to `false`, the workspace will be used for state storage only. This value _must not_ be provided if `execution_mode` is provided.",
 				Type:          schema.TypeBool,
 				Optional:      true,
 				Computed:      true,
@@ -139,35 +140,35 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"queue_all_runs": {
-				Description: "",
+				Description: "Whether the workspace should start automatically performing runs immediately after its creation. Defaults to `true`. When set to `false`, runs triggered by a webhook (such as a commit in VCS) will not be queued until at least one run has been manually queued. **Note:** This default differs from the Terraform Cloud API default, which is `false`. The provider uses `true` as any workspace provisioned with `false` would need to then have a run manually queued out-of-band before accepting webhooks.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
 			},
 
 			"speculative_enabled": {
-				Description: "",
+				Description: "Whether this workspace allows speculative plans. Defaults to `true`. Setting this to `false` prevents Terraform Cloud or the Terraform Enterprise instance from running plans on pull requests, which can improve security if the VCS repository is public or includes untrusted contributors.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
 			},
 
 			"ssh_key_id": {
-				Description: "",
+				Description: "The ID of an SSH key to assign to the workspace.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     "",
 			},
 
 			"structured_run_output_enabled": {
-				Description: "",
+				Description: "Whether this workspace should show output from Terraform runs using the enhanced UI when available. Defaults to `true`. Setting this to `false` ensures that all runs in this workspace will display their output as text logs.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
 			},
 
 			"tag_names": {
-				Description: "",
+				Description: "A list of tag names for this workspace. Note that tags must only contain lowercase letters, numbers, colons, or hyphens.",
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Computed:    true,
@@ -175,14 +176,14 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"terraform_version": {
-				Description: "",
+				Description: "The version of Terraform to use for this workspace. This can be either an exact version or a [version constraint](https://www.terraform.io/docs/language/expressions/version-constraints.html) (like `~> 1.0.0`); if you specify a constraint, the workspace will always use the newest release that meets that constraint. Defaults to the latest available version.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
 			},
 
 			"trigger_prefixes": {
-				Description:   "",
+				Description:   "List of repository-root-relative paths which describe all locations to be tracked for changes.",
 				Type:          schema.TypeList,
 				Optional:      true,
 				Computed:      true,
@@ -191,7 +192,7 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"trigger_patterns": {
-				Description:   "",
+				Description:   "List of [glob patterns](https://www.terraform.io/cloud-docs/workspaces/settings/vcs#glob-patterns-for-automatic-run-triggering) that describe the files Terraform Cloud monitors for changes. Trigger patterns are always appended to the root directory of the repository. Mutually exclusive with `trigger-prefixes`. Only available for Terraform Cloud.",
 				Type:          schema.TypeList,
 				Optional:      true,
 				Computed:      true,
@@ -200,14 +201,14 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"working_directory": {
-				Description: "",
+				Description: "A relative path that Terraform will execute within.  Defaults to the root of your repository.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     "",
 			},
 
 			"vcs_repo": {
-				Description: "vcs nested",
+				Description: "Settings for the workspace's VCS repository, enabling the [UI/VCS-driven run workflow](https://www.terraform.io/docs/cloud/run/ui.html). Omit this argument to utilize the [CLI-driven](https://www.terraform.io/docs/cloud/run/cli.html) and [API-driven](https://www.terraform.io/docs/cloud/run/api.html) workflows, where runs are not driven by webhooks on your VCS provider.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				MinItems:    1,
@@ -215,26 +216,26 @@ func resourceTFEWorkspace() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"identifier": {
-							Description: "identifier",
+							Description: " reference to your VCS repository in the format `<organization>/<repository>` where `<organization>` and `<repository>` refer to the organization and repository in your VCS provider. The format for Azure DevOps is <organization>/<project>/_git/<repository>.",
 							Type:        schema.TypeString,
 							Required:    true,
 						},
 
 						"branch": {
-							Description: "branch",
+							Description: "The repository branch that Terraform will execute from. This defaults to the repository's default branch (e.g. main).",
 							Type:        schema.TypeString,
 							Optional:    true,
 						},
 
 						"ingress_submodules": {
-							Description: "ingress",
+							Description: " Whether submodules should be fetched when cloning the VCS repository. Defaults to `false`.",
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Default:     false,
 						},
 
 						"oauth_token_id": {
-							Description: "",
+							Description: "The VCS Connection (OAuth Connection + Token) to use. This ID can be obtained from a `tfe_oauth_client` resource.",
 							Type:        schema.TypeString,
 							Required:    true,
 						},

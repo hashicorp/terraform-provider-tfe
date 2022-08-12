@@ -25,19 +25,19 @@ func resourceTFEVariableSet() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "",
+				Description: "Name of the variable set.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
 
 			"description": {
-				Description: "",
+				Description: "Description of the variable set.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
 
 			"global": {
-				Description:   "",
+				Description:   "Whether or not the variable set applies to all workspaces in the organization. Defaults to `false`.",
 				Type:          schema.TypeBool,
 				Optional:      true,
 				Default:       false,
@@ -45,14 +45,14 @@ func resourceTFEVariableSet() *schema.Resource {
 			},
 
 			"organization": {
-				Description: "",
+				Description: "Name of the organization.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
 			},
 
 			"workspace_ids": {
-				Description: "",
+				Description: "**Deprecated** IDs of the workspaces that use the variable set. Must not be set if `global` is set. This argument is mutually exclusive with using the resource [tfe_workspace_variable_set](workspace_variable_set.html) which is the preferred method of associating a workspace with a variable set.",
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Computed:    true,
