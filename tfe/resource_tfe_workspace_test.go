@@ -1220,6 +1220,10 @@ func TestAccTFEWorkspace_pullRequestOutputsEnabled(t *testing.T) {
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
+				Config:      testAccTFEWorkspace_invalidPullRequestOutputsEnabled(rInt),
+				ExpectError: regexp.MustCompile(`"PullRequestOutputsEnabled" can be true only when "SpeculativeEnabled" is set to true`),
+			},
+			{
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
@@ -1228,7 +1232,6 @@ func TestAccTFEWorkspace_pullRequestOutputsEnabled(t *testing.T) {
 						"tfe_workspace.foobar", "pull_request_outputs_enabled", "false"),
 				),
 			},
-
 			{
 				Config: testAccTFEWorkspace_updatePullRequestOutputsEnabled(rInt),
 				Check: resource.ComposeTestCheckFunc(
@@ -1237,6 +1240,10 @@ func TestAccTFEWorkspace_pullRequestOutputsEnabled(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "pull_request_outputs_enabled", "true"),
 				),
+			},
+			{
+				Config:      testAccTFEWorkspace_invalidPullRequestOutputsEnabled(rInt),
+				ExpectError: regexp.MustCompile("Pull request outputs enabled cannot be enabled when speculative plans is disabled"),
 			},
 		},
 	})
@@ -2859,6 +2866,21 @@ resource "tfe_organization" "foobar" {
 resource "tfe_workspace" "foobar" {
   name                         = "workspace-test"
   organization                 = tfe_organization.foobar.id
+  pull_request_outputs_enabled = true
+}`, rInt)
+}
+
+func testAccTFEWorkspace_invalidPullRequestOutputsEnabled(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name                         = "workspace-test"
+  organization                 = tfe_organization.foobar.id
+  speculative_enabled          = "false"
   pull_request_outputs_enabled = true
 }`, rInt)
 }
