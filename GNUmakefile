@@ -3,10 +3,13 @@ GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
 WEBSITE_REPO=github.com/hashicorp/terraform-website
 PKG_NAME=tfe
 
-default: build
+default: terraform-provider-tfe
 
 build: fmtcheck
 	go install
+
+terraform-provider-tfe: fmtcheck
+	@go build -o terraform-provider-tfe
 
 test: fmtcheck
 	go test -v $(TEST) || exit 1
@@ -19,6 +22,12 @@ sweep:
 
 testacc: fmtcheck
 	TF_ACC=1 TF_LOG_SDK_PROTO=OFF go test $(TEST) -v $(TESTARGS) -timeout 15m
+
+# This rule creates a terraform CLI config file to override the tfe provider to point to the latest
+# build in the current directory. The output of devoverride.sh is an export statement that
+# overrides the CLI config to use this build.
+devoverride: terraform-provider-tfe
+	@sh -c "'$(CURDIR)/scripts/devoverride.sh'"
 
 vet:
 	@echo "go vet ."

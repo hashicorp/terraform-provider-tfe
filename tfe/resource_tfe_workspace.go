@@ -212,6 +212,12 @@ func resourceTFEWorkspace() *schema.Resource {
 							Type:     schema.TypeString,
 							Required: true,
 						},
+
+						"tags_regex": {
+							Type:          schema.TypeString,
+							Optional:      true,
+							ConflictsWith: []string{"trigger_patterns", "trigger_prefixes"},
+						},
 					},
 				},
 			},
@@ -287,6 +293,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 			Identifier:        tfe.String(vcsRepo["identifier"].(string)),
 			IngressSubmodules: tfe.Bool(vcsRepo["ingress_submodules"].(bool)),
 			OAuthTokenID:      tfe.String(vcsRepo["oauth_token_id"].(string)),
+			TagsRegex:         tfe.String(vcsRepo["tags_regex"].(string)),
 		}
 
 		// Only set the branch if one is configured.
@@ -396,6 +403,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 			"branch":             workspace.VCSRepo.Branch,
 			"ingress_submodules": workspace.VCSRepo.IngressSubmodules,
 			"oauth_token_id":     workspace.VCSRepo.OAuthTokenID,
+			"tags_regex":         workspace.VCSRepo.TagsRegex,
 		}
 		vcsRepo = append(vcsRepo, vcsConfig)
 	}
@@ -506,6 +514,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 				Branch:            tfe.String(vcsRepo["branch"].(string)),
 				IngressSubmodules: tfe.Bool(vcsRepo["ingress_submodules"].(bool)),
 				OAuthTokenID:      tfe.String(vcsRepo["oauth_token_id"].(string)),
+				TagsRegex:         tfe.String(vcsRepo["tags_regex"].(string)),
 			}
 		}
 

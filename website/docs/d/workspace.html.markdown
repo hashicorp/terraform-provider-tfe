@@ -68,3 +68,4 @@ The `vcs_repo` block contains:
 * `ingress_submodules` - Indicates whether submodules should be fetched when
   cloning the VCS repository.
 * `oauth_token_id` - OAuth token ID of the configured VCS connection.
+* `tags_regex` - A regular expression used to trigger a Workspace run for matching Git tags. 

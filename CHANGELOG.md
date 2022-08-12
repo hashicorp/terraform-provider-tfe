@@ -2,6 +2,7 @@
 
 FEATURES:
 * r/tfe_organization_run_task, d/tfe_organization_run_task: Add `description` attribute to organization run tasks. ([#585](https://github.com/hashicorp/terraform-provider-tfe/pull/585))
+* r/tfe_workspace: Adds `tags_regex` attribute to `vcs_repo` for workspaces, enabling a workspace to trigger runs for matching Git tags. ([#549](https://github.com/hashicorp/terraform-provider-tfe/pull/549))
 
 BUG FIXES:
 * d/tfe_outputs: Fix referencing sensitive values in tfe_outputs ([#565](https://github.com/hashicorp/terraform-provider-tfe/pull/565))
