@@ -2608,8 +2608,8 @@ resource "tfe_organization" "foobar" {
 }
 
 resource "tfe_workspace" "foobar" {
-  name                          = "workspace-test"
-  organization                  = tfe_organization.foobar.id
-  structured_run_output_enabled = true
+  name                         = "workspace-test"
+  organization                 = tfe_organization.foobar.id
+  pull_request_outputs_enabled = true
 }`, rInt)
 }

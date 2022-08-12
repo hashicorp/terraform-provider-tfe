@@ -168,20 +168,20 @@ resource "tfe_organization" "foobar" {
 }
 
 resource "tfe_workspace" "foobar" {
-  name                  = "workspace-test-%d"
-  organization          = tfe_organization.foobar.id
-  description           = "provider-testing"
-  allow_destroy_plan    = false
-  auto_apply            = true
-  file_triggers_enabled = true
+  name                         = "workspace-test-%d"
+  organization                 = tfe_organization.foobar.id
+  description                  = "provider-testing"
+  allow_destroy_plan           = false
+  auto_apply                   = true
+  file_triggers_enabled        = true
   pull_request_outputs_enabled = true
-  queue_all_runs        = false
-  speculative_enabled   = true
-  tag_names             = ["modules", "shared"]
-  terraform_version     = "0.11.1"
-  trigger_prefixes      = ["/modules", "/shared"]
-  working_directory     = "terraform/test"
-  global_remote_state   = true
+  queue_all_runs               = false
+  speculative_enabled          = true
+  tag_names                    = ["modules", "shared"]
+  terraform_version            = "0.11.1"
+  trigger_prefixes             = ["/modules", "/shared"]
+  working_directory            = "terraform/test"
+  global_remote_state          = true
 }
 
 data "tfe_workspace" "foobar" {

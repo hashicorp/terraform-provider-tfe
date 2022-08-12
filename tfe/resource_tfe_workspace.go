@@ -126,7 +126,6 @@ func resourceTFEWorkspace() *schema.Resource {
 			"pull_request_outputs_enabled": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				// RequiredWith: []string{"speculative_enabled"},
 			},
 
 			"queue_all_runs": {
