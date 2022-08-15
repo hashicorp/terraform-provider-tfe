@@ -11,7 +11,7 @@ echo
 cat "4-descinfoex.sh"
 echo
 echo
-echo "***** end *****"
+read -p "***** end *****"
 echo
 read -p "[1] A \"Description\" can be added for each attribute"
 read -p "[2] An additional note modal can be added using the \"\n\n ~>\" syntax" 

@@ -79,14 +79,14 @@ importmenu() {
 $(yellowprint 'IMPORT STATEMENT MENU')
 $(greenprint '1)') Info
 $(greenprint '2)') Continue to NOTES
-$(cyanprint '3)') Return to Basic Menu
-$(magentaprint '4)') Return to Main Menu
+$(cyanprint '3)') Go to Basic Menu
+$(magentaprint '4)') Go to Main Menu
 $(redprint '0)') Exit
 Choose an option:  "
     read -r ans
     case $ans in
     1)
-        ./importinfo.sh
+        ./8-importinfo.sh
         importmenu
         ;;
     2)
