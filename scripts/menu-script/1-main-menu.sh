@@ -27,7 +27,7 @@ Choose an option:  "
     read -r ans
     case $ans in
     1)
-        # TODO: add info script
+
         ./custominfo.sh
         custommenu
         ;;
@@ -56,7 +56,6 @@ Choose an option:  "
     read -r ans
     case $ans in
     1)
-        # TODO: info script 
         ./noteinfo.sh
         notemenu
         ;;
@@ -87,7 +86,6 @@ Choose an option:  "
     read -r ans
     case $ans in
     1)
-        # TODO: info script 
         ./importinfo.sh
         importmenu
         ;;
@@ -115,15 +113,14 @@ examplemenu() {
 $(yellowprint 'EXAMPLES MENU')
 $(greenprint '1)') Info
 $(greenprint '2)') Continue to IMPORT STATEMENT
-$(cyanprint '3)') Return to Basic Menu
-$(magentaprint '4)') Return to Main Menu
+$(cyanprint '3)') Go to Basic Menu
+$(magentaprint '4)') Go to Main Menu
 $(redprint '0)') Exit
 Choose an option:  "
     read -r ans
     case $ans in
     1)
-        # TODO: info script 
-        ./exampleinfo.sh
+        ./5-exampleinfo.sh
         examplemenu
         ;;
     2)
@@ -151,13 +148,13 @@ $(yellowprint 'DESCRIPTIONS MENU')
 $(greenprint '1)') Info
 $(greenprint '2)') Continue to EXAMPLES
 $(cyanprint '3)') Return to Basic Menu
-$(magentaprint '4)') Return to Main Menu
+$(magentaprint '4)') Go to Main Menu
 $(redprint '0)') Exit
 Choose an option:  "
     read -r ans
     case $ans in
     1)
-        ./descinfo.sh
+        ./3-descinfo.sh
         descmenu
         ;;
     2)
@@ -182,10 +179,10 @@ Choose an option:  "
 basicmenu() {
     echo -ne "
 $(cyanprint 'BASIC MENU')
-$(greenprint '1)') DESCRIPTIONS
-$(greenprint '2)') EXAMPLES
-$(greenprint '3)') IMPORT STATEMENT
-$(greenprint '4)') NOTES
+$(greenprint '1)') Descriptions
+$(greenprint '2)') Examples
+$(greenprint '3)') Import Statement
+$(greenprint '4)') Notes
 $(magentaprint '5)') Return to Main Menu
 $(redprint '0)') Exit
 Choose an option:  "
@@ -228,14 +225,14 @@ mainmenu() {
     echo -ne "
 $(magentaprint 'MAIN MENU')
 $(greenprint '1)') Info
-$(greenprint '2)') Basic
-$(greenprint '3)') Custom
+$(greenprint '2)') BASIC
+$(greenprint '3)') CUSTOM
 $(redprint '0)') Exit
 Choose an option:  "
     read -r ans
     case $ans in
     1)
-        ./maininfo.sh
+        ./2-main-menu-info.sh
         mainmenu
         ;;
     2)

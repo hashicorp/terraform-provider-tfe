@@ -1,7 +1,7 @@
 func resourceTFEAgentPool() *schema.Resource {
 	return &schema.Resource{
-		Description: "An agent pool represents a group of agents..." + 
-			"\n\n ~> **NOTE:** This resource requires  ... ",
+[1]		Description: "An agent pool represents a group of agents..." + 
+[2]			"\n\n ~> This resource requires  ... ",
 
 		Create: resourceTFEAgentPoolCreate,
 		Read:   resourceTFEAgentPoolRead,
@@ -13,13 +13,13 @@ func resourceTFEAgentPool() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "Name of the agent pool.",
+[1]			Description: "Name of the agent pool.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
 
 			"organization": {
-				Description: "Name of the organization.",
+[1]			Description: "Name of the organization.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
