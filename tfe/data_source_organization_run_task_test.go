@@ -6,23 +6,26 @@ import (
 	"testing"
 	"time"
 
+	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccTFEOrganizationRunTaskDataSource_basic(t *testing.T) {
 	skipUnlessRunTasksDefined(t)
-	skipIfFreeOnly(t) // Run Tasks requires TFE or a TFC paid/trial subscription
+
+	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
-			testCheckCreateOrgWithRunTasks(orgName),
+			testCheckCreateOrgWithRunTasks(org),
 			{
-				Config: testAccTFEOrganizationRunTaskDataSourceConfig(orgName, rInt, runTasksURL()),
+				Config: testAccTFEOrganizationRunTaskDataSourceConfig(org.Name, rInt, runTasksURL()),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.tfe_organization_run_task.foobar", "name", fmt.Sprintf("foobar-task-%d", rInt)),
 					resource.TestCheckResourceAttr("data.tfe_organization_run_task.foobar", "url", runTasksURL()),
@@ -39,13 +42,12 @@ func TestAccTFEOrganizationRunTaskDataSource_basic(t *testing.T) {
 
 func testAccTFEOrganizationRunTaskDataSourceConfig(orgName string, rInt int, runTaskURL string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-	name  = "%s"
-	email = "admin@company.com"
+locals {
+    organization_name = "%s"
 }
 
 resource "tfe_organization_run_task" "foobar" {
-	organization = tfe_organization.foobar.id
+	organization = local.organization_name
 	url          = "%s"
 	name         = "foobar-task-%d"
 	hmac_key     = "Password1"
@@ -54,7 +56,7 @@ resource "tfe_organization_run_task" "foobar" {
 }
 
 data "tfe_organization_run_task" "foobar" {
-	organization      = resource.tfe_organization.foobar.id
+	organization      = local.organization_name
 	name              = "foobar-task-%d"
 	depends_on = [tfe_organization_run_task.foobar]
 }`, orgName, runTaskURL, rInt, rInt)

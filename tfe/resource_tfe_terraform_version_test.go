@@ -15,7 +15,7 @@ import (
 )
 
 func TestAccTFETerraformVersion_basic(t *testing.T) {
-	skipIfFreeOnly(t)
+	skipIfCloud(t)
 
 	tfVersion := &tfe.AdminTerraformVersion{}
 	sha := genSha(t, "secret", "data")
@@ -44,6 +44,8 @@ func TestAccTFETerraformVersion_basic(t *testing.T) {
 }
 
 func TestAccTFETerraformVersion_import(t *testing.T) {
+	skipIfCloud(t)
+
 	sha := genSha(t, "secret", "data")
 	version := genSafeRandomTerraformVersion()
 
@@ -71,7 +73,7 @@ func TestAccTFETerraformVersion_import(t *testing.T) {
 }
 
 func TestAccTFETerraformVersion_full(t *testing.T) {
-	skipIfFreeOnly(t)
+	skipIfCloud(t)
 
 	tfVersion := &tfe.AdminTerraformVersion{}
 	sha := genSha(t, "secret", "data")

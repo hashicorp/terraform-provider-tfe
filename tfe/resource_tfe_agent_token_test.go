@@ -2,9 +2,7 @@ package tfe
 
 import (
 	"fmt"
-	"math/rand"
 	"testing"
-	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -12,11 +10,13 @@ import (
 )
 
 func TestAccTFEAgentToken_basic(t *testing.T) {
-	skipIfFreeOnly(t)
 	skipIfEnterprise(t)
 
+	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
 	agentToken := &tfe.AgentToken{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -24,7 +24,7 @@ func TestAccTFEAgentToken_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFEAgentTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEAgentToken_basic(rInt),
+				Config: testAccTFEAgentToken_basic(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEAgentTokenExists(
 						"tfe_agent_token.foobar", agentToken),
@@ -97,20 +97,15 @@ func testAccCheckTFEAgentTokenDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccTFEAgentToken_basic(rInt int) string {
+func testAccTFEAgentToken_basic(organization string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
 resource "tfe_agent_pool" "foobar" {
   name         = "agent-pool-test"
-  organization = tfe_organization.foobar.id
+  organization = "%s"
 }
 
 resource "tfe_agent_token" "foobar" {
 	agent_pool_id = tfe_agent_pool.foobar.id
 	description   = "agent-token-test"
-}`, rInt)
+}`, organization)
 }

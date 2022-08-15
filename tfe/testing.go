@@ -114,14 +114,14 @@ func upgradeOrganizationSubscription(t *testing.T, client *tfe.Client, org *tfe.
 }
 
 func createBusinessOrganization(t *testing.T, client *tfe.Client) (*tfe.Organization, func()) {
-    org, orgCleanup := createOrganization(t, client, tfe.OrganizationCreateOptions{
-        Name: tfe.String("tst-"+randomString(t)),
-        Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t)))
-    })
+	org, orgCleanup := createOrganization(t, client, tfe.OrganizationCreateOptions{
+		Name:  tfe.String("tst-" + randomString(t)),
+		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
+	})
 
-    upgradeOrganizationSubscription(t, client, org)
+	upgradeOrganizationSubscription(t, client, org)
 
-    return org, orgCleanup
+	return org, orgCleanup
 }
 
 func createOrganization(t *testing.T, client *tfe.Client, options tfe.OrganizationCreateOptions) (*tfe.Organization, func()) {
@@ -194,11 +194,11 @@ func skipIfUnitTest(t *testing.T) {
 }
 
 func randomString(t *testing.T) string {
-    v, err := uuid.GenerateUUID()
-    if err != nil {
-        t.Fatal(err)
-    }
-    return v
+	v, err := uuid.GenerateUUID()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return v
 }
 
 type retryableFn func() (interface{}, error)

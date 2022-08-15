@@ -308,24 +308,24 @@ var GITHUB_REGISTRY_MODULE_IDENTIFIER = os.Getenv("GITHUB_REGISTRY_MODULE_IDENTI
 var TFE_USER1 = os.Getenv("TFE_USER1")
 var TFE_USER2 = os.Getenv("TFE_USER2")
 
-func testCheckCreateOrgWithRunTasks(organizationName string) resource.TestStep {
+func testCheckCreateOrgWithRunTasks(org *tfe.Organization) resource.TestStep {
 	check := func(_ *terraform.State) error {
 		client, err := getClientUsingEnv()
 		if err != nil {
 			return err
 		}
-		entitlements, err := client.Organizations.ReadEntitlements(context.TODO(), organizationName)
+		entitlements, err := client.Organizations.ReadEntitlements(context.TODO(), org.Name)
 		if err != nil {
 			return fmt.Errorf("error reading entitlements: %w", err)
 		}
 		if entitlements == nil || !entitlements.RunTasks {
-			return fmt.Errorf("Organization %s is not entitled to use Run Tasks", organizationName)
+			return fmt.Errorf("Organization %s is not entitled to use Run Tasks", org.Name)
 		}
 		return nil
 	}
 
 	return resource.TestStep{
-		Config: fmt.Sprintf("resource \"tfe_organization\" \"foobar\" {\n name = %q\nemail = \"admin@company.com\"\n}", organizationName),
+		Config: fmt.Sprintf("resource \"tfe_organization\" \"foobar\" {\n name = %q\nemail = %q\n}", org.Name, org.Email),
 		Check:  check,
 	}
 }

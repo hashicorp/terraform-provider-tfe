@@ -2,24 +2,23 @@ package tfe
 
 import (
 	"fmt"
-	"math/rand"
 	"testing"
-	"time"
 
+	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccTFETeamAccessDataSource_basic(t *testing.T) {
-	skipIfFreeOnly(t)
-
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamAccessDataSourceConfig(rInt),
+				Config: testAccTFETeamAccessDataSourceConfig(org.Name),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"data.tfe_team_access.foobar", "access", "write"),
@@ -44,21 +43,16 @@ func TestAccTFETeamAccessDataSource_basic(t *testing.T) {
 	})
 }
 
-func testAccTFETeamAccessDataSourceConfig(rInt int) string {
+func testAccTFETeamAccessDataSourceConfig(organization string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
 resource "tfe_team" "foobar" {
-  name         = "team-test-%d"
-  organization = tfe_organization.foobar.id
+  name         = "team-test"
+  organization = "%s"
 }
 
 resource "tfe_workspace" "foobar" {
-  name         = "workspace-test-%d"
-  organization = tfe_organization.foobar.id
+  name         = "workspace-test"
+  organization = "%s"
 }
 
 resource "tfe_team_access" "foobar" {
@@ -70,5 +64,5 @@ resource "tfe_team_access" "foobar" {
 data "tfe_team_access" "foobar" {
   team_id      = tfe_team.foobar.id
   workspace_id = tfe_team_access.foobar.workspace_id
-}`, rInt, rInt, rInt)
+}`, organization, organization)
 }

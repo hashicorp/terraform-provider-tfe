@@ -2,9 +2,7 @@ package tfe
 
 import (
 	"fmt"
-	"math/rand"
 	"testing"
-	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -13,27 +11,28 @@ import (
 
 func TestAccTFEWorkspaceRunTask_create(t *testing.T) {
 	skipUnlessRunTasksDefined(t)
-	skipIfFreeOnly(t) // Run Tasks requires TFE or a TFC paid/trial subscription
+
+	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	workspaceTask := &tfe.WorkspaceRunTask{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEWorkspaceRunTaskDestroy,
 		Steps: []resource.TestStep{
-			testCheckCreateOrgWithRunTasks(orgName),
+			testCheckCreateOrgWithRunTasks(org),
 			{
-				Config: testAccTFEWorkspaceRunTask_basic(orgName, runTasksURL()),
+				Config: testAccTFEWorkspaceRunTask_basic(org.Name, runTasksURL()),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceRunTaskExists("tfe_workspace_run_task.foobar", workspaceTask),
 					resource.TestCheckResourceAttr("tfe_workspace_run_task.foobar", "enforcement_level", "advisory"),
 				),
 			},
 			{
-				Config: testAccTFEWorkspaceRunTask_update(orgName, runTasksURL()),
+				Config: testAccTFEWorkspaceRunTask_update(org.Name, runTasksURL()),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_workspace_run_task.foobar", "enforcement_level", "mandatory"),
 				),
@@ -78,24 +77,24 @@ func TestAccTFEWorkspaceRunTask_beta_create(t *testing.T) {
 
 func TestAccTFEWorkspaceRunTask_import(t *testing.T) {
 	skipUnlessRunTasksDefined(t)
-	skipIfFreeOnly(t) // Run Tasks requires TFE or a TFC paid/trial subscription
 
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
-			testCheckCreateOrgWithRunTasks(orgName),
+			testCheckCreateOrgWithRunTasks(org),
 			{
-				Config: testAccTFEWorkspaceRunTask_basic(orgName, runTasksURL()),
+				Config: testAccTFEWorkspaceRunTask_basic(org.Name, runTasksURL()),
 			},
 			{
 				ResourceName:      "tfe_workspace_run_task.foobar",
 				ImportState:       true,
-				ImportStateId:     fmt.Sprintf("tst-terraform-%d/workspace-test/foobar-task", rInt),
+				ImportStateId:     fmt.Sprintf("%s/workspace-test/foobar-task", org.Name),
 				ImportStateVerify: true,
 			},
 		},
@@ -160,20 +159,18 @@ func testAccCheckTFEWorkspaceRunTaskDestroy(s *terraform.State) error {
 
 func testAccTFEWorkspaceRunTask_basic(orgName, runTaskURL string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "%s"
-  email = "admin@company.com"
+locals {
+    organization_name = "%s"
 }
-
 resource "tfe_organization_run_task" "foobar" {
-  organization = tfe_organization.foobar.id
+  organization = local.organization_name
   url          = "%s"
   name         = "foobar-task"
 }
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = tfe_organization.foobar.id
+  organization = local.organization_name
 }
 
 resource "tfe_workspace_run_task" "foobar" {
@@ -186,20 +183,19 @@ resource "tfe_workspace_run_task" "foobar" {
 
 func testAccTFEWorkspaceRunTask_update(orgName, runTaskURL string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "%s"
-  email = "admin@company.com"
+locals {
+    organization_name = "%s"
 }
 
 resource "tfe_organization_run_task" "foobar" {
-  organization = tfe_organization.foobar.id
+  organization = local.organization_name
   url          = "%s"
   name         = "foobar-task"
 }
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = tfe_organization.foobar.id
+  organization = local.organization_name
 }
 
 resource "tfe_workspace_run_task" "foobar" {

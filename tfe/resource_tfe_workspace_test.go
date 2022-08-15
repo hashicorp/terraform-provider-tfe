@@ -1538,11 +1538,13 @@ func TestAccTFEWorkspace_importVCSBranch(t *testing.T) {
 }
 
 func TestAccTFEWorkspace_operationsAndExecutionModeInteroperability(t *testing.T) {
-	skipIfFreeOnly(t)
 	skipIfEnterprise(t)
 
+	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
 	workspace := &tfe.Workspace{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -1550,7 +1552,7 @@ func TestAccTFEWorkspace_operationsAndExecutionModeInteroperability(t *testing.T
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspace_operationsTrue(rInt),
+				Config: testAccTFEWorkspace_operationsTrue(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
@@ -1563,7 +1565,7 @@ func TestAccTFEWorkspace_operationsAndExecutionModeInteroperability(t *testing.T
 				),
 			},
 			{
-				Config: testAccTFEWorkspace_executionModeLocal(rInt),
+				Config: testAccTFEWorkspace_executionModeLocal(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
@@ -1576,7 +1578,7 @@ func TestAccTFEWorkspace_operationsAndExecutionModeInteroperability(t *testing.T
 				),
 			},
 			{
-				Config: testAccTFEWorkspace_operationsFalse(rInt),
+				Config: testAccTFEWorkspace_operationsFalse(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
@@ -1589,7 +1591,7 @@ func TestAccTFEWorkspace_operationsAndExecutionModeInteroperability(t *testing.T
 				),
 			},
 			{
-				Config: testAccTFEWorkspace_executionModeRemote(rInt),
+				Config: testAccTFEWorkspace_executionModeRemote(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
@@ -1602,7 +1604,7 @@ func TestAccTFEWorkspace_operationsAndExecutionModeInteroperability(t *testing.T
 				),
 			},
 			{
-				Config: testAccTFEWorkspace_executionModeAgent(rInt),
+				Config: testAccTFEWorkspace_executionModeAgent(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
@@ -2192,80 +2194,55 @@ resource "tfe_workspace" "foobar" {
 }`, rInt)
 }
 
-func testAccTFEWorkspace_operationsTrue(rInt int) string {
+func testAccTFEWorkspace_operationsTrue(organization string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = tfe_organization.foobar.id
+  organization = "%s"
   operations = true
-}`, rInt)
+}`, organization)
 }
 
-func testAccTFEWorkspace_operationsFalse(rInt int) string {
+func testAccTFEWorkspace_operationsFalse(organization string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = tfe_organization.foobar.id
+  organization = "%s"
   operations = false
-}`, rInt)
+}`, organization)
 }
 
-func testAccTFEWorkspace_executionModeRemote(rInt int) string {
+func testAccTFEWorkspace_executionModeRemote(organization string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = tfe_organization.foobar.id
+  organization = "%s"
   execution_mode = "remote"
-}`, rInt)
+}`, organization)
 }
 
-func testAccTFEWorkspace_executionModeLocal(rInt int) string {
+func testAccTFEWorkspace_executionModeLocal(organization string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = tfe_organization.foobar.id
+  organization = "%s"
   execution_mode = "local"
-}`, rInt)
+}`, organization)
 }
 
-func testAccTFEWorkspace_executionModeAgent(rInt int) string {
+func testAccTFEWorkspace_executionModeAgent(organization string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
 resource "tfe_agent_pool" "foobar" {
   name = "agent-pool-test"
-  organization = tfe_organization.foobar.name
+  organization = "%s"
 }
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = tfe_organization.foobar.id
+  organization = "%s"
   execution_mode = "agent"
   agent_pool_id = tfe_agent_pool.foobar.id
-}`, rInt)
+}`, organization, organization)
 }
 
 func testAccTFEWorkspace_basicSpeculativeOff(rInt int) string {
@@ -2685,7 +2662,7 @@ func testAccTFEWorkspace_updateToTriggerPatternsFromTagsRegex(rInt int) string {
 		name  = "tst-tf-%d-git-tag-ff-on"
 		email = "admin@company.com"
 	}
-	
+
 	resource "tfe_oauth_client" "test" {
 		organization     = tfe_organization.foobar.id
 		api_url          = "https://api.github.com"
@@ -2693,7 +2670,7 @@ func testAccTFEWorkspace_updateToTriggerPatternsFromTagsRegex(rInt int) string {
 		oauth_token      = "%s"
 		service_provider = "github"
 	}
-	
+
 	resource "tfe_workspace" "foobar" {
 		name         			= "workspace-test"
 		description  			= "workspace-test-update-vcs-repo-tags-regex"
