@@ -6,6 +6,7 @@ FEATURES:
 
 BUG FIXES:
 * d/tfe_outputs: Fix referencing sensitive values in tfe_outputs ([#565](https://github.com/hashicorp/terraform-provider-tfe/pull/565))
+* r/tfe_workspace: Fix error when removing `vcs_repo` attribute block after previously setting a `tags_regex` value. ([#594](https://github.com/hashicorp/terraform-provider-tfe/pull/594))
 
 ## 0.35.0 (July 27th, 2022)
 
