@@ -12,23 +12,26 @@ Use this data source to get information about an OAuth client.
 
 ## Example Usage
 
+### Finding an OAuth client by its ID
+
 ```hcl
-# search for OAuth client by ID
 data "tfe_oauth_client" "client" {
   oauth_client_id = "oc-XXXXXXX"
 }
 ```
 
+### Finding an OAuth client by its name
+
 ```hcl
-# search for OAuth client by name
 data "tfe_oauth_client" "client" {
   organization = "my-org"
   name         = "my-oauth-client"
 }
 ```
 
+### Finding an OAuth client by its service provider
+
 ```hcl
-# search for OAuth client by service provider
 data "tfe_oauth_client" "client" {
   organization     = "my-org"
   service_provider = "github"
