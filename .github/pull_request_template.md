@@ -4,9 +4,9 @@ _Describe why you're making this change._
 
 _Remember to:_
 
-- _Update the [Change Log](https://github.com/hashicorp/terraform-provider-tfe/blob/main/README.md#updating-the-changelog)_
+- _Update the [Change Log](https://github.com/hashicorp/terraform-provider-tfe/blob/main/CONTRIBUTING.md#updating-the-changelog)_
 
-- _Update the [Documentation](https://github.com/hashicorp/terraform-provider-tfe/blob/main/README.md#updating-the-documentation)_
+- _Update the [Documentation](https://github.com/hashicorp/terraform-provider-tfe/blob/main/CONTRIBUTING.md#updating-the-documentation)_
 
 ## Testing plan
 
