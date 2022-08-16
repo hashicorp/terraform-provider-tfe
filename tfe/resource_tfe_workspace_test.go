@@ -2880,7 +2880,7 @@ resource "tfe_organization" "foobar" {
 resource "tfe_workspace" "foobar" {
   name                         = "workspace-test"
   organization                 = tfe_organization.foobar.id
-  speculative_enabled          = "false"
+  speculative_enabled          = false
   pull_request_outputs_enabled = true
 }`, rInt)
 }
