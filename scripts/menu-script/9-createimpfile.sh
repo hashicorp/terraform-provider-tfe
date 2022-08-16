@@ -1,9 +1,6 @@
 #!/bin/bash
 echo
 read -p "Please enter your resource or datasource name (tfe_resourcename) " resourcename
-if [[-z ]]
-
-
 path=../../examples/$dir1/$resourcename
 #echo $path
 mkdir -p $path

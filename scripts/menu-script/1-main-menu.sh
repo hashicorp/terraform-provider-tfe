@@ -56,7 +56,7 @@ Choose an option:  "
     read -r ans
     case $ans in
     1)
-        ./noteinfo.sh
+        ./11-noteinfo.sh
         notemenu
         ;;
     2)

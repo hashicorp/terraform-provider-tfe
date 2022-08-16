@@ -6,7 +6,7 @@ read -p "Here is an example from examples/resource_tfe_agent_pool/import.sh: "
 echo 
 echo "***** start *****"
 echo
-cat "9-importinfoex.sh"
+cat "10-importinfoex.sh"
 echo
 echo
 read -p "***** end *****"
