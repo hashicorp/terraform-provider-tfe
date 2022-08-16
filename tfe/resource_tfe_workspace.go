@@ -518,26 +518,26 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			}
 		}
 
+		// Remove vcs_repo from the workspace
+		// if the value of vcs_repo has been changed
+		// by removing it from the config
+		if d.HasChange("vcs_repo") {
+			_, ok := d.GetOk("vcs_repo")
+			if !ok {
+				_, err := tfeClient.Workspaces.RemoveVCSConnectionByID(ctx, id)
+				if err != nil {
+					d.Partial(true)
+					return fmt.Errorf("Error removing VCS repo from workspace %s: %w", id, err)
+				}
+			}
+		}
+
 		log.Printf("[DEBUG] Update workspace %s", id)
 		_, err := tfeClient.Workspaces.UpdateByID(ctx, id, options)
 		if err != nil {
 			d.Partial(true)
 			return fmt.Errorf(
 				"Error updating workspace %s: %w", id, err)
-		}
-	}
-
-	// Remove vcs_repo from the workspace
-	// if the value of vcs_repo has been changed
-	// by removing it from the config
-	if d.HasChange("vcs_repo") {
-		_, ok := d.GetOk("vcs_repo")
-		if !ok {
-			_, err := tfeClient.Workspaces.RemoveVCSConnectionByID(ctx, id)
-			if err != nil {
-				d.Partial(true)
-				return fmt.Errorf("Error removing VCS repo from workspace %s: %w", id, err)
-			}
 		}
 	}
 
