@@ -9,7 +9,9 @@ description: |-
 # {{.Name}}
 
 {{ .Description | trimspace }}
+\n\n ~> Example Note
 
+{{ if .HasExample -}}
 ## Example Usage 
 
 {{ printf "{{tffile %q}}" .ExampleFile }}
@@ -17,6 +19,7 @@ description: |-
 
 {{ .SchemaMarkdown | trimspace }}
 
+{{ if .HasImport -}}
 ## Import
 
 Import is supported using the following syntax:
