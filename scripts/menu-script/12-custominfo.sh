@@ -18,19 +18,19 @@ fn_fail() { echo "Wrong option." exit 1; }
 
 echo
 read -p "Custom templates are used to add any additional sections beyond what is offered by the basic template."
+echo
 read -p "NOTE: All markdown changes should be made to .tmpl files in the templates directory. 
         ** Do not directly edit the .md files in the docs directory as these changes will not be saved. **"
 echo
-read -p "If you are unsure, first go to \"Main Menu\" and then \"BASIC\"."
+read -p "If you are unsure, go to \"Main Menu\" and then \"Info\"."
 
 while true; do
     echo
-    read -p "   -> Generate a custom template file? [y|n] " yn
+    read -p "-> Generate a custom template file? [y|n] " yn
     case $yn in
         [Yy]* ) 
         ./13-createcustomfile.sh
-        read -p "
-        File created at templates/resources/resource_name.md.tmpl (edit with markdown)"; break;;
+        break;;
         [Nn]* ) 
         echo
         read -p "File not created. Custom templates should be added within the templates directory" ; exit;;
@@ -40,24 +40,19 @@ done
 
 mainmenu() {
     echo -ne "
-$(magentaprint 'COMMON CASES')
-$(greenprint '1)') >1 Example File
-$(greenprint '2)') >1 Import Statement File
-$(greenprint '3)') Notes defined outside of schema descriptions
+$(magentaprint 'MORE FUNCTIONS')
+$(greenprint '1)') Create Multiple Example Files
+$(greenprint '2)') Create Multiple Import Files
 $(redprint '0)') Exit
 Choose an option:  "
     read -r ans
     case $ans in
     1)
-        ./addexample.sh
+        ./14-cust-examplesinfo.sh
         mainmenu
         ;;
     2)
-        ./addimport.sh
-        mainmenu
-        ;;
-    3)
-        ./addnote.sh
+        ./15-create-imports.sh
         mainmenu
         ;;
     0)
