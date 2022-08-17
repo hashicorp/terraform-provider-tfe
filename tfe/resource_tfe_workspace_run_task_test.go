@@ -27,7 +27,6 @@ func TestAccTFEWorkspaceRunTask_create(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEWorkspaceRunTaskDestroy,
 		Steps: []resource.TestStep{
-			testCheckCreateOrgWithRunTasks(org),
 			{
 				Config: testAccTFEWorkspaceRunTask_basic(org.Name, runTasksURL()),
 				Check: resource.ComposeTestCheckFunc(
@@ -99,7 +98,6 @@ func TestAccTFEWorkspaceRunTask_import(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
-			testCheckCreateOrgWithRunTasks(org),
 			{
 				Config: testAccTFEWorkspaceRunTask_basic(org.Name, runTasksURL()),
 			},

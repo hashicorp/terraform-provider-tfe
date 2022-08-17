@@ -26,7 +26,6 @@ func TestAccTFEWorkspaceRunTaskDataSource_basic(t *testing.T) {
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
-			testCheckCreateOrgWithRunTasks(org),
 			{
 				Config: testAccTFEWorkspaceRunTaskDataSourceConfig(org.Name, rInt, runTasksURL()),
 				Check: resource.ComposeAggregateTestCheckFunc(
