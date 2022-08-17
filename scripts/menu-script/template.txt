@@ -6,13 +6,20 @@ description: |-
 {{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
 ---
 
+[DELETE THIS: Customize your template by adding or removing sections.]
+
 # {{.Name}}
 
 {{ .Description | trimspace }}
 
 ## Example Usage 
 
-{{ printf "{{tffile %q}}" .ExampleFile }}
+Basic usage:
+
+[DELETE THIS: Add your example filepath]
+
+{{ tffile "EXAMPLE FILEPATH" }}
+
 {{- end }}
 
 {{ .SchemaMarkdown | trimspace }}
@@ -21,5 +28,8 @@ description: |-
 
 Import is supported using the following syntax:
 
-{{ printf "{{codefile \"shell\" %q}}" .ImportFile }}
+[DELETE THIS: Add your import file path]
+
+
+
 {{- end }}
