@@ -12,7 +12,7 @@ while true; do
         read -p "Path added to custom template file under # Example Usage"
         echo
         ./14-cust-examplesinfo.sh; break;;
-
+x
         [Nn]* ) 
         echo
         read -p "File not created. Examples should be added to a file with the path examples/resource_directory/example.tf" ; break;;
