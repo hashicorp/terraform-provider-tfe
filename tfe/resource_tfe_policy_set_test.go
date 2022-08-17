@@ -13,7 +13,11 @@ import (
 )
 
 func TestAccTFEPolicySet_basic(t *testing.T) {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
@@ -44,7 +48,11 @@ func TestAccTFEPolicySet_basic(t *testing.T) {
 }
 
 func TestAccTFEPolicySet_update(t *testing.T) {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
@@ -91,7 +99,11 @@ func TestAccTFEPolicySet_update(t *testing.T) {
 }
 
 func TestAccTFEPolicySet_updateEmpty(t *testing.T) {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
@@ -138,7 +150,11 @@ func TestAccTFEPolicySet_updateEmpty(t *testing.T) {
 }
 
 func TestAccTFEPolicySet_updatePopulated(t *testing.T) {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
@@ -185,7 +201,11 @@ func TestAccTFEPolicySet_updatePopulated(t *testing.T) {
 }
 
 func TestAccTFEPolicySet_updateToGlobal(t *testing.T) {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
@@ -230,7 +250,11 @@ func TestAccTFEPolicySet_updateToGlobal(t *testing.T) {
 }
 
 func TestAccTFEPolicySet_updateToWorkspace(t *testing.T) {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
@@ -275,7 +299,11 @@ func TestAccTFEPolicySet_updateToWorkspace(t *testing.T) {
 }
 
 func TestAccTFEPolicySet_vcs(t *testing.T) {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
@@ -326,7 +354,11 @@ func TestAccTFEPolicySet_vcs(t *testing.T) {
 }
 
 func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
@@ -401,7 +433,11 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 func TestAccTFEPolicySet_versionedSlug(t *testing.T) {
 	skipIfUnitTest(t)
 
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
@@ -444,7 +480,11 @@ func TestAccTFEPolicySet_versionedSlug(t *testing.T) {
 func TestAccTFEPolicySet_versionedSlugUpdate(t *testing.T) {
 	skipIfUnitTest(t)
 
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
@@ -500,7 +540,11 @@ func TestAccTFEPolicySet_versionedSlugUpdate(t *testing.T) {
 }
 
 func TestAccTFEPolicySet_versionedNoConflicts(t *testing.T) {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
@@ -542,7 +586,11 @@ func testAccCheckTFEPolicySetVersionValidateChecksum(n string, sourcePath string
 }
 
 func TestAccTFEPolicySet_invalidName(t *testing.T) {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
@@ -560,7 +608,11 @@ func TestAccTFEPolicySet_invalidName(t *testing.T) {
 }
 
 func TestAccTFEPolicySetImport(t *testing.T) {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 

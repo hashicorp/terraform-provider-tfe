@@ -79,7 +79,11 @@ func TestAccTFEOrganization_full(t *testing.T) {
 }
 
 func TestAccTFEOrganization_update_costEstimation(t *testing.T) {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 

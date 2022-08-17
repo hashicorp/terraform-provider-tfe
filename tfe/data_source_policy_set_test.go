@@ -11,7 +11,13 @@ import (
 )
 
 func TestAccTFEPolicySetDataSource_basic(t *testing.T) {
-	skipIfFreeOnly(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -20,7 +26,7 @@ func TestAccTFEPolicySetDataSource_basic(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySetDataSourceConfig_basic(rInt),
+				Config: testAccTFEPolicySetDataSourceConfig_basic(org.Name, rInt),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.tfe_policy_set.bar", "id"),
 					resource.TestCheckResourceAttr(
@@ -30,7 +36,7 @@ func TestAccTFEPolicySetDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_policy_set.bar", "global", "false"),
 					resource.TestCheckResourceAttr(
-						"data.tfe_policy_set.bar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
+						"data.tfe_policy_set.bar", "organization", org.Name),
 					resource.TestCheckResourceAttr(
 						"data.tfe_policy_set.bar", "policy_ids.#", "1"),
 					resource.TestCheckResourceAttr(
@@ -45,7 +51,13 @@ func TestAccTFEPolicySetDataSource_basic(t *testing.T) {
 }
 
 func TestAccTFEPolicySetDataSource_vcs(t *testing.T) {
-	skipIfFreeOnly(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -69,7 +81,7 @@ func TestAccTFEPolicySetDataSource_vcs(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySetDataSourceConfig_vcs(rInt),
+				Config: testAccTFEPolicySetDataSourceConfig_vcs(org.Name, rInt),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.tfe_policy_set.bar", "id"),
 					resource.TestCheckResourceAttr(
@@ -79,7 +91,7 @@ func TestAccTFEPolicySetDataSource_vcs(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_policy_set.bar", "global", "false"),
 					resource.TestCheckResourceAttr(
-						"data.tfe_policy_set.bar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
+						"data.tfe_policy_set.bar", "organization", org.Name),
 					resource.TestCheckResourceAttr(
 						"data.tfe_policy_set.bar", "policy_ids.#", "0"),
 					resource.TestCheckResourceAttr(
@@ -94,8 +106,6 @@ func TestAccTFEPolicySetDataSource_vcs(t *testing.T) {
 }
 
 func TestAccTFEPolicySetDataSource_notFound(t *testing.T) {
-	skipIfFreeOnly(t)
-
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -111,47 +121,45 @@ func TestAccTFEPolicySetDataSource_notFound(t *testing.T) {
 	)
 }
 
-func testAccTFEPolicySetDataSourceConfig_basic(rInt int) string {
+func testAccTFEPolicySetDataSourceConfig_basic(organization string, rInt int) string {
 	return fmt.Sprintf(`
-	resource "tfe_organization" "foobar" {
-		name  = "tst-terraform-%d"
-		email = "admin@company.com"
-	}
-
-	resource "tfe_workspace" "foobar" {
-		name         = "workspace-foo-%d"
-		organization = tfe_organization.foobar.id
-	}
-
-	resource "tfe_sentinel_policy" "foo" {
-		name         = "policy-foo"
-		policy       = "main = rule { true }"
-		organization = tfe_organization.foobar.id
-	}
-
-	resource "tfe_policy_set" "foobar" {
-		name         = "tst-policy-set-%d"
-		description  = "Policy Set"
-		organization = tfe_organization.foobar.id
-		policy_ids   = [tfe_sentinel_policy.foo.id]
-		workspace_ids = [tfe_workspace.foobar.id]
-	}
-
-  data "tfe_policy_set" "bar" {
-		name = tfe_policy_set.foobar.name
-		organization = tfe_organization.foobar.id
-	}`, rInt, rInt, rInt)
+locals {
+  organization_name = "%s"
 }
 
-func testAccTFEPolicySetDataSourceConfig_vcs(rInt int) string {
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-foo-%d"
+  organization = local.organization_name
+}
+
+resource "tfe_sentinel_policy" "foo" {
+  name         = "policy-foo"
+  policy       = "main = rule { true }"
+  organization = local.organization_name
+}
+
+resource "tfe_policy_set" "foobar" {
+  name         = "tst-policy-set-%d"
+  description  = "Policy Set"
+  organization = local.organization_name
+  policy_ids   = [tfe_sentinel_policy.foo.id]
+  workspace_ids = [tfe_workspace.foobar.id]
+}
+
+data "tfe_policy_set" "bar" {
+  name = tfe_policy_set.foobar.name
+  organization = local.organization_name
+}`, organization, rInt, rInt)
+}
+
+func testAccTFEPolicySetDataSourceConfig_vcs(organization string, rInt int) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
+locals {
+    organization_name = "%s"
 }
 
 resource "tfe_oauth_client" "test" {
-  organization     = tfe_organization.foobar.id
+  organization     = local.organization_name
   api_url          = "https://api.github.com"
   http_url         = "https://github.com"
   oauth_token      = "%s"
@@ -161,22 +169,22 @@ resource "tfe_oauth_client" "test" {
 resource "tfe_policy_set" "foobar" {
   name         = "tst-policy-set-%d"
   description  = "Policy Set"
-  organization = tfe_organization.foobar.id
-	vcs_repo {
-		identifier         = "%s"
-		branch             = "main"
-		ingress_submodules = true
-		oauth_token_id     = tfe_oauth_client.test.oauth_token_id
-	}
+  organization = local.organization_name
+  vcs_repo {
+	identifier         = "%s"
+	branch             = "main"
+	ingress_submodules = true
+	oauth_token_id     = tfe_oauth_client.test.oauth_token_id
+  }
 
   policies_path = "%s"
 }
 
 data "tfe_policy_set" "bar" {
-	name = tfe_policy_set.foobar.name
-	organization = tfe_organization.foobar.id
+  name         = tfe_policy_set.foobar.name
+  organization = local.organization_name
 }
-`, rInt,
+`, organization,
 		GITHUB_TOKEN,
 		rInt,
 		GITHUB_POLICY_SET_IDENTIFIER,
@@ -186,13 +194,13 @@ data "tfe_policy_set" "bar" {
 
 func testAccTFEPolicySetDataSourceConfig_notFound(rInt int) string {
 	return fmt.Sprintf(`
-	resource "tfe_organization" "foobar" {
-		name  = "tst-terraform-%d"
-		email = "admin@company.com"
-	}
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
 
-	data "tfe_policy_set" "not-found" {
-		name = "does-not-exist"
-		organization = tfe_organization.foobar.id
-	}`, rInt)
+data "tfe_policy_set" "not-found" {
+  name = "does-not-exist"
+  organization = tfe_organization.foobar.id
+}`, rInt)
 }

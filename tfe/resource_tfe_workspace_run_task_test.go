@@ -12,7 +12,11 @@ import (
 func TestAccTFEWorkspaceRunTask_create(t *testing.T) {
 	skipUnlessRunTasksDefined(t)
 
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
@@ -44,20 +48,24 @@ func TestAccTFEWorkspaceRunTask_create(t *testing.T) {
 func TestAccTFEWorkspaceRunTask_beta_create(t *testing.T) {
 	skipUnlessRunTasksDefined(t)
 	skipUnlessBeta(t)
-	skipIfFreeOnly(t) // Run Tasks requires TFE or a TFC paid/trial subscription
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	workspaceTask := &tfe.WorkspaceRunTask{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEWorkspaceRunTaskDestroy,
 		Steps: []resource.TestStep{
-			testCheckCreateOrgWithRunTasks(orgName),
 			{
-				Config: testAccTFEWorkspaceRunTask_beta_basic(orgName, runTasksURL()),
+				Config: testAccTFEWorkspaceRunTask_beta_basic(org.Name, runTasksURL()),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceRunTaskExists("tfe_workspace_run_task.foobar", workspaceTask),
 					resource.TestCheckResourceAttr("tfe_workspace_run_task.foobar", "enforcement_level", "advisory"),
@@ -65,7 +73,7 @@ func TestAccTFEWorkspaceRunTask_beta_create(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFEWorkspaceRunTask_beta_update(orgName, runTasksURL()),
+				Config: testAccTFEWorkspaceRunTask_beta_update(org.Name, runTasksURL()),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_workspace_run_task.foobar", "enforcement_level", "mandatory"),
 					resource.TestCheckResourceAttr("tfe_workspace_run_task.foobar", "stage", "pre_plan"),
@@ -78,7 +86,11 @@ func TestAccTFEWorkspaceRunTask_beta_create(t *testing.T) {
 func TestAccTFEWorkspaceRunTask_import(t *testing.T) {
 	skipUnlessRunTasksDefined(t)
 
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
@@ -208,13 +220,12 @@ resource "tfe_workspace_run_task" "foobar" {
 
 func testAccTFEWorkspaceRunTask_beta_basic(orgName, runTaskURL string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "%s"
-  email = "admin@company.com"
+locals {
+    organization_name = "%s"
 }
 
 resource "tfe_organization_run_task" "foobar" {
-  organization = tfe_organization.foobar.id
+  organization = local.organization_name
   url          = "%s"
   name         = "foobar-task"
 }
@@ -235,20 +246,19 @@ resource "tfe_workspace_run_task" "foobar" {
 
 func testAccTFEWorkspaceRunTask_beta_update(orgName, runTaskURL string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "%s"
-  email = "admin@company.com"
+locals {
+    organization_name = "%s"
 }
 
 resource "tfe_organization_run_task" "foobar" {
-  organization = tfe_organization.foobar.id
+  organization = local.organization_name
   url          = "%s"
   name         = "foobar-task"
 }
 
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
-  organization = tfe_organization.foobar.id
+  organization = local.organization_name
 }
 
 resource "tfe_workspace_run_task" "foobar" {

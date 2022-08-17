@@ -1540,7 +1540,11 @@ func TestAccTFEWorkspace_importVCSBranch(t *testing.T) {
 func TestAccTFEWorkspace_operationsAndExecutionModeInteroperability(t *testing.T) {
 	skipIfEnterprise(t)
 
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 

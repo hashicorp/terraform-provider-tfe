@@ -6,14 +6,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccTFEWorkspaceRunTaskDataSource_basic(t *testing.T) {
 	skipUnlessRunTasksDefined(t)
 
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 

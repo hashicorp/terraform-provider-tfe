@@ -36,7 +36,11 @@ func TestAccTFEOrganizationRunTask_validateSchemaAttributeUrl(t *testing.T) {
 func TestAccTFEOrganizationRunTask_create(t *testing.T) {
 	skipUnlessRunTasksDefined(t)
 
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
@@ -79,7 +83,11 @@ func TestAccTFEOrganizationRunTask_create(t *testing.T) {
 func TestAccTFEOrganizationRunTask_import(t *testing.T) {
 	skipUnlessRunTasksDefined(t)
 
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 

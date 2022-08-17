@@ -12,7 +12,11 @@ import (
 func TestAccTFEAgentPool_basic(t *testing.T) {
 	skipIfEnterprise(t)
 
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
@@ -40,7 +44,11 @@ func TestAccTFEAgentPool_basic(t *testing.T) {
 func TestAccTFEAgentPool_update(t *testing.T) {
 	skipIfEnterprise(t)
 
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
@@ -79,7 +87,11 @@ func TestAccTFEAgentPool_update(t *testing.T) {
 func TestAccTFEAgentPool_import(t *testing.T) {
 	skipIfEnterprise(t)
 
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
