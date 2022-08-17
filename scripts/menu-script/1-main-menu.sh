@@ -28,7 +28,7 @@ Choose an option:  "
     case $ans in
     1)
 
-        ./custominfo.sh
+        ./12-custominfo.sh
         custommenu
         ;;
 
@@ -227,6 +227,7 @@ $(magentaprint 'MAIN MENU')
 $(greenprint '1)') Info
 $(greenprint '2)') BASIC
 $(greenprint '3)') CUSTOM
+$(greenprint '3)') FINAL STEP (run tfplugindocs)
 $(redprint '0)') Exit
 Choose an option:  "
     read -r ans
@@ -243,6 +244,9 @@ Choose an option:  "
         custommenu
         mainmenu
         ;;
+    4) 
+        ./run-tfplugindocs.sh
+        ;;
     0)
         fn_bye
         ;;
@@ -250,11 +254,6 @@ Choose an option:  "
         fn_fail
         ;;
     esac
-
-    curl -L https://github.com/hashicorp/terraform-plugin-docs/releases/download/v0.13.0/tfplugindocs_0.13.0_darwin_arm64.zip  --output /usr/local/bin/tfplugindocs.zip
-    unzip -u /usr/local/bin/tfplugindocs.zip -d /usr/local/bin/tfplugindocsdir
-    sudo chmod 755 /usr/local/bin/tfplugindocsdir
-    /usr/local/bin/tfplugindocsdir/tfplugindocs
 }
 
 mainmenu

@@ -17,19 +17,18 @@ fn_bye() { echo "Bye bye."; exit 0; }
 fn_fail() { echo "Wrong option." exit 1; }
 
 echo
-read -p "Custom templates are used to add more sections to the basic template..."
-read -p "
-    NOTE: All markdown changes should be made to .tmpl files in the templates directory. 
-        ** Do not directly edit the .md files in the docs directory."
+read -p "Custom templates are used to add any additional sections beyond what is offered by the basic template."
+read -p "NOTE: All markdown changes should be made to .tmpl files in the templates directory. 
+        ** Do not directly edit the .md files in the docs directory as these changes will not be saved. **"
 echo
-read -p "If you are unsure, first run through Main Menu > Basic."
+read -p "If you are unsure, first go to \"Main Menu\" and then \"BASIC\"."
 
 while true; do
     echo
     read -p "   -> Generate a custom template file? [y|n] " yn
     case $yn in
         [Yy]* ) 
-        # TODO: script to create template file
+        ./13-createcustomfile.sh
         read -p "
         File created at templates/resources/resource_name.md.tmpl (edit with markdown)"; break;;
         [Nn]* ) 

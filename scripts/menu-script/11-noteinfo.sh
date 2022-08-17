@@ -11,6 +11,6 @@ echo
 echo
 read -p "***** end *****"
 echo
-echo "Visit https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/agent_pool to see the note on the website."
+read -p "[1] \"\n\n ->\" will create a note, while \"\n\n ~>\" will create a warning."
 echo
-read -p "[1] \"->\" will generate a note, while \"~>\" will generate a warning."
+echo "Visit https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/agent_pool to see the note on the website."
