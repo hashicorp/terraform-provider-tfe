@@ -67,6 +67,12 @@ func skipUnlessRunTasksDefined(t *testing.T) {
 	}
 }
 
+func skipUnlessBeta(t *testing.T) {
+	if !betaFeaturesEnabled() {
+		t.Skip("Skipping test related to a Terraform Cloud/Enterprise beta feature. Set ENABLE_BETA=1 to run.")
+	}
+}
+
 func enterpriseEnabled() bool {
 	return os.Getenv("ENABLE_TFE") == "1"
 }
@@ -77,6 +83,11 @@ func isAcceptanceTest() bool {
 
 func runTasksURL() string {
 	return os.Getenv(RunTasksURLEnvName)
+}
+
+// Checks to see if ENABLE_BETA is set to 1, thereby enabling tests for beta features.
+func betaFeaturesEnabled() bool {
+	return os.Getenv("ENABLE_BETA") == "1"
 }
 
 // Most tests rely on terraform-plugin-sdk/helper/resource.Test to run.  That test helper ensures
