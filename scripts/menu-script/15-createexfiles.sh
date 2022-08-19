@@ -6,10 +6,8 @@ while true; do
         [Yy]* ) 
         read -p "-> What is your example filename?" filename
         echo $filename
-        # TODO: script to create example file (pass in $filename) and add path to template file
         echo
         read -p "File created at examples/resource_directory/example.tf"
-        read -p "Path added to custom template file under # Example Usage"
         echo
         ./14-cust-examplesinfo.sh; break;;
 x
@@ -20,13 +18,13 @@ x
     esac
 done
 
-read -p "-> Please enter your resource or datasource name (tfe_resourcename) " resourcename
+read -p "-> Please enter your resource or datasource name " resourcename
 read -p "-> Please enter your example filename " filename
-path=../../examples/$dir1/$resourcename/$filename.tf
+path=../../examples/$dir1/tfe_$resourcename/$filename.tf
 #echo $path
 mkdir -p $path
 filepath=../../examples/$dir1/$filename.tf
-printpath=examples/$dir1/$resourcename/$filename.tf
+printpath=examples/$dir1/tfe_$resourcename/$filename.tf
 #echo $filepath
 touch $filepath
 echo 

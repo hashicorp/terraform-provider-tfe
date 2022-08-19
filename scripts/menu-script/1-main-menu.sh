@@ -20,7 +20,7 @@ fn_fail() { echo "Wrong option." exit 1; }
 custommenu() {
     echo -ne "
 $(cyanprint 'CUSTOM MENU')
-$(greenprint '1)') Info
+$(greenprint '1)') ReadMe
 $(magentaprint '2)') Return to Main Menu
 $(redprint '0)') Exit
 Choose an option:  "
@@ -48,7 +48,7 @@ Choose an option:  "
 notemenu() {
     echo -ne "
 $(yellowprint 'NOTES MENU')
-$(greenprint '1)') Info
+$(greenprint '1)') ReadMe
 $(greenprint '2)') Return to Basic Menu
 $(cyanprint '3)') Return to Main Menu
 $(redprint '0)') Exit
@@ -77,7 +77,7 @@ Choose an option:  "
 importmenu() {
     echo -ne "
 $(yellowprint 'IMPORT STATEMENT MENU')
-$(greenprint '1)') Info
+$(greenprint '1)') ReadMe
 $(greenprint '2)') Continue to NOTES
 $(cyanprint '3)') Go to Basic Menu
 $(magentaprint '4)') Go to Main Menu
@@ -111,7 +111,7 @@ Choose an option:  "
 examplemenu() {
     echo -ne "
 $(yellowprint 'EXAMPLES MENU')
-$(greenprint '1)') Info
+$(greenprint '1)') ReadMe
 $(greenprint '2)') Continue to IMPORT STATEMENT
 $(cyanprint '3)') Go to Basic Menu
 $(magentaprint '4)') Go to Main Menu
@@ -145,7 +145,7 @@ Choose an option:  "
 descmenu() {
     echo -ne "
 $(yellowprint 'DESCRIPTIONS MENU')
-$(greenprint '1)') Info
+$(greenprint '1)') ReadMe
 $(greenprint '2)') Continue to EXAMPLES
 $(cyanprint '3)') Return to Basic Menu
 $(magentaprint '4)') Go to Main Menu
@@ -183,7 +183,8 @@ $(greenprint '1)') Descriptions
 $(greenprint '2)') Examples
 $(greenprint '3)') Import Statement
 $(greenprint '4)') Notes
-$(magentaprint '5)') Return to Main Menu
+$(greenprint '5)') FINAL STEP (run tfplugindocs)
+$(magentaprint '6)') Return to Main Menu
 $(redprint '0)') Exit
 Choose an option:  "
     read -r ans
@@ -209,6 +210,9 @@ Choose an option:  "
         ;;
 
     5)
+        ./run-tfplugindocs.sh
+        ;;
+    6)
         mainmenu
         basicmenu
         ;;
@@ -224,10 +228,10 @@ Choose an option:  "
 mainmenu() {
     echo -ne "
 $(magentaprint 'MAIN MENU')
-$(greenprint '1)') Info
+$(greenprint '1)') ReadMe
 $(greenprint '2)') BASIC
 $(greenprint '3)') CUSTOM
-$(greenprint '3)') FINAL STEP (run tfplugindocs)
+$(greenprint '4)') FINAL STEP (run tfplugindocs)
 $(redprint '0)') Exit
 Choose an option:  "
     read -r ans

@@ -7,7 +7,6 @@ while true; do
         [Yy]* ) 
         read -p "-> What is your import filename?" filename
         echo $filename
-        # TODO: script to create import file (pass in $filename) and add path to template file
         echo
         read -p "File created."
         read -p "Path added to custom template file under # Import Statement"
