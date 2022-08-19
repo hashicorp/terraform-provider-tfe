@@ -11,7 +11,7 @@
 
 See [PR #595](https://github.com/hashicorp/terraform-provider-tfe/pull/595) for a summary of changes
 
-See **info-project-docsparkle/in-depth-tfplugindocs.md** for more details on how the tool functions and things to watch out for
+See **info-project-docsparkle/1b-in-depth-tfplugindocs.md** for more details on how the tool functions and things to watch out for
 
 ## Providers Using tfplugindocs 
 *internal*
@@ -28,3 +28,5 @@ advanced:
 
 ## Useful Links
 [terraform-plugin-docs Github](https://github.com/hashicorp/terraform-plugin-docs)
+
+[slack thread w/ engineer from tls provider](https://hashicorp.slack.com/archives/CTQBQ9G0Y/p1657141043514899)
