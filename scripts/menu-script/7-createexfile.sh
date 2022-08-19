@@ -12,12 +12,12 @@ while true; do
     esac
 done
 echo
-read -p "Please enter your resource or datasource name (tfe_resourcename) " resourcename
-path=../../examples/$dir1/$resourcename
+read -p "Please enter your resource or datasource name " resourcename
+path=../../examples/$dir1/tfe_$resourcename
 #echo $path
 mkdir -p $path
-filepath=../../examples/$dir1/$resourcename/resource.tf
-printpath=examples/$dir1/$resourcename/resource.tf
+filepath=../../examples/$dir1/tfe_$resourcename/resource.tf
+printpath=examples/$dir1/tfe_$resourcename/resource.tf
 #echo $filepath
 touch $filepath
 echo 
