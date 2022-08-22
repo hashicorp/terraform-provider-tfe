@@ -1,0 +1,51 @@
+name: test
+on:
+  pull_request:
+    branches: [ main ]
+jobs:
+  tests:
+    name: Acceptance Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Sync dependencies
+        run: |
+          go get -v -t -d ./...
+          go mod tidy
+
+      - name: fmt check
+        run: make fmtcheck
+
+      - name: go vet
+        run: make vet
+
+      - name: Install gotestsum
+        run: go install gotest.tools/gotestsum@latest
+
+      - name: Fetch Outputs
+        env:
+          TFE_TOKEN: "${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}"
+        run: |
+          go run .github/scripts/fetch_outputs/main.go hashicorp-v2 tflocal-terraform-provider-tfe
+      - name: Run Tests
+        env:
+          TF_ACC: 1
+          TFC_RUN_TASK_URL: "https://httpstat.us/200"
+          GITHUB_POLICY_SET_IDENTIFIER: "hashicorp/test-policy-set"
+          GITHUB_REGISTRY_MODULE_IDENTIFIER: "hashicorp/terraform-random-module"
+          GITHUB_WORKSPACE_IDENTIFIER: "hashicorp/terraform-random-1"
+          GITHUB_WORKSPACE_BRANCH: "test"
+        run: |
+          source $HOME/.env
+          echo "TESTS=$(go list ./... | grep -v 'vendor')" >> $GITHUB_ENV
+          gotestsum --format short-verbose -- ${{ env.TESTS }} -v -timeout=30m
+

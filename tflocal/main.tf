@@ -11,6 +11,8 @@ module "tflocal" {
   gem_contribsys_key           = var.gem_contribsys_key
   ejson_file_name              = var.ejson_file_name
   ejson_file_content           = var.ejson_file_content
+  artifactory_username         = var.artifactory_username
+  artifactory_token            = var.artifactory_token
   quay_username                = var.quay_username
   quay_password                = var.quay_password
   artifactory_token            = var.artifactory_token
