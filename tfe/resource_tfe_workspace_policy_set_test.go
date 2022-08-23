@@ -13,9 +13,15 @@ import (
 )
 
 func TestAccTFEWorkspacePolicySet_basic(t *testing.T) {
-	skipIfFreeOnly(t)
-
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -23,7 +29,7 @@ func TestAccTFEWorkspacePolicySet_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFEWorkspacePolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspacePolicySet_basic(rInt),
+				Config: testAccTFEWorkspacePolicySet_basic(org.Name, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspacePolicySetExists(
 						"tfe_workspace_policy_set.test"),
@@ -32,7 +38,7 @@ func TestAccTFEWorkspacePolicySet_basic(t *testing.T) {
 			{
 				ResourceName:      "tfe_workspace_policy_set.test",
 				ImportState:       true,
-				ImportStateId:     fmt.Sprintf("tst-terraform-%d/tst-terraform-%d/tst-policy-set-%d", rInt, rInt, rInt),
+				ImportStateId:     fmt.Sprintf("%s/tst-terraform-%d/tst-policy-set-%d", org.Name, rInt, rInt),
 				ImportStateVerify: true,
 			},
 		},
@@ -40,21 +46,27 @@ func TestAccTFEWorkspacePolicySet_basic(t *testing.T) {
 }
 
 func TestAccTFEWorkspacePolicySet_incorrectImportSyntax(t *testing.T) {
-	skipIfFreeOnly(t)
-
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspacePolicySet_basic(rInt),
+				Config: testAccTFEWorkspacePolicySet_basic(org.Name, rInt),
 			},
 			{
 				ResourceName:  "tfe_workspace_policy_set.test",
 				ImportState:   true,
-				ImportStateId: fmt.Sprintf("tst-terraform-%d/tst-terraform-%d", rInt, rInt),
+				ImportStateId: fmt.Sprintf("%s/tst-terraform-%d", org.Name, rInt),
 				ExpectError:   regexp.MustCompile(`Error: invalid workspace policy set input format`),
 			},
 		},
@@ -122,16 +134,11 @@ func testAccCheckTFEWorkspacePolicySetDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccTFEWorkspacePolicySet_basic(rInt int) string {
+func testAccTFEWorkspacePolicySet_basic(orgName string, rInt int) string {
 	return fmt.Sprintf(`
-	resource "tfe_organization" "test" {
-		name  = "tst-terraform-%d"
-		email = "admin@company.com"
-	}
-
 	resource "tfe_workspace" "test" {
 		name         = "tst-terraform-%d"
-		organization = tfe_organization.test.id
+		organization = "%s"
 		auto_apply   = true
 		tag_names    = ["test"]
 	}
@@ -139,11 +146,11 @@ func testAccTFEWorkspacePolicySet_basic(rInt int) string {
 	resource "tfe_policy_set" "test" {
 		name         = "tst-policy-set-%d"
 		description  = "Policy Set"
-		organization = tfe_organization.test.id
+		organization = "%s"
 	}
 
 	resource "tfe_workspace_policy_set" "test" {
 		policy_set_id = tfe_policy_set.test.id
 		workspace_id  = tfe_workspace.test.id
-	}`, rInt, rInt, rInt)
+	}`, rInt, orgName, rInt, orgName)
 }
