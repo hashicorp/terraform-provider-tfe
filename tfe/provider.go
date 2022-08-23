@@ -123,6 +123,7 @@ func Provider() *schema.Provider {
 			"tfe_variable":                    resourceTFEVariable(),
 			"tfe_variable_set":                resourceTFEVariableSet(),
 			"tfe_workspace_variable_set":      resourceTFEWorkspaceVariableSet(),
+			"tfe_workspace_policy_set":        resourceTFEWorkspacePolicySet(),
 		},
 
 		ConfigureFunc: providerConfigure,
