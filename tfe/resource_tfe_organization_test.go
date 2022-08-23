@@ -79,20 +79,22 @@ func TestAccTFEOrganization_full(t *testing.T) {
 }
 
 func TestAccTFEOrganization_update_costEstimation(t *testing.T) {
-	skipIfFreeOnly(t)
+	t.Skip("Skipping this test until the SDK can support importing resources before applying a configuration")
 
-	org := &tfe.Organization{}
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	// First update
-	rInt1 := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	costEstimationEnabled1 := true
 
 	// Second update
-	rInt2 := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	costEstimationEnabled2 := false
+	updatedName := org.Name + "_foobar"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -100,28 +102,13 @@ func TestAccTFEOrganization_update_costEstimation(t *testing.T) {
 		CheckDestroy: testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOrganization_basic(rInt),
+				Config: testAccTFEOrganization_update(org.Name, org.Email, costEstimationEnabled1),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
 						"tfe_organization.foobar", org),
-					testAccCheckTFEOrganizationAttributesBasic(org, orgName),
+					testAccCheckTFEOrganizationAttributesUpdated(org, org.Name, costEstimationEnabled1),
 					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "name", orgName),
-					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "email", "admin@company.com"),
-					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "collaborator_auth_policy", "password"),
-				),
-			},
-
-			{
-				Config: testAccTFEOrganization_update(rInt1, costEstimationEnabled1),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEOrganizationExists(
-						"tfe_organization.foobar", org),
-					testAccCheckTFEOrganizationAttributesUpdated(org, fmt.Sprintf("tst-terraform-%d", rInt1), costEstimationEnabled1),
-					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "name", fmt.Sprintf("tst-terraform-%d", rInt1)),
+						"tfe_organization.foobar", "name", org.Name),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "email", "admin-updated@company.com"),
 					resource.TestCheckResourceAttr(
@@ -140,13 +127,13 @@ func TestAccTFEOrganization_update_costEstimation(t *testing.T) {
 			},
 
 			{
-				Config: testAccTFEOrganization_update(rInt2, costEstimationEnabled2),
+				Config: testAccTFEOrganization_update(updatedName, org.Email, costEstimationEnabled2),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
 						"tfe_organization.foobar", org),
-					testAccCheckTFEOrganizationAttributesUpdated(org, fmt.Sprintf("tst-terraform-%d", rInt2), costEstimationEnabled2),
+					testAccCheckTFEOrganizationAttributesUpdated(org, updatedName, costEstimationEnabled2),
 					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "name", fmt.Sprintf("tst-terraform-%d", rInt2)),
+						"tfe_organization.foobar", "name", updatedName),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "email", "admin-updated@company.com"),
 					resource.TestCheckResourceAttr(
@@ -386,14 +373,14 @@ resource "tfe_organization" "foobar" {
 }`, rInt)
 }
 
-func testAccTFEOrganization_update(rInt int, costEstimationEnabled bool) string {
+func testAccTFEOrganization_update(orgName string, orgEmail string, costEstimationEnabled bool) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name                     = "tst-terraform-%d"
-  email                    = "admin-updated@company.com"
+  name                     = "%s"
+  email                    = "%s"
   session_timeout_minutes  = 3600
   session_remember_minutes = 3600
   owners_team_saml_role_id = "owners"
   cost_estimation_enabled  = %t
-}`, rInt, costEstimationEnabled)
+}`, orgName, orgEmail, costEstimationEnabled)
 }

@@ -11,7 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
 	tfmux "github.com/hashicorp/terraform-plugin-mux"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/hashicorp/terraform-provider-tfe/version"
@@ -307,25 +306,3 @@ var GITHUB_POLICY_SET_PATH = os.Getenv("GITHUB_POLICY_SET_PATH")
 var GITHUB_REGISTRY_MODULE_IDENTIFIER = os.Getenv("GITHUB_REGISTRY_MODULE_IDENTIFIER")
 var TFE_USER1 = os.Getenv("TFE_USER1")
 var TFE_USER2 = os.Getenv("TFE_USER2")
-
-func testCheckCreateOrgWithRunTasks(organizationName string) resource.TestStep {
-	check := func(_ *terraform.State) error {
-		client, err := getClientUsingEnv()
-		if err != nil {
-			return err
-		}
-		entitlements, err := client.Organizations.ReadEntitlements(context.TODO(), organizationName)
-		if err != nil {
-			return fmt.Errorf("error reading entitlements: %w", err)
-		}
-		if entitlements == nil || !entitlements.RunTasks {
-			return fmt.Errorf("Organization %s is not entitled to use Run Tasks", organizationName)
-		}
-		return nil
-	}
-
-	return resource.TestStep{
-		Config: fmt.Sprintf("resource \"tfe_organization\" \"foobar\" {\n name = %q\nemail = \"admin@company.com\"\n}", organizationName),
-		Check:  check,
-	}
-}

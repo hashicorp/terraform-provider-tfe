@@ -2,9 +2,7 @@ package tfe
 
 import (
 	"fmt"
-	"math/rand"
 	"testing"
-	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -12,11 +10,17 @@ import (
 )
 
 func TestAccTFEAgentPool_basic(t *testing.T) {
-	skipIfFreeOnly(t)
 	skipIfEnterprise(t)
 
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
 	agentPool := &tfe.AgentPool{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -24,7 +28,7 @@ func TestAccTFEAgentPool_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFEAgentPoolDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEAgentPool_basic(rInt),
+				Config: testAccTFEAgentPool_basic(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEAgentPoolExists(
 						"tfe_agent_pool.foobar", agentPool),
@@ -38,11 +42,17 @@ func TestAccTFEAgentPool_basic(t *testing.T) {
 }
 
 func TestAccTFEAgentPool_update(t *testing.T) {
-	skipIfFreeOnly(t)
 	skipIfEnterprise(t)
 
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
 	agentPool := &tfe.AgentPool{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -50,7 +60,7 @@ func TestAccTFEAgentPool_update(t *testing.T) {
 		CheckDestroy: testAccCheckTFEAgentPoolDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEAgentPool_basic(rInt),
+				Config: testAccTFEAgentPool_basic(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEAgentPoolExists(
 						"tfe_agent_pool.foobar", agentPool),
@@ -61,7 +71,7 @@ func TestAccTFEAgentPool_update(t *testing.T) {
 			},
 
 			{
-				Config: testAccTFEAgentPool_update(rInt),
+				Config: testAccTFEAgentPool_update(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEAgentPoolExists(
 						"tfe_agent_pool.foobar", agentPool),
@@ -75,10 +85,15 @@ func TestAccTFEAgentPool_update(t *testing.T) {
 }
 
 func TestAccTFEAgentPool_import(t *testing.T) {
-	skipIfFreeOnly(t)
 	skipIfEnterprise(t)
 
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -86,9 +101,8 @@ func TestAccTFEAgentPool_import(t *testing.T) {
 		CheckDestroy: testAccCheckTFEAgentPoolDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEAgentPool_basic(rInt),
+				Config: testAccTFEAgentPool_basic(org.Name),
 			},
-
 			{
 				ResourceName:      "tfe_agent_pool.foobar",
 				ImportState:       true,
@@ -97,7 +111,7 @@ func TestAccTFEAgentPool_import(t *testing.T) {
 			{
 				ResourceName:      "tfe_agent_pool.foobar",
 				ImportState:       true,
-				ImportStateId:     fmt.Sprintf("tst-terraform-%d/agent-pool-test", rInt),
+				ImportStateId:     fmt.Sprintf("%s/agent-pool-test", org.Name),
 				ImportStateVerify: true,
 			},
 		},
@@ -174,28 +188,18 @@ func testAccCheckTFEAgentPoolDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccTFEAgentPool_basic(rInt int) string {
+func testAccTFEAgentPool_basic(organization string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
 resource "tfe_agent_pool" "foobar" {
   name         = "agent-pool-test"
-  organization = tfe_organization.foobar.id
-}`, rInt)
+  organization = "%s"
+}`, organization)
 }
 
-func testAccTFEAgentPool_update(rInt int) string {
+func testAccTFEAgentPool_update(organization string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
 resource "tfe_agent_pool" "foobar" {
   name         = "agent-pool-updated"
-  organization = tfe_organization.foobar.id
-}`, rInt)
+  organization = "%s"
+}`, organization)
 }

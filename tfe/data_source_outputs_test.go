@@ -16,7 +16,6 @@ import (
 )
 
 func TestAccTFEOutputs(t *testing.T) {
-	skipIfFreeOnly(t)
 	skipIfUnitTest(t)
 
 	client, err := getClientUsingEnv()
@@ -27,7 +26,7 @@ func TestAccTFEOutputs(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	fileName := "test-fixtures/state-versions/terraform.tfstate"
 	orgName, wsName, orgCleanup := createStateVersion(t, client, rInt, fileName)
-	defer orgCleanup()
+	t.Cleanup(orgCleanup)
 
 	waitForOutputs(t, client, orgName, wsName)
 
@@ -61,7 +60,6 @@ func TestAccTFEOutputs(t *testing.T) {
 }
 
 func TestAccTFEOutputs_emptyOutputs(t *testing.T) {
-	skipIfFreeOnly(t)
 	skipIfUnitTest(t)
 
 	client, err := getClientUsingEnv()
@@ -72,7 +70,7 @@ func TestAccTFEOutputs_emptyOutputs(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	fileName := "test-fixtures/state-versions/terraform-empty-outputs.tfstate"
 	orgName, wsName, orgCleanup := createStateVersion(t, client, rInt, fileName)
-	defer orgCleanup()
+	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -124,6 +122,9 @@ func createStateVersion(t *testing.T, client *tfe.Client, rInt int, fileName str
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	upgradeOrganizationSubscription(t, client, org)
+
 	orgCleanup = func() {
 		if err := client.Organizations.Delete(ctx, org.Name); err != nil {
 			t.Errorf("Error destroying organization! WARNING: Dangling resources\n"+
