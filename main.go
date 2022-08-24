@@ -51,13 +51,17 @@ func main() {
 
 	err = tf5server.Serve(tfeProviderName, func() tfprotov5.ProviderServer {
 		return mux.Server()
-	}, withServeOptions(ctx, debugFlag)...)
+	},
+		/* TO-DO: replace with `tf5server.WithManagedDebug()` when we upgrade terraform-plugin-go to v0.6.0 or newer */
+		withServeOptions(ctx, debugFlag)...,
+	)
 	if err != nil {
 		log.Printf("[ERROR] Could not start serving the ProviderServer: %v", err)
 		os.Exit(1)
 	}
 }
 
+/* TO-DO: remove when we upgrade terraform-plugin-go to v0.6.0 or newer */
 func withServeOptions(ctx context.Context, debugFlag *bool) []tf5server.ServeOpt {
 	serveOpts := []tf5server.ServeOpt{}
 	if *debugFlag {
@@ -106,3 +110,5 @@ func printReattachConfig(config *plugin.ReattachConfig) {
 	}
 	fmt.Printf("# Provider server started\nexport TF_REATTACH_PROVIDERS='%s'\n", string(reattachStr))
 }
+
+/* TO-DO: remove when we upgrade terraform-plugin-go to v0.6.0 or newer */
