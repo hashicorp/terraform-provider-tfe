@@ -152,8 +152,6 @@ dlv exec \
 -- -debug
 ```
 
-*Current issue where you may need to manually kill the delve debugger session.*
-
 ##### Visual Studio Code
 
 Example taken from [here](https://www.terraform.io/plugin/debugging#visual-studio-code)
@@ -203,7 +201,7 @@ provider_installation {
 }
 ```
 
-Initialize terraform in the project you wish to debug from via `terraform init`
+Initialize Terraform in the project you wish to debug from via `terraform init`
 
 Should see the following output with the previous examples being used
 
@@ -214,10 +212,16 @@ Initializing provider plugins...
 - Installed hashicorp/tfe v9.9.9 (unauthenticated)
 ```
 
-Take the output from debugger session from terraform-provider-tfe project `TF_REATTACH_PROVIDERS` and either export into your env shell or lead your terraform commands setting this value
+Copy the value of `TF_REATTACH_PROVIDERS` outputted by the debugger session and either export into your shell or lead your Terraform commands setting this value:
 
 ```
 TF_REATTACH_PROVIDERS='{...}' terraform {command}
 ```
 
 The breakpoints you have set will halt execution and show you the current variable values.
+
+If using the Delve CLI, include the full qualifed path to set a breakpoint.
+
+```
+(delve) b /Users/{user}/path/to/terraform-provider-tfe/tfe/resource_example.go:35
+```
