@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"log"
 	"os"
 
@@ -24,6 +25,14 @@ func main() {
 	logFlags &^= (log.Ldate | log.Ltime)
 	log.SetFlags(logFlags)
 
+	debugFlag := flag.Bool("debug", false, "Start provider in debug mode.")
+	flag.Parse()
+
+	var serveOpts []tf5server.ServeOpt
+
+	if *debugFlag {
+		serveOpts = append(serveOpts, tf5server.WithManagedDebug())
+	}
 	// terraform-plugin-mux here is used to combine multiple Terraform providers
 	// built using different SDK and frameworks in order to combine them into a
 	// single logical provider for Terraform to work with.
@@ -43,7 +52,7 @@ func main() {
 
 	err = tf5server.Serve(tfeProviderName, func() tfprotov5.ProviderServer {
 		return mux.Server()
-	})
+	}, serveOpts...)
 	if err != nil {
 		log.Printf("[ERROR] Could not start serving the ProviderServer: %v", err)
 		os.Exit(1)
