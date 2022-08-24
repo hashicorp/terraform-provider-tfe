@@ -1,3 +1,8 @@
+## v0.36.1 (August 24th, 2022)
+
+BUG FIXES:
+* Bump `terraform-plugin-go` to `v0.6.0`, due to a crash when `tfe_outputs` had null values. ([#611](https://github.com/hashicorp/terraform-provider-tfe/pull/611))
+
 ## v0.36.0 (August 16th, 2022)
 
 FEATURES:
