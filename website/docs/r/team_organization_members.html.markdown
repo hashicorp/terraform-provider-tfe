@@ -1,14 +1,14 @@
 ---
 layout: "tfe"
-page_title: "Terraform Enterprise: tfe_team_organization_member"
-sidebar_current: "docs-resource-tfe-team-organization_member"
+page_title: "Terraform Enterprise: tfe_team_organization_members"
+sidebar_current: "docs-resource-tfe-team-organization_members"
 description: |-
-  Add or remove a user from a team.
+  Add or remove users from a team based on their organization memberships.
 ---
 
-# tfe_team_organization_member
+# tfe_team_organization_members
 
-Add or remove a team member using a
+Add or remove one or more team members using a
 [tfe_organization_membership](organization_membership.html).
 
 ~> **NOTE** on managing team memberships: Terraform currently provides four
@@ -33,9 +33,17 @@ resource "tfe_organization_membership" "test" {
   email = "example@hashicorp.com"
 }
 
-resource "tfe_team_organization_member" "test" {
+resource "tfe_organization_membership" "sample" {
+  organization = "my-org-name"
+  email = "sample@hashicorp.com"
+}
+
+resource "tfe_team_organization_members" "test" {
   team_id = tfe_team.test.id
-  organization_membership_id = tfe_organization_membership.test.id
+  organization_membership_ids = [
+    tfe_organization_membership.test.id,
+    tfe_organization_membership.sample.id
+  ]
 }
 ```
 
@@ -44,13 +52,13 @@ resource "tfe_team_organization_member" "test" {
 The following arguments are supported:
 
 * `team_id` - (Required) ID of the team.
-* `organization_membership_id` - (Required) ID of the organization membership.
+* `organization_membership_ids` - (Required) IDs of organization memberships to be added.
 
 ## Import
 
-A team member can be imported; use `<TEAM ID>/<ORGANIZATION MEMBERSHIP ID>`
+A resource can be imported by using the team ID `<TEAM ID>`
 as the import ID. For example:
 
 ```shell
-terraform import tfe_team_organization_member.test team-47qC3LmA47piVan7/ou-2342390sdf0jj
+terraform import tfe_team_organization_members.test team-47qC3LmA47piVan7
 ```
