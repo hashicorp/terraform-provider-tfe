@@ -37,9 +37,14 @@ func resourceTFETeamOrganizationMembers() *schema.Resource {
 func resourceTFETeamOrganizationMembersCreate(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
-	// Get the team ID and username..
+	// Get the team ID.
 	teamID := d.Get("team_id").(string)
-	organizationMembershipIDs := d.Get("organization_membership_ids").([]string)
+
+	var organizationMembershipIDs []string
+	// Get all organization membership IDs
+	for _, id := range d.Get("organization_membership_ids").(*schema.Set).List() {
+		organizationMembershipIDs = append(organizationMembershipIDs, id.(string))
+	}
 
 	// Create a new options struct.
 	options := tfe.TeamMemberAddOptions{
