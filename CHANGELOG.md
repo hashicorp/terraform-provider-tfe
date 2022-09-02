@@ -6,6 +6,7 @@ FEATURES:
 
 BUG FIXES:
 * Bump `terraform-plugin-go` to `v0.6.0`, due to a crash when `tfe_outputs` had null values. ([#611](https://github.com/hashicorp/terraform-provider-tfe/pull/611))
+* Fix README and docs to match current release. ([#620](https://github.com/hashicorp/terraform-provider-tfe/pull/620))
 
 ## v0.36.0 (August 16th, 2022)
 
