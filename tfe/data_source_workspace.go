@@ -54,7 +54,7 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
-			"drift_detection": {
+			"assessments_enabled": {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
@@ -188,7 +188,7 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("allow_destroy_plan", workspace.AllowDestroyPlan)
 	d.Set("auto_apply", workspace.AutoApply)
 	d.Set("description", workspace.Description)
-	d.Set("drift_detection", workspace.DriftDetection)
+	d.Set("assessments_enabled", workspace.AssessmentsEnabled)
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
 	d.Set("operations", workspace.Operations)
 	d.Set("policy_check_failures", workspace.PolicyCheckFailures)

@@ -48,7 +48,7 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "speculative_enabled", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "drift_detection", "false"),
+						"tfe_workspace.foobar", "assessments_enabled", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "structured_run_output_enabled", "true"),
 					resource.TestCheckResourceAttr(
@@ -2156,7 +2156,7 @@ func testAccCheckTFEWorkspaceDestroy(s *terraform.State) error {
 	return nil
 }
 
-func TestAccTFEWorkspace_basicDriftDetection(t *testing.T) {
+func TestAccTFEWorkspace_basicAssessmentsEnabled(t *testing.T) {
 	skipIfFreeOnly(t)
 	skipIfEnterprise(t)
 
@@ -2177,18 +2177,18 @@ func TestAccTFEWorkspace_basicDriftDetection(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-test"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "drift_detection", "false"),
+						"tfe_workspace.foobar", "assessments_enabled", "false"),
 				),
 			},
 			{
-				Config: testAccTFEWorkspace_updateDriftDetection(rInt),
+				Config: testAccTFEWorkspace_updateAssessmentsEnabled(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-updated"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "drift_detection", "true"),
+						"tfe_workspace.foobar", "assessments_enabled", "true"),
 				),
 			},
 		},
@@ -2422,7 +2422,7 @@ resource "tfe_workspace" "foobar" {
 }`, rInt)
 }
 
-func testAccTFEWorkspace_updateDriftDetection(rInt int) string {
+func testAccTFEWorkspace_updateAssessmentsEnabled(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
@@ -2433,7 +2433,7 @@ resource "tfe_workspace" "foobar" {
   name                  = "workspace-updated"
   organization          = tfe_organization.foobar.id
   description           = "My favorite workspace!"
-	drift_detection       = true
+	assessments_enabled       = true
   allow_destroy_plan    = false
   auto_apply            = true
   tag_names             = ["fav", "test"]
