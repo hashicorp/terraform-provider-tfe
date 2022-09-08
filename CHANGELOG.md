@@ -1,112 +1,3 @@
-## Unreleased
-
-FEATURES:
-* r/tfe_workspace_run_task, d/tfe_workspace_run_task: Add `stage` attribute to workspace run tasks. ([#555](https://github.com/hashicorp/terraform-provider-tfe/pull/555))
-* r/tfe_workspace_policy_set: Add ability to attach an existing `workspace` to an existing `policy set`. ([#589](https://github.com/hashicorp/terraform-provider-tfe/pull/589))
-
-BUG FIXES:
-* Bump `terraform-plugin-go` to `v0.6.0`, due to a crash when `tfe_outputs` had null values. ([#611](https://github.com/hashicorp/terraform-provider-tfe/pull/611))
-* Fix README and docs to match current release. ([#620](https://github.com/hashicorp/terraform-provider-tfe/pull/620))
-
-## v0.36.0 (August 16th, 2022)
-
-FEATURES:
-* r/tfe_organization_run_task, d/tfe_organization_run_task: Add `description` attribute to organization run tasks. ([#585](https://github.com/hashicorp/terraform-provider-tfe/pull/585))
-* d/tfe_policy_set: Add datasource for policy_set ([#592](https://github.com/hashicorp/terraform-provider-tfe/pull/592))
-* r/tfe_workspace: Adds `tags_regex` attribute to `vcs_repo` for workspaces, enabling a workspace to trigger runs for matching Git tags. ([#549](https://github.com/hashicorp/terraform-provider-tfe/pull/549))
-* r/agent_pool: Agent Pools can now be imported using `<ORGANIZATION NAME>/<AGENT POOL NAME>` ([#561](https://github.com/hashicorp/terraform-provider-tfe/pull/561))
-
-BUG FIXES:
-* d/tfe_outputs: Fix a bug causing sensitive values to be missing from tfe_outputs ([#565](https://github.com/hashicorp/terraform-provider-tfe/pull/565))
-
-## 0.35.0 (July 27th, 2022)
-
-BREAKING CHANGES:
-* `r/tfe_organization`: `admin_settings` attribute was removed after being released prematurely in 0.34.0, breaking existing configurations due to requiring a token with admin privileges ([#573](https://github.com/hashicorp/terraform-provider-tfe/pull/573))
-
-BUG FIXES:
-* r/tfe_registry_module: Added `Computed` modifier to attributes in order to prevent unnecessary resource replacement ([#572](https://github.com/hashicorp/terraform-provider-tfe/pull/572))
-
-## 0.34.0 (July 26th, 2022)
-
-BUG FIXES:
-* Removed nonworking example from `tfe_variable_set` docs ([#562](https://github.com/hashicorp/terraform-provider-tfe/pull/562))
-* Removed `ForceNew` modifier from `name` attribute in `r/tfe_team` ([#566](https://github.com/hashicorp/terraform-provider-tfe/pull/566))
-* r/tfe_workspace: Fix `trigger-prefixes` could not be updated because of the conflict with `trigger-patterns` in some cases - as described in this [GitHub Issue](https://github.com/hashicorp/terraform-provider-tfe/issues/552) ([#564](https://github.com/hashicorp/terraform-provider-tfe/pull/564/))
-
-FEATURES:
-* d/agent_pool: Improve efficiency of reading agent pool data when the target organization has more than 20 agent pools ([#508](https://github.com/hashicorp/terraform-provider-tfe/pull/508))
-* Added warning logs for 404 error responses ([#538](https://github.com/hashicorp/terraform-provider-tfe/pull/538))
-* r/tfe_registry_module: Add ability to create both public and private `registry_modules` without VCS. ([#546](https://github.com/hashicorp/terraform-provider-tfe/pull/546))
-
-DEPRECATION NOTICE:
-* The `registry_modules` import format `<ORGANIZATION>/<REGISTRY MODULE NAME>/<REGISTRY MODULE PROVIDER>/<REGISTRY MODULE ID>` has been deprecated in favour of `<ORGANIZATION>/<REGISTRY_NAME>/<NAMESPACE>/<REGISTRY MODULE NAME>/<REGISTRY MODULE PROVIDER>/<REGISTRY MODULE ID>` to support public and private `registry_modules`.
-
-## 0.33.0 (July 8th, 2022)
-
-FEATURES:
-* **New Resource**: `tfe_workspace_variable_set` ([#537](https://github.com/hashicorp/terraform-provider-tfe/pull/537)) adds the ability to assign a variable set to a workspace in a single, flexible resource.
-* r/tfe_workspace, d/tfe_workspace: `trigger-patterns` ([#502](https://github.com/hashicorp/terraform-provider-tfe/pull/502)) attribute is introduced to support specifying a set of [glob patterns](https://www.terraform.io/cloud-docs/workspaces/settings/vcs#glob-patterns-for-automatic-run-triggering) for automatic VCS run triggering.
-* r/organization: Add `workspace_limit` setting, available only in Terraform Enterprise ([#521](https://github.com/hashicorp/terraform-provider-tfe/pull/521))
-
-DEPRECATION NOTICE: The `workspace_ids` argument on `tfe_variable_set` has been labelled as deprecated and should not be used in conjunction with `tfe_workspace_variable_set`.
-
-## 0.32.1 (June 21st, 2022)
-
-BUG FIXES:
-
-* Fixed a bug in the latest release where a team data source could be populated with the wrong team. ([#530](https://github.com/hashicorp/terraform-provider-tfe/pull/530))
-
-## 0.32.0 (June 20th, 2022)
-
-0.32.0 is an impactful release that includes several bug fixes, support for [run tasks](https://www.terraform.io/cloud-docs/workspaces/settings/run-tasks#run-tasks) and several breaking changes that you should review carefully.
-
-BREAKING CHANGES:
-* **Removed Authentication Method**: Host-specific TF_TOKEN_... environment variable (added in 0.31.0) can no longer be used for token authentication. This method of authentication is incompatible with the Terraform Cloud remote execution model. Please use the TFE_TOKEN environment variable.
-* r/tfe_workspace: Default value of the `file_triggers_enabled` field is changed to `false`. This will align the
-  `file_triggers_enabled` field default value with the default value for the same field in the
-  [TFC API](https://www.terraform.io/cloud-docs/api-docs/workspaces).
-  If the value of the `file_triggers_enabled` field was not explicitly set and either of the fields `working_directory`
-  (not an empty string) or `trigger_prefixes` was used - to keep the behavior unchanged, the `file_trigger_enabled`
-  field should now explicitly be set to `true`. ([#510](https://github.com/hashicorp/terraform-provider-tfe/pull/510/files))
-* r/tfe_team_access: The `permissions` attribute requires `run_tasks` in the block. ([#487](https://github.com/hashicorp/terraform-provider-tfe/pull/487))
-
-BUG FIXES:
-* Prevent overwriting `vcs_repo` attributes in `r/tfe_workspace` when update API call fails ([#498](https://github.com/hashicorp/terraform-provider-tfe/pull/498))
-* Fix panic crash on `trigger_prefixes` update in `r/tfe_workspace` when given empty strings ([#518](https://github.com/hashicorp/terraform-provider-tfe/pull/518))
-
-FEATURES:
-* r/team, d/team: Add manage_run_tasks to the tfe_team organization_access attributes ([#486](https://github.com/hashicorp/terraform-provider-tfe/pull/486))
-* **New Resource**: `tfe_organization_run_task` ([#488](https://github.com/hashicorp/terraform-provider-tfe/pull/488))
-* **New Resource**: `tfe_workspace_run_task` ([#488](https://github.com/hashicorp/terraform-provider-tfe/pull/488))
-* **New Data Source**: d/tfe_organization_run_task ([#488](https://github.com/hashicorp/terraform-provider-tfe/pull/488))
-* **New Data Source**: d/tfe_workspace_run_task ([#488](https://github.com/hashicorp/terraform-provider-tfe/pull/488))
-* r/tfe_notification_configuration: Add Microsoft Teams notification type ([#484](https://github.com/hashicorp/terraform-provider-tfe/pull/484))
-* d/workspace_ids: Add `exclude_tags` to `tfe_workspace_ids` attributes ([#523](https://github.com/hashicorp/terraform-provider-tfe/pull/523))
-
-## 0.31.0 (April 21, 2022)
-
-BUG FIXES:
-* Sensitive values within certain Authorization headers are now redacted from TRACE and DEBUG logs ([#479](https://github.com/hashicorp/terraform-provider-tfe/pull/479))
-* r/tfe_variable_set: Clarified and fixed variable_set documentation and examples ([#473](https://github.com/hashicorp/terraform-provider-tfe/pull/473)) and ([#472](https://github.com/hashicorp/terraform-provider-tfe/pull/472))
-
-FEATURES:
-* r/team, d/team: Add sso_team_id to the tfe_team attributes ([#457](https://github.com/hashicorp/terraform-provider-tfe/pull/457))
-* **New Authentication Method**: Host-specific TF_TOKEN_... variable can be used for token authentication. See provider documentation for details. ([#477](https://github.com/hashicorp/terraform-provider-tfe/pull/477))
-
-## 0.30.2 (April 01, 2022)
-
-BUG FIXES:
-* r/tfe_variable_set: Fixed import documentation and examples ([#466](https://github.com/hashicorp/terraform-provider-tfe/pull/466))
-* r/tfe_variable: Fixed import documentation and examples ([#466](https://github.com/hashicorp/terraform-provider-tfe/pull/466))
-
-## 0.30.1 (April 01, 2022)
-
-BUG FIXES:
-* d/tfe_variable_set: Renamed variable_sets data source to variable_set in documentation ([#458](https://github.com/hashicorp/terraform-provider-tfe/pull/458))
-* r/tfe_variable_set: Fixed examples in documentation for specifying workspace_ids ([#461](https://github.com/hashicorp/terraform-provider-tfe/pull/461))
-* r/tfe_variable_set: Fixed examples in documentation for variable_set_id ([#462](https://github.com/hashicorp/terraform-provider-tfe/pull/462))
-
 ## 0.30.0 (March 29, 2022)
 
 FEATURES:
@@ -117,7 +8,7 @@ FEATURES:
 ## 0.29.0 (March 24, 2022)
 
 BUG FIXES:
-* r/ssh_key: Removed ability to update ssh value, which never worked ([#432](https://github.com/hashicorp/terraform-provider-tfe/pull/432))
+* r/ssh_key: Removed ability to update ssh value, which never worked ([#432](https://github.com/hashicorp/terraform-provider-tfe/pull/432)) 
 
 ENHANCEMENTS:
 * r/team: Add `manage_providers` and `manage_modules` attributes to resource schema ([#431](https://github.com/hashicorp/terraform-provider-tfe/pull/431))
@@ -343,7 +234,7 @@ ENHANCEMENTS:
 * r/tfe_notification_configuration: Added support for email notification configuration by adding support for `destination_type` of `email` and associated schema attributes `email_user_ids` and (TFE only) `email_addresses` ([#191](https://github.com/hashicorp/terraform-provider-tfe/pull/191))
 * r/tfe_organization_membership: Added ability to import organization memberships and added new computed attribute `user_id` ([#191](https://github.com/hashicorp/terraform-provider-tfe/pull/191))
 
-NOTES:
+NOTES: 
 * Using `destination_type` of `email` with resource `tfe_notification_configuration` requires using the provider with Terraform Cloud or an instance of Terraform Enterprise at least as recent as v202005-1.
 
 ## 0.19.0 (June 17, 2020)
@@ -368,11 +259,11 @@ ENHANCEMENTS:
 * r/tfe_run_trigger: Added deprecation warning to the `workspace_external_id` attribute, preferring `workspace_id` instead ([#182](https://github.com/hashicorp/terraform-provider-tfe/pull/182))
 
 NOTES:
-* All deprecated attributes will be removed 3 months after the release of v0.18.0. You will have until September 3, 2020 to migrate to the preferred attributes.
+* All deprecated attributes will be removed 3 months after the release of v0.18.0. You will have until September 3, 2020 to migrate to the preferred attributes. 
 * More information about these deprecations can be found in the description of [#182](https://github.com/hashicorp/terraform-provider-tfe/pull/182)
-* d/tfe_workspace_ids: The deprecation warning for the `ids` attribute will not go away until the attribute is removed in a future version.
+* d/tfe_workspace_ids: The deprecation warning for the `ids` attribute will not go away until the attribute is removed in a future version. 
 This is due to a [limitation of the 1.0 version of the Terraform SDK](https://github.com/hashicorp/terraform/issues/7569) for deprecation warnings on attributes that aren't specified in a configuration.
-If you have already changed all references to this data source's `ids` attribute to the new `full_names` attribute, you can ignore the warning.
+If you have already changed all references to this data source's `ids` attribute to the new `full_names` attribute, you can ignore the warning.  
 
 
 ## 0.17.1 (May 27, 2020)
@@ -416,8 +307,8 @@ ENHANCEMENTS:
 
 BUG FIXES:
 
-* t/tfe_workspace: Issues with updating `working_directory` ([[#137](https://github.com/hashicorp/terraform-provider-tfe/pull/137)])
-  and `trigger_prefixes` ([[#138](https://github.com/hashicorp/terraform-provider-tfe/pull/138)]) when removed from the configuration.
+* t/tfe_workspace: Issues with updating `working_directory` ([[#137](https://github.com/hashicorp/terraform-provider-tfe/pull/137)]) 
+  and `trigger_prefixes` ([[#138](https://github.com/hashicorp/terraform-provider-tfe/pull/138)]) when removed from the configuration. 
   Special note: if you have workspaces which are configured through the TFE provider, but have set the working directory or trigger prefixes manually, through the UI, you'll need to update your configuration.
 
 ## 0.14.0 (February 20, 2020)
@@ -444,7 +335,7 @@ This will warn users that this version of the provider does not support Terrafor
 BREAKING CHANGES:
 
 * r/tfe_variable: Update the workspace variable resource to utilize the "nested" routes that are now preferred ([[#123](https://github.com/hashicorp/terraform-provider-tfe/pull/123)])
-This change is incompatible with Terraform Enterprise versions < 202001-1.
+This change is incompatible with Terraform Enterprise versions < 202001-1. 
 
 ENHANCEMENTS:
 
