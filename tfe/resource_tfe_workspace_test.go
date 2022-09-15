@@ -2157,7 +2157,6 @@ func testAccCheckTFEWorkspaceDestroy(s *terraform.State) error {
 }
 
 func TestAccTFEWorkspace_basicAssessmentsEnabled(t *testing.T) {
-	skipIfFreeOnly(t)
 	skipIfEnterprise(t)
 
 	workspace := &tfe.Workspace{}

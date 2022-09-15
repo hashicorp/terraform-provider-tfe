@@ -175,7 +175,7 @@ func resourceTFEOrganizationUpdate(d *schema.ResourceData, meta interface{}) err
 
 	// If cost_estimation_enabled is supplied, set it using the options struct.
 	if assessmentsEnforced, ok := d.GetOkExists("assessments_enforced"); ok {
-		options.assessmentsEnforced = tfe.Bool(assessmentsEnforced.(bool))
+		options.AssessmentsEnforced = tfe.Bool(assessmentsEnforced.(bool))
 	}
 
 	log.Printf("[DEBUG] Update configuration of organization: %s", d.Id())
