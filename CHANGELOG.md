@@ -1,8 +1,7 @@
 ## Unreleased
  * r/tfe_workspace: Changes in `agent_pool_id` and `execution_mode` attributes are now detected and applied. ([#607](https://github.com/hashicorp/terraform-provider-tfe/pull/607))
- * r/tfe_workspace: Added attribute for drift detection setting ([550](https://github.com/hashicorp/terraform-provider-tfe/pull/550))
- * d/tfe_workspace: Added attribute for drift detection setting ([550](https://github.com/hashicorp/terraform-provider-tfe/pull/550))
-
+ * r/tfe_workspace: Added attribute for health assessments (drift detection) setting ([550](https://github.com/hashicorp/terraform-provider-tfe/pull/550))
+ * d/tfe_workspace: Added attribute for health assessments (drift detection) setting ([550](https://github.com/hashicorp/terraform-provider-tfe/pull/550))
 
 FEATURES:
 * r/tfe_workspace_run_task, d/tfe_workspace_run_task: Add `stage` attribute to workspace run tasks. ([#555](https://github.com/hashicorp/terraform-provider-tfe/pull/555))
