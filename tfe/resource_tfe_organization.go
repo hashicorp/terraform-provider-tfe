@@ -77,7 +77,6 @@ func resourceTFEOrganization() *schema.Resource {
 			"assessments_enforced": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				Computed: true,
 			},
 		},
 	}
@@ -129,7 +128,11 @@ func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error
 	d.Set("owners_team_saml_role_id", org.OwnersTeamSAMLRoleID)
 	d.Set("cost_estimation_enabled", org.CostEstimationEnabled)
 	d.Set("send_passing_statuses_for_untriggered_speculative_plans", org.SendPassingStatusesForUntriggeredSpeculativePlans)
-	d.Set("assessments_enforced", org.AssessmentsEnforced)
+
+	//TFE (onprem) does not have access to this feature yet and cannot be expected to return this attribute
+	if org.AssessmentsEnforced != nil {
+		d.Set("assessments_enforced", org.AssessmentsEnforced)
+	}
 
 	return nil
 }
