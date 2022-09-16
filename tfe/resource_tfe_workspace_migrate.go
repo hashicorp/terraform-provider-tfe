@@ -22,7 +22,7 @@ func resourceTfeWorkspaceResourceV0() *schema.Resource {
 
 			"assessments_enabled": {
 				Type:     schema.TypeBool,
-				Optional: true
+				Optional: true,
 			},
 
 			"auto_apply": {
