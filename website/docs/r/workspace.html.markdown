@@ -70,7 +70,7 @@ The following arguments are supported:
   for state storage only. This value _must not_ be provided if `operations`
   is provided.
 * `file_triggers_enabled` - (Optional) Whether to filter runs based on the changed files
-  in a VCS push. Defaults to `false`. If enabled, the working directory and
+  in a VCS push. Defaults to `true`. If enabled, the working directory and
   trigger prefixes describe a set of paths which must contain changes for a
   VCS push to trigger a run. If disabled, any push will trigger a run.
 * `global_remote_state` - (Optional) Whether the workspace allows all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (`remote_state_consumer_ids`).
