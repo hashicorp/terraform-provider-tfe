@@ -1,5 +1,7 @@
 ## Unreleased
- * r/tfe_workspace: Changes in `agent_pool_id` and `execution_mode` attributes are now detected and applied. ([#607](https://github.com/hashicorp/terraform-provider-tfe/pull/607))
+
+BREAKING CHANGES:
+* `r/tfe_variable_set`: Removed deprecated argument `workspace_ids` for applying a variable set to workspace, use `r/tfe_workspace_variable_set` instead. ([#629](https://github.com/hashicorp/terraform-provider-tfe/pull/629))
 
 FEATURES:
 * r/tfe_workspace_run_task, d/tfe_workspace_run_task: Add `stage` attribute to workspace run tasks. ([#555](https://github.com/hashicorp/terraform-provider-tfe/pull/555))
@@ -8,6 +10,7 @@ FEATURES:
 BUG FIXES:
 * Bump `terraform-plugin-go` to `v0.6.0`, due to a crash when `tfe_outputs` had null values. ([#611](https://github.com/hashicorp/terraform-provider-tfe/pull/611))
 * r/tfe_workspace: Fix documentation of file_triggers_enabled default. ([#627](https://github.com/hashicorp/terraform-provider-tfe/pull/627))
+* r/tfe_workspace: Changes in `agent_pool_id` and `execution_mode` attributes are now detected and applied. ([#607](https://github.com/hashicorp/terraform-provider-tfe/pull/607))
 
 ## v0.36.0 (August 16th, 2022)
 
