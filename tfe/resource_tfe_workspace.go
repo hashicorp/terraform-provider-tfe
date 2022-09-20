@@ -372,10 +372,9 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", workspace.Name)
 	d.Set("allow_destroy_plan", workspace.AllowDestroyPlan)
 
-	//TFE (onprem) does not currently have this feature and this value won't be returned in those cases
-	if workspace.AssessmentsEnabled != nil {
-		d.Set("assessments_enabled", workspace.AssessmentsEnabled)
-	}
+	// TFE (onprem) does not currently have this feature and this value won't be returned in those cases.
+	// workspace.AssessmentsEnabled will default to false
+	d.Set("assessments_enabled", workspace.AssessmentsEnabled)
 
 	d.Set("auto_apply", workspace.AutoApply)
 	d.Set("description", workspace.Description)
@@ -467,7 +466,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 
 		if d.HasChange("assessments_enabled") {
 			if v, ok := d.GetOkExists("assessments_enabled"); ok {
-				options.AssessmentsEnabled = tfe.Bool(d.Get("assessments_enabled").(bool))
+				options.AssessmentsEnabled = tfe.Bool(v.(bool))
 			}
 		}
 
