@@ -11,33 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccTFEVariableSet_basic(t *testing.T) {
-	variableSet := &tfe.VariableSet{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEVariableSetDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccTFEVariableSet_basic(rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEVariableSetExists(
-						"tfe_variable_set.foobar", variableSet),
-					testAccCheckTFEVariableSetAttributes(variableSet),
-					resource.TestCheckResourceAttr(
-						"tfe_variable_set.foobar", "name", "variable_set_test"),
-					resource.TestCheckResourceAttr(
-						"tfe_variable_set.foobar", "description", "a test variable set"),
-					resource.TestCheckResourceAttr(
-						"tfe_variable_set.foobar", "global", "false"),
-				),
-			},
-		},
-	})
-}
-
 func TestAccTFEVariableSet_full(t *testing.T) {
 	variableSet := &tfe.VariableSet{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -48,36 +21,6 @@ func TestAccTFEVariableSet_full(t *testing.T) {
 		CheckDestroy: testAccCheckTFEVariableSetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEVariableSet_full(rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEVariableSetExists(
-						"tfe_variable_set.foobar", variableSet),
-					testAccCheckTFEVariableSetAttributes(variableSet),
-					resource.TestCheckResourceAttr(
-						"tfe_variable_set.foobar", "name", "variable_set_test"),
-					resource.TestCheckResourceAttr(
-						"tfe_variable_set.foobar", "description", "a test variable set"),
-					resource.TestCheckResourceAttr(
-						"tfe_variable_set.foobar", "global", "false"),
-					testAccCheckTFEVariableSetExists(
-						"tfe_variable_set.applied", variableSet),
-					testAccCheckTFEVariableSetApplication(variableSet),
-				),
-			},
-		},
-	})
-}
-
-func TestAccTFEVariableSet_update(t *testing.T) {
-	variableSet := &tfe.VariableSet{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEVariableSetDestroy,
-		Steps: []resource.TestStep{
-			{
 				Config: testAccTFEVariableSet_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEVariableSetExists(
@@ -89,10 +32,8 @@ func TestAccTFEVariableSet_update(t *testing.T) {
 						"tfe_variable_set.foobar", "description", "a test variable set"),
 					resource.TestCheckResourceAttr(
 						"tfe_variable_set.foobar", "global", "false"),
-					testAccCheckTFEVariableSetApplicationUpdate(variableSet),
 				),
 			},
-
 			{
 				Config: testAccTFEVariableSet_update(rInt),
 				Check: resource.ComposeTestCheckFunc(
@@ -196,26 +137,6 @@ func testAccCheckTFEVariableSetAttributesUpdate(
 	}
 }
 
-func testAccCheckTFEVariableSetApplication(variableSet *tfe.VariableSet) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		if len(variableSet.Workspaces) != 1 {
-			return fmt.Errorf("Bad workspace apply: %v", variableSet.Workspaces)
-		}
-
-		return nil
-	}
-}
-
-func testAccCheckTFEVariableSetApplicationUpdate(variableSet *tfe.VariableSet) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		if len(variableSet.Workspaces) != 0 {
-			return fmt.Errorf("Bad workspace apply: %v", variableSet.Workspaces)
-		}
-
-		return nil
-	}
-}
-
 func testAccCheckTFEVariableSetDestroy(s *terraform.State) error {
 	tfeClient := testAccProvider.Meta().(*tfe.Client)
 
@@ -241,67 +162,28 @@ func testAccTFEVariableSet_basic(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name = "tst-terraform-%d"
-	email = "admin@company.com"
+  email = "admin@company.com"
 }
 
 resource "tfe_variable_set" "foobar" {
   name         = "variable_set_test"
-	description  = "a test variable set"
-	global       = false
-	organization = tfe_organization.foobar.id
-}`, rInt)
-}
-
-func testAccTFEVariableSet_full(rInt int) string {
-	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name = "tst-terraform-%d"
-	email = "admin@company.com"
-}
-
-resource "tfe_workspace" "foobar" {
-  name = "foobar"
-	organization = tfe_organization.foobar.id
-}
-
-resource "tfe_variable_set" "foobar" {
-  name         = "variable_set_test"
-	description  = "a test variable set"
-	global       = false
-	organization = tfe_organization.foobar.id
-}
-
-resource "tfe_variable_set" "applied" {
-  name         = "variable_set_applied"
-	description  = "a test variable set"
-	workspace_ids   = [tfe_workspace.foobar.id]
-	organization = tfe_organization.foobar.id
+  description  = "a test variable set"
+  global       = false
+  organization = tfe_organization.foobar.id
 }`, rInt)
 }
 
 func testAccTFEVariableSet_update(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
+  name = "tst-terraform-%d"
   email = "admin@company.com"
-}
-
-resource "tfe_workspace" "foobar" {
-  name = "foobar"
-	organization = tfe_organization.foobar.id
 }
 
 resource "tfe_variable_set" "foobar" {
   name         = "variable_set_test_updated"
-	description  = "another description"
-	global       = true
-	organization = tfe_organization.foobar.id
-}
-
-resource "tfe_variable_set" "applied" {
-  name         = "variable_set_applied"
-	description  = "a test variable set"
-	workspace_ids   = []
-	organization = tfe_organization.foobar.id
+  description  = "another description"
+  global       = true
+  organization = tfe_organization.foobar.id
 }`, rInt)
 }
