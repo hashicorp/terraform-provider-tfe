@@ -35,6 +35,7 @@ In addition to all arguments above, the following attributes are exported:
 * `id` - The workspace ID.
 * `allow_destroy_plan` - Indicates whether destroy plans can be queued on the workspace.
 * `auto_apply` - Indicates whether to automatically apply changes when a Terraform plan is successful.
+  `assessments_enabled` - (Available only in Terraform Cloud) Indicates whether health assessments such as drift detection are enabled for the workspace.
 * `file_triggers_enabled` - Indicates whether runs are triggered based on the changed files in a VCS push (if `true`) or always triggered on every push (if `false`).
 * `global_remote_state` - (Optional) Whether the workspace should allow all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (determined by the `remote_state_consumer_ids` argument).
 * `remote_state_consumer_ids` - (Optional) A set of workspace IDs that will be set as the remote state consumers for the given workspace. Cannot be used if `global_remote_state` is set to `true`.

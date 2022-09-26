@@ -69,6 +69,7 @@ The following arguments are supported:
   execution modes are valid.  When set to `local`, the workspace will be used
   for state storage only. This value _must not_ be provided if `operations`
   is provided.
+* `assessments_enabled` - (Optional) Whether to regularly run health assessments such as drift detection on the workspace. Defaults to `false`.
 * `file_triggers_enabled` - (Optional) Whether to filter runs based on the changed files
   in a VCS push. Defaults to `true`. If enabled, the working directory and
   trigger prefixes describe a set of paths which must contain changes for a

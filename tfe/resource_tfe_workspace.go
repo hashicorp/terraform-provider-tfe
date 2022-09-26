@@ -123,6 +123,11 @@ func resourceTFEWorkspace() *schema.Resource {
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
+			"assessments_enabled": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+
 			"operations": {
 				Type:          schema.TypeBool,
 				Optional:      true,
@@ -241,6 +246,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		AllowDestroyPlan:           tfe.Bool(d.Get("allow_destroy_plan").(bool)),
 		AutoApply:                  tfe.Bool(d.Get("auto_apply").(bool)),
 		Description:                tfe.String(d.Get("description").(string)),
+		AssessmentsEnabled:         tfe.Bool(d.Get("assessments_enabled").(bool)),
 		FileTriggersEnabled:        tfe.Bool(d.Get("file_triggers_enabled").(bool)),
 		QueueAllRuns:               tfe.Bool(d.Get("queue_all_runs").(bool)),
 		SpeculativeEnabled:         tfe.Bool(d.Get("speculative_enabled").(bool)),
@@ -365,6 +371,11 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	// Update the config.
 	d.Set("name", workspace.Name)
 	d.Set("allow_destroy_plan", workspace.AllowDestroyPlan)
+
+	// TFE (onprem) does not currently have this feature and this value won't be returned in those cases.
+	// workspace.AssessmentsEnabled will default to false
+	d.Set("assessments_enabled", workspace.AssessmentsEnabled)
+
 	d.Set("auto_apply", workspace.AutoApply)
 	d.Set("description", workspace.Description)
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
@@ -451,6 +462,12 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			SpeculativeEnabled:         tfe.Bool(d.Get("speculative_enabled").(bool)),
 			StructuredRunOutputEnabled: tfe.Bool(d.Get("structured_run_output_enabled").(bool)),
 			WorkingDirectory:           tfe.String(d.Get("working_directory").(string)),
+		}
+
+		if d.HasChange("assessments_enabled") {
+			if v, ok := d.GetOkExists("assessments_enabled"); ok {
+				options.AssessmentsEnabled = tfe.Bool(v.(bool))
+			}
 		}
 
 		if d.HasChange("agent_pool_id") {
