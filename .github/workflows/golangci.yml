@@ -1,0 +1,13 @@
+linters:
+  disable-all: true
+  enable:
+    - wrapcheck
+    - staticcheck
+    - gosimple
+    - revive
+    - nestif
+    - gocritic
+    - errorlint
+
+run:
+  issues-exit-code: 1
