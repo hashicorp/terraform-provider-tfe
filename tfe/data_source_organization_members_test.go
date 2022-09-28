@@ -20,8 +20,7 @@ func TestAccTFEOrganizationMembersDataSource_basic(t *testing.T) {
 	options := tfe.OrganizationMembershipCreateOptions{
 		Email: tfe.String("invited_user@company.com"),
 	}
-	membership, membershipCleanup := createOrganizationMembership(t, tfeClient, org.Name, options)
-	t.Cleanup(membershipCleanup)
+	membership := createOrganizationMembership(t, tfeClient, org.Name, options)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
@@ -38,14 +37,14 @@ func TestAccTFEOrganizationMembersDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_organization_members.all_members", "members.#", "1"),
 					resource.TestCheckResourceAttrSet(
-						"data.tfe_organization_members.all_members", "members.0.membership_id"),
+						"data.tfe_organization_members.all_members", "members.0.organization_membership_id"),
 					resource.TestCheckResourceAttrSet(
 						"data.tfe_organization_members.all_members", "members.0.user_id"),
 
 					resource.TestCheckResourceAttr(
 						"data.tfe_organization_members.all_members", "members_waiting.#", "1"),
 					resource.TestCheckResourceAttr(
-						"data.tfe_organization_members.all_members", "members_waiting.0.membership_id", membership.ID),
+						"data.tfe_organization_members.all_members", "members_waiting.0.organization_membership_id", membership.ID),
 					resource.TestCheckResourceAttr(
 						"data.tfe_organization_members.all_members", "members_waiting.0.user_id", membership.User.ID),
 				),

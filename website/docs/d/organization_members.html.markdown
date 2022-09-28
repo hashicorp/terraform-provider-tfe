@@ -13,8 +13,13 @@ Use this data source to get information about members of an organization.
 ## Example Usage
 
 ```hcl
+resource "tfe_organization" "bar" {
+   name = "org-bar"
+   email = "user@hashicorp.com"
+}
+
 data "tfe_organization_members" "foo" {
-  organization = "organization-name"
+  organization = tfe_organization.bar.name
 }
 ```
 
@@ -34,4 +39,4 @@ In addition to all arguments above, the following attributes are exported:
 The `member` block contains:
 
 * `user_id` - The ID of the user.
-* `membership_id` - The ID of the membership.
+* `organization_membership_id` - The ID of the organization membership.

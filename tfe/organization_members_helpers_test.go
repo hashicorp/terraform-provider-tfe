@@ -63,8 +63,8 @@ func TestFetchOrganizationMembers(t *testing.T) {
 			activeAndInvitedOrganizationMemberships(orgName),
 			orgName,
 			false,
-			[]map[string]string{{"user_id": "user-orgmember-1", "membership_id": "ou-orgmember-1"}},
-			[]map[string]string{{"user_id": "user-orgmember-2", "membership_id": "ou-orgmember-2"}},
+			[]map[string]string{{"user_id": "user-orgmember-1", "organization_membership_id": "ou-orgmember-1"}},
+			[]map[string]string{{"user_id": "user-orgmember-2", "organization_membership_id": "ou-orgmember-2"}},
 		},
 	}
 
@@ -74,7 +74,7 @@ func TestFetchOrganizationMembers(t *testing.T) {
 		// Mock the Organization Membership
 		MockOrganizationMemberships(t, client, orgName, test.members)
 		t.Run(name, func(t *testing.T) {
-			receivedMembers, receivedMembersWaiting, err := fetchOrganizationMembers(client, test.org, &tfe.OrganizationMembershipListOptions{Include: []tfe.OrgMembershipIncludeOpt{tfe.OrgMembershipUser}})
+			receivedMembers, receivedMembersWaiting, err := fetchOrganizationMembers(client, test.org, tfe.OrganizationMembershipListOptions{Include: []tfe.OrgMembershipIncludeOpt{tfe.OrgMembershipUser}})
 
 			if (err != nil) != test.err {
 				t.Fatalf("expected error is %t, got %v", test.err, err)
@@ -93,7 +93,7 @@ func checkIsEqualMembers(t *testing.T, receivedMembers []map[string]string, expe
 		}
 
 		// the test case only have 1 active and invited member
-		if receivedMembers[0]["user_id"] != expectedMembers[0]["user_id"] || receivedMembers[0]["membership_id"] != expectedMembers[0]["membership_id"] {
+		if receivedMembers[0]["user_id"] != expectedMembers[0]["user_id"] || receivedMembers[0]["organization_membership_id"] != expectedMembers[0]["organization_membership_id"] {
 			t.Fatalf("wrong result\ngot: %#v\nwant: %#v", receivedMembers[0], expectedMembers[0])
 		}
 	} else if (expectedMembers == nil && receivedMembers != nil) || (expectedMembers != nil && receivedMembers == nil) {

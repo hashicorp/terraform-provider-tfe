@@ -25,7 +25,7 @@ func dataSourceTFEOrganizationMembers() *schema.Resource {
 							Computed: true,
 						},
 
-						"membership_id": {
+						"organization_membership_id": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
@@ -43,7 +43,7 @@ func dataSourceTFEOrganizationMembers() *schema.Resource {
 							Computed: true,
 						},
 
-						"membership_id": {
+						"organization_membership_id": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
@@ -58,7 +58,7 @@ func dataSourceTFEOrganizationMembersRead(d *schema.ResourceData, meta interface
 	tfeClient := meta.(*tfe.Client)
 
 	organizationName := d.Get("organization").(string)
-	options := &tfe.OrganizationMembershipListOptions{Include: []tfe.OrgMembershipIncludeOpt{tfe.OrgMembershipUser}}
+	options := tfe.OrganizationMembershipListOptions{Include: []tfe.OrgMembershipIncludeOpt{tfe.OrgMembershipUser}}
 
 	members, membersWaiting, err := fetchOrganizationMembers(tfeClient, organizationName, options)
 	if err != nil {
