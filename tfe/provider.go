@@ -92,6 +92,7 @@ func Provider() *schema.Provider {
 			"tfe_variables":               dataSourceTFEWorkspaceVariables(),
 			"tfe_variable_set":            dataSourceTFEVariableSet(),
 			"tfe_policy_set":              dataSourceTFEPolicySet(),
+			"tfe_organization_members":    dataSourceTFEOrganizationMembers(),
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
