@@ -1,4 +1,4 @@
-## v0.37.0 (September 27, 2022)
+## v0.37.0 (September 28, 2022)
 
 FEATURES:
 * r/tfe_workspace: Changes in `agent_pool_id` and `execution_mode` attributes are now detected and applied. ([#607](https://github.com/hashicorp/terraform-provider-tfe/pull/607))
