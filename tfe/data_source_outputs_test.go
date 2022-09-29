@@ -5,8 +5,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
+	"os"
 	"testing"
 	"time"
 
@@ -140,7 +140,7 @@ func createStateVersion(t *testing.T, client *tfe.Client, rInt int, fileName str
 		t.Fatal(err)
 	}
 
-	state, err := ioutil.ReadFile(fileName)
+	state, err := os.ReadFile(fileName)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -2,7 +2,6 @@ package tfe
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"testing"
@@ -519,7 +518,7 @@ func TestAccTFEPolicySet_versionedSlugUpdate(t *testing.T) {
 			},
 			{
 				PreConfig: func() {
-					err = ioutil.WriteFile(newFile, []byte("main = rule { true }"), 0755)
+					err = os.WriteFile(newFile, []byte("main = rule { true }"), 0755)
 					if err != nil {
 						t.Fatalf("error writing to file %s", newFile)
 					}
