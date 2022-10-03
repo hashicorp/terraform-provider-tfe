@@ -84,6 +84,7 @@ After creating new schema, it's important to test your changes beyond the automa
 - Are mutually exclusive config arguments constrained by an error?
 - If adding a new argument to an existing resource: is it required? (This would be a breaking change)
 - If adding a new attribute to an existing resource: is new or unexpected API authorization required?
+- Is the new resource argument updated when it is the _only_ change in a plan?
 
 ### Updating the Changelog
 
@@ -125,7 +126,7 @@ $ cd terraform-provider-tfe
 $ go build -gcflags="all=-N -l" -o {where to place the binary}
 ```
 
-example, replace {platform}. 
+example, replace {platform}.
 ```sh
 go build -gcflags="all=-N -l" -o bin/registry.terraform.io/hashicorp/tfe/9.9.9/{platform}/terraform-provider-tfe
 ```
@@ -143,7 +144,7 @@ dlv exec \
 -- -debug
 ```
 
-example 
+example
 ```sh
 dlv exec \
 --accept-multiclient \
@@ -176,7 +177,7 @@ Example taken from [here](https://www.terraform.io/plugin/debugging#visual-studi
 
 ```
 
-You'll know you activated the debugger successfully if you see the following output. 
+You'll know you activated the debugger successfully if you see the following output.
 
 *For vscode, the output will be located in the Debug Console tab.*
 
