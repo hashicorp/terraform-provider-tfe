@@ -1,3 +1,9 @@
+## Unreleased
+
+BUG FIXES:
+
+* r/tfe_workspace: When assessments_enabled was the only change in to the resource the workspace was not being updated ([#641](https://github.com/hashicorp/terraform-provider-tfe/pull/641))
+
 ## v0.37.0 (September 28, 2022)
 
 FEATURES:
