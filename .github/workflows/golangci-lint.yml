@@ -1,4 +1,4 @@
-name: golangci-lint Checks
+name: golangci-lint
 
 on:
   push:
@@ -12,9 +12,10 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     steps:
+      - name: Setup Go Environment
       - uses: actions/setup-go@v3
         with:
-          go-version: 1.17
+          go-version: "${{ env.go_version }}"
       - uses: actions/checkout@v3
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
