@@ -22,6 +22,8 @@ linters:
     - predeclared #https://github.com/nishanths/predeclared
     - unconvert #https://github.com/mdempsky/unconvert
     - wrapcheck #https://github.com/tomarrell/wrapcheck
+    - staticcheck #https://staticcheck.io/
+    - gosimple #https://github.com/dominikh/go-tools/tree/master/simple
 issues:
   exclude-rules:
   - path: _test\.go

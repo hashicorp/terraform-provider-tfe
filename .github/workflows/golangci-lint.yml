@@ -12,13 +12,15 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     steps:
-      - name: Setup Go Environment
-      - uses: actions/setup-go@v3
-        with:
-          go-version: "${{ env.go_version }}"
       - uses: actions/checkout@v3
-      - name: golangci-lint
+      - name: Setup Go Environment
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v3
+        run: golangci-lint run
         with:
           # Optional: version of golangci-lint to use in form of v1.2 or v1.2.3 or `latest` to use the latest version
           version: v1.29
@@ -41,17 +43,3 @@ jobs:
 
           # Optional: if set to true then the action don't cache or restore ~/.cache/go-build.
           # skip-build-cache: true
-
-linters:
-  disable-all: true
-  enable:
-    - wrapcheck
-    - staticcheck
-    - gosimple
-    - revive
-    - nestif
-    - gocritic
-    - errorlint
-
-run:
-  issues-exit-code: 1
