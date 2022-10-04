@@ -52,6 +52,11 @@ func dataSourceTFEOrganization() *schema.Resource {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
+
+			"assessments_enforced": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -79,6 +84,7 @@ func dataSourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) err
 	d.Set("owners_team_saml_role_id", org.OwnersTeamSAMLRoleID)
 	d.Set("two_factor_conformant", org.TwoFactorConformant)
 	d.Set("send_passing_statuses_for_untriggered_speculative_plans", org.SendPassingStatusesForUntriggeredSpeculativePlans)
+	d.Set("assessments_enforced", org.AssessmentsEnforced)
 
 	return nil
 }

@@ -362,10 +362,10 @@ func resourceTFETeamAccessImporter(d *schema.ResourceData, meta interface{}) ([]
 
 // The Team Access API and behavior for 'custom' access is very hard for the current SDK to model.
 //
-// * Schema validations are limited to the single attribute they are defined on; you cannot validate something with the
-//   additional context of another attribute's value in the resource.
-// * The SDK cannot discern between something defined only in state, or only in configuration. Some assumptions can be
-//   made (and are made in these changes) via GetChange(), but it's hacky at best.
+//   - Schema validations are limited to the single attribute they are defined on; you cannot validate something with the
+//     additional context of another attribute's value in the resource.
+//   - The SDK cannot discern between something defined only in state, or only in configuration. Some assumptions can be
+//     made (and are made in these changes) via GetChange(), but it's hacky at best.
 //
 // This CustomizeDiff function is what allows the provider resource to model the right API behavior with these
 // limitations, rooting out the user's intentions to figure out when to automatically assign 'access' to custom and/or

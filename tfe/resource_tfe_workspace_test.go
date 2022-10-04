@@ -48,6 +48,8 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "speculative_enabled", "true"),
 					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "assessments_enabled", "false"),
+					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "structured_run_output_enabled", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "tag_names.0", "fav"),
@@ -1624,6 +1626,54 @@ func TestAccTFEWorkspace_operationsAndExecutionModeInteroperability(t *testing.T
 	})
 }
 
+func TestAccTFEWorkspace_unsetExecutionMode(t *testing.T) {
+	skipIfEnterprise(t)
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	workspace := &tfe.Workspace{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_executionModeAgent(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "operations", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "execution_mode", "agent"),
+					resource.TestCheckResourceAttrSet(
+						"tfe_workspace.foobar", "agent_pool_id"),
+				),
+			},
+			{
+				Config: testAccTFEWorkspace_executionModeNull(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "operations", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "execution_mode", "remote"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "agent_pool_id", ""),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEWorkspace_globalRemoteState(t *testing.T) {
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -2106,6 +2156,44 @@ func testAccCheckTFEWorkspaceDestroy(s *terraform.State) error {
 	return nil
 }
 
+func TestAccTFEWorkspace_basicAssessmentsEnabled(t *testing.T) {
+	skipIfEnterprise(t)
+
+	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_basic(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					testAccCheckTFEWorkspaceAttributes(workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "name", "workspace-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "assessments_enabled", "false"),
+				),
+			},
+			{
+				Config: testAccTFEWorkspace_updateAssessmentsEnabled(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "name", "workspace-updated"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "assessments_enabled", "true"),
+				),
+			},
+		},
+	})
+}
+
 func testAccTFEWorkspace_basic(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
@@ -2249,6 +2337,22 @@ resource "tfe_workspace" "foobar" {
 }`, organization, organization)
 }
 
+// while testing the flow of unsetting execution mode as in TestAccTFEWorkspace_unsetExecutionMode
+// the resource "tfe_agent_pool" has been kept in both configs(testAccTFEWorkspace_executionModeAgent & testAccTFEWorkspace_executionModeNull)
+// this prevents an attempt to destroy the agent pool before dissasociating it from the workspace
+func testAccTFEWorkspace_executionModeNull(organization string) string {
+	return fmt.Sprintf(`
+resource "tfe_agent_pool" "foobar" {
+  name = "agent-pool-test"
+  organization = "%s"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = "%s"
+}`, organization, organization)
+}
+
 func testAccTFEWorkspace_basicSpeculativeOff(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
@@ -2314,6 +2418,25 @@ resource "tfe_workspace" "foobar" {
   trigger_prefixes      = ["/modules", "/shared"]
   working_directory     = "terraform/test"
   operations            = false
+}`, rInt)
+}
+
+func testAccTFEWorkspace_updateAssessmentsEnabled(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name                  = "workspace-updated"
+  organization          = tfe_organization.foobar.id
+  description           = "My favorite workspace!"
+	assessments_enabled       = true
+  allow_destroy_plan    = false
+  auto_apply            = true
+  tag_names             = ["fav", "test"]
+  terraform_version     = "0.15.4"
 }`, rInt)
 }
 
@@ -2702,7 +2825,7 @@ func testAccTFEWorkspace_updateRemoveVCSBlockFromTagsRegex(rInt int) string {
 		name  = "tst-tf-%d-git-tag-ff-on"
 		email = "admin@company.com"
 	}
-	
+
 	resource "tfe_oauth_client" "test" {
 		organization     = tfe_organization.foobar.id
 		api_url          = "https://api.github.com"
@@ -2710,7 +2833,7 @@ func testAccTFEWorkspace_updateRemoveVCSBlockFromTagsRegex(rInt int) string {
 		oauth_token      = "%s"
 		service_provider = "github"
 	}
-	
+
 	resource "tfe_workspace" "foobar" {
 		name         			= "workspace-test"
 		description  			= "workspace-test-update-vcs-repo-tags-regex"

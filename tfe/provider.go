@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -366,7 +365,7 @@ func readCliConfigFile(configFilePath string) *Config {
 	config := &Config{}
 
 	// Read the CLI config file content.
-	content, err := ioutil.ReadFile(configFilePath)
+	content, err := os.ReadFile(configFilePath)
 	if err != nil {
 		log.Printf("[ERROR] Error reading CLI config or credentials file %s: %v", configFilePath, err)
 		return config

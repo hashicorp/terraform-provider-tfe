@@ -1,12 +1,26 @@
 ## Unreleased
 
-FEATURES:
+BUG FIXES:
+
+* r/tfe_workspace: When assessments_enabled was the only change in to the resource the workspace was not being updated ([#641](https://github.com/hashicorp/terraform-provider-tfe/pull/641))
 * r/tfe_team_organization_members: Add resource for managing team members via organization membership IDs ([#617](https://github.com/hashicorp/terraform-provider-tfe/pull/617))
+
+## v0.37.0 (September 28, 2022)
+
+FEATURES:
+* r/tfe_workspace: Changes in `agent_pool_id` and `execution_mode` attributes are now detected and applied. ([#607](https://github.com/hashicorp/terraform-provider-tfe/pull/607))
 * r/tfe_workspace_run_task, d/tfe_workspace_run_task: Add `stage` attribute to workspace run tasks. ([#555](https://github.com/hashicorp/terraform-provider-tfe/pull/555))
-* r/tfe_workspace_policy_set: Add ability to attach an existing `workspace` to an existing `policy set`. ([#589](https://github.com/hashicorp/terraform-provider-tfe/pull/589))
+* r/tfe_workspace_policy_set: Add ability to attach an existing `workspace` to an existing `policy set`. ([#591](https://github.com/hashicorp/terraform-provider-tfe/pull/591))
+* Add attributes for health assessments (drift detection) - available only in Terraform Cloud ([550](https://github.com/hashicorp/terraform-provider-tfe/pull/550)):
+  * r/tfe_workspace: Add attribute `assessments_enabled`
+  * d/tfe_workspace: Add attribute `assessments_enabled`
+  * r/tfe_organization: Added attribute `assessments_enforced`
+  * d/tfe_organization: Added attribute `assessments_enforced`
 
 BUG FIXES:
 * Bump `terraform-plugin-go` to `v0.6.0`, due to a crash when `tfe_outputs` had null values. ([#611](https://github.com/hashicorp/terraform-provider-tfe/pull/611))
+* r/tfe_workspace: Fix documentation of file_triggers_enabled default. ([#627](https://github.com/hashicorp/terraform-provider-tfe/pull/627))
+* r/tfe_variable_set: Fix panic when applying variable set to workspaces fails ([#628](https://github.com/hashicorp/terraform-provider-tfe/pull/628))
 
 ## v0.36.0 (August 16th, 2022)
 

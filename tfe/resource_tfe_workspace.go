@@ -34,7 +34,13 @@ func resourceTFEWorkspace() *schema.Resource {
 		},
 
 		CustomizeDiff: func(c context.Context, d *schema.ResourceDiff, meta interface{}) error {
-			err := validateAgentExecution(c, d)
+			// NOTE: execution mode must be set to default first before calling the validation functions
+			err := setExecutionModeDefault(c, d)
+			if err != nil {
+				return err
+			}
+
+			err = validateAgentExecution(c, d)
 			if err != nil {
 				return err
 			}
@@ -67,6 +73,7 @@ func resourceTFEWorkspace() *schema.Resource {
 			"agent_pool_id": {
 				Type:          schema.TypeString,
 				Optional:      true,
+				Default:       "",
 				ConflictsWith: []string{"operations"},
 			},
 
@@ -116,10 +123,16 @@ func resourceTFEWorkspace() *schema.Resource {
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
+			"assessments_enabled": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+
 			"operations": {
 				Type:          schema.TypeBool,
 				Optional:      true,
 				Computed:      true,
+				Deprecated:    "Use execution_mode instead.",
 				ConflictsWith: []string{"execution_mode", "agent_pool_id"},
 			},
 
@@ -233,6 +246,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		AllowDestroyPlan:           tfe.Bool(d.Get("allow_destroy_plan").(bool)),
 		AutoApply:                  tfe.Bool(d.Get("auto_apply").(bool)),
 		Description:                tfe.String(d.Get("description").(string)),
+		AssessmentsEnabled:         tfe.Bool(d.Get("assessments_enabled").(bool)),
 		FileTriggersEnabled:        tfe.Bool(d.Get("file_triggers_enabled").(bool)),
 		QueueAllRuns:               tfe.Bool(d.Get("queue_all_runs").(bool)),
 		SpeculativeEnabled:         tfe.Bool(d.Get("speculative_enabled").(bool)),
@@ -254,7 +268,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		options.ExecutionMode = tfe.String(v.(string))
 	}
 
-	if v, ok := d.GetOk("operations"); ok {
+	if v, ok := d.GetOkExists("operations"); ok {
 		options.Operations = tfe.Bool(v.(bool))
 	}
 
@@ -357,6 +371,11 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	// Update the config.
 	d.Set("name", workspace.Name)
 	d.Set("allow_destroy_plan", workspace.AllowDestroyPlan)
+
+	// TFE (onprem) does not currently have this feature and this value won't be returned in those cases.
+	// workspace.AssessmentsEnabled will default to false
+	d.Set("assessments_enabled", workspace.AssessmentsEnabled)
+
 	d.Set("auto_apply", workspace.AutoApply)
 	d.Set("description", workspace.Description)
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
@@ -430,7 +449,8 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		d.HasChange("allow_destroy_plan") || d.HasChange("speculative_enabled") ||
 		d.HasChange("operations") || d.HasChange("execution_mode") ||
 		d.HasChange("description") || d.HasChange("agent_pool_id") ||
-		d.HasChange("global_remote_state") || d.HasChange("structured_run_output_enabled") {
+		d.HasChange("global_remote_state") || d.HasChange("structured_run_output_enabled") ||
+		d.HasChange("assessments_enabled") {
 		// Create a new options struct.
 		options := tfe.WorkspaceUpdateOptions{
 			Name:                       tfe.String(d.Get("name").(string)),
@@ -443,6 +463,12 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			SpeculativeEnabled:         tfe.Bool(d.Get("speculative_enabled").(bool)),
 			StructuredRunOutputEnabled: tfe.Bool(d.Get("structured_run_output_enabled").(bool)),
 			WorkingDirectory:           tfe.String(d.Get("working_directory").(string)),
+		}
+
+		if d.HasChange("assessments_enabled") {
+			if v, ok := d.GetOkExists("assessments_enabled"); ok {
+				options.AssessmentsEnabled = tfe.Bool(v.(bool))
+			}
 		}
 
 		if d.HasChange("agent_pool_id") {
@@ -657,13 +683,34 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 	return nil
 }
 
+// since execution_mode is marked as Optional: true, and Computed: true,
+// unsetting the execution_mode in the config after it's been set to a valid
+// value is not detected by ResourceDiff so read value from RawConfig instead
+func setExecutionModeDefault(_ context.Context, d *schema.ResourceDiff) error {
+	configMap := d.GetRawConfig().AsValueMap()
+	operations, operationsReadOk := configMap["operations"]
+	executionMode, executionModeReadOk := configMap["execution_mode"]
+	executionModeState := d.Get("execution_mode")
+	if operationsReadOk && executionModeReadOk {
+		if operations.IsNull() && executionMode.IsNull() && executionModeState != "remote" {
+			err := d.SetNew("execution_mode", "remote")
+			if err != nil {
+				return fmt.Errorf("failed to set execution_mode: %w", err)
+			}
+		}
+	}
+
+	return nil
+}
+
 // An agent pool can only be specified when execution_mode is set to "agent". You currently cannot specify a
 // schema validation based on a different argument's value, so we do so here at plan time instead.
 func validateAgentExecution(_ context.Context, d *schema.ResourceDiff) error {
 	if executionMode, ok := d.GetOk("execution_mode"); ok {
-		if executionMode.(string) != "agent" && d.Get("agent_pool_id") != "" {
+		executionModeIsAgent := executionMode.(string) == "agent"
+		if !executionModeIsAgent && d.Get("agent_pool_id") != "" {
 			return fmt.Errorf("execution_mode must be set to 'agent' to assign agent_pool_id")
-		} else if executionMode.(string) == "agent" && d.NewValueKnown("agent_pool_id") && d.Get("agent_pool_id") == "" {
+		} else if executionModeIsAgent && d.NewValueKnown("agent_pool_id") && d.Get("agent_pool_id") == "" {
 			return fmt.Errorf("agent_pool_id must be provided when execution_mode is 'agent'")
 		}
 	}
