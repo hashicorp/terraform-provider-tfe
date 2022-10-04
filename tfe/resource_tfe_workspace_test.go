@@ -1279,7 +1279,8 @@ func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
 					testAccCheckTFEWorkspaceUpdatedRemoveVCSRepoAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-remove-vcs-repo"),
-					resource.TestCheckNoResourceAttr("tfe_workspace.foobar", "vcs_repo"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.#", "0"),
 				),
 			},
 		},
@@ -1427,7 +1428,8 @@ func TestAccTFEWorkspace_updateRemoveVCSRepoWithTagsRegex(t *testing.T) {
 						"tfe_workspace.foobar", "description", "workspace-test-update-vcs-repo-tags-regex"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "file_triggers_enabled", "true"),
-					resource.TestCheckNoResourceAttr("tfe_workspace.foobar", "vcs_repo"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.#", "0"),
 				),
 			},
 		},
