@@ -7,10 +7,11 @@ import (
 	tfe "github.com/hashicorp/go-tfe"
 )
 
-func fetchOrganizationMembers(client *tfe.Client, orgName string, options tfe.OrganizationMembershipListOptions) ([]map[string]string, []map[string]string, error) {
+func fetchOrganizationMembers(client *tfe.Client, orgName string) ([]map[string]string, []map[string]string, error) {
 	var members []map[string]string
 	var membersWaiting []map[string]string
 
+	options := tfe.OrganizationMembershipListOptions{}
 	for {
 		organizationMembershipList, err := client.OrganizationMemberships.List(ctx, orgName, &options)
 		if err != nil {

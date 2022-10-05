@@ -58,9 +58,8 @@ func dataSourceTFEOrganizationMembersRead(d *schema.ResourceData, meta interface
 	tfeClient := meta.(*tfe.Client)
 
 	organizationName := d.Get("organization").(string)
-	options := tfe.OrganizationMembershipListOptions{Include: []tfe.OrgMembershipIncludeOpt{tfe.OrgMembershipUser}}
 
-	members, membersWaiting, err := fetchOrganizationMembers(tfeClient, organizationName, options)
+	members, membersWaiting, err := fetchOrganizationMembers(tfeClient, organizationName)
 	if err != nil {
 		return err
 	}

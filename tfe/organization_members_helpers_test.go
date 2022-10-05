@@ -74,7 +74,7 @@ func TestFetchOrganizationMembers(t *testing.T) {
 		// Mock the Organization Membership
 		MockOrganizationMemberships(t, client, orgName, test.members)
 		t.Run(name, func(t *testing.T) {
-			receivedMembers, receivedMembersWaiting, err := fetchOrganizationMembers(client, test.org, tfe.OrganizationMembershipListOptions{Include: []tfe.OrgMembershipIncludeOpt{tfe.OrgMembershipUser}})
+			receivedMembers, receivedMembersWaiting, err := fetchOrganizationMembers(client, test.org)
 
 			if (err != nil) != test.err {
 				t.Fatalf("expected error is %t, got %v", test.err, err)
