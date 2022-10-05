@@ -22,8 +22,7 @@ linters:
     - predeclared #https://github.com/nishanths/predeclared
     - unconvert #https://github.com/mdempsky/unconvert
     - wrapcheck #https://github.com/tomarrell/wrapcheck
-    - staticcheck #https://staticcheck.io/
-    - gosimple #https://github.com/dominikh/go-tools/tree/master/simple
+
 issues:
   exclude-rules:
   - path: _test\.go
@@ -44,18 +43,18 @@ issues:
   - linters:
       - errcheck
     path: \.go
-  - linters:
-      - gocritic
-    path: config_unix\.go
-    text: "importShadow: shadow of imported package 'user'"
+  # - linters:
+  #     - gocritic
+  #   path: config_unix\.go
+  #   text: "importShadow: shadow of imported package 'user'"
   - linters:
       - gocritic
     path: resource_tfe_policy_set\.go
     text: "badRegexp"
-  - linters:
-      - gocritic
-    path: resource_tfe_team_access\.go
-    text: "elseif: can replace 'else {if cond {}}' with 'else if cond {}'"
+  # - linters:
+  #     - gocritic
+  #   path: resource_tfe_team_access\.go
+  #   text: "elseif: can replace 'else {if cond {}}' with 'else if cond {}'"
   - linters:
       - gocritic
     path: data_source_ip_ranges_test\.go

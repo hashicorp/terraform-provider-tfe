@@ -377,33 +377,27 @@ func setCustomOrComputedPermissions(_ context.Context, d *schema.ResourceDiff, m
 			// will be read-only and computed by the API (access is never marked as 'custom' in the
 			// configuration).
 			d.SetNewComputed("permissions")
-		} else {
-			if d.HasChange("permissions.0") {
-				// If access is present, not being explicitly changed, but permissions are being
-				// changed, the user might be switching from using a fixed access level
-				// (read/plan/write/admin) to a permissions block ('custom' access).
-				// Set the access to custom.
-				if err := setCustomAccess(d); err != nil {
-					return err
-				}
+		} else if d.HasChange("permissions.0") {
+			// If access is present, not being explicitly changed, but permissions are being
+			// changed, the user might be switching from using a fixed access level
+			// (read/plan/write/admin) to a permissions block ('custom' access).
+			// Set the access to custom.
+			if err := setCustomAccess(d); err != nil {
+				return err
 			}
 		}
-	} else {
-		if !d.NewValueKnown("access") {
-			if d.Id() != "" {
-				// If the value for access isn't known on an existing resource, the user must have set the
-				// access attribute to an interpolated value not known at plan time.
-				// Set permissions as computed.
-				d.SetNewComputed("permissions")
-			} else {
-				if _, ok := d.GetOk("permissions"); ok {
-					// If the resource is new, the value for access isn't known, and permissions are
-					// present, the user must be creating a new resource with custom access.
-					// Set access to custom.
-					if err := setCustomAccess(d); err != nil {
-						return err
-					}
-				}
+	} else if !d.NewValueKnown("access") {
+		if d.Id() != "" {
+			// If the value for access isn't known on an existing resource, the user must have set the
+			// access attribute to an interpolated value not known at plan time.
+			// Set permissions as computed.
+			d.SetNewComputed("permissions")
+		} else if _, ok := d.GetOk("permissions"); ok {
+			// If the resource is new, the value for access isn't known, and permissions are
+			// present, the user must be creating a new resource with custom access.
+			// Set access to custom.
+			if err := setCustomAccess(d); err != nil {
+				return err
 			}
 		}
 	}
