@@ -59,10 +59,10 @@ issues:
       - gocritic
     path: data_source_ip_ranges_test\.go
     text: "regexpSimplify: can re-write"
-  - linters:
-      - gocritic
-    path: resource_tfe_policy_set_test\.go
-    text: "octalLiteral: use new octal literal style"
+  # - linters:
+  #     - gocritic
+  #   path: resource_tfe_policy_set_test\.go
+  #   text: "octalLiteral: use new octal literal style"
   - linters:
       - gosec
     path: provider\.go

@@ -623,7 +623,7 @@ func TestAccTFEPolicySet_versionedSlugUpdate(t *testing.T) {
 			},
 			{
 				PreConfig: func() {
-					err = os.WriteFile(newFile, []byte("main = rule { true }"), 0755)
+					err = os.WriteFile(newFile, []byte("main = rule { true }"), 0o755)
 					if err != nil {
 						t.Fatalf("error writing to file %s", newFile)
 					}
