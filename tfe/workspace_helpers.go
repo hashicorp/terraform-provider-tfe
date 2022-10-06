@@ -84,9 +84,8 @@ func readWorkspaceStateConsumers(id string, client *tfe.Client) (bool, []interfa
 				// by setting this computed attribute to true, which is the actual
 				// default value when the installation is eventually upgraded.
 				return true, remoteStateConsumerIDs, nil
-			} else {
-				return false, remoteStateConsumerIDs, err
 			}
+			return false, remoteStateConsumerIDs, err
 		}
 
 		for _, w := range wl.Items {
