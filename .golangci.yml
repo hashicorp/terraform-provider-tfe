@@ -63,10 +63,10 @@ issues:
   #     - gocritic
   #   path: resource_tfe_policy_set_test\.go
   #   text: "octalLiteral: use new octal literal style"
-  - linters:
-      - gosec
-    path: provider\.go
-    text: "G402: TLS MinVersion too low."
+  # - linters:
+  #     - gosec
+  #   path: provider\.go
+  #   text: "G402: TLS MinVersion too low."
   # Exclude gosec warnings in test files
   - linters:
       - gosec
