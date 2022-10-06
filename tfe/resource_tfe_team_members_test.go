@@ -1,6 +1,7 @@
 package tfe
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"reflect"
@@ -145,7 +146,7 @@ func testAccCheckTFETeamMembersExists(
 		}
 
 		us, err := tfeClient.TeamMembers.List(ctx, rs.Primary.ID)
-		if err != nil && err != tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			return err
 		}
 
@@ -193,7 +194,7 @@ func testAccCheckTFETeamMembersDestroy(s *terraform.State) error {
 		}
 
 		users, err := tfeClient.TeamMembers.List(ctx, rs.Primary.ID)
-		if err != nil && err != tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			return err
 		}
 

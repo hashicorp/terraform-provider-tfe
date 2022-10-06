@@ -2,6 +2,7 @@ package tfe
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
@@ -48,7 +49,7 @@ func resourceTFEOrganizationTokenCreate(d *schema.ResourceData, meta interface{}
 
 	log.Printf("[DEBUG] Check if a token already exists for organization: %s", organization)
 	_, err := tfeClient.OrganizationTokens.Read(ctx, organization)
-	if err != nil && err != tfe.ErrResourceNotFound {
+	if errors.Is(err, tfe.ErrResourceNotFound) {
 		return fmt.Errorf("error checking if a token exists for organization %s: %w", organization, err)
 	}
 
