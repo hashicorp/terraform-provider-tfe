@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"os"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
@@ -18,13 +17,13 @@ type dataSourceOutputs struct {
 	tfeClient *tfe.Client
 }
 
-var stderr *os.File
+// // var stderr *os.File
 
-func init() {
-	// There is a issue that occurs when the plugin-go Serve function is used that
-	// causes os.Stderr to be overwritten. There is a fix being worked on for this.
-	stderr = os.Stderr
-}
+// func init() {
+// 	// There is a issue that occurs when the plugin-go Serve function is used that
+// 	// causes os.Stderr to be overwritten. There is a fix being worked on for this.
+// 	// stderr := os.Stderr
+// }
 
 func newDataSourceOutputs(client *tfe.Client) tfprotov5.DataSourceServer {
 	return dataSourceOutputs{

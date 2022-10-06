@@ -55,7 +55,7 @@ func resourceTFEOrganizationTokenCreate(d *schema.ResourceData, meta interface{}
 	// If error is nil, the token already exists.
 	if err == nil {
 		if !d.Get("force_regenerate").(bool) {
-			return fmt.Errorf("A token already exists for organization: %s", organization)
+			return fmt.Errorf("a token already exists for organization: %s", organization)
 		}
 		log.Printf("[DEBUG] Regenerating existing token for organization: %s", organization)
 	}
