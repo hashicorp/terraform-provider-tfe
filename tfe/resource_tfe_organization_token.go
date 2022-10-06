@@ -49,7 +49,7 @@ func resourceTFEOrganizationTokenCreate(d *schema.ResourceData, meta interface{}
 	log.Printf("[DEBUG] Check if a token already exists for organization: %s", organization)
 	_, err := tfeClient.OrganizationTokens.Read(ctx, organization)
 	if err != nil && err != tfe.ErrResourceNotFound {
-		return fmt.Errorf("Error checking if a token exists for organization %s: %w", organization, err)
+		return fmt.Errorf("error checking if a token exists for organization %s: %w", organization, err)
 	}
 
 	// If error is nil, the token already exists.
@@ -63,7 +63,7 @@ func resourceTFEOrganizationTokenCreate(d *schema.ResourceData, meta interface{}
 	token, err := tfeClient.OrganizationTokens.Create(ctx, organization)
 	if err != nil {
 		return fmt.Errorf(
-			"Error creating new token for organization %s: %w", organization, err)
+			"error creating new token for organization %s: %w", organization, err)
 	}
 
 	d.SetId(organization)
@@ -86,7 +86,7 @@ func resourceTFEOrganizationTokenRead(d *schema.ResourceData, meta interface{}) 
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading token from organization %s: %w", d.Id(), err)
+		return fmt.Errorf("error reading token from organization %s: %w", d.Id(), err)
 	}
 
 	return nil
@@ -104,7 +104,7 @@ func resourceTFEOrganizationTokenDelete(d *schema.ResourceData, meta interface{}
 		if err == tfe.ErrResourceNotFound {
 			return nil
 		}
-		return fmt.Errorf("Error deleting token from organization %s: %w", d.Id(), err)
+		return fmt.Errorf("error deleting token from organization %s: %w", d.Id(), err)
 	}
 
 	return nil
