@@ -1,6 +1,7 @@
 package tfe
 
 import (
+	"errors"
 	"fmt"
 	"log"
 
@@ -15,7 +16,7 @@ func resourceTFETeamOrganizationMembers() *schema.Resource {
 		Update: resourceTFETeamOrganizationMembersUpdate,
 		Delete: resourceTFETeamOrganizationMembersDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -68,7 +69,7 @@ func resourceTFETeamOrganizationMembersRead(d *schema.ResourceData, meta interfa
 	log.Printf("[DEBUG] Read organization memberships from team: %s", d.Id())
 	organizationMemberships, err := tfeClient.TeamMembers.ListOrganizationMemberships(ctx, d.Id())
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			log.Printf("[DEBUG] Organization memberships for team %s do no longer exist", d.Id())
 			d.SetId("")
 			return nil
@@ -146,7 +147,7 @@ func resourceTFETeamOrganizationMembersDelete(d *schema.ResourceData, meta inter
 	log.Printf("[DEBUG] Read organization memberships from team: %s", d.Id())
 	organizationMemberships, err := tfeClient.TeamMembers.ListOrganizationMemberships(ctx, d.Id())
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			log.Printf("[DEBUG] Organization memberships for team %s do no longer exist", d.Id())
 			d.SetId("")
 			return nil

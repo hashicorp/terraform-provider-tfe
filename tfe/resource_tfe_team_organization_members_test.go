@@ -1,6 +1,7 @@
 package tfe
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"sort"
@@ -68,8 +69,8 @@ func testAccCheckTFETeamOrganizationMembersExists(resourceName string, organizat
 		}
 
 		orgMemberships, err := tfeClient.TeamMembers.ListOrganizationMemberships(ctx, rs.Primary.ID)
-		if err != nil && err != tfe.ErrResourceNotFound {
-			return err
+		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+			return fmt.Errorf("error while listing organization memberships: %w", err)
 		}
 
 		if len(orgMemberships) == 0 {
@@ -121,8 +122,8 @@ func testAccCheckTFETeamOrganizationMembersDestroy(s *terraform.State) error {
 		}
 
 		organizationMemberships, err := tfeClient.TeamMembers.ListOrganizationMemberships(ctx, rs.Primary.ID)
-		if err != nil && err != tfe.ErrResourceNotFound {
-			return err
+		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+			return fmt.Errorf("error while listing organization memberships: %w", err)
 		}
 
 		// No organization memberships should exist for the team
