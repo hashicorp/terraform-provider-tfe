@@ -8,7 +8,7 @@ test_results_dir: &test_results_dir /tmp/test_results
 jobs:
   run-tests:
     docker:
-      - image: docker.mirror.hashicorp.services/cimg/go:1.17.1
+      - image: docker.mirror.hashicorp.services/cimg/go:1.18
         environment:
           TF_ACC_TERRAFORM_VERSION: 1.0.0
           TEST_RESULTS_DIR: *test_results_dir
