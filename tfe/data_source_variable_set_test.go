@@ -108,5 +108,6 @@ resource "tfe_variable" "envfoo" {
 data "tfe_variable_set" "foobar" {
   name = tfe_variable_set.foobar.name
 	organization = tfe_variable_set.foobar.organization
+	depends_on = [tfe_variable.envfoo]
 }`, rInt, rInt, rInt)
 }
