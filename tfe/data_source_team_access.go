@@ -109,5 +109,5 @@ func dataSourceTFETeamAccessRead(d *schema.ResourceData, meta interface{}) error
 		options.PageNumber = l.NextPage
 	}
 
-	return fmt.Errorf("Could not find team access for %s and workspace %s", teamID, ws.Name)
+	return fmt.Errorf("could not find team access for %s and workspace %s", teamID, ws.Name)
 }

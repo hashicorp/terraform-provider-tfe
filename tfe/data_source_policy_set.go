@@ -169,5 +169,5 @@ func dataSourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error 
 		// Update the page number to get the next page.
 		listOptions.PageNumber = policySetList.NextPage
 	}
-	return fmt.Errorf("Could not find policy set %s/%s", organization, name)
+	return fmt.Errorf("could not find policy set %s/%s", organization, name)
 }

@@ -340,7 +340,7 @@ func validateSchemaAttributesForDestinationTypeEmail(d *schema.ResourceData) err
 	}
 	token, tokenIsSet := d.GetOk("token")
 	if tokenIsSet && token != "" {
-		return fmt.Errorf("Token cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeEmail))
+		return fmt.Errorf("token cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeEmail))
 	}
 
 	return nil
@@ -350,11 +350,11 @@ func validateSchemaAttributesForDestinationTypeGeneric(d *schema.ResourceData) e
 	// Make sure email_addresses and email_user_ids are not set when destination_type is 'generic'
 	_, emailAddressesIsSet := d.GetOk("email_addresses")
 	if emailAddressesIsSet {
-		return fmt.Errorf("Email addresses cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeGeneric))
+		return fmt.Errorf("email addresses cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeGeneric))
 	}
 	_, emailUserIDsIsSet := d.GetOk("email_user_ids")
 	if emailUserIDsIsSet {
-		return fmt.Errorf("Email user IDs cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeGeneric))
+		return fmt.Errorf("email user IDs cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeGeneric))
 	}
 
 	// Make sure url is set when destination_type is 'generic'
@@ -370,15 +370,15 @@ func validateSchemaAttributesForDestinationTypeSlack(d *schema.ResourceData) err
 	// Make sure email_addresses, email_user_ids, and token are not set when destination_type is 'slack'
 	_, emailAddressesIsSet := d.GetOk("email_addresses")
 	if emailAddressesIsSet {
-		return fmt.Errorf("Email addresses cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeSlack))
+		return fmt.Errorf("email addresses cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeSlack))
 	}
 	_, emailUserIDsIsSet := d.GetOk("email_user_ids")
 	if emailUserIDsIsSet {
-		return fmt.Errorf("Email user IDs cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeSlack))
+		return fmt.Errorf("email user IDs cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeSlack))
 	}
 	token, tokenIsSet := d.GetOk("token")
 	if tokenIsSet && token != "" {
-		return fmt.Errorf("Token cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeSlack))
+		return fmt.Errorf("token cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeSlack))
 	}
 
 	// Make sure url is set when destination_type is 'slack'
@@ -394,15 +394,15 @@ func validateSchemaAttributesForDestinationTypeMicrosoftTeams(d *schema.Resource
 	// Make sure email_addresses, email_user_ids, and token are not set when destination_type is 'microsoft-teams'
 	_, emailAddressesIsSet := d.GetOk("email_addresses")
 	if emailAddressesIsSet {
-		return fmt.Errorf("Email addresses cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeMicrosoftTeams))
+		return fmt.Errorf("email addresses cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeMicrosoftTeams))
 	}
 	_, emailUserIDsIsSet := d.GetOk("email_user_ids")
 	if emailUserIDsIsSet {
-		return fmt.Errorf("Email user IDs cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeMicrosoftTeams))
+		return fmt.Errorf("email user IDs cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeMicrosoftTeams))
 	}
 	token, tokenIsSet := d.GetOk("token")
 	if tokenIsSet && token != "" {
-		return fmt.Errorf("Token cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeMicrosoftTeams))
+		return fmt.Errorf("token cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeMicrosoftTeams))
 	}
 
 	// Make sure url is set when destination_type is 'microsoft-teams'

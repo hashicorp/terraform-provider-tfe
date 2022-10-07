@@ -28,7 +28,7 @@ const defaultSSLSkipVerify = false
 
 var (
 	tfeServiceIDs       = []string{"tfe.v2.2"}
-	errMissingAuthToken = errors.New("Required token could not be found. Please set the token using an input variable in the provider configuration block or by using the TFE_TOKEN environment variable.")
+	errMissingAuthToken = errors.New("required token could not be found. Please set the token using an input variable in the provider configuration block or by using the TFE_TOKEN environment variable")
 )
 
 // Config is the structure of the configuration for the Terraform CLI.

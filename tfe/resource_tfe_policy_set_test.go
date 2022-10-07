@@ -678,11 +678,11 @@ func testAccCheckTFEPolicySetVersionValidateChecksum(n string, sourcePath string
 
 		newChecksum, err := hashPolicies(sourcePath)
 		if err != nil {
-			return fmt.Errorf("Unable to generate checksum for policies %w", err)
+			return fmt.Errorf("unable to generate checksum for policies %w", err)
 		}
 
 		if rs.Primary.Attributes["slug.id"] != newChecksum {
-			return fmt.Errorf("The new checksum for the policies contents did not match")
+			return fmt.Errorf("the new checksum for the policies contents did not match")
 		}
 
 		return nil

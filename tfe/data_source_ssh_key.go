@@ -57,5 +57,5 @@ func dataSourceTFESSHKeyRead(d *schema.ResourceData, meta interface{}) error {
 		options.PageNumber = l.NextPage
 	}
 
-	return fmt.Errorf("Could not find SSH key %s/%s", organization, name)
+	return fmt.Errorf("could not find SSH key %s/%s", organization, name)
 }

@@ -128,7 +128,7 @@ func (d dataSourceOutputs) readConfigValues(req *tfprotov5.ReadDataSourceRequest
 	}
 
 	if valMap["organization"].IsNull() || valMap["workspace"].IsNull() {
-		return orgName, wsName, fmt.Errorf("Organization and Workspace cannot be nil: %w", err)
+		return orgName, wsName, fmt.Errorf("organization and workspace cannot be nil: %w", err)
 	}
 
 	err = valMap["organization"].As(&orgName)
@@ -171,20 +171,20 @@ func (d dataSourceOutputs) readStateOutput(ctx context.Context, tfeClient *tfe.C
 		if op.Sensitive {
 			sensitiveOutput, err := tfeClient.StateVersionOutputs.Read(ctx, op.ID)
 			if err != nil {
-				return nil, fmt.Errorf("Could not read sensitive output: %w", err)
+				return nil, fmt.Errorf("could not read sensitive output: %w", err)
 			}
 			op.Value = sensitiveOutput.Value
 		}
 
 		buf, err := json.Marshal(op.Value)
 		if err != nil {
-			return nil, fmt.Errorf("Could not marshal output value: %w", err)
+			return nil, fmt.Errorf("could not marshal output value: %w", err)
 		}
 
 		v := ctyjson.SimpleJSONValue{}
 		err = v.UnmarshalJSON(buf)
 		if err != nil {
-			return nil, fmt.Errorf("Could not unmarshal output value: %w", err)
+			return nil, fmt.Errorf("could not unmarshal output value: %w", err)
 		}
 		sd.outputs[op.Name] = &outputData{
 			Value:     v.Value,

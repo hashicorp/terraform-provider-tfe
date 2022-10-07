@@ -45,12 +45,12 @@ func dataSourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 
 	switch len(tl.Items) {
 	case 0:
-		return fmt.Errorf("Could not find team %s/%s", organization, name)
+		return fmt.Errorf("could not find team %s/%s", organization, name)
 	case 1:
 		// We check this just in case a user's TFE instance only has one team
 		// and doesn't support the filter query param
 		if tl.Items[0].Name != name {
-			return fmt.Errorf("Could not find team %s/%s", organization, name)
+			return fmt.Errorf("could not find team %s/%s", organization, name)
 		}
 
 		d.SetId(tl.Items[0].ID)
@@ -82,5 +82,5 @@ func dataSourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	return fmt.Errorf("Could not find team %s/%s", organization, name)
+	return fmt.Errorf("could not find team %s/%s", organization, name)
 }
