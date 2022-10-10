@@ -177,8 +177,11 @@ func waitForOutputs(t *testing.T, client *tfe.Client, org, workspace string) {
 		t.Fatal(err)
 	}
 
+	maxRetries := 15
+	secondsToWait := 4
+
 	// Wait for outputs to be populated
-	_, err = retry(10, 3, func() (interface{}, error) {
+	_, err = retry(maxRetries, secondsToWait, func() (interface{}, error) {
 		svo, oerr := client.StateVersionOutputs.ReadCurrent(ctx, ws.ID)
 		if oerr != nil {
 			return nil, fmt.Errorf("could not read outputs: %w", oerr)
