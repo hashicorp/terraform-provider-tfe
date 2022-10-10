@@ -19,11 +19,9 @@ const (
 func main() {
 	ctx := context.Background()
 
-	// Strip the leading log package prefix so hclog
-	// can set the appropriate log level
-	logFlags := log.Flags()
-	logFlags &^= (log.Ldate | log.Ltime)
-	log.SetFlags(logFlags)
+	// Remove any date and time prefix in log package function output to
+	// prevent duplicate timestamp and incorrect log level setting
+	log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime))
 
 	debugFlag := flag.Bool("debug", false, "Start provider in debug mode.")
 	flag.Parse()
