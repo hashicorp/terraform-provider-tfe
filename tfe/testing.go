@@ -140,6 +140,24 @@ func createOrganization(t *testing.T, client *tfe.Client, options tfe.Organizati
 	}
 }
 
+func createOrganizationMembership(t *testing.T, client *tfe.Client, orgName string, options tfe.OrganizationMembershipCreateOptions) *tfe.OrganizationMembership {
+	ctx := context.Background()
+	orgMembership, err := client.OrganizationMemberships.Create(ctx, orgName, options)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() {
+		if err := client.OrganizationMemberships.Delete(ctx, orgMembership.ID); err != nil {
+			t.Errorf("Error destroying organization membership! WARNING: Dangling resources\n"+
+				"may exist! The full error is show below:\n\n"+
+				"Organization memberships:%s\nError: %s", orgMembership.ID, err)
+		}
+	})
+
+	return orgMembership
+}
+
 func skipIfCloud(t *testing.T) {
 	if !enterpriseEnabled() {
 		t.Skip("Skipping test for a feature unavailable in Terraform Cloud. Set 'ENABLE_TFE=1' to run.")

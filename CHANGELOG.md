@@ -1,7 +1,9 @@
 ## Unreleased
 
-BUG FIXES:
+FEATURES:
+* d/tfe_organization_members: Add datasource for organization_members that returns a list of active members and members with pending invite in an organization. ([#635](https://github.com/hashicorp/terraform-provider-tfe/pull/635))
 
+BUG FIXES:
 * r/tfe_workspace: When assessments_enabled was the only change in to the resource the workspace was not being updated ([#641](https://github.com/hashicorp/terraform-provider-tfe/pull/641))
 
 FEATURES:
