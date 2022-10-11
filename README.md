@@ -18,9 +18,8 @@ breaking changes. Patch version changes will be used for both bugfixes and
 non-breaking changes.
 
 - **Documentation:** https://registry.terraform.io/providers/hashicorp/tfe/latest/docs
-- Website: https://registry.terraform.io/providers/hashicorp/tfe / https://www.terraform.io
-- Discuss forum: https://discuss.hashicorp.com/c/terraform-providers
-
+- **Website**: https://registry.terraform.io/providers/hashicorp/tfe / https://www.terraform.io
+- **Discuss forum**: https://discuss.hashicorp.com/c/terraform-providers
 
 ## Installation
 
