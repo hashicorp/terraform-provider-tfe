@@ -190,7 +190,7 @@ resource "tfe_organization" "foobar" {
 }
 
 resource "tfe_oauth_client" "test" {
-	organization     = tfe_organization.foobar.id
+	organization     = tfe_organization.foobar.name
 	api_url          = "https://api.github.com"
 	http_url         = "https://github.com"
 	oauth_token      = "%s"
@@ -211,7 +211,7 @@ resource "tfe_organization" "foobar" {
 }
 
 resource "tfe_oauth_client" "test" {
-	organization     = tfe_organization.foobar.id
+	organization     = tfe_organization.foobar.name
 	api_url          = "https://api.github.com"
 	http_url         = "https://github.com"
 	name             = "tst-github-%d"
@@ -236,7 +236,7 @@ resource "tfe_organization" "foobar" {
 }
 
 resource "tfe_oauth_client" "test" {
-	organization     = tfe_organization.foobar.id
+	organization     = tfe_organization.foobar.name
 	api_url          = "https://api.github.com"
 	http_url         = "https://github.com"
 	oauth_token      = "%s"
@@ -260,7 +260,7 @@ resource "tfe_organization" "foobar" {
 }
 
 resource "tfe_oauth_client" "test" {
-	organization     = tfe_organization.foobar.id
+	organization     = tfe_organization.foobar.name
 	api_url          = "https://api.github.com"
 	http_url         = "https://github.com"
 	oauth_token      = "%s"
@@ -283,7 +283,7 @@ resource "tfe_organization" "foobar" {
 }
 
 resource "tfe_oauth_client" "test" {
-	organization     = tfe_organization.foobar.id
+	organization     = tfe_organization.foobar.name
 	api_url          = "https://api.github.com"
 	http_url         = "https://github.com"
 	oauth_token      = "%s"
@@ -306,7 +306,7 @@ resource "tfe_organization" "foobar" {
 }
 
 resource "tfe_oauth_client" "test" {
-	organization     = tfe_organization.foobar.id
+	organization     = tfe_organization.foobar.name
 	api_url          = "https://api.github.com"
 	http_url         = "https://github.com"
 	oauth_token      = "%s"
@@ -329,7 +329,7 @@ resource "tfe_organization" "foobar" {
 }
 
 resource "tfe_oauth_client" "test1" {
-	organization     = tfe_organization.foobar.id
+	organization     = tfe_organization.foobar.name
 	api_url          = "https://api.github.com"
 	http_url         = "https://github.com"
 	name             = "tst-github"
@@ -338,7 +338,7 @@ resource "tfe_oauth_client" "test1" {
 }
 
 resource "tfe_oauth_client" "test2" {
-	organization     = tfe_organization.foobar.id
+	organization     = tfe_organization.foobar.name
 	api_url          = "https://api.github.com"
 	http_url         = "https://github.com"
 	name             = "tst-github"
@@ -347,7 +347,7 @@ resource "tfe_oauth_client" "test2" {
 }
 
 data "tfe_oauth_client" "client" {
-	organization = tfe_organization.foobar.id
+	organization = tfe_organization.foobar.name
 	name         = tfe_oauth_client.test1.name
 
 	depends_on = [tfe_oauth_client.test1, tfe_oauth_client.test2]
@@ -363,7 +363,7 @@ resource "tfe_organization" "foobar" {
 }
 
 resource "tfe_oauth_client" "test" {
-	organization     = tfe_organization.foobar.id
+	organization     = tfe_organization.foobar.name
 	api_url          = "https://api.github.com"
 	http_url         = "https://github.com"
 	oauth_token      = "%s"
@@ -371,7 +371,7 @@ resource "tfe_oauth_client" "test" {
 }
 
 data "tfe_oauth_client" "client" {
-	organization = tfe_organization.foobar.id
+	organization = tfe_organization.foobar.name
 	name         = "tst-github"
 
 	depends_on = [tfe_oauth_client.test]
@@ -387,7 +387,7 @@ resource "tfe_organization" "foobar" {
 }
 
 resource "tfe_oauth_client" "test1" {
-	organization     = tfe_organization.foobar.id
+	organization     = tfe_organization.foobar.name
 	api_url          = "https://api.github.com"
 	http_url         = "https://github.com"
 	oauth_token      = "%s"
@@ -395,7 +395,7 @@ resource "tfe_oauth_client" "test1" {
 }
 
 resource "tfe_oauth_client" "test2" {
-	organization     = tfe_organization.foobar.id
+	organization     = tfe_organization.foobar.name
 	api_url          = "https://api.github.com"
 	http_url         = "https://github.com"
 	oauth_token      = "%s"
@@ -403,7 +403,7 @@ resource "tfe_oauth_client" "test2" {
 }
 
 data "tfe_oauth_client" "client" {
-    organization     = tfe_organization.foobar.id
+    organization     = tfe_organization.foobar.name
 	service_provider = "github"
 
 	depends_on = [tfe_oauth_client.test1, tfe_oauth_client.test2]
