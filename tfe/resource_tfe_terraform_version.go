@@ -1,6 +1,7 @@
 package tfe
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -16,7 +17,7 @@ func resourceTFETerraformVersion() *schema.Resource {
 		Update: resourceTFETerraformVersionUpdate,
 		Delete: resourceTFETerraformVersionDelete,
 		Importer: &schema.ResourceImporter{
-			State: resourceTFETerraformVersionImporter,
+			StateContext: resourceTFETerraformVersionImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -152,7 +153,7 @@ func resourceTFETerraformVersionDelete(d *schema.ResourceData, meta interface{})
 	return nil
 }
 
-func resourceTFETerraformVersionImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceTFETerraformVersionImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	tfeClient := meta.(*tfe.Client)
 
 	// Splitting by '-' and checking if the first elem is equal to tool

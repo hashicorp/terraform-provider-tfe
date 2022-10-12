@@ -17,7 +17,7 @@ func resourceTFEPolicySet() *schema.Resource {
 		Update: resourceTFEPolicySetUpdate,
 		Delete: resourceTFEPolicySetDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{

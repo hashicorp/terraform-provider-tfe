@@ -15,7 +15,7 @@ func resourceTFETeamOrganizationMember() *schema.Resource {
 		Read:   resourceTFETeamOrganizationMemberRead,
 		Delete: resourceTFETeamOrganizationMemberDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{

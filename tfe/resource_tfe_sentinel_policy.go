@@ -1,6 +1,7 @@
 package tfe
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -17,7 +18,7 @@ func resourceTFESentinelPolicy() *schema.Resource {
 		Update: resourceTFESentinelPolicyUpdate,
 		Delete: resourceTFESentinelPolicyDelete,
 		Importer: &schema.ResourceImporter{
-			State: resourceTFESentinelPolicyImporter,
+			StateContext: resourceTFESentinelPolicyImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -187,7 +188,7 @@ func resourceTFESentinelPolicyDelete(d *schema.ResourceData, meta interface{}) e
 	return nil
 }
 
-func resourceTFESentinelPolicyImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceTFESentinelPolicyImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	s := strings.SplitN(d.Id(), "/", 2)
 	if len(s) != 2 {
 		return nil, fmt.Errorf(

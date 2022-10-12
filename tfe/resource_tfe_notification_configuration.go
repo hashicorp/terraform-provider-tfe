@@ -16,7 +16,7 @@ func resourceTFENotificationConfiguration() *schema.Resource {
 		Update: resourceTFENotificationConfigurationUpdate,
 		Delete: resourceTFENotificationConfigurationDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{
