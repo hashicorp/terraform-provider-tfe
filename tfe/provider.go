@@ -509,9 +509,9 @@ func checkConstraints(c *disco.Constraints) error {
 
 func checkConstraintsWarning(err error) error {
 	return fmt.Errorf(
-		"Failed to check version constraints: %v\n\n"+
-			"Checking version constraints is considered optional, but this is an\n"+
-			"unexpected error which should be reported.",
+		"failed to check version constraints: %v\n\n"+
+			"checking version constraints is considered optional, but this is an\n"+
+			"unexpected error which should be reported",
 		err,
 	)
 }

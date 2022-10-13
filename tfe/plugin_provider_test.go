@@ -1,6 +1,7 @@
 package tfe
 
 import (
+	"errors"
 	"log"
 	"testing"
 
@@ -67,7 +68,7 @@ func TestPluginProvider_providerMeta(t *testing.T) {
 		}
 
 		meta, err := retrieveProviderMeta(req)
-		if err != tc.err {
+		if !errors.Is(err, tc.err) {
 			t.Fatalf("Test %s: should not be error", name)
 		}
 
