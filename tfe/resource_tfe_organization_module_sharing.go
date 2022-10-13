@@ -20,8 +20,8 @@ func resourceTFEOrganizationModuleSharing() *schema.Resource {
 			"organization": {
 				Type:     schema.TypeString,
 				Required: true,
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return strings.EqualFold(old, new)
+				DiffSuppressFunc: func(k, old, current string, d *schema.ResourceData) bool {
+					return strings.EqualFold(old, current)
 				},
 			},
 
