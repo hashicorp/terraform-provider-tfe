@@ -2,8 +2,6 @@ module github.com/hashicorp/terraform-provider-tfe
 
 go 1.17
 
-replace github.com/hashicorp/go-tfe => /Users/sams/hashicorp/go-tfe
-
 require (
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/fatih/color v1.13.0 // indirect
