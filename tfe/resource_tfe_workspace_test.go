@@ -2144,7 +2144,7 @@ func testAccCheckTFEWorkspacePanic(n string) resource.TestCheckFunc {
 		rd.SetId(rs.Primary.ID)
 
 		err = resourceTFEWorkspaceRead(rd, testAccProvider.Meta())
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 			return fmt.Errorf("Could not re-read resource directly: %w", err)
 		}
 

@@ -49,7 +49,7 @@ func resourceTFETeamTokenCreate(d *schema.ResourceData, meta interface{}) error 
 
 	log.Printf("[DEBUG] Check if a token already exists for team: %s", teamID)
 	_, err := tfeClient.TeamTokens.Read(ctx, teamID)
-	if errors.Is(err, tfe.ErrResourceNotFound) {
+	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 		return fmt.Errorf("error checking if a token exists for team %s: %w", teamID, err)
 	}
 

@@ -148,7 +148,7 @@ func testAccCheckTFETeamMemberExists(
 		}
 
 		users, err := tfeClient.TeamMembers.List(ctx, teamID)
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 			return err
 		}
 
@@ -198,7 +198,7 @@ func testAccCheckTFETeamMemberDestroy(s *terraform.State) error {
 		}
 
 		users, err := tfeClient.TeamMembers.List(ctx, teamID)
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 			return err
 		}
 
