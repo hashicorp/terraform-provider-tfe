@@ -74,6 +74,8 @@ func TestAccTFEOrganization_full(t *testing.T) {
 						"tfe_organization.foobar", "send_passing_statuses_for_untriggered_speculative_plans", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "assessments_enforced", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "allow_force_delete_workspaces", "false"),
 				),
 			},
 		},
@@ -94,10 +96,12 @@ func TestAccTFEOrganization_update_costEstimation(t *testing.T) {
 	// First update
 	costEstimationEnabled1 := true
 	assessmentsEnforced1 := true
+	allowForceDeleteWorkspaces1 := true
 
 	// Second update
 	costEstimationEnabled2 := false
 	assessmentsEnforced2 := false
+	allowForceDeleteWorkspaces2 := false
 	updatedName := org.Name + "_foobar"
 
 	resource.Test(t, resource.TestCase{
@@ -106,7 +110,7 @@ func TestAccTFEOrganization_update_costEstimation(t *testing.T) {
 		CheckDestroy: testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOrganization_update(org.Name, org.Email, costEstimationEnabled1, assessmentsEnforced1),
+				Config: testAccTFEOrganization_update(org.Name, org.Email, costEstimationEnabled1, assessmentsEnforced1, allowForceDeleteWorkspaces1),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
 						"tfe_organization.foobar", org),
@@ -129,11 +133,13 @@ func TestAccTFEOrganization_update_costEstimation(t *testing.T) {
 						"tfe_organization.foobar", "send_passing_statuses_for_untriggered_speculative_plans", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "assessments_enforced", strconv.FormatBool(assessmentsEnforced1)),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "allow_force_delete_workspaces", strconv.FormatBool(allowForceDeleteWorkspaces1)),
 				),
 			},
 
 			{
-				Config: testAccTFEOrganization_update(updatedName, org.Email, costEstimationEnabled2, assessmentsEnforced2),
+				Config: testAccTFEOrganization_update(updatedName, org.Email, costEstimationEnabled2, assessmentsEnforced2, allowForceDeleteWorkspaces2),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
 						"tfe_organization.foobar", org),
@@ -154,6 +160,8 @@ func TestAccTFEOrganization_update_costEstimation(t *testing.T) {
 						"tfe_organization.foobar", "cost_estimation_enabled", strconv.FormatBool(costEstimationEnabled2)),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "assessments_enforced", strconv.FormatBool(assessmentsEnforced2)),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "allow_force_delete_workspaces", strconv.FormatBool(allowForceDeleteWorkspaces2)),
 				),
 			},
 		},
@@ -371,26 +379,28 @@ resource "tfe_organization" "foobar" {
 func testAccTFEOrganization_full(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name                     = "tst-terraform-%d"
-  email                    = "admin@company.com"
-  session_timeout_minutes  = 30
-  session_remember_minutes = 30
-  collaborator_auth_policy = "password"
-  owners_team_saml_role_id = "owners"
-  cost_estimation_enabled  = false
-  assessments_enforced     = false
+  name                     		= "tst-terraform-%d"
+  email                    		= "admin@company.com"
+  session_timeout_minutes  		= 30
+  session_remember_minutes 		= 30
+  collaborator_auth_policy 		= "password"
+  owners_team_saml_role_id 		= "owners"
+  cost_estimation_enabled  		= false
+  assessments_enforced     		= false
+  allow_force_delete_workspaces	= false
 }`, rInt)
 }
 
-func testAccTFEOrganization_update(orgName string, orgEmail string, costEstimationEnabled bool, assessmentsEnforced bool) string {
+func testAccTFEOrganization_update(orgName string, orgEmail string, costEstimationEnabled bool, assessmentsEnforced bool, allowForceDeleteWorkspaces bool) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name                     = "%s"
-  email                    = "%s"
-  session_timeout_minutes  = 3600
-  session_remember_minutes = 3600
-  owners_team_saml_role_id = "owners"
-  cost_estimation_enabled  = %t
-	assessments_enforced     = %t
-}`, orgName, orgEmail, costEstimationEnabled, assessmentsEnforced)
+  name                     		= "%s"
+  email                    		= "%s"
+  session_timeout_minutes  		= 3600
+  session_remember_minutes 		= 3600
+  owners_team_saml_role_id 		= "owners"
+  cost_estimation_enabled  		= %t
+  assessments_enforced     		= %t
+  allow_force_delete_workspaces = %t
+}`, orgName, orgEmail, costEstimationEnabled, assessmentsEnforced, allowForceDeleteWorkspaces)
 }
