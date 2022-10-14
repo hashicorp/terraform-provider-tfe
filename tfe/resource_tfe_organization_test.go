@@ -379,28 +379,28 @@ resource "tfe_organization" "foobar" {
 func testAccTFEOrganization_full(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name                     		= "tst-terraform-%d"
-  email                    		= "admin@company.com"
-  session_timeout_minutes  		= 30
-  session_remember_minutes 		= 30
-  collaborator_auth_policy 		= "password"
-  owners_team_saml_role_id 		= "owners"
-  cost_estimation_enabled  		= false
-  assessments_enforced     		= false
-  allow_force_delete_workspaces	= false
+  name                              = "tst-terraform-%d"
+  email                             = "admin@company.com"
+  session_timeout_minutes           = 30
+  session_remember_minutes          = 30
+  collaborator_auth_policy          = "password"
+  owners_team_saml_role_id          = "owners"
+  cost_estimation_enabled           = false
+  assessments_enforced              = false
+  allow_force_delete_workspaces     = false
 }`, rInt)
 }
 
 func testAccTFEOrganization_update(orgName string, orgEmail string, costEstimationEnabled bool, assessmentsEnforced bool, allowForceDeleteWorkspaces bool) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name                     		= "%s"
-  email                    		= "%s"
-  session_timeout_minutes  		= 3600
-  session_remember_minutes 		= 3600
-  owners_team_saml_role_id 		= "owners"
-  cost_estimation_enabled  		= %t
-  assessments_enforced     		= %t
-  allow_force_delete_workspaces = %t
+  name                              = "%s"
+  email                             = "%s"
+  session_timeout_minutes           = 3600
+  session_remember_minutes          = 3600
+  owners_team_saml_role_id          = "owners"
+  cost_estimation_enabled           = %t
+  assessments_enforced              = %t
+  allow_force_delete_workspaces     = %t
 }`, orgName, orgEmail, costEstimationEnabled, assessmentsEnforced, allowForceDeleteWorkspaces)
 }
