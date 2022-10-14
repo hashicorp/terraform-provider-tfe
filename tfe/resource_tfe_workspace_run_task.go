@@ -10,6 +10,37 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+func workspaceRunTaskEnforcementLevels() []string {
+	return []string{
+		string(tfe.Advisory),
+		string(tfe.Mandatory),
+	}
+}
+
+func workspaceRunTaskStages() []string {
+	return []string{
+		string(tfe.PrePlan),
+		string(tfe.PostPlan),
+		string(tfe.PreApply),
+	}
+}
+
+// Helper function to turn a slice of strings into an english sentence for documentation
+func sentenceList(items []string, prefix string, suffix string, conjunction string) string {
+	var b strings.Builder
+	for i, v := range items {
+		fmt.Fprint(&b, prefix, v, suffix)
+		if i < len(items)-1 {
+			if i < len(items)-2 {
+				fmt.Fprint(&b, ", ")
+			} else {
+				fmt.Fprintf(&b, " %s ", conjunction)
+			}
+		}
+	}
+	return b.String()
+}
+
 func resourceTFEWorkspaceRunTask() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceTFEWorkspaceRunTaskCreate,
@@ -22,25 +53,47 @@ func resourceTFEWorkspaceRunTask() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"workspace_id": {
-				Type:     schema.TypeString,
-				ForceNew: true,
-				Required: true,
+				Description: "The id of the workspace to associate the Run task to.",
+				Type:        schema.TypeString,
+				ForceNew:    true,
+				Required:    true,
 			},
 
 			"task_id": {
+				Description: "The id of the Run task to associate to the Workspace.",
+
 				Type:     schema.TypeString,
 				ForceNew: true,
 				Required: true,
 			},
 
 			"enforcement_level": {
+				Description: fmt.Sprintf("The enforcement level of the task. Valid values are %s.", sentenceList(
+					workspaceRunTaskEnforcementLevels(),
+					"`",
+					"`",
+					"and",
+				)),
 				Type:     schema.TypeString,
 				Required: true,
 				ValidateFunc: validation.StringInSlice(
-					[]string{
-						string(tfe.Advisory),
-						string(tfe.Mandatory),
-					},
+					workspaceRunTaskEnforcementLevels(),
+					false,
+				),
+			},
+
+			"stage": {
+				Description: fmt.Sprintf("This is currently in BETA. The stage to run the task in. Valid values are %s.", sentenceList(
+					workspaceRunTaskStages(),
+					"`",
+					"`",
+					"and",
+				)),
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  tfe.PostPlan,
+				ValidateFunc: validation.StringInSlice(
+					workspaceRunTaskStages(),
 					false,
 				),
 			},
@@ -65,10 +118,12 @@ func resourceTFEWorkspaceRunTaskCreate(d *schema.ResourceData, meta interface{})
 		return fmt.Errorf(
 			"Error retrieving workspace %s: %w", workspaceID, err)
 	}
+	stage := tfe.Stage(d.Get("stage").(string))
 
 	options := tfe.WorkspaceRunTaskCreateOptions{
 		RunTask:          task,
 		EnforcementLevel: tfe.TaskEnforcementLevel(d.Get("enforcement_level").(string)),
+		Stage:            &stage,
 	}
 
 	log.Printf("[DEBUG] Create task %s in workspace %s", task.ID, ws.ID)
@@ -108,6 +163,10 @@ func resourceTFEWorkspaceRunTaskUpdate(d *schema.ResourceData, meta interface{})
 	if d.HasChange("enforcement_level") {
 		options.EnforcementLevel = tfe.TaskEnforcementLevel(d.Get("enforcement_level").(string))
 	}
+	if d.HasChange("stage") {
+		stage := tfe.Stage(d.Get("stage").(string))
+		options.Stage = &stage
+	}
 
 	log.Printf("[DEBUG] Update configuration of task %s in workspace %s", d.Id(), workspaceID)
 	_, err := tfeClient.WorkspaceRunTasks.Update(ctx, workspaceID, d.Id(), options)
@@ -138,6 +197,7 @@ func resourceTFEWorkspaceRunTaskRead(d *schema.ResourceData, meta interface{}) e
 	d.Set("workspace_id", wstask.Workspace.ID)
 	d.Set("task_id", wstask.RunTask.ID)
 	d.Set("enforcement_level", string(wstask.EnforcementLevel))
+	d.Set("stage", string(wstask.Stage))
 
 	return nil
 }

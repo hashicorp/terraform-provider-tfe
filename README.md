@@ -18,9 +18,8 @@ breaking changes. Patch version changes will be used for both bugfixes and
 non-breaking changes.
 
 - **Documentation:** https://registry.terraform.io/providers/hashicorp/tfe/latest/docs
-- Website: https://registry.terraform.io/providers/hashicorp/tfe / https://www.terraform.io
-- Discuss forum: https://discuss.hashicorp.com/c/terraform-providers
-
+- **Website**: https://registry.terraform.io/providers/hashicorp/tfe / https://www.terraform.io
+- **Discuss forum**: https://discuss.hashicorp.com/c/terraform-providers
 
 ## Installation
 
@@ -30,7 +29,7 @@ Declare the provider in your configuration and `terraform init` will automatical
 terraform {
   required_providers {
     tfe = {
-      version = "~> 0.35.0"
+      version = "~> 0.37.0"
     }
   }
 }
@@ -46,7 +45,7 @@ The above snippet using `required_providers` is for Terraform 0.13+; if you are 
 
 ```hcl
 provider "tfe" {
-  version = "~> 0.35.0"
+  version = "~> 0.37.0"
   ...
 }
 ```

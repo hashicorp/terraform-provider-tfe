@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -77,7 +77,7 @@ func (t *loggingTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 func hasSensitiveValues(req *http.Request) bool {
 	foundSensitiveVal := false
 	if req.Body != nil {
-		b, err := ioutil.ReadAll(req.Body)
+		b, err := io.ReadAll(req.Body)
 		if err != nil {
 			return true // just to be safe, let's assume there could be a sensitive value
 		}
@@ -86,7 +86,7 @@ func hasSensitiveValues(req *http.Request) bool {
 			foundSensitiveVal = true
 		}
 		// after done inspecting the body, place back same data we read
-		req.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+		req.Body = io.NopCloser(bytes.NewBuffer(b))
 	}
 	return foundSensitiveVal
 }

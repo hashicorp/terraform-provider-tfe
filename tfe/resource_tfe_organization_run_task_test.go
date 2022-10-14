@@ -35,20 +35,25 @@ func TestAccTFEOrganizationRunTask_validateSchemaAttributeUrl(t *testing.T) {
 
 func TestAccTFEOrganizationRunTask_create(t *testing.T) {
 	skipUnlessRunTasksDefined(t)
-	skipIfFreeOnly(t) // Run Tasks requires TFE or a TFC paid/trial subscription
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	runTask := &tfe.RunTask{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFEOrganizationRunTaskDestroy,
 		Steps: []resource.TestStep{
-			testCheckCreateOrgWithRunTasks(orgName),
 			{
-				Config: testAccTFEOrganizationRunTask_basic(orgName, rInt, runTasksURL()),
+				Config: testAccTFEOrganizationRunTask_basic(org.Name, rInt, runTasksURL()),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationRunTaskExists("tfe_organization_run_task.foobar", runTask),
 					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "name", fmt.Sprintf("foobar-task-%d", rInt)),
@@ -60,7 +65,7 @@ func TestAccTFEOrganizationRunTask_create(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFEOrganizationRunTask_update(orgName, rInt, runTasksURL()),
+				Config: testAccTFEOrganizationRunTask_update(org.Name, rInt, runTasksURL()),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "name", fmt.Sprintf("foobar-task-%d-new", rInt)),
 					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "url", runTasksURL()),
@@ -76,24 +81,29 @@ func TestAccTFEOrganizationRunTask_create(t *testing.T) {
 
 func TestAccTFEOrganizationRunTask_import(t *testing.T) {
 	skipUnlessRunTasksDefined(t)
-	skipIfFreeOnly(t) // Run Tasks requires TFE or a TFC paid/trial subscription
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
-			testCheckCreateOrgWithRunTasks(orgName),
 			{
-				Config: testAccTFEOrganizationRunTask_basic(orgName, rInt, runTasksURL()),
+				Config: testAccTFEOrganizationRunTask_basic(org.Name, rInt, runTasksURL()),
 			},
 			{
 				ResourceName:      "tfe_organization_run_task.foobar",
 				ImportState:       true,
-				ImportStateId:     fmt.Sprintf("tst-terraform-%d/foobar-task-%d", rInt, rInt),
+				ImportStateId:     fmt.Sprintf("%s/foobar-task-%d", org.Name, rInt),
 				ImportStateVerify: true,
 			},
 		},
@@ -150,13 +160,8 @@ func testAccCheckTFEOrganizationRunTaskDestroy(s *terraform.State) error {
 
 func testAccTFEOrganizationRunTask_basic(orgName string, rInt int, runTaskURL string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-	name  = "%s"
-	email = "admin@company.com"
-}
-
 resource "tfe_organization_run_task" "foobar" {
-	organization = tfe_organization.foobar.id
+	organization = "%s"
 	url          = "%s"
 	name         = "foobar-task-%d"
 	enabled      = false
@@ -166,13 +171,8 @@ resource "tfe_organization_run_task" "foobar" {
 
 func testAccTFEOrganizationRunTask_update(orgName string, rInt int, runTaskURL string) string {
 	return fmt.Sprintf(`
-	resource "tfe_organization" "foobar" {
-		name  = "%s"
-		email = "admin@company.com"
-	}
-
 	resource "tfe_organization_run_task" "foobar" {
-		organization = tfe_organization.foobar.id
+		organization = "%s"
 		url          = "%s"
 		name         = "foobar-task-%d-new"
 		enabled      = true

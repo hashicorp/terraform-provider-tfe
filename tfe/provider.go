@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -92,6 +91,8 @@ func Provider() *schema.Provider {
 			"tfe_workspace_run_task":      dataSourceTFEWorkspaceRunTask(),
 			"tfe_variables":               dataSourceTFEWorkspaceVariables(),
 			"tfe_variable_set":            dataSourceTFEVariableSet(),
+			"tfe_policy_set":              dataSourceTFEPolicySet(),
+			"tfe_organization_members":    dataSourceTFEOrganizationMembers(),
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
@@ -113,6 +114,7 @@ func Provider() *schema.Provider {
 			"tfe_team":                        resourceTFETeam(),
 			"tfe_team_access":                 resourceTFETeamAccess(),
 			"tfe_team_organization_member":    resourceTFETeamOrganizationMember(),
+			"tfe_team_organization_members":   resourceTFETeamOrganizationMembers(),
 			"tfe_team_member":                 resourceTFETeamMember(),
 			"tfe_team_members":                resourceTFETeamMembers(),
 			"tfe_team_token":                  resourceTFETeamToken(),
@@ -122,6 +124,7 @@ func Provider() *schema.Provider {
 			"tfe_variable":                    resourceTFEVariable(),
 			"tfe_variable_set":                resourceTFEVariableSet(),
 			"tfe_workspace_variable_set":      resourceTFEWorkspaceVariableSet(),
+			"tfe_workspace_policy_set":        resourceTFEWorkspacePolicySet(),
 		},
 
 		ConfigureFunc: providerConfigure,
@@ -363,7 +366,7 @@ func readCliConfigFile(configFilePath string) *Config {
 	config := &Config{}
 
 	// Read the CLI config file content.
-	content, err := ioutil.ReadFile(configFilePath)
+	content, err := os.ReadFile(configFilePath)
 	if err != nil {
 		log.Printf("[ERROR] Error reading CLI config or credentials file %s: %v", configFilePath, err)
 		return config

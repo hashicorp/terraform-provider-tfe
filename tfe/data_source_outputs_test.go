@@ -5,8 +5,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
+	"os"
 	"testing"
 	"time"
 
@@ -16,7 +16,6 @@ import (
 )
 
 func TestAccTFEOutputs(t *testing.T) {
-	skipIfFreeOnly(t)
 	skipIfUnitTest(t)
 
 	client, err := getClientUsingEnv()
@@ -27,7 +26,7 @@ func TestAccTFEOutputs(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	fileName := "test-fixtures/state-versions/terraform.tfstate"
 	orgName, wsName, orgCleanup := createStateVersion(t, client, rInt, fileName)
-	defer orgCleanup()
+	t.Cleanup(orgCleanup)
 
 	waitForOutputs(t, client, orgName, wsName)
 
@@ -61,7 +60,6 @@ func TestAccTFEOutputs(t *testing.T) {
 }
 
 func TestAccTFEOutputs_emptyOutputs(t *testing.T) {
-	skipIfFreeOnly(t)
 	skipIfUnitTest(t)
 
 	client, err := getClientUsingEnv()
@@ -72,7 +70,7 @@ func TestAccTFEOutputs_emptyOutputs(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	fileName := "test-fixtures/state-versions/terraform-empty-outputs.tfstate"
 	orgName, wsName, orgCleanup := createStateVersion(t, client, rInt, fileName)
-	defer orgCleanup()
+	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -124,6 +122,9 @@ func createStateVersion(t *testing.T, client *tfe.Client, rInt int, fileName str
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	upgradeOrganizationSubscription(t, client, org)
+
 	orgCleanup = func() {
 		if err := client.Organizations.Delete(ctx, org.Name); err != nil {
 			t.Errorf("Error destroying organization! WARNING: Dangling resources\n"+
@@ -139,7 +140,7 @@ func createStateVersion(t *testing.T, client *tfe.Client, rInt int, fileName str
 		t.Fatal(err)
 	}
 
-	state, err := ioutil.ReadFile(fileName)
+	state, err := os.ReadFile(fileName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,8 +177,11 @@ func waitForOutputs(t *testing.T, client *tfe.Client, org, workspace string) {
 		t.Fatal(err)
 	}
 
+	maxRetries := 15
+	secondsToWait := 4
+
 	// Wait for outputs to be populated
-	_, err = retry(10, 3, func() (interface{}, error) {
+	_, err = retry(maxRetries, secondsToWait, func() (interface{}, error) {
 		svo, oerr := client.StateVersionOutputs.ReadCurrent(ctx, ws.ID)
 		if oerr != nil {
 			return nil, fmt.Errorf("could not read outputs: %w", oerr)

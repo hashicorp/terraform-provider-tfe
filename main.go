@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"log"
 	"os"
 
@@ -18,12 +19,18 @@ const (
 func main() {
 	ctx := context.Background()
 
-	// Strip the leading log package prefix so hclog
-	// can set the appropriate log level
-	logFlags := log.Flags()
-	logFlags &^= (log.Ldate | log.Ltime)
-	log.SetFlags(logFlags)
+	// Remove any date and time prefix in log package function output to
+	// prevent duplicate timestamp and incorrect log level setting
+	log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime))
 
+	debugFlag := flag.Bool("debug", false, "Start provider in debug mode.")
+	flag.Parse()
+
+	var serveOpts []tf5server.ServeOpt
+
+	if *debugFlag {
+		serveOpts = append(serveOpts, tf5server.WithManagedDebug())
+	}
 	// terraform-plugin-mux here is used to combine multiple Terraform providers
 	// built using different SDK and frameworks in order to combine them into a
 	// single logical provider for Terraform to work with.
@@ -43,7 +50,7 @@ func main() {
 
 	err = tf5server.Serve(tfeProviderName, func() tfprotov5.ProviderServer {
 		return mux.Server()
-	})
+	}, serveOpts...)
 	if err != nil {
 		log.Printf("[ERROR] Could not start serving the ProviderServer: %v", err)
 		os.Exit(1)

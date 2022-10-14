@@ -2,9 +2,7 @@ package tfe
 
 import (
 	"fmt"
-	"math/rand"
 	"testing"
-	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -12,10 +10,15 @@ import (
 )
 
 func TestAccTFEPolicySetParameter_basic(t *testing.T) {
-	skipIfFreeOnly(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	parameter := &tfe.PolicySetParameter{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -23,7 +26,7 @@ func TestAccTFEPolicySetParameter_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetParameterDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySetParameter_basic(rInt),
+				Config: testAccTFEPolicySetParameter_basic(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetParameterExists(
 						"tfe_policy_set_parameter.foobar", parameter),
@@ -41,10 +44,15 @@ func TestAccTFEPolicySetParameter_basic(t *testing.T) {
 }
 
 func TestAccTFEPolicySetParameter_update(t *testing.T) {
-	skipIfFreeOnly(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	parameter := &tfe.PolicySetParameter{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -52,7 +60,7 @@ func TestAccTFEPolicySetParameter_update(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetParameterDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySetParameter_basic(rInt),
+				Config: testAccTFEPolicySetParameter_basic(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetParameterExists(
 						"tfe_policy_set_parameter.foobar", parameter),
@@ -67,7 +75,7 @@ func TestAccTFEPolicySetParameter_update(t *testing.T) {
 			},
 
 			{
-				Config: testAccTFEPolicySetParameter_update(rInt),
+				Config: testAccTFEPolicySetParameter_update(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetParameterExists(
 						"tfe_policy_set_parameter.foobar", parameter),
@@ -85,9 +93,13 @@ func TestAccTFEPolicySetParameter_update(t *testing.T) {
 }
 
 func TestAccTFEPolicySetParameter_import(t *testing.T) {
-	skipIfFreeOnly(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -95,7 +107,7 @@ func TestAccTFEPolicySetParameter_import(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetParameterDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySetParameter_basic(rInt),
+				Config: testAccTFEPolicySetParameter_basic(org.Name),
 			},
 
 			{
@@ -198,35 +210,25 @@ func testAccCheckTFEPolicySetParameterDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccTFEPolicySetParameter_basic(rInt int) string {
+func testAccTFEPolicySetParameter_basic(organization string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
 resource "tfe_policy_set" "foobar" {
   name         = "policy-set-test"
-  organization = tfe_organization.foobar.id
+  organization = "%s"
 }
 
 resource "tfe_policy_set_parameter" "foobar" {
   key          = "key_test"
   value        = "value_test"
   policy_set_id = tfe_policy_set.foobar.id
-}`, rInt)
+}`, organization)
 }
 
-func testAccTFEPolicySetParameter_update(rInt int) string {
+func testAccTFEPolicySetParameter_update(organization string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
 resource "tfe_policy_set" "foobar" {
   name         = "policy-set-test"
-  organization = tfe_organization.foobar.id
+  organization = "%s"
 }
 
 resource "tfe_policy_set_parameter" "foobar" {
@@ -234,5 +236,5 @@ resource "tfe_policy_set_parameter" "foobar" {
   value        = "value_updated"
   sensitive    = true
   policy_set_id = tfe_policy_set.foobar.id
-}`, rInt)
+}`, organization)
 }
