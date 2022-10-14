@@ -15,10 +15,10 @@ require (
 	github.com/hashicorp/go-tfe v1.10.0
 	github.com/hashicorp/go-version v1.6.0
 	github.com/hashicorp/hcl v0.0.0-20180404174102-ef8a98b0bbce
-	github.com/hashicorp/hcl/v2 v2.14.0 // indirect
+	github.com/hashicorp/hcl/v2 v2.14.1 // indirect
 	github.com/hashicorp/terraform-plugin-go v0.14.0
 	github.com/hashicorp/terraform-plugin-mux v0.2.0
-	github.com/hashicorp/terraform-plugin-sdk/v2 v2.23.0
+	github.com/hashicorp/terraform-plugin-sdk/v2 v2.24.0
 	github.com/hashicorp/terraform-svchost v0.0.0-20200729002733-f050f53b9734
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
