@@ -95,6 +95,20 @@ func resourceTFETeamOrganizationMembersRead(d *schema.ResourceData, meta interfa
 	return nil
 }
 
+func fetchExistingTeamMembershipIds(tfeClient *tfe.Client, teamID string) (map[string]interface{}, error) {
+	teamMembers, err := tfeClient.TeamMembers.ListOrganizationMemberships(ctx, teamID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch existing organization memberships for team %s: %w", teamID, err)
+	}
+
+	teamMembersIDSet := make(map[string]interface{})
+	for _, m := range teamMembers {
+		teamMembersIDSet[m.ID] = nil
+	}
+
+	return teamMembersIDSet, nil
+}
+
 func resourceTFETeamOrganizationMembersUpdate(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
@@ -124,21 +138,36 @@ func resourceTFETeamOrganizationMembersUpdate(d *schema.ResourceData, meta inter
 		}
 	}
 
-	// Then delete all the old users.
-	if membershipIDsToDelete.Len() > 0 {
-		// Create a new options struct.
-		options := tfe.TeamMemberRemoveOptions{}
+	if membershipIDsToDelete.Len() == 0 {
+		return nil
+	}
 
-		// Add all the organization memberships that need to be removed.
-		for _, id := range membershipIDsToDelete.List() {
+	// Then delete all the old users.
+	existingIDs, err := fetchExistingTeamMembershipIds(tfeClient, d.Id())
+	if err != nil {
+		return err
+	}
+
+	// Create a new options struct.
+	options := tfe.TeamMemberRemoveOptions{}
+
+	// Add all the organization memberships that need to be removed, except the
+	// ones that already don't exist. Those may have been removed by another
+	// destroy operation, such as a membership resource.
+	for _, id := range membershipIDsToDelete.List() {
+		if _, exists := existingIDs[id.(string)]; exists {
 			options.OrganizationMembershipIDs = append(options.OrganizationMembershipIDs, id.(string))
 		}
+	}
 
+	if len(options.OrganizationMembershipIDs) > 0 {
 		log.Printf("[DEBUG] Remove organization memberships %v from team: %s", options.OrganizationMembershipIDs, d.Id())
-		err := tfeClient.TeamMembers.Remove(ctx, d.Id(), options)
+		err = tfeClient.TeamMembers.Remove(ctx, d.Id(), options)
 		if err != nil {
 			return fmt.Errorf("Error removing organization memberships from team %s: %w", d.Id(), err)
 		}
+	} else {
+		log.Printf("[DEBUG] All members planned to be removed from this team were already removed from team %s", d.Id())
 	}
 
 	return nil

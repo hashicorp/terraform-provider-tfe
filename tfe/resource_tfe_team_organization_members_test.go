@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccTFETeamOrganizationMembers_basic(t *testing.T) {
+func TestAccTFETeamOrganizationMembers_create_update(t *testing.T) {
 	organizationMemberships := &[]tfe.OrganizationMembership{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -26,7 +26,15 @@ func TestAccTFETeamOrganizationMembers_basic(t *testing.T) {
 				Config: testAccTFETeamOrganizationMembers_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamOrganizationMembersExists("tfe_team_organization_members.foobar", organizationMemberships),
+					testAccCheckTFETeamOrganizationMembersCount(3, organizationMemberships),
 					testAccCheckTFETeamOrganizationMembersAttributes(organizationMemberships),
+				),
+			},
+			{
+				Config: testAccTFETeamOrganizationMembers_deletedMembership(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFETeamOrganizationMembersExists("tfe_team_organization_members.foobar", organizationMemberships),
+					testAccCheckTFETeamOrganizationMembersCount(2, organizationMemberships),
 				),
 			},
 		},
@@ -57,6 +65,7 @@ func TestAccTFETeamOrganizationMembers_import(t *testing.T) {
 func testAccCheckTFETeamOrganizationMembersExists(resourceName string, organizationMemberships *[]tfe.OrganizationMembership) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		*organizationMemberships = []tfe.OrganizationMembership{}
 
 		rs, ok := s.RootModule().Resources[resourceName]
 		if !ok {
@@ -107,6 +116,15 @@ func testAccCheckTFETeamOrganizationMembersAttributes(organizationMemberships *[
 	}
 }
 
+func testAccCheckTFETeamOrganizationMembersCount(expected int, organizationMemberships *[]tfe.OrganizationMembership) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if len(*organizationMemberships) != expected {
+			return fmt.Errorf("expected %d memberships, got %d", expected, len(*organizationMemberships))
+		}
+		return nil
+	}
+}
+
 func testAccCheckTFETeamOrganizationMembersDestroy(s *terraform.State) error {
 	tfeClient := testAccProvider.Meta().(*tfe.Client)
 
@@ -133,6 +151,37 @@ func testAccCheckTFETeamOrganizationMembersDestroy(s *terraform.State) error {
 	}
 
 	return nil
+}
+
+func testAccTFETeamOrganizationMembers_deletedMembership(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-test-%d"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_organization_membership" "foo" {
+  organization = tfe_organization.foobar.id
+  email = "foo@foobar.com"
+}
+
+resource "tfe_organization_membership" "bar" {
+  organization = tfe_organization.foobar.id
+  email = "bar@foobar.com"
+}
+
+resource "tfe_team_organization_members" "foobar" {
+  team_id  = tfe_team.foobar.id
+  organization_membership_ids = [
+	tfe_organization_membership.foo.id,
+	tfe_organization_membership.bar.id,
+  ]
+}`, rInt, rInt)
 }
 
 func testAccTFETeamOrganizationMembers_basic(rInt int) string {
