@@ -73,7 +73,7 @@ issues:
   - linters:
       - nestif
     path: (resource_tfe_team_access|resource_tfe_workspace|credentials|resource_tfe_policy_set|
-      resource_tfe_policy_set|resource_tfe_team_members|resource_tfe_notification_configuration|resource_tfe_team)\.go
+      resource_tfe_policy_set|resource_tfe_team_members|resource_tfe_notification_configuration|resource_tfe_team|data_source_oauth_client|oauth_client_helpers)\.go
   - linters:
       - revive
     path: workspace_helpers\.go
