@@ -63,6 +63,8 @@ Terraform on your local command line, it can automatically discover the credenti
 the [CLI Configuration File documentation](/docs/commands/cli-config.html).
 If you used the `TF_CLI_CONFIG_FILE` environment variable to specify a
 non-default location for .terraformrc, the provider will also use that location.
+Using a `credentials_helper` block is not supported.
+
 
 ## Versions
 
