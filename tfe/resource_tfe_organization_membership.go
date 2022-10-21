@@ -34,6 +34,11 @@ func resourceTFEOrganizationMembership() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+
+			"username": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -84,6 +89,7 @@ func resourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interfac
 	d.Set("email", membership.Email)
 	d.Set("organization", membership.Organization.Name)
 	d.Set("user_id", membership.User.ID)
+	d.Set("username", membership.User.Username)
 
 	return nil
 }

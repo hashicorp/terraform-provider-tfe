@@ -18,10 +18,21 @@ be updated manually.
 
 ## Example Usage
 
+### Fetch by email
+
 ```hcl
 data "tfe_organization_membership" "test" {
   organization  = "my-org-name"
   email = "user@company.com"
+}
+```
+
+### Fetch by username
+
+```
+data "tfe_organization_membership" "test" {
+  organization  = "my-org-name"
+  username = "my-username"
 }
 ```
 
@@ -30,7 +41,10 @@ data "tfe_organization_membership" "test" {
 The following arguments are supported:
 
 * `organization` - (Required) Name of the organization.
-* `email` - (Required) Email of the user.
+* `email` - (Optional) Email of the user.
+* `username` - (Optional) The username of the user.
+
+~> **NOTE:** While `email` and `username` are optional arguments, one or the other is required.
 
 ## Attributes Reference
 
@@ -38,3 +52,4 @@ In addition to all arguments above, the following attributes are exported:
 
 * `id` - The organization membership ID.
 * `user_id` - The ID of the user associated with the organization membership.
+* `username` - The username of the user associated with the organization membership.
