@@ -2,6 +2,23 @@ variable "aws_region" {
   type = string
 }
 
+variable "artifactory_username" {
+  description = "Username for Artifactory repository access"
+  type = string
+}
+
+variable "artifactory_token" {
+  description = "Token for Artifactory repository access"
+  type = string
+  sensitive = true
+}
+
+variable "datadog_api_key" {
+  description = "Private API key to give access to Datadog"
+  type = string
+  sensitive = true
+}
+
 variable "env" {
   description = "Environment variables that will be present during startup. These may be propagated into services through the Docker Compose definitions"
   type        = map(string)

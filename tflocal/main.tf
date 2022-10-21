@@ -13,6 +13,9 @@ module "tflocal" {
   ejson_file_content           = var.ejson_file_content
   quay_username                = var.quay_username
   quay_password                = var.quay_password
+  artifactory_token            = var.artifactory_token
+  artifactory_username         = var.artifactory_username
+  datadog_api_key              = var.datadog_api_key
   run_cleanup_script           = var.run_cleanup_script
   env                          = var.env
 
