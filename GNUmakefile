@@ -11,6 +11,7 @@ build: fmtcheck
 terraform-provider-tfe: fmtcheck
 	@go build -o terraform-provider-tfe
 
+# Run unit tests
 test: fmtcheck
 	go test -v $(TEST) || exit 1
 	echo $(TEST) | \
@@ -20,6 +21,7 @@ sweep:
 	@echo "WARNING: This will destroy infrastructure. Use only in development accounts."
 	go test ./tfe -v -timeout 60m -sweep=prod
 
+# Run acceptance tests
 testacc: fmtcheck
 	TF_ACC=1 TF_LOG_SDK_PROTO=OFF go test $(TEST) -v $(TESTARGS) -timeout 15m
 
