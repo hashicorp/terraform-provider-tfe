@@ -44,8 +44,10 @@ jobs:
           GITHUB_REGISTRY_MODULE_IDENTIFIER: "hashicorp/terraform-random-module"
           GITHUB_WORKSPACE_IDENTIFIER: "hashicorp/terraform-random-1"
           GITHUB_WORKSPACE_BRANCH: "test"
+          MOD_PROVIDER: github.com/hashicorp/terraform-provider-tfe
+          MOD_TFE: github.com/hashicorp/terraform-provider-tfe/tfe
+          MOD_VERSION: github.com/hashicorp/terraform-provider-tfe/version
         run: |
           source $HOME/.env
-          echo "TESTS=$(go list ./... | grep -v 'vendor')" >> $GITHUB_ENV
-          gotestsum --format short-verbose -- ${{ env.TESTS }} -v -timeout=30m
+          gotestsum --format short-verbose -- $MOD_PROVIDER $MOD_TFE $MOD_VERSION -v -timeout=30m
 
