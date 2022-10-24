@@ -64,19 +64,11 @@ You can set your environment variables up however you prefer. The following are 
 
 ### 3. Run the tests
 
-#### Running the provider tests
+There are two types of tests one can run for the provider: acceptance tests and unit tests. You can run acceptance tests using the Makefile target `testacc` and unit tests using the Makefile target `test`. Typically, when you write a test for a particular resource or data source it will be referred to as an acceptance test. On the other hand, unit tests are reserved for resource helpers or provider specific logic. These are semantics used by the Terraform Plugin SDKv2 and are maintained here for consistency, learn more about [Acceptance Tests](https://developer.hashicorp.com/terraform/plugin/sdkv2/testing/acceptance-tests). Furthermore, resource tests make use of the Terraform Plugin SDKv2 helper, [resource.Test()](https://pkg.go.dev/github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource#Test), which requires the environment variable `TF_ACC` to be set in order to run.
 
-##### With envchain:
-```sh
-$ envchain YOUR_NAMESPACE_HERE make test
-```
+**Note**: The difference between `make testacc` and `make test` is whether `TF_ACC=1` is set or not. However, you can still run unit tests using the `testacc` target.
 
-##### Without envchain:
-```sh
-$ make test
-```
-
-#### Running all the acceptance tests
+#### Run all acceptance tests
 
 ##### With envchain:
 ```sh
@@ -88,7 +80,7 @@ $ envchain YOUR_NAMESPACE_HERE make testacc
 $ make testacc
 ```
 
-#### Running specific acceptance tests
+#### Run a specific acceptance test
 
 The commands below use notification configurations as an example.
 
@@ -100,5 +92,31 @@ $ TESTARGS="-run TestAccTFENotificationConfiguration" envchain YOUR_NAMESPACE_HE
 ##### Without envchain:
 ```sh
 $ TESTARGS="-run TestAccTFENotificationConfiguration" make testacc
+```
+
+#### Run all unit tests
+
+##### With envchain:
+```sh
+$ envchain YOUR_NAMESPACE_HERE make test
+```
+
+##### Without envchain:
+```sh
+$ make test
+```
+
+#### Run a specific unit test
+
+The commands below test the organization run task helper as an example.
+
+##### With envchain:
+```sh
+$ TESTARGS="-run TestFetchOrganizationRunTask" envchain YOUR_NAMESPACE_HERE make test
+```
+
+##### Without envchain:
+```sh
+$ TESTARGS="-run TestFetchOrganizationRunTask" make test
 ```
 
