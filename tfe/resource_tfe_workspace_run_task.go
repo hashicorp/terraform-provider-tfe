@@ -83,7 +83,7 @@ func resourceTFEWorkspaceRunTask() *schema.Resource {
 			},
 
 			"stage": {
-				Description: fmt.Sprintf("This is currently in BETA. The stage to run the task in. Valid values are %s.", sentenceList(
+				Description: fmt.Sprintf("The stage to run the task in. Valid values are %s.", sentenceList(
 					workspaceRunTaskStages(),
 					"`",
 					"`",
