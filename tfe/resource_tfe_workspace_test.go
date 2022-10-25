@@ -1811,6 +1811,100 @@ func TestAccTFEWorkspace_paginatedRemoteStateConsumers(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspace_deleteWithForceDeleteSettingDisabled(t *testing.T) {
+	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_basic(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					testAccCheckTFEWorkspaceAttributes(workspace),
+				),
+			},
+			{
+				PreConfig: func() {
+					_, err := tfeClient.Workspaces.Lock(ctx, workspace.ID, tfe.WorkspaceLockOptions{})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				Config:      testAccTFEWorkspace_basicDeleted(rInt),
+				ExpectError: regexp.MustCompile(`.*Workspace is currently locked.`),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+				),
+			},
+			{
+				PreConfig: func() {
+					_, err := tfeClient.Workspaces.Unlock(ctx, workspace.ID)
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				Config: testAccTFEWorkspace_basicDeleted(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceDestroy,
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspace_deleteWithForceDeleteSettingEnabled(t *testing.T) {
+	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_basicForceDeleteEnabled(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					testAccCheckTFEWorkspaceAttributes(workspace),
+				),
+			},
+			{
+				PreConfig: func() {
+					_, err := tfeClient.Workspaces.Lock(ctx, workspace.ID, tfe.WorkspaceLockOptions{})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				Config: testAccTFEWorkspace_basicDeleted(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceDestroy,
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspace_deleteWithoutPermissionAndSettingDisabled(t *testing.T) {
+	// at some point after weve read that workspace object but before we've done the delete -- we have to set the permission
+}
+
+func TestAccTFEWorkspace_deleteWithoutPermissionAndSettingEnabled(t *testing.T) {
+
+}
+
 func testAccCheckTFEWorkspaceExists(
 	n string, workspace *tfe.Workspace) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
@@ -2285,6 +2379,32 @@ resource "tfe_workspace" "foobar" {
   organization          = tfe_organization.foobar.id
   auto_apply            = true
   file_triggers_enabled = false
+}`, rInt)
+}
+
+func testAccTFEWorkspace_basicDeleted(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}`, rInt)
+}
+
+func testAccTFEWorkspace_basicForceDeleteEnabled(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name               = "workspace-test"
+  organization       = tfe_organization.foobar.id
+  description        = "My favorite workspace!"
+  allow_destroy_plan = false
+  auto_apply         = true
+  tag_names          = ["fav", "test"]
+  force_delete       = true
 }`, rInt)
 }
 

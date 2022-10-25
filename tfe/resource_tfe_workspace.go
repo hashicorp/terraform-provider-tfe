@@ -229,6 +229,11 @@ func resourceTFEWorkspace() *schema.Resource {
 					},
 				},
 			},
+			"force_delete": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
 		},
 	}
 }
@@ -671,7 +676,29 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 	id := d.Id()
 
 	log.Printf("[DEBUG] Delete workspace %s", id)
-	err := tfeClient.Workspaces.DeleteByID(ctx, id)
+
+	ws, err := tfeClient.Workspaces.ReadByID(ctx, id)
+	if err != nil {
+		if err == tfe.ErrResourceNotFound {
+			return nil
+		}
+		return fmt.Errorf(
+			"Error reading workspace %s: %w", id, err)
+	}
+
+	forceDelete := d.Get("force_delete").(bool)
+
+	if ws.Permissions.CanForceDelete == nil && !forceDelete {
+		return fmt.Errorf(
+			"Error deleting workspace %s: This workspace must be force deleted by setting force_delete=true", id)
+	}
+
+	if forceDelete {
+		err = tfeClient.Workspaces.DeleteByID(ctx, id)
+	} else {
+		err = tfeClient.Workspaces.SafeDeleteByID(ctx, id)
+	}
+
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil
