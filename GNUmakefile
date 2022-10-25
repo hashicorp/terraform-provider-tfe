@@ -40,6 +40,13 @@ vet:
 		exit 1; \
 	fi
 
+lint:
+	@golangci-lint run ; if [ $$? -ne 1 ]; then \
+		echo ""; \
+		echo "golangci-lint found some code style issues." \
+		exit 1; \
+	fi
+
 fmt:
 	gofmt -w $(GOFMT_FILES)
 
