@@ -31,7 +31,7 @@ The following arguments are supported:
 * `enforcement_level` - (Required) The enforcement level of the task. Valid values are `advisory` and `mandatory`.
 * `task_id` - (Required) The id of the Run task to associate to the Workspace.
 * `workspace_id` - (Required) The id of the workspace to associate the Run task to.
-* `stage` - (Optional) This is currently in BETA. The stage to run the task in. Valid values are `pre-plan`, `post-plan`, and `pre-apply`.
+* `stage` - (Optional) The stage to run the task in. Valid values are `pre-plan`, `post-plan`, and `pre-apply`.
 
 ## Attributes Reference
 
