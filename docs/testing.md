@@ -16,7 +16,7 @@ Your registry module repository will need to be a [valid module](https://www.ter
 It will need the following:
 1. To be named `terraform-<PROVIDER>-<NAME>`
 1. At least one valid SemVer tag in the format `x.y.z`
-[terraform-random-module](ttps://github.com/caseylang/terraform-random-module) is a good example repo.
+[terraform-random-module](https://github.com/caseylang/terraform-random-module) is a good example repo.
 
 Your workspace repository will need the following:
 1. A branch other than `main`.

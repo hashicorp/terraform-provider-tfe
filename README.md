@@ -77,4 +77,4 @@ For more information on configuring providers in general, see the [Provider Conf
 
 # Development
 
-We have developed some guidelines to help you learn more about compiling the provider, using it locally, and contributing suggested changes in the [contributing guide](CONTRIBUTING.md).
+We have developed some guidelines to help you learn more about compiling the provider, using it locally, and contributing suggested changes in the [contributing guide](https://hashicorp.github.io/terraform-provider-tfe/).
