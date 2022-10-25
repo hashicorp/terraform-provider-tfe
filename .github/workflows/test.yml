@@ -44,6 +44,7 @@ jobs:
           GITHUB_REGISTRY_MODULE_IDENTIFIER: "hashicorp/terraform-random-module"
           GITHUB_WORKSPACE_IDENTIFIER: "hashicorp/terraform-random-1"
           GITHUB_WORKSPACE_BRANCH: "test"
+          GITHUB_TOKEN: "${{ secrets.TESTING_GITHUB_TOKEN }}"
           MOD_PROVIDER: github.com/hashicorp/terraform-provider-tfe
           MOD_TFE: github.com/hashicorp/terraform-provider-tfe/tfe
           MOD_VERSION: github.com/hashicorp/terraform-provider-tfe/version
