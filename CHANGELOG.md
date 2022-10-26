@@ -1,6 +1,3 @@
-## Unreleased
-* `ResourceImporter.State` has deprecated functions and those functions have been replaced. ([#654](https://github.com/hashicorp/terraform-provider-tfe/pull/654))
-
 ## v0.38.0 (October 24, 2022)
 
 FEATURES:
