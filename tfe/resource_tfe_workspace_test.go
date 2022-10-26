@@ -1898,10 +1898,40 @@ func TestAccTFEWorkspace_deleteWithForceDeleteSettingEnabled(t *testing.T) {
 }
 
 func TestAccTFEWorkspace_deleteWithoutPermissionAndSettingDisabled(t *testing.T) {
-	// at some point after weve read that workspace object but before we've done the delete -- we have to set the permission
-}
+	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
 
-func TestAccTFEWorkspace_deleteWithoutPermissionAndSettingEnabled(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_basic(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					testAccCheckTFEWorkspaceAttributes(workspace),
+				),
+			},
+			{
+				PreConfig: func() {
+					_, err := tfeClient.Workspaces.Lock(ctx, workspace.ID, tfe.WorkspaceLockOptions{})
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				Config: testAccTFEWorkspace_basicDeleted(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceDestroy,
+				),
+			},
+		},
+	})
 
 }
 

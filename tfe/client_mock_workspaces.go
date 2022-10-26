@@ -3,6 +3,7 @@ package tfe
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -37,6 +38,7 @@ func (m *mockWorkspaces) Create(ctx context.Context, organization string, option
 		Organization: &tfe.Organization{
 			Name: organization,
 		},
+		Permissions: &tfe.WorkspacePermissions{},
 	}
 
 	m.workspaceNames[workspaceNamesKey{organization, *options.Name}] = ws
@@ -66,7 +68,12 @@ func (m *mockWorkspaces) Readme(ctx context.Context, workspaceID string) (io.Rea
 }
 
 func (m *mockWorkspaces) ReadByID(ctx context.Context, workspaceID string) (*tfe.Workspace, error) {
-	panic("not implemented")
+	for _, workspace := range m.workspaceNames {
+		if workspace.ID == workspaceID {
+			return workspace, nil
+		}
+	}
+	return nil, fmt.Errorf("no workspace found with id %s", workspaceID)
 }
 
 func (m *mockWorkspaces) Update(ctx context.Context, organization, workspace string, options tfe.WorkspaceUpdateOptions) (*tfe.Workspace, error) {
@@ -82,7 +89,13 @@ func (m *mockWorkspaces) Delete(ctx context.Context, organization, workspace str
 }
 
 func (m *mockWorkspaces) DeleteByID(ctx context.Context, workspaceID string) error {
-	panic("not implemented")
+	for key, workspace := range m.workspaceNames {
+		if workspace.ID == workspaceID {
+			delete(m.workspaceNames, key)
+			return nil
+		}
+	}
+	return fmt.Errorf("no workspace found with id %s", workspaceID)
 }
 
 func (m *mockWorkspaces) RemoveVCSConnection(ctx context.Context, organization, workspace string) (*tfe.Workspace, error) {
