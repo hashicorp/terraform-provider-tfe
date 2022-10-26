@@ -1,5 +1,7 @@
 # Updating the Changelog
 
+The Changelog is for the benefit of users who need to quickly and easily understand what changes will impact them (& how) if they upgrade. The best way to help folks do that is to keep the signal-to-noise ratio high, so we try to keep the Changelog entries limited to user-facing changes.
+
 Only update the `Unreleased` section. Make sure you change the unreleased tag to an appropriate version, using [Semantic Versioning](https://semver.org/) as a guideline.
 
 Please use the template below when updating the changelog:
