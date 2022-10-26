@@ -230,6 +230,61 @@ func TestAccTFERegistryModule_publicRegistryModule(t *testing.T) {
 						"tfe_registry_module.foobar", "namespace", expectedRegistryModuleAttributes.Namespace),
 					resource.TestCheckResourceAttr(
 						"tfe_registry_module.foobar", "registry_name", string(expectedRegistryModuleAttributes.RegistryName)),
+					resource.TestCheckResourceAttr(
+						"tfe_registry_module.foobar", "no_code", "false"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFERegistryModule_noCodeModule(t *testing.T) {
+	registryModule := &tfe.RegistryModule{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	expectedRegistryModuleAttributes := &tfe.RegistryModule{
+		Name:         "vpc",
+		Provider:     "aws",
+		RegistryName: tfe.PublicRegistry,
+		Namespace:    "terraform-aws-modules",
+		Organization: &tfe.Organization{Name: orgName},
+		NoCode:       true,
+	}
+
+	resource.Test(t, resource.TestCase{
+		IsUnitTest: true,
+		PreCheck: func() {
+			testAccPreCheck(t)
+		},
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFERegistryModuleDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFERegistryModule_NoCode(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFERegistryModuleExists(
+						"tfe_registry_module.foobar",
+						tfe.RegistryModuleID{
+							Organization: orgName,
+							Name:         expectedRegistryModuleAttributes.Name,
+							Provider:     expectedRegistryModuleAttributes.Provider,
+							RegistryName: expectedRegistryModuleAttributes.RegistryName,
+							Namespace:    expectedRegistryModuleAttributes.Namespace,
+						}, registryModule),
+					testAccCheckTFERegistryModuleAttributes(registryModule, expectedRegistryModuleAttributes),
+					resource.TestCheckResourceAttr(
+						"tfe_registry_module.foobar", "organization", orgName),
+					resource.TestCheckResourceAttr(
+						"tfe_registry_module.foobar", "name", expectedRegistryModuleAttributes.Name),
+					resource.TestCheckResourceAttr(
+						"tfe_registry_module.foobar", "module_provider", expectedRegistryModuleAttributes.Provider),
+					resource.TestCheckResourceAttr(
+						"tfe_registry_module.foobar", "namespace", expectedRegistryModuleAttributes.Namespace),
+					resource.TestCheckResourceAttr(
+						"tfe_registry_module.foobar", "registry_name", string(expectedRegistryModuleAttributes.RegistryName)),
+					resource.TestCheckResourceAttr(
+						"tfe_registry_module.foobar", "no_code", fmt.Sprint(expectedRegistryModuleAttributes.NoCode)),
 				),
 			},
 		},
@@ -670,6 +725,24 @@ resource "tfe_registry_module" "foobar" {
   module_provider = "aws"
   name            = "vpc"
   registry_name   = "public"
+ }`,
+		rInt)
+}
+
+func testAccTFERegistryModule_NoCode(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+ name  = "tst-terraform-%d"
+ email = "admin@company.com"
+}
+
+resource "tfe_registry_module" "foobar" {
+  organization    = tfe_organization.foobar.id
+  namespace       = "terraform-aws-modules"
+  module_provider = "aws"
+  name            = "vpc"
+  registry_name   = "public"
+  no_code         = true
  }`,
 		rInt)
 }
