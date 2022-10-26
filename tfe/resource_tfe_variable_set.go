@@ -18,7 +18,7 @@ func resourceTFEVariableSet() *schema.Resource {
 		Update: resourceTFEVariableSetUpdate,
 		Delete: resourceTFEVariableSetDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{
