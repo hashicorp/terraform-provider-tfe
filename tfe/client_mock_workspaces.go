@@ -73,7 +73,7 @@ func (m *mockWorkspaces) ReadByID(ctx context.Context, workspaceID string) (*tfe
 			return workspace, nil
 		}
 	}
-	return nil, fmt.Errorf("no workspace found with id %s", workspaceID)
+	return nil, tfe.ErrResourceNotFound
 }
 
 func (m *mockWorkspaces) Update(ctx context.Context, organization, workspace string, options tfe.WorkspaceUpdateOptions) (*tfe.Workspace, error) {

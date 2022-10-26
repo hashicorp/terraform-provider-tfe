@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"regexp"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -1223,7 +1224,7 @@ func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspace_basic(rInt),
+				Config: testAccTFEWorkspace_basicForceDeleteEnabled(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
@@ -1490,15 +1491,17 @@ func TestAccTFEWorkspace_import(t *testing.T) {
 			},
 
 			{
-				ResourceName:      "tfe_workspace.foobar",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "tfe_workspace.foobar",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"force_delete"},
 			},
 			{
-				ResourceName:      "tfe_workspace.foobar",
-				ImportState:       true,
-				ImportStateId:     fmt.Sprintf("tst-terraform-%d/workspace-test", rInt),
-				ImportStateVerify: true,
+				ResourceName:            "tfe_workspace.foobar",
+				ImportState:             true,
+				ImportStateId:           fmt.Sprintf("tst-terraform-%d/workspace-test", rInt),
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"force_delete"},
 			},
 		},
 	})
@@ -1533,9 +1536,10 @@ func TestAccTFEWorkspace_importVCSBranch(t *testing.T) {
 			},
 
 			{
-				ResourceName:      "tfe_workspace.foobar",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "tfe_workspace.foobar",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"force_delete"},
 			},
 		},
 	})
@@ -1811,7 +1815,7 @@ func TestAccTFEWorkspace_paginatedRemoteStateConsumers(t *testing.T) {
 	})
 }
 
-func TestAccTFEWorkspace_deleteWithForceDeleteSettingDisabled(t *testing.T) {
+func TestAccTFEWorkspace_delete_forceDeleteSettingDisabled(t *testing.T) {
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	tfeClient, err := getClientUsingEnv()
@@ -1861,7 +1865,7 @@ func TestAccTFEWorkspace_deleteWithForceDeleteSettingDisabled(t *testing.T) {
 	})
 }
 
-func TestAccTFEWorkspace_deleteWithForceDeleteSettingEnabled(t *testing.T) {
+func TestAccTFEWorkspace_delete_forceDeleteSettingEnabled(t *testing.T) {
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	tfeClient, err := getClientUsingEnv()
@@ -1897,42 +1901,55 @@ func TestAccTFEWorkspace_deleteWithForceDeleteSettingEnabled(t *testing.T) {
 	})
 }
 
-func TestAccTFEWorkspace_deleteWithoutPermissionAndSettingDisabled(t *testing.T) {
-	workspace := &tfe.Workspace{}
+func TestTFEWorkspace_delete_withoutCanForceDeletePermission(t *testing.T) {
+	// This test checks that workspace deletion works as expected when communicating with TFE servers which do not send
+	// the CanForceDelete workspace permission. To simulate this we use the mock workspaces client and call the
+	// workspace resource delete function directly, rather than use the usual resource.
+
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	tfeClient, err := getClientUsingEnv()
+	orgName := fmt.Sprintf("test-orgnaization-%d", rInt)
+
+	client := testTfeClient(t, testClientOptions{defaultOrganization: orgName})
+	workspace, err := client.Workspaces.Create(ctx, orgName, tfe.WorkspaceCreateOptions{
+		Name: tfe.String(fmt.Sprintf("test-workspace-%d", rInt)),
+	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("unexpected err creating mock workspace %v", err)
+	}
+	workspace.Permissions.CanForceDelete = nil
+
+	rd := resourceTFEWorkspace().TestResourceData()
+	rd.SetId(workspace.ID)
+	err = rd.Set("force_delete", false)
+	if err != nil {
+		t.Fatalf("unexpected err creating configuration state %v", err)
 	}
 
-	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccTFEWorkspace_basic(rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace),
-					testAccCheckTFEWorkspaceAttributes(workspace),
-				),
-			},
-			{
-				PreConfig: func() {
-					_, err := tfeClient.Workspaces.Lock(ctx, workspace.ID, tfe.WorkspaceLockOptions{})
-					if err != nil {
-						t.Fatal(err)
-					}
-				},
-				Config: testAccTFEWorkspace_basicDeleted(rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceDestroy,
-				),
-			},
-		},
-	})
+	err = resourceTFEWorkspaceDelete(rd, client)
 
+	if err == nil {
+		t.Fatalf("Expected an error deleting workspace with CanForceDelete=nil and force_delete=true")
+	}
+	expectedErrSubstring := "workspace must be force deleted by setting force_delete=true"
+	if !strings.Contains(err.Error(), expectedErrSubstring) {
+		t.Fatalf("Expected error contains %s but got %s", expectedErrSubstring, err.Error())
+	}
+
+	// now attempt with force_delete=true and confirm that it successfully removes the workspace
+	err = rd.Set("force_delete", true)
+	if err != nil {
+		t.Fatalf("Unexpected err creating configuration state %v", err)
+	}
+
+	err = resourceTFEWorkspaceDelete(rd, client)
+	if err != nil {
+		t.Fatalf("Unexpected err deleting mock workspace %v", err)
+	}
+
+	workspace, err = client.Workspaces.ReadByID(ctx, workspace.ID)
+	if err != tfe.ErrResourceNotFound {
+		t.Fatalf("Expected workspace %s to have been deleted", workspace.ID)
+	}
 }
 
 func testAccCheckTFEWorkspaceExists(
@@ -2766,6 +2783,7 @@ resource "tfe_workspace" "foobar" {
   description  = "workspace-test-add-vcs-repo"
   organization = tfe_organization.foobar.id
   auto_apply   = true
+  force_delete = true
   vcs_repo {
     identifier     = "%s"
     oauth_token_id = tfe_oauth_client.test.oauth_token_id
@@ -2833,6 +2851,7 @@ resource "tfe_workspace" "foobar" {
   description  = "workspace-test-update-vcs-repo-branch"
   organization = tfe_organization.foobar.id
   auto_apply   = true
+  force_delete = true
   vcs_repo {
     identifier     = "%s"
     oauth_token_id = tfe_oauth_client.test.oauth_token_id
@@ -2859,6 +2878,7 @@ resource "tfe_workspace" "foobar" {
   description  = "workspace-test-remove-vcs-repo"
   organization = tfe_organization.foobar.id
   auto_apply   = true
+  force_delete = true
 }
 `, rInt)
 }
@@ -2883,6 +2903,7 @@ resource "tfe_workspace" "foobar" {
   description  			= "workspace-test-update-vcs-repo-tags-regex"
   organization 			= tfe_organization.foobar.id
   auto_apply   			= true
+  force_delete          = true
   file_triggers_enabled = false
   vcs_repo {
     identifier     = "%s"
@@ -2919,6 +2940,7 @@ resource "tfe_workspace" "foobar" {
   description  			= "workspace-test-update-vcs-repo-tags-regex"
   organization 			= tfe_organization.foobar.id
   auto_apply   			= true
+  force_delete          = true
   file_triggers_enabled = false
   vcs_repo {
     identifier     = "%s"
@@ -2955,8 +2977,9 @@ func testAccTFEWorkspace_updateToTriggerPatternsFromTagsRegex(rInt int) string {
 		description  			= "workspace-test-update-vcs-repo-tags-regex"
 		organization 			= tfe_organization.foobar.id
 		auto_apply   			= true
-		file_triggers_enabled = true
-		trigger_patterns = ["foo/**/*"]
+        force_delete            = true
+		file_triggers_enabled   = true
+		trigger_patterns        = ["foo/**/*"]
 		vcs_repo {
 			identifier     = "%s"
 			oauth_token_id = tfe_oauth_client.test.oauth_token_id
@@ -2991,8 +3014,9 @@ func testAccTFEWorkspace_updateRemoveVCSBlockFromTagsRegex(rInt int) string {
 		description  			= "workspace-test-update-vcs-repo-tags-regex"
 		organization 			= tfe_organization.foobar.id
 		auto_apply   			= true
-		file_triggers_enabled = true
-		trigger_patterns = ["foo/**/*"]
+        force_delete            = true
+		file_triggers_enabled   = true
+		trigger_patterns        = ["foo/**/*"]
 	}
 	`,
 		rInt,
