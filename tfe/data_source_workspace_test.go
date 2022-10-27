@@ -109,6 +109,14 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 						"data.tfe_workspace.foobar", "trigger_prefixes.1", "/shared"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "working_directory", "terraform/test"),
+					resource.TestCheckResourceAttrWith("data.tfe_workspace.foobar", "project_id", func(value string) error {
+						// TODO: When go-tfe supports reading default project ID from org, check to ensure workspace is created in the org's default project
+						if value != "" {
+							return nil
+						} else {
+							return fmt.Errorf("workspace datasource project_id was nil")
+						}
+					}),
 				),
 			},
 		},

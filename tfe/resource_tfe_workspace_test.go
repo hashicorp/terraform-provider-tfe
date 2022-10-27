@@ -59,6 +59,14 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 						"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "working_directory", ""),
+					resource.TestCheckResourceAttrWith(
+						"tfe_workspace.foobar", "project_id", func(value string) error {
+							if value == workspace.Project.ID {
+								return nil
+							} else {
+								return fmt.Errorf("workspace project id %s doesn't match expected ID %s", value, workspace.Project.ID)
+							}
+						}),
 				),
 			},
 		},
