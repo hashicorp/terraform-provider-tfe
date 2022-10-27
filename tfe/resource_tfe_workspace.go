@@ -136,6 +136,13 @@ func resourceTFEWorkspace() *schema.Resource {
 				ConflictsWith: []string{"execution_mode", "agent_pool_id"},
 			},
 
+			"project_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+				// TODO: Remove Computed: true once go-tfe supports changing project ID
+				Computed: true,
+			},
+
 			"queue_all_runs": {
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -394,6 +401,11 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("trigger_patterns", workspace.TriggerPatterns)
 	d.Set("working_directory", workspace.WorkingDirectory)
 	d.Set("organization", workspace.Organization.Name)
+
+	// Project will be nil for versions of TFE that predate projects
+	if workspace.Project != nil {
+		d.Set("project_id", workspace.Project.ID)
+	}
 
 	var sshKeyID string
 	if workspace.SSHKey != nil {
