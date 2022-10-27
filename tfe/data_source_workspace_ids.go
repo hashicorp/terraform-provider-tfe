@@ -50,6 +50,38 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 	}
 }
 
+func includedByName(names map[string]bool, workspaceName string) bool {
+	for name := range names {
+		switch {
+		case len(name) == 0:
+			continue
+		case !strings.HasPrefix(name, "*") && !strings.HasSuffix(name, "*"):
+			if strings.Contains(workspaceName, name) {
+				return true
+			}
+		case strings.HasPrefix(name, "*") && strings.HasSuffix(name, "*"):
+			if len(name) == 1 {
+				return true
+			}
+			x := name[1 : len(name)-1]
+			if strings.Contains(workspaceName, x) {
+				return true
+			}
+		case strings.HasPrefix(name, "*"):
+			x := name[1:]
+			if strings.HasSuffix(workspaceName, x) {
+				return true
+			}
+		case strings.HasSuffix(name, "*"):
+			x := name[:len(name)-1]
+			if strings.HasPrefix(workspaceName, x) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
@@ -68,7 +100,6 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 		id += name.(string)
 		names[name.(string)] = true
 	}
-	isWildcard := names["*"]
 
 	// Create two maps to hold the results.
 	fullNames := make(map[string]string, len(names))
@@ -115,7 +146,6 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 		}
 
 		for _, w := range wl.Items {
-			nameIncluded := isWildcard || names[w.Name]
 			// fallback for tfe instances that don't yet support exclude-tags
 			hasExcludedTag := false
 			for _, tag := range w.TagNames {
@@ -124,7 +154,7 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 					break
 				}
 			}
-			if (hasOnlyTags || nameIncluded) && !hasExcludedTag {
+			if (hasOnlyTags || includedByName(names, w.Name)) && !hasExcludedTag {
 				fullNames[w.Name] = organization + "/" + w.Name
 				ids[w.Name] = w.ID
 			}
