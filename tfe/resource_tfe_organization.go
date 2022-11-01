@@ -83,6 +83,11 @@ func resourceTFEOrganization() *schema.Resource {
 				Optional: true,
 				Default:  false,
 			},
+
+			"default_project_id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -137,6 +142,10 @@ func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error
 	// org.AssessmentsEnforced will default to false
 	d.Set("assessments_enforced", org.AssessmentsEnforced)
 	d.Set("allow_force_delete_workspaces", org.AllowForceDeleteWorkspaces)
+
+	if org.DefaultProject != nil {
+		d.Set("default_project_id", org.DefaultProject.ID)
+	}
 
 	return nil
 }

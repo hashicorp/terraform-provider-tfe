@@ -1,6 +1,7 @@
 package tfe
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"testing"
@@ -30,6 +31,33 @@ func TestAccTFEOrganizationDataSource_basic(t *testing.T) {
 					// check data attrs
 					resource.TestCheckResourceAttr("data.tfe_organization.foo", "name", orgName),
 					resource.TestCheckResourceAttr("data.tfe_organization.foo", "email", "admin@company.com"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEOrganizationDataSource_defaultProject(t *testing.T) {
+	skipUnlessBeta(t)
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	org := &tfe.Organization{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOrganizationDataSourceConfig_basic(rInt),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccCheckTFEOrganizationExists("tfe_organization.foo", org),
+					resource.TestCheckResourceAttrWith("tfe_organization.foo", "default_project_id", func(value string) error {
+						if value == "" {
+							return errors.New("default project ID not exposed")
+						} else {
+							return nil
+						}
+					}),
 				),
 			},
 		},

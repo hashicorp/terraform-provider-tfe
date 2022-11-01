@@ -33,6 +33,11 @@ func dataSourceTFEOrganization() *schema.Resource {
 				Computed: true,
 			},
 
+			"default_project_id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+
 			"email": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -80,6 +85,11 @@ func dataSourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) err
 	d.Set("external_id", org.ExternalID)
 	d.Set("collaborator_auth_policy", org.CollaboratorAuthPolicy)
 	d.Set("cost_estimation_enabled", org.CostEstimationEnabled)
+
+	if org.DefaultProject != nil {
+		d.Set("default_project_id", org.DefaultProject.ID)
+	}
+
 	d.Set("email", org.Email)
 	d.Set("owners_team_saml_role_id", org.OwnersTeamSAMLRoleID)
 	d.Set("two_factor_conformant", org.TwoFactorConformant)
