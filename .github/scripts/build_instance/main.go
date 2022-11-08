@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -38,12 +39,9 @@ func main() {
 		log.Fatalf("client initialization error: %v", err)
 	}
 
-	var runID string
-	if runID, err = createRun(ctx, client); err != nil {
+	if _, err = createRun(ctx, client); err != nil {
 		log.Fatal(err)
 	}
-
-	log.Printf("Created run with ID: %s", runID)
 }
 
 func createRun(ctx context.Context, client *tfe.Client) (string, error) {
