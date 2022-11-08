@@ -1,4 +1,4 @@
-name: instance
+name: Rebuild tflocal Infrastructure
 on:
   schedule:
     - cron: 0 0 * * *
