@@ -1,10 +1,10 @@
-name: lint
+name: Code Linting
 on:
   push:
     branches: [ main ]
   pull_request:
 jobs:
-  golangci:
+  lint:
     name: lint
     runs-on: ubuntu-latest
     steps:
@@ -17,6 +17,12 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: "${{ env.go_version }}"
+      - name: fmt check
+        run: make fmtcheck
+
+      - name: go vet
+        run: make vet
+
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:

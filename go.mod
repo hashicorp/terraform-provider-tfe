@@ -1,6 +1,6 @@
 module github.com/hashicorp/terraform-provider-tfe
 
-go 1.17
+go 1.18
 
 require (
 	github.com/agext/levenshtein v1.2.3 // indirect
