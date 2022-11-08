@@ -78,6 +78,11 @@ func resourceTFEOrganization() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 			},
+			"allow_force_delete_workspaces": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
 		},
 	}
 }
@@ -131,6 +136,7 @@ func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error
 	// TFE (onprem) does not currently have this feature and this value won't be returned in those cases.
 	// org.AssessmentsEnforced will default to false
 	d.Set("assessments_enforced", org.AssessmentsEnforced)
+	d.Set("allow_force_delete_workspaces", org.AllowForceDeleteWorkspaces)
 
 	return nil
 }
@@ -174,9 +180,14 @@ func resourceTFEOrganizationUpdate(d *schema.ResourceData, meta interface{}) err
 		options.SendPassingStatusesForUntriggeredSpeculativePlans = tfe.Bool(sendPassingStatusesForUntriggeredSpeculativePlans.(bool))
 	}
 
-	// If cost_estimation_enabled is supplied, set it using the options struct.
+	// If assessments_enforced is supplied, set it using the options struct.
 	if assessmentsEnforced, ok := d.GetOkExists("assessments_enforced"); ok {
 		options.AssessmentsEnforced = tfe.Bool(assessmentsEnforced.(bool))
+	}
+
+	// If allow_force_delete_workspaces is supplied, set it using the options struct.
+	if allowForceDeleteWorkspaces, ok := d.GetOkExists("allow_force_delete_workspaces"); ok {
+		options.AllowForceDeleteWorkspaces = tfe.Bool(allowForceDeleteWorkspaces.(bool))
 	}
 
 	log.Printf("[DEBUG] Update configuration of organization: %s", d.Id())

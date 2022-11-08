@@ -1,3 +1,8 @@
+## Unreleased
+
+FEATURES:
+* r/tfe_organization: Add `allow_force_delete_workspaces` attribute to set whether admins are permitted to delete workspaces with resource under management. ([#661](https://github.com/hashicorp/terraform-provider-tfe/pull/661))
+
 ## v0.38.0 (October 24, 2022)
 
 FEATURES:
