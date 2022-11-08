@@ -7,6 +7,11 @@ jobs:
     name: Acceptance Tests
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        parallel: [3]
+        index: [0, 1, 2]
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -31,6 +36,13 @@ jobs:
       - name: Install gotestsum
         run: go install gotest.tools/gotestsum@latest
 
+      - name: Split integration tests
+        id: test_split
+        uses: brandonc/go-test-split-action@v1
+        with:
+          index: ${{ matrix.index }}
+          total: ${{ matrix.parallel }}
+
       - name: Fetch Outputs
         env:
           TFE_TOKEN: "${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}"
@@ -50,5 +62,5 @@ jobs:
           MOD_VERSION: github.com/hashicorp/terraform-provider-tfe/version
         run: |
           source $HOME/.env
-          gotestsum --format short-verbose -- $MOD_PROVIDER $MOD_TFE $MOD_VERSION -v -timeout=30m
+          gotestsum --format short-verbose -- $MOD_PROVIDER $MOD_TFE $MOD_VERSION -v -timeout=30m -run "${{ steps.test_split.outputs.run }}"
 
