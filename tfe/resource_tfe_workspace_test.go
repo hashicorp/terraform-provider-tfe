@@ -60,6 +60,8 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 						"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "working_directory", ""),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "resource_count", "0"),
 				),
 			},
 		},
@@ -2180,6 +2182,10 @@ func testAccCheckTFEWorkspaceAttributes(
 
 		if len(workspace.TriggerPrefixes) != 0 {
 			return fmt.Errorf("Bad trigger prefixes: %s", workspace.TriggerPrefixes)
+		}
+
+		if workspace.ResourceCount >= 0 {
+			return fmt.Errorf("Bad resource count: %d", workspace.ResourceCount)
 		}
 
 		return nil

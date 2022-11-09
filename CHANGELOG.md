@@ -1,6 +1,8 @@
 ## Unreleased
 
+
 FEATURES:
+* r/tfe_workspace: Add attribute `resource_count` to `tfe_workspace` ([#682](https://github.com/hashicorp/terraform-provider-tfe/pull/682))
 
 ## v0.40.0 (December 6, 2022)
 

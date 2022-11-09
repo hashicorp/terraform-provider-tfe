@@ -134,6 +134,7 @@ The `vcs_repo` block supports:
 In addition to all arguments above, the following attributes are exported:
 
 * `id` - The workspace ID.
+* `resource_count` - The number of resources managed by the workspace.
 
 ## Import
 
