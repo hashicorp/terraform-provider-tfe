@@ -229,6 +229,10 @@ func resourceTFEWorkspace() *schema.Resource {
 					},
 				},
 			},
+			"resource_count": {
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -389,6 +393,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("trigger_patterns", workspace.TriggerPatterns)
 	d.Set("working_directory", workspace.WorkingDirectory)
 	d.Set("organization", workspace.Organization.Name)
+	d.Set("resource_count", workspace.ResourceCount)
 
 	var sshKeyID string
 	if workspace.SSHKey != nil {
