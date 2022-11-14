@@ -38,8 +38,6 @@ func TestAccTFEPolicySet_basic(t *testing.T) {
 						"tfe_policy_set.foobar", "description", "Policy Set"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "global", "false"),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "policy_ids.#", "1"),
 				),
 			},
 		},
@@ -75,8 +73,6 @@ func TestAccTFEPolicySetOPA_basic(t *testing.T) {
 						"tfe_policy_set.foobar", "description", "Policy Set"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "global", "false"),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "policy_ids.#", "1"),
 				),
 			},
 		},
@@ -858,20 +854,12 @@ resource "tfe_policy_set" "foobar" {
 
 func testAccTFEPolicySetOPA_basic(organization string) string {
 	return fmt.Sprintf(`
-resource "tfe_sentinel_policy" "foo" {
-  name         = "policy-foo"
-  policy       = "package example rule["not allowed"] { false }"
-  organization = "%s"
-  kind         = "opa"
-}
-
 resource "tfe_policy_set" "foobar" {
   name         = "tst-terraform"
   description  = "Policy Set"
   organization = "%s"
   kind         = "opa"
-  policy_ids   = [tfe_sentinel_policy.foo.id]
-}`, organization, organization)
+}`, organization)
 }
 
 func testAccTFEPolicySet_empty(organization string) string {
