@@ -27,7 +27,7 @@ To run all tests, you will need to set the following environment variables:
 
 ##### Required:
 A hostname and token must be provided in order to run the acceptance tests. By
-default, these are loaded from the the `credentials` in the [CLI config
+default, these are loaded from the `credentials` in the [CLI config
 file](https://www.terraform.io/docs/commands/cli-config.html). You can override
 these values with the environment variables specified below:
 

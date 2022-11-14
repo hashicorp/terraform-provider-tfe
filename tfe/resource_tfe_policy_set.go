@@ -46,6 +46,17 @@ func resourceTFEPolicySet() *schema.Resource {
 				ConflictsWith: []string{"workspace_ids"},
 			},
 
+			"kind": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "sentinel",
+			},
+
+			"overridable": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+
 			"policies_path": {
 				Type:          schema.TypeString,
 				Optional:      true,
@@ -121,6 +132,13 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 		Name:   tfe.String(name),
 		Global: tfe.Bool(d.Get("global").(bool)),
 	}
+	if vKind, ok := d.GetOk("kind"); ok {
+		options.Kind = tfe.PolicyKind(vKind.(string))
+	}
+
+	if vOverridable, ok := d.GetOk("overridable"); ok {
+		options.Overridable = tfe.Bool(vOverridable.(bool))
+	}
 
 	// Process all configured options.
 	if desc, ok := d.GetOk("description"); ok {
@@ -193,10 +211,15 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", policySet.Name)
 	d.Set("description", policySet.Description)
 	d.Set("global", policySet.Global)
+	d.Set("kind", policySet.Kind)
 	d.Set("policies_path", policySet.PoliciesPath)
 
 	if policySet.Organization != nil {
 		d.Set("organization", policySet.Organization.Name)
+	}
+
+	if policySet.Overridable != nil {
+		d.Set("overridable", policySet.Overridable)
 	}
 
 	// Set VCS policy set options.
