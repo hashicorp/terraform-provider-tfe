@@ -1,6 +1,7 @@
 package tfe
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -15,7 +16,7 @@ func resourceTFETeamMembers() *schema.Resource {
 		Update: resourceTFETeamMembersUpdate,
 		Delete: resourceTFETeamMembersDelete,
 		Importer: &schema.ResourceImporter{
-			State: resourceTFETeamMembersImporter,
+			StateContext: resourceTFETeamMembersImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -163,7 +164,7 @@ func resourceTFETeamMembersDelete(d *schema.ResourceData, meta interface{}) erro
 	return nil
 }
 
-func resourceTFETeamMembersImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceTFETeamMembersImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	// Set the team ID field.
 	d.Set("team_id", d.Id())
 

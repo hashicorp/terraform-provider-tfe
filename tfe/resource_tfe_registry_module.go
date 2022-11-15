@@ -1,6 +1,7 @@
 package tfe
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -19,7 +20,7 @@ func resourceTFERegistryModule() *schema.Resource {
 		Update: resourceTFERegistryModuleUpdate,
 		Delete: resourceTFERegistryModuleDelete,
 		Importer: &schema.ResourceImporter{
-			State: resourceTFERegistryModuleImporter,
+			StateContext: resourceTFERegistryModuleImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -297,7 +298,7 @@ func resourceTFERegistryModuleDelete(d *schema.ResourceData, meta interface{}) e
 	return nil
 }
 
-func resourceTFERegistryModuleImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceTFERegistryModuleImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	registryModuleInfo := strings.SplitN(d.Id(), "/", 6)
 	if len(registryModuleInfo) == 4 {
 		// for format: <ORGANIZATION>/<REGISTRY MODULE NAME>/<REGISTRY MODULE PROVIDER>/<REGISTRY MODULE ID>

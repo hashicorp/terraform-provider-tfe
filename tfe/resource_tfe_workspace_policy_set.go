@@ -1,6 +1,7 @@
 package tfe
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -16,7 +17,7 @@ func resourceTFEWorkspacePolicySet() *schema.Resource {
 		Read:   resourceTFEWorkspacePolicySetRead,
 		Delete: resourceTFEWorkspacePolicySetDelete,
 		Importer: &schema.ResourceImporter{
-			State: resourceTFEWorkspacePolicySetImporter,
+			StateContext: resourceTFEWorkspacePolicySetImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -112,7 +113,7 @@ func resourceTFEWorkspacePolicySetDelete(d *schema.ResourceData, meta interface{
 	return nil
 }
 
-func resourceTFEWorkspacePolicySetImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceTFEWorkspacePolicySetImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	// The format of the import ID is <ORGANIZATION/WORKSPACE NAME/POLICYSET NAME>
 	splitID := strings.SplitN(d.Id(), "/", 3)
 	if len(splitID) != 3 {

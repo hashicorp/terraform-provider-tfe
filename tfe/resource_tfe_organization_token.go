@@ -1,6 +1,7 @@
 package tfe
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -14,7 +15,7 @@ func resourceTFEOrganizationToken() *schema.Resource {
 		Read:   resourceTFEOrganizationTokenRead,
 		Delete: resourceTFEOrganizationTokenDelete,
 		Importer: &schema.ResourceImporter{
-			State: resourceTFEOrganizationTokenImporter,
+			StateContext: resourceTFEOrganizationTokenImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -109,7 +110,7 @@ func resourceTFEOrganizationTokenDelete(d *schema.ResourceData, meta interface{}
 	return nil
 }
 
-func resourceTFEOrganizationTokenImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceTFEOrganizationTokenImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	// Set the organization field.
 	d.Set("organization", d.Id())
 

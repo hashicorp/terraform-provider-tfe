@@ -1,6 +1,7 @@
 package tfe
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -18,7 +19,7 @@ func resourceTFETeam() *schema.Resource {
 		Update: resourceTFETeamUpdate,
 		Delete: resourceTFETeamDelete,
 		Importer: &schema.ResourceImporter{
-			State: resourceTFETeamImporter,
+			StateContext: resourceTFETeamImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -243,7 +244,7 @@ func resourceTFETeamDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceTFETeamImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceTFETeamImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	s := strings.SplitN(d.Id(), "/", 2)
 	if len(s) != 2 {
 		return nil, fmt.Errorf(
