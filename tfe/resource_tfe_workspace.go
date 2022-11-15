@@ -21,7 +21,7 @@ func resourceTFEWorkspace() *schema.Resource {
 		Update: resourceTFEWorkspaceUpdate,
 		Delete: resourceTFEWorkspaceDelete,
 		Importer: &schema.ResourceImporter{
-			State: resourceTFEWorkspaceImporter,
+			StateContext: resourceTFEWorkspaceImporter,
 		},
 
 		SchemaVersion: 1,
@@ -741,7 +741,7 @@ func validateRemoteState(_ context.Context, d *schema.ResourceDiff) error {
 	return nil
 }
 
-func resourceTFEWorkspaceImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceTFEWorkspaceImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	tfeClient := meta.(*tfe.Client)
 
 	s := strings.Split(d.Id(), "/")

@@ -18,7 +18,7 @@ func resourceTFETeamAccess() *schema.Resource {
 		Update: resourceTFETeamAccessUpdate,
 		Delete: resourceTFETeamAccessDelete,
 		Importer: &schema.ResourceImporter{
-			State: resourceTFETeamAccessImporter,
+			StateContext: resourceTFETeamAccessImporter,
 		},
 
 		CustomizeDiff: setCustomOrComputedPermissions,
@@ -337,7 +337,7 @@ func resourceTFETeamAccessDelete(d *schema.ResourceData, meta interface{}) error
 	return nil
 }
 
-func resourceTFETeamAccessImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceTFETeamAccessImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	tfeClient := meta.(*tfe.Client)
 
 	s := strings.SplitN(d.Id(), "/", 3)

@@ -1,6 +1,7 @@
 package tfe
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -17,7 +18,7 @@ func resourceTFEOrganizationRunTask() *schema.Resource {
 		Delete: resourceTFEOrganizationRunTaskDelete,
 		Update: resourceTFEOrganizationRunTaskUpdate,
 		Importer: &schema.ResourceImporter{
-			State: resourceTFEOrganizationRunTaskImporter,
+			StateContext: resourceTFEOrganizationRunTaskImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -171,7 +172,7 @@ func resourceTFEOrganizationRunTaskRead(d *schema.ResourceData, meta interface{}
 	return nil
 }
 
-func resourceTFEOrganizationRunTaskImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceTFEOrganizationRunTaskImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	tfeClient := meta.(*tfe.Client)
 
 	s := strings.Split(d.Id(), "/")

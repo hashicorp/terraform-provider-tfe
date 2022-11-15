@@ -1,6 +1,7 @@
 package tfe
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -16,7 +17,7 @@ func resourceTFEAgentPool() *schema.Resource {
 		Update: resourceTFEAgentPoolUpdate,
 		Delete: resourceTFEAgentPoolDelete,
 		Importer: &schema.ResourceImporter{
-			State: resourceTFEAgentPoolImporter,
+			StateContext: resourceTFEAgentPoolImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -111,7 +112,7 @@ func resourceTFEAgentPoolDelete(d *schema.ResourceData, meta interface{}) error 
 	return nil
 }
 
-func resourceTFEAgentPoolImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceTFEAgentPoolImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	tfeClient := meta.(*tfe.Client)
 
 	s := strings.Split(d.Id(), "/")

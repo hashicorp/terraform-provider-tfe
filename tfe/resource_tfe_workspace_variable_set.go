@@ -1,6 +1,7 @@
 package tfe
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -16,7 +17,7 @@ func resourceTFEWorkspaceVariableSet() *schema.Resource {
 		Read:   resourceTFEWorkspaceVariableSetRead,
 		Delete: resourceTFEWorkspaceVariableSetDelete,
 		Importer: &schema.ResourceImporter{
-			State: resourceTFEWorkspaceVariableSetImporter,
+			StateContext: resourceTFEWorkspaceVariableSetImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -116,7 +117,7 @@ func encodeVariableSetWorkspaceAttachment(wID, vSID string) string {
 	return fmt.Sprintf("%s_%s", wID, vSID)
 }
 
-func resourceTFEWorkspaceVariableSetImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceTFEWorkspaceVariableSetImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	// The format of the import ID is <ORGANIZATION/WORKSPACE NAME/VARSET NAME> but be aware
 	// that variable set names can contain forward slash characters but organization/workspace
 	// names cannot. Therefore, we split the import ID into at most 3 substrings.

@@ -17,7 +17,7 @@ func resourceTFERunTrigger() *schema.Resource {
 		Read:   resourceTFERunTriggerRead,
 		Delete: resourceTFERunTriggerDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{

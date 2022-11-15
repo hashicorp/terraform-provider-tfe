@@ -18,7 +18,7 @@ func resourceTFEVariable() *schema.Resource {
 		Update: resourceTFEVariableUpdate,
 		Delete: resourceTFEVariableDelete,
 		Importer: &schema.ResourceImporter{
-			State: resourceTFEVariableImporter,
+			StateContext: resourceTFEVariableImporter,
 		},
 
 		SchemaVersion: 1,
@@ -404,7 +404,7 @@ func resourceTFEVariableSetVariableDelete(d *schema.ResourceData, meta interface
 	return nil
 }
 
-func resourceTFEVariableImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceTFEVariableImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	tfeClient := meta.(*tfe.Client)
 
 	s := strings.SplitN(d.Id(), "/", 3)
