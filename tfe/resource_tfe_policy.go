@@ -2,6 +2,7 @@ package tfe
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -107,9 +108,9 @@ func resourceTFEPolicyCreate(d *schema.ResourceData, meta interface{}) error {
 	//  Setup per-kind policy options
 	switch tfe.PolicyKind(kind) {
 	case tfe.Sentinel:
-		options = createSentinelPolicyOptions(options, d, meta)
+		options = createSentinelPolicyOptions(options, d)
 	case tfe.OPA:
-		options = createOPAPolicyOptions(options, d, meta)
+		options = createOPAPolicyOptions(options, d)
 	default:
 		return fmt.Errorf(
 			"Unsupported policy kind %s: has to be one of [%s, %s]", kind, string(tfe.Sentinel), string(tfe.OPA))
@@ -134,7 +135,7 @@ func resourceTFEPolicyCreate(d *schema.ResourceData, meta interface{}) error {
 	return resourceTFEPolicyRead(d, meta)
 }
 
-func createOPAPolicyOptions(options *tfe.PolicyCreateOptions, d *schema.ResourceData, meta interface{}) *tfe.PolicyCreateOptions {
+func createOPAPolicyOptions(options *tfe.PolicyCreateOptions, d *schema.ResourceData) *tfe.PolicyCreateOptions {
 	name := d.Get("name").(string)
 	path := name + ".rego"
 	options.Enforce = []*tfe.EnforcementOptions{
@@ -149,7 +150,7 @@ func createOPAPolicyOptions(options *tfe.PolicyCreateOptions, d *schema.Resource
 	return options
 }
 
-func createSentinelPolicyOptions(options *tfe.PolicyCreateOptions, d *schema.ResourceData, meta interface{}) *tfe.PolicyCreateOptions {
+func createSentinelPolicyOptions(options *tfe.PolicyCreateOptions, d *schema.ResourceData) *tfe.PolicyCreateOptions {
 	name := d.Get("name").(string)
 	path := name + ".rego"
 	options.Enforce = []*tfe.EnforcementOptions{
@@ -167,7 +168,7 @@ func resourceTFEPolicyRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Read policy: %s", d.Id())
 	policy, err := tfeClient.Policies.Read(ctx, d.Id())
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			log.Printf("[DEBUG] Policy %s does no longer exist", d.Id())
 			d.SetId("")
 			return nil
@@ -196,6 +197,7 @@ func resourceTFEPolicyRead(d *schema.ResourceData, meta interface{}) error {
 func resourceTFEPolicyUpdate(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
+	// nolint:nestif
 	if d.HasChange("description") || d.HasChange("enforce_mode") {
 		// Create a new options struct.
 		options := tfe.PolicyUpdateOptions{}
@@ -246,7 +248,7 @@ func resourceTFEPolicyDelete(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Delete policy: %s", d.Id())
 	err := tfeClient.Policies.Delete(ctx, d.Id())
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			return nil
 		}
 		return fmt.Errorf("Error deleting policy %s: %w", d.Id(), err)

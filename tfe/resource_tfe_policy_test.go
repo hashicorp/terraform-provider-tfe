@@ -10,6 +10,7 @@ import (
 )
 
 func TestAccTFEPolicy_basic(t *testing.T) {
+	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -48,6 +49,7 @@ func TestAccTFEPolicy_basic(t *testing.T) {
 }
 
 func TestAccTFEPolicyOPA_basic(t *testing.T) {
+	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -88,6 +90,7 @@ func TestAccTFEPolicyOPA_basic(t *testing.T) {
 }
 
 func TestAccTFEPolicy_update(t *testing.T) {
+	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -143,6 +146,7 @@ func TestAccTFEPolicy_update(t *testing.T) {
 }
 
 func TestAccTFEPolicyOPA_update(t *testing.T) {
+	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -202,6 +206,7 @@ func TestAccTFEPolicyOPA_update(t *testing.T) {
 }
 
 func TestAccTFEPolicy_import(t *testing.T) {
+	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -245,6 +250,7 @@ func testAccCheckTFEPolicyExists(
 
 		p, err := tfeClient.Policies.Read(ctx, rs.Primary.ID)
 		if err != nil {
+			// nolint: wrapcheck
 			return err
 		}
 
