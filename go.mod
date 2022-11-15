@@ -67,4 +67,5 @@ require (
 	github.com/vmihailenco/tagparser v0.1.1 // indirect
 )
 
+// TODO DEBUG ONLY. REMOVE ME
 replace github.com/hashicorp/go-tfe => ../go-tfe

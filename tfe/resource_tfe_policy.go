@@ -32,7 +32,6 @@ func resourceTFEPolicy() *schema.Resource {
 			"description": {
 				Type:     schema.TypeString,
 				Optional: true,
-				Computed: true,
 			},
 
 			"organization": {
@@ -44,7 +43,12 @@ func resourceTFEPolicy() *schema.Resource {
 			"kind": {
 				Type:     schema.TypeString,
 				Optional: true,
-				Default:  "sentinel",
+				Default:  string(tfe.Sentinel),
+				ValidateFunc: validation.StringInSlice(
+					[]string{
+						string(tfe.OPA),
+						string(tfe.Sentinel),
+					}, false),
 			},
 
 			"query": {
@@ -58,7 +62,11 @@ func resourceTFEPolicy() *schema.Resource {
 			},
 
 			"enforce_mode": {
-				Type:     schema.TypeString,
+				Type: schema.TypeString,
+				Description: fmt.Sprintf(
+					"The enforce_mode of the policy. For Sentinel, valid values are `%s`, `%s`, and `%s`. For OPA, Valid values are `%s`and `%s`",
+					tfe.EnforcementHard, tfe.EnforcementSoft, tfe.EnforcementAdvisory,
+					tfe.EnforcementMandatory, tfe.EnforcementAdvisory),
 				Optional: true,
 				ValidateFunc: validation.StringInSlice(
 					[]string{
@@ -86,33 +94,29 @@ func resourceTFEPolicyCreate(d *schema.ResourceData, meta interface{}) error {
 		kind = vKind.(string)
 	}
 
-	path := name + ".sentinel"
-	if tfe.PolicyKind(kind) == tfe.OPA {
-		path = name + ".rego"
-	}
-
-	// Create a new options struct.
-	options := tfe.PolicyCreateOptions{
+	// Setup common policy options
+	options := &tfe.PolicyCreateOptions{
 		Name: tfe.String(name),
 		Kind: tfe.PolicyKind(kind),
-		Enforce: []*tfe.EnforcementOptions{
-			{
-				Path: tfe.String(path),
-				Mode: tfe.EnforcementMode(tfe.EnforcementLevel(d.Get("enforce_mode").(string))),
-			},
-		},
 	}
 
 	if desc, ok := d.GetOk("description"); ok {
 		options.Description = tfe.String(desc.(string))
 	}
 
-	if vQuery, ok := d.GetOk("query"); ok {
-		options.Query = tfe.String(vQuery.(string))
+	//  Setup per-kind policy options
+	switch tfe.PolicyKind(kind) {
+	case tfe.Sentinel:
+		options = createSentinelPolicyOptions(options, d, meta)
+	case tfe.OPA:
+		options = createOPAPolicyOptions(options, d, meta)
+	default:
+		return fmt.Errorf(
+			"Unsupported policy kind %s: has to be one of [%s, %s]", kind, string(tfe.Sentinel), string(tfe.OPA))
 	}
 
 	log.Printf("[DEBUG] Create %s policy %s for organization: %s", kind, name, organization)
-	policy, err := tfeClient.Policies.Create(ctx, organization, options)
+	policy, err := tfeClient.Policies.Create(ctx, organization, *options)
 	if err != nil {
 		return fmt.Errorf(
 			"Error creating %s policy %s for organization %s: %w", kind, name, organization, err)
@@ -128,6 +132,33 @@ func resourceTFEPolicyCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	return resourceTFEPolicyRead(d, meta)
+}
+
+func createOPAPolicyOptions(options *tfe.PolicyCreateOptions, d *schema.ResourceData, meta interface{}) *tfe.PolicyCreateOptions {
+	name := d.Get("name").(string)
+	path := name + ".rego"
+	options.Enforce = []*tfe.EnforcementOptions{
+		{
+			Path: tfe.String(path),
+			Mode: tfe.EnforcementMode(tfe.EnforcementLevel(d.Get("enforce_mode").(string))),
+		},
+	}
+	if vQuery, ok := d.GetOk("query"); ok {
+		options.Query = tfe.String(vQuery.(string))
+	}
+	return options
+}
+
+func createSentinelPolicyOptions(options *tfe.PolicyCreateOptions, d *schema.ResourceData, meta interface{}) *tfe.PolicyCreateOptions {
+	name := d.Get("name").(string)
+	path := name + ".rego"
+	options.Enforce = []*tfe.EnforcementOptions{
+		{
+			Path: tfe.String(path),
+			Mode: tfe.EnforcementMode(tfe.EnforcementLevel(d.Get("enforce_mode").(string))),
+		},
+	}
+	return options
 }
 
 func resourceTFEPolicyRead(d *schema.ResourceData, meta interface{}) error {

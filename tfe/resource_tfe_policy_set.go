@@ -49,12 +49,18 @@ func resourceTFEPolicySet() *schema.Resource {
 			"kind": {
 				Type:     schema.TypeString,
 				Optional: true,
-				Default:  "sentinel",
+				Default:  string(tfe.Sentinel),
+				ValidateFunc: validation.StringInSlice(
+					[]string{
+						string(tfe.OPA),
+						string(tfe.Sentinel),
+					}, false),
 			},
 
 			"overridable": {
 				Type:     schema.TypeBool,
 				Optional: true,
+				Default:  false,
 			},
 
 			"policies_path": {
