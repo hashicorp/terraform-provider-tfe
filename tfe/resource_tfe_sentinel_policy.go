@@ -13,10 +13,11 @@ import (
 
 func resourceTFESentinelPolicy() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceTFESentinelPolicyCreate,
-		Read:   resourceTFESentinelPolicyRead,
-		Update: resourceTFESentinelPolicyUpdate,
-		Delete: resourceTFESentinelPolicyDelete,
+		DeprecationMessage: "tfe_sentinel_policy is being deprecated, please use tfe_policy instead",
+		Create:             resourceTFESentinelPolicyCreate,
+		Read:               resourceTFESentinelPolicyRead,
+		Update:             resourceTFESentinelPolicyUpdate,
+		Delete:             resourceTFESentinelPolicyDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: resourceTFESentinelPolicyImporter,
 		},

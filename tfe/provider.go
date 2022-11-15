@@ -105,6 +105,7 @@ func Provider() *schema.Provider {
 			"tfe_organization_module_sharing": resourceTFEOrganizationModuleSharing(),
 			"tfe_organization_run_task":       resourceTFEOrganizationRunTask(),
 			"tfe_organization_token":          resourceTFEOrganizationToken(),
+			"tfe_policy":                      resourceTFEPolicy(),
 			"tfe_policy_set":                  resourceTFEPolicySet(),
 			"tfe_policy_set_parameter":        resourceTFEPolicySetParameter(),
 			"tfe_registry_module":             resourceTFERegistryModule(),
