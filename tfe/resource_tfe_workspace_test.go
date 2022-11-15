@@ -1907,7 +1907,7 @@ func TestTFEWorkspace_delete_withoutCanForceDeletePermission(t *testing.T) {
 	// workspace resource delete function directly, rather than use the usual resource.
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	orgName := fmt.Sprintf("test-orgnaization-%d", rInt)
+	orgName := fmt.Sprintf("test-organization-%d", rInt)
 
 	client := testTfeClient(t, testClientOptions{defaultOrganization: orgName})
 	workspace, err := client.Workspaces.Create(ctx, orgName, tfe.WorkspaceCreateOptions{
@@ -1926,9 +1926,8 @@ func TestTFEWorkspace_delete_withoutCanForceDeletePermission(t *testing.T) {
 	}
 
 	err = resourceTFEWorkspaceDelete(rd, client)
-
 	if err == nil {
-		t.Fatalf("Expected an error deleting workspace with CanForceDelete=nil and force_delete=true")
+		t.Fatalf("Expected an error deleting workspace with CanForceDelete=nil and force_delete=false")
 	}
 	expectedErrSubstring := "workspace must be force deleted by setting force_delete=true"
 	if !strings.Contains(err.Error(), expectedErrSubstring) {
