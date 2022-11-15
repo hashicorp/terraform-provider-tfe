@@ -66,5 +66,3 @@ require (
 	github.com/vmihailenco/msgpack/v4 v4.3.12 // indirect
 	github.com/vmihailenco/tagparser v0.1.1 // indirect
 )
-
-replace github.com/hashicorp/go-tfe => ../go-tfe
