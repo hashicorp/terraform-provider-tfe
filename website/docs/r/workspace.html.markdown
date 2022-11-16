@@ -80,6 +80,7 @@ The following arguments are supported:
   Defaults to `true`. When set to `false`, the workspace will be used for
   state storage only. This value _must not_ be provided if `execution_mode` is
   provided.
+* `project_id` - (Optional) ID of the project where the workspace should be created.
 * `queue_all_runs` - (Optional) Whether the workspace should start
   automatically performing runs immediately after its creation. Defaults to
   `true`. When set to `false`, runs triggered by a webhook (such as a commit
