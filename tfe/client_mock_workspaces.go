@@ -26,6 +26,8 @@ func newMockWorkspaces(options testClientOptions) *mockWorkspaces {
 	}
 }
 
+var _ tfe.Workspaces = (*mockWorkspaces)(nil)
+
 func (m *mockWorkspaces) List(ctx context.Context, organization string, options *tfe.WorkspaceListOptions) (*tfe.WorkspaceList, error) {
 	panic("not implemented")
 }
