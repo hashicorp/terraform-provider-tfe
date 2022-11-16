@@ -46,6 +46,44 @@ func TestAccTFEPolicySet_basic(t *testing.T) {
 	})
 }
 
+func TestAccTFEPolicySetOPA_basic(t *testing.T) {
+	skipUnlessBeta(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	policySet := &tfe.PolicySet{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicySetOPA_basic(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					testAccCheckTFEPolicySetAttributes(policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "tst-terraform"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "kind", "opa"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "overridable", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "description", "Policy Set"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEPolicySet_update(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
@@ -817,6 +855,16 @@ resource "tfe_policy_set" "foobar" {
   organization = "%s"
   policy_ids   = [tfe_sentinel_policy.foo.id]
 }`, organization, organization)
+}
+
+func testAccTFEPolicySetOPA_basic(organization string) string {
+	return fmt.Sprintf(`
+resource "tfe_policy_set" "foobar" {
+  name         = "tst-terraform"
+  description  = "Policy Set"
+  organization = "%s"
+  kind         = "opa"
+}`, organization)
 }
 
 func testAccTFEPolicySet_empty(organization string) string {

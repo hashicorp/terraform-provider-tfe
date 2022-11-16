@@ -33,6 +33,18 @@ func dataSourceTFEPolicySet() *schema.Resource {
 				Computed: true,
 			},
 
+			"kind": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  string(tfe.Sentinel),
+			},
+
+			"overridable": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
+
 			"policies_path": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -100,6 +112,7 @@ func dataSourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error 
 		}
 
 		for _, policySet := range policySetList.Items {
+			// nolint: nestif
 			if policySet.Name == name {
 				d.Set("name", policySet.Name)
 				d.Set("description", policySet.Description)
@@ -108,6 +121,14 @@ func dataSourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error 
 
 				if policySet.Organization != nil {
 					d.Set("organization", policySet.Organization.Name)
+				}
+
+				if policySet.Kind != "" {
+					d.Set("kind", policySet.Kind)
+				}
+
+				if policySet.Overridable != nil {
+					d.Set("overridable", policySet.Overridable)
 				}
 
 				var vcsRepo []interface{}
