@@ -81,7 +81,6 @@ func resourceTFERegistryModule() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Computed: true,
-				ForceNew: false,
 			},
 			"registry_name": {
 				Type:         schema.TypeString,
@@ -224,13 +223,12 @@ func resourceTFERegistryModuleUpdate(d *schema.ResourceData, meta interface{}) e
 	})
 
 	if err != nil {
-		return fmt.Errorf("Error while waiting for module %s/%s to be ingested: %w", registryModule.Organization.Name, registryModule.Name, err)
+		return fmt.Errorf("Error while waiting for module %s/%s to be updated: %w", registryModule.Organization.Name, registryModule.Name, err)
 	}
 
 	d.SetId(registryModule.ID)
-	d.Set("no_code", registryModule.NoCode)
 
-	return nil
+	return resourceTFERegistryModuleRead(d, meta)
 }
 
 func resourceTFERegistryModuleRead(d *schema.ResourceData, meta interface{}) error {
@@ -264,6 +262,7 @@ func resourceTFERegistryModuleRead(d *schema.ResourceData, meta interface{}) err
 	d.Set("organization", registryModule.Organization.Name)
 	d.Set("namespace", registryModule.Namespace)
 	d.Set("registry_name", registryModule.RegistryName)
+	d.Set("no_code", registryModule.NoCode)
 
 	// Set VCS repo options.
 	var vcsRepo []interface{}

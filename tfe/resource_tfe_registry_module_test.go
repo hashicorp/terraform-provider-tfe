@@ -230,8 +230,6 @@ func TestAccTFERegistryModule_publicRegistryModule(t *testing.T) {
 						"tfe_registry_module.foobar", "namespace", expectedRegistryModuleAttributes.Namespace),
 					resource.TestCheckResourceAttr(
 						"tfe_registry_module.foobar", "registry_name", string(expectedRegistryModuleAttributes.RegistryName)),
-					resource.TestCheckResourceAttr(
-						"tfe_registry_module.foobar", "no_code", "false"),
 				),
 			},
 		},
