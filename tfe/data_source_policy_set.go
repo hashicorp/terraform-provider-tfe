@@ -36,7 +36,6 @@ func dataSourceTFEPolicySet() *schema.Resource {
 			"kind": {
 				Type:     schema.TypeString,
 				Optional: true,
-				Default:  string(tfe.Sentinel),
 			},
 
 			"overridable": {

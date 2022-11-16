@@ -126,6 +126,8 @@ func TestAccTFEPolicySet_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "global", "false"),
 					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "kind", "sentinel"),
+					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "policy_ids.#", "1"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "workspace_ids.#", "1"),
@@ -228,6 +230,8 @@ func TestAccTFEPolicySet_updatePopulated(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "global", "false"),
 					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "kind", "sentinel"),
+					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "policy_ids.#", "1"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "workspace_ids.#", "1"),
@@ -278,6 +282,8 @@ func TestAccTFEPolicySet_updateToGlobal(t *testing.T) {
 						"tfe_policy_set.foobar", "name", "terraform-global"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "global", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "kind", "sentinel"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "policy_ids.#", "1"),
 				),
@@ -377,6 +383,8 @@ func TestAccTFEPolicySet_vcs(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "global", "false"),
 					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "kind", "sentinel"),
+					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.identifier", GITHUB_POLICY_SET_IDENTIFIER),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.branch", "main"),
@@ -432,6 +440,8 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "global", "false"),
 					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "kind", "sentinel"),
+					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.identifier", GITHUB_POLICY_SET_IDENTIFIER),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.branch", "main"),
@@ -453,6 +463,8 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 						"tfe_policy_set.foobar", "description", "Policy Set"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "kind", "sentinel"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.identifier", GITHUB_POLICY_SET_IDENTIFIER),
 					resource.TestCheckResourceAttr(
@@ -666,6 +678,9 @@ func TestAccTFEPolicySetImport(t *testing.T) {
 				ResourceName:      "tfe_policy_set.foobar",
 				ImportState:       true,
 				ImportStateVerify: true,
+				// Note: We ignore the optional fields below, since the old API endpoints send empty values
+				// and the results may vary depending on the API version
+				ImportStateVerifyIgnore: []string{"kind", "overridable"},
 			},
 		},
 	})

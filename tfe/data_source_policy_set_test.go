@@ -134,6 +134,8 @@ func TestAccTFEPolicySetDataSource_vcs(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_policy_set.bar", "global", "false"),
 					resource.TestCheckResourceAttr(
+						"data.tfe_policy_set.bar", "kind", "sentinel"),
+					resource.TestCheckResourceAttr(
 						"data.tfe_policy_set.bar", "organization", org.Name),
 					resource.TestCheckResourceAttr(
 						"data.tfe_policy_set.bar", "policy_ids.#", "0"),

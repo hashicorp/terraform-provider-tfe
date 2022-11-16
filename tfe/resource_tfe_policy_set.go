@@ -217,12 +217,16 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 	// Update the config.
 	d.Set("name", policySet.Name)
 	d.Set("description", policySet.Description)
-	d.Set("kind", policySet.Kind)
 	d.Set("global", policySet.Global)
 	d.Set("policies_path", policySet.PoliciesPath)
 
 	if policySet.Organization != nil {
 		d.Set("organization", policySet.Organization.Name)
+	}
+
+	// Note: Old API endpoints return an empty string, so use the default in the schema
+	if policySet.Kind != "" {
+		d.Set("kind", policySet.Kind)
 	}
 
 	if policySet.Overridable != nil {
