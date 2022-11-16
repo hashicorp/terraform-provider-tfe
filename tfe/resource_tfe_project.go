@@ -2,6 +2,7 @@ package tfe
 
 import (
 	"context"
+	"errors"
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -60,7 +61,7 @@ func resourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta in
 	log.Printf("[DEBUG] Read configuration of project: %s", d.Id())
 	project, err := tfeClient.Projects.Read(ctx, d.Id())
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			log.Printf("[DEBUG] Project %s does no longer exist", d.Id())
 			d.SetId("")
 			return nil
@@ -98,7 +99,7 @@ func resourceTFEProjectDelete(ctx context.Context, d *schema.ResourceData, meta 
 	log.Printf("[DEBUG] Delete project: %s", d.Id())
 	err := tfeClient.Projects.Delete(ctx, d.Id())
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			return nil
 		}
 		return diag.Errorf("Error deleting project %s: %v", d.Id(), err)

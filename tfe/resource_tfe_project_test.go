@@ -12,6 +12,8 @@ import (
 )
 
 func TestAccTFEProject_basic(t *testing.T) {
+	skipUnlessBeta(t)
+
 	project := &tfe.Project{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -37,6 +39,8 @@ func TestAccTFEProject_basic(t *testing.T) {
 }
 
 func TestAccTFEProject_update(t *testing.T) {
+	skipUnlessBeta(t)
+
 	project := &tfe.Project{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -70,6 +74,8 @@ func TestAccTFEProject_update(t *testing.T) {
 }
 
 func TestAccTFEProject_import(t *testing.T) {
+	skipUnlessBeta(t)
+
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	project := &tfe.Project{}
 	resource.Test(t, resource.TestCase{
@@ -145,10 +151,8 @@ func testAccCheckTFEProjectDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckTFEProjectExists(
-	n string, project *tfe.Project) resource.TestCheckFunc {
+func testAccCheckTFEProjectExists(n string, project *tfe.Project) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-
 		tfeClient := testAccProvider.Meta().(*tfe.Client)
 
 		rs, ok := s.RootModule().Resources[n]
@@ -162,7 +166,7 @@ func testAccCheckTFEProjectExists(
 
 		p, err := tfeClient.Projects.Read(ctx, rs.Primary.ID)
 		if err != nil {
-			return err
+			return fmt.Errorf("unable to read project with ID %s", project.ID)
 		}
 
 		*project = *p

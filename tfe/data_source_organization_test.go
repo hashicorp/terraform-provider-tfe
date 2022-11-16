@@ -1,7 +1,6 @@
 package tfe
 
 import (
-	"errors"
 	"fmt"
 	"math/rand"
 	"testing"
@@ -52,11 +51,10 @@ func TestAccTFEOrganizationDataSource_defaultProject(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckTFEOrganizationExists("tfe_organization.foo", org),
 					resource.TestCheckResourceAttrWith("tfe_organization.foo", "default_project_id", func(value string) error {
-						if value == "" {
-							return errors.New("default project ID not exposed")
-						} else {
-							return nil
+						if value != org.DefaultProject.ID {
+							return fmt.Errorf("default project ID should be %s but was %s", org.DefaultProject.ID, value)
 						}
+						return nil
 					}),
 				),
 			},

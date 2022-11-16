@@ -101,9 +101,8 @@ func TestAccTFEOrganization_defaultProject(t *testing.T) {
 					resource.TestCheckResourceAttrWith("tfe_organization.foobar", "default_project_id", func(value string) error {
 						if value == "" {
 							return errors.New("default project ID not exposed")
-						} else {
-							return nil
 						}
+						return nil
 					}),
 				),
 			},

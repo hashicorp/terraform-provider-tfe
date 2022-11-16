@@ -139,7 +139,6 @@ func resourceTFEWorkspace() *schema.Resource {
 			"project_id": {
 				Type:     schema.TypeString,
 				Optional: true,
-				// TODO: Remove Computed: true once go-tfe supports changing project ID
 				Computed: true,
 			},
 
@@ -305,6 +304,12 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		options.TriggerPatterns = nil
 	}
 
+	if d.HasChange("project_id") {
+		if v, ok := d.GetOk("project_id"); ok && v.(string) != "" {
+			options.Project = &tfe.Project{ID: *tfe.String(v.(string))}
+		}
+	}
+
 	// Get and assert the VCS repo configuration block.
 	if v, ok := d.GetOk("vcs_repo"); ok {
 		vcsRepo := v.([]interface{})[0].(map[string]interface{})
@@ -467,7 +472,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		d.HasChange("operations") || d.HasChange("execution_mode") ||
 		d.HasChange("description") || d.HasChange("agent_pool_id") ||
 		d.HasChange("global_remote_state") || d.HasChange("structured_run_output_enabled") ||
-		d.HasChange("assessments_enabled") {
+		d.HasChange("assessments_enabled") || d.HasChange("project_id") {
 		// Create a new options struct.
 		options := tfe.WorkspaceUpdateOptions{
 			Name:                       tfe.String(d.Get("name").(string)),
@@ -480,6 +485,12 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			SpeculativeEnabled:         tfe.Bool(d.Get("speculative_enabled").(bool)),
 			StructuredRunOutputEnabled: tfe.Bool(d.Get("structured_run_output_enabled").(bool)),
 			WorkingDirectory:           tfe.String(d.Get("working_directory").(string)),
+		}
+
+		if d.HasChange("project_id") {
+			if v, ok := d.GetOk("project_id"); ok && v.(string) != "" {
+				options.Project = &tfe.Project{ID: *tfe.String(v.(string))}
+			}
 		}
 
 		if d.HasChange("assessments_enabled") {

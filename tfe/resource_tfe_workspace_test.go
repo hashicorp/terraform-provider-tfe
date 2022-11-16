@@ -60,14 +60,52 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 						"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "working_directory", ""),
-					resource.TestCheckResourceAttrWith(
-						"tfe_workspace.foobar", "project_id", func(value string) error {
-							if value == workspace.Project.ID {
-								return nil
-							} else {
-								return fmt.Errorf("workspace project id %s doesn't match expected ID %s", value, workspace.Project.ID)
-							}
-						}),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspace_basicReadProjectId(t *testing.T) {
+	skipUnlessBeta(t)
+
+	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_basic(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttrPair("tfe_workspace.foobar", "project_id", "tfe_organization.foobar", "default_project_id"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspace_customProject(t *testing.T) {
+	skipUnlessBeta(t)
+
+	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_orgProjectWorkspace(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttrPair("tfe_workspace.foobar", "project_id", "tfe_project.foobar", "id"),
 				),
 			},
 		},
@@ -304,6 +342,32 @@ func TestAccTFEWorkspace_updateWorkingDirectory(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "working_directory", ""),
 				),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspace_updateProject(t *testing.T) {
+	skipUnlessBeta(t)
+	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_orgProjectWorkspace(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace),
+					resource.TestCheckResourceAttrPair("tfe_workspace.foobar", "project_id", "tfe_project.foobar", "id"),
+				),
+			},
+			{
+				Config: testAccTFEWorkspace_orgProjectWorkspaceOtherProject(rInt),
+				Check:  resource.TestCheckResourceAttrPair("tfe_workspace.foobar", "project_id", "tfe_project.new_project", "id"),
 			},
 		},
 	})
@@ -1553,6 +1617,29 @@ func TestAccTFEWorkspace_importVCSBranch(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspace_importProject(t *testing.T) {
+	skipUnlessBeta(t)
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_orgProjectWorkspace(rInt),
+			},
+			{
+				ResourceName:            "tfe_workspace.foobar",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"force_delete"},
+			},
+		},
+	})
+}
+
 func TestAccTFEWorkspace_operationsAndExecutionModeInteroperability(t *testing.T) {
 	skipIfEnterprise(t)
 
@@ -2366,6 +2453,49 @@ resource "tfe_workspace" "foobar" {
   allow_destroy_plan = false
   auto_apply         = true
   tag_names          = ["fav", "test"]
+}`, rInt)
+}
+
+func testAccTFEWorkspace_orgProjectWorkspace(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "foobar" {
+  name = "testproject"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_workspace" "foobar" {
+  name               = "workspace-test"
+  organization       = tfe_organization.foobar.id
+  project_id		 = tfe_project.foobar.id
+}`, rInt)
+}
+
+func testAccTFEWorkspace_orgProjectWorkspaceOtherProject(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "foobar" {
+  name = "testproject"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_project" "new_project" {
+  name = "testproject2"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_workspace" "foobar" {
+  name               = "workspace-test"
+  organization       = tfe_organization.foobar.id
+  project_id		 = tfe_project.new_project.id
 }`, rInt)
 }
 
