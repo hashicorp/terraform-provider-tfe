@@ -13,7 +13,7 @@ import (
 
 func resourceTFESentinelPolicy() *schema.Resource {
 	return &schema.Resource{
-		DeprecationMessage: "tfe_sentinel_policy is being deprecated, please use tfe_policy instead",
+		DeprecationMessage: "tfe_sentinel_policy is deprecated, please use tfe_policy instead",
 		Create:             resourceTFESentinelPolicyCreate,
 		Read:               resourceTFESentinelPolicyRead,
 		Update:             resourceTFESentinelPolicyUpdate,
