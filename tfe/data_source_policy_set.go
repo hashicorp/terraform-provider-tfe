@@ -34,14 +34,16 @@ func dataSourceTFEPolicySet() *schema.Resource {
 			},
 
 			"kind": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "The policy-as-code framework for the policy. Valid values are sentinel and opa",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 
 			"overridable": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
+				Description: "Whether users can override this policy when it fails during a run. Only valid for OPA policies",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
 			},
 
 			"policies_path": {
