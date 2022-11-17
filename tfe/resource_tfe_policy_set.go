@@ -50,6 +50,7 @@ func resourceTFEPolicySet() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				Default:  string(tfe.Sentinel),
+				ForceNew: true,
 				ValidateFunc: validation.StringInSlice(
 					[]string{
 						string(tfe.OPA),
