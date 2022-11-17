@@ -47,6 +47,7 @@ func resourceTFEPolicy() *schema.Resource {
 			"kind": {
 				Description: "The policy-as-code framework for the policy. Valid values are sentinel and opa",
 				Type:        schema.TypeString,
+				ForceNew:    true,
 				Optional:    true,
 				Default:     string(tfe.Sentinel),
 				ValidateFunc: validation.StringInSlice(
