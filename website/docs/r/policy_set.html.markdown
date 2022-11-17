@@ -8,8 +8,8 @@ description: |-
 
 # tfe_policy_set
 
-Sentinel Policy as Code is an embedded policy as code framework integrated
-with Terraform Enterprise.
+Policies are rules enforced on Terraform runs. Two policy-as-code frameworks are 
+integrated with Terraform Enterprise: Sentinel and Open Policy Agent (OPA).
 
 Policy sets are groups of policies that are applied together to related workspaces.
 By using policy sets, you can group your policies by attributes such as environment
@@ -25,6 +25,7 @@ resource "tfe_policy_set" "test" {
   name          = "my-policy-set"
   description   = "A brand new policy set"
   organization  = "my-org-name"
+  kind          = "sentinel"
   policies_path = "policies/my-policy-set"
   workspace_ids = [tfe_workspace.test.id]
 
@@ -44,6 +45,7 @@ resource "tfe_policy_set" "test" {
   name          = "my-policy-set"
   description   = "A brand new policy set"
   organization  = "my-org-name"
+  kind          = "sentinel"
   policy_ids    = [tfe_sentinel_policy.test.id]
   workspace_ids = [tfe_workspace.test.id]
 }
@@ -77,6 +79,10 @@ The following arguments are supported:
 * `global` - (Optional) Whether or not policies in this set will apply to
   all workspaces. Defaults to `false`. This value _must not_ be provided if
   `workspace_ids` is provided.
+* `kind` - (Optional) The policy-as-code framework associated with the policy.
+   Defaults to `sentinel` if not provided. Valid values are `sentinel` and `opa`.
+* `overridable` - (Optional) Whether or not users can override this policy when 
+   it fails during a run. Defaults to `false`. Only valid for OPA policies. 
 * `organization` - (Required) Name of the organization.
 * `policies_path` - (Optional) The sub-path within the attached VCS repository
   to ingress when using `vcs_repo`. All files and directories outside of this
