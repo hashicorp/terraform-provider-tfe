@@ -229,6 +229,11 @@ func resourceTFEWorkspace() *schema.Resource {
 					},
 				},
 			},
+			"force_delete": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
 		},
 	}
 }
@@ -671,7 +676,41 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 	id := d.Id()
 
 	log.Printf("[DEBUG] Delete workspace %s", id)
-	err := tfeClient.Workspaces.DeleteByID(ctx, id)
+
+	ws, err := tfeClient.Workspaces.ReadByID(ctx, id)
+	if err != nil {
+		if err == tfe.ErrResourceNotFound {
+			return nil
+		}
+		return fmt.Errorf(
+			"Error reading workspace %s: %w", id, err)
+	}
+
+	forceDelete := d.Get("force_delete").(bool)
+
+	// presence of Permissions.CanForceDelete will determine if current version of TFE supports safe deletes
+	if ws.Permissions.CanForceDelete == nil {
+		if forceDelete {
+			err = tfeClient.Workspaces.DeleteByID(ctx, id)
+		} else {
+			return fmt.Errorf(
+				"Error deleting workspace %s: This workspace must be force deleted by setting force_delete=true", id)
+		}
+	} else if *ws.Permissions.CanForceDelete {
+		if forceDelete {
+			err = tfeClient.Workspaces.DeleteByID(ctx, id)
+		} else {
+			err = tfeClient.Workspaces.SafeDeleteByID(ctx, id)
+			return errWorkspaceSafeDeleteWithPermission(id, err)
+		}
+	} else {
+		if forceDelete {
+			return fmt.Errorf(
+				"Error deleting workspace %s: missing required permissions to set force delete workspaces in the organization.", id)
+		}
+		err = tfeClient.Workspaces.SafeDeleteByID(ctx, id)
+	}
+
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil
@@ -679,7 +718,6 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 		return fmt.Errorf(
 			"Error deleting workspace %s: %w", id, err)
 	}
-
 	return nil
 }
 
@@ -766,4 +804,13 @@ func resourceTFEWorkspaceImporter(ctx context.Context, d *schema.ResourceData, m
 // Warns the user that a workspace tag containing uppercase characters will be downcased.
 func warnWorkspaceTagsCasing(ctx context.Context, tag string) {
 	log.Printf("[WARN] The tag \"%s\" contains uppercase characters that will be transformed by the API. Please update your configuration to lowercase tags in order to avoid conflicts with state.", tag)
+}
+
+func errWorkspaceSafeDeleteWithPermission(workspaceID string, err error) error {
+	if err != nil {
+		if strings.HasPrefix(err.Error(), "conflict") {
+			return fmt.Errorf("Error deleting workspace %s: %w\nTo delete this workspace without destroying the managed resources, add force_delete = true to the resource config.", workspaceID, err)
+		}
+	}
+	return nil
 }
