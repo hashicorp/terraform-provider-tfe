@@ -2,6 +2,7 @@
 
 FEATURES:
 * r/tfe_organization: Add `allow_force_delete_workspaces` attribute to set whether admins are permitted to delete workspaces with resource under management. ([#661](https://github.com/hashicorp/terraform-provider-tfe/pull/661))
+* r/tfe_workspace: Add `force_delete` attribute to set whether workspaces will be force deleted when removed through the provider. Otherwise, they will be safe deleted. ([#675](https://github.com/hashicorp/terraform-provider-tfe/pull/675))
 * r/tfe_policy_set: Add OPA support for policy sets. ([#691](https://github.com/hashicorp/terraform-provider-tfe/pull/691))
 * d/tfe_policy_set: Add optional `kind` and `overridable` fields for OPA policy sets ([#691](https://github.com/hashicorp/terraform-provider-tfe/pull/691))
 
