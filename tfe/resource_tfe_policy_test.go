@@ -48,6 +48,47 @@ func TestAccTFEPolicy_basic(t *testing.T) {
 	})
 }
 
+func TestAccTFEPolicy_basicWithDefaults(t *testing.T) {
+	skipUnlessBeta(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	policy := &tfe.Policy{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEPolicyDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicy_basicWithDefaults(org.Name),
+				// Note: We need this flag since enforce is set to the default value
+				ExpectNonEmptyPlan: true,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicyExists(
+						"tfe_policy.foobar", policy),
+					testAccCheckTFEDefaultPolicyAttributes(policy),
+					resource.TestCheckResourceAttr(
+						"tfe_policy.foobar", "name", "policy-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy.foobar", "description", "A test policy"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy.foobar", "kind", "sentinel"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy.foobar", "policy", "main = rule { true }"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy.foobar", "enforce_mode", "soft-mandatory"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEPolicyOPA_basic(t *testing.T) {
 	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
@@ -294,6 +335,26 @@ func testAccCheckTFEOPAPolicyAttributes(
 	}
 }
 
+func testAccCheckTFEDefaultPolicyAttributes(policy *tfe.Policy) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if policy.Name != "policy-test" {
+			return fmt.Errorf("Bad name: %s", policy.Name)
+		}
+
+		switch policy.Kind {
+		case tfe.Sentinel:
+			if policy.Enforce[0].Mode != "soft-mandatory" {
+				return fmt.Errorf("Bad enforce mode: %s", policy.Enforce[0].Mode)
+			}
+		case tfe.OPA:
+			if policy.Enforce[0].Mode != "advisory" {
+				return fmt.Errorf("Bad enforce mode: %s", policy.Enforce[0].Mode)
+			}
+		}
+		return nil
+	}
+}
+
 func testAccCheckTFEPolicyAttributesUpdated(
 	policy *tfe.Policy) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
@@ -353,6 +414,16 @@ resource "tfe_policy" "foobar" {
   organization = "%s"
   policy       = "main = rule { true }"
   enforce_mode = "hard-mandatory"
+}`, organization)
+}
+
+func testAccTFEPolicy_basicWithDefaults(organization string) string {
+	return fmt.Sprintf(`
+resource "tfe_policy" "foobar" {
+  name         = "policy-test"
+  description  = "A test policy"
+  organization = "%s"
+  policy       = "main = rule { true }"
 }`, organization)
 }
 

@@ -170,12 +170,18 @@ func resourceTFEPolicyCreate(d *schema.ResourceData, meta interface{}) error {
 func createOPAPolicyOptions(options *tfe.PolicyCreateOptions, d *schema.ResourceData) (*tfe.PolicyCreateOptions, error) {
 	name := d.Get("name").(string)
 	path := name + ".rego"
-	options.Enforce = []*tfe.EnforcementOptions{
-		{
-			Path: tfe.String(path),
-			Mode: tfe.EnforcementMode(tfe.EnforcementLevel(d.Get("enforce_mode").(string))),
-		},
+	enforceOpts := &tfe.EnforcementOptions{
+		Path: tfe.String(path),
 	}
+
+	if v, ok := d.GetOk("enforce_mode"); !ok {
+		enforceOpts.Mode = tfe.EnforcementMode(getDefaultEnforcementMode(tfe.OPA))
+	} else {
+		enforceOpts.Mode = tfe.EnforcementMode(tfe.EnforcementLevel(v.(string)))
+	}
+
+	options.Enforce = []*tfe.EnforcementOptions{enforceOpts}
+
 	vQuery, ok := d.GetOk("query")
 	if !ok {
 		return options, fmt.Errorf("Missing query for OPA policy.")
@@ -188,13 +194,31 @@ func createOPAPolicyOptions(options *tfe.PolicyCreateOptions, d *schema.Resource
 func createSentinelPolicyOptions(options *tfe.PolicyCreateOptions, d *schema.ResourceData) *tfe.PolicyCreateOptions {
 	name := d.Get("name").(string)
 	path := name + ".sentinel"
-	options.Enforce = []*tfe.EnforcementOptions{
-		{
-			Path: tfe.String(path),
-			Mode: tfe.EnforcementMode(tfe.EnforcementLevel(d.Get("enforce_mode").(string))),
-		},
+	enforceOpts := &tfe.EnforcementOptions{
+		Path: tfe.String(path),
 	}
+
+	if v, ok := d.GetOk("enforce_mode"); !ok {
+		enforceOpts.Mode = tfe.EnforcementMode(getDefaultEnforcementMode(tfe.Sentinel))
+	} else {
+		enforceOpts.Mode = tfe.EnforcementMode(tfe.EnforcementLevel(v.(string)))
+	}
+
+	options.Enforce = []*tfe.EnforcementOptions{enforceOpts}
 	return options
+}
+
+func getDefaultEnforcementMode(kind tfe.PolicyKind) tfe.EnforcementLevel {
+	switch kind {
+	case tfe.Sentinel:
+		return tfe.EnforcementSoft
+
+	case tfe.OPA:
+		return tfe.EnforcementAdvisory
+
+	default:
+		return ""
+	}
 }
 
 func resourceTFEPolicyRead(d *schema.ResourceData, meta interface{}) error {
