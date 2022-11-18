@@ -1,4 +1,4 @@
-## Unreleased
+## v0.39.0 (November 18, 2022)
 
 FEATURES:
 * r/registry_module: Adds `no_code` field. ([#673](https://github.com/hashicorp/terraform-provider-tfe/pull/673))
