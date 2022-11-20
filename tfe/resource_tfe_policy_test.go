@@ -67,8 +67,6 @@ func TestAccTFEPolicy_basicWithDefaults(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEPolicy_basicWithDefaults(org.Name),
-				// Note: We need this flag since enforce is set to the default value
-				ExpectNonEmptyPlan: true,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicyExists(
 						"tfe_policy.foobar", policy),
@@ -180,6 +178,62 @@ func TestAccTFEPolicy_update(t *testing.T) {
 						"tfe_policy.foobar", "policy", "main = rule { false }"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy.foobar", "enforce_mode", "soft-mandatory"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEPolicy_unsetEnforce(t *testing.T) {
+	skipUnlessBeta(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	policy := &tfe.Policy{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEPolicyDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicy_basic(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicyExists(
+						"tfe_policy.foobar", policy),
+					testAccCheckTFEPolicyAttributes(policy),
+					resource.TestCheckResourceAttr(
+						"tfe_policy.foobar", "name", "policy-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy.foobar", "description", "A test policy"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy.foobar", "kind", "sentinel"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy.foobar", "policy", "main = rule { true }"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy.foobar", "enforce_mode", "hard-mandatory"),
+				),
+			},
+
+			{
+				Config: testAccTFEPolicy_emptyEnforce(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicyExists(
+						"tfe_policy.foobar", policy),
+					testAccCheckTFEPolicyAttributes(policy),
+					resource.TestCheckResourceAttr(
+						"tfe_policy.foobar", "name", "policy-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy.foobar", "description", "An updated test policy"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy.foobar", "policy", "main = rule { false }"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy.foobar", "enforce_mode", "hard-mandatory"),
 				),
 			},
 		},
@@ -448,6 +502,16 @@ resource "tfe_policy" "foobar" {
   organization = "%s"
   policy       = "main = rule { false }"
   enforce_mode = "soft-mandatory"
+}`, organization)
+}
+
+func testAccTFEPolicy_emptyEnforce(organization string) string {
+	return fmt.Sprintf(`
+  resource "tfe_policy" "foobar" {
+  name         = "policy-test"
+  description  = "An updated test policy"
+  organization = "%s"
+  policy       = "main = rule { false }"
 }`, organization)
 }
 

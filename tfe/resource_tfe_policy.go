@@ -83,6 +83,7 @@ func resourceTFEPolicy() *schema.Resource {
 						"`",
 						"and")),
 				Optional: true,
+				Computed: true,
 				ValidateFunc: validation.StringInSlice(
 					[]string{
 						string(tfe.EnforcementAdvisory),
