@@ -81,6 +81,8 @@ func resourceTFENotificationConfiguration() *schema.Resource {
 							string(tfe.NotificationTriggerApplying),
 							string(tfe.NotificationTriggerCompleted),
 							string(tfe.NotificationTriggerErrored),
+							string(tfe.NotificationTriggerAssessmentDrifted),
+							string(tfe.NotificationTriggerAssessmentFailed),
 						},
 						false,
 					),

@@ -1,8 +1,11 @@
-## Unreleased
+## v0.39.0 (November 18, 2022)
 
 FEATURES:
+* r/tfe_workspace_run_task: Removed beta notices on the `stage` attribute for workspace run tasks. ([#669](https://github.com/hashicorp/terraform-provider-tfe/pull/669))
+* r/registry_module: Adds `no_code` field. ([#673](https://github.com/hashicorp/terraform-provider-tfe/pull/673))
 * r/tfe_organization: Add `allow_force_delete_workspaces` attribute to set whether admins are permitted to delete workspaces with resource under management. ([#661](https://github.com/hashicorp/terraform-provider-tfe/pull/661))
 * r/tfe_workspace: Add `force_delete` attribute to set whether workspaces will be force deleted when removed through the provider. Otherwise, they will be safe deleted. ([#675](https://github.com/hashicorp/terraform-provider-tfe/pull/675))
+* r/tfe_notification_configuration: Add assessment triggers to notifications ([#676](https://github.com/hashicorp/terraform-provider-tfe/pull/676))
 * r/tfe_policy: Add OPA support for policies. `tfe_policy` is a new resource that supports both Sentinel as well as OPA policies. `tfe_sentinel_policy` now includes a deprecation warning. ([#690](https://github.com/hashicorp/terraform-provider-tfe/pull/690))
 
 ## v0.38.0 (October 24, 2022)
@@ -13,8 +16,6 @@ FEATURES:
 * d/tfe_organization_membership: Add new argument `username` to enable fetching an organization membership by username. ([#660](https://github.com/hashicorp/terraform-provider-tfe/pull/660))
 * r/tfe_organization_membership: Add new computed attribute `username`. ([#660](https://github.com/hashicorp/terraform-provider-tfe/pull/660))
 * r/tfe_team_organization_members: Add resource for managing team members via organization membership IDs ([#617](https://github.com/hashicorp/terraform-provider-tfe/pull/617))
-* d/tfe_oauth_client: Adds `name`, `service_provider`, `service_provider_display_name`, `organization`, `callback_url`, and `created_at` fields, and enables searching for an OAuth client with `organization`, `name`, and `service_provider`. ([#599](https://github.com/hashicorp/terraform-provider-tfe/pull/599))
-* r/tfe_workspace_run_task: Removed beta notices on the `stage` attribute for workspace run tasks. ([#669](https://github.com/hashicorp/terraform-provider-tfe/pull/669))
 
 BUG FIXES:
 * r/tfe_workspace: When assessments_enabled was the only change in to the resource the workspace was not being updated ([#641](https://github.com/hashicorp/terraform-provider-tfe/pull/641))
