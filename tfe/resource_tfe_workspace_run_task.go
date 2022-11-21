@@ -26,6 +26,7 @@ func workspaceRunTaskStages() []string {
 	}
 }
 
+// nolint: unparam
 // Helper function to turn a slice of strings into an english sentence for documentation
 func sentenceList(items []string, prefix string, suffix string, conjunction string) string {
 	var b strings.Builder
