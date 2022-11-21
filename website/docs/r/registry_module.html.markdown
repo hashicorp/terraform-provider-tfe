@@ -70,6 +70,24 @@ resource "tfe_registry_module" "test-public-registry-module" {
 }
 ```
 
+Create no-code provisioning registry module:
+
+```hcl
+resource "tfe_organization" "test-organization" {
+  name  = "my-org-name"
+  email = "admin@company.com"
+}
+
+resource "tfe_registry_module" "test-no-code-provisioning-registry-module" {
+  organization    = tfe_organization.test-organization.name
+  namespace       = "terraform-aws-modules"
+  module_provider = "aws"
+  name            = "vpc"
+  registry_name   = "public"
+  no_code         = true
+}
+```
+
 ## Argument Reference
 
 The following arguments are supported:
@@ -81,6 +99,7 @@ The following arguments are supported:
 * `organization` - (Optional) The name of the organization associated with the registry module. It must be set if `module_provider` is used.
 * `namespace` - (Optional) The namespace of a public registry module. It can be used if `module_provider` is set and `registry_name` is public.
 * `registry_name` - (Optional) Whether the registry module is private or public. It can be used if `module_provider` is set.
+* `no_code` - (Optional) Whether the registry module is enabled for [no-code provisioning](https://learn.hashicorp.com/tutorials/terraform/no-code-provisioning). Defaults to `false`.
 
 The `vcs_repo` block supports:
 
@@ -101,6 +120,7 @@ The `vcs_repo` block supports:
 * `organization` - The name of the organization associated with the registry module.
 * `namespace` - The namespace of the module. For private modules this is the name of the organization that owns the module.
 * `registry_name` - The registry name of the registry module depicting whether the registry module is private or public.
+* `no_code` - The property that will enable or disable a module as no-code provisioning ready.
 
 ## Import
 

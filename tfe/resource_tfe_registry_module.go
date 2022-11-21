@@ -17,6 +17,7 @@ func resourceTFERegistryModule() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceTFERegistryModuleCreate,
 		Read:   resourceTFERegistryModuleRead,
+		Update: resourceTFERegistryModuleUpdate,
 		Delete: resourceTFERegistryModuleDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: resourceTFERegistryModuleImporter,
@@ -76,6 +77,11 @@ func resourceTFERegistryModule() *schema.Resource {
 				ForceNew:     true,
 				RequiredWith: []string{"registry_name"},
 			},
+			"no_code": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Computed: true,
+			},
 			"registry_name": {
 				Type:         schema.TypeString,
 				Optional:     true,
@@ -118,6 +124,7 @@ func resourceTFERegistryModuleCreateWithoutVCS(meta interface{}, d *schema.Resou
 	options := tfe.RegistryModuleCreateOptions{
 		Name:     tfe.String(d.Get("name").(string)),
 		Provider: tfe.String(d.Get("module_provider").(string)),
+		NoCode:   d.Get("no_code").(bool),
 	}
 
 	if registryName, ok := d.GetOk("registry_name"); ok {
@@ -190,6 +197,40 @@ func resourceTFERegistryModuleCreate(d *schema.ResourceData, meta interface{}) e
 	return resourceTFERegistryModuleRead(d, meta)
 }
 
+func resourceTFERegistryModuleUpdate(d *schema.ResourceData, meta interface{}) error {
+	tfeClient := meta.(*tfe.Client)
+
+	options := tfe.RegistryModuleUpdateOptions{
+		NoCode: tfe.Bool(d.Get("no_code").(bool)),
+	}
+	var registryModule *tfe.RegistryModule
+	var err error
+
+	rmID := tfe.RegistryModuleID{
+		Organization: d.Get("organization").(string),
+		Name:         d.Get("name").(string),
+		Provider:     d.Get("module_provider").(string),
+		Namespace:    d.Get("namespace").(string),
+		RegistryName: tfe.RegistryName(d.Get("registry_name").(string)),
+	}
+
+	err = resource.Retry(time.Duration(5)*time.Minute, func() *resource.RetryError {
+		registryModule, err = tfeClient.RegistryModules.Update(ctx, rmID, options)
+		if err != nil {
+			return resource.RetryableError(err)
+		}
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("Error while waiting for module %s/%s to be updated: %w", registryModule.Organization.Name, registryModule.Name, err)
+	}
+
+	d.SetId(registryModule.ID)
+
+	return resourceTFERegistryModuleRead(d, meta)
+}
+
 func resourceTFERegistryModuleRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
@@ -221,6 +262,7 @@ func resourceTFERegistryModuleRead(d *schema.ResourceData, meta interface{}) err
 	d.Set("organization", registryModule.Organization.Name)
 	d.Set("namespace", registryModule.Namespace)
 	d.Set("registry_name", registryModule.RegistryName)
+	d.Set("no_code", registryModule.NoCode)
 
 	// Set VCS repo options.
 	var vcsRepo []interface{}
