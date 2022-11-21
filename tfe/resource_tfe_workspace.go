@@ -700,6 +700,10 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 		if forceDelete {
 			err = tfeClient.Workspaces.DeleteByID(ctx, id)
 		} else {
+			err = errWorkspaceResourceCountCheck(id, ws.ResourceCount)
+			if err != nil {
+				return err
+			}
 			err = tfeClient.Workspaces.SafeDeleteByID(ctx, id)
 			return errWorkspaceSafeDeleteWithPermission(id, err)
 		}
@@ -707,6 +711,10 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 		if forceDelete {
 			return fmt.Errorf(
 				"Error deleting workspace %s: missing required permissions to set force delete workspaces in the organization.", id)
+		}
+		err = errWorkspaceResourceCountCheck(id, ws.ResourceCount)
+		if err != nil {
+			return err
 		}
 		err = tfeClient.Workspaces.SafeDeleteByID(ctx, id)
 	}
@@ -811,6 +819,14 @@ func errWorkspaceSafeDeleteWithPermission(workspaceID string, err error) error {
 		if strings.HasPrefix(err.Error(), "conflict") {
 			return fmt.Errorf("Error deleting workspace %s: %w\nTo delete this workspace without destroying the managed resources, add force_delete = true to the resource config.", workspaceID, err)
 		}
+	}
+	return nil
+}
+
+func errWorkspaceResourceCountCheck(workspaceID string, resourceCount int) error {
+	if resourceCount > 0 {
+		return fmt.Errorf(
+			"Error deleting workspace %s: This workspace has %v resources under management and must be force deleted by setting force_delete = true", workspaceID, resourceCount)
 	}
 	return nil
 }
