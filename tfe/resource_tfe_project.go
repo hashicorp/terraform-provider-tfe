@@ -40,7 +40,7 @@ func resourceTFEProjectCreate(ctx context.Context, d *schema.ResourceData, meta 
 	name := d.Get("name").(string)
 
 	options := tfe.ProjectCreateOptions{
-		Name: tfe.String(name),
+		Name: name,
 	}
 
 	log.Printf("[DEBUG] Create new project: %s", name)
