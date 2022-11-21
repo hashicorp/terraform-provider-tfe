@@ -1,3 +1,7 @@
+## Unreleased
+FEATURES:
+* r/tfe_workspace: Add preemptive check for resources under management when `force_delete` attribute is false ([#699](https://github.com/hashicorp/terraform-provider-tfe/pull/699))
+
 ## v0.39.0 (November 18, 2022)
 
 FEATURES:

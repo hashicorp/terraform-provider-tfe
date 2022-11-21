@@ -1917,6 +1917,7 @@ func TestTFEWorkspace_delete_withoutCanForceDeletePermission(t *testing.T) {
 		t.Fatalf("unexpected err creating mock workspace %v", err)
 	}
 	workspace.Permissions.CanForceDelete = nil
+	workspace.ResourceCount = 2
 
 	rd := resourceTFEWorkspace().TestResourceData()
 	rd.SetId(workspace.ID)
@@ -1924,6 +1925,13 @@ func TestTFEWorkspace_delete_withoutCanForceDeletePermission(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected err creating configuration state %v", err)
 	}
+
+	err = resourceTFEWorkspaceDelete(rd, client)
+	if err == nil {
+		t.Fatalf("Expected an error deleting workspace with CanForceDelete=nil, force_delete=true, and %v resources", workspace.ResourceCount)
+	}
+
+	workspace.ResourceCount = 0
 
 	err = resourceTFEWorkspaceDelete(rd, client)
 	if err == nil {
