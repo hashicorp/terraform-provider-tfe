@@ -1,7 +1,8 @@
 name: Acceptance Tests
 on:
-  pull_request:
+  push:
     branches: [ main ]
+  pull_request:
 jobs:
   tests:
     name: run
@@ -57,4 +58,15 @@ jobs:
         run: |
           source $HOME/.env
           gotestsum --format short-verbose -- $MOD_PROVIDER $MOD_TFE $MOD_VERSION -v -timeout=30m -run "${{ steps.test_split.outputs.run }}"
-
+  tests-summarize:
+    name: Summarize Tests
+    needs: [tests]
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    steps:
+      - name: Check tests Status
+        run: |
+          if [ "${{ needs.tests.result }}" = "success" ]; then
+            exit 0
+          fi
+          exit 1
