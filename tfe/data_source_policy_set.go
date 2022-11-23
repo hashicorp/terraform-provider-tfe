@@ -43,7 +43,6 @@ func dataSourceTFEPolicySet() *schema.Resource {
 				Description: "Whether users can override this policy when it fails during a run. Only valid for OPA policies",
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Default:     false,
 			},
 
 			"policies_path": {
