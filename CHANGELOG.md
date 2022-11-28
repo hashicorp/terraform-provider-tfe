@@ -5,6 +5,8 @@ FEATURES:
 * r/tfe_policy: Add OPA support for policies. `tfe_policy` is a new resource that supports both Sentinel as well as OPA policies. `tfe_sentinel_policy` now includes a deprecation warning. ([#690](https://github.com/hashicorp/terraform-provider-tfe/pull/690))
 * r/tfe_policy_set: Add OPA support for policy sets. ([#691](https://github.com/hashicorp/terraform-provider-tfe/pull/691))
 * d/tfe_policy_set: Add optional `kind` and `overridable` fields for OPA policy sets ([#691](https://github.com/hashicorp/terraform-provider-tfe/pull/691))
+* r/tfe_policy: Fix documentation to make enforce_mode not a required property ([#705](https://github.com/hashicorp/terraform-provider-tfe/pull/705))
+* r/tfe_sentinel_policy: Fix documentation to make enforce_mode not a required property ([#705](https://github.com/hashicorp/terraform-provider-tfe/pull/705))
 
 ## v0.39.0 (November 18, 2022)
 
