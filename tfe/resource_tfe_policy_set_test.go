@@ -46,6 +46,99 @@ func TestAccTFEPolicySet_basic(t *testing.T) {
 	})
 }
 
+func TestAccTFEPolicySetOPA_basic(t *testing.T) {
+	skipUnlessBeta(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	policySet := &tfe.PolicySet{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicySetOPA_basic(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					testAccCheckTFEPolicySetAttributes(policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "tst-terraform"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "kind", "opa"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "overridable", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "description", "Policy Set"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEPolicySet_updateOverridable(t *testing.T) {
+	skipUnlessBeta(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	policySet := &tfe.PolicySet{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicySetOPA_basic(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					testAccCheckTFEPolicySetAttributes(policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "tst-terraform"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "description", "Policy Set"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "kind", "opa"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "overridable", "true"),
+				),
+			},
+
+			{
+				Config: testAccTFEPolicySetOPA_overridable(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "tst-terraform"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "kind", "opa"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "workspace_ids.#", "1"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "overridable", "false"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEPolicySet_update(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
@@ -87,6 +180,8 @@ func TestAccTFEPolicySet_update(t *testing.T) {
 						"tfe_policy_set.foobar", "name", "terraform-populated"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "kind", "sentinel"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "policy_ids.#", "1"),
 					resource.TestCheckResourceAttr(
@@ -190,6 +285,8 @@ func TestAccTFEPolicySet_updatePopulated(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "global", "false"),
 					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "kind", "sentinel"),
+					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "policy_ids.#", "1"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "workspace_ids.#", "1"),
@@ -240,6 +337,8 @@ func TestAccTFEPolicySet_updateToGlobal(t *testing.T) {
 						"tfe_policy_set.foobar", "name", "terraform-global"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "global", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "kind", "sentinel"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "policy_ids.#", "1"),
 				),
@@ -339,6 +438,8 @@ func TestAccTFEPolicySet_vcs(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "global", "false"),
 					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "kind", "sentinel"),
+					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.identifier", GITHUB_POLICY_SET_IDENTIFIER),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.branch", "main"),
@@ -394,6 +495,8 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "global", "false"),
 					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "kind", "sentinel"),
+					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.identifier", GITHUB_POLICY_SET_IDENTIFIER),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.branch", "main"),
@@ -415,6 +518,8 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 						"tfe_policy_set.foobar", "description", "Policy Set"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "kind", "sentinel"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.identifier", GITHUB_POLICY_SET_IDENTIFIER),
 					resource.TestCheckResourceAttr(
@@ -628,6 +733,9 @@ func TestAccTFEPolicySetImport(t *testing.T) {
 				ResourceName:      "tfe_policy_set.foobar",
 				ImportState:       true,
 				ImportStateVerify: true,
+				// Note: We ignore the optional fields below, since the old API endpoints send empty values
+				// and the results may vary depending on the API version
+				ImportStateVerifyIgnore: []string{"kind", "overridable"},
 			},
 		},
 	})
@@ -819,6 +927,17 @@ resource "tfe_policy_set" "foobar" {
 }`, organization, organization)
 }
 
+func testAccTFEPolicySetOPA_basic(organization string) string {
+	return fmt.Sprintf(`
+resource "tfe_policy_set" "foobar" {
+  name         = "tst-terraform"
+  description  = "Policy Set"
+  organization = "%s"
+  kind         = "opa"
+  overridable = "true"
+}`, organization)
+}
+
 func testAccTFEPolicySet_empty(organization string) string {
 	return fmt.Sprintf(`
  resource "tfe_policy_set" "foobar" {
@@ -850,6 +969,26 @@ resource "tfe_policy_set" "foobar" {
   organization = local.organization_name
   policy_ids    = [tfe_sentinel_policy.foo.id]
   workspace_ids = [tfe_workspace.foo.id]
+}`, organization)
+}
+
+func testAccTFEPolicySetOPA_overridable(organization string) string {
+	return fmt.Sprintf(`
+locals {
+    organization_name = "%s"
+}
+
+resource "tfe_workspace" "foo" {
+  name         = "workspace-foo"
+  organization = local.organization_name
+}
+
+resource "tfe_policy_set" "foobar" {
+  name          = "tst-terraform"
+  organization = local.organization_name
+  workspace_ids = [tfe_workspace.foo.id]
+  overridable = "false"
+  kind = "opa"
 }`, organization)
 }
 

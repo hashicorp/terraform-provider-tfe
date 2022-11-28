@@ -46,6 +46,24 @@ func resourceTFEPolicySet() *schema.Resource {
 				ConflictsWith: []string{"workspace_ids"},
 			},
 
+			"kind": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  string(tfe.Sentinel),
+				ForceNew: true,
+				ValidateFunc: validation.StringInSlice(
+					[]string{
+						string(tfe.OPA),
+						string(tfe.Sentinel),
+					}, false),
+			},
+
+			"overridable": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
+
 			"policies_path": {
 				Type:          schema.TypeString,
 				Optional:      true,
@@ -123,6 +141,14 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	// Process all configured options.
+	if vKind, ok := d.GetOk("kind"); ok {
+		options.Kind = tfe.PolicyKind(vKind.(string))
+	}
+
+	if vOverridable, ok := d.GetOk("overridable"); ok {
+		options.Overridable = tfe.Bool(vOverridable.(bool))
+	}
+
 	if desc, ok := d.GetOk("description"); ok {
 		options.Description = tfe.String(desc.(string))
 	}
@@ -199,6 +225,15 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 		d.Set("organization", policySet.Organization.Name)
 	}
 
+	// Note: Old API endpoints return an empty string, so use the default in the schema
+	if policySet.Kind != "" {
+		d.Set("kind", policySet.Kind)
+	}
+
+	if policySet.Overridable != nil {
+		d.Set("overridable", policySet.Overridable)
+	}
+
 	// Set VCS policy set options.
 	var vcsRepo []interface{}
 	if policySet.VCSRepo != nil {
@@ -271,7 +306,7 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	// Don't bother updating the policy set's attributes if they haven't changed
-	if d.HasChange("name") || d.HasChange("description") || d.HasChange("global") || d.HasChange("vcs_repo") {
+	if d.HasChange("name") || d.HasChange("description") || d.HasChange("global") || d.HasChange("vcs_repo") || d.HasChange("overridable") {
 		// Create a new options struct.
 		options := tfe.PolicySetUpdateOptions{
 			Name:   tfe.String(name),
@@ -280,6 +315,11 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 
 		if desc, ok := d.GetOk("description"); ok {
 			options.Description = tfe.String(desc.(string))
+		}
+
+		if d.HasChange("overridable") {
+			o := d.Get("overridable").(bool)
+			options.Overridable = tfe.Bool(o)
 		}
 
 		if v, ok := d.GetOk("vcs_repo"); ok {

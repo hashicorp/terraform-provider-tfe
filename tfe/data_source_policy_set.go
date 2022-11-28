@@ -33,6 +33,18 @@ func dataSourceTFEPolicySet() *schema.Resource {
 				Computed: true,
 			},
 
+			"kind": {
+				Description: "The policy-as-code framework for the policy. Valid values are sentinel and opa",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+
+			"overridable": {
+				Description: "Whether users can override this policy when it fails during a run. Only valid for OPA policies",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+
 			"policies_path": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -100,6 +112,7 @@ func dataSourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error 
 		}
 
 		for _, policySet := range policySetList.Items {
+			// nolint: nestif
 			if policySet.Name == name {
 				d.Set("name", policySet.Name)
 				d.Set("description", policySet.Description)
@@ -108,6 +121,14 @@ func dataSourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error 
 
 				if policySet.Organization != nil {
 					d.Set("organization", policySet.Organization.Name)
+				}
+
+				if policySet.Kind != "" {
+					d.Set("kind", policySet.Kind)
+				}
+
+				if policySet.Overridable != nil {
+					d.Set("overridable", policySet.Overridable)
 				}
 
 				var vcsRepo []interface{}
