@@ -306,7 +306,7 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	// Don't bother updating the policy set's attributes if they haven't changed
-	if d.HasChange("name") || d.HasChange("description") || d.HasChange("global") || d.HasChange("vcs_repo") {
+	if d.HasChange("name") || d.HasChange("description") || d.HasChange("global") || d.HasChange("vcs_repo") || d.HasChange("overridable") {
 		// Create a new options struct.
 		options := tfe.PolicySetUpdateOptions{
 			Name:   tfe.String(name),
@@ -315,6 +315,11 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 
 		if desc, ok := d.GetOk("description"); ok {
 			options.Description = tfe.String(desc.(string))
+		}
+
+		if d.HasChange("overridable") {
+			o := d.Get("overridable").(bool)
+			options.Overridable = tfe.Bool(o)
 		}
 
 		if v, ok := d.GetOk("vcs_repo"); ok {

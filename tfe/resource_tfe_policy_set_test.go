@@ -84,6 +84,61 @@ func TestAccTFEPolicySetOPA_basic(t *testing.T) {
 	})
 }
 
+func TestAccTFEPolicySet_updateOverridable(t *testing.T) {
+	skipUnlessBeta(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	policySet := &tfe.PolicySet{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicySetOPA_basic(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					testAccCheckTFEPolicySetAttributes(policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "tst-terraform"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "description", "Policy Set"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "kind", "opa"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "overridable", "true"),
+				),
+			},
+
+			{
+				Config: testAccTFEPolicySetOPA_overridable(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "tst-terraform"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "kind", "opa"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "workspace_ids.#", "1"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "overridable", "false"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEPolicySet_update(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
@@ -879,6 +934,7 @@ resource "tfe_policy_set" "foobar" {
   description  = "Policy Set"
   organization = "%s"
   kind         = "opa"
+  overridable = "true"
 }`, organization)
 }
 
@@ -913,6 +969,26 @@ resource "tfe_policy_set" "foobar" {
   organization = local.organization_name
   policy_ids    = [tfe_sentinel_policy.foo.id]
   workspace_ids = [tfe_workspace.foo.id]
+}`, organization)
+}
+
+func testAccTFEPolicySetOPA_overridable(organization string) string {
+	return fmt.Sprintf(`
+locals {
+    organization_name = "%s"
+}
+
+resource "tfe_workspace" "foo" {
+  name         = "workspace-foo"
+  organization = local.organization_name
+}
+
+resource "tfe_policy_set" "foobar" {
+  name          = "tst-terraform"
+  organization = local.organization_name
+  workspace_ids = [tfe_workspace.foo.id]
+  overridable = "false"
+  kind = "opa"
 }`, organization)
 }
 
