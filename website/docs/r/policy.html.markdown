@@ -57,7 +57,7 @@ The following arguments are supported:
 * `query` - (Optional) The OPA query to identify a specific policy rule that 
    needs to run within your Rego code. Required for all OPA policies. 
 * `policy` - (Required) The actual policy itself.
-* `enforce_mode` - The enforcement level of the policy. Valid
+* `enforce_mode` - (Optional) The enforcement level of the policy. Valid
   values for Sentinel are `advisory`, `hard-mandatory` and `soft-mandatory`. Defaults
   to `soft-mandatory`. Valid values for OPA are `advisory` and `mandatory`. Defaults
   to `advisory`.

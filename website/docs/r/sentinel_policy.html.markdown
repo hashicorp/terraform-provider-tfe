@@ -39,7 +39,7 @@ The following arguments are supported:
 * `description` - (Optional) A description of the policy's purpose.
 * `organization` - (Required) Name of the organization.
 * `policy` - (Required) The actual policy itself.
-* `enforce_mode` - The enforcement level of the policy. Valid
+* `enforce_mode` - (Optional) The enforcement level of the policy. Valid
   values are `advisory`, `hard-mandatory` and `soft-mandatory`. Defaults
   to `soft-mandatory`.
 
