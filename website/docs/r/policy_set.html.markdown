@@ -81,6 +81,7 @@ The following arguments are supported:
   `workspace_ids` is provided.
 * `kind` - (Optional) The policy-as-code framework associated with the policy.
    Defaults to `sentinel` if not provided. Valid values are `sentinel` and `opa`.
+   A policy set can only have policies that have the same underlying kind.
 * `overridable` - (Optional) Whether or not users can override this policy when 
    it fails during a run. Defaults to `false`. Only valid for OPA policies. 
 * `organization` - (Required) Name of the organization.
