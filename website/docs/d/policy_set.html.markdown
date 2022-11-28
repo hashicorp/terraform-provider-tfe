@@ -35,6 +35,8 @@ The following arguments are supported:
 * `name` - Name of the policy set.
 * `description` - Description of the policy set.
 * `global` - Whether or not the policy set applies to all workspaces in the organization.
+* `kind` - The policy-as-code framework for the policy. Valid values are "sentinel" and "opa".
+* `overridable` - Whether users can override this policy when it fails during a run. Only valid for OPA policies.
 * `workspace_ids` - IDs of the workspaces that use the policy set.
 * `policy_ids` - IDs of the policies attached to the policy set.
 * `policies_path` - The sub-path within the attached VCS repository when using `vcs_repo`.
