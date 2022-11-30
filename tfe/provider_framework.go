@@ -73,6 +73,7 @@ func (p *FrameworkProvider) GetSchema(ctx context.Context) (tfsdk.Schema, diag.D
 // Resources is the list of resources available to the provider
 func (p *FrameworkProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
+		admin.NewOrganizationSettings,
 	}
 }
 
