@@ -6,7 +6,9 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
+	"github.com/hashicorp/terraform-plugin-mux/tf5to6server"
 )
 
 type pluginProviderServer struct {
@@ -147,6 +149,10 @@ func (r resourceRouter) ImportResourceState(ctx context.Context, req *tfprotov5.
 		return nil, errUnsupportedResource(req.TypeName)
 	}
 	return res.ImportResourceState(ctx, req)
+}
+
+func UpgradedPluginProviderServer() (tfprotov6.ProviderServer, error) {
+	return tf5to6server.UpgradeServer(ctx, PluginProviderServer)
 }
 
 // PluginProviderServer returns the implementation of an interface for a lower

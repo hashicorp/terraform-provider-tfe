@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
-	tfmux "github.com/hashicorp/terraform-plugin-mux"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
+	"github.com/hashicorp/terraform-plugin-mux/tf6muxserver"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -19,24 +19,35 @@ import (
 
 var testAccProviders map[string]*schema.Provider
 var testAccProvider *schema.Provider
-var testAccMuxedProviders map[string]func() (tfprotov5.ProviderServer, error)
+var testAccMuxedProviders map[string]func() (tfprotov6.ProviderServer, error)
 
 func init() {
 	testAccProvider = Provider()
 	testAccProviders = map[string]*schema.Provider{
 		"tfe": testAccProvider,
 	}
-	testAccMuxedProviders = map[string]func() (tfprotov5.ProviderServer, error){
-		"tfe": func() (tfprotov5.ProviderServer, error) {
+	testAccMuxedProviders = map[string]func() (tfprotov6.ProviderServer, error){
+		"tfe": func() (tfprotov6.ProviderServer, error) {
 			ctx := context.Background()
-			mux, err := tfmux.NewSchemaServerFactory(
-				ctx, PluginProviderServer, testAccProvider.GRPCProvider,
+
+			providerServer, err := UpgradedProviderServer()
+			if err != nil {
+				return nil, err
+			}
+
+			pluginServer, err := UpgradedPluginProviderServer()
+			if err != nil {
+				return nil, err
+			}
+
+			mux, err := tf6muxserver.NewMuxServer(
+				ctx, func() tfprotov6.ProviderServer { return providerServer }, func() tfprotov6.ProviderServer { return pluginServer },
 			)
 			if err != nil {
 				return nil, err
 			}
 
-			return mux.Server(), nil
+			return mux.ProviderServer(), nil
 		},
 	}
 }

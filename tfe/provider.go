@@ -16,6 +16,8 @@ import (
 	tfe "github.com/hashicorp/go-tfe"
 	version "github.com/hashicorp/go-version"
 	"github.com/hashicorp/hcl"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
+	"github.com/hashicorp/terraform-plugin-mux/tf5to6server"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	providerVersion "github.com/hashicorp/terraform-provider-tfe/version"
 	svchost "github.com/hashicorp/terraform-svchost"
@@ -46,6 +48,10 @@ type ConfigHost struct {
 
 // ctx is used as default context.Context when making TFE calls.
 var ctx = context.Background()
+
+func UpgradedProviderServer() (tfprotov6.ProviderServer, error) {
+	return tf5to6server.UpgradeServer(ctx, Provider().GRPCProvider)
+}
 
 // Provider returns a schema.Provider
 func Provider() *schema.Provider {
