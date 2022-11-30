@@ -224,7 +224,7 @@ func resourceTFEVariableRead(d *schema.ResourceData, meta interface{}) error {
 	variable, err := tfeClient.Variables.Read(ctx, ws.ID, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			log.Printf("[DEBUG] Variable %s does no longer exist", d.Id())
+			log.Printf("[DEBUG] Variable %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}
@@ -266,7 +266,7 @@ func resourceTFEVariableSetVariableRead(d *schema.ResourceData, meta interface{}
 	variable, err := tfeClient.VariableSetVariables.Read(ctx, vs.ID, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			log.Printf("[DEBUG] Variable %s does no longer exist", d.Id())
+			log.Printf("[DEBUG] Variable %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}

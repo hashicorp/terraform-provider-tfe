@@ -223,7 +223,7 @@ func resourceTFETeamAccessRead(d *schema.ResourceData, meta interface{}) error {
 	tmAccess, err := tfeClient.TeamAccess.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			log.Printf("[DEBUG] Team access %s does no longer exist", d.Id())
+			log.Printf("[DEBUG] Team access %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}

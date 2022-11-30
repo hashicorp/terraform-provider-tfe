@@ -62,7 +62,7 @@ func resourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta in
 	project, err := tfeClient.Projects.Read(ctx, d.Id())
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
-			log.Printf("[DEBUG] Project %s does no longer exist", d.Id())
+			log.Printf("[DEBUG] Project %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}

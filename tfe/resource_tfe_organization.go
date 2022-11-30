@@ -122,7 +122,7 @@ func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error
 	org, err := tfeClient.Organizations.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			log.Printf("[DEBUG] Organization %s does no longer exist", d.Id())
+			log.Printf("[DEBUG] Organization %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}

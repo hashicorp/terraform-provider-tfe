@@ -79,7 +79,7 @@ func resourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interfac
 
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			log.Printf("[DEBUG] Membership %s does no longer exist", d.Id())
+			log.Printf("[DEBUG] Membership %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}

@@ -155,7 +155,7 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 	team, err := tfeClient.Teams.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			log.Printf("[DEBUG] Team %s does no longer exist", d.Id())
+			log.Printf("[DEBUG] Team %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}

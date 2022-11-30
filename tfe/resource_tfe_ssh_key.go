@@ -68,7 +68,7 @@ func resourceTFESSHKeyRead(d *schema.ResourceData, meta interface{}) error {
 	sshKey, err := tfeClient.SSHKeys.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			log.Printf("[DEBUG] SSH key %s does no longer exist", d.Id())
+			log.Printf("[DEBUG] SSH key %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}

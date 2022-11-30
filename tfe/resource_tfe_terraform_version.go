@@ -94,7 +94,7 @@ func resourceTFETerraformVersionRead(d *schema.ResourceData, meta interface{}) e
 	v, err := tfeClient.Admin.TerraformVersions.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			log.Printf("[DEBUG] Terraform version %s does no longer exist", d.Id())
+			log.Printf("[DEBUG] Terraform version %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}

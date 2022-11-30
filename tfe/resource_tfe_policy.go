@@ -229,7 +229,7 @@ func resourceTFEPolicyRead(d *schema.ResourceData, meta interface{}) error {
 	policy, err := tfeClient.Policies.Read(ctx, d.Id())
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
-			log.Printf("[DEBUG] Policy %s does no longer exist", d.Id())
+			log.Printf("[DEBUG] Policy %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}

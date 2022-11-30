@@ -162,7 +162,7 @@ func resourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) error 
 	oc, err := tfeClient.OAuthClients.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			log.Printf("[DEBUG] OAuth client %s does no longer exist", d.Id())
+			log.Printf("[DEBUG] OAuth client %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}

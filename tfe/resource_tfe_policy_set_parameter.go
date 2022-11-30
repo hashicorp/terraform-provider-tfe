@@ -92,7 +92,7 @@ func resourceTFEPolicySetParameterRead(d *schema.ResourceData, meta interface{})
 	parameter, err := tfeClient.PolicySetParameters.Read(ctx, policySet.ID, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			log.Printf("[DEBUG] PolicySetParameter %s does no longer exist", d.Id())
+			log.Printf("[DEBUG] PolicySetParameter %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}

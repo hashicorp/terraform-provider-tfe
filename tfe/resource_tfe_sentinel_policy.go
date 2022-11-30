@@ -111,7 +111,7 @@ func resourceTFESentinelPolicyRead(d *schema.ResourceData, meta interface{}) err
 	policy, err := tfeClient.Policies.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			log.Printf("[DEBUG] Sentinel policy %s does no longer exist", d.Id())
+			log.Printf("[DEBUG] Sentinel policy %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}
