@@ -15,7 +15,9 @@ After creating new schema, it's important to test your changes beyond the automa
 
 - Is the resource replaced when non-updatable attributes are changed?
 - Is the resource unchanged after successive plans with no config changes?
+- What happens when you configure export-only computed arguments?
 - Are mutually exclusive config arguments constrained by an error?
 - If adding a new argument to an existing resource: is it required? (This would be a breaking change)
 - If adding a new attribute to an existing resource: is new or unexpected API authorization required?
 - Is the new resource argument updated when it is the _only_ change in a plan?
+- Does Terraform warn about abnormalities when TF_LOG=debug is used?
