@@ -1,6 +1,7 @@
 ## Unreleased
 
 FEATURES:
+* d/tfe_workspace_ids: Add support for filtering workspace names with partial matching using `*` ([#698](https://github.com/hashicorp/terraform-provider-tfe/pull/698))
 * r/tfe_workspace: Add preemptive check for resources under management when `force_delete` attribute is false ([#699](https://github.com/hashicorp/terraform-provider-tfe/pull/699))
 * r/tfe_policy: Add OPA support for policies. `tfe_policy` is a new resource that supports both Sentinel as well as OPA policies. `tfe_sentinel_policy` now includes a deprecation warning. ([#690](https://github.com/hashicorp/terraform-provider-tfe/pull/690))
 * r/tfe_policy_set: Add OPA support for policy sets. ([#691](https://github.com/hashicorp/terraform-provider-tfe/pull/691))
