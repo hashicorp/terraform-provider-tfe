@@ -10,8 +10,7 @@ description: |-
 
 Manage module sharing for an organization.
 
-~> **NOTE:** This resource requires using the provider with 
-an instance of Terraform Enterprise at least as recent as v202004-1.
+-> **NOTE:** `tfe_organization_module_sharing` is deprecated in favor of using `tfe_admin_organization_settings` which also allows the management of the global module sharing setting. They attempt to manage the same resource and are mutually exclusive.
 
 ## Example Usage
 
@@ -20,7 +19,7 @@ Basic usage:
 ```hcl
 resource "tfe_organization_module_sharing" "test" {
   organization  = "my-org-name"
-  module_consumers = ["my-org-name-2", "my-org-name-3"] 
+  module_consumers = ["my-org-name-2", "my-org-name-3"]
 }
 ```
 
