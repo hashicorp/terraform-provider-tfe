@@ -251,7 +251,6 @@ func TestAccTFERegistryModule_noCodeModule(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		IsUnitTest: true,
 		PreCheck: func() {
 			testAccPreCheck(t)
 		},
