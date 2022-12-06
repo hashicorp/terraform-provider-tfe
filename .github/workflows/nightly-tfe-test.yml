@@ -29,7 +29,6 @@ jobs:
           go run . -w tflocal-terraform-provider-tfe-nightly
 
   tests:
-    name: run
     needs: instance
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -91,9 +90,22 @@ jobs:
           source $HOME/.env
           gotestsum --format short-verbose -- $MOD_PROVIDER $MOD_TFE $MOD_VERSION -timeout=30m -run "${{ steps.test_split.outputs.run }}"
 
+  tests-summarize:
+    name: Summarize Tests
+    needs: [tests]
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    steps:
+      - name: Check tests Status
+        run: |
+          if [ "${{ needs.tests.result }}" = "success" ]; then
+            exit 0
+          fi
+          exit 1
+
   cleanup:
     runs-on: ubuntu-latest
-    needs: tests
+    needs: [tests-summarize]
     if: "${{ always() }}"
     steps:
       - uses: actions/checkout@v3
