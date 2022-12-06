@@ -11,10 +11,11 @@ import (
 
 func resourceTFEOrganizationModuleSharing() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceTFEOrganizationModuleSharingCreate,
-		Read:   resourceTFEOrganizationModuleSharingRead,
-		Update: resourceTFEOrganizationModuleSharingUpdate,
-		Delete: resourceTFEOrganizationModuleSharingDelete,
+		DeprecationMessage: "the tfe_organization_module_sharing resource is deprecated, please use tfe_admin_organization_settings instead",
+		Create:             resourceTFEOrganizationModuleSharingCreate,
+		Read:               resourceTFEOrganizationModuleSharingRead,
+		Update:             resourceTFEOrganizationModuleSharingUpdate,
+		Delete:             resourceTFEOrganizationModuleSharingDelete,
 		Schema: map[string]*schema.Schema{
 			"organization": {
 				Type:     schema.TypeString,
