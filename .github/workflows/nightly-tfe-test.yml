@@ -70,6 +70,7 @@ jobs:
 
       - name: Run Tests
         env:
+          TF_ACC: "1"
           ENABLE_TFE: "1"
           TFC_RUN_TASK_URL: "https://httpstat.us/200"
           GITHUB_POLICY_SET_IDENTIFIER: "hashicorp/test-policy-set"
