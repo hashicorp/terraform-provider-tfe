@@ -1,4 +1,8 @@
 ## Unreleased
+* d/tfe_organization: Add `default_project_id` field ([#704](https://github.com/hashicorp/terraform-provider-tfe/pull/704))
+* r/tfe_project: Allow managing projects ([#704](https://github.com/hashicorp/terraform-provider-tfe/pull/704))
+* r/tfe_workspace: Add `project_id` attribute ([#704](https://github.com/hashicorp/terraform-provider-tfe/pull/704))
+* d/tfe_workspace: Add `project_id` field ([#704](https://github.com/hashicorp/terraform-provider-tfe/pull/704))
 
 FEATURES:
 * d/tfe_workspace_ids: Add support for filtering workspace names with partial matching using `*` ([#698](https://github.com/hashicorp/terraform-provider-tfe/pull/698))

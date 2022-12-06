@@ -82,7 +82,7 @@ func resourceTFEOrganizationTokenRead(d *schema.ResourceData, meta interface{}) 
 	_, err := tfeClient.OrganizationTokens.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			log.Printf("[DEBUG] Token for organization %s does no longer exist", d.Id())
+			log.Printf("[DEBUG] Token for organization %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}

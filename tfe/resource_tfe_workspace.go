@@ -136,6 +136,12 @@ func resourceTFEWorkspace() *schema.Resource {
 				ConflictsWith: []string{"execution_mode", "agent_pool_id"},
 			},
 
+			"project_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
 			"queue_all_runs": {
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -298,6 +304,12 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		options.TriggerPatterns = nil
 	}
 
+	if d.HasChange("project_id") {
+		if v, ok := d.GetOk("project_id"); ok && v.(string) != "" {
+			options.Project = &tfe.Project{ID: *tfe.String(v.(string))}
+		}
+	}
+
 	// Get and assert the VCS repo configuration block.
 	if v, ok := d.GetOk("vcs_repo"); ok {
 		vcsRepo := v.([]interface{})[0].(map[string]interface{})
@@ -395,6 +407,11 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("working_directory", workspace.WorkingDirectory)
 	d.Set("organization", workspace.Organization.Name)
 
+	// Project will be nil for versions of TFE that predate projects
+	if workspace.Project != nil {
+		d.Set("project_id", workspace.Project.ID)
+	}
+
 	var sshKeyID string
 	if workspace.SSHKey != nil {
 		sshKeyID = workspace.SSHKey.ID
@@ -455,7 +472,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		d.HasChange("operations") || d.HasChange("execution_mode") ||
 		d.HasChange("description") || d.HasChange("agent_pool_id") ||
 		d.HasChange("global_remote_state") || d.HasChange("structured_run_output_enabled") ||
-		d.HasChange("assessments_enabled") {
+		d.HasChange("assessments_enabled") || d.HasChange("project_id") {
 		// Create a new options struct.
 		options := tfe.WorkspaceUpdateOptions{
 			Name:                       tfe.String(d.Get("name").(string)),
@@ -468,6 +485,12 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			SpeculativeEnabled:         tfe.Bool(d.Get("speculative_enabled").(bool)),
 			StructuredRunOutputEnabled: tfe.Bool(d.Get("structured_run_output_enabled").(bool)),
 			WorkingDirectory:           tfe.String(d.Get("working_directory").(string)),
+		}
+
+		if d.HasChange("project_id") {
+			if v, ok := d.GetOk("project_id"); ok && v.(string) != "" {
+				options.Project = &tfe.Project{ID: *tfe.String(v.(string))}
+			}
 		}
 
 		if d.HasChange("assessments_enabled") {

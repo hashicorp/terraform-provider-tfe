@@ -66,7 +66,7 @@ func resourceTFEAgentPoolRead(d *schema.ResourceData, meta interface{}) error {
 	agentPool, err := tfeClient.AgentPools.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			log.Printf("[DEBUG] agent pool %s does no longer exist", d.Id())
+			log.Printf("[DEBUG] agent pool %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}

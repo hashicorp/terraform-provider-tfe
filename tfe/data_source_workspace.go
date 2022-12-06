@@ -69,6 +69,11 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Computed: true,
 			},
 
+			"project_id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+
 			"queue_all_runs": {
 				Type:     schema.TypeBool,
 				Computed: true,
@@ -192,6 +197,12 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
 	d.Set("operations", workspace.Operations)
 	d.Set("policy_check_failures", workspace.PolicyCheckFailures)
+
+	// If target tfe instance predates projects, then workspace.Project will be nil
+	if workspace.Project != nil {
+		d.Set("project_id", workspace.Project.ID)
+	}
+
 	d.Set("queue_all_runs", workspace.QueueAllRuns)
 	d.Set("resource_count", workspace.ResourceCount)
 	d.Set("run_failures", workspace.RunFailures)

@@ -160,6 +160,43 @@ func TestAccTFEWorkspaceDataSourceWithTriggerPatterns(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspaceDataSource_readProjectIDDefault(t *testing.T) {
+	skipUnlessBeta(t)
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspaceDataSourceConfig(rInt),
+				Check:  resource.TestCheckResourceAttrPair("data.tfe_workspace.foobar", "project_id", "tfe_organization.foobar", "default_project_id"),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspaceDataSource_readProjectIDNonDefault(t *testing.T) {
+	skipUnlessBeta(t)
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspaceDataSourceConfig_project(rInt),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "id"),
+					resource.TestCheckResourceAttrPair("tfe_project.foobar", "id", "data.tfe_workspace.foobar", "project_id"),
+				),
+			},
+		},
+	})
+}
+
 func testAccTFEWorkspaceDataSourceConfig(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
@@ -223,6 +260,32 @@ data "tfe_workspace" "foobar" {
   organization = tfe_workspace.foobar.organization
 	depends_on   = [tfe_workspace.foobar]
 }`, rInt1, rInt2, rInt1)
+}
+
+func testAccTFEWorkspaceDataSourceConfig_project(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "foobar" {
+  name         = "nondefaultproject"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_workspace" "foobar" {
+  name                  = "workspace-test-%d"
+  organization          = tfe_organization.foobar.id
+  project_id			= tfe_project.foobar.id
+}
+
+data "tfe_workspace" "foobar" {
+  name         = tfe_workspace.foobar.name
+  organization = tfe_workspace.foobar.organization
+  depends_on   = [tfe_workspace.foobar]
+}
+`, rInt, rInt)
 }
 
 func givenOrganization(t *testing.T, tfeClient *tfe.Client, organizationName string) (*tfe.Organization, func()) {

@@ -41,6 +41,7 @@ In addition to all arguments above, the following attributes are exported:
 * `remote_state_consumer_ids` - (Optional) A set of workspace IDs that will be set as the remote state consumers for the given workspace. Cannot be used if `global_remote_state` is set to `true`.
 * `operations` - Indicates whether the workspace is using remote execution mode. Set to `false` to switch execution mode to local. `true` by default.
 * `policy_check_failures` - The number of policy check failures from the latest run.
+* `project_id` - ID of the workspace's project
 * `queue_all_runs` - Indicates whether the workspace will automatically perform runs
   in response to webhooks immediately after its creation. If `false`, an initial run must
   be manually queued to enable future automatic runs.

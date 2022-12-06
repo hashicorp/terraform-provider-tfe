@@ -83,7 +83,7 @@ func resourceTFETeamTokenRead(d *schema.ResourceData, meta interface{}) error {
 	_, err := tfeClient.TeamTokens.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			log.Printf("[DEBUG] Token for team %s does no longer exist", d.Id())
+			log.Printf("[DEBUG] Token for team %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}

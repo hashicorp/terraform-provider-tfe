@@ -1,6 +1,7 @@
 package tfe
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"strconv"
@@ -76,6 +77,33 @@ func TestAccTFEOrganization_full(t *testing.T) {
 						"tfe_organization.foobar", "assessments_enforced", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "allow_force_delete_workspaces", "false"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEOrganization_defaultProject(t *testing.T) {
+	skipUnlessBeta(t)
+	org := &tfe.Organization{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEOrganizationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOrganization_full(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOrganizationExists(
+						"tfe_organization.foobar", org),
+					resource.TestCheckResourceAttrWith("tfe_organization.foobar", "default_project_id", func(value string) error {
+						if value == "" {
+							return errors.New("default project ID not exposed")
+						}
+						return nil
+					}),
 				),
 			},
 		},
