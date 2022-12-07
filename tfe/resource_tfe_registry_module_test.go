@@ -237,6 +237,8 @@ func TestAccTFERegistryModule_publicRegistryModule(t *testing.T) {
 }
 
 func TestAccTFERegistryModule_noCodeModule(t *testing.T) {
+	skipIfEnterprise(t)
+
 	registryModule := &tfe.RegistryModule{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
