@@ -49,3 +49,4 @@ The following arguments are supported:
 The following attributes are exported:
 
 * `values` - The current output values for the specified workspace.
+* `nonsensitive_values` - The current non-sensitive output values for the specified workspace.
