@@ -10,10 +10,10 @@ description: |-
 This data source is used to retrieve the state outputs for a given workspace.
 It enables output values in one Terraform configuration to be used in another.
 
-As the outputs retrieved from a different workspace may contain sensitive
-information in the context of that workspace, the `values` attribute of this
-data source is statically marked as
-[sensitive](https://www.terraform.io/docs/language/values/outputs.html#sensitive-suppressing-values-in-cli-output).
+The `values` attribute has been defined as sensitive because the workspace
+outputs may contain sensitive values and the provider protocol does not support
+marking values as [sensitive](https://www.terraform.io/docs/language/values/outputs.html#sensitive-suppressing-values-in-cli-output) after this information is known. You can access
+the subset of non-sensitive outputs using the `nonsensitive_values` attribute.
 
 ## Example Usage
 
@@ -49,4 +49,4 @@ The following arguments are supported:
 The following attributes are exported:
 
 * `values` - The current output values for the specified workspace.
-* `nonsensitive_values` - The current non-sensitive output values for the specified workspace.
+* `nonsensitive_values` - The current non-sensitive output values for the specified workspace, this is a subset of all output values.
