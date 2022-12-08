@@ -1,6 +1,7 @@
 ## Unreleased
 
 FEATURES:
+* d/tfe_outputs: Add `nonsensitive_values` attribute to expose current non-sensitive outputs of a given workspace ([#711](https://github.com/hashicorp/terraform-provider-tfe/pull/711))
 
 ## v0.40.0 (December 6, 2022)
 

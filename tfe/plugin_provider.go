@@ -211,6 +211,12 @@ func PluginProviderServer() tfprotov5.ProviderServer {
 							Computed:  true,
 							Sensitive: true,
 						},
+						{
+							Name:      "nonsensitive_values",
+							Type:      tftypes.DynamicPseudoType,
+							Computed:  true,
+							Sensitive: false,
+						},
 					},
 				},
 			},

@@ -57,7 +57,7 @@ func (d dataSourceOutputs) ReadDataSource(ctx context.Context, req *tfprotov5.Re
 		return resp, nil
 	}
 
-	tftypesValues, stateTypes, err := parseStateOutput(remoteStateOutput)
+	tftypesValues, stateTypes, tftypesNonsensitiveValues, nonsensitiveStateTypes, err := parseStateOutput(remoteStateOutput)
 	if err != nil {
 		resp.Diagnostics = append(resp.Diagnostics, &tfprotov5.Diagnostic{
 			Severity: tfprotov5.DiagnosticSeverityError,
@@ -70,23 +70,26 @@ func (d dataSourceOutputs) ReadDataSource(ctx context.Context, req *tfprotov5.Re
 	id := fmt.Sprintf("%s-%s", orgName, wsName)
 	state, err := tfprotov5.NewDynamicValue(tftypes.Object{
 		AttributeTypes: map[string]tftypes.Type{
-			"workspace":    tftypes.String,
-			"organization": tftypes.String,
-			"values":       tftypes.DynamicPseudoType,
-			"id":           tftypes.String,
+			"workspace":           tftypes.String,
+			"organization":        tftypes.String,
+			"values":              tftypes.DynamicPseudoType,
+			"nonsensitive_values": tftypes.DynamicPseudoType,
+			"id":                  tftypes.String,
 		},
 	}, tftypes.NewValue(tftypes.Object{
 		AttributeTypes: map[string]tftypes.Type{
-			"workspace":    tftypes.String,
-			"organization": tftypes.String,
-			"values":       tftypes.Object{AttributeTypes: stateTypes},
-			"id":           tftypes.String,
+			"workspace":           tftypes.String,
+			"organization":        tftypes.String,
+			"values":              tftypes.Object{AttributeTypes: stateTypes},
+			"nonsensitive_values": tftypes.Object{AttributeTypes: nonsensitiveStateTypes},
+			"id":                  tftypes.String,
 		},
 	}, map[string]tftypes.Value{
-		"workspace":    tftypes.NewValue(tftypes.String, wsName),
-		"organization": tftypes.NewValue(tftypes.String, orgName),
-		"values":       tftypes.NewValue(tftypes.Object{AttributeTypes: stateTypes}, tftypesValues),
-		"id":           tftypes.NewValue(tftypes.String, id),
+		"workspace":           tftypes.NewValue(tftypes.String, wsName),
+		"organization":        tftypes.NewValue(tftypes.String, orgName),
+		"values":              tftypes.NewValue(tftypes.Object{AttributeTypes: stateTypes}, tftypesValues),
+		"nonsensitive_values": tftypes.NewValue(tftypes.Object{AttributeTypes: nonsensitiveStateTypes}, tftypesNonsensitiveValues),
+		"id":                  tftypes.NewValue(tftypes.String, id),
 	}))
 
 	if err != nil {
@@ -117,10 +120,11 @@ func (d dataSourceOutputs) readConfigValues(req *tfprotov5.ReadDataSourceRequest
 	config := req.Config
 	val, err := config.Unmarshal(tftypes.Object{
 		AttributeTypes: map[string]tftypes.Type{
-			"workspace":    tftypes.String,
-			"organization": tftypes.String,
-			"values":       tftypes.DynamicPseudoType,
-			"id":           tftypes.String,
+			"workspace":           tftypes.String,
+			"organization":        tftypes.String,
+			"values":              tftypes.DynamicPseudoType,
+			"nonsensitive_values": tftypes.DynamicPseudoType,
+			"id":                  tftypes.String,
 		}})
 	if err != nil {
 		return orgName, wsName, fmt.Errorf("Error unmarshalling config: %w", err)
@@ -154,7 +158,8 @@ type stateData struct {
 }
 
 type outputData struct {
-	Value cty.Value
+	Value     cty.Value
+	Sensitive cty.Value
 }
 
 func (d dataSourceOutputs) readStateOutput(ctx context.Context, tfeClient *tfe.Client, orgName, wsName string) (*stateData, error) {
@@ -191,40 +196,49 @@ func (d dataSourceOutputs) readStateOutput(ctx context.Context, tfeClient *tfe.C
 			return nil, fmt.Errorf("Could not unmarshal output value: %w", err)
 		}
 		sd.outputs[op.Name] = &outputData{
-			Value: v.Value,
+			Value:     v.Value,
+			Sensitive: cty.BoolVal(op.Sensitive),
 		}
 	}
 
 	return sd, nil
 }
 
-func parseStateOutput(stateOutput *stateData) (map[string]tftypes.Value, map[string]tftypes.Type, error) {
+func parseStateOutput(stateOutput *stateData) (map[string]tftypes.Value, map[string]tftypes.Type, map[string]tftypes.Value, map[string]tftypes.Type, error) {
 	tftypesValues := map[string]tftypes.Value{}
 	stateTypes := map[string]tftypes.Type{}
+
+	tftypesNonsensitiveValues := map[string]tftypes.Value{}
+	nonsensitiveStateTypes := map[string]tftypes.Type{}
 
 	for name, output := range stateOutput.outputs {
 		marshData, err := output.Value.Type().MarshalJSON()
 		if err != nil {
-			return nil, nil, fmt.Errorf("Could not marshal output type: %w", err)
+			return nil, nil, nil, nil, fmt.Errorf("Could not marshal output type: %w", err)
 		}
 		tfType, err := tftypes.ParseJSONType(marshData)
 		if err != nil {
-			return nil, nil, fmt.Errorf("Could not parse json type data: %w", err)
+			return nil, nil, nil, nil, fmt.Errorf("Could not parse json type data: %w", err)
 		}
 		mByte, err := ctyjson.Marshal(output.Value, output.Value.Type())
 		if err != nil {
-			return nil, nil, fmt.Errorf("Could not marshal output value and output type: %w", err)
+			return nil, nil, nil, nil, fmt.Errorf("Could not marshal output value and output type: %w", err)
 		}
 		tfRawState := tfprotov5.RawState{
 			JSON: mByte,
 		}
 		newVal, err := tfRawState.Unmarshal(tfType)
 		if err != nil {
-			return nil, nil, fmt.Errorf("Could not unmarshal tftype into value: %w", err)
+			return nil, nil, nil, nil, fmt.Errorf("Could not unmarshal tftype into value: %w", err)
 		}
+		if output.Sensitive.False() {
+			tftypesNonsensitiveValues[name] = newVal
+			nonsensitiveStateTypes[name] = tfType
+		}
+
 		tftypesValues[name] = newVal
 		stateTypes[name] = tfType
 	}
 
-	return tftypesValues, stateTypes, nil
+	return tftypesValues, stateTypes, tftypesNonsensitiveValues, nonsensitiveStateTypes, nil
 }
