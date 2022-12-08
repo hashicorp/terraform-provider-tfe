@@ -59,6 +59,51 @@ func TestAccTFEOutputs(t *testing.T) {
 	})
 }
 
+func TestAccTFEOutputs_ReadAllNonSensitiveValues(t *testing.T) {
+	skipIfUnitTest(t)
+
+	client, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatalf("error getting client %v", err)
+	}
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	fileName := "test-fixtures/state-versions/terraform.tfstate"
+	orgName, wsName, orgCleanup := createStateVersion(t, client, rInt, fileName)
+	t.Cleanup(orgCleanup)
+
+	waitForOutputs(t, client, orgName, wsName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOutputs_dataSourceReadNonsensitiveValues(rInt, orgName, wsName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "name", fmt.Sprintf("tst-%d", rInt)),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "name", fmt.Sprintf("workspace-test-%d", rInt)),
+					resource.TestCheckResourceAttr(
+						"data.tfe_outputs.foobar", "organization", orgName),
+					resource.TestCheckResourceAttr(
+						"data.tfe_outputs.foobar", "workspace", wsName),
+					// nonsensitive_values does not set sensitive values
+					resource.TestCheckNoResourceAttr("data.tfe_outputs.foobar", "nonsensitive_values.test_output_string"),
+					// These outputs rely on the values in test-fixtures/state-versions/terraform.tfstate
+					testCheckOutputState("test_output_list_string", &terraform.OutputState{Value: []interface{}{"us-west-1a"}}),
+					testCheckOutputState("test_output_tuple_number", &terraform.OutputState{Value: []interface{}{"1", "2"}}),
+					testCheckOutputState("test_output_tuple_string", &terraform.OutputState{Value: []interface{}{"one", "two"}}),
+					testCheckOutputState("test_output_object", &terraform.OutputState{Value: map[string]interface{}{"foo": "bar"}}),
+					testCheckOutputState("test_output_number", &terraform.OutputState{Value: "5"}),
+					testCheckOutputState("test_output_bool", &terraform.OutputState{Value: "true"}),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEOutputs_emptyOutputs(t *testing.T) {
 	skipIfUnitTest(t)
 
@@ -245,6 +290,46 @@ output "test_output_number" {
 output "test_output_bool" {
 	sensitive = true
 	value = data.tfe_outputs.foobar.values.test_output_bool
+}
+`, rInt, rInt, org, workspace)
+}
+
+func testAccTFEOutputs_dataSourceReadNonsensitiveValues(rInt int, org, workspace string) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+	name  = "tst-%d"
+	email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+	name                  = "workspace-test-%d"
+	organization          = tfe_organization.foobar.name
+}
+
+data "tfe_outputs" "foobar" {
+  organization = "%s"
+  workspace = "%s"
+}
+
+// All of these values reference the outputs in the file
+// 'test-fixtures/state-versions/terraform.tfstate except the sensitive attr test_output_string
+output "test_output_list_string" {
+	value = data.tfe_outputs.foobar.nonsensitive_values.test_output_list_string
+}
+output "test_output_tuple_number" {
+	value = data.tfe_outputs.foobar.nonsensitive_values.test_output_tuple_number
+}
+output "test_output_tuple_string" {
+	value = data.tfe_outputs.foobar.nonsensitive_values.test_output_tuple_string
+}
+output "test_output_object" {
+	value = data.tfe_outputs.foobar.nonsensitive_values.test_output_object
+}
+output "test_output_number" {
+	value = data.tfe_outputs.foobar.nonsensitive_values.test_output_number
+}
+output "test_output_bool" {
+	value = data.tfe_outputs.foobar.nonsensitive_values.test_output_bool
 }
 `, rInt, rInt, org, workspace)
 }
