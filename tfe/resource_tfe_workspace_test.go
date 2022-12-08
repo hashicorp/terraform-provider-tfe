@@ -62,7 +62,6 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 						"tfe_workspace.foobar", "working_directory", ""),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "resource_count", "0"),
-<<<<<<< HEAD
 				),
 			},
 		},
@@ -109,8 +108,6 @@ func TestAccTFEWorkspace_customProject(t *testing.T) {
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttrPair("tfe_workspace.foobar", "project_id", "tfe_project.foobar", "id"),
-=======
->>>>>>> 5be8f6f7584506e0cc9d88efdff43caec22168dd
 				),
 			},
 		},
