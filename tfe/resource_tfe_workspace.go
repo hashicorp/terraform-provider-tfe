@@ -240,6 +240,10 @@ func resourceTFEWorkspace() *schema.Resource {
 				Optional: true,
 				Default:  false,
 			},
+			"resource_count": {
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -406,6 +410,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("trigger_patterns", workspace.TriggerPatterns)
 	d.Set("working_directory", workspace.WorkingDirectory)
 	d.Set("organization", workspace.Organization.Name)
+	d.Set("resource_count", workspace.ResourceCount)
 
 	// Project will be nil for versions of TFE that predate projects
 	if workspace.Project != nil {
