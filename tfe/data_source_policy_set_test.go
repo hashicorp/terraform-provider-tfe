@@ -108,17 +108,17 @@ func TestAccTFEPolicySetDataSource_vcs(t *testing.T) {
 		PreCheck: func() {
 			testAccPreCheck(t)
 
-			if GITHUB_TOKEN == "" {
-				t.Skip("Please set GITHUB_TOKEN to run this test")
+			if githubToken == "" {
+				t.Skip("Please set githubToken to run this test")
 			}
-			if GITHUB_POLICY_SET_IDENTIFIER == "" {
+			if githubPolicySetIdentifier == "" {
 				t.Skip("Please set GITHUB_POLICY_SET_IDENTIFIER to run this test")
 			}
-			if GITHUB_POLICY_SET_BRANCH == "" {
+			if githubPolicySetBranch == "" {
 				t.Skip("Please set GITHUB_POLICY_SET_BRANCH to run this test")
 			}
-			if GITHUB_POLICY_SET_PATH == "" {
-				t.Skip("Please set GITHUB_POLICY_SET_PATH to run this test")
+			if githubPolicySetPath == "" {
+				t.Skip("Please set githubPolicySetPath to run this test")
 			}
 		},
 		Providers: testAccProviders,
@@ -257,10 +257,10 @@ data "tfe_policy_set" "bar" {
   organization = local.organization_name
 }
 `, organization,
-		GITHUB_TOKEN,
+		githubToken,
 		rInt,
-		GITHUB_POLICY_SET_IDENTIFIER,
-		GITHUB_POLICY_SET_PATH,
+		githubPolicySetIdentifier,
+		githubPolicySetPath,
 	)
 }
 

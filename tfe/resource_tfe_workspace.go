@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-var workspaceIdRegexp = regexp.MustCompile("^ws-[a-zA-Z0-9]{16}$")
+var workspaceIDRegexp = regexp.MustCompile("^ws-[a-zA-Z0-9]{16}$")
 
 func resourceTFEWorkspace() *schema.Resource {
 	return &schema.Resource{

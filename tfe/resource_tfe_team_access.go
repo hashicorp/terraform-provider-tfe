@@ -132,7 +132,7 @@ func resourceTFETeamAccess() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 				ValidateFunc: validation.StringMatch(
-					workspaceIdRegexp,
+					workspaceIDRegexp,
 					"must be a valid workspace ID (ws-<RANDOM STRING>)",
 				),
 			},

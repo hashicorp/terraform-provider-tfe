@@ -12,7 +12,7 @@ import (
 
 func testAccTFEOAuthClientDataSourcePreCheck(t *testing.T) {
 	testAccPreCheck(t)
-	if GITHUB_TOKEN == "" {
+	if githubToken == "" {
 		t.Skip("Please set GITHUB_TOKEN to run this test")
 	}
 }
@@ -188,7 +188,6 @@ resource "tfe_organization" "foobar" {
 	name  = "tst-terraform-%d"
 	email = "admin@company.com"
 }
-
 resource "tfe_oauth_client" "test" {
 	organization     = tfe_organization.foobar.name
 	api_url          = "https://api.github.com"
@@ -196,11 +195,10 @@ resource "tfe_oauth_client" "test" {
 	oauth_token      = "%s"
 	service_provider = "github"
 }
-
 data "tfe_oauth_client" "client" {
 	oauth_client_id = tfe_oauth_client.test.id
 }
-`, rInt, GITHUB_TOKEN)
+`, rInt, githubToken)
 }
 
 func testAccTFEOAuthClientDataSourceConfig_findByName(rInt int) string {
@@ -209,7 +207,6 @@ resource "tfe_organization" "foobar" {
 	name  = "tst-terraform-%d"
 	email = "admin@company.com"
 }
-
 resource "tfe_oauth_client" "test" {
 	organization     = tfe_organization.foobar.name
 	api_url          = "https://api.github.com"
@@ -218,14 +215,12 @@ resource "tfe_oauth_client" "test" {
 	oauth_token      = "%s"
 	service_provider = "github"
 }
-
 data "tfe_oauth_client" "client" {
     organization = "tst-terraform-%d"
 	name         = "tst-github-%d"
-
 	depends_on = [tfe_oauth_client.test]
 }
-`, rInt, rInt, GITHUB_TOKEN, rInt, rInt)
+`, rInt, rInt, githubToken, rInt, rInt)
 }
 
 func testAccTFEOAuthClientDataSourceConfig_findByServiceProvider(rInt int) string {
@@ -234,7 +229,6 @@ resource "tfe_organization" "foobar" {
 	name  = "tst-terraform-%d"
 	email = "admin@company.com"
 }
-
 resource "tfe_oauth_client" "test" {
 	organization     = tfe_organization.foobar.name
 	api_url          = "https://api.github.com"
@@ -242,14 +236,12 @@ resource "tfe_oauth_client" "test" {
 	oauth_token      = "%s"
 	service_provider = "github"
 }
-
 data "tfe_oauth_client" "client" {
     organization = "tst-terraform-%d"
 	service_provider = "github"
-
 	depends_on = [tfe_oauth_client.test]
 }
-`, rInt, GITHUB_TOKEN, rInt)
+`, rInt, githubToken, rInt)
 }
 
 func testAccTFEOAuthClientDataSourceConfig_missingParameters(rInt int) string {
@@ -258,7 +250,6 @@ resource "tfe_organization" "foobar" {
 	name  = "tst-terraform-%d"
 	email = "admin@company.com"
 }
-
 resource "tfe_oauth_client" "test" {
 	organization     = tfe_organization.foobar.name
 	api_url          = "https://api.github.com"
@@ -266,13 +257,11 @@ resource "tfe_oauth_client" "test" {
 	oauth_token      = "%s"
 	service_provider = "github"
 }
-
 data "tfe_oauth_client" "client" {
     organization = "tst-terraform-%d"
-
 	depends_on = [tfe_oauth_client.test]
 }
-`, rInt, GITHUB_TOKEN, rInt)
+`, rInt, githubToken, rInt)
 }
 
 func testAccTFEOAuthClientDataSourceConfig_missingOrgWithName(rInt int) string {
@@ -281,7 +270,6 @@ resource "tfe_organization" "foobar" {
 	name  = "tst-terraform-%d"
 	email = "admin@company.com"
 }
-
 resource "tfe_oauth_client" "test" {
 	organization     = tfe_organization.foobar.name
 	api_url          = "https://api.github.com"
@@ -289,13 +277,11 @@ resource "tfe_oauth_client" "test" {
 	oauth_token      = "%s"
 	service_provider = "github"
 }
-
 data "tfe_oauth_client" "client" {
 	name = "github"
-
 	depends_on = [tfe_oauth_client.test]
 }
-`, rInt, GITHUB_TOKEN)
+`, rInt, githubToken)
 }
 
 func testAccTFEOAuthClientDataSourceConfig_missingOrgWithServiceProvider(rInt int) string {
@@ -304,7 +290,6 @@ resource "tfe_organization" "foobar" {
 	name  = "tst-terraform-%d"
 	email = "admin@company.com"
 }
-
 resource "tfe_oauth_client" "test" {
 	organization     = tfe_organization.foobar.name
 	api_url          = "https://api.github.com"
@@ -312,13 +297,11 @@ resource "tfe_oauth_client" "test" {
 	oauth_token      = "%s"
 	service_provider = "github"
 }
-
 data "tfe_oauth_client" "client" {
 	service_provider = "github"
-
 	depends_on = [tfe_oauth_client.test]
 }
-`, rInt, GITHUB_TOKEN)
+`, rInt, githubToken)
 }
 
 func testAccTFEOAuthClientDataSourceConfig_sameName(rInt int) string {
@@ -327,7 +310,6 @@ resource "tfe_organization" "foobar" {
 	name  = "tst-terraform-%d"
 	email = "admin@company.com"
 }
-
 resource "tfe_oauth_client" "test1" {
 	organization     = tfe_organization.foobar.name
 	api_url          = "https://api.github.com"
@@ -336,7 +318,6 @@ resource "tfe_oauth_client" "test1" {
 	oauth_token      = "%s"
 	service_provider = "github"
 }
-
 resource "tfe_oauth_client" "test2" {
 	organization     = tfe_organization.foobar.name
 	api_url          = "https://api.github.com"
@@ -345,14 +326,12 @@ resource "tfe_oauth_client" "test2" {
 	oauth_token      = "%s"
 	service_provider = "github"
 }
-
 data "tfe_oauth_client" "client" {
 	organization = tfe_organization.foobar.name
 	name         = tfe_oauth_client.test1.name
-
 	depends_on = [tfe_oauth_client.test1, tfe_oauth_client.test2]
 }
-`, rInt, GITHUB_TOKEN, GITHUB_TOKEN)
+`, rInt, githubToken, githubToken)
 }
 
 func testAccTFEOAuthClientDataSourceConfig_noName(rInt int) string {
@@ -361,7 +340,6 @@ resource "tfe_organization" "foobar" {
 	name  = "tst-terraform-%d"
 	email = "admin@company.com"
 }
-
 resource "tfe_oauth_client" "test" {
 	organization     = tfe_organization.foobar.name
 	api_url          = "https://api.github.com"
@@ -369,14 +347,12 @@ resource "tfe_oauth_client" "test" {
 	oauth_token      = "%s"
 	service_provider = "github"
 }
-
 data "tfe_oauth_client" "client" {
 	organization = tfe_organization.foobar.name
 	name         = "tst-github"
-
 	depends_on = [tfe_oauth_client.test]
 }
-`, rInt, GITHUB_TOKEN)
+`, rInt, githubToken)
 }
 
 func testAccTFEOAuthClientDataSourceConfig_sameServiceProvider(rInt int) string {
@@ -385,7 +361,6 @@ resource "tfe_organization" "foobar" {
 	name  = "tst-terraform-%d"
 	email = "admin@company.com"
 }
-
 resource "tfe_oauth_client" "test1" {
 	organization     = tfe_organization.foobar.name
 	api_url          = "https://api.github.com"
@@ -393,7 +368,6 @@ resource "tfe_oauth_client" "test1" {
 	oauth_token      = "%s"
 	service_provider = "github"
 }
-
 resource "tfe_oauth_client" "test2" {
 	organization     = tfe_organization.foobar.name
 	api_url          = "https://api.github.com"
@@ -401,12 +375,10 @@ resource "tfe_oauth_client" "test2" {
 	oauth_token      = "%s"
 	service_provider = "github"
 }
-
 data "tfe_oauth_client" "client" {
     organization     = tfe_organization.foobar.name
 	service_provider = "github"
-
 	depends_on = [tfe_oauth_client.test1, tfe_oauth_client.test2]
 }
-`, rInt, GITHUB_TOKEN, GITHUB_TOKEN)
+`, rInt, githubToken, githubToken)
 }
