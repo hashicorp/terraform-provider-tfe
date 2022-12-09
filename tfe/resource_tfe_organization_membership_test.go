@@ -6,6 +6,7 @@ package tfe
 import (
 	"fmt"
 	"math/rand"
+	"regexp"
 	"testing"
 	"time"
 
@@ -43,7 +44,7 @@ func TestAccTFEOrganizationMembership_basic(t *testing.T) {
 	})
 }
 
-func TestAccTFEOrganizationMembershipImport(t *testing.T) {
+func TestAccTFEOrganizationMembershipImport_ByID(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -58,6 +59,66 @@ func TestAccTFEOrganizationMembershipImport(t *testing.T) {
 				ResourceName:      "tfe_organization_membership.foobar",
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccTFEOrganizationMembershipImport_ByEmail(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+	email := "testuser@hashicorp.com"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEOrganizationMembershipDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOrganizationMembership_nameAndEmail(orgName, email),
+			},
+			{
+				ResourceName:      "tfe_organization_membership.foobar",
+				ImportState:       true,
+				ImportStateId:     fmt.Sprintf("%s/%s", orgName, email),
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccTFEOrganizationMembershipImport_invalidImportId(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+	email := "testuser@hashicorp.com"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEOrganizationMembershipDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOrganizationMembership_nameAndEmail(orgName, email),
+			},
+			{
+				ResourceName:  "tfe_organization_membership.foobar",
+				ImportState:   true,
+				ImportStateId: fmt.Sprintf("%s/%s/someOtherString", orgName, email),
+				ExpectError:   regexp.MustCompile("invalid organization membership input format"),
+			},
+			{
+				ResourceName:  "tfe_organization_membership.foobar",
+				ImportState:   true,
+				ImportStateId: fmt.Sprintf("invalid-org-%d/%s", rInt, email),
+				ExpectError:   regexp.MustCompile(fmt.Sprintf("error retrieving user with email %s from organization invalid-org-%d", email, rInt)),
+			},
+			{
+				ResourceName:  "tfe_organization_membership.foobar",
+				ImportState:   true,
+				ImportStateId: fmt.Sprintf("%s/invalidEmail", orgName),
+				ExpectError:   regexp.MustCompile(fmt.Sprintf("error retrieving user with email invalidEmail from organization %s", orgName)),
 			},
 		},
 	})
@@ -145,4 +206,17 @@ resource "tfe_organization_membership" "foobar" {
   email        = "example@hashicorp.com"
   organization = tfe_organization.foobar.id
 }`, rInt)
+}
+
+func testAccTFEOrganizationMembership_nameAndEmail(orgName string, email string) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "%s"
+  email = "admin@company.com"
+}
+
+resource "tfe_organization_membership" "foobar" {
+  email        = "%s"
+  organization = tfe_organization.foobar.id
+}`, orgName, email)
 }

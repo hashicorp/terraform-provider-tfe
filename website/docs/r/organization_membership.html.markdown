@@ -43,8 +43,14 @@ In addition to all arguments above, the following attributes are exported:
 * `user_id` - The ID of the user associated with the organization membership.
 * `username` - The username of the user associated with the organization membership.
 
-Organization memberships can be imported; use `<ORGANIZATION MEMBERSHIP ID>` as the import ID. For
+## Import 
+
+Organization memberships can be imported using `<ORGANIZATION>/<USER EMAIL>` or `<ORGANIZATION MEMBERSHIP ID>` as the import ID. For
 example:
+
+```shell
+terraform import tfe_organization_membership.test my-org-name/user@example.com
+```
 
 ```shell
 terraform import tfe_organization_membership.test ou-wAs3zYmWAhYK7peR
