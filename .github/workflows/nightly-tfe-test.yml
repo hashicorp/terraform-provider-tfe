@@ -108,7 +108,7 @@ jobs:
         with:
           payload: |
             {
-              "text": ":x::moon::sob: <!subteam^S03PV9GGJER> Nightly TFE tests *FAILED*",
+              "text": ":x::moon::sob: Nightly TFE tests *FAILED*",
               "attachments": [
                 {
                   "color": "#C41E3A",
