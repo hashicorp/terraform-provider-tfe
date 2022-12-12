@@ -2,10 +2,11 @@ package tfe
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -66,7 +67,7 @@ func TestAccTFEProject_update(t *testing.T) {
 						"tfe_project.foobar", project),
 					testAccCheckTFEProjectAttributesUpdated(project),
 					resource.TestCheckResourceAttr(
-						"tfe_project.foobar", "name", "projectupdated"),
+						"tfe_project.foobar", "name", "project updated"),
 				),
 			},
 		},
@@ -113,7 +114,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_project" "foobar" {
   organization = tfe_organization.foobar.name
-  name = "projectupdated"
+  name = "project updated"
 }`, rInt)
 }
 
@@ -189,7 +190,7 @@ func testAccCheckTFEProjectAttributes(
 func testAccCheckTFEProjectAttributesUpdated(
 	project *tfe.Project) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		if project.Name != "projectupdated" {
+		if project.Name != "project updated" {
 			return fmt.Errorf("Bad name: %s", project.Name)
 		}
 
