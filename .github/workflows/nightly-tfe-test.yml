@@ -66,6 +66,7 @@ jobs:
         env:
           TFE_TOKEN: "${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}"
         run: |
+          set -euo pipefail
           go run .github/scripts/fetch_outputs/main.go hashicorp-v2 tflocal-terraform-provider-tfe-nightly
 
       - name: Run Tests
@@ -86,7 +87,6 @@ jobs:
           gotestsum --format short-verbose -- $MOD_PROVIDER $MOD_TFE $MOD_VERSION -timeout=30m -run "${{ steps.test_split.outputs.run }}"
 
   tests-summarize:
-    name: Summarize Tests
     needs: [tests]
     runs-on: ubuntu-latest
     if: ${{ always() }}

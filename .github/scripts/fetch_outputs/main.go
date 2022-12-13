@@ -67,14 +67,14 @@ func newRunnerConfiguration(ctx context.Context, outputs []*tfe.StateVersionOutp
 	// since we need to fetch TFE_USER1 and TFE_USER2
 	client, err := tfe.NewClient(tfeCfg)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not initialize the client: %w", err)
 	}
 
 	oml, err := client.OrganizationMemberships.List(ctx, "hashicorp", &tfe.OrganizationMembershipListOptions{
 		Include: []tfe.OrgMembershipIncludeOpt{tfe.OrgMembershipUser},
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not fetch the organization membership list: %w", err)
 	}
 
 	for i, orgMember := range oml.Items {
@@ -89,13 +89,13 @@ func newRunnerConfiguration(ctx context.Context, outputs []*tfe.StateVersionOutp
 func writeToEnv(ctx context.Context, config WorkflowRunnerConfiguration) error {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to get the current home directory: %w", err)
 	}
 
 	name := filepath.Join(homeDir, ".env")
 	f, err := os.OpenFile(name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to open the file: %w", err)
 	}
 	defer f.Close()
 
@@ -107,7 +107,7 @@ func writeToEnv(ctx context.Context, config WorkflowRunnerConfiguration) error {
 
 		envVar := fmt.Sprintf("export %s=%s\n", envName, config[k])
 		if _, err := f.WriteString(envVar); err != nil {
-			return err
+			return fmt.Errorf("unable to write to the file: %w", err)
 		}
 	}
 
@@ -127,7 +127,7 @@ func main() {
 
 	client, err := tfe.NewClient(tfe.DefaultConfig())
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("client initialization error: %v", err)
 	}
 
 	outputs, err := fetchOutputs(ctx, client, organization, workspace)
