@@ -87,7 +87,6 @@ jobs:
           gotestsum --format short-verbose -- $MOD_PROVIDER $MOD_TFE $MOD_VERSION -timeout=30m -run "${{ steps.test_split.outputs.run }}"
 
   tests-summarize:
-    name: Summarize Tests
     needs: [tests]
     runs-on: ubuntu-latest
     if: ${{ always() }}
