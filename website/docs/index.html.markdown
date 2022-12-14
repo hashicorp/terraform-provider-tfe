@@ -100,7 +100,7 @@ For more information on provider installation and constraining provider versions
 
 ```hcl
 provider "tfe" {
-  hostname = var.hostname
+  hostname = var.hostname # Optional, it defaults to Terraform Cloud `app.terraform.io` if not setup
   token    = var.token
   version  = "~> 0.41.0"
 }
