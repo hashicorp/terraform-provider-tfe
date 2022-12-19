@@ -7,12 +7,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceTFESettingsTwilio() *schema.Resource {
+func resourceTFEAdminSettingsTwilio() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceTFESettingsTwilioUpdate,
-		Read:   resourceTFESettingsTwilioRead,
-		Update: resourceTFESettingsTwilioUpdate,
-		Delete: resourceTFESettingsTwilioDelete,
+		Create: resourceTFEAdminSettingsTwilioUpdate,
+		Read:   resourceTFEAdminSettingsTwilioRead,
+		Update: resourceTFEAdminSettingsTwilioUpdate,
+		Delete: resourceTFEAdminSettingsTwilioDelete,
 		Schema: map[string]*schema.Schema{
 			"enabled": {
 				Type:     schema.TypeBool,
@@ -35,7 +35,7 @@ func resourceTFESettingsTwilio() *schema.Resource {
 	}
 }
 
-func resourceTFESettingsTwilioUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAdminSettingsTwilioUpdate(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
 	opts := tfe.AdminTwilioSettingsUpdateOptions{
@@ -58,10 +58,10 @@ func resourceTFESettingsTwilioUpdate(d *schema.ResourceData, meta interface{}) e
 	}
 
 	d.SetId("settings-twilio")
-	return resourceTFESettingsTwilioRead(d, meta)
+	return resourceTFEAdminSettingsTwilioRead(d, meta)
 }
 
-func resourceTFESettingsTwilioRead(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAdminSettingsTwilioRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
 	settings, err := tfeClient.Admin.Settings.Twilio.Read(ctx)
@@ -76,7 +76,7 @@ func resourceTFESettingsTwilioRead(d *schema.ResourceData, meta interface{}) err
 	return nil
 }
 
-func resourceTFESettingsTwilioDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAdminSettingsTwilioDelete(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
 	_, err := tfeClient.Admin.Settings.Twilio.Update(ctx, tfe.AdminTwilioSettingsUpdateOptions{

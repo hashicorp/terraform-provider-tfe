@@ -7,12 +7,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceTFESettingsCostEstimation() *schema.Resource {
+func resourceTFEAdminSettingsCostEstimation() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceTFESettingsCostEstimationUpdate,
-		Read:   resourceTFESettingsCostEstimationRead,
-		Update: resourceTFESettingsCostEstimationUpdate,
-		Delete: resourceTFESettingsCostEstimationDelete,
+		Create: resourceTFEAdminSettingsCostEstimationUpdate,
+		Read:   resourceTFEAdminSettingsCostEstimationRead,
+		Update: resourceTFEAdminSettingsCostEstimationUpdate,
+		Delete: resourceTFEAdminSettingsCostEstimationDelete,
 		Schema: map[string]*schema.Schema{
 			"enabled": {
 				Type:     schema.TypeBool,
@@ -70,7 +70,7 @@ func resourceTFESettingsCostEstimation() *schema.Resource {
 	}
 }
 
-func resourceTFESettingsCostEstimationUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAdminSettingsCostEstimationUpdate(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
 	opts := tfe.AdminCostEstimationSettingOptions{
@@ -105,10 +105,10 @@ func resourceTFESettingsCostEstimationUpdate(d *schema.ResourceData, meta interf
 	}
 
 	d.SetId("settings-cost-estimation")
-	return resourceTFESettingsCostEstimationRead(d, meta)
+	return resourceTFEAdminSettingsCostEstimationRead(d, meta)
 }
 
-func resourceTFESettingsCostEstimationRead(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAdminSettingsCostEstimationRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
 	settings, err := tfeClient.Admin.Settings.CostEstimation.Read(ctx)
@@ -132,7 +132,7 @@ func resourceTFESettingsCostEstimationRead(d *schema.ResourceData, meta interfac
 	return nil
 }
 
-func resourceTFESettingsCostEstimationDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAdminSettingsCostEstimationDelete(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
 	_, err := tfeClient.Admin.Settings.Twilio.Update(ctx, tfe.AdminTwilioSettingsUpdateOptions{

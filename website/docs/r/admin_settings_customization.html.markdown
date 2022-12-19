@@ -1,12 +1,11 @@
 ---
 layout: "tfe"
-page_title: "Terraform Enterprise: tfe_settings_customization"
-sidebar_current: "docs-resource-tfe-settings-customization"
+page_title: "Terraform Enterprise: tfe_admin_settings_customization"
 description: |-
   Manage customization settings for a Terraform Enterprise installation.
 ---
 
-# tfe_settings_customization
+# tfe_admin_settings_customization
 
 Manage [customization settings](https://www.terraform.io/cloud-docs/api-docs/admin/settings#list-customization-settings) for a Terraform Enterprise installation.
 
@@ -15,7 +14,7 @@ Manage [customization settings](https://www.terraform.io/cloud-docs/api-docs/adm
 Basic usage:
 
 ```hcl
-resource "tfe_settings_customization" "settings" {
+resource "tfe_admin_settings_customization" "settings" {
   support_email_address = "support@hashicorp.com"
   login_help            = ""
   footer                = ""

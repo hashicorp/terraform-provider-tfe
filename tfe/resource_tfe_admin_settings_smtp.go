@@ -7,12 +7,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceTFESettingsSMTP() *schema.Resource {
+func resourceTFEAdminSettingsSMTP() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceTFESettingsSMTPUpdate,
-		Read:   resourceTFESettingsSMTPRead,
-		Update: resourceTFESettingsSMTPUpdate,
-		Delete: resourceTFESettingsSMTPDelete,
+		Create: resourceTFEAdminSettingsSMTPUpdate,
+		Read:   resourceTFEAdminSettingsSMTPRead,
+		Update: resourceTFEAdminSettingsSMTPUpdate,
+		Delete: resourceTFEAdminSettingsSMTPDelete,
 		Schema: map[string]*schema.Schema{
 			"enabled": {
 				Type:     schema.TypeBool,
@@ -58,7 +58,7 @@ func smtpAuthType(v string) *tfe.SMTPAuthType {
 	return &t
 }
 
-func resourceTFESettingsSMTPUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAdminSettingsSMTPUpdate(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
 	opts := tfe.AdminSMTPSettingsUpdateOptions{
@@ -91,10 +91,10 @@ func resourceTFESettingsSMTPUpdate(d *schema.ResourceData, meta interface{}) err
 	}
 
 	d.SetId("settings-smtp")
-	return resourceTFESettingsSMTPRead(d, meta)
+	return resourceTFEAdminSettingsSMTPRead(d, meta)
 }
 
-func resourceTFESettingsSMTPRead(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAdminSettingsSMTPRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
 	settings, err := tfeClient.Admin.Settings.SMTP.Read(ctx)
@@ -112,7 +112,7 @@ func resourceTFESettingsSMTPRead(d *schema.ResourceData, meta interface{}) error
 	return nil
 }
 
-func resourceTFESettingsSMTPDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAdminSettingsSMTPDelete(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
 	_, err := tfeClient.Admin.Settings.SMTP.Update(ctx, tfe.AdminSMTPSettingsUpdateOptions{

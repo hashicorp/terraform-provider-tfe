@@ -1,12 +1,11 @@
 ---
 layout: "tfe"
-page_title: "Terraform Enterprise: tfe_settings_smtp"
-sidebar_current: "docs-resource-tfe-settings-smtp"
+page_title: "Terraform Enterprise: tfe_admin_settings_smtp"
 description: |-
   Manage the SMTP settings of a Terraform Enterprise installation.
 ---
 
-# tfe_settings_smtp
+# tfe_admin_settings_smtp
 
 Manage the [SMTP settings](https://www.terraform.io/cloud-docs/api-docs/admin/settings#list-smtp-settings) of a Terraform Enterprise installation.
 
@@ -15,7 +14,7 @@ Manage the [SMTP settings](https://www.terraform.io/cloud-docs/api-docs/admin/se
 Basic usage:
 
 ```hcl
-resource "tfe_settings_smtp" "settings" {
+resource "tfe_admin_settings_smtp" "settings" {
   enabled = true
 
   host               = "example.com"

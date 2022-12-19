@@ -7,12 +7,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceTFESettingsSAML() *schema.Resource {
+func resourceTFEAdminSettingsSAML() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceTFESettingsSAMLUpdate,
-		Read:   resourceTFESettingsSAMLRead,
-		Update: resourceTFESettingsSAMLUpdate,
-		Delete: resourceTFESettingsSAMLDelete,
+		Create: resourceTFEAdminSettingsSAMLUpdate,
+		Read:   resourceTFEAdminSettingsSAMLRead,
+		Update: resourceTFEAdminSettingsSAMLUpdate,
+		Delete: resourceTFEAdminSettingsSAMLDelete,
 		Schema: map[string]*schema.Schema{
 			"enabled": {
 				Type:     schema.TypeBool,
@@ -73,7 +73,7 @@ func resourceTFESettingsSAML() *schema.Resource {
 	}
 }
 
-func resourceTFESettingsSAMLUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAdminSettingsSAMLUpdate(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
 	opts := tfe.AdminSAMLSettingsUpdateOptions{
@@ -102,10 +102,10 @@ func resourceTFESettingsSAMLUpdate(d *schema.ResourceData, meta interface{}) err
 	}
 
 	d.SetId("settings-saml")
-	return resourceTFESettingsSAMLRead(d, meta)
+	return resourceTFEAdminSettingsSAMLRead(d, meta)
 }
 
-func resourceTFESettingsSAMLRead(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAdminSettingsSAMLRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
 	settings, err := tfeClient.Admin.Settings.SAML.Read(ctx)
@@ -129,7 +129,7 @@ func resourceTFESettingsSAMLRead(d *schema.ResourceData, meta interface{}) error
 	return nil
 }
 
-func resourceTFESettingsSAMLDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAdminSettingsSAMLDelete(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
 	_, err := tfeClient.Admin.Settings.SAML.Update(ctx, tfe.AdminSAMLSettingsUpdateOptions{

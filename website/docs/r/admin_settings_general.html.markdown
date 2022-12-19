@@ -1,12 +1,11 @@
 ---
 layout: "tfe"
-page_title: "Terraform Enterprise: tfe_settings_general"
-sidebar_current: "docs-resource-tfe-settings-general"
+page_title: "Terraform Enterprise: tfe_admin_settings_general"
 description: |-
   Manage the general settings of a Terraform Enterprise installation.
 ---
 
-# tfe_settings_general
+# tfe_admin_settings_general
 
 Manage the [general settings](https://www.terraform.io/cloud-docs/api-docs/admin/settings#list-general-settings) of a Terraform Enterprise installation.
 
@@ -15,7 +14,7 @@ Manage the [general settings](https://www.terraform.io/cloud-docs/api-docs/admin
 Basic usage:
 
 ```hcl
-resource "tfe_settings_general" "settings" {
+resource "tfe_admin_settings_general" "settings" {
   limit_user_organization_creation                        = true
   api_rate_limiting_enabled                               = true
   api_rate_limit                                          = 30

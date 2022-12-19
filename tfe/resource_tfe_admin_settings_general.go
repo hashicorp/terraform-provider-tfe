@@ -7,12 +7,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceTFESettingsGeneral() *schema.Resource {
+func resourceTFEAdminSettingsGeneral() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceTFESettingsGeneralUpdate,
-		Read:   resourceTFESettingsGeneralRead,
-		Update: resourceTFESettingsGeneralUpdate,
-		Delete: resourceTFESettingsGeneralDelete,
+		Create: resourceTFEAdminSettingsGeneralUpdate,
+		Read:   resourceTFEAdminSettingsGeneralRead,
+		Update: resourceTFEAdminSettingsGeneralUpdate,
+		Delete: resourceTFEAdminSettingsGeneralDelete,
 		Schema: map[string]*schema.Schema{
 			"limit_user_organization_creation": {
 				Type:     schema.TypeBool,
@@ -48,7 +48,7 @@ func resourceTFESettingsGeneral() *schema.Resource {
 	}
 }
 
-func resourceTFESettingsGeneralUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAdminSettingsGeneralUpdate(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
 	opts := tfe.AdminGeneralSettingsUpdateOptions{
@@ -66,10 +66,10 @@ func resourceTFESettingsGeneralUpdate(d *schema.ResourceData, meta interface{}) 
 	}
 
 	d.SetId("settings-general")
-	return resourceTFESettingsGeneralRead(d, meta)
+	return resourceTFEAdminSettingsGeneralRead(d, meta)
 }
 
-func resourceTFESettingsGeneralRead(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAdminSettingsGeneralRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
 	settings, err := tfeClient.Admin.Settings.General.Read(ctx)
@@ -87,6 +87,6 @@ func resourceTFESettingsGeneralRead(d *schema.ResourceData, meta interface{}) er
 	return nil
 }
 
-func resourceTFESettingsGeneralDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAdminSettingsGeneralDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }

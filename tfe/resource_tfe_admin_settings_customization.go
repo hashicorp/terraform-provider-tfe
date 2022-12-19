@@ -7,12 +7,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceTFESettingsCustomization() *schema.Resource {
+func resourceTFEAdminSettingsCustomization() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceTFESettingsCustomizationUpdate,
-		Read:   resourceTFESettingsCustomizationRead,
-		Update: resourceTFESettingsCustomizationUpdate,
-		Delete: resourceTFESettingsCustomizationDelete,
+		Create: resourceTFEAdminSettingsCustomizationUpdate,
+		Read:   resourceTFEAdminSettingsCustomizationRead,
+		Update: resourceTFEAdminSettingsCustomizationUpdate,
+		Delete: resourceTFEAdminSettingsCustomizationDelete,
 		Schema: map[string]*schema.Schema{
 			"support_email_address": {
 				Type:     schema.TypeString,
@@ -43,7 +43,7 @@ func resourceTFESettingsCustomization() *schema.Resource {
 	}
 }
 
-func resourceTFESettingsCustomizationUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAdminSettingsCustomizationUpdate(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
 	opts := tfe.AdminCustomizationSettingsUpdateOptions{
@@ -60,10 +60,10 @@ func resourceTFESettingsCustomizationUpdate(d *schema.ResourceData, meta interfa
 	}
 
 	d.SetId("settings-customization")
-	return resourceTFESettingsCustomizationRead(d, meta)
+	return resourceTFEAdminSettingsCustomizationRead(d, meta)
 }
 
-func resourceTFESettingsCustomizationRead(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAdminSettingsCustomizationRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(*tfe.Client)
 
 	settings, err := tfeClient.Admin.Settings.Customization.Read(ctx)
@@ -80,6 +80,6 @@ func resourceTFESettingsCustomizationRead(d *schema.ResourceData, meta interface
 	return nil
 }
 
-func resourceTFESettingsCustomizationDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAdminSettingsCustomizationDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }

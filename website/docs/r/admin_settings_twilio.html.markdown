@@ -1,12 +1,11 @@
 ---
 layout: "tfe"
-page_title: "Terraform Enterprise: tfe_settings_twilio"
-sidebar_current: "docs-resource-tfe-settings-twilio"
+page_title: "Terraform Enterprise: tfe_admin_settings_twilio"
 description: |-
   Manage the Twilio settings of a Terraform Enterprise installation.
 ---
 
-# tfe_settings_twilio
+# tfe_admin_settings_twilio
 
 Manage the [Twilio settings](https://www.terraform.io/cloud-docs/api-docs/admin/settings#list-twilio-settings) of a Terraform Enterprise installation.
 
@@ -15,7 +14,7 @@ Manage the [Twilio settings](https://www.terraform.io/cloud-docs/api-docs/admin/
 Basic usage:
 
 ```hcl
-resource "tfe_settings_twilio" "settings" {
+resource "tfe_admin_settings_twilio" "settings" {
   enabled = true
 
   account_sid = "12345abcd"

@@ -1,12 +1,11 @@
 ---
 layout: "tfe"
-page_title: "Terraform Enterprise: tfe_settings_cost_estimation"
-sidebar_current: "docs-resource-tfe-settings-cost-estimation"
+page_title: "Terraform Enterprise: tfe_admin_settings_cost_estimation"
 description: |-
   Manage the cost estimation settings of a Terraform Enterprise installation.
 ---
 
-# tfe_settings_cost_estimation
+# tfe_admin_settings_cost_estimation
 
 Manage the [cost estimation settings](https://www.terraform.io/cloud-docs/api-docs/admin/settings#list-cost-estimation-settings) of a Terraform Enterprise installation.
 
@@ -15,7 +14,7 @@ Manage the [cost estimation settings](https://www.terraform.io/cloud-docs/api-do
 Basic usage:
 
 ```hcl
-resource "tfe_settings_cost_estimation" "settings" {
+resource "tfe_admin_settings_cost_estimation" "settings" {
   enabled = true
 
   aws_access_key_id     = "AKIAIOSFODNN7EXAMPLE"

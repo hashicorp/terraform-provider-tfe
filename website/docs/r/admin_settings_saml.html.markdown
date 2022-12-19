@@ -1,12 +1,11 @@
 ---
 layout: "tfe"
-page_title: "Terraform Enterprise: tfe_settings_saml"
-sidebar_current: "docs-resource-tfe-settings-saml"
+page_title: "Terraform Enterprise: tfe_admin_settings_saml"
 description: |-
   Manage the SAML settings of a Terraform Enterprise installation.
 ---
 
-# tfe_settings_saml
+# tfe_admin_settings_saml
 
 Manage the [SAML settings](https://www.terraform.io/cloud-docs/api-docs/admin/settings#list-saml-settings) of a Terraform Enterprise installation.
 
@@ -15,7 +14,7 @@ Manage the [SAML settings](https://www.terraform.io/cloud-docs/api-docs/admin/se
 Basic usage:
 
 ```hcl
-resource "tfe_settings_saml" "settings" {
+resource "tfe_admin_settings_saml" "settings" {
   enabled = true
   debug   = false
 
