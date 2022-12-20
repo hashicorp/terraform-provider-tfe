@@ -3,12 +3,14 @@ name: Create Jira Issue
 on:
   issues:
     types: [opened, closed, deleted, reopened]
+  pull_request_target:
+    types: [opened, closed, reopened]
   issue_comment:
     types: [created]
 
 jobs:
   call-workflow:
-    uses: hashicorp/terraform-random-tfe-utility/.github/workflows/create-jira-issue.yml@main
+    uses: ./.github/workflows/jira-issue-sync.yml
     with:
       github-team: Terraform-Enterprise
       project: TF
