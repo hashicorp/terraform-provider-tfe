@@ -31,7 +31,7 @@ jobs:
         if: github.event.action == 'opened'
         uses: atlassian/gajira-find-issue-key@v3
         with:
-          from: branch
+          string: ${{ github.event.ref }}
 
       # Constructs extra data from workflow input as well as these defaults
       - name: Build Extra fields

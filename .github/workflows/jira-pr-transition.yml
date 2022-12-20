@@ -17,7 +17,7 @@ jobs:
         id: find-issue-in-branch
         uses: atlassian/gajira-find-issue-key@v3
         with:
-          from: branch
+          string: ${{ github.event.ref }}
       - name: Transition to Development Complete
         if: steps.search.outputs.issue && github.event.action == 'closed'
         uses: atlassian/gajira-transition@v3
