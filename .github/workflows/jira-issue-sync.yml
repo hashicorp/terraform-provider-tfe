@@ -56,7 +56,7 @@ jobs:
           issuetype: "GH Issue"
           summary: "${{ github.event.repository.name }} [GH Issue #${{ github.event.issue.number || github.event.pull_request.number }}]: ${{ github.event.issue.title || github.event.pull_request.title }}"
           description: "${{ github.event.issue.body || github.event.pull_request.body }}\n\n_Created in GitHub by ${{ github.actor }}._"
-          extraFields: ${{ steps.build-extra-fields.outputs.extra }}
+          fields: ${{ steps.build-extra-fields.outputs.extra }}
 
       - name: Search
         if: github.event.action != 'opened'
