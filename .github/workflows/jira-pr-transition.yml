@@ -1,0 +1,32 @@
+name: Jira Issue PR Transition
+
+on:
+  workflow_call:
+
+jobs:
+  pr-transition:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login
+        uses: atlassian/gajira-login@v2.0.0
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+      - name: Find in branch name
+        id: find-issue-in-branch
+        uses: atlassian/gajira-find-issue-key@v3
+        with:
+          from: branch
+      - name: Transition to Development Complete
+        if: steps.search.outputs.issue && github.event.action == 'closed'
+        uses: atlassian/gajira-transition@v3
+        with:
+          issue: ${{ steps.search.outputs.issue }}
+          transition: "Development Complete"
+      - name: Transition to In Review
+        if: steps.search.outputs.issue && github.event.action == 'closed'
+        uses: atlassian/gajira-transition@v3
+        with:
+          issue: ${{ steps.search.outputs.issue }}
+          transition: "In Review"

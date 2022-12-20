@@ -1,0 +1,10 @@
+name: Create Jira Issue
+
+on:
+  pull_request_target:
+    types: [opened, closed, reopened]
+
+jobs:
+  call-workflow:
+    uses: ./.github/workflows/jira-pr-transition.yml
+    secrets: inherit
