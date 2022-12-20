@@ -29,10 +29,9 @@ jobs:
       - name: Find in commit messages
         id: find-issue-in-branch
         if: github.event.action == 'opened'
-        uses: atlassian/gajira-find-issue-key@v3
+        uses: atlassian/gajira-find-issue-key@v2.0.2 # "v3" seems broken
         with:
-          string: ${{ github.event.ref }}
-          from: "" # Workaround for PR bug in this action
+          from: branch
 
       # Constructs extra data from workflow input as well as these defaults
       - name: Build Extra fields
