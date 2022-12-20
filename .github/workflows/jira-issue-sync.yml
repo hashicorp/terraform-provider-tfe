@@ -42,7 +42,7 @@ jobs:
             { "customfield_10089": "${{ github.event.issue.html_url || github.event.pull_request.html_url }}",
               "customfield_10371": { "value": "GitHub" },
               "components": [{ "name": "${{ github.event.repository.name }}" }],
-              "labels": ${{ github.event.issue.labels.*.name }}
+              "labels": ${{ toJSON(github.event.issue.labels.*.name) }}
             }
         run: |
           echo "::set-output name=extra::$(echo '${{ env.EXTRA_FIELDS }}' '${{ inputs.issue-extra-fields }}' | jq -rcs '.[0] * .[1]')"
