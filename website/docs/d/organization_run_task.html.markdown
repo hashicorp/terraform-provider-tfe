@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_organization_run_task"
-sidebar_current: "docs-datasource-tfe-organization-run-task"
 description: |-
   Get information on a Run task.
 ---

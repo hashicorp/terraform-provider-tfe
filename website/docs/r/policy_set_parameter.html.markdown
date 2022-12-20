@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_policy_set_parameter"
-sidebar_current: "docs-resource-tfe-policy-set-parameter"
 description: |-
   Manages policy set parameters.
 ---

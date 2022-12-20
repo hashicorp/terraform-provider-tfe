@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_workspace_policy_set"
-sidebar_current: "docs-resource-tfe-workspace-policy-set"
 description: |-
   Add a policy set to a workspace
 ---

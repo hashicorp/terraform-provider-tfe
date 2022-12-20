@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_team"
-sidebar_current: "docs-datasource-tfe-team-x"
 description: |-
   Get information on a team.
 ---

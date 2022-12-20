@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_workspace"
-sidebar_current: "docs-resource-tfe-workspace"
 description: |-
   Manages workspaces.
 ---

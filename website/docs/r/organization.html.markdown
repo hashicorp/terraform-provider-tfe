@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_organization"
-sidebar_current: "docs-resource-tfe-organization-x"
 description: |-
   Manages organizations.
 ---

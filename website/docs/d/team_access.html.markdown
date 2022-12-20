@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_team_access"
-sidebar_current: "docs-datasource-tfe-team-access"
 description: |-
   Get information on team permissions on a workspace.
 ---

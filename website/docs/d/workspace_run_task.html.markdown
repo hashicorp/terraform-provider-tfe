@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_workspace_task"
-sidebar_current: "docs-datasource-tfe-workspace-task"
 description: |-
   Get information on a Workspace Run task.
 ---

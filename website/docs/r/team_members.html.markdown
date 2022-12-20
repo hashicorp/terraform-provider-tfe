@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_team_members"
-sidebar_current: "docs-resource-tfe-team-members"
 description: |-
   Manages users in a team.
 ---

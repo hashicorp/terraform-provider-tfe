@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_ip_ranges"
-sidebar_current: "docs-datasource-tfe-ip-ranges"
 description: |-
   Get Terraform Cloud/Enterprise's IP ranges of its services
 ---

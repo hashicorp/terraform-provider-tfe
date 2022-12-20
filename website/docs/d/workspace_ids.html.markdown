@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_workspace_ids"
-sidebar_current: "docs-datasource-tfe-workspace-ids"
 description: |-
   Get information on workspace IDs.
 ---

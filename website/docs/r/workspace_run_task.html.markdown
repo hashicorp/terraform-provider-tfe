@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_workspace_run_task"
-sidebar_current: "docs-resource-tfe_workspace_run_task"
 description: |-
   Manages Workspace Run tasks.
 ---

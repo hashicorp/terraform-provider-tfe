@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_outputs"
-sidebar_current: "docs-datasource-tfe-state-outputs"
 description: |-
   Get output values from another organization/workspace.
 ---

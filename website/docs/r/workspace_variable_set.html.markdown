@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_workspace_variable_set"
-sidebar_current: "docs-resource-tfe-workspace-variable-set"
 description: |-
   Add a variable set to a workspace
 ---

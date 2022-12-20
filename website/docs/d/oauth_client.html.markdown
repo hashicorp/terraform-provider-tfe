@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_oauth_client"
-sidebar_current: "docs-datasource-tfe-oauth-client-x"
 description: |-
   Get information on an OAuth client.
 ---

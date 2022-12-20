@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_admin_organization_settings"
-sidebar_current: "docs-resource-tfe-organization-x"
 description: |-
   Manages admin settings for an organization (Terraform Enterprise Only).
 ---

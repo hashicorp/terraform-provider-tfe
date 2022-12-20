@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_agent_token"
-sidebar_current: "docs-resource-tfe-agent-token"
 description: |-
   Manages agent tokens
 ---

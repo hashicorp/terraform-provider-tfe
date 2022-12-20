@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_team_organization_member"
-sidebar_current: "docs-resource-tfe-team-organization_member"
 description: |-
   Add or remove a user from a team.
 ---

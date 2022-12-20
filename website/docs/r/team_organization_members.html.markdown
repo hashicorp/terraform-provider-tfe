@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_team_organization_members"
-sidebar_current: "docs-resource-tfe-team-organization_members"
 description: |-
   Add or remove users from a team based on their organization memberships.
 ---

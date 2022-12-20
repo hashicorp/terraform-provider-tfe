@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_policy"
-sidebar_current: "docs-resource-tfe-policy"
 description: |-
   Manages policies.
 ---

@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Provider: Terraform Cloud/Enterprise"
-sidebar_current: "docs-tfe-index"
 description: |-
   Provision Terraform Cloud or Terraform Enterprise - with Terraform! Management of organizations, workspaces, teams, variables, run triggers, policy sets, and more. Maintained by the Terraform Cloud team at HashiCorp.
 ---

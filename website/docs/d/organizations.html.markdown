@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_organizations"
-sidebar_current: "docs-datasource-tfe-organizations"
 description: |-
   Get information on Organizations.
 ---

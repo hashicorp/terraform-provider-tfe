@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_team"
-sidebar_current: "docs-resource-tfe-team-x"
 description: |-
   Manages teams.
 ---
