@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_project"
-sidebar_current: "docs-resource-tfe-project"
 description: |-
 Manages projects.
 ---

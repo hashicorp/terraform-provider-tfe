@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_policy_set"
-sidebar_current: "docs-datasource-tfe-policy-set"
 description: |-
   Get information on organization policy sets.
 ---

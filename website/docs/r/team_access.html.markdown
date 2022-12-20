@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_team_access"
-sidebar_current: "docs-resource-tfe-team-access"
 description: |-
   Associate a team to permissions on a workspace.
 ---

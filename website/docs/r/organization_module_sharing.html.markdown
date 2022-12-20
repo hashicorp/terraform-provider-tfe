@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_organization_module_sharing"
-sidebar_current: "docs-resource-tfe-organization-module-sharing"
 description: |-
   Manage module sharing for an organization.
 ---

@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_terraform_version"
-sidebar_current: "docs-resource-tfe-terraform-version-x"
 description: |-
   Manages Terraform versions
 ---

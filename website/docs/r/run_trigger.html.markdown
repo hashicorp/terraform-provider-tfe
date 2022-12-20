@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_run_trigger"
-sidebar_current: "docs-resource-tfe-run-trigger"
 description: |-
   Manages run triggers
 ---

@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_sentinel_policy"
-sidebar_current: "docs-resource-tfe-sentinel-policy"
 description: |-
   Manages Sentinel policies.
 ---

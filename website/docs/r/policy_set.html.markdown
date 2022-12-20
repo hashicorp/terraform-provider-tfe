@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_policy_set"
-sidebar_current: "docs-resource-tfe-tfe_policy_set"
 description: |-
   Manages policy sets.
 ---

@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_notification_configuration"
-sidebar_current: "docs-resource-tfe-notification-configuration"
 description: |-
   Manages notifications configurations.
 ---

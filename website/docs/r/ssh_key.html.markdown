@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_ssh_key"
-sidebar_current: "docs-resource-tfe-ssh-key"
 description: |-
   Manages SSH keys.
 ---

@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_organization_members"
-sidebar_current: "docs-datasource-tfe-organization-members"
 description: |-
   Get information on an Organization members.
 ---

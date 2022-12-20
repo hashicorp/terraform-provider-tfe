@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_agent_pool"
-sidebar_current: "docs-resource-tfe-agent-pool"
 description: |-
   Manages agent pools
 ---

@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_variable_set"
-sidebar_current: "docs-resource-tfe-variable-set"
 description: |-
   Manages variable sets.
 ---

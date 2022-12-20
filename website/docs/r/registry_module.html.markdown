@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_registry_module"
-sidebar_current: "docs-resource-tfe-registry-module"
 description: |-
   Manages registry modules
 ---

@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_oauth_client"
-sidebar_current: "docs-resource-tfe-oauth-client"
 description: |-
   Manages OAuth clients.
 ---
