@@ -32,6 +32,7 @@ jobs:
         uses: atlassian/gajira-find-issue-key@v3
         with:
           string: ${{ github.event.ref }}
+          from: "" # Workaround for PR bug in this action
 
       # Constructs extra data from workflow input as well as these defaults
       - name: Build Extra fields

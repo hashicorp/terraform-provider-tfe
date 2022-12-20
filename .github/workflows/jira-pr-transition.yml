@@ -18,6 +18,7 @@ jobs:
         uses: atlassian/gajira-find-issue-key@v3
         with:
           string: ${{ github.event.ref }}
+          from: "" # Workaround for PR bug in this action
       - name: Transition to Development Complete
         if: steps.search.outputs.issue && github.event.action == 'closed'
         uses: atlassian/gajira-transition@v3
