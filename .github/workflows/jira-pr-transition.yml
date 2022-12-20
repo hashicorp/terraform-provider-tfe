@@ -20,13 +20,13 @@ jobs:
           string: ${{ github.event.ref }}
           from: "" # Workaround for PR bug in this action
       - name: Transition to Development Complete
-        if: steps.search.outputs.issue && github.event.action == 'closed'
+        if: steps.search.outputs.issue && github.event.action == 'closed' && github.event.pull_request.merged == true
         uses: atlassian/gajira-transition@v3
         with:
           issue: ${{ steps.search.outputs.issue }}
           transition: "Development Complete"
       - name: Transition to In Review
-        if: steps.search.outputs.issue && github.event.action == 'opened'
+        if: steps.search.outputs.issue && (github.event.action == 'opened' || github.event.action == 'reopened')
         uses: atlassian/gajira-transition@v3
         with:
           issue: ${{ steps.search.outputs.issue }}
