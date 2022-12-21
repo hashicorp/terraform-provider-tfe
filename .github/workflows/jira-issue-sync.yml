@@ -31,7 +31,8 @@ jobs:
         if: github.event.action == 'opened'
         uses: atlassian/gajira-find-issue-key@v2.0.2 # "v3" seems broken
         with:
-          from: branch
+          string: ${{ github.head_ref }}
+          from: ""
 
       # Constructs extra data from workflow input as well as these defaults
       - name: Build Extra fields

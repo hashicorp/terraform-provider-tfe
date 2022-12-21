@@ -17,7 +17,8 @@ jobs:
         id: find-issue-in-branch
         uses: atlassian/gajira-find-issue-key@v2.0.2 # "v3" seems broken
         with:
-          from: branch
+          string: ${{ github.head_ref }}
+          from: ""
       - name: Transition to Development Complete
         if: steps.search.outputs.issue && github.event.action == 'closed' && github.event.pull_request.merged == true
         uses: atlassian/gajira-transition@v3
