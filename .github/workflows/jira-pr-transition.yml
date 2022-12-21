@@ -1,6 +1,12 @@
 name: Jira Issue PR Transition
 
 on:
+  # workflow_call is used so that this workflow may be re-used in other repositories.
+  #
+  # Trigger on these pull_request or pull_request_target events:
+  #   [opened, closed, reopened, converted_to_draft]
+  #
+  # (see call-jira-pr-transition for example)
   workflow_call:
 
 jobs:
@@ -24,15 +30,25 @@ jobs:
           echo " Issue: ${{ steps.search.outputs.issue }}"
           echo "Action: ${{ github.event.action }}"
           echo "Merged: ${{ github.event.pull_request.merged }}"
-      - name: Transition to Development Complete
+          echo " Draft: ${{ github.event.pull_request.draft }}"
+
+      - name: Transition Drafts to In Progress
+        if: steps.search.outputs.issue && github.event.pull_request.draft
+        uses: atlassian/gajira-transition@v3
+        with:
+          issue: ${{ steps.search.outputs.issue }}
+          transition: "In Progress"
+
+      - name: Transition Opened to In Review
+        if: steps.search.outputs.issue && !github.event.pull_request.draft && (github.event.action == 'opened' || github.event.action == 'reopened')
+        uses: atlassian/gajira-transition@v3
+        with:
+          issue: ${{ steps.search.outputs.issue }}
+          transition: "In Review"
+
+      - name: Transition Merged to Development Complete
         if: steps.search.outputs.issue && github.event.action == 'closed' && github.event.pull_request.merged == true
         uses: atlassian/gajira-transition@v3
         with:
           issue: ${{ steps.search.outputs.issue }}
           transition: "Development Complete"
-      - name: Transition to In Review
-        if: steps.search.outputs.issue && (github.event.action == 'opened' || github.event.action == 'reopened' || github.event.action == 'converted_to_draft')
-        uses: atlassian/gajira-transition@v3
-        with:
-          issue: ${{ steps.search.outputs.issue }}
-          transition: "In Review"
