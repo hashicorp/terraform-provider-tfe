@@ -10,11 +10,12 @@ import (
 )
 
 func TestAccTFEAdminSettingsGeneral(t *testing.T) {
-	// Put admin settings in known state before checking changes to their status
+	// Put admin settings in a known state before checking changes to them
 	err := testAccResetAdminSettingsGeneral()
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Remember to reset global singleton resources when done!
 	t.Cleanup(testAccCleanupAdminSettings)
 
 	resource.Test(t, resource.TestCase{
@@ -24,23 +25,23 @@ func TestAccTFEAdminSettingsGeneral(t *testing.T) {
 			// Set all settings and note the ones that changed.
 			{
 				Config: testAccTFEAdminSettingsGeneral_all,
-				Check: testAccCheckAdminSettingsGeneral(&testAccAdminSettingsGeneralExpectation{
+				Check: testAccCheckAdminSettingsGeneral(testAccAdminSettingsGeneralExpectation{
 					// all changed from their defaults:
-					DefaultRemoteStateAccess:          tfe.Bool(false),
-					SendPassingStatusUntriggeredPlans: tfe.Bool(true),
-					APIRateLimit:                      tfe.Int(40),
+					DefaultRemoteStateAccess:          false,
+					SendPassingStatusUntriggeredPlans: true,
+					APIRateLimit:                      40,
 				}),
 			},
-			// Different config: set minimal settings, and note both changed and unchanged values.
+			// Different config: set minimal settings, observe both changed and unchanged values.
 			{
 				Config: testAccTFEAdminSettingsGeneral_minimal,
-				Check: testAccCheckAdminSettingsGeneral(&testAccAdminSettingsGeneralExpectation{
-					// changed back:
-					DefaultRemoteStateAccess: tfe.Bool(true),
+				Check: testAccCheckAdminSettingsGeneral(testAccAdminSettingsGeneralExpectation{
+					// changed back explicitly:
+					DefaultRemoteStateAccess: true,
 					// NOT changed back to default when omitted:
-					SendPassingStatusUntriggeredPlans: tfe.Bool(true),
+					SendPassingStatusUntriggeredPlans: true,
 					// NOT changed back to default when omitted:
-					APIRateLimit: tfe.Int(40),
+					APIRateLimit: 40,
 				}),
 			},
 		},
@@ -50,7 +51,7 @@ func TestAccTFEAdminSettingsGeneral(t *testing.T) {
 
 // testAccCheckAdminSettingsGeneral returns a check function that tests whether
 // a limited number of admin settings have their expected values.
-func testAccCheckAdminSettingsGeneral(expected *testAccAdminSettingsGeneralExpectation) resource.TestCheckFunc {
+func testAccCheckAdminSettingsGeneral(expected testAccAdminSettingsGeneralExpectation) resource.TestCheckFunc {
 	return func(_s *terraform.State) error {
 		tfeClient := testAccProvider.Meta().(*tfe.Client)
 
@@ -59,22 +60,24 @@ func testAccCheckAdminSettingsGeneral(expected *testAccAdminSettingsGeneralExpec
 			return err
 		}
 
-		actual := &testAccAdminSettingsGeneralExpectation{
-			DefaultRemoteStateAccess:          &settings.DefaultRemoteStateAccess,
-			SendPassingStatusUntriggeredPlans: &settings.SendPassingStatusesEnabled,
-			APIRateLimit:                      &settings.APIRateLimit,
+		actual := testAccAdminSettingsGeneralExpectation{
+			DefaultRemoteStateAccess:          settings.DefaultRemoteStateAccess,
+			SendPassingStatusUntriggeredPlans: settings.SendPassingStatusesEnabled,
+			APIRateLimit:                      settings.APIRateLimit,
 		}
-		if *actual != *expected {
+		if actual != expected {
 			return fmt.Errorf("Admin settings didn't match: expected %+v, got %+v", expected, actual)
 		}
 		return nil
 	}
 }
 
+// testAccAdminSettingsGeneralExpectation represents expected values of a few
+// choice admin settings, for legible/printable all-at-once comparisons.
 type testAccAdminSettingsGeneralExpectation struct {
-	DefaultRemoteStateAccess          *bool
-	SendPassingStatusUntriggeredPlans *bool
-	APIRateLimit                      *int
+	DefaultRemoteStateAccess          bool
+	SendPassingStatusUntriggeredPlans bool
+	APIRateLimit                      int
 }
 
 // Admin settings are a per-instance singleton, so they're dicey to test --
@@ -83,8 +86,12 @@ type testAccAdminSettingsGeneralExpectation struct {
 // settings that would interfere with other tests, and reset stuff to a known
 // baseline before *and* after testing. Thou shalt not flake.
 func testAccResetAdminSettingsGeneral() error {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		return fmt.Errorf("failed to get client for resetting admin settings: %s", err)
+	}
 
+	// These happen to be the default values for stock TFE instances:
 	opts := tfe.AdminGeneralSettingsUpdateOptions{
 		LimitUserOrgCreation:              tfe.Bool(true),
 		APIRateLimitingEnabled:            tfe.Bool(true),
@@ -94,7 +101,7 @@ func testAccResetAdminSettingsGeneral() error {
 		DefaultRemoteStateAccess:          tfe.Bool(true),
 	}
 
-	_, err := tfeClient.Admin.Settings.General.Update(ctx, opts)
+	_, err = tfeClient.Admin.Settings.General.Update(ctx, opts)
 	if err != nil {
 		return fmt.Errorf("failed to reset general settings: %s", err)
 	}
@@ -105,6 +112,7 @@ func testAccResetAdminSettingsGeneral() error {
 func testAccCleanupAdminSettings() {
 	err := testAccResetAdminSettingsGeneral()
 	if err != nil {
+		// The test is already over at this point, so just complain:
 		fmt.Printf("error during test cleanup: %s", err)
 	}
 }
