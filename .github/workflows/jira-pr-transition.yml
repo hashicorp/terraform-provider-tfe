@@ -21,11 +21,12 @@ jobs:
           from: ""
       - name: Transition Issue
         id: transition
+        if: steps.search.outputs.issue
         uses: tuanddd/jira-automate-transition@v1.0.6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           column-to-move-to-when-review-requested: In Review
           column-to-move-to-when-changes-requested: In Progress
           column-to-move-to-when-merged: Development Complete
-
+          jira-issue-id: ${{ steps.search.outputs.issue }}
 
