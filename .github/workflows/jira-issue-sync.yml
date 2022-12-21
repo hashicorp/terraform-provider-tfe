@@ -25,15 +25,6 @@ jobs:
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
 
-      # If this is a PR and an issue is NOT found in the branch name, a new issue will be created!
-      - name: Find in commit messages
-        id: find-issue-in-branch
-        if: github.event.action == 'opened'
-        uses: atlassian/gajira-find-issue-key@v2.0.2 # "v3" seems broken
-        with:
-          string: ${{ github.head_ref }}
-          from: ""
-
       # Constructs extra data from workflow input as well as these defaults
       - name: Build Extra fields
         id: build-extra-fields

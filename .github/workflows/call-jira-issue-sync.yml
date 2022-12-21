@@ -3,8 +3,6 @@ name: Jira Issue Sync
 on:
   issues:
     types: [opened, closed, deleted, reopened]
-  pull_request_target:
-    types: [opened, closed, reopened]
   issue_comment:
     types: [created]
 
