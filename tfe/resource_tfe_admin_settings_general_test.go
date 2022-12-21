@@ -1,1 +1,129 @@
 package tfe
+
+import (
+	"fmt"
+	"testing"
+
+	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+)
+
+func TestAccTFEAdminSettingsGeneral(t *testing.T) {
+	// Put admin settings in known state before checking changes to their status
+	err := testAccResetAdminSettingsGeneral()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(testAccCleanupAdminSettings)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			// Set all settings and note the ones that changed.
+			{
+				Config: testAccTFEAdminSettingsGeneral_all,
+				Check: testAccCheckAdminSettingsGeneral(&testAccAdminSettingsGeneralExpectation{
+					// all changed from their defaults:
+					DefaultRemoteStateAccess:          tfe.Bool(false),
+					SendPassingStatusUntriggeredPlans: tfe.Bool(true),
+					APIRateLimit:                      tfe.Int(40),
+				}),
+			},
+			// Different config: set minimal settings, and note both changed and unchanged values.
+			{
+				Config: testAccTFEAdminSettingsGeneral_minimal,
+				Check: testAccCheckAdminSettingsGeneral(&testAccAdminSettingsGeneralExpectation{
+					// changed back:
+					DefaultRemoteStateAccess: tfe.Bool(true),
+					// NOT changed back to default when omitted:
+					SendPassingStatusUntriggeredPlans: tfe.Bool(true),
+					// NOT changed back to default when omitted:
+					APIRateLimit: tfe.Int(40),
+				}),
+			},
+		},
+	})
+
+}
+
+// testAccCheckAdminSettingsGeneral returns a check function that tests whether
+// a limited number of admin settings have their expected values.
+func testAccCheckAdminSettingsGeneral(expected *testAccAdminSettingsGeneralExpectation) resource.TestCheckFunc {
+	return func(_s *terraform.State) error {
+		tfeClient := testAccProvider.Meta().(*tfe.Client)
+
+		settings, err := tfeClient.Admin.Settings.General.Read(ctx)
+		if err != nil {
+			return err
+		}
+
+		actual := &testAccAdminSettingsGeneralExpectation{
+			DefaultRemoteStateAccess:          &settings.DefaultRemoteStateAccess,
+			SendPassingStatusUntriggeredPlans: &settings.SendPassingStatusesEnabled,
+			APIRateLimit:                      &settings.APIRateLimit,
+		}
+		if *actual != *expected {
+			return fmt.Errorf("Admin settings didn't match: expected %+v, got %+v", expected, actual)
+		}
+		return nil
+	}
+}
+
+type testAccAdminSettingsGeneralExpectation struct {
+	DefaultRemoteStateAccess          *bool
+	SendPassingStatusUntriggeredPlans *bool
+	APIRateLimit                      *int
+}
+
+// Admin settings are a per-instance singleton, so they're dicey to test --
+// there's no good way to isolate our actions to a per-test instance, and they
+// mutate a shared resource. So heed ye these rules: Don't mess with any
+// settings that would interfere with other tests, and reset stuff to a known
+// baseline before *and* after testing. Thou shalt not flake.
+func testAccResetAdminSettingsGeneral() error {
+	tfeClient := testAccProvider.Meta().(*tfe.Client)
+
+	opts := tfe.AdminGeneralSettingsUpdateOptions{
+		LimitUserOrgCreation:              tfe.Bool(true),
+		APIRateLimitingEnabled:            tfe.Bool(true),
+		APIRateLimit:                      tfe.Int(30),
+		SendPassingStatusUntriggeredPlans: tfe.Bool(false),
+		AllowSpeculativePlansOnPR:         tfe.Bool(false),
+		DefaultRemoteStateAccess:          tfe.Bool(true),
+	}
+
+	_, err := tfeClient.Admin.Settings.General.Update(ctx, opts)
+	if err != nil {
+		return fmt.Errorf("failed to reset general settings: %s", err)
+	}
+	return nil
+}
+
+// Wrapper for reset function to be used in t.Cleanup
+func testAccCleanupAdminSettings() {
+	err := testAccResetAdminSettingsGeneral()
+	if err != nil {
+		fmt.Printf("error during test cleanup: %s", err)
+	}
+}
+
+const testAccTFEAdminSettingsGeneral_all = `
+resource "tfe_admin_settings_general" "stuff" {
+  default_remote_state_access                             = false # non-default
+  limit_user_organization_creation                        = true
+  api_rate_limiting_enabled                               = true
+  api_rate_limit                                          = 40    # non-default
+  send_passing_statuses_for_untriggered_speculative_plans = true  # non-default
+  allow_speculative_plans_on_pull_requests_from_forks     = false
+}
+`
+
+const testAccTFEAdminSettingsGeneral_minimal = `
+resource "tfe_admin_settings_general" "stuff" {
+  default_remote_state_access                             = true
+  limit_user_organization_creation                        = true
+  api_rate_limiting_enabled                               = false
+}
+`
