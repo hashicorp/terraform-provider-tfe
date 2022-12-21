@@ -20,12 +20,13 @@ jobs:
           string: ${{ github.head_ref }}
           from: ""
       - name: Transition to Development Complete
-        if: github.event.action == 'closed' && github.event.pull_request.merged == true
+        if: steps.search.outputs.issue != null && github.event.action == 'closed' && github.event.pull_request.merged == true
         uses: atlassian/gajira-transition@v3
         with:
           transition: "Development Complete"
       - name: Transition to In Review
-        if: github.event.action == 'opened' || github.event.action == 'reopened'
+        if: steps.search.outputs.issue != null && (github.event.action == 'opened' || github.event.action == 'reopened')
         uses: atlassian/gajira-transition@v3
         with:
+          issue: ${{ steps.search.outputs.issue }}
           transition: "In Review"
