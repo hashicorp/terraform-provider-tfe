@@ -3,9 +3,6 @@ name: Jira Issue Sync
 on:
   workflow_call:
     inputs:
-      github-team:
-        required: true
-        type: string
       project:
         required: true
         type: string

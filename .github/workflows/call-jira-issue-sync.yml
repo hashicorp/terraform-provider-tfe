@@ -10,7 +10,6 @@ jobs:
   call-workflow:
     uses: ./.github/workflows/jira-issue-sync.yml
     with:
-      github-team: Terraform-Enterprise
       project: TF
       issue-extra-fields: |
         { "customfield_10091": ["TF-CLI"] }
