@@ -19,14 +19,19 @@ jobs:
         with:
           string: ${{ github.head_ref }}
           from: ""
-      - name: Transition Issue
-        id: transition
-        if: steps.search.outputs.issue
-        uses: tuanddd/jira-automate-transition@v1.0.6
+      - name: Debug
+        run: |
+          echo " Issue: ${{ steps.search.outputs.issue }}"
+          echo "Action: ${{ github.event.action }}"
+          echo "Merged: ${{ github.event.pull_request.merged }}"
+      - name: Transition to Development Complete
+        if: steps.search.outputs.issue && github.event.action == 'closed' && github.event.pull_request.merged == true
+        uses: atlassian/gajira-transition@v3
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          column-to-move-to-when-review-requested: In Review
-          column-to-move-to-when-changes-requested: In Progress
-          column-to-move-to-when-merged: Development Complete
-          jira-issue-id: ${{ steps.search.outputs.issue }}
-
+          transition: "Development Complete"
+      - name: Transition to In Review
+        if: steps.search.outputs.issue && (github.event.action == 'opened' || github.event.action == 'reopened')
+        uses: atlassian/gajira-transition@v3
+        with:
+          issue: ${{ steps.search.outputs.issue }}
+          transition: "In Review"
