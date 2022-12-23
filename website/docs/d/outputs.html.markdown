@@ -9,10 +9,8 @@ description: |-
 This data source is used to retrieve the state outputs for a given workspace.
 It enables output values in one Terraform configuration to be used in another.
 
-The `values` attribute has been defined as sensitive because the workspace
-outputs may contain sensitive values and the provider protocol does not support
-marking values as [sensitive](https://www.terraform.io/docs/language/values/outputs.html#sensitive-suppressing-values-in-cli-output) after this information is known. You can access
-the subset of non-sensitive outputs using the `nonsensitive_values` attribute.
+~> **NOTE:** The `values` attribute is preemptively marked [sensitive](https://www.terraform.io/docs/language/values/outputs.html#sensitive-suppressing-values-in-cli-output) and is only populated after a run completes on the associated workspace. Use the `nonsensitive_values` attribute to access the subset of the outputs
+that are known to be non-sensitive.
 
 ## Example Usage
 
