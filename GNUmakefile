@@ -40,7 +40,7 @@ vet:
 	fi
 
 lint:
-	@golangci-lint run ; if [ $$? -ne 1 ]; then \
+	@golangci-lint run ; if [ $$? -ne 0 ]; then \
 		echo ""; \
 		echo "golangci-lint found some code style issues." \
 		exit 1; \
