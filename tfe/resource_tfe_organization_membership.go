@@ -119,7 +119,7 @@ func resourceTFEOrganizationMembershipDelete(d *schema.ResourceData, meta interf
 }
 
 func resourceTFEOrganizationMembershipImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Import formats:
 	//  - <ORGANIZATION MEMBERSHIP ID>
@@ -133,7 +133,7 @@ func resourceTFEOrganizationMembershipImporter(ctx context.Context, d *schema.Re
 	} else if len(s) == 2 {
 		org := s[0]
 		email := s[1]
-		orgMembership, err := fetchOrganizationMemberByNameOrEmail(ctx, tfeClient, org, "", email)
+		orgMembership, err := fetchOrganizationMemberByNameOrEmail(ctx, config.Client, org, "", email)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"error retrieving user with email %s from organization %s: %w", email, org, err)
