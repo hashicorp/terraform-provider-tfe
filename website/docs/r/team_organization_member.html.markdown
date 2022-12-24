@@ -47,9 +47,13 @@ The following arguments are supported:
 
 ## Import
 
-A team member can be imported; use `<TEAM ID>/<ORGANIZATION MEMBERSHIP ID>`
+A team member can be imported; use `<TEAM ID>/<ORGANIZATION MEMBERSHIP ID>` or `<ORGANIZATION NAME>/<TEAM NAME>/<USER EMAIL>`
 as the import ID. For example:
 
 ```shell
 terraform import tfe_team_organization_member.test team-47qC3LmA47piVan7/ou-2342390sdf0jj
+```
+or
+```shell
+terraform import tfe_team_organization_member.test my-org-name/my-team-name/user@company.com
 ```

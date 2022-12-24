@@ -245,17 +245,41 @@ func resourceTFETeamDelete(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceTFETeamImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	// Import formats:
+	//  - <ORGANIZATION NAME>/<TEAM ID>
+	//  - <ORGANIZATION NAME>/<TEAM NAME>
 	s := strings.SplitN(d.Id(), "/", 2)
 	if len(s) != 2 {
 		return nil, fmt.Errorf(
-			"invalid team import format: %s (expected <ORGANIZATION>/<TEAM ID>)",
+			"invalid team import format: %s (expected <ORGANIZATION>/<TEAM ID> or <ORGANIZATION>/<TEAM NAME>)",
 			d.Id(),
 		)
 	}
 
-	// Set the fields that are part of the import ID.
-	d.Set("organization", s[0])
-	d.SetId(s[1])
+	orgName := s[0]
+	teamNameOrId := s[1]
 
+	err := d.Set("organization", orgName)
+	if err != nil {
+		return nil, err
+	}
+
+	// we don't know if the second piece of the import is an ID or a team name. If it is an ID we should be able to read
+	// the team by that ID
+	tfeClient := meta.(*tfe.Client)
+	if isResourceIdFormat("team", teamNameOrId) {
+		team, err := tfeClient.Teams.Read(ctx, teamNameOrId)
+		if err == nil {
+			d.SetId(team.ID)
+			return []*schema.ResourceData{d}, nil
+		}
+	}
+
+	// a team does not exist (or cannot be found) with the ID s[1]...check if it is the team name instead
+	team, err := fetchTeamByName(ctx, tfeClient, orgName, teamNameOrId)
+	if err != nil {
+		return nil, fmt.Errorf("no team found with name or ID %s in organization %s: %w", teamNameOrId, orgName, err)
+	}
+	d.SetId(team.ID)
 	return []*schema.ResourceData{d}, nil
 }

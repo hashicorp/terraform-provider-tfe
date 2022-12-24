@@ -3,6 +3,7 @@ package tfe
 import (
 	"fmt"
 	"math/rand"
+	"regexp"
 	"testing"
 	"time"
 
@@ -167,7 +168,7 @@ func TestAccTFETeam_full_update(t *testing.T) {
 	})
 }
 
-func TestAccTFETeam_import(t *testing.T) {
+func TestAccTFETeam_import_byId(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -184,6 +185,162 @@ func TestAccTFETeam_import(t *testing.T) {
 				ImportState:         true,
 				ImportStateIdPrefix: fmt.Sprintf("tst-terraform-%d/", rInt),
 				ImportStateVerify:   true,
+			},
+		},
+	})
+}
+
+func TestAccTFETeam_import_byId_doesNotExist(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeam_basic(rInt),
+			},
+
+			{
+				ResourceName:  "tfe_team.foobar",
+				ImportState:   true,
+				ImportStateId: fmt.Sprintf("tst-terraform-%d/team-1234567891234567", rInt),
+				ExpectError:   regexp.MustCompile("no team found with name or ID team-1234567891234567 in organization"),
+			},
+		},
+	})
+}
+
+func TestAccTFETeam_import_byName(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeam_basic(rInt),
+			},
+
+			{
+				ResourceName:      "tfe_team.foobar",
+				ImportState:       true,
+				ImportStateId:     fmt.Sprintf("tst-terraform-%d/team-test", rInt),
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccTFETeam_import_missingOrg(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeam_basic(rInt),
+			},
+
+			{
+				ResourceName:  "tfe_team.foobar",
+				ImportState:   true,
+				ImportStateId: "wrongOrg/team-test",
+				ExpectError:   regexp.MustCompile("no team found with name or ID .* in organization wrongOrg"),
+			},
+		},
+	})
+}
+
+func TestAccTFETeam_import_missingTeam(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeam_basic(rInt),
+			},
+
+			{
+				ResourceName:  "tfe_team.foobar",
+				ImportState:   true,
+				ImportStateId: fmt.Sprintf("tst-terraform-%d/wrongTeam", rInt),
+				ExpectError:   regexp.MustCompile("no team found with name or ID wrongTeam"),
+			},
+		},
+	})
+}
+
+func TestAccTFETeam_import_teamNameWithSpaces(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeam_withSpaces(rInt),
+			},
+
+			{
+				ResourceName:      "tfe_team.foobar",
+				ImportState:       true,
+				ImportStateId:     fmt.Sprintf("tst-terraform-%d/team name with spaces", rInt),
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccTFETeam_import_teamNameWithSlashes(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeam_withSlashes(rInt),
+			},
+
+			{
+				ResourceName:      "tfe_team.foobar",
+				ImportState:       true,
+				ImportStateId:     fmt.Sprintf("tst-terraform-%d/team/name/with/slashes", rInt),
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccTFETeam_import_teamNameWhichLooksLikeID(t *testing.T) {
+	// Check that we can import a team with a name which looks like a team ID
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeam_withIDLikeName(rInt),
+			},
+
+			{
+				ResourceName:      "tfe_team.foobar",
+				ImportState:       true,
+				ImportStateId:     fmt.Sprintf("tst-terraform-%d/team-aaaabbbbcccc", rInt),
+				ImportStateVerify: true,
 			},
 		},
 	})
@@ -388,6 +545,45 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_team" "foobar" {
   name         = "team-test-1"
+  organization = tfe_organization.foobar.id
+}`, rInt)
+}
+
+func testAccTFETeam_withSpaces(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team name with spaces"
+  organization = tfe_organization.foobar.id
+}`, rInt)
+}
+
+func testAccTFETeam_withSlashes(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team/name/with/slashes"
+  organization = tfe_organization.foobar.id
+}`, rInt)
+}
+
+func testAccTFETeam_withIDLikeName(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-aaaabbbbcccc"
   organization = tfe_organization.foobar.id
 }`, rInt)
 }

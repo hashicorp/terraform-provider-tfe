@@ -1,6 +1,7 @@
 package tfe
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -15,7 +16,7 @@ func resourceTFETeamOrganizationMember() *schema.Resource {
 		Read:   resourceTFETeamOrganizationMemberRead,
 		Delete: resourceTFETeamOrganizationMemberDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: resourceTFETeamOrganizationMemberImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -131,4 +132,41 @@ func unpackTeamOrganizationMemberID(id string) (teamID, organizationMembershipID
 	}
 
 	return s[0], s[1], nil
+}
+
+func resourceTFETeamOrganizationMemberImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	tfeClient := meta.(*tfe.Client)
+
+	// Import formats:
+	//  - <TEAM ID>/<ORGANIZATION MEMBERSHIP ID>
+	//  - <ORGANIZATION NAME>/<TEAM NAME>/<USER EMAIL>
+	s := strings.Split(d.Id(), "/")
+
+	if len(s) == 2 {
+		// the <TEAM ID>/<ORGANIZATION MEMBERSHIP ID> is the default ID, so pass it on through
+		return []*schema.ResourceData{d}, nil
+	} else if len(s) == 3 {
+		// the ID we want to construct is <TEAM ID>/<ORGANIZATION MEMBERSHIP ID>
+		// we can use org and email to get the org membership ID, and find the team based on org and team name
+		org := s[0]
+		teamName := s[1]
+		email := s[2]
+		orgMembership, err := fetchOrganizationMemberByNameOrEmail(ctx, tfeClient, org, "", email)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"error retrieving user with email %s from organization %s: %w", email, org, err)
+		}
+		team, err := fetchTeamByName(ctx, tfeClient, org, teamName)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"error retrieving team with name %s from organization %s: %w", teamName, org, err)
+		}
+
+		d.SetId(fmt.Sprintf("%s/%s", team.ID, orgMembership.ID))
+		return []*schema.ResourceData{d}, nil
+	}
+	return nil, fmt.Errorf(
+		"invalid organization membership input format: %s (expected <TEAM ID>/<ORGANIZATION MEMBERSHIP ID> or <ORGANIZATION NAME>/<TEAM NAME>/<USER EMAIL>)",
+		d.Id(),
+	)
 }
