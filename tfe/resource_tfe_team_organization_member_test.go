@@ -154,9 +154,9 @@ func TestAccTFETeamOrganizationMember_import_orgDoesNotExist(t *testing.T) {
 
 			{
 				ResourceName:  "tfe_team_organization_member.foobar",
-				ImportStateId: fmt.Sprintf("non-existant-org/%s/%s", teamName, userEmail),
+				ImportStateId: fmt.Sprintf("non-existent-org/%s/%s", teamName, userEmail),
 				ImportState:   true,
-				ExpectError:   regexp.MustCompile(fmt.Sprintf("error retrieving user with email %s from organization non-existant-org", userEmail)),
+				ExpectError:   regexp.MustCompile(fmt.Sprintf("error retrieving user with email %s from organization non-existent-org", userEmail)),
 			},
 		},
 	})
@@ -179,9 +179,9 @@ func TestAccTFETeamOrganizationMember_import_teamNameDoesNotExist(t *testing.T) 
 
 			{
 				ResourceName:  "tfe_team_organization_member.foobar",
-				ImportStateId: fmt.Sprintf("%s/non-existant-team/%s", orgName, userEmail),
+				ImportStateId: fmt.Sprintf("%s/non-existent-team/%s", orgName, userEmail),
 				ImportState:   true,
-				ExpectError:   regexp.MustCompile(fmt.Sprintf("error retrieving team with name non-existant-team from organization %s", orgName)),
+				ExpectError:   regexp.MustCompile(fmt.Sprintf("error retrieving team with name non-existent-team from organization %s", orgName)),
 			},
 		},
 	})
@@ -204,9 +204,9 @@ func TestAccTFETeamOrganizationMember_import_userEmailDoesNotExist(t *testing.T)
 
 			{
 				ResourceName:  "tfe_team_organization_member.foobar",
-				ImportStateId: fmt.Sprintf("%s/%s/non-existant-email", orgName, teamName),
+				ImportStateId: fmt.Sprintf("%s/%s/non-existent-email", orgName, teamName),
 				ImportState:   true,
-				ExpectError:   regexp.MustCompile(fmt.Sprintf("error retrieving user with email non-existant-email from organization %s", orgName)),
+				ExpectError:   regexp.MustCompile(fmt.Sprintf("error retrieving user with email non-existent-email from organization %s", orgName)),
 			},
 		},
 	})

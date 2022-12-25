@@ -7,7 +7,7 @@ import (
 
 // Checks if a given string matches the typical ID format for a TFC/E ressource
 // <resource specific prefix>-<16 base58 characters  >
-func isResourceIdFormat(resourcePrefix string, id string) bool {
+func isResourceIDFormat(resourcePrefix string, id string) bool {
 	base58Regex, err := regexp.Compile(fmt.Sprintf("^%s-[1-9A-HJ-NP-Za-km-z]{16}$", resourcePrefix))
 	if err != nil {
 		return false

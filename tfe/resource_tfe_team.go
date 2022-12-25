@@ -257,18 +257,18 @@ func resourceTFETeamImporter(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	orgName := s[0]
-	teamNameOrId := s[1]
+	teamNameOrID := s[1]
 
 	err := d.Set("organization", orgName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not set organization name %s on resource: %w", orgName, err)
 	}
 
 	// we don't know if the second piece of the import is an ID or a team name. If it is an ID we should be able to read
 	// the team by that ID
 	tfeClient := meta.(*tfe.Client)
-	if isResourceIdFormat("team", teamNameOrId) {
-		team, err := tfeClient.Teams.Read(ctx, teamNameOrId)
+	if isResourceIDFormat("team", teamNameOrID) {
+		team, err := tfeClient.Teams.Read(ctx, teamNameOrID)
 		if err == nil {
 			d.SetId(team.ID)
 			return []*schema.ResourceData{d}, nil
@@ -276,9 +276,9 @@ func resourceTFETeamImporter(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	// a team does not exist (or cannot be found) with the ID s[1]...check if it is the team name instead
-	team, err := fetchTeamByName(ctx, tfeClient, orgName, teamNameOrId)
+	team, err := fetchTeamByName(ctx, tfeClient, orgName, teamNameOrID)
 	if err != nil {
-		return nil, fmt.Errorf("no team found with name or ID %s in organization %s: %w", teamNameOrId, orgName, err)
+		return nil, fmt.Errorf("no team found with name or ID %s in organization %s: %w", teamNameOrID, orgName, err)
 	}
 	d.SetId(team.ID)
 	return []*schema.ResourceData{d}, nil
