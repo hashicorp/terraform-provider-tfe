@@ -3,6 +3,8 @@
 BUG FIXES:
 
 FEATURES:
+* r/tfe_team: Teams can now be imported using `<ORGANIZATION NAME>/<TEAM NAME>` ([#745](https://github.com/hashicorp/terraform-provider-tfe/pull/745))
+* r/tfe_team_organization_member: Team Organization Memberships can now be imported using `<ORGANIZATION NAME>/<TEAM NAME>/<USER EMAIL>` ([#745](https://github.com/hashicorp/terraform-provider-tfe/pull/745))
 
 ## v0.41.0 (January 4, 2023)
 
