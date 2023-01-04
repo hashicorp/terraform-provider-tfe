@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"unicode"
 
 	tfe "github.com/hashicorp/go-tfe"
 )
@@ -104,13 +103,4 @@ func readWorkspaceStateConsumers(id string, client *tfe.Client) (bool, []interfa
 	}
 
 	return false, remoteStateConsumerIDs, nil
-}
-
-func tagContainsUppercase(tag string) bool {
-	for _, c := range tag {
-		if unicode.IsUpper(c) {
-			return true
-		}
-	}
-	return false
 }

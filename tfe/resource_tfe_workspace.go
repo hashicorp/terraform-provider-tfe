@@ -35,18 +35,19 @@ func resourceTFEWorkspace() *schema.Resource {
 
 		CustomizeDiff: func(c context.Context, d *schema.ResourceDiff, meta interface{}) error {
 			// NOTE: execution mode must be set to default first before calling the validation functions
-			err := setExecutionModeDefault(c, d)
-			if err != nil {
+			if err := setExecutionModeDefault(c, d); err != nil {
 				return err
 			}
 
-			err = validateAgentExecution(c, d)
-			if err != nil {
+			if err := validateAgentExecution(c, d); err != nil {
 				return err
 			}
 
-			err = validateRemoteState(c, d)
-			if err != nil {
+			if err := validateRemoteState(c, d); err != nil {
+				return err
+			}
+
+			if err := validateTagNames(c, d); err != nil {
 				return err
 			}
 
@@ -333,12 +334,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 
 	for _, tagName := range d.Get("tag_names").(*schema.Set).List() {
 		name := tagName.(string)
-		if len(strings.TrimSpace(name)) != 0 {
-			if tagContainsUppercase(name) {
-				warnWorkspaceTagsCasing(ctx, name)
-			}
-			options.Tags = append(options.Tags, &tfe.Tag{Name: name})
-		}
+		options.Tags = append(options.Tags, &tfe.Tag{Name: name})
 	}
 
 	log.Printf("[DEBUG] Create workspace %s for organization: %s", name, organization)
@@ -627,9 +623,6 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 
 			for _, tagName := range newTagNames.List() {
 				name := tagName.(string)
-				if tagContainsUppercase(name) {
-					warnWorkspaceTagsCasing(ctx, name)
-				}
 				addTags = append(addTags, &tfe.Tag{Name: name})
 			}
 
@@ -798,6 +791,36 @@ func validateAgentExecution(_ context.Context, d *schema.ResourceDiff) error {
 	return nil
 }
 
+func validTagName(tag string) bool {
+	// Tags are re-validated here because the API will accept uppercase letters and automatically
+	// downcase them, causing resource drift. It's better to catch this issue during the plan phase
+	//
+	//     \A            match beginning of string
+	//     [a-z0-9]      match a letter or number for the first char; case insensitive
+	//     (?:           start non-capture group; used to group sub-expressions; will not capture/store, interally
+	//       [a-z0-9_:-]*     match 0 or more letter, number, colon, or hyphen
+	//       [a-z0-9]    match a letter or number as the final character when this group is present
+	//     )?            end non-capture group; ? is quantifier; matches 0 or 1 instances of the non-capture group in preceding set
+	//     \z            match end of string; requires last char to match preceding subset; in this case, an alphanumeric char
+	tagPattern := regexp.MustCompile(`\A[a-z0-9](?:[a-z0-9_:-]*[a-z0-9])?\z`)
+	return tagPattern.MatchString(tag)
+}
+
+func validateTagNames(_ context.Context, d *schema.ResourceDiff) error {
+	names, ok := d.GetOk("tag_names")
+	if !ok {
+		return nil
+	}
+
+	for _, t := range names.(*schema.Set).List() {
+		tagName := t.(string)
+		if !validTagName(tagName) {
+			return fmt.Errorf("%q is not a valid tag name. Tag must be one or more characters; can include lowercase letters, numbers, colons, hyphens, and underscores; and must begin and end with a letter or number", tagName)
+		}
+	}
+	return nil
+}
+
 func validateRemoteState(_ context.Context, d *schema.ResourceDiff) error {
 	// If remote state consumers aren't set, the global setting can be either value and it
 	// doesn't matter.
@@ -807,7 +830,7 @@ func validateRemoteState(_ context.Context, d *schema.ResourceDiff) error {
 	}
 
 	if globalRemoteState, ok := d.GetOk("global_remote_state"); ok {
-		if globalRemoteState.(bool) == true {
+		if globalRemoteState.(bool) {
 			return fmt.Errorf("global_remote_state must be 'false' when setting remote_state_consumer_ids")
 		}
 	}
@@ -837,15 +860,10 @@ func resourceTFEWorkspaceImporter(ctx context.Context, d *schema.ResourceData, m
 	return []*schema.ResourceData{d}, nil
 }
 
-// Warns the user that a workspace tag containing uppercase characters will be downcased.
-func warnWorkspaceTagsCasing(ctx context.Context, tag string) {
-	log.Printf("[WARN] The tag \"%s\" contains uppercase characters that will be transformed by the API. Please update your configuration to lowercase tags in order to avoid conflicts with state.", tag)
-}
-
 func errWorkspaceSafeDeleteWithPermission(workspaceID string, err error) error {
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "conflict") {
-			return fmt.Errorf("Error deleting workspace %s: %w\nTo delete this workspace without destroying the managed resources, add force_delete = true to the resource config.", workspaceID, err)
+			return fmt.Errorf("error deleting workspace %s: %w\nTo delete this workspace without destroying the managed resources, add force_delete = true to the resource config", workspaceID, err)
 		}
 	}
 	return nil
@@ -854,7 +872,7 @@ func errWorkspaceSafeDeleteWithPermission(workspaceID string, err error) error {
 func errWorkspaceResourceCountCheck(workspaceID string, resourceCount int) error {
 	if resourceCount > 0 {
 		return fmt.Errorf(
-			"Error deleting workspace %s: This workspace has %v resources under management and must be force deleted by setting force_delete = true", workspaceID, resourceCount)
+			"error deleting workspace %s: This workspace has %v resources under management and must be force deleted by setting force_delete = true", workspaceID, resourceCount)
 	}
 	return nil
 }

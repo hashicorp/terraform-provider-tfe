@@ -114,6 +114,33 @@ func TestAccTFEWorkspace_customProject(t *testing.T) {
 	})
 }
 
+func TestTagValidation(t *testing.T) {
+	testCases := []struct {
+		tag   string
+		valid bool
+	}{
+		{"hello-world", true},
+		{"-helloworld", false},
+		{"H1", false},
+		{"h1", true},
+		{"1h", true},
+		{"1H", false},
+		{"aStater", false},
+		{"new_Cap", false},
+		{"new_cap-laugh", true},
+	}
+
+	for _, c := range testCases {
+		if validTagName(c.tag) != c.valid {
+			explain := "an invalid"
+			if c.valid {
+				explain = "a valid"
+			}
+			t.Errorf("expected %q to be %s tag", c.tag, explain)
+		}
+	}
+}
+
 func TestAccTFEWorkspace_panic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -1216,6 +1243,11 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "tag_names.1", "test"),
 				),
+			},
+			{
+				// bad tags
+				Config:      testAccTFEWorkspace_basicBadTag(rInt),
+				ExpectError: regexp.MustCompile(`"-Hello" is not a valid tag name.`),
 			},
 		},
 	})
@@ -2532,6 +2564,21 @@ resource "tfe_workspace" "foobar" {
   organization       = tfe_organization.foobar.id
   auto_apply         = true
   tag_names          = []
+}`, rInt)
+}
+
+func testAccTFEWorkspace_basicBadTag(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name               = "workspace-test"
+  organization       = tfe_organization.foobar.id
+  auto_apply         = true
+  tag_names          = ["-Hello"]
 }`, rInt)
 }
 
