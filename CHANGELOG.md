@@ -1,11 +1,12 @@
-## Unreleased
+## v0.41.0 (January 4, 2023)
 
 BUG FIXES:
-* d/tfe_workspace_ids: When no wildcard matchers were used in the names argument a substring match was being performed anyway @brandonc ([#752](https://github.com/hashicorp/terraform-provider-tfe/pull/752))
+* d/tfe_workspace_ids: When no wildcards were used in the names argument a substring match was being performed anyway @brandonc ([#752](https://github.com/hashicorp/terraform-provider-tfe/pull/752))
 
 FEATURES:
 * r/tfe_workspace: Add attribute `resource_count` to `tfe_workspace` by @rhughes1 ([#682](https://github.com/hashicorp/terraform-provider-tfe/pull/682))
-* d/tfe_outputs: Add `nonsensitive_values` attribute to expose current non-sensitive outputs of a given workspace ([#711](https://github.com/hashicorp/terraform-provider-tfe/pull/711))
+* d/tfe_outputs: Add `nonsensitive_values` attribute to expose current non-sensitive outputs of a given workspace @Uk1288 ([#711](https://github.com/hashicorp/terraform-provider-tfe/pull/711))
+* r/tfe_workspace: Adds validation to tag_names argument to ensure tags are lowercase and don't contain invalid characters @brandonc ([#743](https://github.com/hashicorp/terraform-provider-tfe/pull/743))
 
 ## v0.40.0 (December 6, 2022)
 
