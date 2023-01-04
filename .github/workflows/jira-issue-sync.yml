@@ -62,14 +62,16 @@ jobs:
           issue: ${{ steps.search.outputs.issue }}
           comment: "${{ github.actor }} ${{ github.event.review.state || 'commented' }}:\n\n${{ github.event.comment.body || github.event.review.body }}\n\n${{ github.event.comment.html_url || github.event.review.html_url }}"
 
-      - name: Close ticket
+      - name: Close issue
         if: ( github.event.action == 'closed' || github.event.action == 'deleted' ) && steps.search.outputs.issue
-        uses: atlassian/gajira-transition@v3
+        uses: brandonc/gajira-transition@master
         with:
           issue: ${{ steps.search.outputs.issue }}
           transition: "Closed"
+          fields: |
+            { "resolution": "${{ github.event.issue.marked_as_duplicate && 'Won't Do' || 'Done' }}" }
 
-      - name: Reopen ticket
+      - name: Reopen issue
         if: github.event.action == 'reopened' && steps.search.outputs.issue
         uses: atlassian/gajira-transition@v3
         with:
