@@ -798,11 +798,11 @@ func validTagName(tag string) bool {
 	//     \A            match beginning of string
 	//     [a-z0-9]      match a letter or number for the first char; case insensitive
 	//     (?:           start non-capture group; used to group sub-expressions; will not capture/store, interally
-	//       [\w:-]*     match 0 or more letter, number, colon, or hyphen
+	//       [a-z0-9_:-]*     match 0 or more letter, number, colon, or hyphen
 	//       [a-z0-9]    match a letter or number as the final character when this group is present
 	//     )?            end non-capture group; ? is quantifier; matches 0 or 1 instances of the non-capture group in preceding set
 	//     \z            match end of string; requires last char to match preceding subset; in this case, an alphanumeric char
-	tagPattern := regexp.MustCompile(`\A[a-z0-9](?:[\w:-]*[a-z0-9])?\z`)
+	tagPattern := regexp.MustCompile(`\A[a-z0-9](?:[a-z0-9_:-]*[a-z0-9])?\z`)
 	return tagPattern.MatchString(tag)
 }
 
@@ -815,7 +815,7 @@ func validateTagNames(_ context.Context, d *schema.ResourceDiff) error {
 	for _, t := range names.(*schema.Set).List() {
 		tagName := t.(string)
 		if !validTagName(tagName) {
-			return fmt.Errorf("%q is not a valid tag name. Tag must be one or more characters; can include letters, numbers, colons, hyphens, and underscores; and must begin and end with a letter or number", tagName)
+			return fmt.Errorf("%q is not a valid tag name. Tag must be one or more characters; can include lowercase letters, numbers, colons, hyphens, and underscores; and must begin and end with a letter or number", tagName)
 		}
 	}
 	return nil

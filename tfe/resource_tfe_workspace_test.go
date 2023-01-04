@@ -125,6 +125,9 @@ func TestTagValidation(t *testing.T) {
 		{"h1", true},
 		{"1h", true},
 		{"1H", false},
+		{"aStater", false},
+		{"new_Cap", false},
+		{"new_cap-laugh", true},
 	}
 
 	for _, c := range testCases {
