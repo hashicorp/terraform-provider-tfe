@@ -56,7 +56,7 @@ func includedByName(names map[string]bool, workspaceName string) bool {
 		case len(name) == 0:
 			continue
 		case !strings.HasPrefix(name, "*") && !strings.HasSuffix(name, "*"):
-			if strings.Contains(workspaceName, name) {
+			if name == workspaceName {
 				return true
 			}
 		case strings.HasPrefix(name, "*") && strings.HasSuffix(name, "*"):

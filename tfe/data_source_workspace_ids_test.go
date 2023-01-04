@@ -214,6 +214,43 @@ func TestAccTFEWorkspaceIDsDataSource_suffixWildcard(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspaceIDsDataSource_noMatch(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+	fooWorkspaceName := "workspace-foo"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspaceIDsDataSourceConfig_wildcard(rInt, fooWorkspaceName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					// names attribute
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_ids.foobar", "names.#", "1"),
+
+					// organization attribute
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_ids.foobar", "organization", orgName),
+
+					// full_names attribute
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_ids.foobar", "full_names.%", "0"),
+
+					// ids attribute
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_ids.foobar", "ids.%", "0"),
+
+					// id attribute
+					resource.TestCheckResourceAttrSet("data.tfe_workspace_ids.foobar", "id"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEWorkspaceIDsDataSource_substringWildcard(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
