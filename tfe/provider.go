@@ -72,6 +72,12 @@ func Provider() *schema.Provider {
 				Optional:    true,
 				Description: descriptions["ssl_skip_verify"],
 			},
+
+			"default_organization": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: descriptions["default_organization"],
+			},
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
@@ -521,6 +527,8 @@ var descriptions = map[string]string{
 	"token": "The token used to authenticate with Terraform Enterprise. We recommend omitting\n" +
 		"the token which can be set as credentials in the CLI config file.",
 	"ssl_skip_verify": "Whether or not to skip certificate verifications.",
+	"default_organization": "The organization to apply to a resource if one is not defined on\n" +
+		"the resource itself",
 }
 
 // A commonly used helper method to check if the error
