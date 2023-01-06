@@ -29,12 +29,12 @@ issues:
     linters:
     - unused
     - deadcode
-  Exclude stylecheck underscore warnings in test files since most test files already follow this pattern
+  # Exclude stylecheck underscore warnings in test files since most test files already follow this pattern
   - linters:
       - stylecheck
     path: _test\.go
     text: "should not use underscores in Go names"
-  Exclude gocritic paramTypeCombine errors since it could make code less readable
+  # Exclude gocritic paramTypeCombine errors since it could make code less readable
   - linters:
       - gocritic
     text: "paramTypeCombine"
