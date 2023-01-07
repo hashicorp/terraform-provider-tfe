@@ -93,7 +93,7 @@ func resourceTFEOrganization() *schema.Resource {
 }
 
 func resourceTFEOrganizationCreate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the organization name.
 	name := d.Get("name").(string)
@@ -105,7 +105,7 @@ func resourceTFEOrganizationCreate(d *schema.ResourceData, meta interface{}) err
 	}
 
 	log.Printf("[DEBUG] Create new organization: %s", name)
-	org, err := tfeClient.Organizations.Create(ctx, options)
+	org, err := config.Client.Organizations.Create(ctx, options)
 	if err != nil {
 		return fmt.Errorf("Error creating the new organization %s: %w", name, err)
 	}
@@ -116,10 +116,10 @@ func resourceTFEOrganizationCreate(d *schema.ResourceData, meta interface{}) err
 }
 
 func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read configuration of organization: %s", d.Id())
-	org, err := tfeClient.Organizations.Read(ctx, d.Id())
+	org, err := config.Client.Organizations.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] Organization %s no longer exists", d.Id())
@@ -151,7 +151,7 @@ func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error
 }
 
 func resourceTFEOrganizationUpdate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Create a new options struct.
 	options := tfe.OrganizationUpdateOptions{
@@ -200,7 +200,7 @@ func resourceTFEOrganizationUpdate(d *schema.ResourceData, meta interface{}) err
 	}
 
 	log.Printf("[DEBUG] Update configuration of organization: %s", d.Id())
-	org, err := tfeClient.Organizations.Update(ctx, d.Id(), options)
+	org, err := config.Client.Organizations.Update(ctx, d.Id(), options)
 	if err != nil {
 		return fmt.Errorf("Error updating organization %s: %w", d.Id(), err)
 	}
@@ -211,10 +211,10 @@ func resourceTFEOrganizationUpdate(d *schema.ResourceData, meta interface{}) err
 }
 
 func resourceTFEOrganizationDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete organization: %s", d.Id())
-	err := tfeClient.Organizations.Delete(ctx, d.Id())
+	err := config.Client.Organizations.Delete(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil

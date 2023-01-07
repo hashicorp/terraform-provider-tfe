@@ -20,13 +20,13 @@ func getOrgSweeper(name string) *resource.Sweeper {
 	return &resource.Sweeper{
 		Name: name,
 		F: func(ununsed string) error {
-			client, err := getClientUsingEnv()
+			tfeClient, err := getClientUsingEnv()
 			if err != nil {
 				return fmt.Errorf("Error getting client: %w", err)
 			}
 
 			ctx := context.TODO()
-			orgList, err := client.Organizations.List(ctx, &tfe.OrganizationListOptions{})
+			orgList, err := tfeClient.Organizations.List(ctx, &tfe.OrganizationListOptions{})
 			if err != nil {
 				return fmt.Errorf("Error listing organizations: %w", err)
 			}
@@ -34,7 +34,7 @@ func getOrgSweeper(name string) *resource.Sweeper {
 				log.Printf("[DEBUG] Testing if org %s starts with tst-terraform or named terraform-updated", org.Name)
 				if strings.HasPrefix(org.Name, "tst-terraform") {
 					log.Printf("[DEBUG] deleting org %s", org.Name)
-					err = client.Organizations.Delete(ctx, org.Name)
+					err = tfeClient.Organizations.Delete(ctx, org.Name)
 					if err != nil {
 						return fmt.Errorf("Error deleting organization %q %w", org.Name, err)
 					}

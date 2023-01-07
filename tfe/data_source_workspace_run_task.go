@@ -40,7 +40,7 @@ func dataSourceTFEWorkspaceRunTask() *schema.Resource {
 }
 
 func dataSourceTFEWorkspaceRunTaskRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	workspaceID := d.Get("workspace_id").(string)
 	taskID := d.Get("task_id").(string)
@@ -48,7 +48,7 @@ func dataSourceTFEWorkspaceRunTaskRead(d *schema.ResourceData, meta interface{})
 	// Create an options struct.
 	options := &tfe.WorkspaceRunTaskListOptions{}
 	for {
-		list, err := tfeClient.WorkspaceRunTasks.List(ctx, workspaceID, options)
+		list, err := config.Client.WorkspaceRunTasks.List(ctx, workspaceID, options)
 		if err != nil {
 			return fmt.Errorf("Error retrieving tasks for workspace %s: %w", workspaceID, err)
 		}

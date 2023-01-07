@@ -3,10 +3,11 @@ package tfe
 import (
 	"context"
 	"errors"
+	"log"
+
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"log"
 )
 
 func resourceTFEProject() *schema.Resource {
@@ -35,7 +36,7 @@ func resourceTFEProject() *schema.Resource {
 }
 
 func resourceTFEProjectCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	organizationName := d.Get("organization").(string)
 	name := d.Get("name").(string)
@@ -45,7 +46,7 @@ func resourceTFEProjectCreate(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	log.Printf("[DEBUG] Create new project: %s", name)
-	project, err := tfeClient.Projects.Create(ctx, organizationName, options)
+	project, err := config.Client.Projects.Create(ctx, organizationName, options)
 	if err != nil {
 		return diag.Errorf("Error creating the new project %s: %v", name, err)
 	}
@@ -56,10 +57,10 @@ func resourceTFEProjectCreate(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func resourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read configuration of project: %s", d.Id())
-	project, err := tfeClient.Projects.Read(ctx, d.Id())
+	project, err := config.Client.Projects.Read(ctx, d.Id())
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			log.Printf("[DEBUG] Project %s no longer exists", d.Id())
@@ -76,14 +77,14 @@ func resourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta in
 }
 
 func resourceTFEProjectUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	options := tfe.ProjectUpdateOptions{
 		Name: tfe.String(d.Get("name").(string)),
 	}
 
 	log.Printf("[DEBUG] Update configuration of project: %s", d.Id())
-	project, err := tfeClient.Projects.Update(ctx, d.Id(), options)
+	project, err := config.Client.Projects.Update(ctx, d.Id(), options)
 	if err != nil {
 		return diag.Errorf("Error updating project %s: %v", d.Id(), err)
 	}
@@ -94,10 +95,10 @@ func resourceTFEProjectUpdate(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func resourceTFEProjectDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete project: %s", d.Id())
-	err := tfeClient.Projects.Delete(ctx, d.Id())
+	err := config.Client.Projects.Delete(ctx, d.Id())
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			return nil

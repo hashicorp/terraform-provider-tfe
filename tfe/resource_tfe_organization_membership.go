@@ -44,7 +44,7 @@ func resourceTFEOrganizationMembership() *schema.Resource {
 }
 
 func resourceTFEOrganizationMembershipCreate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the email and organization.
 	email := d.Get("email").(string)
@@ -56,7 +56,7 @@ func resourceTFEOrganizationMembershipCreate(d *schema.ResourceData, meta interf
 	}
 
 	log.Printf("[DEBUG] Create membership %s for organization: %s", email, organization)
-	membership, err := tfeClient.OrganizationMemberships.Create(ctx, organization, options)
+	membership, err := config.Client.OrganizationMemberships.Create(ctx, organization, options)
 	if err != nil {
 		return fmt.Errorf(
 			"Error creating membership %s for organization %s: %w", email, organization, err)
@@ -68,14 +68,14 @@ func resourceTFEOrganizationMembershipCreate(d *schema.ResourceData, meta interf
 }
 
 func resourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	options := tfe.OrganizationMembershipReadOptions{
 		Include: []tfe.OrgMembershipIncludeOpt{tfe.OrgMembershipUser},
 	}
 
 	log.Printf("[DEBUG] Read configuration of membership: %s", d.Id())
-	membership, err := tfeClient.OrganizationMemberships.ReadWithOptions(ctx, d.Id(), options)
+	membership, err := config.Client.OrganizationMemberships.ReadWithOptions(ctx, d.Id(), options)
 
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
@@ -95,10 +95,10 @@ func resourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interfac
 }
 
 func resourceTFEOrganizationMembershipDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete membership: %s", d.Id())
-	err := tfeClient.OrganizationMemberships.Delete(ctx, d.Id())
+	err := config.Client.OrganizationMemberships.Delete(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil

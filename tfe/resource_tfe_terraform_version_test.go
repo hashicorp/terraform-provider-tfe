@@ -112,7 +112,7 @@ func TestAccTFETerraformVersion_full(t *testing.T) {
 }
 
 func testAccCheckTFETerraformVersionDestroy(s *terraform.State) error {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	config := testAccProvider.Meta().(ConfiguredClient)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_terraform_version" {
@@ -123,7 +123,7 @@ func testAccCheckTFETerraformVersionDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := tfeClient.Admin.TerraformVersions.Read(ctx, rs.Primary.ID)
+		_, err := config.Client.Admin.TerraformVersions.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Terraform version %s still exists", rs.Primary.ID)
 		}
@@ -134,7 +134,7 @@ func testAccCheckTFETerraformVersionDestroy(s *terraform.State) error {
 
 func testAccCheckTFETerraformVersionExists(n string, tfVersion *tfe.AdminTerraformVersion) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -145,7 +145,7 @@ func testAccCheckTFETerraformVersionExists(n string, tfVersion *tfe.AdminTerrafo
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		v, err := tfeClient.Admin.TerraformVersions.Read(ctx, rs.Primary.ID)
+		v, err := config.Client.Admin.TerraformVersions.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}

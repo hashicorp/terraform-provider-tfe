@@ -36,7 +36,7 @@ func resourceTFETeamOrganizationMembers() *schema.Resource {
 }
 
 func resourceTFETeamOrganizationMembersCreate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the team ID.
 	teamID := d.Get("team_id").(string)
@@ -53,7 +53,7 @@ func resourceTFETeamOrganizationMembersCreate(d *schema.ResourceData, meta inter
 	}
 
 	log.Printf("[DEBUG] Add organization memberships %v to team: %s", organizationMembershipIDs, teamID)
-	err := tfeClient.TeamMembers.Add(ctx, teamID, options)
+	err := config.Client.TeamMembers.Add(ctx, teamID, options)
 	if err != nil {
 		return fmt.Errorf("Error adding organization memberships %v to team %s: %w", organizationMembershipIDs, teamID, err)
 	}
@@ -64,10 +64,10 @@ func resourceTFETeamOrganizationMembersCreate(d *schema.ResourceData, meta inter
 }
 
 func resourceTFETeamOrganizationMembersRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read organization memberships from team: %s", d.Id())
-	organizationMemberships, err := tfeClient.TeamMembers.ListOrganizationMemberships(ctx, d.Id())
+	organizationMemberships, err := config.Client.TeamMembers.ListOrganizationMemberships(ctx, d.Id())
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			log.Printf("[DEBUG] Organization memberships for team %s do no longer exist", d.Id())
@@ -95,8 +95,8 @@ func resourceTFETeamOrganizationMembersRead(d *schema.ResourceData, meta interfa
 	return nil
 }
 
-func fetchExistingTeamMembershipIds(tfeClient *tfe.Client, teamID string) (map[string]interface{}, error) {
-	teamMembers, err := tfeClient.TeamMembers.ListOrganizationMemberships(ctx, teamID)
+func fetchExistingTeamMembershipIds(config *tfe.Client, teamID string) (map[string]interface{}, error) {
+	teamMembers, err := config.TeamMembers.ListOrganizationMemberships(ctx, teamID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch existing organization memberships for team %s: %w", teamID, err)
 	}
@@ -110,7 +110,7 @@ func fetchExistingTeamMembershipIds(tfeClient *tfe.Client, teamID string) (map[s
 }
 
 func resourceTFETeamOrganizationMembersUpdate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	var membershipIDsToDelete *schema.Set
 	var membershipIDsToAdd *schema.Set
@@ -132,7 +132,7 @@ func resourceTFETeamOrganizationMembersUpdate(d *schema.ResourceData, meta inter
 		}
 
 		log.Printf("[DEBUG] Add organization memberships %v to team: %s", options.OrganizationMembershipIDs, d.Id())
-		err := tfeClient.TeamMembers.Add(ctx, d.Id(), options)
+		err := config.Client.TeamMembers.Add(ctx, d.Id(), options)
 		if err != nil {
 			return fmt.Errorf("Error adding organization memberships to team %s: %w", d.Id(), err)
 		}
@@ -143,7 +143,7 @@ func resourceTFETeamOrganizationMembersUpdate(d *schema.ResourceData, meta inter
 	}
 
 	// Then delete all the old users.
-	existingIDs, err := fetchExistingTeamMembershipIds(tfeClient, d.Id())
+	existingIDs, err := fetchExistingTeamMembershipIds(config.Client, d.Id())
 	if err != nil {
 		return err
 	}
@@ -162,7 +162,7 @@ func resourceTFETeamOrganizationMembersUpdate(d *schema.ResourceData, meta inter
 
 	if len(options.OrganizationMembershipIDs) > 0 {
 		log.Printf("[DEBUG] Remove organization memberships %v from team: %s", options.OrganizationMembershipIDs, d.Id())
-		err = tfeClient.TeamMembers.Remove(ctx, d.Id(), options)
+		err = config.Client.TeamMembers.Remove(ctx, d.Id(), options)
 		if err != nil {
 			return fmt.Errorf("Error removing organization memberships from team %s: %w", d.Id(), err)
 		}
@@ -174,10 +174,10 @@ func resourceTFETeamOrganizationMembersUpdate(d *schema.ResourceData, meta inter
 }
 
 func resourceTFETeamOrganizationMembersDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read organization memberships from team: %s", d.Id())
-	organizationMemberships, err := tfeClient.TeamMembers.ListOrganizationMemberships(ctx, d.Id())
+	organizationMemberships, err := config.Client.TeamMembers.ListOrganizationMemberships(ctx, d.Id())
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			log.Printf("[DEBUG] Organization memberships for team %s do no longer exist", d.Id())
@@ -196,7 +196,7 @@ func resourceTFETeamOrganizationMembersDelete(d *schema.ResourceData, meta inter
 	}
 
 	log.Printf("[DEBUG] Remove organization memberships %v from team: %s", options.OrganizationMembershipIDs, d.Id())
-	err = tfeClient.TeamMembers.Remove(ctx, d.Id(), options)
+	err = config.Client.TeamMembers.Remove(ctx, d.Id(), options)
 	if err != nil {
 		return fmt.Errorf("Error removing organization membership %v to team %s: %w", options.OrganizationMembershipIDs, d.Id(), err)
 	}

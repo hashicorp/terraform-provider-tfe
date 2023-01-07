@@ -35,7 +35,7 @@ func resourceTFEAgentToken() *schema.Resource {
 }
 
 func resourceTFEAgentTokenCreate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the agent pool ID
 	agentPoolID := d.Get("agent_pool_id").(string)
@@ -49,7 +49,7 @@ func resourceTFEAgentTokenCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	log.Printf("[DEBUG] Create new agent token for agent pool ID: %s", agentPoolID)
-	agentToken, err := tfeClient.AgentTokens.Create(ctx, agentPoolID, options)
+	agentToken, err := config.Client.AgentTokens.Create(ctx, agentPoolID, options)
 	if err != nil {
 		return fmt.Errorf("Error creating agent token for agent pool ID %s: %w", agentPoolID, err)
 	}
@@ -64,10 +64,10 @@ func resourceTFEAgentTokenCreate(d *schema.ResourceData, meta interface{}) error
 }
 
 func resourceTFEAgentTokenRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read configuration of agent token: %s", d.Id())
-	agentToken, err := tfeClient.AgentTokens.Read(ctx, d.Id())
+	agentToken, err := config.Client.AgentTokens.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] agent token %s no longer exists", d.Id())
@@ -84,10 +84,10 @@ func resourceTFEAgentTokenRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceTFEAgentTokenDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete agent token: %s", d.Id())
-	err := tfeClient.AgentTokens.Delete(ctx, d.Id())
+	err := config.Client.AgentTokens.Delete(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil

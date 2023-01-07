@@ -250,7 +250,7 @@ func resourceTFEWorkspace() *schema.Resource {
 }
 
 func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the name and organization.
 	name := d.Get("name").(string)
@@ -338,7 +338,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	log.Printf("[DEBUG] Create workspace %s for organization: %s", name, organization)
-	workspace, err := tfeClient.Workspaces.Create(ctx, organization, options)
+	workspace, err := config.Client.Workspaces.Create(ctx, organization, options)
 	if err != nil {
 		return fmt.Errorf(
 			"Error creating workspace %s for organization %s: %w", name, organization, err)
@@ -347,7 +347,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 	d.SetId(workspace.ID)
 
 	if sshKeyID, ok := d.GetOk("ssh_key_id"); ok {
-		_, err = tfeClient.Workspaces.AssignSSHKey(ctx, workspace.ID, tfe.WorkspaceAssignSSHKeyOptions{
+		_, err = config.Client.Workspaces.AssignSSHKey(ctx, workspace.ID, tfe.WorkspaceAssignSSHKeyOptions{
 			SSHKeyID: tfe.String(sshKeyID.(string)),
 		})
 		if err != nil {
@@ -361,7 +361,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		for _, remoteStateConsumerID := range remoteStateConsumerIDs.(*schema.Set).List() {
 			options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: remoteStateConsumerID.(string)})
 		}
-		err = tfeClient.Workspaces.AddRemoteStateConsumers(ctx, workspace.ID, options)
+		err = config.Client.Workspaces.AddRemoteStateConsumers(ctx, workspace.ID, options)
 		if err != nil {
 			return fmt.Errorf("Error adding remote state consumers to workspace %s: %w", name, err)
 		}
@@ -371,11 +371,11 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 }
 
 func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	id := d.Id()
 	log.Printf("[DEBUG] Read configuration of workspace: %s", id)
-	workspace, err := tfeClient.Workspaces.ReadByID(ctx, id)
+	workspace, err := config.Client.Workspaces.ReadByID(ctx, id)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] Workspace %s no longer exists", id)
@@ -448,7 +448,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	if workspace.GlobalRemoteState {
 		d.Set("global_remote_state", true)
 	} else {
-		globalRemoteState, remoteStateConsumerIDs, err := readWorkspaceStateConsumers(id, tfeClient)
+		globalRemoteState, remoteStateConsumerIDs, err := readWorkspaceStateConsumers(id, config.Client)
 		if err != nil {
 			return fmt.Errorf(
 				"Error reading remote state consumers for workspace %s: %w", id, err)
@@ -462,7 +462,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 	id := d.Id()
 
 	if d.HasChange("name") || d.HasChange("auto_apply") || d.HasChange("queue_all_runs") ||
@@ -570,7 +570,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		if d.HasChange("vcs_repo") {
 			_, ok := d.GetOk("vcs_repo")
 			if !ok {
-				_, err := tfeClient.Workspaces.RemoveVCSConnectionByID(ctx, id)
+				_, err := config.Client.Workspaces.RemoveVCSConnectionByID(ctx, id)
 				if err != nil {
 					d.Partial(true)
 					return fmt.Errorf("Error removing VCS repo from workspace %s: %w", id, err)
@@ -579,7 +579,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		}
 
 		log.Printf("[DEBUG] Update workspace %s", id)
-		_, err := tfeClient.Workspaces.UpdateByID(ctx, id, options)
+		_, err := config.Client.Workspaces.UpdateByID(ctx, id, options)
 		if err != nil {
 			d.Partial(true)
 			return fmt.Errorf(
@@ -591,7 +591,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		sshKeyID := d.Get("ssh_key_id").(string)
 
 		if sshKeyID != "" {
-			_, err := tfeClient.Workspaces.AssignSSHKey(
+			_, err := config.Client.Workspaces.AssignSSHKey(
 				ctx,
 				id,
 				tfe.WorkspaceAssignSSHKeyOptions{
@@ -602,7 +602,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 				return fmt.Errorf("Error assigning SSH key to workspace %s: %w", id, err)
 			}
 		} else {
-			_, err := tfeClient.Workspaces.UnassignSSHKey(ctx, id)
+			_, err := config.Client.Workspaces.UnassignSSHKey(ctx, id)
 			if err != nil {
 				return fmt.Errorf("Error unassigning SSH key from workspace %s: %w", id, err)
 			}
@@ -627,7 +627,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			}
 
 			log.Printf("[DEBUG] Adding tags to workspace: %s", d.Id())
-			err := tfeClient.Workspaces.AddTags(ctx, d.Id(), tfe.WorkspaceAddTagsOptions{Tags: addTags})
+			err := config.Client.Workspaces.AddTags(ctx, d.Id(), tfe.WorkspaceAddTagsOptions{Tags: addTags})
 			if err != nil {
 				return fmt.Errorf("Error adding tags to workspace %s: %w", d.Id(), err)
 			}
@@ -642,7 +642,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			}
 
 			log.Printf("[DEBUG] Removing tags from workspace: %s", d.Id())
-			err := tfeClient.Workspaces.RemoveTags(ctx, d.Id(), tfe.WorkspaceRemoveTagsOptions{Tags: removeTags})
+			err := config.Client.Workspaces.RemoveTags(ctx, d.Id(), tfe.WorkspaceRemoveTagsOptions{Tags: removeTags})
 			if err != nil {
 				return fmt.Errorf("Error removing tags from workspace %s: %w", d.Id(), err)
 			}
@@ -667,7 +667,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			}
 
 			log.Printf("[DEBUG] Adding remote state consumers to workspace: %s", d.Id())
-			err := tfeClient.Workspaces.AddRemoteStateConsumers(ctx, d.Id(), options)
+			err := config.Client.Workspaces.AddRemoteStateConsumers(ctx, d.Id(), options)
 			if err != nil {
 				return fmt.Errorf("Error adding remote state consumers to workspace %s: %w", d.Id(), err)
 			}
@@ -682,7 +682,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			}
 
 			log.Printf("[DEBUG] Removing remote state consumers from workspace: %s", d.Id())
-			err := tfeClient.Workspaces.RemoveRemoteStateConsumers(ctx, d.Id(), options)
+			err := config.Client.Workspaces.RemoveRemoteStateConsumers(ctx, d.Id(), options)
 			if err != nil {
 				return fmt.Errorf("Error removing remote state consumers from workspace %s: %w", d.Id(), err)
 			}
@@ -693,12 +693,12 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 }
 
 func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 	id := d.Id()
 
 	log.Printf("[DEBUG] Delete workspace %s", id)
 
-	ws, err := tfeClient.Workspaces.ReadByID(ctx, id)
+	ws, err := config.Client.Workspaces.ReadByID(ctx, id)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil
@@ -712,20 +712,20 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 	// presence of Permissions.CanForceDelete will determine if current version of TFE supports safe deletes
 	if ws.Permissions.CanForceDelete == nil {
 		if forceDelete {
-			err = tfeClient.Workspaces.DeleteByID(ctx, id)
+			err = config.Client.Workspaces.DeleteByID(ctx, id)
 		} else {
 			return fmt.Errorf(
 				"Error deleting workspace %s: This workspace must be force deleted by setting force_delete=true", id)
 		}
 	} else if *ws.Permissions.CanForceDelete {
 		if forceDelete {
-			err = tfeClient.Workspaces.DeleteByID(ctx, id)
+			err = config.Client.Workspaces.DeleteByID(ctx, id)
 		} else {
 			err = errWorkspaceResourceCountCheck(id, ws.ResourceCount)
 			if err != nil {
 				return err
 			}
-			err = tfeClient.Workspaces.SafeDeleteByID(ctx, id)
+			err = config.Client.Workspaces.SafeDeleteByID(ctx, id)
 			return errWorkspaceSafeDeleteWithPermission(id, err)
 		}
 	} else {
@@ -737,7 +737,7 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 		if err != nil {
 			return err
 		}
-		err = tfeClient.Workspaces.SafeDeleteByID(ctx, id)
+		err = config.Client.Workspaces.SafeDeleteByID(ctx, id)
 	}
 
 	if err != nil {
@@ -839,7 +839,7 @@ func validateRemoteState(_ context.Context, d *schema.ResourceDiff) error {
 }
 
 func resourceTFEWorkspaceImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	s := strings.Split(d.Id(), "/")
 	if len(s) >= 3 {
@@ -848,7 +848,7 @@ func resourceTFEWorkspaceImporter(ctx context.Context, d *schema.ResourceData, m
 			d.Id(),
 		)
 	} else if len(s) == 2 {
-		workspaceID, err := fetchWorkspaceExternalID(s[0]+"/"+s[1], tfeClient)
+		workspaceID, err := fetchWorkspaceExternalID(s[0]+"/"+s[1], config.Client)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"error retrieving workspace with name %s from organization %s %w", s[1], s[0], err)

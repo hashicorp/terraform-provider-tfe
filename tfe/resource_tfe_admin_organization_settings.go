@@ -51,13 +51,13 @@ func resourceTFEAdminOrganizationSettings() *schema.Resource {
 }
 
 func resourceTFEAdminOrganizationSettingsRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the name.
 	name := d.Get("organization").(string)
 
 	log.Printf("[DEBUG] Read configuration of admin organization: %s", name)
-	org, err := tfeClient.Admin.Organizations.Read(ctx, name)
+	org, err := config.Client.Admin.Organizations.Read(ctx, name)
 	if err != nil {
 		return fmt.Errorf("failed to read admin organization %s: %w", name, err)
 	}
@@ -76,7 +76,7 @@ func resourceTFEAdminOrganizationSettingsRead(d *schema.ResourceData, meta inter
 
 		log.Printf("[DEBUG] Read configuration of module sharing for organization: %s", d.Id())
 		for {
-			consumerList, err := tfeClient.Admin.Organizations.ListModuleConsumers(ctx, d.Id(), options)
+			consumerList, err := config.Client.Admin.Organizations.ListModuleConsumers(ctx, d.Id(), options)
 			if err != nil {
 				if errors.Is(err, tfe.ErrResourceNotFound) {
 					log.Printf("[DEBUG] Organization %s does not longer exist", d.Id())
@@ -113,11 +113,11 @@ func resourceTFEAdminOrganizationSettingsDelete(d *schema.ResourceData, meta int
 }
 
 func resourceTFEAdminOrganizationSettingsUpdate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 	name := d.Get("organization").(string)
 	globalModuleSharing := d.Get("global_module_sharing").(bool)
 
-	_, err := tfeClient.Admin.Organizations.Update(ctx, name, tfe.AdminOrganizationUpdateOptions{
+	_, err := config.Client.Admin.Organizations.Update(ctx, name, tfe.AdminOrganizationUpdateOptions{
 		AccessBetaTools:     tfe.Bool(d.Get("access_beta_tools").(bool)),
 		GlobalModuleSharing: tfe.Bool(globalModuleSharing),
 		WorkspaceLimit:      tfe.Int(d.Get("workspace_limit").(int)),
@@ -145,7 +145,7 @@ func resourceTFEAdminOrganizationSettingsUpdate(d *schema.ResourceData, meta int
 			consumerOrgNames[i] = v.(string)
 		}
 
-		err = tfeClient.Admin.Organizations.UpdateModuleConsumers(ctx, name, consumerOrgNames)
+		err = config.Client.Admin.Organizations.UpdateModuleConsumers(ctx, name, consumerOrgNames)
 		if err != nil {
 			return fmt.Errorf("failed to update organization module consumers: %w", err)
 		}

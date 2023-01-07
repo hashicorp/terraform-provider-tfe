@@ -98,7 +98,7 @@ func resourceTFERegistryModule() *schema.Resource {
 }
 
 func resourceTFERegistryModuleCreateWithVCS(v interface{}, meta interface{}) (*tfe.RegistryModule, error) {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 	// Create module with VCS repo configuration block.
 	options := tfe.RegistryModuleCreateWithVCSConnectionOptions{}
 	vcsRepo := v.([]interface{})[0].(map[string]interface{})
@@ -110,7 +110,7 @@ func resourceTFERegistryModuleCreateWithVCS(v interface{}, meta interface{}) (*t
 	}
 
 	log.Printf("[DEBUG] Create registry module from repository %s", *options.VCSRepo.Identifier)
-	registryModule, err := tfeClient.RegistryModules.CreateWithVCSConnection(ctx, options)
+	registryModule, err := config.Client.RegistryModules.CreateWithVCSConnection(ctx, options)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"Error creating registry module from repository %s: %w", *options.VCSRepo.Identifier, err)
@@ -119,7 +119,7 @@ func resourceTFERegistryModuleCreateWithVCS(v interface{}, meta interface{}) (*t
 }
 
 func resourceTFERegistryModuleCreateWithoutVCS(meta interface{}, d *schema.ResourceData) (*tfe.RegistryModule, error) {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	options := tfe.RegistryModuleCreateOptions{
 		Name:     tfe.String(d.Get("name").(string)),
@@ -138,7 +138,7 @@ func resourceTFERegistryModuleCreateWithoutVCS(meta interface{}, d *schema.Resou
 	orgName := d.Get("organization").(string)
 
 	log.Printf("[DEBUG] Create registry module named %s", *options.Name)
-	registryModule, err := tfeClient.RegistryModules.Create(ctx, orgName, options)
+	registryModule, err := config.Client.RegistryModules.Create(ctx, orgName, options)
 
 	if err != nil {
 		return nil, fmt.Errorf("Error creating registry module %s: %w", *options.Name, err)
@@ -148,7 +148,7 @@ func resourceTFERegistryModuleCreateWithoutVCS(meta interface{}, d *schema.Resou
 }
 
 func resourceTFERegistryModuleCreate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	var registryModule *tfe.RegistryModule
 	var err error
@@ -171,7 +171,7 @@ func resourceTFERegistryModuleCreate(d *schema.ResourceData, meta interface{}) e
 			Namespace:    registryModule.Namespace,
 			RegistryName: registryModule.RegistryName,
 		}
-		_, err := tfeClient.RegistryModules.Read(ctx, rmID)
+		_, err := config.Client.RegistryModules.Read(ctx, rmID)
 		if err != nil {
 			if strings.Contains(strings.ToLower(err.Error()), "not found") {
 				return resource.RetryableError(err)
@@ -198,7 +198,7 @@ func resourceTFERegistryModuleCreate(d *schema.ResourceData, meta interface{}) e
 }
 
 func resourceTFERegistryModuleUpdate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	options := tfe.RegistryModuleUpdateOptions{
 		NoCode: tfe.Bool(d.Get("no_code").(bool)),
@@ -215,7 +215,7 @@ func resourceTFERegistryModuleUpdate(d *schema.ResourceData, meta interface{}) e
 	}
 
 	err = resource.Retry(time.Duration(5)*time.Minute, func() *resource.RetryError {
-		registryModule, err = tfeClient.RegistryModules.Update(ctx, rmID, options)
+		registryModule, err = config.Client.RegistryModules.Update(ctx, rmID, options)
 		if err != nil {
 			return resource.RetryableError(err)
 		}
@@ -232,7 +232,7 @@ func resourceTFERegistryModuleUpdate(d *schema.ResourceData, meta interface{}) e
 }
 
 func resourceTFERegistryModuleRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read registry module: %s", d.Id())
 
@@ -245,7 +245,7 @@ func resourceTFERegistryModuleRead(d *schema.ResourceData, meta interface{}) err
 		RegistryName: tfe.RegistryName(d.Get("registry_name").(string)),
 	}
 
-	registryModule, err := tfeClient.RegistryModules.Read(ctx, rmID)
+	registryModule, err := config.Client.RegistryModules.Read(ctx, rmID)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] Registry module %s no longer exists", d.Id())
@@ -281,12 +281,12 @@ func resourceTFERegistryModuleRead(d *schema.ResourceData, meta interface{}) err
 }
 
 func resourceTFERegistryModuleDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete registry module: %s", d.Id())
 	organization := d.Get("organization").(string)
 	name := d.Get("name").(string)
-	err := tfeClient.RegistryModules.Delete(ctx, organization, name)
+	err := config.Client.RegistryModules.Delete(ctx, organization, name)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil

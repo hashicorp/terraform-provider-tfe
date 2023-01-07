@@ -35,7 +35,7 @@ func resourceTFETeamMember() *schema.Resource {
 }
 
 func resourceTFETeamMemberCreate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the team ID and username..
 	teamID := d.Get("team_id").(string)
@@ -47,7 +47,7 @@ func resourceTFETeamMemberCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	log.Printf("[DEBUG] Add user %q to team: %s", username, teamID)
-	err := tfeClient.TeamMembers.Add(ctx, teamID, options)
+	err := config.Client.TeamMembers.Add(ctx, teamID, options)
 	if err != nil {
 		return fmt.Errorf("Error adding user %q to team %s: %w", username, teamID, err)
 	}
@@ -58,7 +58,7 @@ func resourceTFETeamMemberCreate(d *schema.ResourceData, meta interface{}) error
 }
 
 func resourceTFETeamMemberRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the team ID and username.
 	teamID, username, err := unpackTeamMemberID(d.Id())
@@ -67,7 +67,7 @@ func resourceTFETeamMemberRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	log.Printf("[DEBUG] Read users from team: %s", teamID)
-	users, err := tfeClient.TeamMembers.List(ctx, teamID)
+	users, err := config.Client.TeamMembers.List(ctx, teamID)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] User %q no longer exists", d.Id())
@@ -100,7 +100,7 @@ func resourceTFETeamMemberRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceTFETeamMemberDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the team ID and username.
 	teamID, username, err := unpackTeamMemberID(d.Id())
@@ -114,7 +114,7 @@ func resourceTFETeamMemberDelete(d *schema.ResourceData, meta interface{}) error
 	}
 
 	log.Printf("[DEBUG] Remove user %q from team: %s", username, teamID)
-	err = tfeClient.TeamMembers.Remove(ctx, teamID, options)
+	err = config.Client.TeamMembers.Remove(ctx, teamID, options)
 	if err != nil {
 		return fmt.Errorf("Error removing user %q to team %s: %w", username, teamID, err)
 	}

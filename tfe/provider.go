@@ -16,6 +16,7 @@ import (
 	tfe "github.com/hashicorp/go-tfe"
 	version "github.com/hashicorp/go-version"
 	"github.com/hashicorp/hcl"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	providerVersion "github.com/hashicorp/terraform-provider-tfe/version"
 	svchost "github.com/hashicorp/terraform-svchost"
@@ -42,6 +43,11 @@ type Config struct {
 // discovery behavior for a particular hostname.
 type ConfigHost struct {
 	Services map[string]interface{} `hcl:"services"`
+}
+
+type ConfiguredClient struct {
+	Client              *tfe.Client
+	DefaultOrganization string
 }
 
 // ctx is used as default context.Context when making TFE calls.
@@ -135,15 +141,31 @@ func Provider() *schema.Provider {
 			"tfe_workspace_variable_set":      resourceTFEWorkspaceVariableSet(),
 			"tfe_workspace_policy_set":        resourceTFEWorkspacePolicySet(),
 		},
-
-		ConfigureFunc: providerConfigure,
+		ConfigureContextFunc: configure(),
 	}
 }
 
-func providerConfigure(d *schema.ResourceData) (interface{}, error) {
+func configure() schema.ConfigureContextFunc {
+	return func(ctx context.Context, rd *schema.ResourceData) (any, diag.Diagnostics) {
+		defaultOrganization := rd.Get("default_organization").(string)
+
+		client, err := configureClient(rd)
+		if err != nil {
+			return nil, diag.Errorf("failed to create SDK client: %s", err)
+		}
+
+		return ConfiguredClient{
+			client,
+			defaultOrganization,
+		}, nil
+	}
+}
+
+func configureClient(d *schema.ResourceData) (*tfe.Client, error) {
 	hostname := d.Get("hostname").(string)
 	token := d.Get("token").(string)
 	insecure := d.Get("ssl_skip_verify").(bool)
+
 	return getClient(hostname, token, insecure)
 }
 

@@ -36,7 +36,7 @@ func resourceTFETeamMembers() *schema.Resource {
 }
 
 func resourceTFETeamMembersCreate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the team ID.
 	teamID := d.Get("team_id").(string)
@@ -50,7 +50,7 @@ func resourceTFETeamMembersCreate(d *schema.ResourceData, meta interface{}) erro
 	}
 
 	log.Printf("[DEBUG] Add users to team: %s", teamID)
-	err := tfeClient.TeamMembers.Add(ctx, teamID, options)
+	err := config.Client.TeamMembers.Add(ctx, teamID, options)
 	if err != nil {
 		return fmt.Errorf("Error adding users to team %s: %w", teamID, err)
 	}
@@ -61,10 +61,10 @@ func resourceTFETeamMembersCreate(d *schema.ResourceData, meta interface{}) erro
 }
 
 func resourceTFETeamMembersRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read users from team: %s", d.Id())
-	users, err := tfeClient.TeamMembers.List(ctx, d.Id())
+	users, err := config.Client.TeamMembers.List(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] Users do no longer exist")
@@ -90,7 +90,7 @@ func resourceTFETeamMembersRead(d *schema.ResourceData, meta interface{}) error 
 }
 
 func resourceTFETeamMembersUpdate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	if d.HasChange("usernames") {
 		oldUsernames, newUsernames := d.GetChange("usernames")
@@ -108,7 +108,7 @@ func resourceTFETeamMembersUpdate(d *schema.ResourceData, meta interface{}) erro
 			}
 
 			log.Printf("[DEBUG] Add users to team: %s", d.Id())
-			err := tfeClient.TeamMembers.Add(ctx, d.Id(), options)
+			err := config.Client.TeamMembers.Add(ctx, d.Id(), options)
 			if err != nil {
 				return fmt.Errorf("Error adding users to team %s: %w", d.Id(), err)
 			}
@@ -125,7 +125,7 @@ func resourceTFETeamMembersUpdate(d *schema.ResourceData, meta interface{}) erro
 			}
 
 			log.Printf("[DEBUG] Remove users from team: %s", d.Id())
-			err := tfeClient.TeamMembers.Remove(ctx, d.Id(), options)
+			err := config.Client.TeamMembers.Remove(ctx, d.Id(), options)
 			if err != nil {
 				return fmt.Errorf("Error removing users to team %s: %w", d.Id(), err)
 			}
@@ -136,10 +136,10 @@ func resourceTFETeamMembersUpdate(d *schema.ResourceData, meta interface{}) erro
 }
 
 func resourceTFETeamMembersDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Retrieve users to remove from team: %s", d.Id())
-	users, err := tfeClient.TeamMembers.List(ctx, d.Id())
+	users, err := config.Client.TeamMembers.List(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil
@@ -156,7 +156,7 @@ func resourceTFETeamMembersDelete(d *schema.ResourceData, meta interface{}) erro
 	}
 
 	log.Printf("[DEBUG] Remove users from team: %s", d.Id())
-	err = tfeClient.TeamMembers.Remove(ctx, d.Id(), options)
+	err = config.Client.TeamMembers.Remove(ctx, d.Id(), options)
 	if err != nil {
 		return fmt.Errorf("Error removing users to team %s: %w", d.Id(), err)
 	}

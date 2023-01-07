@@ -26,7 +26,7 @@ func dataSourceTFESSHKey() *schema.Resource {
 }
 
 func dataSourceTFESSHKeyRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the name and organization.
 	name := d.Get("name").(string)
@@ -36,7 +36,7 @@ func dataSourceTFESSHKeyRead(d *schema.ResourceData, meta interface{}) error {
 	options := &tfe.SSHKeyListOptions{}
 
 	for {
-		l, err := tfeClient.SSHKeys.List(ctx, organization, options)
+		l, err := config.Client.SSHKeys.List(ctx, organization, options)
 		if err != nil {
 			return fmt.Errorf("Error retrieving SSH keys: %w", err)
 		}

@@ -10,14 +10,15 @@ import (
 )
 
 type pluginProviderServer struct {
-	providerSchema     *tfprotov5.Schema
-	providerMetaSchema *tfprotov5.Schema
-	resourceSchemas    map[string]*tfprotov5.Schema
-	dataSourceSchemas  map[string]*tfprotov5.Schema
-	tfeClient          *tfe.Client
+	providerSchema      *tfprotov5.Schema
+	providerMetaSchema  *tfprotov5.Schema
+	resourceSchemas     map[string]*tfprotov5.Schema
+	dataSourceSchemas   map[string]*tfprotov5.Schema
+	tfeClient           *tfe.Client
+	defaultOrganization string
 
 	resourceRouter
-	dataSourceRouter map[string]func(*tfe.Client) tfprotov5.DataSourceServer
+	dataSourceRouter map[string]func(ConfiguredClient) tfprotov5.DataSourceServer
 }
 
 type errUnsupportedDataSource string
@@ -77,6 +78,7 @@ func (p *pluginProviderServer) ConfigureProvider(ctx context.Context, req *tfpro
 	}
 
 	p.tfeClient = client
+	p.defaultOrganization = meta.defaultOrganization
 	return resp, nil
 }
 
@@ -89,7 +91,7 @@ func (p *pluginProviderServer) ValidateDataSourceConfig(ctx context.Context, req
 	if !ok {
 		return nil, errUnsupportedDataSource(req.TypeName)
 	}
-	return ds(p.tfeClient).ValidateDataSourceConfig(ctx, req)
+	return ds(ConfiguredClient{p.tfeClient, p.defaultOrganization}).ValidateDataSourceConfig(ctx, req)
 }
 
 func (p *pluginProviderServer) ReadDataSource(ctx context.Context, req *tfprotov5.ReadDataSourceRequest) (*tfprotov5.ReadDataSourceResponse, error) {
@@ -97,7 +99,7 @@ func (p *pluginProviderServer) ReadDataSource(ctx context.Context, req *tfprotov
 	if !ok {
 		return nil, errUnsupportedDataSource(req.TypeName)
 	}
-	return ds(p.tfeClient).ReadDataSource(ctx, req)
+	return ds(ConfiguredClient{p.tfeClient, p.defaultOrganization}).ReadDataSource(ctx, req)
 }
 
 type resourceRouter map[string]tfprotov5.ResourceServer
@@ -228,7 +230,7 @@ func PluginProviderServer() tfprotov5.ProviderServer {
 				},
 			},
 		},
-		dataSourceRouter: map[string]func(*tfe.Client) tfprotov5.DataSourceServer{
+		dataSourceRouter: map[string]func(ConfiguredClient) tfprotov5.DataSourceServer{
 			"tfe_outputs": newDataSourceOutputs,
 		},
 	}

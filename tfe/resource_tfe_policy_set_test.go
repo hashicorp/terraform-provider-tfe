@@ -737,7 +737,7 @@ func TestAccTFEPolicySetImport(t *testing.T) {
 
 func testAccCheckTFEPolicySetExists(n string, policySet *tfe.PolicySet) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -748,7 +748,7 @@ func testAccCheckTFEPolicySetExists(n string, policySet *tfe.PolicySet) resource
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		ps, err := tfeClient.PolicySets.Read(ctx, rs.Primary.ID)
+		ps, err := config.Client.PolicySets.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -783,7 +783,7 @@ func testAccCheckTFEPolicySetAttributes(policySet *tfe.PolicySet) resource.TestC
 
 func testAccCheckTFEPolicySetPopulated(policySet *tfe.PolicySet, orgName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		if policySet.Name != "terraform-populated" {
 			return fmt.Errorf("Bad name: %s", policySet.Name)
@@ -798,7 +798,7 @@ func testAccCheckTFEPolicySetPopulated(policySet *tfe.PolicySet, orgName string)
 		}
 
 		policyID := policySet.Policies[0].ID
-		policy, _ := tfeClient.Policies.Read(ctx, policyID)
+		policy, _ := config.Client.Policies.Read(ctx, policyID)
 		if policy.Name != "policy-foo" {
 			return fmt.Errorf("Wrong member policy: %v", policy.Name)
 		}
@@ -808,7 +808,7 @@ func testAccCheckTFEPolicySetPopulated(policySet *tfe.PolicySet, orgName string)
 		}
 
 		workspaceID := policySet.Workspaces[0].ID
-		workspace, _ := tfeClient.Workspaces.Read(ctx, orgName, "workspace-foo")
+		workspace, _ := config.Client.Workspaces.Read(ctx, orgName, "workspace-foo")
 		if workspace.ID != workspaceID {
 			return fmt.Errorf("Wrong member workspace: %v", workspace.Name)
 		}
@@ -819,7 +819,7 @@ func testAccCheckTFEPolicySetPopulated(policySet *tfe.PolicySet, orgName string)
 
 func testAccCheckTFEPolicySetPopulatedUpdated(policySet *tfe.PolicySet, orgName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		if policySet.Name != "terraform-populated-updated" {
 			return fmt.Errorf("Bad name: %s", policySet.Name)
@@ -834,7 +834,7 @@ func testAccCheckTFEPolicySetPopulatedUpdated(policySet *tfe.PolicySet, orgName 
 		}
 
 		policyID := policySet.Policies[0].ID
-		policy, _ := tfeClient.Policies.Read(ctx, policyID)
+		policy, _ := config.Client.Policies.Read(ctx, policyID)
 		if policy.Name != "policy-bar" {
 			return fmt.Errorf("Wrong member policy: %v", policy.Name)
 		}
@@ -844,7 +844,7 @@ func testAccCheckTFEPolicySetPopulatedUpdated(policySet *tfe.PolicySet, orgName 
 		}
 
 		workspaceID := policySet.Workspaces[0].ID
-		workspace, _ := tfeClient.Workspaces.Read(ctx, orgName, "workspace-bar")
+		workspace, _ := config.Client.Workspaces.Read(ctx, orgName, "workspace-bar")
 		if workspace.ID != workspaceID {
 			return fmt.Errorf("Wrong member workspace: %v", workspace.Name)
 		}
@@ -855,7 +855,7 @@ func testAccCheckTFEPolicySetPopulatedUpdated(policySet *tfe.PolicySet, orgName 
 
 func testAccCheckTFEPolicySetGlobal(policySet *tfe.PolicySet) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		if policySet.Name != "terraform-global" {
 			return fmt.Errorf("Bad name: %s", policySet.Name)
@@ -870,7 +870,7 @@ func testAccCheckTFEPolicySetGlobal(policySet *tfe.PolicySet) resource.TestCheck
 		}
 
 		policyID := policySet.Policies[0].ID
-		policy, _ := tfeClient.Policies.Read(ctx, policyID)
+		policy, _ := config.Client.Policies.Read(ctx, policyID)
 		if policy.Name != "policy-foo" {
 			return fmt.Errorf("Wrong member policy: %v", policy.Name)
 		}
@@ -885,7 +885,7 @@ func testAccCheckTFEPolicySetGlobal(policySet *tfe.PolicySet) resource.TestCheck
 }
 
 func testAccCheckTFEPolicySetDestroy(s *terraform.State) error {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	config := testAccProvider.Meta().(ConfiguredClient)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_policy_set" {
@@ -896,7 +896,7 @@ func testAccCheckTFEPolicySetDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := tfeClient.PolicySets.Read(ctx, rs.Primary.ID)
+		_, err := config.Client.PolicySets.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Sentinel policy %s still exists", rs.Primary.ID)
 		}

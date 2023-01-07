@@ -67,7 +67,7 @@ func resourceTFEOrganizationRunTask() *schema.Resource {
 }
 
 func resourceTFEOrganizationRunTaskCreate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	client := meta.(ConfiguredClient)
 
 	// Get the task name and organization.
 	name := d.Get("name").(string)
@@ -84,7 +84,7 @@ func resourceTFEOrganizationRunTaskCreate(d *schema.ResourceData, meta interface
 	}
 
 	log.Printf("[DEBUG] Create task %s for organization: %s", name, organization)
-	task, err := tfeClient.RunTasks.Create(ctx, organization, options)
+	task, err := client.Client.RunTasks.Create(ctx, organization, options)
 	if err != nil {
 		return fmt.Errorf(
 			"Error creating task %s for organization %s: %w", name, organization, err)
@@ -96,10 +96,10 @@ func resourceTFEOrganizationRunTaskCreate(d *schema.ResourceData, meta interface
 }
 
 func resourceTFEOrganizationRunTaskDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	client := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete task: %s", d.Id())
-	err := tfeClient.RunTasks.Delete(ctx, d.Id())
+	err := client.Client.RunTasks.Delete(ctx, d.Id())
 	if err != nil {
 		if isErrResourceNotFound(err) {
 			return nil
@@ -111,7 +111,7 @@ func resourceTFEOrganizationRunTaskDelete(d *schema.ResourceData, meta interface
 }
 
 func resourceTFEOrganizationRunTaskUpdate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	client := meta.(ConfiguredClient)
 
 	// Setup the options struct
 	options := tfe.RunTaskUpdateOptions{}
@@ -135,7 +135,7 @@ func resourceTFEOrganizationRunTaskUpdate(d *schema.ResourceData, meta interface
 	}
 
 	log.Printf("[DEBUG] Update configuration of task: %s", d.Id())
-	task, err := tfeClient.RunTasks.Update(ctx, d.Id(), options)
+	task, err := client.Client.RunTasks.Update(ctx, d.Id(), options)
 	if err != nil {
 		return fmt.Errorf("Error updating task %s: %w", d.Id(), err)
 	}
@@ -146,10 +146,10 @@ func resourceTFEOrganizationRunTaskUpdate(d *schema.ResourceData, meta interface
 }
 
 func resourceTFEOrganizationRunTaskRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	client := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read configuration of task: %s", d.Id())
-	task, err := tfeClient.RunTasks.Read(ctx, d.Id())
+	task, err := client.Client.RunTasks.Read(ctx, d.Id())
 
 	if err != nil {
 		if isErrResourceNotFound(err) {
@@ -173,7 +173,7 @@ func resourceTFEOrganizationRunTaskRead(d *schema.ResourceData, meta interface{}
 }
 
 func resourceTFEOrganizationRunTaskImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	tfeClient := meta.(*tfe.Client)
+	client := meta.(ConfiguredClient)
 
 	s := strings.Split(d.Id(), "/")
 	if len(s) != 2 {
@@ -183,7 +183,7 @@ func resourceTFEOrganizationRunTaskImporter(ctx context.Context, d *schema.Resou
 		)
 	}
 
-	task, err := fetchOrganizationRunTask(s[1], s[0], tfeClient)
+	task, err := fetchOrganizationRunTask(s[1], s[0], client.Client)
 	if err != nil {
 		return nil, err
 	}

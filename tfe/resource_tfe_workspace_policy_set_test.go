@@ -75,7 +75,7 @@ func TestAccTFEWorkspacePolicySet_incorrectImportSyntax(t *testing.T) {
 
 func testAccCheckTFEWorkspacePolicySetExists(n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -97,7 +97,7 @@ func testAccCheckTFEWorkspacePolicySetExists(n string) resource.TestCheckFunc {
 			return fmt.Errorf("No workspace id set")
 		}
 
-		policySet, err := tfeClient.PolicySets.ReadWithOptions(ctx, policySetID, &tfe.PolicySetReadOptions{
+		policySet, err := config.Client.PolicySets.ReadWithOptions(ctx, policySetID, &tfe.PolicySetReadOptions{
 			Include: []tfe.PolicySetIncludeOpt{tfe.PolicySetWorkspaces},
 		})
 		if err != nil {
@@ -114,7 +114,7 @@ func testAccCheckTFEWorkspacePolicySetExists(n string) resource.TestCheckFunc {
 }
 
 func testAccCheckTFEWorkspacePolicySetDestroy(s *terraform.State) error {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	config := testAccProvider.Meta().(ConfiguredClient)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_policy_set" {
@@ -125,7 +125,7 @@ func testAccCheckTFEWorkspacePolicySetDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := tfeClient.PolicySets.Read(ctx, rs.Primary.ID)
+		_, err := config.Client.PolicySets.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Policy Set %s still exists", rs.Primary.ID)
 		}

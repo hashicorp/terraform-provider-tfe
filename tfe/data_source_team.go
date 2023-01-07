@@ -30,13 +30,13 @@ func dataSourceTFETeam() *schema.Resource {
 }
 
 func dataSourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the name and organization.
 	name := d.Get("name").(string)
 	organization := d.Get("organization").(string)
 
-	tl, err := tfeClient.Teams.List(ctx, organization, &tfe.TeamListOptions{
+	tl, err := config.Client.Teams.List(ctx, organization, &tfe.TeamListOptions{
 		Names: []string{name},
 	})
 	if err != nil {
@@ -75,7 +75,7 @@ func dataSourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 
 			options.PageNumber = tl.NextPage
 
-			tl, err = tfeClient.Teams.List(ctx, organization, options)
+			tl, err = config.Client.Teams.List(ctx, organization, options)
 			if err != nil {
 				return fmt.Errorf("Error retrieving teams: %w", err)
 			}

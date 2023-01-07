@@ -14,12 +14,14 @@ import (
 )
 
 type dataSourceOutputs struct {
-	tfeClient *tfe.Client
+	tfeClient           *tfe.Client
+	defaultOrganization string
 }
 
-func newDataSourceOutputs(client *tfe.Client) tfprotov5.DataSourceServer {
+func newDataSourceOutputs(config ConfiguredClient) tfprotov5.DataSourceServer {
 	return dataSourceOutputs{
-		tfeClient: client,
+		tfeClient:           config.Client,
+		defaultOrganization: config.DefaultOrganization,
 	}
 }
 
@@ -38,7 +40,7 @@ func (d dataSourceOutputs) ReadDataSource(ctx context.Context, req *tfprotov5.Re
 		return resp, nil
 	}
 
-	remoteStateOutput, err := d.readStateOutput(ctx, d.tfeClient, orgName, wsName)
+	remoteStateOutput, err := d.readStateOutput(ctx, orgName, wsName)
 	if err != nil {
 		resp.Diagnostics = append(resp.Diagnostics, &tfprotov5.Diagnostic{
 			Severity: tfprotov5.DiagnosticSeverityError,
@@ -153,12 +155,12 @@ type outputData struct {
 	Sensitive cty.Value
 }
 
-func (d dataSourceOutputs) readStateOutput(ctx context.Context, tfeClient *tfe.Client, orgName, wsName string) (*stateData, error) {
+func (d dataSourceOutputs) readStateOutput(ctx context.Context, orgName, wsName string) (*stateData, error) {
 	log.Printf("[DEBUG] Reading the Workspace %s in Organization %s", wsName, orgName)
 	opts := &tfe.WorkspaceReadOptions{
 		Include: []tfe.WSIncludeOpt{tfe.WSOutputs},
 	}
-	ws, err := tfeClient.Workspaces.ReadWithOptions(ctx, orgName, wsName, opts)
+	ws, err := d.tfeClient.Workspaces.ReadWithOptions(ctx, orgName, wsName, opts)
 	if err != nil {
 		return nil, fmt.Errorf("Error reading workspace: %w", err)
 	}
@@ -169,7 +171,7 @@ func (d dataSourceOutputs) readStateOutput(ctx context.Context, tfeClient *tfe.C
 
 	for _, op := range ws.Outputs {
 		if op.Sensitive {
-			sensitiveOutput, err := tfeClient.StateVersionOutputs.Read(ctx, op.ID)
+			sensitiveOutput, err := d.tfeClient.StateVersionOutputs.Read(ctx, op.ID)
 			if err != nil {
 				return nil, fmt.Errorf("could not read sensitive output: %w", err)
 			}

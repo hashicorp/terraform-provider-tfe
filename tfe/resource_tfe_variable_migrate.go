@@ -59,10 +59,10 @@ func resourceTfeVariableResourceV0() *schema.Resource {
 }
 
 func resourceTfeVariableStateUpgradeV0(_ context.Context, rawState map[string]interface{}, meta interface{}) (map[string]interface{}, error) {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	humanID := rawState["workspace_id"].(string)
-	id, err := fetchWorkspaceExternalID(humanID, tfeClient)
+	id, err := fetchWorkspaceExternalID(humanID, config.Client)
 	if err != nil {
 		return nil, fmt.Errorf("Error reading configuration of workspace %s: %w", humanID, err)
 	}

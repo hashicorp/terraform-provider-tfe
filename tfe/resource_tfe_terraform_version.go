@@ -63,7 +63,7 @@ func resourceTFETerraformVersion() *schema.Resource {
 }
 
 func resourceTFETerraformVersionCreate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	opts := tfe.AdminTerraformVersionCreateOptions{
 		Version:          tfe.String(d.Get("version").(string)),
@@ -77,7 +77,7 @@ func resourceTFETerraformVersionCreate(d *schema.ResourceData, meta interface{})
 	}
 
 	log.Printf("[DEBUG] Create new Terraform version: %s", *opts.Version)
-	v, err := tfeClient.Admin.TerraformVersions.Create(ctx, opts)
+	v, err := config.Client.Admin.TerraformVersions.Create(ctx, opts)
 	if err != nil {
 		return fmt.Errorf("Error creating the new Terraform version %s: %w", *opts.Version, err)
 	}
@@ -88,10 +88,10 @@ func resourceTFETerraformVersionCreate(d *schema.ResourceData, meta interface{})
 }
 
 func resourceTFETerraformVersionRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read configuration of Terraform version: %s", d.Id())
-	v, err := tfeClient.Admin.TerraformVersions.Read(ctx, d.Id())
+	v, err := config.Client.Admin.TerraformVersions.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] Terraform version %s no longer exists", d.Id())
@@ -114,7 +114,7 @@ func resourceTFETerraformVersionRead(d *schema.ResourceData, meta interface{}) e
 }
 
 func resourceTFETerraformVersionUpdate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	opts := tfe.AdminTerraformVersionUpdateOptions{
 		Version:          tfe.String(d.Get("version").(string)),
@@ -128,7 +128,7 @@ func resourceTFETerraformVersionUpdate(d *schema.ResourceData, meta interface{})
 	}
 
 	log.Printf("[DEBUG] Update configuration of Terraform version: %s", d.Id())
-	v, err := tfeClient.Admin.TerraformVersions.Update(ctx, d.Id(), opts)
+	v, err := config.Client.Admin.TerraformVersions.Update(ctx, d.Id(), opts)
 	if err != nil {
 		return fmt.Errorf("Error updating Terraform version %s: %w", d.Id(), err)
 	}
@@ -139,10 +139,10 @@ func resourceTFETerraformVersionUpdate(d *schema.ResourceData, meta interface{})
 }
 
 func resourceTFETerraformVersionDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete Terraform version: %s", d.Id())
-	err := tfeClient.Admin.TerraformVersions.Delete(ctx, d.Id())
+	err := config.Client.Admin.TerraformVersions.Delete(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil
@@ -154,13 +154,13 @@ func resourceTFETerraformVersionDelete(d *schema.ResourceData, meta interface{})
 }
 
 func resourceTFETerraformVersionImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Splitting by '-' and checking if the first elem is equal to tool
 	// determines if the string is a tool version ID
 	s := strings.Split(d.Id(), "-")
 	if s[0] != "tool" {
-		versionID, err := fetchTerraformVersionID(d.Id(), tfeClient)
+		versionID, err := fetchTerraformVersionID(d.Id(), config.Client)
 		if err != nil {
 			return nil, fmt.Errorf("error retrieving terraform version %s: %w", d.Id(), err)
 		}

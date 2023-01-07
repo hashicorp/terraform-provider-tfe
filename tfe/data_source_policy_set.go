@@ -94,7 +94,7 @@ func dataSourceTFEPolicySet() *schema.Resource {
 }
 
 func dataSourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	name := d.Get("name").(string)
 	organization := d.Get("organization").(string)
@@ -102,7 +102,7 @@ func dataSourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error 
 	listOptions := tfe.PolicySetListOptions{}
 
 	for {
-		policySetList, err := tfeClient.PolicySets.List(ctx, organization, &listOptions)
+		policySetList, err := config.Client.PolicySets.List(ctx, organization, &listOptions)
 
 		if err != nil {
 			if errors.Is(err, tfe.ErrResourceNotFound) {

@@ -64,7 +64,7 @@ func TestAccTFETeamOrganizationMembers_import(t *testing.T) {
 
 func testAccCheckTFETeamOrganizationMembersExists(resourceName string, organizationMemberships *[]tfe.OrganizationMembership) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 		*organizationMemberships = []tfe.OrganizationMembership{}
 
 		rs, ok := s.RootModule().Resources[resourceName]
@@ -77,7 +77,7 @@ func testAccCheckTFETeamOrganizationMembersExists(resourceName string, organizat
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		orgMemberships, err := tfeClient.TeamMembers.ListOrganizationMemberships(ctx, rs.Primary.ID)
+		orgMemberships, err := config.Client.TeamMembers.ListOrganizationMemberships(ctx, rs.Primary.ID)
 		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 			return fmt.Errorf("error while listing organization memberships: %w", err)
 		}
@@ -126,7 +126,7 @@ func testAccCheckTFETeamOrganizationMembersCount(expected int, organizationMembe
 }
 
 func testAccCheckTFETeamOrganizationMembersDestroy(s *terraform.State) error {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	config := testAccProvider.Meta().(ConfiguredClient)
 
 	for _, rs := range s.RootModule().Resources {
 		// Continue if current resource is not a "tfe_team_organization_members" resource
@@ -139,7 +139,7 @@ func testAccCheckTFETeamOrganizationMembersDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		organizationMemberships, err := tfeClient.TeamMembers.ListOrganizationMemberships(ctx, rs.Primary.ID)
+		organizationMemberships, err := config.Client.TeamMembers.ListOrganizationMemberships(ctx, rs.Primary.ID)
 		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 			return fmt.Errorf("error while listing organization memberships: %w", err)
 		}

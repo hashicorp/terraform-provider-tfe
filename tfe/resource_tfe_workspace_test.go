@@ -2092,7 +2092,7 @@ func TestTFEWorkspace_delete_withoutCanForceDeletePermission(t *testing.T) {
 func testAccCheckTFEWorkspaceExists(
 	n string, workspace *tfe.Workspace) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -2104,7 +2104,7 @@ func testAccCheckTFEWorkspaceExists(
 		}
 
 		// Get the workspace
-		w, err := tfeClient.Workspaces.ReadByID(ctx, rs.Primary.ID)
+		w, err := config.Client.Workspaces.ReadByID(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -2125,7 +2125,7 @@ func testAccCheckTFEWorkspaceExists(
 // resource_tfe_workspace.go:208 resourceTFEWorkspaceRead(...)
 func testAccCheckTFEWorkspacePanic(n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		// Grab the resource out of the state and delete it from TFC/E directly.
 		rs, ok := s.RootModule().Resources[n]
@@ -2133,7 +2133,7 @@ func testAccCheckTFEWorkspacePanic(n string) resource.TestCheckFunc {
 			return fmt.Errorf("Not found: %s", n)
 		}
 
-		err := tfeClient.Workspaces.DeleteByID(ctx, rs.Primary.ID)
+		err := config.Client.Workspaces.DeleteByID(ctx, rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("Could not delete %s: %w", n, err)
 		}
@@ -2256,9 +2256,9 @@ func testAccCheckTFEWorkspaceMonorepoAttributes(
 
 func testAccCheckTFEWorkspaceRename(orgName string) func() {
 	return func() {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
-		w, err := tfeClient.Workspaces.Update(
+		w, err := config.Client.Workspaces.Update(
 			context.Background(),
 			orgName,
 			"workspace-test",
@@ -2420,7 +2420,7 @@ func testAccCheckTFEWorkspaceUpdatedRemoveVCSRepoAttributes(
 }
 
 func testAccCheckTFEWorkspaceDestroy(s *terraform.State) error {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	config := testAccProvider.Meta().(ConfiguredClient)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_workspace" {
@@ -2431,7 +2431,7 @@ func testAccCheckTFEWorkspaceDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := tfeClient.Workspaces.ReadByID(ctx, rs.Primary.ID)
+		_, err := config.Client.Workspaces.ReadByID(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Workspace %s still exists", rs.Primary.ID)
 		}

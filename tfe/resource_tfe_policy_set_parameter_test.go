@@ -129,7 +129,7 @@ func TestAccTFEPolicySetParameter_import(t *testing.T) {
 func testAccCheckTFEPolicySetParameterExists(
 	n string, parameter *tfe.PolicySetParameter) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -140,7 +140,7 @@ func testAccCheckTFEPolicySetParameterExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		v, err := tfeClient.PolicySetParameters.Read(ctx, rs.Primary.Attributes["policy_set_id"], rs.Primary.ID)
+		v, err := config.Client.PolicySetParameters.Read(ctx, rs.Primary.Attributes["policy_set_id"], rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -190,7 +190,7 @@ func testAccCheckTFEPolicySetParameterAttributesUpdate(
 }
 
 func testAccCheckTFEPolicySetParameterDestroy(s *terraform.State) error {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	config := testAccProvider.Meta().(ConfiguredClient)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_policy_set_parameter" {
@@ -201,7 +201,7 @@ func testAccCheckTFEPolicySetParameterDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := tfeClient.PolicySetParameters.Read(ctx, rs.Primary.Attributes["policy_set_id"], rs.Primary.ID)
+		_, err := config.Client.PolicySetParameters.Read(ctx, rs.Primary.Attributes["policy_set_id"], rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("PolicySetParameter %s still exists", rs.Primary.ID)
 		}

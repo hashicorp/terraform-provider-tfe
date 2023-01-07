@@ -264,7 +264,7 @@ func TestAccTFETeamOrganizationMember_import_slashesInTeamName(t *testing.T) {
 func testAccCheckTFETeamOrganizationMemberExists(
 	n string, organizationMembership *tfe.OrganizationMembership) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -281,7 +281,7 @@ func testAccCheckTFETeamOrganizationMemberExists(
 			return fmt.Errorf("Error unpacking team organization member ID: %w", err)
 		}
 
-		organizationMemberships, err := tfeClient.TeamMembers.ListOrganizationMemberships(ctx, teamID)
+		organizationMemberships, err := config.Client.TeamMembers.ListOrganizationMemberships(ctx, teamID)
 		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 			return err
 		}
@@ -314,7 +314,7 @@ func testAccCheckTFETeamOrganizationMemberAttributes(
 }
 
 func testAccCheckTFETeamOrganizationMemberDestroy(s *terraform.State) error {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	config := testAccProvider.Meta().(ConfiguredClient)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_team_organization_member" {
@@ -331,7 +331,7 @@ func testAccCheckTFETeamOrganizationMemberDestroy(s *terraform.State) error {
 			return fmt.Errorf("Error unpacking team organization member ID: %w", err)
 		}
 
-		organizationMemberships, err := tfeClient.TeamMembers.ListOrganizationMemberships(ctx, teamID)
+		organizationMemberships, err := config.Client.TeamMembers.ListOrganizationMemberships(ctx, teamID)
 		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 			return err
 		}

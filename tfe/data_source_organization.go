@@ -67,11 +67,11 @@ func dataSourceTFEOrganization() *schema.Resource {
 }
 
 func dataSourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	name := d.Get("name").(string)
 	log.Printf("[DEBUG] Read configuration for Organization: %s", name)
-	org, err := tfeClient.Organizations.Read(ctx, name)
+	org, err := config.Client.Organizations.Read(ctx, name)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return fmt.Errorf("could not read organization '%s'", name)

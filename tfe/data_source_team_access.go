@@ -69,14 +69,14 @@ func dataSourceTFETeamAccess() *schema.Resource {
 }
 
 func dataSourceTFETeamAccessRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the team ID.
 	teamID := d.Get("team_id").(string)
 
 	// Get the workspace
 	workspaceID := d.Get("workspace_id").(string)
-	ws, err := tfeClient.Workspaces.ReadByID(ctx, workspaceID)
+	ws, err := config.Client.Workspaces.ReadByID(ctx, workspaceID)
 	if err != nil {
 		return fmt.Errorf(
 			"Error retrieving workspace %s: %w", workspaceID, err)
@@ -88,7 +88,7 @@ func dataSourceTFETeamAccessRead(d *schema.ResourceData, meta interface{}) error
 	}
 
 	for {
-		l, err := tfeClient.TeamAccess.List(ctx, options)
+		l, err := config.Client.TeamAccess.List(ctx, options)
 		if err != nil {
 			return fmt.Errorf("Error retrieving team access list: %w", err)
 		}
