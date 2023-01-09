@@ -106,7 +106,7 @@ func TestAccTFEOrganizationMembershipImport_invalidImportId(t *testing.T) {
 				ResourceName:  "tfe_organization_membership.foobar",
 				ImportState:   true,
 				ImportStateId: fmt.Sprintf("%s/%s/someOtherString", orgName, email),
-				ExpectError:   regexp.MustCompile("invalid organization membership input format"),
+				ExpectError:   regexp.MustCompile(fmt.Sprintf("error retrieving user with email %s/someOtherString from organization %s", email, orgName)),
 			},
 			{
 				ResourceName:  "tfe_organization_membership.foobar",

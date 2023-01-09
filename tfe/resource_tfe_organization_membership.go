@@ -124,13 +124,8 @@ func resourceTFEOrganizationMembershipImporter(ctx context.Context, d *schema.Re
 	// Import formats:
 	//  - <ORGANIZATION MEMBERSHIP ID>
 	//  - <organization name>/<user email>
-	s := strings.Split(d.Id(), "/")
-	if len(s) >= 3 {
-		return nil, fmt.Errorf(
-			"invalid organization membership input format: %s (expected <ORGANIZATION>/<USER EMAIL> or <ORGANIZATION MEMBERSHIP ID>)",
-			d.Id(),
-		)
-	} else if len(s) == 2 {
+	s := strings.SplitN(d.Id(), "/", 2)
+	if len(s) == 2 {
 		org := s[0]
 		email := s[1]
 		orgMembership, err := fetchOrganizationMemberByNameOrEmail(ctx, config.Client, org, "", email)
