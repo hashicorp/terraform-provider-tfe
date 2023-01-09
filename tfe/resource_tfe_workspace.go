@@ -865,6 +865,7 @@ func errWorkspaceSafeDeleteWithPermission(workspaceID string, err error) error {
 		if strings.HasPrefix(err.Error(), "conflict") {
 			return fmt.Errorf("error deleting workspace %s: %w\nTo delete this workspace without destroying the managed resources, add force_delete = true to the resource config", workspaceID, err)
 		}
+		return err
 	}
 	return nil
 }
