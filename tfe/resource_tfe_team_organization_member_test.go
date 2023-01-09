@@ -129,7 +129,7 @@ func TestAccTFETeamOrganizationMember_import_byTeamName(t *testing.T) {
 			},
 			{
 				ResourceName:      "tfe_team_organization_member.foobar",
-				ImportStateId:     fmt.Sprintf("%s/%s/%s", orgName, teamName, userEmail),
+				ImportStateId:     fmt.Sprintf("%s/%s/%s", orgName, userEmail, teamName),
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -154,7 +154,7 @@ func TestAccTFETeamOrganizationMember_import_orgDoesNotExist(t *testing.T) {
 
 			{
 				ResourceName:  "tfe_team_organization_member.foobar",
-				ImportStateId: fmt.Sprintf("non-existent-org/%s/%s", teamName, userEmail),
+				ImportStateId: fmt.Sprintf("non-existent-org/%s/%s", userEmail, teamName),
 				ImportState:   true,
 				ExpectError:   regexp.MustCompile(fmt.Sprintf("error retrieving user with email %s from organization non-existent-org", userEmail)),
 			},
@@ -179,7 +179,7 @@ func TestAccTFETeamOrganizationMember_import_teamNameDoesNotExist(t *testing.T) 
 
 			{
 				ResourceName:  "tfe_team_organization_member.foobar",
-				ImportStateId: fmt.Sprintf("%s/non-existent-team/%s", orgName, userEmail),
+				ImportStateId: fmt.Sprintf("%s/%s/non-existent-team", orgName, userEmail),
 				ImportState:   true,
 				ExpectError:   regexp.MustCompile(fmt.Sprintf("error retrieving team with name non-existent-team from organization %s", orgName)),
 			},
@@ -204,7 +204,7 @@ func TestAccTFETeamOrganizationMember_import_userEmailDoesNotExist(t *testing.T)
 
 			{
 				ResourceName:  "tfe_team_organization_member.foobar",
-				ImportStateId: fmt.Sprintf("%s/%s/non-existent-email", orgName, teamName),
+				ImportStateId: fmt.Sprintf("%s/non-existent-email/%s", orgName, teamName),
 				ImportState:   true,
 				ExpectError:   regexp.MustCompile(fmt.Sprintf("error retrieving user with email non-existent-email from organization %s", orgName)),
 			},
@@ -232,11 +232,29 @@ func TestAccTFETeamOrganizationMember_import_incorrectFormat(t *testing.T) {
 				ImportState:   true,
 				ExpectError:   regexp.MustCompile("invalid organization membership input format"),
 			},
+		},
+	})
+}
+
+func TestAccTFETeamOrganizationMember_import_slashesInTeamName(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+	teamName := fmt.Sprintf("team-%d/other/data", rInt)
+	userEmail := fmt.Sprintf("user-%d@company.com", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamOrganizationMemberDestroy,
+		Steps: []resource.TestStep{
 			{
-				ResourceName:  "tfe_team_organization_member.foobar",
-				ImportStateId: "too/many/slashes/for/valid/ID",
-				ImportState:   true,
-				ExpectError:   regexp.MustCompile("invalid organization membership input format"),
+				Config: testAccTFETeamOrganizationMember_byName(orgName, teamName, userEmail),
+			},
+			{
+				ResourceName:      "tfe_team_organization_member.foobar",
+				ImportStateId:     fmt.Sprintf("%s/%s/%s", orgName, userEmail, teamName),
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})

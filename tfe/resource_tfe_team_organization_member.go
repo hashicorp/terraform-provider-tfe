@@ -139,8 +139,8 @@ func resourceTFETeamOrganizationMemberImporter(ctx context.Context, d *schema.Re
 
 	// Import formats:
 	//  - <TEAM ID>/<ORGANIZATION MEMBERSHIP ID>
-	//  - <ORGANIZATION NAME>/<TEAM NAME>/<USER EMAIL>
-	s := strings.Split(d.Id(), "/")
+	//  - <ORGANIZATION NAME>/<USER EMAIL>/<TEAM NAME>
+	s := strings.SplitN(d.Id(), "/", 3)
 
 	if len(s) == 2 {
 		// the <TEAM ID>/<ORGANIZATION MEMBERSHIP ID> is the default ID, so pass it on through
@@ -149,8 +149,8 @@ func resourceTFETeamOrganizationMemberImporter(ctx context.Context, d *schema.Re
 		// the ID we want to construct is <TEAM ID>/<ORGANIZATION MEMBERSHIP ID>
 		// we can use org and email to get the org membership ID, and find the team based on org and team name
 		org := s[0]
-		teamName := s[1]
-		email := s[2]
+		email := s[1]
+		teamName := s[2]
 		orgMembership, err := fetchOrganizationMemberByNameOrEmail(ctx, tfeClient, org, "", email)
 		if err != nil {
 			return nil, fmt.Errorf(

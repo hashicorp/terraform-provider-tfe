@@ -47,7 +47,7 @@ The following arguments are supported:
 
 ## Import
 
-A team member can be imported; use `<TEAM ID>/<ORGANIZATION MEMBERSHIP ID>` or `<ORGANIZATION NAME>/<TEAM NAME>/<USER EMAIL>`
+A team member can be imported; use `<TEAM ID>/<ORGANIZATION MEMBERSHIP ID>` or `<ORGANIZATION NAME>/<USER EMAIL>/<TEAM NAME>`
 as the import ID. For example:
 
 ```shell
@@ -55,5 +55,6 @@ terraform import tfe_team_organization_member.test team-47qC3LmA47piVan7/ou-2342
 ```
 or
 ```shell
-terraform import tfe_team_organization_member.test my-org-name/my-team-name/user@company.com
+terraform import tfe_team_organization_member.test my-org-name/user@company.com/my-team-name
 ```
+~> **NOTE:** The `<ORGANIZATION NAME>/<USER EMAIL>/<TEAM NAME>` import ID format cannot be used if there are `/` characters in the user's email. These users must be imported with the `<TEAM ID>/<ORGANIZATION MEMBERSHIP ID>` format instead  
