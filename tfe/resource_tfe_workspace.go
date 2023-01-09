@@ -731,7 +731,7 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 	} else {
 		if forceDelete {
 			return fmt.Errorf(
-				"Error deleting workspace %s: missing required permissions to set force delete workspaces in the organization.", id)
+				"Error deleting workspace %s: missing required permissions to set force delete workspaces in the organization", id)
 		}
 		err = errWorkspaceResourceCountCheck(id, ws.ResourceCount)
 		if err != nil {

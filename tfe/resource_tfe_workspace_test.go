@@ -2084,7 +2084,7 @@ func TestTFEWorkspace_delete_withoutCanForceDeletePermission(t *testing.T) {
 	}
 
 	workspace, err = client.Workspaces.ReadByID(ctx, workspace.ID)
-	if err != tfe.ErrResourceNotFound {
+	if errors.Is(err, tfe.ErrResourceNotFound) {
 		t.Fatalf("Expected workspace %s to have been deleted", workspace.ID)
 	}
 }

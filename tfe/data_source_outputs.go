@@ -205,22 +205,22 @@ func parseStateOutput(stateOutput *stateData) (map[string]tftypes.Value, map[str
 	for name, output := range stateOutput.outputs {
 		marshData, err := output.Value.Type().MarshalJSON()
 		if err != nil {
-			return nil, nil, nil, nil, fmt.Errorf("Could not marshal output type: %w", err)
+			return nil, nil, nil, nil, fmt.Errorf("could not marshal output type: %w", err)
 		}
 		tfType, err := tftypes.ParseJSONType(marshData)
 		if err != nil {
-			return nil, nil, nil, nil, fmt.Errorf("Could not parse json type data: %w", err)
+			return nil, nil, nil, nil, fmt.Errorf("could not parse json type data: %w", err)
 		}
 		mByte, err := ctyjson.Marshal(output.Value, output.Value.Type())
 		if err != nil {
-			return nil, nil, nil, nil, fmt.Errorf("Could not marshal output value and output type: %w", err)
+			return nil, nil, nil, nil, fmt.Errorf("could not marshal output value and output type: %w", err)
 		}
 		tfRawState := tfprotov5.RawState{
 			JSON: mByte,
 		}
 		newVal, err := tfRawState.Unmarshal(tfType)
 		if err != nil {
-			return nil, nil, nil, nil, fmt.Errorf("Could not unmarshal tftype into value: %w", err)
+			return nil, nil, nil, nil, fmt.Errorf("could not unmarshal tftype into value: %w", err)
 		}
 		if output.Sensitive.False() {
 			tftypesNonsensitiveValues[name] = newVal

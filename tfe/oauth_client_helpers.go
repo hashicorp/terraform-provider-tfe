@@ -30,15 +30,16 @@ func fetchOAuthClientByNameOrServiceProvider(ctx context.Context, tfeClient *tfe
 		}
 
 		for _, item := range ocList.Items {
-			if name != "" && serviceProvider != "" {
+			switch {
+			case name != "" && serviceProvider != "":
 				if item.Name != nil && *item.Name == name && item.ServiceProvider == serviceProvider {
 					ocMatches = append(ocMatches, item)
 				}
-			} else if name != "" {
+			case name != "":
 				if item.Name != nil && *item.Name == name {
 					ocMatches = append(ocMatches, item)
 				}
-			} else if serviceProvider != "" {
+			case serviceProvider != "":
 				if item.ServiceProvider == serviceProvider {
 					ocMatches = append(ocMatches, item)
 				}
@@ -54,10 +55,10 @@ func fetchOAuthClientByNameOrServiceProvider(ctx context.Context, tfeClient *tfe
 		options.PageNumber = ocList.NextPage
 	}
 	if len(ocMatches) == 0 {
-		return nil, fmt.Errorf("No OAuthClients found matching the given parameters")
+		return nil, fmt.Errorf("no OAuthClients found matching the given parameters")
 	}
 	if len(ocMatches) > 1 {
-		return nil, fmt.Errorf("Too many OAuthClients were found to match the given parameters. Please narrow your search.")
+		return nil, fmt.Errorf("too many OAuthClients were found to match the given parameters. Please narrow your search")
 	}
 
 	return ocMatches[0], nil

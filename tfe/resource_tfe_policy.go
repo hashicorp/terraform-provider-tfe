@@ -144,7 +144,7 @@ func resourceTFEPolicyCreate(d *schema.ResourceData, meta interface{}) error {
 		options, err = createOPAPolicyOptions(options, d)
 	default:
 		err = fmt.Errorf(
-			"Unsupported policy kind %s: has to be one of [%s, %s]", kind, string(tfe.Sentinel), string(tfe.OPA))
+			"unsupported policy kind %s: has to be one of [%s, %s]", kind, string(tfe.Sentinel), string(tfe.OPA))
 	}
 	if err != nil {
 		return err
@@ -185,7 +185,7 @@ func createOPAPolicyOptions(options *tfe.PolicyCreateOptions, d *schema.Resource
 
 	vQuery, ok := d.GetOk("query")
 	if !ok {
-		return options, fmt.Errorf("Missing query for OPA policy.")
+		return options, fmt.Errorf("missing query for OPA policy")
 	}
 	options.Query = tfe.String(vQuery.(string))
 
