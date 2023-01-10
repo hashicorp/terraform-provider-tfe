@@ -1,6 +1,7 @@
 ## Unreleased
 
 BUG FIXES:
+* `r/tfe_workspace`: Return all workspace safe deletion errors by @skeggse ([#758](https://github.com/hashicorp/terraform-provider-tfe/pull/758))
 
 FEATURES:
 
