@@ -47,7 +47,6 @@ func TestAccTFEPolicySet_basic(t *testing.T) {
 }
 
 func TestAccTFEPolicySetOPA_basic(t *testing.T) {
-	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -85,7 +84,6 @@ func TestAccTFEPolicySetOPA_basic(t *testing.T) {
 }
 
 func TestAccTFEPolicySet_updateOverridable(t *testing.T) {
-	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
