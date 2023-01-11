@@ -308,7 +308,7 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesEmail(t *
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_emailWithToken(rInt),
-				ExpectError: regexp.MustCompile(`Token cannot be set with destination type of email`),
+				ExpectError: regexp.MustCompile(`token cannot be set with destination type of email`),
 			},
 		},
 	})
