@@ -120,27 +120,30 @@ func (d dataSourceOutputs) readConfigValues(req *tfprotov5.ReadDataSourceRequest
 			"id":                  tftypes.String,
 		}})
 	if err != nil {
-		return orgName, wsName, fmt.Errorf("Error unmarshalling config: %w", err)
+		return "", "", fmt.Errorf("Error unmarshalling config: %w", err)
 	}
 
 	var valMap map[string]tftypes.Value
 	err = val.As(&valMap)
 	if err != nil {
-		return orgName, wsName, fmt.Errorf("Error assigning configuration attributes to map: %w", err)
-	}
-
-	if valMap["organization"].IsNull() || valMap["workspace"].IsNull() {
-		return orgName, wsName, fmt.Errorf("organization and workspace cannot be nil: %w", err)
+		return "", "", fmt.Errorf("error assigning configuration attributes to map: %w", err)
 	}
 
 	err = valMap["organization"].As(&orgName)
 	if err != nil {
-		return orgName, wsName, fmt.Errorf("Error assigning 'organization' value to string: %w", err)
+		if d.defaultOrganization == "" {
+			return "", "", fmt.Errorf("error assigning 'organization' value to string: %w", err)
+		}
+		orgName = d.defaultOrganization
+	}
+
+	if valMap["workspace"].IsNull() {
+		return orgName, "", fmt.Errorf("workspace cannot be nil: %w", err)
 	}
 
 	err = valMap["workspace"].As(&wsName)
 	if err != nil {
-		return orgName, wsName, fmt.Errorf("Error assigning 'workspace' value to string: %w", err)
+		return orgName, wsName, fmt.Errorf("error assigning 'workspace' value to string: %w", err)
 	}
 
 	return orgName, wsName, nil
@@ -162,7 +165,7 @@ func (d dataSourceOutputs) readStateOutput(ctx context.Context, orgName, wsName 
 	}
 	ws, err := d.tfeClient.Workspaces.ReadWithOptions(ctx, orgName, wsName, opts)
 	if err != nil {
-		return nil, fmt.Errorf("Error reading workspace: %w", err)
+		return nil, fmt.Errorf("error reading workspace: %w", err)
 	}
 
 	sd := &stateData{

@@ -19,7 +19,8 @@ func resourceTFEAdminOrganizationSettings() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				ForceNew: true,
 			},
 			"access_beta_tools": {
 				Type:     schema.TypeBool,
@@ -54,7 +55,10 @@ func resourceTFEAdminOrganizationSettingsRead(d *schema.ResourceData, meta inter
 	config := meta.(ConfiguredClient)
 
 	// Get the name.
-	name := d.Get("organization").(string)
+	name, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	log.Printf("[DEBUG] Read configuration of admin organization: %s", name)
 	org, err := config.Client.Admin.Organizations.Read(ctx, name)
@@ -114,10 +118,13 @@ func resourceTFEAdminOrganizationSettingsDelete(d *schema.ResourceData, meta int
 
 func resourceTFEAdminOrganizationSettingsUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
-	name := d.Get("organization").(string)
+	name, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 	globalModuleSharing := d.Get("global_module_sharing").(bool)
 
-	_, err := config.Client.Admin.Organizations.Update(ctx, name, tfe.AdminOrganizationUpdateOptions{
+	_, err = config.Client.Admin.Organizations.Update(ctx, name, tfe.AdminOrganizationUpdateOptions{
 		AccessBetaTools:     tfe.Bool(d.Get("access_beta_tools").(bool)),
 		GlobalModuleSharing: tfe.Bool(globalModuleSharing),
 		WorkspaceLimit:      tfe.Int(d.Get("workspace_limit").(int)),

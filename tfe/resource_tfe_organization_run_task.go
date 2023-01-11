@@ -29,7 +29,8 @@ func resourceTFEOrganizationRunTask() *schema.Resource {
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Computed: true,
 				ForceNew: true,
 			},
 
@@ -67,11 +68,14 @@ func resourceTFEOrganizationRunTask() *schema.Resource {
 }
 
 func resourceTFEOrganizationRunTaskCreate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(ConfiguredClient)
+	config := meta.(ConfiguredClient)
 
 	// Get the task name and organization.
 	name := d.Get("name").(string)
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	// Create a new options struct.
 	options := tfe.RunTaskCreateOptions{
@@ -84,7 +88,7 @@ func resourceTFEOrganizationRunTaskCreate(d *schema.ResourceData, meta interface
 	}
 
 	log.Printf("[DEBUG] Create task %s for organization: %s", name, organization)
-	task, err := client.Client.RunTasks.Create(ctx, organization, options)
+	task, err := config.Client.RunTasks.Create(ctx, organization, options)
 	if err != nil {
 		return fmt.Errorf(
 			"Error creating task %s for organization %s: %w", name, organization, err)

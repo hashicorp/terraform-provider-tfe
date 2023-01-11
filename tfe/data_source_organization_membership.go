@@ -25,7 +25,7 @@ func dataSourceTFEOrganizationMembership() *schema.Resource {
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 
 			"user_id": {
@@ -42,7 +42,11 @@ func dataSourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interf
 	// Get the user email and organization.
 	email := d.Get("email").(string)
 	username := d.Get("username").(string)
-	organization := d.Get("organization").(string)
+
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	orgMember, err := fetchOrganizationMemberByNameOrEmail(context.Background(), config.Client, organization, username, email)
 	if err != nil {

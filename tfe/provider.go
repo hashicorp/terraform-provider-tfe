@@ -28,8 +28,9 @@ const defaultHostname = "app.terraform.io"
 const defaultSSLSkipVerify = false
 
 var (
-	tfeServiceIDs       = []string{"tfe.v2.2"}
-	errMissingAuthToken = errors.New("required token could not be found. Please set the token using an input variable in the provider configuration block or by using the TFE_TOKEN environment variable")
+	tfeServiceIDs          = []string{"tfe.v2.2"}
+	errMissingAuthToken    = errors.New("required token could not be found. Please set the token using an input variable in the provider configuration block or by using the TFE_TOKEN environment variable")
+	errMissingOrganization = errors.New("no organization was specified on the resource or provider")
 )
 
 // Config is the structure of the configuration for the Terraform CLI.
@@ -48,6 +49,21 @@ type ConfigHost struct {
 type ConfiguredClient struct {
 	Client              *tfe.Client
 	DefaultOrganization string
+}
+
+func (c ConfiguredClient) schemaOrDefaultOrganization(resource *schema.ResourceData) (string, error) {
+	return c.schemaOrDefaultOrganizationKey(resource, "organization")
+}
+
+func (c ConfiguredClient) schemaOrDefaultOrganizationKey(resource *schema.ResourceData, key string) (string, error) {
+	schemaOrg, got := resource.GetOk(key)
+	if got {
+		return schemaOrg.(string), nil
+	}
+	if c.DefaultOrganization == "" {
+		return "", errMissingOrganization
+	}
+	return c.DefaultOrganization, nil
 }
 
 // ctx is used as default context.Context when making TFE calls.

@@ -16,7 +16,7 @@ func dataSourceTFEOrganizationRunTask() *schema.Resource {
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 
 			"url": {
@@ -45,7 +45,10 @@ func dataSourceTFEOrganizationRunTask() *schema.Resource {
 func dataSourceTFEOrganizationRunTaskRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 	name := d.Get("name").(string)
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	task, err := fetchOrganizationRunTask(name, organization, config.Client)
 	if err != nil {

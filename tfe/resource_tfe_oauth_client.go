@@ -24,7 +24,8 @@ func resourceTFEOAuthClient() *schema.Resource {
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Computed: true,
 				ForceNew: true,
 			},
 
@@ -108,7 +109,10 @@ func resourceTFEOAuthClientCreate(d *schema.ResourceData, meta interface{}) erro
 	config := meta.(ConfiguredClient)
 
 	// Get the organization and provider.
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 	name := d.Get("name").(string)
 	privateKey := d.Get("private_key").(string)
 	rsaPublicKey := d.Get("rsa_public_key").(string)
@@ -170,9 +174,9 @@ func resourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	// Update the config.
+	d.Set("organization", oc.Organization.Name)
 	d.Set("api_url", oc.APIURL)
 	d.Set("http_url", oc.HTTPURL)
-	d.Set("organization", oc.Organization.Name)
 	d.Set("service_provider", string(oc.ServiceProvider))
 
 	switch len(oc.OAuthTokens) {

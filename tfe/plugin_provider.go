@@ -211,7 +211,7 @@ func PluginProviderServer() tfprotov5.ProviderServer {
 							Type:            tftypes.String,
 							Description:     "The organization to fetch the remote state from.",
 							DescriptionKind: tfprotov5.StringKindPlain,
-							Required:        true,
+							Optional:        true,
 						},
 						{
 							Name:      "values",

@@ -20,7 +20,7 @@ func dataSourceTFEPolicySet() *schema.Resource {
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 
 			"description": {
@@ -97,7 +97,10 @@ func dataSourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error 
 	config := meta.(ConfiguredClient)
 
 	name := d.Get("name").(string)
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	listOptions := tfe.PolicySetListOptions{}
 
@@ -118,10 +121,6 @@ func dataSourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error 
 				d.Set("description", policySet.Description)
 				d.Set("global", policySet.Global)
 				d.Set("policies_path", policySet.PoliciesPath)
-
-				if policySet.Organization != nil {
-					d.Set("organization", policySet.Organization.Name)
-				}
 
 				if policySet.Kind != "" {
 					d.Set("kind", policySet.Kind)

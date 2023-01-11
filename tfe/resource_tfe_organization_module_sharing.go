@@ -19,7 +19,9 @@ func resourceTFEOrganizationModuleSharing() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Computed: true,
+				ForceNew: true,
 				DiffSuppressFunc: func(k, old, current string, d *schema.ResourceData) bool {
 					return strings.EqualFold(old, current)
 				},
@@ -36,7 +38,12 @@ func resourceTFEOrganizationModuleSharing() *schema.Resource {
 
 func resourceTFEOrganizationModuleSharingCreate(d *schema.ResourceData, meta interface{}) error {
 	// Get the organization name that will share "produce" modules
-	producer := d.Get("organization").(string)
+	config := meta.(ConfiguredClient)
+
+	producer, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	log.Printf("[DEBUG] Create %s module consumers", producer)
 	d.SetId(producer)

@@ -16,7 +16,7 @@ func dataSourceTFEAgentPool() *schema.Resource {
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 		},
 	}
@@ -27,7 +27,10 @@ func dataSourceTFEAgentPoolRead(d *schema.ResourceData, meta interface{}) error 
 
 	// Get the name and organization.
 	name := d.Get("name").(string)
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	id, err := fetchAgentPoolID(organization, name, config.Client)
 	if err != nil {

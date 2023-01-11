@@ -22,7 +22,8 @@ func resourceTFEOrganizationToken() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Computed: true,
 				ForceNew: true,
 			},
 
@@ -45,10 +46,13 @@ func resourceTFEOrganizationTokenCreate(d *schema.ResourceData, meta interface{}
 	config := meta.(ConfiguredClient)
 
 	// Get the organization name.
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	log.Printf("[DEBUG] Check if a token already exists for organization: %s", organization)
-	_, err := config.Client.OrganizationTokens.Read(ctx, organization)
+	_, err = config.Client.OrganizationTokens.Read(ctx, organization)
 	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 		return fmt.Errorf("error checking if a token exists for organization %s: %w", organization, err)
 	}
@@ -97,10 +101,13 @@ func resourceTFEOrganizationTokenDelete(d *schema.ResourceData, meta interface{}
 	config := meta.(ConfiguredClient)
 
 	// Get the organization name.
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	log.Printf("[DEBUG] Delete token from organization: %s", organization)
-	err := config.Client.OrganizationTokens.Delete(ctx, organization)
+	err = config.Client.OrganizationTokens.Delete(ctx, organization)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil

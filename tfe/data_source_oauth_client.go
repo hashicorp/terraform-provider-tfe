@@ -91,7 +91,10 @@ func dataSourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) erro
 		}
 	default:
 		// search by name or service provider within a specific organization instead
-		organization := d.Get("organization").(string)
+		organization, err := config.schemaOrDefaultOrganization(d)
+		if err != nil {
+			return err
+		}
 
 		var name string
 		var serviceProvider tfe.ServiceProviderType
@@ -119,7 +122,6 @@ func dataSourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) erro
 	if oc.Name != nil {
 		d.Set("name", *oc.Name)
 	}
-	d.Set("organization", oc.Organization.Name)
 	d.Set("service_provider", oc.ServiceProvider)
 	d.Set("service_provider_display_name", oc.ServiceProviderName)
 

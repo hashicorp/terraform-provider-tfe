@@ -34,7 +34,7 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 
 			"ids": {
@@ -86,7 +86,10 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 	config := meta.(ConfiguredClient)
 
 	// Get the organization.
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	// Create a map with all the names we are looking for.
 	var id string

@@ -26,7 +26,8 @@ func resourceTFEOrganizationMembership() *schema.Resource {
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Computed: true,
 				ForceNew: true,
 			},
 
@@ -48,7 +49,10 @@ func resourceTFEOrganizationMembershipCreate(d *schema.ResourceData, meta interf
 
 	// Get the email and organization.
 	email := d.Get("email").(string)
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	// Create a new options struct.
 	options := tfe.OrganizationMembershipCreateOptions{

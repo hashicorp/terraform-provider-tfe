@@ -28,7 +28,8 @@ func resourceTFEProject() *schema.Resource {
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Computed: true,
 				ForceNew: true,
 			},
 		},
@@ -38,7 +39,10 @@ func resourceTFEProject() *schema.Resource {
 func resourceTFEProjectCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	config := meta.(ConfiguredClient)
 
-	organizationName := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 	name := d.Get("name").(string)
 
 	options := tfe.ProjectCreateOptions{
@@ -46,7 +50,7 @@ func resourceTFEProjectCreate(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	log.Printf("[DEBUG] Create new project: %s", name)
-	project, err := config.Client.Projects.Create(ctx, organizationName, options)
+	project, err := config.Client.Projects.Create(ctx, organization, options)
 	if err != nil {
 		return diag.Errorf("Error creating the new project %s: %v", name, err)
 	}

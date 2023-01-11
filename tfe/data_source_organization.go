@@ -69,7 +69,11 @@ func dataSourceTFEOrganization() *schema.Resource {
 func dataSourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
-	name := d.Get("name").(string)
+	name, err := config.schemaOrDefaultOrganizationKey(d, "name")
+	if err != nil {
+		return err
+	}
+
 	log.Printf("[DEBUG] Read configuration for Organization: %s", name)
 	org, err := config.Client.Organizations.Read(ctx, name)
 	if err != nil {
@@ -81,7 +85,6 @@ func dataSourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) err
 
 	log.Printf("[DEBUG] Setting Organization Attributes")
 	d.SetId(org.ExternalID)
-	d.Set("name", org.Name)
 	d.Set("external_id", org.ExternalID)
 	d.Set("collaborator_auth_policy", org.CollaboratorAuthPolicy)
 	d.Set("cost_estimation_enabled", org.CostEstimationEnabled)

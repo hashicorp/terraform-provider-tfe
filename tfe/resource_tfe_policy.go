@@ -40,7 +40,8 @@ func resourceTFEPolicy() *schema.Resource {
 			"organization": {
 				Description: "Name of the organization that this policy belongs to",
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
+				Computed:    true,
 				ForceNew:    true,
 			},
 
@@ -118,7 +119,10 @@ func resourceTFEPolicyCreate(d *schema.ResourceData, meta interface{}) error {
 
 	// Get the name and organization.
 	name := d.Get("name").(string)
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	var kind string
 	if vKind, ok := d.GetOk("kind"); ok {
@@ -135,7 +139,6 @@ func resourceTFEPolicyCreate(d *schema.ResourceData, meta interface{}) error {
 		options.Description = tfe.String(desc.(string))
 	}
 
-	var err error
 	//  Setup per-kind policy options
 	switch tfe.PolicyKind(kind) {
 	case tfe.Sentinel:

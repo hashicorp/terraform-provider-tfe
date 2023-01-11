@@ -19,7 +19,7 @@ func dataSourceTFETeam() *schema.Resource {
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 			"sso_team_id": {
 				Type:     schema.TypeString,
@@ -34,7 +34,10 @@ func dataSourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 
 	// Get the name and organization.
 	name := d.Get("name").(string)
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	tl, err := config.Client.Teams.List(ctx, organization, &tfe.TeamListOptions{
 		Names: []string{name},

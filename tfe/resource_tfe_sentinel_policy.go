@@ -37,7 +37,8 @@ func resourceTFESentinelPolicy() *schema.Resource {
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Computed: true,
 				ForceNew: true,
 			},
 
@@ -68,7 +69,10 @@ func resourceTFESentinelPolicyCreate(d *schema.ResourceData, meta interface{}) e
 
 	// Get the name and organization.
 	name := d.Get("name").(string)
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	// Create a new options struct.
 	options := tfe.PolicyCreateOptions{

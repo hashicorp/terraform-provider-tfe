@@ -19,7 +19,7 @@ func dataSourceTFEVariableSet() *schema.Resource {
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 
 			"description": {
@@ -54,7 +54,10 @@ func dataSourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) erro
 
 	// Get the name and organization.
 	name := d.Get("name").(string)
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	// Create an options struct.
 	options := tfe.VariableSetListOptions{}
