@@ -62,7 +62,7 @@ The following arguments are supported:
 * `allow_destroy_plan` - (Optional) Whether destroy plans can be queued on the workspace.
 * `auto_apply` - (Optional) Whether to automatically apply changes when a
   Terraform plan is successful. Defaults to `false`.
-* `execution_mode` - (Optional) Which [execution mode](https://www.terraform.io/docs/cloud/workspaces/settings.html#execution-mode)
+* `execution_mode` - (Optional) Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode)
   to use. Using Terraform Cloud, valid values are `remote`, `local` or`agent`.
   Defaults to `remote`. Using Terraform Enterprise, only `remote`and `local`
   execution modes are valid.  When set to `local`, the workspace will be used
@@ -101,17 +101,17 @@ The following arguments are supported:
 * `tag_names` - (Optional) A list of tag names for this workspace. Note that tags must only contain lowercase letters, numbers, colons, or hyphens.
 * `terraform_version` - (Optional) The version of Terraform to use for this
   workspace. This can be either an exact version or a
-  [version constraint](https://www.terraform.io/docs/language/expressions/version-constraints.html)
+  [version constraint](https://developer.hashicorp.com/terraform/language/expressions/version-constraints)
   (like `~> 1.0.0`); if you specify a constraint, the workspace will always use
   the newest release that meets that constraint. Defaults to the latest
   available version.
 * `trigger_prefixes` - (Optional) List of repository-root-relative paths which describe all locations
   to be tracked for changes.
-* `trigger_patterns` - (Optional) List of [glob patterns](https://www.terraform.io/cloud-docs/workspaces/settings/vcs#glob-patterns-for-automatic-run-triggering) that describe the files Terraform Cloud monitors for changes. Trigger patterns are always appended to the root directory of the repository. Mutually exclusive with `trigger-prefixes`.
+* `trigger_patterns` - (Optional) List of [glob patterns](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/vcs#glob-patterns-for-automatic-run-triggering) that describe the files Terraform Cloud monitors for changes. Trigger patterns are always appended to the root directory of the repository. Mutually exclusive with `trigger-prefixes`.
 * `working_directory` - (Optional) A relative path that Terraform will execute
   within.  Defaults to the root of your repository.
-* `vcs_repo` - (Optional) Settings for the workspace's VCS repository, enabling the [UI/VCS-driven run workflow](https://www.terraform.io/docs/cloud/run/ui.html).
-  Omit this argument to utilize the [CLI-driven](https://www.terraform.io/docs/cloud/run/cli.html) and [API-driven](https://www.terraform.io/docs/cloud/run/api.html)
+* `vcs_repo` - (Optional) Settings for the workspace's VCS repository, enabling the [UI/VCS-driven run workflow](https://developer.hashicorp.com/terraform/cloud-docs/run/ui).
+  Omit this argument to utilize the [CLI-driven](https://developer.hashicorp.com/terraform/cloud-docs/run/cli) and [API-driven](https://developer.hashicorp.com/terraform/cloud-docs/run/api)
   workflows, where runs are not driven by webhooks on your VCS provider.
 * `force_delete` - (Optional) If this attribute is present on a workspace that is being deleted through the provider, it will use the existing force delete API. If this attribute is not present or false it will safe delete the workspace.
 

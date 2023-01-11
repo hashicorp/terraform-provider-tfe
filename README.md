@@ -50,13 +50,13 @@ provider "tfe" {
 }
 ```
 
-Since v0.24.0, this provider requires [Terraform](https://www.terraform.io/downloads.html) >= 0.12
+Since v0.24.0, this provider requires [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 0.12
 
-For more information on provider installation and constraining provider versions, see the [Provider Requirements documentation](https://www.terraform.io/docs/configuration/provider-requirements.html).
+For more information on provider installation and constraining provider versions, see the [Provider Requirements documentation](https://developer.hashicorp.com/terraform/language/providers/requirements).
 
 ## Usage
 
-[Create a user or team API token in Terraform Cloud/Enterprise](https://www.terraform.io/docs/cloud/users-teams-organizations/api-tokens.html), and use the token in the provider configuration block:
+[Create a user or team API token in Terraform Cloud/Enterprise](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/api-tokens), and use the token in the provider configuration block:
 
 ```hcl
 provider "tfe" {
@@ -73,7 +73,7 @@ resource "tfe_organization" "org" {
 There are several other ways to configure the authentication token, depending on
 your use case. For other methods, see the [Authentication documentation](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs#authentication)
 
-For more information on configuring providers in general, see the [Provider Configuration documentation](https://www.terraform.io/docs/configuration/providers.html).
+For more information on configuring providers in general, see the [Provider Configuration documentation](https://developer.hashicorp.com/terraform/language/providers/configuration).
 
 # Development
 

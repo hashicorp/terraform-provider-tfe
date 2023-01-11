@@ -1,6 +1,6 @@
 # Setup Provider to Debug Locally
 
-Find more information [here](https://www.terraform.io/plugin/debugging#starting-a-provider-in-debug-mode)
+Find more information [here](https://developer.hashicorp.com/terraform/plugin/debugging#starting-a-provider-in-debug-mode)
 
 Clone the repository and build the provider binary with the necessary Go compiler flags: `-gcflags=all=-N -l`, to disable compiler optimization in order for the debugger to work efficiently.
 
@@ -15,7 +15,7 @@ example, replace {platform}.
 go build -gcflags="all=-N -l" -o bin/registry.terraform.io/hashicorp/tfe/9.9.9/{platform}/terraform-provider-tfe
 ```
 
-You can activate the debugger via your editor such as [visual studio code](https://www.terraform.io/plugin/debugging#visual-studio-code) or the Delve CLI.
+You can activate the debugger via your editor such as [visual studio code](https://developer.hashicorp.com/terraform/plugin/debugging#visual-studio-code) or the Delve CLI.
 
 
 #### Delve
@@ -39,7 +39,7 @@ dlv exec \
 
 ##### Visual Studio Code
 
-Example taken from [here](https://www.terraform.io/plugin/debugging#visual-studio-code)
+Example taken from [here](https://developer.hashicorp.com/terraform/plugin/debugging#visual-studio-code)
 ```
 {
     "version": "0.2.0",

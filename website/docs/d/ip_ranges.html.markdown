@@ -7,7 +7,7 @@ description: |-
 
 # Data Source: tfe_ip_ranges
 
-Use this data source to retrieve a list of Terraform Cloud's IP ranges. For more information about these IP ranges, view our [documentation about Terraform Cloud IP Ranges](https://www.terraform.io/docs/cloud/architectural-details/ip-ranges.html).
+Use this data source to retrieve a list of Terraform Cloud's IP ranges. For more information about these IP ranges, view our [documentation about Terraform Cloud IP Ranges](https://developer.hashicorp.com/terraform/cloud-docs/architectural-details/ip-ranges).
 
 ## Example Usage
 

@@ -20,7 +20,7 @@ _Remember to:_
 _Include any links here that might be helpful for people reviewing your PR. If there are none, feel free to delete this section._
 
 - [go-tfe documentation](https://pkg.go.dev/github.com/hashicorp/go-tfe?tab=doc#xxxx)
-- [API documentation](https://www.terraform.io/docs/cloud/api/xxxx.html)
+- [API documentation](https://developer.hashicorp.com/terraform/cloud-docs/xxxx)
 - [Related PR](https://github.com/hashicorp/terraform-provider-tfe/pull/xxxx)
 
 ## Output from acceptance tests

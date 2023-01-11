@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - [Go 1.17+](https://golang.org/doc/install) (to build the provider and run the tests)
-- [Terraform 0.14+](https://www.terraform.io/downloads.html) (to run the tests)
+- [Terraform 0.14+](https://developer.hashicorp.com/terraform/downloads) (to run the tests)
 - [golangci-lint](https://golangci-lint.run/usage/install/#local-installation) (to run code checks locally)
 
 ## Building the Provider
@@ -32,10 +32,10 @@ $ terraform init
 
 ##### Using Terraform 0.13+
 
-You can use a filesystem mirror (either one of the [implied local mirror directories](https://www.terraform.io/docs/commands/cli-config.html#implied-local-mirror-directories) for your platform
-or by [configuring your own](https://www.terraform.io/docs/commands/cli-config.html#explicit-installation-method-configuration)).
+You can use a filesystem mirror (either one of the [implied local mirror directories](https://developer.hashicorp.com/terraform/cli/config/config-file#implied-local-mirror-directories) for your platform
+or by [configuring your own](https://developer.hashicorp.com/terraform/cli/config/config-file#explicit-installation-method-configuration)).
 
-See the [Provider Requirements](https://www.terraform.io/docs/configuration/provider-requirements.html) documentation for more information.
+See the [Provider Requirements](https://developer.hashicorp.com/terraform/language/providers/requirements) documentation for more information.
 
 ##### Using Terraform 0.12
 
