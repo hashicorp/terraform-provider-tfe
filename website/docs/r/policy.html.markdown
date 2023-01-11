@@ -50,11 +50,11 @@ The following arguments are supported:
 
 * `name` - (Required) Name of the policy.
 * `description` - (Optional) A description of the policy's purpose.
-* `organization` - (Required) Name of the organization.
+* `organization` - (Optional) Name of the organization. If omitted, default_organization provider config must be defined.
 * `kind` - (Optional) The policy-as-code framework associated with the policy.
-   Defaults to `sentinel` if not provided. Valid values are `sentinel` and `opa`. 
-* `query` - (Optional) The OPA query to identify a specific policy rule that 
-   needs to run within your Rego code. Required for all OPA policies. 
+   Defaults to `sentinel` if not provided. Valid values are `sentinel` and `opa`.
+* `query` - (Optional) The OPA query to identify a specific policy rule that
+   needs to run within your Rego code. Required for all OPA policies.
 * `policy` - (Required) The actual policy itself.
 * `enforce_mode` - (Optional) The enforcement level of the policy. Valid
   values for Sentinel are `advisory`, `hard-mandatory` and `soft-mandatory`. Defaults

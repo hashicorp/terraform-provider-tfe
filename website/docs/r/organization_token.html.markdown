@@ -24,7 +24,7 @@ resource "tfe_organization_token" "test" {
 
 The following arguments are supported:
 
-* `organization` - (Required) Name of the organization.
+* `organization` - (Optional) Name of the organization. If omitted, default_organization provider config must be defined.
 * `force_regenerate` - (Optional) If set to `true`, a new token will be
   generated even if a token already exists. This will invalidate the existing
   token!

@@ -32,7 +32,7 @@ resource "tfe_project" "test" {
 The following arguments are supported:
 
 * `name` - (Required) Name of the project.
-* `organization` - (Required) Name of the organization.
+* `organization` - (Optional) Name of the organization. If omitted, default_organization provider config must be defined.
 
 ## Attributes Reference
 

@@ -34,7 +34,7 @@ The following arguments are supported:
 * `description` - (Optional) A short description of the the task.
 * `hmac_key` - (Optional) HMAC key to verify run task.
 * `name` - (Required) Name of the task.
-* `organization` - (Required) Name of the organization.
+* `organization` - (Optional) Name of the organization. If omitted, default_organization provider config must be defined.
 * `url` - (Required) URL to send a run task payload.
 
 ## Attributes Reference
