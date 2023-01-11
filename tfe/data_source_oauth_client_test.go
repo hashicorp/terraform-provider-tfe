@@ -148,7 +148,7 @@ func TestAccTFEOAuthClientDataSource_sameName(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEOAuthClientDataSourceConfig_sameName(rInt),
-				ExpectError: regexp.MustCompile("Too many OAuthClients were found to match the given parameters"),
+				ExpectError: regexp.MustCompile("too many OAuthClients were found to match the given parameters"),
 			},
 		},
 	})
@@ -162,7 +162,7 @@ func TestAccTFEOAuthClientDataSource_noName(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEOAuthClientDataSourceConfig_noName(rInt),
-				ExpectError: regexp.MustCompile("No OAuthClients found matching the given parameters"),
+				ExpectError: regexp.MustCompile("no OAuthClients found matching the given parameters"),
 			},
 		},
 	})
@@ -176,7 +176,7 @@ func TestAccTFEOAuthClientDataSource_sameServiceProvider(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEOAuthClientDataSourceConfig_sameServiceProvider(rInt),
-				ExpectError: regexp.MustCompile("Too many OAuthClients were found to match the given parameters"),
+				ExpectError: regexp.MustCompile("too many OAuthClients were found to match the given parameters"),
 			},
 		},
 	})

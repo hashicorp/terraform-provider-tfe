@@ -192,7 +192,7 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesEmail(t *testin
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_emailWithToken(rInt),
-				ExpectError: regexp.MustCompile(`Token cannot be set with destination type of email`),
+				ExpectError: regexp.MustCompile(`token cannot be set with destination type of email`),
 			},
 		},
 	})
@@ -207,11 +207,11 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesGeneric(t *test
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`Email addresses cannot be set with destination type of generic`),
+				ExpectError: regexp.MustCompile(`email addresses cannot be set with destination type of generic`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`Email user IDs cannot be set with destination type of generic`),
+				ExpectError: regexp.MustCompile(`email user IDs cannot be set with destination type of generic`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithoutURL(rInt),
@@ -230,15 +230,15 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesSlack(t *testin
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`Email addresses cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`email addresses cannot be set with destination type of slack`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`Email user IDs cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`email user IDs cannot be set with destination type of slack`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithToken(rInt),
-				ExpectError: regexp.MustCompile(`Token cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`token cannot be set with destination type of slack`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithoutURL(rInt),
@@ -257,15 +257,15 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesMicrosoftTeams(
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`Email addresses cannot be set with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`email addresses cannot be set with destination type of microsoft-teams`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`Email user IDs cannot be set with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`email user IDs cannot be set with destination type of microsoft-teams`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithToken(rInt),
-				ExpectError: regexp.MustCompile(`Token cannot be set with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`token cannot be set with destination type of microsoft-teams`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithoutURL(rInt),
@@ -343,11 +343,11 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesGeneric(t
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`Email addresses cannot be set with destination type of generic`),
+				ExpectError: regexp.MustCompile(`email addresses cannot be set with destination type of generic`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`Email user IDs cannot be set with destination type of generic`),
+				ExpectError: regexp.MustCompile(`email user IDs cannot be set with destination type of generic`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithoutURL(rInt),
@@ -386,15 +386,15 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesSlack(t *
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`Email addresses cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`email addresses cannot be set with destination type of slack`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`Email user IDs cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`email user IDs cannot be set with destination type of slack`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithToken(rInt),
-				ExpectError: regexp.MustCompile(`Token cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`token cannot be set with destination type of slack`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithoutURL(rInt),
@@ -429,15 +429,15 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesMicrosoft
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`Email addresses cannot be set with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`email addresses cannot be set with destination type of microsoft-teams`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`Email user IDs cannot be set with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`email user IDs cannot be set with destination type of microsoft-teams`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithToken(rInt),
-				ExpectError: regexp.MustCompile(`Token cannot be set with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`token cannot be set with destination type of microsoft-teams`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithoutURL(rInt),

@@ -297,12 +297,24 @@ func testAccGithubPreCheck(t *testing.T) {
 	}
 }
 
-var githubPolicySetIdentifier = os.Getenv("GITHUB_POLICY_SET_IDENTIFIER")
-var githubPolicySetBranch = os.Getenv("GITHUB_POLICY_SET_BRANCH")
-var githubPolicySetPath = os.Getenv("GITHUB_POLICY_SET_PATH")
-var githubRegistryModuleIdentifer = os.Getenv("GITHUB_REGISTRY_MODULE_IDENTIFIER")
-var githubToken = os.Getenv("GITHUB_TOKEN")
-var githubWorkspaceIdentifier = os.Getenv("GITHUB_WORKSPACE_IDENTIFIER")
-var githubWorkspaceBranch = os.Getenv("GITHUB_WORKSPACE_BRANCH")
-var tfeUser1 = os.Getenv("TFE_USER1")
-var tfeUser2 = os.Getenv("TFE_USER2")
+func init() {
+	githubToken = os.Getenv("GITHUB_TOKEN")
+	githubPolicySetIdentifier = os.Getenv("GITHUB_POLICY_SET_IDENTIFIER")
+	githubPolicySetBranch = os.Getenv("GITHUB_POLICY_SET_BRANCH")
+	githubPolicySetPath = os.Getenv("GITHUB_POLICY_SET_PATH")
+	githubRegistryModuleIdentifer = os.Getenv("GITHUB_REGISTRY_MODULE_IDENTIFIER")
+	githubWorkspaceIdentifier = os.Getenv("GITHUB_WORKSPACE_IDENTIFIER")
+	githubWorkspaceBranch = os.Getenv("GITHUB_WORKSPACE_BRANCH")
+	tfeUser1 = os.Getenv("TFE_USER1")
+	tfeUser2 = os.Getenv("TFE_USER2")
+}
+
+var githubPolicySetIdentifier string
+var githubPolicySetBranch string
+var githubPolicySetPath string
+var githubRegistryModuleIdentifer string
+var githubToken string
+var githubWorkspaceIdentifier string
+var githubWorkspaceBranch string
+var tfeUser1 string
+var tfeUser2 string

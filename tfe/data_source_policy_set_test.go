@@ -159,7 +159,7 @@ func TestAccTFEPolicySetDataSource_notFound(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEPolicySetDataSourceConfig_notFound(rInt),
-				ExpectError: regexp.MustCompile(`Error: Could not find policy set`),
+				ExpectError: regexp.MustCompile(`Error: could not find policy set`),
 			},
 		},
 	},
