@@ -107,7 +107,7 @@ The following arguments are supported:
   available version.
 * `trigger_prefixes` - (Optional) List of repository-root-relative paths which describe all locations
   to be tracked for changes.
-* `trigger_patterns` - (Optional) List of [glob patterns](https://www.terraform.io/cloud-docs/workspaces/settings/vcs#glob-patterns-for-automatic-run-triggering) that describe the files Terraform Cloud monitors for changes. Trigger patterns are always appended to the root directory of the repository. Mutually exclusive with `trigger-prefixes`. Only available for Terraform Cloud.
+* `trigger_patterns` - (Optional) List of [glob patterns](https://www.terraform.io/cloud-docs/workspaces/settings/vcs#glob-patterns-for-automatic-run-triggering) that describe the files Terraform Cloud monitors for changes. Trigger patterns are always appended to the root directory of the repository. Mutually exclusive with `trigger-prefixes`.
 * `working_directory` - (Optional) A relative path that Terraform will execute
   within.  Defaults to the root of your repository.
 * `vcs_repo` - (Optional) Settings for the workspace's VCS repository, enabling the [UI/VCS-driven run workflow](https://www.terraform.io/docs/cloud/run/ui.html).
