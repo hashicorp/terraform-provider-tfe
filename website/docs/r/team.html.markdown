@@ -58,9 +58,13 @@ The `organization_access` block supports:
 
 ## Import
 
-Teams can be imported; use `<ORGANIZATION NAME>/<TEAM ID>` as the import ID. For
+Teams can be imported; use `<ORGANIZATION NAME>/<TEAM ID>` or `<ORGANIZATION NAME>/<TEAM NAME>` as the import ID. For
 example:
 
 ```shell
 terraform import tfe_team.test my-org-name/team-uomQZysH9ou42ZYY
+```
+or 
+```shell
+terraform import tfe_team.test my-org-name/my-team-name
 ```
