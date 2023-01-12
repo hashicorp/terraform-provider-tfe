@@ -410,17 +410,17 @@ func TestAccTFEPolicySet_vcs(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			if githubToken == "" {
-				t.Skip("Please set githubToken to run this test")
+			if envGithubToken == "" {
+				t.Skip("Please set GITHUB_TOKEN to run this test")
 			}
-			if githubPolicySetIdentifier == "" {
-				t.Skip("Please set githubPolicySetIdentifier to run this test")
+			if envGithubPolicySetIdentifier == "" {
+				t.Skip("Please set GITHUB_POLICY_SET_IDENTIFIER to run this test")
 			}
-			if githubPolicySetBranch == "" {
-				t.Skip("Please set githubPolicySetBranch to run this test")
+			if envGithubPolicySetBranch == "" {
+				t.Skip("Please set GITHUB_POLICY_SET_BRANCH to run this test")
 			}
-			if githubPolicySetPath == "" {
-				t.Skip("Please set githubPolicySetPath to run this test")
+			if envGithubPolicySetPath == "" {
+				t.Skip("Please set GITHUB_POLICY_SET_PATH to run this test")
 			}
 		},
 		Providers:    testAccProviders,
@@ -438,13 +438,13 @@ func TestAccTFEPolicySet_vcs(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "global", "false"),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "vcs_repo.0.identifier", githubPolicySetIdentifier),
+						"tfe_policy_set.foobar", "vcs_repo.0.identifier", envGithubPolicySetIdentifier),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.branch", "main"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.ingress_submodules", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "policies_path", githubPolicySetPath),
+						"tfe_policy_set.foobar", "policies_path", envGithubPolicySetPath),
 				),
 			},
 		},
@@ -465,16 +465,16 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			if githubToken == "" {
+			if envGithubToken == "" {
 				t.Skip("Please set GITHUB_TOKEN to run this test")
 			}
-			if githubPolicySetIdentifier == "" {
+			if envGithubPolicySetIdentifier == "" {
 				t.Skip("Please set GITHUB_POLICY_SET_IDENTIFIER to run this test")
 			}
-			if githubPolicySetBranch == "" {
+			if envGithubPolicySetBranch == "" {
 				t.Skip("Please set GITHUB_POLICY_SET_BRANCH to run this test")
 			}
-			if githubPolicySetPath == "" {
+			if envGithubPolicySetPath == "" {
 				t.Skip("Please set GITHUB_POLICY_SET_PATH to run this test")
 			}
 		},
@@ -493,13 +493,13 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "global", "false"),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "vcs_repo.0.identifier", githubPolicySetIdentifier),
+						"tfe_policy_set.foobar", "vcs_repo.0.identifier", envGithubPolicySetIdentifier),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.branch", "main"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.ingress_submodules", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "policies_path", githubPolicySetPath),
+						"tfe_policy_set.foobar", "policies_path", envGithubPolicySetPath),
 				),
 			},
 
@@ -515,13 +515,13 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "global", "false"),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "vcs_repo.0.identifier", githubPolicySetIdentifier),
+						"tfe_policy_set.foobar", "vcs_repo.0.identifier", envGithubPolicySetIdentifier),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "vcs_repo.0.branch", githubPolicySetBranch),
+						"tfe_policy_set.foobar", "vcs_repo.0.branch", envGithubPolicySetBranch),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.ingress_submodules", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "policies_path", githubPolicySetPath),
+						"tfe_policy_set.foobar", "policies_path", envGithubPolicySetPath),
 				),
 			},
 		},
@@ -1075,9 +1075,9 @@ resource "tfe_policy_set" "foobar" {
   policies_path = "%s"
 }
 `, organization,
-		githubToken,
-		githubPolicySetIdentifier,
-		githubPolicySetPath,
+		envGithubToken,
+		envGithubPolicySetIdentifier,
+		envGithubPolicySetPath,
 	)
 }
 
@@ -1109,10 +1109,10 @@ resource "tfe_policy_set" "foobar" {
   policies_path = "%s"
 }
 `, organization,
-		githubToken,
-		githubPolicySetIdentifier,
-		githubPolicySetBranch,
-		githubPolicySetPath,
+		envGithubToken,
+		envGithubPolicySetIdentifier,
+		envGithubPolicySetBranch,
+		envGithubPolicySetPath,
 	)
 }
 

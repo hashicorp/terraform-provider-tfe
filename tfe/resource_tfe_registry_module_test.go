@@ -59,9 +59,9 @@ func TestAccTFERegistryModule_vcs(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_registry_module.foobar", "registry_name", string(expectedRegistryModuleAttributes.RegistryName)),
 					resource.TestCheckResourceAttr(
-						"tfe_registry_module.foobar", "vcs_repo.0.display_identifier", githubRegistryModuleIdentifer),
+						"tfe_registry_module.foobar", "vcs_repo.0.display_identifier", envGithubRegistryModuleIdentifer),
 					resource.TestCheckResourceAttr(
-						"tfe_registry_module.foobar", "vcs_repo.0.identifier", githubRegistryModuleIdentifer),
+						"tfe_registry_module.foobar", "vcs_repo.0.identifier", envGithubRegistryModuleIdentifer),
 					resource.TestCheckResourceAttrSet(
 						"tfe_registry_module.foobar", "vcs_repo.0.oauth_token_id"),
 				),
@@ -82,7 +82,7 @@ func TestAccTFERegistryModule_emptyVCSRepo(t *testing.T) {
 		CheckDestroy: testAccCheckTFERegistryModuleDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccTFERegistryModule_emptyVCSRepo(rInt, githubToken),
+				Config:      testAccTFERegistryModule_emptyVCSRepo(rInt, envGithubToken),
 				ExpectError: regexp.MustCompile(`Missing required argument`),
 			},
 		},
@@ -533,11 +533,11 @@ func testAccCheckTFERegistryModuleVCSAttributes(registryModule *tfe.RegistryModu
 			return fmt.Errorf("Bad VCS repo: %v", registryModule.VCSRepo)
 		}
 
-		if registryModule.VCSRepo.DisplayIdentifier != githubRegistryModuleIdentifer {
+		if registryModule.VCSRepo.DisplayIdentifier != envGithubRegistryModuleIdentifer {
 			return fmt.Errorf("Bad VCS repo display identifier: %v", registryModule.VCSRepo.DisplayIdentifier)
 		}
 
-		if registryModule.VCSRepo.Identifier != githubRegistryModuleIdentifer {
+		if registryModule.VCSRepo.Identifier != envGithubRegistryModuleIdentifer {
 			return fmt.Errorf("Bad VCS repo identifier: %v", registryModule.VCSRepo.Identifier)
 		}
 
@@ -604,30 +604,30 @@ func testAccCheckTFERegistryModuleDestroy(s *terraform.State) error {
 }
 
 func testAccPreCheckTFERegistryModule(t *testing.T) {
-	if githubToken == "" {
-		t.Skip("Please set githubToken to run this test")
+	if envGithubToken == "" {
+		t.Skip("Please set GITHUB_TOKEN to run this test")
 	}
-	if githubRegistryModuleIdentifer == "" {
-		t.Skip("Please set githubRegistryModuleIdentifer to run this test")
+	if envGithubRegistryModuleIdentifer == "" {
+		t.Skip("Please set GITHUB_REGISTRY_MODULE_IDENTIFIER to run this test")
 	}
 }
 
 func getRegistryModuleRepository() string {
-	if githubRegistryModuleIdentifer == "" {
-		return githubRegistryModuleIdentifer
+	if envGithubRegistryModuleIdentifer == "" {
+		return envGithubRegistryModuleIdentifer
 	}
-	return strings.Split(githubRegistryModuleIdentifer, "/")[1]
+	return strings.Split(envGithubRegistryModuleIdentifer, "/")[1]
 }
 func getRegistryModuleName() string {
-	if githubRegistryModuleIdentifer == "" {
-		return githubRegistryModuleIdentifer
+	if envGithubRegistryModuleIdentifer == "" {
+		return envGithubRegistryModuleIdentifer
 	}
 	return strings.SplitN(getRegistryModuleRepository(), "-", 3)[2]
 }
 
 func getRegistryModuleProvider() string {
-	if githubRegistryModuleIdentifer == "" {
-		return githubRegistryModuleIdentifer
+	if envGithubRegistryModuleIdentifer == "" {
+		return envGithubRegistryModuleIdentifer
 	}
 	return strings.SplitN(getRegistryModuleRepository(), "-", 3)[1]
 }
@@ -655,9 +655,9 @@ resource "tfe_registry_module" "foobar" {
  }
 }`,
 		rInt,
-		githubToken,
-		githubRegistryModuleIdentifer,
-		githubRegistryModuleIdentifer)
+		envGithubToken,
+		envGithubRegistryModuleIdentifer,
+		envGithubRegistryModuleIdentifer)
 }
 
 func testAccTFERegistryModule_emptyVCSRepo(rInt int, token string) string {

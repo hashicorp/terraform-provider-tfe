@@ -12,7 +12,7 @@ import (
 
 func testAccTFEOAuthClientDataSourcePreCheck(t *testing.T) {
 	testAccPreCheck(t)
-	if githubToken == "" {
+	if envGithubToken == "" {
 		t.Skip("Please set GITHUB_TOKEN to run this test")
 	}
 }
@@ -198,7 +198,7 @@ resource "tfe_oauth_client" "test" {
 data "tfe_oauth_client" "client" {
 	oauth_client_id = tfe_oauth_client.test.id
 }
-`, rInt, githubToken)
+`, rInt, envGithubToken)
 }
 
 func testAccTFEOAuthClientDataSourceConfig_findByName(rInt int) string {
@@ -220,7 +220,7 @@ data "tfe_oauth_client" "client" {
 	name         = "tst-github-%d"
 	depends_on = [tfe_oauth_client.test]
 }
-`, rInt, rInt, githubToken, rInt, rInt)
+`, rInt, rInt, envGithubToken, rInt, rInt)
 }
 
 func testAccTFEOAuthClientDataSourceConfig_findByServiceProvider(rInt int) string {
@@ -241,7 +241,7 @@ data "tfe_oauth_client" "client" {
 	service_provider = "github"
 	depends_on = [tfe_oauth_client.test]
 }
-`, rInt, githubToken, rInt)
+`, rInt, envGithubToken, rInt)
 }
 
 func testAccTFEOAuthClientDataSourceConfig_missingParameters(rInt int) string {
@@ -261,7 +261,7 @@ data "tfe_oauth_client" "client" {
     organization = "tst-terraform-%d"
 	depends_on = [tfe_oauth_client.test]
 }
-`, rInt, githubToken, rInt)
+`, rInt, envGithubToken, rInt)
 }
 
 func testAccTFEOAuthClientDataSourceConfig_missingOrgWithName(rInt int) string {
@@ -281,7 +281,7 @@ data "tfe_oauth_client" "client" {
 	name = "github"
 	depends_on = [tfe_oauth_client.test]
 }
-`, rInt, githubToken)
+`, rInt, envGithubToken)
 }
 
 func testAccTFEOAuthClientDataSourceConfig_missingOrgWithServiceProvider(rInt int) string {
@@ -301,7 +301,7 @@ data "tfe_oauth_client" "client" {
 	service_provider = "github"
 	depends_on = [tfe_oauth_client.test]
 }
-`, rInt, githubToken)
+`, rInt, envGithubToken)
 }
 
 func testAccTFEOAuthClientDataSourceConfig_sameName(rInt int) string {
@@ -331,7 +331,7 @@ data "tfe_oauth_client" "client" {
 	name         = tfe_oauth_client.test1.name
 	depends_on = [tfe_oauth_client.test1, tfe_oauth_client.test2]
 }
-`, rInt, githubToken, githubToken)
+`, rInt, envGithubToken, envGithubToken)
 }
 
 func testAccTFEOAuthClientDataSourceConfig_noName(rInt int) string {
@@ -352,7 +352,7 @@ data "tfe_oauth_client" "client" {
 	name         = "tst-github"
 	depends_on = [tfe_oauth_client.test]
 }
-`, rInt, githubToken)
+`, rInt, envGithubToken)
 }
 
 func testAccTFEOAuthClientDataSourceConfig_sameServiceProvider(rInt int) string {
@@ -380,5 +380,5 @@ data "tfe_oauth_client" "client" {
 	service_provider = "github"
 	depends_on = [tfe_oauth_client.test1, tfe_oauth_client.test2]
 }
-`, rInt, githubToken, githubToken)
+`, rInt, envGithubToken, envGithubToken)
 }

@@ -286,35 +286,35 @@ func testAccPreCheck(t *testing.T) {
 }
 
 func testAccGithubPreCheck(t *testing.T) {
-	if githubToken == "" {
+	if envGithubToken == "" {
 		t.Skip("Please set GITHUB_TOKEN to run this test")
 	}
-	if githubWorkspaceIdentifier == "" {
+	if envGithubWorkspaceIdentifier == "" {
 		t.Skip("Please set GITHUB_WORKSPACE_IDENTIFIER to run this test")
 	}
-	if githubWorkspaceBranch == "" {
+	if envGithubWorkspaceBranch == "" {
 		t.Skip("Please set GITHUB_WORKSPACE_BRANCH to run this test")
 	}
 }
 
 func init() {
-	githubToken = os.Getenv("GITHUB_TOKEN")
-	githubPolicySetIdentifier = os.Getenv("GITHUB_POLICY_SET_IDENTIFIER")
-	githubPolicySetBranch = os.Getenv("GITHUB_POLICY_SET_BRANCH")
-	githubPolicySetPath = os.Getenv("GITHUB_POLICY_SET_PATH")
-	githubRegistryModuleIdentifer = os.Getenv("GITHUB_REGISTRY_MODULE_IDENTIFIER")
-	githubWorkspaceIdentifier = os.Getenv("GITHUB_WORKSPACE_IDENTIFIER")
-	githubWorkspaceBranch = os.Getenv("GITHUB_WORKSPACE_BRANCH")
-	tfeUser1 = os.Getenv("TFE_USER1")
-	tfeUser2 = os.Getenv("TFE_USER2")
+	envGithubPolicySetIdentifier = os.Getenv("GITHUB_POLICY_SET_IDENTIFIER")
+	envGithubPolicySetBranch = os.Getenv("GITHUB_POLICY_SET_BRANCH")
+	envGithubPolicySetPath = os.Getenv("GITHUB_POLICY_SET_PATH")
+	envGithubRegistryModuleIdentifer = os.Getenv("GITHUB_REGISTRY_MODULE_IDENTIFIER")
+	envGithubToken = os.Getenv("GITHUB_TOKEN")
+	envGithubWorkspaceIdentifier = os.Getenv("GITHUB_WORKSPACE_IDENTIFIER")
+	envGithubWorkspaceBranch = os.Getenv("GITHUB_WORKSPACE_BRANCH")
+	envTFEUser1 = os.Getenv("TFE_USER1")
+	envTFEUser2 = os.Getenv("TFE_USER2")
 }
 
-var githubPolicySetIdentifier string
-var githubPolicySetBranch string
-var githubPolicySetPath string
-var githubRegistryModuleIdentifer string
-var githubToken string
-var githubWorkspaceIdentifier string
-var githubWorkspaceBranch string
-var tfeUser1 string
-var tfeUser2 string
+var envGithubPolicySetIdentifier string
+var envGithubPolicySetBranch string
+var envGithubPolicySetPath string
+var envGithubRegistryModuleIdentifer string
+var envGithubToken string
+var envGithubWorkspaceIdentifier string
+var envGithubWorkspaceBranch string
+var envTFEUser1 string
+var envTFEUser2 string
