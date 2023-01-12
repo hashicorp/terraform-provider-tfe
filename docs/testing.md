@@ -12,7 +12,7 @@ Your policy set repository will need the following:
 1. A policy set stored in a subdirectory
 1. A branch other than `main`.
 
-Your registry module repository will need to be a [valid module](https://www.terraform.io/docs/cloud/registry/publish.html#preparing-a-module-repository).
+Your registry module repository will need to be a [valid module](https://developer.hashicorp.com/terraform/cloud-docs/registry/publish-modules#preparing-a-module-repository).
 It will need the following:
 1. To be named `terraform-<PROVIDER>-<NAME>`
 1. At least one valid SemVer tag in the format `x.y.z`
@@ -28,11 +28,11 @@ To run all tests, you will need to set the following environment variables:
 ##### Required:
 A hostname and token must be provided in order to run the acceptance tests. By
 default, these are loaded from the `credentials` in the [CLI config
-file](https://www.terraform.io/docs/commands/cli-config.html). You can override
+file](https://developer.hashicorp.com/terraform/cli/config/config-file). You can override
 these values with the environment variables specified below:
 
 1. `TFE_HOSTNAME` - URL of a Terraform Cloud or Terraform Enterprise instance to be used for testing, without the scheme. Example: `tfe.local`
-1. `TFE_TOKEN` - A [user API token](https://www.terraform.io/docs/cloud/users-teams-organizations/users.html#api-tokens) for an administrator account on the Terraform Cloud or Terraform Enterprise instance being used for testing.
+1. `TFE_TOKEN` - A [user API token](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/users#tokens) for an administrator account on the Terraform Cloud or Terraform Enterprise instance being used for testing.
 
 ##### Optional:
 1. `TFE_USER1` and `TFE_USER2`: The usernames of two pre-existing users on the Terraform Cloud or Terraform Enterprise instance being used for testing. Required for running team membership tests.

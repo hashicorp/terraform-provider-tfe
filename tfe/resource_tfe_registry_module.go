@@ -310,7 +310,7 @@ func resourceTFERegistryModuleImporter(ctx context.Context, d *schema.ResourceDa
 		return []*schema.ResourceData{d}, nil
 	} else if len(registryModuleInfo) == 6 {
 		// for format: <ORGANIZATION>/<REGISTRY_NAME>/<NAMESPACE>/<REGISTRY MODULE NAME>/<REGISTRY MODULE PROVIDER>/<REGISTRY MODULE ID>
-		// see https://www.terraform.io/cloud-docs/api-docs/private-registry/modules#get-a-module
+		// see https://developer.hashicorp.com/terraform/cloud-docs/api-docs/private-registry/modules#get-a-module
 		d.Set("organization", registryModuleInfo[0])
 		d.Set("registry_name", registryModuleInfo[1])
 		d.Set("namespace", registryModuleInfo[2])

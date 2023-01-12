@@ -2,6 +2,9 @@
 
 BUG FIXES:
 
+ENHANCEMENTS:
+* Update API doc links from terraform.io to developer.hashicorp domain by @uk1288 [#764](https://github.com/hashicorp/terraform-provider-tfe/pull/764)
+
 FEATURES:
 
 ## v0.41.0 (January 4, 2023)

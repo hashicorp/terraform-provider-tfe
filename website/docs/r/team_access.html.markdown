@@ -38,7 +38,7 @@ The following arguments are supported:
 * `team_id` - (Required) ID of the team to add to the workspace.
 * `workspace_id` - (Required) ID of the workspace to which the team will be added.
 * `access` - (Optional) Type of fixed access to grant. Valid values are `admin`, `read`, `plan`, or `write`. To use `custom` permissions, use a `permissions` block instead. This value _must not_ be provided if `permissions` is provided.
-* `permissions` - (Optional) Permissions to grant using [custom workspace permissions](https://www.terraform.io/docs/cloud/users-teams-organizations/permissions.html#custom-workspace-permissions). This value _must not_ be provided if `access` is provided.
+* `permissions` - (Optional) Permissions to grant using [custom workspace permissions](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/permissions#custom-workspace-permissions). This value _must not_ be provided if `access` is provided.
 
 The `permissions` block supports:
 

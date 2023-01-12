@@ -49,12 +49,12 @@ In addition to all arguments above, the following attributes are exported:
 * `runs_count` - The number of runs on the workspace.
 * `speculative_enabled` - Indicates whether this workspace allows speculative plans.
 * `ssh_key_id` - The ID of an SSH key assigned to the workspace.
-* `structured_run_output_enabled` - Indicates whether runs in this workspace use the enhanced apply UI. 
+* `structured_run_output_enabled` - Indicates whether runs in this workspace use the enhanced apply UI.
 * `tag_names` - The names of tags added to this workspace.
 * `terraform_version` - The version (or version constraint) of Terraform used for this workspace.
 * `trigger_prefixes` - List of trigger prefixes that describe the paths Terraform Cloud monitors for changes, in addition to the working directory. Trigger prefixes are always appended to the root directory of the repository.
   Terraform Cloud or Terraform Enterprise will start a run when files are changed in any directory path matching the provided set of prefixes.
-* `trigger_patterns` - List of [glob patterns](https://www.terraform.io/cloud-docs/workspaces/settings/vcs#glob-patterns-for-automatic-run-triggering) that describe the files Terraform Cloud monitors for changes. Trigger patterns are always appended to the root directory of the repository.
+* `trigger_patterns` - List of [glob patterns](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/vcs#glob-patterns-for-automatic-run-triggering) that describe the files Terraform Cloud monitors for changes. Trigger patterns are always appended to the root directory of the repository.
 * `vcs_repo` - Settings for the workspace's VCS repository.
 * `working_directory` - A relative path that Terraform will execute within.
 
@@ -68,4 +68,4 @@ The `vcs_repo` block contains:
 * `ingress_submodules` - Indicates whether submodules should be fetched when
   cloning the VCS repository.
 * `oauth_token_id` - OAuth token ID of the configured VCS connection.
-* `tags_regex` - A regular expression used to trigger a Workspace run for matching Git tags. 
+* `tags_regex` - A regular expression used to trigger a Workspace run for matching Git tags.

@@ -7,9 +7,9 @@ description: |-
 
 # tfe_workspace_run_task
 
-[Run tasks](https://www.terraform.io/cloud-docs/workspaces/settings/run-tasks) allow Terraform Cloud to interact with external systems at specific points in the Terraform Cloud run lifecycle. Run tasks are reusable configurations that you can attach to any workspace in an organization.
+[Run tasks](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks) allow Terraform Cloud to interact with external systems at specific points in the Terraform Cloud run lifecycle. Run tasks are reusable configurations that you can attach to any workspace in an organization.
 
-The tfe_workspace_run_task resource associates, updates and removes [Workspace Run tasks](https://www.terraform.io/cloud-docs/workspaces/settings/run-tasks#associating-run-tasks-with-a-workspace).
+The tfe_workspace_run_task resource associates, updates and removes [Workspace Run tasks](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks#associating-run-tasks-with-a-workspace).
 
 ## Example Usage
 
