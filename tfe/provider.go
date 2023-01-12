@@ -183,7 +183,7 @@ func getClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
 	// Make sure the transport has a TLS config.
 	transport := httpClient.Transport.(*http.Transport)
 	if transport.TLSClientConfig == nil {
-		transport.TLSClientConfig = &tls.Config{MinVersion: tls.VersionTLS13}
+		transport.TLSClientConfig = &tls.Config{MinVersion: tls.VersionTLS12}
 	}
 
 	// If ssl_skip_verify is false, it is either set that way in configuration or unset. Check
