@@ -67,7 +67,7 @@ func resourceTFETeamMembersRead(d *schema.ResourceData, meta interface{}) error 
 	users, err := tfeClient.TeamMembers.List(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			log.Printf("[DEBUG] Users do no longer exist")
+			log.Printf("[DEBUG] Users no longer exist")
 			d.SetId("")
 			return nil
 		}
@@ -82,7 +82,7 @@ func resourceTFETeamMembersRead(d *schema.ResourceData, meta interface{}) error 
 	if len(usernames) > 0 {
 		d.Set("usernames", usernames)
 	} else {
-		log.Printf("[DEBUG] Users do no longer exist")
+		log.Printf("[DEBUG] Users no longer exist")
 		d.SetId("")
 	}
 
