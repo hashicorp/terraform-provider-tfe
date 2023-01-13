@@ -71,5 +71,5 @@ func dataSourceTFEWorkspaceRunTaskRead(d *schema.ResourceData, meta interface{})
 		options.PageNumber = list.NextPage
 	}
 
-	return fmt.Errorf("Could not find workspace run task %s in workspace %s", taskID, workspaceID)
+	return fmt.Errorf("could not find workspace run task %s in workspace %s", taskID, workspaceID)
 }

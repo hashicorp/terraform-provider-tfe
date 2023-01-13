@@ -112,5 +112,5 @@ func dataSourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) erro
 		options.PageNumber = l.NextPage
 	}
 
-	return fmt.Errorf("Could not find variable set %s/%s", organization, name)
+	return fmt.Errorf("could not find variable set %s/%s", organization, name)
 }

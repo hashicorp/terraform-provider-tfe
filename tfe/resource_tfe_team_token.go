@@ -2,6 +2,7 @@ package tfe
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
@@ -48,14 +49,14 @@ func resourceTFETeamTokenCreate(d *schema.ResourceData, meta interface{}) error 
 
 	log.Printf("[DEBUG] Check if a token already exists for team: %s", teamID)
 	_, err := tfeClient.TeamTokens.Read(ctx, teamID)
-	if err != nil && err != tfe.ErrResourceNotFound {
-		return fmt.Errorf("Error checking if a token exists for team %s: %w", teamID, err)
+	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+		return fmt.Errorf("error checking if a token exists for team %s: %w", teamID, err)
 	}
 
 	// If error is nil, the token already exists.
 	if err == nil {
 		if !d.Get("force_regenerate").(bool) {
-			return fmt.Errorf("A token already exists for team: %s", teamID)
+			return fmt.Errorf("a token already exists for team: %s", teamID)
 		}
 		log.Printf("[DEBUG] Regenerating existing token for team: %s", teamID)
 	}
@@ -64,7 +65,7 @@ func resourceTFETeamTokenCreate(d *schema.ResourceData, meta interface{}) error 
 	token, err := tfeClient.TeamTokens.Create(ctx, teamID)
 	if err != nil {
 		return fmt.Errorf(
-			"Error creating new token for team %s: %w", teamID, err)
+			"error creating new token for team %s: %w", teamID, err)
 	}
 
 	d.SetId(teamID)
@@ -87,7 +88,7 @@ func resourceTFETeamTokenRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading token from team %s: %w", d.Id(), err)
+		return fmt.Errorf("error reading token from team %s: %w", d.Id(), err)
 	}
 
 	return nil
@@ -102,7 +103,7 @@ func resourceTFETeamTokenDelete(d *schema.ResourceData, meta interface{}) error 
 		if err == tfe.ErrResourceNotFound {
 			return nil
 		}
-		return fmt.Errorf("Error deleting token from team %s: %w", d.Id(), err)
+		return fmt.Errorf("error deleting token from team %s: %w", d.Id(), err)
 	}
 
 	return nil

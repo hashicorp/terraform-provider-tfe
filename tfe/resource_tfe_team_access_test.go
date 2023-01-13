@@ -285,11 +285,11 @@ func testAccCheckTFETeamAccessExists(
 
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
-			return fmt.Errorf("Not found: %s", n)
+			return fmt.Errorf("not found: %s", n)
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("No instance ID is set")
+			return fmt.Errorf("no instance ID is set")
 		}
 
 		ta, err := tfeClient.TeamAccess.Read(ctx, rs.Primary.ID)

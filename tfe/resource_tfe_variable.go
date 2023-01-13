@@ -80,7 +80,7 @@ func resourceTFEVariable() *schema.Resource {
 				ForceNew:     true,
 				ExactlyOneOf: []string{"workspace_id", "variable_set_id"},
 				ValidateFunc: validation.StringMatch(
-					workspaceIdRegexp,
+					workspaceIDRegexp,
 					"must be a valid workspace ID (ws-<RANDOM STRING>)",
 				),
 			},
@@ -92,7 +92,7 @@ func resourceTFEVariable() *schema.Resource {
 				ForceNew:     true,
 				ExactlyOneOf: []string{"workspace_id", "variable_set_id"},
 				ValidateFunc: validation.StringMatch(
-					variableSetIdRegexp,
+					variableSetIDRegexp,
 					"must be a valid variable set ID (varset-<RANDOM STRING>)",
 				),
 			},
@@ -122,8 +122,8 @@ func forceRecreateResourceIf() schema.CustomizeDiffFunc {
 
 func resourceTFEVariableCreate(d *schema.ResourceData, meta interface{}) error {
 	// Switch to variable set variable logic if we need to
-	_, variableSetIdProvided := d.GetOk("variable_set_id")
-	if variableSetIdProvided {
+	_, variableSetIDProvided := d.GetOk("variable_set_id")
+	if variableSetIDProvided {
 		return resourceTFEVariableSetVariableCreate(d, meta)
 	}
 
@@ -200,8 +200,8 @@ func resourceTFEVariableSetVariableCreate(d *schema.ResourceData, meta interface
 
 func resourceTFEVariableRead(d *schema.ResourceData, meta interface{}) error {
 	// Switch to variable set variable logic if we need to
-	_, variableSetIdProvided := d.GetOk("variable_set_id")
-	if variableSetIdProvided {
+	_, variableSetIDProvided := d.GetOk("variable_set_id")
+	if variableSetIDProvided {
 		return resourceTFEVariableSetVariableRead(d, meta)
 	}
 
@@ -290,8 +290,8 @@ func resourceTFEVariableSetVariableRead(d *schema.ResourceData, meta interface{}
 
 func resourceTFEVariableUpdate(d *schema.ResourceData, meta interface{}) error {
 	// Switch to variable set variable logic if we need to
-	_, variableSetIdProvided := d.GetOk("variable_set_id")
-	if variableSetIdProvided {
+	_, variableSetIDProvided := d.GetOk("variable_set_id")
+	if variableSetIDProvided {
 		return resourceTFEVariableSetVariableUpdate(d, meta)
 	}
 
@@ -354,8 +354,8 @@ func resourceTFEVariableSetVariableUpdate(d *schema.ResourceData, meta interface
 
 func resourceTFEVariableDelete(d *schema.ResourceData, meta interface{}) error {
 	// Switch to variable set variable logic if we need to
-	_, variableSetIdProvided := d.GetOk("variable_set_id")
-	if variableSetIdProvided {
+	_, variableSetIDProvided := d.GetOk("variable_set_id")
+	if variableSetIDProvided {
 		return resourceTFEVariableSetVariableDelete(d, meta)
 	}
 
@@ -415,7 +415,7 @@ func resourceTFEVariableImporter(ctx context.Context, d *schema.ResourceData, me
 		)
 	}
 
-	varsetIDUsed := variableSetIdRegexp.MatchString(s[1])
+	varsetIDUsed := variableSetIDRegexp.MatchString(s[1])
 	if varsetIDUsed {
 		d.Set("variable_set_id", s[1])
 	} else {

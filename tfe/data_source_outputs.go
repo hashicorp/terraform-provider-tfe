@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"os"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
@@ -16,14 +15,6 @@ import (
 
 type dataSourceOutputs struct {
 	tfeClient *tfe.Client
-}
-
-var stderr *os.File
-
-func init() {
-	// There is a issue that occurs when the plugin-go Serve function is used that
-	// causes os.Stderr to be overwritten. There is a fix being worked on for this.
-	stderr = os.Stderr
 }
 
 func newDataSourceOutputs(client *tfe.Client) tfprotov5.DataSourceServer {
@@ -137,7 +128,7 @@ func (d dataSourceOutputs) readConfigValues(req *tfprotov5.ReadDataSourceRequest
 	}
 
 	if valMap["organization"].IsNull() || valMap["workspace"].IsNull() {
-		return orgName, wsName, fmt.Errorf("Organization and Workspace cannot be nil: %w", err)
+		return orgName, wsName, fmt.Errorf("organization and workspace cannot be nil: %w", err)
 	}
 
 	err = valMap["organization"].As(&orgName)
@@ -180,20 +171,20 @@ func (d dataSourceOutputs) readStateOutput(ctx context.Context, tfeClient *tfe.C
 		if op.Sensitive {
 			sensitiveOutput, err := tfeClient.StateVersionOutputs.Read(ctx, op.ID)
 			if err != nil {
-				return nil, fmt.Errorf("Could not read sensitive output: %w", err)
+				return nil, fmt.Errorf("could not read sensitive output: %w", err)
 			}
 			op.Value = sensitiveOutput.Value
 		}
 
 		buf, err := json.Marshal(op.Value)
 		if err != nil {
-			return nil, fmt.Errorf("Could not marshal output value: %w", err)
+			return nil, fmt.Errorf("could not marshal output value: %w", err)
 		}
 
 		v := ctyjson.SimpleJSONValue{}
 		err = v.UnmarshalJSON(buf)
 		if err != nil {
-			return nil, fmt.Errorf("Could not unmarshal output value: %w", err)
+			return nil, fmt.Errorf("could not unmarshal output value: %w", err)
 		}
 		sd.outputs[op.Name] = &outputData{
 			Value:     v.Value,
@@ -214,22 +205,22 @@ func parseStateOutput(stateOutput *stateData) (map[string]tftypes.Value, map[str
 	for name, output := range stateOutput.outputs {
 		marshData, err := output.Value.Type().MarshalJSON()
 		if err != nil {
-			return nil, nil, nil, nil, fmt.Errorf("Could not marshal output type: %w", err)
+			return nil, nil, nil, nil, fmt.Errorf("could not marshal output type: %w", err)
 		}
 		tfType, err := tftypes.ParseJSONType(marshData)
 		if err != nil {
-			return nil, nil, nil, nil, fmt.Errorf("Could not parse json type data: %w", err)
+			return nil, nil, nil, nil, fmt.Errorf("could not parse json type data: %w", err)
 		}
 		mByte, err := ctyjson.Marshal(output.Value, output.Value.Type())
 		if err != nil {
-			return nil, nil, nil, nil, fmt.Errorf("Could not marshal output value and output type: %w", err)
+			return nil, nil, nil, nil, fmt.Errorf("could not marshal output value and output type: %w", err)
 		}
 		tfRawState := tfprotov5.RawState{
 			JSON: mByte,
 		}
 		newVal, err := tfRawState.Unmarshal(tfType)
 		if err != nil {
-			return nil, nil, nil, nil, fmt.Errorf("Could not unmarshal tftype into value: %w", err)
+			return nil, nil, nil, nil, fmt.Errorf("could not unmarshal tftype into value: %w", err)
 		}
 		if output.Sensitive.False() {
 			tftypesNonsensitiveValues[name] = newVal

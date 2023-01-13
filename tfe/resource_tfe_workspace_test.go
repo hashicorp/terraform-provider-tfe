@@ -2,6 +2,7 @@ package tfe
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
@@ -1355,7 +1356,7 @@ func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-add-vcs-repo"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "vcs_repo.0.identifier", GITHUB_WORKSPACE_IDENTIFIER),
+						"tfe_workspace.foobar", "vcs_repo.0.identifier", envGithubWorkspaceIdentifier),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "vcs_repo.0.branch", ""),
 					resource.TestCheckResourceAttr(
@@ -1372,9 +1373,9 @@ func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-update-vcs-repo-branch"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "vcs_repo.0.identifier", GITHUB_WORKSPACE_IDENTIFIER),
+						"tfe_workspace.foobar", "vcs_repo.0.identifier", envGithubWorkspaceIdentifier),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "vcs_repo.0.branch", GITHUB_WORKSPACE_BRANCH),
+						"tfe_workspace.foobar", "vcs_repo.0.branch", envGithubWorkspaceBranch),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "vcs_repo.0.ingress_submodules", "false"),
 				),
@@ -1415,9 +1416,9 @@ func TestAccTFEWorkspace_updateVCSRepoTagsRegex(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "file_triggers_enabled", "false"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "vcs_repo.0.identifier", GITHUB_WORKSPACE_IDENTIFIER),
+						"tfe_workspace.foobar", "vcs_repo.0.identifier", envGithubWorkspaceIdentifier),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "vcs_repo.0.branch", GITHUB_WORKSPACE_BRANCH),
+						"tfe_workspace.foobar", "vcs_repo.0.branch", envGithubWorkspaceBranch),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "vcs_repo.0.ingress_submodules", "false"),
 					resource.TestCheckResourceAttr(
@@ -1433,9 +1434,9 @@ func TestAccTFEWorkspace_updateVCSRepoTagsRegex(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "file_triggers_enabled", "false"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "vcs_repo.0.identifier", GITHUB_WORKSPACE_IDENTIFIER),
+						"tfe_workspace.foobar", "vcs_repo.0.identifier", envGithubWorkspaceIdentifier),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "vcs_repo.0.branch", GITHUB_WORKSPACE_BRANCH),
+						"tfe_workspace.foobar", "vcs_repo.0.branch", envGithubWorkspaceBranch),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "vcs_repo.0.ingress_submodules", "false"),
 					resource.TestCheckResourceAttr(
@@ -1467,9 +1468,9 @@ func TestAccTFEWorkspace_updateVCSRepoChangeTagRegexToTriggerPattern(t *testing.
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "file_triggers_enabled", "false"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "vcs_repo.0.identifier", GITHUB_WORKSPACE_IDENTIFIER),
+						"tfe_workspace.foobar", "vcs_repo.0.identifier", envGithubWorkspaceIdentifier),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "vcs_repo.0.branch", GITHUB_WORKSPACE_BRANCH),
+						"tfe_workspace.foobar", "vcs_repo.0.branch", envGithubWorkspaceBranch),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "vcs_repo.0.ingress_submodules", "false"),
 					resource.TestCheckResourceAttr(
@@ -1485,9 +1486,9 @@ func TestAccTFEWorkspace_updateVCSRepoChangeTagRegexToTriggerPattern(t *testing.
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "file_triggers_enabled", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "vcs_repo.0.identifier", GITHUB_WORKSPACE_IDENTIFIER),
+						"tfe_workspace.foobar", "vcs_repo.0.identifier", envGithubWorkspaceIdentifier),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "vcs_repo.0.branch", GITHUB_WORKSPACE_BRANCH),
+						"tfe_workspace.foobar", "vcs_repo.0.branch", envGithubWorkspaceBranch),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "vcs_repo.0.ingress_submodules", "false"),
 					resource.TestCheckResourceAttr(
@@ -1518,9 +1519,9 @@ func TestAccTFEWorkspace_updateRemoveVCSRepoWithTagsRegex(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "file_triggers_enabled", "false"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "vcs_repo.0.identifier", GITHUB_WORKSPACE_IDENTIFIER),
+						"tfe_workspace.foobar", "vcs_repo.0.identifier", envGithubWorkspaceIdentifier),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "vcs_repo.0.branch", GITHUB_WORKSPACE_BRANCH),
+						"tfe_workspace.foobar", "vcs_repo.0.branch", envGithubWorkspaceBranch),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "vcs_repo.0.ingress_submodules", "false"),
 					resource.TestCheckResourceAttr(
@@ -1633,9 +1634,9 @@ func TestAccTFEWorkspace_importVCSBranch(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-update-vcs-repo-branch"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "vcs_repo.0.identifier", GITHUB_WORKSPACE_IDENTIFIER),
+						"tfe_workspace.foobar", "vcs_repo.0.identifier", envGithubWorkspaceIdentifier),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "vcs_repo.0.branch", GITHUB_WORKSPACE_BRANCH),
+						"tfe_workspace.foobar", "vcs_repo.0.branch", envGithubWorkspaceBranch),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "vcs_repo.0.ingress_submodules", "false"),
 				),
@@ -2083,7 +2084,7 @@ func TestTFEWorkspace_delete_withoutCanForceDeletePermission(t *testing.T) {
 	}
 
 	workspace, err = client.Workspaces.ReadByID(ctx, workspace.ID)
-	if err != tfe.ErrResourceNotFound {
+	if !errors.Is(err, tfe.ErrResourceNotFound) {
 		t.Fatalf("Expected workspace %s to have been deleted", workspace.ID)
 	}
 }
@@ -2143,7 +2144,7 @@ func testAccCheckTFEWorkspacePanic(n string) resource.TestCheckFunc {
 		rd.SetId(rs.Primary.ID)
 
 		err = resourceTFEWorkspaceRead(rd, testAccProvider.Meta())
-		if err != nil && err != tfe.ErrResourceNotFound {
+		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 			return fmt.Errorf("Could not re-read resource directly: %w", err)
 		}
 
@@ -2364,7 +2365,7 @@ func testAccCheckTFEWorkspaceUpdatedAddVCSRepoAttributes(
 			return fmt.Errorf("Bad VCS repo branch: %v", workspace.VCSRepo.Branch)
 		}
 
-		if workspace.VCSRepo.Identifier != GITHUB_WORKSPACE_IDENTIFIER {
+		if workspace.VCSRepo.Identifier != envGithubWorkspaceIdentifier {
 			return fmt.Errorf("Bad VCS repo identifier: %v", workspace.VCSRepo.Identifier)
 		}
 
@@ -2387,11 +2388,11 @@ func testAccCheckTFEWorkspaceUpdatedUpdateVCSRepoBranchAttributes(
 			return fmt.Errorf("Bad VCS repo: %v", workspace.VCSRepo)
 		}
 
-		if workspace.VCSRepo.Branch != GITHUB_WORKSPACE_BRANCH {
+		if workspace.VCSRepo.Branch != envGithubWorkspaceBranch {
 			return fmt.Errorf("Bad VCS repo branch: %v", workspace.VCSRepo.Branch)
 		}
 
-		if workspace.VCSRepo.Identifier != GITHUB_WORKSPACE_IDENTIFIER {
+		if workspace.VCSRepo.Identifier != envGithubWorkspaceIdentifier {
 			return fmt.Errorf("Bad VCS repo identifier: %v", workspace.VCSRepo.Identifier)
 		}
 
@@ -2989,8 +2990,8 @@ resource "tfe_workspace" "foobar" {
 }
 `,
 		rInt,
-		GITHUB_TOKEN,
-		GITHUB_WORKSPACE_IDENTIFIER,
+		envGithubToken,
+		envGithubWorkspaceIdentifier,
 	)
 }
 
@@ -3023,9 +3024,9 @@ resource "tfe_workspace" "foobar" {
 }
 `,
 		rInt,
-		GITHUB_TOKEN,
-		GITHUB_WORKSPACE_IDENTIFIER,
-		GITHUB_WORKSPACE_BRANCH,
+		envGithubToken,
+		envGithubWorkspaceIdentifier,
+		envGithubWorkspaceBranch,
 	)
 }
 
@@ -3058,9 +3059,9 @@ resource "tfe_workspace" "foobar" {
 }
 `,
 		rInt,
-		GITHUB_TOKEN,
-		GITHUB_WORKSPACE_IDENTIFIER,
-		GITHUB_WORKSPACE_BRANCH,
+		envGithubToken,
+		envGithubWorkspaceIdentifier,
+		envGithubWorkspaceBranch,
 	)
 }
 
@@ -3112,9 +3113,9 @@ resource "tfe_workspace" "foobar" {
 }
 `,
 		rInt,
-		GITHUB_TOKEN,
-		GITHUB_WORKSPACE_IDENTIFIER,
-		GITHUB_WORKSPACE_BRANCH,
+		envGithubToken,
+		envGithubWorkspaceIdentifier,
+		envGithubWorkspaceBranch,
 	)
 }
 
@@ -3149,9 +3150,9 @@ resource "tfe_workspace" "foobar" {
 }
 `,
 		rInt,
-		GITHUB_TOKEN,
-		GITHUB_WORKSPACE_IDENTIFIER,
-		GITHUB_WORKSPACE_BRANCH,
+		envGithubToken,
+		envGithubWorkspaceIdentifier,
+		envGithubWorkspaceBranch,
 	)
 }
 
@@ -3186,9 +3187,9 @@ func testAccTFEWorkspace_updateToTriggerPatternsFromTagsRegex(rInt int) string {
 	}
 	`,
 		rInt,
-		GITHUB_TOKEN,
-		GITHUB_WORKSPACE_IDENTIFIER,
-		GITHUB_WORKSPACE_BRANCH,
+		envGithubToken,
+		envGithubWorkspaceIdentifier,
+		envGithubWorkspaceBranch,
 	)
 }
 
@@ -3218,7 +3219,7 @@ func testAccTFEWorkspace_updateRemoveVCSBlockFromTagsRegex(rInt int) string {
 	}
 	`,
 		rInt,
-		GITHUB_TOKEN,
+		envGithubToken,
 	)
 }
 

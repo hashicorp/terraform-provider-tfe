@@ -28,7 +28,7 @@ const defaultSSLSkipVerify = false
 
 var (
 	tfeServiceIDs       = []string{"tfe.v2.2"}
-	errMissingAuthToken = errors.New("Required token could not be found. Please set the token using an input variable in the provider configuration block or by using the TFE_TOKEN environment variable.")
+	errMissingAuthToken = errors.New("required token could not be found. Please set the token using an input variable in the provider configuration block or by using the TFE_TOKEN environment variable")
 )
 
 // Config is the structure of the configuration for the Terraform CLI.
@@ -183,7 +183,7 @@ func getClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
 	// Make sure the transport has a TLS config.
 	transport := httpClient.Transport.(*http.Transport)
 	if transport.TLSClientConfig == nil {
-		transport.TLSClientConfig = &tls.Config{}
+		transport.TLSClientConfig = &tls.Config{MinVersion: tls.VersionTLS12}
 	}
 
 	// If ssl_skip_verify is false, it is either set that way in configuration or unset. Check
@@ -509,9 +509,9 @@ func checkConstraints(c *disco.Constraints) error {
 
 func checkConstraintsWarning(err error) error {
 	return fmt.Errorf(
-		"Failed to check version constraints: %v\n\n"+
-			"Checking version constraints is considered optional, but this is an\n"+
-			"unexpected error which should be reported.",
+		"failed to check version constraints: %v\n\n"+
+			"checking version constraints is considered optional, but this is an\n"+
+			"unexpected error which should be reported",
 		err,
 	)
 }

@@ -18,7 +18,7 @@ func TestAccTFEOAuthClient_basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			if GITHUB_TOKEN == "" {
+			if envGithubToken == "" {
 				t.Skip("Please set GITHUB_TOKEN to run this test")
 			}
 		},
@@ -150,7 +150,7 @@ resource "tfe_oauth_client" "foobar" {
   http_url         = "https://github.com"
   oauth_token      = "%s"
   service_provider = "github"
-}`, rInt, GITHUB_TOKEN)
+}`, rInt, envGithubToken)
 }
 
 func testAccTFEOAuthClient_rsaKeys(rInt int) string {

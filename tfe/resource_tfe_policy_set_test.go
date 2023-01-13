@@ -410,16 +410,16 @@ func TestAccTFEPolicySet_vcs(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			if GITHUB_TOKEN == "" {
+			if envGithubToken == "" {
 				t.Skip("Please set GITHUB_TOKEN to run this test")
 			}
-			if GITHUB_POLICY_SET_IDENTIFIER == "" {
+			if envGithubPolicySetIdentifier == "" {
 				t.Skip("Please set GITHUB_POLICY_SET_IDENTIFIER to run this test")
 			}
-			if GITHUB_POLICY_SET_BRANCH == "" {
+			if envGithubPolicySetBranch == "" {
 				t.Skip("Please set GITHUB_POLICY_SET_BRANCH to run this test")
 			}
-			if GITHUB_POLICY_SET_PATH == "" {
+			if envGithubPolicySetPath == "" {
 				t.Skip("Please set GITHUB_POLICY_SET_PATH to run this test")
 			}
 		},
@@ -438,15 +438,13 @@ func TestAccTFEPolicySet_vcs(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "global", "false"),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "kind", "sentinel"),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "vcs_repo.0.identifier", GITHUB_POLICY_SET_IDENTIFIER),
+						"tfe_policy_set.foobar", "vcs_repo.0.identifier", envGithubPolicySetIdentifier),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.branch", "main"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.ingress_submodules", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "policies_path", GITHUB_POLICY_SET_PATH),
+						"tfe_policy_set.foobar", "policies_path", envGithubPolicySetPath),
 				),
 			},
 		},
@@ -467,16 +465,16 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			if GITHUB_TOKEN == "" {
+			if envGithubToken == "" {
 				t.Skip("Please set GITHUB_TOKEN to run this test")
 			}
-			if GITHUB_POLICY_SET_IDENTIFIER == "" {
+			if envGithubPolicySetIdentifier == "" {
 				t.Skip("Please set GITHUB_POLICY_SET_IDENTIFIER to run this test")
 			}
-			if GITHUB_POLICY_SET_BRANCH == "" {
+			if envGithubPolicySetBranch == "" {
 				t.Skip("Please set GITHUB_POLICY_SET_BRANCH to run this test")
 			}
-			if GITHUB_POLICY_SET_PATH == "" {
+			if envGithubPolicySetPath == "" {
 				t.Skip("Please set GITHUB_POLICY_SET_PATH to run this test")
 			}
 		},
@@ -495,15 +493,13 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "global", "false"),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "kind", "sentinel"),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "vcs_repo.0.identifier", GITHUB_POLICY_SET_IDENTIFIER),
+						"tfe_policy_set.foobar", "vcs_repo.0.identifier", envGithubPolicySetIdentifier),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.branch", "main"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.ingress_submodules", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "policies_path", GITHUB_POLICY_SET_PATH),
+						"tfe_policy_set.foobar", "policies_path", envGithubPolicySetPath),
 				),
 			},
 
@@ -519,15 +515,13 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "global", "false"),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "kind", "sentinel"),
+						"tfe_policy_set.foobar", "vcs_repo.0.identifier", envGithubPolicySetIdentifier),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "vcs_repo.0.identifier", GITHUB_POLICY_SET_IDENTIFIER),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "vcs_repo.0.branch", GITHUB_POLICY_SET_BRANCH),
+						"tfe_policy_set.foobar", "vcs_repo.0.branch", envGithubPolicySetBranch),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "vcs_repo.0.ingress_submodules", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "policies_path", GITHUB_POLICY_SET_PATH),
+						"tfe_policy_set.foobar", "policies_path", envGithubPolicySetPath),
 				),
 			},
 		},
@@ -623,7 +617,7 @@ func TestAccTFEPolicySet_versionedSlugUpdate(t *testing.T) {
 			},
 			{
 				PreConfig: func() {
-					err = os.WriteFile(newFile, []byte("main = rule { true }"), 0755)
+					err = os.WriteFile(newFile, []byte("main = rule { true }"), 0o755)
 					if err != nil {
 						t.Fatalf("error writing to file %s", newFile)
 					}
@@ -678,11 +672,11 @@ func testAccCheckTFEPolicySetVersionValidateChecksum(n string, sourcePath string
 
 		newChecksum, err := hashPolicies(sourcePath)
 		if err != nil {
-			return fmt.Errorf("Unable to generate checksum for policies %w", err)
+			return fmt.Errorf("unable to generate checksum for policies %w", err)
 		}
 
 		if rs.Primary.Attributes["slug.id"] != newChecksum {
-			return fmt.Errorf("The new checksum for the policies contents did not match")
+			return fmt.Errorf("the new checksum for the policies contents did not match")
 		}
 
 		return nil
@@ -1081,9 +1075,9 @@ resource "tfe_policy_set" "foobar" {
   policies_path = "%s"
 }
 `, organization,
-		GITHUB_TOKEN,
-		GITHUB_POLICY_SET_IDENTIFIER,
-		GITHUB_POLICY_SET_PATH,
+		envGithubToken,
+		envGithubPolicySetIdentifier,
+		envGithubPolicySetPath,
 	)
 }
 
@@ -1115,10 +1109,10 @@ resource "tfe_policy_set" "foobar" {
   policies_path = "%s"
 }
 `, organization,
-		GITHUB_TOKEN,
-		GITHUB_POLICY_SET_IDENTIFIER,
-		GITHUB_POLICY_SET_BRANCH,
-		GITHUB_POLICY_SET_PATH,
+		envGithubToken,
+		envGithubPolicySetIdentifier,
+		envGithubPolicySetBranch,
+		envGithubPolicySetPath,
 	)
 }
 

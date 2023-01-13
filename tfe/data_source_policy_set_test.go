@@ -108,17 +108,17 @@ func TestAccTFEPolicySetDataSource_vcs(t *testing.T) {
 		PreCheck: func() {
 			testAccPreCheck(t)
 
-			if GITHUB_TOKEN == "" {
+			if envGithubToken == "" {
 				t.Skip("Please set GITHUB_TOKEN to run this test")
 			}
-			if GITHUB_POLICY_SET_IDENTIFIER == "" {
+			if envGithubPolicySetIdentifier == "" {
 				t.Skip("Please set GITHUB_POLICY_SET_IDENTIFIER to run this test")
 			}
-			if GITHUB_POLICY_SET_BRANCH == "" {
+			if envGithubPolicySetBranch == "" {
 				t.Skip("Please set GITHUB_POLICY_SET_BRANCH to run this test")
 			}
-			if GITHUB_POLICY_SET_PATH == "" {
-				t.Skip("Please set GITHUB_POLICY_SET_PATH to run this test")
+			if envGithubPolicySetPath == "" {
+				t.Skip("Please set GITHUB_POLIY_SET_PATH to run this test")
 			}
 		},
 		Providers: testAccProviders,
@@ -159,7 +159,7 @@ func TestAccTFEPolicySetDataSource_notFound(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEPolicySetDataSourceConfig_notFound(rInt),
-				ExpectError: regexp.MustCompile(`Error: Could not find policy set`),
+				ExpectError: regexp.MustCompile(`Error: could not find policy set`),
 			},
 		},
 	},
@@ -257,10 +257,10 @@ data "tfe_policy_set" "bar" {
   organization = local.organization_name
 }
 `, organization,
-		GITHUB_TOKEN,
+		envGithubToken,
 		rInt,
-		GITHUB_POLICY_SET_IDENTIFIER,
-		GITHUB_POLICY_SET_PATH,
+		envGithubPolicySetIdentifier,
+		envGithubPolicySetPath,
 	)
 }
 

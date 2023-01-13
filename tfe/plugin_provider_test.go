@@ -1,6 +1,8 @@
 package tfe
 
 import (
+	"errors"
+	"log"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
@@ -55,14 +57,18 @@ func TestPluginProvider_providerMeta(t *testing.T) {
 			"hostname":        tftypes.NewValue(tftypes.String, tc.hostname),
 			"token":           tftypes.NewValue(tftypes.String, tc.token),
 			"ssl_skip_verify": tftypes.NewValue(tftypes.Bool, tc.sslSkipVerify),
-		}))
+		}),
+		)
+		if err != nil {
+			log.Printf("error: %v", err)
+		}
 
 		req := &tfprotov5.ConfigureProviderRequest{
 			Config: &config,
 		}
 
 		meta, err := retrieveProviderMeta(req)
-		if err != tc.err {
+		if !errors.Is(err, tc.err) {
 			t.Fatalf("Test %s: should not be error", name)
 		}
 

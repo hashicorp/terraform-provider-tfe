@@ -48,11 +48,11 @@ func testAccCheckTFEAgentTokenExists(
 
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
-			return fmt.Errorf("Not found: %s", n)
+			return fmt.Errorf("not found: %s", n)
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("No instance ID is set")
+			return fmt.Errorf("no instance ID is set")
 		}
 
 		sk, err := tfeClient.AgentTokens.Read(ctx, rs.Primary.ID)
@@ -74,7 +74,7 @@ func testAccCheckTFEAgentTokenAttributes(
 	agentToken *tfe.AgentToken) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if agentToken.Description != "agent-token-test" {
-			return fmt.Errorf("Bad name: %s", agentToken.Description)
+			return fmt.Errorf("bad name: %s", agentToken.Description)
 		}
 		return nil
 	}
@@ -89,7 +89,7 @@ func testAccCheckTFEAgentTokenDestroy(s *terraform.State) error {
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("No instance ID is set")
+			return fmt.Errorf("no instance ID is set")
 		}
 
 		_, err := tfeClient.AgentTokens.Read(ctx, rs.Primary.ID)

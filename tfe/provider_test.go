@@ -286,23 +286,35 @@ func testAccPreCheck(t *testing.T) {
 }
 
 func testAccGithubPreCheck(t *testing.T) {
-	if GITHUB_TOKEN == "" {
+	if envGithubToken == "" {
 		t.Skip("Please set GITHUB_TOKEN to run this test")
 	}
-	if GITHUB_WORKSPACE_IDENTIFIER == "" {
+	if envGithubWorkspaceIdentifier == "" {
 		t.Skip("Please set GITHUB_WORKSPACE_IDENTIFIER to run this test")
 	}
-	if GITHUB_WORKSPACE_BRANCH == "" {
+	if envGithubWorkspaceBranch == "" {
 		t.Skip("Please set GITHUB_WORKSPACE_BRANCH to run this test")
 	}
 }
 
-var GITHUB_POLICY_SET_IDENTIFIER = os.Getenv("GITHUB_POLICY_SET_IDENTIFIER")
-var GITHUB_POLICY_SET_BRANCH = os.Getenv("GITHUB_POLICY_SET_BRANCH")
-var GITHUB_POLICY_SET_PATH = os.Getenv("GITHUB_POLICY_SET_PATH")
-var GITHUB_REGISTRY_MODULE_IDENTIFIER = os.Getenv("GITHUB_REGISTRY_MODULE_IDENTIFIER")
-var GITHUB_TOKEN = os.Getenv("GITHUB_TOKEN")
-var GITHUB_WORKSPACE_IDENTIFIER = os.Getenv("GITHUB_WORKSPACE_IDENTIFIER")
-var GITHUB_WORKSPACE_BRANCH = os.Getenv("GITHUB_WORKSPACE_BRANCH")
-var TFE_USER1 = os.Getenv("TFE_USER1")
-var TFE_USER2 = os.Getenv("TFE_USER2")
+func init() {
+	envGithubPolicySetIdentifier = os.Getenv("GITHUB_POLICY_SET_IDENTIFIER")
+	envGithubPolicySetBranch = os.Getenv("GITHUB_POLICY_SET_BRANCH")
+	envGithubPolicySetPath = os.Getenv("GITHUB_POLICY_SET_PATH")
+	envGithubRegistryModuleIdentifer = os.Getenv("GITHUB_REGISTRY_MODULE_IDENTIFIER")
+	envGithubToken = os.Getenv("GITHUB_TOKEN")
+	envGithubWorkspaceIdentifier = os.Getenv("GITHUB_WORKSPACE_IDENTIFIER")
+	envGithubWorkspaceBranch = os.Getenv("GITHUB_WORKSPACE_BRANCH")
+	envTFEUser1 = os.Getenv("TFE_USER1")
+	envTFEUser2 = os.Getenv("TFE_USER2")
+}
+
+var envGithubPolicySetIdentifier string
+var envGithubPolicySetBranch string
+var envGithubPolicySetPath string
+var envGithubRegistryModuleIdentifer string
+var envGithubToken string
+var envGithubWorkspaceIdentifier string
+var envGithubWorkspaceBranch string
+var envTFEUser1 string
+var envTFEUser2 string

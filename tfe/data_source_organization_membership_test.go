@@ -43,19 +43,19 @@ func TestAccTFEOrganizationMembershipDataSource_findByName(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			if TFE_USER1 == "" {
+			if envTFEUser1 == "" {
 				t.Skip("Please set TFE_USER1 to run this test")
 			}
 		},
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOrganizationMembershipDataSourceSearchUsername(TFE_USER1),
+				Config: testAccTFEOrganizationMembershipDataSourceSearchUsername(envTFEUser1),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(
 						"data.tfe_organization_membership.foobar", "email"),
 					resource.TestCheckResourceAttr(
-						"data.tfe_organization_membership.foobar", "username", TFE_USER1),
+						"data.tfe_organization_membership.foobar", "username", envTFEUser1),
 					resource.TestCheckResourceAttr(
 						"data.tfe_organization_membership.foobar", "organization", "hashicorp"),
 					resource.TestCheckResourceAttrSet("data.tfe_organization_membership.foobar", "user_id"),

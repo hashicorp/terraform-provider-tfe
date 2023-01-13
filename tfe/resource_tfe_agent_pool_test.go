@@ -125,11 +125,11 @@ func testAccCheckTFEAgentPoolExists(
 
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
-			return fmt.Errorf("Not found: %s", n)
+			return fmt.Errorf("not found: %s", n)
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("No instance ID is set")
+			return fmt.Errorf("no instance ID is set")
 		}
 
 		sk, err := tfeClient.AgentPools.Read(ctx, rs.Primary.ID)
@@ -151,7 +151,7 @@ func testAccCheckTFEAgentPoolAttributes(
 	agentPool *tfe.AgentPool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if agentPool.Name != "agent-pool-test" {
-			return fmt.Errorf("Bad name: %s", agentPool.Name)
+			return fmt.Errorf("bad name: %s", agentPool.Name)
 		}
 		return nil
 	}
@@ -161,7 +161,7 @@ func testAccCheckTFEAgentPoolAttributesUpdated(
 	agentPool *tfe.AgentPool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if agentPool.Name != "agent-pool-updated" {
-			return fmt.Errorf("Bad name: %s", agentPool.Name)
+			return fmt.Errorf("bad name: %s", agentPool.Name)
 		}
 		return nil
 	}
@@ -176,7 +176,7 @@ func testAccCheckTFEAgentPoolDestroy(s *terraform.State) error {
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("No instance ID is set")
+			return fmt.Errorf("no instance ID is set")
 		}
 
 		_, err := tfeClient.AgentPools.Read(ctx, rs.Primary.ID)

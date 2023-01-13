@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-var workspaceIdRegexp = regexp.MustCompile("^ws-[a-zA-Z0-9]{16}$")
+var workspaceIDRegexp = regexp.MustCompile("^ws-[a-zA-Z0-9]{16}$")
 
 func resourceTFEWorkspace() *schema.Resource {
 	return &schema.Resource{
@@ -731,7 +731,7 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 	} else {
 		if forceDelete {
 			return fmt.Errorf(
-				"Error deleting workspace %s: missing required permissions to set force delete workspaces in the organization.", id)
+				"Error deleting workspace %s: missing required permissions to set force delete workspaces in the organization", id)
 		}
 		err = errWorkspaceResourceCountCheck(id, ws.ResourceCount)
 		if err != nil {

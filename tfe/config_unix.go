@@ -49,14 +49,14 @@ func homeDir() (string, error) {
 	}
 
 	// If that fails, try build-in module
-	user, err := user.Current()
+	osUser, err := user.Current()
 	if err != nil {
 		return "", err
 	}
 
-	if user.HomeDir == "" {
+	if osUser.HomeDir == "" {
 		return "", errors.New("blank output")
 	}
 
-	return user.HomeDir, nil
+	return osUser.HomeDir, nil
 }

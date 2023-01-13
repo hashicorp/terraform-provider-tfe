@@ -132,7 +132,7 @@ func (m *mockWorkspaces) ListRemoteStateConsumers(ctx context.Context, workspace
 	if m.options.remoteStateConsumersResponse == "404" {
 		return nil, tfe.ErrResourceNotFound
 	} else if m.options.remoteStateConsumersResponse == "500" {
-		return nil, errors.New("something is broken!")
+		return nil, errors.New("something is broken")
 	}
 
 	return &tfe.WorkspaceList{Items: []*tfe.Workspace{{ID: "ws-456"}}, Pagination: &tfe.Pagination{CurrentPage: 1, TotalPages: 1}}, nil

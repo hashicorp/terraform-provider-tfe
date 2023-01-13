@@ -83,12 +83,13 @@ func dataSourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) erro
 	var oc *tfe.OAuthClient
 	var err error
 
-	if v, ok := d.GetOk("oauth_client_id"); ok {
+	switch v, ok := d.GetOk("oauth_client_id"); {
+	case ok:
 		oc, err = tfeClient.OAuthClients.Read(ctx, v.(string))
 		if err != nil {
 			return fmt.Errorf("Error retrieving OAuth client: %w", err)
 		}
-	} else {
+	default:
 		// search by name or service provider within a specific organization instead
 		organization := d.Get("organization").(string)
 
@@ -128,7 +129,7 @@ func dataSourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) erro
 	case 1:
 		d.Set("oauth_token_id", oc.OAuthTokens[0].ID)
 	default:
-		return fmt.Errorf("Unexpected number of OAuth tokens: %d", len(oc.OAuthTokens)) // nolint:golint,errorlint
+		return fmt.Errorf("unexpected number of OAuth tokens: %d", len(oc.OAuthTokens))
 	}
 
 	return nil

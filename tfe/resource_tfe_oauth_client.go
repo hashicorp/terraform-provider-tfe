@@ -181,7 +181,7 @@ func resourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) error 
 	case 1:
 		d.Set("oauth_token_id", oc.OAuthTokens[0].ID)
 	default:
-		return fmt.Errorf("Unexpected number of OAuth tokens: %d", len(oc.OAuthTokens))
+		return fmt.Errorf("unexpected number of OAuth tokens: %d", len(oc.OAuthTokens))
 	}
 
 	return nil

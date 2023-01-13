@@ -147,10 +147,10 @@ func testCheckOutputState(name string, expectedOutputState *terraform.OutputStat
 		ms := s.RootModule()
 		rs, ok := ms.Outputs[name]
 		if !ok {
-			return fmt.Errorf("Not found: %s", name)
+			return fmt.Errorf("not found: %s", name)
 		}
 		if rs.String() != expectedOutputState.String() {
-			return fmt.Errorf("Expected the output state %s to match expected output state %s", rs.String(), expectedOutputState.String())
+			return fmt.Errorf("expected the output state %s to match expected output state %s", rs.String(), expectedOutputState.String())
 		}
 		return nil
 	}

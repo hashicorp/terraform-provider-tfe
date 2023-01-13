@@ -77,8 +77,8 @@ func dataSourceTFEWorkspaceVariables() *schema.Resource {
 
 func dataSourceVariableRead(d *schema.ResourceData, meta interface{}) error {
 	// Switch to variable set variable logic
-	_, variableSetIdProvided := d.GetOk("variable_set_id")
-	if variableSetIdProvided {
+	_, variableSetIDProvided := d.GetOk("variable_set_id")
+	if variableSetIDProvided {
 		return dataSourceVariableSetVariableRead(d, meta)
 	}
 
@@ -139,9 +139,9 @@ func dataSourceVariableSetVariableRead(d *schema.ResourceData, meta interface{})
 	tfeClient := meta.(*tfe.Client)
 
 	// Get the id.
-	variableSetId := d.Get("variable_set_id").(string)
+	variableSetID := d.Get("variable_set_id").(string)
 
-	log.Printf("[DEBUG] Read configuration of variable set: %s", variableSetId)
+	log.Printf("[DEBUG] Read configuration of variable set: %s", variableSetID)
 
 	totalEnvVariables := make([]interface{}, 0)
 	totalTerraformVariables := make([]interface{}, 0)
@@ -149,7 +149,7 @@ func dataSourceVariableSetVariableRead(d *schema.ResourceData, meta interface{})
 	options := tfe.VariableSetVariableListOptions{}
 
 	for {
-		variableList, err := tfeClient.VariableSetVariables.List(ctx, variableSetId, &options)
+		variableList, err := tfeClient.VariableSetVariables.List(ctx, variableSetID, &options)
 		if err != nil {
 			return fmt.Errorf("Error retrieving variable list: %w", err)
 		}
@@ -182,7 +182,7 @@ func dataSourceVariableSetVariableRead(d *schema.ResourceData, meta interface{})
 		options.PageNumber = variableList.NextPage
 	}
 
-	d.SetId(fmt.Sprintf("variables/%v", variableSetId))
+	d.SetId(fmt.Sprintf("variables/%v", variableSetID))
 	d.Set("variables", append(totalTerraformVariables, totalEnvVariables...))
 	d.Set("terraform", totalTerraformVariables)
 	d.Set("env", totalEnvVariables)
