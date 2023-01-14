@@ -8,7 +8,10 @@ import (
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"regexp"
 )
+
+var projectIDRegexp = regexp.MustCompile("^prj-[a-zA-Z0-9]{16}$")
 
 func resourceTFEProject() *schema.Resource {
 	return &schema.Resource{

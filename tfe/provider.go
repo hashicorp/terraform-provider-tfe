@@ -146,6 +146,7 @@ func Provider() *schema.Provider {
 			"tfe_team_access":                 resourceTFETeamAccess(),
 			"tfe_team_organization_member":    resourceTFETeamOrganizationMember(),
 			"tfe_team_organization_members":   resourceTFETeamOrganizationMembers(),
+			"tfe_team_project_access":         resourceTFETeamProjectAccess(),
 			"tfe_team_member":                 resourceTFETeamMember(),
 			"tfe_team_members":                resourceTFETeamMembers(),
 			"tfe_team_token":                  resourceTFETeamToken(),
