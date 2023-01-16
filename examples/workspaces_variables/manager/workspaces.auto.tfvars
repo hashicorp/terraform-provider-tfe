@@ -17,8 +17,8 @@
 # Note that lists and maps need to be enclosed in heredoc syntax so that they
 # are actually strings, which is what the tfe provider requires.
 
-workspaces = {
-  ws1 = {
+vars_mapped_by_workspace_name = {
+  customer_1_workspace = {
     a_string = {
       value = "val1"
     }
@@ -53,7 +53,7 @@ workspaces = {
     }
   }
 
-  ws2 = {
+  customer_2_workspace = {
     a_number = {
       value = 6.28
     }

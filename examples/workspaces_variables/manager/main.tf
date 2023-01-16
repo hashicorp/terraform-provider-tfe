@@ -4,78 +4,73 @@
 # variable resource blocks. The maps are merged, and then the result is
 # iterated over using for_each.
 
-# Edit and uncomment this block if you wish to connect to the manager workspace
-# from your workstation using the remote backend. This is not necessary in
-# order to use and run this configuration in Terraform Cloud / Enterprise.
-# It is also necessary to create a terraformrc configuration file:
-# https://www.terraform.io/docs/commands/cli-config.html
-/*
-terraform {
-  backend "remote" {
-    organization = "YOUR_ORG"
-    workspaces {
-      name = "manager"
+variable "tf_organization" {
+  description = "The Terraform Cloud or Enterprise organization under which all operations should be performed."
+}
+
+variable "vcs_repo_identifier" {
+  description = <<-EOT
+  The format of VCS repo identifier might differ depending on the VCS provider,
+  see https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/workspace
+  EOT
+}
+
+variable "vcs_token" {
+  description = "The VCS token should correspond to an API token that can create OAuth clients."
+}
+
+variable "vars_mapped_by_workspace_name" {
+    description = <<-EOT
+    This is the map of workspaces and variables. A workspace is created for each
+    top level key and then variables are set on the workspace.
+    EOT
+}
+
+variable "additional_vars" {
+  description = "This is a map of additional variables intended to be set in specific workspaces."
+  default = {
+    customer_1_workspace = {
+      i_am_sensitive_tf_var = {
+        value = "i am sensitive"
+        sensitive = true
+      }
     }
   }
 }
-*/
 
-# By default, variables being set will be Terraform variables
 variable "default_var_category" {
+  description = "Default category for variables being set in managed workspaces unless specified"
   default = "terraform"
 }
 
-# By default, variables being set will not be interpreted as hcl values
 variable "default_var_hcl" {
+  description = "By default, variables being set in managed workspaces will not be interpreted as hcl values"
   default = false
 }
 
-# By default, variables being set will not be sensitive
 variable "default_var_sensitive" {
+  description = "By default, variables being set in managed workspaces will be non-sensitive"
   default = false
-}
-
-# The API token used should be able to create and configure workspaces, and
-# create and configure workspace variables.
-variable "tf_api_token" {}
-
-# The Terraform Cloud or Enterprise organization under which all operations
-# should be performed.
-variable "org" {}
-
-# The org and repo should correspond to, e.g., github.com/org/repo
-variable "vcs_org" {}
-variable "vcs_repo" {}
-
-# The vcs token should correspond to an API token that can create OAuth
-# clients.
-variable "vcs_token" {}
-
-# This is the map of workspaces and variables. A workspace is created for each
-# top level key and then variables are set on the workspace.
-variable "workspaces" {}
-
-# This is a map of additional variables intended to be set in the Terraform
-# Enterprise workspace so that it can be set as sensitive so the values are
-# hidden.
-variable "addtl_vars" {
-  default = {}
-}
-
-provider "tfe" {
-  token = var.tf_api_token
 }
 
 locals {
-  # Flatten a nested structure for later iteration in a resource. Adapted from:
-  # https://www.terraform.io/docs/configuration/functions/flatten.html#flattening-nested-structures-for-for_each
+  # Flatten the workspaces variable nested structure for later iteration in the managed_var resource. Adapted from:
+  # https://developer.hashicorp.com/terraform/language/functions/flatten#flattening-nested-structures-for-for_each
 
-  # Results in a list that can be used to create a map, where each key
-  # represents a workspace variable that needs to be set, and each value
-  # contains all of the information required to manage that workspace variable.
+  # Results in a list of maps, that contains all the information
+  # required to manage that workspace variable.
+  #   [{
+  #     ws            = ws_name
+  #     var_key       = name
+  #     var_value     = value
+  #     var_category  = string
+  #     var_hcl       = true/false
+  #     var_sensitive = true/false
+  #     ws_id         = <tfe_workspace>.id
+  #   }...]
   ws_variables = flatten([
-    for ws_name, variables in var.workspaces : [
-      for var_name, var_attrs in merge(variables, lookup(var.addtl_vars, ws_name, {})) : {
+    for ws_name, variables in var.vars_mapped_by_workspace_name : [
+      for var_name, var_attrs in merge(variables, lookup(var.additional_vars, ws_name, {})) : {
         ws            = ws_name
         var_key       = var_name
         var_value     = var_attrs["value"]
@@ -90,68 +85,43 @@ locals {
 
 # This example oauth connection assumes the VCS provider is Github.
 resource "tfe_oauth_client" "gh" {
-  organization     = var.org
+  organization     = var.tf_organization
   api_url          = "https://api.github.com"
   http_url         = "https://github.com"
   oauth_token      = var.vcs_token
   service_provider = "github"
 }
 
-# Create a workspace for each top level key. The workspace will be named after
-# the VCS repo and the top level key: "repo-name"
 resource "tfe_workspace" "managed_ws" {
-  for_each = var.workspaces
+  description = "Create all workspaces specified in the input workspaces map"
+  for_each = var.vars_mapped_by_workspace_name
 
-  name = "${var.vcs_repo}-${each.key}"
-  organization = var.org
-
+  name = each.key
+  organization = var.tf_organization
+  auto_apply = true
+  force_delete = true
   vcs_repo {
-    identifier = "${var.vcs_org}/${var.vcs_repo}"
+    identifier = var.vcs_repo_identifier
     oauth_token_id = tfe_oauth_client.gh.oauth_token_id
   }
 }
 
 resource "tfe_variable" "managed_var" {
-  # The for_each expression expects a map. The flattened list of maps,
-  # local.ws_variables, contains all of the required information to create all
-  # of the variables. What's required, then, is a map where each key/value is a
-  # variable to create. The keys need to be unique, so the key used here is
-  # "workspace_name.variable_name".  The each.key expression is not used. The
-  # each.value map has all of the variable information.
-
-  # So the transformation is from the merged var.workspaces and addtl_vars
-  # structure:
+  # The for_each expression expects a map or a set of strings,
+  # see https://developer.hashicorp.com/terraform/language/meta-arguments/for_each
+  # Accordingly, the flattened list of maps, local.ws_variables, is converted to a
+  # map with unique key format "workspace_name_variable_name".
   # {
-  #   ws1 {
-  #     var1 = {
-  #       var_key   = name
-  #       var_value = value
-  #       var_hcl   = true/false
-  #       ws_id     = <tfe_workspace>.id
-  #     }
-  #     var2 = {
-  #       ...
-  #     }
+  #   customer_1_workspace_var1 = {
+  #     ws            = ws_name
+  #     var_key       = name
+  #     var_value     = value
+  #     var_category  = string
+  #     var_hcl       = true/false
+  #     var_sensitive = true/false
+  #     ws_id         = <tfe_workspace>.id
   #   }
-  #   ws2 {
-  #     ...
-  #   }
-  #   ...
-  # }
-  #
-  # To a map of unique keys pointing at each list value in local.ws_variables:
-  # {
-  #   ws1_var1 = {
-  #     ws        = ws_name
-  #     var_key   = name
-  #     var_value = value
-  #     var_hcl   = true/false
-  #     ws_id     = <tfe_workspace>.id
-  #   }
-  #   ws1_var2 = {
-  #     ...
-  #   }
-  #   ws2_var1 = {
+  #   customer_1_workspace_var2 = {
   #     ...
   #   }
   #   ...
@@ -169,12 +139,17 @@ resource "tfe_variable" "managed_var" {
   sensitive    = each.value.var_sensitive
 }
 
-resource "tfe_variable" "managed_single_var" {
+resource "random_pet" "a_dynamic_value" {
+  length = 5
+}
+
+resource "tfe_variable" "managed_customized_var" {
+  description  = "Create dynamic variable for specific workspaces"
   for_each     = tfe_workspace.managed_ws
 
   workspace_id = each.value.id
-  key          = "a_single_var"
-  value        = "not from the workspaces map"
+  key          = "a_customized_var"
+  value        = random_pet.a_dynamic_value.id
   category     = "terraform"
   hcl          = false
   sensitive    = false

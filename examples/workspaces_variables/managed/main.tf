@@ -1,25 +1,5 @@
-# Defaults are given in this configuration and also using the some.auto.tfvars.
-# Both will be overridden by what is set in the TF Cloud / Enterprise Variables
-# page using the manager configuration.
-
-# Edit and uncomment this backend configuration to enable connecting to the
-# different managed workspaces created by the manager from your workstation.
-# Connecting to the backend from your workstation is not required in order to
-# use this configuration from within TF Cloud / Enterprise.
-
-# Note that the prefix should end in a literal hyphen. For the repo 'managed',
-# the prefix should be 'managed-'
-
-/*
-terraform {
-  backend "remote" {
-    organization = "YOUR_ORGANIZATION"
-    workspaces = {
-      prefix = "managed-"
-    }
-  }
-}
-*/
+# Defaults are given in this configuration and the defaults.auto.tfvars file.
+# Both will be overridden by values passed down by the manager configuration.
 
 #
 # Variables
@@ -85,7 +65,7 @@ output "a_single_var" {
   value = var.a_single_var
 }
 
-# Print the value of the environment variables 
+# Print the value of the environment variables
 resource "null_resource" "env_vars" {
   provisioner "local-exec" {
     command = <<EOT
