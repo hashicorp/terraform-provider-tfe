@@ -47,8 +47,8 @@ type ConfigHost struct {
 }
 
 type ConfiguredClient struct {
-	Client              *tfe.Client
-	DefaultOrganization string
+	Client       *tfe.Client
+	Organization string
 }
 
 func (c ConfiguredClient) schemaOrDefaultOrganization(resource *schema.ResourceData) (string, error) {
@@ -60,10 +60,10 @@ func (c ConfiguredClient) schemaOrDefaultOrganizationKey(resource *schema.Resour
 	if got {
 		return schemaOrg.(string), nil
 	}
-	if c.DefaultOrganization == "" {
+	if c.Organization == "" {
 		return "", errMissingOrganization
 	}
-	return c.DefaultOrganization, nil
+	return c.Organization, nil
 }
 
 // ctx is used as default context.Context when making TFE calls.
@@ -95,10 +95,10 @@ func Provider() *schema.Provider {
 				Description: descriptions["ssl_skip_verify"],
 			},
 
-			"default_organization": {
+			"organization": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: descriptions["default_organization"],
+				Description: descriptions["organization"],
 			},
 		},
 
@@ -163,7 +163,7 @@ func Provider() *schema.Provider {
 
 func configure() schema.ConfigureContextFunc {
 	return func(ctx context.Context, rd *schema.ResourceData) (any, diag.Diagnostics) {
-		defaultOrganization := rd.Get("default_organization").(string)
+		providerOrganization := rd.Get("organization").(string)
 
 		client, err := configureClient(rd)
 		if err != nil {
@@ -172,7 +172,7 @@ func configure() schema.ConfigureContextFunc {
 
 		return ConfiguredClient{
 			client,
-			defaultOrganization,
+			providerOrganization,
 		}, nil
 	}
 }
@@ -565,7 +565,7 @@ var descriptions = map[string]string{
 	"token": "The token used to authenticate with Terraform Enterprise. We recommend omitting\n" +
 		"the token which can be set as credentials in the CLI config file.",
 	"ssl_skip_verify": "Whether or not to skip certificate verifications.",
-	"default_organization": "The organization to apply to a resource if one is not defined on\n" +
+	"organization": "The organization to apply to a resource if one is not defined on\n" +
 		"the resource itself",
 }
 

@@ -54,7 +54,7 @@ resource "tfe_workspace" "test" {
 The following arguments are supported:
 
 * `name` - (Required) Name of the workspace.
-* `organization` - (Optional) Name of the organization. If omitted, default_organization provider config must be defined.
+* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `description` - (Optional) A description for the workspace.
 * `agent_pool_id` - (Optional) The ID of an agent pool to assign to the workspace. Requires `execution_mode`
   to be set to `agent`. This value _must not_ be provided if `execution_mode` is set to any other value or if `operations` is

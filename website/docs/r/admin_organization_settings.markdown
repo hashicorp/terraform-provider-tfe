@@ -54,7 +54,7 @@ resource "tfe_admin_organization_settings" "test-settings" {
 
 The following arguments are supported:
 
-* `organization` - (Optional) Name of the organization. If omitted, default_organization provider config must be defined.
+* `organization` - (Optional) Name of the organization. If omitted, organization provider config must be defined.
 * `access_beta_tools` - (Optional) True if the organization has access to beta tool versions.
 * `workspace_limit` - (Optional) Maximum number of workspaces for this organization. If this number is set to a value lower than the number of workspaces the organization has, it will prevent additional workspaces from being created, but existing workspaces will not be affected. If set to 0, this limit will have no effect.
 * `global_module_sharing` - (Optional) If true, modules in the organization's private module repository will be available to all other organizations. Enabling this will disable any previously configured module_sharing_consumer_organizations. Cannot be true if module_sharing_consumer_organizations is set.

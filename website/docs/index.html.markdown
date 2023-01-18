@@ -122,6 +122,6 @@ The following arguments are supported:
 * `ssl_skip_verify` - (Optional) Whether or not to skip certificate verifications.
   Defaults to `false`. Can be overridden setting the `TFE_SSL_SKIP_VERIFY`
   environment variable.
-* `default_organization` - (Optional) The default organization that resources should
+* `organization` - (Optional) The default organization that resources should
   belong to. If provided, it's usually possible to omit resource-specific `organization`
-  arguments.
+  arguments. Ensure that the organization already exists prior to using this argument.

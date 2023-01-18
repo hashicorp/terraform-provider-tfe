@@ -14,14 +14,14 @@ import (
 )
 
 type dataSourceOutputs struct {
-	tfeClient           *tfe.Client
-	defaultOrganization string
+	tfeClient    *tfe.Client
+	organization string
 }
 
 func newDataSourceOutputs(config ConfiguredClient) tfprotov5.DataSourceServer {
 	return dataSourceOutputs{
-		tfeClient:           config.Client,
-		defaultOrganization: config.DefaultOrganization,
+		tfeClient:    config.Client,
+		organization: config.Organization,
 	}
 }
 
@@ -130,11 +130,11 @@ func (d dataSourceOutputs) readConfigValues(req *tfprotov5.ReadDataSourceRequest
 	}
 
 	err = valMap["organization"].As(&orgName)
-	if err != nil {
-		if d.defaultOrganization == "" {
-			return "", "", fmt.Errorf("error assigning 'organization' value to string: %w", err)
+	if err != nil || orgName == "" {
+		if d.organization == "" {
+			return "", "", errMissingOrganization
 		}
-		orgName = d.defaultOrganization
+		orgName = d.organization
 	}
 
 	if valMap["workspace"].IsNull() {

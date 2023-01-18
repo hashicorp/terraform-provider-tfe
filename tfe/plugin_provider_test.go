@@ -10,11 +10,11 @@ import (
 
 func TestPluginProvider_providerMeta(t *testing.T) {
 	cases := map[string]struct {
-		hostname            string
-		token               string
-		sslSkipVerify       bool
-		defaultOrganization string
-		err                 error
+		hostname      string
+		token         string
+		sslSkipVerify bool
+		organization  string
+		err           error
 	}{
 		"has none": {},
 		"has only hostname": {
@@ -38,31 +38,31 @@ func TestPluginProvider_providerMeta(t *testing.T) {
 			token:         "secret",
 			sslSkipVerify: true,
 		},
-		"has default_organization": {
-			defaultOrganization: "hashicorp",
+		"has organization": {
+			organization: "hashicorp",
 		},
 	}
 
 	for name, tc := range cases {
 		config, err := tfprotov5.NewDynamicValue(tftypes.Object{
 			AttributeTypes: map[string]tftypes.Type{
-				"hostname":             tftypes.String,
-				"token":                tftypes.String,
-				"ssl_skip_verify":      tftypes.Bool,
-				"default_organization": tftypes.String,
+				"hostname":        tftypes.String,
+				"token":           tftypes.String,
+				"ssl_skip_verify": tftypes.Bool,
+				"organization":    tftypes.String,
 			},
 		}, tftypes.NewValue(tftypes.Object{
 			AttributeTypes: map[string]tftypes.Type{
-				"hostname":             tftypes.String,
-				"token":                tftypes.String,
-				"ssl_skip_verify":      tftypes.Bool,
-				"default_organization": tftypes.String,
+				"hostname":        tftypes.String,
+				"token":           tftypes.String,
+				"ssl_skip_verify": tftypes.Bool,
+				"organization":    tftypes.String,
 			},
 		}, map[string]tftypes.Value{
-			"hostname":             tftypes.NewValue(tftypes.String, tc.hostname),
-			"token":                tftypes.NewValue(tftypes.String, tc.token),
-			"ssl_skip_verify":      tftypes.NewValue(tftypes.Bool, tc.sslSkipVerify),
-			"default_organization": tftypes.NewValue(tftypes.String, tc.defaultOrganization),
+			"hostname":        tftypes.NewValue(tftypes.String, tc.hostname),
+			"token":           tftypes.NewValue(tftypes.String, tc.token),
+			"ssl_skip_verify": tftypes.NewValue(tftypes.Bool, tc.sslSkipVerify),
+			"organization":    tftypes.NewValue(tftypes.String, tc.organization),
 		}))
 		if err != nil {
 			t.Fatal(err.Error())
@@ -97,7 +97,7 @@ func TestPluginProvider_providerMeta(t *testing.T) {
 			t.Fatalf("Test %s: ssl_skip_verify was not set in config and has not been set to default", name)
 		}
 
-		if tc.defaultOrganization != meta.defaultOrganization {
+		if tc.organization != meta.organization {
 			t.Fatalf("Test %s: default organization was set in config and input default organization %s does not have the same value in meta %s", name, tc.token, meta.token)
 		}
 

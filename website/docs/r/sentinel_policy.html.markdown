@@ -36,7 +36,7 @@ The following arguments are supported:
 
 * `name` - (Required) Name of the policy.
 * `description` - (Optional) A description of the policy's purpose.
-* `organization` - (Optional) Name of the organization. If omitted, default_organization provider config must be defined.
+* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `policy` - (Required) The actual policy itself.
 * `enforce_mode` - (Optional) The enforcement level of the policy. Valid
   values are `advisory`, `hard-mandatory` and `soft-mandatory`. Defaults

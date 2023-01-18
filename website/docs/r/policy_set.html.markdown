@@ -83,7 +83,7 @@ The following arguments are supported:
    A policy set can only have policies that have the same underlying kind.
 * `overridable` - (Optional) Whether or not users can override this policy when
    it fails during a run. Defaults to `false`. Only valid for OPA policies.
-* `organization` - (Optional) Name of the organization. If omitted, default_organization provider config must be defined.
+* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `policies_path` - (Optional) The sub-path within the attached VCS repository
   to ingress when using `vcs_repo`. All files and directories outside of this
   sub-path will be ignored. This option can only be supplied when `vcs_repo` is

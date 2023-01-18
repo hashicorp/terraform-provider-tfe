@@ -49,8 +49,8 @@ func providerWithDefaultOrganization(defaultOrgName string) map[string]*schema.P
 	testAccProviderDefaultOrganization.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
 		client, err := getClientUsingEnv()
 		return ConfiguredClient{
-			Client:              client,
-			DefaultOrganization: defaultOrgName,
+			Client:       client,
+			Organization: defaultOrgName,
 		}, diag.FromErr(err)
 	}
 	return map[string]*schema.Provider{

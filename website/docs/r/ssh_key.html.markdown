@@ -27,7 +27,7 @@ resource "tfe_ssh_key" "test" {
 The following arguments are supported:
 
 * `name` - (Required) Name to identify the SSH key.
-* `organization` - (Optional) Name of the organization. If omitted, default_organization provider config must be defined.
+* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `key` - (Required) The text of the SSH private key.
 
 ## Attributes Reference
