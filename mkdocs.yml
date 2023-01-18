@@ -1,6 +1,6 @@
-site_name: Terraform Cloud/Enterprise Provider - Contributor Guide
+site_name: hashicorp/tfe Terraform Provider - Contributor Guide
 site_description: 'Contributor documentation and reference for the
-                   Terraform Cloud/Enterprise Provider (tfe)'
+                   hashicorp/tfe Terraform provider'
 copyright: HashiCorp
 repo_name: hashicorp/terraform-provider-tfe
 repo_url: https://github.com/hashicorp/terraform-provider-tfe
@@ -10,9 +10,11 @@ nav:
   - Welcome: index.md
   - Contribute:
       - Development Environment: development-environment.md
+      - Test Infrastructure: test-infrastructure.md
       - Contribution Guides:
-          - Debugging: debugging.md
           - Testing: testing.md
+          - Introducing Beta Features: beta.md
+          - Debugging: debugging.md
       - Acceptance Tests: writing-acceptance-tests.md
       - Changelog Process: changelog-process.md
 
