@@ -125,3 +125,4 @@ The following arguments are supported:
 * `organization` - (Optional) The default organization that resources should
   belong to. If provided, it's usually possible to omit resource-specific `organization`
   arguments. Ensure that the organization already exists prior to using this argument.
+  This can also be specified using the `TFE_ORGANIZATION` environment variable.

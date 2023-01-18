@@ -164,6 +164,9 @@ func Provider() *schema.Provider {
 func configure() schema.ConfigureContextFunc {
 	return func(ctx context.Context, rd *schema.ResourceData) (any, diag.Diagnostics) {
 		providerOrganization := rd.Get("organization").(string)
+		if providerOrganization == "" {
+			providerOrganization = os.Getenv("TFE_ORGANIZATION")
+		}
 
 		client, err := configureClient(rd)
 		if err != nil {

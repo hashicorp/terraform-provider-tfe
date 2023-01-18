@@ -3,6 +3,7 @@ package tfe
 import (
 	"context"
 	"fmt"
+	"os"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
@@ -75,6 +76,10 @@ func (p *pluginProviderServer) ConfigureProvider(ctx context.Context, req *tfpro
 			Detail:   fmt.Sprintf("Error getting client: %v", err),
 		})
 		return resp, nil
+	}
+
+	if meta.organization == "" {
+		meta.organization = os.Getenv("TFE_ORGANIZATION")
 	}
 
 	p.tfeClient = client

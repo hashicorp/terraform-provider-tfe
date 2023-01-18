@@ -320,6 +320,38 @@ func testAccPreCheck(t *testing.T) {
 	}
 }
 
+func TestConfigureEnvOrganization(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	originalTFEOrganization := os.Getenv("TFE_ORGANIZATION")
+	reset := func() {
+		if originalTFEOrganization != "" {
+			os.Setenv("TFE_ORGANIZATION", originalTFEOrganization)
+		} else {
+			os.Unsetenv("TFE_ORGANIZATION")
+		}
+	}
+	defer reset()
+
+	expectedOrganization := fmt.Sprintf("tst-organization-%d", rInt)
+	os.Setenv("TFE_ORGANIZATION", expectedOrganization)
+
+	provider := Provider()
+
+	// The credentials must be provided by the CLI config file for testing.
+	if diags := provider.Configure(context.Background(), &terraform.ResourceConfig{}); diags.HasError() {
+		for _, d := range diags {
+			if d.Severity == diag.Error {
+				t.Fatalf("err: %s", d.Summary)
+			}
+		}
+	}
+
+	config := provider.Meta().(ConfiguredClient)
+	if config.Organization != expectedOrganization {
+		t.Fatalf("unexpected organization configuration: got %s, wanted %s", config.Organization, expectedOrganization)
+	}
+}
+
 func testAccGithubPreCheck(t *testing.T) {
 	if envGithubToken == "" {
 		t.Skip("Please set GITHUB_TOKEN to run this test")
