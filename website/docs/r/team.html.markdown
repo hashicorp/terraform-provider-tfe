@@ -37,7 +37,7 @@ resource "tfe_team" "test" {
 The following arguments are supported:
 
 * `name` - (Required) Name of the team.
-* `organization` - (Required) Name of the organization.
+* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `visibility` - (Optional) The visibility of the team ("secret" or "organization"). Defaults to "secret".
 * `organization_access` - (Optional) Settings for the team's [organization access](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/permissions#organization-permissions).
 * `sso_team_id` - (Optional) Unique Identifier to control [team membership](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/single-sign-on#team-names-and-sso-team-ids) via SAML. Defaults to `null`
@@ -64,7 +64,7 @@ example:
 ```shell
 terraform import tfe_team.test my-org-name/team-uomQZysH9ou42ZYY
 ```
-or 
+or
 ```shell
 terraform import tfe_team.test my-org-name/my-team-name
 ```

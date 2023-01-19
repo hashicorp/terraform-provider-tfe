@@ -37,7 +37,7 @@ func resourceTFEWorkspaceVariableSet() *schema.Resource {
 }
 
 func resourceTFEWorkspaceVariableSetCreate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	vSID := d.Get("variable_set_id").(string)
 	wID := d.Get("workspace_id").(string)
@@ -45,7 +45,7 @@ func resourceTFEWorkspaceVariableSetCreate(d *schema.ResourceData, meta interfac
 	applyOptions := tfe.VariableSetApplyToWorkspacesOptions{}
 	applyOptions.Workspaces = append(applyOptions.Workspaces, &tfe.Workspace{ID: wID})
 
-	err := tfeClient.VariableSets.ApplyToWorkspaces(ctx, vSID, &applyOptions)
+	err := config.Client.VariableSets.ApplyToWorkspaces(ctx, vSID, &applyOptions)
 	if err != nil {
 		return fmt.Errorf(
 			"Error applying variable set id %s to workspace %s: %w", vSID, wID, err)
@@ -58,13 +58,13 @@ func resourceTFEWorkspaceVariableSetCreate(d *schema.ResourceData, meta interfac
 }
 
 func resourceTFEWorkspaceVariableSetRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	wID := d.Get("workspace_id").(string)
 	vSID := d.Get("variable_set_id").(string)
 
 	log.Printf("[DEBUG] Read configuration of workspace variable set: %s", d.Id())
-	vS, err := tfeClient.VariableSets.Read(ctx, vSID, &tfe.VariableSetReadOptions{
+	vS, err := config.Client.VariableSets.Read(ctx, vSID, &tfe.VariableSetReadOptions{
 		Include: &[]tfe.VariableSetIncludeOpt{tfe.VariableSetWorkspaces},
 	})
 	if err != nil {
@@ -95,7 +95,7 @@ func resourceTFEWorkspaceVariableSetRead(d *schema.ResourceData, meta interface{
 }
 
 func resourceTFEWorkspaceVariableSetDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	wID := d.Get("workspace_id").(string)
 	vSID := d.Get("variable_set_id").(string)
@@ -104,7 +104,7 @@ func resourceTFEWorkspaceVariableSetDelete(d *schema.ResourceData, meta interfac
 	removeOptions := tfe.VariableSetRemoveFromWorkspacesOptions{}
 	removeOptions.Workspaces = append(removeOptions.Workspaces, &tfe.Workspace{ID: wID})
 
-	err := tfeClient.VariableSets.RemoveFromWorkspaces(ctx, vSID, &removeOptions)
+	err := config.Client.VariableSets.RemoveFromWorkspaces(ctx, vSID, &removeOptions)
 	if err != nil {
 		return fmt.Errorf(
 			"Error removing workspace %s from variable set %s: %w", wID, vSID, err)
@@ -126,10 +126,10 @@ func resourceTFEWorkspaceVariableSetImporter(ctx context.Context, d *schema.Reso
 		return nil, err
 	}
 
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Ensure a workspace of this name exists before fetching all the variable sets in the org
-	_, err = tfeClient.Workspaces.Read(ctx, organization, wsName)
+	_, err = config.Client.Workspaces.Read(ctx, organization, wsName)
 	if err != nil {
 		return nil, fmt.Errorf("error reading configuration of workspace %s in organization %s: %w", wsName, organization, err)
 	}
@@ -138,7 +138,7 @@ func resourceTFEWorkspaceVariableSetImporter(ctx context.Context, d *schema.Reso
 		Include: string(tfe.VariableSetWorkspaces),
 	}
 	for {
-		list, err := tfeClient.VariableSets.List(ctx, organization, options)
+		list, err := config.Client.VariableSets.List(ctx, organization, options)
 		if err != nil {
 			return nil, fmt.Errorf("Error retrieving variable sets: %w", err)
 		}

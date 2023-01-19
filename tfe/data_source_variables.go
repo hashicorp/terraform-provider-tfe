@@ -82,7 +82,7 @@ func dataSourceVariableRead(d *schema.ResourceData, meta interface{}) error {
 		return dataSourceVariableSetVariableRead(d, meta)
 	}
 
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the name and organization.
 	workspaceID := d.Get("workspace_id").(string)
@@ -95,7 +95,7 @@ func dataSourceVariableRead(d *schema.ResourceData, meta interface{}) error {
 	options := &tfe.VariableListOptions{}
 
 	for {
-		variableList, err := tfeClient.Variables.List(ctx, workspaceID, options)
+		variableList, err := config.Client.Variables.List(ctx, workspaceID, options)
 		if err != nil {
 			return fmt.Errorf("Error retrieving variable list: %w", err)
 		}
@@ -136,7 +136,7 @@ func dataSourceVariableRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func dataSourceVariableSetVariableRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the id.
 	variableSetID := d.Get("variable_set_id").(string)
@@ -149,7 +149,7 @@ func dataSourceVariableSetVariableRead(d *schema.ResourceData, meta interface{})
 	options := tfe.VariableSetVariableListOptions{}
 
 	for {
-		variableList, err := tfeClient.VariableSetVariables.List(ctx, variableSetID, &options)
+		variableList, err := config.Client.VariableSetVariables.List(ctx, variableSetID, &options)
 		if err != nil {
 			return fmt.Errorf("Error retrieving variable list: %w", err)
 		}

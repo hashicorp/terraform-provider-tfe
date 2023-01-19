@@ -111,7 +111,7 @@ func TestAccTFESentinelPolicy_import(t *testing.T) {
 func testAccCheckTFESentinelPolicyExists(
 	n string, policy *tfe.Policy) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -122,7 +122,7 @@ func testAccCheckTFESentinelPolicyExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		p, err := tfeClient.Policies.Read(ctx, rs.Primary.ID)
+		p, err := config.Client.Policies.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -168,7 +168,7 @@ func testAccCheckTFESentinelPolicyAttributesUpdated(
 }
 
 func testAccCheckTFESentinelPolicyDestroy(s *terraform.State) error {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	config := testAccProvider.Meta().(ConfiguredClient)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_sentinel_policy" {
@@ -179,7 +179,7 @@ func testAccCheckTFESentinelPolicyDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := tfeClient.Policies.Read(ctx, rs.Primary.ID)
+		_, err := config.Client.Policies.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Sentinel policy %s still exists", rs.Primary.ID)
 		}

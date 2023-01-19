@@ -34,7 +34,7 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 
 			"ids": {
@@ -83,10 +83,13 @@ func includedByName(names map[string]bool, workspaceName string) bool {
 }
 
 func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the organization.
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	// Create a map with all the names we are looking for.
 	var id string
@@ -140,7 +143,7 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 	hasOnlyTags := len(tagSearchParts) > 0 && len(names) == 0
 
 	for {
-		wl, err := tfeClient.Workspaces.List(ctx, organization, options)
+		wl, err := config.Client.Workspaces.List(ctx, organization, options)
 		if err != nil {
 			return fmt.Errorf("Error retrieving workspaces: %w", err)
 		}

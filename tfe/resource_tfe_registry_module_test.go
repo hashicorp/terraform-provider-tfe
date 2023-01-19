@@ -475,7 +475,7 @@ func TestAccTFERegistryModule_invalidWithRegistryNameAndNoModuleProvider(t *test
 }
 func testAccCheckTFERegistryModuleExists(n string, rmID tfe.RegistryModuleID, registryModule *tfe.RegistryModule) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -486,7 +486,7 @@ func testAccCheckTFERegistryModuleExists(n string, rmID tfe.RegistryModuleID, re
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		rm, err := tfeClient.RegistryModules.Read(ctx, rmID)
+		rm, err := config.Client.RegistryModules.Read(ctx, rmID)
 		if err != nil {
 			return err
 		}
@@ -550,7 +550,7 @@ func testAccCheckTFERegistryModuleVCSAttributes(registryModule *tfe.RegistryModu
 }
 
 func testAccCheckTFERegistryModuleDestroy(s *terraform.State) error {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	config := testAccProvider.Meta().(ConfiguredClient)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_registry_module" {
@@ -594,7 +594,7 @@ func testAccCheckTFERegistryModuleDestroy(s *terraform.State) error {
 			Namespace:    rs.Primary.Attributes["namespace"],
 			RegistryName: tfe.RegistryName(rs.Primary.Attributes["registry_name"]),
 		}
-		_, err := tfeClient.RegistryModules.Read(ctx, rmID)
+		_, err := config.Client.RegistryModules.Read(ctx, rmID)
 		if err == nil {
 			return fmt.Errorf("Registry module %s still exists", id)
 		}

@@ -40,7 +40,8 @@ func resourceTFEPolicy() *schema.Resource {
 			"organization": {
 				Description: "Name of the organization that this policy belongs to",
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
+				Computed:    true,
 				ForceNew:    true,
 			},
 
@@ -114,11 +115,14 @@ func opaPolicyEnforcementLevels() []string {
 }
 
 func resourceTFEPolicyCreate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the name and organization.
 	name := d.Get("name").(string)
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	var kind string
 	if vKind, ok := d.GetOk("kind"); ok {
@@ -135,7 +139,6 @@ func resourceTFEPolicyCreate(d *schema.ResourceData, meta interface{}) error {
 		options.Description = tfe.String(desc.(string))
 	}
 
-	var err error
 	//  Setup per-kind policy options
 	switch tfe.PolicyKind(kind) {
 	case tfe.Sentinel:
@@ -150,7 +153,7 @@ func resourceTFEPolicyCreate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 	log.Printf("[DEBUG] Create %s policy %s for organization: %s", kind, name, organization)
-	policy, err := tfeClient.Policies.Create(ctx, organization, *options)
+	policy, err := config.Client.Policies.Create(ctx, organization, *options)
 	if err != nil {
 		return fmt.Errorf(
 			"Error creating %s policy %s for organization %s: %w", kind, name, organization, err)
@@ -159,7 +162,7 @@ func resourceTFEPolicyCreate(d *schema.ResourceData, meta interface{}) error {
 	d.SetId(policy.ID)
 
 	log.Printf("[DEBUG] Upload %s policy %s for organization: %s", kind, name, organization)
-	err = tfeClient.Policies.Upload(ctx, policy.ID, []byte(d.Get("policy").(string)))
+	err = config.Client.Policies.Upload(ctx, policy.ID, []byte(d.Get("policy").(string)))
 	if err != nil {
 		return fmt.Errorf(
 			"Error uploading %s policy %s for organization %s: %w", kind, name, organization, err)
@@ -223,10 +226,10 @@ func getDefaultEnforcementMode(kind tfe.PolicyKind) tfe.EnforcementLevel {
 }
 
 func resourceTFEPolicyRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read policy: %s", d.Id())
-	policy, err := tfeClient.Policies.Read(ctx, d.Id())
+	policy, err := config.Client.Policies.Read(ctx, d.Id())
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			log.Printf("[DEBUG] Policy %s no longer exists", d.Id())
@@ -245,7 +248,7 @@ func resourceTFEPolicyRead(d *schema.ResourceData, meta interface{}) error {
 		d.Set("enforce_mode", string(policy.Enforce[0].Mode))
 	}
 
-	content, err := tfeClient.Policies.Download(ctx, policy.ID)
+	content, err := config.Client.Policies.Download(ctx, policy.ID)
 	if err != nil {
 		return fmt.Errorf("Error downloading policy %s: %w", d.Id(), err)
 	}
@@ -255,7 +258,7 @@ func resourceTFEPolicyRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceTFEPolicyUpdate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// nolint:nestif
 	if d.HasChange("description") || d.HasChange("enforce_mode") {
@@ -283,7 +286,7 @@ func resourceTFEPolicyUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		log.Printf("[DEBUG] Update configuration for %s policy: %s", vKind, d.Id())
-		_, err := tfeClient.Policies.Update(ctx, d.Id(), options)
+		_, err := config.Client.Policies.Update(ctx, d.Id(), options)
 		if err != nil {
 			return fmt.Errorf(
 				"Error updating configuration for %s policy %s: %w", vKind, d.Id(), err)
@@ -293,7 +296,7 @@ func resourceTFEPolicyUpdate(d *schema.ResourceData, meta interface{}) error {
 	if d.HasChange("policy") {
 		vKind := d.Get("kind").(string)
 		log.Printf("[DEBUG] Update %s policy: %s", vKind, d.Id())
-		err := tfeClient.Policies.Upload(ctx, d.Id(), []byte(d.Get("policy").(string)))
+		err := config.Client.Policies.Upload(ctx, d.Id(), []byte(d.Get("policy").(string)))
 		if err != nil {
 			return fmt.Errorf("Error updating %s policy %s: %w", vKind, d.Id(), err)
 		}
@@ -303,10 +306,10 @@ func resourceTFEPolicyUpdate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceTFEPolicyDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete policy: %s", d.Id())
-	err := tfeClient.Policies.Delete(ctx, d.Id())
+	err := config.Client.Policies.Delete(ctx, d.Id())
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			return nil

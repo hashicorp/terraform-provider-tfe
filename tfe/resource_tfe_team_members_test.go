@@ -134,7 +134,7 @@ func hashSchemaString(username string) int {
 func testAccCheckTFETeamMembersExists(
 	n string, users *[]*tfe.User) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -145,7 +145,7 @@ func testAccCheckTFETeamMembersExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		us, err := tfeClient.TeamMembers.List(ctx, rs.Primary.ID)
+		us, err := config.Client.TeamMembers.List(ctx, rs.Primary.ID)
 		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 			return err
 		}
@@ -182,7 +182,7 @@ func usernamesFromTFEUsers(users []*tfe.User) []string {
 }
 
 func testAccCheckTFETeamMembersDestroy(s *terraform.State) error {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	config := testAccProvider.Meta().(ConfiguredClient)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_team_members" {
@@ -193,7 +193,7 @@ func testAccCheckTFETeamMembersDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		users, err := tfeClient.TeamMembers.List(ctx, rs.Primary.ID)
+		users, err := config.Client.TeamMembers.List(ctx, rs.Primary.ID)
 		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 			return err
 		}

@@ -19,7 +19,7 @@ func dataSourceTFEVariableSet() *schema.Resource {
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 
 			"description": {
@@ -50,11 +50,14 @@ func dataSourceTFEVariableSet() *schema.Resource {
 }
 
 func dataSourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the name and organization.
 	name := d.Get("name").(string)
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	// Create an options struct.
 	options := tfe.VariableSetListOptions{}
@@ -62,7 +65,7 @@ func dataSourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) erro
 	for {
 		// Variable Set relations, vars and workspaces, are omitted from the querying until
 		// we find the desired variable set.
-		l, err := tfeClient.VariableSets.List(ctx, organization, &options)
+		l, err := config.Client.VariableSets.List(ctx, organization, &options)
 		if err != nil {
 			if err == tfe.ErrResourceNotFound {
 				return fmt.Errorf("could not find variable set%s/%s", organization, name)
@@ -81,7 +84,7 @@ func dataSourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) erro
 					Include: &[]tfe.VariableSetIncludeOpt{tfe.VariableSetWorkspaces, tfe.VariableSetVars},
 				}
 
-				vs, err = tfeClient.VariableSets.Read(ctx, vs.ID, &readOptions)
+				vs, err = config.Client.VariableSets.Read(ctx, vs.ID, &readOptions)
 				if err != nil {
 					return fmt.Errorf("Error retrieving variable set relations: %w", err)
 				}

@@ -7,7 +7,7 @@ description: |-
 
 # tfe_policy_set
 
-Policies are rules enforced on Terraform runs. Two policy-as-code frameworks are 
+Policies are rules enforced on Terraform runs. Two policy-as-code frameworks are
 integrated with Terraform Enterprise: Sentinel and Open Policy Agent (OPA).
 
 Policy sets are groups of policies that are applied together to related workspaces.
@@ -81,18 +81,18 @@ The following arguments are supported:
 * `kind` - (Optional) The policy-as-code framework associated with the policy.
    Defaults to `sentinel` if not provided. Valid values are `sentinel` and `opa`.
    A policy set can only have policies that have the same underlying kind.
-* `overridable` - (Optional) Whether or not users can override this policy when 
-   it fails during a run. Defaults to `false`. Only valid for OPA policies. 
-* `organization` - (Required) Name of the organization.
+* `overridable` - (Optional) Whether or not users can override this policy when
+   it fails during a run. Defaults to `false`. Only valid for OPA policies.
+* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `policies_path` - (Optional) The sub-path within the attached VCS repository
   to ingress when using `vcs_repo`. All files and directories outside of this
   sub-path will be ignored. This option can only be supplied when `vcs_repo` is
   present. Forces a new resource if changed.
-* `policy_ids` - (Optional) A list of Sentinel policy IDs. This value _must not_ be provided 
+* `policy_ids` - (Optional) A list of Sentinel policy IDs. This value _must not_ be provided
   if `vcs_repo` is provided.
 * `vcs_repo` - (Optional) Settings for the policy sets VCS repository. Forces a
   new resource if changed. This value _must not_ be provided if `policy_ids` are provided.
-* `workspace_ids` - (Optional) A list of workspace IDs. This value _must not_ be provided 
+* `workspace_ids` - (Optional) A list of workspace IDs. This value _must not_ be provided
   if `global` is provided.
 * `slug` - (Optional) A reference to the `tfe_slug` data source that contains
   the `source_path` to where the local policies are located. This is used when

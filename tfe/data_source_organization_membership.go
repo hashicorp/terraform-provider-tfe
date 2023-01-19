@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -26,7 +25,7 @@ func dataSourceTFEOrganizationMembership() *schema.Resource {
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 
 			"user_id": {
@@ -38,14 +37,18 @@ func dataSourceTFEOrganizationMembership() *schema.Resource {
 }
 
 func dataSourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the user email and organization.
 	email := d.Get("email").(string)
 	username := d.Get("username").(string)
-	organization := d.Get("organization").(string)
 
-	orgMember, err := fetchOrganizationMemberByNameOrEmail(context.Background(), tfeClient, organization, username, email)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
+
+	orgMember, err := fetchOrganizationMemberByNameOrEmail(context.Background(), config.Client, organization, username, email)
 	if err != nil {
 		return fmt.Errorf("could not find organization membership for organization %s: %w", organization, err)
 	}

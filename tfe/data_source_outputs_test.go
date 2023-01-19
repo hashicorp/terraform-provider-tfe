@@ -18,17 +18,17 @@ import (
 func TestAccTFEOutputs(t *testing.T) {
 	skipIfUnitTest(t)
 
-	client, err := getClientUsingEnv()
+	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatalf("error getting client %v", err)
 	}
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	fileName := "test-fixtures/state-versions/terraform.tfstate"
-	orgName, wsName, orgCleanup := createStateVersion(t, client, rInt, fileName)
+	orgName, wsName, orgCleanup := createStateVersion(t, tfeClient, rInt, fileName)
 	t.Cleanup(orgCleanup)
 
-	waitForOutputs(t, client, orgName, wsName)
+	waitForOutputs(t, tfeClient, orgName, wsName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -62,17 +62,17 @@ func TestAccTFEOutputs(t *testing.T) {
 func TestAccTFEOutputs_ReadAllNonSensitiveValues(t *testing.T) {
 	skipIfUnitTest(t)
 
-	client, err := getClientUsingEnv()
+	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatalf("error getting client %v", err)
 	}
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	fileName := "test-fixtures/state-versions/terraform.tfstate"
-	orgName, wsName, orgCleanup := createStateVersion(t, client, rInt, fileName)
+	orgName, wsName, orgCleanup := createStateVersion(t, tfeClient, rInt, fileName)
 	t.Cleanup(orgCleanup)
 
-	waitForOutputs(t, client, orgName, wsName)
+	waitForOutputs(t, tfeClient, orgName, wsName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -107,14 +107,14 @@ func TestAccTFEOutputs_ReadAllNonSensitiveValues(t *testing.T) {
 func TestAccTFEOutputs_emptyOutputs(t *testing.T) {
 	skipIfUnitTest(t)
 
-	client, err := getClientUsingEnv()
+	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatalf("error getting client %v", err)
 	}
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	fileName := "test-fixtures/state-versions/terraform-empty-outputs.tfstate"
-	orgName, wsName, orgCleanup := createStateVersion(t, client, rInt, fileName)
+	orgName, wsName, orgCleanup := createStateVersion(t, tfeClient, rInt, fileName)
 	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{

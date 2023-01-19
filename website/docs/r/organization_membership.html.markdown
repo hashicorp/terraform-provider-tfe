@@ -32,7 +32,7 @@ resource "tfe_organization_membership" "test" {
 
 The following arguments are supported:
 
-* `organization` - (Required) Name of the organization.
+* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `email` - (Required) Email of the user to add.
 
 ## Attributes Reference

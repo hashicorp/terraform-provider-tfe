@@ -14,12 +14,14 @@ import (
 )
 
 type dataSourceOutputs struct {
-	tfeClient *tfe.Client
+	tfeClient    *tfe.Client
+	organization string
 }
 
-func newDataSourceOutputs(client *tfe.Client) tfprotov5.DataSourceServer {
+func newDataSourceOutputs(config ConfiguredClient) tfprotov5.DataSourceServer {
 	return dataSourceOutputs{
-		tfeClient: client,
+		tfeClient:    config.Client,
+		organization: config.Organization,
 	}
 }
 
@@ -38,7 +40,7 @@ func (d dataSourceOutputs) ReadDataSource(ctx context.Context, req *tfprotov5.Re
 		return resp, nil
 	}
 
-	remoteStateOutput, err := d.readStateOutput(ctx, d.tfeClient, orgName, wsName)
+	remoteStateOutput, err := d.readStateOutput(ctx, orgName, wsName)
 	if err != nil {
 		resp.Diagnostics = append(resp.Diagnostics, &tfprotov5.Diagnostic{
 			Severity: tfprotov5.DiagnosticSeverityError,
@@ -118,27 +120,30 @@ func (d dataSourceOutputs) readConfigValues(req *tfprotov5.ReadDataSourceRequest
 			"id":                  tftypes.String,
 		}})
 	if err != nil {
-		return orgName, wsName, fmt.Errorf("Error unmarshalling config: %w", err)
+		return "", "", fmt.Errorf("Error unmarshalling config: %w", err)
 	}
 
 	var valMap map[string]tftypes.Value
 	err = val.As(&valMap)
 	if err != nil {
-		return orgName, wsName, fmt.Errorf("Error assigning configuration attributes to map: %w", err)
-	}
-
-	if valMap["organization"].IsNull() || valMap["workspace"].IsNull() {
-		return orgName, wsName, fmt.Errorf("organization and workspace cannot be nil: %w", err)
+		return "", "", fmt.Errorf("error assigning configuration attributes to map: %w", err)
 	}
 
 	err = valMap["organization"].As(&orgName)
-	if err != nil {
-		return orgName, wsName, fmt.Errorf("Error assigning 'organization' value to string: %w", err)
+	if err != nil || orgName == "" {
+		if d.organization == "" {
+			return "", "", errMissingOrganization
+		}
+		orgName = d.organization
+	}
+
+	if valMap["workspace"].IsNull() {
+		return orgName, "", fmt.Errorf("workspace cannot be nil: %w", err)
 	}
 
 	err = valMap["workspace"].As(&wsName)
 	if err != nil {
-		return orgName, wsName, fmt.Errorf("Error assigning 'workspace' value to string: %w", err)
+		return orgName, wsName, fmt.Errorf("error assigning 'workspace' value to string: %w", err)
 	}
 
 	return orgName, wsName, nil
@@ -153,14 +158,14 @@ type outputData struct {
 	Sensitive cty.Value
 }
 
-func (d dataSourceOutputs) readStateOutput(ctx context.Context, tfeClient *tfe.Client, orgName, wsName string) (*stateData, error) {
+func (d dataSourceOutputs) readStateOutput(ctx context.Context, orgName, wsName string) (*stateData, error) {
 	log.Printf("[DEBUG] Reading the Workspace %s in Organization %s", wsName, orgName)
 	opts := &tfe.WorkspaceReadOptions{
 		Include: []tfe.WSIncludeOpt{tfe.WSOutputs},
 	}
-	ws, err := tfeClient.Workspaces.ReadWithOptions(ctx, orgName, wsName, opts)
+	ws, err := d.tfeClient.Workspaces.ReadWithOptions(ctx, orgName, wsName, opts)
 	if err != nil {
-		return nil, fmt.Errorf("Error reading workspace: %w", err)
+		return nil, fmt.Errorf("error reading workspace: %w", err)
 	}
 
 	sd := &stateData{
@@ -169,7 +174,7 @@ func (d dataSourceOutputs) readStateOutput(ctx context.Context, tfeClient *tfe.C
 
 	for _, op := range ws.Outputs {
 		if op.Sensitive {
-			sensitiveOutput, err := tfeClient.StateVersionOutputs.Read(ctx, op.ID)
+			sensitiveOutput, err := d.tfeClient.StateVersionOutputs.Read(ctx, op.ID)
 			if err != nil {
 				return nil, fmt.Errorf("could not read sensitive output: %w", err)
 			}

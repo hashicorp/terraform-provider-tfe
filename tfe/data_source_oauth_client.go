@@ -78,20 +78,23 @@ func dataSourceTFEOAuthClient() *schema.Resource {
 
 func dataSourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) error {
 	ctx := context.TODO()
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	var oc *tfe.OAuthClient
 	var err error
 
 	switch v, ok := d.GetOk("oauth_client_id"); {
 	case ok:
-		oc, err = tfeClient.OAuthClients.Read(ctx, v.(string))
+		oc, err = config.Client.OAuthClients.Read(ctx, v.(string))
 		if err != nil {
 			return fmt.Errorf("Error retrieving OAuth client: %w", err)
 		}
 	default:
 		// search by name or service provider within a specific organization instead
-		organization := d.Get("organization").(string)
+		organization, err := config.schemaOrDefaultOrganization(d)
+		if err != nil {
+			return err
+		}
 
 		var name string
 		var serviceProvider tfe.ServiceProviderType
@@ -104,7 +107,7 @@ func dataSourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) erro
 			serviceProvider = tfe.ServiceProviderType(vServiceProvider.(string))
 		}
 
-		oc, err = fetchOAuthClientByNameOrServiceProvider(ctx, tfeClient, organization, name, serviceProvider)
+		oc, err = fetchOAuthClientByNameOrServiceProvider(ctx, config.Client, organization, name, serviceProvider)
 		if err != nil {
 			return err
 		}
@@ -119,7 +122,6 @@ func dataSourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) erro
 	if oc.Name != nil {
 		d.Set("name", *oc.Name)
 	}
-	d.Set("organization", oc.Organization.Name)
 	d.Set("service_provider", oc.ServiceProvider)
 	d.Set("service_provider_display_name", oc.ServiceProviderName)
 

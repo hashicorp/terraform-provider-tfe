@@ -36,7 +36,7 @@ resource "tfe_agent_pool" "test-agent-pool" {
 The following arguments are supported:
 
 * `name` - (Required) Name of the agent pool.
-* `organization` - (Required) Name of the organization.
+* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 
 ## Attributes Reference
 

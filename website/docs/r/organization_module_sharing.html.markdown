@@ -27,5 +27,5 @@ resource "tfe_organization_module_sharing" "test" {
 
 The following arguments are supported:
 
-* `organization` - (Required) Name of the organization.
+* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `module_consumers` - (Required) Names of the organizations to consume the module registry.

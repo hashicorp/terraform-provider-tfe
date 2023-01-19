@@ -20,7 +20,7 @@ func dataSourceTFEWorkspace() *schema.Resource {
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 
 			"description": {
@@ -175,14 +175,17 @@ func dataSourceTFEWorkspace() *schema.Resource {
 }
 
 func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the name and organization.
 	name := d.Get("name").(string)
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	log.Printf("[DEBUG] Read configuration of workspace: %s", name)
-	workspace, err := tfeClient.Workspaces.Read(ctx, organization, name)
+	workspace, err := config.Client.Workspaces.Read(ctx, organization, name)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return fmt.Errorf("could not find workspace %s/%s", organization, name)
@@ -221,7 +224,7 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 			return err
 		}
 	} else {
-		legacyGlobalState, remoteStateConsumerIDs, err := readWorkspaceStateConsumers(workspace.ID, tfeClient)
+		legacyGlobalState, remoteStateConsumerIDs, err := readWorkspaceStateConsumers(workspace.ID, config.Client)
 
 		if err != nil {
 			return fmt.Errorf(

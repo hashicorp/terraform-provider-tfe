@@ -23,7 +23,8 @@ func resourceTFESSHKey() *schema.Resource {
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Computed: true,
 				ForceNew: true,
 			},
 
@@ -37,11 +38,14 @@ func resourceTFESSHKey() *schema.Resource {
 }
 
 func resourceTFESSHKeyCreate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the name and organization.
 	name := d.Get("name").(string)
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	// Create a new options struct.
 	options := tfe.SSHKeyCreateOptions{
@@ -50,7 +54,7 @@ func resourceTFESSHKeyCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	log.Printf("[DEBUG] Create new SSH key for organization: %s", organization)
-	sshKey, err := tfeClient.SSHKeys.Create(ctx, organization, options)
+	sshKey, err := config.Client.SSHKeys.Create(ctx, organization, options)
 	if err != nil {
 		return fmt.Errorf(
 			"Error creating SSH key %s for organization %s: %w", name, organization, err)
@@ -62,10 +66,10 @@ func resourceTFESSHKeyCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceTFESSHKeyRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read configuration of SSH key: %s", d.Id())
-	sshKey, err := tfeClient.SSHKeys.Read(ctx, d.Id())
+	sshKey, err := config.Client.SSHKeys.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] SSH key %s no longer exists", d.Id())
@@ -82,7 +86,7 @@ func resourceTFESSHKeyRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceTFESSHKeyUpdate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Create a new options struct.
 	options := tfe.SSHKeyUpdateOptions{
@@ -90,7 +94,7 @@ func resourceTFESSHKeyUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	log.Printf("[DEBUG] Update SSH key: %s", d.Id())
-	_, err := tfeClient.SSHKeys.Update(ctx, d.Id(), options)
+	_, err := config.Client.SSHKeys.Update(ctx, d.Id(), options)
 	if err != nil {
 		return fmt.Errorf("Error updating SSH key %s: %w", d.Id(), err)
 	}
@@ -99,10 +103,10 @@ func resourceTFESSHKeyUpdate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceTFESSHKeyDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete SSH key: %s", d.Id())
-	err := tfeClient.SSHKeys.Delete(ctx, d.Id())
+	err := config.Client.SSHKeys.Delete(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil

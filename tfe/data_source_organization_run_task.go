@@ -1,7 +1,6 @@
 package tfe
 
 import (
-	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -17,7 +16,7 @@ func dataSourceTFEOrganizationRunTask() *schema.Resource {
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 
 			"url": {
@@ -44,11 +43,14 @@ func dataSourceTFEOrganizationRunTask() *schema.Resource {
 }
 
 func dataSourceTFEOrganizationRunTaskRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 	name := d.Get("name").(string)
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
-	task, err := fetchOrganizationRunTask(name, organization, tfeClient)
+	task, err := fetchOrganizationRunTask(name, organization, config.Client)
 	if err != nil {
 		return err
 	}

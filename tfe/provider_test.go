@@ -3,9 +3,11 @@ package tfe
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
@@ -23,6 +25,7 @@ var testAccMuxedProviders map[string]func() (tfprotov5.ProviderServer, error)
 
 func init() {
 	testAccProvider = Provider()
+
 	testAccProviders = map[string]*schema.Provider{
 		"tfe": testAccProvider,
 	}
@@ -39,6 +42,38 @@ func init() {
 			return mux.Server(), nil
 		},
 	}
+}
+
+func providerWithDefaultOrganization(defaultOrgName string) map[string]*schema.Provider {
+	testAccProviderDefaultOrganization := Provider()
+	testAccProviderDefaultOrganization.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
+		client, err := getClientUsingEnv()
+		return ConfiguredClient{
+			Client:       client,
+			Organization: defaultOrgName,
+		}, diag.FromErr(err)
+	}
+	return map[string]*schema.Provider{
+		"tfe": testAccProviderDefaultOrganization,
+	}
+}
+
+func setupDefaultOrganization(t *testing.T) (string, int) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	defaultOrgName := fmt.Sprintf("tst-default-org-%d", rInt)
+
+	client, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, cleanup := createOrganization(t, client, tfe.OrganizationCreateOptions{
+		Name:  &defaultOrgName,
+		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
+	})
+
+	t.Cleanup(cleanup)
+	return defaultOrgName, rInt
 }
 
 func getClientUsingEnv() (*tfe.Client, error) {
@@ -282,6 +317,38 @@ func testAccPreCheck(t *testing.T) {
 				t.Fatalf("err: %s", d.Summary)
 			}
 		}
+	}
+}
+
+func TestConfigureEnvOrganization(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	originalTFEOrganization := os.Getenv("TFE_ORGANIZATION")
+	reset := func() {
+		if originalTFEOrganization != "" {
+			os.Setenv("TFE_ORGANIZATION", originalTFEOrganization)
+		} else {
+			os.Unsetenv("TFE_ORGANIZATION")
+		}
+	}
+	defer reset()
+
+	expectedOrganization := fmt.Sprintf("tst-organization-%d", rInt)
+	os.Setenv("TFE_ORGANIZATION", expectedOrganization)
+
+	provider := Provider()
+
+	// The credentials must be provided by the CLI config file for testing.
+	if diags := provider.Configure(context.Background(), &terraform.ResourceConfig{}); diags.HasError() {
+		for _, d := range diags {
+			if d.Severity == diag.Error {
+				t.Fatalf("err: %s", d.Summary)
+			}
+		}
+	}
+
+	config := provider.Meta().(ConfiguredClient)
+	if config.Organization != expectedOrganization {
+		t.Fatalf("unexpected organization configuration: got %s, wanted %s", config.Organization, expectedOrganization)
 	}
 }
 

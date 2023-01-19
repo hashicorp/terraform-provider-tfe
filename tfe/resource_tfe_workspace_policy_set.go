@@ -37,7 +37,7 @@ func resourceTFEWorkspacePolicySet() *schema.Resource {
 }
 
 func resourceTFEWorkspacePolicySetCreate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	policySetID := d.Get("policy_set_id").(string)
 	workspaceID := d.Get("workspace_id").(string)
@@ -45,7 +45,7 @@ func resourceTFEWorkspacePolicySetCreate(d *schema.ResourceData, meta interface{
 	policySetAddWorkspacesOptions := tfe.PolicySetAddWorkspacesOptions{}
 	policySetAddWorkspacesOptions.Workspaces = append(policySetAddWorkspacesOptions.Workspaces, &tfe.Workspace{ID: workspaceID})
 
-	err := tfeClient.PolicySets.AddWorkspaces(ctx, policySetID, policySetAddWorkspacesOptions)
+	err := config.Client.PolicySets.AddWorkspaces(ctx, policySetID, policySetAddWorkspacesOptions)
 	if err != nil {
 		return fmt.Errorf(
 			"Error attaching policy set id %s to workspace %s: %w", policySetID, workspaceID, err)
@@ -57,13 +57,13 @@ func resourceTFEWorkspacePolicySetCreate(d *schema.ResourceData, meta interface{
 }
 
 func resourceTFEWorkspacePolicySetRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	policySetID := d.Get("policy_set_id").(string)
 	workspaceID := d.Get("workspace_id").(string)
 
 	log.Printf("[DEBUG] Read configuration of workspace policy set: %s", policySetID)
-	policySet, err := tfeClient.PolicySets.ReadWithOptions(ctx, policySetID, &tfe.PolicySetReadOptions{
+	policySet, err := config.Client.PolicySets.ReadWithOptions(ctx, policySetID, &tfe.PolicySetReadOptions{
 		Include: []tfe.PolicySetIncludeOpt{tfe.PolicySetWorkspaces},
 	})
 	if err != nil {
@@ -95,7 +95,7 @@ func resourceTFEWorkspacePolicySetRead(d *schema.ResourceData, meta interface{})
 }
 
 func resourceTFEWorkspacePolicySetDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	policySetID := d.Get("policy_set_id").(string)
 	workspaceID := d.Get("workspace_id").(string)
@@ -104,7 +104,7 @@ func resourceTFEWorkspacePolicySetDelete(d *schema.ResourceData, meta interface{
 	policySetRemoveWorkspacesOptions := tfe.PolicySetRemoveWorkspacesOptions{}
 	policySetRemoveWorkspacesOptions.Workspaces = append(policySetRemoveWorkspacesOptions.Workspaces, &tfe.Workspace{ID: workspaceID})
 
-	err := tfeClient.PolicySets.RemoveWorkspaces(ctx, policySetID, policySetRemoveWorkspacesOptions)
+	err := config.Client.PolicySets.RemoveWorkspaces(ctx, policySetID, policySetRemoveWorkspacesOptions)
 	if err != nil {
 		return fmt.Errorf(
 			"Error detaching workspace %s from policy set %s: %w", workspaceID, policySetID, err)
@@ -125,17 +125,17 @@ func resourceTFEWorkspacePolicySetImporter(ctx context.Context, d *schema.Resour
 
 	organization, wsName, pSName := splitID[0], splitID[1], splitID[2]
 
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Ensure the named workspace exists before fetching all the policy sets in the org
-	_, err := tfeClient.Workspaces.Read(ctx, organization, wsName)
+	_, err := config.Client.Workspaces.Read(ctx, organization, wsName)
 	if err != nil {
 		return nil, fmt.Errorf("error reading configuration of workspace %s in organization %s: %w", wsName, organization, err)
 	}
 
 	options := &tfe.PolicySetListOptions{Include: []tfe.PolicySetIncludeOpt{tfe.PolicySetWorkspaces}}
 	for {
-		list, err := tfeClient.PolicySets.List(ctx, organization, options)
+		list, err := config.Client.PolicySets.List(ctx, organization, options)
 		if err != nil {
 			return nil, fmt.Errorf("Error retrieving policy sets: %w", err)
 		}

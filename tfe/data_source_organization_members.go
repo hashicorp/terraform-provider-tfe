@@ -1,7 +1,6 @@
 package tfe
 
 import (
-	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -12,7 +11,7 @@ func dataSourceTFEOrganizationMembers() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 
 			"members": {
@@ -55,11 +54,14 @@ func dataSourceTFEOrganizationMembers() *schema.Resource {
 }
 
 func dataSourceTFEOrganizationMembersRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
-	organizationName := d.Get("organization").(string)
+	organizationName, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
-	members, membersWaiting, err := fetchOrganizationMembers(tfeClient, organizationName)
+	members, membersWaiting, err := fetchOrganizationMembers(config.Client, organizationName)
 	if err != nil {
 		return err
 	}

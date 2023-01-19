@@ -16,6 +16,7 @@ import (
 	tfe "github.com/hashicorp/go-tfe"
 	version "github.com/hashicorp/go-version"
 	"github.com/hashicorp/hcl"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	providerVersion "github.com/hashicorp/terraform-provider-tfe/version"
 	svchost "github.com/hashicorp/terraform-svchost"
@@ -27,8 +28,9 @@ const defaultHostname = "app.terraform.io"
 const defaultSSLSkipVerify = false
 
 var (
-	tfeServiceIDs       = []string{"tfe.v2.2"}
-	errMissingAuthToken = errors.New("required token could not be found. Please set the token using an input variable in the provider configuration block or by using the TFE_TOKEN environment variable")
+	tfeServiceIDs          = []string{"tfe.v2.2"}
+	errMissingAuthToken    = errors.New("required token could not be found. Please set the token using an input variable in the provider configuration block or by using the TFE_TOKEN environment variable")
+	errMissingOrganization = errors.New("no organization was specified on the resource or provider")
 )
 
 // Config is the structure of the configuration for the Terraform CLI.
@@ -42,6 +44,26 @@ type Config struct {
 // discovery behavior for a particular hostname.
 type ConfigHost struct {
 	Services map[string]interface{} `hcl:"services"`
+}
+
+type ConfiguredClient struct {
+	Client       *tfe.Client
+	Organization string
+}
+
+func (c ConfiguredClient) schemaOrDefaultOrganization(resource *schema.ResourceData) (string, error) {
+	return c.schemaOrDefaultOrganizationKey(resource, "organization")
+}
+
+func (c ConfiguredClient) schemaOrDefaultOrganizationKey(resource *schema.ResourceData, key string) (string, error) {
+	schemaOrg, got := resource.GetOk(key)
+	if got {
+		return schemaOrg.(string), nil
+	}
+	if c.Organization == "" {
+		return "", errMissingOrganization
+	}
+	return c.Organization, nil
 }
 
 // ctx is used as default context.Context when making TFE calls.
@@ -71,6 +93,12 @@ func Provider() *schema.Provider {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Description: descriptions["ssl_skip_verify"],
+			},
+
+			"organization": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: descriptions["organization"],
 			},
 		},
 
@@ -129,15 +157,34 @@ func Provider() *schema.Provider {
 			"tfe_workspace_variable_set":      resourceTFEWorkspaceVariableSet(),
 			"tfe_workspace_policy_set":        resourceTFEWorkspacePolicySet(),
 		},
-
-		ConfigureFunc: providerConfigure,
+		ConfigureContextFunc: configure(),
 	}
 }
 
-func providerConfigure(d *schema.ResourceData) (interface{}, error) {
+func configure() schema.ConfigureContextFunc {
+	return func(ctx context.Context, rd *schema.ResourceData) (any, diag.Diagnostics) {
+		providerOrganization := rd.Get("organization").(string)
+		if providerOrganization == "" {
+			providerOrganization = os.Getenv("TFE_ORGANIZATION")
+		}
+
+		client, err := configureClient(rd)
+		if err != nil {
+			return nil, diag.Errorf("failed to create SDK client: %s", err)
+		}
+
+		return ConfiguredClient{
+			client,
+			providerOrganization,
+		}, nil
+	}
+}
+
+func configureClient(d *schema.ResourceData) (*tfe.Client, error) {
 	hostname := d.Get("hostname").(string)
 	token := d.Get("token").(string)
 	insecure := d.Get("ssl_skip_verify").(bool)
+
 	return getClient(hostname, token, insecure)
 }
 
@@ -521,6 +568,8 @@ var descriptions = map[string]string{
 	"token": "The token used to authenticate with Terraform Enterprise. We recommend omitting\n" +
 		"the token which can be set as credentials in the CLI config file.",
 	"ssl_skip_verify": "Whether or not to skip certificate verifications.",
+	"organization": "The organization to apply to a resource if one is not defined on\n" +
+		"the resource itself",
 }
 
 // A commonly used helper method to check if the error

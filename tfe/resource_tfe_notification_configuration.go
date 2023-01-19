@@ -105,7 +105,7 @@ func resourceTFENotificationConfiguration() *schema.Resource {
 }
 
 func resourceTFENotificationConfigurationCreate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get workspace
 	workspaceID := d.Get("workspace_id").(string)
@@ -180,7 +180,7 @@ func resourceTFENotificationConfigurationCreate(d *schema.ResourceData, meta int
 	}
 
 	log.Printf("[DEBUG] Create notification configuration: %s", name)
-	notificationConfiguration, err := tfeClient.NotificationConfigurations.Create(ctx, workspaceID, options)
+	notificationConfiguration, err := config.Client.NotificationConfigurations.Create(ctx, workspaceID, options)
 	if err != nil {
 		return fmt.Errorf("Error creating notification configuration %s: %w", name, err)
 	}
@@ -191,10 +191,10 @@ func resourceTFENotificationConfigurationCreate(d *schema.ResourceData, meta int
 }
 
 func resourceTFENotificationConfigurationRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read notification configuration: %s", d.Id())
-	notificationConfiguration, err := tfeClient.NotificationConfigurations.Read(ctx, d.Id())
+	notificationConfiguration, err := config.Client.NotificationConfigurations.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] Notification configuration %s no longer exists", d.Id())
@@ -237,7 +237,7 @@ func resourceTFENotificationConfigurationRead(d *schema.ResourceData, meta inter
 }
 
 func resourceTFENotificationConfigurationUpdate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get attributes
 	enabled := d.Get("enabled").(bool)
@@ -308,7 +308,7 @@ func resourceTFENotificationConfigurationUpdate(d *schema.ResourceData, meta int
 	}
 
 	log.Printf("[DEBUG] Update notification configuration: %s", d.Id())
-	_, err := tfeClient.NotificationConfigurations.Update(ctx, d.Id(), options)
+	_, err := config.Client.NotificationConfigurations.Update(ctx, d.Id(), options)
 	if err != nil {
 		return fmt.Errorf("Error updating notification configuration %s: %w", d.Id(), err)
 	}
@@ -317,10 +317,10 @@ func resourceTFENotificationConfigurationUpdate(d *schema.ResourceData, meta int
 }
 
 func resourceTFENotificationConfigurationDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete notification configuration: %s", d.Id())
-	err := tfeClient.NotificationConfigurations.Delete(ctx, d.Id())
+	err := config.Client.NotificationConfigurations.Delete(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil
