@@ -6,4 +6,4 @@ Within the Pull Request process, test checks are executed against infrastructure
 
 In addition, we test the main branch of the provider once each night against the same image but configured to simulate Terraform Enterprise. Tests that use the helper `skipIfEnterprise` are skipped during this nightly job.
 
-In both cases, all feature flags are disabled and not evaluated. Features that are behind a feature flag should use the `skipUnlessBeta` flag to avoid failing. See our [beta feature policy](beta.md) for more details.
+In both cases, all feature flags are disabled and not evaluated. Features that are behind a feature flag should use the `skipUnlessBeta` flag to avoid failing, even if that feature flag is enabled for all users in production. See our [beta feature policy](beta.md) for more details.
