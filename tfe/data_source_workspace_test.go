@@ -2,11 +2,12 @@ package tfe
 
 import (
 	"fmt"
-	"github.com/hashicorp/go-tfe"
 	"math/rand"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/hashicorp/go-tfe"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -109,6 +110,8 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 						"data.tfe_workspace.foobar", "trigger_prefixes.1", "/shared"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "working_directory", "terraform/test"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "execution_mode", "remote"),
 				),
 			},
 		},
