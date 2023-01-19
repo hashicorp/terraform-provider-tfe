@@ -70,7 +70,7 @@ func resourceTFETeamOrganizationMembersRead(d *schema.ResourceData, meta interfa
 	organizationMemberships, err := config.Client.TeamMembers.ListOrganizationMemberships(ctx, d.Id())
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
-			log.Printf("[DEBUG] Organization memberships for team %s do no longer exist", d.Id())
+			log.Printf("[DEBUG] Organization memberships for team %s no longer exist", d.Id())
 			d.SetId("")
 			return nil
 		}
@@ -88,7 +88,7 @@ func resourceTFETeamOrganizationMembersRead(d *schema.ResourceData, meta interfa
 		d.Set("team_id", d.Id())
 		d.Set("organization_membership_ids", organizationMembershipIDs)
 	} else {
-		log.Printf("[DEBUG] Organization memberships for team %s do no longer exist", d.Id())
+		log.Printf("[DEBUG] Organization memberships for team %s no longer exist", d.Id())
 		d.SetId("")
 	}
 
@@ -180,7 +180,7 @@ func resourceTFETeamOrganizationMembersDelete(d *schema.ResourceData, meta inter
 	organizationMemberships, err := config.Client.TeamMembers.ListOrganizationMemberships(ctx, d.Id())
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
-			log.Printf("[DEBUG] Organization memberships for team %s do no longer exist", d.Id())
+			log.Printf("[DEBUG] Organization memberships for team %s no longer exist", d.Id())
 			d.SetId("")
 			return nil
 		}
