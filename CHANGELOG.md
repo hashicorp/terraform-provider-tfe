@@ -5,6 +5,7 @@ BUG FIXES:
 ENHANCEMENTS:
 * Update API doc links from terraform.io to developer.hashicorp domain by @uk1288 [#764](https://github.com/hashicorp/terraform-provider-tfe/pull/764)
 * Update website docs to depict the use of set with `tfe_team_organization_members` and `tfe_team_members` by @uk1288 [#767](https://github.com/hashicorp/terraform-provider-tfe/pull/767)
+* d/tfe_workspace: Add `execution_mode` field to workspace datasoure @Uk1288 ([#772](https://github.com/hashicorp/terraform-provider-tfe/pull/772))
 
 FEATURES:
 * **New Provider Config**: `organization` defines a default organization for all resources, making all resource-specific organization arguments optional.
