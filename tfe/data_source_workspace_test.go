@@ -6,6 +6,7 @@ package tfe
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"strconv"
 	"testing"
 	"time"
@@ -60,6 +61,7 @@ func testAccCheckTFEWorkspaceDataSourceHasRemoteStateConsumers(dataWorkspace str
 func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+	workspaceName := fmt.Sprintf("workspace-test-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
@@ -70,7 +72,7 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "id"),
 					resource.TestCheckResourceAttr(
-						"data.tfe_workspace.foobar", "name", fmt.Sprintf("workspace-test-%d", rInt)),
+						"data.tfe_workspace.foobar", "name", workspaceName),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "organization", orgName),
 					resource.TestCheckResourceAttr(
@@ -115,6 +117,8 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 						"data.tfe_workspace.foobar", "working_directory", "terraform/test"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "execution_mode", "remote"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "html_url", fmt.Sprintf("https://%s/app/%s/workspaces/%s", os.Getenv("TFE_HOSTNAME"), orgName, workspaceName)),
 				),
 			},
 		},

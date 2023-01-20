@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -25,6 +26,9 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+	workspaceName := "workspace-test"
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -37,7 +41,7 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 						"tfe_workspace.foobar", workspace, testAccProvider),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "name", "workspace-test"),
+						"tfe_workspace.foobar", "name", workspaceName),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "My favorite workspace!"),
 					resource.TestCheckResourceAttr(
@@ -66,6 +70,8 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 						"tfe_workspace.foobar", "working_directory", ""),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "resource_count", "0"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "html_url", fmt.Sprintf("https://%s/app/%s/workspaces/%s", os.Getenv("TFE_HOSTNAME"), orgName, workspaceName)),
 				),
 			},
 		},
