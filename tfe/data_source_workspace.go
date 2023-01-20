@@ -138,6 +138,11 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Computed: true,
 			},
 
+			"execution_mode": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+
 			"vcs_repo": {
 				Type:     schema.TypeList,
 				Computed: true,
@@ -216,6 +221,7 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
 	d.Set("trigger_patterns", workspace.TriggerPatterns)
 	d.Set("working_directory", workspace.WorkingDirectory)
+	d.Set("execution_mode", workspace.ExecutionMode)
 
 	// Set remote_state_consumer_ids if global_remote_state is false
 	globalRemoteState := workspace.GlobalRemoteState
