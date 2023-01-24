@@ -2,7 +2,7 @@
 
 This configuration provides an example of how to manage Terraform Cloud / Enterprise workspaces and the variables set on those workspaces using the `tfe` provider.
 
-There are two configurations supplied in this example. The `manager` configuration uses the `tfe` provider to create workspaces and variables. The `managed` configuration is the configuration that will be associated with the workspaces being created. This `managed` workspace represents what would do the actual deployment of the resources of interest, which could represent environments (dev/test/prod), customers, and so on. The usecase is for any configuration that needs to be deployed where the only difference is the variables supplied.
+There are two configurations supplied in this example. The `manager` configuration uses the `tfe` provider to create workspaces and variables. The `managed` configuration is the configuration that will be associated with the workspaces being created. This `managed` workspace represents what would do the actual deployment of the resources of interest, which could represent environments (dev/test/prod), customers, and so on. The use case is for any configuration that needs to be deployed where the only difference is the variables supplied.
 
 ### Initial setup and information gathering
 
@@ -10,7 +10,7 @@ Successful configuration of this example requires several things to be prepared 
 
 * Create or join a Terraform Cloud or Enterprise [organization](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/organizations#creating-organizations).
 * Create a Terraform Cloud or Enterprise token to use with the `tfe` [provider](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs). While other token types can be used, a [User Token](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/users#api-tokens) is recommended in the beginning so that the provider has the same access as the user experimenting with this configuration.
-* Create a [Github token](https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line) that has access to create and manage OAuth clients. A personal access token should be sufficient. This example uses Github, so the configuration will need to be modified to work with other VCS providers.
+* Create a [Github token](https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line) that has access to create and manage OAuth clients. A personal access token with full repo scope should be sufficient. This example uses Github, so the configuration will need to be modified to work with other VCS providers.
 
 Have the following information handy for the next steps:
 
@@ -37,7 +37,7 @@ The `manager` workspace requires certain Terraform variables to be set on the [V
 * `tf_hostname` - The Terraform Cloud or Enterprise hostname. Defaults to app.terraform.io
 * `tf_api_token` - The TFC/TFE user token that was generated. Mark this as sensitive.
 * `tf_organization` - The TFC/TFE organization name where the managed workspaces should exist. This will most commonly be the organization that was created or joined, where the `manager` workspace also exists. The token supplied to perform the operations should have sufficient access to the organization.
-* `vcs_repo_identifier` - A reference to the `managed` repository in the format <github-organization>/<repository>. The format of the VCS repo identifier might differ depending on the VCS provider, see https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/workspace
+* `vcs_repo_identifier` - A reference to the `managed` repository in the format `<github-organization>/<repository>`. The format of the VCS repo identifier might differ depending on the VCS provider, see [tfe_workspace](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/workspace)
 * `vcs_token` - The Github personal access token that can create OAuth connections. Mark this as sensitive.
 
 ### Run to create managed workspaces
