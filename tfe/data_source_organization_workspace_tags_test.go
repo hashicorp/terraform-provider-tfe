@@ -18,7 +18,7 @@ func TestAccTFEOrganizationWorkspaceTagsDataSource_basic(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETagsDataSourceConfig(rInt),
+				Config: testAccTFEOrganizationWorkspaceTagsDataSourceConfig(rInt),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"data.tfe_organization_workspace_tags.foobar", "organization", orgName),
@@ -29,7 +29,7 @@ func TestAccTFEOrganizationWorkspaceTagsDataSource_basic(t *testing.T) {
 	})
 }
 
-func testAccTFETagsDataSourceConfig(rInt int) string {
+func testAccTFEOrganizationWorkspaceTagsDataSourceConfig(rInt int) string {
 	return fmt.Sprintf(`
 	resource "tfe_organization" "foobar" {
 		name  = "tst-terraform-%d"
