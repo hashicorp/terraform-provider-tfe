@@ -7,10 +7,12 @@
 
 variable "sens_tf_var" {
   default = ""
+  sensitive = true
 }
 
 variable "sens_env_var" {
   default = ""
+  sensitive = true
 }
 
 variable "a_string" {
@@ -24,13 +26,13 @@ variable "a_number" {
 }
 
 variable "a_list" {
-  type = list
+  type = list(string)
   default = []
 }
 
 # Value is initially supplied via some.auto.tfvars
 variable "a_map" {
-  type = map
+  type = map(string)
 }
 
 variable "a_single_var" {
@@ -43,6 +45,7 @@ variable "a_single_var" {
 
 output "sens_tf_var" {
   value = var.sens_tf_var
+  sensitive = true
 }
 
 output "a_string" {

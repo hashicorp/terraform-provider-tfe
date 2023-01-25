@@ -6,6 +6,7 @@
 
 variable "tf_organization" {
   description = "The Terraform Cloud or Enterprise organization under which all operations should be performed."
+  type = string
 }
 
 variable "vcs_repo_identifier" {
@@ -13,10 +14,12 @@ variable "vcs_repo_identifier" {
   The format of VCS repo identifier might differ depending on the VCS provider,
   see https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/workspace
   EOT
+  type = string
 }
 
 variable "vcs_token" {
   description = "The VCS token should correspond to an API token that can create OAuth clients."
+  type = string
 }
 
 variable "vars_mapped_by_workspace_name" {
@@ -24,10 +27,12 @@ variable "vars_mapped_by_workspace_name" {
     This is the map of workspaces and variables. A workspace is created for each
     top level key and then variables are set on the workspace.
     EOT
+    type = any
 }
 
 variable "additional_vars" {
   description = "This is a map of additional variables intended to be set in specific workspaces."
+  type = any
   default = {
     customer_1_workspace = {
       i_am_sensitive_tf_var = {
@@ -41,16 +46,19 @@ variable "additional_vars" {
 variable "default_var_category" {
   description = "Default category for variables being set in managed workspaces unless specified"
   default = "terraform"
+  type = string
 }
 
 variable "default_var_hcl" {
   description = "By default, variables being set in managed workspaces will not be interpreted as hcl values"
   default = false
+  type = bool
 }
 
 variable "default_var_sensitive" {
   description = "By default, variables being set in managed workspaces will be non-sensitive"
   default = false
+  type = bool
 }
 
 locals {
