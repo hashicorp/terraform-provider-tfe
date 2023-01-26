@@ -204,6 +204,7 @@ func resourceTFEWorkspace() *schema.Resource {
 			"vcs_repo": {
 				Type:     schema.TypeList,
 				Optional: true,
+				Computed: true,
 				MinItems: 1,
 				MaxItems: 1,
 				Elem: &schema.Resource{

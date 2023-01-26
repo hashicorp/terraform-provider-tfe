@@ -1349,6 +1349,43 @@ func TestAccTFEWorkspace_structuredRunOutputDisabled(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspace_vcsRepoDrift(t *testing.T) {
+	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccGithubPreCheck(t)
+		},
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_basic(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace, testAccProvider),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.#", "0"),
+				),
+			},
+			{
+				Config: testAccTFEWorkspace_withVCSRepoDrift(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.0.identifier", envGithubWorkspaceIdentifier),
+				),
+			},
+			{
+				Config:   testAccTFEWorkspace_withoutVCSRepoDrift(rInt),
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
 func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -3053,6 +3090,72 @@ resource "tfe_workspace" "foobar" {
 		rInt,
 		envGithubToken,
 		envGithubWorkspaceIdentifier,
+	)
+}
+
+func testAccTFEWorkspace_withVCSRepoDrift(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_oauth_client" "test" {
+  organization     = tfe_organization.foobar.id
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "%s"
+  service_provider = "github"
+}
+
+resource "tfe_workspace" "foobar" {
+  name               = "workspace-test"
+  organization       = tfe_organization.foobar.id
+  description        = "My favorite workspace!"
+  allow_destroy_plan = false
+  auto_apply         = true
+  force_delete       = true
+  tag_names          = ["fav", "test"]
+
+  vcs_repo {
+    identifier = "%s"
+    oauth_token_id = tfe_oauth_client.test.oauth_token_id
+  }
+}
+`,
+		rInt,
+		envGithubToken,
+		envGithubWorkspaceIdentifier,
+	)
+}
+
+func testAccTFEWorkspace_withoutVCSRepoDrift(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_oauth_client" "test" {
+  organization     = tfe_organization.foobar.id
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "%s"
+  service_provider = "github"
+}
+
+resource "tfe_workspace" "foobar" {
+  name               = "workspace-test"
+  organization       = tfe_organization.foobar.id
+  description        = "My favorite workspace!"
+  allow_destroy_plan = false
+  force_delete       = true
+  auto_apply         = true
+  tag_names          = ["fav", "test"]
+}
+`,
+		rInt,
+		envGithubToken,
 	)
 }
 
