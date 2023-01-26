@@ -10,7 +10,10 @@ ENHANCEMENTS:
 
 FEATURES:
 * **New Provider Config**: `organization` defines a default organization for all resources, making all resource-specific organization arguments optional.
+* **New Resource**: r/tfe_team_project_access is a new resource that allows managing team project permissions.
+* **New Data Source**: d/tfe_team_project_access is a new datasource to allows reading existing team project permissions.
 * r/tfe_team: Teams can now be imported using `<ORGANIZATION NAME>/<TEAM NAME>` ([#745](https://github.com/hashicorp/terraform-provider-tfe/pull/745))
+* r/tfe_team: Add attribute `manage_projects` to `tfe_team`.
 * r/tfe_team_organization_member: Team Organization Memberships can now be imported using `<ORGANIZATION NAME>/<USER EMAIL>/<TEAM NAME>` ([#745](https://github.com/hashicorp/terraform-provider-tfe/pull/745))
 
 ## v0.41.0 (January 4, 2023)
