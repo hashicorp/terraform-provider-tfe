@@ -12,7 +12,7 @@ jobs:
       - name: Setup Go Environment
         uses: actions/setup-go@v3
         with:
-          go-version-file: ".go-version"
+          go-version-file: "go.mod"
       - name: fmt check
         run: make fmtcheck
 

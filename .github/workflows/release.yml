@@ -38,6 +38,6 @@ jobs:
       signore-client-secret: '${{ secrets.SIGNORE_CLIENT_SECRET }}'
     with:
       release-notes: true
-      setup-go-version-file: '.go-version'
+      setup-go-version-file: 'go.mod'
       # Product Version (e.g. v1.2.3 or github.ref_name)
       product-version: '${{ github.ref_name }}'
