@@ -1,3 +1,6 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 # This configuration creates and manages workspaces in Terraform Cloud /
 # Enterprise. Workspaces and the variables that should be set on them come from
 # two maps, and can come from additional sources as well, such as individual

@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 
 # Check gofmt
 gofmt_files=$(gofmt -l `find . -name '*.go' | grep -v vendor`)
