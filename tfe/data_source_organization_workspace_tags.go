@@ -32,7 +32,7 @@ func dataSourceTFEOrganizationWorkspaceTags() *schema.Resource {
 							Computed: true,
 						},
 
-						"instance_count": {
+						"workspace_count": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
@@ -61,7 +61,7 @@ func dataSourceTFEOrganizationWorkspaceTagsRead(d *schema.ResourceData, meta int
 		}
 
 		for _, orgTag := range organizationTagsList.Items {
-			tag := map[string]string{"id": orgTag.ID, "name": orgTag.Name, "instance_count": strconv.Itoa(orgTag.InstanceCount)}
+			tag := map[string]string{"id": orgTag.ID, "name": orgTag.Name, "workspace_count": strconv.Itoa(orgTag.InstanceCount)}
 			tags = append(tags, tag)
 		}
 

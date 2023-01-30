@@ -33,4 +33,4 @@ The `tag` block contains:
 
 * `name` - The name of the workspace tag
 * `id` - The ID of the workspace tag
-* `instance_count` - The number of workspaces the workspace tag is associate with
+* `workspace_count` - The number of workspaces the tag is associate with
