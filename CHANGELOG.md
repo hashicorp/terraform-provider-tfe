@@ -1,12 +1,12 @@
 ## v0.42.0 (January 31, 2023)
 
 FEATURES:
-* **New Provider Config**: `organization` (or the `TFE_ORGANIZATION` environment variable) defines a default organization for all resources, making all resource-specific organization arguments optional. ([#762](https://github.com/hashicorp/terraform-provider-tfe/pull/762))
-* **New Resource**: `r/tfe_team_project_access` manages team project permissions. ([#768](https://github.com/hashicorp/terraform-provider-tfe/pull/768))
-* **New Data Source**: `d/tfe_team_project_access` reads existing team project permissions. ([#768](https://github.com/hashicorp/terraform-provider-tfe/pull/768))
-* `r/tfe_team`: Teams can now be imported using `<ORGANIZATION NAME>/<TEAM NAME>` ([#745](https://github.com/hashicorp/terraform-provider-tfe/pull/745))
-* `r/tfe_team`: Add attribute `manage_projects` to `tfe_team`. ([#768](https://github.com/hashicorp/terraform-provider-tfe/pull/768))
-* `r/tfe_team_organization_member`: Team Organization Memberships can now be imported using `<ORGANIZATION NAME>/<USER EMAIL>/<TEAM NAME>` ([#745](https://github.com/hashicorp/terraform-provider-tfe/pull/745))
+* **New Provider Config**: `organization` (or the `TFE_ORGANIZATION` environment variable) defines a default organization for all resources, making all resource-specific organization arguments optional, by @brandonc ([#762](https://github.com/hashicorp/terraform-provider-tfe/pull/762))
+* **New Resource**: `r/tfe_team_project_access` manages team project permissions, by @mwudka ([#768](https://github.com/hashicorp/terraform-provider-tfe/pull/768))
+* **New Data Source**: `d/tfe_team_project_access` reads existing team project permissions, by @mwudka ([#768](https://github.com/hashicorp/terraform-provider-tfe/pull/768))
+* `r/tfe_team`: Add attribute `manage_projects` to `tfe_team`, by @mwudka ([#768](https://github.com/hashicorp/terraform-provider-tfe/pull/768))
+* `r/tfe_team`: Teams can now be imported using `<ORGANIZATION NAME>/<TEAM NAME>`, by @JarrettSpiker ([#745](https://github.com/hashicorp/terraform-provider-tfe/pull/745))
+* `r/tfe_team_organization_member`: Team Organization Memberships can now be imported using `<ORGANIZATION NAME>/<USER EMAIL>/<TEAM NAME>`, by @JarrettSpiker ([#745](https://github.com/hashicorp/terraform-provider-tfe/pull/745))
 
 ENHANCEMENTS:
 * Update API doc links from terraform.io to developer.hashicorp domain by @uk1288 [#764](https://github.com/hashicorp/terraform-provider-tfe/pull/764)
