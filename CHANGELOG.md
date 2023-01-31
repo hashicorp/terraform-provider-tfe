@@ -1,20 +1,20 @@
-## Unreleased
+## v0.42.0 (January 31, 2023)
 
-BUG FIXES:
-* `r/tfe_workspace`: Return all workspace safe deletion errors by @skeggse ([#758](https://github.com/hashicorp/terraform-provider-tfe/pull/758))
+FEATURES:
+* **New Provider Config**: `organization` (or the `TFE_ORGANIZATION` environment variable) defines a default organization for all resources, making all resource-specific organization arguments optional. ([#762](https://github.com/hashicorp/terraform-provider-tfe/pull/762))
+* **New Resource**: `r/tfe_team_project_access` manages team project permissions. ([#768](https://github.com/hashicorp/terraform-provider-tfe/pull/768))
+* **New Data Source**: `d/tfe_team_project_access` reads existing team project permissions. ([#768](https://github.com/hashicorp/terraform-provider-tfe/pull/768))
+* `r/tfe_team`: Teams can now be imported using `<ORGANIZATION NAME>/<TEAM NAME>` ([#745](https://github.com/hashicorp/terraform-provider-tfe/pull/745))
+* `r/tfe_team`: Add attribute `manage_projects` to `tfe_team`. ([#768](https://github.com/hashicorp/terraform-provider-tfe/pull/768))
+* `r/tfe_team_organization_member`: Team Organization Memberships can now be imported using `<ORGANIZATION NAME>/<USER EMAIL>/<TEAM NAME>` ([#745](https://github.com/hashicorp/terraform-provider-tfe/pull/745))
 
 ENHANCEMENTS:
 * Update API doc links from terraform.io to developer.hashicorp domain by @uk1288 [#764](https://github.com/hashicorp/terraform-provider-tfe/pull/764)
 * Update website docs to depict the use of set with `tfe_team_organization_members` and `tfe_team_members` by @uk1288 [#767](https://github.com/hashicorp/terraform-provider-tfe/pull/767)
-* d/tfe_workspace: Add `execution_mode` field to workspace datasoure @Uk1288 ([#772](https://github.com/hashicorp/terraform-provider-tfe/pull/772))
+* `d/tfe_workspace`: Add `execution_mode` field to workspace datasource @Uk1288 ([#772](https://github.com/hashicorp/terraform-provider-tfe/pull/772))
 
-FEATURES:
-* **New Provider Config**: `organization` defines a default organization for all resources, making all resource-specific organization arguments optional.
-* **New Resource**: r/tfe_team_project_access is a new resource that allows managing team project permissions.
-* **New Data Source**: d/tfe_team_project_access is a new datasource to allows reading existing team project permissions.
-* r/tfe_team: Teams can now be imported using `<ORGANIZATION NAME>/<TEAM NAME>` ([#745](https://github.com/hashicorp/terraform-provider-tfe/pull/745))
-* r/tfe_team: Add attribute `manage_projects` to `tfe_team`.
-* r/tfe_team_organization_member: Team Organization Memberships can now be imported using `<ORGANIZATION NAME>/<USER EMAIL>/<TEAM NAME>` ([#745](https://github.com/hashicorp/terraform-provider-tfe/pull/745))
+BUG FIXES:
+* `r/tfe_workspace`: Return all workspace safe deletion errors by @skeggse ([#758](https://github.com/hashicorp/terraform-provider-tfe/pull/758))
 
 ## v0.41.0 (January 4, 2023)
 
