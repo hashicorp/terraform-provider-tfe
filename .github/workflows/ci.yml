@@ -69,7 +69,7 @@ jobs:
 
       - name: Split acceptance tests
         id: test_split
-        uses: brandonc/go-test-split-action@v1
+        uses: hashicorp-forge/go-test-split-action@v1
         with:
           index: ${{ matrix.index }}
           total: ${{ matrix.parallel }}
