@@ -1,3 +1,6 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 # Defaults are given in this configuration and the defaults.auto.tfvars file.
 # Both will be overridden by values passed down by the manager configuration.
 

@@ -1,9 +1,33 @@
-name: Acceptance Tests
+name: CI Tests
 on:
   push:
     branches: [ main ]
   pull_request:
 jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: hashicorp/setup-copywrite@v1.0.0
+      - name: Setup Go Environment
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: "go.mod"
+      - name: fmt check
+        run: make fmtcheck
+
+      - name: go vet
+        run: make vet
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.50.0
+          args: "--out-${NO_FUTURE}format colored-line-number"
+
+      - name: copywrite headers check
+        run: copywrite headers --plan
   tests:
     name: run
     runs-on: ubuntu-latest
@@ -33,7 +57,7 @@ jobs:
 
       - name: Split acceptance tests
         id: test_split
-        uses: brandonc/go-test-split-action@v1
+        uses: hashicorp-forge/go-test-split-action@v1
         with:
           index: ${{ matrix.index }}
           total: ${{ matrix.parallel }}

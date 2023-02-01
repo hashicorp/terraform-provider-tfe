@@ -1,3 +1,6 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 # If a variable is omitted it will not be set on the variables page. Values can
 # be supplied in other ways, such as *.auto.tfvars files, via the variable's
 # default value, var.addtl_vars, or manually managed variables.
