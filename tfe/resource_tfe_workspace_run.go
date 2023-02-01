@@ -14,16 +14,17 @@ var (
 	backoffMax = 3000.0
 )
 
-var planPendingStatus = map[tfe.RunStatus]bool{
+var planPendingStatuses = map[tfe.RunStatus]bool{
 	tfe.RunPending:        true,
 	tfe.RunPlanQueued:     true,
 	tfe.RunPlanning:       true,
 	tfe.RunCostEstimating: true,
 	tfe.RunPolicyChecking: true,
 	tfe.RunQueuing:        true,
+	tfe.RunFetching:       true,
 }
 
-var planTerminalStatus = map[tfe.RunStatus]bool{
+var planTerminalStatuses = map[tfe.RunStatus]bool{
 	tfe.RunPlanned:            true,
 	tfe.RunPlannedAndFinished: true,
 	tfe.RunErrored:            true,
@@ -33,19 +34,20 @@ var planTerminalStatus = map[tfe.RunStatus]bool{
 	tfe.RunPolicyOverride:     true,
 }
 
-var applyPendingStatus = map[tfe.RunStatus]bool{
+var applyPendingStatuses = map[tfe.RunStatus]bool{
 	tfe.RunConfirmed:   true,
 	tfe.RunApplyQueued: true,
 	tfe.RunApplying:    true,
 	tfe.RunQueuing:     true,
+	tfe.RunFetching:    true,
 }
 
-var applyDoneStatus = map[tfe.RunStatus]bool{
+var applyDoneStatuses = map[tfe.RunStatus]bool{
 	tfe.RunApplied: true,
 	tfe.RunErrored: true,
 }
 
-var confirmationDoneStatus = map[tfe.RunStatus]bool{
+var confirmationDoneStatuses = map[tfe.RunStatus]bool{
 	tfe.RunConfirmed:   true,
 	tfe.RunApplyQueued: true,
 	tfe.RunApplying:    true,
@@ -74,34 +76,29 @@ func resourceTFEWorkspaceRun() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"manual_confirm": {
-							Type:        schema.TypeBool,
-							Optional:    true,
-							Default:     false,
-							Description: "",
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
 						},
 						"retry": {
-							Type:        schema.TypeBool,
-							Optional:    true,
-							Default:     true,
-							Description: "",
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  true,
 						},
 						"retry_attempts": {
-							Type:        schema.TypeInt,
-							Optional:    true,
-							Default:     3,
-							Description: "",
+							Type:     schema.TypeInt,
+							Optional: true,
+							Default:  3,
 						},
 						"retry_backoff_min": {
-							Type:        schema.TypeInt,
-							Optional:    true,
-							Default:     1,
-							Description: "",
+							Type:     schema.TypeInt,
+							Optional: true,
+							Default:  1,
 						},
 						"retry_backoff_max": {
-							Type:        schema.TypeInt,
-							Optional:    true,
-							Default:     30,
-							Description: "",
+							Type:     schema.TypeInt,
+							Optional: true,
+							Default:  30,
 						},
 					},
 				},
@@ -114,34 +111,29 @@ func resourceTFEWorkspaceRun() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"manual_confirm": {
-							Type:        schema.TypeBool,
-							Optional:    true,
-							Default:     false,
-							Description: "",
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
 						},
 						"retry": {
-							Type:        schema.TypeBool,
-							Optional:    true,
-							Default:     true,
-							Description: "",
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  true,
 						},
 						"retry_attempts": {
-							Type:        schema.TypeInt,
-							Optional:    true,
-							Default:     3,
-							Description: "",
+							Type:     schema.TypeInt,
+							Optional: true,
+							Default:  3,
 						},
 						"retry_backoff_min": {
-							Type:        schema.TypeInt,
-							Optional:    true,
-							Default:     1,
-							Description: "",
+							Type:     schema.TypeInt,
+							Optional: true,
+							Default:  1,
 						},
 						"retry_backoff_max": {
-							Type:        schema.TypeInt,
-							Optional:    true,
-							Default:     30,
-							Description: "",
+							Type:     schema.TypeInt,
+							Optional: true,
+							Default:  30,
 						},
 					},
 				},
@@ -183,7 +175,7 @@ func resourceTFEWorkspaceRunRead(d *schema.ResourceData, meta interface{}) error
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading run %s: %w", d.Id(), err)
+		return fmt.Errorf("error reading run %s: %w", d.Id(), err)
 	}
 
 	return nil

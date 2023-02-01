@@ -34,13 +34,13 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 	retry := runArgs["retry"].(bool)
 	retryMaxAttempts := runArgs["retry_attempts"].(int)
 
-	isRunInitialAttempt := currentRetryAttempts == 0
+	isInitialRunAttempt := currentRetryAttempts == 0
 
 	// only perform exponential backoff during retries, not during initial attempt
-	if !isRunInitialAttempt {
+	if !isInitialRunAttempt {
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("Context canceled: %w", ctx.Err())
+			return fmt.Errorf("context canceled: %w", ctx.Err())
 		case <-time.After(backoff(float64(retryBOMin), float64(retryBOMax), currentRetryAttempts)):
 		}
 	}
@@ -57,7 +57,7 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 	ws, err := config.Client.Workspaces.Read(ctx, organization, workspace)
 	if err != nil {
 		return fmt.Errorf(
-			"Error reading workspace %s for organization %s: %w", workspace, organization, err)
+			"error reading workspace %s for organization %s: %w", workspace, organization, err)
 	}
 
 	runConfig := tfe.RunCreateOptions{
@@ -77,19 +77,19 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 	run, err := config.Client.Runs.Create(ctx, runConfig)
 	if err != nil {
 		return fmt.Errorf(
-			"Error creating run for workspace %s: %w", workspace, err)
+			"error creating run for workspace %s: %w", workspace, err)
 	}
 
 	if run == nil {
 		log.Printf("[ERROR] The client returned both a nil run and nil error, this should not happen")
 		return fmt.Errorf(
-			"The client returned both a nil run and nil error for workspace %s, this should not happen", workspace)
+			"the client returned both a nil run and nil error for workspace %s, this should not happen", workspace)
 	}
 
 	log.Printf("[DEBUG] Run %s created for workspace %s", run.ID, workspace)
 
 	isPlanOp := true
-	run, err = awaitRun(meta, run.ID, ws.ID, organization, isPlanOp, planPendingStatus, planTerminalStatus)
+	run, err = awaitRun(meta, run.ID, ws.ID, organization, isPlanOp, planPendingStatuses, planTerminalStatuses)
 	if err != nil {
 		return err
 	}
@@ -101,11 +101,11 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 			return createWorkspaceRun(d, meta, isDestroyRun, currentRetryAttempts)
 		}
 
-		return fmt.Errorf("Run errored during plan, use the run ID %s to debug error", run.ID)
+		return fmt.Errorf("run errored during plan, use the run ID %s to debug error", run.ID)
 	}
 
 	// A run is complete when it is successfully planned with no changes to apply
-	if !run.HasChanges || run.Status == tfe.RunPlannedAndFinished {
+	if run.Status == tfe.RunPlannedAndFinished {
 		log.Printf("[INFO] Plan finished, no changes to apply")
 		d.SetId(run.ID)
 		return nil
@@ -113,20 +113,20 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 
 	if run.Status == tfe.RunPolicyOverride {
 		log.Printf("[INFO] Policy check soft-failed, awaiting manual override for run %q", run.ID)
-		run, err = awaitRun(meta, run.ID, ws.ID, organization, isPlanOp, map[tfe.RunStatus]bool{tfe.RunPolicyOverride: true}, confirmationDoneStatus)
+		run, err = awaitRun(meta, run.ID, ws.ID, organization, isPlanOp, map[tfe.RunStatus]bool{tfe.RunPolicyOverride: true}, confirmationDoneStatuses)
 		if err != nil {
 			return err
 		}
 	}
 
 	manualConfirm := runArgs["manual_confirm"].(bool)
-	// if human approval is required, an apply will kick off automatically only when run is manually approved
+	// if human approval is required, an apply will auto kick off when run is manually approved
 	if manualConfirm {
 		confirmationPendingStatus := map[tfe.RunStatus]bool{}
 		confirmationPendingStatus[run.Status] = true
 
 		log.Printf("[INFO] Plan complete, waiting for manual confirm before proceeding run %q", run.ID)
-		run, err = awaitRun(meta, run.ID, ws.ID, organization, isPlanOp, confirmationPendingStatus, confirmationDoneStatus)
+		run, err = awaitRun(meta, run.ID, ws.ID, organization, isPlanOp, confirmationPendingStatus, confirmationDoneStatuses)
 		if err != nil {
 			return err
 		}
@@ -138,12 +138,12 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 				time.Now().Format(time.UnixDate))),
 		})
 		if err != nil {
-			return fmt.Errorf("Run errored while applying run %s: %w", run.ID, err)
+			return fmt.Errorf("run errored while applying run %s: %w", run.ID, err)
 		}
 	}
 
 	isPlanOp = false
-	run, err = awaitRun(meta, run.ID, ws.ID, organization, isPlanOp, applyPendingStatus, applyDoneStatus)
+	run, err = awaitRun(meta, run.ID, ws.ID, organization, isPlanOp, applyPendingStatuses, applyDoneStatuses)
 	if err != nil {
 		return err
 	}
@@ -159,10 +159,10 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 			log.Printf("[INFO] Run errored during apply, retrying run, retry count: %d", currentRetryAttempts)
 			return createWorkspaceRun(d, meta, isDestroyRun, currentRetryAttempts)
 		}
-		return fmt.Errorf("Run errored during apply, use the run ID %s to debug error", run.ID)
+		return fmt.Errorf("run errored during apply, use the run ID %s to debug error", run.ID)
 	default:
 		// unexpected run states including canceled and discarded is handled by this block
-		return fmt.Errorf("Run %s entered unexpected state %s, expected %s state", run.ID, run.Status, tfe.RunApplied)
+		return fmt.Errorf("run %s entered unexpected state %s, expected %s state", run.ID, run.Status, tfe.RunApplied)
 	}
 }
 
@@ -173,12 +173,12 @@ func awaitRun(meta interface{}, runID string, wsID string, organization string, 
 	for i := 0; ; i++ {
 		select {
 		case <-ctx.Done():
-			return nil, fmt.Errorf("Context canceled: %w", ctx.Err())
+			return nil, fmt.Errorf("context canceled: %w", ctx.Err())
 		case <-time.After(backoff(backoffMin, backoffMax, i)):
 			log.Printf("[DEBUG] Polling run %s", runID)
 			run, err := config.Client.Runs.Read(ctx, runID)
 			if err != nil {
-				return nil, fmt.Errorf("Could not read run %s: %w", runID, err)
+				return nil, fmt.Errorf("could not read run %s: %w", runID, err)
 			}
 
 			_, runHasEnded := runTerminalStatus[run.Status]
@@ -192,15 +192,15 @@ func awaitRun(meta interface{}, runID string, wsID string, organization string, 
 				log.Printf("[DEBUG] Reading workspace %s", wsID)
 				ws, err := config.Client.Workspaces.ReadByID(ctx, wsID)
 				if err != nil {
-					return nil, fmt.Errorf("Unable to read workspace %s: %w", wsID, err)
+					return nil, fmt.Errorf("unable to read workspace %s: %w", wsID, err)
 				}
 
-				// if the workspace is locked and there is no current run, assume that workspace was locked for other purposes.
+				// if the workspace is locked and the current run has not started, assume that workspace was locked for other purposes.
 				// display a message to indicate that the workspace is waiting to be manually unlocked before the run can proceed
 				if ws.Locked && ws.CurrentRun != nil {
 					currentRun, err := config.Client.Runs.Read(ctx, ws.CurrentRun.ID)
 					if err != nil {
-						return nil, fmt.Errorf("Unable to read current run %s: %w", ws.CurrentRun.ID, err)
+						return nil, fmt.Errorf("unable to read current run %s: %w", ws.CurrentRun.ID, err)
 					}
 
 					if currentRun.Status == tfe.RunPending {
@@ -211,14 +211,14 @@ func awaitRun(meta interface{}, runID string, wsID string, organization string, 
 
 				// if this run is the current run in it's workspace, display it's position in the organization queue
 				if ws.CurrentRun != nil && ws.CurrentRun.ID == runID {
-					runPositionInOrg, err := readRunPositionInOrgQueue(meta, runID, wsID, organization)
+					runPositionInOrg, err := readRunPositionInOrgQueue(meta, runID, organization)
 					if err != nil {
 						return nil, err
 					}
 
 					orgCapacity, err := config.Client.Organizations.ReadCapacity(ctx, organization)
 					if err != nil {
-						return nil, fmt.Errorf("Unable to read capacity for organization %s: %w", organization, err)
+						return nil, fmt.Errorf("unable to read capacity for organization %s: %w", organization, err)
 					}
 					if runPositionInOrg > 0 {
 						log.Printf("[INFO] Waiting for %d queued run(s) before starting run", runPositionInOrg-orgCapacity.Running)
@@ -250,7 +250,7 @@ func awaitRun(meta interface{}, runID string, wsID string, organization string, 
 	}
 }
 
-func readRunPositionInOrgQueue(meta interface{}, runID string, wsID string, organization string) (int, error) {
+func readRunPositionInOrgQueue(meta interface{}, runID string, organization string) (int, error) {
 	config := meta.(ConfiguredClient)
 	position := 0
 	options := tfe.ReadRunQueueOptions{}
@@ -258,7 +258,7 @@ func readRunPositionInOrgQueue(meta interface{}, runID string, wsID string, orga
 	for {
 		runQueue, err := config.Client.Organizations.ReadRunQueue(ctx, organization, options)
 		if err != nil {
-			return position, fmt.Errorf("Unable to read run queue for organization %s: %w", organization, err)
+			return position, fmt.Errorf("unable to read run queue for organization %s: %w", organization, err)
 		}
 		for _, item := range runQueue.Items {
 			if runID == item.ID {
@@ -287,7 +287,7 @@ func readRunPositionInWorkspaceQueue(meta interface{}, runID string, wsID string
 	for {
 		runList, err := config.Client.Runs.List(ctx, wsID, &options)
 		if err != nil {
-			return position, fmt.Errorf("Unable to read run list for workspace %s: %w", wsID, err)
+			return position, fmt.Errorf("unable to read run list for workspace %s: %w", wsID, err)
 		}
 
 		for _, item := range runList.Items {
