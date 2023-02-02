@@ -2564,7 +2564,7 @@ func TestAccTFEWorkspace_createWithSourceURLAndName(t *testing.T) {
 				Config: testAccTFEWorkspace_basicWithSourceURLAndName(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace),
+						"tfe_workspace.foobar", workspace, testAccProvider),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "source_url", "https://example.com"),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "source_name", "Example Source"),
 				),
