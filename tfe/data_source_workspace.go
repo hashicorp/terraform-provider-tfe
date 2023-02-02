@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -20,7 +23,7 @@ func dataSourceTFEWorkspace() *schema.Resource {
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 
 			"description": {
@@ -54,6 +57,11 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
+			"assessments_enabled": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
+
 			"operations": {
 				Type:     schema.TypeBool,
 				Computed: true,
@@ -61,6 +69,11 @@ func dataSourceTFEWorkspace() *schema.Resource {
 
 			"policy_check_failures": {
 				Type:     schema.TypeInt,
+				Computed: true,
+			},
+
+			"project_id": {
+				Type:     schema.TypeString,
 				Computed: true,
 			},
 
@@ -127,7 +140,18 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
+			"trigger_patterns": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+
 			"working_directory": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+
+			"execution_mode": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
@@ -156,6 +180,11 @@ func dataSourceTFEWorkspace() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
+
+						"tags_regex": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 					},
 				},
 			},
@@ -164,14 +193,17 @@ func dataSourceTFEWorkspace() *schema.Resource {
 }
 
 func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the name and organization.
 	name := d.Get("name").(string)
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	log.Printf("[DEBUG] Read configuration of workspace: %s", name)
-	workspace, err := tfeClient.Workspaces.Read(ctx, organization, name)
+	workspace, err := config.Client.Workspaces.Read(ctx, organization, name)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return fmt.Errorf("could not find workspace %s/%s", organization, name)
@@ -182,9 +214,16 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("allow_destroy_plan", workspace.AllowDestroyPlan)
 	d.Set("auto_apply", workspace.AutoApply)
 	d.Set("description", workspace.Description)
+	d.Set("assessments_enabled", workspace.AssessmentsEnabled)
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
 	d.Set("operations", workspace.Operations)
 	d.Set("policy_check_failures", workspace.PolicyCheckFailures)
+
+	// If target tfe instance predates projects, then workspace.Project will be nil
+	if workspace.Project != nil {
+		d.Set("project_id", workspace.Project.ID)
+	}
+
 	d.Set("queue_all_runs", workspace.QueueAllRuns)
 	d.Set("resource_count", workspace.ResourceCount)
 	d.Set("run_failures", workspace.RunFailures)
@@ -195,7 +234,9 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("structured_run_output_enabled", workspace.StructuredRunOutputEnabled)
 	d.Set("terraform_version", workspace.TerraformVersion)
 	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
+	d.Set("trigger_patterns", workspace.TriggerPatterns)
 	d.Set("working_directory", workspace.WorkingDirectory)
+	d.Set("execution_mode", workspace.ExecutionMode)
 
 	// Set remote_state_consumer_ids if global_remote_state is false
 	globalRemoteState := workspace.GlobalRemoteState
@@ -204,7 +245,7 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 			return err
 		}
 	} else {
-		legacyGlobalState, remoteStateConsumerIDs, err := readWorkspaceStateConsumers(workspace.ID, tfeClient)
+		legacyGlobalState, remoteStateConsumerIDs, err := readWorkspaceStateConsumers(workspace.ID, config.Client)
 
 		if err != nil {
 			return fmt.Errorf(
@@ -236,6 +277,7 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 			"branch":             workspace.VCSRepo.Branch,
 			"ingress_submodules": workspace.VCSRepo.IngressSubmodules,
 			"oauth_token_id":     workspace.VCSRepo.OAuthTokenID,
+			"tags_regex":         workspace.VCSRepo.TagsRegex,
 		}
 		vcsRepo = append(vcsRepo, vcsConfig)
 	}

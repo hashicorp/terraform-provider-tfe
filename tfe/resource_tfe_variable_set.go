@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -9,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-var variableSetIdRegexp = regexp.MustCompile("varset-[a-zA-Z0-9]{16}$")
+var variableSetIDRegexp = regexp.MustCompile("varset-[a-zA-Z0-9]{16}$")
 
 func resourceTFEVariableSet() *schema.Resource {
 	return &schema.Resource{
@@ -18,7 +21,7 @@ func resourceTFEVariableSet() *schema.Resource {
 		Update: resourceTFEVariableSetUpdate,
 		Delete: resourceTFEVariableSetDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -41,7 +44,8 @@ func resourceTFEVariableSet() *schema.Resource {
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Computed: true,
 				ForceNew: true,
 			},
 
@@ -56,11 +60,14 @@ func resourceTFEVariableSet() *schema.Resource {
 }
 
 func resourceTFEVariableSetCreate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the name and organization.
 	name := d.Get("name").(string)
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	// Create a new options struct.
 	options := tfe.VariableSetCreateOptions{
@@ -72,11 +79,13 @@ func resourceTFEVariableSetCreate(d *schema.ResourceData, meta interface{}) erro
 		options.Description = tfe.String(description.(string))
 	}
 
-	variableSet, err := tfeClient.VariableSets.Create(ctx, organization, &options)
+	variableSet, err := config.Client.VariableSets.Create(ctx, organization, &options)
 	if err != nil {
 		return fmt.Errorf(
 			"Error creating variable set %s, for organization: %s: %w", name, organization, err)
 	}
+
+	d.SetId(variableSet.ID)
 
 	if workspaceIDs, workspacesSet := d.GetOk("workspace_ids"); !*options.Global && workspacesSet {
 		log.Printf("[DEBUG] Apply variable set %s to workspaces %v", name, workspaceIDs)
@@ -84,26 +93,26 @@ func resourceTFEVariableSetCreate(d *schema.ResourceData, meta interface{}) erro
 
 		applyOptions := tfe.VariableSetUpdateWorkspacesOptions{}
 		for _, workspaceID := range workspaceIDs.(*schema.Set).List() {
-			applyOptions.Workspaces = append(applyOptions.Workspaces, &tfe.Workspace{ID: workspaceID.(string)})
+			if val, ok := workspaceID.(string); ok {
+				applyOptions.Workspaces = append(applyOptions.Workspaces, &tfe.Workspace{ID: val})
+			}
 		}
 
-		variableSet, err = tfeClient.VariableSets.UpdateWorkspaces(ctx, variableSet.ID, &applyOptions)
+		_, err := config.Client.VariableSets.UpdateWorkspaces(ctx, variableSet.ID, &applyOptions)
 		if err != nil {
 			return fmt.Errorf(
 				"Error applying variable set %s (%s) to given workspaces: %w", name, variableSet.ID, err)
 		}
 	}
 
-	d.SetId(variableSet.ID)
-
 	return resourceTFEVariableSetRead(d, meta)
 }
 
 func resourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read configuration of variable set: %s", d.Id())
-	variableSet, err := tfeClient.VariableSets.Read(ctx, d.Id(), &tfe.VariableSetReadOptions{
+	variableSet, err := config.Client.VariableSets.Read(ctx, d.Id(), &tfe.VariableSetReadOptions{
 		Include: &[]tfe.VariableSetIncludeOpt{tfe.VariableSetWorkspaces},
 	})
 	if err != nil {
@@ -131,7 +140,7 @@ func resourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) error 
 }
 
 func resourceTFEVariableSetUpdate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	if d.HasChange("name") || d.HasChange("description") || d.HasChange("global") {
 		options := tfe.VariableSetUpdateOptions{
@@ -141,7 +150,7 @@ func resourceTFEVariableSetUpdate(d *schema.ResourceData, meta interface{}) erro
 		}
 
 		log.Printf("[DEBUG] Update variable set: %s", d.Id())
-		_, err := tfeClient.VariableSets.Update(ctx, d.Id(), &options)
+		_, err := config.Client.VariableSets.Update(ctx, d.Id(), &options)
 		if err != nil {
 			return fmt.Errorf("Error updateing variable %s: %w", d.Id(), err)
 		}
@@ -152,12 +161,14 @@ func resourceTFEVariableSetUpdate(d *schema.ResourceData, meta interface{}) erro
 		applyOptions := tfe.VariableSetUpdateWorkspacesOptions{}
 		applyOptions.Workspaces = []*tfe.Workspace{}
 		for _, workspaceID := range workspaceIDs.(*schema.Set).List() {
-			applyOptions.Workspaces = append(applyOptions.Workspaces, &tfe.Workspace{ID: workspaceID.(string)})
+			if val, ok := workspaceID.(string); ok {
+				applyOptions.Workspaces = append(applyOptions.Workspaces, &tfe.Workspace{ID: val})
+			}
 		}
 
 		log.Printf("[DEBUG] Apply variable set %s to workspaces %v", d.Id(), workspaceIDs)
 		warnWorkspaceIdsDeprecation()
-		_, err := tfeClient.VariableSets.UpdateWorkspaces(ctx, d.Id(), &applyOptions)
+		_, err := config.Client.VariableSets.UpdateWorkspaces(ctx, d.Id(), &applyOptions)
 		if err != nil {
 			return fmt.Errorf(
 				"Error applying variable set %s to given workspaces: %w", d.Id(), err)
@@ -168,10 +179,10 @@ func resourceTFEVariableSetUpdate(d *schema.ResourceData, meta interface{}) erro
 }
 
 func resourceTFEVariableSetDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete variable set: %s", d.Id())
-	err := tfeClient.VariableSets.Delete(ctx, d.Id())
+	err := config.Client.VariableSets.Delete(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil

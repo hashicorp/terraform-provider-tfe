@@ -1,6 +1,10 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -18,18 +22,18 @@ func resourceTFETeam() *schema.Resource {
 		Update: resourceTFETeamUpdate,
 		Delete: resourceTFETeamDelete,
 		Importer: &schema.ResourceImporter{
-			State: resourceTFETeamImporter,
+			StateContext: resourceTFETeamImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 			},
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Computed: true,
 				ForceNew: true,
 			},
 			"organization_access": {
@@ -74,6 +78,11 @@ func resourceTFETeam() *schema.Resource {
 							Optional: true,
 							Default:  false,
 						},
+						"manage_projects": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
+						},
 					},
 				},
 			},
@@ -95,11 +104,14 @@ func resourceTFETeam() *schema.Resource {
 }
 
 func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get team attributes.
 	name := d.Get("name").(string)
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	// Create a new options struct.
 	options := tfe.TeamCreateOptions{
@@ -117,6 +129,7 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 			ManageProviders:       tfe.Bool(organizationAccess["manage_providers"].(bool)),
 			ManageModules:         tfe.Bool(organizationAccess["manage_modules"].(bool)),
 			ManageRunTasks:        tfe.Bool(organizationAccess["manage_run_tasks"].(bool)),
+			ManageProjects:        tfe.Bool(organizationAccess["manage_projects"].(bool)),
 		}
 	}
 
@@ -129,10 +142,10 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	log.Printf("[DEBUG] Create team %s for organization: %s", name, organization)
-	team, err := tfeClient.Teams.Create(ctx, organization, options)
+	team, err := config.Client.Teams.Create(ctx, organization, options)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			entitlements, _ := tfeClient.Organizations.ReadEntitlements(ctx, organization)
+			entitlements, _ := config.Client.Organizations.ReadEntitlements(ctx, organization)
 			if entitlements == nil {
 				return fmt.Errorf("Error creating team %s for organization %s: %w", name, organization, err)
 			}
@@ -149,13 +162,13 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read configuration of team: %s", d.Id())
-	team, err := tfeClient.Teams.Read(ctx, d.Id())
+	team, err := config.Client.Teams.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			log.Printf("[DEBUG] Team %s does no longer exist", d.Id())
+			log.Printf("[DEBUG] Team %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}
@@ -173,6 +186,7 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 			"manage_providers":        team.OrganizationAccess.ManageProviders,
 			"manage_modules":          team.OrganizationAccess.ManageModules,
 			"manage_run_tasks":        team.OrganizationAccess.ManageRunTasks,
+			"manage_projects":         team.OrganizationAccess.ManageProjects,
 		}}
 		if err := d.Set("organization_access", organizationAccess); err != nil {
 			return fmt.Errorf("error setting organization access for team %s: %w", d.Id(), err)
@@ -185,7 +199,7 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceTFETeamUpdate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the name and organization.
 	name := d.Get("name").(string)
@@ -206,6 +220,7 @@ func resourceTFETeamUpdate(d *schema.ResourceData, meta interface{}) error {
 			ManageProviders:       tfe.Bool(organizationAccess["manage_providers"].(bool)),
 			ManageModules:         tfe.Bool(organizationAccess["manage_modules"].(bool)),
 			ManageRunTasks:        tfe.Bool(organizationAccess["manage_run_tasks"].(bool)),
+			ManageProjects:        tfe.Bool(organizationAccess["manage_projects"].(bool)),
 		}
 	}
 
@@ -220,7 +235,7 @@ func resourceTFETeamUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	log.Printf("[DEBUG] Update team: %s", d.Id())
-	_, err := tfeClient.Teams.Update(ctx, d.Id(), options)
+	_, err := config.Client.Teams.Update(ctx, d.Id(), options)
 	if err != nil {
 		return fmt.Errorf(
 			"Error updating team %s: %w", d.Id(), err)
@@ -230,10 +245,10 @@ func resourceTFETeamUpdate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceTFETeamDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete team: %s", d.Id())
-	err := tfeClient.Teams.Delete(ctx, d.Id())
+	err := config.Client.Teams.Delete(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil
@@ -244,18 +259,42 @@ func resourceTFETeamDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceTFETeamImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceTFETeamImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	// Import formats:
+	//  - <ORGANIZATION NAME>/<TEAM ID>
+	//  - <ORGANIZATION NAME>/<TEAM NAME>
 	s := strings.SplitN(d.Id(), "/", 2)
 	if len(s) != 2 {
 		return nil, fmt.Errorf(
-			"invalid team import format: %s (expected <ORGANIZATION>/<TEAM ID>)",
+			"invalid team import format: %s (expected <ORGANIZATION>/<TEAM ID> or <ORGANIZATION>/<TEAM NAME>)",
 			d.Id(),
 		)
 	}
 
-	// Set the fields that are part of the import ID.
-	d.Set("organization", s[0])
-	d.SetId(s[1])
+	orgName := s[0]
+	teamNameOrID := s[1]
 
+	err := d.Set("organization", orgName)
+	if err != nil {
+		return nil, fmt.Errorf("could not set organization name %s on resource: %w", orgName, err)
+	}
+
+	// we don't know if the second piece of the import is an ID or a team name. If it is an ID we should be able to read
+	// the team by that ID
+	config := meta.(ConfiguredClient)
+	if isResourceIDFormat("team", teamNameOrID) {
+		team, err := config.Client.Teams.Read(ctx, teamNameOrID)
+		if err == nil {
+			d.SetId(team.ID)
+			return []*schema.ResourceData{d}, nil
+		}
+	}
+
+	// a team does not exist (or cannot be found) with the ID s[1]...check if it is the team name instead
+	team, err := fetchTeamByName(ctx, config.Client, orgName, teamNameOrID)
+	if err != nil {
+		return nil, fmt.Errorf("no team found with name or ID %s in organization %s: %w", teamNameOrID, orgName, err)
+	}
+	d.SetId(team.ID)
 	return []*schema.ResourceData{d}, nil
 }

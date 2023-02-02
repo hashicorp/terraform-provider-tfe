@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -32,6 +35,8 @@ func TestAccTFEOrganizationMembership_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_organization_membership.foobar", "organization", orgName),
 					resource.TestCheckResourceAttrSet("tfe_organization_membership.foobar", "user_id"),
+					resource.TestCheckResourceAttr(
+						"tfe_organization_membership.foobar", "username", ""),
 				),
 			},
 		},
@@ -61,7 +66,7 @@ func TestAccTFEOrganizationMembershipImport(t *testing.T) {
 func testAccCheckTFEOrganizationMembershipExists(
 	n string, membership *tfe.OrganizationMembership) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -76,7 +81,7 @@ func testAccCheckTFEOrganizationMembershipExists(
 			Include: []tfe.OrgMembershipIncludeOpt{tfe.OrgMembershipUser},
 		}
 
-		m, err := tfeClient.OrganizationMemberships.ReadWithOptions(ctx, rs.Primary.ID, options)
+		m, err := config.Client.OrganizationMemberships.ReadWithOptions(ctx, rs.Primary.ID, options)
 		if err != nil {
 			return err
 		}
@@ -109,7 +114,7 @@ func testAccCheckTFEOrganizationMembershipAttributes(
 }
 
 func testAccCheckTFEOrganizationMembershipDestroy(s *terraform.State) error {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	config := testAccProvider.Meta().(ConfiguredClient)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_organization_membership" {
@@ -120,7 +125,7 @@ func testAccCheckTFEOrganizationMembershipDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := tfeClient.OrganizationMemberships.Read(ctx, rs.Primary.ID)
+		_, err := config.Client.OrganizationMemberships.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Membership %s still exists", rs.Primary.ID)
 		}

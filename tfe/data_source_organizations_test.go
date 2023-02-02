@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -50,7 +53,7 @@ func testAccCheckTFEOrganizationHasNames(dataOrg string, orgNames []string) reso
 		numOrgs, _ := strconv.Atoi(numOrgsStr)
 
 		if numOrgs < len(orgNames) {
-			return fmt.Errorf("Expected at least %d organizations, but found %d.", len(orgNames), numOrgs)
+			return fmt.Errorf("expected at least %d organizations, but found %d.", len(orgNames), numOrgs)
 		}
 
 		allOrgsMap := map[string]struct{}{}
@@ -62,7 +65,7 @@ func testAccCheckTFEOrganizationHasNames(dataOrg string, orgNames []string) reso
 		for _, orgName := range orgNames {
 			_, ok := allOrgsMap[orgName]
 			if !ok {
-				return fmt.Errorf("Expected to find organization name %s, but did not.", orgName)
+				return fmt.Errorf("expected to find organization name %s, but did not.", orgName)
 			}
 		}
 
@@ -81,7 +84,7 @@ func testAccCheckTFEOrganizationHasIDs(dataOrg string, orgNames []string) resour
 			id := fmt.Sprintf("ids.%s", orgName)
 			_, ok := org.Primary.Attributes[id]
 			if !ok {
-				return fmt.Errorf("Expected to find organization id %s, but did not.", id)
+				return fmt.Errorf("expected to find organization id %s, but did not.", id)
 			}
 		}
 

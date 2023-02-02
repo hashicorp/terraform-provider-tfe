@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -10,8 +13,15 @@ import (
 )
 
 func TestAccTFEAgentPoolDataSource_basic(t *testing.T) {
-	skipIfFreeOnly(t)
 	skipIfEnterprise(t)
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -20,33 +30,28 @@ func TestAccTFEAgentPoolDataSource_basic(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEAgentPoolDataSourceConfig(rInt),
+				Config: testAccTFEAgentPoolDataSourceConfig(org.Name, rInt),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.tfe_agent_pool.foobar", "id"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_agent_pool.foobar", "name", fmt.Sprintf("agent-pool-test-%d", rInt)),
 					resource.TestCheckResourceAttr(
-						"data.tfe_agent_pool.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
+						"data.tfe_agent_pool.foobar", "organization", org.Name),
 				),
 			},
 		},
 	})
 }
 
-func testAccTFEAgentPoolDataSourceConfig(rInt int) string {
+func testAccTFEAgentPoolDataSourceConfig(organization string, rInt int) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
 resource "tfe_agent_pool" "foobar" {
   name                  = "agent-pool-test-%d"
-  organization          = tfe_organization.foobar.id
+  organization          = "%s"
 }
 
 data "tfe_agent_pool" "foobar" {
   name         = tfe_agent_pool.foobar.name
-  organization = tfe_agent_pool.foobar.organization
-}`, rInt, rInt)
+  organization = "%s"
+}`, rInt, organization, organization)
 }

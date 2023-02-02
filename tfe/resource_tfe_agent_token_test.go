@@ -1,10 +1,11 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
 	"fmt"
-	"math/rand"
 	"testing"
-	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -12,11 +13,17 @@ import (
 )
 
 func TestAccTFEAgentToken_basic(t *testing.T) {
-	skipIfFreeOnly(t)
 	skipIfEnterprise(t)
 
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
 	agentToken := &tfe.AgentToken{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -24,7 +31,7 @@ func TestAccTFEAgentToken_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFEAgentTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEAgentToken_basic(rInt),
+				Config: testAccTFEAgentToken_basic(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEAgentTokenExists(
 						"tfe_agent_token.foobar", agentToken),
@@ -40,18 +47,18 @@ func TestAccTFEAgentToken_basic(t *testing.T) {
 func testAccCheckTFEAgentTokenExists(
 	n string, agentToken *tfe.AgentToken) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
-			return fmt.Errorf("Not found: %s", n)
+			return fmt.Errorf("not found: %s", n)
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("No instance ID is set")
+			return fmt.Errorf("no instance ID is set")
 		}
 
-		sk, err := tfeClient.AgentTokens.Read(ctx, rs.Primary.ID)
+		sk, err := config.Client.AgentTokens.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -70,14 +77,14 @@ func testAccCheckTFEAgentTokenAttributes(
 	agentToken *tfe.AgentToken) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if agentToken.Description != "agent-token-test" {
-			return fmt.Errorf("Bad name: %s", agentToken.Description)
+			return fmt.Errorf("bad name: %s", agentToken.Description)
 		}
 		return nil
 	}
 }
 
 func testAccCheckTFEAgentTokenDestroy(s *terraform.State) error {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	config := testAccProvider.Meta().(ConfiguredClient)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_agent_token" {
@@ -85,10 +92,10 @@ func testAccCheckTFEAgentTokenDestroy(s *terraform.State) error {
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("No instance ID is set")
+			return fmt.Errorf("no instance ID is set")
 		}
 
-		_, err := tfeClient.AgentTokens.Read(ctx, rs.Primary.ID)
+		_, err := config.Client.AgentTokens.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("agent token %s still exists", rs.Primary.ID)
 		}
@@ -97,20 +104,15 @@ func testAccCheckTFEAgentTokenDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccTFEAgentToken_basic(rInt int) string {
+func testAccTFEAgentToken_basic(organization string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
 resource "tfe_agent_pool" "foobar" {
   name         = "agent-pool-test"
-  organization = tfe_organization.foobar.id
+  organization = "%s"
 }
 
 resource "tfe_agent_token" "foobar" {
 	agent_pool_id = tfe_agent_pool.foobar.id
 	description   = "agent-token-test"
-}`, rInt)
+}`, organization)
 }

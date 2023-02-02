@@ -1,7 +1,9 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
-	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -17,7 +19,7 @@ func dataSourceTFEOrganizationRunTask() *schema.Resource {
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 
 			"url": {
@@ -34,16 +36,24 @@ func dataSourceTFEOrganizationRunTask() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 			},
+
+			"description": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
 
 func dataSourceTFEOrganizationRunTaskRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 	name := d.Get("name").(string)
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
-	task, err := fetchOrganizationRunTask(name, organization, tfeClient)
+	task, err := fetchOrganizationRunTask(name, organization, config.Client)
 	if err != nil {
 		return err
 	}
@@ -51,6 +61,7 @@ func dataSourceTFEOrganizationRunTaskRead(d *schema.ResourceData, meta interface
 	d.Set("url", task.URL)
 	d.Set("category", task.Category)
 	d.Set("enabled", task.Enabled)
+	d.Set("description", task.Description)
 	d.SetId(task.ID)
 
 	return nil

@@ -1,6 +1,10 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"testing"
@@ -129,25 +133,25 @@ func TestAccTFETeamMember_import(t *testing.T) {
 func testAccCheckTFETeamMemberExists(
 	n string, user *tfe.User) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
-			return fmt.Errorf("Not found: %s", n)
+			return fmt.Errorf("not found: %s", n)
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("No instance ID is set")
+			return fmt.Errorf("no instance ID is set")
 		}
 
 		// Get the team ID and username.
 		teamID, username, err := unpackTeamMemberID(rs.Primary.ID)
 		if err != nil {
-			return fmt.Errorf("Error unpacking team member ID: %w", err)
+			return fmt.Errorf("error unpacking team member ID: %w", err)
 		}
 
-		users, err := tfeClient.TeamMembers.List(ctx, teamID)
-		if err != nil && err != tfe.ErrResourceNotFound {
+		users, err := config.Client.TeamMembers.List(ctx, teamID)
+		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 			return err
 		}
 
@@ -161,7 +165,7 @@ func testAccCheckTFETeamMemberExists(
 		}
 
 		if !found {
-			return fmt.Errorf("User not found")
+			return fmt.Errorf("user not found")
 		}
 
 		return nil
@@ -172,14 +176,14 @@ func testAccCheckTFETeamMemberAttributes(
 	user *tfe.User) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if user.Username != "admin" {
-			return fmt.Errorf("Bad username: %s", user.Username)
+			return fmt.Errorf("bad username: %s", user.Username)
 		}
 		return nil
 	}
 }
 
 func testAccCheckTFETeamMemberDestroy(s *terraform.State) error {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	config := testAccProvider.Meta().(ConfiguredClient)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_team_member" {
@@ -187,17 +191,17 @@ func testAccCheckTFETeamMemberDestroy(s *terraform.State) error {
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("No instance ID is set")
+			return fmt.Errorf("no instance ID is set")
 		}
 
 		// Get the team ID and username.
 		teamID, username, err := unpackTeamMemberID(rs.Primary.ID)
 		if err != nil {
-			return fmt.Errorf("Error unpacking team member ID: %w", err)
+			return fmt.Errorf("error unpacking team member ID: %w", err)
 		}
 
-		users, err := tfeClient.TeamMembers.List(ctx, teamID)
-		if err != nil && err != tfe.ErrResourceNotFound {
+		users, err := config.Client.TeamMembers.List(ctx, teamID)
+		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 			return err
 		}
 
@@ -210,7 +214,7 @@ func testAccCheckTFETeamMemberDestroy(s *terraform.State) error {
 		}
 
 		if found {
-			return fmt.Errorf("User %s still exists", rs.Primary.ID)
+			return fmt.Errorf("user %s still exists", rs.Primary.ID)
 		}
 	}
 

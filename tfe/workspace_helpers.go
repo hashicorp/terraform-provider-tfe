@@ -1,10 +1,12 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
 	"context"
 	"fmt"
 	"strings"
-	"unicode"
 
 	tfe "github.com/hashicorp/go-tfe"
 )
@@ -85,9 +87,8 @@ func readWorkspaceStateConsumers(id string, client *tfe.Client) (bool, []interfa
 				// by setting this computed attribute to true, which is the actual
 				// default value when the installation is eventually upgraded.
 				return true, remoteStateConsumerIDs, nil
-			} else {
-				return false, remoteStateConsumerIDs, err
 			}
+			return false, remoteStateConsumerIDs, err
 		}
 
 		for _, w := range wl.Items {
@@ -104,13 +105,4 @@ func readWorkspaceStateConsumers(id string, client *tfe.Client) (bool, []interfa
 	}
 
 	return false, remoteStateConsumerIDs, nil
-}
-
-func tagContainsUppercase(tag string) bool {
-	for _, c := range tag {
-		if unicode.IsUpper(c) {
-			return true
-		}
-	}
-	return false
 }

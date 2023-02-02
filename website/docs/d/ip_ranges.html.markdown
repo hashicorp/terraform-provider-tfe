@@ -1,14 +1,13 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_ip_ranges"
-sidebar_current: "docs-datasource-tfe-ip-ranges"
 description: |-
   Get Terraform Cloud/Enterprise's IP ranges of its services
 ---
 
 # Data Source: tfe_ip_ranges
 
-Use this data source to retrieve a list of Terraform Cloud's IP ranges. For more information about these IP ranges, view our [documentation about Terraform Cloud IP Ranges](https://www.terraform.io/docs/cloud/architectural-details/ip-ranges.html).
+Use this data source to retrieve a list of Terraform Cloud's IP ranges. For more information about these IP ranges, view our [documentation about Terraform Cloud IP Ranges](https://developer.hashicorp.com/terraform/cloud-docs/architectural-details/ip-ranges).
 
 ## Example Usage
 

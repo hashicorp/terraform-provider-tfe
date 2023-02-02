@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -33,6 +36,11 @@ func dataSourceTFEOrganization() *schema.Resource {
 				Computed: true,
 			},
 
+			"default_project_id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+
 			"email": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -52,33 +60,47 @@ func dataSourceTFEOrganization() *schema.Resource {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
+
+			"assessments_enforced": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
 		},
 	}
 }
 
 func dataSourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
-	name := d.Get("name").(string)
+	name, err := config.schemaOrDefaultOrganizationKey(d, "name")
+	if err != nil {
+		return err
+	}
+
 	log.Printf("[DEBUG] Read configuration for Organization: %s", name)
-	org, err := tfeClient.Organizations.Read(ctx, name)
+	org, err := config.Client.Organizations.Read(ctx, name)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			return fmt.Errorf("Could not read organization '%s'", name)
+			return fmt.Errorf("could not read organization '%s'", name)
 		}
 		return fmt.Errorf("Error retrieving organization: %w", err)
 	}
 
 	log.Printf("[DEBUG] Setting Organization Attributes")
 	d.SetId(org.ExternalID)
-	d.Set("name", org.Name)
 	d.Set("external_id", org.ExternalID)
 	d.Set("collaborator_auth_policy", org.CollaboratorAuthPolicy)
 	d.Set("cost_estimation_enabled", org.CostEstimationEnabled)
+
+	if org.DefaultProject != nil {
+		d.Set("default_project_id", org.DefaultProject.ID)
+	}
+
 	d.Set("email", org.Email)
 	d.Set("owners_team_saml_role_id", org.OwnersTeamSAMLRoleID)
 	d.Set("two_factor_conformant", org.TwoFactorConformant)
 	d.Set("send_passing_statuses_for_untriggered_speculative_plans", org.SendPassingStatusesForUntriggeredSpeculativePlans)
+	d.Set("assessments_enforced", org.AssessmentsEnforced)
 
 	return nil
 }

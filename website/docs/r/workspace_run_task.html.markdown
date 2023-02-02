@@ -1,16 +1,15 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_workspace_run_task"
-sidebar_current: "docs-resource-tfe_workspace_run_task"
 description: |-
   Manages Workspace Run tasks.
 ---
 
 # tfe_workspace_run_task
 
-[Run tasks](https://www.terraform.io/cloud-docs/workspaces/settings/run-tasks) allow Terraform Cloud to interact with external systems at specific points in the Terraform Cloud run lifecycle. Run tasks are reusable configurations that you can attach to any workspace in an organization.
+[Run tasks](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks) allow Terraform Cloud to interact with external systems at specific points in the Terraform Cloud run lifecycle. Run tasks are reusable configurations that you can attach to any workspace in an organization.
 
-The tfe_workspace_run_task resource associates, updates and removes [Workspace Run tasks](https://www.terraform.io/cloud-docs/workspaces/settings/run-tasks#associating-run-tasks-with-a-workspace).
+The tfe_workspace_run_task resource associates, updates and removes [Workspace Run tasks](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks#associating-run-tasks-with-a-workspace).
 
 ## Example Usage
 
@@ -31,6 +30,7 @@ The following arguments are supported:
 * `enforcement_level` - (Required) The enforcement level of the task. Valid values are `advisory` and `mandatory`.
 * `task_id` - (Required) The id of the Run task to associate to the Workspace.
 * `workspace_id` - (Required) The id of the workspace to associate the Run task to.
+* `stage` - (Optional) The stage to run the task in. Valid values are `pre_plan`, `post_plan`, and `pre_apply`.
 
 ## Attributes Reference
 

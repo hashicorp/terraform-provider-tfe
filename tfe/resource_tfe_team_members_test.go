@@ -1,6 +1,10 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"reflect"
@@ -16,13 +20,13 @@ import (
 func TestAccTFETeamMembers_basic(t *testing.T) {
 	t.Skip("Skipping, due to current testing limitations; namely, an organization membership must first be confirmed.")
 	users := []*tfe.User{}
-	TFE_USER1_HASH := hashSchemaString(TFE_USER1)
+	tfeUser1Hash := hashSchemaString(envTFEUser1)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			if TFE_USER1 == "" {
+			if envTFEUser1 == "" {
 				t.Skip("Please set TFE_USER1 to run this test")
 			}
 		},
@@ -34,13 +38,13 @@ func TestAccTFETeamMembers_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamMembersExists(
 						"tfe_team_members.foobar", &users),
-					testAccCheckTFETeamMembersAttributes(&users, []string{"admin", TFE_USER1}),
+					testAccCheckTFETeamMembersAttributes(&users, []string{"admin", envTFEUser1}),
 					resource.TestCheckResourceAttr(
 						"tfe_team_members.foobar", "usernames.#", "2"),
 					resource.TestCheckResourceAttr(
 						"tfe_team_members.foobar", "usernames.3672628397", "admin"),
 					resource.TestCheckResourceAttr(
-						"tfe_team_members.foobar", fmt.Sprintf("usernames.%d", TFE_USER1_HASH), TFE_USER1),
+						"tfe_team_members.foobar", fmt.Sprintf("usernames.%d", tfeUser1Hash), envTFEUser1),
 				),
 			},
 		},
@@ -50,17 +54,17 @@ func TestAccTFETeamMembers_basic(t *testing.T) {
 func TestAccTFETeamMembers_update(t *testing.T) {
 	t.Skip("Skipping, due to current testing limitations; namely, an organization membership must first be confirmed.")
 	users := []*tfe.User{}
-	TFE_USER1_HASH := hashSchemaString(TFE_USER1)
-	TFE_USER2_HASH := hashSchemaString(TFE_USER2)
+	tfeUser1Hash := hashSchemaString(envTFEUser1)
+	tfeUser2Hash := hashSchemaString(envTFEUser2)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			if TFE_USER1 == "" {
+			if envTFEUser1 == "" {
 				t.Skip("Please set TFE_USER1 to run this test")
 			}
-			if TFE_USER2 == "" {
+			if envTFEUser2 == "" {
 				t.Skip("Please set TFE_USER2 to run this test")
 			}
 		},
@@ -72,13 +76,13 @@ func TestAccTFETeamMembers_update(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamMembersExists(
 						"tfe_team_members.foobar", &users),
-					testAccCheckTFETeamMembersAttributes(&users, []string{"admin", TFE_USER1}),
+					testAccCheckTFETeamMembersAttributes(&users, []string{"admin", envTFEUser1}),
 					resource.TestCheckResourceAttr(
 						"tfe_team_members.foobar", "usernames.#", "2"),
 					resource.TestCheckResourceAttr(
 						"tfe_team_members.foobar", "usernames.3672628397", "admin"),
 					resource.TestCheckResourceAttr(
-						"tfe_team_members.foobar", fmt.Sprintf("usernames.%d", TFE_USER1_HASH), TFE_USER1),
+						"tfe_team_members.foobar", fmt.Sprintf("usernames.%d", tfeUser1Hash), envTFEUser1),
 				),
 			},
 
@@ -87,11 +91,11 @@ func TestAccTFETeamMembers_update(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamMembersExists(
 						"tfe_team_members.foobar", &users),
-					testAccCheckTFETeamMembersAttributes(&users, []string{"admin", TFE_USER2}),
+					testAccCheckTFETeamMembersAttributes(&users, []string{"admin", envTFEUser2}),
 					resource.TestCheckResourceAttr(
 						"tfe_team_members.foobar", "usernames.#", "2"),
 					resource.TestCheckResourceAttr(
-						"tfe_team_members.foobar", fmt.Sprintf("usernames.%d", TFE_USER2_HASH), TFE_USER2),
+						"tfe_team_members.foobar", fmt.Sprintf("usernames.%d", tfeUser2Hash), envTFEUser2),
 					resource.TestCheckResourceAttr(
 						"tfe_team_members.foobar", "usernames.3672628397", "admin"),
 				),
@@ -106,7 +110,7 @@ func TestAccTFETeamMembers_import(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			if TFE_USER1 == "" {
+			if envTFEUser1 == "" {
 				t.Skip("Please set TFE_USER1 to run this test")
 			}
 		},
@@ -133,7 +137,7 @@ func hashSchemaString(username string) int {
 func testAccCheckTFETeamMembersExists(
 	n string, users *[]*tfe.User) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -144,8 +148,8 @@ func testAccCheckTFETeamMembersExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		us, err := tfeClient.TeamMembers.List(ctx, rs.Primary.ID)
-		if err != nil && err != tfe.ErrResourceNotFound {
+		us, err := config.Client.TeamMembers.List(ctx, rs.Primary.ID)
+		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 			return err
 		}
 
@@ -181,7 +185,7 @@ func usernamesFromTFEUsers(users []*tfe.User) []string {
 }
 
 func testAccCheckTFETeamMembersDestroy(s *terraform.State) error {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	config := testAccProvider.Meta().(ConfiguredClient)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_team_members" {
@@ -192,8 +196,8 @@ func testAccCheckTFETeamMembersDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		users, err := tfeClient.TeamMembers.List(ctx, rs.Primary.ID)
-		if err != nil && err != tfe.ErrResourceNotFound {
+		users, err := config.Client.TeamMembers.List(ctx, rs.Primary.ID)
+		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 			return err
 		}
 
@@ -220,7 +224,7 @@ resource "tfe_team" "foobar" {
 resource "tfe_team_members" "foobar" {
   team_id   = tfe_team.foobar.id
   usernames = ["%s"]
-}`, rInt, TFE_USER1)
+}`, rInt, envTFEUser1)
 }
 
 func testAccTFETeamMembers_update(rInt int) string {
@@ -238,5 +242,5 @@ resource "tfe_team" "foobar" {
 resource "tfe_team_members" "foobar" {
   team_id   = tfe_team.foobar.id
   usernames = ["%s", "%s"]
-}`, rInt, TFE_USER1, TFE_USER2)
+}`, rInt, envTFEUser1, envTFEUser2)
 }

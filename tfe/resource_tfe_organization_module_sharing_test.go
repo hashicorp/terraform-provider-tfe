@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -10,7 +13,6 @@ import (
 )
 
 func TestAccTFEOrganizationModuleSharing_basic(t *testing.T) {
-	skipIfFreeOnly(t)
 	skipIfCloud(t)
 
 	rInt1 := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -47,7 +49,6 @@ func TestAccTFEOrganizationModuleSharing_basic(t *testing.T) {
 }
 
 func TestAccTFEOrganizationModuleSharing_emptyOrg(t *testing.T) {
-	skipIfFreeOnly(t)
 	skipIfCloud(t)
 
 	rInt1 := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -80,7 +81,6 @@ func TestAccTFEOrganizationModuleSharing_emptyOrg(t *testing.T) {
 }
 
 func TestAccTFEOrganizationModuleSharing_stopSharing(t *testing.T) {
-	skipIfFreeOnly(t)
 	skipIfCloud(t)
 
 	rInt1 := rand.New(rand.NewSource(time.Now().UnixNano())).Int()

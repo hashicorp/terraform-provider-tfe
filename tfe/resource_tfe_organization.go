@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -17,15 +20,15 @@ func resourceTFEOrganization() *schema.Resource {
 		Update: resourceTFEOrganizationUpdate,
 		Delete: resourceTFEOrganizationDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return strings.EqualFold(old, new)
+				DiffSuppressFunc: func(k, old, current string, d *schema.ResourceData) bool {
+					return strings.EqualFold(old, current)
 				},
 			},
 
@@ -73,12 +76,27 @@ func resourceTFEOrganization() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
+
+			"assessments_enforced": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+			"allow_force_delete_workspaces": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
+
+			"default_project_id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 	}
 }
 
 func resourceTFEOrganizationCreate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the organization name.
 	name := d.Get("name").(string)
@@ -90,7 +108,7 @@ func resourceTFEOrganizationCreate(d *schema.ResourceData, meta interface{}) err
 	}
 
 	log.Printf("[DEBUG] Create new organization: %s", name)
-	org, err := tfeClient.Organizations.Create(ctx, options)
+	org, err := config.Client.Organizations.Create(ctx, options)
 	if err != nil {
 		return fmt.Errorf("Error creating the new organization %s: %w", name, err)
 	}
@@ -101,13 +119,13 @@ func resourceTFEOrganizationCreate(d *schema.ResourceData, meta interface{}) err
 }
 
 func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read configuration of organization: %s", d.Id())
-	org, err := tfeClient.Organizations.Read(ctx, d.Id())
+	org, err := config.Client.Organizations.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			log.Printf("[DEBUG] Organization %s does no longer exist", d.Id())
+			log.Printf("[DEBUG] Organization %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}
@@ -123,12 +141,20 @@ func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error
 	d.Set("owners_team_saml_role_id", org.OwnersTeamSAMLRoleID)
 	d.Set("cost_estimation_enabled", org.CostEstimationEnabled)
 	d.Set("send_passing_statuses_for_untriggered_speculative_plans", org.SendPassingStatusesForUntriggeredSpeculativePlans)
+	// TFE (onprem) does not currently have this feature and this value won't be returned in those cases.
+	// org.AssessmentsEnforced will default to false
+	d.Set("assessments_enforced", org.AssessmentsEnforced)
+	d.Set("allow_force_delete_workspaces", org.AllowForceDeleteWorkspaces)
+
+	if org.DefaultProject != nil {
+		d.Set("default_project_id", org.DefaultProject.ID)
+	}
 
 	return nil
 }
 
 func resourceTFEOrganizationUpdate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Create a new options struct.
 	options := tfe.OrganizationUpdateOptions{
@@ -166,8 +192,18 @@ func resourceTFEOrganizationUpdate(d *schema.ResourceData, meta interface{}) err
 		options.SendPassingStatusesForUntriggeredSpeculativePlans = tfe.Bool(sendPassingStatusesForUntriggeredSpeculativePlans.(bool))
 	}
 
+	// If assessments_enforced is supplied, set it using the options struct.
+	if assessmentsEnforced, ok := d.GetOkExists("assessments_enforced"); ok {
+		options.AssessmentsEnforced = tfe.Bool(assessmentsEnforced.(bool))
+	}
+
+	// If allow_force_delete_workspaces is supplied, set it using the options struct.
+	if allowForceDeleteWorkspaces, ok := d.GetOkExists("allow_force_delete_workspaces"); ok {
+		options.AllowForceDeleteWorkspaces = tfe.Bool(allowForceDeleteWorkspaces.(bool))
+	}
+
 	log.Printf("[DEBUG] Update configuration of organization: %s", d.Id())
-	org, err := tfeClient.Organizations.Update(ctx, d.Id(), options)
+	org, err := config.Client.Organizations.Update(ctx, d.Id(), options)
 	if err != nil {
 		return fmt.Errorf("Error updating organization %s: %w", d.Id(), err)
 	}
@@ -178,10 +214,10 @@ func resourceTFEOrganizationUpdate(d *schema.ResourceData, meta interface{}) err
 }
 
 func resourceTFEOrganizationDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete organization: %s", d.Id())
-	err := tfeClient.Organizations.Delete(ctx, d.Id())
+	err := config.Client.Organizations.Delete(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil

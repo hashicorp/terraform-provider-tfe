@@ -1,10 +1,11 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
 	"fmt"
-	"math/rand"
 	"testing"
-	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -12,11 +13,17 @@ import (
 )
 
 func TestAccTFEAgentPool_basic(t *testing.T) {
-	skipIfFreeOnly(t)
 	skipIfEnterprise(t)
 
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
 	agentPool := &tfe.AgentPool{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -24,7 +31,7 @@ func TestAccTFEAgentPool_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFEAgentPoolDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEAgentPool_basic(rInt),
+				Config: testAccTFEAgentPool_basic(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEAgentPoolExists(
 						"tfe_agent_pool.foobar", agentPool),
@@ -38,11 +45,17 @@ func TestAccTFEAgentPool_basic(t *testing.T) {
 }
 
 func TestAccTFEAgentPool_update(t *testing.T) {
-	skipIfFreeOnly(t)
 	skipIfEnterprise(t)
 
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
 	agentPool := &tfe.AgentPool{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -50,7 +63,7 @@ func TestAccTFEAgentPool_update(t *testing.T) {
 		CheckDestroy: testAccCheckTFEAgentPoolDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEAgentPool_basic(rInt),
+				Config: testAccTFEAgentPool_basic(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEAgentPoolExists(
 						"tfe_agent_pool.foobar", agentPool),
@@ -61,7 +74,7 @@ func TestAccTFEAgentPool_update(t *testing.T) {
 			},
 
 			{
-				Config: testAccTFEAgentPool_update(rInt),
+				Config: testAccTFEAgentPool_update(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEAgentPoolExists(
 						"tfe_agent_pool.foobar", agentPool),
@@ -75,10 +88,15 @@ func TestAccTFEAgentPool_update(t *testing.T) {
 }
 
 func TestAccTFEAgentPool_import(t *testing.T) {
-	skipIfFreeOnly(t)
 	skipIfEnterprise(t)
 
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -86,12 +104,17 @@ func TestAccTFEAgentPool_import(t *testing.T) {
 		CheckDestroy: testAccCheckTFEAgentPoolDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEAgentPool_basic(rInt),
+				Config: testAccTFEAgentPool_basic(org.Name),
 			},
-
 			{
 				ResourceName:      "tfe_agent_pool.foobar",
 				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				ResourceName:      "tfe_agent_pool.foobar",
+				ImportState:       true,
+				ImportStateId:     fmt.Sprintf("%s/agent-pool-test", org.Name),
 				ImportStateVerify: true,
 			},
 		},
@@ -101,18 +124,18 @@ func TestAccTFEAgentPool_import(t *testing.T) {
 func testAccCheckTFEAgentPoolExists(
 	n string, agentPool *tfe.AgentPool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
-			return fmt.Errorf("Not found: %s", n)
+			return fmt.Errorf("not found: %s", n)
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("No instance ID is set")
+			return fmt.Errorf("no instance ID is set")
 		}
 
-		sk, err := tfeClient.AgentPools.Read(ctx, rs.Primary.ID)
+		sk, err := config.Client.AgentPools.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -131,7 +154,7 @@ func testAccCheckTFEAgentPoolAttributes(
 	agentPool *tfe.AgentPool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if agentPool.Name != "agent-pool-test" {
-			return fmt.Errorf("Bad name: %s", agentPool.Name)
+			return fmt.Errorf("bad name: %s", agentPool.Name)
 		}
 		return nil
 	}
@@ -141,14 +164,14 @@ func testAccCheckTFEAgentPoolAttributesUpdated(
 	agentPool *tfe.AgentPool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if agentPool.Name != "agent-pool-updated" {
-			return fmt.Errorf("Bad name: %s", agentPool.Name)
+			return fmt.Errorf("bad name: %s", agentPool.Name)
 		}
 		return nil
 	}
 }
 
 func testAccCheckTFEAgentPoolDestroy(s *terraform.State) error {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	config := testAccProvider.Meta().(ConfiguredClient)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_agent_pool" {
@@ -156,10 +179,10 @@ func testAccCheckTFEAgentPoolDestroy(s *terraform.State) error {
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("No instance ID is set")
+			return fmt.Errorf("no instance ID is set")
 		}
 
-		_, err := tfeClient.AgentPools.Read(ctx, rs.Primary.ID)
+		_, err := config.Client.AgentPools.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("agent pool %s still exists", rs.Primary.ID)
 		}
@@ -168,28 +191,18 @@ func testAccCheckTFEAgentPoolDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccTFEAgentPool_basic(rInt int) string {
+func testAccTFEAgentPool_basic(organization string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
 resource "tfe_agent_pool" "foobar" {
   name         = "agent-pool-test"
-  organization = tfe_organization.foobar.id
-}`, rInt)
+  organization = "%s"
+}`, organization)
 }
 
-func testAccTFEAgentPool_update(rInt int) string {
+func testAccTFEAgentPool_update(organization string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
 resource "tfe_agent_pool" "foobar" {
   name         = "agent-pool-updated"
-  organization = tfe_organization.foobar.id
-}`, rInt)
+  organization = "%s"
+}`, organization)
 }

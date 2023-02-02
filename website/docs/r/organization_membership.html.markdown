@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_organization_membership"
-sidebar_current: "docs-resource-tfe-organization-membership"
 description: |-
   Add or remove a user from an organization.
 ---
@@ -33,7 +32,7 @@ resource "tfe_organization_membership" "test" {
 
 The following arguments are supported:
 
-* `organization` - (Required) Name of the organization.
+* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `email` - (Required) Email of the user to add.
 
 ## Attributes Reference
@@ -42,6 +41,7 @@ In addition to all arguments above, the following attributes are exported:
 
 * `id` - The organization membership ID.
 * `user_id` - The ID of the user associated with the organization membership.
+* `username` - The username of the user associated with the organization membership.
 
 Organization memberships can be imported; use `<ORGANIZATION MEMBERSHIP ID>` as the import ID. For
 example:

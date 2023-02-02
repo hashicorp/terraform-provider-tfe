@@ -1,6 +1,11 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log"
 
@@ -14,7 +19,7 @@ func resourceTFETeamToken() *schema.Resource {
 		Read:   resourceTFETeamTokenRead,
 		Delete: resourceTFETeamTokenDelete,
 		Importer: &schema.ResourceImporter{
-			State: resourceTFETeamTokenImporter,
+			StateContext: resourceTFETeamTokenImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -40,30 +45,30 @@ func resourceTFETeamToken() *schema.Resource {
 }
 
 func resourceTFETeamTokenCreate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the team ID.
 	teamID := d.Get("team_id").(string)
 
 	log.Printf("[DEBUG] Check if a token already exists for team: %s", teamID)
-	_, err := tfeClient.TeamTokens.Read(ctx, teamID)
-	if err != nil && err != tfe.ErrResourceNotFound {
-		return fmt.Errorf("Error checking if a token exists for team %s: %w", teamID, err)
+	_, err := config.Client.TeamTokens.Read(ctx, teamID)
+	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+		return fmt.Errorf("error checking if a token exists for team %s: %w", teamID, err)
 	}
 
 	// If error is nil, the token already exists.
 	if err == nil {
 		if !d.Get("force_regenerate").(bool) {
-			return fmt.Errorf("A token already exists for team: %s", teamID)
+			return fmt.Errorf("a token already exists for team: %s", teamID)
 		}
 		log.Printf("[DEBUG] Regenerating existing token for team: %s", teamID)
 	}
 
 	log.Printf("[DEBUG] Create new token for team: %s", teamID)
-	token, err := tfeClient.TeamTokens.Create(ctx, teamID)
+	token, err := config.Client.TeamTokens.Create(ctx, teamID)
 	if err != nil {
 		return fmt.Errorf(
-			"Error creating new token for team %s: %w", teamID, err)
+			"error creating new token for team %s: %w", teamID, err)
 	}
 
 	d.SetId(teamID)
@@ -76,38 +81,38 @@ func resourceTFETeamTokenCreate(d *schema.ResourceData, meta interface{}) error 
 }
 
 func resourceTFETeamTokenRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read the token from team: %s", d.Id())
-	_, err := tfeClient.TeamTokens.Read(ctx, d.Id())
+	_, err := config.Client.TeamTokens.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			log.Printf("[DEBUG] Token for team %s does no longer exist", d.Id())
+			log.Printf("[DEBUG] Token for team %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading token from team %s: %w", d.Id(), err)
+		return fmt.Errorf("error reading token from team %s: %w", d.Id(), err)
 	}
 
 	return nil
 }
 
 func resourceTFETeamTokenDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete token from team: %s", d.Id())
-	err := tfeClient.TeamTokens.Delete(ctx, d.Id())
+	err := config.Client.TeamTokens.Delete(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil
 		}
-		return fmt.Errorf("Error deleting token from team %s: %w", d.Id(), err)
+		return fmt.Errorf("error deleting token from team %s: %w", d.Id(), err)
 	}
 
 	return nil
 }
 
-func resourceTFETeamTokenImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceTFETeamTokenImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	// Set the team ID field.
 	d.Set("team_id", d.Id())
 

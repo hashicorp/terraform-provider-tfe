@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_slug"
-sidebar_current: "docs-datasource-tfe-slug"
 description: |-
   Manages files.
 ---

@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_team"
-sidebar_current: "docs-resource-tfe-team-x"
 description: |-
   Manages teams.
 ---
@@ -38,10 +37,10 @@ resource "tfe_team" "test" {
 The following arguments are supported:
 
 * `name` - (Required) Name of the team.
-* `organization` - (Required) Name of the organization.
+* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `visibility` - (Optional) The visibility of the team ("secret" or "organization"). Defaults to "secret".
-* `organization_access` - (Optional) Settings for the team's [organization access](https://www.terraform.io/docs/cloud/users-teams-organizations/permissions.html#organization-level-permissions).
-* `sso_team_id` - (Optional) Unique Identifier to control [team membership](https://www.terraform.io/cloud-docs/users-teams-organizations/single-sign-on#team-names-and-sso-team-ids) via SAML. Defaults to `null`
+* `organization_access` - (Optional) Settings for the team's [organization access](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/permissions#organization-permissions).
+* `sso_team_id` - (Optional) Unique Identifier to control [team membership](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/single-sign-on#team-names-and-sso-team-ids) via SAML. Defaults to `null`
 
 The `organization_access` block supports:
 
@@ -52,6 +51,7 @@ The `organization_access` block supports:
 * `manage_providers` - (Optional) Allow members to publish and delete providers in the organization's private registry.
 * `manage_modules` - (Optional) Allow members to publish and delete modules in the organization's private registry.
 * `manage_run_tasks` - (Optional) Allow members to create, edit, and delete the organization's run tasks.
+* `manage_projects` - (Optional) Allow members to create and administrate all projects within the organization.
 
 ## Attributes Reference
 
@@ -59,9 +59,13 @@ The `organization_access` block supports:
 
 ## Import
 
-Teams can be imported; use `<ORGANIZATION NAME>/<TEAM ID>` as the import ID. For
+Teams can be imported; use `<ORGANIZATION NAME>/<TEAM ID>` or `<ORGANIZATION NAME>/<TEAM NAME>` as the import ID. For
 example:
 
 ```shell
 terraform import tfe_team.test my-org-name/team-uomQZysH9ou42ZYY
+```
+or
+```shell
+terraform import tfe_team.test my-org-name/my-team-name
 ```

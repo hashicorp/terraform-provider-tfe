@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_sentinel_policy"
-sidebar_current: "docs-resource-tfe-sentinel-policy"
 description: |-
   Manages Sentinel policies.
 ---
@@ -15,7 +14,7 @@ Policies are configured on a per-organization level and are organized and
 grouped into policy sets, which define the workspaces on which policies are
 enforced during runs.
 
-~> **NOTE:** Managing policies and policy sets individually is [a deprecated feature in Terraform Cloud](https://www.terraform.io/docs/cloud/sentinel/manage-policies.html#policies-and-policy-sets), and we recommend always using versioned policy sets to manage policies.
+~> **NOTE:** Managing policies and policy sets individually is [a deprecated feature in Terraform Cloud](https://developer.hashicorp.com/terraform/cloud-docs/policy-enforcement/manage-policy-sets), and we recommend always using versioned policy sets to manage policies.
 
 ## Example Usage
 
@@ -37,9 +36,9 @@ The following arguments are supported:
 
 * `name` - (Required) Name of the policy.
 * `description` - (Optional) A description of the policy's purpose.
-* `organization` - (Required) Name of the organization.
+* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `policy` - (Required) The actual policy itself.
-* `enforce_mode` - (Required) The enforcement level of the policy. Valid
+* `enforce_mode` - (Optional) The enforcement level of the policy. Valid
   values are `advisory`, `hard-mandatory` and `soft-mandatory`. Defaults
   to `soft-mandatory`.
 

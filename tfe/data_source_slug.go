@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -45,7 +48,7 @@ func hashPolicies(path string) (string, error) {
 		return "", err
 	}
 	if !file.Mode().IsDir() {
-		return "", fmt.Errorf("The path is not a directory")
+		return "", fmt.Errorf("the path is not a directory")
 	}
 
 	_, err = slug.Pack(path, body, true)

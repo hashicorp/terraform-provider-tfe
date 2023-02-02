@@ -1,6 +1,10 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -12,12 +16,13 @@ import (
 
 func resourceTFESentinelPolicy() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceTFESentinelPolicyCreate,
-		Read:   resourceTFESentinelPolicyRead,
-		Update: resourceTFESentinelPolicyUpdate,
-		Delete: resourceTFESentinelPolicyDelete,
+		DeprecationMessage: "tfe_sentinel_policy is deprecated, please use tfe_policy instead",
+		Create:             resourceTFESentinelPolicyCreate,
+		Read:               resourceTFESentinelPolicyRead,
+		Update:             resourceTFESentinelPolicyUpdate,
+		Delete:             resourceTFESentinelPolicyDelete,
 		Importer: &schema.ResourceImporter{
-			State: resourceTFESentinelPolicyImporter,
+			StateContext: resourceTFESentinelPolicyImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -35,7 +40,8 @@ func resourceTFESentinelPolicy() *schema.Resource {
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Computed: true,
 				ForceNew: true,
 			},
 
@@ -62,11 +68,14 @@ func resourceTFESentinelPolicy() *schema.Resource {
 }
 
 func resourceTFESentinelPolicyCreate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the name and organization.
 	name := d.Get("name").(string)
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	// Create a new options struct.
 	options := tfe.PolicyCreateOptions{
@@ -84,7 +93,7 @@ func resourceTFESentinelPolicyCreate(d *schema.ResourceData, meta interface{}) e
 	}
 
 	log.Printf("[DEBUG] Create sentinel policy %s for organization: %s", name, organization)
-	policy, err := tfeClient.Policies.Create(ctx, organization, options)
+	policy, err := config.Client.Policies.Create(ctx, organization, options)
 	if err != nil {
 		return fmt.Errorf(
 			"Error creating sentinel policy %s for organization %s: %w", name, organization, err)
@@ -93,7 +102,7 @@ func resourceTFESentinelPolicyCreate(d *schema.ResourceData, meta interface{}) e
 	d.SetId(policy.ID)
 
 	log.Printf("[DEBUG] Upload sentinel policy %s for organization: %s", name, organization)
-	err = tfeClient.Policies.Upload(ctx, policy.ID, []byte(d.Get("policy").(string)))
+	err = config.Client.Policies.Upload(ctx, policy.ID, []byte(d.Get("policy").(string)))
 	if err != nil {
 		return fmt.Errorf(
 			"Error uploading sentinel policy %s for organization %s: %w", name, organization, err)
@@ -103,13 +112,13 @@ func resourceTFESentinelPolicyCreate(d *schema.ResourceData, meta interface{}) e
 }
 
 func resourceTFESentinelPolicyRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read sentinel policy: %s", d.Id())
-	policy, err := tfeClient.Policies.Read(ctx, d.Id())
+	policy, err := config.Client.Policies.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			log.Printf("[DEBUG] Sentinel policy %s does no longer exist", d.Id())
+			log.Printf("[DEBUG] Sentinel policy %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}
@@ -124,7 +133,7 @@ func resourceTFESentinelPolicyRead(d *schema.ResourceData, meta interface{}) err
 		d.Set("enforce_mode", string(policy.Enforce[0].Mode))
 	}
 
-	content, err := tfeClient.Policies.Download(ctx, policy.ID)
+	content, err := config.Client.Policies.Download(ctx, policy.ID)
 	if err != nil {
 		return fmt.Errorf("Error downloading sentinel policy %s: %w", d.Id(), err)
 	}
@@ -134,7 +143,7 @@ func resourceTFESentinelPolicyRead(d *schema.ResourceData, meta interface{}) err
 }
 
 func resourceTFESentinelPolicyUpdate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	if d.HasChange("description") || d.HasChange("enforce_mode") {
 		// Create a new options struct.
@@ -154,7 +163,7 @@ func resourceTFESentinelPolicyUpdate(d *schema.ResourceData, meta interface{}) e
 		}
 
 		log.Printf("[DEBUG] Update configuration for sentinel policy: %s", d.Id())
-		_, err := tfeClient.Policies.Update(ctx, d.Id(), options)
+		_, err := config.Client.Policies.Update(ctx, d.Id(), options)
 		if err != nil {
 			return fmt.Errorf(
 				"Error updating configuration for sentinel policy %s: %w", d.Id(), err)
@@ -163,7 +172,7 @@ func resourceTFESentinelPolicyUpdate(d *schema.ResourceData, meta interface{}) e
 
 	if d.HasChange("policy") {
 		log.Printf("[DEBUG] Update sentinel policy: %s", d.Id())
-		err := tfeClient.Policies.Upload(ctx, d.Id(), []byte(d.Get("policy").(string)))
+		err := config.Client.Policies.Upload(ctx, d.Id(), []byte(d.Get("policy").(string)))
 		if err != nil {
 			return fmt.Errorf("Error updating sentinel policy %s: %w", d.Id(), err)
 		}
@@ -173,10 +182,10 @@ func resourceTFESentinelPolicyUpdate(d *schema.ResourceData, meta interface{}) e
 }
 
 func resourceTFESentinelPolicyDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete sentinel policy: %s", d.Id())
-	err := tfeClient.Policies.Delete(ctx, d.Id())
+	err := config.Client.Policies.Delete(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil
@@ -187,7 +196,7 @@ func resourceTFESentinelPolicyDelete(d *schema.ResourceData, meta interface{}) e
 	return nil
 }
 
-func resourceTFESentinelPolicyImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceTFESentinelPolicyImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	s := strings.SplitN(d.Id(), "/", 2)
 	if len(s) != 2 {
 		return nil, fmt.Errorf(

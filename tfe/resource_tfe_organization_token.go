@@ -1,6 +1,11 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log"
 
@@ -14,13 +19,14 @@ func resourceTFEOrganizationToken() *schema.Resource {
 		Read:   resourceTFEOrganizationTokenRead,
 		Delete: resourceTFEOrganizationTokenDelete,
 		Importer: &schema.ResourceImporter{
-			State: resourceTFEOrganizationTokenImporter,
+			StateContext: resourceTFEOrganizationTokenImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Computed: true,
 				ForceNew: true,
 			},
 
@@ -40,29 +46,32 @@ func resourceTFEOrganizationToken() *schema.Resource {
 }
 
 func resourceTFEOrganizationTokenCreate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the organization name.
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	log.Printf("[DEBUG] Check if a token already exists for organization: %s", organization)
-	_, err := tfeClient.OrganizationTokens.Read(ctx, organization)
-	if err != nil && err != tfe.ErrResourceNotFound {
-		return fmt.Errorf("Error checking if a token exists for organization %s: %w", organization, err)
+	_, err = config.Client.OrganizationTokens.Read(ctx, organization)
+	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+		return fmt.Errorf("error checking if a token exists for organization %s: %w", organization, err)
 	}
 
 	// If error is nil, the token already exists.
 	if err == nil {
 		if !d.Get("force_regenerate").(bool) {
-			return fmt.Errorf("A token already exists for organization: %s", organization)
+			return fmt.Errorf("a token already exists for organization: %s", organization)
 		}
 		log.Printf("[DEBUG] Regenerating existing token for organization: %s", organization)
 	}
 
-	token, err := tfeClient.OrganizationTokens.Create(ctx, organization)
+	token, err := config.Client.OrganizationTokens.Create(ctx, organization)
 	if err != nil {
 		return fmt.Errorf(
-			"Error creating new token for organization %s: %w", organization, err)
+			"error creating new token for organization %s: %w", organization, err)
 	}
 
 	d.SetId(organization)
@@ -75,41 +84,44 @@ func resourceTFEOrganizationTokenCreate(d *schema.ResourceData, meta interface{}
 }
 
 func resourceTFEOrganizationTokenRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read the token from organization: %s", d.Id())
-	_, err := tfeClient.OrganizationTokens.Read(ctx, d.Id())
+	_, err := config.Client.OrganizationTokens.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			log.Printf("[DEBUG] Token for organization %s does no longer exist", d.Id())
+			log.Printf("[DEBUG] Token for organization %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading token from organization %s: %w", d.Id(), err)
+		return fmt.Errorf("error reading token from organization %s: %w", d.Id(), err)
 	}
 
 	return nil
 }
 
 func resourceTFEOrganizationTokenDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the organization name.
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	log.Printf("[DEBUG] Delete token from organization: %s", organization)
-	err := tfeClient.OrganizationTokens.Delete(ctx, organization)
+	err = config.Client.OrganizationTokens.Delete(ctx, organization)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil
 		}
-		return fmt.Errorf("Error deleting token from organization %s: %w", d.Id(), err)
+		return fmt.Errorf("error deleting token from organization %s: %w", d.Id(), err)
 	}
 
 	return nil
 }
 
-func resourceTFEOrganizationTokenImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceTFEOrganizationTokenImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	// Set the organization field.
 	d.Set("organization", d.Id())
 

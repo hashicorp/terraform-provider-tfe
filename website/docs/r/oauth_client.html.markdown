@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_oauth_client"
-sidebar_current: "docs-resource-tfe-oauth-client"
 description: |-
   Manages OAuth clients.
 ---
@@ -30,7 +29,7 @@ resource "tfe_oauth_client" "test" {
 
 #### Azure DevOps Server Usage
 
-See [documentation for TFC/E setup](https://www.terraform.io/docs/cloud/vcs/azure-devops-server.html).
+See [documentation for TFC/E setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/azure-devops-server).
 
 **Note:** This resource requires a private key when creating Azure DevOps Server OAuth clients.
 
@@ -48,7 +47,7 @@ resource "tfe_oauth_client" "test" {
 
 #### BitBucket Server Usage
 
-See [documentation for TFC/E setup](https://www.terraform.io/docs/cloud/vcs/bitbucket-server.html).
+See [documentation for TFC/E setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/bitbucket-server).
 
 When using BitBucket Server, you must use three required fields: `key`, `secret`, `rsa_public_key`.
 
@@ -71,12 +70,12 @@ resource "tfe_oauth_client" "test" {
 The following arguments are supported:
 
 * `name` - (Optional) Display name for the OAuth Client. Defaults to the `service_provider` if not supplied.
-* `organization` - (Required) Name of the Terraform organization.
+* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `api_url` - (Required) The base URL of your VCS provider's API (e.g.
   `https://api.github.com` or `https://ghe.example.com/api/v3`).
 * `http_url` - (Required) The homepage of your VCS provider (e.g.
   `https://github.com` or `https://ghe.example.com`).
-* `oauth_token` - The token string you were given by your VCS provider, e.g. `ghp_xxxxxxxxxxxxxxx` for a GitHub personal access token. For more information on how to generate this token string for your VCS provider, see the [Create an OAuth Client](https://www.terraform.io/docs/cloud/api/oauth-clients.html#create-an-oauth-client) documentation.
+* `oauth_token` - The token string you were given by your VCS provider, e.g. `ghp_xxxxxxxxxxxxxxx` for a GitHub personal access token. For more information on how to generate this token string for your VCS provider, see the [Create an OAuth Client](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/oauth-clients#create-an-oauth-client) documentation.
 * `private_key` - (Required for `ado_server`) The text of the private key associated with your Azure DevOps Server account
 * `key` - The OAuth Client key can refer to a Consumer Key, Application Key,
   or another type of client key for the VCS provider.

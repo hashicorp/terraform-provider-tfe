@@ -1,6 +1,10 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -17,7 +21,7 @@ func resourceTFEOrganizationRunTask() *schema.Resource {
 		Delete: resourceTFEOrganizationRunTaskDelete,
 		Update: resourceTFEOrganizationRunTaskUpdate,
 		Importer: &schema.ResourceImporter{
-			State: resourceTFEOrganizationRunTaskImporter,
+			StateContext: resourceTFEOrganizationRunTaskImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -28,7 +32,8 @@ func resourceTFEOrganizationRunTask() *schema.Resource {
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Computed: true,
 				ForceNew: true,
 			},
 
@@ -56,28 +61,37 @@ func resourceTFEOrganizationRunTask() *schema.Resource {
 				Default:  true,
 				Optional: true,
 			},
+
+			"description": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
 
 func resourceTFEOrganizationRunTaskCreate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the task name and organization.
 	name := d.Get("name").(string)
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	// Create a new options struct.
 	options := tfe.RunTaskCreateOptions{
-		Name:     name,
-		URL:      d.Get("url").(string),
-		Category: d.Get("category").(string),
-		HMACKey:  tfe.String(d.Get("hmac_key").(string)),
-		Enabled:  tfe.Bool(d.Get("enabled").(bool)),
+		Name:        name,
+		URL:         d.Get("url").(string),
+		Category:    d.Get("category").(string),
+		HMACKey:     tfe.String(d.Get("hmac_key").(string)),
+		Enabled:     tfe.Bool(d.Get("enabled").(bool)),
+		Description: tfe.String(d.Get("description").(string)),
 	}
 
 	log.Printf("[DEBUG] Create task %s for organization: %s", name, organization)
-	task, err := tfeClient.RunTasks.Create(ctx, organization, options)
+	task, err := config.Client.RunTasks.Create(ctx, organization, options)
 	if err != nil {
 		return fmt.Errorf(
 			"Error creating task %s for organization %s: %w", name, organization, err)
@@ -89,10 +103,10 @@ func resourceTFEOrganizationRunTaskCreate(d *schema.ResourceData, meta interface
 }
 
 func resourceTFEOrganizationRunTaskDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	client := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete task: %s", d.Id())
-	err := tfeClient.RunTasks.Delete(ctx, d.Id())
+	err := client.Client.RunTasks.Delete(ctx, d.Id())
 	if err != nil {
 		if isErrResourceNotFound(err) {
 			return nil
@@ -104,7 +118,7 @@ func resourceTFEOrganizationRunTaskDelete(d *schema.ResourceData, meta interface
 }
 
 func resourceTFEOrganizationRunTaskUpdate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	client := meta.(ConfiguredClient)
 
 	// Setup the options struct
 	options := tfe.RunTaskUpdateOptions{}
@@ -123,9 +137,12 @@ func resourceTFEOrganizationRunTaskUpdate(d *schema.ResourceData, meta interface
 	if d.HasChange("hmac_key") {
 		options.HMACKey = tfe.String(d.Get("hmac_key").(string))
 	}
+	if d.HasChange("description") {
+		options.Description = tfe.String(d.Get("description").(string))
+	}
 
 	log.Printf("[DEBUG] Update configuration of task: %s", d.Id())
-	task, err := tfeClient.RunTasks.Update(ctx, d.Id(), options)
+	task, err := client.Client.RunTasks.Update(ctx, d.Id(), options)
 	if err != nil {
 		return fmt.Errorf("Error updating task %s: %w", d.Id(), err)
 	}
@@ -136,10 +153,10 @@ func resourceTFEOrganizationRunTaskUpdate(d *schema.ResourceData, meta interface
 }
 
 func resourceTFEOrganizationRunTaskRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	client := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read configuration of task: %s", d.Id())
-	task, err := tfeClient.RunTasks.Read(ctx, d.Id())
+	task, err := client.Client.RunTasks.Read(ctx, d.Id())
 
 	if err != nil {
 		if isErrResourceNotFound(err) {
@@ -158,12 +175,12 @@ func resourceTFEOrganizationRunTaskRead(d *schema.ResourceData, meta interface{}
 	// The HMAC Key is always empty from the API so all we can do is
 	// echo the request's key to the response
 	d.Set("hmac_key", tfe.String(d.Get("hmac_key").(string)))
-
+	d.Set("description", task.Description)
 	return nil
 }
 
-func resourceTFEOrganizationRunTaskImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	tfeClient := meta.(*tfe.Client)
+func resourceTFEOrganizationRunTaskImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	client := meta.(ConfiguredClient)
 
 	s := strings.Split(d.Id(), "/")
 	if len(s) != 2 {
@@ -173,7 +190,7 @@ func resourceTFEOrganizationRunTaskImporter(d *schema.ResourceData, meta interfa
 		)
 	}
 
-	task, err := fetchOrganizationRunTask(s[1], s[0], tfeClient)
+	task, err := fetchOrganizationRunTask(s[1], s[0], client.Client)
 	if err != nil {
 		return nil, err
 	}

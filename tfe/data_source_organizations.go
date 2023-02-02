@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -34,16 +37,16 @@ func dataSourceTFEOrganizations() *schema.Resource {
 }
 
 func dataSourceTFEOrganizationList(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	var names []string
 	var ids map[string]string
 	var err error
 
 	if isAdmin(d) {
-		names, ids, err = adminOrgsPopulateFields(tfeClient)
+		names, ids, err = adminOrgsPopulateFields(config.Client)
 	} else {
-		names, ids, err = orgsPopulateFields(tfeClient)
+		names, ids, err = orgsPopulateFields(config.Client)
 	}
 
 	if err != nil {

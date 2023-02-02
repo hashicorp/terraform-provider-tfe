@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -11,16 +14,19 @@ import (
 
 func resourceTFEOrganizationModuleSharing() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceTFEOrganizationModuleSharingCreate,
-		Read:   resourceTFEOrganizationModuleSharingRead,
-		Update: resourceTFEOrganizationModuleSharingUpdate,
-		Delete: resourceTFEOrganizationModuleSharingDelete,
+		DeprecationMessage: "the tfe_organization_module_sharing resource is deprecated, please use tfe_admin_organization_settings instead",
+		Create:             resourceTFEOrganizationModuleSharingCreate,
+		Read:               resourceTFEOrganizationModuleSharingRead,
+		Update:             resourceTFEOrganizationModuleSharingUpdate,
+		Delete:             resourceTFEOrganizationModuleSharingDelete,
 		Schema: map[string]*schema.Schema{
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return strings.EqualFold(old, new)
+				Optional: true,
+				Computed: true,
+				ForceNew: true,
+				DiffSuppressFunc: func(k, old, current string, d *schema.ResourceData) bool {
+					return strings.EqualFold(old, current)
 				},
 			},
 
@@ -35,7 +41,12 @@ func resourceTFEOrganizationModuleSharing() *schema.Resource {
 
 func resourceTFEOrganizationModuleSharingCreate(d *schema.ResourceData, meta interface{}) error {
 	// Get the organization name that will share "produce" modules
-	producer := d.Get("organization").(string)
+	config := meta.(ConfiguredClient)
+
+	producer, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	log.Printf("[DEBUG] Create %s module consumers", producer)
 	d.SetId(producer)
@@ -44,7 +55,7 @@ func resourceTFEOrganizationModuleSharingCreate(d *schema.ResourceData, meta int
 }
 
 func resourceTFEOrganizationModuleSharingUpdate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	var consumers []string
 	for _, name := range d.Get("module_consumers").([]interface{}) {
@@ -56,7 +67,7 @@ func resourceTFEOrganizationModuleSharingUpdate(d *schema.ResourceData, meta int
 	}
 
 	log.Printf("[DEBUG] Update %s module consumers", d.Id())
-	err := tfeClient.Admin.Organizations.UpdateModuleConsumers(ctx, d.Id(), consumers)
+	err := config.Client.Admin.Organizations.UpdateModuleConsumers(ctx, d.Id(), consumers)
 	if err != nil {
 		return fmt.Errorf("error updating module consumers to %s: %w", d.Id(), err)
 	}
@@ -65,13 +76,13 @@ func resourceTFEOrganizationModuleSharingUpdate(d *schema.ResourceData, meta int
 }
 
 func resourceTFEOrganizationModuleSharingRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	options := &tfe.AdminOrganizationListModuleConsumersOptions{}
 
 	log.Printf("[DEBUG] Read configuration of module sharing for organization: %s", d.Id())
 	for {
-		consumerList, err := tfeClient.Admin.Organizations.ListModuleConsumers(ctx, d.Id(), options)
+		consumerList, err := config.Client.Admin.Organizations.ListModuleConsumers(ctx, d.Id(), options)
 		if err != nil {
 			if err == tfe.ErrResourceNotFound {
 				log.Printf("[DEBUG] Organization %s does not longer exist", d.Id())
@@ -92,10 +103,10 @@ func resourceTFEOrganizationModuleSharingRead(d *schema.ResourceData, meta inter
 }
 
 func resourceTFEOrganizationModuleSharingDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Disable module sharing for organization: %s", d.Id())
-	err := tfeClient.Admin.Organizations.UpdateModuleConsumers(ctx, d.Id(), []string{})
+	err := config.Client.Admin.Organizations.UpdateModuleConsumers(ctx, d.Id(), []string{})
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil

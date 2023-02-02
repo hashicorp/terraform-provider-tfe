@@ -1,8 +1,140 @@
-## 0.33.0 (Unreleased)
+## Unreleased
+
+FEATURES:
+* r/workspace, d/workspace: Add `source_name` and `source_url` to workspaces ([#527](https://github.com/hashicorp/terraform-provider-tfe/pull/527))
+
+ENHANCEMENTS:
+
+BUG FIXES:
+
+## v0.42.0 (January 31, 2023)
+
+FEATURES:
+* **New Provider Config**: `organization` (or the `TFE_ORGANIZATION` environment variable) defines a default organization for all resources, making all resource-specific organization arguments optional, by @brandonc ([#762](https://github.com/hashicorp/terraform-provider-tfe/pull/762))
+* **New Resource**: `r/tfe_team_project_access` manages team project permissions, by @mwudka ([#768](https://github.com/hashicorp/terraform-provider-tfe/pull/768))
+* **New Data Source**: `d/tfe_team_project_access` reads existing team project permissions, by @mwudka ([#768](https://github.com/hashicorp/terraform-provider-tfe/pull/768))
+* `r/tfe_team`: Add attribute `manage_projects` to `tfe_team`, by @mwudka ([#768](https://github.com/hashicorp/terraform-provider-tfe/pull/768))
+* `r/tfe_team`: Teams can now be imported using `<ORGANIZATION NAME>/<TEAM NAME>`, by @JarrettSpiker ([#745](https://github.com/hashicorp/terraform-provider-tfe/pull/745))
+* `r/tfe_team_organization_member`: Team Organization Memberships can now be imported using `<ORGANIZATION NAME>/<USER EMAIL>/<TEAM NAME>`, by @JarrettSpiker ([#745](https://github.com/hashicorp/terraform-provider-tfe/pull/745))
+
+ENHANCEMENTS:
+* Update API doc links from terraform.io to developer.hashicorp domain by @uk1288 [#764](https://github.com/hashicorp/terraform-provider-tfe/pull/764)
+* Update website docs to depict the use of set with `tfe_team_organization_members` and `tfe_team_members` by @uk1288 [#767](https://github.com/hashicorp/terraform-provider-tfe/pull/767)
+* `d/tfe_workspace`: Add `execution_mode` field to workspace datasource @Uk1288 ([#772](https://github.com/hashicorp/terraform-provider-tfe/pull/772))
+
+BUG FIXES:
+* `r/tfe_workspace`: Return all workspace safe deletion errors by @skeggse ([#758](https://github.com/hashicorp/terraform-provider-tfe/pull/758))
+
+## v0.41.0 (January 4, 2023)
+
+BUG FIXES:
+* d/tfe_workspace_ids: When no wildcards were used in the names argument a substring match was being performed anyway @brandonc ([#752](https://github.com/hashicorp/terraform-provider-tfe/pull/752))
+
+FEATURES:
+* r/tfe_workspace: Add attribute `resource_count` to `tfe_workspace` by @rhughes1 ([#682](https://github.com/hashicorp/terraform-provider-tfe/pull/682))
+* d/tfe_outputs: Add `nonsensitive_values` attribute to expose current non-sensitive outputs of a given workspace @Uk1288 ([#711](https://github.com/hashicorp/terraform-provider-tfe/pull/711))
+* r/tfe_workspace: Adds validation to tag_names argument to ensure tags are lowercase and don't contain invalid characters @brandonc ([#743](https://github.com/hashicorp/terraform-provider-tfe/pull/743))
+
+## v0.40.0 (December 6, 2022)
+
+DEPRECATIONS:
+* r/tfe_sentinel_policy is deprecated in favor of the new resource `tfe_policy`, which supports both Sentinel and OPA policies
+* r/tfe_organization_module_sharing is deprecated in favor of the new resource `tfe_admin_organization_settings`, which supports the global module sharing option
+
+FEATURES:
+* **New Resource**: `tfe_admin_organization_settings` ([#709](https://github.com/hashicorp/terraform-provider-tfe/pull/709)) adds the ability for Terraform Enterprise admins to configure settings for an organization, including module consumers and global module sharing config.
+* **New Resource**: `tfe_policy` is a new resource that supports both Sentinel as well as OPA policies. `tfe_sentinel_policy` now includes a deprecation warning. ([#690](https://github.com/hashicorp/terraform-provider-tfe/pull/690))
+* **New Resource**: `tfe_project` allows managing projects, which is an upcoming feature of Terraform Cloud and may not yet be generally available. ([#704](https://github.com/hashicorp/terraform-provider-tfe/pull/704))
+* d/tfe_workspace_ids: Add support for filtering workspace names with partial matching using `*` ([#698](https://github.com/hashicorp/terraform-provider-tfe/pull/698))
+* r/tfe_workspace: Add preemptive check for resources under management when `force_delete` attribute is false ([#699](https://github.com/hashicorp/terraform-provider-tfe/pull/699))
+* r/tfe_policy_set: Add OPA support for policy sets. ([#691](https://github.com/hashicorp/terraform-provider-tfe/pull/691))
+* d/tfe_policy_set: Add optional `kind` and `overridable` fields for OPA policy sets ([#691](https://github.com/hashicorp/terraform-provider-tfe/pull/691))
+* r/tfe_policy: enforce_mode is no longer a required property ([#705](https://github.com/hashicorp/terraform-provider-tfe/pull/705))
+* d/tfe_organization: Add computed `default_project_id` field to support projects ([#704](https://github.com/hashicorp/terraform-provider-tfe/pull/704))
+* r/tfe_workspace: Add optional `project_id` argument to support projects ([#704](https://github.com/hashicorp/terraform-provider-tfe/pull/704))
+* d/tfe_workspace: Add optional `project_id` argument to support projects ([#704](https://github.com/hashicorp/terraform-provider-tfe/pull/704))
+
+## v0.39.0 (November 18, 2022)
+
+FEATURES:
+* r/tfe_workspace_run_task: Removed beta notices on the `stage` attribute for workspace run tasks. ([#669](https://github.com/hashicorp/terraform-provider-tfe/pull/669))
+* r/registry_module: Adds `no_code` field. ([#673](https://github.com/hashicorp/terraform-provider-tfe/pull/673))
+* r/tfe_organization: Add `allow_force_delete_workspaces` attribute to set whether admins are permitted to delete workspaces with resource under management. ([#661](https://github.com/hashicorp/terraform-provider-tfe/pull/661))
+* r/tfe_workspace: Add `force_delete` attribute to set whether workspaces will be force deleted when removed through the provider. Otherwise, they will be safe deleted. ([#675](https://github.com/hashicorp/terraform-provider-tfe/pull/675))
+* r/tfe_notification_configuration: Add assessment triggers to notifications ([#676](https://github.com/hashicorp/terraform-provider-tfe/pull/676))
+
+## v0.38.0 (October 24, 2022)
+
+FEATURES:
+* d/tfe_oauth_client: Adds `name`, `service_provider`, `service_provider_display_name`, `organization`, `callback_url`, and `created_at` fields, and enables searching for an OAuth client with `organization`, `name`, and `service_provider`. ([#599](https://github.com/hashicorp/terraform-provider-tfe/pull/599))
+* d/tfe_organization_members: Add datasource for organization_members that returns a list of active members and members with pending invite in an organization. ([#635](https://github.com/hashicorp/terraform-provider-tfe/pull/635))
+* d/tfe_organization_membership: Add new argument `username` to enable fetching an organization membership by username. ([#660](https://github.com/hashicorp/terraform-provider-tfe/pull/660))
+* r/tfe_organization_membership: Add new computed attribute `username`. ([#660](https://github.com/hashicorp/terraform-provider-tfe/pull/660))
+* r/tfe_team_organization_members: Add resource for managing team members via organization membership IDs ([#617](https://github.com/hashicorp/terraform-provider-tfe/pull/617))
+
+BUG FIXES:
+* r/tfe_workspace: When assessments_enabled was the only change in to the resource the workspace was not being updated ([#641](https://github.com/hashicorp/terraform-provider-tfe/pull/641))
+
+NOTES:
+* The provider is now using go 1.18. ([#643](https://github.com/hashicorp/terraform-provider-tfe/pull/643), [#646](https://github.com/hashicorp/terraform-provider-tfe/pull/646))
+
+## v0.37.0 (September 28, 2022)
+
+FEATURES:
+* r/tfe_workspace: Changes in `agent_pool_id` and `execution_mode` attributes are now detected and applied. ([#607](https://github.com/hashicorp/terraform-provider-tfe/pull/607))
+* r/tfe_workspace_run_task, d/tfe_workspace_run_task: Add `stage` attribute to workspace run tasks. ([#555](https://github.com/hashicorp/terraform-provider-tfe/pull/555))
+* r/tfe_workspace_policy_set: Add ability to attach an existing `workspace` to an existing `policy set`. ([#591](https://github.com/hashicorp/terraform-provider-tfe/pull/591))
+* Add attributes for health assessments (drift detection) - available only in Terraform Cloud ([550](https://github.com/hashicorp/terraform-provider-tfe/pull/550)):
+  * r/tfe_workspace: Add attribute `assessments_enabled`
+  * d/tfe_workspace: Add attribute `assessments_enabled`
+  * r/tfe_organization: Added attribute `assessments_enforced`
+  * d/tfe_organization: Added attribute `assessments_enforced`
+
+BUG FIXES:
+* Bump `terraform-plugin-go` to `v0.6.0`, due to a crash when `tfe_outputs` had null values. ([#611](https://github.com/hashicorp/terraform-provider-tfe/pull/611))
+* r/tfe_workspace: Fix documentation of file_triggers_enabled default. ([#627](https://github.com/hashicorp/terraform-provider-tfe/pull/627))
+* r/tfe_variable_set: Fix panic when applying variable set to workspaces fails ([#628](https://github.com/hashicorp/terraform-provider-tfe/pull/628))
+
+## v0.36.0 (August 16th, 2022)
+
+FEATURES:
+* r/tfe_organization_run_task, d/tfe_organization_run_task: Add `description` attribute to organization run tasks. ([#585](https://github.com/hashicorp/terraform-provider-tfe/pull/585))
+* d/tfe_policy_set: Add datasource for policy_set ([#592](https://github.com/hashicorp/terraform-provider-tfe/pull/592))
+* r/tfe_workspace: Adds `tags_regex` attribute to `vcs_repo` for workspaces, enabling a workspace to trigger runs for matching Git tags. ([#549](https://github.com/hashicorp/terraform-provider-tfe/pull/549))
+* r/agent_pool: Agent Pools can now be imported using `<ORGANIZATION NAME>/<AGENT POOL NAME>` ([#561](https://github.com/hashicorp/terraform-provider-tfe/pull/561))
+
+BUG FIXES:
+* d/tfe_outputs: Fix a bug causing sensitive values to be missing from tfe_outputs ([#565](https://github.com/hashicorp/terraform-provider-tfe/pull/565))
+
+## 0.35.0 (July 27th, 2022)
+
+BREAKING CHANGES:
+* `r/tfe_organization`: `admin_settings` attribute was removed after being released prematurely in 0.34.0, breaking existing configurations due to requiring a token with admin privileges ([#573](https://github.com/hashicorp/terraform-provider-tfe/pull/573))
+
+BUG FIXES:
+* r/tfe_registry_module: Added `Computed` modifier to attributes in order to prevent unnecessary resource replacement ([#572](https://github.com/hashicorp/terraform-provider-tfe/pull/572))
+
+## 0.34.0 (July 26th, 2022)
+
+BUG FIXES:
+* Removed nonworking example from `tfe_variable_set` docs ([#562](https://github.com/hashicorp/terraform-provider-tfe/pull/562))
+* Removed `ForceNew` modifier from `name` attribute in `r/tfe_team` ([#566](https://github.com/hashicorp/terraform-provider-tfe/pull/566))
+* r/tfe_workspace: Fix `trigger-prefixes` could not be updated because of the conflict with `trigger-patterns` in some cases - as described in this [GitHub Issue](https://github.com/hashicorp/terraform-provider-tfe/issues/552) ([#564](https://github.com/hashicorp/terraform-provider-tfe/pull/564/))
+
+FEATURES:
+* d/agent_pool: Improve efficiency of reading agent pool data when the target organization has more than 20 agent pools ([#508](https://github.com/hashicorp/terraform-provider-tfe/pull/508))
+* Added warning logs for 404 error responses ([#538](https://github.com/hashicorp/terraform-provider-tfe/pull/538))
+* r/tfe_registry_module: Add ability to create both public and private `registry_modules` without VCS. ([#546](https://github.com/hashicorp/terraform-provider-tfe/pull/546))
+
+DEPRECATION NOTICE:
+* The `registry_modules` import format `<ORGANIZATION>/<REGISTRY MODULE NAME>/<REGISTRY MODULE PROVIDER>/<REGISTRY MODULE ID>` has been deprecated in favour of `<ORGANIZATION>/<REGISTRY_NAME>/<NAMESPACE>/<REGISTRY MODULE NAME>/<REGISTRY MODULE PROVIDER>/<REGISTRY MODULE ID>` to support public and private `registry_modules`.
+
+## 0.33.0 (July 8th, 2022)
 
 FEATURES:
 * **New Resource**: `tfe_workspace_variable_set` ([#537](https://github.com/hashicorp/terraform-provider-tfe/pull/537)) adds the ability to assign a variable set to a workspace in a single, flexible resource.
-* r/workspace, d/workspace: Add `source_name` and `source_url` to workspaces ([#527](https://github.com/hashicorp/terraform-provider-tfe/pull/527))
+* r/tfe_workspace, d/tfe_workspace: `trigger-patterns` ([#502](https://github.com/hashicorp/terraform-provider-tfe/pull/502)) attribute is introduced to support specifying a set of [glob patterns](https://www.terraform.io/cloud-docs/workspaces/settings/vcs#glob-patterns-for-automatic-run-triggering) for automatic VCS run triggering.
+* r/organization: Add `workspace_limit` setting, available only in Terraform Enterprise ([#521](https://github.com/hashicorp/terraform-provider-tfe/pull/521))
 
 DEPRECATION NOTICE: The `workspace_ids` argument on `tfe_variable_set` has been labelled as deprecated and should not be used in conjunction with `tfe_workspace_variable_set`.
 
@@ -37,6 +169,7 @@ FEATURES:
 * **New Data Source**: d/tfe_organization_run_task ([#488](https://github.com/hashicorp/terraform-provider-tfe/pull/488))
 * **New Data Source**: d/tfe_workspace_run_task ([#488](https://github.com/hashicorp/terraform-provider-tfe/pull/488))
 * r/tfe_notification_configuration: Add Microsoft Teams notification type ([#484](https://github.com/hashicorp/terraform-provider-tfe/pull/484))
+* d/workspace_ids: Add `exclude_tags` to `tfe_workspace_ids` attributes ([#523](https://github.com/hashicorp/terraform-provider-tfe/pull/523))
 
 ## 0.31.0 (April 21, 2022)
 

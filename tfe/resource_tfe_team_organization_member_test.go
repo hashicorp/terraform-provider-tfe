@@ -1,8 +1,13 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
+	"regexp"
 	"testing"
 	"time"
 
@@ -91,7 +96,7 @@ func TestAccTFETeamOrganizationMember_basic(t *testing.T) {
 	})
 }
 
-func TestAccTFETeamOrganizationMember_import(t *testing.T) {
+func TestAccTFETeamOrganizationMember_import_byId(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -112,10 +117,157 @@ func TestAccTFETeamOrganizationMember_import(t *testing.T) {
 	})
 }
 
+func TestAccTFETeamOrganizationMember_import_byTeamName(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+	teamName := fmt.Sprintf("team-%d", rInt)
+	userEmail := fmt.Sprintf("user-%d@company.com", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamOrganizationMemberDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeamOrganizationMember_byName(orgName, teamName, userEmail),
+			},
+			{
+				ResourceName:      "tfe_team_organization_member.foobar",
+				ImportStateId:     fmt.Sprintf("%s/%s/%s", orgName, userEmail, teamName),
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccTFETeamOrganizationMember_import_orgDoesNotExist(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+	teamName := fmt.Sprintf("team-%d", rInt)
+	userEmail := fmt.Sprintf("user-%d@company.com", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamOrganizationMemberDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeamOrganizationMember_byName(orgName, teamName, userEmail),
+			},
+
+			{
+				ResourceName:  "tfe_team_organization_member.foobar",
+				ImportStateId: fmt.Sprintf("non-existent-org/%s/%s", userEmail, teamName),
+				ImportState:   true,
+				ExpectError:   regexp.MustCompile(fmt.Sprintf("error retrieving user with email %s from organization non-existent-org", userEmail)),
+			},
+		},
+	})
+}
+
+func TestAccTFETeamOrganizationMember_import_teamNameDoesNotExist(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+	teamName := fmt.Sprintf("team-%d", rInt)
+	userEmail := fmt.Sprintf("user-%d@company.com", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamOrganizationMemberDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeamOrganizationMember_byName(orgName, teamName, userEmail),
+			},
+
+			{
+				ResourceName:  "tfe_team_organization_member.foobar",
+				ImportStateId: fmt.Sprintf("%s/%s/non-existent-team", orgName, userEmail),
+				ImportState:   true,
+				ExpectError:   regexp.MustCompile(fmt.Sprintf("error retrieving team with name non-existent-team from organization %s", orgName)),
+			},
+		},
+	})
+}
+
+func TestAccTFETeamOrganizationMember_import_userEmailDoesNotExist(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+	teamName := fmt.Sprintf("team-%d", rInt)
+	userEmail := fmt.Sprintf("user-%d@company.com", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamOrganizationMemberDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeamOrganizationMember_byName(orgName, teamName, userEmail),
+			},
+
+			{
+				ResourceName:  "tfe_team_organization_member.foobar",
+				ImportStateId: fmt.Sprintf("%s/non-existent-email/%s", orgName, teamName),
+				ImportState:   true,
+				ExpectError:   regexp.MustCompile(fmt.Sprintf("error retrieving user with email non-existent-email from organization %s", orgName)),
+			},
+		},
+	})
+}
+
+func TestAccTFETeamOrganizationMember_import_incorrectFormat(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+	teamName := fmt.Sprintf("team-%d", rInt)
+	userEmail := fmt.Sprintf("user-%d@company.com", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamOrganizationMemberDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeamOrganizationMember_byName(orgName, teamName, userEmail),
+			},
+			{
+				ResourceName:  "tfe_team_organization_member.foobar",
+				ImportStateId: "notEnoughSlashes",
+				ImportState:   true,
+				ExpectError:   regexp.MustCompile("invalid organization membership input format"),
+			},
+		},
+	})
+}
+
+func TestAccTFETeamOrganizationMember_import_slashesInTeamName(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+	teamName := fmt.Sprintf("team-%d/other/data", rInt)
+	userEmail := fmt.Sprintf("user-%d@company.com", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamOrganizationMemberDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeamOrganizationMember_byName(orgName, teamName, userEmail),
+			},
+			{
+				ResourceName:      "tfe_team_organization_member.foobar",
+				ImportStateId:     fmt.Sprintf("%s/%s/%s", orgName, userEmail, teamName),
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func testAccCheckTFETeamOrganizationMemberExists(
 	n string, organizationMembership *tfe.OrganizationMembership) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -132,8 +284,8 @@ func testAccCheckTFETeamOrganizationMemberExists(
 			return fmt.Errorf("Error unpacking team organization member ID: %w", err)
 		}
 
-		organizationMemberships, err := tfeClient.TeamMembers.ListOrganizationMemberships(ctx, teamID)
-		if err != nil && err != tfe.ErrResourceNotFound {
+		organizationMemberships, err := config.Client.TeamMembers.ListOrganizationMemberships(ctx, teamID)
+		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 			return err
 		}
 
@@ -165,7 +317,7 @@ func testAccCheckTFETeamOrganizationMemberAttributes(
 }
 
 func testAccCheckTFETeamOrganizationMemberDestroy(s *terraform.State) error {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	config := testAccProvider.Meta().(ConfiguredClient)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_team_organization_member" {
@@ -182,8 +334,8 @@ func testAccCheckTFETeamOrganizationMemberDestroy(s *terraform.State) error {
 			return fmt.Errorf("Error unpacking team organization member ID: %w", err)
 		}
 
-		organizationMemberships, err := tfeClient.TeamMembers.ListOrganizationMemberships(ctx, teamID)
-		if err != nil && err != tfe.ErrResourceNotFound {
+		organizationMemberships, err := config.Client.TeamMembers.ListOrganizationMemberships(ctx, teamID)
+		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 			return err
 		}
 
@@ -224,4 +376,27 @@ resource "tfe_team_organization_member" "foobar" {
   team_id  = tfe_team.foobar.id
   organization_membership_id = tfe_organization_membership.foobar.id
 }`, rInt)
+}
+
+func testAccTFETeamOrganizationMember_byName(orgName string, teamName string, userEmail string) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "%s"
+  email = "admin@company.com"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "%s"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_organization_membership" "foobar" {
+  organization = tfe_organization.foobar.id
+	email = "%s"
+}
+
+resource "tfe_team_organization_member" "foobar" {
+  team_id  = tfe_team.foobar.id
+  organization_membership_id = tfe_organization_membership.foobar.id
+}`, orgName, teamName, userEmail)
 }

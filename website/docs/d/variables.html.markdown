@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_variables"
-sidebar_current: "docs-datasource-tfe-variables-x"
 description: |-
   Get information on a workspace variables.
 ---

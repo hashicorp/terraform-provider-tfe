@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -16,7 +19,7 @@ func resourceTFENotificationConfiguration() *schema.Resource {
 		Update: resourceTFENotificationConfigurationUpdate,
 		Delete: resourceTFENotificationConfigurationDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -81,6 +84,8 @@ func resourceTFENotificationConfiguration() *schema.Resource {
 							string(tfe.NotificationTriggerApplying),
 							string(tfe.NotificationTriggerCompleted),
 							string(tfe.NotificationTriggerErrored),
+							string(tfe.NotificationTriggerAssessmentDrifted),
+							string(tfe.NotificationTriggerAssessmentFailed),
 						},
 						false,
 					),
@@ -103,7 +108,7 @@ func resourceTFENotificationConfiguration() *schema.Resource {
 }
 
 func resourceTFENotificationConfigurationCreate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get workspace
 	workspaceID := d.Get("workspace_id").(string)
@@ -178,7 +183,7 @@ func resourceTFENotificationConfigurationCreate(d *schema.ResourceData, meta int
 	}
 
 	log.Printf("[DEBUG] Create notification configuration: %s", name)
-	notificationConfiguration, err := tfeClient.NotificationConfigurations.Create(ctx, workspaceID, options)
+	notificationConfiguration, err := config.Client.NotificationConfigurations.Create(ctx, workspaceID, options)
 	if err != nil {
 		return fmt.Errorf("Error creating notification configuration %s: %w", name, err)
 	}
@@ -189,10 +194,10 @@ func resourceTFENotificationConfigurationCreate(d *schema.ResourceData, meta int
 }
 
 func resourceTFENotificationConfigurationRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read notification configuration: %s", d.Id())
-	notificationConfiguration, err := tfeClient.NotificationConfigurations.Read(ctx, d.Id())
+	notificationConfiguration, err := config.Client.NotificationConfigurations.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] Notification configuration %s no longer exists", d.Id())
@@ -235,7 +240,7 @@ func resourceTFENotificationConfigurationRead(d *schema.ResourceData, meta inter
 }
 
 func resourceTFENotificationConfigurationUpdate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get attributes
 	enabled := d.Get("enabled").(bool)
@@ -306,7 +311,7 @@ func resourceTFENotificationConfigurationUpdate(d *schema.ResourceData, meta int
 	}
 
 	log.Printf("[DEBUG] Update notification configuration: %s", d.Id())
-	_, err := tfeClient.NotificationConfigurations.Update(ctx, d.Id(), options)
+	_, err := config.Client.NotificationConfigurations.Update(ctx, d.Id(), options)
 	if err != nil {
 		return fmt.Errorf("Error updating notification configuration %s: %w", d.Id(), err)
 	}
@@ -315,10 +320,10 @@ func resourceTFENotificationConfigurationUpdate(d *schema.ResourceData, meta int
 }
 
 func resourceTFENotificationConfigurationDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete notification configuration: %s", d.Id())
-	err := tfeClient.NotificationConfigurations.Delete(ctx, d.Id())
+	err := config.Client.NotificationConfigurations.Delete(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil
@@ -338,7 +343,7 @@ func validateSchemaAttributesForDestinationTypeEmail(d *schema.ResourceData) err
 	}
 	token, tokenIsSet := d.GetOk("token")
 	if tokenIsSet && token != "" {
-		return fmt.Errorf("Token cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeEmail))
+		return fmt.Errorf("token cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeEmail))
 	}
 
 	return nil
@@ -348,11 +353,11 @@ func validateSchemaAttributesForDestinationTypeGeneric(d *schema.ResourceData) e
 	// Make sure email_addresses and email_user_ids are not set when destination_type is 'generic'
 	_, emailAddressesIsSet := d.GetOk("email_addresses")
 	if emailAddressesIsSet {
-		return fmt.Errorf("Email addresses cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeGeneric))
+		return fmt.Errorf("email addresses cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeGeneric))
 	}
 	_, emailUserIDsIsSet := d.GetOk("email_user_ids")
 	if emailUserIDsIsSet {
-		return fmt.Errorf("Email user IDs cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeGeneric))
+		return fmt.Errorf("email user IDs cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeGeneric))
 	}
 
 	// Make sure url is set when destination_type is 'generic'
@@ -368,15 +373,15 @@ func validateSchemaAttributesForDestinationTypeSlack(d *schema.ResourceData) err
 	// Make sure email_addresses, email_user_ids, and token are not set when destination_type is 'slack'
 	_, emailAddressesIsSet := d.GetOk("email_addresses")
 	if emailAddressesIsSet {
-		return fmt.Errorf("Email addresses cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeSlack))
+		return fmt.Errorf("email addresses cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeSlack))
 	}
 	_, emailUserIDsIsSet := d.GetOk("email_user_ids")
 	if emailUserIDsIsSet {
-		return fmt.Errorf("Email user IDs cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeSlack))
+		return fmt.Errorf("email user IDs cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeSlack))
 	}
 	token, tokenIsSet := d.GetOk("token")
 	if tokenIsSet && token != "" {
-		return fmt.Errorf("Token cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeSlack))
+		return fmt.Errorf("token cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeSlack))
 	}
 
 	// Make sure url is set when destination_type is 'slack'
@@ -392,15 +397,15 @@ func validateSchemaAttributesForDestinationTypeMicrosoftTeams(d *schema.Resource
 	// Make sure email_addresses, email_user_ids, and token are not set when destination_type is 'microsoft-teams'
 	_, emailAddressesIsSet := d.GetOk("email_addresses")
 	if emailAddressesIsSet {
-		return fmt.Errorf("Email addresses cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeMicrosoftTeams))
+		return fmt.Errorf("email addresses cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeMicrosoftTeams))
 	}
 	_, emailUserIDsIsSet := d.GetOk("email_user_ids")
 	if emailUserIDsIsSet {
-		return fmt.Errorf("Email user IDs cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeMicrosoftTeams))
+		return fmt.Errorf("email user IDs cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeMicrosoftTeams))
 	}
 	token, tokenIsSet := d.GetOk("token")
 	if tokenIsSet && token != "" {
-		return fmt.Errorf("Token cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeMicrosoftTeams))
+		return fmt.Errorf("token cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeMicrosoftTeams))
 	}
 
 	// Make sure url is set when destination_type is 'microsoft-teams'

@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -121,7 +124,7 @@ func TestAccTFEOrganizationToken_import(t *testing.T) {
 func testAccCheckTFEOrganizationTokenExists(
 	n string, token *tfe.OrganizationToken) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -132,7 +135,7 @@ func testAccCheckTFEOrganizationTokenExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		ot, err := tfeClient.OrganizationTokens.Read(ctx, rs.Primary.ID)
+		ot, err := config.Client.OrganizationTokens.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -148,7 +151,7 @@ func testAccCheckTFEOrganizationTokenExists(
 }
 
 func testAccCheckTFEOrganizationTokenDestroy(s *terraform.State) error {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	config := testAccProvider.Meta().(ConfiguredClient)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_organization_token" {
@@ -159,7 +162,7 @@ func testAccCheckTFEOrganizationTokenDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := tfeClient.OrganizationTokens.Read(ctx, rs.Primary.ID)
+		_, err := config.Client.OrganizationTokens.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("OrganizationToken %s still exists", rs.Primary.ID)
 		}

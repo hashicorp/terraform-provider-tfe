@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -39,7 +42,7 @@ func TestAccTFEWorkspaceVariableSet_basic(t *testing.T) {
 
 func testAccCheckTFEWorkspaceVariableSetExists(n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -56,7 +59,7 @@ func testAccCheckTFEWorkspaceVariableSetExists(n string) resource.TestCheckFunc 
 			return fmt.Errorf("error decoding ID (%s): %w", id, err)
 		}
 
-		vS, err := tfeClient.VariableSets.Read(ctx, vSID, &tfe.VariableSetReadOptions{
+		vS, err := config.Client.VariableSets.Read(ctx, vSID, &tfe.VariableSetReadOptions{
 			Include: &[]tfe.VariableSetIncludeOpt{tfe.VariableSetWorkspaces},
 		})
 		if err != nil {
@@ -73,7 +76,7 @@ func testAccCheckTFEWorkspaceVariableSetExists(n string) resource.TestCheckFunc 
 }
 
 func testAccCheckTFEWorkspaceVariableSetDestroy(s *terraform.State) error {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	config := testAccProvider.Meta().(ConfiguredClient)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_variable_set" {
@@ -84,7 +87,7 @@ func testAccCheckTFEWorkspaceVariableSetDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := tfeClient.VariableSets.Read(ctx, rs.Primary.ID, nil)
+		_, err := config.Client.VariableSets.Read(ctx, rs.Primary.ID, nil)
 		if err == nil {
 			return fmt.Errorf("Variable Set %s still exists", rs.Primary.ID)
 		}

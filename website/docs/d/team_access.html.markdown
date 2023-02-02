@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_team_access"
-sidebar_current: "docs-datasource-tfe-team-access"
 description: |-
   Get information on team permissions on a workspace.
 ---
@@ -41,4 +40,4 @@ The `permissions` block contains:
 * `state_versions` - The permissions granted to state versions. Valid values are `none`, `read-outputs`, `read`, or `write`
 * `sentinel_mocks` - The permissions granted to Sentinel mocks. Valid values are `none` or `read`
 * `workspace_locking` - Whether permission is granted to manually lock the workspace or not.
-* `run_tasks` - Whether permission is granted to manage workspace run tasks or not.
+* `run_tasks` - Boolean determining whether or not to grant the team permission to manage workspace run tasks.

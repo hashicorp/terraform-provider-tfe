@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -110,7 +113,7 @@ func TestAccTFETeamToken_import(t *testing.T) {
 func testAccCheckTFETeamTokenExists(
 	n string, token *tfe.TeamToken) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -121,7 +124,7 @@ func testAccCheckTFETeamTokenExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		tt, err := tfeClient.TeamTokens.Read(ctx, rs.Primary.ID)
+		tt, err := config.Client.TeamTokens.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -137,7 +140,7 @@ func testAccCheckTFETeamTokenExists(
 }
 
 func testAccCheckTFETeamTokenDestroy(s *terraform.State) error {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	config := testAccProvider.Meta().(ConfiguredClient)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_team_token" {
@@ -148,7 +151,7 @@ func testAccCheckTFETeamTokenDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := tfeClient.TeamTokens.Read(ctx, rs.Primary.ID)
+		_, err := config.Client.TeamTokens.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Team token %s still exists", rs.Primary.ID)
 		}

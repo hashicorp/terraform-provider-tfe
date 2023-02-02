@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -75,7 +78,7 @@ func TestAccTFERunTriggerImport(t *testing.T) {
 
 func testAccCheckTFERunTriggerExists(n string, runTrigger *tfe.RunTrigger) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -86,7 +89,7 @@ func testAccCheckTFERunTriggerExists(n string, runTrigger *tfe.RunTrigger) resou
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		rt, err := tfeClient.RunTriggers.Read(ctx, rs.Primary.ID)
+		rt, err := config.Client.RunTriggers.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -99,16 +102,16 @@ func testAccCheckTFERunTriggerExists(n string, runTrigger *tfe.RunTrigger) resou
 
 func testAccCheckTFERunTriggerAttributes(runTrigger *tfe.RunTrigger, orgName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		workspaceID := runTrigger.Workspace.ID
-		workspace, _ := tfeClient.Workspaces.Read(ctx, orgName, "workspace-test")
+		workspace, _ := config.Client.Workspaces.Read(ctx, orgName, "workspace-test")
 		if workspace.ID != workspaceID {
 			return fmt.Errorf("Wrong workspace: %v", workspace.ID)
 		}
 
 		sourceableID := runTrigger.Sourceable.ID
-		sourceable, _ := tfeClient.Workspaces.Read(ctx, orgName, "sourceable-test")
+		sourceable, _ := config.Client.Workspaces.Read(ctx, orgName, "sourceable-test")
 		if sourceable.ID != sourceableID {
 			return fmt.Errorf("Wrong sourceable: %v", sourceable.ID)
 		}
@@ -118,7 +121,7 @@ func testAccCheckTFERunTriggerAttributes(runTrigger *tfe.RunTrigger, orgName str
 }
 
 func testAccCheckTFERunTriggerDestroy(s *terraform.State) error {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	config := testAccProvider.Meta().(ConfiguredClient)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_run_trigger" {
@@ -129,7 +132,7 @@ func testAccCheckTFERunTriggerDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := tfeClient.RunTriggers.Read(ctx, rs.Primary.ID)
+		_, err := config.Client.RunTriggers.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Run trigger %s still exists", rs.Primary.ID)
 		}

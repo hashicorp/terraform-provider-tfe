@@ -1,0 +1,96 @@
+name: CI Tests
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: hashicorp/setup-copywrite@v1.0.0
+      - name: Setup Go Environment
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: "go.mod"
+      - name: fmt check
+        run: make fmtcheck
+
+      - name: go vet
+        run: make vet
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.50.0
+          args: "--out-${NO_FUTURE}format colored-line-number"
+
+      - name: copywrite headers check
+        run: copywrite headers --plan
+  tests:
+    name: run
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        parallel: [3]
+        index: [0, 1, 2]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Sync dependencies
+        run: |
+          go get -v -t -d ./...
+          go mod tidy
+
+      - name: Install gotestsum
+        run: go install gotest.tools/gotestsum@latest
+
+      - name: Split acceptance tests
+        id: test_split
+        uses: hashicorp-forge/go-test-split-action@v1
+        with:
+          index: ${{ matrix.index }}
+          total: ${{ matrix.parallel }}
+
+      - name: Fetch Outputs
+        env:
+          TFE_TOKEN: "${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}"
+        run: |
+          go run .github/scripts/fetch_outputs/main.go hashicorp-v2 tflocal-terraform-provider-tfe
+      - name: Run Tests
+        env:
+          TF_ACC: 1
+          TFC_RUN_TASK_URL: "https://httpstat.us/200"
+          GITHUB_POLICY_SET_IDENTIFIER: "hashicorp/test-policy-set"
+          GITHUB_REGISTRY_MODULE_IDENTIFIER: "hashicorp/terraform-random-module"
+          GITHUB_WORKSPACE_IDENTIFIER: "hashicorp/terraform-random-1"
+          GITHUB_WORKSPACE_BRANCH: "test"
+          GITHUB_TOKEN: "${{ secrets.TESTING_GITHUB_TOKEN }}"
+          MOD_PROVIDER: github.com/hashicorp/terraform-provider-tfe
+          MOD_TFE: github.com/hashicorp/terraform-provider-tfe/tfe
+          MOD_VERSION: github.com/hashicorp/terraform-provider-tfe/version
+        run: |
+          source $HOME/.env
+          gotestsum --format short-verbose -- $MOD_PROVIDER $MOD_TFE $MOD_VERSION -v -timeout=30m -run "${{ steps.test_split.outputs.run }}"
+  tests-summarize:
+    name: Summarize Tests
+    needs: [tests]
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    steps:
+      - name: Check tests Status
+        run: |
+          if [ "${{ needs.tests.result }}" = "success" ]; then
+            exit 0
+          fi
+          exit 1

@@ -1,0 +1,16 @@
+name: Jira Issue Sync
+
+on:
+  issues:
+    types: [opened, closed, deleted, reopened]
+  issue_comment:
+    types: [created]
+
+jobs:
+  call-workflow:
+    uses: ./.github/workflows/jira-issue-sync.yml
+    with:
+      project: TF
+      issue-extra-fields: |
+        { "customfield_10091": ["TF-CLI"] }
+    secrets: inherit

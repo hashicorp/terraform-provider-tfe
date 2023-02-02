@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -30,7 +33,7 @@ func fetchOrganizationRunTask(name, organization string, client *tfe.Client) (*t
 		options.PageNumber = list.NextPage
 	}
 
-	return nil, fmt.Errorf("Could not find organization run task for organization %s and name %s", organization, name)
+	return nil, fmt.Errorf("could not find organization run task for organization %s and name %s", organization, name)
 }
 
 // fetchWorkspaceRunTask returns the task association in a workspace by name
@@ -66,5 +69,5 @@ func fetchWorkspaceRunTask(name, workspace, organization string, client *tfe.Cli
 		options.PageNumber = list.NextPage
 	}
 
-	return nil, fmt.Errorf("Could not find organization run task %s for workspace %s in organization %s", name, workspace, organization)
+	return nil, fmt.Errorf("could not find organization run task %s for workspace %s in organization %s", name, workspace, organization)
 }

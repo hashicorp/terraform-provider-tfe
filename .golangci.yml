@@ -1,3 +1,6 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 run:
   timeout: 5m
 linters:
@@ -22,6 +25,7 @@ linters:
     - predeclared #https://github.com/nishanths/predeclared
     - unconvert #https://github.com/mdempsky/unconvert
     - wrapcheck #https://github.com/tomarrell/wrapcheck
+
 issues:
   exclude-rules:
   - path: _test\.go
@@ -44,29 +48,12 @@ issues:
     path: \.go
   - linters:
       - gocritic
-    path: config_unix\.go
-    text: "importShadow: shadow of imported package 'user'"
-  - linters:
-      - gocritic
     path: resource_tfe_policy_set\.go
     text: "badRegexp"
   - linters:
       - gocritic
-    path: resource_tfe_team_access\.go
-    text: "elseif: can replace 'else {if cond {}}' with 'else if cond {}'"
-  - linters:
-      - gocritic
     path: data_source_ip_ranges_test\.go
     text: "regexpSimplify: can re-write"
-  - linters:
-      - gocritic
-    path: resource_tfe_policy_set_test\.go
-    text: "octalLiteral: use new octal literal style"
-  - linters:
-      - gosec
-    path: provider\.go
-    text: "G402: TLS MinVersion too low."
-  # Exclude gosec warnings in test files
   - linters:
       - gosec
     path: _test\.go
@@ -75,17 +62,9 @@ issues:
     path: (resource_tfe_team_access|resource_tfe_workspace|credentials|resource_tfe_policy_set|
       resource_tfe_policy_set|resource_tfe_team_members|resource_tfe_notification_configuration|resource_tfe_team)\.go
   - linters:
-      - revive
-    path: workspace_helpers\.go
-    text: "indent-error-flow: if block ends with a return statement, so drop this else and outdent its block"
-  - linters:
       - unparam
     path: _test\.go
     text: "always receives" # ignore unparam warning for all test files when a function param receives same mock data for it's test examples
-  - linters:
-      - unused
-    path: data_source_outputs\.go
-    text: "var `stderr` is unused" # ignore this warning since stderr was added as a fix for OS override bug. See tfe/data_source_outputs.go file for details
   - linters:
       - errorlint
     path: (data_source_organization|data_source_variable_set|data_source_workspace|resource_tfe_organization_token|
@@ -96,11 +75,6 @@ issues:
       -|resource_tfe_team_member|resource_tfe_team_organization_member|resource_tfe_terraform_version|resource_tfe_variable_set|resource_tfe_variable|
       -|resource_tfe_workspace|workspace_helpers)\.go
     text: "comparing with == will fail on wrapped errors. Use errors.Is to check for a specific error"
-  - linters:
-      - errorlint
-    path: (resource_tfe_organization_token|resource_tfe_team_token|plugin_provider_test|resource_tfe_team_member_test|resource_tfe_team_members_test|
-      -|resource_tfe_team_organization_member_test|resource_tfe_workspace_test)\.go
-    text: "comparing with != will fail on wrapped errors. Use errors.Is to check for a specific error"
   - linters:
       - errorlint
     path: provider\.go
@@ -118,14 +92,6 @@ issues:
     path: resource_tfe_team_members_test\.go
     text: "S1019: should use make"
   - linters:
-      - ineffassign
-    path: plugin_provider_test\.go
-    text: "ineffectual assignment to err"
-  - linters:
-      - predeclared
-    path: (resource_tfe_organization|resource_tfe_organization_module_sharing)\.go
-    text: "param new has same name as predeclared identifier"
-  - linters:
       - staticcheck
     path: (resource_tfe_team_access_migrate_test|resource_tfe_variable_migrate_test|workspace_helpers_test)\.go
     text: "SA1012: do not pass a nil Context, even if a function permits it; pass context.TODO if you are unsure about which Context to use"
@@ -135,18 +101,6 @@ issues:
       -|resource_tfe_run_trigger|resource_tfe_team_access|resource_tfe_organization_membership|resource_tfe_policy_set|resource_tfe_team_member|
       -|resource_tfe_workspace|resource_tfe_team_organization_member|resource_tfe_variable_set)\.go
     text: "SA1019"
-  - linters:
-      - staticcheck
-    path: plugin_provider_test\.go
-    text: "SA4006"
-  - linters:
-      - stylecheck
-    path: (data_source_variables|resource_tfe_variable|resource_tfe_variable_set|resource_tfe_workspace|data_source_team_test|provider_test|
-      -|resource_tfe_team_members_test)\.go
-    text: "ST1003"
-  - linters: # Exclude error string style checks and keep current terraform error string format
-      - stylecheck
-    text: "ST1005"
   - linters:
       - wrapcheck
     path: (config_unix|data_source_slug|data_source_workspace|provider|resource_tfe_variable|provider_test)\.go

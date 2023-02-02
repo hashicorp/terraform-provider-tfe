@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -17,7 +20,7 @@ func resourceTFERunTrigger() *schema.Resource {
 		Read:   resourceTFERunTriggerRead,
 		Delete: resourceTFERunTriggerDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -36,7 +39,7 @@ func resourceTFERunTrigger() *schema.Resource {
 }
 
 func resourceTFERunTriggerCreate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get attributes
 	workspaceID := d.Get("workspace_id").(string)
@@ -51,7 +54,7 @@ func resourceTFERunTriggerCreate(d *schema.ResourceData, meta interface{}) error
 
 	log.Printf("[DEBUG] Create run trigger on workspace %s with sourceable %s", workspaceID, sourceableID)
 	err := resource.Retry(1*time.Minute, func() *resource.RetryError {
-		runTrigger, err := tfeClient.RunTriggers.Create(ctx, workspaceID, options)
+		runTrigger, err := config.Client.RunTriggers.Create(ctx, workspaceID, options)
 		if err == nil {
 			d.SetId(runTrigger.ID)
 			return nil
@@ -73,10 +76,10 @@ func resourceTFERunTriggerCreate(d *schema.ResourceData, meta interface{}) error
 }
 
 func resourceTFERunTriggerRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read run trigger: %s", d.Id())
-	runTrigger, err := tfeClient.RunTriggers.Read(ctx, d.Id())
+	runTrigger, err := config.Client.RunTriggers.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] run trigger %s no longer exists", d.Id())
@@ -93,10 +96,10 @@ func resourceTFERunTriggerRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceTFERunTriggerDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete run trigger: %s", d.Id())
-	err := tfeClient.RunTriggers.Delete(ctx, d.Id())
+	err := config.Client.RunTriggers.Delete(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil

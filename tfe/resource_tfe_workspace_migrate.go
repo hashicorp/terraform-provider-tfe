@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -18,6 +21,11 @@ func resourceTfeWorkspaceResourceV0() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
+			},
+
+			"assessments_enabled": {
+				Type:     schema.TypeBool,
+				Optional: true,
 			},
 
 			"auto_apply": {

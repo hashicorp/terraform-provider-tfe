@@ -1,6 +1,10 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
@@ -12,6 +16,7 @@ func TestPluginProvider_providerMeta(t *testing.T) {
 		hostname      string
 		token         string
 		sslSkipVerify bool
+		organization  string
 		err           error
 	}{
 		"has none": {},
@@ -36,6 +41,9 @@ func TestPluginProvider_providerMeta(t *testing.T) {
 			token:         "secret",
 			sslSkipVerify: true,
 		},
+		"has organization": {
+			organization: "hashicorp",
+		},
 	}
 
 	for name, tc := range cases {
@@ -44,26 +52,32 @@ func TestPluginProvider_providerMeta(t *testing.T) {
 				"hostname":        tftypes.String,
 				"token":           tftypes.String,
 				"ssl_skip_verify": tftypes.Bool,
+				"organization":    tftypes.String,
 			},
 		}, tftypes.NewValue(tftypes.Object{
 			AttributeTypes: map[string]tftypes.Type{
 				"hostname":        tftypes.String,
 				"token":           tftypes.String,
 				"ssl_skip_verify": tftypes.Bool,
+				"organization":    tftypes.String,
 			},
 		}, map[string]tftypes.Value{
 			"hostname":        tftypes.NewValue(tftypes.String, tc.hostname),
 			"token":           tftypes.NewValue(tftypes.String, tc.token),
 			"ssl_skip_verify": tftypes.NewValue(tftypes.Bool, tc.sslSkipVerify),
+			"organization":    tftypes.NewValue(tftypes.String, tc.organization),
 		}))
+		if err != nil {
+			t.Fatal(err.Error())
+		}
 
 		req := &tfprotov5.ConfigureProviderRequest{
 			Config: &config,
 		}
 
 		meta, err := retrieveProviderMeta(req)
-		if err != tc.err {
-			t.Fatalf("Test %s: should not be error", name)
+		if !errors.Is(err, tc.err) {
+			t.Fatalf("Test %s: should not be error, got %v", name, err)
 		}
 
 		if tc.hostname == "" && meta.hostname != "" {
@@ -84,6 +98,10 @@ func TestPluginProvider_providerMeta(t *testing.T) {
 
 		if tc.sslSkipVerify == false && meta.sslSkipVerify != defaultSSLSkipVerify {
 			t.Fatalf("Test %s: ssl_skip_verify was not set in config and has not been set to default", name)
+		}
+
+		if tc.organization != meta.organization {
+			t.Fatalf("Test %s: default organization was set in config and input default organization %s does not have the same value in meta %s", name, tc.token, meta.token)
 		}
 
 		if tc.sslSkipVerify != false {

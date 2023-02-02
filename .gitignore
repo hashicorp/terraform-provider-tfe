@@ -5,13 +5,19 @@
 *.so
 *.dylib
 
+# Local build artifacts
 /terraform-provider-tfe
+provider_tfe_override.tfrc
 
 # Test binary, build with `go test -c`
 *.test
 
-# Output of the go coverage tool, specifically when used with LiteIDE
+# Output of IDE logs
 *.out
+.vscode/*.log
 
 # Other
 .idea/
+
+# mkdocs build output
+site/

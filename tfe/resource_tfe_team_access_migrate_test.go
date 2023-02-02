@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -28,7 +31,9 @@ func TestResourceTfeTeamAccessStateUpgradeV0(t *testing.T) {
 	})
 
 	expected := testResourceTfeTeamAccessStateDataV1()
-	actual, err := resourceTfeTeamAccessStateUpgradeV0(context.Background(), testResourceTfeTeamAccessStateDataV0(), client)
+	actual, err := resourceTfeTeamAccessStateUpgradeV0(context.Background(), testResourceTfeTeamAccessStateDataV0(), ConfiguredClient{
+		Client: client,
+	})
 	if err != nil {
 		t.Fatalf("error migrating state: %s", err)
 	}

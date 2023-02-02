@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -281,18 +284,18 @@ func TestAccTFETeamAccess_import(t *testing.T) {
 func testAccCheckTFETeamAccessExists(
 	n string, tmAccess *tfe.TeamAccess) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
-			return fmt.Errorf("Not found: %s", n)
+			return fmt.Errorf("not found: %s", n)
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("No instance ID is set")
+			return fmt.Errorf("no instance ID is set")
 		}
 
-		ta, err := tfeClient.TeamAccess.Read(ctx, rs.Primary.ID)
+		ta, err := config.Client.TeamAccess.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -341,7 +344,7 @@ func testAccCheckTFETeamAccessAttributesPermissionsAre(tmAccess *tfe.TeamAccess,
 }
 
 func testAccCheckTFETeamAccessDestroy(s *terraform.State) error {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	config := testAccProvider.Meta().(ConfiguredClient)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_team_access" {
@@ -352,7 +355,7 @@ func testAccCheckTFETeamAccessDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := tfeClient.TeamAccess.Read(ctx, rs.Primary.ID)
+		_, err := config.Client.TeamAccess.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Team access %s still exists", rs.Primary.ID)
 		}

@@ -1,13 +1,16 @@
 TEST?=$$(go list ./... |grep -v 'vendor')
 GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
-WEBSITE_REPO=github.com/hashicorp/terraform-website
 PKG_NAME=tfe
 
-default: build
+default: terraform-provider-tfe
 
 build: fmtcheck
 	go install
 
+terraform-provider-tfe: fmtcheck
+	@go build -o terraform-provider-tfe
+
+# Run unit tests
 test: fmtcheck
 	go test -v $(TEST) || exit 1
 	echo $(TEST) | \
@@ -17,8 +20,15 @@ sweep:
 	@echo "WARNING: This will destroy infrastructure. Use only in development accounts."
 	go test ./tfe -v -timeout 60m -sweep=prod
 
+# Run acceptance tests
 testacc: fmtcheck
-	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 15m
+	TF_ACC=1 TF_LOG_SDK_PROTO=OFF go test $(TEST) -v $(TESTARGS) -timeout 15m
+
+# This rule creates a terraform CLI config file to override the tfe provider to point to the latest
+# build in the current directory. The output of devoverride.sh is an export statement that
+# overrides the CLI config to use this build.
+devoverride: terraform-provider-tfe
+	@sh -c "'$(CURDIR)/scripts/devoverride.sh'"
 
 vet:
 	@echo "go vet ."
@@ -26,6 +36,13 @@ vet:
 		echo ""; \
 		echo "Vet found suspicious constructs. Please check the reported constructs"; \
 		echo "and fix them if necessary before submitting the code for review."; \
+		exit 1; \
+	fi
+
+lint:
+	@golangci-lint run ; if [ $$? -ne 0 ]; then \
+		echo ""; \
+		echo "golangci-lint found some code style issues." \
 		exit 1; \
 	fi
 
@@ -46,12 +63,5 @@ test-compile:
 	fi
 	go test -c $(TEST) $(TESTARGS)
 
-website:
-ifeq (,$(wildcard $(GOPATH)/src/$(WEBSITE_REPO)))
-	echo "$(WEBSITE_REPO) not found in your GOPATH (necessary for layouts and assets), get-ting..."
-	git clone https://$(WEBSITE_REPO) $(GOPATH)/src/$(WEBSITE_REPO)
-endif
-	@$(MAKE) -C $(GOPATH)/src/$(WEBSITE_REPO) website-provider PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PKG_NAME)
-
-.PHONY: build test testacc vet fmt fmtcheck errcheck test-compile website sweep
+.PHONY: build test testacc vet fmt fmtcheck errcheck test-compile sweep
 

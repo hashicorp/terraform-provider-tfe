@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -24,7 +27,8 @@ func resourceTFEOAuthClient() *schema.Resource {
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Computed: true,
 				ForceNew: true,
 			},
 
@@ -105,10 +109,13 @@ func resourceTFEOAuthClient() *schema.Resource {
 }
 
 func resourceTFEOAuthClientCreate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the organization and provider.
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 	name := d.Get("name").(string)
 	privateKey := d.Get("private_key").(string)
 	rsaPublicKey := d.Get("rsa_public_key").(string)
@@ -144,7 +151,7 @@ func resourceTFEOAuthClientCreate(d *schema.ResourceData, meta interface{}) erro
 	}
 
 	log.Printf("[DEBUG] Create an OAuth client for organization: %s", organization)
-	oc, err := tfeClient.OAuthClients.Create(ctx, organization, options)
+	oc, err := config.Client.OAuthClients.Create(ctx, organization, options)
 	if err != nil {
 		return fmt.Errorf(
 			"Error creating OAuth client for organization %s: %w", organization, err)
@@ -156,13 +163,13 @@ func resourceTFEOAuthClientCreate(d *schema.ResourceData, meta interface{}) erro
 }
 
 func resourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read configuration of OAuth client: %s", d.Id())
-	oc, err := tfeClient.OAuthClients.Read(ctx, d.Id())
+	oc, err := config.Client.OAuthClients.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			log.Printf("[DEBUG] OAuth client %s does no longer exist", d.Id())
+			log.Printf("[DEBUG] OAuth client %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}
@@ -170,9 +177,9 @@ func resourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	// Update the config.
+	d.Set("organization", oc.Organization.Name)
 	d.Set("api_url", oc.APIURL)
 	d.Set("http_url", oc.HTTPURL)
-	d.Set("organization", oc.Organization.Name)
 	d.Set("service_provider", string(oc.ServiceProvider))
 
 	switch len(oc.OAuthTokens) {
@@ -181,17 +188,17 @@ func resourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) error 
 	case 1:
 		d.Set("oauth_token_id", oc.OAuthTokens[0].ID)
 	default:
-		return fmt.Errorf("Unexpected number of OAuth tokens: %d", len(oc.OAuthTokens))
+		return fmt.Errorf("unexpected number of OAuth tokens: %d", len(oc.OAuthTokens))
 	}
 
 	return nil
 }
 
 func resourceTFEOAuthClientDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete OAuth client: %s", d.Id())
-	err := tfeClient.OAuthClients.Delete(ctx, d.Id())
+	err := config.Client.OAuthClients.Delete(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil

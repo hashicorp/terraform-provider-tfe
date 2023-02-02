@@ -1,17 +1,21 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
 	tfmux "github.com/hashicorp/terraform-plugin-mux"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/hashicorp/terraform-provider-tfe/version"
@@ -24,6 +28,7 @@ var testAccMuxedProviders map[string]func() (tfprotov5.ProviderServer, error)
 
 func init() {
 	testAccProvider = Provider()
+
 	testAccProviders = map[string]*schema.Provider{
 		"tfe": testAccProvider,
 	}
@@ -40,6 +45,38 @@ func init() {
 			return mux.Server(), nil
 		},
 	}
+}
+
+func providerWithDefaultOrganization(defaultOrgName string) map[string]*schema.Provider {
+	testAccProviderDefaultOrganization := Provider()
+	testAccProviderDefaultOrganization.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
+		client, err := getClientUsingEnv()
+		return ConfiguredClient{
+			Client:       client,
+			Organization: defaultOrgName,
+		}, diag.FromErr(err)
+	}
+	return map[string]*schema.Provider{
+		"tfe": testAccProviderDefaultOrganization,
+	}
+}
+
+func setupDefaultOrganization(t *testing.T) (string, int) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	defaultOrgName := fmt.Sprintf("tst-default-org-%d", rInt)
+
+	client, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, cleanup := createOrganization(t, client, tfe.OrganizationCreateOptions{
+		Name:  &defaultOrgName,
+		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
+	})
+
+	t.Cleanup(cleanup)
+	return defaultOrgName, rInt
 }
 
 func getClientUsingEnv() (*tfe.Client, error) {
@@ -286,34 +323,68 @@ func testAccPreCheck(t *testing.T) {
 	}
 }
 
-var GITHUB_TOKEN = os.Getenv("GITHUB_TOKEN")
-var GITHUB_WORKSPACE_IDENTIFIER = os.Getenv("GITHUB_WORKSPACE_IDENTIFIER")
-var GITHUB_WORKSPACE_BRANCH = os.Getenv("GITHUB_WORKSPACE_BRANCH")
-var GITHUB_POLICY_SET_IDENTIFIER = os.Getenv("GITHUB_POLICY_SET_IDENTIFIER")
-var GITHUB_POLICY_SET_BRANCH = os.Getenv("GITHUB_POLICY_SET_BRANCH")
-var GITHUB_POLICY_SET_PATH = os.Getenv("GITHUB_POLICY_SET_PATH")
-var GITHUB_REGISTRY_MODULE_IDENTIFIER = os.Getenv("GITHUB_REGISTRY_MODULE_IDENTIFIER")
-var TFE_USER1 = os.Getenv("TFE_USER1")
-var TFE_USER2 = os.Getenv("TFE_USER2")
+func TestConfigureEnvOrganization(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	originalTFEOrganization := os.Getenv("TFE_ORGANIZATION")
+	reset := func() {
+		if originalTFEOrganization != "" {
+			os.Setenv("TFE_ORGANIZATION", originalTFEOrganization)
+		} else {
+			os.Unsetenv("TFE_ORGANIZATION")
+		}
+	}
+	defer reset()
 
-func testCheckCreateOrgWithRunTasks(organizationName string) resource.TestStep {
-	check := func(_ *terraform.State) error {
-		client, err := getClientUsingEnv()
-		if err != nil {
-			return err
+	expectedOrganization := fmt.Sprintf("tst-organization-%d", rInt)
+	os.Setenv("TFE_ORGANIZATION", expectedOrganization)
+
+	provider := Provider()
+
+	// The credentials must be provided by the CLI config file for testing.
+	if diags := provider.Configure(context.Background(), &terraform.ResourceConfig{}); diags.HasError() {
+		for _, d := range diags {
+			if d.Severity == diag.Error {
+				t.Fatalf("err: %s", d.Summary)
+			}
 		}
-		entitlements, err := client.Organizations.ReadEntitlements(context.TODO(), organizationName)
-		if err != nil {
-			return fmt.Errorf("error reading entitlements: %w", err)
-		}
-		if entitlements == nil || !entitlements.RunTasks {
-			return fmt.Errorf("Organization %s is not entitled to use Run Tasks", organizationName)
-		}
-		return nil
 	}
 
-	return resource.TestStep{
-		Config: fmt.Sprintf("resource \"tfe_organization\" \"foobar\" {\n name = %q\nemail = \"admin@company.com\"\n}", organizationName),
-		Check:  check,
+	config := provider.Meta().(ConfiguredClient)
+	if config.Organization != expectedOrganization {
+		t.Fatalf("unexpected organization configuration: got %s, wanted %s", config.Organization, expectedOrganization)
 	}
 }
+
+func testAccGithubPreCheck(t *testing.T) {
+	if envGithubToken == "" {
+		t.Skip("Please set GITHUB_TOKEN to run this test")
+	}
+	if envGithubWorkspaceIdentifier == "" {
+		t.Skip("Please set GITHUB_WORKSPACE_IDENTIFIER to run this test")
+	}
+	if envGithubWorkspaceBranch == "" {
+		t.Skip("Please set GITHUB_WORKSPACE_BRANCH to run this test")
+	}
+}
+
+func init() {
+	envGithubPolicySetIdentifier = os.Getenv("GITHUB_POLICY_SET_IDENTIFIER")
+	envGithubPolicySetBranch = os.Getenv("GITHUB_POLICY_SET_BRANCH")
+	envGithubPolicySetPath = os.Getenv("GITHUB_POLICY_SET_PATH")
+	envGithubRegistryModuleIdentifer = os.Getenv("GITHUB_REGISTRY_MODULE_IDENTIFIER")
+	envGithubToken = os.Getenv("GITHUB_TOKEN")
+	envGithubWorkspaceIdentifier = os.Getenv("GITHUB_WORKSPACE_IDENTIFIER")
+	envGithubWorkspaceBranch = os.Getenv("GITHUB_WORKSPACE_BRANCH")
+	envTFEUser1 = os.Getenv("TFE_USER1")
+	envTFEUser2 = os.Getenv("TFE_USER2")
+}
+
+var envGithubPolicySetIdentifier string
+var envGithubPolicySetBranch string
+var envGithubPolicySetPath string
+var envGithubRegistryModuleIdentifer string
+var envGithubToken string
+var envGithubWorkspaceIdentifier string
+var envGithubWorkspaceBranch string
+var envTFEUser1 string
+var envTFEUser2 string

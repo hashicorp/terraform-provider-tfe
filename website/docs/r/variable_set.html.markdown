@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_variable_set"
-sidebar_current: "docs-resource-tfe-variable-set"
 description: |-
   Manages variable sets.
 ---
@@ -85,32 +84,6 @@ resource "tfe_variable" "test-b" {
 }
 ```
 
-Creating a variable set that is applied based on workspace tags:
-
-```hcl
-resource "tfe_organization" "test" {
-  name  = "my-org-name"
-  email = "admin@company.com"
-}
-
-data "tfe_workspace_ids" "prod-apps" {
-  tag_names    = ["prod", "app", "aws"]
-  organization = tfe_organization.test.name
-}
-
-resource "tfe_variable_set" "test" {
-  name          = "Tag Based Varset"
-  description   = "Variable set applied to workspaces based on tag."
-  organization  = tfe_organization.test.name
-}
-
-resource "tfe_workspace_variable_set" "test" {
-  for_each        = toset(values(data.tfe_workspace_ids.prod-apps.ids))
-  workspace_id    = each.key
-  variable_set_id = tfe_variable_set.test.id
-}
-```
-
 ## Argument Reference
 
 The following arguments are supported:
@@ -118,7 +91,7 @@ The following arguments are supported:
 * `name` - (Required) Name of the variable set.
 * `description` - (Optional) Description of the variable set.
 * `global` - (Optional) Whether or not the variable set applies to all workspaces in the organization. Defaults to `false`.
-* `organization` - (Required) Name of the organization.
+* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `workspace_ids` - **Deprecated** (Optional) IDs of the workspaces that use the variable set.
   Must not be set if `global` is set. This argument is mutually exclusive with using the resource
   [tfe_workspace_variable_set](workspace_variable_set.html) which is the preferred method of associating a workspace

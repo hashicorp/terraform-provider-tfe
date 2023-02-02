@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_organization_token"
-sidebar_current: "docs-resource-tfe-organization-token"
 description: |-
   Generates a new organization token, replacing any existing token.
 ---
@@ -25,7 +24,7 @@ resource "tfe_organization_token" "test" {
 
 The following arguments are supported:
 
-* `organization` - (Required) Name of the organization.
+* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `force_regenerate` - (Optional) If set to `true`, a new token will be
   generated even if a token already exists. This will invalidate the existing
   token!

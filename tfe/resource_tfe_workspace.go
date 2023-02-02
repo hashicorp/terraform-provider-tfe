@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -12,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-var workspaceIdRegexp = regexp.MustCompile("^ws-[a-zA-Z0-9]{16}$")
+var workspaceIDRegexp = regexp.MustCompile("^ws-[a-zA-Z0-9]{16}$")
 
 func resourceTFEWorkspace() *schema.Resource {
 	return &schema.Resource{
@@ -21,7 +24,7 @@ func resourceTFEWorkspace() *schema.Resource {
 		Update: resourceTFEWorkspaceUpdate,
 		Delete: resourceTFEWorkspaceDelete,
 		Importer: &schema.ResourceImporter{
-			State: resourceTFEWorkspaceImporter,
+			StateContext: resourceTFEWorkspaceImporter,
 		},
 
 		SchemaVersion: 1,
@@ -34,13 +37,20 @@ func resourceTFEWorkspace() *schema.Resource {
 		},
 
 		CustomizeDiff: func(c context.Context, d *schema.ResourceDiff, meta interface{}) error {
-			err := validateAgentExecution(c, d)
-			if err != nil {
+			// NOTE: execution mode must be set to default first before calling the validation functions
+			if err := setExecutionModeDefault(c, d); err != nil {
 				return err
 			}
 
-			err = validateRemoteState(c, d)
-			if err != nil {
+			if err := validateAgentExecution(c, d); err != nil {
+				return err
+			}
+
+			if err := validateRemoteState(c, d); err != nil {
+				return err
+			}
+
+			if err := validateTagNames(c, d); err != nil {
 				return err
 			}
 
@@ -55,7 +65,8 @@ func resourceTFEWorkspace() *schema.Resource {
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Computed: true,
 				ForceNew: true,
 			},
 
@@ -67,6 +78,7 @@ func resourceTFEWorkspace() *schema.Resource {
 			"agent_pool_id": {
 				Type:          schema.TypeString,
 				Optional:      true,
+				Default:       "",
 				ConflictsWith: []string{"operations"},
 			},
 
@@ -116,11 +128,23 @@ func resourceTFEWorkspace() *schema.Resource {
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
+			"assessments_enabled": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+
 			"operations": {
 				Type:          schema.TypeBool,
 				Optional:      true,
 				Computed:      true,
+				Deprecated:    "Use execution_mode instead.",
 				ConflictsWith: []string{"execution_mode", "agent_pool_id"},
+			},
+
+			"project_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
 			},
 
 			"queue_all_runs": {
@@ -176,10 +200,17 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"trigger_prefixes": {
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Type:          schema.TypeList,
+				Optional:      true,
+				Elem:          &schema.Schema{Type: schema.TypeString},
+				ConflictsWith: []string{"trigger_patterns"},
+			},
+
+			"trigger_patterns": {
+				Type:          schema.TypeList,
+				Optional:      true,
+				Elem:          &schema.Schema{Type: schema.TypeString},
+				ConflictsWith: []string{"trigger_prefixes"},
 			},
 
 			"working_directory": {
@@ -215,19 +246,37 @@ func resourceTFEWorkspace() *schema.Resource {
 							Type:     schema.TypeString,
 							Required: true,
 						},
+
+						"tags_regex": {
+							Type:          schema.TypeString,
+							Optional:      true,
+							ConflictsWith: []string{"trigger_patterns", "trigger_prefixes"},
+						},
 					},
 				},
+			},
+			"force_delete": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
+			"resource_count": {
+				Type:     schema.TypeInt,
+				Computed: true,
 			},
 		},
 	}
 }
 
 func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the name and organization.
 	name := d.Get("name").(string)
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
 	// Create a new options struct.
 	options := tfe.WorkspaceCreateOptions{
@@ -235,6 +284,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		AllowDestroyPlan:           tfe.Bool(d.Get("allow_destroy_plan").(bool)),
 		AutoApply:                  tfe.Bool(d.Get("auto_apply").(bool)),
 		Description:                tfe.String(d.Get("description").(string)),
+		AssessmentsEnabled:         tfe.Bool(d.Get("assessments_enabled").(bool)),
 		FileTriggersEnabled:        tfe.Bool(d.Get("file_triggers_enabled").(bool)),
 		QueueAllRuns:               tfe.Bool(d.Get("queue_all_runs").(bool)),
 		SpeculativeEnabled:         tfe.Bool(d.Get("speculative_enabled").(bool)),
@@ -256,7 +306,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		options.ExecutionMode = tfe.String(v.(string))
 	}
 
-	if v, ok := d.GetOk("operations"); ok {
+	if v, ok := d.GetOkExists("operations"); ok {
 		options.Operations = tfe.Bool(v.(bool))
 	}
 
@@ -274,9 +324,23 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 
 	if tps, ok := d.GetOk("trigger_prefixes"); ok {
 		for _, tp := range tps.([]interface{}) {
-			if t, ok := tp.(string); ok {
-				options.TriggerPrefixes = append(options.TriggerPrefixes, t)
-			}
+			options.TriggerPrefixes = append(options.TriggerPrefixes, tp.(string))
+		}
+	} else {
+		options.TriggerPrefixes = nil
+	}
+
+	if tps, ok := d.GetOk("trigger_patterns"); ok {
+		for _, tp := range tps.([]interface{}) {
+			options.TriggerPatterns = append(options.TriggerPatterns, tp.(string))
+		}
+	} else {
+		options.TriggerPatterns = nil
+	}
+
+	if d.HasChange("project_id") {
+		if v, ok := d.GetOk("project_id"); ok && v.(string) != "" {
+			options.Project = &tfe.Project{ID: *tfe.String(v.(string))}
 		}
 	}
 
@@ -288,6 +352,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 			Identifier:        tfe.String(vcsRepo["identifier"].(string)),
 			IngressSubmodules: tfe.Bool(vcsRepo["ingress_submodules"].(bool)),
 			OAuthTokenID:      tfe.String(vcsRepo["oauth_token_id"].(string)),
+			TagsRegex:         tfe.String(vcsRepo["tags_regex"].(string)),
 		}
 
 		// Only set the branch if one is configured.
@@ -298,16 +363,11 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 
 	for _, tagName := range d.Get("tag_names").(*schema.Set).List() {
 		name := tagName.(string)
-		if len(strings.TrimSpace(name)) != 0 {
-			if tagContainsUppercase(name) {
-				warnWorkspaceTagsCasing(ctx, name)
-			}
-			options.Tags = append(options.Tags, &tfe.Tag{Name: name})
-		}
+		options.Tags = append(options.Tags, &tfe.Tag{Name: name})
 	}
 
 	log.Printf("[DEBUG] Create workspace %s for organization: %s", name, organization)
-	workspace, err := tfeClient.Workspaces.Create(ctx, organization, options)
+	workspace, err := config.Client.Workspaces.Create(ctx, organization, options)
 	if err != nil {
 		return fmt.Errorf(
 			"Error creating workspace %s for organization %s: %w", name, organization, err)
@@ -316,7 +376,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 	d.SetId(workspace.ID)
 
 	if sshKeyID, ok := d.GetOk("ssh_key_id"); ok {
-		_, err = tfeClient.Workspaces.AssignSSHKey(ctx, workspace.ID, tfe.WorkspaceAssignSSHKeyOptions{
+		_, err = config.Client.Workspaces.AssignSSHKey(ctx, workspace.ID, tfe.WorkspaceAssignSSHKeyOptions{
 			SSHKeyID: tfe.String(sshKeyID.(string)),
 		})
 		if err != nil {
@@ -330,7 +390,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		for _, remoteStateConsumerID := range remoteStateConsumerIDs.(*schema.Set).List() {
 			options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: remoteStateConsumerID.(string)})
 		}
-		err = tfeClient.Workspaces.AddRemoteStateConsumers(ctx, workspace.ID, options)
+		err = config.Client.Workspaces.AddRemoteStateConsumers(ctx, workspace.ID, options)
 		if err != nil {
 			return fmt.Errorf("Error adding remote state consumers to workspace %s: %w", name, err)
 		}
@@ -340,11 +400,11 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 }
 
 func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	id := d.Id()
 	log.Printf("[DEBUG] Read configuration of workspace: %s", id)
-	workspace, err := tfeClient.Workspaces.ReadByID(ctx, id)
+	workspace, err := config.Client.Workspaces.ReadByID(ctx, id)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] Workspace %s no longer exists", id)
@@ -357,6 +417,11 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	// Update the config.
 	d.Set("name", workspace.Name)
 	d.Set("allow_destroy_plan", workspace.AllowDestroyPlan)
+
+	// TFE (onprem) does not currently have this feature and this value won't be returned in those cases.
+	// workspace.AssessmentsEnabled will default to false
+	d.Set("assessments_enabled", workspace.AssessmentsEnabled)
+
 	d.Set("auto_apply", workspace.AutoApply)
 	d.Set("description", workspace.Description)
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
@@ -369,8 +434,15 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("structured_run_output_enabled", workspace.StructuredRunOutputEnabled)
 	d.Set("terraform_version", workspace.TerraformVersion)
 	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
+	d.Set("trigger_patterns", workspace.TriggerPatterns)
 	d.Set("working_directory", workspace.WorkingDirectory)
 	d.Set("organization", workspace.Organization.Name)
+	d.Set("resource_count", workspace.ResourceCount)
+
+	// Project will be nil for versions of TFE that predate projects
+	if workspace.Project != nil {
+		d.Set("project_id", workspace.Project.ID)
+	}
 
 	var sshKeyID string
 	if workspace.SSHKey != nil {
@@ -397,6 +469,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 			"branch":             workspace.VCSRepo.Branch,
 			"ingress_submodules": workspace.VCSRepo.IngressSubmodules,
 			"oauth_token_id":     workspace.VCSRepo.OAuthTokenID,
+			"tags_regex":         workspace.VCSRepo.TagsRegex,
 		}
 		vcsRepo = append(vcsRepo, vcsConfig)
 	}
@@ -406,7 +479,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	if workspace.GlobalRemoteState {
 		d.Set("global_remote_state", true)
 	} else {
-		globalRemoteState, remoteStateConsumerIDs, err := readWorkspaceStateConsumers(id, tfeClient)
+		globalRemoteState, remoteStateConsumerIDs, err := readWorkspaceStateConsumers(id, config.Client)
 		if err != nil {
 			return fmt.Errorf(
 				"Error reading remote state consumers for workspace %s: %w", id, err)
@@ -420,16 +493,18 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 	id := d.Id()
 
 	if d.HasChange("name") || d.HasChange("auto_apply") || d.HasChange("queue_all_runs") ||
-		d.HasChange("terraform_version") || d.HasChange("working_directory") || d.HasChange("vcs_repo") ||
-		d.HasChange("file_triggers_enabled") || d.HasChange("trigger_prefixes") ||
+		d.HasChange("terraform_version") || d.HasChange("working_directory") ||
+		d.HasChange("vcs_repo") || d.HasChange("file_triggers_enabled") ||
+		d.HasChange("trigger_prefixes") || d.HasChange("trigger_patterns") ||
 		d.HasChange("allow_destroy_plan") || d.HasChange("speculative_enabled") ||
 		d.HasChange("operations") || d.HasChange("execution_mode") ||
 		d.HasChange("description") || d.HasChange("agent_pool_id") ||
-		d.HasChange("global_remote_state") || d.HasChange("structured_run_output_enabled") {
+		d.HasChange("global_remote_state") || d.HasChange("structured_run_output_enabled") ||
+		d.HasChange("assessments_enabled") || d.HasChange("project_id") {
 		// Create a new options struct.
 		options := tfe.WorkspaceUpdateOptions{
 			Name:                       tfe.String(d.Get("name").(string)),
@@ -442,6 +517,18 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			SpeculativeEnabled:         tfe.Bool(d.Get("speculative_enabled").(bool)),
 			StructuredRunOutputEnabled: tfe.Bool(d.Get("structured_run_output_enabled").(bool)),
 			WorkingDirectory:           tfe.String(d.Get("working_directory").(string)),
+		}
+
+		if d.HasChange("project_id") {
+			if v, ok := d.GetOk("project_id"); ok && v.(string) != "" {
+				options.Project = &tfe.Project{ID: *tfe.String(v.(string))}
+			}
+		}
+
+		if d.HasChange("assessments_enabled") {
+			if v, ok := d.GetOkExists("assessments_enabled"); ok {
+				options.AssessmentsEnabled = tfe.Bool(v.(bool))
+			}
 		}
 
 		if d.HasChange("agent_pool_id") {
@@ -474,8 +561,21 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 				}
 			}
 		} else {
-			// Reset trigger prefixes when none are present in the config.
 			options.TriggerPrefixes = []string{}
+		}
+
+		if tps, ok := d.GetOk("trigger_patterns"); ok {
+			for _, tp := range tps.([]interface{}) {
+				options.TriggerPatterns = append(options.TriggerPatterns, tp.(string))
+			}
+		} else {
+			options.TriggerPatterns = []string{}
+		}
+
+		if d.GetRawConfig().GetAttr("trigger_patterns").IsNull() {
+			options.TriggerPatterns = nil
+		} else if d.GetRawConfig().GetAttr("trigger_prefixes").IsNull() {
+			options.TriggerPrefixes = nil
 		}
 
 		if workingDir, ok := d.GetOk("working_directory"); ok {
@@ -491,11 +591,26 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 				Branch:            tfe.String(vcsRepo["branch"].(string)),
 				IngressSubmodules: tfe.Bool(vcsRepo["ingress_submodules"].(bool)),
 				OAuthTokenID:      tfe.String(vcsRepo["oauth_token_id"].(string)),
+				TagsRegex:         tfe.String(vcsRepo["tags_regex"].(string)),
+			}
+		}
+
+		// Remove vcs_repo from the workspace
+		// if the value of vcs_repo has been changed
+		// by removing it from the config
+		if d.HasChange("vcs_repo") {
+			_, ok := d.GetOk("vcs_repo")
+			if !ok {
+				_, err := config.Client.Workspaces.RemoveVCSConnectionByID(ctx, id)
+				if err != nil {
+					d.Partial(true)
+					return fmt.Errorf("Error removing VCS repo from workspace %s: %w", id, err)
+				}
 			}
 		}
 
 		log.Printf("[DEBUG] Update workspace %s", id)
-		_, err := tfeClient.Workspaces.UpdateByID(ctx, id, options)
+		_, err := config.Client.Workspaces.UpdateByID(ctx, id, options)
 		if err != nil {
 			d.Partial(true)
 			return fmt.Errorf(
@@ -503,25 +618,11 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		}
 	}
 
-	// Remove vcs_repo from the workspace
-	// if the value of vcs_repo has been changed
-	// by removing it from the config
-	if d.HasChange("vcs_repo") {
-		_, ok := d.GetOk("vcs_repo")
-		if !ok {
-			_, err := tfeClient.Workspaces.RemoveVCSConnectionByID(ctx, id)
-			if err != nil {
-				d.Partial(true)
-				return fmt.Errorf("Error removing VCS repo from workspace %s: %w", id, err)
-			}
-		}
-	}
-
 	if d.HasChange("ssh_key_id") {
 		sshKeyID := d.Get("ssh_key_id").(string)
 
 		if sshKeyID != "" {
-			_, err := tfeClient.Workspaces.AssignSSHKey(
+			_, err := config.Client.Workspaces.AssignSSHKey(
 				ctx,
 				id,
 				tfe.WorkspaceAssignSSHKeyOptions{
@@ -532,7 +633,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 				return fmt.Errorf("Error assigning SSH key to workspace %s: %w", id, err)
 			}
 		} else {
-			_, err := tfeClient.Workspaces.UnassignSSHKey(ctx, id)
+			_, err := config.Client.Workspaces.UnassignSSHKey(ctx, id)
 			if err != nil {
 				return fmt.Errorf("Error unassigning SSH key from workspace %s: %w", id, err)
 			}
@@ -553,14 +654,11 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 
 			for _, tagName := range newTagNames.List() {
 				name := tagName.(string)
-				if tagContainsUppercase(name) {
-					warnWorkspaceTagsCasing(ctx, name)
-				}
 				addTags = append(addTags, &tfe.Tag{Name: name})
 			}
 
 			log.Printf("[DEBUG] Adding tags to workspace: %s", d.Id())
-			err := tfeClient.Workspaces.AddTags(ctx, d.Id(), tfe.WorkspaceAddTagsOptions{Tags: addTags})
+			err := config.Client.Workspaces.AddTags(ctx, d.Id(), tfe.WorkspaceAddTagsOptions{Tags: addTags})
 			if err != nil {
 				return fmt.Errorf("Error adding tags to workspace %s: %w", d.Id(), err)
 			}
@@ -575,7 +673,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			}
 
 			log.Printf("[DEBUG] Removing tags from workspace: %s", d.Id())
-			err := tfeClient.Workspaces.RemoveTags(ctx, d.Id(), tfe.WorkspaceRemoveTagsOptions{Tags: removeTags})
+			err := config.Client.Workspaces.RemoveTags(ctx, d.Id(), tfe.WorkspaceRemoveTagsOptions{Tags: removeTags})
 			if err != nil {
 				return fmt.Errorf("Error removing tags from workspace %s: %w", d.Id(), err)
 			}
@@ -600,7 +698,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			}
 
 			log.Printf("[DEBUG] Adding remote state consumers to workspace: %s", d.Id())
-			err := tfeClient.Workspaces.AddRemoteStateConsumers(ctx, d.Id(), options)
+			err := config.Client.Workspaces.AddRemoteStateConsumers(ctx, d.Id(), options)
 			if err != nil {
 				return fmt.Errorf("Error adding remote state consumers to workspace %s: %w", d.Id(), err)
 			}
@@ -615,7 +713,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			}
 
 			log.Printf("[DEBUG] Removing remote state consumers from workspace: %s", d.Id())
-			err := tfeClient.Workspaces.RemoveRemoteStateConsumers(ctx, d.Id(), options)
+			err := config.Client.Workspaces.RemoveRemoteStateConsumers(ctx, d.Id(), options)
 			if err != nil {
 				return fmt.Errorf("Error removing remote state consumers from workspace %s: %w", d.Id(), err)
 			}
@@ -626,17 +724,78 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 }
 
 func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 	id := d.Id()
 
 	log.Printf("[DEBUG] Delete workspace %s", id)
-	err := tfeClient.Workspaces.DeleteByID(ctx, id)
+
+	ws, err := config.Client.Workspaces.ReadByID(ctx, id)
+	if err != nil {
+		if err == tfe.ErrResourceNotFound {
+			return nil
+		}
+		return fmt.Errorf(
+			"Error reading workspace %s: %w", id, err)
+	}
+
+	forceDelete := d.Get("force_delete").(bool)
+
+	// presence of Permissions.CanForceDelete will determine if current version of TFE supports safe deletes
+	if ws.Permissions.CanForceDelete == nil {
+		if forceDelete {
+			err = config.Client.Workspaces.DeleteByID(ctx, id)
+		} else {
+			return fmt.Errorf(
+				"Error deleting workspace %s: This workspace must be force deleted by setting force_delete=true", id)
+		}
+	} else if *ws.Permissions.CanForceDelete {
+		if forceDelete {
+			err = config.Client.Workspaces.DeleteByID(ctx, id)
+		} else {
+			err = errWorkspaceResourceCountCheck(id, ws.ResourceCount)
+			if err != nil {
+				return err
+			}
+			err = config.Client.Workspaces.SafeDeleteByID(ctx, id)
+			return errWorkspaceSafeDeleteWithPermission(id, err)
+		}
+	} else {
+		if forceDelete {
+			return fmt.Errorf(
+				"Error deleting workspace %s: missing required permissions to set force delete workspaces in the organization", id)
+		}
+		err = errWorkspaceResourceCountCheck(id, ws.ResourceCount)
+		if err != nil {
+			return err
+		}
+		err = config.Client.Workspaces.SafeDeleteByID(ctx, id)
+	}
+
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil
 		}
 		return fmt.Errorf(
 			"Error deleting workspace %s: %w", id, err)
+	}
+	return nil
+}
+
+// since execution_mode is marked as Optional: true, and Computed: true,
+// unsetting the execution_mode in the config after it's been set to a valid
+// value is not detected by ResourceDiff so read value from RawConfig instead
+func setExecutionModeDefault(_ context.Context, d *schema.ResourceDiff) error {
+	configMap := d.GetRawConfig().AsValueMap()
+	operations, operationsReadOk := configMap["operations"]
+	executionMode, executionModeReadOk := configMap["execution_mode"]
+	executionModeState := d.Get("execution_mode")
+	if operationsReadOk && executionModeReadOk {
+		if operations.IsNull() && executionMode.IsNull() && executionModeState != "remote" {
+			err := d.SetNew("execution_mode", "remote")
+			if err != nil {
+				return fmt.Errorf("failed to set execution_mode: %w", err)
+			}
+		}
 	}
 
 	return nil
@@ -646,9 +805,10 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 // schema validation based on a different argument's value, so we do so here at plan time instead.
 func validateAgentExecution(_ context.Context, d *schema.ResourceDiff) error {
 	if executionMode, ok := d.GetOk("execution_mode"); ok {
-		if executionMode.(string) != "agent" && d.Get("agent_pool_id") != "" {
+		executionModeIsAgent := executionMode.(string) == "agent"
+		if !executionModeIsAgent && d.Get("agent_pool_id") != "" {
 			return fmt.Errorf("execution_mode must be set to 'agent' to assign agent_pool_id")
-		} else if executionMode.(string) == "agent" && d.NewValueKnown("agent_pool_id") && d.Get("agent_pool_id") == "" {
+		} else if executionModeIsAgent && d.NewValueKnown("agent_pool_id") && d.Get("agent_pool_id") == "" {
 			return fmt.Errorf("agent_pool_id must be provided when execution_mode is 'agent'")
 		}
 	}
@@ -662,6 +822,36 @@ func validateAgentExecution(_ context.Context, d *schema.ResourceDiff) error {
 	return nil
 }
 
+func validTagName(tag string) bool {
+	// Tags are re-validated here because the API will accept uppercase letters and automatically
+	// downcase them, causing resource drift. It's better to catch this issue during the plan phase
+	//
+	//     \A            match beginning of string
+	//     [a-z0-9]      match a letter or number for the first char; case insensitive
+	//     (?:           start non-capture group; used to group sub-expressions; will not capture/store, interally
+	//       [a-z0-9_:-]*     match 0 or more letter, number, colon, or hyphen
+	//       [a-z0-9]    match a letter or number as the final character when this group is present
+	//     )?            end non-capture group; ? is quantifier; matches 0 or 1 instances of the non-capture group in preceding set
+	//     \z            match end of string; requires last char to match preceding subset; in this case, an alphanumeric char
+	tagPattern := regexp.MustCompile(`\A[a-z0-9](?:[a-z0-9_:-]*[a-z0-9])?\z`)
+	return tagPattern.MatchString(tag)
+}
+
+func validateTagNames(_ context.Context, d *schema.ResourceDiff) error {
+	names, ok := d.GetOk("tag_names")
+	if !ok {
+		return nil
+	}
+
+	for _, t := range names.(*schema.Set).List() {
+		tagName := t.(string)
+		if !validTagName(tagName) {
+			return fmt.Errorf("%q is not a valid tag name. Tag must be one or more characters; can include lowercase letters, numbers, colons, hyphens, and underscores; and must begin and end with a letter or number", tagName)
+		}
+	}
+	return nil
+}
+
 func validateRemoteState(_ context.Context, d *schema.ResourceDiff) error {
 	// If remote state consumers aren't set, the global setting can be either value and it
 	// doesn't matter.
@@ -671,7 +861,7 @@ func validateRemoteState(_ context.Context, d *schema.ResourceDiff) error {
 	}
 
 	if globalRemoteState, ok := d.GetOk("global_remote_state"); ok {
-		if globalRemoteState.(bool) == true {
+		if globalRemoteState.(bool) {
 			return fmt.Errorf("global_remote_state must be 'false' when setting remote_state_consumer_ids")
 		}
 	}
@@ -679,8 +869,8 @@ func validateRemoteState(_ context.Context, d *schema.ResourceDiff) error {
 	return nil
 }
 
-func resourceTFEWorkspaceImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	tfeClient := meta.(*tfe.Client)
+func resourceTFEWorkspaceImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	config := meta.(ConfiguredClient)
 
 	s := strings.Split(d.Id(), "/")
 	if len(s) >= 3 {
@@ -689,7 +879,7 @@ func resourceTFEWorkspaceImporter(d *schema.ResourceData, meta interface{}) ([]*
 			d.Id(),
 		)
 	} else if len(s) == 2 {
-		workspaceID, err := fetchWorkspaceExternalID(s[0]+"/"+s[1], tfeClient)
+		workspaceID, err := fetchWorkspaceExternalID(s[0]+"/"+s[1], config.Client)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"error retrieving workspace with name %s from organization %s %w", s[1], s[0], err)
@@ -701,7 +891,20 @@ func resourceTFEWorkspaceImporter(d *schema.ResourceData, meta interface{}) ([]*
 	return []*schema.ResourceData{d}, nil
 }
 
-// Warns the user that a workspace tag containing uppercase characters will be downcased.
-func warnWorkspaceTagsCasing(ctx context.Context, tag string) {
-	log.Printf("[WARN] The tag \"%s\" contains uppercase characters that will be transformed by the API. Please update your configuration to lowercase tags in order to avoid conflicts with state.", tag)
+func errWorkspaceSafeDeleteWithPermission(workspaceID string, err error) error {
+	if err != nil {
+		if strings.HasPrefix(err.Error(), "conflict") {
+			return fmt.Errorf("error deleting workspace %s: %w\nTo delete this workspace without destroying the managed resources, add force_delete = true to the resource config", workspaceID, err)
+		}
+		return err
+	}
+	return nil
+}
+
+func errWorkspaceResourceCountCheck(workspaceID string, resourceCount int) error {
+	if resourceCount > 0 {
+		return fmt.Errorf(
+			"error deleting workspace %s: This workspace has %v resources under management and must be force deleted by setting force_delete = true", workspaceID, resourceCount)
+	}
+	return nil
 }

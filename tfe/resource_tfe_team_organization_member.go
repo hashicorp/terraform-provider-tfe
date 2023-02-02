@@ -1,6 +1,10 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -15,7 +19,7 @@ func resourceTFETeamOrganizationMember() *schema.Resource {
 		Read:   resourceTFETeamOrganizationMemberRead,
 		Delete: resourceTFETeamOrganizationMemberDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: resourceTFETeamOrganizationMemberImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -35,7 +39,7 @@ func resourceTFETeamOrganizationMember() *schema.Resource {
 }
 
 func resourceTFETeamOrganizationMemberCreate(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the team ID and username..
 	teamID := d.Get("team_id").(string)
@@ -47,7 +51,7 @@ func resourceTFETeamOrganizationMemberCreate(d *schema.ResourceData, meta interf
 	}
 
 	log.Printf("[DEBUG] Add organization membership %q to team: %s", organizationMembershipID, teamID)
-	err := tfeClient.TeamMembers.Add(ctx, teamID, options)
+	err := config.Client.TeamMembers.Add(ctx, teamID, options)
 	if err != nil {
 		return fmt.Errorf("Error adding organization membership %q to team %s: %w", organizationMembershipID, teamID, err)
 	}
@@ -58,7 +62,7 @@ func resourceTFETeamOrganizationMemberCreate(d *schema.ResourceData, meta interf
 }
 
 func resourceTFETeamOrganizationMemberRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the team ID and organization membership id.
 	teamID, organizationMembershipID, err := unpackTeamOrganizationMemberID(d.Id())
@@ -67,10 +71,10 @@ func resourceTFETeamOrganizationMemberRead(d *schema.ResourceData, meta interfac
 	}
 
 	log.Printf("[DEBUG] Read organization membership from team: %s", teamID)
-	organizationMemberships, err := tfeClient.TeamMembers.ListOrganizationMemberships(ctx, teamID)
+	organizationMemberships, err := config.Client.TeamMembers.ListOrganizationMemberships(ctx, teamID)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			log.Printf("[DEBUG] Organization membership %q does no longer exist", d.Id())
+			log.Printf("[DEBUG] Organization membership %q no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}
@@ -97,7 +101,7 @@ func resourceTFETeamOrganizationMemberRead(d *schema.ResourceData, meta interfac
 }
 
 func resourceTFETeamOrganizationMemberDelete(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the team ID and organization membership id.
 	teamID, organizationMembershipID, err := unpackTeamOrganizationMemberID(d.Id())
@@ -111,7 +115,7 @@ func resourceTFETeamOrganizationMemberDelete(d *schema.ResourceData, meta interf
 	}
 
 	log.Printf("[DEBUG] Remove organization membership %q from team: %s", organizationMembershipID, teamID)
-	err = tfeClient.TeamMembers.Remove(ctx, teamID, options)
+	err = config.Client.TeamMembers.Remove(ctx, teamID, options)
 	if err != nil {
 		return fmt.Errorf("Error removing organization membership %q to team %s: %w", organizationMembershipID, teamID, err)
 	}
@@ -131,4 +135,41 @@ func unpackTeamOrganizationMemberID(id string) (teamID, organizationMembershipID
 	}
 
 	return s[0], s[1], nil
+}
+
+func resourceTFETeamOrganizationMemberImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	config := meta.(ConfiguredClient)
+
+	// Import formats:
+	//  - <TEAM ID>/<ORGANIZATION MEMBERSHIP ID>
+	//  - <ORGANIZATION NAME>/<USER EMAIL>/<TEAM NAME>
+	s := strings.SplitN(d.Id(), "/", 3)
+
+	if len(s) == 2 {
+		// the <TEAM ID>/<ORGANIZATION MEMBERSHIP ID> is the default ID, so pass it on through
+		return []*schema.ResourceData{d}, nil
+	} else if len(s) == 3 {
+		// the ID we want to construct is <TEAM ID>/<ORGANIZATION MEMBERSHIP ID>
+		// we can use org and email to get the org membership ID, and find the team based on org and team name
+		org := s[0]
+		email := s[1]
+		teamName := s[2]
+		orgMembership, err := fetchOrganizationMemberByNameOrEmail(ctx, config.Client, org, "", email)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"error retrieving user with email %s from organization %s: %w", email, org, err)
+		}
+		team, err := fetchTeamByName(ctx, config.Client, org, teamName)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"error retrieving team with name %s from organization %s: %w", teamName, org, err)
+		}
+
+		d.SetId(fmt.Sprintf("%s/%s", team.ID, orgMembership.ID))
+		return []*schema.ResourceData{d}, nil
+	}
+	return nil, fmt.Errorf(
+		"invalid organization membership input format: %s (expected <TEAM ID>/<ORGANIZATION MEMBERSHIP ID> or <ORGANIZATION NAME>/<TEAM NAME>/<USER EMAIL>)",
+		d.Id(),
+	)
 }

@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -18,7 +21,7 @@ func TestAccTFEOAuthClient_basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			if GITHUB_TOKEN == "" {
+			if envGithubToken == "" {
 				t.Skip("Please set GITHUB_TOKEN to run this test")
 			}
 		},
@@ -75,7 +78,7 @@ func TestAccTFEOAuthClient_rsaKeys(t *testing.T) {
 func testAccCheckTFEOAuthClientExists(
 	n string, oc *tfe.OAuthClient) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -86,7 +89,7 @@ func testAccCheckTFEOAuthClientExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		client, err := tfeClient.OAuthClients.Read(ctx, rs.Primary.ID)
+		client, err := config.Client.OAuthClients.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -117,7 +120,7 @@ func testAccCheckTFEOAuthClientAttributes(
 }
 
 func testAccCheckTFEOAuthClientDestroy(s *terraform.State) error {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	config := testAccProvider.Meta().(ConfiguredClient)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_oauth_client" {
@@ -128,7 +131,7 @@ func testAccCheckTFEOAuthClientDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := tfeClient.OAuthClients.Read(ctx, rs.Primary.ID)
+		_, err := config.Client.OAuthClients.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("OAuth client %s still exists", rs.Primary.ID)
 		}
@@ -150,7 +153,7 @@ resource "tfe_oauth_client" "foobar" {
   http_url         = "https://github.com"
   oauth_token      = "%s"
   service_provider = "github"
-}`, rInt, GITHUB_TOKEN)
+}`, rInt, envGithubToken)
 }
 
 func testAccTFEOAuthClient_rsaKeys(rInt int) string {

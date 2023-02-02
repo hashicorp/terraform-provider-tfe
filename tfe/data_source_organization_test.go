@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -30,6 +33,32 @@ func TestAccTFEOrganizationDataSource_basic(t *testing.T) {
 					// check data attrs
 					resource.TestCheckResourceAttr("data.tfe_organization.foo", "name", orgName),
 					resource.TestCheckResourceAttr("data.tfe_organization.foo", "email", "admin@company.com"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEOrganizationDataSource_defaultProject(t *testing.T) {
+	skipUnlessBeta(t)
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	org := &tfe.Organization{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOrganizationDataSourceConfig_basic(rInt),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccCheckTFEOrganizationExists("tfe_organization.foo", org),
+					resource.TestCheckResourceAttrWith("tfe_organization.foo", "default_project_id", func(value string) error {
+						if value != org.DefaultProject.ID {
+							return fmt.Errorf("default project ID should be %s but was %s", org.DefaultProject.ID, value)
+						}
+						return nil
+					}),
 				),
 			},
 		},

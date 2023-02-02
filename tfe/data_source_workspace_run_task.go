@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -13,25 +16,34 @@ func dataSourceTFEWorkspaceRunTask() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"workspace_id": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "The id of the workspace.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"task_id": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "The id of the run task.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"enforcement_level": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The enforcement level of the task.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
+			"stage": {
+				Description: "Which stage the task will run in.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 		},
 	}
 }
 
 func dataSourceTFEWorkspaceRunTaskRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	workspaceID := d.Get("workspace_id").(string)
 	taskID := d.Get("task_id").(string)
@@ -39,7 +51,7 @@ func dataSourceTFEWorkspaceRunTaskRead(d *schema.ResourceData, meta interface{})
 	// Create an options struct.
 	options := &tfe.WorkspaceRunTaskListOptions{}
 	for {
-		list, err := tfeClient.WorkspaceRunTasks.List(ctx, workspaceID, options)
+		list, err := config.Client.WorkspaceRunTasks.List(ctx, workspaceID, options)
 		if err != nil {
 			return fmt.Errorf("Error retrieving tasks for workspace %s: %w", workspaceID, err)
 		}
@@ -47,6 +59,7 @@ func dataSourceTFEWorkspaceRunTaskRead(d *schema.ResourceData, meta interface{})
 		for _, wstask := range list.Items {
 			if wstask.RunTask.ID == taskID {
 				d.Set("enforcement_level", string(wstask.EnforcementLevel))
+				d.Set("stage", string(wstask.Stage))
 				d.SetId(wstask.ID)
 				return nil
 			}
@@ -61,5 +74,5 @@ func dataSourceTFEWorkspaceRunTaskRead(d *schema.ResourceData, meta interface{})
 		options.PageNumber = list.NextPage
 	}
 
-	return fmt.Errorf("Could not find workspace run task %s in workspace %s", taskID, workspaceID)
+	return fmt.Errorf("could not find workspace run task %s in workspace %s", taskID, workspaceID)
 }

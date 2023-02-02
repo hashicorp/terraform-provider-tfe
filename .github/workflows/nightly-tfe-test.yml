@@ -1,0 +1,152 @@
+name: Nightly TFE Tests
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: 0 0 * * *
+
+jobs:
+  instance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Sync dependencies
+        run: |
+          go mod download
+          go mod tidy
+      - name: Build nightly TFE instance
+        env:
+          TFE_TOKEN: ${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}
+        run: |
+          cd .github/scripts/build_instance
+          go run . -w tflocal-terraform-provider-tfe-nightly
+
+  tests:
+    needs: instance
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        parallel: [3]
+        index: [0, 1, 2]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Sync dependencies
+        run: |
+          go get -v -t -d ./...
+          go mod tidy
+
+      - name: Install gotestsum
+        run: go install gotest.tools/gotestsum@latest
+
+      - name: Split acceptance tests
+        id: test_split
+        uses: brandonc/go-test-split-action@v1
+        with:
+          index: ${{ matrix.index }}
+          total: ${{ matrix.parallel }}
+
+      - name: Fetch Outputs
+        env:
+          TFE_TOKEN: "${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}"
+        run: |
+          set -euo pipefail
+          go run .github/scripts/fetch_outputs/main.go hashicorp-v2 tflocal-terraform-provider-tfe-nightly
+
+      - name: Run Tests
+        env:
+          TF_ACC: "1"
+          ENABLE_TFE: "1"
+          TFC_RUN_TASK_URL: "https://httpstat.us/200"
+          GITHUB_POLICY_SET_IDENTIFIER: "hashicorp/test-policy-set"
+          GITHUB_REGISTRY_MODULE_IDENTIFIER: "hashicorp/terraform-random-module"
+          GITHUB_WORKSPACE_IDENTIFIER: "hashicorp/terraform-random-1"
+          GITHUB_WORKSPACE_BRANCH: "test"
+          GITHUB_TOKEN: "${{ secrets.TESTING_GITHUB_TOKEN }}"
+          MOD_PROVIDER: github.com/hashicorp/terraform-provider-tfe
+          MOD_TFE: github.com/hashicorp/terraform-provider-tfe/tfe
+          MOD_VERSION: github.com/hashicorp/terraform-provider-tfe/version
+        run: |
+          source $HOME/.env
+          gotestsum --format short-verbose -- $MOD_PROVIDER $MOD_TFE $MOD_VERSION -timeout=30m -run "${{ steps.test_split.outputs.run }}"
+
+  tests-summarize:
+    needs: [tests]
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    steps:
+      - name: Check tests Status
+        run: |
+          if [ "${{ needs.tests.result }}" = "success" ]; then
+            exit 0
+          fi
+          exit 1
+
+  slack-notify:
+    needs: tests-summarize
+    if: always() && (needs.tests-summarize.result == 'failure')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send slack notification on failure
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          payload: |
+            {
+              "text": ":x::moon::sob: Nightly TFE tests *FAILED*",
+              "attachments": [
+                {
+                  "color": "#C41E3A",
+                  "blocks": [
+                    {
+                      "type": "section",
+                      "fields": [
+                        {
+                          "type": "mrkdwn",
+                          "text": "*Workflow:*\n${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+  cleanup:
+    runs-on: ubuntu-latest
+    needs: [tests-summarize]
+    if: "${{ always() }}"
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+          check-latest: true
+          cache: true
+
+      - name: Destroy nightly TFE instance
+        env:
+          TFE_TOKEN: ${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}
+        run: |
+          cd .github/scripts/build_instance
+          go run . -w tflocal-terraform-provider-tfe-nightly -d

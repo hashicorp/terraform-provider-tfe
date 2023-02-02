@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -24,12 +27,14 @@ func TestResourceTfeVariableStateUpgradeV0(t *testing.T) {
 	client := testTfeClient(t, testClientOptions{defaultWorkspaceID: "ws-123"})
 	name := "a-workspace"
 
-	client.Workspaces.Create(nil, "hashicorp", tfe.WorkspaceCreateOptions{
+	client.Workspaces.Create(context.TODO(), "hashicorp", tfe.WorkspaceCreateOptions{
 		Name: &name,
 	})
 
 	expected := testResourceTfeVariableStateDataV1()
-	actual, err := resourceTfeVariableStateUpgradeV0(context.Background(), testResourceTfeVariableStateDataV0(), client)
+	actual, err := resourceTfeVariableStateUpgradeV0(context.Background(), testResourceTfeVariableStateDataV0(), ConfiguredClient{
+		Client: client,
+	})
 	if err != nil {
 		t.Fatalf("error migrating state: %s", err)
 	}

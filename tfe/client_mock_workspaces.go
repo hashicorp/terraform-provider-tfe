@@ -1,8 +1,12 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -26,6 +30,8 @@ func newMockWorkspaces(options testClientOptions) *mockWorkspaces {
 	}
 }
 
+var _ tfe.Workspaces = (*mockWorkspaces)(nil)
+
 func (m *mockWorkspaces) List(ctx context.Context, organization string, options *tfe.WorkspaceListOptions) (*tfe.WorkspaceList, error) {
 	panic("not implemented")
 }
@@ -37,6 +43,7 @@ func (m *mockWorkspaces) Create(ctx context.Context, organization string, option
 		Organization: &tfe.Organization{
 			Name: organization,
 		},
+		Permissions: &tfe.WorkspacePermissions{},
 	}
 
 	m.workspaceNames[workspaceNamesKey{organization, *options.Name}] = ws
@@ -66,7 +73,12 @@ func (m *mockWorkspaces) Readme(ctx context.Context, workspaceID string) (io.Rea
 }
 
 func (m *mockWorkspaces) ReadByID(ctx context.Context, workspaceID string) (*tfe.Workspace, error) {
-	panic("not implemented")
+	for _, workspace := range m.workspaceNames {
+		if workspace.ID == workspaceID {
+			return workspace, nil
+		}
+	}
+	return nil, tfe.ErrResourceNotFound
 }
 
 func (m *mockWorkspaces) Update(ctx context.Context, organization, workspace string, options tfe.WorkspaceUpdateOptions) (*tfe.Workspace, error) {
@@ -82,7 +94,13 @@ func (m *mockWorkspaces) Delete(ctx context.Context, organization, workspace str
 }
 
 func (m *mockWorkspaces) DeleteByID(ctx context.Context, workspaceID string) error {
-	panic("not implemented")
+	for key, workspace := range m.workspaceNames {
+		if workspace.ID == workspaceID {
+			delete(m.workspaceNames, key)
+			return nil
+		}
+	}
+	return fmt.Errorf("no workspace found with id %s", workspaceID)
 }
 
 func (m *mockWorkspaces) RemoveVCSConnection(ctx context.Context, organization, workspace string) (*tfe.Workspace, error) {
@@ -117,7 +135,7 @@ func (m *mockWorkspaces) ListRemoteStateConsumers(ctx context.Context, workspace
 	if m.options.remoteStateConsumersResponse == "404" {
 		return nil, tfe.ErrResourceNotFound
 	} else if m.options.remoteStateConsumersResponse == "500" {
-		return nil, errors.New("something is broken!")
+		return nil, errors.New("something is broken")
 	}
 
 	return &tfe.WorkspaceList{Items: []*tfe.Workspace{{ID: "ws-456"}}, Pagination: &tfe.Pagination{CurrentPage: 1, TotalPages: 1}}, nil
@@ -144,5 +162,13 @@ func (m *mockWorkspaces) AddTags(ctx context.Context, workspaceID string, option
 }
 
 func (m *mockWorkspaces) RemoveTags(ctx context.Context, workspaceID string, options tfe.WorkspaceRemoveTagsOptions) error {
+	panic("not implemented")
+}
+
+func (m *mockWorkspaces) SafeDelete(ctx context.Context, organization string, workspace string) error {
+	panic("not implemented")
+}
+
+func (m *mockWorkspaces) SafeDeleteByID(ctx context.Context, workspaceID string) error {
 	panic("not implemented")
 }

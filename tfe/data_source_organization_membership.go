@@ -1,9 +1,12 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -14,12 +17,18 @@ func dataSourceTFEOrganizationMembership() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"email": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+			},
+
+			"username": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
 			},
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 
 			"user_id": {
@@ -31,60 +40,22 @@ func dataSourceTFEOrganizationMembership() *schema.Resource {
 }
 
 func dataSourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the user email and organization.
 	email := d.Get("email").(string)
-	organization := d.Get("organization").(string)
+	username := d.Get("username").(string)
 
-	// Create an options struct.
-	options := &tfe.OrganizationMembershipListOptions{
-		Include: []tfe.OrgMembershipIncludeOpt{tfe.OrgMembershipUser},
-		Emails:  []string{email},
-	}
-
-	oml, err := tfeClient.OrganizationMemberships.List(ctx, organization, options)
+	organization, err := config.schemaOrDefaultOrganization(d)
 	if err != nil {
-		return fmt.Errorf("Error retrieving organization memberships: %w", err)
+		return err
 	}
 
-	switch len(oml.Items) {
-	case 0:
-		return fmt.Errorf("Could not find organization membership for organization %s and email %s", organization, email)
-	case 1:
-		// We check this just in case a user's TFE instance only has one organization member
-		// and doesn't support the filter query param
-		if oml.Items[0].User.Email != email {
-			return fmt.Errorf("Could not find organization membership for organization %s and email %s", organization, email)
-		}
-
-		d.SetId(oml.Items[0].ID)
-		return resourceTFEOrganizationMembershipRead(d, meta)
-	default:
-		options = &tfe.OrganizationMembershipListOptions{
-			Include: []tfe.OrgMembershipIncludeOpt{tfe.OrgMembershipUser},
-		}
-
-		for {
-			for _, member := range oml.Items {
-				if member.User.Email == email {
-					d.SetId(member.ID)
-					return resourceTFEOrganizationMembershipRead(d, meta)
-				}
-			}
-
-			if oml.CurrentPage >= oml.TotalPages {
-				break
-			}
-
-			options.PageNumber = oml.NextPage
-
-			oml, err = tfeClient.OrganizationMemberships.List(ctx, organization, options)
-			if err != nil {
-				return fmt.Errorf("Error retrieving organization memberships: %w", err)
-			}
-		}
+	orgMember, err := fetchOrganizationMemberByNameOrEmail(context.Background(), config.Client, organization, username, email)
+	if err != nil {
+		return fmt.Errorf("could not find organization membership for organization %s: %w", organization, err)
 	}
 
-	return fmt.Errorf("Could not find organization membership for organization %s and email %s", organization, email)
+	d.SetId(orgMember.ID)
+	return resourceTFEOrganizationMembershipRead(d, meta)
 }

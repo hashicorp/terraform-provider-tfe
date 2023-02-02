@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_agent_pool"
-sidebar_current: "docs-resource-tfe-agent-pool"
 description: |-
   Manages agent pools
 ---
@@ -37,7 +36,7 @@ resource "tfe_agent_pool" "test-agent-pool" {
 The following arguments are supported:
 
 * `name` - (Required) Name of the agent pool.
-* `organization` - (Required) Name of the organization.
+* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 
 ## Attributes Reference
 
@@ -47,8 +46,12 @@ The following arguments are supported:
 
 ## Import
 
-Agent pools can be imported; use `<AGENT POOL ID>` as the import ID. For example:
+Agent pools can be imported; use `<AGENT POOL ID>` or `<ORGANIZATION NAME>/<AGENT POOL NAME>` as the import ID. For example:
 
 ```shell
 terraform import tfe_agent_pool.test apool-rW0KoLSlnuNb5adB
+```
+
+```shell
+terraform import tfe_workspace.test my-org-name/my-agent-pool-name
 ```

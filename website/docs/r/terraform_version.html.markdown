@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_terraform_version"
-sidebar_current: "docs-resource-tfe-terraform-version-x"
 description: |-
   Manages Terraform versions
 ---
@@ -44,11 +43,11 @@ The following arguments are supported:
 Terraform versions can be imported; use `<TERRAFORM VERSION ID>` or `<TERRAFORM VERSION NUMBER>` as the import ID. For example:
 
 ```shell
-terraform import tfe_terraform_version.test tool-L4oe7rNwn7J4E5Yr 
+terraform import tfe_terraform_version.test tool-L4oe7rNwn7J4E5Yr
 ```
 
 ```shell
-terraform import tfe_terraform_version.test 1.1.2 
+terraform import tfe_terraform_version.test 1.1.2
 ```
 
--> **Note:** You can fetch a Terraform version ID from the URL of an exisiting version in the Terraform Cloud UI. The ID is in the format `tool-<RANDOM STRING>` 
+-> **Note:** You can fetch a Terraform version ID from the URL of an existing version in the Terraform Cloud UI. The ID is in the format `tool-<RANDOM STRING>`

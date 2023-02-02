@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -19,7 +22,7 @@ func dataSourceTFETeam() *schema.Resource {
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 			"sso_team_id": {
 				Type:     schema.TypeString,
@@ -30,13 +33,16 @@ func dataSourceTFETeam() *schema.Resource {
 }
 
 func dataSourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	// Get the name and organization.
 	name := d.Get("name").(string)
-	organization := d.Get("organization").(string)
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
 
-	tl, err := tfeClient.Teams.List(ctx, organization, &tfe.TeamListOptions{
+	tl, err := config.Client.Teams.List(ctx, organization, &tfe.TeamListOptions{
 		Names: []string{name},
 	})
 	if err != nil {
@@ -45,12 +51,12 @@ func dataSourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 
 	switch len(tl.Items) {
 	case 0:
-		return fmt.Errorf("Could not find team %s/%s", organization, name)
+		return fmt.Errorf("could not find team %s/%s", organization, name)
 	case 1:
 		// We check this just in case a user's TFE instance only has one team
 		// and doesn't support the filter query param
 		if tl.Items[0].Name != name {
-			return fmt.Errorf("Could not find team %s/%s", organization, name)
+			return fmt.Errorf("could not find team %s/%s", organization, name)
 		}
 
 		d.SetId(tl.Items[0].ID)
@@ -75,12 +81,12 @@ func dataSourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 
 			options.PageNumber = tl.NextPage
 
-			tl, err = tfeClient.Teams.List(ctx, organization, options)
+			tl, err = config.Client.Teams.List(ctx, organization, options)
 			if err != nil {
 				return fmt.Errorf("Error retrieving teams: %w", err)
 			}
 		}
 	}
 
-	return fmt.Errorf("Could not find team %s/%s", organization, name)
+	return fmt.Errorf("could not find team %s/%s", organization, name)
 }

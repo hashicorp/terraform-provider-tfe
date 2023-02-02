@@ -1,8 +1,12 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
 	"fmt"
 	"math/rand"
+	"regexp"
 	"testing"
 	"time"
 
@@ -38,13 +42,17 @@ func TestAccTFETeam_full(t *testing.T) {
 	team := &tfe.Team{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
+	// Enabling the manage projects feature requires projects support, which is feature flagged and disabled
+	// on TFE
+	manageProjects := betaFeaturesEnabled()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeam_full(rInt),
+				Config: testAccTFETeam_full(rInt, manageProjects),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamExists(
 						"tfe_team.foobar", team),
@@ -67,6 +75,10 @@ func TestAccTFETeam_full(t *testing.T) {
 						"tfe_team.foobar", "organization_access.0.manage_modules", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_run_tasks", "true"),
+					// Projects are in GA for TFC, but haven't been enabled for TFE yet. This Cloud-only gate
+					// can be removed once TFE nightly builds include project support
+					betaOnlyCheck(resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_projects", "true")),
 				),
 			},
 		},
@@ -77,13 +89,17 @@ func TestAccTFETeam_full_update(t *testing.T) {
 	team := &tfe.Team{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
+	// Enabling the manage projects feature requires projects support, which is feature flagged and disabled
+	// on TFE
+	manageProjects := betaFeaturesEnabled()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeam_full(rInt),
+				Config: testAccTFETeam_full(rInt, manageProjects),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamExists(
 						"tfe_team.foobar", team),
@@ -106,6 +122,8 @@ func TestAccTFETeam_full_update(t *testing.T) {
 						"tfe_team.foobar", "organization_access.0.manage_modules", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_run_tasks", "true"),
+					betaOnlyCheck(resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_projects", "true")),
 				),
 			},
 			{
@@ -132,6 +150,8 @@ func TestAccTFETeam_full_update(t *testing.T) {
 						"tfe_team.foobar", "organization_access.0.manage_modules", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_run_tasks", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_projects", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "sso_team_id", "changed-sso-id"),
 				),
@@ -160,6 +180,8 @@ func TestAccTFETeam_full_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_run_tasks", "false"),
 					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_projects", "false"),
+					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "sso_team_id", ""),
 				),
 			},
@@ -167,7 +189,7 @@ func TestAccTFETeam_full_update(t *testing.T) {
 	})
 }
 
-func TestAccTFETeam_import(t *testing.T) {
+func TestAccTFETeam_import_byId(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -189,10 +211,166 @@ func TestAccTFETeam_import(t *testing.T) {
 	})
 }
 
+func TestAccTFETeam_import_byId_doesNotExist(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeam_basic(rInt),
+			},
+
+			{
+				ResourceName:  "tfe_team.foobar",
+				ImportState:   true,
+				ImportStateId: fmt.Sprintf("tst-terraform-%d/team-1234567891234567", rInt),
+				ExpectError:   regexp.MustCompile("no team found with name or ID team-1234567891234567 in organization"),
+			},
+		},
+	})
+}
+
+func TestAccTFETeam_import_byName(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeam_basic(rInt),
+			},
+
+			{
+				ResourceName:      "tfe_team.foobar",
+				ImportState:       true,
+				ImportStateId:     fmt.Sprintf("tst-terraform-%d/team-test", rInt),
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccTFETeam_import_missingOrg(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeam_basic(rInt),
+			},
+
+			{
+				ResourceName:  "tfe_team.foobar",
+				ImportState:   true,
+				ImportStateId: "wrongOrg/team-test",
+				ExpectError:   regexp.MustCompile("no team found with name or ID .* in organization wrongOrg"),
+			},
+		},
+	})
+}
+
+func TestAccTFETeam_import_missingTeam(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeam_basic(rInt),
+			},
+
+			{
+				ResourceName:  "tfe_team.foobar",
+				ImportState:   true,
+				ImportStateId: fmt.Sprintf("tst-terraform-%d/wrongTeam", rInt),
+				ExpectError:   regexp.MustCompile("no team found with name or ID wrongTeam"),
+			},
+		},
+	})
+}
+
+func TestAccTFETeam_import_teamNameWithSpaces(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeam_withSpaces(rInt),
+			},
+
+			{
+				ResourceName:      "tfe_team.foobar",
+				ImportState:       true,
+				ImportStateId:     fmt.Sprintf("tst-terraform-%d/team name with spaces", rInt),
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccTFETeam_import_teamNameWithSlashes(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeam_withSlashes(rInt),
+			},
+
+			{
+				ResourceName:      "tfe_team.foobar",
+				ImportState:       true,
+				ImportStateId:     fmt.Sprintf("tst-terraform-%d/team/name/with/slashes", rInt),
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccTFETeam_import_teamNameWhichLooksLikeID(t *testing.T) {
+	// Check that we can import a team with a name which looks like a team ID
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeam_withIDLikeName(rInt),
+			},
+
+			{
+				ResourceName:      "tfe_team.foobar",
+				ImportState:       true,
+				ImportStateId:     fmt.Sprintf("tst-terraform-%d/team-aaaabbbbcccc", rInt),
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func testAccCheckTFETeamExists(
 	n string, team *tfe.Team) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -203,7 +381,7 @@ func testAccCheckTFETeamExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		t, err := tfeClient.Teams.Read(ctx, rs.Primary.ID)
+		t, err := config.Client.Teams.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -251,6 +429,9 @@ func testAccCheckTFETeamAttributes_full(
 		if !team.OrganizationAccess.ManageRunTasks {
 			return fmt.Errorf("OrganizationAccess.ManageRunTasks should be true")
 		}
+		if betaFeaturesEnabled() && !team.OrganizationAccess.ManageProjects {
+			return fmt.Errorf("OrganizationAccess.ManageProjects should be true")
+		}
 		if team.SSOTeamID != "team-test-sso-id" {
 			return fmt.Errorf("Bad SSO Team ID: %s", team.SSOTeamID)
 		}
@@ -282,6 +463,9 @@ func testAccCheckTFETeamAttributes_full_update(
 		if team.OrganizationAccess.ManageRunTasks {
 			return fmt.Errorf("OrganizationAccess.ManageRunTasks should be false")
 		}
+		if team.OrganizationAccess.ManageProjects {
+			return fmt.Errorf("OrganizationAccess.ManageProjects should be false")
+		}
 
 		if team.SSOTeamID != "changed-sso-id" {
 			return fmt.Errorf("Bad SSO Team ID: %s", team.SSOTeamID)
@@ -292,7 +476,7 @@ func testAccCheckTFETeamAttributes_full_update(
 }
 
 func testAccCheckTFETeamDestroy(s *terraform.State) error {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	config := testAccProvider.Meta().(ConfiguredClient)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_team" {
@@ -303,7 +487,7 @@ func testAccCheckTFETeamDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := tfeClient.Teams.Read(ctx, rs.Primary.ID)
+		_, err := config.Client.Teams.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Team %s still exists", rs.Primary.ID)
 		}
@@ -325,7 +509,7 @@ resource "tfe_team" "foobar" {
 }`, rInt)
 }
 
-func testAccTFETeam_full(rInt int) string {
+func testAccTFETeam_full(rInt int, manageProjects bool) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
@@ -346,9 +530,10 @@ resource "tfe_team" "foobar" {
     manage_run_tasks = true
 	manage_providers = true
 	manage_modules = true
+	manage_projects = %t
   }
   sso_team_id = "team-test-sso-id"
-}`, rInt)
+}`, rInt, manageProjects)
 }
 
 func testAccTFETeam_full_update(rInt int) string {
@@ -372,6 +557,7 @@ resource "tfe_team" "foobar" {
     manage_run_tasks = false
 	manage_providers = false
 	manage_modules = false
+	manage_projects = false
   }
 
   sso_team_id = "changed-sso-id"
@@ -388,6 +574,45 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_team" "foobar" {
   name         = "team-test-1"
+  organization = tfe_organization.foobar.id
+}`, rInt)
+}
+
+func testAccTFETeam_withSpaces(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team name with spaces"
+  organization = tfe_organization.foobar.id
+}`, rInt)
+}
+
+func testAccTFETeam_withSlashes(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team/name/with/slashes"
+  organization = tfe_organization.foobar.id
+}`, rInt)
+}
+
+func testAccTFETeam_withIDLikeName(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-aaaabbbbcccc"
   organization = tfe_organization.foobar.id
 }`, rInt)
 }

@@ -1,10 +1,12 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
 	"fmt"
 	"log"
 
-	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -38,10 +40,10 @@ func dataSourceTFEIPRanges() *schema.Resource {
 }
 
 func dataSourceTFEIPRangesRead(d *schema.ResourceData, meta interface{}) error {
-	tfeClient := meta.(*tfe.Client)
+	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Reading IP Ranges")
-	ipRanges, err := tfeClient.Meta.IPRanges.Read(ctx, "")
+	ipRanges, err := config.Client.Meta.IPRanges.Read(ctx, "")
 	if err != nil {
 		return fmt.Errorf("Error retrieving IP ranges: %w", err)
 	}

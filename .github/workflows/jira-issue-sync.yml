@@ -1,0 +1,83 @@
+name: Jira Issue Sync
+
+on:
+  workflow_call:
+    inputs:
+      project:
+        required: true
+        type: string
+      issue-extra-fields:
+        type: string
+        default: "{}"
+        required: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login
+        uses: atlassian/gajira-login@v3.0.1
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+
+      # Constructs extra data from workflow input as well as these defaults
+      - name: Build Extra fields
+        id: build-extra-fields
+        env:
+          # customfield_10089 is "Issue Link", customfield_10371 is "Source" (use JIRA API to retrieve)
+          EXTRA_FIELDS: |
+            { "customfield_10089": "${{ github.event.issue.html_url || github.event.pull_request.html_url }}",
+              "customfield_10371": { "value": "GitHub" },
+              "components": [{ "name": "${{ github.event.repository.name }}" }],
+              "labels": ${{ toJSON(github.event.issue.labels.*.name) }}
+            }
+        run: |
+          echo "::set-output name=extra::$(echo '${{ env.EXTRA_FIELDS }}' '${{ inputs.issue-extra-fields }}' | jq -rcs '.[0] * .[1]')"
+
+      # Creates a new issue, only if this is a new PR or GH Issue, and only if an existing issue is not in the branch name
+      - name: Create Issue
+        if: github.event.action == 'opened' && steps.find-issue-in-branch.outputs.issue == null
+        uses: atlassian/gajira-create@v3
+        with:
+          project: "${{ inputs.project }}"
+          issuetype: "GH Issue"
+          summary: "${{ github.event.repository.name }} [GH Issue #${{ github.event.issue.number || github.event.pull_request.number }}]: ${{ github.event.issue.title || github.event.pull_request.title }}"
+          description: "${{ github.event.issue.body || github.event.pull_request.body }}\n\n_Created in GitHub by ${{ github.actor }}._"
+          fields: ${{ steps.build-extra-fields.outputs.extra }}
+
+      - name: Search
+        if: github.event.action != 'opened'
+        id: search
+        uses: tomhjp/gh-action-jira-search@v0.2.2
+        with:
+          # cf[10089] is Issue Link (use JIRA API to retrieve)
+          jql: 'issuetype = "GH Issue" and cf[10089] = "${{ github.event.issue.html_url || github.event.pull_request.html_url }}"'
+
+      - name: Sync comment
+        if: github.event.action == 'created' && steps.search.outputs.issue
+        uses: atlassian/gajira-comment@v3
+        with:
+          issue: ${{ steps.search.outputs.issue }}
+          comment: "${{ github.actor }} ${{ github.event.review.state || 'commented' }}:\n\n${{ github.event.comment.body || github.event.review.body }}\n\n${{ github.event.comment.html_url || github.event.review.html_url }}"
+
+      - name: Close issue
+        if: ( github.event.action == 'closed' || github.event.action == 'deleted' ) && steps.search.outputs.issue
+        uses: brandonc/gajira-transition@master
+        with:
+          issue: ${{ steps.search.outputs.issue }}
+          transition: "Closed"
+          fields: |
+            {
+              "resolution": {
+                "name": "Done"
+              }
+            }
+
+      - name: Reopen issue
+        if: github.event.action == 'reopened' && steps.search.outputs.issue
+        uses: atlassian/gajira-transition@v3
+        with:
+          issue: ${{ steps.search.outputs.issue }}
+          transition: "Reopen"

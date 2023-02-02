@@ -1,7 +1,6 @@
 ---
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_workspace"
-sidebar_current: "docs-datasource-tfe-workspace-x"
 description: |-
   Get information on a workspace.
 ---
@@ -35,11 +34,13 @@ In addition to all arguments above, the following attributes are exported:
 * `id` - The workspace ID.
 * `allow_destroy_plan` - Indicates whether destroy plans can be queued on the workspace.
 * `auto_apply` - Indicates whether to automatically apply changes when a Terraform plan is successful.
+  `assessments_enabled` - (Available only in Terraform Cloud) Indicates whether health assessments such as drift detection are enabled for the workspace.
 * `file_triggers_enabled` - Indicates whether runs are triggered based on the changed files in a VCS push (if `true`) or always triggered on every push (if `false`).
 * `global_remote_state` - (Optional) Whether the workspace should allow all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (determined by the `remote_state_consumer_ids` argument).
 * `remote_state_consumer_ids` - (Optional) A set of workspace IDs that will be set as the remote state consumers for the given workspace. Cannot be used if `global_remote_state` is set to `true`.
 * `operations` - Indicates whether the workspace is using remote execution mode. Set to `false` to switch execution mode to local. `true` by default.
 * `policy_check_failures` - The number of policy check failures from the latest run.
+* `project_id` - ID of the workspace's project
 * `queue_all_runs` - Indicates whether the workspace will automatically perform runs
   in response to webhooks immediately after its creation. If `false`, an initial run must
   be manually queued to enable future automatic runs.
@@ -50,12 +51,15 @@ In addition to all arguments above, the following attributes are exported:
 * `source_url` - The URL of the workspace creation source, if set.
 * `speculative_enabled` - Indicates whether this workspace allows speculative plans.
 * `ssh_key_id` - The ID of an SSH key assigned to the workspace.
-* `structured_run_output_enabled` - Indicates whether runs in this workspace use the enhanced apply UI. 
+* `structured_run_output_enabled` - Indicates whether runs in this workspace use the enhanced apply UI.
 * `tag_names` - The names of tags added to this workspace.
 * `terraform_version` - The version (or version constraint) of Terraform used for this workspace.
-* `trigger_prefixes` - List of repository-root-relative paths which describe all locations to be tracked for changes.
+* `trigger_prefixes` - List of trigger prefixes that describe the paths Terraform Cloud monitors for changes, in addition to the working directory. Trigger prefixes are always appended to the root directory of the repository.
+  Terraform Cloud or Terraform Enterprise will start a run when files are changed in any directory path matching the provided set of prefixes.
+* `trigger_patterns` - List of [glob patterns](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/vcs#glob-patterns-for-automatic-run-triggering) that describe the files Terraform Cloud monitors for changes. Trigger patterns are always appended to the root directory of the repository.
 * `vcs_repo` - Settings for the workspace's VCS repository.
 * `working_directory` - A relative path that Terraform will execute within.
+* `execution_mode` - Indicates the [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode) of the workspace. Possible values include `remote`, `local`, or `agent`.
 
 
 The `vcs_repo` block contains:
@@ -67,3 +71,4 @@ The `vcs_repo` block contains:
 * `ingress_submodules` - Indicates whether submodules should be fetched when
   cloning the VCS repository.
 * `oauth_token_id` - OAuth token ID of the configured VCS connection.
+* `tags_regex` - A regular expression used to trigger a Workspace run for matching Git tags.

@@ -12,11 +12,11 @@ Your policy set repository will need the following:
 1. A policy set stored in a subdirectory
 1. A branch other than `main`.
 
-Your registry module repository will need to be a [valid module](https://www.terraform.io/docs/cloud/registry/publish.html#preparing-a-module-repository).
+Your registry module repository will need to be a [valid module](https://developer.hashicorp.com/terraform/cloud-docs/registry/publish-modules#preparing-a-module-repository).
 It will need the following:
 1. To be named `terraform-<PROVIDER>-<NAME>`
 1. At least one valid SemVer tag in the format `x.y.z`
-[terraform-random-module](ttps://github.com/caseylang/terraform-random-module) is a good example repo.
+[terraform-random-module](https://github.com/caseylang/terraform-random-module) is a good example repo.
 
 Your workspace repository will need the following:
 1. A branch other than `main`.
@@ -27,12 +27,12 @@ To run all tests, you will need to set the following environment variables:
 
 ##### Required:
 A hostname and token must be provided in order to run the acceptance tests. By
-default, these are loaded from the the `credentials` in the [CLI config
-file](https://www.terraform.io/docs/commands/cli-config.html). You can override
+default, these are loaded from the `credentials` in the [CLI config
+file](https://developer.hashicorp.com/terraform/cli/config/config-file). You can override
 these values with the environment variables specified below:
 
 1. `TFE_HOSTNAME` - URL of a Terraform Cloud or Terraform Enterprise instance to be used for testing, without the scheme. Example: `tfe.local`
-1. `TFE_TOKEN` - A [user API token](https://www.terraform.io/docs/cloud/users-teams-organizations/users.html#api-tokens) for an administrator account on the Terraform Cloud or Terraform Enterprise instance being used for testing.
+1. `TFE_TOKEN` - A [user API token](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/users#tokens) for an administrator account on the Terraform Cloud or Terraform Enterprise instance being used for testing.
 
 ##### Optional:
 1. `TFE_USER1` and `TFE_USER2`: The usernames of two pre-existing users on the Terraform Cloud or Terraform Enterprise instance being used for testing. Required for running team membership tests.
@@ -43,9 +43,10 @@ these values with the environment variables specified below:
 1. `GITHUB_REGISTRY_MODULE_IDENTIFIER` - GitHub registry module repository identifier in the format `username/repository`. Required for running registry module tests.
 1. `GITHUB_WORKSPACE_IDENTIFIER` - GitHub workspace repository identifier in the format `username/repository`. Required for running workspace tests.
 1. `GITHUB_WORKSPACE_BRANCH`: A GitHub branch for the repository specified by `GITHUB_WORKSPACE_IDENTIFIER`. Required for running workspace tests.
-1. `SKIP_PAID` - Some tests depend on paid only features. By setting `SKIP_PAID=1`, you will skip tests that access paid features.
 1. `ENABLE_TFE` - Some tests cover features available only in Terraform Cloud. To skip these tests when running against a Terraform Enterprise instance, set `ENABLE_TFE=1`.
 1. `RUN_TASKS_URL` - External URL to use for testing Run Tasks operations, for example `RUN_TASKS_URL=http://somewhere.local:8080/pass`. Required for running run tasks tests.
+
+**Note:** In order to run integration tests for **Paid** features you will need a token `TFE_TOKEN` with TFC/E administrator privileges, otherwise the attempt to upgrade an organization's feature set will fail.
 
 You can set your environment variables up however you prefer. The following are instructions for setting up environment variables using [envchain](https://github.com/sorah/envchain).
    1. Make sure you have envchain installed. [Instructions for this can be found in the envchain README](https://github.com/sorah/envchain#installation).
@@ -63,19 +64,11 @@ You can set your environment variables up however you prefer. The following are 
 
 ### 3. Run the tests
 
-#### Running the provider tests
+There are two types of tests one can run for the provider: acceptance tests and unit tests. You can run acceptance tests using the Makefile target `testacc` and unit tests using the Makefile target `test`. Typically, when you write a test for a particular resource or data source it will be referred to as an acceptance test. On the other hand, unit tests are reserved for resource helpers or provider specific logic. These are semantics used by the Terraform Plugin SDKv2 and are maintained here for consistency, learn more about [Acceptance Tests](https://developer.hashicorp.com/terraform/plugin/sdkv2/testing/acceptance-tests). Furthermore, resource tests make use of the Terraform Plugin SDKv2 helper, [resource.Test()](https://pkg.go.dev/github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource#Test), which requires the environment variable `TF_ACC` to be set in order to run.
 
-##### With envchain:
-```sh
-$ envchain YOUR_NAMESPACE_HERE make test
-```
+**Note**: The difference between `make testacc` and `make test` is whether `TF_ACC=1` is set or not. However, you can still run unit tests using the `testacc` target.
 
-##### Without envchain:
-```sh
-$ make test
-```
-
-#### Running all the acceptance tests
+#### Run all acceptance tests
 
 ##### With envchain:
 ```sh
@@ -87,7 +80,7 @@ $ envchain YOUR_NAMESPACE_HERE make testacc
 $ make testacc
 ```
 
-#### Running specific acceptance tests
+#### Run a specific acceptance test
 
 The commands below use notification configurations as an example.
 
@@ -99,5 +92,31 @@ $ TESTARGS="-run TestAccTFENotificationConfiguration" envchain YOUR_NAMESPACE_HE
 ##### Without envchain:
 ```sh
 $ TESTARGS="-run TestAccTFENotificationConfiguration" make testacc
+```
+
+#### Run all unit tests
+
+##### With envchain:
+```sh
+$ envchain YOUR_NAMESPACE_HERE make test
+```
+
+##### Without envchain:
+```sh
+$ make test
+```
+
+#### Run a specific unit test
+
+The commands below test the organization run task helper as an example.
+
+##### With envchain:
+```sh
+$ TESTARGS="-run TestFetchOrganizationRunTask" envchain YOUR_NAMESPACE_HERE make test
+```
+
+##### Without envchain:
+```sh
+$ TESTARGS="-run TestFetchOrganizationRunTask" make test
 ```
 

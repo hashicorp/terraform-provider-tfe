@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfe
 
 import (
@@ -192,7 +195,7 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesEmail(t *testin
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_emailWithToken(rInt),
-				ExpectError: regexp.MustCompile(`Token cannot be set with destination type of email`),
+				ExpectError: regexp.MustCompile(`token cannot be set with destination type of email`),
 			},
 		},
 	})
@@ -207,11 +210,11 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesGeneric(t *test
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`Email addresses cannot be set with destination type of generic`),
+				ExpectError: regexp.MustCompile(`email addresses cannot be set with destination type of generic`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`Email user IDs cannot be set with destination type of generic`),
+				ExpectError: regexp.MustCompile(`email user IDs cannot be set with destination type of generic`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithoutURL(rInt),
@@ -230,15 +233,15 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesSlack(t *testin
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`Email addresses cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`email addresses cannot be set with destination type of slack`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`Email user IDs cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`email user IDs cannot be set with destination type of slack`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithToken(rInt),
-				ExpectError: regexp.MustCompile(`Token cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`token cannot be set with destination type of slack`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithoutURL(rInt),
@@ -257,15 +260,15 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesMicrosoftTeams(
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`Email addresses cannot be set with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`email addresses cannot be set with destination type of microsoft-teams`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`Email user IDs cannot be set with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`email user IDs cannot be set with destination type of microsoft-teams`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithToken(rInt),
-				ExpectError: regexp.MustCompile(`Token cannot be set with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`token cannot be set with destination type of microsoft-teams`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithoutURL(rInt),
@@ -308,7 +311,7 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesEmail(t *
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_emailWithToken(rInt),
-				ExpectError: regexp.MustCompile(`Token cannot be set with destination type of email`),
+				ExpectError: regexp.MustCompile(`token cannot be set with destination type of email`),
 			},
 		},
 	})
@@ -343,11 +346,11 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesGeneric(t
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`Email addresses cannot be set with destination type of generic`),
+				ExpectError: regexp.MustCompile(`email addresses cannot be set with destination type of generic`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`Email user IDs cannot be set with destination type of generic`),
+				ExpectError: regexp.MustCompile(`email user IDs cannot be set with destination type of generic`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithoutURL(rInt),
@@ -386,15 +389,15 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesSlack(t *
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`Email addresses cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`email addresses cannot be set with destination type of slack`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`Email user IDs cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`email user IDs cannot be set with destination type of slack`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithToken(rInt),
-				ExpectError: regexp.MustCompile(`Token cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`token cannot be set with destination type of slack`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithoutURL(rInt),
@@ -429,15 +432,15 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesMicrosoft
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`Email addresses cannot be set with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`email addresses cannot be set with destination type of microsoft-teams`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`Email user IDs cannot be set with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`email user IDs cannot be set with destination type of microsoft-teams`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithToken(rInt),
-				ExpectError: regexp.MustCompile(`Token cannot be set with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`token cannot be set with destination type of microsoft-teams`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithoutURL(rInt),
@@ -546,7 +549,7 @@ func TestAccTFENotificationConfigurationImport_emptyEmailUserIDs(t *testing.T) {
 
 func testAccCheckTFENotificationConfigurationExists(n string, notificationConfiguration *tfe.NotificationConfiguration) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		tfeClient := testAccProvider.Meta().(*tfe.Client)
+		config := testAccProvider.Meta().(ConfiguredClient)
 
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -557,7 +560,7 @@ func testAccCheckTFENotificationConfigurationExists(n string, notificationConfig
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		nc, err := tfeClient.NotificationConfigurations.Read(ctx, rs.Primary.ID)
+		nc, err := config.Client.NotificationConfigurations.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -763,7 +766,7 @@ func testAccCheckTFENotificationConfigurationAttributesDuplicateTriggers(notific
 }
 
 func testAccCheckTFENotificationConfigurationDestroy(s *terraform.State) error {
-	tfeClient := testAccProvider.Meta().(*tfe.Client)
+	config := testAccProvider.Meta().(ConfiguredClient)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_notification_configuration" {
@@ -774,7 +777,7 @@ func testAccCheckTFENotificationConfigurationDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := tfeClient.NotificationConfigurations.Read(ctx, rs.Primary.ID)
+		_, err := config.Client.NotificationConfigurations.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Notification configuration %s still exists", rs.Primary.ID)
 		}
