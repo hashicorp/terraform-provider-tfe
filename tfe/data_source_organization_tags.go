@@ -8,9 +8,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func dataSourceTFEOrganizationWorkspaceTags() *schema.Resource {
+func dataSourceTFEOrganizationTags() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceTFEOrganizationWorkspaceTagsRead,
+		Read: dataSourceTFEOrganizationTagsRead,
 
 		Schema: map[string]*schema.Schema{
 			"organization": {
@@ -43,7 +43,7 @@ func dataSourceTFEOrganizationWorkspaceTags() *schema.Resource {
 	}
 }
 
-func dataSourceTFEOrganizationWorkspaceTagsRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceTFEOrganizationTagsRead(d *schema.ResourceData, meta interface{}) error {
 	tfeClient := meta.(ConfiguredClient)
 
 	organizationName, err := tfeClient.schemaOrDefaultOrganization(d)
@@ -57,7 +57,7 @@ func dataSourceTFEOrganizationWorkspaceTagsRead(d *schema.ResourceData, meta int
 	for {
 		organizationTagsList, err := tfeClient.Client.OrganizationTags.List(ctx, organizationName, &options)
 		if err != nil {
-			return fmt.Errorf("Error retrieving organization workspace tags: %w", err)
+			return fmt.Errorf("Error retrieving organization tags: %w", err)
 		}
 
 		for _, orgTag := range organizationTagsList.Items {

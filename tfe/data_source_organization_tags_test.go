@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccTFEOrganizationWorkspaceTagsDataSource_basic(t *testing.T) {
+func TestAccTFEOrganizationTagsDataSource_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
@@ -18,18 +18,18 @@ func TestAccTFEOrganizationWorkspaceTagsDataSource_basic(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOrganizationWorkspaceTagsDataSourceConfig(rInt),
+				Config: testAccTFEOrganizationTagsDataSourceConfig(rInt),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
-						"data.tfe_organization_workspace_tags.foobar", "organization", orgName),
-					resource.TestCheckResourceAttrSet("data.tfe_organization_workspace_tags.foobar", "tags"),
+						"data.tfe_organization_tags.foobar", "organization", orgName),
+					resource.TestCheckResourceAttrSet("data.tfe_organization_tags.foobar", "tags"),
 				),
 			},
 		},
 	})
 }
 
-func testAccTFEOrganizationWorkspaceTagsDataSourceConfig(rInt int) string {
+func testAccTFEOrganizationTagsDataSourceConfig(rInt int) string {
 	return fmt.Sprintf(`
 	resource "tfe_organization" "foobar" {
 		name  = "tst-terraform-%d"
@@ -53,7 +53,7 @@ func testAccTFEOrganizationWorkspaceTagsDataSourceConfig(rInt int) string {
 		global_remote_state   = true
 	  }
 	  
-	  data "tfe_organization_workspace_tags" "foobar" {
+	  data "tfe_organization_tags" "foobar" {
 		organization = tfe_workspace.foobar.organization
 		depends_on   = [tfe_workspace.foobar]
 	  }`, rInt, rInt)

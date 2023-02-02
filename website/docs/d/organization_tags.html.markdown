@@ -1,18 +1,18 @@
 ---
 layout: "tfe"
-page_title: "Terraform Enterprise: tfe_organization_workspace_tags"
+page_title: "Terraform Enterprise: tfe_organization_tags"
 description: |-
   Get information on an organization's workspace tags.
 ---
 
-# Data Source: tfe_organization_workspace_tags
+# Data Source: tfe_organization_tags
 
 Use this data source to get information about the workspace tags for a given organization.
 
 ## Example Usage
 
 ```hcl
-data "tfe_organization_workspace_tags" "example" {
+data "tfe_organization_tags" "example" {
   organization = "my-org-name"
 }
 ```
