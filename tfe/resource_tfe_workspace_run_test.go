@@ -23,81 +23,48 @@ func TestAccTFEWorkspaceRun_create(t *testing.T) {
 	organization, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
-	runForParentWorkspace := &tfe.Run{}
-	runForChildWorkspace := &tfe.Run{}
-
-	resource.Test(t, resource.TestCase{
-		PreCheck: func() {
-			testAccPreCheck(t)
-			testAccGithubPreCheck(t)
+	createCases := []struct{ Config string }{
+		{
+			Config: testAccTFEWorkspaceRun_create(organization.Name, rInt),
 		},
-		Providers: testAccProviders,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccTFEWorkspaceRun_create(organization.Name, rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceRunExistWithExpectedStatus("tfe_workspace_run.ws_run_parent", runForParentWorkspace, tfe.RunApplied),
-					testAccCheckTFEWorkspaceRunExistWithExpectedStatus("tfe_workspace_run.ws_run_child", runForChildWorkspace, tfe.RunApplied),
-					resource.TestCheckResourceAttrWith("tfe_workspace_run.ws_run_parent", "id", func(value string) error {
-						if value != runForParentWorkspace.ID {
-							return fmt.Errorf("run ID for ws_run_parent should be %s but was %s", runForParentWorkspace.ID, value)
-						}
-						return nil
-					}),
-					resource.TestCheckResourceAttrWith("tfe_workspace_run.ws_run_child", "id", func(value string) error {
-						if value != runForChildWorkspace.ID {
-							return fmt.Errorf("run ID for ws_run_child should be %s but was %s", runForChildWorkspace.ID, value)
-						}
-						return nil
-					}),
-				),
-			},
+		{
+			Config: testAccTFEWorkspaceRun_createWithDefaults(organization.Name, rInt),
 		},
-	})
-}
-
-func TestAccTFEWorkspaceRun_createWithDefaults(t *testing.T) {
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-
-	tfeClient, err := getClientUsingEnv()
-	if err != nil {
-		t.Fatal(err)
 	}
 
-	organization, orgCleanup := createBusinessOrganization(t, tfeClient)
-	t.Cleanup(orgCleanup)
+	for _, createCase := range createCases {
+		runForParentWorkspace := &tfe.Run{}
+		runForChildWorkspace := &tfe.Run{}
 
-	runForParentWorkspace := &tfe.Run{}
-	runForChildWorkspace := &tfe.Run{}
-
-	resource.Test(t, resource.TestCase{
-		PreCheck: func() {
-			testAccPreCheck(t)
-			testAccGithubPreCheck(t)
-		},
-		Providers: testAccProviders,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccTFEWorkspaceRun_createWithDefaults(organization.Name, rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceRunExistWithExpectedStatus("tfe_workspace_run.ws_run_parent", runForParentWorkspace, tfe.RunApplied),
-					testAccCheckTFEWorkspaceRunExistWithExpectedStatus("tfe_workspace_run.ws_run_child", runForChildWorkspace, tfe.RunApplied),
-					resource.TestCheckResourceAttrWith("tfe_workspace_run.ws_run_parent", "id", func(value string) error {
-						if value != runForParentWorkspace.ID {
-							return fmt.Errorf("run ID for ws_run_parent should be %s but was %s", runForParentWorkspace.ID, value)
-						}
-						return nil
-					}),
-					resource.TestCheckResourceAttrWith("tfe_workspace_run.ws_run_child", "id", func(value string) error {
-						if value != runForChildWorkspace.ID {
-							return fmt.Errorf("run ID for ws_run_child should be %s but was %s", runForChildWorkspace.ID, value)
-						}
-						return nil
-					}),
-				),
+		resource.Test(t, resource.TestCase{
+			PreCheck: func() {
+				testAccPreCheck(t)
+				testAccGithubPreCheck(t)
 			},
-		},
-	})
+			Providers: testAccProviders,
+			Steps: []resource.TestStep{
+				{
+					Config: createCase.Config,
+					Check: resource.ComposeTestCheckFunc(
+						testAccCheckTFEWorkspaceRunExistWithExpectedStatus("tfe_workspace_run.ws_run_parent", runForParentWorkspace, tfe.RunApplied),
+						testAccCheckTFEWorkspaceRunExistWithExpectedStatus("tfe_workspace_run.ws_run_child", runForChildWorkspace, tfe.RunApplied),
+						resource.TestCheckResourceAttrWith("tfe_workspace_run.ws_run_parent", "id", func(value string) error {
+							if value != runForParentWorkspace.ID {
+								return fmt.Errorf("run ID for ws_run_parent should be %s but was %s", runForParentWorkspace.ID, value)
+							}
+							return nil
+						}),
+						resource.TestCheckResourceAttrWith("tfe_workspace_run.ws_run_child", "id", func(value string) error {
+							if value != runForChildWorkspace.ID {
+								return fmt.Errorf("run ID for ws_run_child should be %s but was %s", runForChildWorkspace.ID, value)
+							}
+							return nil
+						}),
+					),
+				},
+			},
+		})
+	}
 }
 
 func TestAccTFEWorkspaceRun_createAndDestroyRuns(t *testing.T) {
@@ -135,7 +102,7 @@ func TestAccTFEWorkspaceRun_createAndDestroyRuns(t *testing.T) {
 	workspaceA := &tfe.Workspace{}
 	workspaceB := &tfe.Workspace{}
 
-	// create workspace outside of the config, to allow for testing check destroy runs prior to deleting the workspace
+	// create workspace outside of the config, to allow for testing destroy runs prior to deleting the workspace
 	for _, wsName := range []string{fmt.Sprintf("tst-terraform-%d-A", rInt), fmt.Sprintf("tst-terraform-%d-B", rInt)} {
 		ws, err := tfeClient.Workspaces.Create(ctx, org.Name, tfe.WorkspaceCreateOptions{
 			Name:         tfe.String(wsName),
@@ -227,10 +194,6 @@ func TestAccTFEWorkspaceRun_invalidParams(t *testing.T) {
 		{
 			Config:      testAccTFEWorkspaceRun_noApplyOrDestroyBlockProvided(organization.Name, rInt),
 			ExpectError: regexp.MustCompile("\"apply\": one of `apply,destroy` must be specified"),
-		},
-		{
-			Config:      testAccTFEWorkspaceRun_noOrganizationProvided(organization.Name, rInt),
-			ExpectError: regexp.MustCompile(`The argument "organization" is required, but no definition was found`),
 		},
 		{
 			Config:      testAccTFEWorkspaceRun_noWorkspaceProvided(organization.Name),

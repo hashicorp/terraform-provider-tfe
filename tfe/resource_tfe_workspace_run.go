@@ -63,7 +63,7 @@ func resourceTFEWorkspaceRun() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 				ForceNew: true,
 			},
 			"workspace": {
