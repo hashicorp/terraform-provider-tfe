@@ -3,6 +3,7 @@
 FEATURES:
 
 ENHANCEMENTS:
+* r/tfe_organization_membership: Organization Memberships can now be imported using `<ORGANIZATION NAME>/<USER EMAIL>` ([#715](https://github.com/hashicorp/terraform-provider-tfe/pull/715))
 
 BUG FIXES:
 
