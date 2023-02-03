@@ -4,6 +4,7 @@ FEATURES:
 * **New Data Source**: d/tfe_organization_tags is a new data source to allow reading all workspace tags within an organization, by @rhughes1 ([#773](https://github.com/hashicorp/terraform-provider-tfe/pull/773))
 
 ENHANCEMENTS:
+* r/tfe_organization_membership: Organization Memberships can now be imported using `<ORGANIZATION NAME>/<USER EMAIL>` ([#715](https://github.com/hashicorp/terraform-provider-tfe/pull/715))
 
 BUG FIXES:
 
