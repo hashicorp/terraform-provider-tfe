@@ -28,8 +28,9 @@ jobs:
           version: v1.50.0
           args: "--out-${NO_FUTURE}format colored-line-number"
 
-      - name: copywrite headers check
-        run: copywrite headers --plan
+# Commented out until the API rate limiting issue is resolved
+      # - name: copywrite headers check
+      #   run: copywrite headers --plan
   tests:
     name: run
     runs-on: ubuntu-latest
