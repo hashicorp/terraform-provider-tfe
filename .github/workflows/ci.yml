@@ -9,7 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: hashicorp/setup-copywrite@v1.0.0
+      # Disabling this GH action because we're getting API rate limit exceeded errors
+      # Will reenable once it's working again
+#      - uses: hashicorp/setup-copywrite@v1.0.0
       - name: Setup Go Environment
         uses: actions/setup-go@v3
         with:
@@ -26,8 +28,9 @@ jobs:
           version: v1.50.0
           args: "--out-${NO_FUTURE}format colored-line-number"
 
-      - name: copywrite headers check
-        run: copywrite headers --plan
+# Commented out until the API rate limiting issue is resolved
+      # - name: copywrite headers check
+      #   run: copywrite headers --plan
   tests:
     name: run
     runs-on: ubuntu-latest
