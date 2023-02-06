@@ -27,7 +27,7 @@ var isDestroy bool
 
 func init() {
 	flag.StringVar(&organization, "o", "hashicorp-v2", "the TFC organization that owns the specified workspace.")
-	flag.StringVar(&workspace, "w", "tflocal-go-tfe", "the TFC workspace to create a run in.")
+	flag.StringVar(&workspace, "w", "tflocal-terraform-provider-tfe", "the TFC workspace to create a run in.")
 	flag.BoolVar(&isDestroy, "d", false, "trigger a destroy run.")
 	flag.Parse()
 }
@@ -66,7 +66,7 @@ func createRun(ctx context.Context, client *tfe.Client) (string, error) {
 
 	opts := tfe.RunCreateOptions{
 		IsDestroy: tfe.Bool(isDestroy),
-		Message:   tfe.String("Queued nightly from GH Actions via go-tfe"),
+		Message:   tfe.String("Queued nightly from GH Actions via terraform-provider-tfe"),
 		Workspace: wk,
 		AutoApply: tfe.Bool(true),
 	}
@@ -95,7 +95,7 @@ func waitForRun(ctx context.Context, client *tfe.Client, runID string) error {
 	for {
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("Context canceled: %w", ctx.Err())
+			return fmt.Errorf("context canceled: %w", ctx.Err())
 		case <-ticker.C:
 			run, err := client.Runs.Read(ctx, runID)
 			if err != nil {
@@ -104,7 +104,7 @@ func waitForRun(ctx context.Context, client *tfe.Client, runID string) error {
 
 			switch run.Status {
 			case tfe.RunCanceled, tfe.RunErrored, tfe.RunDiscarded:
-				return fmt.Errorf("Could not complete run: %s", string(run.Status))
+				return fmt.Errorf("could not complete run: %s", string(run.Status))
 			case tfe.RunApplied:
 				// run is complete
 				return nil
