@@ -2,7 +2,6 @@ package tfe
 
 import (
 	"fmt"
-	"strconv"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -33,7 +32,7 @@ func dataSourceTFEOrganizationTags() *schema.Resource {
 						},
 
 						"workspace_count": {
-							Type:     schema.TypeString,
+							Type:     schema.TypeInt,
 							Computed: true,
 						},
 					},
@@ -51,7 +50,7 @@ func dataSourceTFEOrganizationTagsRead(d *schema.ResourceData, meta interface{})
 		return err
 	}
 
-	var tags []map[string]string
+	var tags []map[string]interface{}
 
 	options := tfe.OrganizationTagsListOptions{}
 	for {
@@ -61,7 +60,11 @@ func dataSourceTFEOrganizationTagsRead(d *schema.ResourceData, meta interface{})
 		}
 
 		for _, orgTag := range organizationTagsList.Items {
-			tag := map[string]string{"id": orgTag.ID, "name": orgTag.Name, "workspace_count": strconv.Itoa(orgTag.InstanceCount)}
+			tag := map[string]interface{}{
+				"id":              orgTag.ID,
+				"name":            orgTag.Name,
+				"workspace_count": orgTag.InstanceCount,
+			}
 			tags = append(tags, tag)
 		}
 

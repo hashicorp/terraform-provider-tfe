@@ -31,30 +31,30 @@ func TestAccTFEOrganizationTagsDataSource_basic(t *testing.T) {
 
 func testAccTFEOrganizationTagsDataSourceConfig(rInt int) string {
 	return fmt.Sprintf(`
-	resource "tfe_organization" "foobar" {
-		name  = "tst-terraform-%d"
-		email = "admin@company.com"
-	  }
-	  
-	  resource "tfe_workspace" "foobar" {
-		name                  = "workspace-test-%d"
-		organization          = tfe_organization.foobar.id
-		description           = "provider-testing"
-		allow_destroy_plan    = false
-		auto_apply            = true
-		file_triggers_enabled = true
-		queue_all_runs        = false
-		speculative_enabled   = true
-		assessments_enabled       = false
-		tag_names             = ["modules", "shared"]
-		terraform_version     = "0.11.1"
-		trigger_prefixes      = ["/modules", "/shared"]
-		working_directory     = "terraform/test"
-		global_remote_state   = true
-	  }
-	  
-	  data "tfe_organization_tags" "foobar" {
-		organization = tfe_workspace.foobar.organization
-		depends_on   = [tfe_workspace.foobar]
-	  }`, rInt, rInt)
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name                  = "workspace-test-%d"
+  organization          = tfe_organization.foobar.id
+  description           = "provider-testing"
+  allow_destroy_plan    = false
+  auto_apply            = true
+  file_triggers_enabled = true
+  queue_all_runs        = false
+  speculative_enabled   = true
+  assessments_enabled       = false
+  tag_names             = ["modules", "shared"]
+  terraform_version     = "0.11.1"
+  trigger_prefixes      = ["/modules", "/shared"]
+  working_directory     = "terraform/test"
+  global_remote_state   = true
+}
+
+data "tfe_organization_tags" "foobar" {
+  organization = tfe_workspace.foobar.organization
+  depends_on   = [tfe_workspace.foobar]
+}`, rInt, rInt)
 }
