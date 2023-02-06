@@ -43,8 +43,8 @@ The following arguments are supported:
 
 The `vcs_repo` block contains:
 
-* `identifier` - A reference to your VCS repository in the format `<organization>/<repository>`
-  where `<organization>` and `<repository>` refer to the organization and repository in your VCS
+* `identifier` - A reference to your VCS repository in the format `<vcs organization>/<repository>`
+  where `<vcs organization>` and `<repository>` refer to the organization and repository in your VCS
   provider.
 * `branch` - The repository branch that Terraform will execute from.
 * `ingress_submodules` - Indicates whether submodules should be fetched when
