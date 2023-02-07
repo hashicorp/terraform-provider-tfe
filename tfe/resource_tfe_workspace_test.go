@@ -2519,6 +2519,60 @@ func TestAccTFEWorkspace_basicAssessmentsEnabled(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspace_createWithSourceURL(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFEWorkspace_basicWithSourceURL(rInt),
+				ExpectError: regexp.MustCompile(`Missing required argument`),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspace_createWithSourceName(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFEWorkspace_basicWithSourceName(rInt),
+				ExpectError: regexp.MustCompile(`Missing required argument`),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspace_createWithSourceURLAndName(t *testing.T) {
+	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_basicWithSourceURLAndName(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace, testAccProvider),
+					resource.TestCheckResourceAttr("tfe_workspace.foobar", "source_url", "https://example.com"),
+					resource.TestCheckResourceAttr("tfe_workspace.foobar", "source_name", "Example Source"),
+				),
+			},
+		},
+	})
+}
+
 func testAccTFEWorkspace_basic(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
@@ -3412,5 +3466,57 @@ resource "tfe_workspace" "foobar" {
   organization                  = tfe_organization.foobar.id
   auto_apply                    = true
   structured_run_output_enabled = false
+}`, rInt)
+}
+
+func testAccTFEWorkspace_basicWithSourceURL(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+resource "tfe_workspace" "foobar" {
+  name               = "workspace-test"
+  organization       = tfe_organization.foobar.id
+  description        = "My favorite workspace!"
+  allow_destroy_plan = false
+  auto_apply         = true
+  tag_names          = ["fav", "test"]
+  source_url         = "https://example.com"
+}`, rInt)
+}
+
+func testAccTFEWorkspace_basicWithSourceName(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+resource "tfe_workspace" "foobar" {
+  name               = "workspace-test"
+  organization       = tfe_organization.foobar.id
+  description        = "My favorite workspace!"
+  allow_destroy_plan = false
+  auto_apply         = true
+  tag_names          = ["fav", "test"]
+  source_name        = "Example Source"
+}`, rInt)
+}
+
+func testAccTFEWorkspace_basicWithSourceURLAndName(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+resource "tfe_workspace" "foobar" {
+  name               = "workspace-test"
+  organization       = tfe_organization.foobar.id
+  description        = "My favorite workspace!"
+  allow_destroy_plan = false
+  auto_apply         = true
+  tag_names          = ["fav", "test"]
+  source_url         = "https://example.com"
+  source_name        = "Example Source"
 }`, rInt)
 }

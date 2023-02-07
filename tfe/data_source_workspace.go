@@ -97,6 +97,16 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Computed: true,
 			},
 
+			"source_name": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+
+			"source_url": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+
 			"speculative_enabled": {
 				Type:     schema.TypeBool,
 				Computed: true,
@@ -218,6 +228,8 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("resource_count", workspace.ResourceCount)
 	d.Set("run_failures", workspace.RunFailures)
 	d.Set("runs_count", workspace.RunsCount)
+	d.Set("source_name", workspace.SourceName)
+	d.Set("source_url", workspace.SourceURL)
 	d.Set("speculative_enabled", workspace.SpeculativeEnabled)
 	d.Set("structured_run_output_enabled", workspace.StructuredRunOutputEnabled)
 	d.Set("terraform_version", workspace.TerraformVersion)
