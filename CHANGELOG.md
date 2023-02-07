@@ -1,6 +1,7 @@
 ## Unreleased
 
 FEATURES:
+* r/workspace, d/workspace: Add `source_name` and `source_url` to workspaces ([#527](https://github.com/hashicorp/terraform-provider-tfe/pull/527))
 
 ENHANCEMENTS:
 * r/tfe_organization_membership: Organization Memberships can now be imported using `<ORGANIZATION NAME>/<USER EMAIL>` ([#715](https://github.com/hashicorp/terraform-provider-tfe/pull/715))

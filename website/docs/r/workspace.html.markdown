@@ -88,6 +88,17 @@ The following arguments are supported:
   is `false`. The provider uses `true` as any workspace provisioned with
   `false` would need to then have a run manually queued out-of-band before
   accepting webhooks.
+* `source_name` - (Optional) A friendly name for the application or client
+   creating this workspace. If set, this will be displayed on the workspace as
+   "Created via <SOURCE NAME>".
+   Requires `source_url` to also be set.
+* `source_url` - (Optional) A URL for the application or client creating this
+   workspace. This can be the URL of a related resource in another app, or a
+   link to documentation or other info about the client.
+   Requires `source_name` to also be set.
+   **Note:** The API does not (currently) allow this to be updated after a
+   workspace has been created, so modifying this value will result in the
+   workspace being replaced.
 * `speculative_enabled` - (Optional) Whether this workspace allows speculative
   plans. Defaults to `true`. Setting this to `false` prevents Terraform Cloud
   or the Terraform Enterprise instance from running plans on pull requests,
