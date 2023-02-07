@@ -153,6 +153,21 @@ func resourceTFEWorkspace() *schema.Resource {
 				Default:  true,
 			},
 
+			"source_name": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				ForceNew:     true,
+				RequiredWith: []string{"source_url"},
+			},
+
+			"source_url": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.IsURLWithHTTPorHTTPS,
+				RequiredWith: []string{"source_name"},
+			},
+
 			"speculative_enabled": {
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -295,6 +310,13 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		options.Operations = tfe.Bool(v.(bool))
 	}
 
+	if v, ok := d.GetOk("source_url"); ok {
+		options.SourceURL = tfe.String(v.(string))
+	}
+	if v, ok := d.GetOk("source_name"); ok {
+		options.SourceName = tfe.String(v.(string))
+	}
+
 	// Process all configured options.
 	if tfVersion, ok := d.GetOk("terraform_version"); ok {
 		options.TerraformVersion = tfe.String(tfVersion.(string))
@@ -406,6 +428,8 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("operations", workspace.Operations)
 	d.Set("execution_mode", workspace.ExecutionMode)
 	d.Set("queue_all_runs", workspace.QueueAllRuns)
+	d.Set("source_name", workspace.SourceName)
+	d.Set("source_url", workspace.SourceURL)
 	d.Set("speculative_enabled", workspace.SpeculativeEnabled)
 	d.Set("structured_run_output_enabled", workspace.StructuredRunOutputEnabled)
 	d.Set("terraform_version", workspace.TerraformVersion)
