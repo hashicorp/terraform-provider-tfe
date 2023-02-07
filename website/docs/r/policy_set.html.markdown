@@ -105,7 +105,7 @@ default is to create an empty non-VCS policy set.
 The `vcs_repo` block supports:
 
 * `identifier` - (Required) A reference to your VCS repository in the format
-  `<organization>/<repository>` where `<organization>` and `<repository>` refer to the organization and repository
+  `<vcs organization>/<repository>` where `<vcs organization>` and `<repository>` refer to the organization and repository
   in your VCS provider.
 * `branch` - (Optional) The repository branch that Terraform will execute from.
   This defaults to the repository's default branch (e.g. main).
