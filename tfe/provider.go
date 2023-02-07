@@ -357,10 +357,10 @@ func getClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
 
 // cliConfig tries to find and parse the configuration of the Terraform CLI.
 // This is an optional step, so any errors are ignored.
-func cliConfig() *Config {
-	mainConfig := &Config{}
-	credentialsConfig := &Config{}
-	combinedConfig := &Config{}
+func cliConfig() Config {
+	mainConfig := Config{}
+	credentialsConfig := Config{}
+	combinedConfig := Config{}
 
 	// Main CLI config file; might contain manually-entered credentials, and/or
 	// some host service discovery objects. Location is configurable via
@@ -417,8 +417,8 @@ func locateConfigFile() string {
 	return filePath
 }
 
-func readCliConfigFile(configFilePath string) *Config {
-	config := &Config{}
+func readCliConfigFile(configFilePath string) Config {
+	config := Config{}
 
 	// Read the CLI config file content.
 	content, err := os.ReadFile(configFilePath)
@@ -442,7 +442,7 @@ func readCliConfigFile(configFilePath string) *Config {
 	return config
 }
 
-func credentialsSource(config *Config) auth.CredentialsSource {
+func credentialsSource(config Config) auth.CredentialsSource {
 	creds := auth.NoCredentials
 
 	// Add all configured credentials to the credentials source.
