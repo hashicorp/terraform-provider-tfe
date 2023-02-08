@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccTFEWorkspaceRun_create(t *testing.T) {
+func TestAccTFEWorkspaceRun_createWithDefaultParams(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	tfeClient, err := getClientUsingEnv()
@@ -23,48 +23,37 @@ func TestAccTFEWorkspaceRun_create(t *testing.T) {
 	organization, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
-	createCases := []struct{ Config string }{
-		{
-			Config: testAccTFEWorkspaceRun_create(organization.Name, rInt),
-		},
-		{
-			Config: testAccTFEWorkspaceRun_createWithDefaults(organization.Name, rInt),
-		},
-	}
+	parentWorkspace, childWorkspace := setupWorkspacesWithConfig(t, tfeClient, rInt, organization.Name, "test-fixtures/basic-config")
+	runForParentWorkspace := &tfe.Run{}
+	runForChildWorkspace := &tfe.Run{}
 
-	for _, createCase := range createCases {
-		runForParentWorkspace := &tfe.Run{}
-		runForChildWorkspace := &tfe.Run{}
-
-		resource.Test(t, resource.TestCase{
-			PreCheck: func() {
-				testAccPreCheck(t)
-				testAccGithubPreCheck(t)
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+		},
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspaceRun_createWithDefaults(organization.Name, parentWorkspace.Name, childWorkspace.Name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceRunExistWithExpectedStatus("tfe_workspace_run.ws_run_parent", runForParentWorkspace, tfe.RunApplied),
+					testAccCheckTFEWorkspaceRunExistWithExpectedStatus("tfe_workspace_run.ws_run_child", runForChildWorkspace, tfe.RunApplied),
+					resource.TestCheckResourceAttrWith("tfe_workspace_run.ws_run_parent", "id", func(value string) error {
+						if value != runForParentWorkspace.ID {
+							return fmt.Errorf("run ID for ws_run_parent should be %s but was %s", runForParentWorkspace.ID, value)
+						}
+						return nil
+					}),
+					resource.TestCheckResourceAttrWith("tfe_workspace_run.ws_run_child", "id", func(value string) error {
+						if value != runForChildWorkspace.ID {
+							return fmt.Errorf("run ID for ws_run_child should be %s but was %s", runForChildWorkspace.ID, value)
+						}
+						return nil
+					}),
+				),
 			},
-			Providers: testAccProviders,
-			Steps: []resource.TestStep{
-				{
-					Config: createCase.Config,
-					Check: resource.ComposeTestCheckFunc(
-						testAccCheckTFEWorkspaceRunExistWithExpectedStatus("tfe_workspace_run.ws_run_parent", runForParentWorkspace, tfe.RunApplied),
-						testAccCheckTFEWorkspaceRunExistWithExpectedStatus("tfe_workspace_run.ws_run_child", runForChildWorkspace, tfe.RunApplied),
-						resource.TestCheckResourceAttrWith("tfe_workspace_run.ws_run_parent", "id", func(value string) error {
-							if value != runForParentWorkspace.ID {
-								return fmt.Errorf("run ID for ws_run_parent should be %s but was %s", runForParentWorkspace.ID, value)
-							}
-							return nil
-						}),
-						resource.TestCheckResourceAttrWith("tfe_workspace_run.ws_run_child", "id", func(value string) error {
-							if value != runForChildWorkspace.ID {
-								return fmt.Errorf("run ID for ws_run_child should be %s but was %s", runForChildWorkspace.ID, value)
-							}
-							return nil
-						}),
-					),
-				},
-			},
-		})
-	}
+		},
+	})
 }
 
 func TestAccTFEWorkspaceRun_createAndDestroyRuns(t *testing.T) {
@@ -78,95 +67,35 @@ func TestAccTFEWorkspaceRun_createAndDestroyRuns(t *testing.T) {
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
-	oauthClient, err := tfeClient.OAuthClients.Create(ctx, org.Name, tfe.OAuthClientCreateOptions{
-		APIURL:          tfe.String("https://api.github.com"),
-		HTTPURL:         tfe.String("https://github.com"),
-		ServiceProvider: tfe.ServiceProvider(tfe.ServiceProviderGithub),
-		OAuthToken:      tfe.String(envGithubToken),
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(oauthClient.OAuthTokens) == 0 {
-		t.Fatal("Expected OAuthClient to have OAuthTokens, 0 found")
-	}
+	parentWorkspace, childWorkspace := setupWorkspacesWithConfig(t, tfeClient, rInt, org.Name, "test-fixtures/basic-config")
 
-	t.Cleanup(func() {
-		if err := tfeClient.OAuthClients.Delete(ctx, oauthClient.ID); err != nil {
-			t.Errorf("Error destroying Oauth client! WARNING: Dangling resources\n"+
-				"may exist! The full error is show below:\n\n"+
-				"Oauth client:%s\nError: %s", oauthClient.ID, err)
-		}
-	})
-
-	workspaceA := &tfe.Workspace{}
-	workspaceB := &tfe.Workspace{}
-
-	// create workspace outside of the config, to allow for testing destroy runs prior to deleting the workspace
-	for _, wsName := range []string{fmt.Sprintf("tst-terraform-%d-A", rInt), fmt.Sprintf("tst-terraform-%d-B", rInt)} {
-		ws, err := tfeClient.Workspaces.Create(ctx, org.Name, tfe.WorkspaceCreateOptions{
-			Name:         tfe.String(wsName),
-			QueueAllRuns: tfe.Bool(false),
-			VCSRepo: &tfe.VCSRepoOptions{
-				Branch:       tfe.String(envGithubWorkspaceBranch),
-				Identifier:   tfe.String(envGithubWorkspaceIdentifier),
-				OAuthTokenID: tfe.String(oauthClient.OAuthTokens[0].ID),
-			},
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if wsName == fmt.Sprintf("tst-terraform-%d-A", rInt) {
-			*workspaceA = *ws
-		} else {
-			*workspaceB = *ws
-		}
-	}
-
-	t.Cleanup(func() {
-		if err := tfeClient.Workspaces.DeleteByID(ctx, workspaceA.ID); err != nil {
-			t.Errorf("Error destroying Workspace! WARNING: Dangling resources\n"+
-				"may exist! The full error is show below:\n\n"+
-				"Workspace:%s\nError: %s", workspaceA.ID, err)
-		}
-	})
-	t.Cleanup(func() {
-		if err := tfeClient.Workspaces.DeleteByID(ctx, workspaceB.ID); err != nil {
-			t.Errorf("Error destroying Workspace! WARNING: Dangling resources\n"+
-				"may exist! The full error is show below:\n\n"+
-				"Workspace:%s\nError: %s", workspaceB.ID, err)
-		}
-	})
-
-	runForWorkspaceRootA := &tfe.Run{}
-	runForWorkspaceB := &tfe.Run{}
+	runForParentWorkspace := &tfe.Run{}
+	runForChildWorkspace := &tfe.Run{}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			testAccGithubPreCheck(t)
 		},
 		Providers: testAccProviders,
 		CheckDestroy: resource.ComposeTestCheckFunc(
-			testAccCheckTFEWorkspaceRunDestroy(workspaceA.ID),
-			testAccCheckTFEWorkspaceRunDestroy(workspaceB.ID),
+			testAccCheckTFEWorkspaceRunDestroy(parentWorkspace.ID),
+			testAccCheckTFEWorkspaceRunDestroy(childWorkspace.ID),
 		),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceRun_createAndDestroyRuns(org.Name, rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceRunExistWithExpectedStatus("tfe_workspace_run.ws_run_root_A", runForWorkspaceRootA, tfe.RunApplied),
-					testAccCheckTFEWorkspaceRunExistWithExpectedStatus("tfe_workspace_run.ws_run_B", runForWorkspaceB, tfe.RunApplied),
-					resource.TestCheckResourceAttrWith("tfe_workspace_run.ws_run_root_A", "id", func(value string) error {
-						if value != runForWorkspaceRootA.ID {
-							return fmt.Errorf("run ID for ws_run_root_A should be %s but was %s", runForWorkspaceRootA.ID, value)
+					testAccCheckTFEWorkspaceRunExistWithExpectedStatus("tfe_workspace_run.ws_run_parent", runForParentWorkspace, tfe.RunApplied),
+					testAccCheckTFEWorkspaceRunExistWithExpectedStatus("tfe_workspace_run.ws_run_child", runForChildWorkspace, tfe.RunApplied),
+					resource.TestCheckResourceAttrWith("tfe_workspace_run.ws_run_parent", "id", func(value string) error {
+						if value != runForParentWorkspace.ID {
+							return fmt.Errorf("run ID for ws_run_parent should be %s but was %s", runForParentWorkspace.ID, value)
 						}
 						return nil
 					}),
-					resource.TestCheckResourceAttrWith("tfe_workspace_run.ws_run_B", "id", func(value string) error {
-						if value != runForWorkspaceB.ID {
-							return fmt.Errorf("run ID for ws_run_B should be %s but was %s", runForWorkspaceB.ID, value)
+					resource.TestCheckResourceAttrWith("tfe_workspace_run.ws_run_child", "id", func(value string) error {
+						if value != runForChildWorkspace.ID {
+							return fmt.Errorf("run ID for ws_run_child should be %s but was %s", runForChildWorkspace.ID, value)
 						}
 						return nil
 					}),
@@ -205,7 +134,6 @@ func TestAccTFEWorkspaceRun_invalidParams(t *testing.T) {
 		resource.Test(t, resource.TestCase{
 			PreCheck: func() {
 				testAccPreCheck(t)
-				testAccGithubPreCheck(t)
 			},
 			Providers: testAccProviders,
 			Steps: []resource.TestStep{
@@ -229,34 +157,57 @@ func TestAccTFEWorkspaceRun_WhenRunErrors(t *testing.T) {
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
-	workspace, err := tfeClient.Workspaces.Create(ctx, org.Name, tfe.WorkspaceCreateOptions{Name: tfe.String(fmt.Sprintf("tst-terraform-%d-A", rInt))})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Cleanup(func() {
-		if err := tfeClient.Workspaces.DeleteByID(ctx, workspace.ID); err != nil {
-			t.Errorf("Error destroying Workspace! WARNING: Dangling resources\n"+
-				"may exist! The full error is show below:\n\n"+
-				"Workspace:%s\nError: %s", workspace.ID, err)
-		}
-	})
-
-	_ = createAndUploadConfigurationVersion(t, workspace, tfeClient, "test-fixtures/config-with-error-during-plan")
+	parentWorkspace, _ := setupWorkspacesWithConfig(t, tfeClient, rInt, org.Name, "test-fixtures/config-with-error-during-plan")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			testAccGithubPreCheck(t)
 		},
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccTFEWorkspaceRun_WhenRunErrors(org.Name, workspace.Name),
+				Config:      testAccTFEWorkspaceRun_WhenRunErrors(org.Name, parentWorkspace.Name),
 				ExpectError: regexp.MustCompile(`run errored during plan`),
 			},
 		},
 	})
+}
+
+func setupWorkspacesWithConfig(t *testing.T, tfeClient *tfe.Client, rInt int, orgName string, configPath string) (*tfe.Workspace, *tfe.Workspace) {
+	parentWorkspace := &tfe.Workspace{}
+	childWorkspace := &tfe.Workspace{}
+
+	// create workspace outside of the config, to allow for testing destroy runs prior to deleting the workspace
+	for _, wsName := range []string{fmt.Sprintf("tst-terraform-%d-parent", rInt), fmt.Sprintf("tst-terraform-%d-child", rInt)} {
+		ws, err := tfeClient.Workspaces.Create(ctx, orgName, tfe.WorkspaceCreateOptions{Name: tfe.String(wsName)})
+		if err != nil {
+			t.Fatal(err)
+		}
+		_ = createAndUploadConfigurationVersion(t, ws, tfeClient, configPath)
+
+		if wsName == fmt.Sprintf("tst-terraform-%d-parent", rInt) {
+			*parentWorkspace = *ws
+		} else {
+			*childWorkspace = *ws
+		}
+	}
+
+	t.Cleanup(func() {
+		if err := tfeClient.Workspaces.DeleteByID(ctx, parentWorkspace.ID); err != nil {
+			t.Errorf("Error destroying Workspace! WARNING: Dangling resources\n"+
+				"may exist! The full error is show below:\n\n"+
+				"Workspace:%s\nError: %s", parentWorkspace.ID, err)
+		}
+	})
+	t.Cleanup(func() {
+		if err := tfeClient.Workspaces.DeleteByID(ctx, childWorkspace.ID); err != nil {
+			t.Errorf("Error destroying Workspace! WARNING: Dangling resources\n"+
+				"may exist! The full error is show below:\n\n"+
+				"Workspace:%s\nError: %s", childWorkspace.ID, err)
+		}
+	})
+
+	return parentWorkspace, childWorkspace
 }
 
 func testAccCheckTFEWorkspaceRunExistWithExpectedStatus(n string, run *tfe.Run, expectedStatus tfe.RunStatus) resource.TestCheckFunc {
@@ -319,105 +270,11 @@ func testAccCheckTFEWorkspaceRunDestroy(workspaceID string) resource.TestCheckFu
 	}
 }
 
-func testAccTFEWorkspaceRun_create(orgName string, rInt int) string {
+func testAccTFEWorkspaceRun_createWithDefaults(orgName string, parentWorkspaceName string, childWorkspaceName string) string {
 	return fmt.Sprintf(`
-	resource "tfe_oauth_client" "test" {
-		organization     = "%s"
-		api_url          = "https://api.github.com"
-		http_url         = "https://github.com"
-		oauth_token      = "%s"
-		service_provider = "github"
-	}
-
-	resource "tfe_workspace" "parent" {
-		name                 = "tst-terraform-%d-parent"
-		organization         = "%s"
-		queue_all_runs       = false
-		vcs_repo {
-			branch             = "%s"
-			identifier         = "%s"
-			oauth_token_id     = tfe_oauth_client.test.oauth_token_id
-		}
-	}
-
-	resource "tfe_workspace" "child" {
-		name                 = "tst-terraform-%d-child"
-		organization         = "%s"
-		queue_all_runs       = false
-		vcs_repo {
-			branch             = "%s"
-			identifier         = "%s"
-			oauth_token_id     = tfe_oauth_client.test.oauth_token_id
-		}
-	}
-
 	resource "tfe_workspace_run" "ws_run_parent" {
 		organization = "%s"
-		workspace    = tfe_workspace.parent.name
-
-		apply {
-			manual_confirm = false
-			retry = true
-		}
-
-		destroy {
-			manual_confirm = false
-			retry = true
-		}
-	}
-
-	resource "tfe_workspace_run" "ws_run_child" {
-		organization = "%s"
-		workspace    = tfe_workspace.child.name
-		depends_on   = [tfe_workspace_run.ws_run_parent]
-
-		apply {
-			manual_confirm = false
-			retry = true
-		}
-
-		destroy {
-			manual_confirm = false
-			retry = true
-		}
-	}`, orgName, envGithubToken, rInt, orgName, envGithubWorkspaceBranch, envGithubWorkspaceIdentifier, rInt, orgName, envGithubWorkspaceBranch, envGithubWorkspaceIdentifier, orgName, orgName)
-}
-
-func testAccTFEWorkspaceRun_createWithDefaults(orgName string, rInt int) string {
-	return fmt.Sprintf(`
-	resource "tfe_oauth_client" "test" {
-		organization     = "%s"
-		api_url          = "https://api.github.com"
-		http_url         = "https://github.com"
-		oauth_token      = "%s"
-		service_provider = "github"
-	}
-
-	resource "tfe_workspace" "parent" {
-		name                 = "tst-terraform-%d-parent"
-		organization         = "%s"
-		queue_all_runs       = false
-		vcs_repo {
-			branch             = "%s"
-			identifier         = "%s"
-			oauth_token_id     = tfe_oauth_client.test.oauth_token_id
-		}
-	}
-
-	resource "tfe_workspace" "child" {
-		name                 = "tst-terraform-%d-child"
-		organization         = "%s"
-		queue_all_runs       = false
-		vcs_repo {
-			branch             = "%s"
-			identifier         = "%s"
-			oauth_token_id     = tfe_oauth_client.test.oauth_token_id
-		}
-	}
-
-	resource "tfe_workspace_run" "ws_run_parent" {
-		organization = "%s"
-		workspace    = tfe_workspace.parent.name
+		workspace    = "%s"
 
 		apply {}
 
@@ -426,30 +283,30 @@ func testAccTFEWorkspaceRun_createWithDefaults(orgName string, rInt int) string 
 
 	resource "tfe_workspace_run" "ws_run_child" {
 		organization = "%s"
-		workspace    = tfe_workspace.child.name
+		workspace    = "%s"
 		depends_on   = [tfe_workspace_run.ws_run_parent]
 
 		apply {}
 
 		destroy {}
-	}`, orgName, envGithubToken, rInt, orgName, envGithubWorkspaceBranch, envGithubWorkspaceIdentifier, rInt, orgName, envGithubWorkspaceBranch, envGithubWorkspaceIdentifier, orgName, orgName)
+	}`, orgName, parentWorkspaceName, orgName, childWorkspaceName)
 }
 
 func testAccTFEWorkspaceRun_createAndDestroyRuns(orgName string, rInt int) string {
 	return fmt.Sprintf(`
-	data "tfe_workspace" "root_A" {
-		name                 = "tst-terraform-%d-A"
+	data "tfe_workspace" "parent" {
+		name                 = "tst-terraform-%d-parent"
 		organization         = "%s"
 	}
 
-	data "tfe_workspace" "B_depends_on_A" {
-		name                 = "tst-terraform-%d-B"
+	data "tfe_workspace" "child_depends_on_parent" {
+		name                 = "tst-terraform-%d-child"
 		organization         = "%s"
 	}
 
-	resource "tfe_workspace_run" "ws_run_root_A" {
+	resource "tfe_workspace_run" "ws_run_parent" {
 		organization = "%s"
-		workspace    = data.tfe_workspace.root_A.name
+		workspace    = data.tfe_workspace.parent.name
 
 		apply {
 			manual_confirm = false
@@ -462,10 +319,10 @@ func testAccTFEWorkspaceRun_createAndDestroyRuns(orgName string, rInt int) strin
 		}
 	}
 
-	resource "tfe_workspace_run" "ws_run_B" {
+	resource "tfe_workspace_run" "ws_run_child" {
 		organization = "%s"
-		workspace    = data.tfe_workspace.B_depends_on_A.name
-		depends_on   = [tfe_workspace_run.ws_run_root_A]
+		workspace    = data.tfe_workspace.child_depends_on_parent.name
+		depends_on   = [tfe_workspace_run.ws_run_parent]
 
 		apply {
 			manual_confirm = false
@@ -481,55 +338,27 @@ func testAccTFEWorkspaceRun_createAndDestroyRuns(orgName string, rInt int) strin
 
 func testAccTFEWorkspaceRun_noApplyOrDestroyBlockProvided(orgName string, rInt int) string {
 	return fmt.Sprintf(`
-	resource "tfe_oauth_client" "test" {
-		organization     = "%s"
-		api_url          = "https://api.github.com"
-		http_url         = "https://github.com"
-		oauth_token      = "%s"
-		service_provider = "github"
-	}
-
-	resource "tfe_workspace" "root_A" {
-		name                 = "tst-terraform-%d-A"
+	resource "tfe_workspace" "parent" {
+		name                 = "tst-terraform-%d-parent"
 		organization         = "%s"
-		queue_all_runs       = false
-		vcs_repo {
-			branch             = "%s"
-			identifier         = "%s"
-			oauth_token_id     = tfe_oauth_client.test.oauth_token_id
-		}
 	}
 
-	resource "tfe_workspace_run" "ws_run_root_A" {
+	resource "tfe_workspace_run" "ws_run_parent" {
 		organization = "%s"
-		workspace    = tfe_workspace.root_A.name
+		workspace    = tfe_workspace.parent.name
 	}
-`, orgName, envGithubToken, rInt, orgName, envGithubWorkspaceBranch, envGithubWorkspaceIdentifier, orgName)
+`, rInt, orgName, orgName)
 }
 
 func testAccTFEWorkspaceRun_noOrganizationProvided(orgName string, rInt int) string {
 	return fmt.Sprintf(`
-	resource "tfe_oauth_client" "test" {
-		organization     = "%s"
-		api_url          = "https://api.github.com"
-		http_url         = "https://github.com"
-		oauth_token      = "%s"
-		service_provider = "github"
-	}
-
-	resource "tfe_workspace" "root_A" {
-		name                 = "tst-terraform-%d-A"
+	resource "tfe_workspace" "parent" {
+		name                 = "tst-terraform-%d-parent"
 		organization         = "%s"
-		queue_all_runs       = false
-		vcs_repo {
-			branch             = "%s"
-			identifier         = "%s"
-			oauth_token_id     = tfe_oauth_client.test.oauth_token_id
-		}
 	}
 
-	resource "tfe_workspace_run" "ws_run_root_A" {
-		workspace    = tfe_workspace.root_A.name
+	resource "tfe_workspace_run" "ws_run_parent" {
+		workspace    = tfe_workspace.parent.name
 
 		apply {
 			manual_confirm = false
@@ -541,12 +370,12 @@ func testAccTFEWorkspaceRun_noOrganizationProvided(orgName string, rInt int) str
 			retry = true
 		}
 	}
-`, orgName, envGithubToken, rInt, orgName, envGithubWorkspaceBranch, envGithubWorkspaceIdentifier)
+`, rInt, orgName)
 }
 
 func testAccTFEWorkspaceRun_noWorkspaceProvided(orgName string) string {
 	return fmt.Sprintf(`
-	resource "tfe_workspace_run" "ws_run_root_A" {
+	resource "tfe_workspace_run" "ws_run_parent" {
 		organization = "%s"
 
 		apply {
@@ -564,7 +393,7 @@ func testAccTFEWorkspaceRun_noWorkspaceProvided(orgName string) string {
 
 func testAccTFEWorkspaceRun_WhenRunErrors(orgName string, workspaceName string) string {
 	return fmt.Sprintf(`
-	resource "tfe_workspace_run" "ws_run_root" {
+	resource "tfe_workspace_run" "ws_run_parent" {
 		organization = "%s"
 		workspace    = "%s"
 

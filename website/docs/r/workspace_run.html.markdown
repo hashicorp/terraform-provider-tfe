@@ -8,7 +8,7 @@ description: |-
 # tfe_workspace_run
 
 Provides a resource to manage create and destroy lifecycles in a workspace.
-The `tfe_workspace_run` expects to own exactly one apply during a creation and one destroy during a destruction. This implies that the `tfe_workspace_run` resource will queue an apply even though previous successful applies exist in the workspace prior to adding this resource.
+The `tfe_workspace_run` expects to own exactly one apply during a creation and/or one destroy during a destruction. This implies that even though previous successful applies exist in the workspace, the `tfe_workspace_run` resource will queue a new apply when added to a config.
 
 
 ## Example Usage
