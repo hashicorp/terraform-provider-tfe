@@ -22,7 +22,10 @@ func TestAccTFEOrganizationTagsDataSource_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"data.tfe_organization_tags.foobar", "organization", orgName),
-					resource.TestCheckResourceAttrSet("data.tfe_organization_tags.foobar", "tags"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_organization_tags.foobar", "tags.0.name", "modules"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_organization_tags.foobar", "tags.0.workspace_count", "1"),
 				),
 			},
 		},
@@ -46,7 +49,7 @@ resource "tfe_workspace" "foobar" {
   queue_all_runs        = false
   speculative_enabled   = true
   assessments_enabled       = false
-  tag_names             = ["modules", "shared"]
+  tag_names             = ["modules"]
   terraform_version     = "0.11.1"
   trigger_prefixes      = ["/modules", "/shared"]
   working_directory     = "terraform/test"
