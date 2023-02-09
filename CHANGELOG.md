@@ -1,6 +1,7 @@
 ## Unreleased
 
 FEATURES:
+* **New Data Source**: d/tfe_organization_tags is a new data source to allow reading all workspace tags within an organization, by @rhughes1 ([#773](https://github.com/hashicorp/terraform-provider-tfe/pull/773))
 * r/workspace, d/workspace: Add `source_name` and `source_url` to workspaces ([#527](https://github.com/hashicorp/terraform-provider-tfe/pull/527))
 
 ENHANCEMENTS:
