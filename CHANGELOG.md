@@ -2,12 +2,17 @@
 
 FEATURES:
 * r/workspace, d/workspace: Add `source_name` and `source_url` to workspaces ([#527](https://github.com/hashicorp/terraform-provider-tfe/pull/527))
+* `r/tfe_team`: Add `read_projects` and `read_workspaces` to the `organization_access` block. ([#796](https://github.com/hashicorp/terraform-provider-tfe/pull/796))
 
 ENHANCEMENTS:
 * r/tfe_organization_membership: Organization Memberships can now be imported using `<ORGANIZATION NAME>/<USER EMAIL>` ([#715](https://github.com/hashicorp/terraform-provider-tfe/pull/715))
 * Clarify usage of `organization` fields in documentation describing VCS repository config blocks ([#792](https://github.com/hashicorp/terraform-provider-tfe/pull/792))
 
 BUG FIXES:
+
+BREAKING CHANGES:
+* `r/tfe_team`:  The `organization_access` block now requires `read_workspaces` to be set to true if `manage_workspaces` is set to true. ([#796](https://github.com/hashicorp/terraform-provider-tfe/pull/796))
+* `r/tfe_team`:  The `organization_access` block now requires `read_projects` to be set to true if `manage_projects` is set to true. ([#796](https://github.com/hashicorp/terraform-provider-tfe/pull/796))
 
 ## v0.42.0 (January 31, 2023)
 
