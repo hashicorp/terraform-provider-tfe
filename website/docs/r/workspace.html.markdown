@@ -145,6 +145,7 @@ In addition to all arguments above, the following attributes are exported:
 
 * `id` - The workspace ID.
 * `resource_count` - The number of resources managed by the workspace.
+* `html_url` - The URL to the browsable HTML overview of the workspace
 
 ## Import
 

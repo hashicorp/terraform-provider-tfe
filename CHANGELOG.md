@@ -7,6 +7,8 @@ ENHANCEMENTS:
 * r/tfe_organization_membership: Organization Memberships can now be imported using `<ORGANIZATION NAME>/<USER EMAIL>` ([#715](https://github.com/hashicorp/terraform-provider-tfe/pull/715))
 * Clarify usage of `organization` fields in documentation describing VCS repository config blocks ([#792](https://github.com/hashicorp/terraform-provider-tfe/pull/792))
 
+* `r/tfe_workspace` and `d/tfe_workspace`: Add attribute `html_url` by @brandonc ([#784](https://github.com/hashicorp/terraform-provider-tfe/pull/784))
+
 BUG FIXES:
 
 ## v0.42.0 (January 31, 2023)
