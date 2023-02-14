@@ -171,8 +171,6 @@ func TestAccTFEWorkspaceDataSourceWithTriggerPatterns(t *testing.T) {
 }
 
 func TestAccTFEWorkspaceDataSource_readProjectIDDefault(t *testing.T) {
-	skipUnlessBeta(t)
-
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -188,8 +186,6 @@ func TestAccTFEWorkspaceDataSource_readProjectIDDefault(t *testing.T) {
 }
 
 func TestAccTFEWorkspaceDataSource_readProjectIDNonDefault(t *testing.T) {
-	skipUnlessBeta(t)
-
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{

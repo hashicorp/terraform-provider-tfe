@@ -42,17 +42,13 @@ func TestAccTFETeam_full(t *testing.T) {
 	team := &tfe.Team{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
-	// Enabling the manage projects feature requires projects support, which is feature flagged and disabled
-	// on TFE
-	manageProjects := betaFeaturesEnabled()
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeam_full(rInt, manageProjects),
+				Config: testAccTFETeam_full(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamExists(
 						"tfe_team.foobar", team),
@@ -75,10 +71,8 @@ func TestAccTFETeam_full(t *testing.T) {
 						"tfe_team.foobar", "organization_access.0.manage_modules", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_run_tasks", "true"),
-					// Projects are in GA for TFC, but haven't been enabled for TFE yet. This Cloud-only gate
-					// can be removed once TFE nightly builds include project support
-					betaOnlyCheck(resource.TestCheckResourceAttr(
-						"tfe_team.foobar", "organization_access.0.manage_projects", "true")),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_projects", "true"),
 				),
 			},
 		},
@@ -89,17 +83,13 @@ func TestAccTFETeam_full_update(t *testing.T) {
 	team := &tfe.Team{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
-	// Enabling the manage projects feature requires projects support, which is feature flagged and disabled
-	// on TFE
-	manageProjects := betaFeaturesEnabled()
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeam_full(rInt, manageProjects),
+				Config: testAccTFETeam_full(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamExists(
 						"tfe_team.foobar", team),
@@ -122,8 +112,8 @@ func TestAccTFETeam_full_update(t *testing.T) {
 						"tfe_team.foobar", "organization_access.0.manage_modules", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_run_tasks", "true"),
-					betaOnlyCheck(resource.TestCheckResourceAttr(
-						"tfe_team.foobar", "organization_access.0.manage_projects", "true")),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_projects", "true"),
 				),
 			},
 			{
@@ -429,7 +419,7 @@ func testAccCheckTFETeamAttributes_full(
 		if !team.OrganizationAccess.ManageRunTasks {
 			return fmt.Errorf("OrganizationAccess.ManageRunTasks should be true")
 		}
-		if betaFeaturesEnabled() && !team.OrganizationAccess.ManageProjects {
+		if !team.OrganizationAccess.ManageProjects {
 			return fmt.Errorf("OrganizationAccess.ManageProjects should be true")
 		}
 		if team.SSOTeamID != "team-test-sso-id" {
@@ -509,7 +499,7 @@ resource "tfe_team" "foobar" {
 }`, rInt)
 }
 
-func testAccTFETeam_full(rInt int, manageProjects bool) string {
+func testAccTFETeam_full(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
@@ -530,10 +520,10 @@ resource "tfe_team" "foobar" {
     manage_run_tasks = true
 	manage_providers = true
 	manage_modules = true
-	manage_projects = %t
+	manage_projects = true
   }
   sso_team_id = "team-test-sso-id"
-}`, rInt, manageProjects)
+}`, rInt)
 }
 
 func testAccTFETeam_full_update(rInt int) string {

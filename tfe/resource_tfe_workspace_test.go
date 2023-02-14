@@ -110,8 +110,6 @@ func TestAccTFEWorkspace_defaultOrg(t *testing.T) {
 }
 
 func TestAccTFEWorkspace_basicReadProjectId(t *testing.T) {
-	skipUnlessBeta(t)
-
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -133,8 +131,6 @@ func TestAccTFEWorkspace_basicReadProjectId(t *testing.T) {
 }
 
 func TestAccTFEWorkspace_customProject(t *testing.T) {
-	skipUnlessBeta(t)
-
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -418,7 +414,6 @@ func TestAccTFEWorkspace_updateWorkingDirectory(t *testing.T) {
 }
 
 func TestAccTFEWorkspace_updateProject(t *testing.T) {
-	skipUnlessBeta(t)
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -1693,8 +1688,6 @@ func TestAccTFEWorkspace_importVCSBranch(t *testing.T) {
 }
 
 func TestAccTFEWorkspace_importProject(t *testing.T) {
-	skipUnlessBeta(t)
-
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
