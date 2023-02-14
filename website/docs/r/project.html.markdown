@@ -9,8 +9,6 @@ Manages projects.
 
 Provides a project resource.
 
-~> **NOTE:** Projects functionality is currently in beta.
-
 ## Example Usage
 
 Basic usage:
