@@ -10,10 +10,6 @@ ENHANCEMENTS:
 
 BUG FIXES:
 
-BREAKING CHANGES:
-* `r/tfe_team`:  The `organization_access` block now requires `read_workspaces` to be set to true if `manage_workspaces` is set to true. ([#796](https://github.com/hashicorp/terraform-provider-tfe/pull/796))
-* `r/tfe_team`:  The `organization_access` block now requires `read_projects` to be set to true if `manage_projects` is set to true. ([#796](https://github.com/hashicorp/terraform-provider-tfe/pull/796))
-
 ## v0.42.0 (January 31, 2023)
 
 FEATURES:
