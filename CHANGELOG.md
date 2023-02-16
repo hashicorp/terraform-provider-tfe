@@ -10,6 +10,7 @@ ENHANCEMENTS:
 * `r/tfe_workspace` and `d/tfe_workspace`: Add attribute `html_url` by @brandonc ([#784](https://github.com/hashicorp/terraform-provider-tfe/pull/784))
 
 BUG FIXES:
+* r/tfe_workspace: Clarify error message shown when attempting to safe-delete a workspace on a version of TFE which does not support safe delete ([#803](https://github.com/hashicorp/terraform-provider-tfe/pull/803))
 
 ## v0.42.0 (January 31, 2023)
 

@@ -2092,7 +2092,7 @@ func TestTFEWorkspace_delete_withoutCanForceDeletePermission(t *testing.T) {
 
 	err = resourceTFEWorkspaceDelete(rd, config)
 	if err == nil {
-		t.Fatalf("Expected an error deleting workspace with CanForceDelete=nil, force_delete=true, and %v resources", workspace.ResourceCount)
+		t.Fatalf("Expected an error deleting workspace with CanForceDelete=nil, force_delete=false, and %v resources", workspace.ResourceCount)
 	}
 
 	workspace.ResourceCount = 0
@@ -2101,7 +2101,7 @@ func TestTFEWorkspace_delete_withoutCanForceDeletePermission(t *testing.T) {
 	if err == nil {
 		t.Fatalf("Expected an error deleting workspace with CanForceDelete=nil and force_delete=false")
 	}
-	expectedErrSubstring := "workspace must be force deleted by setting force_delete=true"
+	expectedErrSubstring := "This version of Terraform Enterprise does not support workspace safe-delete. Workspaces must be force deleted by setting force_delete=true"
 	if !strings.Contains(err.Error(), expectedErrSubstring) {
 		t.Fatalf("Expected error contains %s but got %s", expectedErrSubstring, err.Error())
 	}
