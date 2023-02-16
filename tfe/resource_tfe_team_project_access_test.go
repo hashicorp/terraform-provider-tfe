@@ -15,8 +15,6 @@ import (
 )
 
 func TestAccTFETeamProjectAccess_admin(t *testing.T) {
-	skipUnlessBeta(t)
-
 	tmAccess := &tfe.TeamProjectAccess{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -41,8 +39,6 @@ func TestAccTFETeamProjectAccess_admin(t *testing.T) {
 }
 
 func TestAccTFETeamProjectAccess_import(t *testing.T) {
-	skipUnlessBeta(t)
-
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{

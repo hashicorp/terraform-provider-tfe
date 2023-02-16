@@ -6,8 +6,6 @@ package tfe
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"net/url"
 	"os"
 	"testing"
@@ -244,15 +242,5 @@ func retry(maxRetries, secondsBetween int, f retryableFn) (interface{}, error) {
 		}
 
 		retries += 1
-	}
-}
-
-// Allows skipping the given TestCheckFunc unless beta checks enabled.
-func betaOnlyCheck(testFunc resource.TestCheckFunc) resource.TestCheckFunc {
-	if betaFeaturesEnabled() {
-		return testFunc
-	}
-	return func(state *terraform.State) error {
-		return nil
 	}
 }

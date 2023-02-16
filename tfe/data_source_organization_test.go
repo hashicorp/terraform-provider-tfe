@@ -40,8 +40,6 @@ func TestAccTFEOrganizationDataSource_basic(t *testing.T) {
 }
 
 func TestAccTFEOrganizationDataSource_defaultProject(t *testing.T) {
-	skipUnlessBeta(t)
-
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	org := &tfe.Organization{}
 
