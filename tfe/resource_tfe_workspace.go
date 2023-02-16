@@ -762,7 +762,7 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 			err = config.Client.Workspaces.DeleteByID(ctx, id)
 		} else {
 			return fmt.Errorf(
-				"Error deleting workspace %s: This workspace must be force deleted by setting force_delete=true", id)
+				"Error deleting workspace %s: This version of Terraform Enterprise does not support workspace safe-delete. Workspaces must be force deleted by setting force_delete=true", id)
 		}
 	} else if *ws.Permissions.CanForceDelete {
 		if forceDelete {
