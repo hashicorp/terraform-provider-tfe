@@ -357,6 +357,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 			Identifier:        tfe.String(vcsRepo["identifier"].(string)),
 			IngressSubmodules: tfe.Bool(vcsRepo["ingress_submodules"].(bool)),
 			OAuthTokenID:      tfe.String(vcsRepo["oauth_token_id"].(string)),
+			GHAInstallationID: tfe.String(vcsRepo["github_app_installation_id"].(string)),
 			TagsRegex:         tfe.String(vcsRepo["tags_regex"].(string)),
 		}
 
@@ -481,11 +482,12 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	var vcsRepo []interface{}
 	if workspace.VCSRepo != nil {
 		vcsConfig := map[string]interface{}{
-			"identifier":         workspace.VCSRepo.Identifier,
-			"branch":             workspace.VCSRepo.Branch,
-			"ingress_submodules": workspace.VCSRepo.IngressSubmodules,
-			"oauth_token_id":     workspace.VCSRepo.OAuthTokenID,
-			"tags_regex":         workspace.VCSRepo.TagsRegex,
+			"identifier":                 workspace.VCSRepo.Identifier,
+			"branch":                     workspace.VCSRepo.Branch,
+			"ingress_submodules":         workspace.VCSRepo.IngressSubmodules,
+			"oauth_token_id":             workspace.VCSRepo.OAuthTokenID,
+			"github_app_installation_id": workspace.VCSRepo.GHAInstallationID,
+			"tags_regex":                 workspace.VCSRepo.TagsRegex,
 		}
 		vcsRepo = append(vcsRepo, vcsConfig)
 	}
@@ -607,6 +609,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 				Branch:            tfe.String(vcsRepo["branch"].(string)),
 				IngressSubmodules: tfe.Bool(vcsRepo["ingress_submodules"].(bool)),
 				OAuthTokenID:      tfe.String(vcsRepo["oauth_token_id"].(string)),
+				GHAInstallationID: tfe.String(vcsRepo["github_app_installation_id"].(string)),
 				TagsRegex:         tfe.String(vcsRepo["tags_regex"].(string)),
 			}
 		}

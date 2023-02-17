@@ -136,10 +136,11 @@ func dataSourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error 
 				var vcsRepo []interface{}
 				if policySet.VCSRepo != nil {
 					vcsRepo = append(vcsRepo, map[string]interface{}{
-						"identifier":         policySet.VCSRepo.Identifier,
-						"branch":             policySet.VCSRepo.Branch,
-						"ingress_submodules": policySet.VCSRepo.IngressSubmodules,
-						"oauth_token_id":     policySet.VCSRepo.OAuthTokenID,
+						"identifier":                 policySet.VCSRepo.Identifier,
+						"branch":                     policySet.VCSRepo.Branch,
+						"ingress_submodules":         policySet.VCSRepo.IngressSubmodules,
+						"oauth_token_id":             policySet.VCSRepo.OAuthTokenID,
+						"github_app_installation_id": policySet.VCSRepo.GHAInstallationID,
 					})
 				}
 				d.Set("vcs_repo", vcsRepo)

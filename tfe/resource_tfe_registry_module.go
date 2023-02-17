@@ -109,6 +109,7 @@ func resourceTFERegistryModuleCreateWithVCS(v interface{}, meta interface{}) (*t
 	options.VCSRepo = &tfe.RegistryModuleVCSRepoOptions{
 		Identifier:        tfe.String(vcsRepo["identifier"].(string)),
 		OAuthTokenID:      tfe.String(vcsRepo["oauth_token_id"].(string)),
+		GHAInstallationID: tfe.String(vcsRepo["github_app_installation_id"].(string)),
 		DisplayIdentifier: tfe.String(vcsRepo["display_identifier"].(string)),
 	}
 
@@ -271,9 +272,10 @@ func resourceTFERegistryModuleRead(d *schema.ResourceData, meta interface{}) err
 	var vcsRepo []interface{}
 	if registryModule.VCSRepo != nil {
 		vcsConfig := map[string]interface{}{
-			"identifier":         registryModule.VCSRepo.Identifier,
-			"oauth_token_id":     registryModule.VCSRepo.OAuthTokenID,
-			"display_identifier": registryModule.VCSRepo.DisplayIdentifier,
+			"identifier":                 registryModule.VCSRepo.Identifier,
+			"oauth_token_id":             registryModule.VCSRepo.OAuthTokenID,
+			"github_app_installation_id": registryModule.VCSRepo.GHAInstallationID,
+			"display_identifier":         registryModule.VCSRepo.DisplayIdentifier,
 		}
 		vcsRepo = append(vcsRepo, vcsConfig)
 

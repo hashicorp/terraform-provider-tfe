@@ -289,11 +289,12 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	var vcsRepo []interface{}
 	if workspace.VCSRepo != nil {
 		vcsConfig := map[string]interface{}{
-			"identifier":         workspace.VCSRepo.Identifier,
-			"branch":             workspace.VCSRepo.Branch,
-			"ingress_submodules": workspace.VCSRepo.IngressSubmodules,
-			"oauth_token_id":     workspace.VCSRepo.OAuthTokenID,
-			"tags_regex":         workspace.VCSRepo.TagsRegex,
+			"identifier":                 workspace.VCSRepo.Identifier,
+			"branch":                     workspace.VCSRepo.Branch,
+			"ingress_submodules":         workspace.VCSRepo.IngressSubmodules,
+			"oauth_token_id":             workspace.VCSRepo.OAuthTokenID,
+			"tags_regex":                 workspace.VCSRepo.TagsRegex,
+			"github_app_installation_id": workspace.VCSRepo.GHAInstallationID,
 		}
 		vcsRepo = append(vcsRepo, vcsConfig)
 	}
