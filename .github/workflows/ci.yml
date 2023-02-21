@@ -66,12 +66,19 @@ jobs:
           total: ${{ matrix.parallel }}
 
       - name: Fetch Outputs
-        env:
-          TFE_TOKEN: "${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}"
-        run: |
-          go run .github/scripts/fetch_outputs/main.go hashicorp-v2 tflocal-terraform-provider-tfe
+        id: tflocal
+        uses: brandonc/terraform-cloud-outputs-action@v1
+        with:
+          token: "${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}"
+          organization: hashicorp-v2
+          workspace: tflocal-terraform-provider-tfe
+
       - name: Run Tests
         env:
+          TFE_HOSTNAME: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).ngrok_domain }}
+          TFE_TOKEN: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_token }}
+          TFE_USER1: tfe-provider-user1
+          TFE_USER2: tfe-provider-user2
           TF_ACC: 1
           TFC_RUN_TASK_URL: "https://httpstat.us/200"
           GITHUB_POLICY_SET_IDENTIFIER: "hashicorp/test-policy-set"
@@ -83,7 +90,6 @@ jobs:
           MOD_TFE: github.com/hashicorp/terraform-provider-tfe/tfe
           MOD_VERSION: github.com/hashicorp/terraform-provider-tfe/version
         run: |
-          source $HOME/.env
           gotestsum --format short-verbose -- $MOD_PROVIDER $MOD_TFE $MOD_VERSION -v -timeout=30m -run "${{ steps.test_split.outputs.run }}"
   tests-summarize:
     name: Summarize Tests
