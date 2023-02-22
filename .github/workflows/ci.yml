@@ -25,6 +25,7 @@ jobs:
         with:
           version: v1.50.0
           args: "--out-${NO_FUTURE}format colored-line-number"
+          skip-pkg-cache: true
 
   tests:
     name: run
