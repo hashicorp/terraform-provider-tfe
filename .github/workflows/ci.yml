@@ -9,13 +9,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      # Disabling this GH action because we're getting API rate limit exceeded errors
-      # Will reenable once it's working again
-#      - uses: hashicorp/setup-copywrite@v1.0.0
       - name: Setup Go Environment
         uses: actions/setup-go@v3
         with:
           go-version-file: "go.mod"
+
       - name: fmt check
         run: make fmtcheck
 
@@ -27,10 +25,8 @@ jobs:
         with:
           version: v1.50.0
           args: "--out-${NO_FUTURE}format colored-line-number"
+          skip-pkg-cache: true
 
-# Commented out until the API rate limiting issue is resolved
-      # - name: copywrite headers check
-      #   run: copywrite headers --plan
   tests:
     name: run
     runs-on: ubuntu-latest
@@ -38,8 +34,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        parallel: [3]
-        index: [0, 1, 2]
+        # If you adjust these parameters, also adjust the jrm input files on the "Merge reports" step below
+        parallel: [ 5 ]
+        index: [ 0, 1, 2, 3, 4 ]
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -52,11 +49,20 @@ jobs:
 
       - name: Sync dependencies
         run: |
-          go get -v -t -d ./...
+          go mod download
           go mod tidy
 
       - name: Install gotestsum
         run: go install gotest.tools/gotestsum@latest
+
+      - name: Download artifact
+        id: download-artifact
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow_conclusion: success
+          name: junit-test-summary
+          if_no_artifact_found: warn
+          # branch: main
 
       - name: Split acceptance tests
         id: test_split
@@ -64,6 +70,7 @@ jobs:
         with:
           index: ${{ matrix.index }}
           total: ${{ matrix.parallel }}
+          junit-summary: ./ci-summary-provider.xml
 
       - name: Fetch Outputs
         id: tflocal
@@ -90,10 +97,42 @@ jobs:
           MOD_TFE: github.com/hashicorp/terraform-provider-tfe/tfe
           MOD_VERSION: github.com/hashicorp/terraform-provider-tfe/version
         run: |
-          gotestsum --format short-verbose -- $MOD_PROVIDER $MOD_TFE $MOD_VERSION -v -timeout=30m -run "${{ steps.test_split.outputs.run }}"
+          gotestsum --junitfile summary.xml --format short-verbose -- $MOD_PROVIDER $MOD_TFE $MOD_VERSION -v -timeout=30m -run "${{ steps.test_split.outputs.run }}"
+
+      - name: Upload test artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: junit-test-summary-${{ matrix.index }}
+          path: summary.xml
+          retention-days: 1
+
+  tests-combine-summaries:
+    name: Combine Test Reports
+    needs: [ tests ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Install junit-report-merger
+        run: npm install -g junit-report-merger
+
+      - name: Merge reports
+        run: jrm ./ci-summary-provider.xml "junit-test-summary-0/*.xml" "junit-test-summary-1/*.xml" "junit-test-summary-2/*.xml" "junit-test-summary-3/*.xml" "junit-test-summary-4/*.xml"
+
+      - name: Upload test artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: junit-test-summary
+          path: ./ci-summary-provider.xml
+
   tests-summarize:
     name: Summarize Tests
-    needs: [tests]
+    needs: [ tests ]
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:
