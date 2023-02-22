@@ -126,6 +126,7 @@ func Provider() *schema.Provider {
 			"tfe_variable_set":            dataSourceTFEVariableSet(),
 			"tfe_policy_set":              dataSourceTFEPolicySet(),
 			"tfe_organization_members":    dataSourceTFEOrganizationMembers(),
+			"tfe_github_app_installation": dataSourceTFEGHAInstallation(),
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
