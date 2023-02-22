@@ -35,8 +35,8 @@ jobs:
       fail-fast: false
       matrix:
         # If you adjust these parameters, also adjust the jrm input files on the "Merge reports" step below
-        parallel: [ 3 ]
-        index: [ 0, 1, 2 ]
+        parallel: [ 5 ]
+        index: [ 0, 1, 2, 3, 4 ]
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -122,7 +122,7 @@ jobs:
         run: npm install -g junit-report-merger
 
       - name: Merge reports
-        run: jrm ./ci-summary-provider.xml "junit-test-summary-0/*.xml" "junit-test-summary-1/*.xml" "junit-test-summary-2/*.xml"
+        run: jrm ./ci-summary-provider.xml "junit-test-summary-0/*.xml" "junit-test-summary-1/*.xml" "junit-test-summary-2/*.xml" "junit-test-summary-3/*.xml" "junit-test-summary-4/*.xml"
 
       - name: Upload test artifacts
         uses: actions/upload-artifact@v3
