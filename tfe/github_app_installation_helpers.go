@@ -10,21 +10,21 @@ import (
 	"github.com/hashicorp/go-tfe"
 )
 
-func fetchGithubAppInstallationByNameOrGHID(ctx context.Context, tfeClient *tfe.Client, name string, GHID int32) (*tfe.GHAInstallation, error) {
-	// Paginate through all OAuthClients in the organization; if multiple pages
+func fetchGithubAppInstallationByNameOrGHID(ctx context.Context, tfeClient *tfe.Client, name string, GHInstallationIDS int) (*tfe.GHAInstallation, error) {
+	// Paginate through all GithubAppInstallation; if multiple pages
 	// of results are returned by the API, use the options variable to increment
 	// the page number until all results have been retrieved.
 	//
 	// Within the pagination loop, loop again through each result on each page.
-	// If 'name' was set, then match against the 'Name' field. If 'service_provider'
-	// was set, then match against the 'ServiceProvider' field. If both are set,
+	// If 'name' was set, then match against the 'Name' field. If 'github_installation_id'
+	// was set, then match against the 'github_installation_id' field. If both are set,
 	// then both must match. All matches are added to the ocMatches slice.
 	//
 	// At the end of the loop, if zero or more than one matches were found, an
 	// error is returned. Otherwise, only one match was found, and that match is
 	// returned.
 	//
-	var ocMatches []*tfe.GHAInstallation
+	var ghainsMatches []*tfe.GHAInstallation
 	options := &tfe.GHAInstallationListOptions{}
 	for {
 		ghaInstList, err := tfeClient.GHAInstallations.List(ctx, options)
@@ -34,17 +34,17 @@ func fetchGithubAppInstallationByNameOrGHID(ctx context.Context, tfeClient *tfe.
 
 		for _, item := range ghaInstList.Items {
 			switch {
-			case name != "" && GHID != nil:
-				if item.Name != nil && *item.Name == name && item.InstallationId == GHID {
-					ocMatches = append(ocMatches, item)
+			case name != "" && GHInstallationIDS != 0:
+				if item.Name != "" && item.Name == name && item.GHInstallationId == GHInstallationIDS {
+					ghainsMatches = append(ghainsMatches, item)
 				}
 			case name != "":
-				if item.Name != nil && *item.Name == name {
-					ocMatches = append(ocMatches, item)
+				if item.Name != "" && item.Name == name {
+					ghainsMatches = append(ghainsMatches, item)
 				}
-			case GHID != nil:
-				if item.InstallationId == GHID {
-					ocMatches = append(ocMatches, item)
+			case GHInstallationIDS != 0:
+				if item.GHInstallationId == GHInstallationIDS {
+					ghainsMatches = append(ghainsMatches, item)
 				}
 			}
 		}
@@ -57,12 +57,12 @@ func fetchGithubAppInstallationByNameOrGHID(ctx context.Context, tfeClient *tfe.
 		// Update the page number to get the next page.
 		options.PageNumber = ghaInstList.NextPage
 	}
-	if len(ocMatches) == 0 {
+	if len(ghainsMatches) == 0 {
 		return nil, fmt.Errorf("no Github App Installation found matching the given parameters")
 	}
-	if len(ocMatches) > 1 {
+	if len(ghainsMatches) > 1 {
 		return nil, fmt.Errorf("too many Github App Installation were found to match the given parameters. Please narrow your search")
 	}
 
-	return ocMatches[0], nil
+	return ghainsMatches[0], nil
 }
