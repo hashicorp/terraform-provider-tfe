@@ -100,6 +100,11 @@ func resourceTFEWorkspaceRun() *schema.Resource {
 							Optional: true,
 							Default:  30,
 						},
+						"wait_for_run": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  true,
+						},
 					},
 				},
 				Optional:     true,
@@ -134,6 +139,11 @@ func resourceTFEWorkspaceRun() *schema.Resource {
 							Type:     schema.TypeInt,
 							Optional: true,
 							Default:  30,
+						},
+						"wait_for_run": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  true,
 						},
 					},
 				},

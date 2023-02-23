@@ -183,6 +183,7 @@ Both `apply` and `destroy` block supports:
 * `retry_attempts` - (Optional) The number to retry attempts made after an initial error. Defaults to `3`.
 * `retry_backoff_min` - (Optional) The minimum time in seconds to backoff before attempting a retry. Defaults to `1`.
 * `retry_backoff_max` - (Optional) The maximum time in seconds to backoff before attempting a retry. Defaults to `30`.
+* `wait_for_run` - (Optional) Whether or not to wait for a run to reach completion before firing the next run. When set to false, `manual_confirm` will not be considered as run will be started with auto apply set to true . Defaults to `true`.
 
 ## Attributes Reference
 

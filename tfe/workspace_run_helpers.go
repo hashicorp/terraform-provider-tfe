@@ -33,6 +33,7 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 	retryBOMax := runArgs["retry_backoff_max"].(int)
 	retry := runArgs["retry"].(bool)
 	retryMaxAttempts := runArgs["retry_attempts"].(int)
+	waitForRun := runArgs["wait_for_run"].(bool)
 
 	isInitialRunAttempt := currentRetryAttempts == 0
 
@@ -68,10 +69,12 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 			time.Now().Format(time.UnixDate),
 		)),
 		/**
+			autoapply is set to true when there is no intention to wait for the run to reach completion.
+			On the other hand, if the intent is to wait for run completion,
 			autoapply is set to false to give the tfe_workspace_run resource
 			full control of run confirmation.
 		**/
-		AutoApply: tfe.Bool(false),
+		AutoApply: tfe.Bool(!waitForRun),
 	}
 	log.Printf("[DEBUG] Create run for workspace: %s", workspace)
 	run, err := config.Client.Runs.Create(ctx, runConfig)
@@ -87,6 +90,11 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 	}
 
 	log.Printf("[DEBUG] Run %s created for workspace %s", run.ID, workspace)
+
+	if !waitForRun {
+		d.SetId(run.ID)
+		return nil
+	}
 
 	isPlanOp := true
 	run, err = awaitRun(meta, run.ID, ws.ID, organization, isPlanOp, planPendingStatuses, planTerminalStatuses)
