@@ -18,9 +18,9 @@ func dataSourceTFEGHAInstallation() *schema.Resource {
 			"id": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				AtLeastOneOf: []string{"id", "name", "github_installation_id"},
+				AtLeastOneOf: []string{"id", "name", "installation_id"},
 			},
-			"github_installation_id": {
+			"installation_id": {
 				Type:     schema.TypeInt,
 				Optional: true,
 			},
@@ -59,7 +59,7 @@ func dataSourceGHAInstallationRead(d *schema.ResourceData, meta interface{}) err
 		if ok {
 			name = vName.(string)
 		}
-		vInstallationId, ok := d.GetOk("github_installation_id")
+		vInstallationId, ok := d.GetOk("installation_id")
 		if ok {
 			GHInstallationID = vInstallationId.(int)
 		}
@@ -71,7 +71,7 @@ func dataSourceGHAInstallationRead(d *schema.ResourceData, meta interface{}) err
 
 	d.SetId(ghai.ID)
 	d.Set("id", ghai.ID)
-	d.Set("github_installation_id", ghai.GHInstallationId)
+	d.Set("installation_id", ghai.GHInstallationId)
 	d.Set("name", ghai.Name)
 
 	return nil

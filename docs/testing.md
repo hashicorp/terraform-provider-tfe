@@ -36,15 +36,16 @@ these values with the environment variables specified below:
 
 ##### Optional:
 1. `TFE_USER1` and `TFE_USER2`: The usernames of two pre-existing users on the Terraform Cloud or Terraform Enterprise instance being used for testing. Required for running team membership tests.
-1. `GITHUB_TOKEN` - [GitHub personal access token](https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line). Used to establish a VCS provider connection.
-1. `GITHUB_POLICY_SET_IDENTIFIER` - GitHub policy set repository identifier in the format `username/repository`. Required for running policy set tests.
-1. `GITHUB_POLICY_SET_BRANCH`: A GitHub branch for the repository specified by `GITHUB_POLICY_SET_IDENTIFIER`. Required for running policy set tests.
-1. `GITHUB_POLICY_SET_PATH`: A GitHub subdirectory for the repository specified by `GITHUB_POLICY_SET_IDENTIFIER`. Required for running policy set tests.
-1. `GITHUB_REGISTRY_MODULE_IDENTIFIER` - GitHub registry module repository identifier in the format `username/repository`. Required for running registry module tests.
-1. `GITHUB_WORKSPACE_IDENTIFIER` - GitHub workspace repository identifier in the format `username/repository`. Required for running workspace tests.
-1. `GITHUB_WORKSPACE_BRANCH`: A GitHub branch for the repository specified by `GITHUB_WORKSPACE_IDENTIFIER`. Required for running workspace tests.
-1. `ENABLE_TFE` - Some tests cover features available only in Terraform Cloud. To skip these tests when running against a Terraform Enterprise instance, set `ENABLE_TFE=1`.
-1. `RUN_TASKS_URL` - External URL to use for testing Run Tasks operations, for example `RUN_TASKS_URL=http://somewhere.local:8080/pass`. Required for running run tasks tests.
+2. `GITHUB_TOKEN` - [GitHub personal access token](https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line). Used to establish a VCS provider connection.
+3. `GITHUB_POLICY_SET_IDENTIFIER` - GitHub policy set repository identifier in the format `username/repository`. Required for running policy set tests.
+4. `GITHUB_POLICY_SET_BRANCH`: A GitHub branch for the repository specified by `GITHUB_POLICY_SET_IDENTIFIER`. Required for running policy set tests.
+5. `GITHUB_POLICY_SET_PATH`: A GitHub subdirectory for the repository specified by `GITHUB_POLICY_SET_IDENTIFIER`. Required for running policy set tests.
+6. `GITHUB_REGISTRY_MODULE_IDENTIFIER` - GitHub registry module repository identifier in the format `username/repository`. Required for running registry module tests.
+7. `GITHUB_WORKSPACE_IDENTIFIER` - GitHub workspace repository identifier in the format `username/repository`. Required for running workspace tests.
+8. `GITHUB_WORKSPACE_BRANCH`: A GitHub branch for the repository specified by `GITHUB_WORKSPACE_IDENTIFIER`. Required for running workspace tests.
+9. `ENABLE_TFE` - Some tests cover features available only in Terraform Cloud. To skip these tests when running against a Terraform Enterprise instance, set `ENABLE_TFE=1`.
+10. `RUN_TASKS_URL` - External URL to use for testing Run Tasks operations, for example `RUN_TASKS_URL=http://somewhere.local:8080/pass`. Required for running run tasks tests.
+11. `GITHUB_APP_INSTALLATION_ID` -  GitHub App installation internal id in the format `ghain-xxxxxxxxxxxxxxx`.Required for running GitHub app installation tests.
 
 **Note:** In order to run integration tests for **Paid** features you will need a token `TFE_TOKEN` with TFC/E administrator privileges, otherwise the attempt to upgrade an organization's feature set will fail.
 

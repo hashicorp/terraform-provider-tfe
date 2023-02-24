@@ -16,23 +16,21 @@ func testAccTFEGHAInstallationDataSourcePreCheck(t *testing.T) {
 	if envGithubAppInstallationId == "" {
 		t.Skip("Please set GITHUB_APP_INSTALLATION_ID to run this test")
 	}
+	fmt.Println(envGithubAppInstallationId)
 }
 
 func TestAccTFEGHAInstallationDataSource_findByID(t *testing.T) {
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	//rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccTFEGHAInstallationDataSourcePreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEGHAInstallationDataSourceConfig(rInt),
+				Config: testAccTFEGHAInstallationDataSourceConfig(),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrPair(
-						"tfe_oauth_client.test", "api_url",
-						"data.tfe_oauth_client.client", "api_url"),
-					resource.TestCheckResourceAttrPair(
-						"tfe_oauth_client.test", "http_url",
-						"data.tfe_oauth_client.client", "http_url"),
+					resource.TestCheckResourceAttr("data.tfe_github_app_installation.gha_installation", "installation_id", envGithubAppInstallationId),
+					resource.TestCheckResourceAttrSet("data.tfe_github_app_installation.gha_installation", "id"),
+					resource.TestCheckResourceAttrSet("data.tfe_github_app_installation.gha_installation", "name"),
 				),
 			},
 		},
@@ -46,14 +44,11 @@ func TestAccTFEGHAInstallationDataSource_findByName(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEGHAInstallationDataSourceConfig(rInt),
+				Config: testAccTFEGHAInstallationDataSourceConfig_findByName(rInt),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrPair(
-						"tfe_oauth_client.test", "api_url",
-						"data.tfe_oauth_client.client", "api_url"),
-					resource.TestCheckResourceAttrPair(
-						"tfe_oauth_client.test", "http_url",
-						"data.tfe_oauth_client.client", "http_url"),
+					//resource.TestCheckResourceAttrSet("data.tfe_github_app_installation.gha_installation", "installation_id"),
+					//resource.TestCheckResourceAttrSet("data.tfe_github_app_installation.gha_installation", "id"),
+					resource.TestCheckResourceAttr("data.tfe_github_app_installation.gha_installation", "name", fmt.Sprintf("name-%d", rInt)),
 				),
 			},
 		},
@@ -67,26 +62,37 @@ func TestAccTFEGHAInstallationDataSource_findByInstallationID(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEGHAInstallationDataSourceConfig(rInt),
+				Config: testAccTFEGHAInstallationDataSourceConfig_findByGithubInstallationID(rInt),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrPair(
-						"tfe_oauth_client.test", "api_url",
-						"data.tfe_oauth_client.client", "api_url"),
-					resource.TestCheckResourceAttrPair(
-						"tfe_oauth_client.test", "http_url",
-						"data.tfe_oauth_client.client", "http_url"),
+					resource.TestCheckResourceAttr("data.tfe_github_app_installation.gha_installation", "installation_id", envGithubAppInstallationId),
+					//resource.TestCheckResourceAttrSet("data.tfe_github_app_installation.gha_installation", "id"),
+					//resource.TestCheckResourceAttrSet("data.tfe_github_app_installation.gha_installation", "name"),
 				),
 			},
 		},
 	})
 }
 
-func testAccTFEGHAInstallationDataSourceConfig(rInt int) string {
+func testAccTFEGHAInstallationDataSourceConfig() string {
 	return fmt.Sprintf(`
 data "tfe_github_app_installation" "gha_installation" {
 	id = "%s"
+}
+`, envGithubAppInstallationId)
+}
+
+func testAccTFEGHAInstallationDataSourceConfig_findByName(rInt int) string {
+	return fmt.Sprintf(`
+data "tfe_github_app_installation" "gha_installation" {
 	name = "name-%d"
+}
+`, rInt)
+}
+
+func testAccTFEGHAInstallationDataSourceConfig_findByGithubInstallationID(rInt int) string {
+	return fmt.Sprintf(`
+data "tfe_github_app_installation" "gha_installation" {
 	installation_id = %d
 }
-`, envGithubAppInstallationId, rInt, rInt)
+`, rInt)
 }

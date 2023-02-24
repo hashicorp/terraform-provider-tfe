@@ -67,7 +67,10 @@ func resourceTFERegistryModule() *schema.Resource {
 						},
 						"oauth_token_id": {
 							Type:     schema.TypeString,
-							Required: true,
+							ForceNew: true,
+						},
+						"github_app_installation_id": {
+							Type:     schema.TypeString,
 							ForceNew: true,
 						},
 					},

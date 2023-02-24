@@ -114,8 +114,11 @@ func resourceTFEPolicySet() *schema.Resource {
 						},
 
 						"oauth_token_id": {
-							Type:     schema.TypeString,
-							Required: true,
+							Type: schema.TypeString,
+						},
+
+						"github_app_installation_id": {
+							Type: schema.TypeString,
 						},
 					},
 				},

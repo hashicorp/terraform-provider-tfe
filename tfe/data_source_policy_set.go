@@ -83,6 +83,11 @@ func dataSourceTFEPolicySet() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
+
+						"github_app_installation_id": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 					},
 				},
 			},

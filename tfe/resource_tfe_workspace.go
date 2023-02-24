@@ -253,6 +253,11 @@ func resourceTFEWorkspace() *schema.Resource {
 							Optional:      true,
 							ConflictsWith: []string{"trigger_patterns", "trigger_prefixes"},
 						},
+
+						"github_app_installation_id": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 					},
 				},
 			},

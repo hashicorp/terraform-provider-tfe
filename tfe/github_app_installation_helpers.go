@@ -10,14 +10,14 @@ import (
 	"github.com/hashicorp/go-tfe"
 )
 
-func fetchGithubAppInstallationByNameOrGHID(ctx context.Context, tfeClient *tfe.Client, name string, GHInstallationIDS int) (*tfe.GHAInstallation, error) {
+func fetchGithubAppInstallationByNameOrGHID(ctx context.Context, tfeClient *tfe.Client, name string, installationIDS int) (*tfe.GHAInstallation, error) {
 	// Paginate through all GithubAppInstallation; if multiple pages
 	// of results are returned by the API, use the options variable to increment
 	// the page number until all results have been retrieved.
 	//
 	// Within the pagination loop, loop again through each result on each page.
-	// If 'name' was set, then match against the 'Name' field. If 'github_installation_id'
-	// was set, then match against the 'github_installation_id' field. If both are set,
+	// If 'name' was set, then match against the 'Name' field. If 'installation_id'
+	// was set, then match against the 'installation_id' field. If both are set,
 	// then both must match. All matches are added to the ocMatches slice.
 	//
 	// At the end of the loop, if zero or more than one matches were found, an
@@ -34,16 +34,16 @@ func fetchGithubAppInstallationByNameOrGHID(ctx context.Context, tfeClient *tfe.
 
 		for _, item := range ghaInstList.Items {
 			switch {
-			case name != "" && GHInstallationIDS != 0:
-				if item.Name != "" && item.Name == name && item.GHInstallationId == GHInstallationIDS {
+			case name != "" && installationIDS != 0:
+				if item.Name != "" && item.Name == name && item.GHInstallationId == installationIDS {
 					ghainsMatches = append(ghainsMatches, item)
 				}
 			case name != "":
 				if item.Name != "" && item.Name == name {
 					ghainsMatches = append(ghainsMatches, item)
 				}
-			case GHInstallationIDS != 0:
-				if item.GHInstallationId == GHInstallationIDS {
+			case installationIDS != 0:
+				if item.GHInstallationId == installationIDS {
 					ghainsMatches = append(ghainsMatches, item)
 				}
 			}
