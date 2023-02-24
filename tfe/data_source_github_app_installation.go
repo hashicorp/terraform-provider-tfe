@@ -59,6 +59,7 @@ func dataSourceGHAInstallationRead(d *schema.ResourceData, meta interface{}) err
 		if ok {
 			name = vName.(string)
 		}
+
 		vInstallationId, ok := d.GetOk("installation_id")
 		if ok {
 			GHInstallationID = vInstallationId.(int)
