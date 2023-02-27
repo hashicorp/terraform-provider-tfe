@@ -35,7 +35,7 @@ func fetchGithubAppInstallationByNameOrGHID(ctx context.Context, tfeClient *tfe.
 		for _, item := range ghaInstList.Items {
 			switch {
 			case name != "" && installationIDS != 0:
-				if item.Name != "" && item.Name == name && item.GHInstallationId == installationIDS {
+				if item.Name != "" && item.Name == name && item.GHInstallationID == installationIDS {
 					ghainsMatches = append(ghainsMatches, item)
 				}
 			case name != "":
@@ -43,7 +43,7 @@ func fetchGithubAppInstallationByNameOrGHID(ctx context.Context, tfeClient *tfe.
 					ghainsMatches = append(ghainsMatches, item)
 				}
 			case installationIDS != 0:
-				if item.GHInstallationId == installationIDS {
+				if item.GHInstallationID == installationIDS {
 					ghainsMatches = append(ghainsMatches, item)
 				}
 			}

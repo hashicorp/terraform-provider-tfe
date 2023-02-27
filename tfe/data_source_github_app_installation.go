@@ -72,7 +72,7 @@ func dataSourceGHAInstallationRead(d *schema.ResourceData, meta interface{}) err
 
 	d.SetId(ghai.ID)
 	d.Set("id", ghai.ID)
-	d.Set("installation_id", ghai.GHInstallationId)
+	d.Set("installation_id", ghai.GHInstallationID)
 	d.Set("name", ghai.Name)
 
 	return nil
