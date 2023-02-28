@@ -59,7 +59,7 @@ require (
 	google.golang.org/grpc v1.51.0 // indirect
 )
 
-require github.com/stretchr/testify v1.8.1
+require github.com/stretchr/testify v1.8.2
 
 require (
 	github.com/hashicorp/hc-install v0.5.0 // indirect
