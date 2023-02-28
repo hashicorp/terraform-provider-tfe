@@ -60,9 +60,9 @@ func dataSourceGHAInstallationRead(d *schema.ResourceData, meta interface{}) err
 			name = vName.(string)
 		}
 
-		vInstallationId, ok := d.GetOk("installation_id")
+		vInstallationID, ok := d.GetOk("installation_id")
 		if ok {
-			GHInstallationID = vInstallationId.(int)
+			GHInstallationID = vInstallationID.(int)
 		}
 		ghai, err = fetchGithubAppInstallationByNameOrGHID(ctx, config.Client, name, GHInstallationID)
 		if err != nil {
@@ -70,10 +70,10 @@ func dataSourceGHAInstallationRead(d *schema.ResourceData, meta interface{}) err
 		}
 	}
 
-	d.SetId(ghai.ID)
-	d.Set("id", ghai.ID)
-	d.Set("installation_id", ghai.GHInstallationID)
-	d.Set("name", ghai.Name)
+	d.SetId(*ghai.ID)
+	d.Set("id", *ghai.ID)
+	d.Set("installation_id", *ghai.InstallationID)
+	d.Set("name", *ghai.Name)
 
 	return nil
 }

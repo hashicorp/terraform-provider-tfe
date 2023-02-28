@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/go-tfe"
 )
 
-func fetchGithubAppInstallationByNameOrGHID(ctx context.Context, tfeClient *tfe.Client, name string, installationIDS int) (*tfe.GHAInstallation, error) {
+func fetchGithubAppInstallationByNameOrGHID(ctx context.Context, tfeClient *tfe.Client, name string, installationID int) (*tfe.GHAInstallation, error) {
 	// Paginate through all GithubAppInstallation; if multiple pages
 	// of results are returned by the API, use the options variable to increment
 	// the page number until all results have been retrieved.
@@ -34,16 +34,16 @@ func fetchGithubAppInstallationByNameOrGHID(ctx context.Context, tfeClient *tfe.
 
 		for _, item := range ghaInstList.Items {
 			switch {
-			case name != "" && installationIDS != 0:
-				if item.Name != "" && item.Name == name && item.GHInstallationID == installationIDS {
+			case name != "" && installationID != 0:
+				if item.Name != nil && *item.Name == name && item.InstallationID != nil && *item.InstallationID == installationID {
 					ghainsMatches = append(ghainsMatches, item)
 				}
 			case name != "":
-				if item.Name != "" && item.Name == name {
+				if item.Name != nil && *item.Name == name {
 					ghainsMatches = append(ghainsMatches, item)
 				}
-			case installationIDS != 0:
-				if item.GHInstallationID == installationIDS {
+			case installationID != 0:
+				if *item.InstallationID == installationID {
 					ghainsMatches = append(ghainsMatches, item)
 				}
 			}
