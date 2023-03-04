@@ -9,28 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      # Disabling this GH action because we're getting API rate limit exceeded errors
-      # Will reenable once it's working again
-#      - uses: hashicorp/setup-copywrite@v1.0.0
-      - name: Setup Go Environment
-        uses: actions/setup-go@v3
-        with:
-          go-version-file: "go.mod"
-      - name: fmt check
-        run: make fmtcheck
+      - uses: ./.github/actions/lint-provider-tfe
 
-      - name: go vet
-        run: make vet
-
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: v1.50.0
-          args: "--out-${NO_FUTURE}format colored-line-number"
-
-# Commented out until the API rate limiting issue is resolved
-      # - name: copywrite headers check
-      #   run: copywrite headers --plan
   tests:
     name: run
     runs-on: ubuntu-latest
@@ -38,56 +18,55 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        parallel: [3]
-        index: [0, 1, 2]
+        # If you adjust these parameters, also adjust the jrm input files on the "Merge reports" step below
+        total: [ 5 ]
+        index: [ 0, 1, 2, 3, 4 ]
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Set up Go
-        uses: actions/setup-go@v3
-        with:
-          go-version-file: go.mod
-          cache: true
-
-      - name: Sync dependencies
-        run: |
-          go get -v -t -d ./...
-          go mod tidy
-
-      - name: Install gotestsum
-        run: go install gotest.tools/gotestsum@latest
-
-      - name: Split acceptance tests
-        id: test_split
-        uses: hashicorp-forge/go-test-split-action@v1
-        with:
-          index: ${{ matrix.index }}
-          total: ${{ matrix.parallel }}
-
       - name: Fetch Outputs
-        env:
-          TFE_TOKEN: "${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}"
-        run: |
-          go run .github/scripts/fetch_outputs/main.go hashicorp-v2 tflocal-terraform-provider-tfe
-      - name: Run Tests
-        env:
-          TF_ACC: 1
-          TFC_RUN_TASK_URL: "https://httpstat.us/200"
-          GITHUB_POLICY_SET_IDENTIFIER: "hashicorp/test-policy-set"
-          GITHUB_REGISTRY_MODULE_IDENTIFIER: "hashicorp/terraform-random-module"
-          GITHUB_WORKSPACE_IDENTIFIER: "hashicorp/terraform-random-1"
-          GITHUB_WORKSPACE_BRANCH: "test"
-          GITHUB_TOKEN: "${{ secrets.TESTING_GITHUB_TOKEN }}"
-          MOD_PROVIDER: github.com/hashicorp/terraform-provider-tfe
-          MOD_TFE: github.com/hashicorp/terraform-provider-tfe/tfe
-          MOD_VERSION: github.com/hashicorp/terraform-provider-tfe/version
-        run: |
-          source $HOME/.env
-          gotestsum --format short-verbose -- $MOD_PROVIDER $MOD_TFE $MOD_VERSION -v -timeout=30m -run "${{ steps.test_split.outputs.run }}"
+        id: tflocal
+        uses: hashicorp-forge/terraform-cloud-action/outputs@v1
+        with:
+          token: "${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}"
+          organization: hashicorp-v2
+          workspace: tflocal-terraform-provider-tfe
+
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/test-provider-tfe
+        with:
+          matrix_index: ${{ matrix.index }}
+          matrix_total: ${{ matrix.total }}
+          hostname: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).ngrok_domain }}
+          token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_token }}
+          testing-github-token: ${{ secrets.TESTING_GITHUB_TOKEN }}
+
+  tests-combine-summaries:
+    name: Combine Test Reports
+    needs: [ tests ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Install junit-report-merger
+        run: npm install -g junit-report-merger
+
+      - name: Merge reports
+        run: jrm ./ci-summary-provider.xml "junit-test-summary-0/*.xml" "junit-test-summary-1/*.xml" "junit-test-summary-2/*.xml" "junit-test-summary-3/*.xml" "junit-test-summary-4/*.xml"
+
+      - name: Upload test artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: junit-test-summary
+          path: ./ci-summary-provider.xml
+
   tests-summarize:
     name: Summarize Tests
-    needs: [tests]
+    needs: [ tests ]
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:

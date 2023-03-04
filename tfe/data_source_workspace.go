@@ -6,6 +6,7 @@ package tfe
 import (
 	"fmt"
 	"log"
+	"net/url"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -188,6 +189,10 @@ func dataSourceTFEWorkspace() *schema.Resource {
 					},
 				},
 			},
+			"html_url": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -237,6 +242,17 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("trigger_patterns", workspace.TriggerPatterns)
 	d.Set("working_directory", workspace.WorkingDirectory)
 	d.Set("execution_mode", workspace.ExecutionMode)
+
+	if workspace.Links["self-html"] != nil {
+		baseAPI := config.Client.BaseURL()
+		htmlURL := url.URL{
+			Scheme: baseAPI.Scheme,
+			Host:   baseAPI.Host,
+			Path:   workspace.Links["self-html"].(string),
+		}
+
+		d.Set("html_url", htmlURL.String())
+	}
 
 	// Set remote_state_consumer_ids if global_remote_state is false
 	globalRemoteState := workspace.GlobalRemoteState

@@ -53,7 +53,7 @@ The `organization_access` block supports:
 * `manage_providers` - (Optional) Allow members to publish and delete providers in the organization's private registry.
 * `manage_modules` - (Optional) Allow members to publish and delete modules in the organization's private registry.
 * `manage_run_tasks` - (Optional) Allow members to create, edit, and delete the organization's run tasks.
-* `manage_projects` - (Optional) Allow members to create and administrate all projects within the organization.
+* `manage_projects` - (Optional) Allow members to create and administrate all projects within the organization. Requires `manage_workspaces` to be set to `true`.
 
 ## Attributes Reference
 

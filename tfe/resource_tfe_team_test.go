@@ -42,17 +42,13 @@ func TestAccTFETeam_full(t *testing.T) {
 	team := &tfe.Team{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
-	// Enabling the manage projects feature requires projects support, which is feature flagged and disabled
-	// on TFE
-	manageProjects := betaFeaturesEnabled()
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeam_full(rInt, manageProjects),
+				Config: testAccTFETeam_full(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamExists(
 						"tfe_team.foobar", team),
@@ -76,14 +72,11 @@ func TestAccTFETeam_full(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_run_tasks", "true"),
 					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_projects", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.read_projects", "true"),
+					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.read_workspaces", "true"),
-
-					// Projects are in GA for TFC, but haven't been enabled for TFE yet. This Cloud-only gate
-					// can be removed once TFE nightly builds include project support
-					betaOnlyCheck(resource.TestCheckResourceAttr(
-						"tfe_team.foobar", "organization_access.0.manage_projects", "true")),
-					betaOnlyCheck(resource.TestCheckResourceAttr(
-						"tfe_team.foobar", "organization_access.0.read_projects", "true")),
 				),
 			},
 		},
@@ -94,17 +87,13 @@ func TestAccTFETeam_full_update(t *testing.T) {
 	team := &tfe.Team{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
-	// Enabling the manage projects feature requires projects support, which is feature flagged and disabled
-	// on TFE
-	manageProjects := betaFeaturesEnabled()
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeam_full(rInt, manageProjects),
+				Config: testAccTFETeam_full(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamExists(
 						"tfe_team.foobar", team),
@@ -129,10 +118,10 @@ func TestAccTFETeam_full_update(t *testing.T) {
 						"tfe_team.foobar", "organization_access.0.manage_run_tasks", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.read_projects", "true"),
-					betaOnlyCheck(resource.TestCheckResourceAttr(
-						"tfe_team.foobar", "organization_access.0.manage_projects", "true")),
-					betaOnlyCheck(resource.TestCheckResourceAttr(
-						"tfe_team.foobar", "organization_access.0.read_workspaces", "true")),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_projects", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.read_workspaces", "true"),
 				),
 			},
 			{
@@ -199,26 +188,6 @@ func TestAccTFETeam_full_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "sso_team_id", ""),
 				),
-			},
-		},
-	})
-}
-
-func TestAccTFETeam_invalid(t *testing.T) {
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config:      testAccTFETeam_invalid_manage_workspaces_without_read(rInt),
-				ExpectError: regexp.MustCompile(`Manage workspaces cannot be true if Read Workspaces is false`),
-			},
-			{
-				Config:      testAccTFETeam_invalid_manage_projects_without_read(rInt),
-				ExpectError: regexp.MustCompile(`Manage projects cannot be true if Read Projects is false`),
 			},
 		},
 	})
@@ -464,7 +433,7 @@ func testAccCheckTFETeamAttributes_full(
 		if !team.OrganizationAccess.ManageRunTasks {
 			return fmt.Errorf("OrganizationAccess.ManageRunTasks should be true")
 		}
-		if betaFeaturesEnabled() && !team.OrganizationAccess.ManageProjects {
+		if !team.OrganizationAccess.ManageProjects {
 			return fmt.Errorf("OrganizationAccess.ManageProjects should be true")
 		}
 		if team.SSOTeamID != "team-test-sso-id" {
@@ -544,7 +513,7 @@ resource "tfe_team" "foobar" {
 }`, rInt)
 }
 
-func testAccTFETeam_full(rInt int, manageProjects bool) string {
+func testAccTFETeam_full(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
@@ -565,75 +534,11 @@ resource "tfe_team" "foobar" {
     manage_run_tasks = true
 	manage_providers = true
 	manage_modules = true
-	manage_projects = %t
+	manage_projects = true
 	read_workspaces = true
 	read_projects = true
   }
   sso_team_id = "team-test-sso-id"
-}`, rInt, manageProjects)
-}
-
-func testAccTFETeam_manage_workspaces_with_implicit_read(rInt int) string {
-	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
-resource "tfe_team" "foobar" {
-  name         = "team-test"
-  organization = tfe_organization.foobar.id
-
-  visibility = "organization"
-
-  organization_access {
-    manage_workspaces = true
-  }
-  sso_team_id = "team-test-sso-id"
-}`, rInt)
-}
-
-func testAccTFETeam_invalid_manage_workspaces_without_read(rInt int) string {
-	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
-resource "tfe_team" "manage_workspaces_without_read" {
-  name         = "team-test"
-  organization = tfe_organization.foobar.id
-
-  visibility = "organization"
-
-  organization_access {
-    read_workspaces = false
-    manage_workspaces = true
-  }
-  sso_team_id = "team-test-sso-id"
-}`, rInt)
-}
-
-func testAccTFETeam_invalid_manage_projects_without_read(rInt int) string {
-	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
- name  = "tst-terraform-%d"
- email = "admin@company.com"
-}
-
-resource "tfe_team" "manage_projects_without_read" {
- name         = "team-test"
- organization = tfe_organization.foobar.id
-
- visibility = "organization"
-
- organization_access {
-	read_workspaces = true
-	manage_workspaces = true
-	read_projects = false
-	manage_projects = true
- }
- sso_team_id = "team-test-sso-id"
 }`, rInt)
 }
 

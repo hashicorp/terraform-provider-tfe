@@ -87,7 +87,6 @@ func TestAccTFEOrganization_full(t *testing.T) {
 }
 
 func TestAccTFEOrganization_defaultProject(t *testing.T) {
-	skipUnlessBeta(t)
 	org := &tfe.Organization{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 

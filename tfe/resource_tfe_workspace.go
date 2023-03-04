@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/url"
 	"regexp"
 	"strings"
 
@@ -264,6 +265,10 @@ func resourceTFEWorkspace() *schema.Resource {
 				Type:     schema.TypeInt,
 				Computed: true,
 			},
+			"html_url": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -438,6 +443,17 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("working_directory", workspace.WorkingDirectory)
 	d.Set("organization", workspace.Organization.Name)
 	d.Set("resource_count", workspace.ResourceCount)
+
+	if workspace.Links["self-html"] != nil {
+		baseAPI := config.Client.BaseURL()
+		htmlURL := url.URL{
+			Scheme: baseAPI.Scheme,
+			Host:   baseAPI.Host,
+			Path:   workspace.Links["self-html"].(string),
+		}
+
+		d.Set("html_url", htmlURL.String())
+	}
 
 	// Project will be nil for versions of TFE that predate projects
 	if workspace.Project != nil {
@@ -746,7 +762,7 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 			err = config.Client.Workspaces.DeleteByID(ctx, id)
 		} else {
 			return fmt.Errorf(
-				"Error deleting workspace %s: This workspace must be force deleted by setting force_delete=true", id)
+				"Error deleting workspace %s: This version of Terraform Enterprise does not support workspace safe-delete. Workspaces must be force deleted by setting force_delete=true", id)
 		}
 	} else if *ws.Permissions.CanForceDelete {
 		if forceDelete {

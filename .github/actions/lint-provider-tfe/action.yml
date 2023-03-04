@@ -1,0 +1,27 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
+name: Lint
+description: Lints terraform-provider-tfe
+runs:
+  using: composite
+  steps:
+    - name: Setup Go Environment
+      uses: actions/setup-go@v3
+      with:
+        go-version-file: "go.mod"
+        cache: true
+
+    - name: fmt check
+      run: make fmtcheck
+      shell: bash
+
+    - name: go vet
+      run: make vet
+      shell: bash
+
+    - uses: golangci/golangci-lint-action@v3
+      with:
+        version: v1.50.0
+        args: "--out-${NO_FUTURE}format colored-line-number"
+        skip-pkg-cache: true

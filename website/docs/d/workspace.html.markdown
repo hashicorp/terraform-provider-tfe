@@ -60,6 +60,7 @@ In addition to all arguments above, the following attributes are exported:
 * `vcs_repo` - Settings for the workspace's VCS repository.
 * `working_directory` - A relative path that Terraform will execute within.
 * `execution_mode` - Indicates the [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode) of the workspace. Possible values include `remote`, `local`, or `agent`.
+* `html_url` - The URL to the browsable HTML overview of the workspace
 
 
 The `vcs_repo` block contains:

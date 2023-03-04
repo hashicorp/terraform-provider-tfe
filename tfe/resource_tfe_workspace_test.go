@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -25,6 +26,9 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+	workspaceName := "workspace-test"
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -37,7 +41,7 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 						"tfe_workspace.foobar", workspace, testAccProvider),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "name", "workspace-test"),
+						"tfe_workspace.foobar", "name", workspaceName),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "My favorite workspace!"),
 					resource.TestCheckResourceAttr(
@@ -66,6 +70,8 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 						"tfe_workspace.foobar", "working_directory", ""),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "resource_count", "0"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "html_url", fmt.Sprintf("https://%s/app/%s/workspaces/%s", os.Getenv("TFE_HOSTNAME"), orgName, workspaceName)),
 				),
 			},
 		},
@@ -104,8 +110,6 @@ func TestAccTFEWorkspace_defaultOrg(t *testing.T) {
 }
 
 func TestAccTFEWorkspace_basicReadProjectId(t *testing.T) {
-	skipUnlessBeta(t)
-
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -127,8 +131,6 @@ func TestAccTFEWorkspace_basicReadProjectId(t *testing.T) {
 }
 
 func TestAccTFEWorkspace_customProject(t *testing.T) {
-	skipUnlessBeta(t)
-
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -412,7 +414,6 @@ func TestAccTFEWorkspace_updateWorkingDirectory(t *testing.T) {
 }
 
 func TestAccTFEWorkspace_updateProject(t *testing.T) {
-	skipUnlessBeta(t)
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -1687,8 +1688,6 @@ func TestAccTFEWorkspace_importVCSBranch(t *testing.T) {
 }
 
 func TestAccTFEWorkspace_importProject(t *testing.T) {
-	skipUnlessBeta(t)
-
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -2093,7 +2092,7 @@ func TestTFEWorkspace_delete_withoutCanForceDeletePermission(t *testing.T) {
 
 	err = resourceTFEWorkspaceDelete(rd, config)
 	if err == nil {
-		t.Fatalf("Expected an error deleting workspace with CanForceDelete=nil, force_delete=true, and %v resources", workspace.ResourceCount)
+		t.Fatalf("Expected an error deleting workspace with CanForceDelete=nil, force_delete=false, and %v resources", workspace.ResourceCount)
 	}
 
 	workspace.ResourceCount = 0
@@ -2102,7 +2101,7 @@ func TestTFEWorkspace_delete_withoutCanForceDeletePermission(t *testing.T) {
 	if err == nil {
 		t.Fatalf("Expected an error deleting workspace with CanForceDelete=nil and force_delete=false")
 	}
-	expectedErrSubstring := "workspace must be force deleted by setting force_delete=true"
+	expectedErrSubstring := "This version of Terraform Enterprise does not support workspace safe-delete. Workspaces must be force deleted by setting force_delete=true"
 	if !strings.Contains(err.Error(), expectedErrSubstring) {
 		t.Fatalf("Expected error contains %s but got %s", expectedErrSubstring, err.Error())
 	}
