@@ -13,13 +13,12 @@ import (
 
 func testAccTFEGHAInstallationDataSourcePreCheck(t *testing.T) {
 	testAccPreCheck(t)
-	if envGithubAppInstallationId == "" {
+	if envGithubAppInstallationID == "" {
 		t.Skip("Please set GITHUB_APP_INSTALLATION_ID to run this test")
 	}
 }
 
 func TestAccTFEGHAInstallationDataSource_findByID(t *testing.T) {
-	//rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccTFEGHAInstallationDataSourcePreCheck(t) },
 		Providers: testAccProviders,
@@ -27,7 +26,7 @@ func TestAccTFEGHAInstallationDataSource_findByID(t *testing.T) {
 			{
 				Config: testAccTFEGHAInstallationDataSourceConfig(),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.tfe_github_app_installation.gha_installation", "installation_id", envGithubAppInstallationId),
+					resource.TestCheckResourceAttr("data.tfe_github_app_installation.gha_installation", "installation_id", envGithubAppInstallationID),
 					resource.TestCheckResourceAttrSet("data.tfe_github_app_installation.gha_installation", "id"),
 					resource.TestCheckResourceAttrSet("data.tfe_github_app_installation.gha_installation", "name"),
 				),
@@ -45,8 +44,6 @@ func TestAccTFEGHAInstallationDataSource_findByName(t *testing.T) {
 			{
 				Config: testAccTFEGHAInstallationDataSourceConfig_findByName(rInt),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					//resource.TestCheckResourceAttrSet("data.tfe_github_app_installation.gha_installation", "installation_id"),
-					//resource.TestCheckResourceAttrSet("data.tfe_github_app_installation.gha_installation", "id"),
 					resource.TestCheckResourceAttr("data.tfe_github_app_installation.gha_installation", "name", fmt.Sprintf("name-%d", rInt)),
 				),
 			},
@@ -63,9 +60,9 @@ func TestAccTFEGHAInstallationDataSource_findByInstallationID(t *testing.T) {
 			{
 				Config: testAccTFEGHAInstallationDataSourceConfig_findByInstallationID(rInt),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.tfe_github_app_installation.gha_installation", "installation_id", envGithubAppInstallationId),
-					//resource.TestCheckResourceAttrSet("data.tfe_github_app_installation.gha_installation", "id"),
-					//resource.TestCheckResourceAttrSet("data.tfe_github_app_installation.gha_installation", "name"),
+					resource.TestCheckResourceAttr("data.tfe_github_app_installation.gha_installation", "installation_id", envGithubAppInstallationID),
+					// resource.TestCheckResourceAttrSet("data.tfe_github_app_installation.gha_installation", "id"),
+					// resource.TestCheckResourceAttrSet("data.tfe_github_app_installation.gha_installation", "name"),
 				),
 			},
 		},
@@ -77,7 +74,7 @@ func testAccTFEGHAInstallationDataSourceConfig() string {
 data "tfe_github_app_installation" "gha_installation" {
 	id = "%s"
 }
-`, envGithubAppInstallationId)
+`, envGithubAppInstallationID)
 }
 
 func testAccTFEGHAInstallationDataSourceConfig_findByName(rInt int) string {

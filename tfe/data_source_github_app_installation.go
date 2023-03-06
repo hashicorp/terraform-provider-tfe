@@ -49,10 +49,6 @@ func dataSourceGHAInstallationRead(d *schema.ResourceData, meta interface{}) err
 		}
 	default:
 		// search by name or id
-		if err != nil {
-			return err
-		}
-
 		var name string
 		var GHInstallationID int
 		vName, ok := d.GetOk("name")
