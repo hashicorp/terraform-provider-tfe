@@ -19,13 +19,13 @@ require (
 	github.com/hashicorp/terraform-plugin-go v0.14.3
 	github.com/hashicorp/terraform-plugin-mux v0.2.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.25.0
-	github.com/hashicorp/terraform-svchost v0.0.0-20200729002733-f050f53b9734
+	github.com/hashicorp/terraform-svchost v0.1.0
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
-	github.com/zclconf/go-cty v1.12.1
+	github.com/zclconf/go-cty v1.13.0
 	golang.org/x/crypto v0.6.0 // indirect
 	golang.org/x/net v0.7.0 // indirect
-	golang.org/x/oauth2 v0.0.0-20210622215436-a8dc77f794b6 // indirect
+	golang.org/x/oauth2 v0.4.0 // indirect
 	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/text v0.7.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
@@ -59,7 +59,7 @@ require (
 	google.golang.org/grpc v1.51.0 // indirect
 )
 
-require github.com/stretchr/testify v1.8.1
+require github.com/stretchr/testify v1.8.2
 
 require (
 	github.com/hashicorp/hc-install v0.5.0 // indirect
