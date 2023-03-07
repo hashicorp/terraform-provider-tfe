@@ -28,7 +28,6 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 	workspaceName := "workspace-test"
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -71,7 +70,7 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "resource_count", "0"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "html_url", fmt.Sprintf("https://%s/app/%s/workspaces/%s", os.Getenv("TFE_HOSTNAME"), orgName, workspaceName)),
+						"tfe_workspace.foobar", "html_url", fmt.Sprintf("https:/%s/app/%s/workspaces/%s", os.Getenv("TFE_HOSTNAME"), orgName, workspaceName)),
 				),
 			},
 		},
