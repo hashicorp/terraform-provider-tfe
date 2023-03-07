@@ -11,27 +11,9 @@ import (
 
 func testAccTFEGHAInstallationDataSourcePreCheck(t *testing.T) {
 	testAccPreCheck(t)
-	fmt.Printf("envGithubAppInstallationID is %s\n", envGithubAppInstallationID)
 	if envGithubAppInstallationID == "" {
 		t.Skip("Please set GITHUB_APP_INSTALLATION_ID to run this test")
 	}
-}
-
-func TestAccTFEGHAInstallationDataSource_findByID(t *testing.T) {
-	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccTFEGHAInstallationDataSourcePreCheck(t) },
-		Providers: testAccProviders,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccTFEGHAInstallationDataSourceConfig(envGithubAppInstallationID),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.tfe_github_app_installation.gha_installation", "id", envGithubAppInstallationID),
-					resource.TestCheckResourceAttrSet("data.tfe_github_app_installation.gha_installation", "installation_id"),
-					resource.TestCheckResourceAttrSet("data.tfe_github_app_installation.gha_installation", "name"),
-				),
-			},
-		},
-	})
 }
 
 func TestAccTFEGHAInstallationDataSource_findByName(t *testing.T) {
@@ -40,7 +22,7 @@ func TestAccTFEGHAInstallationDataSource_findByName(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEGHAInstallationDataSourceConfig_findByName("installation-name"),
+				Config: testAccTFEGHAInstallationDataSourceConfig_findByName("installation_name"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.tfe_github_app_installation.gha_installation", "id", envGithubAppInstallationID),
 					resource.TestCheckResourceAttrSet("data.tfe_github_app_installation.gha_installation", "installation_id"),
@@ -66,14 +48,6 @@ func TestAccTFEGHAInstallationDataSource_findByInstallationID(t *testing.T) {
 			},
 		},
 	})
-}
-
-func testAccTFEGHAInstallationDataSourceConfig(envGithubAppInstallationID string) string {
-	return fmt.Sprintf(`
-data "tfe_github_app_installation" "gha_installation" {
-	id = "%s"
-}
-`, envGithubAppInstallationID)
 }
 
 func testAccTFEGHAInstallationDataSourceConfig_findByName(name string) string {

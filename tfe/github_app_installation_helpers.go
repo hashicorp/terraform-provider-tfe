@@ -24,27 +24,29 @@ func fetchGithubAppInstallationByNameOrGHID(ctx context.Context, tfeClient *tfe.
 	// error is returned. Otherwise, only one match was found, and that match is
 	// returned.
 	//
-	var ghainsMatches []*tfe.GHAInstallation
+	if name == "" && installationID == 0 {
+		return nil, fmt.Errorf("invalid parameters, either name or installation id must have a value")
+	}
+	var ghaInstallation *tfe.GHAInstallation
 	options := &tfe.GHAInstallationListOptions{}
 	for {
 		ghaInstList, err := tfeClient.GHAInstallations.List(ctx, options)
 		if err != nil {
 			return nil, fmt.Errorf("Error retrieving Github App Installations: %w", err)
 		}
-
 		for _, item := range ghaInstList.Items {
 			switch {
 			case name != "" && installationID != 0:
 				if item.Name != nil && *item.Name == name && item.InstallationID != nil && *item.InstallationID == installationID {
-					ghainsMatches = append(ghainsMatches, item)
+					ghaInstallation = item
 				}
 			case name != "":
 				if item.Name != nil && *item.Name == name {
-					ghainsMatches = append(ghainsMatches, item)
+					ghaInstallation = item
 				}
 			case installationID != 0:
 				if *item.InstallationID == installationID {
-					ghainsMatches = append(ghainsMatches, item)
+					ghaInstallation = item
 				}
 			}
 		}
@@ -53,16 +55,11 @@ func fetchGithubAppInstallationByNameOrGHID(ctx context.Context, tfeClient *tfe.
 		if ghaInstList.CurrentPage >= ghaInstList.TotalPages {
 			break
 		}
-
 		// Update the page number to get the next page.
 		options.PageNumber = ghaInstList.NextPage
 	}
-	if len(ghainsMatches) == 0 {
+	if ghaInstallation == nil {
 		return nil, fmt.Errorf("no Github App Installation found matching the given parameters")
 	}
-	if len(ghainsMatches) > 1 {
-		return nil, fmt.Errorf("too many Github App Installation were found to match the given parameters. Please narrow your search")
-	}
-
-	return ghainsMatches[0], nil
+	return ghaInstallation, nil
 }

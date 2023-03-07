@@ -4,7 +4,6 @@ package tfe
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	"github.com/hashicorp/go-tfe"
@@ -16,13 +15,13 @@ func dataSourceTFEGHAInstallation() *schema.Resource {
 		Read: dataSourceGHAInstallationRead,
 		Schema: map[string]*schema.Schema{
 			"id": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				AtLeastOneOf: []string{"id", "name", "installation_id"},
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 			"installation_id": {
-				Type:     schema.TypeInt,
-				Optional: true,
+				Type:         schema.TypeInt,
+				Optional:     true,
+				AtLeastOneOf: []string{"name", "installation_id"},
 			},
 			"name": {
 				Type:     schema.TypeString,
@@ -36,40 +35,31 @@ func dataSourceGHAInstallationRead(d *schema.ResourceData, meta interface{}) err
 	ctx := context.TODO()
 	config := meta.(ConfiguredClient)
 
-	log.Printf("[DEBUG] Reading github app installations")
+	log.Printf("[DEBUG] Reading github app installation")
 
 	var ghai *tfe.GHAInstallation
 	var err error
 
-	switch v, ok := d.GetOk("id"); {
-	case ok:
-		ghai, err = config.Client.GHAInstallations.Read(ctx, v.(string))
-		if err != nil {
-			return fmt.Errorf("Error retrieving Github App Installation: %w", err)
-		}
-	default:
-		// search by name or id
-		var name string
-		var GHInstallationID int
-		vName, ok := d.GetOk("name")
-		if ok {
-			name = vName.(string)
-		}
+	// search by name or installation_id
+	var name string
+	var GHInstallationID int
+	vName, ok := d.GetOk("name")
+	if ok {
+		name = vName.(string)
+	}
 
-		vInstallationID, ok := d.GetOk("installation_id")
-		if ok {
-			GHInstallationID = vInstallationID.(int)
-		}
-		ghai, err = fetchGithubAppInstallationByNameOrGHID(ctx, config.Client, name, GHInstallationID)
-		if err != nil {
-			return err
-		}
+	vInstallationID, ok := d.GetOk("installation_id")
+	if ok {
+		GHInstallationID = vInstallationID.(int)
+	}
+	ghai, err = fetchGithubAppInstallationByNameOrGHID(ctx, config.Client, name, GHInstallationID)
+	if err != nil {
+		return err
 	}
 
 	d.SetId(*ghai.ID)
 	d.Set("id", *ghai.ID)
 	d.Set("installation_id", *ghai.InstallationID)
 	d.Set("name", *ghai.Name)
-
 	return nil
 }
