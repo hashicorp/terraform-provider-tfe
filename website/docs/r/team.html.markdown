@@ -44,7 +44,7 @@ The following arguments are supported:
 
 The `organization_access` block supports:
 
-* `read_workspaces` - (Optional) Allow this team to view all workspaces in this organization.
+* `read_workspaces` - (Optional) Allow members to view all workspaces in this organization.
 * `read_projects` - (Optional) Allow members to view all projects within the organization. Requires `read_workspaces` to be set to `true`.
 * `manage_policies` - (Optional) Allows members to create, edit, and delete the organization's Sentinel policies.
 * `manage_policy_overrides` - (Optional) Allows members to override soft-mandatory policy checks.
