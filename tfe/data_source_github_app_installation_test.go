@@ -16,6 +16,7 @@ func testAccTFEGHAInstallationDataSourcePreCheck(t *testing.T) {
 	}
 }
 
+// For manual testing a GitHub app installation name has to be provided
 func TestAccTFEGHAInstallationDataSource_findByName(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccTFEGHAInstallationDataSourcePreCheck(t) },
@@ -33,6 +34,7 @@ func TestAccTFEGHAInstallationDataSource_findByName(t *testing.T) {
 	})
 }
 
+// For manual testing a GitHub app installation id has to be provided
 func TestAccTFEGHAInstallationDataSource_findByInstallationID(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccTFEGHAInstallationDataSourcePreCheck(t) },

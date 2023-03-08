@@ -1429,6 +1429,84 @@ func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspace_updateGitHubAppRepo(t *testing.T) {
+	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccGithubPreCheck(t)
+			testAccGHAInstallationPreCheck(t)
+		},
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_basicForceDeleteEnabled(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceAttributes(workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "name", "workspace-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "auto_apply", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "operations", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "queue_all_runs", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "working_directory", ""),
+				),
+			},
+			{
+				Config: testAccTFEWorkspace_updateAddGitHubAppRepo(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceUpdatedAddVCSRepoAttributes(workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "description", "workspace-test-add-vcs-repo"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.0.identifier", envGithubWorkspaceIdentifier),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.0.branch", ""),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.0.ingress_submodules", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.0.tags_regex", ""),
+				),
+			},
+			{
+				Config: testAccTFEWorkspace_updateUpdateGitHubAppRepoBranch(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceUpdatedUpdateVCSRepoBranchAttributes(workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "description", "workspace-test-update-vcs-repo-branch"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.0.identifier", envGithubWorkspaceIdentifier),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.0.branch", envGithubWorkspaceBranch),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.0.ingress_submodules", "false"),
+				),
+			},
+			{
+				Config: testAccTFEWorkspace_updateRemoveVCSRepo(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceUpdatedRemoveVCSRepoAttributes(workspace),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "description", "workspace-test-remove-vcs-repo"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "vcs_repo.#", "0"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEWorkspace_updateVCSRepoTagsRegex(t *testing.T) {
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -3111,6 +3189,31 @@ resource "tfe_workspace" "foobar" {
 	)
 }
 
+func testAccTFEWorkspace_updateAddGitHubAppRepo(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  description  = "workspace-test-add-vcs-repo"
+  organization = tfe_organization.foobar.id
+  auto_apply   = true
+  force_delete = true
+  vcs_repo {
+    identifier     = "%s"
+    github_app_installation_id = "%s"
+  }
+}
+`,
+		rInt,
+		envGithubWorkspaceIdentifier,
+		envGithubAppInstallationID,
+	)
+}
+
 func testAccTFEWorkspace_updateUpdateVCSRepoBranchFileTriggersDisabled(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
@@ -3177,6 +3280,33 @@ resource "tfe_workspace" "foobar" {
 		rInt,
 		envGithubToken,
 		envGithubWorkspaceIdentifier,
+		envGithubWorkspaceBranch,
+	)
+}
+
+func testAccTFEWorkspace_updateUpdateGitHubAppRepoBranch(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  description  = "workspace-test-update-vcs-repo-branch"
+  organization = tfe_organization.foobar.id
+  auto_apply   = true
+  force_delete = true
+  vcs_repo {
+    identifier     = "%s"
+    github_app_installation_id = "%s"
+    branch         = "%s"
+  }
+}
+`,
+		rInt,
+		envGithubWorkspaceIdentifier,
+		envGithubAppInstallationID,
 		envGithubWorkspaceBranch,
 	)
 }

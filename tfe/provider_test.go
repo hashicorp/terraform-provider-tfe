@@ -369,6 +369,13 @@ func testAccGithubPreCheck(t *testing.T) {
 	}
 }
 
+func testAccGHAInstallationPreCheck(t *testing.T) {
+	testAccPreCheck(t)
+	if envGithubAppInstallationID == "" {
+		t.Skip("Please set GITHUB_APP_INSTALLATION_ID to run this test")
+	}
+}
+
 func init() {
 	envGithubPolicySetIdentifier = os.Getenv("GITHUB_POLICY_SET_IDENTIFIER")
 	envGithubPolicySetBranch = os.Getenv("GITHUB_POLICY_SET_BRANCH")
