@@ -14,7 +14,7 @@ require (
 	github.com/hashicorp/go-slug v0.10.1
 	github.com/hashicorp/go-tfe v1.19.0
 	github.com/hashicorp/go-version v1.6.0
-	github.com/hashicorp/hcl v0.0.0-20180404174102-ef8a98b0bbce
+	github.com/hashicorp/hcl v1.0.1-vault
 	github.com/hashicorp/hcl/v2 v2.16.1 // indirect
 	github.com/hashicorp/terraform-plugin-go v0.14.3
 	github.com/hashicorp/terraform-plugin-mux v0.2.0
