@@ -44,6 +44,8 @@ The following arguments are supported:
 
 The `organization_access` block supports:
 
+* `read_workspaces` - (Optional) Allow members to view all workspaces in this organization.
+* `read_projects` - (Optional) Allow members to view all projects within the organization. Requires `read_workspaces` to be set to `true`.
 * `manage_policies` - (Optional) Allows members to create, edit, and delete the organization's Sentinel policies.
 * `manage_policy_overrides` - (Optional) Allows members to override soft-mandatory policy checks.
 * `manage_workspaces` - (Optional) Allows members to create and administrate all workspaces within the organization.
@@ -51,7 +53,7 @@ The `organization_access` block supports:
 * `manage_providers` - (Optional) Allow members to publish and delete providers in the organization's private registry.
 * `manage_modules` - (Optional) Allow members to publish and delete modules in the organization's private registry.
 * `manage_run_tasks` - (Optional) Allow members to create, edit, and delete the organization's run tasks.
-* `manage_projects` - (Optional) Allow members to create and administrate all projects within the organization.
+* `manage_projects` - (Optional) Allow members to create and administrate all projects within the organization. Requires `manage_workspaces` to be set to `true`.
 
 ## Attributes Reference
 

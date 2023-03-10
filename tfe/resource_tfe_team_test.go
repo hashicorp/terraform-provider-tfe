@@ -73,6 +73,10 @@ func TestAccTFETeam_full(t *testing.T) {
 						"tfe_team.foobar", "organization_access.0.manage_run_tasks", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_projects", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.read_projects", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.read_workspaces", "true"),
 				),
 			},
 		},
@@ -113,7 +117,11 @@ func TestAccTFETeam_full_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_run_tasks", "true"),
 					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.read_projects", "true"),
+					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_projects", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.read_workspaces", "true"),
 				),
 			},
 			{
@@ -133,8 +141,6 @@ func TestAccTFETeam_full_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_workspaces", "false"),
 					resource.TestCheckResourceAttr(
-						"tfe_team.foobar", "organization_access.0.manage_vcs_settings", "false"),
-					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_providers", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_modules", "false"),
@@ -142,6 +148,10 @@ func TestAccTFETeam_full_update(t *testing.T) {
 						"tfe_team.foobar", "organization_access.0.manage_run_tasks", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_projects", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.read_workspaces", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.read_projects", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "sso_team_id", "changed-sso-id"),
 				),
@@ -171,6 +181,10 @@ func TestAccTFETeam_full_update(t *testing.T) {
 						"tfe_team.foobar", "organization_access.0.manage_run_tasks", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_projects", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.read_workspaces", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.read_projects", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "sso_team_id", ""),
 				),
@@ -521,6 +535,8 @@ resource "tfe_team" "foobar" {
 	manage_providers = true
 	manage_modules = true
 	manage_projects = true
+	read_workspaces = true
+	read_projects = true
   }
   sso_team_id = "team-test-sso-id"
 }`, rInt)
@@ -548,6 +564,8 @@ resource "tfe_team" "foobar" {
 	manage_providers = false
 	manage_modules = false
 	manage_projects = false
+	read_projects = false
+	read_workspaces = false
   }
 
   sso_team_id = "changed-sso-id"
