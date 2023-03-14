@@ -31,7 +31,6 @@ func TestAccTFERegistryModule_vcs(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
-			testAccPreCheck(t)
 			testAccPreCheckTFERegistryModule(t)
 		},
 		Providers:    testAccProviders,
@@ -67,6 +66,63 @@ func TestAccTFERegistryModule_vcs(t *testing.T) {
 						"tfe_registry_module.foobar", "vcs_repo.0.identifier", envGithubRegistryModuleIdentifer),
 					resource.TestCheckResourceAttrSet(
 						"tfe_registry_module.foobar", "vcs_repo.0.oauth_token_id"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFERegistryModule_GitHubApp(t *testing.T) {
+	registryModule := &tfe.RegistryModule{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	expectedRegistryModuleAttributes := &tfe.RegistryModule{
+		Name:         getRegistryModuleName(),
+		Provider:     getRegistryModuleProvider(),
+		RegistryName: tfe.PrivateRegistry,
+		Namespace:    orgName,
+		Organization: &tfe.Organization{Name: orgName},
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheckTFERegistryModule(t)
+			testAccGHAInstallationPreCheck(t)
+		},
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFERegistryModuleDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFERegistryModule_GitHubApp(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFERegistryModuleExists(
+						"tfe_registry_module.foobar",
+						tfe.RegistryModuleID{
+							Organization: orgName,
+							Name:         expectedRegistryModuleAttributes.Name,
+							Provider:     expectedRegistryModuleAttributes.Provider,
+							RegistryName: expectedRegistryModuleAttributes.RegistryName,
+							Namespace:    orgName,
+						}, registryModule),
+					testAccCheckTFERegistryModuleAttributes(registryModule, expectedRegistryModuleAttributes),
+					testAccCheckTFERegistryModuleVCSAttributes(registryModule),
+					resource.TestCheckResourceAttr(
+						"tfe_registry_module.foobar", "organization", orgName),
+					resource.TestCheckResourceAttr(
+						"tfe_registry_module.foobar", "name", expectedRegistryModuleAttributes.Name),
+					resource.TestCheckResourceAttr(
+						"tfe_registry_module.foobar", "module_provider", expectedRegistryModuleAttributes.Provider),
+					resource.TestCheckResourceAttr(
+						"tfe_registry_module.foobar", "namespace", expectedRegistryModuleAttributes.Namespace),
+					resource.TestCheckResourceAttr(
+						"tfe_registry_module.foobar", "registry_name", string(expectedRegistryModuleAttributes.RegistryName)),
+					resource.TestCheckResourceAttr(
+						"tfe_registry_module.foobar", "vcs_repo.0.display_identifier", envGithubRegistryModuleIdentifer),
+					resource.TestCheckResourceAttr(
+						"tfe_registry_module.foobar", "vcs_repo.0.identifier", envGithubRegistryModuleIdentifer),
+					resource.TestCheckResourceAttrSet(
+						"tfe_registry_module.foobar", "vcs_repo.0.github_app_installation_id"),
 				),
 			},
 		},
@@ -661,6 +717,26 @@ resource "tfe_registry_module" "foobar" {
 		envGithubToken,
 		envGithubRegistryModuleIdentifer,
 		envGithubRegistryModuleIdentifer)
+}
+
+func testAccTFERegistryModule_GitHubApp(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+ name  = "tst-terraform-%d"
+ email = "admin@company.com"
+}
+
+resource "tfe_registry_module" "foobar" {
+ vcs_repo {
+   display_identifier = "%s"
+   identifier         = "%s"
+   github_app_installation_id = "%s"
+ }
+}`,
+		rInt,
+		envGithubRegistryModuleIdentifer,
+		envGithubRegistryModuleIdentifer,
+		envGithubAppInstallationID)
 }
 
 func testAccTFERegistryModule_emptyVCSRepo(rInt int, token string) string {

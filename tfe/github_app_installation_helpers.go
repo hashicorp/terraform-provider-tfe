@@ -32,7 +32,7 @@ func fetchGithubAppInstallationByNameOrGHID(ctx context.Context, tfeClient *tfe.
 	for {
 		ghaInstList, err := tfeClient.GHAInstallations.List(ctx, options)
 		if err != nil {
-			return nil, fmt.Errorf("Error retrieving Github App Installations: %w", err)
+			return nil, fmt.Errorf("error retrieving Github App Installations: %w", err)
 		}
 		for _, item := range ghaInstList.Items {
 			switch {

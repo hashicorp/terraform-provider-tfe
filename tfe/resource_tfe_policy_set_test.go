@@ -454,6 +454,61 @@ func TestAccTFEPolicySet_vcs(t *testing.T) {
 	})
 }
 
+func TestAccTFEPolicySet_GithubApp(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	policySet := &tfe.PolicySet{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccGHAInstallationPreCheck(t)
+			if envGithubToken == "" {
+				t.Skip("Please set GITHUB_TOKEN to run this test")
+			}
+			if envGithubPolicySetIdentifier == "" {
+				t.Skip("Please set GITHUB_POLICY_SET_IDENTIFIER to run this test")
+			}
+			if envGithubPolicySetBranch == "" {
+				t.Skip("Please set GITHUB_POLICY_SET_BRANCH to run this test")
+			}
+			if envGithubPolicySetPath == "" {
+				t.Skip("Please set GITHUB_POLICY_SET_PATH to run this test")
+			}
+		},
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicySet_GithubApp(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					testAccCheckTFEPolicySetAttributes(policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "tst-terraform"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "description", "Policy Set"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "vcs_repo.0.identifier", envGithubPolicySetIdentifier),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "vcs_repo.0.branch", "main"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "vcs_repo.0.ingress_submodules", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policies_path", envGithubPolicySetPath),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
@@ -1080,6 +1135,32 @@ resource "tfe_policy_set" "foobar" {
 `, organization,
 		envGithubToken,
 		envGithubPolicySetIdentifier,
+		envGithubPolicySetPath,
+	)
+}
+
+func testAccTFEPolicySet_GithubApp(organization string) string {
+	return fmt.Sprintf(`
+locals {
+    organization_name = "%s"
+}
+
+resource "tfe_policy_set" "foobar" {
+  name         = "tst-terraform"
+  description  = "Policy Set"
+  organization     = local.organization_name
+  vcs_repo {
+    identifier         = "%s"
+    branch             = "main"
+    ingress_submodules = true
+    github_app_installation_id = "%s"
+  }
+
+  policies_path = "%s"
+}
+`, organization,
+		envGithubPolicySetIdentifier,
+		envGithubAppInstallationID,
 		envGithubPolicySetPath,
 	)
 }

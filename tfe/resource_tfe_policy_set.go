@@ -114,13 +114,16 @@ func resourceTFEPolicySet() *schema.Resource {
 						},
 
 						"oauth_token_id": {
-							Type:     schema.TypeString,
-							Optional: true,
+							Type:          schema.TypeString,
+							Optional:      true,
+							ConflictsWith: []string{"vcs_repo.0.github_app_installation_id"},
 						},
 
 						"github_app_installation_id": {
-							Type:     schema.TypeString,
-							Optional: true,
+							Type:          schema.TypeString,
+							Optional:      true,
+							ConflictsWith: []string{"vcs_repo.0.oauth_token_id"},
+							AtLeastOneOf:  []string{"vcs_repo.0.oauth_token_id", "vcs_repo.0.github_app_installation_id"},
 						},
 					},
 				},

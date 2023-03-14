@@ -76,7 +76,7 @@ func resourceTFERegistryModule() *schema.Resource {
 							ForceNew:      true,
 							Optional:      true,
 							ConflictsWith: []string{"vcs_repo.0.oauth_token_id"},
-							AtLeastOneOf:  []string{"vcs_repo.0.oauth_token_id"},
+							AtLeastOneOf:  []string{"vcs_repo.0.oauth_token_id", "vcs_repo.0.github_app_installation_id"},
 						},
 					},
 				},

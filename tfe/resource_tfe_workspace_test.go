@@ -1435,7 +1435,6 @@ func TestAccTFEWorkspace_updateGitHubAppRepo(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
-			testAccPreCheck(t)
 			testAccGithubPreCheck(t)
 			testAccGHAInstallationPreCheck(t)
 		},
