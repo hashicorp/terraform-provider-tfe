@@ -111,8 +111,8 @@ The `vcs_repo` block supports:
   This defaults to the repository's default branch (e.g. main).
 * `ingress_submodules` - (Optional) Whether submodules should be fetched when
   cloning the VCS repository. Defaults to `false`.
-* `oauth_token_id` - (Required) Token ID of the VCS Connection (OAuth Connection Token)
-  to use.
+* `oauth_token_id` - (Optional) Token ID of the VCS Connection (OAuth Connection Token) to use. This conflicts with `github_app_installation_id` and can only be used if `github_app_installation_id` is not used.
+* `github_app_installation_id` - (Optional) The installation id of the Github App. This conflicts with `oauth_token_id` and can only be used if `oauth_token_id` is not used.
 
 ## Attributes Reference
 
