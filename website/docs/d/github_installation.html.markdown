@@ -41,5 +41,3 @@ Must be one of: `installation_id` or `name`.
 In addition to all arguments above, the following attributes are exported:
 
 * `id` - The internal ID of the Github Installation. This is different from the `installation_id`.
-* `installation_id` - The ID of the Github Installation as shown in Github.
-* `name` - Name of the Github Installation as shown in Github.

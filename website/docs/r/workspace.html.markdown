@@ -135,9 +135,9 @@ The `vcs_repo` block supports:
   This defaults to the repository's default branch (e.g. main).
 * `ingress_submodules` - (Optional) Whether submodules should be fetched when
   cloning the VCS repository. Defaults to `false`.
-* `oauth_token_id` - (Required) The VCS Connection (OAuth Connection + Token) to use.
+* `oauth_token_id` - (Optional) The VCS Connection (OAuth Connection + Token) to use.
   This ID can be obtained from a `tfe_oauth_client` resource. This conflicts with `github_app_installation_id` and can only be used if `github_app_installation_id` is not used.
-* `github_app_installation_id` - (Required) The installation id of the Github App. This conflicts with `oauth_token_id` and can only be used if `oauth_token_id` is not used. 
+* `github_app_installation_id` - (Optional) The installation id of the Github App. This conflicts with `oauth_token_id` and can only be used if `oauth_token_id` is not used. 
 * `tags_regex` - (Optional) A regular expression used to trigger a Workspace run for matching Git tags. This option conflicts with `trigger_patterns` and `trigger_prefixes`. Should only set this value if the former is not being used.
 
 ## Attributes Reference
