@@ -45,7 +45,8 @@ these values with the environment variables specified below:
 8. `GITHUB_WORKSPACE_BRANCH`: A GitHub branch for the repository specified by `GITHUB_WORKSPACE_IDENTIFIER`. Required for running workspace tests.
 9. `ENABLE_TFE` - Some tests cover features available only in Terraform Cloud. To skip these tests when running against a Terraform Enterprise instance, set `ENABLE_TFE=1`.
 10. `RUN_TASKS_URL` - External URL to use for testing Run Tasks operations, for example `RUN_TASKS_URL=http://somewhere.local:8080/pass`. Required for running run tasks tests.
-11. `GITHUB_APP_INSTALLATION_ID` - GitHub App installation internal id in the format `ghain-xxxxxxx`. Required for running any tests that use GitHub App VCS (workspace, policy sets, registry module). 
+11. `GITHUB_APP_INSTALLATION_ID` - GitHub App installation internal id in the format `ghain-xxxxxxx`. Required for running any tests that use GitHub App VCS (workspace, policy sets, registry module).
+12. `GITHUB_APP_INSTALLATION_NAME` - GitHub App installation name. Required for running tfe_github_app_installation data source test.
 
 **Note:** In order to run integration tests for **Paid** features you will need a token `TFE_TOKEN` with TFC/E administrator privileges, otherwise the attempt to upgrade an organization's feature set will fail.
 
@@ -60,7 +61,7 @@ You can set your environment variables up however you prefer. The following are 
 
       Set all of the environment variables at once with the following command:
       ```sh
-      envchain --set YOUR_NAMESPACE_HERE TFE_HOSTNAME TFE_TOKEN TFE_USER1 TFE_USER2 GITHUB_TOKEN GITHUB_POLICY_SET_IDENTIFIER GITHUB_POLICY_SET_BRANCH GITHUB_POLICY_SET_PATH GITHUB_REGISTRY_MODULE_IDENTIFIER GITHUB_WORKSPACE_IDENTIFIER GITHUB_WORKSPACE_BRANCH GITHUB_APP_INSTALLATION_ID
+      envchain --set YOUR_NAMESPACE_HERE TFE_HOSTNAME TFE_TOKEN TFE_USER1 TFE_USER2 GITHUB_TOKEN GITHUB_POLICY_SET_IDENTIFIER GITHUB_POLICY_SET_BRANCH GITHUB_POLICY_SET_PATH GITHUB_REGISTRY_MODULE_IDENTIFIER GITHUB_WORKSPACE_IDENTIFIER GITHUB_WORKSPACE_BRANCH GITHUB_APP_INSTALLATION_ID GITHUB_APP_INSTALLATION_NAME
       ```
 
 ### 3. Run the tests
