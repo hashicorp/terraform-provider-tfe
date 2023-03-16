@@ -24,8 +24,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        total: [3]
-        index: [0, 1, 2]
+        total: [ 5 ]
+        index: [ 0, 1, 2, 3, 4 ]
     steps:
       - name: Fetch Outputs
         id: tflocal
