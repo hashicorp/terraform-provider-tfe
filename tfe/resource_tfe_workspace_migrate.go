@@ -103,6 +103,11 @@ func resourceTfeWorkspaceResourceV0() *schema.Resource {
 							Type:     schema.TypeString,
 							Required: true,
 						},
+
+						"github_app_installation_id": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 					},
 				},
 			},

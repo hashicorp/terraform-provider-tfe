@@ -114,8 +114,16 @@ func resourceTFEPolicySet() *schema.Resource {
 						},
 
 						"oauth_token_id": {
-							Type:     schema.TypeString,
-							Required: true,
+							Type:          schema.TypeString,
+							Optional:      true,
+							ConflictsWith: []string{"vcs_repo.0.github_app_installation_id"},
+						},
+
+						"github_app_installation_id": {
+							Type:          schema.TypeString,
+							Optional:      true,
+							ConflictsWith: []string{"vcs_repo.0.oauth_token_id"},
+							AtLeastOneOf:  []string{"vcs_repo.0.oauth_token_id", "vcs_repo.0.github_app_installation_id"},
 						},
 					},
 				},
@@ -176,6 +184,7 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 			Identifier:        tfe.String(vcsRepo["identifier"].(string)),
 			IngressSubmodules: tfe.Bool(vcsRepo["ingress_submodules"].(bool)),
 			OAuthTokenID:      tfe.String(vcsRepo["oauth_token_id"].(string)),
+			GHAInstallationID: tfe.String(vcsRepo["github_app_installation_id"].(string)),
 		}
 
 		// Only set the branch if one is configured.
@@ -245,9 +254,10 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 	var vcsRepo []interface{}
 	if policySet.VCSRepo != nil {
 		vcsConfig := map[string]interface{}{
-			"identifier":         policySet.VCSRepo.Identifier,
-			"ingress_submodules": policySet.VCSRepo.IngressSubmodules,
-			"oauth_token_id":     policySet.VCSRepo.OAuthTokenID,
+			"identifier":                 policySet.VCSRepo.Identifier,
+			"ingress_submodules":         policySet.VCSRepo.IngressSubmodules,
+			"oauth_token_id":             policySet.VCSRepo.OAuthTokenID,
+			"github_app_installation_id": policySet.VCSRepo.GHAInstallationID,
 		}
 
 		// Get and assert the VCS repo configuration block.
@@ -337,6 +347,7 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 				Branch:            tfe.String(vcsRepo["branch"].(string)),
 				IngressSubmodules: tfe.Bool(vcsRepo["ingress_submodules"].(bool)),
 				OAuthTokenID:      tfe.String(vcsRepo["oauth_token_id"].(string)),
+				GHAInstallationID: tfe.String(vcsRepo["github_app_installation_id"].(string)),
 			}
 		}
 

@@ -1,6 +1,10 @@
 ## Unreleased
 
 FEATURES:
+* **New Data Source**: `d/tfe_github_app_installation` is a new data source to read a github app installation by name or github app in installation id, by @roleesinhaHC ([#808](https://github.com/hashicorp/terraform-provider-tfe/pull/808))
+* `r/tfe_workspace`: Add attribute `github_app_installation_id` to the `vcs_repo` by @roleesinhaHC ([#808](https://github.com/hashicorp/terraform-provider-tfe/pull/808)
+* `r/tfe_registry_module`: Add attribute `github_app_installation_id` to the `vcs_repo` by @roleesinhaHC ([#808](https://github.com/hashicorp/terraform-provider-tfe/pull/808)
+* `r/tfe_policy_set`: Add attribute `github_app_installation_id` to the `vcs_repo` by @roleesinhaHC ([#808](https://github.com/hashicorp/terraform-provider-tfe/pull/808)
 * **New Data Source**: d/tfe_organization_tags is a new data source to allow reading all workspace tags within an organization, by @rhughes1 ([#773](https://github.com/hashicorp/terraform-provider-tfe/pull/773))
 * r/workspace, d/workspace: Add `source_name` and `source_url` to workspaces ([#527](https://github.com/hashicorp/terraform-provider-tfe/pull/527))
 * `r/tfe_team`: Add `read_projects` and `read_workspaces` to the `organization_access` block. ([#796](https://github.com/hashicorp/terraform-provider-tfe/pull/796))
