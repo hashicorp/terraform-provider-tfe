@@ -6,11 +6,12 @@ package tfe
 import (
 	"context"
 	"errors"
+	"log"
+
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"log"
 )
 
 func resourceTFETeamProjectAccess() *schema.Resource {
@@ -32,6 +33,8 @@ func resourceTFETeamProjectAccess() *schema.Resource {
 				ValidateFunc: validation.StringInSlice(
 					[]string{
 						string(tfe.TeamProjectAccessAdmin),
+						string(tfe.TeamProjectAccessWrite),
+						string(tfe.TeamProjectAccessMaintain),
 						string(tfe.TeamProjectAccessRead),
 					},
 					false,
