@@ -66,11 +66,6 @@ func resourceTFEWorkspaceLockRead(d *schema.ResourceData, meta interface{}) erro
 	ws, err := config.Client.Workspaces.ReadByID(ctx, wID)
 
 	if err != nil {
-		// if errors.Is(err, tfe.ErrResourceNotFound) {
-		// 	log.Printf("[DEBUG] Variable set %s no longer exists", d.Id())
-		// 	d.SetId("")
-		// 	return nil
-		// }
 		return fmt.Errorf("Error reading Workspace %s: %w", d.Id(), err)
 	}
 
@@ -79,6 +74,7 @@ func resourceTFEWorkspaceLockRead(d *schema.ResourceData, meta interface{}) erro
 		d.SetId("")
 		return nil
 	}
+	d.SetId(wID)
 
 	return nil
 }
