@@ -4,9 +4,9 @@ _Describe why you're making this change._
 
 _Remember to:_
 
-- _Update the [Change Log](https://github.com/hashicorp/terraform-provider-tfe/blob/main/CONTRIBUTING.md#updating-the-changelog)_
+- _Update the [Change Log](https://github.com/hashicorp/terraform-provider-tfe/blob/main/docs/changelog-process.md)_
 
-- _Update the [Documentation](https://github.com/hashicorp/terraform-provider-tfe/blob/main/CONTRIBUTING.md#updating-the-documentation)_
+- _Update the [Documentation](https://github.com/hashicorp/terraform-provider-tfe/blob/main/docs/changelog-process.md#updating-the-documentation)_
 
 ## Testing plan
 
@@ -25,7 +25,7 @@ _Include any links here that might be helpful for people reviewing your PR. If t
 
 ## Output from acceptance tests
 
-_Please run applicable acceptance tests locally and include the output here. See TESTS.md to learn how to run acceptance tests._
+_Please run applicable acceptance tests locally and include the output here. See [testing.md](https://github.com/hashicorp/terraform-provider-tfe/blob/main/docs/testing.md) to learn how to run acceptance tests._
 
 _If you are an external contributor, your contribution(s) will first be reviewed before running them against the project's CI pipeline._
 
