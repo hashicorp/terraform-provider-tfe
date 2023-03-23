@@ -1,22 +1,20 @@
-## Unreleased
+## v0.43.0 (March 23, 2023)
 
 FEATURES:
+* **New Data Source**: `d/tfe_organization_tags` is a new data source to allow reading all workspace tags within an organization, by @rhughes1 ([#773](https://github.com/hashicorp/terraform-provider-tfe/pull/773))
 * **New Data Source**: `d/tfe_github_app_installation` is a new data source to read a github app installation by name or github app in installation id, by @roleesinhaHC ([#808](https://github.com/hashicorp/terraform-provider-tfe/pull/808))
-* `r/tfe_workspace`: Add attribute `github_app_installation_id` to the `vcs_repo` by @roleesinhaHC ([#808](https://github.com/hashicorp/terraform-provider-tfe/pull/808)
-* `r/tfe_registry_module`: Add attribute `github_app_installation_id` to the `vcs_repo` by @roleesinhaHC ([#808](https://github.com/hashicorp/terraform-provider-tfe/pull/808)
-* `r/tfe_policy_set`: Add attribute `github_app_installation_id` to the `vcs_repo` by @roleesinhaHC ([#808](https://github.com/hashicorp/terraform-provider-tfe/pull/808)
-* **New Data Source**: d/tfe_organization_tags is a new data source to allow reading all workspace tags within an organization, by @rhughes1 ([#773](https://github.com/hashicorp/terraform-provider-tfe/pull/773))
-* r/workspace, d/workspace: Add `source_name` and `source_url` to workspaces ([#527](https://github.com/hashicorp/terraform-provider-tfe/pull/527))
-* `r/tfe_team`: Add `read_projects` and `read_workspaces` to the `organization_access` block. ([#796](https://github.com/hashicorp/terraform-provider-tfe/pull/796))
-* r/tfe_team_project_access and d/tfe_team_project_access: Added support for "maintain" and "write" project permissions ([#826](https://github.com/hashicorp/terraform-provider-tfe/pull/826))
+* `r/tfe_workspace`: Add attribute `github_app_installation_id` to the `vcs_repo`, by @roleesinhaHC ([#808](https://github.com/hashicorp/terraform-provider-tfe/pull/808))
+* `r/tfe_registry_module`: Add attribute `github_app_installation_id` to the `vcs_repo`, by @roleesinhaHC ([#808](https://github.com/hashicorp/terraform-provider-tfe/pull/808))
+* `r/tfe_policy_set`: Add attribute `github_app_installation_id` to the `vcs_repo`, by @roleesinhaHC ([#808](https://github.com/hashicorp/terraform-provider-tfe/pull/808))
+* `r/tfe_workspace`, `d/tfe_workspace`: Add `source_name` and `source_url` to workspaces, by @lucymhdavies ([#527](https://github.com/hashicorp/terraform-provider-tfe/pull/527))
+* `r/tfe_team`: Add `read_projects` and `read_workspaces` to the `organization_access` block, by @SwiftEngineer ([#796](https://github.com/hashicorp/terraform-provider-tfe/pull/796))
+* `r/tfe_team_project_access` and `d/tfe_team_project_access`: Added support for "maintain" and "write" project permissions, by @joekarl and @jbonhag ([#826](https://github.com/hashicorp/terraform-provider-tfe/pull/826))
+* `r/tfe_workspace` and `d/tfe_workspace`: Add attribute `html_url`, by @brandonc ([#784](https://github.com/hashicorp/terraform-provider-tfe/pull/784))
+* `r/tfe_organization_membership`: Organization Memberships can now be imported using `<ORGANIZATION NAME>/<USER EMAIL>`, by @JarrettSpiker ([#715](https://github.com/hashicorp/terraform-provider-tfe/pull/715))
 
 ENHANCEMENTS:
-* r/tfe_organization_membership: Organization Memberships can now be imported using `<ORGANIZATION NAME>/<USER EMAIL>` ([#715](https://github.com/hashicorp/terraform-provider-tfe/pull/715))
-* Clarify usage of `organization` fields in documentation describing VCS repository config blocks ([#792](https://github.com/hashicorp/terraform-provider-tfe/pull/792))
-* `r/tfe_workspace` and `d/tfe_workspace`: Add attribute `html_url` by @brandonc ([#784](https://github.com/hashicorp/terraform-provider-tfe/pull/784))
-
-BUG FIXES:
-* r/tfe_workspace: Clarify error message shown when attempting to safe-delete a workspace on a version of TFE which does not support safe delete ([#803](https://github.com/hashicorp/terraform-provider-tfe/pull/803))
+* Clarify usage of `organization` fields in documentation describing VCS repository config blocks, by @brandonc ([#792](https://github.com/hashicorp/terraform-provider-tfe/pull/792))
+* `r/tfe_workspace`: Clarify error message shown when attempting to safe-delete a workspace on a version of TFE which does not support safe delete, by @JarrettSpiker ([#803](https://github.com/hashicorp/terraform-provider-tfe/pull/803))
 
 ## v0.42.0 (January 31, 2023)
 
