@@ -37,7 +37,7 @@ The following arguments are supported:
 
 * `team_id` - (Required) ID of the team to add to the project.
 * `project_id` - (Required) ID of the project to which the team will be added.
-* `access` - (Required) Type of fixed access to grant. Valid values are `admin` or `read`.
+* `access` - (Required) Type of fixed access to grant. Valid values are `admin`, `maintain`, `write`, or `read`.
 
 ## Attributes Reference
 

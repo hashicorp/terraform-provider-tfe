@@ -14,11 +14,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccTFETeamProjectAccess_admin(t *testing.T) {
+func TestAccTFETeamProjectAccess(t *testing.T) {
 	tmAccess := &tfe.TeamProjectAccess{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
-	for _, access := range []tfe.TeamProjectAccessType{tfe.TeamProjectAccessAdmin, tfe.TeamProjectAccessRead} {
+	for _, access := range []tfe.TeamProjectAccessType{tfe.TeamProjectAccessAdmin, tfe.TeamProjectAccessMaintain, tfe.TeamProjectAccessWrite, tfe.TeamProjectAccessRead} {
 		resource.Test(t, resource.TestCase{
 			PreCheck:     func() { testAccPreCheck(t) },
 			Providers:    testAccProviders,
