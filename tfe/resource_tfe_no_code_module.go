@@ -101,7 +101,7 @@ func resourceTFENoCodeModuleCreate(ctx context.Context, d *schema.ResourceData, 
 	orgName := d.Get("organization").(string)
 
 	log.Printf("[DEBUG] Create no-code module for registry module %s", options.RegistryModule.ID)
-	noCodeModule, err := config.Client.NoCodeRegistryModules.Create(ctx, orgName, options)
+	noCodeModule, err := config.Client.RegistryNoCodeModules.Create(ctx, orgName, options)
 
 	if err != nil {
 		return diag.Errorf("Error creating no-code module for registry module %s: %s", options.RegistryModule.ID, err)
@@ -133,9 +133,9 @@ func resourceTFENoCodeModuleUpdate(ctx context.Context, d *schema.ResourceData, 
 	config := meta.(ConfiguredClient)
 
 	readOpts := &tfe.RegistryNoCodeModuleReadOptions{
-		Include: []tfe.NoCodeModuleIncludeOpt{tfe.NoCodeIncludeVariableOptions},
+		Include: []tfe.RegistryNoCodeModuleIncludeOpt{tfe.RegistryNoCodeIncludeVariableOptions},
 	}
-	noCodeModule, err := config.Client.NoCodeRegistryModules.Read(ctx, d.Id(), readOpts)
+	noCodeModule, err := config.Client.RegistryNoCodeModules.Read(ctx, d.Id(), readOpts)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -153,7 +153,7 @@ func resourceTFENoCodeModuleUpdate(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	err = retry.RetryContext(ctx, time.Duration(5)*time.Minute, func() *retry.RetryError {
-		noCodeModule, err = config.Client.NoCodeRegistryModules.Update(ctx, d.Id(), options)
+		noCodeModule, err = config.Client.RegistryNoCodeModules.Update(ctx, d.Id(), options)
 		if err != nil {
 			return retry.RetryableError(err)
 		}
@@ -174,10 +174,10 @@ func resourceTFENoCodeModuleRead(ctx context.Context, d *schema.ResourceData, me
 
 	log.Printf("[DEBUG] Read no-code module: %s", d.Id())
 	options := &tfe.RegistryNoCodeModuleReadOptions{
-		Include: []tfe.NoCodeModuleIncludeOpt{tfe.NoCodeIncludeVariableOptions},
+		Include: []tfe.RegistryNoCodeModuleIncludeOpt{tfe.RegistryNoCodeIncludeVariableOptions},
 	}
 
-	noCodeModule, err := config.Client.NoCodeRegistryModules.Read(ctx, d.Id(), options)
+	noCodeModule, err := config.Client.RegistryNoCodeModules.Read(ctx, d.Id(), options)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] no-code module %s no longer exists", d.Id())
@@ -212,7 +212,7 @@ func resourceTFENoCodeModuleDelete(ctx context.Context, d *schema.ResourceData, 
 	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete no-code module: %s", d.Id())
-	err := config.Client.NoCodeRegistryModules.Delete(ctx, d.Id())
+	err := config.Client.RegistryNoCodeModules.Delete(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return nil

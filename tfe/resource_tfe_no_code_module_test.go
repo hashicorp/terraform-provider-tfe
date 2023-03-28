@@ -319,7 +319,7 @@ func testAccCheckTFENoCodeModuleDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.NoCodeRegistryModules.Read(ctx, rs.Primary.ID, nil)
+		_, err := config.Client.RegistryNoCodeModules.Read(ctx, rs.Primary.ID, nil)
 		if err == nil {
 			return fmt.Errorf("Project %s still exists", rs.Primary.ID)
 		}
@@ -342,9 +342,9 @@ func testAccCheckTFENoCodeModuleExists(n string, nocodeModule *tfe.RegistryNoCod
 		}
 
 		opts := &tfe.RegistryNoCodeModuleReadOptions{
-			Include: []tfe.NoCodeModuleIncludeOpt{tfe.NoCodeIncludeVariableOptions},
+			Include: []tfe.RegistryNoCodeModuleIncludeOpt{tfe.RegistryNoCodeIncludeVariableOptions},
 		}
-		p, err := config.Client.NoCodeRegistryModules.Read(ctx, rs.Primary.ID, opts)
+		p, err := config.Client.RegistryNoCodeModules.Read(ctx, rs.Primary.ID, opts)
 		if err != nil {
 			return fmt.Errorf("unable to read nocodeModule with ID %s", nocodeModule.ID)
 		}
