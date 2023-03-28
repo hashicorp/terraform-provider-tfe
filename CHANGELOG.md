@@ -2,6 +2,7 @@
 
 FEATURES:
 * **New Data Source**: `r/data_source_project` is a new data source to allow users to retrieve project id and associated workspace ids, by @hs26gill ([#829](https://github.com/hashicorp/terraform-provider-tfe/pull/829))
+* **New Resource**: `r/tfe_project_variable_set` is a new resource to apply variable sets to projects, by @jbonhag and @rberecka ([#837](https://github.com/hashicorp/terraform-provider-tfe/pull/837))
 
 ENHANCEMENTS:
 
