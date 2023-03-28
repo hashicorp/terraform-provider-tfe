@@ -7,33 +7,37 @@ import (
 )
 
 // Compile-time proof of interface implementation.
-var _ NoCodeRegistryModules = (*noCodeRegistryModules)(nil)
+var _ RegistryNoCodeModules = (*registryNoCodeModules)(nil)
 
-// NoCodeRegistryModules describes all the no-code registry module related methods that the Terraform
+// RegistryNoCodeModules describes all the registry no-code module related methods that the Terraform
 // Enterprise API supports.
 //
 // TFE API docs: https://www.terraform.io/docs/cloud/api/modules.html (TODO: update this link)
-type NoCodeRegistryModules interface {
+type RegistryNoCodeModules interface {
 
-	// Create a no-code registry module
+	// Create a registry no-code module
+	// **Note: This API is still in BETA and subject to change.**
 	Create(ctx context.Context, organization string, options RegistryNoCodeModuleCreateOptions) (*RegistryNoCodeModule, error)
 
 	// Read a registryno-code  module
+	// **Note: This API is still in BETA and subject to change.**
 	Read(ctx context.Context, noCodeModuleID string, options *RegistryNoCodeModuleReadOptions) (*RegistryNoCodeModule, error)
 
-	// Update a no-code registry module
+	// Update a registry no-code module
+	// **Note: This API is still in BETA and subject to change.**
 	Update(ctx context.Context, noCodeModuleID string, options RegistryNoCodeModuleUpdateOptions) (*RegistryNoCodeModule, error)
 
-	// Delete a no-code registry module
+	// Delete a registry no-code module
+	// **Note: This API is still in BETA and subject to change.**
 	Delete(ctx context.Context, ID string) error
 }
 
-// noCodeRegistryModules implements NoCodeRegistryModules.
-type noCodeRegistryModules struct {
+// registryNoCodeModules implements NoCodeRegistryModules.
+type registryNoCodeModules struct {
 	client *Client
 }
 
-// RegistryNoCodeModule represents a no-code registry module
+// RegistryNoCodeModule represents a registry no-code module
 type RegistryNoCodeModule struct {
 	ID                  string `jsonapi:"primary,no-code-modules"`
 	Enabled             bool   `jsonapi:"attr,enabled"`
@@ -46,7 +50,7 @@ type RegistryNoCodeModule struct {
 	VariableOptions []*NoCodeVariableOption `jsonapi:"relation,variable-options"`
 }
 
-// RegistryNoCodeModuleCreateOptions is used when creating a no-code registry module
+// RegistryNoCodeModuleCreateOptions is used when creating a registry no-code module
 type RegistryNoCodeModuleCreateOptions struct {
 	// Type is a public field utilized by JSON:API to
 	// set the resource type via the field tag.
@@ -60,26 +64,25 @@ type RegistryNoCodeModuleCreateOptions struct {
 	// Required whether no-code is enabled for the registry module
 	Enabled *bool `jsonapi:"attr,enabled"`
 
+	// Required: the registry module ID
+	RegistryModule *RegistryModule `jsonapi:"relation,registry-module"`
+
 	// Optional: the registry module version pin for the no-code module
 	VersionPin *string `jsonapi:"attr,version-pin,omitempty"`
 
-	// Optional: the variable options for the registry module
+	// Optional: the variable options for the no-code module
 	VariableOptions []*NoCodeVariableOption `jsonapi:"relation,variable-options,omitempty"`
-
-	// Required: the registry module ID
-	RegistryModule *RegistryModule `jsonapi:"relation,registry-module"`
 }
 
-// NoCodeModuleIncludeOpt represents the available options for include query params.
-// https://developer.hashicorp.com/terraform/enterprise/api-docs/admin/organizations#available-related-resources
-type NoCodeModuleIncludeOpt string
+// RegistryNoCodeModuleIncludeOpt represents the available options for include query params.
+type RegistryNoCodeModuleIncludeOpt string
 
 var (
-	// NoCodeIncludeVariableOptions is used to include variable options in the response
-	NoCodeIncludeVariableOptions NoCodeModuleIncludeOpt = "variable-options"
+	// RegistryNoCodeIncludeVariableOptions is used to include variable options in the response
+	RegistryNoCodeIncludeVariableOptions RegistryNoCodeModuleIncludeOpt = "variable-options"
 )
 
-// RegistryNoCodeModuleReadOptions is used when reading a no-code registry module
+// RegistryNoCodeModuleReadOptions is used when reading a registry no-code module
 type RegistryNoCodeModuleReadOptions struct {
 	// Type is a public field utilized by JSON:API to
 	// set the resource type via the field tag.
@@ -88,16 +91,19 @@ type RegistryNoCodeModuleReadOptions struct {
 	Type string `jsonapi:"primary,no-code-modules"`
 
 	// Optional: Include is used to specify the related resources to include in the response.
-	Include []NoCodeModuleIncludeOpt `url:"include,omitempty"`
+	Include []RegistryNoCodeModuleIncludeOpt `url:"include,omitempty"`
 }
 
-// RegistryNoCodeModuleUpdateOptions is used when updating a no-code registry module
+// RegistryNoCodeModuleUpdateOptions is used when updating a registry no-code module
 type RegistryNoCodeModuleUpdateOptions struct {
 	// Type is a public field utilized by JSON:API to
 	// set the resource type via the field tag.
 	// It is not a user-defined value and does not need to be set.
 	// https://jsonapi.org/format/#crud-updating
 	Type string `jsonapi:"primary,no-code-modules"`
+
+	// Required: the registry module ID
+	RegistryModule *RegistryModule `jsonapi:"relation,registry-module"`
 
 	// Optional: indicates whether the module should follow the latest version
 	FollowLatestVersion *bool `jsonapi:"attr,follow-latest-version,omitempty"`
@@ -112,8 +118,8 @@ type RegistryNoCodeModuleUpdateOptions struct {
 	VariableOptions []*NoCodeVariableOption `jsonapi:"relation,variable-options,omitempty"`
 }
 
-// Create a new no-code registry module
-func (r *noCodeRegistryModules) Create(ctx context.Context, organization string, options RegistryNoCodeModuleCreateOptions) (*RegistryNoCodeModule, error) {
+// Create a new registry no-code module
+func (r *registryNoCodeModules) Create(ctx context.Context, organization string, options RegistryNoCodeModuleCreateOptions) (*RegistryNoCodeModule, error) {
 	if !validStringID(&organization) {
 		return nil, ErrInvalidOrg
 	}
@@ -121,10 +127,7 @@ func (r *noCodeRegistryModules) Create(ctx context.Context, organization string,
 		return nil, err
 	}
 
-	u := fmt.Sprintf(
-		"organizations/%s/no-code-modules",
-		url.QueryEscape(organization),
-	)
+	u := fmt.Sprintf("organizations/%s/no-code-modules", url.QueryEscape(organization))
 	req, err := r.client.NewRequest("POST", u, &options)
 	if err != nil {
 		return nil, err
@@ -139,8 +142,8 @@ func (r *noCodeRegistryModules) Create(ctx context.Context, organization string,
 	return rm, nil
 }
 
-// Read a no-code registry module
-func (r *noCodeRegistryModules) Read(ctx context.Context, noCodeModuleID string, options *RegistryNoCodeModuleReadOptions) (*RegistryNoCodeModule, error) {
+// Read a registry no-code module
+func (r *registryNoCodeModules) Read(ctx context.Context, noCodeModuleID string, options *RegistryNoCodeModuleReadOptions) (*RegistryNoCodeModule, error) {
 	if !validStringID(&noCodeModuleID) {
 		return nil, ErrInvalidModuleID
 	}
@@ -149,11 +152,7 @@ func (r *noCodeRegistryModules) Read(ctx context.Context, noCodeModuleID string,
 		return nil, err
 	}
 
-	u := fmt.Sprintf(
-		"no-code-modules/%s",
-		url.QueryEscape(noCodeModuleID),
-	)
-
+	u := fmt.Sprintf("no-code-modules/%s", url.QueryEscape(noCodeModuleID))
 	req, err := r.client.NewRequest("GET", u, options)
 	if err != nil {
 		return nil, err
@@ -168,20 +167,20 @@ func (r *noCodeRegistryModules) Read(ctx context.Context, noCodeModuleID string,
 	return rm, nil
 }
 
-// Update a no-code registry module
-func (r *noCodeRegistryModules) Update(ctx context.Context, noCodeModuleID string, options RegistryNoCodeModuleUpdateOptions) (*RegistryNoCodeModule, error) {
-	if !validStringID(&noCodeModuleID) {
+// Update a registry no-code module
+func (r *registryNoCodeModules) Update(ctx context.Context, noCodeModuleID string, options RegistryNoCodeModuleUpdateOptions) (*RegistryNoCodeModule, error) {
+	if !validString(&noCodeModuleID) {
 		return nil, ErrInvalidModuleID
 	}
 	if !validStringID(&noCodeModuleID) {
 		return nil, ErrInvalidModuleID
 	}
 
-	u := fmt.Sprintf(
-		"no-code-modules/%s",
-		url.QueryEscape(noCodeModuleID),
-	)
+	if err := options.valid(); err != nil {
+		return nil, err
+	}
 
+	u := fmt.Sprintf("no-code-modules/%s", url.QueryEscape(noCodeModuleID))
 	req, err := r.client.NewRequest("PATCH", u, &options)
 	if err != nil {
 		return nil, err
@@ -196,8 +195,8 @@ func (r *noCodeRegistryModules) Update(ctx context.Context, noCodeModuleID strin
 	return rm, nil
 }
 
-// Delete is used to delete the no-code registry module
-func (r *noCodeRegistryModules) Delete(ctx context.Context, noCodeModuleID string) error {
+// Delete is used to delete the registry no-code module
+func (r *registryNoCodeModules) Delete(ctx context.Context, noCodeModuleID string) error {
 	if !validStringID(&noCodeModuleID) {
 		return ErrInvalidModuleID
 	}
@@ -213,7 +212,7 @@ func (r *noCodeRegistryModules) Delete(ctx context.Context, noCodeModuleID strin
 
 func (o RegistryNoCodeModuleCreateOptions) valid() error {
 	if o.RegistryModule == nil {
-		return fmt.Errorf("registry module is required")
+		return ErrRequiredRegistryModule
 	}
 
 	if o.FollowLatestVersion == nil && o.VersionPin == nil {
@@ -230,6 +229,18 @@ func (o RegistryNoCodeModuleCreateOptions) valid() error {
 	return nil
 }
 
+func (o *RegistryNoCodeModuleUpdateOptions) valid() error {
+	if o == nil {
+		return nil // nothing to validate
+	}
+
+	if o.RegistryModule == nil || o.RegistryModule.ID == "" {
+		return ErrRequiredRegistryModule
+	}
+
+	return nil
+}
+
 func (o *RegistryNoCodeModuleReadOptions) valid() error {
 	if o == nil {
 		return nil // nothing to validate
@@ -242,10 +253,10 @@ func (o *RegistryNoCodeModuleReadOptions) valid() error {
 	return nil
 }
 
-func validateNoCodeIncludeParams(params []NoCodeModuleIncludeOpt) error {
+func validateNoCodeIncludeParams(params []RegistryNoCodeModuleIncludeOpt) error {
 	for _, p := range params {
 		switch p {
-		case NoCodeIncludeVariableOptions:
+		case RegistryNoCodeIncludeVariableOptions:
 			// do nothing
 		default:
 			return ErrInvalidIncludeValue
