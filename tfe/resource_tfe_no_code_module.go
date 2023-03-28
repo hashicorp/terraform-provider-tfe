@@ -1,0 +1,223 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
+package tfe
+
+import (
+	"context"
+	"log"
+	"time"
+
+	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+)
+
+func resourceTFENoCodeModule() *schema.Resource {
+	return &schema.Resource{
+		CreateContext: resourceTFENoCodeModuleCreate,
+		ReadContext:   resourceTFENoCodeModuleRead,
+		UpdateContext: resourceTFENoCodeModuleUpdate,
+		DeleteContext: resourceTFENoCodeModuleDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
+
+		Schema: map[string]*schema.Schema{
+			"organization": {
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
+			"module": {
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
+			"version_pin": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+				ForceNew: false,
+			},
+			"follow_latest_version": {
+				Type:     schema.TypeBool,
+				Required: true,
+				ForceNew: false,
+			},
+			"enabled": {
+				Type:     schema.TypeBool,
+				Required: true,
+				ForceNew: false,
+			},
+			"variable_options": {
+				Type:     schema.TypeList,
+				Optional: true,
+				ForceNew: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"name": {
+							Type:     schema.TypeString,
+							Required: true,
+							ForceNew: true,
+						},
+						"type": {
+							Type:     schema.TypeString,
+							Required: true,
+							ForceNew: true,
+						},
+						"options": {
+							Type:     schema.TypeList,
+							ForceNew: true,
+							Optional: true,
+							Elem:     &schema.Schema{Type: schema.TypeString},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func resourceTFENoCodeModuleCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	config := meta.(ConfiguredClient)
+
+	options := tfe.RegistryNoCodeModuleCreateOptions{
+		FollowLatestVersion: tfe.Bool(d.Get("follow_latest_version").(bool)),
+		Enabled:             tfe.Bool(d.Get("enabled").(bool)),
+		RegistryModule: &tfe.RegistryModule{
+			ID: d.Get("module").(string),
+		},
+	}
+
+	if variableOptions, ok := d.GetOk("variable_options"); ok {
+		options.VariableOptions = variableOptionsMaptoStruct(variableOptions.([]interface{}))
+	}
+	if versionPin, ok := d.GetOk("version_pin"); ok {
+		options.VersionPin = tfe.String(versionPin.(string))
+	}
+
+	orgName := d.Get("organization").(string)
+
+	log.Printf("[DEBUG] Create no-code module for registry module %s", options.RegistryModule.ID)
+	noCodeModule, err := config.Client.NoCodeRegistryModules.Create(ctx, orgName, options)
+
+	if err != nil {
+		return diag.Errorf("Error creating no-code module for registry module %s: %s", options.RegistryModule.ID, err)
+	}
+
+	d.SetId(noCodeModule.ID)
+	return resourceTFENoCodeModuleRead(ctx, d, meta)
+}
+
+func variableOptionsMaptoStruct(variableOptions []interface{}) []*tfe.NoCodeVariableOption {
+	var variableOptionsRes []*tfe.NoCodeVariableOption
+	for _, v := range variableOptions {
+		vOpt := v.(map[string]interface{})
+		option := &tfe.NoCodeVariableOption{
+			VariableName: vOpt["name"].(string),
+			VariableType: vOpt["type"].(string),
+		}
+		if vOpt["options"] != nil {
+			for _, o := range vOpt["options"].([]interface{}) {
+				option.Options = append(option.Options, o.(string))
+			}
+		}
+		variableOptionsRes = append(variableOptionsRes, option)
+	}
+	return variableOptionsRes
+}
+
+func resourceTFENoCodeModuleUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	config := meta.(ConfiguredClient)
+
+	readOpts := &tfe.RegistryNoCodeModuleReadOptions{
+		Include: []tfe.NoCodeModuleIncludeOpt{tfe.NoCodeIncludeVariableOptions},
+	}
+	noCodeModule, err := config.Client.NoCodeRegistryModules.Read(ctx, d.Id(), readOpts)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	options := tfe.RegistryNoCodeModuleUpdateOptions{
+		FollowLatestVersion: tfe.Bool(d.Get("follow_latest_version").(bool)),
+		Enabled:             tfe.Bool(d.Get("enabled").(bool)),
+	}
+
+	if versionPin, ok := d.GetOk("version_pin"); ok {
+		options.VersionPin = tfe.String(versionPin.(string))
+	}
+	if variableOptions, ok := d.GetOk("variable_options"); ok {
+		options.VariableOptions = variableOptions.([]*tfe.NoCodeVariableOption)
+	}
+
+	err = retry.RetryContext(ctx, time.Duration(5)*time.Minute, func() *retry.RetryError {
+		noCodeModule, err = config.Client.NoCodeRegistryModules.Update(ctx, d.Id(), options)
+		if err != nil {
+			return retry.RetryableError(err)
+		}
+		return nil
+	})
+
+	if err != nil {
+		return diag.Errorf("Error while waiting for no-code module %s to be updated: %s", noCodeModule.ID, err)
+	}
+
+	d.SetId(noCodeModule.ID)
+
+	return resourceTFENoCodeModuleRead(ctx, d, meta)
+}
+
+func resourceTFENoCodeModuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	config := meta.(ConfiguredClient)
+
+	log.Printf("[DEBUG] Read no-code module: %s", d.Id())
+	options := &tfe.RegistryNoCodeModuleReadOptions{
+		Include: []tfe.NoCodeModuleIncludeOpt{tfe.NoCodeIncludeVariableOptions},
+	}
+
+	noCodeModule, err := config.Client.NoCodeRegistryModules.Read(ctx, d.Id(), options)
+	if err != nil {
+		if err == tfe.ErrResourceNotFound {
+			log.Printf("[DEBUG] no-code module %s no longer exists", d.Id())
+			d.SetId("")
+			return nil
+		}
+		return diag.Errorf("Error reading no-code module %s: %s", d.Id(), err)
+	}
+
+	// Update the config
+	log.Printf("[DEBUG] Update config for no-code module: %s", d.Id())
+	d.Set("enabled", noCodeModule.Enabled)
+	d.Set("follow_latest_version", noCodeModule.FollowLatestVersion)
+	d.Set("module", noCodeModule.RegistryModule.ID)
+	d.Set("organization", noCodeModule.Organization.Name)
+	d.Set("version_pin", noCodeModule.VersionPin)
+
+	mp := make([]map[string]interface{}, 0)
+	for _, v := range noCodeModule.VariableOptions {
+		m := make(map[string]interface{})
+		m["name"] = v.VariableName
+		m["type"] = v.VariableType
+		m["options"] = v.Options
+		mp = append(mp, m)
+	}
+	d.Set("variable_options", mp)
+
+	return nil
+}
+
+func resourceTFENoCodeModuleDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	config := meta.(ConfiguredClient)
+
+	log.Printf("[DEBUG] Delete no-code module: %s", d.Id())
+	err := config.Client.NoCodeRegistryModules.Delete(ctx, d.Id())
+	if err != nil {
+		if err == tfe.ErrResourceNotFound {
+			return nil
+		}
+		return diag.Errorf("Error deleting no-code module %s: %s", d.Id(), err)
+	}
+	return nil
+}
