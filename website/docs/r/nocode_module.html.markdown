@@ -85,3 +85,11 @@ The following arguments are supported:
 ## Attributes Reference
 
 - `id` - The ID of the no code module.
+
+## Import
+
+No-code modules can be imported; use `<NO CODE MODULE ID>` as the import ID. For example:
+
+```shell
+terraform import tfe_nocode_module.test nocode-qV9JnKRkmtMa4zcA
+```
