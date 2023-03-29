@@ -5,6 +5,7 @@ package tfe
 
 import (
 	"context"
+	"errors"
 	"log"
 	"time"
 
@@ -179,7 +180,7 @@ func resourceTFENoCodeModuleRead(ctx context.Context, d *schema.ResourceData, me
 
 	noCodeModule, err := config.Client.RegistryNoCodeModules.Read(ctx, d.Id(), options)
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			log.Printf("[DEBUG] no-code module %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
@@ -214,7 +215,7 @@ func resourceTFENoCodeModuleDelete(ctx context.Context, d *schema.ResourceData, 
 	log.Printf("[DEBUG] Delete no-code module: %s", d.Id())
 	err := config.Client.RegistryNoCodeModules.Delete(ctx, d.Id())
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			return nil
 		}
 		return diag.Errorf("Error deleting no-code module %s: %s", d.Id(), err)
