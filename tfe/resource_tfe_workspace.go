@@ -364,9 +364,17 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		options.VCSRepo = &tfe.VCSRepoOptions{
 			Identifier:        tfe.String(vcsRepo["identifier"].(string)),
 			IngressSubmodules: tfe.Bool(vcsRepo["ingress_submodules"].(bool)),
-			OAuthTokenID:      tfe.String(vcsRepo["oauth_token_id"].(string)),
-			GHAInstallationID: tfe.String(vcsRepo["github_app_installation_id"].(string)),
 			TagsRegex:         tfe.String(vcsRepo["tags_regex"].(string)),
+		}
+
+		// Only set the oauth_token_id if it is configured.
+		if oauth_token_id, ok := vcsRepo["oauth_token_id"].(string); ok && oauth_token_id != "" {
+			options.VCSRepo.OAuthTokenID = tfe.String(oauth_token_id)
+		}
+
+		// Only set the github_app_installation_id if it is configured.
+		if github_app_installation_id, ok := vcsRepo["github_app_installation_id"].(string); ok && github_app_installation_id != "" {
+			options.VCSRepo.GHAInstallationID = tfe.String(github_app_installation_id)
 		}
 
 		// Only set the branch if one is configured.
