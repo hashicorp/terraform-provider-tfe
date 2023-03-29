@@ -17,6 +17,7 @@ import (
 )
 
 func TestAccTFENoCodeModule_basic(t *testing.T) {
+	skipUnlessBeta(t)
 	nocodeModule := &tfe.RegistryNoCodeModule{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -43,6 +44,7 @@ func TestAccTFENoCodeModule_basic(t *testing.T) {
 }
 
 func TestAccTFENoCodeModule_with_variable_options(t *testing.T) {
+	skipUnlessBeta(t)
 	nocodeModule := &tfe.RegistryNoCodeModule{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	regionOptions := `"us-east-1", "us-west-1", "eu-west-2"`
@@ -71,6 +73,7 @@ func TestAccTFENoCodeModule_with_variable_options(t *testing.T) {
 }
 
 func TestAccTFENoCodeModule_update(t *testing.T) {
+	skipUnlessBeta(t)
 	nocodeModule := &tfe.RegistryNoCodeModule{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -106,6 +109,7 @@ func TestAccTFENoCodeModule_update(t *testing.T) {
 }
 
 func TestAccTFENoCodeModule_update_variable_options(t *testing.T) {
+	skipUnlessBeta(t)
 	nocodeModule := &tfe.RegistryNoCodeModule{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	regionOptions := `"us-east-1", "us-west-1", "eu-west-2"`
@@ -167,6 +171,7 @@ func TestAccTFENoCodeModule_update_variable_options(t *testing.T) {
 }
 
 func TestAccTFENoCodeModule_delete(t *testing.T) {
+	skipUnlessBeta(t)
 	nocodeModule := &tfe.RegistryNoCodeModule{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -202,6 +207,7 @@ func TestAccTFENoCodeModule_delete(t *testing.T) {
 }
 
 func TestAccTFENoCodeModule_import(t *testing.T) {
+	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	nocodeModule := &tfe.RegistryNoCodeModule{}
 	resource.Test(t, resource.TestCase{
