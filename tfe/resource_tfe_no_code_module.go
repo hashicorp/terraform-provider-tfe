@@ -144,6 +144,7 @@ func resourceTFENoCodeModuleUpdate(ctx context.Context, d *schema.ResourceData, 
 	options := tfe.RegistryNoCodeModuleUpdateOptions{
 		FollowLatestVersion: tfe.Bool(d.Get("follow_latest_version").(bool)),
 		Enabled:             tfe.Bool(d.Get("enabled").(bool)),
+		RegistryModule:      &tfe.RegistryModule{ID: d.Get("module").(string)},
 	}
 
 	if versionPin, ok := d.GetOk("version_pin"); ok {
