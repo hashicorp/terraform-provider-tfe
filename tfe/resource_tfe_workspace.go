@@ -368,13 +368,13 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		}
 
 		// Only set the oauth_token_id if it is configured.
-		if oauth_token_id, ok := vcsRepo["oauth_token_id"].(string); ok && oauth_token_id != "" {
-			options.VCSRepo.OAuthTokenID = tfe.String(oauth_token_id)
+		if oauthTokenID, ok := vcsRepo["oauth_token_id"].(string); ok && oauthTokenID != "" {
+			options.VCSRepo.OAuthTokenID = tfe.String(oauthTokenID)
 		}
 
 		// Only set the github_app_installation_id if it is configured.
-		if github_app_installation_id, ok := vcsRepo["github_app_installation_id"].(string); ok && github_app_installation_id != "" {
-			options.VCSRepo.GHAInstallationID = tfe.String(github_app_installation_id)
+		if ghaInstallationID, ok := vcsRepo["github_app_installation_id"].(string); ok && ghaInstallationID != "" {
+			options.VCSRepo.GHAInstallationID = tfe.String(ghaInstallationID)
 		}
 
 		// Only set the branch if one is configured.
