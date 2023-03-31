@@ -12,7 +12,6 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.2 // indirect
 	github.com/hashicorp/go-slug v0.10.1
-	github.com/hashicorp/go-tfe v1.20.1-0.20230328112543-d52f379d130f
 	github.com/hashicorp/go-version v1.6.0
 	github.com/hashicorp/hcl v0.0.0-20180404174102-ef8a98b0bbce
 	github.com/hashicorp/hcl/v2 v2.16.2 // indirect
@@ -62,6 +61,7 @@ require (
 require github.com/stretchr/testify v1.8.2
 
 require (
+	github.com/hashicorp/go-tfe v1.20.1-0.20230331104022-25d55b7c26b5 // indirect
 	github.com/hashicorp/hc-install v0.5.0 // indirect
 	github.com/hashicorp/terraform-plugin-log v0.8.0 // indirect
 	github.com/hashicorp/terraform-registry-address v0.2.0 // indirect

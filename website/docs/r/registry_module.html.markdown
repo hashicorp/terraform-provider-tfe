@@ -125,7 +125,7 @@ The `vcs_repo` block supports:
 * `organization` - The name of the organization associated with the registry module.
 * `namespace` - The namespace of the module. For private modules this is the name of the organization that owns the module.
 * `registry_name` - The registry name of the registry module depicting whether the registry module is private or public.
-* `no_code` - The property that will enable or disable a module as no-code provisioning ready.
+* `no_code` - **Deprecated** The property that will enable or disable a module as no-code provisioning ready.
 
 ## Import
 

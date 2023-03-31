@@ -74,13 +74,13 @@ The following arguments are supported:
 - `name` - (Required) Name of the variable set.
 - `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 - `module` - (Required) The ID of the registry module to associate with the no code module.
+- `enabled` - (Required) Whether or not no-code module is enabled for the associated registry module
 - `follow_latest_version` - (Optional) Whether or not to follow the latest version of the module. Must be `false` if `version_pin` is set.
 - `version_pin` - (Optional) The version of the module to pin to. Must not be set if `follow_latest_version` is `true`.
 - `variable_options` - (Optional) A list of variable options to associate with the no code module.
   - `name` - (Required) The name of the variable option.
   - `type` - (Required) The type of the variable option.
   - `options` - (Required) A list of options for the variable option.
-- `enabled` - (Required) Whether or not no-code module is enabled for the associated registry module
 
 ## Attributes Reference
 
