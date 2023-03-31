@@ -5,6 +5,7 @@ FEATURES:
 ENHANCEMENTS:
 
 BUG FIXES:
+* `r/tfe_workspace`: Only set `oauth_token_id` and `github_app_installation_id` if configured, by @moensch ([#835](https://github.com/hashicorp/terraform-provider-tfe/pull/835))
 
 ## v0.43.0 (March 23, 2023)
 
