@@ -251,7 +251,7 @@ resource "tfe_registry_module" "foobar" {
 	
 resource "tfe_nocode_module" "foobar" {
 	organization = tfe_organization.foobar.id
-	module = tfe_registry_module.foobar.id
+	registry_module = tfe_registry_module.foobar.id
 	follow_latest_version = false
 	enabled = true
 }`, rInt)
@@ -272,7 +272,7 @@ resource "tfe_registry_module" "foobar" {
 
 resource "tfe_nocode_module" "foobar" {
 	organization = tfe_organization.foobar.id
-	module = tfe_registry_module.foobar.id
+	registry_module = tfe_registry_module.foobar.id
 	follow_latest_version = true
 	enabled = true
 }
@@ -294,7 +294,7 @@ resource "tfe_registry_module" "foobar" {
 
 resource "tfe_nocode_module" "foobar" {
 	organization = tfe_organization.foobar.id
-	module = tfe_registry_module.foobar.id
+	registry_module = tfe_registry_module.foobar.id
 	follow_latest_version = true
 	enabled = true
 

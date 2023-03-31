@@ -31,7 +31,7 @@ func resourceTFENoCodeModule() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-			"module": {
+			"registry_module": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
@@ -88,7 +88,7 @@ func resourceTFENoCodeModuleCreate(ctx context.Context, d *schema.ResourceData, 
 		FollowLatestVersion: tfe.Bool(d.Get("follow_latest_version").(bool)),
 		Enabled:             tfe.Bool(d.Get("enabled").(bool)),
 		RegistryModule: &tfe.RegistryModule{
-			ID: d.Get("module").(string),
+			ID: d.Get("registry_module").(string),
 		},
 	}
 
@@ -144,7 +144,7 @@ func resourceTFENoCodeModuleUpdate(ctx context.Context, d *schema.ResourceData, 
 	options := tfe.RegistryNoCodeModuleUpdateOptions{
 		FollowLatestVersion: tfe.Bool(d.Get("follow_latest_version").(bool)),
 		Enabled:             tfe.Bool(d.Get("enabled").(bool)),
-		RegistryModule:      &tfe.RegistryModule{ID: d.Get("module").(string)},
+		RegistryModule:      &tfe.RegistryModule{ID: d.Get("registry_module").(string)},
 	}
 
 	if versionPin, ok := d.GetOk("version_pin"); ok {
@@ -193,7 +193,7 @@ func resourceTFENoCodeModuleRead(ctx context.Context, d *schema.ResourceData, me
 	log.Printf("[DEBUG] Update config for no-code module: %s", d.Id())
 	d.Set("enabled", noCodeModule.Enabled)
 	d.Set("follow_latest_version", noCodeModule.FollowLatestVersion)
-	d.Set("module", noCodeModule.RegistryModule.ID)
+	d.Set("registry_module", noCodeModule.RegistryModule.ID)
 	d.Set("organization", noCodeModule.Organization.Name)
 	d.Set("version_pin", noCodeModule.VersionPin)
 
