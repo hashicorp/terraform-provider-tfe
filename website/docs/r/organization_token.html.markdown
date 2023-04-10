@@ -28,6 +28,7 @@ The following arguments are supported:
 * `force_regenerate` - (Optional) If set to `true`, a new token will be
   generated even if a token already exists. This will invalidate the existing
   token!
+* `expired_at` - (Optional) A date and time in which the organization token will expire.
 
 ## Attributes Reference
 

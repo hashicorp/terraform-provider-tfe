@@ -41,6 +41,12 @@ func resourceTFEOrganizationToken() *schema.Resource {
 				Computed:  true,
 				Sensitive: true,
 			},
+
+			"expired_at": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -66,6 +72,10 @@ func resourceTFEOrganizationTokenCreate(d *schema.ResourceData, meta interface{}
 			return fmt.Errorf("a token already exists for organization: %s", organization)
 		}
 		log.Printf("[DEBUG] Regenerating existing token for organization: %s", organization)
+	}
+	if err != nil {
+		expiredAt := d.Get("expired_at").(string)
+		return fmt.Errorf("%s must be a valid date or time", expiredAt)
 	}
 
 	token, err := config.Client.OrganizationTokens.Create(ctx, organization)

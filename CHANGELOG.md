@@ -15,6 +15,10 @@ BUG FIXES:
 
 ## v0.44.1 (April 21, 2023)
 
+FEATURES:
+* `r/tfe_organization_token`: Add optional `expired_at` field to organization tokens by, @juliannatetreault ([#844](https://github.com/hashicorp/terraform-provider-tfe/pull/844))
+* `r/tfe_team_token`: Add optional `expired_at` field to team tokens by, @juliannatetreault ([#844](https://github.com/hashicorp/terraform-provider-tfe/pull/844))
+
 BUG FIXES:
 
 * Fixed a documentation bug in the new `r/tfe_no_code_module` resource, incorrectly labelling the attribute `registry_module` as `module`

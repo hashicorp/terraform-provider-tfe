@@ -40,6 +40,12 @@ func resourceTFETeamToken() *schema.Resource {
 				Computed:  true,
 				Sensitive: true,
 			},
+
+			"expired_at": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -62,6 +68,11 @@ func resourceTFETeamTokenCreate(d *schema.ResourceData, meta interface{}) error 
 			return fmt.Errorf("a token already exists for team: %s", teamID)
 		}
 		log.Printf("[DEBUG] Regenerating existing token for team: %s", teamID)
+	}
+
+	if err != nil {
+		expiredAt := d.Get("expired_at").(string)
+		return fmt.Errorf("%s must be a valid date or time", expiredAt)
 	}
 
 	log.Printf("[DEBUG] Create new token for team: %s", teamID)
