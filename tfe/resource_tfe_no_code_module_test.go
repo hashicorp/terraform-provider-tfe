@@ -30,13 +30,11 @@ func TestAccTFENoCodeModule_basic(t *testing.T) {
 				Config: testAccTFENoCodeModule_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENoCodeModuleExists(
-						"tfe_nocode_module.foobar", nocodeModule),
+						"tfe_no_code_module.foobar", nocodeModule),
 					resource.TestCheckResourceAttr(
-						"tfe_nocode_module.foobar", "enabled", "true"),
+						"tfe_no_code_module.foobar", "enabled", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_nocode_module.foobar", "follow_latest_version", "true"),
-					resource.TestCheckResourceAttr(
-						"tfe_nocode_module.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
+						"tfe_no_code_module.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
 				),
 			},
 		},
@@ -58,13 +56,11 @@ func TestAccTFENoCodeModule_with_variable_options(t *testing.T) {
 				Config: testAccTFENoCodeModule_with_options(rInt, regionOptions),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENoCodeModuleExists(
-						"tfe_nocode_module.foobar", nocodeModule),
+						"tfe_no_code_module.foobar", nocodeModule),
 					resource.TestCheckResourceAttr(
-						"tfe_nocode_module.foobar", "enabled", "true"),
+						"tfe_no_code_module.foobar", "enabled", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_nocode_module.foobar", "follow_latest_version", "true"),
-					resource.TestCheckResourceAttr(
-						"tfe_nocode_module.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
+						"tfe_no_code_module.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
 					testAccCheckTFENoCodeModuleVariableOptions(nocodeModule),
 				),
 			},
@@ -86,22 +82,18 @@ func TestAccTFENoCodeModule_update(t *testing.T) {
 				Config: testAccTFENoCodeModule_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENoCodeModuleExists(
-						"tfe_nocode_module.foobar", nocodeModule),
+						"tfe_no_code_module.foobar", nocodeModule),
 					resource.TestCheckResourceAttr(
-						"tfe_nocode_module.foobar", "enabled", "true"),
-					resource.TestCheckResourceAttr(
-						"tfe_nocode_module.foobar", "follow_latest_version", "true"),
+						"tfe_no_code_module.foobar", "enabled", "true"),
 				),
 			},
 			{
 				Config: testAccTFENoCodeModule_update(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENoCodeModuleExists(
-						"tfe_nocode_module.foobar", nocodeModule),
+						"tfe_no_code_module.foobar", nocodeModule),
 					resource.TestCheckResourceAttr(
-						"tfe_nocode_module.foobar", "enabled", "true"),
-					resource.TestCheckResourceAttr(
-						"tfe_nocode_module.foobar", "follow_latest_version", "false"),
+						"tfe_no_code_module.foobar", "enabled", "true"),
 				),
 			},
 		},
@@ -124,11 +116,9 @@ func TestAccTFENoCodeModule_update_variable_options(t *testing.T) {
 				Config: testAccTFENoCodeModule_with_options(rInt, regionOptions),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENoCodeModuleExists(
-						"tfe_nocode_module.foobar", nocodeModule),
+						"tfe_no_code_module.foobar", nocodeModule),
 					resource.TestCheckResourceAttr(
-						"tfe_nocode_module.foobar", "enabled", "true"),
-					resource.TestCheckResourceAttr(
-						"tfe_nocode_module.foobar", "follow_latest_version", "true"),
+						"tfe_no_code_module.foobar", "enabled", "true"),
 					func(s *terraform.State) error {
 						if len(nocodeModule.VariableOptions) == 0 {
 							return fmt.Errorf("Bad 'variable_options' attribute: %v", nocodeModule.VariableOptions)
@@ -147,11 +137,9 @@ func TestAccTFENoCodeModule_update_variable_options(t *testing.T) {
 				Config: testAccTFENoCodeModule_with_options(rInt, updatedRegionOptions),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENoCodeModuleExists(
-						"tfe_nocode_module.foobar", nocodeModule),
+						"tfe_no_code_module.foobar", nocodeModule),
 					resource.TestCheckResourceAttr(
-						"tfe_nocode_module.foobar", "enabled", "true"),
-					resource.TestCheckResourceAttr(
-						"tfe_nocode_module.foobar", "follow_latest_version", "true"),
+						"tfe_no_code_module.foobar", "enabled", "true"),
 					func(s *terraform.State) error {
 						if len(nocodeModule.VariableOptions) == 0 {
 							return fmt.Errorf("Bad 'variable_options' attribute: %v", nocodeModule.VariableOptions)
@@ -184,22 +172,18 @@ func TestAccTFENoCodeModule_delete(t *testing.T) {
 				Config: testAccTFENoCodeModule_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENoCodeModuleExists(
-						"tfe_nocode_module.foobar", nocodeModule),
+						"tfe_no_code_module.foobar", nocodeModule),
 					resource.TestCheckResourceAttr(
-						"tfe_nocode_module.foobar", "enabled", "true"),
-					resource.TestCheckResourceAttr(
-						"tfe_nocode_module.foobar", "follow_latest_version", "true"),
+						"tfe_no_code_module.foobar", "enabled", "true"),
 				),
 			},
 			{
 				Config: testAccTFENoCodeModule_update(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENoCodeModuleExists(
-						"tfe_nocode_module.foobar", nocodeModule),
+						"tfe_no_code_module.foobar", nocodeModule),
 					resource.TestCheckResourceAttr(
-						"tfe_nocode_module.foobar", "enabled", "true"),
-					resource.TestCheckResourceAttr(
-						"tfe_nocode_module.foobar", "follow_latest_version", "false"),
+						"tfe_no_code_module.foobar", "enabled", "true"),
 				),
 			},
 		},
@@ -218,16 +202,16 @@ func TestAccTFENoCodeModule_import(t *testing.T) {
 			{
 				Config: testAccTFENoCodeModule_basic(rInt),
 				Check: testAccCheckTFENoCodeModuleExists(
-					"tfe_nocode_module.foobar", nocodeModule),
+					"tfe_no_code_module.foobar", nocodeModule),
 			},
 
 			{
-				ResourceName:      "tfe_nocode_module.foobar",
+				ResourceName:      "tfe_no_code_module.foobar",
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
 			{
-				ResourceName:      "tfe_nocode_module.foobar",
+				ResourceName:      "tfe_no_code_module.foobar",
 				ImportState:       true,
 				ImportStateId:     nocodeModule.ID,
 				ImportStateVerify: true,
@@ -249,11 +233,9 @@ resource "tfe_registry_module" "foobar" {
 	name            = "test_module"
 }
 	
-resource "tfe_nocode_module" "foobar" {
+resource "tfe_no_code_module" "foobar" {
 	organization = tfe_organization.foobar.id
 	registry_module = tfe_registry_module.foobar.id
-	follow_latest_version = false
-	enabled = true
 }`, rInt)
 }
 
@@ -270,11 +252,9 @@ resource "tfe_registry_module" "foobar" {
 	name            = "test_module"
 }
 
-resource "tfe_nocode_module" "foobar" {
+resource "tfe_no_code_module" "foobar" {
 	organization = tfe_organization.foobar.id
 	registry_module = tfe_registry_module.foobar.id
-	follow_latest_version = true
-	enabled = true
 }
 `, rInt)
 }
@@ -292,11 +272,9 @@ resource "tfe_registry_module" "foobar" {
 	name            = "test_module"
 }
 
-resource "tfe_nocode_module" "foobar" {
+resource "tfe_no_code_module" "foobar" {
 	organization = tfe_organization.foobar.id
 	registry_module = tfe_registry_module.foobar.id
-	follow_latest_version = true
-	enabled = true
 
 	variable_options {
 		name    = "ami"
@@ -317,7 +295,7 @@ func testAccCheckTFENoCodeModuleDestroy(s *terraform.State) error {
 	config := testAccProvider.Meta().(ConfiguredClient)
 
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "tfe_nocode_module" {
+		if rs.Type != "tfe_no_code_module" {
 			continue
 		}
 

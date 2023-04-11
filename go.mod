@@ -61,7 +61,7 @@ require (
 require github.com/stretchr/testify v1.8.2
 
 require (
-	github.com/hashicorp/go-tfe v1.20.1-0.20230331104022-25d55b7c26b5 // indirect
+	github.com/hashicorp/go-tfe v1.20.1-0.20230411122710-85e12161f578 // indirect
 	github.com/hashicorp/hc-install v0.5.0 // indirect
 	github.com/hashicorp/terraform-plugin-log v0.8.0 // indirect
 	github.com/hashicorp/terraform-registry-address v0.2.0 // indirect

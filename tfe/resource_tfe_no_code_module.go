@@ -42,14 +42,10 @@ func resourceTFENoCodeModule() *schema.Resource {
 				Computed: true,
 				ForceNew: false,
 			},
-			"follow_latest_version": {
-				Type:     schema.TypeBool,
-				Required: true,
-				ForceNew: false,
-			},
 			"enabled": {
 				Type:     schema.TypeBool,
-				Required: true,
+				Optional: true,
+				Computed: true,
 				ForceNew: false,
 			},
 			"variable_options": {
@@ -86,8 +82,6 @@ func resourceTFENoCodeModuleCreate(ctx context.Context, d *schema.ResourceData, 
 	config := meta.(ConfiguredClient)
 
 	options := tfe.RegistryNoCodeModuleCreateOptions{
-		FollowLatestVersion: tfe.Bool(d.Get("follow_latest_version").(bool)),
-		Enabled:             tfe.Bool(d.Get("enabled").(bool)),
 		RegistryModule: &tfe.RegistryModule{
 			ID: d.Get("registry_module").(string),
 		},
@@ -97,7 +91,7 @@ func resourceTFENoCodeModuleCreate(ctx context.Context, d *schema.ResourceData, 
 		options.VariableOptions = variableOptionsMaptoStruct(variableOptions.([]interface{}))
 	}
 	if versionPin, ok := d.GetOk("version_pin"); ok {
-		options.VersionPin = tfe.String(versionPin.(string))
+		options.VersionPin = versionPin.(string)
 	}
 
 	orgName := d.Get("organization").(string)
@@ -143,16 +137,15 @@ func resourceTFENoCodeModuleUpdate(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	options := tfe.RegistryNoCodeModuleUpdateOptions{
-		FollowLatestVersion: tfe.Bool(d.Get("follow_latest_version").(bool)),
-		Enabled:             tfe.Bool(d.Get("enabled").(bool)),
-		RegistryModule:      &tfe.RegistryModule{ID: d.Get("registry_module").(string)},
+		Enabled:        tfe.Bool(d.Get("enabled").(bool)),
+		RegistryModule: &tfe.RegistryModule{ID: d.Get("registry_module").(string)},
 	}
 
 	if versionPin, ok := d.GetOk("version_pin"); ok {
-		options.VersionPin = tfe.String(versionPin.(string))
+		options.VersionPin = versionPin.(string)
 	}
 	if variableOptions, ok := d.GetOk("variable_options"); ok {
-		options.VariableOptions = variableOptions.([]*tfe.NoCodeVariableOption)
+		options.VariableOptions = variableOptionsMaptoStruct(variableOptions.([]interface{}))
 	}
 
 	err = retry.RetryContext(ctx, time.Duration(5)*time.Minute, func() *retry.RetryError {
@@ -191,9 +184,7 @@ func resourceTFENoCodeModuleRead(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	// Update the config
-	log.Printf("[DEBUG] Update config for no-code module: %s", d.Id())
 	d.Set("enabled", noCodeModule.Enabled)
-	d.Set("follow_latest_version", noCodeModule.FollowLatestVersion)
 	d.Set("registry_module", noCodeModule.RegistryModule.ID)
 	d.Set("organization", noCodeModule.Organization.Name)
 	d.Set("version_pin", noCodeModule.VersionPin)

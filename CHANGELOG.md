@@ -1,7 +1,8 @@
 ## Unreleased
 
 FEATURES:
-* **New Resource**: `r/tfe_nocode_module` is a new resource to manage no-code modules, by @dsa0x ([#836](https://github.com/hashicorp/terraform-provider-tfe/pull/836))
+
+* **New Resource**: `r/tfe_no_code_module` is a new resource to manage no-code settings for registry modules, by @dsa0x ([#836](https://github.com/hashicorp/terraform-provider-tfe/pull/836))
 
 ENHANCEMENTS:
 
@@ -9,8 +10,9 @@ BUG FIXES:
 * `r/tfe_workspace`: Only set `oauth_token_id` and `github_app_installation_id` if configured, by @moensch ([#835](https://github.com/hashicorp/terraform-provider-tfe/pull/835))
 
 DEPRECATIONS:
-* The no_code attribute in r/tfe_registry_module is deprecated in favor of the new resource `tfe_nocode_module`, which 
-  provides a more flexible interface for managing no-code modules. The no_code attribute will be removed in the next major 
+
+* The no_code attribute in r/tfe_registry_module is deprecated in favor of the new resource `tfe_no_code_module`, which
+  provides a more flexible interface for managing no-code for registry modules. The no_code attribute will be removed in the next major
   release of the provider, by @dsa0x ([#836](https://github.com/hashicorp/terraform-provider-tfe/pull/836))
 
 ## v0.43.0 (March 23, 2023)

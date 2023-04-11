@@ -1,13 +1,13 @@
 ---
 layout: "tfe"
-page_title: "Terraform Enterprise: tfe_nocode_module"
+page_title: "Terraform Enterprise: tfe_no_code_module"
 description: |-
-  Manages no code for registry modules
+  Manages no code settings for registry modules
 ---
 
-# tfe_nocode_module
+# tfe_no_code_module
 
-Creates, updates and destroys no code for registry modules.
+Creates, updates and destroys no code settings for registry modules.
 
 ## Example Usage
 
@@ -25,11 +25,9 @@ resource "tfe_registry_module" "foobar" {
 	name            = "test_module"
 }
 
-resource "tfe_nocode_module" "foobar" {
+resource "tfe_no_code_module" "foobar" {
 	organization = tfe_organization.foobar.id
 	module = tfe_registry_module.foobar.id
-	follow_latest_version = true
-	enabled = true
 }
 ```
 
@@ -47,11 +45,9 @@ resource "tfe_registry_module" "foobar" {
 	name            = "test_module"
 }
 
-resource "tfe_nocode_module" "foobar" {
+resource "tfe_no_code_module" "foobar" {
 	organization = tfe_organization.foobar.id
 	module = tfe_registry_module.foobar.id
-	follow_latest_version = true
-	enabled = true
 
 	variable_options {
 		name    = "ami"
@@ -75,8 +71,7 @@ The following arguments are supported:
 - `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 - `module` - (Required) The ID of the registry module to associate with the no code module.
 - `enabled` - (Required) Whether or not no-code module is enabled for the associated registry module
-- `follow_latest_version` - (Optional) Whether or not to follow the latest version of the module. Must be `false` if `version_pin` is set.
-- `version_pin` - (Optional) The version of the module to pin to. Must not be set if `follow_latest_version` is `true`.
+- `version_pin` - (Optional) The version of the module to pin to.
 - `variable_options` - (Optional) A list of variable options to associate with the no code module.
   - `name` - (Required) The name of the variable option.
   - `type` - (Required) The type of the variable option.
@@ -91,5 +86,5 @@ The following arguments are supported:
 No-code modules can be imported; use `<NO CODE MODULE ID>` as the import ID. For example:
 
 ```shell
-terraform import tfe_nocode_module.test nocode-qV9JnKRkmtMa4zcA
+terraform import tfe_no_code_module.test nocode-qV9JnKRkmtMa4zcA
 ```
