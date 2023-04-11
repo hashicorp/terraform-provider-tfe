@@ -67,7 +67,6 @@ func dataSourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta 
 
 		for _, proj := range l.Items {
 			if proj.Name == projName {
-
 				// Only now include workspaces to cut down on request load.
 				readOptions := &tfe.WorkspaceListOptions{
 					ProjectID: proj.ID,
