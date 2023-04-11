@@ -9,7 +9,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5/tf5server"
 	"github.com/hashicorp/terraform-plugin-mux/tf5muxserver"
 	"github.com/hashicorp/terraform-provider-tfe/tfe"
@@ -51,9 +50,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = tf5server.Serve(tfeProviderName, func() tfprotov5.ProviderServer {
-		return mux.ProviderServer()
-	}, serveOpts...)
+	err = tf5server.Serve(tfeProviderName, mux.ProviderServer, serveOpts...)
 	if err != nil {
 		log.Printf("[ERROR] Could not start serving the ProviderServer: %v", err)
 		os.Exit(1)
