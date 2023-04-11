@@ -14,17 +14,19 @@ import (
 
 func TestAccTFEProjectDataSource_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	orgName := fmt.Sprintf("org-%d", rInt)
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEProjectDataSourceConfig(orgName, rInt),
+				Config: testAccTFEProjectDataSourceConfig(rInt),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
-						"data.tfe_project.foobar", "name", "projecttest"),
+						"data.tfe_project.foobar", "name", fmt.Sprintf("project-test-%d", rInt)),
+					resource.TestCheckResourceAttr(
+						"data.tfe_project.foobar", "organization", orgName),
 					resource.TestCheckResourceAttrSet("data.tfe_project.foobar", "id"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_project.foobar", "workspace_ids.#", "1"),
@@ -34,26 +36,26 @@ func TestAccTFEProjectDataSource_basic(t *testing.T) {
 	})
 }
 
-func testAccTFEProjectDataSourceConfig(organization string, rInt int) string {
+func testAccTFEProjectDataSourceConfig(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "org-%d"
+  name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
 resource "tfe_project" "foobar" {
-  name         = "project-%d"
-  organization = "org-%d"
-}
-
-resource "tfe_workspace" "foobar" {
-  name         = "workspace-%d"
+  name         = "project-test-%d"
   organization = tfe_organization.foobar.id
-  project_id  = tfe_project.foobar.id
 }
 
 data "tfe_project" "foobar" {
   name         = tfe_project.foobar.name
-  organization = "%s"
-}`, rInt, rInt, rInt, rInt, organization)
+  organization = tfe_project.foobar.organization
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test-%d"
+  organization = tfe_organization.foobar.id
+  project_id  = tfe_project.foobar.id
+}`, rInt, rInt, rInt)
 }
