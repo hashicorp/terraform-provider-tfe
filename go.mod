@@ -66,9 +66,7 @@ require (
 	github.com/hashicorp/terraform-plugin-log v0.8.0 // indirect
 	github.com/hashicorp/terraform-registry-address v0.2.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/vmihailenco/msgpack/v4 v4.3.12 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.3.5 // indirect
-	github.com/vmihailenco/tagparser v0.1.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	golang.org/x/mod v0.8.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
