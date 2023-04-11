@@ -7,12 +7,14 @@ import (
 	"fmt"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccTFEIPRangesDataSource_basic(t *testing.T) {
 	skipIfEnterprise(t)
+	skipIfBefore(t, time.Date(2023, time.June, 1, 0, 0, 00, 0, time.Local))
 	ipRegex := regexp.MustCompile(`^([\d]{1,3}\.){3}[\d]{1,3}/[\d]{1,3}$`)
 
 	resource.Test(t, resource.TestCase{
