@@ -33,6 +33,13 @@ func dataSourceTFEProject() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+
+			"workspace_ids": {
+				Type:     schema.TypeSet,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
 		},
 	}
 }
@@ -60,6 +67,23 @@ func dataSourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta 
 
 		for _, proj := range l.Items {
 			if proj.Name == projName {
+
+				// Only now include workspaces to cut down on request load.
+				readOptions := &tfe.WorkspaceListOptions{
+					ProjectID: proj.ID,
+				}
+
+				wl, err := config.Client.Workspaces.List(ctx, orgName, readOptions)
+				if err != nil {
+					return diag.Errorf("Error retrieving workspaces: %v", err)
+				}
+
+				var workspaces []interface{}
+				for _, workspace := range wl.Items {
+					workspaces = append(workspaces, workspace.ID)
+				}
+				d.Set("workspace_ids", workspaces)
+
 				d.SetId(proj.ID)
 				return nil
 			}
