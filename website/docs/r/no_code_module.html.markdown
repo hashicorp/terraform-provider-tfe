@@ -7,7 +7,7 @@ description: |-
 
 # tfe_no_code_module
 
-Creates, updates and destroys no code settings for registry modules.
+Creates, updates and destroys no-code module for registry modules.
 
 ## Example Usage
 

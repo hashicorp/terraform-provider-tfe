@@ -77,7 +77,7 @@ resource "tfe_organization" "test-organization" {
   email = "admin@company.com"
 }
 
-resource "tfe_registry_module" "test-ncp-registry-module" {
+resource "tfe_registry_module" "test-no-code-provisioning-registry-module" {
   organization    = tfe_organization.test-organization.name
   namespace       = "terraform-aws-modules"
   module_provider = "aws"
@@ -88,7 +88,7 @@ resource "tfe_registry_module" "test-ncp-registry-module" {
 
 resource "tfe_no_code_module" "foobar" {
   organization = tfe_organization.test-organization.id
-  module = tfe_registry_module.test-ncp-registry-module.id
+  module = tfe_registry_module.test-no-code-provisioning-registry-module.id
 }
 ```
 
@@ -124,6 +124,7 @@ The `vcs_repo` block supports:
 * `namespace` - The namespace of the module. For private modules this is the name of the organization that owns the module.
 * `registry_name` - The registry name of the registry module depicting whether the registry module is private or public.
 * `no_code` - **Deprecated** The property that will enable or disable a module as no-code provisioning ready.
+Use the tfe_no_code_module resource instead.
 
 ## Import
 
