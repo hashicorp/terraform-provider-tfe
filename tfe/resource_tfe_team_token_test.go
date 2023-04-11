@@ -312,6 +312,6 @@ resource "tfe_team_token" "foobar" {
 
 resource "tfe_team_token" "expiry" {
   team_id    = tfe_team.foobar.id
-  expired_at = "04/11/2051"
+  expired_at = "2051-04-11T23:15:59+00:00"
 }`, rInt)
 }
