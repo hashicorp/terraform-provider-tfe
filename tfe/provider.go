@@ -165,7 +165,7 @@ func Provider() *schema.Provider {
 			"tfe_terraform_version":           resourceTFETerraformVersion(),
 			"tfe_workspace":                   resourceTFEWorkspace(),
 			"tfe_workspace_run_task":          resourceTFEWorkspaceRunTask(),
-			"tfe_variable":                    resourceTFEVariable(),
+			"tfe_variable_old":                resourceTFEVariableOld(),
 			"tfe_variable_set":                resourceTFEVariableSet(),
 			"tfe_workspace_variable_set":      resourceTFEWorkspaceVariableSet(),
 			"tfe_workspace_policy_set":        resourceTFEWorkspacePolicySet(),
