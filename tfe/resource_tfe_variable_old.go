@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func resourceTFEVariable() *schema.Resource {
+func resourceTFEVariableOld() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceTFEVariableCreate,
 		Read:   resourceTFEVariableRead,
