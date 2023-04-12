@@ -3,6 +3,8 @@
 FEATURES:
 
 * **New Resource**: `r/tfe_no_code_module` is a new resource to manage no-code settings for registry modules, by @dsa0x ([#836](https://github.com/hashicorp/terraform-provider-tfe/pull/836))
+**NOTE:** This resource is currently in beta and isn't generally
+available to all users. It is subject to change or be removed.
 
 ENHANCEMENTS:
 
