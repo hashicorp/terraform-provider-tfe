@@ -14,7 +14,7 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
-	tfmux "github.com/hashicorp/terraform-plugin-mux"
+	"github.com/hashicorp/terraform-plugin-mux/tf5muxserver"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -35,14 +35,14 @@ func init() {
 	testAccMuxedProviders = map[string]func() (tfprotov5.ProviderServer, error){
 		"tfe": func() (tfprotov5.ProviderServer, error) {
 			ctx := context.Background()
-			mux, err := tfmux.NewSchemaServerFactory(
+			mux, err := tf5muxserver.NewMuxServer(
 				ctx, PluginProviderServer, testAccProvider.GRPCProvider,
 			)
 			if err != nil {
 				return nil, err
 			}
 
-			return mux.Server(), nil
+			return mux.ProviderServer(), nil
 		},
 	}
 }

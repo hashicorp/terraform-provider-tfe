@@ -9,9 +9,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5/tf5server"
-	tfmux "github.com/hashicorp/terraform-plugin-mux"
+	"github.com/hashicorp/terraform-plugin-mux/tf5muxserver"
 	"github.com/hashicorp/terraform-provider-tfe/tfe"
 )
 
@@ -43,7 +42,7 @@ func main() {
 	// lower level terraform-plugin-go to handle far more complex behavior, and
 	// only should be used for functionality that is not present in the
 	// common terraform-plugin- sdk framework.
-	mux, err := tfmux.NewSchemaServerFactory(
+	mux, err := tf5muxserver.NewMuxServer(
 		ctx, tfe.Provider().GRPCProvider, tfe.PluginProviderServer,
 	)
 	if err != nil {
@@ -51,9 +50,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = tf5server.Serve(tfeProviderName, func() tfprotov5.ProviderServer {
-		return mux.Server()
-	}, serveOpts...)
+	err = tf5server.Serve(tfeProviderName, mux.ProviderServer, serveOpts...)
 	if err != nil {
 		log.Printf("[ERROR] Could not start serving the ProviderServer: %v", err)
 		os.Exit(1)
