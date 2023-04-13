@@ -26,12 +26,7 @@ func dataSourceTFEProject() *schema.Resource {
 
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
-			},
-
-			"project_id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Optional: true,
 			},
 
 			"workspace_ids": {
@@ -59,42 +54,42 @@ func dataSourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta 
 		Name: projName,
 	}
 
-	for {
-		l, err := config.Client.Projects.List(ctx, orgName, options)
-		if err != nil {
-			return diag.Errorf("Error retrieving projects: %v", err)
-		}
+	l, err := config.Client.Projects.List(ctx, orgName, options)
+	if err != nil {
+		return diag.Errorf("Error retrieving projects: %v", err)
+	}
 
-		for _, proj := range l.Items {
-			if proj.Name == projName {
-				// Only now include workspaces to cut down on request load.
-				readOptions := &tfe.WorkspaceListOptions{
-					ProjectID: proj.ID,
-				}
+	for _, proj := range l.Items {
+		if proj.Name == projName {
+			// Only now include workspaces to cut down on request load.
+			readOptions := &tfe.WorkspaceListOptions{
+				ProjectID: proj.ID,
+			}
+			var workspaces []interface{}
 
+			for {
 				wl, err := config.Client.Workspaces.List(ctx, orgName, readOptions)
 				if err != nil {
 					return diag.Errorf("Error retrieving workspaces: %v", err)
 				}
 
-				var workspaces []interface{}
 				for _, workspace := range wl.Items {
 					workspaces = append(workspaces, workspace.ID)
 				}
-				d.Set("workspace_ids", workspaces)
 
-				d.SetId(proj.ID)
-				return nil
+				// Exit the loop when we've seen all pages.
+				if wl.CurrentPage >= wl.TotalPages {
+					break
+				}
+
+				// Update the page number to get the next page.
+				readOptions.PageNumber = wl.NextPage
 			}
-		}
 
-		// Exit the loop when we've seen all pages.
-		if l.CurrentPage >= l.TotalPages {
-			break
+			d.Set("workspace_ids", workspaces)
+			d.SetId(proj.ID)
+			return nil
 		}
-
-		// Update the page number to get the next page.
-		options.PageNumber = l.NextPage
 	}
 	return diag.Errorf("could not find project %s/%s", orgName, projName)
 }
