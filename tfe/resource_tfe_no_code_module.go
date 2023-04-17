@@ -28,7 +28,8 @@ func resourceTFENoCodeModule() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"organization": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Computed: true,
 				ForceNew: true,
 			},
 			"registry_module": {
@@ -97,7 +98,10 @@ func resourceTFENoCodeModuleCreate(ctx context.Context, d *schema.ResourceData, 
 		options.VersionPin = versionPin.(string)
 	}
 
-	orgName := d.Get("organization").(string)
+	orgName, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	log.Printf("[DEBUG] Create no-code module for registry module %s", options.RegistryModule.ID)
 	noCodeModule, err := config.Client.RegistryNoCodeModules.Create(ctx, orgName, options)
