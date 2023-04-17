@@ -87,6 +87,9 @@ func resourceTFENoCodeModuleCreate(ctx context.Context, d *schema.ResourceData, 
 		},
 	}
 
+	if enabled, ok := d.GetOk("enabled"); ok {
+		options.Enabled = tfe.Bool(enabled.(bool))
+	}
 	if variableOptions, ok := d.GetOk("variable_options"); ok {
 		options.VariableOptions = variableOptionsMaptoStruct(variableOptions.([]interface{}))
 	}
