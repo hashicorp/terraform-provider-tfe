@@ -19,6 +19,11 @@ resource "tfe_organization" "test" {
   email = "admin@company.com"
 }
 
+resource "tfe_project" "test" {
+  organization = tfe_organization.test.name
+  name = "projectname"
+}
+
 resource "tfe_workspace" "test" {
   name         = "my-workspace-name"
   organization = tfe_organization.test.name
@@ -32,6 +37,11 @@ resource "tfe_variable_set" "test" {
 
 resource "tfe_workspace_variable_set" "test" {
   workspace_id    = tfe_workspace.test.id
+  variable_set_id = tfe_variable_set.test.id
+}
+
+resource "tfe_project_variable_set" "test" {
+  project_id    = tfe_project.test.id
   variable_set_id = tfe_variable_set.test.id
 }
 

@@ -145,6 +145,7 @@ func Provider() *schema.Provider {
 			"tfe_policy_set":                  resourceTFEPolicySet(),
 			"tfe_policy_set_parameter":        resourceTFEPolicySetParameter(),
 			"tfe_project":                     resourceTFEProject(),
+			"tfe_project_variable_set":        resourceTFEProjectVariableSet(),
 			"tfe_registry_module":             resourceTFERegistryModule(),
 			"tfe_no_code_module":              resourceTFENoCodeModule(),
 			"tfe_run_trigger":                 resourceTFERunTrigger(),

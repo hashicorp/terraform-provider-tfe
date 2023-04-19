@@ -2,6 +2,7 @@
 
 FEATURES:
 * **New Data Source**: `r/data_source_project` is a new data source to allow users to retrieve project id and associated workspace ids, by @hs26gill ([#829](https://github.com/hashicorp/terraform-provider-tfe/pull/829))
+* **New Resource**: `r/tfe_project_variable_set` is a new resource to apply variable sets to projects, by @jbonhag and @rberecka ([#837](https://github.com/hashicorp/terraform-provider-tfe/pull/837))
 
 * **New Resource**: `r/tfe_no_code_module` is a new resource to manage no-code settings for registry modules, by @dsa0x ([#836](https://github.com/hashicorp/terraform-provider-tfe/pull/836))
 **NOTE:** This resource is currently in beta and isn't generally
