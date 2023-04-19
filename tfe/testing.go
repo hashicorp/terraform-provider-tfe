@@ -242,7 +242,7 @@ func randomString(t *testing.T) string {
 
 type retryableFn func() (interface{}, error)
 
-func retry(maxRetries, secondsBetween int, f retryableFn) (interface{}, error) {
+func retryFn(maxRetries, secondsBetween int, f retryableFn) (interface{}, error) {
 	tick := time.NewTicker(time.Duration(secondsBetween) * time.Second)
 	retries := 0
 

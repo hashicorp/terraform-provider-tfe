@@ -136,7 +136,11 @@ func resourceTFERegistryModuleCreateWithoutVCS(meta interface{}, d *schema.Resou
 	options := tfe.RegistryModuleCreateOptions{
 		Name:     tfe.String(d.Get("name").(string)),
 		Provider: tfe.String(d.Get("module_provider").(string)),
-		NoCode:   d.Get("no_code").(bool),
+	}
+
+	if v, ok := d.GetOk("no_code"); ok {
+		log.Println("[WARN] The attribute no_code is deprecated as of release 0.44.0 and may be removed in a future version. The preferred way to create a no-code registry module is to use the tfe_no_code_module resource.")
+		options.NoCode = tfe.Bool(v.(bool))
 	}
 
 	if registryName, ok := d.GetOk("registry_name"); ok {
@@ -212,9 +216,12 @@ func resourceTFERegistryModuleCreate(d *schema.ResourceData, meta interface{}) e
 func resourceTFERegistryModuleUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
-	options := tfe.RegistryModuleUpdateOptions{
-		NoCode: tfe.Bool(d.Get("no_code").(bool)),
+	options := tfe.RegistryModuleUpdateOptions{}
+	if v, ok := d.GetOk("no_code"); ok {
+		log.Println("[WARN] The attribute no_code is deprecated as of release 0.44.0 and may be removed in a future version. The preferred way to create a no-code registry module is to use the tfe_no_code_module resource.")
+		options.NoCode = tfe.Bool(v.(bool))
 	}
+
 	var registryModule *tfe.RegistryModule
 	var err error
 

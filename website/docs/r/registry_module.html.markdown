@@ -85,6 +85,11 @@ resource "tfe_registry_module" "test-no-code-provisioning-registry-module" {
   registry_name   = "public"
   no_code         = true
 }
+
+resource "tfe_no_code_module" "foobar" {
+  organization = tfe_organization.test-organization.id
+  module = tfe_registry_module.test-no-code-provisioning-registry-module.id
+}
 ```
 
 ## Argument Reference
@@ -98,16 +103,15 @@ The following arguments are supported:
 * `organization` - (Optional) The name of the organization associated with the registry module. It must be set if `module_provider` is used.
 * `namespace` - (Optional) The namespace of a public registry module. It can be used if `module_provider` is set and `registry_name` is public.
 * `registry_name` - (Optional) Whether the registry module is private or public. It can be used if `module_provider` is set.
-* `no_code` - (Optional) Whether the registry module is enabled for [no-code provisioning](https://learn.hashicorp.com/tutorials/terraform/no-code-provisioning). Defaults to `false`.
 
 The `vcs_repo` block supports:
 
 * `display_identifier` - (Required) The display identifier for your VCS repository.
-   For most VCS providers outside of BitBucket Cloud, this will match the `identifier`
-   string.
+  For most VCS providers outside of BitBucket Cloud, this will match the `identifier`
+  string.
 * `identifier` - (Required) A reference to your VCS repository in the format
   `<organization>/<repository>` where `<organization>` and `<repository>` refer to the organization (or project key, for Bitbucket Server)
-  and repository in your VCS provider. The format for Azure DevOps is <organization>/<project>/_git/<repository>.
+  and repository in your VCS provider. The format for Azure DevOps is <organization>/<project>/\_git/<repository>.
 * `oauth_token_id` - (Optional) Token ID of the VCS Connection (OAuth Connection Token) to use. This conflicts with `github_app_installation_id` and can only be used if `github_app_installation_id` is not used.
 * `github_app_installation_id` - (Optional) The installation id of the Github App. This conflicts with `oauth_token_id` and can only be used if `oauth_token_id` is not used.
 
@@ -119,7 +123,8 @@ The `vcs_repo` block supports:
 * `organization` - The name of the organization associated with the registry module.
 * `namespace` - The namespace of the module. For private modules this is the name of the organization that owns the module.
 * `registry_name` - The registry name of the registry module depicting whether the registry module is private or public.
-* `no_code` - The property that will enable or disable a module as no-code provisioning ready.
+* `no_code` - **Deprecated** The property that will enable or disable a module as no-code provisioning ready.
+Use the tfe_no_code_module resource instead.
 
 ## Import
 

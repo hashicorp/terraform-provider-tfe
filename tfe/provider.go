@@ -147,6 +147,7 @@ func Provider() *schema.Provider {
 			"tfe_project":                     resourceTFEProject(),
 			"tfe_project_variable_set":        resourceTFEProjectVariableSet(),
 			"tfe_registry_module":             resourceTFERegistryModule(),
+			"tfe_no_code_module":              resourceTFENoCodeModule(),
 			"tfe_run_trigger":                 resourceTFERunTrigger(),
 			"tfe_sentinel_policy":             resourceTFESentinelPolicy(),
 			"tfe_ssh_key":                     resourceTFESSHKey(),
