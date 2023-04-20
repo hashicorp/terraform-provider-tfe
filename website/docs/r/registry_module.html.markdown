@@ -88,7 +88,7 @@ resource "tfe_registry_module" "test-no-code-provisioning-registry-module" {
 
 resource "tfe_no_code_module" "foobar" {
   organization = tfe_organization.test-organization.id
-  module = tfe_registry_module.test-no-code-provisioning-registry-module.id
+  registry_module = tfe_registry_module.test-no-code-provisioning-registry-module.id
 }
 ```
 

@@ -30,7 +30,7 @@ resource "tfe_registry_module" "foobar" {
 
 resource "tfe_no_code_module" "foobar" {
 	organization = tfe_organization.foobar.id
-	module = tfe_registry_module.foobar.id
+	registry_module = tfe_registry_module.foobar.id
 }
 ```
 
@@ -50,7 +50,7 @@ resource "tfe_registry_module" "foobar" {
 
 resource "tfe_no_code_module" "foobar" {
 	organization = tfe_organization.foobar.id
-	module = tfe_registry_module.foobar.id
+	registry_module = tfe_registry_module.foobar.id
 
 	variable_options {
 		name    = "ami"
@@ -72,7 +72,7 @@ The following arguments are supported:
 
 - `name` - (Required) Name of the variable set.
 - `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
-- `module` - (Required) The ID of the registry module to associate with the no code module.
+- `registry_module` - (Required) The ID of the registry module to associate with the no code module.
 - `enabled` - (Required) Whether or not no-code module is enabled for the associated registry module
 - `version_pin` - (Optional) The version of the module to pin to.
 - `variable_options` - (Optional) A list of variable options to associate with the no code module.
