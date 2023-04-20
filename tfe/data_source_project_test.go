@@ -51,6 +51,10 @@ resource "tfe_project" "foobar" {
 data "tfe_project" "foobar" {
   name         = tfe_project.foobar.name
   organization = tfe_project.foobar.organization
+  # Read the data source after creating the workspace, so counts match
+  depends_on = [
+	tfe_workspace.foobar
+  ]
 }
 
 resource "tfe_workspace" "foobar" {
