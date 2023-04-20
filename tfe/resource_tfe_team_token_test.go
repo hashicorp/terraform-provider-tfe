@@ -104,11 +104,6 @@ func TestAccTFETeamToken_existsWithoutExpiry(t *testing.T) {
 						"tfe_team_token.foobar", token),
 				),
 			},
-
-			{
-				Config:      testAccTFETeamToken_existsWithoutForce(rInt),
-				ExpectError: regexp.MustCompile(`must be a valid date or time`),
-			},
 		},
 	})
 }
@@ -116,6 +111,7 @@ func TestAccTFETeamToken_existsWithoutExpiry(t *testing.T) {
 func TestAccTFETeamToken_existsWithExpiry(t *testing.T) {
 	token := &tfe.TeamToken{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	expiredAt := fmt.Sprintf("2051-04-11T23:15:59+00:00")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -123,18 +119,12 @@ func TestAccTFETeamToken_existsWithExpiry(t *testing.T) {
 		CheckDestroy: testAccCheckTFETeamTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamToken_basic(rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFETeamTokenExists(
-						"tfe_team_token.foobar", token),
-				),
-			},
-
-			{
-				Config: testAccTFETeamToken_existsWithForce(rInt),
+				Config: testAccTFETeamToken_existsWithExpiry(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamTokenExists(
 						"tfe_team_token.expiry", token),
+					resource.TestCheckResourceAttr(
+						"tfe_team_token.expiry", "expired_at", expiredAt),
 				),
 			},
 		},

@@ -7,10 +7,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
-
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"log"
+	"time"
 )
 
 func resourceTFEOrganizationToken() *schema.Resource {
@@ -45,7 +45,7 @@ func resourceTFEOrganizationToken() *schema.Resource {
 			"expired_at": {
 				Type:     schema.TypeString,
 				Optional: true,
-				Computed: true,
+				ForceNew: true,
 			},
 		},
 	}
@@ -74,12 +74,26 @@ func resourceTFEOrganizationTokenCreate(d *schema.ResourceData, meta interface{}
 		log.Printf("[DEBUG] Regenerating existing token for organization: %s", organization)
 	}
 
-	if err != nil {
+	// Get the token create options.
+	options := tfe.OrganizationTokenCreateOptions{}
+
+	// Check whether the optional expiry was provided.
+	_, expiredAtProvided := d.GetOk("expired_at")
+
+	// If an expiry was provided, parse it and update the options struct.
+	if expiredAtProvided {
 		expiredAt := d.Get("expired_at").(string)
-		return fmt.Errorf("%s must be a valid date or time", expiredAt)
+
+		expiry, err := time.Parse(time.RFC3339, expiredAt)
+
+		options.ExpiredAt = &expiry
+
+		if err != nil {
+			return fmt.Errorf("%s must be a valid date or time, provided in iso8601 format", expiredAt)
+		}
 	}
 
-	token, err := config.Client.OrganizationTokens.Create(ctx, organization)
+	token, err := config.Client.OrganizationTokens.CreateWithOptions(ctx, organization, options)
 	if err != nil {
 		return fmt.Errorf(
 			"error creating new token for organization %s: %w", organization, err)

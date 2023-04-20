@@ -7,10 +7,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
-
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"log"
+	"time"
 )
 
 func resourceTFETeamToken() *schema.Resource {
@@ -44,7 +44,7 @@ func resourceTFETeamToken() *schema.Resource {
 			"expired_at": {
 				Type:     schema.TypeString,
 				Optional: true,
-				Computed: true,
+				ForceNew: true,
 			},
 		},
 	}
@@ -70,13 +70,27 @@ func resourceTFETeamTokenCreate(d *schema.ResourceData, meta interface{}) error 
 		log.Printf("[DEBUG] Regenerating existing token for team: %s", teamID)
 	}
 
-	if err != nil {
+	// Get the token create options.
+	options := tfe.TeamTokenCreateOptions{}
+
+	// Check whether the optional expiry was provided.
+	_, expiredAtProvided := d.GetOk("expired_at")
+
+	// If an expiry was provided, parse it and update the options struct.
+	if expiredAtProvided {
 		expiredAt := d.Get("expired_at").(string)
-		return fmt.Errorf("%s must be a valid date or time", expiredAt)
+
+		expiry, err := time.Parse(time.RFC3339, expiredAt)
+
+		options.ExpiredAt = &expiry
+
+		if err != nil {
+			return fmt.Errorf("%s must be a valid date or time, provided in iso8601 format", expiredAt)
+		}
 	}
 
 	log.Printf("[DEBUG] Create new token for team: %s", teamID)
-	token, err := config.Client.TeamTokens.Create(ctx, teamID)
+	token, err := config.Client.TeamTokens.CreateWithOptions(ctx, teamID, options)
 	if err != nil {
 		return fmt.Errorf(
 			"error creating new token for team %s: %w", teamID, err)
