@@ -1,14 +1,8 @@
-## Unreleased
-
-BREAKING CHANGES:
-
-FEATURES:
-
-ENHANCEMENTS:
+## v0.44.1 (April 21, 2023)
 
 BUG FIXES:
 
-DEPRECATIONS:
+* Fixed a documentation bug in the new `r/tfe_no_code_module` resource, incorrectly labelling the attribute `registry_module` as `module`
 
 ## v0.44.0 (April 19, 2023)
 
