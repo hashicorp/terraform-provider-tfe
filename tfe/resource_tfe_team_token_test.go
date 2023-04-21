@@ -98,7 +98,7 @@ func TestAccTFETeamToken_existsWithoutExpiry(t *testing.T) {
 		CheckDestroy: testAccCheckTFETeamTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamToken_basic(rInt),
+				Config: testAccTFETeamToken_existsWithoutExpiry(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamTokenExists(
 						"tfe_team_token.foobar", token),

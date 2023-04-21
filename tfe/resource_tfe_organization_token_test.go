@@ -110,7 +110,7 @@ func TestAccTFEOrganizationToken_existsWithoutExpiry(t *testing.T) {
 		CheckDestroy: testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOrganizationToken_basic(rInt),
+				Config: testAccTFEOrganizationToken_existsWithoutExpiry(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationTokenExists(
 						"tfe_organization_token.foobar", token),
