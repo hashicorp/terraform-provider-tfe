@@ -3,12 +3,12 @@
 page_title: "tfe_project_variable_set Resource - terraform-provider-tfe"
 subcategory: ""
 description: |-
-  
+  Adds and removes variable sets from a project
 ---
 
 # tfe_project_variable_set (Resource)
 
-
+Adds and removes variable sets from a project
 
 ## Example Usage
 
@@ -37,8 +37,8 @@ resource "tfe_organization" "test" {
 
 ### Required
 
-- `project_id` (String)
-- `variable_set_id` (String)
+- `project_id` (String) Project ID to add the variable set to.
+- `variable_set_id` (String) Name of the variable set to add.
 
 ### Read-Only
 
