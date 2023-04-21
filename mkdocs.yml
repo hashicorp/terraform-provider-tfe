@@ -4,7 +4,7 @@ site_description: 'Contributor documentation and reference for the
 copyright: HashiCorp
 repo_name: hashicorp/terraform-provider-tfe
 repo_url: https://github.com/hashicorp/terraform-provider-tfe
-edit_uri: "https://github.com/hashicorp/terraform-provider-tfe/tree/main/docs"
+edit_uri: "https://github.com/hashicorp/terraform-provider-tfe/tree/main/contributing"
 
 nav:
   - Welcome: index.md
