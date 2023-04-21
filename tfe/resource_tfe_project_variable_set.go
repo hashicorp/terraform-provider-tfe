@@ -16,24 +16,27 @@ import (
 
 func resourceTFEProjectVariableSet() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceTFEProjectVariableSetCreate,
-		Read:   resourceTFEProjectVariableSetRead,
-		Delete: resourceTFEProjectVariableSetDelete,
+		Description: "Adds and removes variable sets from a project",
+		Create:      resourceTFEProjectVariableSetCreate,
+		Read:        resourceTFEProjectVariableSetRead,
+		Delete:      resourceTFEProjectVariableSetDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: resourceTFEProjectVariableSetImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
 			"variable_set_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "Name of the variable set to add.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"project_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "Project ID to add the variable set to.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 		},
 	}
