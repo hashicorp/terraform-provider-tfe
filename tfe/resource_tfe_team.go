@@ -93,6 +93,11 @@ func resourceTFETeam() *schema.Resource {
 							Optional: true,
 							Default:  false,
 						},
+						"manage_membership": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
+						},
 					},
 				},
 			},
@@ -142,6 +147,7 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 			ManageProjects:        tfe.Bool(organizationAccess["manage_projects"].(bool)),
 			ReadWorkspaces:        tfe.Bool(organizationAccess["read_workspaces"].(bool)),
 			ReadProjects:          tfe.Bool(organizationAccess["read_projects"].(bool)),
+			ManageMembership:      tfe.Bool(organizationAccess["manage_membership"].(bool)),
 		}
 	}
 
@@ -201,6 +207,7 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 			"manage_projects":         team.OrganizationAccess.ManageProjects,
 			"read_projects":           team.OrganizationAccess.ReadProjects,
 			"read_workspaces":         team.OrganizationAccess.ReadWorkspaces,
+			"manage_membership":       team.OrganizationAccess.ManageMembership,
 		}}
 		if err := d.Set("organization_access", organizationAccess); err != nil {
 			return fmt.Errorf("error setting organization access for team %s: %w", d.Id(), err)
@@ -237,6 +244,7 @@ func resourceTFETeamUpdate(d *schema.ResourceData, meta interface{}) error {
 			ManageProjects:        tfe.Bool(organizationAccess["manage_projects"].(bool)),
 			ReadProjects:          tfe.Bool(organizationAccess["read_projects"].(bool)),
 			ReadWorkspaces:        tfe.Bool(organizationAccess["read_workspaces"].(bool)),
+			ManageMembership:      tfe.Bool(organizationAccess["manage_membership"].(bool)),
 		}
 	}
 
