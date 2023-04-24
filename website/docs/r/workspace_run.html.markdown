@@ -53,7 +53,7 @@ resource "tfe_workspace" "child" {
 
 resource "tfe_workspace_run" "ws_run_parent" {
   organization = tfe_organization.test-organization
-  workspace    = tfe_workspace.parent.name
+  workspace_id    = tfe_workspace.parent.id
 
   apply {
     retry_attempts = 5
@@ -68,7 +68,7 @@ resource "tfe_workspace_run" "ws_run_parent" {
 
 resource "tfe_workspace_run" "ws_run_child" {
   organization = tfe_organization.test-organization
-  workspace    = tfe_workspace.child.name
+  workspace_id    = tfe_workspace.child.id
   depends_on   = [tfe_workspace_run.ws_run_parent]
 
   apply {
@@ -112,7 +112,7 @@ resource "tfe_workspace" "parent" {
 
 resource "tfe_workspace_run" "ws_run_parent" {
   organization = tfe_organization.test-organization
-  workspace    = tfe_workspace.parent.name
+  workspace_id    = tfe_workspace.parent.id
 
   apply {
     manual_confirm = true
@@ -154,7 +154,7 @@ resource "tfe_workspace" "parent" {
 
 resource "tfe_workspace_run" "ws_run_parent" {
   organization = tfe_organization.test-organization
-  workspace    = tfe_workspace.parent.name
+  workspace_id    = tfe_workspace.parent.id
 
   apply {
     retry = false
@@ -171,7 +171,7 @@ resource "tfe_workspace_run" "ws_run_parent" {
 
 The following arguments are supported:
 
-* `workspace` - (Required) Name of the workspace to execute the run.
+* `workspace_id` - (Required) ID of the workspace to execute the run.
 * `organization` - (Optional) Name of the Terraform Cloud organization. If omitted, organization must be defined in the provider config.
 * `apply` - (Optional) Settings for the workspace's apply run during creation.
 * `destroy` - (Optional) Settings for the workspace's destroy run during destruction.
