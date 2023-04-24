@@ -156,7 +156,7 @@ func resourceTFETeamProjectAccessDelete(ctx context.Context, d *schema.ResourceD
 	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete team access: %s", d.Id())
-	err := config.Client.TeamAccess.Remove(ctx, d.Id())
+	err := config.Client.TeamProjectAccess.Remove(ctx, d.Id())
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			return nil
