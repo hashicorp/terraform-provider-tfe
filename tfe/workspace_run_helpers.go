@@ -33,7 +33,6 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 	retryBOMax := runArgs["retry_backoff_max"].(int)
 	retry := runArgs["retry"].(bool)
 	retryMaxAttempts := runArgs["retry_attempts"].(int)
-	waitForRun := runArgs["wait_for_run"].(bool)
 
 	isInitialRunAttempt := currentRetryAttempts == 0
 
@@ -48,17 +47,17 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 
 	config := meta.(ConfiguredClient)
 
-	workspace := d.Get("workspace").(string)
+	workspaceID := d.Get("workspace_id").(string)
 	organization, err := config.schemaOrDefaultOrganization(d)
 	if err != nil {
 		return err
 	}
 
-	log.Printf("[DEBUG] Read workspace %s for organization: %s", workspace, organization)
-	ws, err := config.Client.Workspaces.Read(ctx, organization, workspace)
+	log.Printf("[DEBUG] Read workspace by ID %s", workspaceID)
+	ws, err := config.Client.Workspaces.ReadByID(ctx, workspaceID)
 	if err != nil {
 		return fmt.Errorf(
-			"error reading workspace %s for organization %s: %w", workspace, organization, err)
+			"error reading workspace %s: %w", workspaceID, err)
 	}
 
 	runConfig := tfe.RunCreateOptions{
@@ -68,33 +67,23 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 			"Triggered by tfe_workspace_run resource via terraform-provider-tfe on %s",
 			time.Now().Format(time.UnixDate),
 		)),
-		/**
-			autoapply is set to true when there is no intention to wait for the run to reach completion.
-			On the other hand, if the intent is to wait for run completion,
-			autoapply is set to false to give the tfe_workspace_run resource
-			full control of run confirmation.
-		**/
-		AutoApply: tfe.Bool(!waitForRun),
+		// autoapply is set to false to give the tfe_workspace_run resource full control of run confirmation.
+		AutoApply: tfe.Bool(false),
 	}
-	log.Printf("[DEBUG] Create run for workspace: %s", workspace)
+	log.Printf("[DEBUG] Create run for workspace: %s", ws.ID)
 	run, err := config.Client.Runs.Create(ctx, runConfig)
 	if err != nil {
 		return fmt.Errorf(
-			"error creating run for workspace %s: %w", workspace, err)
+			"error creating run for workspace %s: %w", ws.ID, err)
 	}
 
 	if run == nil {
 		log.Printf("[ERROR] The client returned both a nil run and nil error, this should not happen")
 		return fmt.Errorf(
-			"the client returned both a nil run and nil error for workspace %s, this should not happen", workspace)
+			"the client returned both a nil run and nil error for workspace %s, this should not happen", ws.ID)
 	}
 
-	log.Printf("[DEBUG] Run %s created for workspace %s", run.ID, workspace)
-
-	if !waitForRun {
-		d.SetId(run.ID)
-		return nil
-	}
+	log.Printf("[DEBUG] Run %s created for workspace %s", run.ID, ws.ID)
 
 	isPlanOp := true
 	run, err = awaitRun(meta, run.ID, ws.ID, organization, isPlanOp, planPendingStatuses, planTerminalStatuses)
@@ -150,6 +139,16 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 		}
 	}
 
+	/**
+		Checking for waitForRun arg towards the tail of this function ensures that all
+		human actions necessary above has already been done.
+	**/
+	waitForRun := runArgs["wait_for_run"].(bool)
+	if !waitForRun {
+		d.SetId(run.ID)
+		return nil
+	}
+
 	isPlanOp = false
 	run, err = awaitRun(meta, run.ID, ws.ID, organization, isPlanOp, applyPendingStatuses, applyDoneStatuses)
 	if err != nil {
@@ -186,7 +185,8 @@ func awaitRun(meta interface{}, runID string, wsID string, organization string, 
 			log.Printf("[DEBUG] Polling run %s", runID)
 			run, err := config.Client.Runs.Read(ctx, runID)
 			if err != nil {
-				return nil, fmt.Errorf("could not read run %s: %w", runID, err)
+				log.Printf("[ERROR] Could not read run %s: %v", runID, err)
+				continue
 			}
 
 			_, runHasEnded := runTerminalStatus[run.Status]
@@ -200,7 +200,8 @@ func awaitRun(meta interface{}, runID string, wsID string, organization string, 
 				log.Printf("[DEBUG] Reading workspace %s", wsID)
 				ws, err := config.Client.Workspaces.ReadByID(ctx, wsID)
 				if err != nil {
-					return nil, fmt.Errorf("unable to read workspace %s: %w", wsID, err)
+					log.Printf("[ERROR] Unable to read workspace %s: %v", wsID, err)
+					continue
 				}
 
 				// if the workspace is locked and the current run has not started, assume that workspace was locked for other purposes.
@@ -208,7 +209,8 @@ func awaitRun(meta interface{}, runID string, wsID string, organization string, 
 				if ws.Locked && ws.CurrentRun != nil {
 					currentRun, err := config.Client.Runs.Read(ctx, ws.CurrentRun.ID)
 					if err != nil {
-						return nil, fmt.Errorf("unable to read current run %s: %w", ws.CurrentRun.ID, err)
+						log.Printf("[ERROR] Unable to read current run %s: %v", ws.CurrentRun.ID, err)
+						continue
 					}
 
 					if currentRun.Status == tfe.RunPending {
@@ -221,12 +223,14 @@ func awaitRun(meta interface{}, runID string, wsID string, organization string, 
 				if ws.CurrentRun != nil && ws.CurrentRun.ID == runID {
 					runPositionInOrg, err := readRunPositionInOrgQueue(meta, runID, organization)
 					if err != nil {
-						return nil, err
+						log.Printf("[ERROR] Unable to read run position in organization queue %v", err)
+						continue
 					}
 
 					orgCapacity, err := config.Client.Organizations.ReadCapacity(ctx, organization)
 					if err != nil {
-						return nil, fmt.Errorf("unable to read capacity for organization %s: %w", organization, err)
+						log.Printf("[ERROR] Unable to read capacity for organization %s: %v", organization, err)
+						continue
 					}
 					if runPositionInOrg > 0 {
 						log.Printf("[INFO] Waiting for %d queued run(s) before starting run", runPositionInOrg-orgCapacity.Running)
@@ -237,7 +241,8 @@ func awaitRun(meta interface{}, runID string, wsID string, organization string, 
 				// if this run is not the current run in it's workspace, display it's position in the workspace queue
 				runPositionInWorkspace, err := readRunPositionInWorkspaceQueue(meta, runID, wsID, isPlanOp, ws.CurrentRun)
 				if err != nil {
-					return nil, err
+					log.Printf("[ERROR] Unable to read run position in workspace queue %v", err)
+					continue
 				}
 
 				if runPositionInWorkspace > 0 {

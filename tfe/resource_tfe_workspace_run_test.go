@@ -34,7 +34,7 @@ func TestAccTFEWorkspaceRun_createWithDefaultParams(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspaceRun_createWithDefaults(organization.Name, parentWorkspace.Name, childWorkspace.Name),
+				Config: testAccTFEWorkspaceRun_createWithDefaults(organization.Name, parentWorkspace.ID, childWorkspace.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceRunExistWithExpectedStatus("tfe_workspace_run.ws_run_parent", runForParentWorkspace, tfe.RunApplied),
 					testAccCheckTFEWorkspaceRunExistWithExpectedStatus("tfe_workspace_run.ws_run_child", runForChildWorkspace, tfe.RunApplied),
@@ -126,7 +126,7 @@ func TestAccTFEWorkspaceRun_invalidParams(t *testing.T) {
 		},
 		{
 			Config:      testAccTFEWorkspaceRun_noWorkspaceProvided(organization.Name),
-			ExpectError: regexp.MustCompile(`The argument "workspace" is required, but no definition was found`),
+			ExpectError: regexp.MustCompile(`The argument "workspace_id" is required, but no definition was found`),
 		},
 	}
 
@@ -166,7 +166,7 @@ func TestAccTFEWorkspaceRun_WhenRunErrors(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccTFEWorkspaceRun_WhenRunErrors(org.Name, parentWorkspace.Name),
+				Config:      testAccTFEWorkspaceRun_WhenRunErrors(org.Name, parentWorkspace.ID),
 				ExpectError: regexp.MustCompile(`run errored during plan`),
 			},
 		},
@@ -270,26 +270,34 @@ func testAccCheckTFEWorkspaceRunDestroy(workspaceID string) resource.TestCheckFu
 	}
 }
 
-func testAccTFEWorkspaceRun_createWithDefaults(orgName string, parentWorkspaceName string, childWorkspaceName string) string {
+func testAccTFEWorkspaceRun_createWithDefaults(orgName string, parentWorkspaceID string, childWorkspaceID string) string {
 	return fmt.Sprintf(`
 	resource "tfe_workspace_run" "ws_run_parent" {
 		organization = "%s"
-		workspace    = "%s"
+		workspace_id    = "%s"
 
-		apply {}
+		apply {
+			manual_confirm = false
+		}
 
-		destroy {}
+		destroy {
+			manual_confirm = false
+		}
 	}
 
 	resource "tfe_workspace_run" "ws_run_child" {
 		organization = "%s"
-		workspace    = "%s"
+		workspace_id    = "%s"
 		depends_on   = [tfe_workspace_run.ws_run_parent]
 
-		apply {}
+		apply {
+			manual_confirm = false
+		}
 
-		destroy {}
-	}`, orgName, parentWorkspaceName, orgName, childWorkspaceName)
+		destroy {
+			manual_confirm = false
+		}
+	}`, orgName, parentWorkspaceID, orgName, childWorkspaceID)
 }
 
 func testAccTFEWorkspaceRun_createAndDestroyRuns(orgName string, rInt int) string {
@@ -306,7 +314,7 @@ func testAccTFEWorkspaceRun_createAndDestroyRuns(orgName string, rInt int) strin
 
 	resource "tfe_workspace_run" "ws_run_parent" {
 		organization = "%s"
-		workspace    = data.tfe_workspace.parent.name
+		workspace_id    = data.tfe_workspace.parent.id
 
 		apply {
 			manual_confirm = false
@@ -321,7 +329,7 @@ func testAccTFEWorkspaceRun_createAndDestroyRuns(orgName string, rInt int) strin
 
 	resource "tfe_workspace_run" "ws_run_child" {
 		organization = "%s"
-		workspace    = data.tfe_workspace.child_depends_on_parent.name
+		workspace_id    = data.tfe_workspace.child_depends_on_parent.id
 		depends_on   = [tfe_workspace_run.ws_run_parent]
 
 		apply {
@@ -345,7 +353,7 @@ func testAccTFEWorkspaceRun_noApplyOrDestroyBlockProvided(orgName string, rInt i
 
 	resource "tfe_workspace_run" "ws_run_parent" {
 		organization = "%s"
-		workspace    = tfe_workspace.parent.name
+		workspace_id    = tfe_workspace.parent.id
 	}
 `, rInt, orgName, orgName)
 }
@@ -358,7 +366,7 @@ func testAccTFEWorkspaceRun_noOrganizationProvided(orgName string, rInt int) str
 	}
 
 	resource "tfe_workspace_run" "ws_run_parent" {
-		workspace    = tfe_workspace.parent.name
+		workspace_id    = tfe_workspace.parent.id
 
 		apply {
 			manual_confirm = false
@@ -391,11 +399,11 @@ func testAccTFEWorkspaceRun_noWorkspaceProvided(orgName string) string {
 `, orgName)
 }
 
-func testAccTFEWorkspaceRun_WhenRunErrors(orgName string, workspaceName string) string {
+func testAccTFEWorkspaceRun_WhenRunErrors(orgName string, workspaceID string) string {
 	return fmt.Sprintf(`
 	resource "tfe_workspace_run" "ws_run_parent" {
 		organization = "%s"
-		workspace    = "%s"
+		workspace_id    = "%s"
 
 		apply {
 			manual_confirm = false
@@ -407,5 +415,5 @@ func testAccTFEWorkspaceRun_WhenRunErrors(orgName string, workspaceName string) 
 			retry = false
 		}
 	}
-`, orgName, workspaceName)
+`, orgName, workspaceID)
 }

@@ -66,87 +66,21 @@ func resourceTFEWorkspaceRun() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
-			"workspace": {
+			"workspace_id": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 			"apply": {
-				Type: schema.TypeList,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"manual_confirm": {
-							Type:     schema.TypeBool,
-							Optional: true,
-							Default:  false,
-						},
-						"retry": {
-							Type:     schema.TypeBool,
-							Optional: true,
-							Default:  true,
-						},
-						"retry_attempts": {
-							Type:     schema.TypeInt,
-							Optional: true,
-							Default:  3,
-						},
-						"retry_backoff_min": {
-							Type:     schema.TypeInt,
-							Optional: true,
-							Default:  1,
-						},
-						"retry_backoff_max": {
-							Type:     schema.TypeInt,
-							Optional: true,
-							Default:  30,
-						},
-						"wait_for_run": {
-							Type:     schema.TypeBool,
-							Optional: true,
-							Default:  true,
-						},
-					},
-				},
+				Type:         schema.TypeList,
+				Elem:         resourceTFEWorkspaceRunSchema(),
 				Optional:     true,
 				AtLeastOneOf: []string{"apply", "destroy"},
 				MaxItems:     1,
 			},
 			"destroy": {
-				Type: schema.TypeList,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"manual_confirm": {
-							Type:     schema.TypeBool,
-							Optional: true,
-							Default:  false,
-						},
-						"retry": {
-							Type:     schema.TypeBool,
-							Optional: true,
-							Default:  true,
-						},
-						"retry_attempts": {
-							Type:     schema.TypeInt,
-							Optional: true,
-							Default:  3,
-						},
-						"retry_backoff_min": {
-							Type:     schema.TypeInt,
-							Optional: true,
-							Default:  1,
-						},
-						"retry_backoff_max": {
-							Type:     schema.TypeInt,
-							Optional: true,
-							Default:  30,
-						},
-						"wait_for_run": {
-							Type:     schema.TypeBool,
-							Optional: true,
-							Default:  true,
-						},
-					},
-				},
+				Type:     schema.TypeList,
+				Elem:     resourceTFEWorkspaceRunSchema(),
 				Optional: true,
 				MaxItems: 1,
 			},
@@ -189,4 +123,40 @@ func resourceTFEWorkspaceRunRead(d *schema.ResourceData, meta interface{}) error
 	}
 
 	return nil
+}
+
+func resourceTFEWorkspaceRunSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"manual_confirm": {
+				Type:     schema.TypeBool,
+				Required: true,
+			},
+			"retry": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
+			},
+			"retry_attempts": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				Default:  3,
+			},
+			"retry_backoff_min": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				Default:  1,
+			},
+			"retry_backoff_max": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				Default:  30,
+			},
+			"wait_for_run": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
+			},
+		},
+	}
 }
