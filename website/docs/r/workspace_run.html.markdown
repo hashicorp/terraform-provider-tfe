@@ -52,16 +52,18 @@ resource "tfe_workspace" "child" {
 }
 
 resource "tfe_workspace_run" "ws_run_parent" {
-  organization = tfe_organization.test-organization
+  organization    = tfe_organization.test-organization
   workspace_id    = tfe_workspace.parent.id
 
   apply {
-    retry_attempts = 5
+    manual_confirm    = false
+    retry_attempts    = 5
     retry_backoff_min = 5
   }
 
   destroy {
-    retry_attempts = 3
+    manual_confirm    = false
+    retry_attempts    = 3
     retry_backoff_min = 10
   }
 }
@@ -72,12 +74,14 @@ resource "tfe_workspace_run" "ws_run_child" {
   depends_on   = [tfe_workspace_run.ws_run_parent]
 
   apply {
-    retry_attempts = 5
+    manual_confirm    = false
+    retry_attempts    = 5
     retry_backoff_min = 5
   }
 
   destroy {
-    retry_attempts = 3
+    manual_confirm    = false
+    retry_attempts    = 3
     retry_backoff_min = 10
   }
 }
@@ -157,11 +161,13 @@ resource "tfe_workspace_run" "ws_run_parent" {
   workspace_id    = tfe_workspace.parent.id
 
   apply {
-    retry = false
+    manual_confirm = false
+    retry          = false
   }
 
   destroy {
-    retry = false
+    manual_confirm = false
+    retry          = false
   }
 }
 
@@ -178,7 +184,7 @@ The following arguments are supported:
 
 Both `apply` and `destroy` block supports:
 
-* `manual_confirm` - (Optional) If set to true a human will have to manually confirm a plan to start an apply. If set to false, this resource will auto confirm the plan. The exception is the case of policy check soft-failed where a human has to perform an override by manually confirming the plan even though `manual_confirm` is set to false. Defaults to `false`.
+* `manual_confirm` - (Required) If set to true a human will have to manually confirm a plan to start an apply. If set to false, this resource will auto confirm the plan. The exception is the case of policy check soft-failed where a human has to perform an override by manually confirming the plan even though `manual_confirm` is set to false. Defaults to `false`.
 * `retry` - (Optional) Whether or not to retry on plan or apply errors. When set to true, `retry_attempts` must also be greater than zero inorder for retries to happen. Defaults to `true`.
 * `retry_attempts` - (Optional) The number to retry attempts made after an initial error. Defaults to `3`.
 * `retry_backoff_min` - (Optional) The minimum time in seconds to backoff before attempting a retry. Defaults to `1`.
