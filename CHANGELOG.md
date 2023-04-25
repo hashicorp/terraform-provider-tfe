@@ -6,7 +6,6 @@ FEATURES:
 * `r/tfe_team`: Add attribute `manage_membership` to `organization_access` on `tfe_team` by @JarrettSpiker ([#801](https://github.com/hashicorp/terraform-provider-tfe/pull/801))
 
 ENHANCEMENTS:
-* Remove beta flag from `r/tfe_project_variable_set` test. Feature now generally available.
 
 BUG FIXES:
 
