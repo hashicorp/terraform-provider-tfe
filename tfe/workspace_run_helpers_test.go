@@ -6,7 +6,6 @@ import (
 	"github.com/golang/mock/gomock"
 	tfe "github.com/hashicorp/go-tfe"
 	tfemocks "github.com/hashicorp/go-tfe/mocks"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func MockRunsListForWorkspaceQueue(t *testing.T, client *tfe.Client, workspaceIDWithExpectedRun string, workspaceIDWithUnexpectedRun string) {
@@ -80,7 +79,7 @@ func MockRunsListForWorkspaceQueue(t *testing.T, client *tfe.Client, workspaceID
 
 func TestReadRunPositionInWorkspaceQueue(t *testing.T) {
 	defaultOrganization := "my-org"
-	client := testTfeClient(t, testClientOptions{defaultOrganization: defaultOrganization})
+	client := testTfeClient(t, testClientOptions{})
 	MockRunsListForWorkspaceQueue(t, client, "ws-1", "ws-2")
 
 	testCases := map[string]struct {
@@ -194,7 +193,7 @@ func MockRunsQueueForOrg(t *testing.T, client *tfe.Client, orgName string, orgNa
 
 func TestReadRunPositionInOrgQueue(t *testing.T) {
 	defaultOrganization := "my-org"
-	client := testTfeClient(t, testClientOptions{defaultOrganization: defaultOrganization})
+	client := testTfeClient(t, testClientOptions{})
 	MockRunsQueueForOrg(t, client, "another-org", defaultOrganization)
 
 	testCases := map[string]struct {
@@ -233,34 +232,6 @@ func TestReadRunPositionInOrgQueue(t *testing.T) {
 
 			if position != testCase.returnVal {
 				t.Fatalf("expected returned value is %d, got %v", testCase.returnVal, position)
-			}
-		})
-	}
-}
-
-func TestCreateWorkspaceRun(t *testing.T) {
-	testCases := map[string]struct {
-		isDestroyRun bool
-	}{
-		"when destroy block is not set OnDestroy": {
-			true,
-		},
-		"when apply block is not set OnCreate": {
-			false,
-		},
-	}
-
-	for name, testCase := range testCases {
-		t.Run(name, func(t *testing.T) {
-			d := &schema.ResourceData{}
-			client := testTfeClient(t, testClientOptions{defaultOrganization: "my-org"})
-			meta := ConfiguredClient{Client: client, Organization: "my-org"}
-			currentRetryAttempts := 0
-
-			err := createWorkspaceRun(d, meta, testCase.isDestroyRun, currentRetryAttempts)
-
-			if err != nil {
-				t.Fatalf("expected error is nil, got %v", err)
 			}
 		})
 	}

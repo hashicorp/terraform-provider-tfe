@@ -21,11 +21,8 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 		}
 		runArgs = destroyArgs.([]interface{})[0].(map[string]interface{})
 	} else {
-		// apply block is optional, if it is not set then create action is noop for a create type run
-		createArgs, ok := d.GetOk("apply")
-		if !ok {
-			return nil
-		}
+		// apply block is required
+		createArgs, _ := d.GetOk("apply")
 		runArgs = createArgs.([]interface{})[0].(map[string]interface{})
 	}
 
@@ -48,11 +45,6 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 	config := meta.(ConfiguredClient)
 
 	workspaceID := d.Get("workspace_id").(string)
-	organization, err := config.schemaOrDefaultOrganization(d)
-	if err != nil {
-		return err
-	}
-
 	log.Printf("[DEBUG] Read workspace by ID %s", workspaceID)
 	ws, err := config.Client.Workspaces.ReadByID(ctx, workspaceID)
 	if err != nil {
@@ -86,7 +78,7 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 	log.Printf("[DEBUG] Run %s created for workspace %s", run.ID, ws.ID)
 
 	isPlanOp := true
-	run, err = awaitRun(meta, run.ID, ws.ID, organization, isPlanOp, planPendingStatuses, planTerminalStatuses)
+	run, err = awaitRun(meta, run.ID, ws.ID, ws.Organization.Name, isPlanOp, planPendingStatuses, planTerminalStatuses)
 	if err != nil {
 		return err
 	}
@@ -110,7 +102,7 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 
 	if run.Status == tfe.RunPolicyOverride {
 		log.Printf("[INFO] Policy check soft-failed, awaiting manual override for run %q", run.ID)
-		run, err = awaitRun(meta, run.ID, ws.ID, organization, isPlanOp, map[tfe.RunStatus]bool{tfe.RunPolicyOverride: true}, confirmationDoneStatuses)
+		run, err = awaitRun(meta, run.ID, ws.ID, ws.Organization.Name, isPlanOp, map[tfe.RunStatus]bool{tfe.RunPolicyOverride: true}, confirmationDoneStatuses)
 		if err != nil {
 			return err
 		}
@@ -123,7 +115,7 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 		confirmationPendingStatus[run.Status] = true
 
 		log.Printf("[INFO] Plan complete, waiting for manual confirm before proceeding run %q", run.ID)
-		run, err = awaitRun(meta, run.ID, ws.ID, organization, isPlanOp, confirmationPendingStatus, confirmationDoneStatuses)
+		run, err = awaitRun(meta, run.ID, ws.ID, ws.Organization.Name, isPlanOp, confirmationPendingStatus, confirmationDoneStatuses)
 		if err != nil {
 			return err
 		}
@@ -150,7 +142,7 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 	}
 
 	isPlanOp = false
-	run, err = awaitRun(meta, run.ID, ws.ID, organization, isPlanOp, applyPendingStatuses, applyDoneStatuses)
+	run, err = awaitRun(meta, run.ID, ws.ID, ws.Organization.Name, isPlanOp, applyPendingStatuses, applyDoneStatuses)
 	if err != nil {
 		return err
 	}

@@ -61,22 +61,16 @@ func resourceTFEWorkspaceRun() *schema.Resource {
 		Update:        resourceTFEWorkspaceRunUpdate,
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
-			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
-			},
 			"workspace_id": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 			"apply": {
-				Type:         schema.TypeList,
-				Elem:         resourceTFEWorkspaceRunSchema(),
-				Optional:     true,
-				AtLeastOneOf: []string{"apply", "destroy"},
-				MaxItems:     1,
+				Type:     schema.TypeList,
+				Elem:     resourceTFEWorkspaceRunSchema(),
+				Required: true,
+				MaxItems: 1,
 			},
 			"destroy": {
 				Type:     schema.TypeList,

@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccTFEWorkspaceRun_createWithDefaultParams(t *testing.T) {
+func TestAccTFEWorkspaceRun_withApplyOnlyBlock(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	tfeClient, err := getClientUsingEnv()
@@ -32,9 +32,14 @@ func TestAccTFEWorkspaceRun_createWithDefaultParams(t *testing.T) {
 			testAccPreCheck(t)
 		},
 		Providers: testAccProviders,
+		CheckDestroy: resource.ComposeTestCheckFunc(
+			// only the workspace with destroy block should have a destroy run
+			testAccCheckTFEWorkspaceRunDestroy(parentWorkspace.ID, 0),
+			testAccCheckTFEWorkspaceRunDestroy(childWorkspace.ID, 1),
+		),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspaceRun_createWithDefaults(organization.Name, parentWorkspace.ID, childWorkspace.ID),
+				Config: testAccTFEWorkspaceRun_withApplyOnlyBlock(parentWorkspace.ID, childWorkspace.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceRunExistWithExpectedStatus("tfe_workspace_run.ws_run_parent", runForParentWorkspace, tfe.RunApplied),
 					testAccCheckTFEWorkspaceRunExistWithExpectedStatus("tfe_workspace_run.ws_run_child", runForChildWorkspace, tfe.RunApplied),
@@ -56,7 +61,7 @@ func TestAccTFEWorkspaceRun_createWithDefaultParams(t *testing.T) {
 	})
 }
 
-func TestAccTFEWorkspaceRun_createAndDestroyRuns(t *testing.T) {
+func TestAccTFEWorkspaceRun_withBothApplyAndDestroyBlocks(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	tfeClient, err := getClientUsingEnv()
@@ -78,12 +83,12 @@ func TestAccTFEWorkspaceRun_createAndDestroyRuns(t *testing.T) {
 		},
 		Providers: testAccProviders,
 		CheckDestroy: resource.ComposeTestCheckFunc(
-			testAccCheckTFEWorkspaceRunDestroy(parentWorkspace.ID),
-			testAccCheckTFEWorkspaceRunDestroy(childWorkspace.ID),
+			testAccCheckTFEWorkspaceRunDestroy(parentWorkspace.ID, 1),
+			testAccCheckTFEWorkspaceRunDestroy(childWorkspace.ID, 1),
 		),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspaceRun_createAndDestroyRuns(org.Name, rInt),
+				Config: testAccTFEWorkspaceRun_withBothApplyAndDestroyBlocks(org.Name, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceRunExistWithExpectedStatus("tfe_workspace_run.ws_run_parent", runForParentWorkspace, tfe.RunApplied),
 					testAccCheckTFEWorkspaceRunExistWithExpectedStatus("tfe_workspace_run.ws_run_child", runForChildWorkspace, tfe.RunApplied),
@@ -122,10 +127,10 @@ func TestAccTFEWorkspaceRun_invalidParams(t *testing.T) {
 	}{
 		{
 			Config:      testAccTFEWorkspaceRun_noApplyOrDestroyBlockProvided(organization.Name, rInt),
-			ExpectError: regexp.MustCompile("\"apply\": one of `apply,destroy` must be specified"),
+			ExpectError: regexp.MustCompile("Insufficient apply blocks"),
 		},
 		{
-			Config:      testAccTFEWorkspaceRun_noWorkspaceProvided(organization.Name),
+			Config:      testAccTFEWorkspaceRun_noWorkspaceProvided(),
 			ExpectError: regexp.MustCompile(`The argument "workspace_id" is required, but no definition was found`),
 		},
 	}
@@ -166,7 +171,7 @@ func TestAccTFEWorkspaceRun_WhenRunErrors(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccTFEWorkspaceRun_WhenRunErrors(org.Name, parentWorkspace.ID),
+				Config:      testAccTFEWorkspaceRun_WhenRunErrors(parentWorkspace.ID),
 				ExpectError: regexp.MustCompile(`run errored during plan`),
 			},
 		},
@@ -246,7 +251,7 @@ func testAccCheckTFEWorkspaceRunExistWithExpectedStatus(n string, run *tfe.Run, 
 	}
 }
 
-func testAccCheckTFEWorkspaceRunDestroy(workspaceID string) resource.TestCheckFunc {
+func testAccCheckTFEWorkspaceRunDestroy(workspaceID string, expectedDestroyCount int) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		config := testAccProvider.Meta().(ConfiguredClient)
 
@@ -258,35 +263,25 @@ func testAccCheckTFEWorkspaceRunDestroy(workspaceID string) resource.TestCheckFu
 			return fmt.Errorf("Unable to find destroy run, %w", err)
 		}
 
-		if runList.TotalCount == 0 {
-			return fmt.Errorf("Destroy run not found")
-		}
-
-		if len(runList.Items) > 1 {
-			return fmt.Errorf("Expected only 1 destroy run but found %d", runList.TotalCount)
+		if len(runList.Items) != expectedDestroyCount {
+			return fmt.Errorf("Expected %d destroy runs but found %d", expectedDestroyCount, len(runList.Items))
 		}
 
 		return nil
 	}
 }
 
-func testAccTFEWorkspaceRun_createWithDefaults(orgName string, parentWorkspaceID string, childWorkspaceID string) string {
+func testAccTFEWorkspaceRun_withApplyOnlyBlock(parentWorkspaceID string, childWorkspaceID string) string {
 	return fmt.Sprintf(`
 	resource "tfe_workspace_run" "ws_run_parent" {
-		organization = "%s"
 		workspace_id    = "%s"
 
 		apply {
 			manual_confirm = false
 		}
-
-		destroy {
-			manual_confirm = false
-		}
 	}
 
 	resource "tfe_workspace_run" "ws_run_child" {
-		organization = "%s"
 		workspace_id    = "%s"
 		depends_on   = [tfe_workspace_run.ws_run_parent]
 
@@ -297,10 +292,10 @@ func testAccTFEWorkspaceRun_createWithDefaults(orgName string, parentWorkspaceID
 		destroy {
 			manual_confirm = false
 		}
-	}`, orgName, parentWorkspaceID, orgName, childWorkspaceID)
+	}`, parentWorkspaceID, childWorkspaceID)
 }
 
-func testAccTFEWorkspaceRun_createAndDestroyRuns(orgName string, rInt int) string {
+func testAccTFEWorkspaceRun_withBothApplyAndDestroyBlocks(orgName string, rInt int) string {
 	return fmt.Sprintf(`
 	data "tfe_workspace" "parent" {
 		name                 = "tst-terraform-%d-parent"
@@ -313,7 +308,6 @@ func testAccTFEWorkspaceRun_createAndDestroyRuns(orgName string, rInt int) strin
 	}
 
 	resource "tfe_workspace_run" "ws_run_parent" {
-		organization = "%s"
 		workspace_id    = data.tfe_workspace.parent.id
 
 		apply {
@@ -328,7 +322,6 @@ func testAccTFEWorkspaceRun_createAndDestroyRuns(orgName string, rInt int) strin
 	}
 
 	resource "tfe_workspace_run" "ws_run_child" {
-		organization = "%s"
 		workspace_id    = data.tfe_workspace.child_depends_on_parent.id
 		depends_on   = [tfe_workspace_run.ws_run_parent]
 
@@ -341,7 +334,7 @@ func testAccTFEWorkspaceRun_createAndDestroyRuns(orgName string, rInt int) strin
 			manual_confirm = false
 			retry = true
 		}
-	}`, rInt, orgName, rInt, orgName, orgName, orgName)
+	}`, rInt, orgName, rInt, orgName)
 }
 
 func testAccTFEWorkspaceRun_noApplyOrDestroyBlockProvided(orgName string, rInt int) string {
@@ -352,40 +345,14 @@ func testAccTFEWorkspaceRun_noApplyOrDestroyBlockProvided(orgName string, rInt i
 	}
 
 	resource "tfe_workspace_run" "ws_run_parent" {
-		organization = "%s"
 		workspace_id    = tfe_workspace.parent.id
-	}
-`, rInt, orgName, orgName)
-}
-
-func testAccTFEWorkspaceRun_noOrganizationProvided(orgName string, rInt int) string {
-	return fmt.Sprintf(`
-	resource "tfe_workspace" "parent" {
-		name                 = "tst-terraform-%d-parent"
-		organization         = "%s"
-	}
-
-	resource "tfe_workspace_run" "ws_run_parent" {
-		workspace_id    = tfe_workspace.parent.id
-
-		apply {
-			manual_confirm = false
-			retry = true
-		}
-
-		destroy {
-			manual_confirm = false
-			retry = true
-		}
 	}
 `, rInt, orgName)
 }
 
-func testAccTFEWorkspaceRun_noWorkspaceProvided(orgName string) string {
+func testAccTFEWorkspaceRun_noWorkspaceProvided() string {
 	return fmt.Sprintf(`
 	resource "tfe_workspace_run" "ws_run_parent" {
-		organization = "%s"
-
 		apply {
 			manual_confirm = false
 			retry = true
@@ -396,13 +363,12 @@ func testAccTFEWorkspaceRun_noWorkspaceProvided(orgName string) string {
 			retry = true
 		}
 	}
-`, orgName)
+`)
 }
 
-func testAccTFEWorkspaceRun_WhenRunErrors(orgName string, workspaceID string) string {
+func testAccTFEWorkspaceRun_WhenRunErrors(workspaceID string) string {
 	return fmt.Sprintf(`
 	resource "tfe_workspace_run" "ws_run_parent" {
-		organization = "%s"
 		workspace_id    = "%s"
 
 		apply {
@@ -415,5 +381,5 @@ func testAccTFEWorkspaceRun_WhenRunErrors(orgName string, workspaceID string) st
 			retry = false
 		}
 	}
-`, orgName, workspaceID)
+`, workspaceID)
 }
