@@ -3,12 +3,17 @@
 BREAKING CHANGES:
 
 FEATURES:
+* `r/tfe_team`: Add attribute `manage_membership` to `organization_access` on `tfe_team` by @JarrettSpiker ([#801](https://github.com/hashicorp/terraform-provider-tfe/pull/801))
 
 ENHANCEMENTS:
 
 BUG FIXES:
 
-DEPRECATIONS:
+## v0.44.1 (April 21, 2023)
+
+BUG FIXES:
+
+* Fixed a documentation bug in the new `r/tfe_no_code_module` resource, incorrectly labelling the attribute `registry_module` as `module`
 
 ## v0.44.0 (April 19, 2023)
 
