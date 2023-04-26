@@ -351,7 +351,7 @@ func testAccTFEWorkspaceRun_noApplyOrDestroyBlockProvided(orgName string, rInt i
 }
 
 func testAccTFEWorkspaceRun_noWorkspaceProvided() string {
-	return fmt.Sprintf(`
+	return `
 	resource "tfe_workspace_run" "ws_run_parent" {
 		apply {
 			manual_confirm = false
@@ -363,7 +363,7 @@ func testAccTFEWorkspaceRun_noWorkspaceProvided() string {
 			retry = true
 		}
 	}
-`)
+`
 }
 
 func testAccTFEWorkspaceRun_WhenRunErrors(workspaceID string) string {
