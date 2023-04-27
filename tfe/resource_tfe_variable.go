@@ -20,12 +20,12 @@ import (
 type resourceTFEVariable struct{}
 
 // Metadata implements resource.Resource
-func (*resourceTFEVariable) Metadata(_ context.Context, _ resource.MetadataRequest, res *resource.MetadataResponse) {
+func (r *resourceTFEVariable) Metadata(_ context.Context, _ resource.MetadataRequest, res *resource.MetadataResponse) {
 	res.TypeName = "tfe_variable"
 }
 
 // Schema implements resource.Resource
-func (*resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaRequest, res *resource.SchemaResponse) {
+func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaRequest, res *resource.SchemaResponse) {
 	res.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"key": schema.StringAttribute{
@@ -132,22 +132,22 @@ func (*resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReque
 }
 
 // Create implements resource.Resource
-func (*resourceTFEVariable) Create(context.Context, resource.CreateRequest, *resource.CreateResponse) {
+func (r *resourceTFEVariable) Create(context.Context, resource.CreateRequest, *resource.CreateResponse) {
 	panic("unimplemented")
 }
 
 // Delete implements resource.Resource
-func (*resourceTFEVariable) Delete(context.Context, resource.DeleteRequest, *resource.DeleteResponse) {
+func (r *resourceTFEVariable) Delete(context.Context, resource.DeleteRequest, *resource.DeleteResponse) {
 	panic("unimplemented")
 }
 
 // Read implements resource.Resource
-func (*resourceTFEVariable) Read(context.Context, resource.ReadRequest, *resource.ReadResponse) {
+func (r *resourceTFEVariable) Read(context.Context, resource.ReadRequest, *resource.ReadResponse) {
 	panic("unimplemented")
 }
 
 // Update implements resource.Resource
-func (*resourceTFEVariable) Update(context.Context, resource.UpdateRequest, *resource.UpdateResponse) {
+func (r *resourceTFEVariable) Update(context.Context, resource.UpdateRequest, *resource.UpdateResponse) {
 	panic("unimplemented")
 }
 
