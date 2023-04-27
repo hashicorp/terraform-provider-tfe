@@ -6,6 +6,7 @@ package tfe
 import (
 	"fmt"
 	"math/rand"
+	"regexp"
 	"strconv"
 	"testing"
 	"time"
@@ -243,7 +244,6 @@ func TestAccTFEVariable_readable_value_becomes_sensitive(t *testing.T) {
 
 	variableValue1 := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	variableValue2 := variableValue1 + 42
-	variableValue3 := variableValue2 + 42
 
 	// Test that if an insensitive variable becomes sensitive, downstream resources depending on the readableValue
 	// may no longer access it, but that the value may still be used directly
@@ -268,34 +268,8 @@ func TestAccTFEVariable_readable_value_becomes_sensitive(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFEVariable_readablevalue(rInt, variableValue2, true),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEVariableExists(
-						"tfe_variable.foobar", variable),
-					resource.TestCheckResourceAttr(
-						"tfe_variable.foobar", "value", fmt.Sprintf("%d", variableValue2)),
-					resource.TestCheckResourceAttr(
-						"tfe_variable.foobar", "sensitive", "true"),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.downstream-readable", "name", "downstream-readable-"),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.downstream-nonreadable", "name", fmt.Sprintf("downstream-nonreadable-%d", variableValue2)),
-				),
-			},
-			{
-				Config: testAccTFEVariable_readablevalue(rInt, variableValue3, false),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEVariableExists(
-						"tfe_variable.foobar", variable),
-					resource.TestCheckResourceAttr(
-						"tfe_variable.foobar", "value", fmt.Sprintf("%d", variableValue3)),
-					resource.TestCheckResourceAttr(
-						"tfe_variable.foobar", "sensitive", "false"),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.downstream-readable", "name", fmt.Sprintf("downstream-readable-%d", variableValue3)),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.downstream-nonreadable", "name", fmt.Sprintf("downstream-nonreadable-%d", variableValue3)),
-				),
+				Config:      testAccTFEVariable_readablevalue(rInt, variableValue2, true),
+				ExpectError: regexp.MustCompile(`tfe_variable.foobar.readable_value is null`),
 			},
 		},
 	})
@@ -310,9 +284,9 @@ func TestAccTFEVariable_varset_readable_value(t *testing.T) {
 
 	// Test that downstream resources may depend on both the value and readableValue of a non-sensitive variable
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEVariableDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEVariable_varset_readablevalue(rInt, variableValue1, false),
@@ -354,14 +328,13 @@ func TestAccTFEVariable_varset_readable_value_becomes_sensitive(t *testing.T) {
 
 	variableValue1 := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	variableValue2 := variableValue1 + 42
-	variableValue3 := variableValue2 + 42
 
 	// Test that if an insensitive variable becomes sensitive, downstream resources depending on the readableValue
 	// may no longer access it, but that the value may still be used directly
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEVariableDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEVariable_varset_readablevalue(rInt, variableValue1, false),
@@ -379,34 +352,8 @@ func TestAccTFEVariable_varset_readable_value_becomes_sensitive(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFEVariable_varset_readablevalue(rInt, variableValue2, true),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEVariableSetVariableExists(
-						"tfe_variable.foobar", variable),
-					resource.TestCheckResourceAttr(
-						"tfe_variable.foobar", "value", fmt.Sprintf("%d", variableValue2)),
-					resource.TestCheckResourceAttr(
-						"tfe_variable.foobar", "sensitive", "true"),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.downstream-readable", "name", "downstream-readable-"),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.downstream-nonreadable", "name", fmt.Sprintf("downstream-nonreadable-%d", variableValue2)),
-				),
-			},
-			{
-				Config: testAccTFEVariable_varset_readablevalue(rInt, variableValue3, false),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEVariableSetVariableExists(
-						"tfe_variable.foobar", variable),
-					resource.TestCheckResourceAttr(
-						"tfe_variable.foobar", "value", fmt.Sprintf("%d", variableValue3)),
-					resource.TestCheckResourceAttr(
-						"tfe_variable.foobar", "sensitive", "false"),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.downstream-readable", "name", fmt.Sprintf("downstream-readable-%d", variableValue3)),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.downstream-nonreadable", "name", fmt.Sprintf("downstream-nonreadable-%d", variableValue3)),
-				),
+				Config:      testAccTFEVariable_varset_readablevalue(rInt, variableValue2, true),
+				ExpectError: regexp.MustCompile(`tfe_variable.foobar.readable_value is null`),
 			},
 		},
 	})
