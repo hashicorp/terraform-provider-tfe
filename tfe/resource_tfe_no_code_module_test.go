@@ -5,9 +5,7 @@ package tfe
 
 import (
 	"fmt"
-	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/stretchr/testify/assert"
@@ -17,8 +15,14 @@ import (
 )
 
 func TestAccTFENoCodeModule_basic(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
 	nocodeModule := &tfe.RegistryNoCodeModule{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -26,14 +30,14 @@ func TestAccTFENoCodeModule_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFENoCodeModuleDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFENoCodeModule_basic(rInt),
+				Config: testAccTFENoCodeModule_basic(org),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENoCodeModuleExists(
 						"tfe_no_code_module.foobar", nocodeModule),
 					resource.TestCheckResourceAttr(
 						"tfe_no_code_module.foobar", "enabled", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_no_code_module.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
+						"tfe_no_code_module.foobar", "organization", org.Name),
 				),
 			},
 		},
@@ -41,8 +45,15 @@ func TestAccTFENoCodeModule_basic(t *testing.T) {
 }
 
 func TestAccTFENoCodeModule_with_variable_options(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
 	nocodeModule := &tfe.RegistryNoCodeModule{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
 	regionOptions := `"us-east-1", "us-west-1", "eu-west-2"`
 
 	resource.Test(t, resource.TestCase{
@@ -51,14 +62,14 @@ func TestAccTFENoCodeModule_with_variable_options(t *testing.T) {
 		CheckDestroy: testAccCheckTFENoCodeModuleDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFENoCodeModule_with_options(rInt, regionOptions),
+				Config: testAccTFENoCodeModule_with_options(org, regionOptions),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENoCodeModuleExists(
 						"tfe_no_code_module.foobar", nocodeModule),
 					resource.TestCheckResourceAttr(
 						"tfe_no_code_module.foobar", "enabled", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_no_code_module.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
+						"tfe_no_code_module.foobar", "organization", org.Name),
 					testAccCheckTFENoCodeModuleVariableOptions(nocodeModule),
 				),
 			},
@@ -67,8 +78,14 @@ func TestAccTFENoCodeModule_with_variable_options(t *testing.T) {
 }
 
 func TestAccTFENoCodeModule_update(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
 	nocodeModule := &tfe.RegistryNoCodeModule{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -76,7 +93,7 @@ func TestAccTFENoCodeModule_update(t *testing.T) {
 		CheckDestroy: testAccCheckTFENoCodeModuleDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFENoCodeModule_basic(rInt),
+				Config: testAccTFENoCodeModule_basic(org),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENoCodeModuleExists(
 						"tfe_no_code_module.foobar", nocodeModule),
@@ -85,7 +102,7 @@ func TestAccTFENoCodeModule_update(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFENoCodeModule_update(rInt),
+				Config: testAccTFENoCodeModule_update(org),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENoCodeModuleExists(
 						"tfe_no_code_module.foobar", nocodeModule),
@@ -98,8 +115,14 @@ func TestAccTFENoCodeModule_update(t *testing.T) {
 }
 
 func TestAccTFENoCodeModule_update_variable_options(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
 	nocodeModule := &tfe.RegistryNoCodeModule{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	regionOptions := `"us-east-1", "us-west-1", "eu-west-2"`
 	updatedRegionOptions := `"eu-east-1", "eu-west-1", "us-west-2"`
 
@@ -109,7 +132,7 @@ func TestAccTFENoCodeModule_update_variable_options(t *testing.T) {
 		CheckDestroy: testAccCheckTFENoCodeModuleDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFENoCodeModule_with_options(rInt, regionOptions),
+				Config: testAccTFENoCodeModule_with_options(org, regionOptions),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENoCodeModuleExists(
 						"tfe_no_code_module.foobar", nocodeModule),
@@ -130,7 +153,7 @@ func TestAccTFENoCodeModule_update_variable_options(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFENoCodeModule_with_options(rInt, updatedRegionOptions),
+				Config: testAccTFENoCodeModule_with_options(org, updatedRegionOptions),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENoCodeModuleExists(
 						"tfe_no_code_module.foobar", nocodeModule),
@@ -155,8 +178,14 @@ func TestAccTFENoCodeModule_update_variable_options(t *testing.T) {
 }
 
 func TestAccTFENoCodeModule_delete(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
 	nocodeModule := &tfe.RegistryNoCodeModule{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -164,7 +193,7 @@ func TestAccTFENoCodeModule_delete(t *testing.T) {
 		CheckDestroy: testAccCheckTFENoCodeModuleDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFENoCodeModule_basic(rInt),
+				Config: testAccTFENoCodeModule_basic(org),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENoCodeModuleExists(
 						"tfe_no_code_module.foobar", nocodeModule),
@@ -173,7 +202,7 @@ func TestAccTFENoCodeModule_delete(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFENoCodeModule_update(rInt),
+				Config: testAccTFENoCodeModule_update(org),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENoCodeModuleExists(
 						"tfe_no_code_module.foobar", nocodeModule),
@@ -186,7 +215,13 @@ func TestAccTFENoCodeModule_delete(t *testing.T) {
 }
 
 func TestAccTFENoCodeModule_import(t *testing.T) {
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
 	nocodeModule := &tfe.RegistryNoCodeModule{}
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -194,7 +229,7 @@ func TestAccTFENoCodeModule_import(t *testing.T) {
 		CheckDestroy: testAccCheckTFENoCodeModuleDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFENoCodeModule_basic(rInt),
+				Config: testAccTFENoCodeModule_basic(org),
 				Check: testAccCheckTFENoCodeModuleExists(
 					"tfe_no_code_module.foobar", nocodeModule),
 			},
@@ -214,10 +249,10 @@ func TestAccTFENoCodeModule_import(t *testing.T) {
 	})
 }
 
-func testAccTFENoCodeModule_update(rInt int) string {
+func testAccTFENoCodeModule_update(org *tfe.Organization) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-	name  = "tst-terraform-%d"
+	name  = "%s"
 	email = "admin@company.com"
 }
 	
@@ -230,13 +265,13 @@ resource "tfe_registry_module" "foobar" {
 resource "tfe_no_code_module" "foobar" {
 	organization = tfe_organization.foobar.id
 	registry_module = tfe_registry_module.foobar.id
-}`, rInt)
+}`, org.Name)
 }
 
-func testAccTFENoCodeModule_basic(rInt int) string {
+func testAccTFENoCodeModule_basic(org *tfe.Organization) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-name  = "tst-terraform-%d"
+name  = "%s"
 email = "admin@company.com"
 }
 
@@ -250,13 +285,13 @@ resource "tfe_no_code_module" "foobar" {
 	organization = tfe_organization.foobar.id
 	registry_module = tfe_registry_module.foobar.id
 }
-`, rInt)
+`, org.Name)
 }
 
-func testAccTFENoCodeModule_with_options(rInt int, regionOpts string) string {
+func testAccTFENoCodeModule_with_options(org *tfe.Organization, regionOpts string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-name  = "tst-terraform-%d"
+name  = "%s"
 email = "admin@company.com"
 }
 
@@ -282,7 +317,7 @@ resource "tfe_no_code_module" "foobar" {
 		options = [%s]
 	}
 }
-`, rInt, regionOpts)
+`, org.Name, regionOpts)
 }
 
 func testAccCheckTFENoCodeModuleDestroy(s *terraform.State) error {
