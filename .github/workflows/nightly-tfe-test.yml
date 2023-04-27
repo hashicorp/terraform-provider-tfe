@@ -10,7 +10,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Build nightly tflocal instance
-        uses: hashicorp-forge/terraform-cloud-action/apply@v1
+        uses: hashicorp-forge/terraform-cloud-action/apply@v1 # TSCCR: no entry for repository "hashicorp-forge/terraform-cloud-action"
         with:
           token: ${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}
           organization: "hashicorp-v2"
@@ -29,13 +29,13 @@ jobs:
     steps:
       - name: Fetch Outputs
         id: tflocal
-        uses: hashicorp-forge/terraform-cloud-action/outputs@v1
+        uses: hashicorp-forge/terraform-cloud-action/outputs@v1 # TSCCR: no entry for repository "hashicorp-forge/terraform-cloud-action"
         with:
           token: "${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}"
           organization: hashicorp-v2
           workspace: tflocal-terraform-provider-tfe-nightly
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
 
       - uses: ./.github/actions/test-provider-tfe
         with:
@@ -64,7 +64,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Send slack notification on failure
-        uses: slackapi/slack-github-action@v1.23.0
+        uses: slackapi/slack-github-action@007b2c3c751a190b6f0f040e47ed024deaa72844 # v1.23.0
         with:
           payload: |
             {
@@ -95,17 +95,17 @@ jobs:
     needs: [tests-summarize]
     if: "${{ always() }}"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
         with:
           go-version-file: go.mod
           check-latest: true
           cache: true
 
       - name: Destroy nightly tflocal instance
-        uses: hashicorp-forge/terraform-cloud-action/destroy@v1
+        uses: hashicorp-forge/terraform-cloud-action/destroy@v1 # TSCCR: no entry for repository "hashicorp-forge/terraform-cloud-action"
         with:
           token: ${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}
           organization: "hashicorp-v2"
