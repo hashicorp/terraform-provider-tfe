@@ -20,7 +20,7 @@ func TestAccTFENoCodeModule_basic(t *testing.T) {
 		t.Fatal(err)
 	}
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
-	t.Cleanup(orgCleanup)
+	defer orgCleanup()
 
 	nocodeModule := &tfe.RegistryNoCodeModule{}
 
@@ -251,58 +251,43 @@ func TestAccTFENoCodeModule_import(t *testing.T) {
 
 func testAccTFENoCodeModule_update(org *tfe.Organization) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-	name  = "%s"
-	email = "admin@company.com"
-}
-	
 resource "tfe_registry_module" "foobar" {
-	organization    = tfe_organization.foobar.id
+	organization    = "%s"
 	module_provider = "my_provider"
 	name            = "test_module"
 }
 	
 resource "tfe_no_code_module" "foobar" {
-	organization = tfe_organization.foobar.id
+	organization = "%s"
 	registry_module = tfe_registry_module.foobar.id
-}`, org.Name)
+}`, org.Name, org.Name)
 }
 
 func testAccTFENoCodeModule_basic(org *tfe.Organization) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-name  = "%s"
-email = "admin@company.com"
-}
-
 resource "tfe_registry_module" "foobar" {
-	organization    = tfe_organization.foobar.id
+	organization    = "%s"
 	module_provider = "my_provider"
 	name            = "test_module"
 }
 
 resource "tfe_no_code_module" "foobar" {
-	organization = tfe_organization.foobar.id
+	organization = "%s"
 	registry_module = tfe_registry_module.foobar.id
 }
-`, org.Name)
+`, org.Name, org.Name)
 }
 
 func testAccTFENoCodeModule_with_options(org *tfe.Organization, regionOpts string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-name  = "%s"
-email = "admin@company.com"
-}
-
 resource "tfe_registry_module" "foobar" {
-	organization    = tfe_organization.foobar.id
+	organization    = "%s"
 	module_provider = "my_provider"
 	name            = "test_module"
 }
 
 resource "tfe_no_code_module" "foobar" {
-	organization = tfe_organization.foobar.id
+	organization = "%s"
 	registry_module = tfe_registry_module.foobar.id
 
 	variable_options {
@@ -317,7 +302,7 @@ resource "tfe_no_code_module" "foobar" {
 		options = [%s]
 	}
 }
-`, org.Name, regionOpts)
+`, org.Name, org.Name, regionOpts)
 }
 
 func testAccCheckTFENoCodeModuleDestroy(s *terraform.State) error {
