@@ -2,6 +2,7 @@ package tfe
 
 import (
 	"context"
+	"fmt"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -17,7 +18,25 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceTFEVariable struct{}
+type resourceTFEVariable struct {
+	config ConfiguredClient
+}
+
+// Configure implements resource.ResourceWithConfigure. TODO: dry this out for other rscs
+func (r *resourceTFEVariable) Configure(c context.Context, req resource.ConfigureRequest, res *resource.ConfigureResponse) {
+	// Early exit if provider is unconfigured (i.e. we're only validating config or something)
+	if req.ProviderData == nil {
+		return
+	}
+	client, ok := req.ProviderData.(ConfiguredClient)
+	if !ok {
+		res.Diagnostics.AddError(
+			"Unexpected resource Configure type",
+			fmt.Sprintf("Expected tfe.ConfiguredClient, got %T. This is a bug in the tfe provider, so please report it on GitHub.", req.ProviderData),
+		)
+	}
+	r.config = client
+}
 
 // Metadata implements resource.Resource
 func (r *resourceTFEVariable) Metadata(_ context.Context, _ resource.MetadataRequest, res *resource.MetadataResponse) {
@@ -152,7 +171,7 @@ func (r *resourceTFEVariable) Update(context.Context, resource.UpdateRequest, *r
 }
 
 // Compile-time interface check
-var _ resource.Resource = &resourceTFEVariable{}
+var _ resource.ResourceWithConfigure = &resourceTFEVariable{}
 
 // NewResourceVariable is a resource function for the framework provider.
 func NewResourceVariable() resource.Resource {
