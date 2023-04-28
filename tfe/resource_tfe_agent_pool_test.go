@@ -38,6 +38,42 @@ func TestAccTFEAgentPool_basic(t *testing.T) {
 					testAccCheckTFEAgentPoolAttributes(agentPool),
 					resource.TestCheckResourceAttr(
 						"tfe_agent_pool.foobar", "name", "agent-pool-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_agent_pool.foobar", "organization_scoped", "true"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEAgentPool_custom_scope(t *testing.T) {
+	skipIfEnterprise(t)
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	agentPool := &tfe.AgentPool{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEAgentPoolDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEAgentPool_custom_scope(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEAgentPoolExists(
+						"tfe_agent_pool.foobar", agentPool),
+					testAccCheckTFEAgentPoolAttributes(agentPool),
+					resource.TestCheckResourceAttr(
+						"tfe_agent_pool.foobar", "name", "agent-pool-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_agent_pool.foobar", "organization_scoped", "false"),
 				),
 			},
 		},
@@ -70,6 +106,8 @@ func TestAccTFEAgentPool_update(t *testing.T) {
 					testAccCheckTFEAgentPoolAttributes(agentPool),
 					resource.TestCheckResourceAttr(
 						"tfe_agent_pool.foobar", "name", "agent-pool-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_agent_pool.foobar", "organization_scoped", "true"),
 				),
 			},
 
@@ -79,8 +117,13 @@ func TestAccTFEAgentPool_update(t *testing.T) {
 					testAccCheckTFEAgentPoolExists(
 						"tfe_agent_pool.foobar", agentPool),
 					testAccCheckTFEAgentPoolAttributesUpdated(agentPool),
+					testAccCheckTFEAgentPoolAllowedWorkspacesCount(agentPool),
 					resource.TestCheckResourceAttr(
 						"tfe_agent_pool.foobar", "name", "agent-pool-updated"),
+					resource.TestCheckResourceAttr(
+						"tfe_agent_pool.foobar", "organization_scoped", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_agent_pool.foobar", "allowed_workspace_ids.#", "1"),
 				),
 			},
 		},
@@ -160,6 +203,16 @@ func testAccCheckTFEAgentPoolAttributes(
 	}
 }
 
+func testAccCheckTFEAgentPoolAllowedWorkspacesCount(
+	agentPool *tfe.AgentPool) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if len(agentPool.AllowedWorkspaces) != 1 {
+			return fmt.Errorf("expected 1 allowed workspaces got: %d", len(agentPool.AllowedWorkspaces))
+		}
+		return nil
+	}
+}
+
 func testAccCheckTFEAgentPoolAttributesUpdated(
 	agentPool *tfe.AgentPool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
@@ -199,10 +252,26 @@ resource "tfe_agent_pool" "foobar" {
 }`, organization)
 }
 
+func testAccTFEAgentPool_custom_scope(organization string) string {
+	return fmt.Sprintf(`
+resource "tfe_agent_pool" "foobar" {
+  name         = "agent-pool-test"
+  organization = "%s"
+  organization_scoped = false
+}`, organization)
+}
+
 func testAccTFEAgentPool_update(organization string) string {
 	return fmt.Sprintf(`
+resource "tfe_workspace" "foobar" {
+  name = "foobar"
+  organization = "%s"
+}
+
 resource "tfe_agent_pool" "foobar" {
   name         = "agent-pool-updated"
   organization = "%s"
-}`, organization)
+  organization_scoped = false
+  allowed_workspace_ids = [tfe_workspace.foobar.id]
+}`, organization, organization)
 }
