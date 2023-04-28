@@ -16,6 +16,7 @@ FEATURES:
 * `r/tfe_team_token`: Add optional `expired_at` field to team tokens by, @juliannatetreault ([#844](https://github.com/hashicorp/terraform-provider-tfe/pull/844))
 
 ENHANCEMENTS:
+* `r/tfe_agent_pool` and `d/tfe_agent_pool`: Add attribute `organization_scoped` and `allowed_workspace_ids` to allow scoping agent pools to workspaces by @hs26gill [870](https://github.com/hashicorp/terraform-provider-tfe/pull/870)
 
 * `r/tfe_workspace`: Retry workspace safe delete if resources are still being processed to determine safety. ([#881](https://github.com/hashicorp/terraform-provider-tfe/pull/881))
 
