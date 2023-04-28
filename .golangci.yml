@@ -135,6 +135,7 @@ linters-settings:
       - singleCaseSwitch
       - ifElseChain
       - nestingReduce
+      - sloppyTestFuncName
   revive:
     # see https://github.com/mgechev/revive#available-rules for details.
     ignore-generated-header: false #recommended in their configuration
