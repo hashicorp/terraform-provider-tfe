@@ -22,6 +22,19 @@ type resourceTFEVariable struct {
 	config ConfiguredClient
 }
 
+// modelTFEVariable maps the resource schema data to a struct.
+type modelTFEVariable struct {
+	ID            types.String `tfsdk:"id"`
+	Key           types.String `tfsdk:"key"`
+	Value         types.String `tfsdk:"value"`
+	Category      types.String `tfsdk:"category"`
+	Description   types.String `tfsdk:"description"`
+	HCL           types.Bool   `tfsdk:"hcl"`
+	Sensitive     types.Bool   `tfsdk:"sensitive"`
+	WorkspaceID   types.String `tfsdk:"workspace_id"`
+	VariableSetID types.String `tfsdk:"variable_set_id"`
+}
+
 // Configure implements resource.ResourceWithConfigure. TODO: dry this out for other rscs
 func (r *resourceTFEVariable) Configure(c context.Context, req resource.ConfigureRequest, res *resource.ConfigureResponse) {
 	// Early exit if provider is unconfigured (i.e. we're only validating config or something)
