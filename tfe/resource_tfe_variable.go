@@ -47,6 +47,13 @@ func (r *resourceTFEVariable) Metadata(_ context.Context, _ resource.MetadataReq
 func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaRequest, res *resource.SchemaResponse) {
 	res.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed:    true,
+				Description: "Service-generated identifier for the variable",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
 			"key": schema.StringAttribute{
 				Required:    true,
 				Description: "Name of the variable.",
