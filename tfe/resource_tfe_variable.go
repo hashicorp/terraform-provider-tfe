@@ -359,19 +359,19 @@ func (r *resourceTFEVariable) Read(ctx context.Context, req resource.ReadRequest
 }
 
 // Update implements resource.Resource
-func (r *resourceTFEVariable) Update(ctx context.Context, req resource.UpdateRequest, res *resource.UpdateResponse) {
+func (r *resourceTFEVariable) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan modelTFEVariable
 	var state modelTFEVariable
 	// Get plan
 	diags := req.Plan.Get(ctx, &plan)
-	res.Diagnostics.Append(diags...)
-	if res.Diagnostics.HasError() {
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 	// Get state too
 	diags = req.State.Get(ctx, &state)
-	res.Diagnostics.Append(diags...)
-	if res.Diagnostics.HasError() {
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 	variableID := plan.ID.ValueString()
@@ -408,15 +408,15 @@ func (r *resourceTFEVariable) Update(ctx context.Context, req resource.UpdateReq
 		log.Printf("[DEBUG] Update variable: %s", variableID)
 		variable, err := r.config.Client.Variables.Update(ctx, workspaceID, variableID, options)
 		if err != nil {
-			res.Diagnostics.AddError(
+			resp.Diagnostics.AddError(
 				"Couldn't update variable",
 				fmt.Sprintf("Error updating variable %s: %s", variableID, err.Error()),
 			)
 		}
 		// Update state
 		plan.refreshFromTFEVariable(*variable)
-		diags = res.State.Set(ctx, &plan)
-		res.Diagnostics.Append(diags...)
+		diags = resp.State.Set(ctx, &plan)
+		resp.Diagnostics.Append(diags...)
 	} else {
 		// TODO update a variable set variable
 	}
