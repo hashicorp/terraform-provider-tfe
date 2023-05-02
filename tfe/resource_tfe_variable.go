@@ -223,16 +223,7 @@ func (r *resourceTFEVariable) Create(ctx context.Context, req resource.CreateReq
 	if data.VariableSetID.IsNull() {
 		// Make a workspace variable
 		workspaceID := data.WorkspaceID.ValueString()
-		// Confirm that the workspace exists
-		if _, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID); err != nil {
-			res.Diagnostics.AddError(
-				"Couldn't read workspace",
-				fmt.Sprintf("Error retrieving workspace %s: %s", workspaceID, err.Error()),
-			)
-			return
-		}
 
-		// The value pointer methods give nil for null/absent, which is what go-tfe wants.
 		options := tfe.VariableCreateOptions{
 			Key:         data.Key.ValueStringPointer(),
 			Value:       data.Value.ValueStringPointer(),
@@ -276,14 +267,6 @@ func (r *resourceTFEVariable) Delete(ctx context.Context, req resource.DeleteReq
 	if data.VariableSetID.IsNull() {
 		// Delete a workspace variable
 		workspaceID := data.WorkspaceID.ValueString()
-		// Check that the workspace exists
-		if _, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID); err != nil {
-			res.Diagnostics.AddError(
-				"Couldn't read workspace",
-				fmt.Sprintf("Error retrieving workspace %s: %s", workspaceID, err.Error()),
-			)
-			return
-		}
 		log.Printf("[DEBUG] Delete variable: %s", variableID)
 		err := r.config.Client.Variables.Delete(ctx, workspaceID, variableID)
 		// Ignore 404s for delete
@@ -314,13 +297,6 @@ func (r *resourceTFEVariable) Read(ctx context.Context, req resource.ReadRequest
 	if data.VariableSetID.IsNull() {
 		// Read a workspace variable
 		workspaceID := data.WorkspaceID.ValueString()
-		// We fetch workspace first so we can log where the 404 came from.
-		if _, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID); err != nil {
-			// If the workspace is gone, so's the variable:
-			log.Printf("[DEBUG] Workspace %s no longer exists", workspaceID)
-			res.State.RemoveResource(ctx)
-			return
-		}
 		variable, err := r.config.Client.Variables.Read(ctx, workspaceID, variableID)
 		if err != nil {
 			// If it's gone, just say so:
@@ -369,15 +345,8 @@ func (r *resourceTFEVariable) Update(ctx context.Context, req resource.UpdateReq
 	if plan.VariableSetID.IsNull() {
 		// Update a workspace variable
 		workspaceID := plan.WorkspaceID.ValueString()
-		// Check that the workspace exists
-		if _, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID); err != nil {
-			res.Diagnostics.AddError(
-				"Couldn't read workspace",
-				fmt.Sprintf("Error retrieving workspace %s: %s", workspaceID, err.Error()),
-			)
-			return
-		}
-		// Create update options, BUT:
+
+		// Make update options, BUT:
 		//
 		// - Omit Value IF no change was planned and the variable is sensitive!
 		// (If we don't do that, we can accidentally reset it to the last known
