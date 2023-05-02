@@ -318,12 +318,12 @@ func (r *resourceTFEVariable) createWithVariableSet(ctx context.Context, req res
 }
 
 // Read implements resource.Resource
-func (r *resourceTFEVariable) Read(ctx context.Context, req resource.ReadRequest, res *resource.ReadResponse) {
+func (r *resourceTFEVariable) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var data modelTFEVariable
 	// Get prior state
 	diags := req.State.Get(ctx, &data)
-	res.Diagnostics.Append(diags...)
-	if res.Diagnostics.HasError() {
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 	variableID := data.ID.ValueString()
@@ -336,12 +336,12 @@ func (r *resourceTFEVariable) Read(ctx context.Context, req resource.ReadRequest
 			// If it's gone, just say so:
 			if err == tfe.ErrResourceNotFound {
 				log.Printf("[DEBUG] Variable %s no longer exists", variableID)
-				res.State.RemoveResource(ctx)
+				resp.State.RemoveResource(ctx)
 				return
 			}
 
 			// If something worse happened, complain:
-			res.Diagnostics.AddError(
+			resp.Diagnostics.AddError(
 				"Couldn't read variable",
 				fmt.Sprintf("Error reading variable %s: %s", variableID, err.Error()),
 			)
@@ -351,8 +351,8 @@ func (r *resourceTFEVariable) Read(ctx context.Context, req resource.ReadRequest
 		// We got a variable, so update state:
 		data.refreshFromTFEVariable(*variable)
 		// Important: If sensitive, transfer over the value from prior state, since that's the last time we were able to know anything about it.
-		diags = res.State.Set(ctx, &data)
-		res.Diagnostics.Append(diags...)
+		diags = resp.State.Set(ctx, &data)
+		resp.Diagnostics.Append(diags...)
 	} else {
 		// TODO Read a variable set variable
 	}
