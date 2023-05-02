@@ -231,20 +231,20 @@ func isWorkspaceVariable(ctx context.Context, data AttrGettable) bool {
 }
 
 // Create implements resource.Resource
-func (r *resourceTFEVariable) Create(ctx context.Context, req resource.CreateRequest, res *resource.CreateResponse) {
+func (r *resourceTFEVariable) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if isWorkspaceVariable(ctx, &req.Plan) {
-		r.createWithWorkspace(ctx, req, res)
+		r.createWithWorkspace(ctx, req, resp)
 	} else {
-		r.createWithVariableSet(ctx, req, res)
+		r.createWithVariableSet(ctx, req, resp)
 	}
 }
 
 // createWithWorkspace is the workspace version of Create.
-func (r *resourceTFEVariable) createWithWorkspace(ctx context.Context, req resource.CreateRequest, res *resource.CreateResponse) {
+func (r *resourceTFEVariable) createWithWorkspace(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data modelTFEVariable
 	diags := req.Plan.Get(ctx, &data)
-	res.Diagnostics.Append(diags...)
-	if res.Diagnostics.HasError() {
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -265,7 +265,7 @@ func (r *resourceTFEVariable) createWithWorkspace(ctx context.Context, req resou
 	log.Printf("[DEBUG] Create %s variable: %s", category, key)
 	variable, err := r.config.Client.Variables.Create(ctx, workspaceID, options)
 	if err != nil {
-		res.Diagnostics.AddError(
+		resp.Diagnostics.AddError(
 			"Couldn't create variable",
 			fmt.Sprintf("Error creating %s variable %s: %s", category, key, err.Error()),
 		)
@@ -274,16 +274,16 @@ func (r *resourceTFEVariable) createWithWorkspace(ctx context.Context, req resou
 
 	// Got a variable back, so set state to new values
 	data.refreshFromTFEVariable(*variable)
-	diags = res.State.Set(ctx, &data)
-	res.Diagnostics.Append(diags...)
+	diags = resp.State.Set(ctx, &data)
+	resp.Diagnostics.Append(diags...)
 }
 
 // createWithVariableSet is the variable set version of Create.
-func (r *resourceTFEVariable) createWithVariableSet(ctx context.Context, req resource.CreateRequest, res *resource.CreateResponse) {
+func (r *resourceTFEVariable) createWithVariableSet(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data modelTFEVariable
 	diags := req.Plan.Get(ctx, &data)
-	res.Diagnostics.Append(diags...)
-	if res.Diagnostics.HasError() {
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -303,7 +303,7 @@ func (r *resourceTFEVariable) createWithVariableSet(ctx context.Context, req res
 	log.Printf("[DEBUG] Create %s variable: %s", category, key)
 	variable, err := r.config.Client.VariableSetVariables.Create(ctx, variableSetID, &options)
 	if err != nil {
-		res.Diagnostics.AddError(
+		resp.Diagnostics.AddError(
 			"Couldn't create variable",
 			fmt.Sprintf("Error creating %s variable %s: %s", category, key, err.Error()),
 		)
@@ -312,8 +312,8 @@ func (r *resourceTFEVariable) createWithVariableSet(ctx context.Context, req res
 
 	// We got a variable, so set state to new values
 	data.refreshFromTFEVariableSetVariable(*variable)
-	diags = res.State.Set(ctx, &data)
-	res.Diagnostics.Append(diags...)
+	diags = resp.State.Set(ctx, &data)
+	resp.Diagnostics.Append(diags...)
 
 }
 
