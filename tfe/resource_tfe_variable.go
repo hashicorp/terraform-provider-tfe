@@ -423,11 +423,11 @@ func (r *resourceTFEVariable) Update(ctx context.Context, req resource.UpdateReq
 }
 
 // Delete implements resource.Resource
-func (r *resourceTFEVariable) Delete(ctx context.Context, req resource.DeleteRequest, res *resource.DeleteResponse) {
+func (r *resourceTFEVariable) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var data modelTFEVariable
 	diags := req.State.Get(ctx, &data)
-	res.Diagnostics.Append(diags...)
-	if res.Diagnostics.HasError() {
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -440,7 +440,7 @@ func (r *resourceTFEVariable) Delete(ctx context.Context, req resource.DeleteReq
 		err := r.config.Client.Variables.Delete(ctx, workspaceID, variableID)
 		// Ignore 404s for delete
 		if err != nil && err != tfe.ErrResourceNotFound {
-			res.Diagnostics.AddError(
+			resp.Diagnostics.AddError(
 				"Couldn't delete variable",
 				fmt.Sprintf("Error deleting variable %s: %s", variableID, err.Error()),
 			)
