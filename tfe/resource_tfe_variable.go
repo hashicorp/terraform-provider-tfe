@@ -223,8 +223,8 @@ func (r *resourceTFEVariable) Create(ctx context.Context, req resource.CreateReq
 	if data.VariableSetID.IsNull() {
 		// Make a workspace variable
 		workspaceID := data.WorkspaceID.ValueString()
-		ws, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID)
-		if err != nil {
+		// Confirm that the workspace exists
+		if _, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID); err != nil {
 			res.Diagnostics.AddError(
 				"Couldn't read workspace",
 				fmt.Sprintf("Error retrieving workspace %s: %s", workspaceID, err.Error()),
@@ -243,7 +243,7 @@ func (r *resourceTFEVariable) Create(ctx context.Context, req resource.CreateReq
 		}
 
 		log.Printf("[DEBUG] Create %s variable: %s", category, key)
-		variable, err := r.config.Client.Variables.Create(ctx, ws.ID, options)
+		variable, err := r.config.Client.Variables.Create(ctx, workspaceID, options)
 		if err != nil {
 			res.Diagnostics.AddError(
 				"Couldn't create variable",
@@ -277,8 +277,7 @@ func (r *resourceTFEVariable) Delete(ctx context.Context, req resource.DeleteReq
 		// Delete a workspace variable
 		workspaceID := data.WorkspaceID.ValueString()
 		// Check that the workspace exists
-		ws, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID)
-		if err != nil {
+		if _, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID); err != nil {
 			res.Diagnostics.AddError(
 				"Couldn't read workspace",
 				fmt.Sprintf("Error retrieving workspace %s: %s", workspaceID, err.Error()),
@@ -286,7 +285,7 @@ func (r *resourceTFEVariable) Delete(ctx context.Context, req resource.DeleteReq
 			return
 		}
 		log.Printf("[DEBUG] Delete variable: %s", variableID)
-		err = r.config.Client.Variables.Delete(ctx, ws.ID, variableID)
+		err := r.config.Client.Variables.Delete(ctx, workspaceID, variableID)
 		// Ignore 404s for delete
 		if err != nil && err != tfe.ErrResourceNotFound {
 			res.Diagnostics.AddError(
@@ -316,14 +315,13 @@ func (r *resourceTFEVariable) Read(ctx context.Context, req resource.ReadRequest
 		// Read a workspace variable
 		workspaceID := data.WorkspaceID.ValueString()
 		// We fetch workspace first so we can log where the 404 came from.
-		ws, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID)
-		if err != nil {
+		if _, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID); err != nil {
 			// If the workspace is gone, so's the variable:
 			log.Printf("[DEBUG] Workspace %s no longer exists", workspaceID)
 			res.State.RemoveResource(ctx)
 			return
 		}
-		variable, err := r.config.Client.Variables.Read(ctx, ws.ID, variableID)
+		variable, err := r.config.Client.Variables.Read(ctx, workspaceID, variableID)
 		if err != nil {
 			// If it's gone, just say so:
 			if err == tfe.ErrResourceNotFound {
@@ -372,8 +370,7 @@ func (r *resourceTFEVariable) Update(ctx context.Context, req resource.UpdateReq
 		// Update a workspace variable
 		workspaceID := plan.WorkspaceID.ValueString()
 		// Check that the workspace exists
-		ws, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID)
-		if err != nil {
+		if _, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID); err != nil {
 			res.Diagnostics.AddError(
 				"Couldn't read workspace",
 				fmt.Sprintf("Error retrieving workspace %s: %s", workspaceID, err.Error()),
@@ -406,7 +403,7 @@ func (r *resourceTFEVariable) Update(ctx context.Context, req resource.UpdateReq
 
 		// Do it
 		log.Printf("[DEBUG] Update variable: %s", variableID)
-		variable, err := r.config.Client.Variables.Update(ctx, ws.ID, variableID, options)
+		variable, err := r.config.Client.Variables.Update(ctx, workspaceID, variableID, options)
 		if err != nil {
 			res.Diagnostics.AddError(
 				"Couldn't update variable",
