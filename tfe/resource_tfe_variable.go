@@ -202,7 +202,6 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 
 // Create implements resource.Resource
 func (r *resourceTFEVariable) Create(ctx context.Context, req resource.CreateRequest, res *resource.CreateResponse) {
-	config := r.config
 	var data modelTFEVariable
 	getDiags := req.Plan.Get(ctx, &data)
 	res.Diagnostics.Append(getDiags...)
@@ -214,7 +213,7 @@ func (r *resourceTFEVariable) Create(ctx context.Context, req resource.CreateReq
 	if data.VariableSetID.IsNull() {
 		// Make a workspace variable
 		workspaceID := data.WorkspaceID.ValueString()
-		ws, err := config.Client.Workspaces.ReadByID(ctx, workspaceID)
+		ws, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID)
 		if err != nil {
 			res.Diagnostics.AddError(
 				"Couldn't read workspace",
@@ -234,7 +233,7 @@ func (r *resourceTFEVariable) Create(ctx context.Context, req resource.CreateReq
 		}
 
 		log.Printf("[DEBUG] Create %s variable: %s", category, key)
-		variable, err := config.Client.Variables.Create(ctx, ws.ID, options)
+		variable, err := r.config.Client.Variables.Create(ctx, ws.ID, options)
 		if err != nil {
 			res.Diagnostics.AddError(
 				"Couldn't create variable",
