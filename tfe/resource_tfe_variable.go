@@ -95,8 +95,8 @@ func (r *resourceTFEVariable) Metadata(_ context.Context, _ resource.MetadataReq
 }
 
 // Schema implements resource.Resource
-func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaRequest, res *resource.SchemaResponse) {
-	res.Schema = schema.Schema{
+func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -110,15 +110,15 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 				Description: "Name of the variable.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplaceIf(
-						func(ctx context.Context, req planmodifier.StringRequest, res *stringplanmodifier.RequiresReplaceIfFuncResponse) {
+						func(ctx context.Context, req planmodifier.StringRequest, resp *stringplanmodifier.RequiresReplaceIfFuncResponse) {
 							var stateSensitive types.Bool
 							diags := req.State.GetAttribute(ctx, path.Root("sensitive"), &stateSensitive)
 							if diags.HasError() {
-								res.Diagnostics.Append(diags...)
+								resp.Diagnostics.Append(diags...)
 								return
 							}
 							if stateSensitive.ValueBool() && req.PlanValue.ValueString() != req.StateValue.ValueString() {
-								res.RequiresReplace = true
+								resp.RequiresReplace = true
 							}
 						},
 						"Force replacement if key changed and sensitive is true",
@@ -163,9 +163,9 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 				Default:  booldefault.StaticBool(false),
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.RequiresReplaceIf(
-						func(ctx context.Context, req planmodifier.BoolRequest, res *boolplanmodifier.RequiresReplaceIfFuncResponse) {
+						func(ctx context.Context, req planmodifier.BoolRequest, resp *boolplanmodifier.RequiresReplaceIfFuncResponse) {
 							if req.StateValue.ValueBool() && !req.ConfigValue.ValueBool() {
-								res.RequiresReplace = true
+								resp.RequiresReplace = true
 							}
 						},
 						"Force replacement if sensitive argument changed from true to false.",
