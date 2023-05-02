@@ -120,6 +120,7 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 			},
 			"value": schema.StringAttribute{
 				Optional:    true,
+				Computed:    true,
 				Default:     stringdefault.StaticString(""),
 				Sensitive:   true,
 				Description: "Value of the variable",
@@ -140,14 +141,17 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 			},
 			"description": schema.StringAttribute{
 				Optional: true,
+				Computed: true,
 				Default:  stringdefault.StaticString(""),
 			},
 			"hcl": schema.BoolAttribute{
 				Optional: true,
+				Computed: true,
 				Default:  booldefault.StaticBool(false),
 			},
 			"sensitive": schema.BoolAttribute{
 				Optional: true,
+				Computed: true,
 				Default:  booldefault.StaticBool(false),
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.RequiresReplaceIf(
