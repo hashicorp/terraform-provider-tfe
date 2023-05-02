@@ -7,6 +7,7 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -54,17 +55,21 @@ func (m *modelTFEVariable) refreshFromTFEVariable(v tfe.Variable) {
 	}
 }
 
-func modelFromTFEVariableSetVariable(v tfe.VariableSetVariable) modelTFEVariable {
-	return modelTFEVariable{
-		ID:            types.StringValue(v.ID),
-		Key:           types.StringValue(v.Key),
-		Value:         types.StringValue(v.Value), // always exists, but may be empty string
-		Category:      types.StringValue(string(v.Category)),
-		Description:   types.StringValue(v.Description), // can be null in API, but becomes zero value in tfe.Variable.
-		HCL:           types.BoolValue(v.HCL),
-		Sensitive:     types.BoolValue(v.Sensitive),
-		WorkspaceID:   types.StringNull(), // never present on variable set vars.
-		VariableSetID: types.StringValue(v.VariableSet.ID),
+func (m *modelTFEVariable) refreshFromTFEVariableSetVariable(v tfe.VariableSetVariable) {
+	// For most fields, the server is authoritative:
+	m.ID = types.StringValue(v.ID)
+	m.Key = types.StringValue(v.Key)
+	m.Category = types.StringValue(string(v.Category))
+	m.Description = types.StringValue(v.Description) // can be null in API, but becomes zero value in tfe.VariableSetVariable.
+	m.HCL = types.BoolValue(v.HCL)
+	m.Sensitive = types.BoolValue(v.Sensitive)
+	m.WorkspaceID = types.StringNull() // never present on variable set vars.
+	m.VariableSetID = types.StringValue(v.VariableSet.ID)
+
+	// But: if the variable is sensitive, our client always gets an empty Value,
+	// so our last-known info is the best we're gonna get.
+	if !v.Sensitive {
+		m.Value = types.StringValue(v.Value)
 	}
 }
 
@@ -207,8 +212,35 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 	}
 }
 
+// AttrGettable is a small enabler for helper functions that need to read one
+// attribute of a Plan or State.
+type AttrGettable interface {
+	GetAttribute(ctx context.Context, path path.Path, target interface{}) diag.Diagnostics
+}
+
+// isWorkspaceVariable takes a pointer to a Plan or State from a CRUD request,
+// and determines whether the operation should use the workspace variable
+// implementation or the variable set variable one.
+func isWorkspaceVariable(ctx context.Context, data AttrGettable) bool {
+	var variableSetID types.Bool
+	// We're ignoring the diagnostics returned by GetAttribute, because we'll
+	// be destructuring the entire schema value shortly in the real
+	// implementations; any notable problems will be reported at that point.
+	data.GetAttribute(ctx, path.Root("variable_set_id"), &variableSetID)
+	return variableSetID.IsNull()
+}
+
 // Create implements resource.Resource
 func (r *resourceTFEVariable) Create(ctx context.Context, req resource.CreateRequest, res *resource.CreateResponse) {
+	if isWorkspaceVariable(ctx, &req.Plan) {
+		r.createWorkspaceVariable(ctx, req, res)
+	} else {
+		r.createVariableSetVariable(ctx, req, res)
+	}
+}
+
+// createWorkspaceVariable is the workspace version of Create.
+func (r *resourceTFEVariable) createWorkspaceVariable(ctx context.Context, req resource.CreateRequest, res *resource.CreateResponse) {
 	var data modelTFEVariable
 	diags := req.Plan.Get(ctx, &data)
 	res.Diagnostics.Append(diags...)
@@ -216,40 +248,73 @@ func (r *resourceTFEVariable) Create(ctx context.Context, req resource.CreateReq
 		return
 	}
 
-	// Get key and category
 	key := data.Key.ValueString()
 	category := data.Category.ValueString()
+	workspaceID := data.WorkspaceID.ValueString()
 
-	if data.VariableSetID.IsNull() {
-		// Make a workspace variable
-		workspaceID := data.WorkspaceID.ValueString()
-
-		options := tfe.VariableCreateOptions{
-			Key:         data.Key.ValueStringPointer(),
-			Value:       data.Value.ValueStringPointer(),
-			Category:    tfe.Category(tfe.CategoryType(category)),
-			HCL:         data.HCL.ValueBoolPointer(),
-			Sensitive:   data.Sensitive.ValueBoolPointer(),
-			Description: data.Description.ValueStringPointer(),
-		}
-
-		log.Printf("[DEBUG] Create %s variable: %s", category, key)
-		variable, err := r.config.Client.Variables.Create(ctx, workspaceID, options)
-		if err != nil {
-			res.Diagnostics.AddError(
-				"Couldn't create variable",
-				fmt.Sprintf("Error creating %s variable %s: %s", category, key, err.Error()),
-			)
-			return
-		}
-
-		// we got a variable back, so set state to new values
-		data.refreshFromTFEVariable(*variable)
-		diags = res.State.Set(ctx, &data)
-		res.Diagnostics.Append(diags...)
-	} else {
-		// TODO Make a variable set variable
+	// Make a workspace variable
+	options := tfe.VariableCreateOptions{
+		Key:         data.Key.ValueStringPointer(),
+		Value:       data.Value.ValueStringPointer(),
+		Category:    tfe.Category(tfe.CategoryType(category)),
+		HCL:         data.HCL.ValueBoolPointer(),
+		Sensitive:   data.Sensitive.ValueBoolPointer(),
+		Description: data.Description.ValueStringPointer(),
 	}
+
+	log.Printf("[DEBUG] Create %s variable: %s", category, key)
+	variable, err := r.config.Client.Variables.Create(ctx, workspaceID, options)
+	if err != nil {
+		res.Diagnostics.AddError(
+			"Couldn't create variable",
+			fmt.Sprintf("Error creating %s variable %s: %s", category, key, err.Error()),
+		)
+		return
+	}
+
+	// Got a variable back, so set state to new values
+	data.refreshFromTFEVariable(*variable)
+	diags = res.State.Set(ctx, &data)
+	res.Diagnostics.Append(diags...)
+}
+
+// createVariableSetVariable is the variable set version of Create.
+func (r *resourceTFEVariable) createVariableSetVariable(ctx context.Context, req resource.CreateRequest, res *resource.CreateResponse) {
+	var data modelTFEVariable
+	diags := req.Plan.Get(ctx, &data)
+	res.Diagnostics.Append(diags...)
+	if res.Diagnostics.HasError() {
+		return
+	}
+
+	key := data.Key.ValueString()
+	category := data.Category.ValueString()
+	variableSetID := data.VariableSetID.ValueString()
+
+	options := tfe.VariableSetVariableCreateOptions{
+		Key:         data.Key.ValueStringPointer(),
+		Value:       data.Value.ValueStringPointer(),
+		Category:    tfe.Category(tfe.CategoryType(category)),
+		HCL:         data.HCL.ValueBoolPointer(),
+		Sensitive:   data.Sensitive.ValueBoolPointer(),
+		Description: data.Description.ValueStringPointer(),
+	}
+
+	log.Printf("[DEBUG] Create %s variable: %s", category, key)
+	variable, err := r.config.Client.VariableSetVariables.Create(ctx, variableSetID, &options)
+	if err != nil {
+		res.Diagnostics.AddError(
+			"Couldn't create variable",
+			fmt.Sprintf("Error creating %s variable %s: %s", category, key, err.Error()),
+		)
+		return
+	}
+
+	// We got a variable, so set state to new values
+	data.refreshFromTFEVariableSetVariable(*variable)
+	diags = res.State.Set(ctx, &data)
+	res.Diagnostics.Append(diags...)
+
 }
 
 // Read implements resource.Resource
