@@ -278,7 +278,7 @@ func (r *resourceTFEVariable) Read(ctx context.Context, req resource.ReadRequest
 	if data.VariableSetID.IsNull() {
 		// Read a workspace variable
 		workspaceID := data.WorkspaceID.ValueString()
-		// We fetch workspace first so we can tell you where the 404 came from.
+		// We fetch workspace first so we can log where the 404 came from.
 		ws, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID)
 		if err != nil {
 			// If the workspace is gone, so's the variable:
@@ -290,6 +290,7 @@ func (r *resourceTFEVariable) Read(ctx context.Context, req resource.ReadRequest
 		if err != nil {
 			// If it's gone, just say so:
 			if err == tfe.ErrResourceNotFound {
+				log.Printf("[DEBUG] Variable %s no longer exists", variableID)
 				res.State.RemoveResource(ctx)
 				return
 			}
