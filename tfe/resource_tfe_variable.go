@@ -281,10 +281,9 @@ func (r *resourceTFEVariable) Read(ctx context.Context, req resource.ReadRequest
 		// We fetch workspace first so we can tell you where the 404 came from.
 		ws, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID)
 		if err != nil {
-			res.Diagnostics.AddError(
-				"Couldn't read workspace",
-				fmt.Sprintf("Error retrieving workspace %s: %s", workspaceID, err.Error()),
-			)
+			// If the workspace is gone, so's the variable:
+			log.Printf("[DEBUG] Workspace %s no longer exists", workspaceID)
+			res.State.RemoveResource(ctx)
 			return
 		}
 		variable, err := r.config.Client.Variables.Read(ctx, ws.ID, variableID)
