@@ -233,14 +233,14 @@ func isWorkspaceVariable(ctx context.Context, data AttrGettable) bool {
 // Create implements resource.Resource
 func (r *resourceTFEVariable) Create(ctx context.Context, req resource.CreateRequest, res *resource.CreateResponse) {
 	if isWorkspaceVariable(ctx, &req.Plan) {
-		r.createWorkspaceVariable(ctx, req, res)
+		r.createWithWorkspace(ctx, req, res)
 	} else {
-		r.createVariableSetVariable(ctx, req, res)
+		r.createWithVariableSet(ctx, req, res)
 	}
 }
 
-// createWorkspaceVariable is the workspace version of Create.
-func (r *resourceTFEVariable) createWorkspaceVariable(ctx context.Context, req resource.CreateRequest, res *resource.CreateResponse) {
+// createWithWorkspace is the workspace version of Create.
+func (r *resourceTFEVariable) createWithWorkspace(ctx context.Context, req resource.CreateRequest, res *resource.CreateResponse) {
 	var data modelTFEVariable
 	diags := req.Plan.Get(ctx, &data)
 	res.Diagnostics.Append(diags...)
@@ -278,8 +278,8 @@ func (r *resourceTFEVariable) createWorkspaceVariable(ctx context.Context, req r
 	res.Diagnostics.Append(diags...)
 }
 
-// createVariableSetVariable is the variable set version of Create.
-func (r *resourceTFEVariable) createVariableSetVariable(ctx context.Context, req resource.CreateRequest, res *resource.CreateResponse) {
+// createWithVariableSet is the variable set version of Create.
+func (r *resourceTFEVariable) createWithVariableSet(ctx context.Context, req resource.CreateRequest, res *resource.CreateResponse) {
 	var data modelTFEVariable
 	diags := req.Plan.Get(ctx, &data)
 	res.Diagnostics.Append(diags...)
