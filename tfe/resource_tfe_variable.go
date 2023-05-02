@@ -249,37 +249,6 @@ func (r *resourceTFEVariable) Create(ctx context.Context, req resource.CreateReq
 		res.Diagnostics.Append(diags...)
 	} else {
 		// TODO Make a variable set variable
-
-	}
-}
-
-// Delete implements resource.Resource
-func (r *resourceTFEVariable) Delete(ctx context.Context, req resource.DeleteRequest, res *resource.DeleteResponse) {
-	var data modelTFEVariable
-	diags := req.State.Get(ctx, &data)
-	res.Diagnostics.Append(diags...)
-	if res.Diagnostics.HasError() {
-		return
-	}
-
-	variableID := data.ID.ValueString()
-
-	if data.VariableSetID.IsNull() {
-		// Delete a workspace variable
-		workspaceID := data.WorkspaceID.ValueString()
-		log.Printf("[DEBUG] Delete variable: %s", variableID)
-		err := r.config.Client.Variables.Delete(ctx, workspaceID, variableID)
-		// Ignore 404s for delete
-		if err != nil && err != tfe.ErrResourceNotFound {
-			res.Diagnostics.AddError(
-				"Couldn't delete variable",
-				fmt.Sprintf("Error deleting variable %s: %s", variableID, err.Error()),
-			)
-			return
-		}
-		// Resource gets implicitly deleted from response state if no error.
-	} else {
-		// TODO delete a variable set variable
 	}
 }
 
@@ -385,6 +354,36 @@ func (r *resourceTFEVariable) Update(ctx context.Context, req resource.UpdateReq
 		res.Diagnostics.Append(diags...)
 	} else {
 		// TODO update a variable set variable
+	}
+}
+
+// Delete implements resource.Resource
+func (r *resourceTFEVariable) Delete(ctx context.Context, req resource.DeleteRequest, res *resource.DeleteResponse) {
+	var data modelTFEVariable
+	diags := req.State.Get(ctx, &data)
+	res.Diagnostics.Append(diags...)
+	if res.Diagnostics.HasError() {
+		return
+	}
+
+	variableID := data.ID.ValueString()
+
+	if data.VariableSetID.IsNull() {
+		// Delete a workspace variable
+		workspaceID := data.WorkspaceID.ValueString()
+		log.Printf("[DEBUG] Delete variable: %s", variableID)
+		err := r.config.Client.Variables.Delete(ctx, workspaceID, variableID)
+		// Ignore 404s for delete
+		if err != nil && err != tfe.ErrResourceNotFound {
+			res.Diagnostics.AddError(
+				"Couldn't delete variable",
+				fmt.Sprintf("Error deleting variable %s: %s", variableID, err.Error()),
+			)
+			return
+		}
+		// Resource gets implicitly deleted from response state if no error.
+	} else {
+		// TODO delete a variable set variable
 	}
 }
 
