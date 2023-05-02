@@ -74,14 +74,14 @@ func (m *modelTFEVariable) refreshFromTFEVariableSetVariable(v tfe.VariableSetVa
 }
 
 // Configure implements resource.ResourceWithConfigure. TODO: dry this out for other rscs
-func (r *resourceTFEVariable) Configure(ctx context.Context, req resource.ConfigureRequest, res *resource.ConfigureResponse) {
+func (r *resourceTFEVariable) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	// Early exit if provider is unconfigured (i.e. we're only validating config or something)
 	if req.ProviderData == nil {
 		return
 	}
 	client, ok := req.ProviderData.(ConfiguredClient)
 	if !ok {
-		res.Diagnostics.AddError(
+		resp.Diagnostics.AddError(
 			"Unexpected resource Configure type",
 			fmt.Sprintf("Expected tfe.ConfiguredClient, got %T. This is a bug in the tfe provider, so please report it on GitHub.", req.ProviderData),
 		)
@@ -90,8 +90,8 @@ func (r *resourceTFEVariable) Configure(ctx context.Context, req resource.Config
 }
 
 // Metadata implements resource.Resource
-func (r *resourceTFEVariable) Metadata(_ context.Context, _ resource.MetadataRequest, res *resource.MetadataResponse) {
-	res.TypeName = "tfe_variable"
+func (r *resourceTFEVariable) Metadata(_ context.Context, _ resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = "tfe_variable"
 }
 
 // Schema implements resource.Resource
