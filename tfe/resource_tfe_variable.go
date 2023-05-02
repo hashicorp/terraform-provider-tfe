@@ -246,8 +246,8 @@ func (r *resourceTFEVariable) Create(ctx context.Context, req resource.CreateReq
 		}
 
 		// we got a variable back, so set state to new values
-		newState := modelFromTFEVariable(*variable)
-		diags = res.State.Set(ctx, &newState)
+		newData := modelFromTFEVariable(*variable)
+		diags = res.State.Set(ctx, &newData)
 		res.Diagnostics.Append(diags...)
 	} else {
 		// TODO Make a variable set variable
