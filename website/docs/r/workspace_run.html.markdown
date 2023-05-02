@@ -174,7 +174,7 @@ resource "tfe_workspace_run" "ws_run_parent" {
 The following arguments are supported:
 
 * `workspace_id` - (Required) ID of the workspace to execute the run.
-* `apply` - (Required) Settings for the workspace's apply run during creation.
+* `apply` - (Optional) Settings for the workspace's apply run during creation.
 * `destroy` - (Optional) Settings for the workspace's destroy run during destruction.
 
 Both `apply` and `destroy` block supports:

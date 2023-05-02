@@ -67,10 +67,11 @@ func resourceTFEWorkspaceRun() *schema.Resource {
 				ForceNew: true,
 			},
 			"apply": {
-				Type:     schema.TypeList,
-				Elem:     resourceTFEWorkspaceRunSchema(),
-				Required: true,
-				MaxItems: 1,
+				Type:         schema.TypeList,
+				Elem:         resourceTFEWorkspaceRunSchema(),
+				Optional:     true,
+				AtLeastOneOf: []string{"apply", "destroy"},
+				MaxItems:     1,
 			},
 			"destroy": {
 				Type:     schema.TypeList,

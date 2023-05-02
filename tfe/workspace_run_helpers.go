@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"math/rand"
 	"time"
 
 	"github.com/hashicorp/go-tfe"
@@ -21,8 +22,12 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 		}
 		runArgs = destroyArgs.([]interface{})[0].(map[string]interface{})
 	} else {
-		// apply block is required
-		createArgs, _ := d.GetOk("apply")
+		createArgs, ok := d.GetOk("apply")
+		if !ok {
+			// apply block is optional, if it is not set then set a random ID to allow for consistent result after apply ops
+			d.SetId(fmt.Sprintf("%d", rand.New(rand.NewSource(time.Now().UnixNano())).Int()))
+			return nil
+		}
 		runArgs = createArgs.([]interface{})[0].(map[string]interface{})
 	}
 

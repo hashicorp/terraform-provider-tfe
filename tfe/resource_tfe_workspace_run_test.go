@@ -127,7 +127,7 @@ func TestAccTFEWorkspaceRun_invalidParams(t *testing.T) {
 	}{
 		{
 			Config:      testAccTFEWorkspaceRun_noApplyOrDestroyBlockProvided(organization.Name, rInt),
-			ExpectError: regexp.MustCompile("Insufficient apply blocks"),
+			ExpectError: regexp.MustCompile("\"apply\": one of `apply,destroy` must be specified"),
 		},
 		{
 			Config:      testAccTFEWorkspaceRun_noWorkspaceProvided(),
