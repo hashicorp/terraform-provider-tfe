@@ -36,18 +36,21 @@ type modelTFEVariable struct {
 	VariableSetID types.String `tfsdk:"variable_set_id"`
 }
 
-func modelFromTFEVariable(v tfe.Variable) modelTFEVariable {
-	// Most of these fields always exist in a tfe.Variable struct.
-	return modelTFEVariable{
-		ID:            types.StringValue(v.ID),
-		Key:           types.StringValue(v.Key),
-		Value:         types.StringValue(v.Value), // always exists, but may be empty string
-		Category:      types.StringValue(string(v.Category)),
-		Description:   types.StringValue(v.Description), // can be null in API, but becomes zero value in tfe.Variable.
-		HCL:           types.BoolValue(v.HCL),
-		Sensitive:     types.BoolValue(v.Sensitive),
-		WorkspaceID:   types.StringValue(v.Workspace.ID),
-		VariableSetID: types.StringNull(), // never present on workspace vars.
+func (m *modelTFEVariable) refreshFromTFEVariable(v tfe.Variable) {
+	// For most fields, the server is authoritative:
+	m.ID = types.StringValue(v.ID)
+	m.Key = types.StringValue(v.Key)
+	m.Category = types.StringValue(string(v.Category))
+	m.Description = types.StringValue(v.Description) // can be null in API, but becomes zero value in tfe.Variable.
+	m.HCL = types.BoolValue(v.HCL)
+	m.Sensitive = types.BoolValue(v.Sensitive)
+	m.WorkspaceID = types.StringValue(v.Workspace.ID)
+	m.VariableSetID = types.StringNull() // never present on workspace vars.
+
+	// But: if the variable is sensitive, our client always gets an empty Value,
+	// so our last-known info is the best we're gonna get.
+	if !v.Sensitive {
+		m.Value = types.StringValue(v.Value)
 	}
 }
 
@@ -250,8 +253,8 @@ func (r *resourceTFEVariable) Create(ctx context.Context, req resource.CreateReq
 		}
 
 		// we got a variable back, so set state to new values
-		newData := modelFromTFEVariable(*variable)
-		diags = res.State.Set(ctx, &newData)
+		data.refreshFromTFEVariable(*variable)
+		diags = res.State.Set(ctx, &data)
 		res.Diagnostics.Append(diags...)
 	} else {
 		// TODO Make a variable set variable
@@ -304,8 +307,9 @@ func (r *resourceTFEVariable) Read(ctx context.Context, req resource.ReadRequest
 		}
 
 		// We got a variable, so update state:
-		newData := modelFromTFEVariable(*variable)
-		diags = res.State.Set(ctx, &newData)
+		data.refreshFromTFEVariable(*variable)
+		// Important: If sensitive, transfer over the value from prior state, since that's the last time we were able to know anything about it.
+		diags = res.State.Set(ctx, &data)
 		res.Diagnostics.Append(diags...)
 	} else {
 		// TODO Read a variable set variable
