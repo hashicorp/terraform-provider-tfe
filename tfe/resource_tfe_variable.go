@@ -203,8 +203,11 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 // Create implements resource.Resource
 func (r *resourceTFEVariable) Create(ctx context.Context, req resource.CreateRequest, res *resource.CreateResponse) {
 	var data modelTFEVariable
-	getDiags := req.Plan.Get(ctx, &data)
-	res.Diagnostics.Append(getDiags...)
+	diags := req.Plan.Get(ctx, &data)
+	res.Diagnostics.Append(diags...)
+	if res.Diagnostics.HasError() {
+		return
+	}
 
 	// Get key and category
 	key := data.Key.ValueString()
@@ -244,7 +247,8 @@ func (r *resourceTFEVariable) Create(ctx context.Context, req resource.CreateReq
 
 		// we got a variable back, so set state to new values
 		newState := modelFromTFEVariable(*variable)
-		res.State.Set(ctx, &newState)
+		diags = res.State.Set(ctx, &newState)
+		res.Diagnostics.Append(diags...)
 	} else {
 		// TODO Make a variable set variable
 
