@@ -263,8 +263,42 @@ func (r *resourceTFEVariable) Create(ctx context.Context, req resource.CreateReq
 }
 
 // Delete implements resource.Resource
-func (r *resourceTFEVariable) Delete(context.Context, resource.DeleteRequest, *resource.DeleteResponse) {
-	panic("unimplemented")
+func (r *resourceTFEVariable) Delete(ctx context.Context, req resource.DeleteRequest, res *resource.DeleteResponse) {
+	var data modelTFEVariable
+	diags := req.State.Get(ctx, &data)
+	res.Diagnostics.Append(diags...)
+	if res.Diagnostics.HasError() {
+		return
+	}
+
+	variableID := data.ID.ValueString()
+
+	if data.VariableSetID.IsNull() {
+		// Delete a workspace variable
+		workspaceID := data.WorkspaceID.ValueString()
+		// Check that the workspace exists
+		ws, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID)
+		if err != nil {
+			res.Diagnostics.AddError(
+				"Couldn't read workspace",
+				fmt.Sprintf("Error retrieving workspace %s: %s", workspaceID, err.Error()),
+			)
+			return
+		}
+		log.Printf("[DEBUG] Delete variable: %s", variableID)
+		err = r.config.Client.Variables.Delete(ctx, ws.ID, variableID)
+		// Ignore 404s for delete
+		if err != nil && err != tfe.ErrResourceNotFound {
+			res.Diagnostics.AddError(
+				"Couldn't delete variable",
+				fmt.Sprintf("Error deleting variable %s: %s", variableID, err.Error()),
+			)
+			return
+		}
+		// Resource gets implicitly deleted from response state if no error.
+	} else {
+		// TODO delete a variable set variable
+	}
 }
 
 // Read implements resource.Resource
