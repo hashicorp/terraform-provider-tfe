@@ -317,8 +317,75 @@ func (r *resourceTFEVariable) Read(ctx context.Context, req resource.ReadRequest
 }
 
 // Update implements resource.Resource
-func (r *resourceTFEVariable) Update(context.Context, resource.UpdateRequest, *resource.UpdateResponse) {
-	panic("unimplemented")
+func (r *resourceTFEVariable) Update(ctx context.Context, req resource.UpdateRequest, res *resource.UpdateResponse) {
+	var plan modelTFEVariable
+	var state modelTFEVariable
+	// Get plan
+	diags := req.Plan.Get(ctx, &plan)
+	res.Diagnostics.Append(diags...)
+	if res.Diagnostics.HasError() {
+		return
+	}
+	// Get state too
+	diags = req.State.Get(ctx, &state)
+	res.Diagnostics.Append(diags...)
+	if res.Diagnostics.HasError() {
+		return
+	}
+	variableID := plan.ID.ValueString()
+
+	if plan.VariableSetID.IsNull() {
+		// Update a workspace variable
+		workspaceID := plan.WorkspaceID.ValueString()
+		// Check that the workspace exists
+		ws, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID)
+		if err != nil {
+			res.Diagnostics.AddError(
+				"Couldn't read workspace",
+				fmt.Sprintf("Error retrieving workspace %s: %s", workspaceID, err.Error()),
+			)
+			return
+		}
+		// Create update options, BUT:
+		//
+		// - Omit Value IF no change was planned and the variable is sensitive!
+		// (If we don't do that, we can accidentally reset it to the last known
+		// value when we shouldn't, e.g. when ignore_changes is used.) That
+		// means it's possible for our knowledge about the value to be out of
+		// date, but this is about the best we can do when something's
+		// impossible to inspect and not always safe to hard-overwrite.
+		//
+		// - Always omit Category, which we can never update anyway (see schema).
+		var value *string
+		if state.Sensitive.ValueBool() && state.Value.ValueString() == plan.Value.ValueString() {
+			value = nil
+		} else {
+			value = plan.Value.ValueStringPointer()
+		}
+		options := tfe.VariableUpdateOptions{
+			Key:         plan.Key.ValueStringPointer(),
+			Value:       value,
+			Description: plan.Description.ValueStringPointer(),
+			HCL:         plan.HCL.ValueBoolPointer(),
+			Sensitive:   plan.Sensitive.ValueBoolPointer(),
+		}
+
+		// Do it
+		log.Printf("[DEBUG] Update variable: %s", variableID)
+		variable, err := r.config.Client.Variables.Update(ctx, ws.ID, variableID, options)
+		if err != nil {
+			res.Diagnostics.AddError(
+				"Couldn't update variable",
+				fmt.Sprintf("Error updating variable %s: %s", variableID, err.Error()),
+			)
+		}
+		// Update state
+		plan.refreshFromTFEVariable(*variable)
+		diags = res.State.Set(ctx, &plan)
+		res.Diagnostics.Append(diags...)
+	} else {
+		// TODO update a variable set variable
+	}
 }
 
 // Compile-time interface check
