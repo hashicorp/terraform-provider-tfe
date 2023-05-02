@@ -232,7 +232,7 @@ func (r *resourceTFEVariable) Create(ctx context.Context, req resource.CreateReq
 		// The value pointer methods give nil for null/absent, which is what go-tfe wants.
 		options := tfe.VariableCreateOptions{
 			Key:         data.Key.ValueStringPointer(),
-			Value:       data.Key.ValueStringPointer(),
+			Value:       data.Value.ValueStringPointer(),
 			Category:    tfe.Category(tfe.CategoryType(category)),
 			HCL:         data.HCL.ValueBoolPointer(),
 			Sensitive:   data.Sensitive.ValueBoolPointer(),
