@@ -3,6 +3,7 @@ package tfe
 import (
 	"context"
 	"fmt"
+	"log"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -35,8 +36,37 @@ type modelTFEVariable struct {
 	VariableSetID types.String `tfsdk:"variable_set_id"`
 }
 
+func modelFromTFEVariable(v tfe.Variable) modelTFEVariable {
+	// Most of these fields always exist in a tfe.Variable struct.
+	return modelTFEVariable{
+		ID:            types.StringValue(v.ID),
+		Key:           types.StringValue(v.Key),
+		Value:         types.StringValue(v.Value), // always exists, but may be empty string
+		Category:      types.StringValue(string(v.Category)),
+		Description:   types.StringValue(v.Description), // can be null in API, but becomes zero value in tfe.Variable.
+		HCL:           types.BoolValue(v.HCL),
+		Sensitive:     types.BoolValue(v.Sensitive),
+		WorkspaceID:   types.StringValue(v.Workspace.ID),
+		VariableSetID: types.StringNull(), // never present on workspace vars.
+	}
+}
+
+func modelFromTFEVariableSetVariable(v tfe.VariableSetVariable) modelTFEVariable {
+	return modelTFEVariable{
+		ID:            types.StringValue(v.ID),
+		Key:           types.StringValue(v.Key),
+		Value:         types.StringValue(v.Value), // always exists, but may be empty string
+		Category:      types.StringValue(string(v.Category)),
+		Description:   types.StringValue(v.Description), // can be null in API, but becomes zero value in tfe.Variable.
+		HCL:           types.BoolValue(v.HCL),
+		Sensitive:     types.BoolValue(v.Sensitive),
+		WorkspaceID:   types.StringNull(), // never present on variable set vars.
+		VariableSetID: types.StringValue(v.VariableSet.ID),
+	}
+}
+
 // Configure implements resource.ResourceWithConfigure. TODO: dry this out for other rscs
-func (r *resourceTFEVariable) Configure(c context.Context, req resource.ConfigureRequest, res *resource.ConfigureResponse) {
+func (r *resourceTFEVariable) Configure(ctx context.Context, req resource.ConfigureRequest, res *resource.ConfigureResponse) {
 	// Early exit if provider is unconfigured (i.e. we're only validating config or something)
 	if req.ProviderData == nil {
 		return
@@ -171,8 +201,55 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 }
 
 // Create implements resource.Resource
-func (r *resourceTFEVariable) Create(context.Context, resource.CreateRequest, *resource.CreateResponse) {
-	panic("unimplemented")
+func (r *resourceTFEVariable) Create(ctx context.Context, req resource.CreateRequest, res *resource.CreateResponse) {
+	config := r.config
+	var data modelTFEVariable
+	getDiags := req.Plan.Get(ctx, &data)
+	res.Diagnostics.Append(getDiags...)
+
+	// Get key and category
+	key := data.Key.ValueString()
+	category := data.Category.ValueString()
+
+	if data.VariableSetID.IsNull() {
+		// Make a workspace variable
+		workspaceID := data.WorkspaceID.ValueString()
+		ws, err := config.Client.Workspaces.ReadByID(ctx, workspaceID)
+		if err != nil {
+			res.Diagnostics.AddError(
+				"Couldn't read workspace",
+				fmt.Sprintf("Error retrieving workspace %s: %s", workspaceID, err.Error()),
+			)
+			return
+		}
+
+		// The value pointer methods give nil for null/absent, which is what go-tfe wants.
+		options := tfe.VariableCreateOptions{
+			Key:         data.Key.ValueStringPointer(),
+			Value:       data.Key.ValueStringPointer(),
+			Category:    tfe.Category(tfe.CategoryType(category)),
+			HCL:         data.HCL.ValueBoolPointer(),
+			Sensitive:   data.Sensitive.ValueBoolPointer(),
+			Description: data.Description.ValueStringPointer(),
+		}
+
+		log.Printf("[DEBUG] Create %s variable: %s", category, key)
+		variable, err := config.Client.Variables.Create(ctx, ws.ID, options)
+		if err != nil {
+			res.Diagnostics.AddError(
+				"Couldn't create variable",
+				fmt.Sprintf("Error creating %s variable %s: %s", category, key, err.Error()),
+			)
+			return
+		}
+
+		// we got a variable back, so set state to new values
+		newState := modelFromTFEVariable(*variable)
+		res.State.Set(ctx, &newState)
+	} else {
+		// TODO Make a variable set variable
+
+	}
 }
 
 // Delete implements resource.Resource
