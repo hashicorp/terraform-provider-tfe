@@ -261,8 +261,51 @@ func (r *resourceTFEVariable) Delete(context.Context, resource.DeleteRequest, *r
 }
 
 // Read implements resource.Resource
-func (r *resourceTFEVariable) Read(context.Context, resource.ReadRequest, *resource.ReadResponse) {
-	panic("unimplemented")
+func (r *resourceTFEVariable) Read(ctx context.Context, req resource.ReadRequest, res *resource.ReadResponse) {
+	var data modelTFEVariable
+	// Get prior state
+	diags := req.State.Get(ctx, &data)
+	res.Diagnostics.Append(diags...)
+	if res.Diagnostics.HasError() {
+		return
+	}
+	variableID := data.ID.ValueString()
+
+	if data.VariableSetID.IsNull() {
+		// Read a workspace variable
+		workspaceID := data.WorkspaceID.ValueString()
+		// We fetch workspace first so we can tell you where the 404 came from.
+		ws, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID)
+		if err != nil {
+			res.Diagnostics.AddError(
+				"Couldn't read workspace",
+				fmt.Sprintf("Error retrieving workspace %s: %s", workspaceID, err.Error()),
+			)
+			return
+		}
+		variable, err := r.config.Client.Variables.Read(ctx, ws.ID, variableID)
+		if err != nil {
+			// If it's gone, just say so:
+			if err == tfe.ErrResourceNotFound {
+				res.State.RemoveResource(ctx)
+				return
+			}
+
+			// If something worse happened, complain:
+			res.Diagnostics.AddError(
+				"Couldn't read variable",
+				fmt.Sprintf("Error reading variable %s: %s", variableID, err.Error()),
+			)
+			return
+		}
+
+		// We got a variable, so update state:
+		newData := modelFromTFEVariable(*variable)
+		diags = res.State.Set(ctx, &newData)
+		res.Diagnostics.Append(diags...)
+	} else {
+		// TODO Read a variable set variable
+	}
 }
 
 // Update implements resource.Resource
