@@ -90,7 +90,7 @@ func modelFromTFEVariableSetVariable(v tfe.VariableSetVariable, lastValue types.
 	return m
 }
 
-// Configure implements resource.ResourceWithConfigure. TODO: dry this out for other rscs
+// Configure implements resource.ResourceWithConfigure
 func (r *resourceTFEVariable) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	// Early exit if provider is unconfigured (i.e. we're only validating config or something)
 	if req.ProviderData == nil {
@@ -149,7 +149,6 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 				Default:     stringdefault.StaticString(""),
 				Sensitive:   true,
 				Description: "Value of the variable",
-				// TODO: do descriptions cause a schema upgrade? how bout the rest of the stuff I'm doing here?
 			},
 			"category": schema.StringAttribute{
 				Required:    true,
