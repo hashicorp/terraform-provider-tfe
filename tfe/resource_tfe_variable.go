@@ -238,7 +238,7 @@ type AttrGettable interface {
 // isWorkspaceVariable is a helper function for switching between tfe_variable's
 // two separate CRUD implementations.
 func isWorkspaceVariable(ctx context.Context, data AttrGettable) bool {
-	var variableSetID types.Bool
+	var variableSetID types.String
 	// We're ignoring the diagnostics returned by GetAttribute, because we'll
 	// be destructuring the entire schema value shortly in the real
 	// implementations; any notable problems will be reported at that point.
