@@ -502,6 +502,15 @@ func (r *resourceTFEVariable) updateWithVariableSet(ctx context.Context, req res
 
 // Delete implements resource.Resource
 func (r *resourceTFEVariable) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	if isWorkspaceVariable(ctx, &req.State) {
+		r.deleteWithWorkspace(ctx, req, resp)
+	} else {
+		r.deleteWithVariableSet(ctx, req, resp)
+	}
+}
+
+// deleteWithWorkspace is the workspace version of Delete.
+func (r *resourceTFEVariable) deleteWithWorkspace(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var data modelTFEVariable
 	diags := req.State.Get(ctx, &data)
 	resp.Diagnostics.Append(diags...)
@@ -510,24 +519,42 @@ func (r *resourceTFEVariable) Delete(ctx context.Context, req resource.DeleteReq
 	}
 
 	variableID := data.ID.ValueString()
+	workspaceID := data.WorkspaceID.ValueString()
 
-	if data.VariableSetID.IsNull() {
-		// Delete a workspace variable
-		workspaceID := data.WorkspaceID.ValueString()
-		log.Printf("[DEBUG] Delete variable: %s", variableID)
-		err := r.config.Client.Variables.Delete(ctx, workspaceID, variableID)
-		// Ignore 404s for delete
-		if err != nil && err != tfe.ErrResourceNotFound {
-			resp.Diagnostics.AddError(
-				"Couldn't delete variable",
-				fmt.Sprintf("Error deleting variable %s: %s", variableID, err.Error()),
-			)
-			return
-		}
-		// Resource gets implicitly deleted from response state if no error.
-	} else {
-		// TODO delete a variable set variable
+	log.Printf("[DEBUG] Delete variable: %s", variableID)
+	err := r.config.Client.Variables.Delete(ctx, workspaceID, variableID)
+	// Ignore 404s for delete
+	if err != nil && err != tfe.ErrResourceNotFound {
+		resp.Diagnostics.AddError(
+			"Couldn't delete variable",
+			fmt.Sprintf("Error deleting variable %s: %s", variableID, err.Error()),
+		)
 	}
+	// Resource is implicitly deleted from resp.State if diagnostics have no errors.
+}
+
+// deleteWithVariableSet is the variable set version of Delete.
+func (r *resourceTFEVariable) deleteWithVariableSet(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data modelTFEVariable
+	diags := req.State.Get(ctx, &data)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	variableID := data.ID.ValueString()
+	variableSetID := data.VariableSetID.ValueString()
+
+	log.Printf("[DEBUG] Delete variable: %s", variableID)
+	err := r.config.Client.VariableSetVariables.Delete(ctx, variableSetID, variableID)
+	// Ignore 404s for delete
+	if err != nil && err != tfe.ErrResourceNotFound {
+		resp.Diagnostics.AddError(
+			"Couldn't delete variable",
+			fmt.Sprintf("Error deleting variable %s: %s", variableID, err.Error()),
+		)
+	}
+	// Resource is implicitly deleted from resp.State if diagnostics have no errors.
 }
 
 // Compile-time interface check
