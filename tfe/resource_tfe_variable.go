@@ -20,6 +20,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+// resourceTFEVariable implements the tfe_variable resource type. Note: Much of
+// the complexity of this type's Resource implementation is because the
+// tfe_variable resource is an abstraction over two parallel APIs, so each
+// primary CRUD method needs to call different client methods (with different
+// argument types and return types) depending on whether the workspace_id or
+// variable_set_id attribute is defined.
 type resourceTFEVariable struct {
 	config ConfiguredClient
 }
@@ -218,9 +224,8 @@ type AttrGettable interface {
 	GetAttribute(ctx context.Context, path path.Path, target interface{}) diag.Diagnostics
 }
 
-// isWorkspaceVariable takes a pointer to a Plan or State from a CRUD request,
-// and determines whether the operation should use the workspace variable
-// implementation or the variable set variable one.
+// isWorkspaceVariable is a helper function for switching between tfe_variable's
+// two separate CRUD implementations.
 func isWorkspaceVariable(ctx context.Context, data AttrGettable) bool {
 	var variableSetID types.Bool
 	// We're ignoring the diagnostics returned by GetAttribute, because we'll
