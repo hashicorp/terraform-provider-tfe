@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -665,10 +666,50 @@ func (r *resourceTFEVariable) UpgradeState(ctx context.Context) map[int64]resour
 	}
 }
 
+// ImportState implements resource.ResourceWithImportState
+func (r *resourceTFEVariable) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	s := strings.SplitN(req.ID, "/", 3)
+	if len(s) != 3 {
+		resp.Diagnostics.AddError(
+			"Error importing variable",
+			fmt.Sprintf("Invalid variable import format: %s (expected <ORGANIZATION>/<WORKSPACE NAME|VARIABLE SET ID>/<VARIABLE ID>)", req.ID),
+		)
+		return
+	}
+	org := s[0]
+	container := s[1]
+	id := s[2]
+
+	data := modelTFEVariable{
+		ID:            types.StringValue(id),
+		WorkspaceID:   types.StringNull(),
+		VariableSetID: types.StringNull(),
+	}
+
+	varsetIDUsed := variableSetIDRegexp.MatchString(container)
+	if varsetIDUsed {
+		data.VariableSetID = types.StringValue(container)
+	} else {
+		workspaceID, err := fetchWorkspaceExternalID(org+"/"+container, r.config.Client)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error importing variable",
+				fmt.Sprintf("Couldn't retrieve workspace %s from organization %s: %s", container, org, err.Error()),
+			)
+			return
+		}
+		data.WorkspaceID = types.StringValue(workspaceID)
+	}
+
+	diags := resp.State.Set(ctx, &data)
+	resp.Diagnostics.Append(diags...)
+}
+
 // Compile-time interface check
 var _ resource.Resource = &resourceTFEVariable{}
 var _ resource.ResourceWithConfigure = &resourceTFEVariable{}
 var _ resource.ResourceWithUpgradeState = &resourceTFEVariable{}
+var _ resource.ResourceWithImportState = &resourceTFEVariable{}
 
 // NewResourceVariable is a resource function for the framework provider.
 func NewResourceVariable() resource.Resource {
