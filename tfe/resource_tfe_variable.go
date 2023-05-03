@@ -396,66 +396,113 @@ func (r *resourceTFEVariable) readWithVariableSet(ctx context.Context, req resou
 
 // Update implements resource.Resource
 func (r *resourceTFEVariable) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	if isWorkspaceVariable(ctx, &req.Plan) {
+		r.updateWithWorkspace(ctx, req, resp)
+	} else {
+		r.updateWithVariableSet(ctx, req, resp)
+	}
+}
+
+// updateWithWorkspace is the workspace version of Update.
+func (r *resourceTFEVariable) updateWithWorkspace(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	// Get both plan and state; must compare them to handle sensitive values safely.
 	var plan modelTFEVariable
 	var state modelTFEVariable
-	// Get plan
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	// Get state too
 	diags = req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	// Update a workspace variable
 	variableID := plan.ID.ValueString()
+	workspaceID := plan.WorkspaceID.ValueString()
 
-	if plan.VariableSetID.IsNull() {
-		// Update a workspace variable
-		workspaceID := plan.WorkspaceID.ValueString()
-
-		// Make update options, BUT:
-		//
-		// - Omit Value IF no change was planned and the variable is sensitive!
-		// (If we don't do that, we can accidentally reset it to the last known
-		// value when we shouldn't, e.g. when ignore_changes is used.) That
-		// means it's possible for our knowledge about the value to be out of
-		// date, but this is about the best we can do when something's
-		// impossible to inspect and not always safe to hard-overwrite.
-		//
-		// - Always omit Category, which we can never update anyway (see schema).
-		var value *string
-		if state.Sensitive.ValueBool() && state.Value.ValueString() == plan.Value.ValueString() {
-			value = nil
-		} else {
-			value = plan.Value.ValueStringPointer()
-		}
-		options := tfe.VariableUpdateOptions{
-			Key:         plan.Key.ValueStringPointer(),
-			Value:       value,
-			Description: plan.Description.ValueStringPointer(),
-			HCL:         plan.HCL.ValueBoolPointer(),
-			Sensitive:   plan.Sensitive.ValueBoolPointer(),
-		}
-
-		// Do it
-		log.Printf("[DEBUG] Update variable: %s", variableID)
-		variable, err := r.config.Client.Variables.Update(ctx, workspaceID, variableID, options)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"Couldn't update variable",
-				fmt.Sprintf("Error updating variable %s: %s", variableID, err.Error()),
-			)
-		}
-		// Update state
-		plan.refreshFromTFEVariable(*variable)
-		diags = resp.State.Set(ctx, &plan)
-		resp.Diagnostics.Append(diags...)
-	} else {
-		// TODO update a variable set variable
+	// When a tfe update options struct uses pointers, any nil fields are
+	// omitted in the API request, preserving the prior value. Here, we always
+	// want to omit Category (can't update it, cf. the schema), and only
+	// *sometimes* want to include Value.
+	options := tfe.VariableUpdateOptions{
+		Key:         plan.Key.ValueStringPointer(),
+		Description: plan.Description.ValueStringPointer(),
+		HCL:         plan.HCL.ValueBoolPointer(),
+		Sensitive:   plan.Sensitive.ValueBoolPointer(),
 	}
+	// Specifically, we ONLY want to set Value if our planned value would be a
+	// CHANGE from the prior state. This is so we don't accidentally reset the
+	// value of a sensitive variable on unrelated changes when `ignore_changes =
+	// [value]` is set. (Basically: since we can't observe the real-world
+	// condition of a sensitive variable, we don't KNOW whether setting it to
+	// our last-known value is a safely idempotent operation or not. This is why
+	// Terraform doesn't promise that it can manage drift at all for write-only
+	// attributes.)
+	if state.Value.ValueString() != plan.Value.ValueString() {
+		options.Value = plan.Value.ValueStringPointer()
+	}
+
+	log.Printf("[DEBUG] Update variable: %s", variableID)
+	variable, err := r.config.Client.Variables.Update(ctx, workspaceID, variableID, options)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Couldn't update variable",
+			fmt.Sprintf("Error updating variable %s: %s", variableID, err.Error()),
+		)
+	}
+	// Update state
+	plan.refreshFromTFEVariable(*variable)
+	diags = resp.State.Set(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
+}
+
+// updateWithVariableSet is the variable set version of Update.
+func (r *resourceTFEVariable) updateWithVariableSet(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	// Get both plan and state; must compare them to handle sensitive values safely.
+	var plan modelTFEVariable
+	var state modelTFEVariable
+	diags := req.Plan.Get(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	diags = req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Update a workspace variable
+	variableID := plan.ID.ValueString()
+	variableSetID := plan.VariableSetID.ValueString()
+
+	options := &tfe.VariableSetVariableUpdateOptions{
+		Key:         plan.Key.ValueStringPointer(),
+		Description: plan.Description.ValueStringPointer(),
+		HCL:         plan.HCL.ValueBoolPointer(),
+		Sensitive:   plan.Sensitive.ValueBoolPointer(),
+	}
+	// We ONLY want to set Value if our planned value would be a CHANGE from the
+	// prior state. See comments in updateWithWorkspace for more color.
+	if state.Value.ValueString() != plan.Value.ValueString() {
+		options.Value = plan.Value.ValueStringPointer()
+	}
+
+	log.Printf("[DEBUG] Update variable: %s", variableID)
+	variable, err := r.config.Client.VariableSetVariables.Update(ctx, variableSetID, variableID, options)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Couldn't update variable",
+			fmt.Sprintf("Error updating variable %s: %s", variableID, err.Error()),
+		)
+	}
+	// Update state
+	plan.refreshFromTFEVariableSetVariable(*variable)
+	diags = resp.State.Set(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
 }
 
 // Delete implements resource.Resource
