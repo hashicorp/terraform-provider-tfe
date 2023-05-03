@@ -335,7 +335,6 @@ func (r *resourceTFEVariable) readWithWorkspace(ctx context.Context, req resourc
 		return
 	}
 
-	// Read a workspace variable
 	variableID := data.ID.ValueString()
 	workspaceID := data.WorkspaceID.ValueString()
 	variable, err := r.config.Client.Variables.Read(ctx, workspaceID, variableID)
@@ -369,7 +368,6 @@ func (r *resourceTFEVariable) readWithVariableSet(ctx context.Context, req resou
 		return
 	}
 
-	// Read a variable set variable
 	variableID := data.ID.ValueString()
 	variableSetID := data.VariableSetID.ValueString()
 	variable, err := r.config.Client.VariableSetVariables.Read(ctx, variableSetID, variableID)
