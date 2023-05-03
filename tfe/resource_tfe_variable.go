@@ -43,40 +43,51 @@ type modelTFEVariable struct {
 	VariableSetID types.String `tfsdk:"variable_set_id"`
 }
 
-func (m *modelTFEVariable) refreshFromTFEVariable(v tfe.Variable) {
-	// For most fields, the server is authoritative:
-	m.ID = types.StringValue(v.ID)
-	m.Key = types.StringValue(v.Key)
-	m.Category = types.StringValue(string(v.Category))
-	m.Description = types.StringValue(v.Description) // can be null in API, but becomes zero value in tfe.Variable.
-	m.HCL = types.BoolValue(v.HCL)
-	m.Sensitive = types.BoolValue(v.Sensitive)
-	m.WorkspaceID = types.StringValue(v.Workspace.ID)
-	m.VariableSetID = types.StringNull() // never present on workspace vars.
-
-	// But: if the variable is sensitive, our client always gets an empty Value,
-	// so our last-known info is the best we're gonna get.
-	if !v.Sensitive {
-		m.Value = types.StringValue(v.Value)
+// modelFromTFEVariable builds a modelTFEVariable struct from a tfe.Variable
+// value (plus the last known value of the variable's `value` attribute).
+func modelFromTFEVariable(v tfe.Variable, lastValue types.String) modelTFEVariable {
+	// Initialize all fields from the provided API struct
+	m := modelTFEVariable{
+		ID:            types.StringValue(v.ID),
+		Key:           types.StringValue(v.Key),
+		Value:         types.StringValue(v.Value),
+		Category:      types.StringValue(string(v.Category)),
+		Description:   types.StringValue(v.Description),
+		HCL:           types.BoolValue(v.HCL),
+		Sensitive:     types.BoolValue(v.Sensitive),
+		WorkspaceID:   types.StringValue(v.Workspace.ID),
+		VariableSetID: types.StringNull(), // never present on workspace vars
 	}
+	// BUT: if the variable is sensitive, carry forward the last known value
+	// instead, because the API never lets us read it again.
+	if v.Sensitive {
+		m.Value = lastValue
+	}
+	return m
 }
 
-func (m *modelTFEVariable) refreshFromTFEVariableSetVariable(v tfe.VariableSetVariable) {
-	// For most fields, the server is authoritative:
-	m.ID = types.StringValue(v.ID)
-	m.Key = types.StringValue(v.Key)
-	m.Category = types.StringValue(string(v.Category))
-	m.Description = types.StringValue(v.Description) // can be null in API, but becomes zero value in tfe.VariableSetVariable.
-	m.HCL = types.BoolValue(v.HCL)
-	m.Sensitive = types.BoolValue(v.Sensitive)
-	m.WorkspaceID = types.StringNull() // never present on variable set vars.
-	m.VariableSetID = types.StringValue(v.VariableSet.ID)
-
-	// But: if the variable is sensitive, our client always gets an empty Value,
-	// so our last-known info is the best we're gonna get.
-	if !v.Sensitive {
-		m.Value = types.StringValue(v.Value)
+// modelFromTFEVariableSetVariable builds a modelTFEVariable struct from a
+// tfe.VariableSetVariable value (plus the last known value of the variable's
+// `value` attribute).
+func modelFromTFEVariableSetVariable(v tfe.VariableSetVariable, lastValue types.String) modelTFEVariable {
+	// Initialize all fields from the provided API struct
+	m := modelTFEVariable{
+		ID:            types.StringValue(v.ID),
+		Key:           types.StringValue(v.Key),
+		Value:         types.StringValue(v.Value),
+		Category:      types.StringValue(string(v.Category)),
+		Description:   types.StringValue(v.Description),
+		HCL:           types.BoolValue(v.HCL),
+		Sensitive:     types.BoolValue(v.Sensitive),
+		WorkspaceID:   types.StringNull(), // never present on variable set vars
+		VariableSetID: types.StringValue(v.VariableSet.ID),
 	}
+	// BUT: if the variable is sensitive, carry forward the last known value
+	// instead, because the API never lets us read it again.
+	if v.Sensitive {
+		m.Value = lastValue
+	}
+	return m
 }
 
 // Configure implements resource.ResourceWithConfigure. TODO: dry this out for other rscs
@@ -277,8 +288,8 @@ func (r *resourceTFEVariable) createWithWorkspace(ctx context.Context, req resou
 	}
 
 	// Got a variable back, so set state to new values
-	data.refreshFromTFEVariable(*variable)
-	diags = resp.State.Set(ctx, &data)
+	result := modelFromTFEVariable(*variable, data.Value)
+	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -315,8 +326,8 @@ func (r *resourceTFEVariable) createWithVariableSet(ctx context.Context, req res
 	}
 
 	// We got a variable, so set state to new values
-	data.refreshFromTFEVariableSetVariable(*variable)
-	diags = resp.State.Set(ctx, &data)
+	result := modelFromTFEVariableSetVariable(*variable, data.Value)
+	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 
 }
@@ -333,7 +344,6 @@ func (r *resourceTFEVariable) Read(ctx context.Context, req resource.ReadRequest
 // readWithWorkspace is the workspace version of Read.
 func (r *resourceTFEVariable) readWithWorkspace(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var data modelTFEVariable
-	// Get prior state
 	diags := req.State.Get(ctx, &data)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -358,15 +368,14 @@ func (r *resourceTFEVariable) readWithWorkspace(ctx context.Context, req resourc
 	}
 
 	// We got a variable, so update state:
-	data.refreshFromTFEVariable(*variable)
-	diags = resp.State.Set(ctx, &data)
+	result := modelFromTFEVariable(*variable, data.Value)
+	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
 
 // readWithVariableSet is the variable set version of Read.
 func (r *resourceTFEVariable) readWithVariableSet(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var data modelTFEVariable
-	// Get prior state
 	diags := req.State.Get(ctx, &data)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -391,8 +400,8 @@ func (r *resourceTFEVariable) readWithVariableSet(ctx context.Context, req resou
 	}
 
 	// We got a variable, so update state:
-	data.refreshFromTFEVariableSetVariable(*variable)
-	diags = resp.State.Set(ctx, &data)
+	result := modelFromTFEVariableSetVariable(*variable, data.Value)
+	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -455,8 +464,8 @@ func (r *resourceTFEVariable) updateWithWorkspace(ctx context.Context, req resou
 		)
 	}
 	// Update state
-	plan.refreshFromTFEVariable(*variable)
-	diags = resp.State.Set(ctx, &plan)
+	result := modelFromTFEVariable(*variable, plan.Value)
+	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -500,8 +509,8 @@ func (r *resourceTFEVariable) updateWithVariableSet(ctx context.Context, req res
 		)
 	}
 	// Update state
-	plan.refreshFromTFEVariableSetVariable(*variable)
-	diags = resp.State.Set(ctx, &plan)
+	result := modelFromTFEVariableSetVariable(*variable, plan.Value)
+	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
 
