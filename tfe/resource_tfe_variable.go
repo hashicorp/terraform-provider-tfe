@@ -416,7 +416,6 @@ func (r *resourceTFEVariable) updateWithWorkspace(ctx context.Context, req resou
 		return
 	}
 
-	// Update a workspace variable
 	variableID := plan.ID.ValueString()
 	workspaceID := plan.WorkspaceID.ValueString()
 
@@ -472,7 +471,6 @@ func (r *resourceTFEVariable) updateWithVariableSet(ctx context.Context, req res
 		return
 	}
 
-	// Update a workspace variable
 	variableID := plan.ID.ValueString()
 	variableSetID := plan.VariableSetID.ValueString()
 
