@@ -252,7 +252,6 @@ func (r *resourceTFEVariable) createWithWorkspace(ctx context.Context, req resou
 	category := data.Category.ValueString()
 	workspaceID := data.WorkspaceID.ValueString()
 
-	// Make a workspace variable
 	options := tfe.VariableCreateOptions{
 		Key:         data.Key.ValueStringPointer(),
 		Value:       data.Value.ValueStringPointer(),
