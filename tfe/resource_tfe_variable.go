@@ -570,8 +570,105 @@ func (r *resourceTFEVariable) deleteWithVariableSet(ctx context.Context, req res
 	// Resource is implicitly deleted from resp.State if diagnostics have no errors.
 }
 
+var resourceTFEVariableSchemaV0 = schema.Schema{
+	Version: 0,
+	Attributes: map[string]schema.Attribute{
+		"id": schema.StringAttribute{
+			Computed: true,
+		},
+		"key": schema.StringAttribute{
+			Required: true,
+		},
+		"value": schema.StringAttribute{
+			Optional:  true,
+			Computed:  true,
+			Default:   stringdefault.StaticString(""),
+			Sensitive: true,
+		},
+		"category": schema.StringAttribute{
+			Required: true,
+			Validators: []validator.String{
+				stringvalidator.OneOf(
+					string(tfe.CategoryEnv),
+					string(tfe.CategoryTerraform),
+				),
+			},
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
+			},
+		},
+		"hcl": schema.BoolAttribute{
+			Optional: true,
+			Computed: true,
+			Default:  booldefault.StaticBool(false),
+		},
+		"sensitive": schema.BoolAttribute{
+			Optional: true,
+			Computed: true,
+			Default:  booldefault.StaticBool(false),
+		},
+		// Unlike the modern tfe_variable schema, this workspace_id was of the
+		// form org_name/ws_name.
+		"workspace_id": schema.StringAttribute{
+			Required: true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
+			},
+		},
+	},
+}
+
+// UpgradeState implements resource.ResourceWithUpgradeState
+func (r *resourceTFEVariable) UpgradeState(ctx context.Context) map[int64]resource.StateUpgrader {
+	return map[int64]resource.StateUpgrader{
+		// Upgrader from version 0 to 1 (schema 1 introduced in v0.15.1, commit
+		// 88a646c; changed workspace_id to use external ID instead of
+		// org/ws_name)
+		0: {
+			PriorSchema: &resourceTFEVariableSchemaV0,
+			StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
+				// Using modern model struct for oldData, since it's a superset of the old attrs.
+				var oldData modelTFEVariable
+				diags := req.State.Get(ctx, &oldData)
+				resp.Diagnostics.Append(diags...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+				// Get the workspace external ID
+				oldWorkspaceID := oldData.WorkspaceID.ValueString()
+				newWorkspaceID, err := fetchWorkspaceExternalID(oldWorkspaceID, r.config.Client)
+				if err != nil {
+					resp.Diagnostics.AddError(
+						"Error reading workspace",
+						fmt.Sprintf("Couldn't read workspace %s while trying to upgrade state of tfe_variable %s: %s", oldWorkspaceID, oldData.ID.ValueString(), err.Error()),
+					)
+					return
+				}
+				newData := modelTFEVariable{
+					// Updated ID
+					WorkspaceID: types.StringValue(newWorkspaceID),
+					// Other existing attrs unchanged
+					ID:        oldData.ID,
+					Key:       oldData.Key,
+					Value:     oldData.Value,
+					Category:  oldData.Category,
+					HCL:       oldData.HCL,
+					Sensitive: oldData.Sensitive,
+					// New attrs didn't exist
+					Description:   types.StringNull(),
+					VariableSetID: types.StringNull(),
+				}
+				diags = resp.State.Set(ctx, newData)
+				resp.Diagnostics.Append(diags...)
+			},
+		},
+	}
+}
+
 // Compile-time interface check
+var _ resource.Resource = &resourceTFEVariable{}
 var _ resource.ResourceWithConfigure = &resourceTFEVariable{}
+var _ resource.ResourceWithUpgradeState = &resourceTFEVariable{}
 
 // NewResourceVariable is a resource function for the framework provider.
 func NewResourceVariable() resource.Resource {
