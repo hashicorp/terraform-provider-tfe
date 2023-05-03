@@ -280,8 +280,8 @@ func (r *resourceTFEVariable) createWithWorkspace(ctx context.Context, req resou
 	variable, err := r.config.Client.Variables.Create(ctx, workspaceID, options)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Couldn't create variable",
-			fmt.Sprintf("Error creating %s variable %s: %s", category, key, err.Error()),
+			"Error creating variable",
+			fmt.Sprintf("Couldn't create %s variable %s: %s", category, key, err.Error()),
 		)
 		return
 	}
@@ -318,8 +318,8 @@ func (r *resourceTFEVariable) createWithVariableSet(ctx context.Context, req res
 	variable, err := r.config.Client.VariableSetVariables.Create(ctx, variableSetID, &options)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Couldn't create variable",
-			fmt.Sprintf("Error creating %s variable %s: %s", category, key, err.Error()),
+			"Error creating variable",
+			fmt.Sprintf("Couldn't create %s variable %s: %s", category, key, err.Error()),
 		)
 		return
 	}
@@ -359,8 +359,8 @@ func (r *resourceTFEVariable) readWithWorkspace(ctx context.Context, req resourc
 			resp.State.RemoveResource(ctx)
 		} else {
 			resp.Diagnostics.AddError(
-				"Couldn't read variable",
-				fmt.Sprintf("Error reading variable %s: %s", variableID, err.Error()),
+				"Error reading variable",
+				fmt.Sprintf("Couldn't read variable %s: %s", variableID, err.Error()),
 			)
 		}
 		return
@@ -391,8 +391,8 @@ func (r *resourceTFEVariable) readWithVariableSet(ctx context.Context, req resou
 			resp.State.RemoveResource(ctx)
 		} else {
 			resp.Diagnostics.AddError(
-				"Couldn't read variable",
-				fmt.Sprintf("Error reading variable %s: %s", variableID, err.Error()),
+				"Error reading variable",
+				fmt.Sprintf("Couldn't read variable %s: %s", variableID, err.Error()),
 			)
 		}
 		return
@@ -458,8 +458,8 @@ func (r *resourceTFEVariable) updateWithWorkspace(ctx context.Context, req resou
 	variable, err := r.config.Client.Variables.Update(ctx, workspaceID, variableID, options)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Couldn't update variable",
-			fmt.Sprintf("Error updating variable %s: %s", variableID, err.Error()),
+			"Error updating variable",
+			fmt.Sprintf("Couldn't update variable %s: %s", variableID, err.Error()),
 		)
 	}
 	// Update state
@@ -503,8 +503,8 @@ func (r *resourceTFEVariable) updateWithVariableSet(ctx context.Context, req res
 	variable, err := r.config.Client.VariableSetVariables.Update(ctx, variableSetID, variableID, options)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Couldn't update variable",
-			fmt.Sprintf("Error updating variable %s: %s", variableID, err.Error()),
+			"Error updating variable",
+			fmt.Sprintf("Couldn't update variable %s: %s", variableID, err.Error()),
 		)
 	}
 	// Update state
@@ -539,8 +539,8 @@ func (r *resourceTFEVariable) deleteWithWorkspace(ctx context.Context, req resou
 	// Ignore 404s for delete
 	if err != nil && err != tfe.ErrResourceNotFound {
 		resp.Diagnostics.AddError(
-			"Couldn't delete variable",
-			fmt.Sprintf("Error deleting variable %s: %s", variableID, err.Error()),
+			"Error deleting variable",
+			fmt.Sprintf("Couldn't delete variable %s: %s", variableID, err.Error()),
 		)
 	}
 	// Resource is implicitly deleted from resp.State if diagnostics have no errors.
@@ -563,8 +563,8 @@ func (r *resourceTFEVariable) deleteWithVariableSet(ctx context.Context, req res
 	// Ignore 404s for delete
 	if err != nil && err != tfe.ErrResourceNotFound {
 		resp.Diagnostics.AddError(
-			"Couldn't delete variable",
-			fmt.Sprintf("Error deleting variable %s: %s", variableID, err.Error()),
+			"Error deleting variable",
+			fmt.Sprintf("Couldn't delete variable %s: %s", variableID, err.Error()),
 		)
 	}
 	// Resource is implicitly deleted from resp.State if diagnostics have no errors.
