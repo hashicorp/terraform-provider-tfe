@@ -201,7 +201,6 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 				Validators: []validator.String{
 					stringvalidator.ExactlyOneOf(
 						path.MatchRelative().AtParent().AtName("variable_set_id"),
-						// TODO: double-check behavior and ensure it includes current attr in that list
 					),
 					stringvalidator.RegexMatches(
 						workspaceIDRegexp,
@@ -332,7 +331,6 @@ func (r *resourceTFEVariable) createWithVariableSet(ctx context.Context, req res
 	result := modelFromTFEVariableSetVariable(*variable, data.Value)
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
-
 }
 
 // Read implements resource.Resource
