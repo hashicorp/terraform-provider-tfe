@@ -115,8 +115,8 @@ func resourceTFERegistryModuleCreateWithVCS(v interface{}, meta interface{}) (*t
 	vcsRepo := v.([]interface{})[0].(map[string]interface{})
 
 	options.VCSRepo = &tfe.RegistryModuleVCSRepoOptions{
-		Identifier:        tfe.String(vcsRepo["identifier"].(string)),
-		OAuthTokenID:      tfe.String(vcsRepo["oauth_token_id"].(string)),
+		Identifier:   tfe.String(vcsRepo["identifier"].(string)),
+		OAuthTokenID: tfe.String(vcsRepo["oauth_token_id"].(string)),
 	}
 
 	// Only set the oauth_token_id if it is configured.
