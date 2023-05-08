@@ -8,6 +8,9 @@ FEATURES:
 ENHANCEMENTS:
 
 BUG FIXES:
+* `r/tfe_workspace`: Set attribute `oauth_token_id` and `github_app_installation_id` on `vcs_repo` only if configured, by @ishashchuk ([#875](https://github.com/hashicorp/terraform-provider-tfe/pull/875))
+* `r/tfe_policy_set`: Set attribute `oauth_token_id` and `github_app_installation_id` on `vcs_repo` only if configured, by @ishashchuk ([#875](https://github.com/hashicorp/terraform-provider-tfe/pull/875))
+* `r/tfe_registry_module`: Set attribute `oauth_token_id` and `github_app_installation_id` on `vcs_repo` only if configured, by @ishashchuk ([#875](https://github.com/hashicorp/terraform-provider-tfe/pull/875))
 
 ## v0.44.1 (April 21, 2023)
 
