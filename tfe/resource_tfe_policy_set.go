@@ -199,7 +199,6 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 		if ghaInstallationID, ok := vcsRepo["github_app_installation_id"].(string); ok && ghaInstallationID != "" {
 			options.VCSRepo.GHAInstallationID = tfe.String(ghaInstallationID)
 		}
-
 	}
 
 	for _, workspaceID := range d.Get("workspace_ids").(*schema.Set).List() {
