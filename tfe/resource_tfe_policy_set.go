@@ -354,9 +354,8 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 				Identifier:        tfe.String(vcsRepo["identifier"].(string)),
 				Branch:            tfe.String(vcsRepo["branch"].(string)),
 				IngressSubmodules: tfe.Bool(vcsRepo["ingress_submodules"].(bool)),
-				OAuthTokenID:      tfe.String(vcsRepo["oauth_token_id"].(string)),
-				GHAInstallationID: tfe.String(vcsRepo["github_app_installation_id"].(string)),
 			}
+
 			// Only set the oauth_token_id if it is configured.
 			if oauthTokenID, ok := vcsRepo["oauth_token_id"].(string); ok && oauthTokenID != "" {
 				options.VCSRepo.OAuthTokenID = tfe.String(oauthTokenID)
