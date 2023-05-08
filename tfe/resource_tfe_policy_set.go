@@ -183,14 +183,23 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 		options.VCSRepo = &tfe.VCSRepoOptions{
 			Identifier:        tfe.String(vcsRepo["identifier"].(string)),
 			IngressSubmodules: tfe.Bool(vcsRepo["ingress_submodules"].(bool)),
-			OAuthTokenID:      tfe.String(vcsRepo["oauth_token_id"].(string)),
-			GHAInstallationID: tfe.String(vcsRepo["github_app_installation_id"].(string)),
 		}
 
 		// Only set the branch if one is configured.
 		if branch, ok := vcsRepo["branch"].(string); ok && branch != "" {
 			options.VCSRepo.Branch = tfe.String(branch)
 		}
+
+		// Only set the oauth_token_id if it is configured.
+		if oauthTokenID, ok := vcsRepo["oauth_token_id"].(string); ok && oauthTokenID != "" {
+			options.VCSRepo.OAuthTokenID = tfe.String(oauthTokenID)
+		}
+
+		// Only set the github_app_installation_id if it is configured.
+		if ghaInstallationID, ok := vcsRepo["github_app_installation_id"].(string); ok && ghaInstallationID != "" {
+			options.VCSRepo.GHAInstallationID = tfe.String(ghaInstallationID)
+		}
+
 	}
 
 	for _, workspaceID := range d.Get("workspace_ids").(*schema.Set).List() {
@@ -348,6 +357,15 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 				IngressSubmodules: tfe.Bool(vcsRepo["ingress_submodules"].(bool)),
 				OAuthTokenID:      tfe.String(vcsRepo["oauth_token_id"].(string)),
 				GHAInstallationID: tfe.String(vcsRepo["github_app_installation_id"].(string)),
+			}
+			// Only set the oauth_token_id if it is configured.
+			if oauthTokenID, ok := vcsRepo["oauth_token_id"].(string); ok && oauthTokenID != "" {
+				options.VCSRepo.OAuthTokenID = tfe.String(oauthTokenID)
+			}
+
+			// Only set the github_app_installation_id if it is configured.
+			if ghaInstallationID, ok := vcsRepo["github_app_installation_id"].(string); ok && ghaInstallationID != "" {
+				options.VCSRepo.GHAInstallationID = tfe.String(ghaInstallationID)
 			}
 		}
 
