@@ -103,6 +103,16 @@ func resourceTFEWorkspaceRunUpdate(d *schema.ResourceData, meta interface{}) err
 }
 
 func resourceTFEWorkspaceRunRead(d *schema.ResourceData, meta interface{}) error {
+	// First check whether this is a destroy-only run
+	_, ok := d.GetOk("apply")
+	if !ok {
+		// If there's no apply, then there won't be anything to "read" until we
+		// do a destroy run. Return now and leave the ID alone, so that we keep
+		// the resource in the state and get a destroy run when the time comes.
+		log.Printf("[DEBUG] Run %s (random ID) has no apply; nothing to read for refresh", d.Id())
+		return nil
+	}
+
 	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read run for: %s", d.Id())
@@ -110,6 +120,10 @@ func resourceTFEWorkspaceRunRead(d *schema.ResourceData, meta interface{}) error
 	_, err := config.Client.Runs.Read(ctx, runID)
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
+			// It would be very strange for this to happen, since runs can't
+			// normally be deleted independently. But this *probably* means we
+			// never performed the initial apply, so we'll remove the missing
+			// run from the state to force an apply to happen.
 			log.Printf("[DEBUG] Run %s does not exist", d.Id())
 			d.SetId("")
 			return nil
