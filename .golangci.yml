@@ -93,7 +93,7 @@ issues:
     text: "S1019: should use make"
   - linters:
       - staticcheck
-    path: (resource_tfe_team_access_migrate_test|resource_tfe_variable_migrate_test|workspace_helpers_test)\.go
+    path: (resource_tfe_team_access_migrate_test|workspace_helpers_test)\.go
     text: "SA1012: do not pass a nil Context, even if a function permits it; pass context.TODO if you are unsure about which Context to use"
   - linters:
       - staticcheck
