@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5/tf5server"
 	"github.com/hashicorp/terraform-plugin-mux/tf5muxserver"
 	"github.com/hashicorp/terraform-provider-tfe/tfe"
@@ -36,17 +37,22 @@ func main() {
 	// terraform-plugin-mux here is used to combine multiple Terraform providers
 	// built using different SDK and frameworks in order to combine them into a
 	// single logical provider for Terraform to work with.
-	// Here, we use one provider (tfe.Provider) that relies on the standard
-	// terraform-plugin-sdk, and this is the main framework for used in this
-	// provider. The second provider (tfe.PluginProviderServer) relies on the
-	// lower level terraform-plugin-go to handle far more complex behavior, and
-	// only should be used for functionality that is not present in the
-	// common terraform-plugin- sdk framework.
+	// - The classic provider relies on terraform-plugin-sdk, and has the bulk
+	//   of the resources and data sources.
+	// - The "next" provider relies on the newer terraform-plugin-framework, and
+	//   we expect to migrate resources and data sources to it over time.
+	// - The low-level provider relies on terraform-plugin-go to handle more
+	//   complex behavior, and should only be used for functionality that is not
+	//   available otherwise. We suspect the framework can supplant it, but have
+	//   not proven that out yet.
+	nextProvider := providerserver.NewProtocol5(tfe.NewFrameworkProvider())
+	classicProvider := tfe.Provider().GRPCProvider
+	lowLevelProvider := tfe.PluginProviderServer
 	mux, err := tf5muxserver.NewMuxServer(
-		ctx, tfe.Provider().GRPCProvider, tfe.PluginProviderServer,
+		ctx, nextProvider, classicProvider, lowLevelProvider,
 	)
 	if err != nil {
-		log.Printf("[ERROR] Could not setup a NewSchemaServerFactory using the providers: %v", err)
+		log.Printf("[ERROR] Could not setup a mux server using the internal providers: %v", err)
 		os.Exit(1)
 	}
 

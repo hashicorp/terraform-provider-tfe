@@ -13,6 +13,7 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
 	"github.com/hashicorp/terraform-plugin-mux/tf5muxserver"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -35,8 +36,10 @@ func init() {
 	testAccMuxedProviders = map[string]func() (tfprotov5.ProviderServer, error){
 		"tfe": func() (tfprotov5.ProviderServer, error) {
 			ctx := context.Background()
+			nextProvider := providerserver.NewProtocol5(NewFrameworkProvider())
+
 			mux, err := tf5muxserver.NewMuxServer(
-				ctx, PluginProviderServer, testAccProvider.GRPCProvider,
+				ctx, nextProvider, PluginProviderServer, testAccProvider.GRPCProvider,
 			)
 			if err != nil {
 				return nil, err
