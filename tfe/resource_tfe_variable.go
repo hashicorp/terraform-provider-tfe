@@ -436,7 +436,7 @@ func (r *resourceTFEVariable) updateWithWorkspace(ctx context.Context, req resou
 
 	// When a tfe update options struct uses pointers, any nil fields are
 	// omitted in the API request, preserving the prior value. Here, we always
-	// want to omit Category (can't update it, cf. the schema), and only
+	// want to omit Category (can't update it, see the schema), and only
 	// *sometimes* want to include Value.
 	options := tfe.VariableUpdateOptions{
 		Key:         plan.Key.ValueStringPointer(),
@@ -449,7 +449,7 @@ func (r *resourceTFEVariable) updateWithWorkspace(ctx context.Context, req resou
 	// value of a sensitive variable on unrelated changes when `ignore_changes =
 	// [value]` is set. (Basically: since we can't observe the real-world
 	// condition of a sensitive variable, we don't KNOW whether setting it to
-	// our last-known value is a safely idempotent operation or not. This is why
+	// our last-known value is a safe idempotent operation or not. This is why
 	// Terraform doesn't promise that it can manage drift at all for write-only
 	// attributes.)
 	if state.Value.ValueString() != plan.Value.ValueString() {
