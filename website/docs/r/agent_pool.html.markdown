@@ -35,8 +35,6 @@ The following arguments are supported:
 * `name` - (Required) Name of the agent pool.
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `organization_scoped` - (Optional) Whether or not the agent pool is scoped to all workspaces in the organization. Defaults to `true`.
-* `allowed_workspace_ids` - (Optional) IDs of the workspaces that to which agent pools is scoped.
-    If `organization_scoped` is set to `true`, this argument will not be served and agent pool will be scoped to all the workspaces.
 
 ## Attributes Reference
 

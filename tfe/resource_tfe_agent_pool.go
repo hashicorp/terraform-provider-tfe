@@ -41,13 +41,6 @@ func resourceTFEAgentPool() *schema.Resource {
 				Optional: true,
 				Default:  true,
 			},
-
-			"allowed_workspace_ids": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-			},
 		},
 	}
 }
@@ -66,14 +59,6 @@ func resourceTFEAgentPoolCreate(d *schema.ResourceData, meta interface{}) error 
 	options := tfe.AgentPoolCreateOptions{
 		Name:               tfe.String(name),
 		OrganizationScoped: tfe.Bool(d.Get("organization_scoped").(bool)),
-	}
-
-	if allowedWorkspaceIDs, allowedWorkspaceSet := d.GetOk("allowed_workspace_ids"); !*options.OrganizationScoped && allowedWorkspaceSet {
-		for _, workspaceID := range allowedWorkspaceIDs.(*schema.Set).List() {
-			if val, ok := workspaceID.(string); ok {
-				options.AllowedWorkspaces = append(options.AllowedWorkspaces, &tfe.Workspace{ID: val})
-			}
-		}
 	}
 
 	log.Printf("[DEBUG] Create new agent pool for organization: %s", organization)
@@ -107,12 +92,6 @@ func resourceTFEAgentPoolRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("organization", agentPool.Organization.Name)
 	d.Set("organization_scoped", agentPool.OrganizationScoped)
 
-	var wids []interface{}
-	for _, workspace := range agentPool.AllowedWorkspaces {
-		wids = append(wids, workspace.ID)
-	}
-	d.Set("allowed_workspace_ids", wids)
-
 	return nil
 }
 
@@ -123,19 +102,6 @@ func resourceTFEAgentPoolUpdate(d *schema.ResourceData, meta interface{}) error 
 	options := tfe.AgentPoolUpdateOptions{
 		Name:               tfe.String(d.Get("name").(string)),
 		OrganizationScoped: tfe.Bool(d.Get("organization_scoped").(bool)),
-	}
-
-	//if d.HasChange("organization_scoped") {
-	//	options.OrganizationScoped = tfe.Bool(d.Get("organization_scoped").(bool))
-	//}
-
-	if allowedWorkspaceIDs, allowedWorkspaceSet := d.GetOk("allowed_workspace_ids"); !*options.OrganizationScoped && allowedWorkspaceSet {
-		options.AllowedWorkspaces = []*tfe.Workspace{}
-		for _, workspaceID := range allowedWorkspaceIDs.(*schema.Set).List() {
-			if val, ok := workspaceID.(string); ok {
-				options.AllowedWorkspaces = append(options.AllowedWorkspaces, &tfe.Workspace{ID: val})
-			}
-		}
 	}
 
 	log.Printf("[DEBUG] Update agent pool: %s", d.Id())

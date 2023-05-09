@@ -117,13 +117,10 @@ func TestAccTFEAgentPool_update(t *testing.T) {
 					testAccCheckTFEAgentPoolExists(
 						"tfe_agent_pool.foobar", agentPool),
 					testAccCheckTFEAgentPoolAttributesUpdated(agentPool),
-					testAccCheckTFEAgentPoolAllowedWorkspacesCount(agentPool),
 					resource.TestCheckResourceAttr(
 						"tfe_agent_pool.foobar", "name", "agent-pool-updated"),
 					resource.TestCheckResourceAttr(
 						"tfe_agent_pool.foobar", "organization_scoped", "false"),
-					resource.TestCheckResourceAttr(
-						"tfe_agent_pool.foobar", "allowed_workspace_ids.#", "1"),
 				),
 			},
 		},
@@ -203,16 +200,6 @@ func testAccCheckTFEAgentPoolAttributes(
 	}
 }
 
-func testAccCheckTFEAgentPoolAllowedWorkspacesCount(
-	agentPool *tfe.AgentPool) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		if len(agentPool.AllowedWorkspaces) != 1 {
-			return fmt.Errorf("expected 1 allowed workspaces got: %d", len(agentPool.AllowedWorkspaces))
-		}
-		return nil
-	}
-}
-
 func testAccCheckTFEAgentPoolAttributesUpdated(
 	agentPool *tfe.AgentPool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
@@ -272,6 +259,5 @@ resource "tfe_agent_pool" "foobar" {
   name         = "agent-pool-updated"
   organization = "%s"
   organization_scoped = false
-  allowed_workspace_ids = [tfe_workspace.foobar.id]
 }`, organization, organization)
 }

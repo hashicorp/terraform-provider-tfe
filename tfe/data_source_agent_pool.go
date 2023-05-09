@@ -54,11 +54,11 @@ func dataSourceTFEAgentPoolRead(d *schema.ResourceData, meta interface{}) error 
 	d.SetId(pool.ID)
 	d.Set("organization_scoped", pool.OrganizationScoped)
 
-	var wids []interface{}
-	for _, workspace := range pool.AllowedWorkspaces {
-		wids = append(wids, workspace.ID)
+	var allowedWorkspaceIDs []string
+	for _, allowedWorkspaceID := range pool.AllowedWorkspaces {
+		allowedWorkspaceIDs = append(allowedWorkspaceIDs, allowedWorkspaceID.ID)
 	}
-	d.Set("allowed_workspace_ids", wids)
+	d.Set("allowed_workspace_ids", allowedWorkspaceIDs)
 
 	return nil
 }

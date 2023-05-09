@@ -14,9 +14,11 @@ FEATURES:
 * `r/tfe_variable`: Add a `readable_value` attribute, which will provide an un-redacted representation of the variable's value in plan outputs if the variable is not sensitive, and which may be referenced by downstream resources by @JarrettSpiker ([#801](https://github.com/hashicorp/terraform-provider-tfe/pull/867))
 * `r/tfe_organization_token`: Add optional `expired_at` field to organization tokens by, @juliannatetreault ([#844](https://github.com/hashicorp/terraform-provider-tfe/pull/844))
 * `r/tfe_team_token`: Add optional `expired_at` field to team tokens by, @juliannatetreault ([#844](https://github.com/hashicorp/terraform-provider-tfe/pull/844))
+* **New Resource**: `r/tfe_agent_pool_allowed_workspaces` restricts the use of an agent pool to particular workspaces, by @hs26gill [870](https://github.com/hashicorp/terraform-provider-tfe/pull/870)
 
 ENHANCEMENTS:
-* `r/tfe_agent_pool` and `d/tfe_agent_pool`: Add attribute `organization_scoped` and `allowed_workspace_ids` to allow scoping agent pools to workspaces by @hs26gill [870](https://github.com/hashicorp/terraform-provider-tfe/pull/870)
+* `r/tfe_agent_pool`: Add attribute `organization_scoped` to set the scope of an agent pool by @hs26gill [870](https://github.com/hashicorp/terraform-provider-tfe/pull/870)
+* `d/tfe_agent_pool`: Add attribute `organization_scoped` and `allowed_workspace_ids` to retrieve agent pool scope and associated allowed workspace ids by @hs26gill [870](https://github.com/hashicorp/terraform-provider-tfe/pull/870)
 
 * `r/tfe_workspace`: Retry workspace safe delete if resources are still being processed to determine safety. ([#881](https://github.com/hashicorp/terraform-provider-tfe/pull/881))
 

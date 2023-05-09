@@ -107,7 +107,11 @@ resource "tfe_agent_pool" "foobar" {
   name                  = "agent-pool-test-%d"
   organization          = "%s"
   organization_scoped   = false
-  allowed_workspace_ids = ["%s"]
+}
+
+resource "tfe_agent_pool_allowed_workspaces" "foobar" {
+	agent_pool_id = tfe_agent_pool.foobar.id
+  	allowed_workspace_ids = ["%s"]
 }
 
 data "tfe_agent_pool" "foobar" {
