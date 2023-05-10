@@ -5,6 +5,7 @@ package tfe
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -356,7 +357,7 @@ func (r *resourceTFEVariable) readWithWorkspace(ctx context.Context, req resourc
 	variable, err := r.config.Client.Variables.Read(ctx, workspaceID, variableID)
 	if err != nil {
 		// If it's gone: that's not an error, but we are done.
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			log.Printf("[DEBUG] Variable %s no longer exists", variableID)
 			resp.State.RemoveResource(ctx)
 		} else {
@@ -387,7 +388,7 @@ func (r *resourceTFEVariable) readWithVariableSet(ctx context.Context, req resou
 	variableSetID := data.VariableSetID.ValueString()
 	variable, err := r.config.Client.VariableSetVariables.Read(ctx, variableSetID, variableID)
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			// If it's gone: that's not an error, but we are done.
 			log.Printf("[DEBUG] Variable %s no longer exists", variableID)
 			resp.State.RemoveResource(ctx)
@@ -539,7 +540,7 @@ func (r *resourceTFEVariable) deleteWithWorkspace(ctx context.Context, req resou
 	log.Printf("[DEBUG] Delete variable: %s", variableID)
 	err := r.config.Client.Variables.Delete(ctx, workspaceID, variableID)
 	// Ignore 404s for delete
-	if err != nil && err != tfe.ErrResourceNotFound {
+	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 		resp.Diagnostics.AddError(
 			"Error deleting variable",
 			fmt.Sprintf("Couldn't delete variable %s: %s", variableID, err.Error()),
@@ -563,7 +564,7 @@ func (r *resourceTFEVariable) deleteWithVariableSet(ctx context.Context, req res
 	log.Printf("[DEBUG] Delete variable: %s", variableID)
 	err := r.config.Client.VariableSetVariables.Delete(ctx, variableSetID, variableID)
 	// Ignore 404s for delete
-	if err != nil && err != tfe.ErrResourceNotFound {
+	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 		resp.Diagnostics.AddError(
 			"Error deleting variable",
 			fmt.Sprintf("Couldn't delete variable %s: %s", variableID, err.Error()),
