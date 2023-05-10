@@ -9,7 +9,7 @@ description: |-
 
 Use this data source to get information about an agent pool.
 
-~> **NOTE:** This resource requires using the provider with [Terraform Cloud](https://www.hashicorp.com/products/terraform/pricing).
+~> **NOTE:** This data source requires using the provider with [Terraform Cloud](https://www.hashicorp.com/products/terraform/pricing).
 
 ## Example Usage
 
