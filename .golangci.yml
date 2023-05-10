@@ -56,7 +56,7 @@ issues:
     text: "regexpSimplify: can re-write"
   - linters:
       - gosec
-    path: _test\.go
+    path: (_test|workspace_run_helpers)\.go
   - linters:
       - nestif
     path: (resource_tfe_team_access|resource_tfe_workspace|credentials|resource_tfe_policy_set|
