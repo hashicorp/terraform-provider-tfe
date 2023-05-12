@@ -232,15 +232,11 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 				},
 			},
 			"readable_value": schema.StringAttribute{
-				Optional: true,
 				Computed: true,
 				Description: "A non-sensitive read-only copy of the variable value, which can be viewed or referenced " +
 					"in plan outputs without being redacted. Will only be present if the variable is not sensitive",
 				PlanModifiers: []planmodifier.String{
 					&updateReadableValuePlanModifier{},
-				},
-				Validators: []validator.String{
-					&readableValueNotSetInConfigValidator{},
 				},
 			},
 		},
@@ -760,35 +756,12 @@ func (u *updateReadableValuePlanModifier) PlanModifyString(ctx2 context.Context,
 	response.PlanValue = actualValue
 }
 
-type readableValueNotSetInConfigValidator struct{}
-
-func (r *readableValueNotSetInConfigValidator) Description(ctx2 context.Context) string {
-	return "readable_value is computed only, and may not be set explicitly in the terraform configuration"
-}
-
-func (r *readableValueNotSetInConfigValidator) MarkdownDescription(ctx2 context.Context) string {
-	return r.Description(ctx2)
-}
-
-func (r *readableValueNotSetInConfigValidator) ValidateString(ctx2 context.Context, request validator.StringRequest, response *validator.StringResponse) {
-	if request.ConfigValue.IsUnknown() || request.ConfigValue.IsNull() {
-		return
-	}
-
-	response.Diagnostics.AddAttributeError(
-		request.Path,
-		"readable_value explicitly set",
-		"readable_value is meant to only be read from the resource, not set directly",
-	)
-}
-
 // Compile-time interface check
 var _ resource.Resource = &resourceTFEVariable{}
 var _ resource.ResourceWithConfigure = &resourceTFEVariable{}
 var _ resource.ResourceWithUpgradeState = &resourceTFEVariable{}
 var _ resource.ResourceWithImportState = &resourceTFEVariable{}
 var _ planmodifier.String = &updateReadableValuePlanModifier{}
-var _ validator.String = &readableValueNotSetInConfigValidator{}
 
 // NewResourceVariable is a resource function for the framework provider.
 func NewResourceVariable() resource.Resource {

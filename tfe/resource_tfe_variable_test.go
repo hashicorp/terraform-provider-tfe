@@ -372,7 +372,7 @@ func TestAccTFEVariable_readable_value_explicitlySet(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEVariable_readablevalue_setExplicitly(rInt, variableValue1),
-				ExpectError: regexp.MustCompile(`readable_value explicitly set`),
+				ExpectError: regexp.MustCompile(`Invalid Configuration for Read-Only Attribute`),
 			},
 		},
 	})
