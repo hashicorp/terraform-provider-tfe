@@ -234,7 +234,7 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 			"readable_value": schema.StringAttribute{
 				Optional: true,
 				Computed: true,
-				Description: "A non-sensitive read-only copy of the variable value, which can be viewed or references " +
+				Description: "A non-sensitive read-only copy of the variable value, which can be viewed or referenced " +
 					"in plan outputs without being redacted. Will only be present if the variable is not sensitive",
 				PlanModifiers: []planmodifier.String{
 					&updateReadableValuePlanModifier{},
