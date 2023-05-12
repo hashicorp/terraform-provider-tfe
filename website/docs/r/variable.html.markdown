@@ -97,7 +97,7 @@ in the state.
 
 While the `value` field may be referenced in other resources, for safety it is always treated as sensitive. This means that it will always be redacted from plan outputs, and any other resource attributes which depend on it will also be redacted.
 
-The `readable_value` attribute is not sensitive, and will not be redacted. This allows other resources to reference it, while keeping their plan outputs readable.
+The `readable_value` attribute is not sensitive, and will not be redacted; instead, it will be null if the variable is sensitive. This allows other resources to reference it, while keeping their plan outputs readable.
 
 For example:
 ```
