@@ -132,7 +132,11 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 				time.Now().Format(time.UnixDate))),
 		})
 		if err != nil {
-			return fmt.Errorf("run errored while applying run %s: %w", run.ID, err)
+			refreshed, fetchErr := config.Client.Runs.Read(ctx, run.ID)
+			if fetchErr != nil {
+				err = fmt.Errorf("%w\n additionally, got an error while reading the run: %w", err, fetchErr)
+			}
+			return fmt.Errorf("run errored while applying run %s (waited til status %s, currently status %s): %w", run.ID, run.Status, refreshed.Status, err)
 		}
 	}
 
