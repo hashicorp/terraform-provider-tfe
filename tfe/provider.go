@@ -49,6 +49,9 @@ type ConfigHost struct {
 	Services map[string]interface{} `hcl:"services"`
 }
 
+// ConfiguredClient wraps the tfe.Client the provider uses, plus the default
+// organization name to be used by resources that need an organization but don't
+// specify one.
 type ConfiguredClient struct {
 	Client       *tfe.Client
 	Organization string
@@ -162,10 +165,10 @@ func Provider() *schema.Provider {
 			"tfe_terraform_version":           resourceTFETerraformVersion(),
 			"tfe_workspace":                   resourceTFEWorkspace(),
 			"tfe_workspace_run_task":          resourceTFEWorkspaceRunTask(),
-			"tfe_variable":                    resourceTFEVariable(),
 			"tfe_variable_set":                resourceTFEVariableSet(),
 			"tfe_workspace_variable_set":      resourceTFEWorkspaceVariableSet(),
 			"tfe_workspace_policy_set":        resourceTFEWorkspacePolicySet(),
+			"tfe_workspace_run":               resourceTFEWorkspaceRun(),
 		},
 		ConfigureContextFunc: configure(),
 	}
@@ -215,6 +218,10 @@ func getTokenFromCreds(services *disco.Disco, hostname svchost.Hostname) string 
 	return ""
 }
 
+// getClient encapsulates the logic for configuring a go-tfe client instance for
+// the provider, including fallback to values from environment variables. This
+// is useful because we're muxing multiple provider servers together and each
+// one needs an identically configured client.
 func getClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
 	h := tfeHost
 	if tfeHost == "" {

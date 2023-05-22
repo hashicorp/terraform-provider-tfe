@@ -56,7 +56,7 @@ issues:
     text: "regexpSimplify: can re-write"
   - linters:
       - gosec
-    path: _test\.go
+    path: (_test|workspace_run_helpers)\.go
   - linters:
       - nestif
     path: (resource_tfe_team_access|resource_tfe_workspace|credentials|resource_tfe_policy_set|
@@ -93,7 +93,7 @@ issues:
     text: "S1019: should use make"
   - linters:
       - staticcheck
-    path: (resource_tfe_team_access_migrate_test|resource_tfe_variable_migrate_test|workspace_helpers_test)\.go
+    path: (resource_tfe_team_access_migrate_test|workspace_helpers_test)\.go
     text: "SA1012: do not pass a nil Context, even if a function permits it; pass context.TODO if you are unsure about which Context to use"
   - linters:
       - staticcheck
@@ -135,6 +135,7 @@ linters-settings:
       - singleCaseSwitch
       - ifElseChain
       - nestingReduce
+      - sloppyTestFuncName
   revive:
     # see https://github.com/mgechev/revive#available-rules for details.
     ignore-generated-header: false #recommended in their configuration

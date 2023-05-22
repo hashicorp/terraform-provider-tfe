@@ -10,10 +10,6 @@ description: |-
 Each agent pool has its own set of tokens which are not shared across pools.
 These tokens allow agents to communicate securely with Terraform Cloud.
 
-~> **NOTE:** This resource requires using the provider with Terraform Cloud and a Terraform Cloud 
-for Business account. 
-[Learn more about Terraform Cloud pricing here](https://www.hashicorp.com/products/terraform/pricing).
-
 ## Example Usage
 
 Basic usage:

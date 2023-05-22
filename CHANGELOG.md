@@ -1,3 +1,17 @@
+## Unreleased
+
+BREAKING CHANGES:
+
+FEATURES:
+* `r/tfe_team`: Add attribute `manage_membership` to `organization_access` on `tfe_team` by @JarrettSpiker ([#801](https://github.com/hashicorp/terraform-provider-tfe/pull/801))
+* **New Resource**: `r/tfe_workspace_run` manages create and destroy lifecycles in a workspace, by @uk1288 ([#786](https://github.com/hashicorp/terraform-provider-tfe/pull/786))
+
+ENHANCEMENTS:
+
+BUG FIXES:
+
+* `r/tfe_variable`: Don't silently erase or override the `value` of a sensitive variable on changes to other attributes when `ignore_changes = [value]` is set, by @nfagerlund ([#873](https://github.com/hashicorp/terraform-provider-tfe/pull/873), fixing issue [#839](https://github.com/hashicorp/terraform-provider-tfe/issues/839))
+
 ## v0.44.1 (April 21, 2023)
 
 BUG FIXES:

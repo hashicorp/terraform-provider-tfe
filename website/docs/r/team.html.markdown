@@ -54,6 +54,7 @@ The `organization_access` block supports:
 * `manage_modules` - (Optional) Allow members to publish and delete modules in the organization's private registry.
 * `manage_run_tasks` - (Optional) Allow members to create, edit, and delete the organization's run tasks.
 * `manage_projects` - (Optional) Allow members to create and administrate all projects within the organization. Requires `manage_workspaces` to be set to `true`.
+* `manage_membership` - (Optional) Allow members to add/remove users from the organization, and to add/remove users from visible teams.
 
 ## Attributes Reference
 

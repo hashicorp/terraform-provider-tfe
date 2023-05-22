@@ -19,9 +19,9 @@ func TestAccTFEVariable_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEVariableDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEVariable_basic(rInt),
@@ -52,9 +52,9 @@ func TestAccTFEVariable_basic_variable_set(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEVariableDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEVariable_basic_variable_set(rInt),
@@ -85,9 +85,9 @@ func TestAccTFEVariable_update(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEVariableDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEVariable_basic(rInt),
@@ -140,9 +140,9 @@ func TestAccTFEVariable_update_key_sensitive(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEVariableDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEVariable_update(rInt),
@@ -193,9 +193,9 @@ func TestAccTFEVariable_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEVariableDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEVariable_basic(rInt),
@@ -206,6 +206,32 @@ func TestAccTFEVariable_import(t *testing.T) {
 				ImportState:         true,
 				ImportStateIdPrefix: fmt.Sprintf("tst-terraform-%d/workspace-test/", rInt),
 				ImportStateVerify:   true,
+			},
+		},
+	})
+}
+
+// Verify that the rewritten framework version of the resource results in no
+// changes when upgrading from the final sdk v2 version of the resource.
+func TestAccTFEVariable_rewrite(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		Steps: []resource.TestStep{
+			{
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"tfe": {
+						VersionConstraint: "0.44.1",
+						Source:            "hashicorp/tfe",
+					},
+				},
+				Config: testAccTFEVariable_everything(rInt),
+				// leaving Check empty, we just care that they're the same
+			},
+			{
+				ProtoV5ProviderFactories: testAccMuxedProviders,
+				Config:                   testAccTFEVariable_everything(rInt),
+				PlanOnly:                 true,
 			},
 		},
 	})
@@ -516,5 +542,91 @@ resource "tfe_variable" "foobar" {
   hcl          = true
   sensitive    = true
   workspace_id = tfe_workspace.foobar.id
+}`, rInt)
+}
+
+func testAccTFEVariable_everything(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_variable" "ws_env" {
+  key          = "ENV_ONE"
+  value        = "value_test"
+  description  = "some description"
+  category     = "env"
+  workspace_id = tfe_workspace.foobar.id
+}
+
+resource "tfe_variable" "ws_env_sensitive" {
+  key          = "ENV_SENSITIVE"
+  value        = "value_test"
+  description  = "some description"
+  category     = "env"
+  sensitive    = true
+  workspace_id = tfe_workspace.foobar.id
+}
+
+resource "tfe_variable" "ws_terraform" {
+  key          = "key_one"
+  value        = "value_test"
+  description  = "some description"
+  category     = "terraform"
+  workspace_id = tfe_workspace.foobar.id
+}
+
+resource "tfe_variable" "ws_terraform_hcl" {
+  key          = "key_hcl"
+  value        = "{ map_key = \"value\" }"
+  description  = "some description"
+  category     = "terraform"
+  hcl          = true
+  workspace_id = tfe_workspace.foobar.id
+}
+
+resource "tfe_variable" "ws_terraform_no_val" {
+  key          = "key_no_val"
+  # value absent, defaults to empty string
+  description  = "some description"
+  category     = "terraform"
+  workspace_id = tfe_workspace.foobar.id
+}
+
+resource "tfe_variable_set" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_variable" "vs_env" {
+  key          = "ENV_ONE"
+  value        = "value_test"
+  description  = "other description"
+  category     = "env"
+  variable_set_id = tfe_variable_set.foobar.id
+}
+
+resource "tfe_variable" "vs_env_sensitive" {
+  key          = "ENV_TWO"
+  value        = "value_test"
+  description  = "other description"
+  category     = "env"
+  sensitive    = true
+  variable_set_id = tfe_variable_set.foobar.id
+}
+
+resource "tfe_variable" "vs_terraform" {
+  key          = "key_whatever"
+  value        = "\"hcl string\""
+  description  = "other description"
+  category     = "terraform"
+  hcl          = true
+  variable_set_id = tfe_variable_set.foobar.id
 }`, rInt)
 }

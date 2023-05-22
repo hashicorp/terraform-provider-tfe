@@ -161,6 +161,42 @@ func createOrganizationMembership(t *testing.T, client *tfe.Client, orgName stri
 	return orgMembership
 }
 
+func createAndUploadConfigurationVersion(t *testing.T, workspace *tfe.Workspace, tfeClient *tfe.Client, configPath string) *tfe.ConfigurationVersion {
+	cv, err := tfeClient.ConfigurationVersions.Create(ctx, workspace.ID, tfe.ConfigurationVersionCreateOptions{AutoQueueRuns: tfe.Bool(false)})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = tfeClient.ConfigurationVersions.Upload(ctx, cv.UploadURL, configPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ticker := time.NewTicker(time.Second * 10)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			t.Fatal("Context canceled while waiting for the configuration version to be uploaded: %w", ctx.Err())
+		case <-ticker.C:
+			cv, err = tfeClient.ConfigurationVersions.Read(ctx, cv.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			switch cv.Status {
+			case tfe.ConfigurationUploaded:
+				return cv
+			case tfe.ConfigurationFetching, tfe.ConfigurationPending:
+				t.Logf("Waiting for the configuration version to be uploaded for workspace %s...", workspace.ID)
+			default:
+				t.Fatalf("Configuration version entered unexpected state %s", cv.Status)
+			}
+		}
+	}
+}
+
 func createProject(t *testing.T, client *tfe.Client, orgName string, options tfe.ProjectCreateOptions) *tfe.Project {
 	ctx := context.Background()
 	proj, err := client.Projects.Create(ctx, orgName, options)
