@@ -724,15 +724,15 @@ func (r *resourceTFEVariable) ImportState(ctx context.Context, req resource.Impo
 
 type updateReadableValuePlanModifier struct{}
 
-func (u *updateReadableValuePlanModifier) Description(ctx2 context.Context) string {
+func (u *updateReadableValuePlanModifier) Description(ctx context.Context) string {
 	return "The readable_value will match the value if sensitive is false, or be empty otherwise"
 }
 
-func (u *updateReadableValuePlanModifier) MarkdownDescription(ctx2 context.Context) string {
-	return u.Description(ctx2)
+func (u *updateReadableValuePlanModifier) MarkdownDescription(ctx context.Context) string {
+	return u.Description(ctx)
 }
 
-func (u *updateReadableValuePlanModifier) PlanModifyString(ctx2 context.Context, request planmodifier.StringRequest, response *planmodifier.StringResponse) {
+func (u *updateReadableValuePlanModifier) PlanModifyString(ctx context.Context, request planmodifier.StringRequest, response *planmodifier.StringResponse) {
 	var sensitive types.Bool
 	diags := request.Plan.GetAttribute(ctx, path.Root("sensitive"), &sensitive)
 	response.Diagnostics.Append(diags...)

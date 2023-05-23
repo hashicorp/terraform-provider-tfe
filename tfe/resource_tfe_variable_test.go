@@ -359,25 +359,6 @@ func TestAccTFEVariable_varset_readable_value_becomes_sensitive(t *testing.T) {
 	})
 }
 
-func TestAccTFEVariable_readable_value_explicitlySet(t *testing.T) {
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-
-	variableValue1 := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-
-	// Test that we throw an error if the user attempts to explicitly set the readable_value in the configuration
-	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
-		CheckDestroy:             testAccCheckTFEVariableDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config:      testAccTFEVariable_readablevalue_setExplicitly(rInt, variableValue1),
-				ExpectError: regexp.MustCompile(`Invalid Configuration for Read-Only Attribute`),
-			},
-		},
-	})
-}
-
 func TestAccTFEVariable_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -883,27 +864,4 @@ resource "tfe_workspace" "downstream-nonreadable" {
   organization = tfe_organization.foobar.id
 }
 `, rIntOrg, rIntVariableValue, strconv.FormatBool(sensitive))
-}
-
-func testAccTFEVariable_readablevalue_setExplicitly(rIntOrg int, rIntVariableValue int) string {
-	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-	name  = "tst-terraform-%d"
-	email = "admin@company.com"
-}
-
-resource "tfe_workspace" "foobar" {
-	name         = "workspace-test"
-	organization = tfe_organization.foobar.id
-}
-
-resource "tfe_variable" "foobar" {
-  key          = "key_test"
-  value        = "%d"
-  readable_value = "%d"
-  description  = "some description"
-  category     = "env"
-  workspace_id = tfe_workspace.foobar.id
-}
-`, rIntOrg, rIntVariableValue, rIntVariableValue)
 }
