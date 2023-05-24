@@ -74,13 +74,11 @@ func resourceTFETeamTokenCreate(d *schema.ResourceData, meta interface{}) error 
 	options := tfe.TeamTokenCreateOptions{}
 
 	// Check whether the optional expiry was provided.
-	_, expiredAtProvided := d.GetOk("expired_at")
+	expiredAt, expiredAtProvided := d.GetOk("expired_at")
 
 	// If an expiry was provided, parse it and update the options struct.
 	if expiredAtProvided {
-		expiredAt := d.Get("expired_at").(string)
-
-		expiry, err := time.Parse(time.RFC3339, expiredAt)
+		expiry, err := time.Parse(time.RFC3339, expiredAt.(string))
 
 		options.ExpiredAt = &expiry
 

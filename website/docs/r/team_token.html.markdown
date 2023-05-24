@@ -40,7 +40,7 @@ iso8601 format. If no expiration date is supplied, the expiration date will defa
 Basic usage:
 
 ```hcl
-resource "tfe_team" "test" {
+resource "tfe_team_token" "test" {
   name         = "my-team-name"
   organization = "my-org-name"
   expired_at = "2051-04-11T23:15:59+00:00"

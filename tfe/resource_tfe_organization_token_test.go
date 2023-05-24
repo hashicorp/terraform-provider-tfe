@@ -102,7 +102,7 @@ func TestAccTFEOrganizationToken_existsWithForce(t *testing.T) {
 func TestAccTFEOrganizationToken_existsWithoutExpiry(t *testing.T) {
 	token := &tfe.OrganizationToken{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+	expiredAt := "null"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -115,7 +115,7 @@ func TestAccTFEOrganizationToken_existsWithoutExpiry(t *testing.T) {
 					testAccCheckTFEOrganizationTokenExists(
 						"tfe_organization_token.foobar", token),
 					resource.TestCheckResourceAttr(
-						"tfe_organization_token.foobar", "organization", orgName),
+						"tfe_organization_token.expiry", "expired_at", expiredAt),
 				),
 			},
 		},
@@ -140,6 +140,22 @@ func TestAccTFEOrganizationToken_existsWithExpiry(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_organization_token.expiry", "expired_at", expiredAt),
 				),
+			},
+		},
+	})
+}
+
+func TestAccTFEOrganizationToken_existsWithInvalidExpiry(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEOrganizationTokenDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFEOrganizationToken_existsWithInvalidExpiry(rInt),
+				ExpectError: regexp.MustCompile(`must be a valid date or time, provided in iso8601 format`),
 			},
 		},
 	})
@@ -271,6 +287,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_organization_token" "foobar" {
   organization = tfe_organization.foobar.id
+  expired_at = null
 }
 
 resource "tfe_organization_token" "error" {
@@ -292,5 +309,22 @@ resource "tfe_organization_token" "foobar" {
 resource "tfe_organization_token" "expiry" {
   organization  = tfe_organization.foobar.id
   expired_at 	= "2051-04-11T23:15:59+00:00"
+}`, rInt)
+}
+
+func testAccTFEOrganizationToken_existsWithInvalidExpiry(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_organization_token" "foobar" {
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_organization_token" "expiry" {
+  organization  = tfe_organization.foobar.id
+  expired_at 	= "2000-04-11"
 }`, rInt)
 }
