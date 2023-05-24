@@ -9,6 +9,8 @@ FEATURES:
 
 ENHANCEMENTS:
 
+* `r/tfe_workspace`: Retry workspace safe delete if resources are still being processed to determine safety. ([#881](https://github.com/hashicorp/terraform-provider-tfe/pull/881))
+
 BUG FIXES:
 
 * `r/tfe_variable`: Don't silently erase or override the `value` of a sensitive variable on changes to other attributes when `ignore_changes = [value]` is set, by @nfagerlund ([#873](https://github.com/hashicorp/terraform-provider-tfe/pull/873), fixing issue [#839](https://github.com/hashicorp/terraform-provider-tfe/issues/839))
