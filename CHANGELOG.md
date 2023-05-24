@@ -5,8 +5,11 @@ BREAKING CHANGES:
 FEATURES:
 * `r/tfe_team`: Add attribute `manage_membership` to `organization_access` on `tfe_team` by @JarrettSpiker ([#801](https://github.com/hashicorp/terraform-provider-tfe/pull/801))
 * **New Resource**: `r/tfe_workspace_run` manages create and destroy lifecycles in a workspace, by @uk1288 ([#786](https://github.com/hashicorp/terraform-provider-tfe/pull/786))
+* `r/tfe_variable`: Add a `readable_value` attribute, which will provide an un-redacted representation of the variable's value in plan outputs if the variable is not sensitive, and which may be referenced by downstream resources by @JarrettSpiker ([#801](https://github.com/hashicorp/terraform-provider-tfe/pull/867))
 
 ENHANCEMENTS:
+
+* `r/tfe_workspace`: Retry workspace safe delete if resources are still being processed to determine safety. ([#881](https://github.com/hashicorp/terraform-provider-tfe/pull/881))
 
 BUG FIXES:
 

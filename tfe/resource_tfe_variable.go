@@ -40,6 +40,7 @@ type modelTFEVariable struct {
 	ID            types.String `tfsdk:"id"`
 	Key           types.String `tfsdk:"key"`
 	Value         types.String `tfsdk:"value"`
+	ReadableValue types.String `tfsdk:"readable_value"`
 	Category      types.String `tfsdk:"category"`
 	Description   types.String `tfsdk:"description"`
 	HCL           types.Bool   `tfsdk:"hcl"`
@@ -67,6 +68,9 @@ func modelFromTFEVariable(v tfe.Variable, lastValue types.String) modelTFEVariab
 	// instead, because the API never lets us read it again.
 	if v.Sensitive {
 		m.Value = lastValue
+		m.ReadableValue = types.StringNull()
+	} else {
+		m.ReadableValue = m.Value
 	}
 	return m
 }
@@ -91,6 +95,9 @@ func modelFromTFEVariableSetVariable(v tfe.VariableSetVariable, lastValue types.
 	// instead, because the API never lets us read it again.
 	if v.Sensitive {
 		m.Value = lastValue
+		m.ReadableValue = types.StringNull()
+	} else {
+		m.ReadableValue = m.Value
 	}
 	return m
 }
@@ -222,6 +229,14 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 						variableSetIDRegexp,
 						"must be a valid variable set ID (varset-<RANDOM STRING>)",
 					),
+				},
+			},
+			"readable_value": schema.StringAttribute{
+				Computed: true,
+				Description: "A non-sensitive read-only copy of the variable value, which can be viewed or referenced " +
+					"in plan outputs without being redacted. Will only be present if the variable is not sensitive",
+				PlanModifiers: []planmodifier.String{
+					&updateReadableValuePlanModifier{},
 				},
 			},
 		},
@@ -707,11 +722,46 @@ func (r *resourceTFEVariable) ImportState(ctx context.Context, req resource.Impo
 	resp.Diagnostics.Append(diags...)
 }
 
+type updateReadableValuePlanModifier struct{}
+
+func (u *updateReadableValuePlanModifier) Description(ctx context.Context) string {
+	return "The readable_value will match the value if sensitive is false, or be empty otherwise"
+}
+
+func (u *updateReadableValuePlanModifier) MarkdownDescription(ctx context.Context) string {
+	return u.Description(ctx)
+}
+
+func (u *updateReadableValuePlanModifier) PlanModifyString(ctx context.Context, request planmodifier.StringRequest, response *planmodifier.StringResponse) {
+	var sensitive types.Bool
+	diags := request.Plan.GetAttribute(ctx, path.Root("sensitive"), &sensitive)
+	response.Diagnostics.Append(diags...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+
+	// If the variable is sensitive, unset the readable_value
+	if sensitive.ValueBool() {
+		response.PlanValue = types.StringNull()
+		return
+	}
+
+	// Otherwise, it should equal the actual value
+	var actualValue types.String
+	diags = request.Plan.GetAttribute(ctx, path.Root("value"), &actualValue)
+	response.Diagnostics.Append(diags...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+	response.PlanValue = actualValue
+}
+
 // Compile-time interface check
 var _ resource.Resource = &resourceTFEVariable{}
 var _ resource.ResourceWithConfigure = &resourceTFEVariable{}
 var _ resource.ResourceWithUpgradeState = &resourceTFEVariable{}
 var _ resource.ResourceWithImportState = &resourceTFEVariable{}
+var _ planmodifier.String = &updateReadableValuePlanModifier{}
 
 // NewResourceVariable is a resource function for the framework provider.
 func NewResourceVariable() resource.Resource {

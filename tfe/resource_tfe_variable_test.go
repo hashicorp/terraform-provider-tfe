@@ -6,6 +6,8 @@ package tfe
 import (
 	"fmt"
 	"math/rand"
+	"regexp"
+	"strconv"
 	"testing"
 	"time"
 
@@ -184,6 +186,174 @@ func TestAccTFEVariable_update_key_sensitive(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_variable.foobar", "sensitive", "true"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccTFEVariable_readable_value(t *testing.T) {
+	variable := &tfe.Variable{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	variableValue1 := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	variableValue2 := variableValue1 + 42
+
+	// Test that downstream resources may depend on both the value and readableValue of a non-sensitive variable
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEVariableDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEVariable_readablevalue(rInt, variableValue1, false),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEVariableExists(
+						"tfe_variable.foobar", variable),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "value", fmt.Sprintf("%d", variableValue1)),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "sensitive", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.downstream-readable", "name", fmt.Sprintf("downstream-readable-%d", variableValue1)),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.downstream-nonreadable", "name", fmt.Sprintf("downstream-nonreadable-%d", variableValue1)),
+				),
+			},
+			{
+				Config: testAccTFEVariable_readablevalue(rInt, variableValue2, false),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEVariableExists(
+						"tfe_variable.foobar", variable),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "value", fmt.Sprintf("%d", variableValue2)),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "sensitive", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.downstream-readable", "name", fmt.Sprintf("downstream-readable-%d", variableValue2)),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.downstream-nonreadable", "name", fmt.Sprintf("downstream-nonreadable-%d", variableValue2)),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEVariable_readable_value_becomes_sensitive(t *testing.T) {
+	variable := &tfe.Variable{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	variableValue1 := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	variableValue2 := variableValue1 + 42
+
+	// Test that if an insensitive variable becomes sensitive, downstream resources depending on the readableValue
+	// may no longer access it, but that the value may still be used directly
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEVariableDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEVariable_readablevalue(rInt, variableValue1, false),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEVariableExists(
+						"tfe_variable.foobar", variable),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "value", fmt.Sprintf("%d", variableValue1)),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "sensitive", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.downstream-readable", "name", fmt.Sprintf("downstream-readable-%d", variableValue1)),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.downstream-nonreadable", "name", fmt.Sprintf("downstream-nonreadable-%d", variableValue1)),
+				),
+			},
+			{
+				Config:      testAccTFEVariable_readablevalue(rInt, variableValue2, true),
+				ExpectError: regexp.MustCompile(`tfe_variable.foobar.readable_value is null`),
+			},
+		},
+	})
+}
+
+func TestAccTFEVariable_varset_readable_value(t *testing.T) {
+	variable := &tfe.VariableSetVariable{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	variableValue1 := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	variableValue2 := variableValue1 + 42
+
+	// Test that downstream resources may depend on both the value and readableValue of a non-sensitive variable
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEVariableDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEVariable_varset_readablevalue(rInt, variableValue1, false),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEVariableSetVariableExists(
+						"tfe_variable.foobar", variable),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "value", fmt.Sprintf("%d", variableValue1)),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "sensitive", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.downstream-readable", "name", fmt.Sprintf("downstream-readable-%d", variableValue1)),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.downstream-nonreadable", "name", fmt.Sprintf("downstream-nonreadable-%d", variableValue1)),
+				),
+			},
+			{
+				Config: testAccTFEVariable_varset_readablevalue(rInt, variableValue2, false),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEVariableSetVariableExists(
+						"tfe_variable.foobar", variable),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "value", fmt.Sprintf("%d", variableValue2)),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "sensitive", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.downstream-readable", "name", fmt.Sprintf("downstream-readable-%d", variableValue2)),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.downstream-nonreadable", "name", fmt.Sprintf("downstream-nonreadable-%d", variableValue2)),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEVariable_varset_readable_value_becomes_sensitive(t *testing.T) {
+	variable := &tfe.VariableSetVariable{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	variableValue1 := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	variableValue2 := variableValue1 + 42
+
+	// Test that if an insensitive variable becomes sensitive, downstream resources depending on the readableValue
+	// may no longer access it, but that the value may still be used directly
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEVariableDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEVariable_varset_readablevalue(rInt, variableValue1, false),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEVariableSetVariableExists(
+						"tfe_variable.foobar", variable),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "value", fmt.Sprintf("%d", variableValue1)),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "sensitive", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.downstream-readable", "name", fmt.Sprintf("downstream-readable-%d", variableValue1)),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.downstream-nonreadable", "name", fmt.Sprintf("downstream-nonreadable-%d", variableValue1)),
+				),
+			},
+			{
+				Config:      testAccTFEVariable_varset_readablevalue(rInt, variableValue2, true),
+				ExpectError: regexp.MustCompile(`tfe_variable.foobar.readable_value is null`),
 			},
 		},
 	})
@@ -629,4 +799,69 @@ resource "tfe_variable" "vs_terraform" {
   hcl          = true
   variable_set_id = tfe_variable_set.foobar.id
 }`, rInt)
+}
+func testAccTFEVariable_readablevalue(rIntOrg int, rIntVariableValue int, sensitive bool) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+	name  = "tst-terraform-%d"
+	email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+	name         = "workspace-test"
+	organization = tfe_organization.foobar.id
+}
+
+resource "tfe_variable" "foobar" {
+  key          = "key_test"
+  value        = "%d"
+  description  = "some description"
+  category     = "env"
+  workspace_id = tfe_workspace.foobar.id
+  sensitive    = %s
+}
+
+resource "tfe_workspace" "downstream-readable" {
+  name         = "downstream-readable-${tfe_variable.foobar.readable_value}"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_workspace" "downstream-nonreadable" {
+  name         = "downstream-nonreadable-${tfe_variable.foobar.value}"
+  organization = tfe_organization.foobar.id
+}
+`, rIntOrg, rIntVariableValue, strconv.FormatBool(sensitive))
+}
+
+func testAccTFEVariable_varset_readablevalue(rIntOrg int, rIntVariableValue int, sensitive bool) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_variable_set" "variable_set" {
+  name         = "varset-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_variable" "foobar" {
+  key          = "key_test"
+  value        = "%d"
+  description  = "some description"
+  category     = "env"
+  variable_set_id = tfe_variable_set.variable_set.id
+  sensitive    = %s
+}
+
+resource "tfe_workspace" "downstream-readable" {
+  name         = "downstream-readable-${tfe_variable.foobar.readable_value}"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_workspace" "downstream-nonreadable" {
+  name         = "downstream-nonreadable-${tfe_variable.foobar.value}"
+  organization = tfe_organization.foobar.id
+}
+`, rIntOrg, rIntVariableValue, strconv.FormatBool(sensitive))
 }

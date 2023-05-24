@@ -5,13 +5,16 @@ package tfe
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/url"
 	"regexp"
 	"strings"
+	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -758,6 +761,18 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 	return resourceTFEWorkspaceRead(d, meta)
 }
 
+func safeWorkspaceDelete(ctx context.Context, config ConfiguredClient, id string) error {
+	return retry.RetryContext(ctx, time.Duration(5)*time.Minute, func() *retry.RetryError {
+		err := config.Client.Workspaces.SafeDeleteByID(ctx, id)
+		if errors.Is(err, tfe.ErrWorkspaceStillProcessing) {
+			return retry.RetryableError(err)
+		} else if err != nil {
+			return retry.NonRetryableError(err)
+		}
+		return nil
+	})
+}
+
 func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 	id := d.Id()
@@ -791,7 +806,8 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 			if err != nil {
 				return err
 			}
-			err = config.Client.Workspaces.SafeDeleteByID(ctx, id)
+
+			err = safeWorkspaceDelete(ctx, config, id)
 			return errWorkspaceSafeDeleteWithPermission(id, err)
 		}
 	} else {
@@ -803,7 +819,7 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 		if err != nil {
 			return err
 		}
-		err = config.Client.Workspaces.SafeDeleteByID(ctx, id)
+		err = safeWorkspaceDelete(ctx, config, id)
 	}
 
 	if err != nil {
