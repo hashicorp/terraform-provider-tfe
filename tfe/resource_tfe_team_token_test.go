@@ -104,7 +104,7 @@ func TestAccTFETeamToken_existsWithoutExpiry(t *testing.T) {
 					testAccCheckTFETeamTokenExists(
 						"tfe_team_token.foobar", token),
 					resource.TestCheckResourceAttr(
-						"tfe_team_token.expiry", "expired_at", expiredAt),
+						"tfe_team_token.foobar", "expired_at", expiredAt),
 				),
 			},
 		},
@@ -127,7 +127,7 @@ func TestAccTFETeamToken_existsWithExpiry(t *testing.T) {
 					testAccCheckTFETeamTokenExists(
 						"tfe_team_token.expiry", token),
 					resource.TestCheckResourceAttr(
-						"tfe_team_token.foobar", "expired_at", expiredAt),
+						"tfe_team_token.expiry", "expired_at", expiredAt),
 				),
 			},
 		},
