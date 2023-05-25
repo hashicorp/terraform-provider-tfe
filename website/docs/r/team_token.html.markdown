@@ -41,8 +41,7 @@ Basic usage:
 
 ```hcl
 resource "tfe_team_token" "test" {
-  name         = "my-team-name"
-  organization = "my-org-name"
+  team_id = "team-id"
   expired_at = "2051-04-11T23:15:59+00:00"
 }
 ```
