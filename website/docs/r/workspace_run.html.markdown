@@ -13,11 +13,9 @@ There are a few main use cases this resource was designed for:
 
 - **Workspaces that depend on other workspaces.** If a workspace will create infrastructure that other workspaces rely on (for example, a Kubernetes cluster to deploy resources into), those downstream workspaces can depend on an initial `apply` with `wait_for_run = true`, so they aren't created before their infrastructure dependencies.
 - **A more reliable `queue_all_runs = true`.** The `queue_all_runs` argument on `tfe_workspace` requests an initial run, which can complete asynchronously outside of the Terraform run that creates the workspace. Unfortunately, it can't be used with workspaces that require variables to be set, because the `tfe_variable` resources themselves depend on the `tfe_workspace`. By managing an initial `apply` with `wait_for_run = false` that depends on your `tfe_variables`, you can accomplish the same goal without a circular dependency.
-- **Safe workspace destruction.** To ensure a workspace's managed resources are destroyed before deleting it, manage a `destroy` with `wait_for_run = true`. When you destroy the whole configuration, Terraform will wait for the destroy run to complete before deleting the workspace.
+- **Safe workspace destruction.** To ensure a workspace's managed resources are destroyed before deleting it, manage a `destroy` with `wait_for_run = true`. When you destroy the whole configuration, Terraform will wait for the destroy run to complete before deleting the workspace. This pattern is compatible with the `tfe_workspace` resource's default safe deletion behavior.
 
 The `tfe_workspace_run` expects to own exactly one apply during a creation and/or one destroy during a destruction. This implies that even if previous successful applies exist in the workspace, a `tfe_workspace_run` resource that includes an `apply` block will queue a new apply when added to a config.
-
-~> **IMPORTANT:** When managing a `tfe_workspace_run` that includes a `destroy`, you must currently set `force_delete = true` on the associated `tfe_workspace` resource; otherwise, the destruction of the workspace after its final run completes can sometimes fail. This is a temporary limitation, due to a bug in the default safe deletion behavior of `tfe_workspace`. ([Issue #876](https://github.com/hashicorp/terraform-provider-tfe/issues/876))
 
 ## Example Usage
 
@@ -41,7 +39,6 @@ resource "tfe_workspace" "parent" {
   name                 = "parent-ws"
   organization         = tfe_organization.test-organization
   queue_all_runs       = false
-  force_delete         = true
   vcs_repo {
     branch             = "main"
     identifier         = "my-org-name/vcs-repository"
@@ -53,7 +50,6 @@ resource "tfe_workspace" "child" {
   name                 = "child-ws"
   organization         = tfe_organization.test-organization
   queue_all_runs       = false
-  force_delete         = true
   vcs_repo {
     branch             = "main"
     identifier         = "my-org-name/vcs-repository"
@@ -118,7 +114,6 @@ resource "tfe_workspace" "parent" {
   name                 = "parent-ws"
   organization         = tfe_organization.test-organization
   queue_all_runs       = false
-  force_delete         = true
   vcs_repo {
     branch             = "main"
     identifier         = "my-org-name/vcs-repository"
@@ -161,7 +156,6 @@ resource "tfe_workspace" "parent" {
   name                 = "parent-ws"
   organization         = tfe_organization.test-organization
   queue_all_runs       = false
-  force_delete         = true
   vcs_repo {
     branch             = "main"
     identifier         = "my-org-name/vcs-repository"
