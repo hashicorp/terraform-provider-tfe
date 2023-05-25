@@ -296,7 +296,7 @@ resource "tfe_team" "foobar" {
 
 resource "tfe_team_token" "foobar" {
   team_id = tfe_team.foobar.id
-  expired_at = "null"
+  expired_at = null
 }
 
 resource "tfe_team_token" "error" {
