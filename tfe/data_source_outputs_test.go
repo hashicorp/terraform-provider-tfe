@@ -171,7 +171,7 @@ func createStateVersion(t *testing.T, client *tfe.Client, rInt int, fileName str
 		t.Fatal(err)
 	}
 
-	upgradeOrganizationSubscription(t, client, org)
+	upgradeOrganizationSubscription(t, org)
 
 	orgCleanup = func() {
 		if err := client.Organizations.Delete(ctx, org.Name); err != nil {

@@ -21,6 +21,7 @@ type testClientOptions struct {
 	defaultOrganization          string
 	defaultWorkspaceID           string
 	remoteStateConsumersResponse string
+	token                        string
 }
 
 type featureSet struct {
@@ -46,13 +47,44 @@ type updateFeatureSetOptions struct {
 	FeatureSet *featureSet `jsonapi:"relation,feature-set"`
 }
 
+type adminRoleType string
+
+const (
+	siteAdmin                adminRoleType = "site-admin"
+	configurationAdmin       adminRoleType = "configuration"
+	provisionLicensesAdmin   adminRoleType = "provision-licenses"
+	subscriptionAdmin        adminRoleType = "subscription"
+	supportAdmin             adminRoleType = "support"
+	securityMaintenanceAdmin adminRoleType = "security-maintenance"
+	versionMaintenanceAdmin  adminRoleType = "version-maintenance"
+)
+
+func getTokenForAdminRole(adminRole adminRoleType) string {
+	token := ""
+
+	switch adminRole {
+	case siteAdmin:
+		token = os.Getenv("TFE_ADMIN_SITE_ADMIN_TOKEN")
+	case configurationAdmin:
+		token = os.Getenv("TFE_ADMIN_CONFIGURATION_TOKEN")
+	case provisionLicensesAdmin:
+		token = os.Getenv("TFE_ADMIN_PROVISION_LICENSES_TOKEN")
+	case subscriptionAdmin:
+		token = os.Getenv("TFE_ADMIN_SUBSCRIPTION_TOKEN")
+	case supportAdmin:
+		token = os.Getenv("TFE_ADMIN_SUPPORT_TOKEN")
+	case securityMaintenanceAdmin:
+		token = os.Getenv("TFE_ADMIN_SECURITY_MAINTENANCE_TOKEN")
+	case versionMaintenanceAdmin:
+		token = os.Getenv("TFE_ADMIN_VERSION_MAINTENANCE_TOKEN")
+	}
+
+	return token
+}
+
 // testTfeClient creates a mock client that creates workspaces with their ID
 // set to workspaceID.
 func testTfeClient(t *testing.T, options testClientOptions) *tfe.Client {
-	config := &tfe.Config{
-		Token: "not-a-token",
-	}
-
 	if options.defaultOrganization == "" {
 		options.defaultOrganization = "hashicorp"
 	}
@@ -60,7 +92,15 @@ func testTfeClient(t *testing.T, options testClientOptions) *tfe.Client {
 		options.defaultWorkspaceID = "ws-testing"
 	}
 
-	client, err := tfe.NewClient(config)
+	config := tfe.Config{
+		Token: options.token,
+	}
+
+	if options.token == "" {
+		config.Token = "not-a-token"
+	}
+
+	client, err := tfe.NewClient(&config)
 	if err != nil {
 		t.Fatalf("error creating tfe client: %v", err)
 	}
@@ -70,12 +110,22 @@ func testTfeClient(t *testing.T, options testClientOptions) *tfe.Client {
 	return client
 }
 
-func upgradeOrganizationSubscription(t *testing.T, client *tfe.Client, org *tfe.Organization) {
+func testAdminClient(t *testing.T, adminRole adminRoleType) *tfe.Client {
+	token := getTokenForAdminRole(adminRole)
+	if token == "" {
+		t.Fatal("missing API token for admin role " + adminRole)
+	}
+
+	return testTfeClient(t, testClientOptions{token: token})
+}
+
+func upgradeOrganizationSubscription(t *testing.T, org *tfe.Organization) {
 	if enterpriseEnabled() {
 		t.Skip("Cannot upgrade an organization's subscription when enterprise is enabled. Set ENABLE_TFE=0 to run.")
 	}
 
-	req, err := client.NewRequest("GET", "admin/feature-sets", featureSetListOptions{
+	adminClient := testAdminClient(t, provisionLicensesAdmin)
+	req, err := adminClient.NewRequest("GET", "admin/feature-sets", featureSetListOptions{
 		Q: "Business",
 	})
 	if err != nil {
@@ -104,7 +154,7 @@ func upgradeOrganizationSubscription(t *testing.T, client *tfe.Client, org *tfe.
 	}
 
 	u := fmt.Sprintf("admin/organizations/%s/subscription", url.QueryEscape(org.Name))
-	req, err = client.NewRequest("POST", u, &opts)
+	req, err = adminClient.NewRequest("POST", u, &opts)
 	if err != nil {
 		t.Fatalf("Failed to create request: %v", err)
 		return
@@ -122,7 +172,7 @@ func createBusinessOrganization(t *testing.T, client *tfe.Client) (*tfe.Organiza
 		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
 	})
 
-	upgradeOrganizationSubscription(t, client, org)
+	upgradeOrganizationSubscription(t, org)
 
 	return org, orgCleanup
 }
