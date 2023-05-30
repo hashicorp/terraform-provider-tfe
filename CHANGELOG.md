@@ -1,3 +1,10 @@
+## Unreleased
+
+BUG FIXES:
+* `r/tfe_workspace_run`: Ensure `wait_for_run` correctly results in a fire-and-forget Run when set to `false` by @lucymhdavies ([#910](https://github.com/hashicorp/terraform-provider-tfe/pull/910)
+
+
+
 ## v0.45.0 (May 25, 2023)
 
 FEATURES:
