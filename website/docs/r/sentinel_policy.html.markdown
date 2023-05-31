@@ -14,8 +14,6 @@ Policies are configured on a per-organization level and are organized and
 grouped into policy sets, which define the workspaces on which policies are
 enforced during runs.
 
-~> **NOTE:** Managing policies and policy sets individually is [a deprecated feature in Terraform Cloud](https://developer.hashicorp.com/terraform/cloud-docs/policy-enforcement/manage-policy-sets), and we recommend always using versioned policy sets to manage policies.
-
 ## Example Usage
 
 Basic usage:
