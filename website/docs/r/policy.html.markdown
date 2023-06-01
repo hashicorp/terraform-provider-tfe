@@ -14,7 +14,6 @@ Policies are configured on a per-organization level and are organized and
 grouped into policy sets, which define the workspaces on which policies are
 enforced during runs.
 
-
 ## Example Usage
 
 Basic usage for Sentinel:
