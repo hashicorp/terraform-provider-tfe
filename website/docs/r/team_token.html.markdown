@@ -38,12 +38,37 @@ iso8601 format. If no expiration date is supplied, the expiration date will defa
 ## Example Usage
 
 Basic usage:
-
 ```hcl
-resource "tfe_team_token" "test" {
-  team_id = "team-id"
-  expired_at = "2051-04-11T23:15:59+00:00"
+resource "tfe_team" "test" {
+  name         = "my-team-name"
+  organization = "my-org-name"
 }
+
+resource "time_rotating" "example" {
+  rotation_days = 30
+}
+
+resource "tfe_team_token" "test" {
+  team_id = tfe_team.test.id
+  expired_at = time_rotating.example.id
+}
+```
+
+Generating the `expired_at` string using the date tool in unix systems (darwin):
+```
+date -Iseconds -v"+30d"
+```
+
+Generating the `expired_at` string using the date tool in unix systems (linux):
+```
+date -Iseconds -d"+30 days"
+```
+
+Generating the `expired_at` string using the `timeadd` Terraform function:
+```
+$ terraform console
+> timeadd(timestamp(), "720h")
+"2023-07-21T02:02:23Z"
 ```
 
 ## Attributes Reference

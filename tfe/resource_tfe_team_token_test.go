@@ -114,7 +114,7 @@ func TestAccTFETeamToken_existsWithoutExpiry(t *testing.T) {
 func TestAccTFETeamToken_existsWithExpiry(t *testing.T) {
 	token := &tfe.TeamToken{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	expiredAt := "2051-04-11T23:15:59+00:00"
+	expiredAt := "2051-04-11T23:15:59Z"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -322,7 +322,7 @@ resource "tfe_team_token" "foobar" {
 
 resource "tfe_team_token" "expiry" {
   team_id    = tfe_team.foobar.id
-  expired_at = "2051-04-11T23:15:59+00:00"
+  expired_at = "2051-04-11T23:15:59Z"
 }`, rInt)
 }
 
