@@ -30,9 +30,37 @@ jobs:
           VERSION='${{ steps.get-latest-tag.outputs.tag }}'
           echo "VERSION=${VERSION:1}" >> $GITHUB_OUTPUT
 
+  buildBinary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+      - name: Set up Go
+        uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Sync dependencies
+        shell: bash
+        run: |
+          go mod download
+          go mod tidy
+
+      - name: Build
+        run: |
+          go build -o terraform-provider-tfe
+
+      - name: Upload test artifacts
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          name: terraform-provider-tfe
+          path: terraform-provider-tfe
+          retention-days: 1
+
   prepare-release-pr:
     needs:
       - releasedVersion
+      - buildBinary
     runs-on: ubuntu-latest
     container:
       image: docker.mirror.hashicorp.services/hashicorp/jsii-terraform
@@ -41,6 +69,8 @@ jobs:
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v3.1.0
+      - run: git config --global user.email "bcroft@hashicorp.com"
+      - run: git config --global user.name "Brandon Croft"
       - name: Get yarn cache directory path
         id: global-cache-dir-path
         run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
@@ -49,19 +79,25 @@ jobs:
         with:
           path: ${{ steps.global-cache-dir-path.outputs.dir }}
           key: ${{ runner.os }}-integration-yarn-${{ hashFiles('**/yarn.lock') }}
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: "18.x"
+
       - name: Install cdktf-registry-docs
-        run: npm install -g cdktf-registry-docs@1.8.0
+        run: npm install -g cdktf-registry-docs@1.10.0
+
+      - name: Download artifacts
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        with:
+          name: terraform-provider-tfe
+
       - name: Run conversion
         run: |
-          cdktf-registry-docs convert \
-            --language='typescript,python' \
-            --parallel-conversions-per-document=2 \ # Limit parallelism due to possible OOM issues
-            --provider-from-registry="hashicorp/tfe@~> ${{ needs.releasedVersion.outputs.version }}" \
-            .
+          chmod +x terraform-provider-tfe
+
+          cdktf-registry-docs convert --language='typescript,python' --parallel-conversions-per-document=2 --provider-from-binary="$(pwd)/terraform-provider-tfe" --binary-version='${{ needs.releasedVersion.outputs.version }}' .
         env:
           TF_PLUGIN_CACHE_DIR: ${{ steps.global-cache-dir-path.outputs.dir }}/terraform-plugins
 
