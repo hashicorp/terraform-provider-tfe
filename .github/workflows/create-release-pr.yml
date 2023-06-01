@@ -1,0 +1,81 @@
+name: Create Release PR
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        required: true
+        type: string
+        description: "The version to release, e.g. v1.2.3"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  releasedVersion:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.remove-leading-v.outputs.version }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions-ecosystem/action-get-latest-tag@v1
+        id: get-latest-tag
+        with:
+          semver_only: true
+
+      - name: Remove leading v from tag
+        id: remove-leading-v
+        run: |
+          VERSION='${{ steps.get-latest-tag.outputs.tag }}'
+          echo "VERSION=${VERSION:1}" >> $GITHUB_OUTPUT
+
+  prepare-release-pr:
+    needs:
+      - releasedVersion
+    runs-on: ubuntu-latest
+    container:
+      image: docker.mirror.hashicorp.services/hashicorp/jsii-terraform
+    env:
+      CHECKPOINT_DISABLE: "1"
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v3.1.0
+      - name: Get yarn cache directory path
+        id: global-cache-dir-path
+        run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+      - uses: actions/cache@v3.0.11
+        id: global-cache
+        with:
+          path: ${{ steps.global-cache-dir-path.outputs.dir }}
+          key: ${{ runner.os }}-integration-yarn-${{ hashFiles('**/yarn.lock') }}
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+      - name: Install cdktf-registry-docs
+        run: npm install -g cdktf-registry-docs@1.8.0
+      - name: Run conversion
+        run: |
+          cdktf-registry-docs convert \
+            --language='typescript,python' \
+            --parallel-conversions-per-document=2 \ # Limit parallelism due to possible OOM issues
+            --provider-from-registry="hashicorp/tfe@~> ${{ needs.releasedVersion.outputs.version }}" \
+            .
+        env:
+          TF_PLUGIN_CACHE_DIR: ${{ steps.global-cache-dir-path.outputs.dir }}/terraform-plugins
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: "cdktf: update documentation"
+          title: "release: ${{ github.event.inputs.version }}"
+          body: |
+            # Release Preparation PR/Checklist
+
+            This PR is meant to automate certain preparations for release and instruct maintainers on the manual release tasks. Push any changes you make to this branch and merge it just before creating a release.
+
+            1. Ensure both main and nightly CI actions passed. These test the release version against TFC and TFE, respectively.
+            2. Review the CHANGELOG and ensure and ensure [everything that's changed since the last release](https://github.com/hashicorp/terraform-provider-tfe/compare/v${{ needs.releasedVersion.outputs.version }}...main) is described. If anything is missing, inaccurate, or unclear, now is the time to fix it! Check the CHANGELOG organization: pull breaking changes to the top and make sure the most important features are at the top of the FEATURES list. Check the version header in the changelog. It must be: `## v${{ github.event.inputs.version }}`
+            3. Bump the static versions given as an example in the `website/docs/index.html.markdown` docs
+            4. Bump the static versions given in the README installation section.
