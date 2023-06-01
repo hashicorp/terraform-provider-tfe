@@ -28,19 +28,13 @@ The following arguments are supported:
 * `force_regenerate` - (Optional) If set to `true`, a new token will be
   generated even if a token already exists. This will invalidate the existing
   token!
-* `expired_at` - (Optional) A date and time in which the organization token will expire. The expiration date must be passed in
-  iso8601 format. If no expiration date is supplied, the expiration date will default to null and never expire.
-
-## Attributes Reference
-
-* `id` - The ID of the token.
-* `token` - The generated token.
-* `expired_at` - The token's expiration date. The expiration date must be passed in
-iso8601 format. If no expiration date is supplied, the expiration date will default to null and never expire.
+* `expired_at` - (Optional) The token's expiration date. The expiration date must be a date/time string in RFC3339 
+format (e.g., "2024-12-31T23:59:59Z"). If no expiration date is supplied, the expiration date will default to null and 
+never expire.
 
 ## Example Usage
 
-Basic usage:
+When a token has an expiry:
 
 ```hcl
 resource "tfe_organization_token" "test" {
@@ -56,6 +50,11 @@ resource "tfe_organization_token" "test" {
   expired_at = time_rotating.example.id
 }
 ```
+
+## Attributes Reference
+
+* `id` - The ID of the token.
+* `token` - The generated token.
 
 ## Import
 
