@@ -37,17 +37,13 @@ never expire.
 When a token has an expiry:
 
 ```hcl
-resource "tfe_organization_token" "test" {
-  organization = "my-org-name"
-}
-
 resource "time_rotating" "example" {
   rotation_days = 30
 }
 
 resource "tfe_organization_token" "test" {
   organization = data.tfe_organization.org.name
-  expired_at = time_rotating.example.id
+  expired_at = time_rotating.example.rotation_rfc3339
 }
 ```
 

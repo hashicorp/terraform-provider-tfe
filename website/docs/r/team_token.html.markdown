@@ -52,7 +52,7 @@ resource "time_rotating" "example" {
 
 resource "tfe_team_token" "test" {
   team_id = tfe_team.test.id
-  expired_at = time_rotating.example.id
+  expired_at = time_rotating.example.rotation_rfc3339
 }
 ```
 
