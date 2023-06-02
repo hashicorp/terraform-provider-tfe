@@ -86,7 +86,7 @@ jobs:
           node-version: "18.x"
 
       - name: Install cdktf-registry-docs
-        run: npm install -g cdktf-registry-docs@1.10.0
+        run: npm install -g cdktf-registry-docs@1.10.1
 
       - name: Download artifacts
         uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
