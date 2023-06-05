@@ -4,6 +4,8 @@ FEATURES:
 * `r/tfe_team`: Add attribute `manage_membership` to `organization_access` on `tfe_team` by @JarrettSpiker ([#801](https://github.com/hashicorp/terraform-provider-tfe/pull/801))
 * **New Resource**: `r/tfe_workspace_run` manages create and destroy lifecycles in a workspace, by @uk1288 ([#786](https://github.com/hashicorp/terraform-provider-tfe/pull/786))
 * `r/tfe_variable`: Add a `readable_value` attribute, which will provide an un-redacted representation of the variable's value in plan outputs if the variable is not sensitive, and which may be referenced by downstream resources by @JarrettSpiker ([#801](https://github.com/hashicorp/terraform-provider-tfe/pull/867))
+* `r/tfe_organization_token`: Add optional `expired_at` field to organization tokens by, @juliannatetreault ([#844](https://github.com/hashicorp/terraform-provider-tfe/pull/844))
+* `r/tfe_team_token`: Add optional `expired_at` field to team tokens by, @juliannatetreault ([#844](https://github.com/hashicorp/terraform-provider-tfe/pull/844))
 
 ENHANCEMENTS:
 

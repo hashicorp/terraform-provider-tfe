@@ -88,6 +88,68 @@ func TestAccTFETeamToken_existsWithForce(t *testing.T) {
 	})
 }
 
+func TestAccTFETeamToken_existsWithoutExpiry(t *testing.T) {
+	token := &tfe.TeamToken{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	expiredAt := ""
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamTokenDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeamToken_existsWithoutExpiry(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFETeamTokenExists(
+						"tfe_team_token.foobar", token),
+					resource.TestCheckResourceAttr(
+						"tfe_team_token.foobar", "expired_at", expiredAt),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFETeamToken_existsWithExpiry(t *testing.T) {
+	token := &tfe.TeamToken{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	expiredAt := "2051-04-11T23:15:59Z"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamTokenDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeamToken_existsWithExpiry(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFETeamTokenExists(
+						"tfe_team_token.expiry", token),
+					resource.TestCheckResourceAttr(
+						"tfe_team_token.expiry", "expired_at", expiredAt),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFETeamToken_existsWithInvalidExpiry(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamTokenDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFETeamToken_existsWithInvalidExpiry(rInt),
+				ExpectError: regexp.MustCompile(`must be a valid date or time, provided in iso8601 format`),
+			},
+		},
+	})
+}
+
 func TestAccTFETeamToken_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -217,5 +279,71 @@ resource "tfe_team_token" "foobar" {
 resource "tfe_team_token" "regenerated" {
   team_id          = tfe_team.foobar.id
   force_regenerate = true
+}`, rInt)
+}
+
+func testAccTFETeamToken_existsWithoutExpiry(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_team_token" "foobar" {
+  team_id = tfe_team.foobar.id
+  expired_at = ""
+}
+
+resource "tfe_team_token" "error" {
+  team_id = tfe_team.foobar.id
+}`, rInt)
+}
+
+func testAccTFETeamToken_existsWithExpiry(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_team_token" "foobar" {
+  team_id = tfe_team.foobar.id
+}
+
+resource "tfe_team_token" "expiry" {
+  team_id    = tfe_team.foobar.id
+  expired_at = "2051-04-11T23:15:59Z"
+}`, rInt)
+}
+
+func testAccTFETeamToken_existsWithInvalidExpiry(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_team_token" "foobar" {
+  team_id = tfe_team.foobar.id
+}
+
+resource "tfe_team_token" "expiry" {
+  team_id    = tfe_team.foobar.id
+  expired_at = "2000-04-11"
 }`, rInt)
 }

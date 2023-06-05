@@ -32,6 +32,29 @@ The following arguments are supported:
 * `force_regenerate` - (Optional) If set to `true`, a new token will be
   generated even if a token already exists. This will invalidate the existing
   token!
+* `expired_at` - (Optional) The token's expiration date. The expiration date must be a date/time string in RFC3339 
+format (e.g., "2024-12-31T23:59:59Z"). If no expiration date is supplied, the expiration date will default to null and 
+never expire.
+
+## Example Usage
+
+When a token has an expiry:
+
+```hcl
+resource "tfe_team" "test" {
+  name         = "my-team-name"
+  organization = "my-org-name"
+}
+
+resource "time_rotating" "example" {
+  rotation_days = 30
+}
+
+resource "tfe_team_token" "test" {
+  team_id = tfe_team.test.id
+  expired_at = time_rotating.example.rotation_rfc3339
+}
+```
 
 ## Attributes Reference
 
