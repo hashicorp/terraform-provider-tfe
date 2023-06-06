@@ -60,6 +60,18 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 			"error reading workspace %s: %w", workspaceID, err)
 	}
 
+	waitForRun := runArgs["wait_for_run"].(bool)
+	manualConfirm := runArgs["manual_confirm"].(bool)
+
+	// In fire-and-forget mode (waitForRun=false), autoapply is set to !manualConfirm
+	// This should be intuitive, as "manual confirm" is the opposite of "auto apply"
+	//
+	// In apply-and-wait mode (waitForRun=true), autoapply is set to false to give the tfe_workspace_run resource full control of run confirmation.
+	autoApply := false
+	if !waitForRun {
+		autoApply = !manualConfirm
+	}
+
 	runConfig := tfe.RunCreateOptions{
 		Workspace: ws,
 		IsDestroy: tfe.Bool(isDestroyRun),
@@ -67,8 +79,7 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 			"Triggered by tfe_workspace_run resource via terraform-provider-tfe on %s",
 			time.Now().Format(time.UnixDate),
 		)),
-		// autoapply is set to false to give the tfe_workspace_run resource full control of run confirmation.
-		AutoApply: tfe.Bool(false),
+		AutoApply: tfe.Bool(autoApply),
 	}
 	log.Printf("[DEBUG] Create run for workspace: %s", ws.ID)
 	run, err := config.Client.Runs.Create(ctx, runConfig)
@@ -84,6 +95,12 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 	}
 
 	log.Printf("[DEBUG] Run %s created for workspace %s", run.ID, ws.ID)
+
+	// in fire-and-forget mode, that's all we need to do
+	if !waitForRun {
+		d.SetId(run.ID)
+		return nil
+	}
 
 	isPlanOp := true
 	run, err = awaitRun(meta, run.ID, ws.ID, ws.Organization.Name, isPlanOp, planPendingStatuses, planTerminalStatuses)
@@ -115,8 +132,6 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 			return err
 		}
 	}
-
-	manualConfirm := runArgs["manual_confirm"].(bool)
 	// if human approval is required, an apply will auto kick off when run is manually approved
 	if manualConfirm {
 		confirmationPendingStatus := map[tfe.RunStatus]bool{}
@@ -141,16 +156,6 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 			}
 			return fmt.Errorf("run errored while applying run %s (waited til status %s, currently status %s): %w", run.ID, run.Status, refreshed.Status, err)
 		}
-	}
-
-	/**
-		Checking for waitForRun arg towards the tail of this function ensures that all
-		human actions necessary above has already been done.
-	**/
-	waitForRun := runArgs["wait_for_run"].(bool)
-	if !waitForRun {
-		d.SetId(run.ID)
-		return nil
 	}
 
 	isPlanOp = false
@@ -178,7 +183,8 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 }
 
 func awaitRun(meta interface{}, runID string, wsID string, organization string, isPlanOp bool, runPendingStatus map[tfe.RunStatus]bool,
-	runTerminalStatus map[tfe.RunStatus]bool) (*tfe.Run, error) {
+	runTerminalStatus map[tfe.RunStatus]bool,
+) (*tfe.Run, error) {
 	config := meta.(ConfiguredClient)
 
 	for i := 0; ; i++ {

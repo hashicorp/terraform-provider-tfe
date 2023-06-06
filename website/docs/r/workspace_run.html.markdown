@@ -190,15 +190,18 @@ The following arguments are supported:
 
 Both `apply` and `destroy` block supports:
 
-* `manual_confirm` - (Required) If set to true a human will have to manually confirm a plan in Terraform Cloud's UI to start an apply. If set to false, this resource will auto confirm the plan. The exception is the case of policy check soft-failed where a human has to perform an override by manually confirming the plan even though `manual_confirm` is set to false. Defaults to `false`.
+* `manual_confirm` - (Required) If set to true a human will have to manually confirm a plan in Terraform Cloud's UI to start an apply. If set to false, this resource will be automatically applied. Defaults to `false`.
+  * If `wait_for_run` is set to `false`, this auto-apply will be done by Terraform Cloud.
+  * If `wait_for_run` is set to `true`, the apply will be confirmed by the provider. The exception is the case of policy check soft-failed where a human has to perform an override by manually confirming the plan even though `manual_confirm` is set to false.
+  * Note that this setting will override the workspace's default apply mode. To use the workspace default apply mode, look up the setting for `auto_apply` with the `tfe_workspace` data source.
 * `retry` - (Optional) Whether or not to retry on plan or apply errors. When set to true, `retry_attempts` must also be greater than zero inorder for retries to happen. Defaults to `true`.
 * `retry_attempts` - (Optional) The number to retry attempts made after an initial error. Defaults to `3`.
 * `retry_backoff_min` - (Optional) The minimum time in seconds to backoff before attempting a retry. Defaults to `1`.
 * `retry_backoff_max` - (Optional) The maximum time in seconds to backoff before attempting a retry. Defaults to `30`.
-* `wait_for_run` - (Optional) Whether or not to wait for a run to reach completion before firing the next run. When set to false, `manual_confirm` will not be considered as run will be started with auto apply set to true . Defaults to `true`.
+* `wait_for_run` - (Optional) Whether or not to wait for a run to reach completion before considering this a success. When set to `false`, the provider considers the `tfe_workspace_run` resource to have been created immediately after the run has been queued. When set to `true`, the provider waits for a successful apply on the target workspace to have applied successfully (or if it resulted in a no-change plan). Defaults to `true`.
 
 ## Attributes Reference
 
 In addition to all arguments above, the following attributes are exported:
 
-* `id` - The ID of the run created by this resource.
+* `id` - The ID of the run created by this resource. Note, if the resource was created without an `apply{}` configuration block, then this ID will not refer to a real run in Terraform Cloud.
