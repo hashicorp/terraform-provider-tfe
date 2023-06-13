@@ -1,7 +1,8 @@
 ## Unreleased
 
 BUG FIXES:
-* `r/tfe_workspace_run`: Ensure `wait_for_run` correctly results in a fire-and-forget Run when set to `false` by @lucymhdavies ([#910](https://github.com/hashicorp/terraform-provider-tfe/pull/910)
+* `r/tfe_workspace_run`: Ensure `wait_for_run` correctly results in a fire-and-forget Run when set to `false` by @lucymhdavies ([#910](https://github.com/hashicorp/terraform-provider-tfe/pull/910))
+* `r/tfe_notification_configuration`: Add support for missing "Check failed" Health Event notifications by @lucymhdavies ([#927](https://github.com/hashicorp/terraform-provider-tfe/pull/927))
 
 
 

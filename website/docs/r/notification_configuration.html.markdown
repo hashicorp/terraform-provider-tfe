@@ -116,8 +116,8 @@ The following arguments are supported:
   configurations with a destination type of `generic`. Defaults to `null`.
   This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.
 * `triggers` - (Optional) The array of triggers for which this notification configuration will
-  send notifications. Valid values are `run:created`, `run:planning`, `run:needs_attention`, `run:applying`
-  `run:completed`, `run:errored`, `assessment:drifted`, or `assessment:failed`.
+  send notifications. Valid values assessment:check_failureare `run:created`, `run:planning`, `run:needs_attention`, `run:applying`
+  `run:completed`, `run:errored`, `assessment:check_failure`, `assessment:drifted`, or `assessment:failed`.
   If omitted, no notification triggers are configured.
 * `url` - (Required if `destination_type` is `generic`, `microsoft-teams`, or `slack`) The HTTP or HTTPS URL of the notification
   configuration where notification requests will be made. This value _must not_ be provided if `destination_type`
