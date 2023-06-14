@@ -32,13 +32,14 @@ var planPendingStatuses = map[tfe.RunStatus]bool{
 }
 
 var applyPendingStatuses = map[tfe.RunStatus]bool{
-	tfe.RunConfirmed:       true,
-	tfe.RunApplyQueued:     true,
-	tfe.RunApplying:        true,
-	tfe.RunQueuing:         true,
-	tfe.RunFetching:        true,
-	tfe.RunQueuingApply:    true,
-	tfe.RunPreApplyRunning: true,
+	tfe.RunConfirmed:         true,
+	tfe.RunApplyQueued:       true,
+	tfe.RunApplying:          true,
+	tfe.RunQueuing:           true,
+	tfe.RunFetching:          true,
+	tfe.RunQueuingApply:      true,
+	tfe.RunPreApplyRunning:   true,
+	tfe.RunPreApplyCompleted: true,
 }
 
 var applyDoneStatuses = map[tfe.RunStatus]bool{
@@ -54,15 +55,16 @@ var confirmationPendingStatuses = map[tfe.RunStatus]bool{
 }
 
 var confirmationDoneStatuses = map[tfe.RunStatus]bool{
-	tfe.RunConfirmed:        true,
-	tfe.RunApplyQueued:      true,
-	tfe.RunApplying:         true,
-	tfe.RunPrePlanCompleted: true,
-	tfe.RunPrePlanRunning:   true,
-	tfe.RunQueuingApply:     true,
+	tfe.RunConfirmed:         true,
+	tfe.RunApplyQueued:       true,
+	tfe.RunApplying:          true,
+	tfe.RunPrePlanCompleted:  true,
+	tfe.RunPrePlanRunning:    true,
+	tfe.RunQueuingApply:      true,
+	tfe.RunPreApplyCompleted: true,
 }
 
-var policyOverridenStatuses = map[tfe.RunStatus]bool{
+var policyOverriddenStatuses = map[tfe.RunStatus]bool{
 	tfe.RunPolicyChecked:    true,
 	tfe.RunConfirmed:        true,
 	tfe.RunApplyQueued:      true,

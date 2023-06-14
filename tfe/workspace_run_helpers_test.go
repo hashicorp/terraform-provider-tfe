@@ -81,7 +81,6 @@ func MockRunsListForWorkspaceQueue(t *testing.T, client *tfe.Client, workspaceID
 }
 
 func TestReadRunPositionInWorkspaceQueue(t *testing.T) {
-	defaultOrganization := "my-org"
 	client := testTfeClient(t, testClientOptions{})
 	MockRunsListForWorkspaceQueue(t, client, "ws-1", "ws-2")
 
@@ -114,7 +113,7 @@ func TestReadRunPositionInWorkspaceQueue(t *testing.T) {
 	for name, testCase := range testCases {
 		t.Run(name, func(t *testing.T) {
 			position, err := readRunPositionInWorkspaceQueue(
-				ConfiguredClient{Client: client, Organization: defaultOrganization},
+				client,
 				testCase.currentRunID,
 				testCase.workspace,
 				false,
@@ -224,7 +223,7 @@ func TestReadRunPositionInOrgQueue(t *testing.T) {
 	for name, testCase := range testCases {
 		t.Run(name, func(t *testing.T) {
 			position, err := readRunPositionInOrgQueue(
-				ConfiguredClient{Client: client, Organization: defaultOrganization},
+				client,
 				"run-02",
 				testCase.orgName,
 			)
