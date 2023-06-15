@@ -9,9 +9,6 @@ description: |-
 
 Creates, updates and destroys no-code module for registry modules.
 
-**NOTE:** This resource is currently in beta and isn't generally
-available to all users. It is subject to change or be removed.
-
 ## Example Usage
 
 Basic usage:

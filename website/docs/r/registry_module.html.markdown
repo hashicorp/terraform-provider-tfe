@@ -83,7 +83,6 @@ resource "tfe_registry_module" "test-no-code-provisioning-registry-module" {
   module_provider = "aws"
   name            = "vpc"
   registry_name   = "public"
-  no_code         = true
 }
 
 resource "tfe_no_code_module" "foobar" {
