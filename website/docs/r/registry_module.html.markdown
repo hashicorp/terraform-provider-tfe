@@ -36,6 +36,28 @@ resource "tfe_registry_module" "test-registry-module" {
 }
 ```
 
+Create private registry module with GitHub App:
+
+```hcl
+resource "tfe_organization" "test-organization" {
+  name  = "my-org-name"
+  email = "admin@company.com"
+}
+
+data "tfe_github_app_installation" "gha_installation" {
+  name = "YOUR_GH_NAME"
+}
+
+resource "tfe_registry_module" "petstore" {
+  organization_name = tfe_organization.foobar2
+  vcs_repo {
+    display_identifier = "GH_NAME/REPO_NAME"
+    identifier         = "GH_NAME/REPO_NAME"
+    github_app_installation_id     = data.tfe_github_app_installation.gha_installation.id
+  }
+}
+```
+
 Create private registry module without VCS:
 
 ```hcl
@@ -99,7 +121,7 @@ The following arguments are supported:
   new resource if changed. One of `vcs_repo` or `module_provider` is required.
 * `module_provider` - (Optional) Specifies the Terraform provider that this module is used for. For example, "aws"
 * `name` - (Optional) The name of registry module. It must be set if `module_provider` is used.
-* `organization` - (Optional) The name of the organization associated with the registry module. It must be set if `module_provider` is used.
+* `organization` - (Optional) The name of the organization associated with the registry module. It must be set if `module_provider` is used, or if `vcs_repo` is used via a GitHub App.
 * `namespace` - (Optional) The namespace of a public registry module. It can be used if `module_provider` is set and `registry_name` is public.
 * `registry_name` - (Optional) Whether the registry module is private or public. It can be used if `module_provider` is set.
 
