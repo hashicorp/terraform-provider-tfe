@@ -108,17 +108,28 @@ func resourceTFERegistryModule() *schema.Resource {
 	}
 }
 
-func resourceTFERegistryModuleCreateWithVCS(v interface{}, meta interface{}) (*tfe.RegistryModule, error) {
+func resourceTFERegistryModuleCreateWithVCS(v interface{}, meta interface{}, d *schema.ResourceData) (*tfe.RegistryModule, error) {
 	config := meta.(ConfiguredClient)
 	// Create module with VCS repo configuration block.
 	options := tfe.RegistryModuleCreateWithVCSConnectionOptions{}
 	vcsRepo := v.([]interface{})[0].(map[string]interface{})
 
+	// Creating a registry module from a VCS repo through a Github app requires the organization name,
+	// but creating via OAuth token does not.
+	orgName, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		log.Printf("[WARN] Error getting organization name: %s", err)
+	}
+
 	options.VCSRepo = &tfe.RegistryModuleVCSRepoOptions{
 		Identifier:        tfe.String(vcsRepo["identifier"].(string)),
-		OAuthTokenID:      tfe.String(vcsRepo["oauth_token_id"].(string)),
 		GHAInstallationID: tfe.String(vcsRepo["github_app_installation_id"].(string)),
 		DisplayIdentifier: tfe.String(vcsRepo["display_identifier"].(string)),
+		OrganizationName:  tfe.String(orgName),
+	}
+
+	if vcsRepo["oauth_token_id"] != nil && vcsRepo["oauth_token_id"].(string) != "" {
+		options.VCSRepo.OAuthTokenID = tfe.String(vcsRepo["oauth_token_id"].(string))
 	}
 
 	log.Printf("[DEBUG] Create registry module from repository %s", *options.VCSRepo.Identifier)
@@ -170,7 +181,7 @@ func resourceTFERegistryModuleCreate(d *schema.ResourceData, meta interface{}) e
 	var err error
 
 	if v, ok := d.GetOk("vcs_repo"); ok {
-		registryModule, err = resourceTFERegistryModuleCreateWithVCS(v, meta)
+		registryModule, err = resourceTFERegistryModuleCreateWithVCS(v, meta, d)
 	} else {
 		registryModule, err = resourceTFERegistryModuleCreateWithoutVCS(meta, d)
 	}
