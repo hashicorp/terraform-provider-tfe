@@ -114,8 +114,6 @@ func resourceTFERegistryModuleCreateWithVCS(v interface{}, meta interface{}, d *
 	options := tfe.RegistryModuleCreateWithVCSConnectionOptions{}
 	vcsRepo := v.([]interface{})[0].(map[string]interface{})
 
-	// Creating a registry module from a VCS repo through a Github app requires the organization name,
-	// but creating via OAuth token does not.
 	orgName, err := config.schemaOrDefaultOrganization(d)
 	if err != nil {
 		log.Printf("[WARN] Error getting organization name: %s", err)
