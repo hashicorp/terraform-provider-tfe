@@ -6,10 +6,11 @@ package tfe
 import (
 	"errors"
 	"fmt"
+	"testing"
+
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"testing"
 )
 
 func TestAccTFEAgentPoolAllowedWorkspaces_create_update(t *testing.T) {

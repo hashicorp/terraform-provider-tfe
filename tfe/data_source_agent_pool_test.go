@@ -5,10 +5,11 @@ package tfe
 
 import (
 	"fmt"
-	"github.com/hashicorp/go-tfe"
 	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/hashicorp/go-tfe"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
