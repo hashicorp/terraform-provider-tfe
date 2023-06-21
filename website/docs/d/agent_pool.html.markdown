@@ -31,4 +31,3 @@ In addition to all arguments above, the following attributes are exported:
 
 * `id` - The agent pool ID.
 * `organization_scoped` - Whether or not the agent pool can be used by all workspaces in the organization.
-* `allowed_workspace_ids` - If `organization_scoped` is set to `false`, the IDs of the workspaces that are allowed to use the agent pool.
