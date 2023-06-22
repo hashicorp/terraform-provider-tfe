@@ -295,8 +295,8 @@ func testAccTFEWorkspaceRun_withApplyOnlyBlock(parentWorkspaceID string, childWo
 		destroy {
 			manual_confirm = false
 			wait_for_run      = true
-    	retry_attempts    = 3
-    	retry_backoff_min = 10
+			retry_attempts    = 3
+			retry_backoff_min = 10
 		}
 	}`, parentWorkspaceID, childWorkspaceID)
 }
