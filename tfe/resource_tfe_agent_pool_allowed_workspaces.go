@@ -4,10 +4,12 @@
 package tfe
 
 import (
+	"errors"
 	"fmt"
+	"log"
+
 	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"log"
 )
 
 func resourceTFEAgentPoolAllowedWorkspaces() *schema.Resource {
@@ -69,7 +71,7 @@ func resourceTFEAgentPoolAllowedWorkspacesRead(d *schema.ResourceData, meta inte
 
 	agentPool, err := config.Client.AgentPools.Read(ctx, d.Id())
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			log.Printf("[DEBUG] agent pool %s no longer exists", d.Id())
 			d.SetId("")
 			return nil

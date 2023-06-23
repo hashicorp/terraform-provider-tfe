@@ -112,7 +112,7 @@ resource "tfe_agent_pool" "foobar" {
 
 resource "tfe_agent_pool_allowed_workspaces" "foobar" {
 	agent_pool_id = tfe_agent_pool.foobar.id
-  	allowed_workspace_ids = ["%s"]
+  allowed_workspace_ids = ["%s"]
 }
 
 data "tfe_agent_pool" "foobar" {
