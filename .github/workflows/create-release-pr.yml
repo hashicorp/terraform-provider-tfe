@@ -74,7 +74,7 @@ jobs:
       - name: Get yarn cache directory path
         id: global-cache-dir-path
         run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
-      - uses: actions/cache@v3.0.11
+      - uses: actions/cache@v3.3.1
         id: global-cache
         with:
           path: ${{ steps.global-cache-dir-path.outputs.dir }}
