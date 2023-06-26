@@ -21,6 +21,17 @@ func dataSourceTFEAgentPool() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+
+			"organization_scoped": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
+
+			"allowed_workspace_ids": {
+				Type:     schema.TypeSet,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
 		},
 	}
 }
@@ -35,10 +46,19 @@ func dataSourceTFEAgentPoolRead(d *schema.ResourceData, meta interface{}) error 
 		return err
 	}
 
-	id, err := fetchAgentPoolID(organization, name, config.Client)
+	pool, err := fetchAgentPool(organization, name, config.Client)
 	if err != nil {
 		return err
 	}
-	d.SetId(id)
+
+	d.SetId(pool.ID)
+	d.Set("organization_scoped", pool.OrganizationScoped)
+
+	var allowedWorkspaceIDs []string
+	for _, allowedWorkspaceID := range pool.AllowedWorkspaces {
+		allowedWorkspaceIDs = append(allowedWorkspaceIDs, allowedWorkspaceID.ID)
+	}
+	d.Set("allowed_workspace_ids", allowedWorkspaceIDs)
+
 	return nil
 }

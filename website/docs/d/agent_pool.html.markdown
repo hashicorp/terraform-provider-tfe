@@ -30,3 +30,4 @@ The following arguments are supported:
 In addition to all arguments above, the following attributes are exported:
 
 * `id` - The agent pool ID.
+* `organization_scoped` - Whether or not the agent pool can be used by all workspaces in the organization.

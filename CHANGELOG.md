@@ -1,10 +1,15 @@
 ## Unreleased
 
+FEATURES:
+* **New Resource**: `r/tfe_agent_pool_allowed_workspaces` restricts the use of an agent pool to particular workspaces, by @hs26gill [870](https://github.com/hashicorp/terraform-provider-tfe/pull/870)
+
 BUG FIXES:
 * `r/tfe_workspace_run`: Ensure `wait_for_run` correctly results in a fire-and-forget Run when set to `false` by @lucymhdavies ([#910](https://github.com/hashicorp/terraform-provider-tfe/pull/910))
 * `r/tfe_notification_configuration`: Add support for missing "Check failed" Health Event notifications by @lucymhdavies ([#927](https://github.com/hashicorp/terraform-provider-tfe/pull/927))
 
-
+ENHANCEMENTS:
+* `r/tfe_agent_pool`: Add attribute `organization_scoped` to set the scope of an agent pool by @hs26gill [870](https://github.com/hashicorp/terraform-provider-tfe/pull/870)
+* `d/tfe_agent_pool`: Add attribute `organization_scoped` and `allowed_workspace_ids` to retrieve agent pool scope and associated allowed workspace ids by @hs26gill [870](https://github.com/hashicorp/terraform-provider-tfe/pull/870)
 
 ## v0.45.0 (May 25, 2023)
 
@@ -16,7 +21,6 @@ FEATURES:
 * `r/tfe_team_token`: Add optional `expired_at` field to team tokens by, @juliannatetreault ([#844](https://github.com/hashicorp/terraform-provider-tfe/pull/844))
 
 ENHANCEMENTS:
-
 * `r/tfe_workspace`: Retry workspace safe delete if resources are still being processed to determine safety. ([#881](https://github.com/hashicorp/terraform-provider-tfe/pull/881))
 
 BUG FIXES:
