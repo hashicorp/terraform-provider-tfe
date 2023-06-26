@@ -66,7 +66,8 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 		return err
 	}
 
-	run, err = awaitRun(config.Client, run.ID, ws.Organization.Name, isPlanOp, hasPostPlanTaskStage, planPendingStatuses, isPlanComplete)
+	planPendingStatuses, planTerminalStatuses := planStatuses(run, hasPostPlanTaskStage)
+	run, err = awaitRun(config.Client, run.ID, ws.Organization.Name, isPlanOp, planPendingStatuses, isPlanComplete(planTerminalStatuses))
 	if err != nil {
 		return err
 	}
@@ -83,14 +84,14 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 
 	if run.Status == tfe.RunPolicyOverride {
 		log.Printf("[INFO] Policy check soft-failed, awaiting manual override for run %q", run.ID)
-		run, err = awaitRun(config.Client, run.ID, ws.Organization.Name, isPlanOp, hasPostPlanTaskStage, policyOverridePendingStatuses, isManuallyOverriden)
+		run, err = awaitRun(config.Client, run.ID, ws.Organization.Name, isPlanOp, policyOverridePendingStatuses, isManuallyOverriden)
 		if err != nil {
 			return err
 		}
 	}
 
 	if !run.HasChanges && !run.AllowEmptyApply {
-		run, err = awaitRun(config.Client, run.ID, ws.Organization.Name, isPlanOp, hasPostPlanTaskStage, confirmationPendingStatuses, isPlannedAndFinished)
+		run, err = awaitRun(config.Client, run.ID, ws.Organization.Name, isPlanOp, confirmationPendingStatuses, isPlannedAndFinished)
 		if err != nil {
 			return err
 		}
@@ -103,18 +104,18 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 	}
 
 	// wait for run to be comfirmable before attempting to confirm
-	run, err = awaitRun(config.Client, run.ID, ws.Organization.Name, isPlanOp, hasPostPlanTaskStage, confirmationPendingStatuses, isConfirmable)
+	run, err = awaitRun(config.Client, run.ID, ws.Organization.Name, isPlanOp, confirmationPendingStatuses, isConfirmable)
 	if err != nil {
 		return err
 	}
 
-	err = confirmRun(config.Client, manualConfirm, isPlanOp, hasPostPlanTaskStage, run, ws)
+	err = confirmRun(config.Client, manualConfirm, isPlanOp, run, ws)
 	if err != nil {
 		return err
 	}
 
 	isPlanOp = false
-	run, err = awaitRun(config.Client, run.ID, ws.Organization.Name, isPlanOp, hasPostPlanTaskStage, applyPendingStatuses, isCompleted)
+	run, err = awaitRun(config.Client, run.ID, ws.Organization.Name, isPlanOp, applyPendingStatuses, isCompleted)
 	if err != nil {
 		return err
 	}
@@ -181,14 +182,14 @@ func createRun(client *tfe.Client, waitForRun bool, manualConfirm bool, isDestro
 	return run, nil
 }
 
-func confirmRun(client *tfe.Client, manualConfirm bool, isPlanOp bool, hasPostPlanTaskStage bool, run *tfe.Run, ws *tfe.Workspace) error {
+func confirmRun(client *tfe.Client, manualConfirm bool, isPlanOp bool, run *tfe.Run, ws *tfe.Workspace) error {
 	// if human approval is required, an apply will auto kick off when run is manually approved
 	if manualConfirm {
 		confirmationPendingStatus := map[tfe.RunStatus]bool{}
 		confirmationPendingStatus[run.Status] = true
 
 		log.Printf("[INFO] Plan complete, waiting for manual confirm before proceeding run %q", run.ID)
-		_, err := awaitRun(client, run.ID, ws.Organization.Name, isPlanOp, hasPostPlanTaskStage, confirmationPendingStatus, isConfirmed)
+		_, err := awaitRun(client, run.ID, ws.Organization.Name, isPlanOp, confirmationPendingStatus, isConfirmed)
 		if err != nil {
 			return err
 		}
@@ -229,8 +230,7 @@ func completeOrRetryRun(meta interface{}, run *tfe.Run, d *schema.ResourceData, 
 	}
 }
 
-func awaitRun(client *tfe.Client, runID string, organization string, isPlanOp bool,
-	hasPostPlanTaskStage bool, runPendingStatus map[tfe.RunStatus]bool, isDone func(*tfe.Run, bool) bool) (*tfe.Run, error) {
+func awaitRun(client *tfe.Client, runID string, organization string, isPlanOp bool, runPendingStatus map[tfe.RunStatus]bool, isDone func(*tfe.Run) bool) (*tfe.Run, error) {
 	for i := 0; ; i++ {
 		select {
 		case <-ctx.Done():
@@ -243,22 +243,33 @@ func awaitRun(client *tfe.Client, runID string, organization string, isPlanOp bo
 				continue
 			}
 
-			_, runIsInProgress := runPendingStatus[run.Status]
-
-			switch {
-			case isDone(run, hasPostPlanTaskStage):
-				log.Printf("[INFO] Run %s has reached a terminal state: %s", runID, run.Status)
-				return run, nil
-			case runIsInProgress:
-				logRunProgress(client, organization, isPlanOp, run)
-			case run.Status == tfe.RunCanceled:
-				log.Printf("[INFO] Run %s has been canceled, status is %s", runID, run.Status)
-				return nil, fmt.Errorf("run %s has been canceled, status is %s", runID, run.Status)
-			default:
-				log.Printf("[INFO] Run %s has entered unexpected state: %s", runID, run.Status)
-				return nil, fmt.Errorf("run %s has entered unexpected state: %s", runID, run.Status)
+			run, err = hasFinalStatus(client, run, organization, isPlanOp, runPendingStatus, isDone)
+			if run == nil && err == nil {
+				// if both error and run is nil, then run is still in progress
+				continue
 			}
+
+			return run, err
 		}
+	}
+}
+
+func hasFinalStatus(client *tfe.Client, run *tfe.Run, organization string, isPlanOp bool, runPendingStatus map[tfe.RunStatus]bool, isDone func(*tfe.Run) bool) (*tfe.Run, error) {
+	_, runIsInProgress := runPendingStatus[run.Status]
+
+	switch {
+	case isDone(run):
+		log.Printf("[INFO] Run %s has reached a terminal state: %s", run.ID, run.Status)
+		return run, nil
+	case runIsInProgress:
+		logRunProgress(client, organization, isPlanOp, run)
+		return nil, nil
+	case run.Status == tfe.RunCanceled:
+		log.Printf("[INFO] Run %s has been canceled, status is %s", run.ID, run.Status)
+		return nil, fmt.Errorf("run %s has been canceled, status is %s", run.ID, run.Status)
+	default:
+		log.Printf("[INFO] Run %s has entered unexpected state: %s", run.ID, run.Status)
+		return nil, fmt.Errorf("run %s has entered unexpected state: %s", run.ID, run.Status)
 	}
 }
 
@@ -435,7 +446,7 @@ func readPostPlanTaskStageInRun(client *tfe.Client, runID string) (bool, error) 
 	return hasPostPlanTaskStage, nil
 }
 
-func isPlanComplete(run *tfe.Run, hasPostPlanTaskStage bool) bool {
+func planStatuses(run *tfe.Run, hasPostPlanTaskStage bool) (map[tfe.RunStatus]bool, map[tfe.RunStatus]bool) {
 	hasPolicyCheck := len(run.PolicyChecks) > 0
 	hasCostEstimate := run.CostEstimate != nil
 
@@ -455,6 +466,20 @@ func isPlanComplete(run *tfe.Run, hasPostPlanTaskStage bool) bool {
 		tfe.RunPolicyOverride:     true,
 	}
 
+	var planPendingStatuses = map[tfe.RunStatus]bool{
+		tfe.RunPending:           true,
+		tfe.RunPlanQueued:        true,
+		tfe.RunPlanning:          true,
+		tfe.RunCostEstimating:    true,
+		tfe.RunPolicyChecking:    true,
+		tfe.RunQueuing:           true,
+		tfe.RunFetching:          true,
+		tfe.RunPostPlanRunning:   true,
+		tfe.RunPostPlanCompleted: true,
+		tfe.RunPrePlanRunning:    true,
+		tfe.RunPrePlanCompleted:  true,
+	}
+
 	if hasPolicyCheck {
 		planTerminalStatuses[tfe.RunPolicyChecked] = true
 
@@ -472,29 +497,36 @@ func isPlanComplete(run *tfe.Run, hasPostPlanTaskStage bool) bool {
 		// there are no post plan ops
 		planTerminalStatuses[tfe.RunPlanned] = true
 	}
-	_, found := planTerminalStatuses[run.Status]
-	return found
+
+	return planPendingStatuses, planTerminalStatuses
 }
 
-func isManuallyOverriden(run *tfe.Run, hasPostPlanTaskStage bool) bool {
+func isPlanComplete(planTerminalStatuses map[tfe.RunStatus]bool) func(run *tfe.Run) bool {
+	return func(run *tfe.Run) bool {
+		_, found := planTerminalStatuses[run.Status]
+		return found
+	}
+}
+
+func isManuallyOverriden(run *tfe.Run) bool {
 	_, found := policyOverriddenStatuses[run.Status]
 	return found
 }
 
-func isPlannedAndFinished(run *tfe.Run, hasPostPlanTaskStage bool) bool {
+func isPlannedAndFinished(run *tfe.Run) bool {
 	return tfe.RunPlannedAndFinished == run.Status
 }
 
-func isConfirmable(run *tfe.Run, hasPostPlanTaskStage bool) bool {
+func isConfirmable(run *tfe.Run) bool {
 	return run.Actions.IsConfirmable
 }
 
-func isConfirmed(run *tfe.Run, hasPostPlanTaskStage bool) bool {
+func isConfirmed(run *tfe.Run) bool {
 	_, found := confirmationDoneStatuses[run.Status]
 	return found
 }
 
-func isCompleted(run *tfe.Run, hasPostPlanTaskStage bool) bool {
+func isCompleted(run *tfe.Run) bool {
 	_, found := applyDoneStatuses[run.Status]
 	return found
 }

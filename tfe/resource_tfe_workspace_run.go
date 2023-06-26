@@ -17,20 +17,6 @@ var (
 	backoffMax = 3000.0
 )
 
-var planPendingStatuses = map[tfe.RunStatus]bool{
-	tfe.RunPending:           true,
-	tfe.RunPlanQueued:        true,
-	tfe.RunPlanning:          true,
-	tfe.RunCostEstimating:    true,
-	tfe.RunPolicyChecking:    true,
-	tfe.RunQueuing:           true,
-	tfe.RunFetching:          true,
-	tfe.RunPostPlanRunning:   true,
-	tfe.RunPostPlanCompleted: true,
-	tfe.RunPrePlanRunning:    true,
-	tfe.RunPrePlanCompleted:  true,
-}
-
 var applyPendingStatuses = map[tfe.RunStatus]bool{
 	tfe.RunConfirmed:         true,
 	tfe.RunApplyQueued:       true,
