@@ -49,7 +49,7 @@ data "tfe_github_app_installation" "gha_installation" {
 }
 
 resource "tfe_registry_module" "petstore" {
-  organization_name = tfe_organization.test-organization.name
+  organization = tfe_organization.test-organization.name
   vcs_repo {
     display_identifier = "GH_NAME/REPO_NAME"
     identifier         = "GH_NAME/REPO_NAME"
