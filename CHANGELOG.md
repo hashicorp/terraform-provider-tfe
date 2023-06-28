@@ -6,6 +6,7 @@ FEATURES:
 BUG FIXES:
 * `r/tfe_workspace_run`: Ensure `wait_for_run` correctly results in a fire-and-forget Run when set to `false` by @lucymhdavies ([#910](https://github.com/hashicorp/terraform-provider-tfe/pull/910))
 * `r/tfe_notification_configuration`: Add support for missing "Check failed" Health Event notifications by @lucymhdavies ([#927](https://github.com/hashicorp/terraform-provider-tfe/pull/927))
+* `r/tfe_registry_module`: Fixes a bug that prevented users from being able to create a registry module using a github app. ([#935](https://github.com/hashicorp/terraform-provider-tfe/pull/935))
 
 ENHANCEMENTS:
 * `r/tfe_agent_pool`: Add attribute `organization_scoped` to set the scope of an agent pool by @hs26gill [870](https://github.com/hashicorp/terraform-provider-tfe/pull/870)
