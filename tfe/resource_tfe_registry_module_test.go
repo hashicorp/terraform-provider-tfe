@@ -600,8 +600,15 @@ func testAccCheckTFERegistryModuleVCSAttributes(registryModule *tfe.RegistryModu
 			return fmt.Errorf("Bad VCS repo identifier: %v", registryModule.VCSRepo.Identifier)
 		}
 
-		if registryModule.VCSRepo.OAuthTokenID == "" {
-			return fmt.Errorf("Bad VCS repo oauth token id: %v", registryModule.VCSRepo)
+		switch registryModule.VCSRepo.ServiceProvider {
+		case "github_app":
+			if registryModule.VCSRepo.GHAInstallationID == "" {
+				return fmt.Errorf("Bad VCS repo github app installation id: %v", registryModule.VCSRepo)
+			}
+		default:
+			if registryModule.VCSRepo.OAuthTokenID == "" {
+				return fmt.Errorf("Bad VCS repo oauth token id: %v", registryModule.VCSRepo)
+			}
 		}
 
 		return nil
@@ -727,6 +734,7 @@ resource "tfe_organization" "foobar" {
 }
 
 resource "tfe_registry_module" "foobar" {
+ organization    = tfe_organization.foobar.id
  vcs_repo {
    display_identifier = "%s"
    identifier         = "%s"
