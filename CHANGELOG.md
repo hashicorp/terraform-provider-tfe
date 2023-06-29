@@ -11,6 +11,7 @@ BUG FIXES:
 ENHANCEMENTS:
 * `r/tfe_agent_pool`: Add attribute `organization_scoped` to set the scope of an agent pool by @hs26gill [870](https://github.com/hashicorp/terraform-provider-tfe/pull/870)
 * `d/tfe_agent_pool`: Add attribute `organization_scoped` and `allowed_workspace_ids` to retrieve agent pool scope and associated allowed workspace ids by @hs26gill [870](https://github.com/hashicorp/terraform-provider-tfe/pull/870)
+* `r/tfe_workspace_run`: Incorporate missing post plan statuses to ensure that `tfe_workspace_run` resource waits for a plan to process completely before attempting to confirm the associated run, by @uk1288 ([#921](https://github.com/hashicorp/terraform-provider-tfe/pull/921))
 
 ## v0.45.0 (May 25, 2023)
 

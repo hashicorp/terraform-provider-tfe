@@ -17,32 +17,15 @@ var (
 	backoffMax = 3000.0
 )
 
-var planPendingStatuses = map[tfe.RunStatus]bool{
-	tfe.RunPending:        true,
-	tfe.RunPlanQueued:     true,
-	tfe.RunPlanning:       true,
-	tfe.RunCostEstimating: true,
-	tfe.RunPolicyChecking: true,
-	tfe.RunQueuing:        true,
-	tfe.RunFetching:       true,
-}
-
-var planTerminalStatuses = map[tfe.RunStatus]bool{
-	tfe.RunPlanned:            true,
-	tfe.RunPlannedAndFinished: true,
-	tfe.RunErrored:            true,
-	tfe.RunCostEstimated:      true,
-	tfe.RunPolicyChecked:      true,
-	tfe.RunPolicySoftFailed:   true,
-	tfe.RunPolicyOverride:     true,
-}
-
 var applyPendingStatuses = map[tfe.RunStatus]bool{
-	tfe.RunConfirmed:   true,
-	tfe.RunApplyQueued: true,
-	tfe.RunApplying:    true,
-	tfe.RunQueuing:     true,
-	tfe.RunFetching:    true,
+	tfe.RunConfirmed:         true,
+	tfe.RunApplyQueued:       true,
+	tfe.RunApplying:          true,
+	tfe.RunQueuing:           true,
+	tfe.RunFetching:          true,
+	tfe.RunQueuingApply:      true,
+	tfe.RunPreApplyRunning:   true,
+	tfe.RunPreApplyCompleted: true,
 }
 
 var applyDoneStatuses = map[tfe.RunStatus]bool{
@@ -50,10 +33,34 @@ var applyDoneStatuses = map[tfe.RunStatus]bool{
 	tfe.RunErrored: true,
 }
 
+var confirmationPendingStatuses = map[tfe.RunStatus]bool{
+	tfe.RunPostPlanCompleted: true,
+	tfe.RunPlanned:           true,
+	tfe.RunCostEstimated:     true,
+	tfe.RunPolicyChecked:     true,
+}
+
 var confirmationDoneStatuses = map[tfe.RunStatus]bool{
-	tfe.RunConfirmed:   true,
-	tfe.RunApplyQueued: true,
-	tfe.RunApplying:    true,
+	tfe.RunConfirmed:         true,
+	tfe.RunApplyQueued:       true,
+	tfe.RunApplying:          true,
+	tfe.RunPrePlanCompleted:  true,
+	tfe.RunPrePlanRunning:    true,
+	tfe.RunQueuingApply:      true,
+	tfe.RunPreApplyCompleted: true,
+}
+
+var policyOverriddenStatuses = map[tfe.RunStatus]bool{
+	tfe.RunPolicyChecked:    true,
+	tfe.RunConfirmed:        true,
+	tfe.RunApplyQueued:      true,
+	tfe.RunApplying:         true,
+	tfe.RunPrePlanCompleted: true,
+	tfe.RunPrePlanRunning:   true,
+}
+
+var policyOverridePendingStatuses = map[tfe.RunStatus]bool{
+	tfe.RunPolicyOverride: true,
 }
 
 func resourceTFEWorkspaceRun() *schema.Resource {
