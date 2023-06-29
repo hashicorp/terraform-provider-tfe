@@ -239,6 +239,8 @@ resource "tfe_team_token" "foobar" {
 }`, rInt)
 }
 
+// NOTE: This config is invalid because you cannot manage multiple tokens for
+// one team. It is expected to always error.
 func testAccTFETeamToken_existsWithoutForce(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
@@ -260,6 +262,9 @@ resource "tfe_team_token" "error" {
 }`, rInt)
 }
 
+// NOTE: This config is invalid because you cannot manage multiple tokens for
+// one team. It can run without error _once_ due to the presence of
+// force_regenerate, but is expected to error on any subsequent run.
 func testAccTFETeamToken_existsWithForce(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
