@@ -99,7 +99,7 @@ func TestAccTFEOrganizationToken_existsWithForce(t *testing.T) {
 	})
 }
 
-func TestAccTFEOrganizationToken_existsWithoutExpiry(t *testing.T) {
+func TestAccTFEOrganizationToken_withBlankExpiry(t *testing.T) {
 	token := &tfe.OrganizationToken{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	expiredAt := ""
@@ -110,7 +110,7 @@ func TestAccTFEOrganizationToken_existsWithoutExpiry(t *testing.T) {
 		CheckDestroy: testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOrganizationToken_existsWithoutExpiry(rInt),
+				Config: testAccTFEOrganizationToken_withBlankExpiry(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationTokenExists(
 						"tfe_organization_token.foobar", token),
@@ -122,7 +122,7 @@ func TestAccTFEOrganizationToken_existsWithoutExpiry(t *testing.T) {
 	})
 }
 
-func TestAccTFEOrganizationToken_existsWithExpiry(t *testing.T) {
+func TestAccTFEOrganizationToken_withValidExpiry(t *testing.T) {
 	token := &tfe.OrganizationToken{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	expiredAt := "2051-04-11T23:15:59Z"
@@ -133,7 +133,7 @@ func TestAccTFEOrganizationToken_existsWithExpiry(t *testing.T) {
 		CheckDestroy: testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOrganizationToken_existsWithExpiry(rInt),
+				Config: testAccTFEOrganizationToken_withValidExpiry(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationTokenExists(
 						"tfe_organization_token.expiry", token),
@@ -145,7 +145,7 @@ func TestAccTFEOrganizationToken_existsWithExpiry(t *testing.T) {
 	})
 }
 
-func TestAccTFEOrganizationToken_existsWithInvalidExpiry(t *testing.T) {
+func TestAccTFEOrganizationToken_withInvalidExpiry(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -154,7 +154,7 @@ func TestAccTFEOrganizationToken_existsWithInvalidExpiry(t *testing.T) {
 		CheckDestroy: testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccTFEOrganizationToken_existsWithInvalidExpiry(rInt),
+				Config:      testAccTFEOrganizationToken_withInvalidExpiry(rInt),
 				ExpectError: regexp.MustCompile(`must be a valid date or time, provided in iso8601 format`),
 			},
 		},
@@ -278,7 +278,7 @@ resource "tfe_organization_token" "regenerated" {
 }`, rInt)
 }
 
-func testAccTFEOrganizationToken_existsWithoutExpiry(rInt int) string {
+func testAccTFEOrganizationToken_withBlankExpiry(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
@@ -288,22 +288,14 @@ resource "tfe_organization" "foobar" {
 resource "tfe_organization_token" "foobar" {
   organization = tfe_organization.foobar.id
   expired_at = ""
-}
-
-resource "tfe_organization_token" "error" {
-  organization = tfe_organization.foobar.id
 }`, rInt)
 }
 
-func testAccTFEOrganizationToken_existsWithExpiry(rInt int) string {
+func testAccTFEOrganizationToken_withValidExpiry(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
-}
-
-resource "tfe_organization_token" "foobar" {
-  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_organization_token" "expiry" {
@@ -312,15 +304,11 @@ resource "tfe_organization_token" "expiry" {
 }`, rInt)
 }
 
-func testAccTFEOrganizationToken_existsWithInvalidExpiry(rInt int) string {
+func testAccTFEOrganizationToken_withInvalidExpiry(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
-}
-
-resource "tfe_organization_token" "foobar" {
-  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_organization_token" "expiry" {
