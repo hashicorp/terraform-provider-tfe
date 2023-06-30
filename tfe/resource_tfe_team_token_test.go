@@ -88,7 +88,7 @@ func TestAccTFETeamToken_existsWithForce(t *testing.T) {
 	})
 }
 
-func TestAccTFETeamToken_existsWithoutExpiry(t *testing.T) {
+func TestAccTFETeamToken_withBlankExpiry(t *testing.T) {
 	token := &tfe.TeamToken{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	expiredAt := ""
@@ -99,7 +99,7 @@ func TestAccTFETeamToken_existsWithoutExpiry(t *testing.T) {
 		CheckDestroy: testAccCheckTFETeamTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamToken_existsWithoutExpiry(rInt),
+				Config: testAccTFETeamToken_withBlankExpiry(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamTokenExists(
 						"tfe_team_token.foobar", token),
@@ -111,7 +111,7 @@ func TestAccTFETeamToken_existsWithoutExpiry(t *testing.T) {
 	})
 }
 
-func TestAccTFETeamToken_existsWithExpiry(t *testing.T) {
+func TestAccTFETeamToken_withValidExpiry(t *testing.T) {
 	token := &tfe.TeamToken{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	expiredAt := "2051-04-11T23:15:59Z"
@@ -122,7 +122,7 @@ func TestAccTFETeamToken_existsWithExpiry(t *testing.T) {
 		CheckDestroy: testAccCheckTFETeamTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamToken_existsWithExpiry(rInt),
+				Config: testAccTFETeamToken_withValidExpiry(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamTokenExists(
 						"tfe_team_token.expiry", token),
@@ -134,7 +134,7 @@ func TestAccTFETeamToken_existsWithExpiry(t *testing.T) {
 	})
 }
 
-func TestAccTFETeamToken_existsWithInvalidExpiry(t *testing.T) {
+func TestAccTFETeamToken_withInvalidExpiry(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -143,7 +143,7 @@ func TestAccTFETeamToken_existsWithInvalidExpiry(t *testing.T) {
 		CheckDestroy: testAccCheckTFETeamTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccTFETeamToken_existsWithInvalidExpiry(rInt),
+				Config:      testAccTFETeamToken_withInvalidExpiry(rInt),
 				ExpectError: regexp.MustCompile(`must be a valid date or time, provided in iso8601 format`),
 			},
 		},
@@ -239,6 +239,8 @@ resource "tfe_team_token" "foobar" {
 }`, rInt)
 }
 
+// NOTE: This config is invalid because you cannot manage multiple tokens for
+// one team. It is expected to always error.
 func testAccTFETeamToken_existsWithoutForce(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
@@ -260,6 +262,9 @@ resource "tfe_team_token" "error" {
 }`, rInt)
 }
 
+// NOTE: This config is invalid because you cannot manage multiple tokens for
+// one team. It can run without error _once_ due to the presence of
+// force_regenerate, but is expected to error on any subsequent run.
 func testAccTFETeamToken_existsWithForce(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
@@ -282,7 +287,7 @@ resource "tfe_team_token" "regenerated" {
 }`, rInt)
 }
 
-func testAccTFETeamToken_existsWithoutExpiry(rInt int) string {
+func testAccTFETeamToken_withBlankExpiry(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
@@ -297,14 +302,10 @@ resource "tfe_team" "foobar" {
 resource "tfe_team_token" "foobar" {
   team_id = tfe_team.foobar.id
   expired_at = ""
-}
-
-resource "tfe_team_token" "error" {
-  team_id = tfe_team.foobar.id
 }`, rInt)
 }
 
-func testAccTFETeamToken_existsWithExpiry(rInt int) string {
+func testAccTFETeamToken_withValidExpiry(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
@@ -314,10 +315,6 @@ resource "tfe_organization" "foobar" {
 resource "tfe_team" "foobar" {
   name         = "team-test"
   organization = tfe_organization.foobar.id
-}
-
-resource "tfe_team_token" "foobar" {
-  team_id = tfe_team.foobar.id
 }
 
 resource "tfe_team_token" "expiry" {
@@ -326,7 +323,7 @@ resource "tfe_team_token" "expiry" {
 }`, rInt)
 }
 
-func testAccTFETeamToken_existsWithInvalidExpiry(rInt int) string {
+func testAccTFETeamToken_withInvalidExpiry(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
@@ -336,10 +333,6 @@ resource "tfe_organization" "foobar" {
 resource "tfe_team" "foobar" {
   name         = "team-test"
   organization = tfe_organization.foobar.id
-}
-
-resource "tfe_team_token" "foobar" {
-  team_id = tfe_team.foobar.id
 }
 
 resource "tfe_team_token" "expiry" {
