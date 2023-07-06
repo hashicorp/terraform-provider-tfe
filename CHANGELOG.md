@@ -102,6 +102,8 @@ FEATURES:
 
 * `r/tfe_team_token`: Adds support for creating multiple team tokens for a single team by adding the `description` attribute, which must be unique per team, by @mkam [#1698](https://github.com/hashicorp/terraform-provider-tfe/pull/1698)
 
+* `r/tfe_registry_module`: Documented required tokens
+
 DEPRECATIONS:
 
 * `ephemeral-resources/tfe_organization_token`: Ephemeral organization tokens have been removed, by @ctrombley [#1736](https://github.com/hashicorp/terraform-provider-tfe/pull/1736)
