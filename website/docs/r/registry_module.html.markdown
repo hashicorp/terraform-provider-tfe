@@ -9,6 +9,8 @@ description: |-
 
 Terraform Cloud's private module registry helps you share Terraform modules across your organization.
 
+**Note**: To manage this resource, the token used with the provider needs to be for a team with **owner** permissions or a user who has the permissions explicilty assigned. Crucially, this **does not work** with an organization token! See the [API Access Levels](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/api-tokens#access-levels) documentation for more information.
+
 ## Example Usage
 
 Basic usage with VCS:
