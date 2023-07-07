@@ -237,10 +237,7 @@ func (r *resourceTFESAMLSettings) Read(ctx context.Context, req resource.ReadReq
 
 	samlSettings, err := r.client.Admin.Settings.SAML.Read(ctx)
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error reading SAML Settings",
-			"Could not read SAML Settings, unexpected error: "+err.Error(),
-		)
+		resp.Diagnostics.AddError("Error reading SAML Settings", "Could not read SAML Settings, unexpected error: "+err.Error())
 		return
 	}
 	result := modelFromTFEAdminSAMLSettings(*samlSettings, data.SignatureSigningMethod.ValueString(), data.SignatureDigestMethod.ValueString())
@@ -249,71 +246,39 @@ func (r *resourceTFESAMLSettings) Read(ctx context.Context, req resource.ReadReq
 }
 
 func (r *resourceTFESAMLSettings) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var data modelTFESAMLSettings
-	diags := req.Plan.Get(ctx, &data)
+	var m modelTFESAMLSettings
+	diags := req.Plan.Get(ctx, &m)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	//TODO: add more after we upgrade go-tfe
-	options := tfe.AdminSAMLSettingsUpdateOptions{
-		Enabled:                   basetypes.NewBoolValue(true).ValueBoolPointer(),
-		Debug:                     data.Debug.ValueBoolPointer(),
-		IDPCert:                   data.IDPCert.ValueStringPointer(),
-		SLOEndpointURL:            data.SLOEndpointURL.ValueStringPointer(),
-		SSOEndpointURL:            data.SSOEndpointURL.ValueStringPointer(),
-		AttrUsername:              data.AttrUsername.ValueStringPointer(),
-		AttrGroups:                data.AttrGroups.ValueStringPointer(),
-		AttrSiteAdmin:             data.AttrSiteAdmin.ValueStringPointer(),
-		SiteAdminRole:             data.SiteAdminRole.ValueStringPointer(),
-		SSOAPITokenSessionTimeout: tfe.Int(int(data.SSOAPITokenSessionTimeout.ValueInt64())),
-	}
-
-	samlSettings, err := r.client.Admin.Settings.SAML.Update(ctx, options)
+	samlSettings, err := r.updateSAMLSettings(ctx, m)
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error updating SAML Settings",
-			"Could not set SAML Settings, unexpected error: "+err.Error(),
-		)
+		resp.Diagnostics.AddError("Error creating SAML Settings", "Could not set SAML Settings, unexpected error: "+err.Error())
 		return
 	}
 
-	result := modelFromTFEAdminSAMLSettings(*samlSettings, data.SignatureSigningMethod.ValueString(), data.SignatureDigestMethod.ValueString())
+	result := modelFromTFEAdminSAMLSettings(*samlSettings, m.SignatureSigningMethod.ValueString(), m.SignatureDigestMethod.ValueString())
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
 
 func (r *resourceTFESAMLSettings) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data modelTFESAMLSettings
-	diags := req.Plan.Get(ctx, &data)
+	var m modelTFESAMLSettings
+	diags := req.Plan.Get(ctx, &m)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	options := tfe.AdminSAMLSettingsUpdateOptions{
-		Enabled:                   basetypes.NewBoolValue(true).ValueBoolPointer(),
-		Debug:                     data.Debug.ValueBoolPointer(),
-		IDPCert:                   data.IDPCert.ValueStringPointer(),
-		SLOEndpointURL:            data.SLOEndpointURL.ValueStringPointer(),
-		SSOEndpointURL:            data.SSOEndpointURL.ValueStringPointer(),
-		AttrUsername:              data.AttrUsername.ValueStringPointer(),
-		AttrGroups:                data.AttrGroups.ValueStringPointer(),
-		AttrSiteAdmin:             data.AttrSiteAdmin.ValueStringPointer(),
-		SiteAdminRole:             data.SiteAdminRole.ValueStringPointer(),
-		SSOAPITokenSessionTimeout: tfe.Int(int(data.SSOAPITokenSessionTimeout.ValueInt64())),
-	}
-
-	samlSettings, err := r.client.Admin.Settings.SAML.Update(ctx, options)
+	samlSettings, err := r.updateSAMLSettings(ctx, m)
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error updating SAML Settings",
-			"Could not set SAML Settings, unexpected error: "+err.Error(),
-		)
+		resp.Diagnostics.AddError("Error updating SAML Settings", "Could not set SAML Settings, unexpected error: "+err.Error())
 		return
 	}
-	result := modelFromTFEAdminSAMLSettings(*samlSettings, data.SignatureSigningMethod.ValueString(), data.SignatureDigestMethod.ValueString())
+
+	result := modelFromTFEAdminSAMLSettings(*samlSettings, m.SignatureSigningMethod.ValueString(), m.SignatureDigestMethod.ValueString())
 	result.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
 
 	diags = resp.State.Set(ctx, &result)
@@ -331,4 +296,19 @@ var (
 // NewSAMLSettingsResource is a resource function for the framework provider.
 func NewSAMLSettingsResource() resource.Resource {
 	return &resourceTFESAMLSettings{}
+}
+
+func (r *resourceTFESAMLSettings) updateSAMLSettings(ctx context.Context, m modelTFESAMLSettings) (*tfe.AdminSAMLSetting, error) {
+	return r.client.Admin.Settings.SAML.Update(ctx, tfe.AdminSAMLSettingsUpdateOptions{
+		Enabled:                   basetypes.NewBoolValue(true).ValueBoolPointer(),
+		Debug:                     m.Debug.ValueBoolPointer(),
+		IDPCert:                   m.IDPCert.ValueStringPointer(),
+		SLOEndpointURL:            m.SLOEndpointURL.ValueStringPointer(),
+		SSOEndpointURL:            m.SSOEndpointURL.ValueStringPointer(),
+		AttrUsername:              m.AttrUsername.ValueStringPointer(),
+		AttrGroups:                m.AttrGroups.ValueStringPointer(),
+		AttrSiteAdmin:             m.AttrSiteAdmin.ValueStringPointer(),
+		SiteAdminRole:             m.SiteAdminRole.ValueStringPointer(),
+		SSOAPITokenSessionTimeout: tfe.Int(int(m.SSOAPITokenSessionTimeout.ValueInt64())),
+	})
 }
