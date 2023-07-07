@@ -3,6 +3,8 @@ package tfe
 import (
 	"context"
 	"fmt"
+	"time"
+
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -12,7 +14,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"time"
 )
 
 const (
@@ -21,11 +22,12 @@ const (
 	defaultSSOAPITokenSessionTimeoutSeconds int64  = 1209600 // 14 days
 )
 
+// resourceTFESAMLSettings implements the tfe_saml_settings resource type
 type resourceTFESAMLSettings struct {
 	client *tfe.Client
 }
 
-// modelTFESAMLSettings maps the resource schema data to a struct.
+// modelTFESAMLSettings maps the resource schema data to a struct
 type modelTFESAMLSettings struct {
 	ID                        types.String `tfsdk:"id"`
 	Enabled                   types.Bool   `tfsdk:"enabled"`
@@ -227,6 +229,7 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 	}
 }
 
+// Read implements resource.Resource
 func (r *resourceTFESAMLSettings) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var data modelTFESAMLSettings
 	diags := req.State.Get(ctx, &data)
@@ -240,11 +243,13 @@ func (r *resourceTFESAMLSettings) Read(ctx context.Context, req resource.ReadReq
 		resp.Diagnostics.AddError("Error reading SAML Settings", "Could not read SAML Settings, unexpected error: "+err.Error())
 		return
 	}
+
 	result := modelFromTFEAdminSAMLSettings(*samlSettings, data.SignatureSigningMethod.ValueString(), data.SignatureDigestMethod.ValueString())
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
 
+// Create implements resource.Resource
 func (r *resourceTFESAMLSettings) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var m modelTFESAMLSettings
 	diags := req.Plan.Get(ctx, &m)
@@ -264,6 +269,7 @@ func (r *resourceTFESAMLSettings) Create(ctx context.Context, req resource.Creat
 	resp.Diagnostics.Append(diags...)
 }
 
+// Update implements resource.Resource
 func (r *resourceTFESAMLSettings) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var m modelTFESAMLSettings
 	diags := req.Plan.Get(ctx, &m)
@@ -285,7 +291,22 @@ func (r *resourceTFESAMLSettings) Update(ctx context.Context, req resource.Updat
 	resp.Diagnostics.Append(diags...)
 }
 
+// Delete disables the SAML Settings and then removes the resource from the state file. You cannot delete TFE SAML Settings, only disable them
 func (r resourceTFESAMLSettings) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var m modelTFESAMLSettings
+	diags := req.State.Get(ctx, &m)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	_, err := r.client.Admin.Settings.SAML.Update(ctx, tfe.AdminSAMLSettingsUpdateOptions{
+		Enabled: basetypes.NewBoolValue(false).ValueBoolPointer(),
+	})
+	if err != nil {
+		resp.Diagnostics.AddError("Error deleting SAML Settings", "Could not disable SAML Settings, unexpected error: "+err.Error())
+		return
+	}
 }
 
 var (
@@ -298,6 +319,7 @@ func NewSAMLSettingsResource() resource.Resource {
 	return &resourceTFESAMLSettings{}
 }
 
+// updateSAMLSettings was created to keep the code DRY. It is used in both Create and Update functions
 func (r *resourceTFESAMLSettings) updateSAMLSettings(ctx context.Context, m modelTFESAMLSettings) (*tfe.AdminSAMLSetting, error) {
 	return r.client.Admin.Settings.SAML.Update(ctx, tfe.AdminSAMLSettingsUpdateOptions{
 		Enabled:                   basetypes.NewBoolValue(true).ValueBoolPointer(),
