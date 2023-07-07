@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 const (
@@ -20,7 +21,6 @@ const (
 )
 
 type resourceTFESAMLSettings struct {
-	//config ConfiguredClient
 	client *tfe.Client
 }
 
@@ -49,9 +49,36 @@ type modelTFESAMLSettings struct {
 	SignatureDigestMethod     types.String `tfsdk:"signature_digest_method"`
 }
 
+// modelFromTFEAdminSAMLSettings builds a modelTFESAMLSettings struct from a tfe.AdminSAMLSetting value
+func modelFromTFEAdminSAMLSettings(v tfe.AdminSAMLSetting, signatureSigningMethod, signatureDigestMethod string) modelTFESAMLSettings {
+	return modelTFESAMLSettings{
+		ID:                        types.StringValue(v.ID),
+		Enabled:                   types.BoolValue(v.Enabled),
+		Debug:                     types.BoolValue(v.Debug),
+		AuthnRequestsSigned:       types.BoolValue(v.AuthnRequestsSigned),
+		WantAssertionsSigned:      types.BoolValue(v.WantAssertionsSigned),
+		TeamManagementEnabled:     types.BoolValue(v.TeamManagementEnabled),
+		OldIDPCert:                types.StringValue(v.OldIDPCert),
+		IDPCert:                   types.StringValue(v.IDPCert),
+		SLOEndpointURL:            types.StringValue(v.SLOEndpointURL),
+		SSOEndpointURL:            types.StringValue(v.SSOEndpointURL),
+		AttrUsername:              types.StringValue(v.AttrUsername),
+		AttrGroups:                types.StringValue(v.AttrGroups),
+		AttrSiteAdmin:             types.StringValue(v.AttrSiteAdmin),
+		SiteAdminRole:             types.StringValue(v.SiteAdminRole),
+		SSOAPITokenSessionTimeout: types.Int64Value(int64(v.SSOAPITokenSessionTimeout)),
+		ACSConsumerURL:            types.StringValue(v.ACSConsumerURL),
+		MetadataURL:               types.StringValue(v.MetadataURL),
+		Certificate:               types.StringValue(v.Certificate),
+		PrivateKey:                types.StringValue(v.PrivateKey),
+		SignatureSigningMethod:    types.StringValue(signatureSigningMethod),
+		SignatureDigestMethod:     types.StringValue(signatureDigestMethod),
+	}
+}
+
 // Configure implements resource.ResourceWithConfigure
 func (r *resourceTFESAMLSettings) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	// Early exit if provider is unconfigured (i.e. we're only validating config or something)
+	// Early exit if provider is not properly configured (i.e. we're only validating config or something)
 	if req.ProviderData == nil {
 		return
 	}
@@ -78,10 +105,8 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 				Computed: true,
 			},
 			"enabled": schema.BoolAttribute{
-				Description: "Whether or not to enable SAML single sign-on",
-				Optional:    true,
+				Description: "Whether or not SAML single sign-on is enabled",
 				Computed:    true,
-				Default:     booldefault.StaticBool(false),
 			},
 			"debug": schema.BoolAttribute{
 				Description: "When sign-on fails and this is enabled, the SAMLResponse XML will be displayed on the login page",
@@ -112,18 +137,15 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 			},
 			"idp_cert": schema.StringAttribute{
 				Description: "Identity Provider Certificate specifies the PEM encoded X.509 Certificate as provided by the IdP configuration",
-				Optional:    true,
-				Computed:    true,
+				Required:    true,
 			},
 			"slo_endpoint_url": schema.StringAttribute{
 				Description: "Single Log Out URL specifies the HTTPS endpoint on your IdP for single logout requests. This value is provided by the IdP configuration",
-				Optional:    true,
-				Computed:    true,
+				Required:    true,
 			},
 			"sso_endpoint_url": schema.StringAttribute{
 				Description: "Single Sign On URL specifies the HTTPS endpoint on your IdP for single sign-on requests. This value is provided by the IdP configuration",
-				Optional:    true,
-				Computed:    true,
+				Required:    true,
 			},
 			"attr_username": schema.StringAttribute{
 				Description: "Username Attribute Name specifies the name of the SAML attribute that determines the user's username",
@@ -176,7 +198,6 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 			},
 			"signature_signing_method": schema.StringAttribute{
 				Description: fmt.Sprintf("Signature Signing Method. Must be either `%s` or `%s`. Defaults to `%s`", signatureMethodSHA1, signatureMethodSHA256, signatureMethodSHA256),
-				Optional:    true,
 				Computed:    true,
 				Default:     stringdefault.StaticString(signatureMethodSHA256),
 				Validators: []validator.String{
@@ -188,7 +209,6 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 			},
 			"signature_digest_method": schema.StringAttribute{
 				Description: fmt.Sprintf("Signature Digest Method. Must be either `%s` or `%s`. Defaults to `%s`", signatureMethodSHA1, signatureMethodSHA256, signatureMethodSHA256),
-				Optional:    true,
 				Computed:    true,
 				Default:     stringdefault.StaticString(signatureMethodSHA256),
 				Validators: []validator.String{
@@ -204,9 +224,60 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 }
 
 func (r *resourceTFESAMLSettings) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data modelTFESAMLSettings
+	diags := req.State.Get(ctx, &data)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	samlSettings, err := r.client.Admin.Settings.SAML.Read(ctx)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error reading SAML Settings",
+			"Could not read SAML Settings, unexpected error: "+err.Error(),
+		)
+		return
+	}
+	result := modelFromTFEAdminSAMLSettings(*samlSettings, data.SignatureSigningMethod.ValueString(), data.SignatureDigestMethod.ValueString())
+	diags = resp.State.Set(ctx, &result)
+	resp.Diagnostics.Append(diags...)
 }
 
 func (r *resourceTFESAMLSettings) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var data modelTFESAMLSettings
+	diags := req.Plan.Get(ctx, &data)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	//TODO: add more after we upgrade go-tfe
+	options := tfe.AdminSAMLSettingsUpdateOptions{
+		Enabled:                   basetypes.NewBoolValue(true).ValueBoolPointer(),
+		Debug:                     data.Debug.ValueBoolPointer(),
+		IDPCert:                   data.IDPCert.ValueStringPointer(),
+		SLOEndpointURL:            data.SLOEndpointURL.ValueStringPointer(),
+		SSOEndpointURL:            data.SSOEndpointURL.ValueStringPointer(),
+		AttrUsername:              data.AttrUsername.ValueStringPointer(),
+		AttrGroups:                data.AttrGroups.ValueStringPointer(),
+		AttrSiteAdmin:             data.AttrSiteAdmin.ValueStringPointer(),
+		SiteAdminRole:             data.SiteAdminRole.ValueStringPointer(),
+		SSOAPITokenSessionTimeout: tfe.Int(int(data.SSOAPITokenSessionTimeout.ValueInt64())),
+	}
+
+	samlSettings, err := r.client.Admin.Settings.SAML.Update(ctx, options)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error updating SAML Settings",
+			"Could not set SAML Settings, unexpected error: "+err.Error(),
+		)
+		return
+	}
+
+	result := modelFromTFEAdminSAMLSettings(*samlSettings, data.SignatureSigningMethod.ValueString(), data.SignatureDigestMethod.ValueString())
+	diags = resp.State.Set(ctx, &result)
+	resp.Diagnostics.Append(diags...)
 }
 
 func (r *resourceTFESAMLSettings) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
