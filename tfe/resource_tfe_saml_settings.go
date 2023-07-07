@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"time"
 )
 
 const (
@@ -47,6 +48,7 @@ type modelTFESAMLSettings struct {
 	PrivateKey                types.String `tfsdk:"private_key"`
 	SignatureSigningMethod    types.String `tfsdk:"signature_signing_method"`
 	SignatureDigestMethod     types.String `tfsdk:"signature_digest_method"`
+	LastUpdated               types.String `tfsdk:"last_updated"`
 }
 
 // modelFromTFEAdminSAMLSettings builds a modelTFESAMLSettings struct from a tfe.AdminSAMLSetting value
@@ -187,12 +189,10 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 			},
 			"certificate": schema.StringAttribute{
 				Description: "The certificate used for request and assertion signing",
-				Optional:    true,
 				Computed:    true,
 			},
 			"private_key": schema.StringAttribute{
 				Description: "The private key used for request and assertion signing",
-				Optional:    true,
 				Computed:    true,
 				Sensitive:   true,
 			},
@@ -217,6 +217,10 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 						signatureMethodSHA256,
 					),
 				},
+			},
+			"last_updated": schema.StringAttribute{
+				Description: "Time when resource was last updated",
+				Computed:    true,
 			},
 		},
 		Version: 1,
@@ -281,6 +285,39 @@ func (r *resourceTFESAMLSettings) Create(ctx context.Context, req resource.Creat
 }
 
 func (r *resourceTFESAMLSettings) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var data modelTFESAMLSettings
+	diags := req.Plan.Get(ctx, &data)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	options := tfe.AdminSAMLSettingsUpdateOptions{
+		Enabled:                   basetypes.NewBoolValue(true).ValueBoolPointer(),
+		Debug:                     data.Debug.ValueBoolPointer(),
+		IDPCert:                   data.IDPCert.ValueStringPointer(),
+		SLOEndpointURL:            data.SLOEndpointURL.ValueStringPointer(),
+		SSOEndpointURL:            data.SSOEndpointURL.ValueStringPointer(),
+		AttrUsername:              data.AttrUsername.ValueStringPointer(),
+		AttrGroups:                data.AttrGroups.ValueStringPointer(),
+		AttrSiteAdmin:             data.AttrSiteAdmin.ValueStringPointer(),
+		SiteAdminRole:             data.SiteAdminRole.ValueStringPointer(),
+		SSOAPITokenSessionTimeout: tfe.Int(int(data.SSOAPITokenSessionTimeout.ValueInt64())),
+	}
+
+	samlSettings, err := r.client.Admin.Settings.SAML.Update(ctx, options)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error updating SAML Settings",
+			"Could not set SAML Settings, unexpected error: "+err.Error(),
+		)
+		return
+	}
+	result := modelFromTFEAdminSAMLSettings(*samlSettings, data.SignatureSigningMethod.ValueString(), data.SignatureDigestMethod.ValueString())
+	result.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
+
+	diags = resp.State.Set(ctx, &result)
+	resp.Diagnostics.Append(diags...)
 }
 
 func (r resourceTFESAMLSettings) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
