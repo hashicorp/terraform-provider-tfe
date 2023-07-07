@@ -231,8 +231,8 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 
 // Read implements resource.Resource
 func (r *resourceTFESAMLSettings) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var data modelTFESAMLSettings
-	diags := req.State.Get(ctx, &data)
+	var m modelTFESAMLSettings
+	diags := req.State.Get(ctx, &m)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -244,7 +244,7 @@ func (r *resourceTFESAMLSettings) Read(ctx context.Context, req resource.ReadReq
 		return
 	}
 
-	result := modelFromTFEAdminSAMLSettings(*samlSettings, data.SignatureSigningMethod.ValueString(), data.SignatureDigestMethod.ValueString())
+	result := modelFromTFEAdminSAMLSettings(*samlSettings, m.SignatureSigningMethod.ValueString(), m.SignatureDigestMethod.ValueString())
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -292,7 +292,7 @@ func (r *resourceTFESAMLSettings) Update(ctx context.Context, req resource.Updat
 }
 
 // Delete disables the SAML Settings and then removes the resource from the state file. You cannot delete TFE SAML Settings, only disable them
-func (r resourceTFESAMLSettings) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *resourceTFESAMLSettings) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var m modelTFESAMLSettings
 	diags := req.State.Get(ctx, &m)
 	resp.Diagnostics.Append(diags...)
@@ -309,9 +309,23 @@ func (r resourceTFESAMLSettings) Delete(ctx context.Context, req resource.Delete
 	}
 }
 
+// ImportState implements resource.ResourceWithImportState
+func (r *resourceTFESAMLSettings) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	samlSettings, err := r.client.Admin.Settings.SAML.Read(ctx)
+	if err != nil {
+		resp.Diagnostics.AddError("Error importing SAML Settings", "Could not retrieve SAML Settings, unexpected error: "+err.Error())
+		return
+	}
+
+	result := modelFromTFEAdminSAMLSettings(*samlSettings, signatureMethodSHA256, signatureMethodSHA256)
+	diags := resp.State.Set(ctx, &result)
+	resp.Diagnostics.Append(diags...)
+}
+
 var (
-	_ resource.Resource              = &resourceTFESAMLSettings{}
-	_ resource.ResourceWithConfigure = &resourceTFESAMLSettings{}
+	_ resource.Resource                = &resourceTFESAMLSettings{}
+	_ resource.ResourceWithConfigure   = &resourceTFESAMLSettings{}
+	_ resource.ResourceWithImportState = &resourceTFESAMLSettings{}
 )
 
 // NewSAMLSettingsResource is a resource function for the framework provider.
