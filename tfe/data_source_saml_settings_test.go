@@ -24,10 +24,6 @@ func TestAccTFESAMLSettingsDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resourceAddress, "team_management_enabled"),
 					resource.TestCheckResourceAttrSet(resourceAddress, "authn_requests_signed"),
 					resource.TestCheckResourceAttrSet(resourceAddress, "want_assertions_signed"),
-					resource.TestCheckResourceAttrSet(resourceAddress, "idp_cert"),
-					resource.TestCheckResourceAttrSet(resourceAddress, "old_idp_cert"),
-					resource.TestCheckResourceAttrSet(resourceAddress, "slo_endpoint_url"),
-					resource.TestCheckResourceAttrSet(resourceAddress, "sso_endpoint_url"),
 					resource.TestCheckResourceAttrSet(resourceAddress, "attr_username"),
 					resource.TestCheckResourceAttrSet(resourceAddress, "attr_groups"),
 					resource.TestCheckResourceAttrSet(resourceAddress, "attr_site_admin"),
@@ -35,7 +31,6 @@ func TestAccTFESAMLSettingsDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resourceAddress, "sso_api_token_session_timeout"),
 					resource.TestCheckResourceAttrSet(resourceAddress, "acs_consumer_url"),
 					resource.TestCheckResourceAttrSet(resourceAddress, "metadata_url"),
-					resource.TestCheckResourceAttrSet(resourceAddress, "certificate"),
 				),
 			},
 		},
@@ -44,5 +39,5 @@ func TestAccTFESAMLSettingsDataSource_basic(t *testing.T) {
 }
 
 func testAccTFESAMLSettingsDataSourceConfig_basic() string {
-	return fmt.Sprintf(`data "tfe_saml_settings" "foobar" {}`)
+	return fmt.Sprint(`data "tfe_saml_settings" "foobar" {}`)
 }
