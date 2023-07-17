@@ -57,3 +57,7 @@ The following attributes are exported:
 * `acs_consumer_url` - ACS Consumer (Recipient) URL.
 * `metadata_url` - Metadata (Audience) URL.
 * `certificate` - Request and assertion signing certificate.
+* `certificate` - Request and assertion signing certificate.
+* `private_key` - The private key used for request and assertion signing.
+* `signature_signing_method` - Signature Signing Method.
+* `signature_digest_method` - Signature Digest Method.
