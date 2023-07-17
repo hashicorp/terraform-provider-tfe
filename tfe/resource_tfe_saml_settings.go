@@ -3,8 +3,6 @@ package tfe
 import (
 	"context"
 	"fmt"
-	"time"
-
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -28,8 +26,8 @@ type resourceTFESAMLSettings struct {
 }
 
 // modelFromTFEAdminSAMLSettings builds a modelTFESAMLSettings struct from a tfe.AdminSAMLSetting value
-func modelFromTFEAdminSAMLSettings(v tfe.AdminSAMLSetting, signatureSigningMethod, signatureDigestMethod string) modelTFESAMLSettings {
-	return modelTFESAMLSettings{
+func modelFromTFEAdminSAMLSettings(v tfe.AdminSAMLSetting, privateKey types.String) modelTFESAMLSettings {
+	m := modelTFESAMLSettings{
 		ID:                        types.StringValue(v.ID),
 		Enabled:                   types.BoolValue(v.Enabled),
 		Debug:                     types.BoolValue(v.Debug),
@@ -48,10 +46,14 @@ func modelFromTFEAdminSAMLSettings(v tfe.AdminSAMLSetting, signatureSigningMetho
 		ACSConsumerURL:            types.StringValue(v.ACSConsumerURL),
 		MetadataURL:               types.StringValue(v.MetadataURL),
 		Certificate:               types.StringValue(v.Certificate),
-		PrivateKey:                types.StringValue(v.PrivateKey),
-		SignatureSigningMethod:    types.StringValue(signatureSigningMethod),
-		SignatureDigestMethod:     types.StringValue(signatureDigestMethod),
+		PrivateKey:                types.StringNull(),
+		SignatureSigningMethod:    types.StringValue(v.SignatureSigningMethod),
+		SignatureDigestMethod:     types.StringValue(v.SignatureDigestMethod),
 	}
+	if privateKey.String() != "" {
+		m.PrivateKey = privateKey
+	}
+	return m
 }
 
 // Configure implements resource.ResourceWithConfigure
@@ -78,6 +80,7 @@ func (r *resourceTFESAMLSettings) Metadata(_ context.Context, req resource.Metad
 // Schema implements resource.Resource
 func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Version: 1,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed: true,
@@ -165,15 +168,18 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 			},
 			"certificate": schema.StringAttribute{
 				Description: "The certificate used for request and assertion signing",
+				Optional:    true,
 				Computed:    true,
 			},
 			"private_key": schema.StringAttribute{
 				Description: "The private key used for request and assertion signing",
+				Optional:    true,
 				Computed:    true,
 				Sensitive:   true,
 			},
 			"signature_signing_method": schema.StringAttribute{
 				Description: fmt.Sprintf("Signature Signing Method. Must be either `%s` or `%s`. Defaults to `%s`", signatureMethodSHA1, signatureMethodSHA256, signatureMethodSHA256),
+				Optional:    true,
 				Computed:    true,
 				Default:     stringdefault.StaticString(signatureMethodSHA256),
 				Validators: []validator.String{
@@ -185,6 +191,7 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 			},
 			"signature_digest_method": schema.StringAttribute{
 				Description: fmt.Sprintf("Signature Digest Method. Must be either `%s` or `%s`. Defaults to `%s`", signatureMethodSHA1, signatureMethodSHA256, signatureMethodSHA256),
+				Optional:    true,
 				Computed:    true,
 				Default:     stringdefault.StaticString(signatureMethodSHA256),
 				Validators: []validator.String{
@@ -194,12 +201,7 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 					),
 				},
 			},
-			"last_updated": schema.StringAttribute{
-				Description: "Time when resource was last updated",
-				Computed:    true,
-			},
 		},
-		Version: 1,
 	}
 }
 
@@ -218,7 +220,7 @@ func (r *resourceTFESAMLSettings) Read(ctx context.Context, req resource.ReadReq
 		return
 	}
 
-	result := modelFromTFEAdminSAMLSettings(*samlSettings, m.SignatureSigningMethod.ValueString(), m.SignatureDigestMethod.ValueString())
+	result := modelFromTFEAdminSAMLSettings(*samlSettings, m.PrivateKey)
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -238,7 +240,7 @@ func (r *resourceTFESAMLSettings) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
-	result := modelFromTFEAdminSAMLSettings(*samlSettings, m.SignatureSigningMethod.ValueString(), m.SignatureDigestMethod.ValueString())
+	result := modelFromTFEAdminSAMLSettings(*samlSettings, m.PrivateKey)
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -258,9 +260,7 @@ func (r *resourceTFESAMLSettings) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
-	result := modelFromTFEAdminSAMLSettings(*samlSettings, m.SignatureSigningMethod.ValueString(), m.SignatureDigestMethod.ValueString())
-	result.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
-
+	result := modelFromTFEAdminSAMLSettings(*samlSettings, m.PrivateKey)
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -291,7 +291,7 @@ func (r *resourceTFESAMLSettings) ImportState(ctx context.Context, req resource.
 		return
 	}
 
-	result := modelFromTFEAdminSAMLSettings(*samlSettings, signatureMethodSHA256, signatureMethodSHA256)
+	result := modelFromTFEAdminSAMLSettings(*samlSettings, types.StringValue(""))
 	diags := resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -313,6 +313,8 @@ func (r *resourceTFESAMLSettings) updateSAMLSettings(ctx context.Context, m mode
 		Enabled:                   basetypes.NewBoolValue(true).ValueBoolPointer(),
 		Debug:                     m.Debug.ValueBoolPointer(),
 		IDPCert:                   m.IDPCert.ValueStringPointer(),
+		Certificate:               m.Certificate.ValueStringPointer(),
+		PrivateKey:                m.Certificate.ValueStringPointer(),
 		SLOEndpointURL:            m.SLOEndpointURL.ValueStringPointer(),
 		SSOEndpointURL:            m.SSOEndpointURL.ValueStringPointer(),
 		AttrUsername:              m.AttrUsername.ValueStringPointer(),
@@ -320,5 +322,10 @@ func (r *resourceTFESAMLSettings) updateSAMLSettings(ctx context.Context, m mode
 		AttrSiteAdmin:             m.AttrSiteAdmin.ValueStringPointer(),
 		SiteAdminRole:             m.SiteAdminRole.ValueStringPointer(),
 		SSOAPITokenSessionTimeout: tfe.Int(int(m.SSOAPITokenSessionTimeout.ValueInt64())),
+		TeamManagementEnabled:     m.TeamManagementEnabled.ValueBoolPointer(),
+		AuthnRequestsSigned:       m.AuthnRequestsSigned.ValueBoolPointer(),
+		WantAssertionsSigned:      m.WantAssertionsSigned.ValueBoolPointer(),
+		SignatureSigningMethod:    m.SignatureSigningMethod.ValueStringPointer(),
+		SignatureDigestMethod:     m.SignatureDigestMethod.ValueStringPointer(),
 	})
 }
