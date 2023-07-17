@@ -8,6 +8,8 @@ package tfe
 
 import (
 	"context"
+	"strings"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -60,7 +62,8 @@ func dataSourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	for _, proj := range l.Items {
-		if proj.Name == projName {
+		// Case-insensitive uniqueness is enforced in TFC
+		if strings.EqualFold(proj.Name, projName) {
 			// Only now include workspaces to cut down on request load.
 			readOptions := &tfe.WorkspaceListOptions{
 				ProjectID: proj.ID,

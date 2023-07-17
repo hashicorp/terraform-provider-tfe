@@ -3,6 +3,9 @@
 FEATURES:
 * **New Resource**: `d/tfe_saml_settings` is a new data source to retrieve SAML settings from the Admin API, by @karvounis-form3 [952](https://github.com/hashicorp/terraform-provider-tfe/pull/952)
 
+BUG FIXES:
+* `d/tfe_project`: Ignore case when matching project name from Projects List API, by @jbonhag [958](https://github.com/hashicorp/terraform-provider-tfe/pull/958)
+
 ## v0.46.0 (July 3, 2023)
 
 FEATURES:
