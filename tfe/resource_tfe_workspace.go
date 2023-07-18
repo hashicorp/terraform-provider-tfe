@@ -108,11 +108,15 @@ func resourceTFEWorkspace() *schema.Resource {
 						"agent",
 						"local",
 						"remote",
+						"default",
 					},
 					false,
 				),
 			},
-
+			"resolved_execution_mode": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			"file_triggers_enabled": {
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -320,6 +324,15 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 
 	if v, ok := d.GetOk("execution_mode"); ok {
 		options.ExecutionMode = tfe.String(v.(string))
+		options.SettingOverrides = &tfe.WorkspaceSettingOverrides{
+			ExecutionMode: tfe.Bool(true),
+			AgentPool:     tfe.Bool(true),
+		}
+	} else {
+		options.SettingOverrides = &tfe.WorkspaceSettingOverrides{
+			ExecutionMode: tfe.Bool(false),
+			AgentPool:     tfe.Bool(false),
+		}
 	}
 
 	if v, ok := d.GetOkExists("operations"); ok {
@@ -464,6 +477,15 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("organization", workspace.Organization.Name)
 	d.Set("resource_count", workspace.ResourceCount)
 
+	d.Set("resolved_execution_mode", workspace.ExecutionMode)
+
+	if workspace.SettingOverrides != nil {
+		executionModeOverridden := workspace.SettingOverrides.ExecutionMode
+		if executionModeOverridden != nil && *executionModeOverridden == false {
+			d.Set("execution_mode", "default")
+		}
+	}
+
 	if workspace.Links["self-html"] != nil {
 		baseAPI := config.Client.BaseURL()
 		htmlURL := url.URL{
@@ -576,7 +598,25 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 
 		if d.HasChange("execution_mode") {
 			if v, ok := d.GetOk("execution_mode"); ok {
-				options.ExecutionMode = tfe.String(v.(string))
+				executionMode := tfe.String(v.(string))
+				if *executionMode == "default" {
+					options.SettingOverrides = &tfe.WorkspaceSettingOverrides{
+						ExecutionMode: tfe.Bool(false),
+						AgentPool:     tfe.Bool(false),
+					}
+				} else {
+					options.ExecutionMode = executionMode
+					options.SettingOverrides = &tfe.WorkspaceSettingOverrides{
+						ExecutionMode: tfe.Bool(true),
+						AgentPool:     tfe.Bool(true),
+					}
+				}
+
+			} else {
+				options.SettingOverrides = &tfe.WorkspaceSettingOverrides{
+					ExecutionMode: tfe.Bool(false),
+					AgentPool:     tfe.Bool(false),
+				}
 			}
 		}
 
@@ -841,8 +881,8 @@ func setExecutionModeDefault(_ context.Context, d *schema.ResourceDiff) error {
 	executionMode, executionModeReadOk := configMap["execution_mode"]
 	executionModeState := d.Get("execution_mode")
 	if operationsReadOk && executionModeReadOk {
-		if operations.IsNull() && executionMode.IsNull() && executionModeState != "remote" {
-			err := d.SetNew("execution_mode", "remote")
+		if operations.IsNull() && executionMode.IsNull() && executionModeState != "default" {
+			err := d.SetNew("execution_mode", "default")
 			if err != nil {
 				return fmt.Errorf("failed to set execution_mode: %w", err)
 			}
