@@ -1,3 +1,7 @@
+## Unreleased
+BUG FIXES:
+* `r/tfe_workspace`: Add error handling for `trigger_patterns` field, by @liamstevens [969](https://github.com/hashicorp/terraform-provider-tfe/pull/969)
+
 ## v0.47.0 (July 18, 2023)
 
 FEATURES:
