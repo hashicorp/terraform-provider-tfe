@@ -4,11 +4,7 @@
 package tfe
 
 import (
-	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/defaults"
-	"github.com/hashicorp/terraform-plugin-framework/types"
-
 	tfe "github.com/hashicorp/go-tfe"
 )
 
@@ -53,34 +49,4 @@ func fetchTerraformVersionID(version string, client *tfe.Client) (string, error)
 	}
 
 	return "", fmt.Errorf("terraform version not found")
-}
-
-// staticInt64 returns a static Int64 value default handler.
-//
-// Use staticInt64 if a static default value for a Int64 should be set.
-func staticInt64(defaultVal int64) defaults.Int64 {
-	return staticInt64Default{
-		defaultVal: defaultVal,
-	}
-}
-
-// staticStringDefault is static value default handler that
-// sets a value on a string attribute.
-type staticInt64Default struct {
-	defaultVal int64
-}
-
-// Description returns a human-readable description of the default value handler.
-func (d staticInt64Default) Description(_ context.Context) string {
-	return fmt.Sprintf("value defaults to %d", d.defaultVal)
-}
-
-// MarkdownDescription returns a markdown description of the default value handler.
-func (d staticInt64Default) MarkdownDescription(_ context.Context) string {
-	return fmt.Sprintf("value defaults to `%d`", d.defaultVal)
-}
-
-// DefaultInt64 implements the static default value logic.
-func (d staticInt64Default) DefaultInt64(_ context.Context, req defaults.Int64Request, resp *defaults.Int64Response) {
-	resp.PlanValue = types.Int64Value(d.defaultVal)
 }

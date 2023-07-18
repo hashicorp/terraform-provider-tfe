@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -162,7 +163,7 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 				Description: "Specifies the Single Sign On session timeout in seconds. Defaults to 14 days",
 				Optional:    true,
 				Computed:    true,
-				Default:     staticInt64(samlDefaultSSOAPITokenSessionTimeoutSeconds),
+				Default:     int64default.StaticInt64(samlDefaultSSOAPITokenSessionTimeoutSeconds),
 			},
 			"acs_consumer_url": schema.StringAttribute{
 				Description: "ACS Consumer (Recipient) URL",
