@@ -6,6 +6,7 @@ package tfe
 import (
 	"context"
 	"fmt"
+
 	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -140,6 +141,7 @@ func (d *dataSourceTFESAMLSettings) Read(ctx context.Context, _ datasource.ReadR
 	s, err := d.client.Admin.Settings.SAML.Read(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read SAML settings", err.Error())
+		return
 	}
 
 	// Set state
@@ -164,7 +166,4 @@ func (d *dataSourceTFESAMLSettings) Read(ctx context.Context, _ datasource.ReadR
 		Certificate:               types.StringValue(s.Certificate),
 	})
 	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
 }
