@@ -1,4 +1,4 @@
-## Unreleased
+## v0.47.0 (July 18, 2023)
 
 FEATURES:
 * **New Data Source**: `d/tfe_saml_settings` is a new data source to retrieve SAML settings from the Terraform Enterprise Admin API, by @karvounis-form3 [952](https://github.com/hashicorp/terraform-provider-tfe/pull/952)
