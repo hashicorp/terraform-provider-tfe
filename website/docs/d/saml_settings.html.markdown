@@ -7,17 +7,33 @@ description: |-
 
 # Data Source: tfe_saml_settings
 
-Use this data source to get information about SAML Settings.
+Use this data source to get information about SAML Settings. It applies only to Terraform Enterprise and requires admin token configuration. See example usage for incorporating an admin token in your provider config.
+
 
 ## Example Usage
 
+Basic usage:
+
 ```hcl
-data "tfe_saml_settings" "foo" {}
+provider "tfe" {
+  hostname = var.hostname
+  token    = var.token
+}
+
+provider "tfe" {
+  alias    = "admin"
+  hostname = var.hostname
+  token    = var.admin_token
+}
+
+data "tfe_saml_settings" "foo" {
+  provider = tfe.admin
+}
 ```
 
 ## Argument Reference
 
-No arguments are required for this datasource.
+No arguments are required for this data source.
 
 ## Attributes Reference
 
