@@ -172,6 +172,28 @@ func TestAccTFESAMLSettings_update(t *testing.T) {
 	})
 }
 
+func TestAccTFESAMLSettings_import(t *testing.T) {
+	s := tfe.AdminSAMLSetting{
+		IDPCert:        "testIDPCertImport",
+		SLOEndpointURL: "https://foobar.com/slo_endpoint_url",
+		SSOEndpointURL: "https://foobar.com/sso_endpoint_url",
+	}
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFESAMLSettings_basic(s),
+			},
+			{
+				ResourceName:      testResourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func testAccTFESAMLSettings_basic(s tfe.AdminSAMLSetting) string {
 	return fmt.Sprintf(`
 resource "tfe_saml_settings" "foobar" {

@@ -4,7 +4,6 @@
 package tfe
 
 import (
-	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"testing"
 )
@@ -39,5 +38,5 @@ func TestAccTFESAMLSettingsDataSource_basic(t *testing.T) {
 }
 
 func testAccTFESAMLSettingsDataSourceConfig_basic() string {
-	return fmt.Sprint(`data "tfe_saml_settings" "foobar" {}`)
+	return `data "tfe_saml_settings" "foobar" {}`
 }
