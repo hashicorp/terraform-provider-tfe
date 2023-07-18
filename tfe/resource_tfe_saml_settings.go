@@ -3,6 +3,7 @@ package tfe
 import (
 	"context"
 	"fmt"
+
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -12,12 +13,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 const (
-	signatureMethodSHA1                     string = "SHA1"
-	signatureMethodSHA256                   string = "SHA256"
-	defaultSSOAPITokenSessionTimeoutSeconds int64  = 1209600 // 14 days
+	samlSignatureMethodSHA1                     string = "SHA1"
+	samlSignatureMethodSHA256                   string = "SHA256"
+	samlDefaultAttrUsername                     string = "Username"
+	samlDefaultAttrSiteAdmin                    string = "SiteAdmin"
+	samlDefaultAttrGroups                       string = "MemberOf"
+	samlDefaultSiteAdminRole                    string = "site-admins"
+	samlDefaultSSOAPITokenSessionTimeoutSeconds int64  = 1209600 // 14 days
 )
 
 // resourceTFESAMLSettings implements the tfe_saml_settings resource type
@@ -46,11 +52,11 @@ func modelFromTFEAdminSAMLSettings(v tfe.AdminSAMLSetting, privateKey types.Stri
 		ACSConsumerURL:            types.StringValue(v.ACSConsumerURL),
 		MetadataURL:               types.StringValue(v.MetadataURL),
 		Certificate:               types.StringValue(v.Certificate),
-		PrivateKey:                types.StringNull(),
+		PrivateKey:                types.StringValue(""),
 		SignatureSigningMethod:    types.StringValue(v.SignatureSigningMethod),
 		SignatureDigestMethod:     types.StringValue(v.SignatureDigestMethod),
 	}
-	if privateKey.String() != "" {
+	if len(privateKey.String()) > 0 {
 		m.PrivateKey = privateKey
 	}
 	return m
@@ -132,31 +138,31 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 				Description: "Username Attribute Name specifies the name of the SAML attribute that determines the user's username",
 				Optional:    true,
 				Computed:    true,
-				Default:     stringdefault.StaticString("Username"),
+				Default:     stringdefault.StaticString(samlDefaultAttrUsername),
 			},
 			"attr_site_admin": schema.StringAttribute{
 				Description: "Specifies the role for site admin access. Overrides the \"Site Admin Role\" method",
 				Optional:    true,
 				Computed:    true,
-				Default:     stringdefault.StaticString("SiteAdmin"),
+				Default:     stringdefault.StaticString(samlDefaultAttrSiteAdmin),
 			},
 			"attr_groups": schema.StringAttribute{
 				Description: "Team Attribute Name specifies the name of the SAML attribute that determines team membership",
 				Optional:    true,
 				Computed:    true,
-				Default:     stringdefault.StaticString("MemberOf"),
+				Default:     stringdefault.StaticString(samlDefaultAttrGroups),
 			},
 			"site_admin_role": schema.StringAttribute{
 				Description: "Specifies the role for site admin access, provided in the list of roles sent in the Team Attribute Name attribute",
 				Optional:    true,
 				Computed:    true,
-				Default:     stringdefault.StaticString("site-admins"),
+				Default:     stringdefault.StaticString(samlDefaultSiteAdminRole),
 			},
 			"sso_api_token_session_timeout": schema.Int64Attribute{
 				Description: "Specifies the Single Sign On session timeout in seconds. Defaults to 14 days",
 				Optional:    true,
 				Computed:    true,
-				Default:     staticInt64(defaultSSOAPITokenSessionTimeoutSeconds),
+				Default:     staticInt64(samlDefaultSSOAPITokenSessionTimeoutSeconds),
 			},
 			"acs_consumer_url": schema.StringAttribute{
 				Description: "ACS Consumer (Recipient) URL",
@@ -173,31 +179,32 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 			},
 			"private_key": schema.StringAttribute{
 				Description: "The private key used for request and assertion signing",
+				Default:     stringdefault.StaticString(""),
 				Optional:    true,
 				Computed:    true,
 				Sensitive:   true,
 			},
 			"signature_signing_method": schema.StringAttribute{
-				Description: fmt.Sprintf("Signature Signing Method. Must be either `%s` or `%s`. Defaults to `%s`", signatureMethodSHA1, signatureMethodSHA256, signatureMethodSHA256),
+				Description: fmt.Sprintf("Signature Signing Method. Must be either `%s` or `%s`. Defaults to `%s`", samlSignatureMethodSHA1, samlSignatureMethodSHA256, samlSignatureMethodSHA256),
 				Optional:    true,
 				Computed:    true,
-				Default:     stringdefault.StaticString(signatureMethodSHA256),
+				Default:     stringdefault.StaticString(samlSignatureMethodSHA256),
 				Validators: []validator.String{
 					stringvalidator.OneOf(
-						signatureMethodSHA1,
-						signatureMethodSHA256,
+						samlSignatureMethodSHA1,
+						samlSignatureMethodSHA256,
 					),
 				},
 			},
 			"signature_digest_method": schema.StringAttribute{
-				Description: fmt.Sprintf("Signature Digest Method. Must be either `%s` or `%s`. Defaults to `%s`", signatureMethodSHA1, signatureMethodSHA256, signatureMethodSHA256),
+				Description: fmt.Sprintf("Signature Digest Method. Must be either `%s` or `%s`. Defaults to `%s`", samlSignatureMethodSHA1, samlSignatureMethodSHA256, samlSignatureMethodSHA256),
 				Optional:    true,
 				Computed:    true,
-				Default:     stringdefault.StaticString(signatureMethodSHA256),
+				Default:     stringdefault.StaticString(samlSignatureMethodSHA256),
 				Validators: []validator.String{
 					stringvalidator.OneOf(
-						signatureMethodSHA1,
-						signatureMethodSHA256,
+						samlSignatureMethodSHA1,
+						samlSignatureMethodSHA256,
 					),
 				},
 			},
@@ -234,6 +241,7 @@ func (r *resourceTFESAMLSettings) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
+	tflog.Debug(ctx, "Create SAML Settings")
 	samlSettings, err := r.updateSAMLSettings(ctx, m)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating SAML Settings", "Could not set SAML Settings, unexpected error: "+err.Error())
@@ -254,6 +262,7 @@ func (r *resourceTFESAMLSettings) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
+	tflog.Debug(ctx, "Update SAML Settings")
 	samlSettings, err := r.updateSAMLSettings(ctx, m)
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating SAML Settings", "Could not set SAML Settings, unexpected error: "+err.Error())
@@ -274,8 +283,32 @@ func (r *resourceTFESAMLSettings) Delete(ctx context.Context, req resource.Delet
 		return
 	}
 
-	_, err := r.client.Admin.Settings.SAML.Update(ctx, tfe.AdminSAMLSettingsUpdateOptions{
-		Enabled: basetypes.NewBoolValue(false).ValueBoolPointer(),
+	tflog.Debug(ctx, "Revoke IDP Certificate")
+	_, err := r.client.Admin.Settings.SAML.RevokeIdpCert(ctx)
+	if err != nil {
+		resp.Diagnostics.AddError("Error revoking IDP Certificate", "Could not revoke IDP Cert, unexpected error: "+err.Error())
+		return
+	}
+
+	tflog.Debug(ctx, "Delete SAML Settings")
+	_, err = r.client.Admin.Settings.SAML.Update(ctx, tfe.AdminSAMLSettingsUpdateOptions{
+		Enabled:                   basetypes.NewBoolValue(false).ValueBoolPointer(),
+		Debug:                     basetypes.NewBoolValue(false).ValueBoolPointer(),
+		AuthnRequestsSigned:       basetypes.NewBoolValue(false).ValueBoolPointer(),
+		WantAssertionsSigned:      basetypes.NewBoolValue(false).ValueBoolPointer(),
+		TeamManagementEnabled:     basetypes.NewBoolValue(false).ValueBoolPointer(),
+		IDPCert:                   basetypes.NewStringNull().ValueStringPointer(),
+		SLOEndpointURL:            basetypes.NewStringNull().ValueStringPointer(),
+		SSOEndpointURL:            basetypes.NewStringNull().ValueStringPointer(),
+		AttrUsername:              basetypes.NewStringValue(samlDefaultAttrUsername).ValueStringPointer(),
+		AttrSiteAdmin:             basetypes.NewStringValue(samlDefaultAttrSiteAdmin).ValueStringPointer(),
+		AttrGroups:                basetypes.NewStringValue(samlDefaultAttrGroups).ValueStringPointer(),
+		SiteAdminRole:             basetypes.NewStringValue(samlDefaultSiteAdminRole).ValueStringPointer(),
+		SSOAPITokenSessionTimeout: tfe.Int(int(samlDefaultSSOAPITokenSessionTimeoutSeconds)),
+		Certificate:               basetypes.NewStringNull().ValueStringPointer(),
+		PrivateKey:                basetypes.NewStringNull().ValueStringPointer(),
+		SignatureSigningMethod:    basetypes.NewStringValue(samlSignatureMethodSHA256).ValueStringPointer(),
+		SignatureDigestMethod:     basetypes.NewStringValue(samlSignatureMethodSHA256).ValueStringPointer(),
 	})
 	if err != nil {
 		resp.Diagnostics.AddError("Error deleting SAML Settings", "Could not disable SAML Settings, unexpected error: "+err.Error())
@@ -314,7 +347,7 @@ func (r *resourceTFESAMLSettings) updateSAMLSettings(ctx context.Context, m mode
 		Debug:                     m.Debug.ValueBoolPointer(),
 		IDPCert:                   m.IDPCert.ValueStringPointer(),
 		Certificate:               m.Certificate.ValueStringPointer(),
-		PrivateKey:                m.Certificate.ValueStringPointer(),
+		PrivateKey:                m.PrivateKey.ValueStringPointer(),
 		SLOEndpointURL:            m.SLOEndpointURL.ValueStringPointer(),
 		SSOEndpointURL:            m.SSOEndpointURL.ValueStringPointer(),
 		AttrUsername:              m.AttrUsername.ValueStringPointer(),
