@@ -603,7 +603,9 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 
 		if tps, ok := d.GetOk("trigger_patterns"); ok {
 			for _, tp := range tps.([]interface{}) {
-				options.TriggerPatterns = append(options.TriggerPatterns, tp.(string))
+				if val, ok := tp.(string); ok {
+					options.TriggerPrefixes = append(options.TriggerPrefixes, val)
+				}
 			}
 		} else {
 			options.TriggerPatterns = []string{}
