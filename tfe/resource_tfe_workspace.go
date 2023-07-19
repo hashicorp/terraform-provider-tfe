@@ -485,7 +485,6 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 			d.Set("execution_mode", "default")
 		}
 	}
-
 	if workspace.Links["self-html"] != nil {
 		baseAPI := config.Client.BaseURL()
 		htmlURL := url.URL{
@@ -886,6 +885,9 @@ func setExecutionModeDefault(_ context.Context, d *schema.ResourceDiff) error {
 			if err != nil {
 				return fmt.Errorf("failed to set execution_mode: %w", err)
 			}
+		}
+		if d.HasChange("execution_mode") {
+			d.SetNewComputed("resolved_execution_mode")
 		}
 	}
 
