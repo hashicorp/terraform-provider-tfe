@@ -202,7 +202,7 @@ func TestAccTFESAMLSettings_import(t *testing.T) {
 func testAccTFESAMLSettingsDestroy(_ *terraform.State) error {
 	s, err := testAccProvider.Meta().(ConfiguredClient).Client.Admin.Settings.SAML.Read(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to read SAML Settings: %v", err)
 	}
 	if s.Enabled {
 		return fmt.Errorf("SAML settings are still enabled")

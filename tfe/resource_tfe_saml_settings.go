@@ -343,7 +343,7 @@ func NewSAMLSettingsResource() resource.Resource {
 
 // updateSAMLSettings was created to keep the code DRY. It is used in both Create and Update functions
 func (r *resourceTFESAMLSettings) updateSAMLSettings(ctx context.Context, m modelTFESAMLSettings) (*tfe.AdminSAMLSetting, error) {
-	return r.client.Admin.Settings.SAML.Update(ctx, tfe.AdminSAMLSettingsUpdateOptions{
+	s, err := r.client.Admin.Settings.SAML.Update(ctx, tfe.AdminSAMLSettingsUpdateOptions{
 		Enabled:                   basetypes.NewBoolValue(true).ValueBoolPointer(),
 		Debug:                     m.Debug.ValueBoolPointer(),
 		IDPCert:                   m.IDPCert.ValueStringPointer(),
@@ -362,4 +362,8 @@ func (r *resourceTFESAMLSettings) updateSAMLSettings(ctx context.Context, m mode
 		SignatureSigningMethod:    m.SignatureSigningMethod.ValueStringPointer(),
 		SignatureDigestMethod:     m.SignatureDigestMethod.ValueStringPointer(),
 	})
+	if err != nil {
+		return s, fmt.Errorf("failed to update SAML Settings %v", err)
+	}
+	return s, err
 }
