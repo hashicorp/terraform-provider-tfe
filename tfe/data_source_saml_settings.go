@@ -118,7 +118,8 @@ func (d *dataSourceTFESAMLSettings) Schema(_ context.Context, _ datasource.Schem
 				Computed: true,
 			},
 			"private_key": schema.StringAttribute{
-				Computed: true,
+				Computed:  true,
+				Sensitive: true,
 			},
 			"signature_signing_method": schema.StringAttribute{
 				Computed: true,
