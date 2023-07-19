@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"strconv"
 	"testing"
 )
@@ -19,6 +20,7 @@ func TestAccTFESAMLSettings_basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccTFESAMLSettingsDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFESAMLSettings_basic(s),
@@ -68,6 +70,7 @@ func TestAccTFESAMLSettings_full(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccTFESAMLSettingsDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFESAMLSettings_full(s),
@@ -123,6 +126,7 @@ func TestAccTFESAMLSettings_update(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccTFESAMLSettingsDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFESAMLSettings_basic(s),
@@ -181,6 +185,7 @@ func TestAccTFESAMLSettings_import(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccTFESAMLSettingsDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFESAMLSettings_basic(s),
@@ -192,6 +197,65 @@ func TestAccTFESAMLSettings_import(t *testing.T) {
 			},
 		},
 	})
+}
+
+func testAccTFESAMLSettingsDestroy(_ *terraform.State) error {
+	s, err := testAccProvider.Meta().(ConfiguredClient).Client.Admin.Settings.SAML.Read(ctx)
+	if err != nil {
+		return err
+	}
+	if s.Enabled {
+		return fmt.Errorf("SAML settings are still enabled")
+	}
+	if s.Debug {
+		return fmt.Errorf("SAML settings debug is set to true")
+	}
+	if s.AuthnRequestsSigned {
+		return fmt.Errorf("SAML settings AuthnRequestsSigned is set to true")
+	}
+	if s.WantAssertionsSigned {
+		return fmt.Errorf("SAML settings WantAssertionsSigned is set to true")
+	}
+	if s.TeamManagementEnabled {
+		return fmt.Errorf("SAML settings TeamManagementEnabled is set to true")
+	}
+	if s.IDPCert != "" {
+		return fmt.Errorf("SAML settings IDPCert is not empty: `%s`", s.IDPCert)
+	}
+	if s.SLOEndpointURL != "" {
+		return fmt.Errorf("SAML settings SLOEndpointURL is not empty: `%s`", s.SLOEndpointURL)
+	}
+	if s.SSOEndpointURL != "" {
+		return fmt.Errorf("SAML settings SSOEndpointURL is not empty: `%s`", s.SSOEndpointURL)
+	}
+	if s.Certificate != "" {
+		return fmt.Errorf("SAML settings Certificate is not empty: `%s`", s.Certificate)
+	}
+	if s.PrivateKey != "" {
+		return fmt.Errorf("SAML settings PrivateKey is not empty")
+	}
+	if s.AttrUsername != samlDefaultAttrUsername {
+		return fmt.Errorf("SAML settings AttrUsername is not `%s`", samlDefaultAttrUsername)
+	}
+	if s.AttrSiteAdmin != samlDefaultAttrSiteAdmin {
+		return fmt.Errorf("SAML settings AttrSiteAdmin is not `%s`", samlDefaultAttrSiteAdmin)
+	}
+	if s.AttrGroups != samlDefaultAttrGroups {
+		return fmt.Errorf("SAML settings AttrGroups is not `%s`", samlDefaultAttrGroups)
+	}
+	if s.SiteAdminRole != samlDefaultSiteAdminRole {
+		return fmt.Errorf("SAML settings SiteAdminRole is not `%s`", samlDefaultSiteAdminRole)
+	}
+	if s.SignatureSigningMethod != samlSignatureMethodSHA256 {
+		return fmt.Errorf("SAML settings SignatureSigningMethod is not `%s`", samlSignatureMethodSHA256)
+	}
+	if s.SignatureDigestMethod != samlSignatureMethodSHA256 {
+		return fmt.Errorf("SAML settings SignatureDigestMethod is not `%s`", samlSignatureMethodSHA256)
+	}
+	if s.SSOAPITokenSessionTimeout != int(samlDefaultSSOAPITokenSessionTimeoutSeconds) {
+		return fmt.Errorf("SAML settings SignatureDigestMethod is not `%d`", samlDefaultSSOAPITokenSessionTimeoutSeconds)
+	}
+	return nil
 }
 
 func testAccTFESAMLSettings_basic(s tfe.AdminSAMLSetting) string {
