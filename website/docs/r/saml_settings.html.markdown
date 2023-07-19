@@ -7,7 +7,7 @@ description: |-
 
 # tfe_saml_settings
 
-Creates, updates and destroys SAML Settings.
+(TFE only) Creates, updates and destroys SAML Settings.
 
 ## Example Usage
 

@@ -284,15 +284,8 @@ func (r *resourceTFESAMLSettings) Delete(ctx context.Context, req resource.Delet
 		return
 	}
 
-	tflog.Debug(ctx, "Revoke IDP Certificate")
-	_, err := r.client.Admin.Settings.SAML.RevokeIdpCert(ctx)
-	if err != nil {
-		resp.Diagnostics.AddError("Error revoking IDP Certificate", "Could not revoke IDP Cert, unexpected error: "+err.Error())
-		return
-	}
-
 	tflog.Debug(ctx, "Delete SAML Settings")
-	_, err = r.client.Admin.Settings.SAML.Update(ctx, tfe.AdminSAMLSettingsUpdateOptions{
+	_, err := r.client.Admin.Settings.SAML.Update(ctx, tfe.AdminSAMLSettingsUpdateOptions{
 		Enabled:                   basetypes.NewBoolValue(false).ValueBoolPointer(),
 		Debug:                     basetypes.NewBoolValue(false).ValueBoolPointer(),
 		AuthnRequestsSigned:       basetypes.NewBoolValue(false).ValueBoolPointer(),
