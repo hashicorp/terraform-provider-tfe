@@ -20,6 +20,7 @@ import (
 )
 
 var workspaceIDRegexp = regexp.MustCompile("^ws-[a-zA-Z0-9]{16}$")
+var knowsAboutOverrides = true
 
 func resourceTFEWorkspace() *schema.Resource {
 	return &schema.Resource{
@@ -323,10 +324,18 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	if v, ok := d.GetOk("execution_mode"); ok {
-		options.ExecutionMode = tfe.String(v.(string))
-		options.SettingOverrides = &tfe.WorkspaceSettingOverrides{
-			ExecutionMode: tfe.Bool(true),
-			AgentPool:     tfe.Bool(true),
+		executionMode := tfe.String(v.(string))
+		if *executionMode == "default" {
+			options.SettingOverrides = &tfe.WorkspaceSettingOverrides{
+				ExecutionMode: tfe.Bool(false),
+				AgentPool:     tfe.Bool(false),
+			}
+		} else {
+			options.ExecutionMode = executionMode
+			options.SettingOverrides = &tfe.WorkspaceSettingOverrides{
+				ExecutionMode: tfe.Bool(true),
+				AgentPool:     tfe.Bool(true),
+			}
 		}
 	} else {
 		options.SettingOverrides = &tfe.WorkspaceSettingOverrides{
@@ -485,6 +494,12 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 			d.Set("execution_mode", "default")
 		}
 	}
+
+	if workspace.SettingOverrides == nil || workspace.SettingOverrides.ExecutionMode == nil {
+		knowsAboutOverrides = false
+
+	}
+
 	if workspace.Links["self-html"] != nil {
 		baseAPI := config.Client.BaseURL()
 		htmlURL := url.URL{
@@ -879,15 +894,35 @@ func setExecutionModeDefault(_ context.Context, d *schema.ResourceDiff) error {
 	operations, operationsReadOk := configMap["operations"]
 	executionMode, executionModeReadOk := configMap["execution_mode"]
 	executionModeState := d.Get("execution_mode")
+
+	defaultValue := "default"
+	if !knowsAboutOverrides {
+		defaultValue = "remote"
+	}
+
 	if operationsReadOk && executionModeReadOk {
-		if operations.IsNull() && executionMode.IsNull() && executionModeState != "default" {
-			err := d.SetNew("execution_mode", "default")
+		if operations.IsNull() && executionMode.IsNull() && executionModeState != defaultValue {
+			err := d.SetNew("execution_mode", defaultValue)
 			if err != nil {
 				return fmt.Errorf("failed to set execution_mode: %w", err)
 			}
 		}
-		if d.HasChange("execution_mode") {
-			d.SetNewComputed("resolved_execution_mode")
+		if knowsAboutOverrides {
+			if d.HasChange("execution_mode") {
+				d.SetNewComputed("resolved_execution_mode")
+			}
+		}
+	}
+
+	// if we are talking to a TFE version which doesnt know about defaults, then changes between remote and default
+	// should be ignored
+	if !knowsAboutOverrides && d.HasChange("execution_mode") {
+		oldValue, newValue := d.GetChange("execution_mode")
+		if (oldValue == "remote" && newValue == "default") || (oldValue == "default" && newValue == "remote") {
+			d.SetNew("execution_mode", oldValue)
+			d.SetNew("resolved_execution_mode", oldValue)
+		} else {
+			d.SetNew("resolved_execution_mode", newValue)
 		}
 	}
 
