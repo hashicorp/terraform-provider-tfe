@@ -5,7 +5,6 @@ package tfe
 
 import (
 	"fmt"
-
 	tfe "github.com/hashicorp/go-tfe"
 )
 

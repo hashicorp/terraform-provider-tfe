@@ -49,6 +49,9 @@ type modelTFESAMLSettings struct {
 	ACSConsumerURL            types.String `tfsdk:"acs_consumer_url"`
 	MetadataURL               types.String `tfsdk:"metadata_url"`
 	Certificate               types.String `tfsdk:"certificate"`
+	PrivateKey                types.String `tfsdk:"private_key"`
+	SignatureSigningMethod    types.String `tfsdk:"signature_signing_method"`
+	SignatureDigestMethod     types.String `tfsdk:"signature_digest_method"`
 }
 
 // Metadata returns the data source type name.
@@ -114,6 +117,16 @@ func (d *dataSourceTFESAMLSettings) Schema(_ context.Context, _ datasource.Schem
 			"certificate": schema.StringAttribute{
 				Computed: true,
 			},
+			"private_key": schema.StringAttribute{
+				Computed:  true,
+				Sensitive: true,
+			},
+			"signature_signing_method": schema.StringAttribute{
+				Computed: true,
+			},
+			"signature_digest_method": schema.StringAttribute{
+				Computed: true,
+			},
 		},
 	}
 }
@@ -164,6 +177,9 @@ func (d *dataSourceTFESAMLSettings) Read(ctx context.Context, _ datasource.ReadR
 		ACSConsumerURL:            types.StringValue(s.ACSConsumerURL),
 		MetadataURL:               types.StringValue(s.MetadataURL),
 		Certificate:               types.StringValue(s.Certificate),
+		PrivateKey:                types.StringValue(s.PrivateKey),
+		SignatureSigningMethod:    types.StringValue(s.SignatureSigningMethod),
+		SignatureDigestMethod:     types.StringValue(s.SignatureDigestMethod),
 	})
 	resp.Diagnostics.Append(diags...)
 }
