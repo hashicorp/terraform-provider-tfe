@@ -7,13 +7,18 @@ description: |-
 
 # tfe_saml_settings
 
-(TFE only) Creates, updates and destroys SAML Settings.
+Use this resource to create, update and destroy SAML Settings. It applies only to Terraform Enterprise and requires admin token configuration. See example usage for incorporating an admin token in your provider config.
 
 ## Example Usage
 
 Basic usage for SAML Settings:
 
 ```hcl
+provider "tfe" {
+  hostname = var.hostname
+  token    = var.admin_token
+}
+
 resource "tfe_saml_settings" "this" {
   idp_cert         = "foobarCertificate"
   slo_endpoint_url = "https://example.com/slo_endpoint_url"
