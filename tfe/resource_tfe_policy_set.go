@@ -136,6 +136,14 @@ func resourceTFEPolicySet() *schema.Resource {
 				Elem:          &schema.Schema{Type: schema.TypeString},
 				ConflictsWith: []string{"global"},
 			},
+
+			"project_ids": {
+				Type:          schema.TypeSet,
+				Optional:      true,
+				Computed:      true,
+				Elem:          &schema.Schema{Type: schema.TypeString},
+				ConflictsWith: []string{"global"},
+			},
 		},
 	}
 }
@@ -195,6 +203,10 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 
 	for _, workspaceID := range d.Get("workspace_ids").(*schema.Set).List() {
 		options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: workspaceID.(string)})
+	}
+
+	for _, projectID := range d.Get("project_ids").(*schema.Set).List() {
+		options.Projects = append(options.Projects, &tfe.Project{ID: projectID.(string)})
 	}
 
 	log.Printf("[DEBUG] Create policy set %s for organization: %s", name, organization)
