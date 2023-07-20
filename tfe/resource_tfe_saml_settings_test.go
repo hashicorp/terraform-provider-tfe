@@ -177,10 +177,13 @@ func TestAccTFESAMLSettings_update(t *testing.T) {
 }
 
 func TestAccTFESAMLSettings_import(t *testing.T) {
+	idpCert := "testIDPCertImport"
+	slo := "https://foobar-import.com/slo_endpoint_url"
+	sso := "https://foobar-import.com/sso_endpoint_url"
 	s := tfe.AdminSAMLSetting{
-		IDPCert:        "testIDPCertImport",
-		SLOEndpointURL: "https://foobar.com/slo_endpoint_url",
-		SSOEndpointURL: "https://foobar.com/sso_endpoint_url",
+		IDPCert:        idpCert,
+		SLOEndpointURL: slo,
+		SSOEndpointURL: sso,
 	}
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -191,9 +194,31 @@ func TestAccTFESAMLSettings_import(t *testing.T) {
 				Config: testAccTFESAMLSettings_basic(s),
 			},
 			{
-				ResourceName:      testResourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName: testResourceName,
+				ImportState:  true,
+				ImportStateCheck: func(s []*terraform.InstanceState) error {
+					if len(s) != 1 {
+						return fmt.Errorf("expected 1 state: %+v", s)
+					}
+					rs := s[0]
+					if rs.Attributes["private_key"] != "" {
+						return fmt.Errorf("expected private_key attribute to not be set, received: %s", rs.Attributes["private_key"])
+
+					}
+					if rs.Attributes["idp_cert"] != idpCert {
+						return fmt.Errorf("expected idp_cert attribute to be equal to %s, received: %s", idpCert, rs.Attributes["idp_cert"])
+
+					}
+					if rs.Attributes["slo_endpoint_url"] != slo {
+						return fmt.Errorf("expected slo_endpoint_url attribute to be equal to %s, received: %s", slo, rs.Attributes["slo_endpoint_url"])
+
+					}
+					if rs.Attributes["sso_endpoint_url"] != sso {
+						return fmt.Errorf("expected sso_endpoint_url attribute to be equal to %s, received: %s", sso, rs.Attributes["sso_endpoint_url"])
+
+					}
+					return nil
+				},
 			},
 		},
 	})
