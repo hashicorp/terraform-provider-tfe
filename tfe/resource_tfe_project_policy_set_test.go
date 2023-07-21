@@ -153,8 +153,6 @@ func testAccCheckTFEProjectPolicySetDestroy(s *terraform.State) error {
 	return nil
 }
 
-// testAccTFEProjectPolicySet_basic
-
 func testAccTFEProjectPolicySet_base(orgName string) string {
 	return fmt.Sprintf(`
 resource "tfe_policy_set" "test" {
