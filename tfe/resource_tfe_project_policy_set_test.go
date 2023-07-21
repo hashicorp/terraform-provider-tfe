@@ -23,8 +23,16 @@ func TestAccTFEProjectPolicySet_basic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	org, orgCleanup := createOrganization(t, tfeClient, tfe.OrganizationCreateOptions{
+		Name:  tfe.String(fmt.Sprintf("tst-terraform-%d", rInt)),
+		Email: tfe.String(fmt.Sprintf("%s@hashicorp.com", randomString(t))),
+	})
 	t.Cleanup(orgCleanup)
+
+	// Make a project
+	prj := createProject(t, tfeClient, org.Name, tfe.ProjectCreateOptions{
+		Name: randomString(t),
+	})
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -32,7 +40,7 @@ func TestAccTFEProjectPolicySet_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFEProjectPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEProjectPolicySet_basic(org.Name, rInt),
+				Config: testAccTFEProjectPolicySet_basic(org.Name, prj.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEProjectPolicySetExists(
 						"tfe_project_policy_set.test"),
@@ -41,7 +49,7 @@ func TestAccTFEProjectPolicySet_basic(t *testing.T) {
 			{
 				ResourceName:      "tfe_project_policy_set.test",
 				ImportState:       true,
-				ImportStateId:     fmt.Sprintf("%s/tst-terraform-%d/tst-policy-set-%d", org.Name, rInt, rInt),
+				ImportStateId:     fmt.Sprintf("%s/%s/policy_set_test", org.Name, prj.ID),
 				ImportStateVerify: true,
 			},
 		},
@@ -56,15 +64,23 @@ func TestAccTFEProjectPolicySet_incorrectImportSyntax(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	org, orgCleanup := createOrganization(t, tfeClient, tfe.OrganizationCreateOptions{
+		Name:  tfe.String(fmt.Sprintf("tst-terraform-%d", rInt)),
+		Email: tfe.String(fmt.Sprintf("%s@hashicorp.com", randomString(t))),
+	})
 	t.Cleanup(orgCleanup)
+
+	// Make a project
+	prj := createProject(t, tfeClient, org.Name, tfe.ProjectCreateOptions{
+		Name: randomString(t),
+	})
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEProjectPolicySet_basic(org.Name, rInt),
+				Config: testAccTFEProjectPolicySet_basic(org.Name, prj.ID),
 			},
 			{
 				ResourceName:  "tfe_project_policy_set.test",
@@ -137,21 +153,24 @@ func testAccCheckTFEProjectPolicySetDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccTFEProjectPolicySet_basic(orgName string, rInt int) string {
+// testAccTFEProjectPolicySet_basic
+
+func testAccTFEProjectPolicySet_base(orgName string) string {
 	return fmt.Sprintf(`
-	resource "tfe_project" "test" {
-		name         = "tst-terraform-%d"
-		organization = "%s"
-	}
+resource "tfe_policy_set" "test" {
+  name         = "policy_set_test"
+  description  = "a test policy set"
+  global       = false
+  organization = "%s"
+}
+`, orgName)
+}
 
-	resource "tfe_policy_set" "test" {
-		name         = "tst-policy-set-%d"
-		description  = "Policy Set"
-		organization = "%s"
-	}
-
-	resource "tfe_project_policy_set" "test" {
-		policy_set_id = tfe_policy_set.test.id
-		project_id  = tfe_project.test.id
-	}`, rInt, orgName, rInt, orgName)
+func testAccTFEProjectPolicySet_basic(orgName string, prjID string) string {
+	return testAccTFEProjectPolicySet_base(orgName) + fmt.Sprintf(`
+resource "tfe_project_policy_set" "test" {
+  policy_set_id = tfe_policy_set.test.id
+  project_id      = "%s"
+}
+`, prjID)
 }
