@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
-      - uses: actions-ecosystem/action-get-latest-tag@v1  # TSCCR: no entry for repository "actions-ecosystem/action-get-latest-tag"
+      - uses: actions-ecosystem/action-get-latest-tag@b7c32daec3395a9616f88548363a42652b22d435 # v1.6.0
         id: get-latest-tag
         with:
           semver_only: true
