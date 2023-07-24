@@ -16,6 +16,7 @@ import (
 )
 
 func TestAccTFEProjectPolicySet_basic(t *testing.T) {
+	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	tfeClient, err := getClientUsingEnv()
@@ -25,7 +26,7 @@ func TestAccTFEProjectPolicySet_basic(t *testing.T) {
 
 	org, orgCleanup := createOrganization(t, tfeClient, tfe.OrganizationCreateOptions{
 		Name:  tfe.String(fmt.Sprintf("tst-terraform-%d", rInt)),
-		Email: tfe.String(fmt.Sprintf("%s@hashicorp.com", randomString(t))),
+		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
 	})
 	t.Cleanup(orgCleanup)
 
@@ -57,6 +58,7 @@ func TestAccTFEProjectPolicySet_basic(t *testing.T) {
 }
 
 func TestAccTFEProjectPolicySet_incorrectImportSyntax(t *testing.T) {
+	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	tfeClient, err := getClientUsingEnv()
@@ -66,7 +68,7 @@ func TestAccTFEProjectPolicySet_incorrectImportSyntax(t *testing.T) {
 
 	org, orgCleanup := createOrganization(t, tfeClient, tfe.OrganizationCreateOptions{
 		Name:  tfe.String(fmt.Sprintf("tst-terraform-%d", rInt)),
-		Email: tfe.String(fmt.Sprintf("%s@hashicorp.com", randomString(t))),
+		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
 	})
 	t.Cleanup(orgCleanup)
 
