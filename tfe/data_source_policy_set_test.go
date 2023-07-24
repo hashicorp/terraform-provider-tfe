@@ -203,7 +203,12 @@ resource "tfe_policy_set" "foobar" {
   organization = local.organization_name
   policy_ids   = [tfe_sentinel_policy.foo.id]
   workspace_ids = [tfe_workspace.foobar.id]
-  project_ids = [tfe_project.foobar.id]
+  
+}
+
+resource "tfe_project_policy_set" "foobar" {
+	policy_set_id = tfe_policy_set.foobar.id
+	project_id = tfe_project.foobar.id
 }
 
 data "tfe_policy_set" "bar" {
@@ -235,7 +240,11 @@ resource "tfe_policy_set" "foobar" {
   kind         = "opa"
   overridable  = true
   workspace_ids = [tfe_workspace.foobar.id]
-  project_ids = [tfe_project.foobar.id]
+}
+
+resource "tfe_project_policy_set" "foobar" {
+	policy_set_id = tfe_policy_set.foobar.id
+	project_id = tfe_project.foobar.id
 }
 
 data "tfe_policy_set" "bar" {
