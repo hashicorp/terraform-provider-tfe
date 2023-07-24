@@ -1,7 +1,7 @@
 ## Unreleased
 
 BUG FIXES:
-* `r/tfe_workspace`: Add error handling for `trigger_patterns` field, by @liamstevens [969](https://github.com/hashicorp/terraform-provider-tfe/pull/969)
+* `r/tfe_workspace`: Fix panic when updating `trigger_patterns` attribute, by @liamstevens [969](https://github.com/hashicorp/terraform-provider-tfe/pull/969)
 
 
 FEATURES:
