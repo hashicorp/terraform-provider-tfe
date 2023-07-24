@@ -12,7 +12,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.4 // indirect
 	github.com/hashicorp/go-slug v0.12.0
-	github.com/hashicorp/go-tfe v1.30.0
+	github.com/hashicorp/go-tfe v1.31.0
 	github.com/hashicorp/go-version v1.6.0
 	github.com/hashicorp/hcl v1.0.0
 	github.com/hashicorp/hcl/v2 v2.17.0 // indirect
@@ -60,13 +60,15 @@ require (
 	google.golang.org/grpc v1.56.1 // indirect
 )
 
-require github.com/stretchr/testify v1.8.4
+require (
+	github.com/hashicorp/terraform-plugin-log v0.9.0
+	github.com/stretchr/testify v1.8.4
+)
 
 require (
 	github.com/ProtonMail/go-crypto v0.0.0-20230619160724-3fbb1f12458c // indirect
 	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/hashicorp/hc-install v0.5.2 // indirect
-	github.com/hashicorp/terraform-plugin-log v0.9.0 // indirect
 	github.com/hashicorp/terraform-registry-address v0.2.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.3.5 // indirect
