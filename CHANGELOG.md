@@ -3,6 +3,7 @@
 FEATURES:
 * **New Resource**: `r/tfe_saml_settings` manages SAML Settings, by @karvounis-form3 [970](https://github.com/hashicorp/terraform-provider-tfe/pull/970)
 * `d/tfe_saml_settings`: Add PrivateKey (sensitive), SignatureSigningMethod, and SignatureDigestMethod attributes, by @karvounis-form3 [970](https://github.com/hashicorp/terraform-provider-tfe/pull/970)
+* **New Resource**: `r/tfe_project_policy_set` is a new resource to attach/detach an existing `project` to an existing `policy set`, by @Netra2104 [972](https://github.com/hashicorp/terraform-provider-tfe/pull/972)
 
 NOTES:
 * The provider is now using go-tfe [v1.30.0](https://github.com/hashicorp/go-tfe/releases/tag/v1.30.0), by @karvounis-form3 [970](https://github.com/hashicorp/terraform-provider-tfe/pull/970)
