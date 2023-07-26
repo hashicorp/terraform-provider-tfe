@@ -51,7 +51,7 @@ func resourceTFEProjectPolicySetCreate(d *schema.ResourceData, meta interface{})
 	err := config.Client.PolicySets.AddProjects(ctx, policySetID, policySetAddProjectsOptions)
 	if err != nil {
 		return fmt.Errorf(
-			"Error attaching policy set id %s to project %s: %w", policySetID, projectID, err)
+			"error attaching policy set id %s to project %s: %w", policySetID, projectID, err)
 	}
 
 	d.SetId(fmt.Sprintf("%s_%s", projectID, policySetID))
@@ -75,7 +75,7 @@ func resourceTFEProjectPolicySetRead(d *schema.ResourceData, meta interface{}) e
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading configuration of policy set %s: %w", policySetID, err)
+		return fmt.Errorf("error reading configuration of policy set %s: %w", policySetID, err)
 	}
 
 	isProjectAttached := false
@@ -110,7 +110,7 @@ func resourceTFEProjectPolicySetDelete(d *schema.ResourceData, meta interface{})
 	err := config.Client.PolicySets.RemoveProjects(ctx, policySetID, policySetRemoveProjectsOptions)
 	if err != nil {
 		return fmt.Errorf(
-			"Error detaching project %s from policy set %s: %w", projectID, policySetID, err)
+			"error detaching project %s from policy set %s: %w", projectID, policySetID, err)
 	}
 
 	return nil
@@ -126,7 +126,7 @@ func resourceTFEProjectPolicySetImporter(ctx context.Context, d *schema.Resource
 		)
 	}
 
-	organization, projectID, pSName := splitID[0], splitID[1], splitID[2]
+	organization, projectID, policySetName := splitID[0], splitID[1], splitID[2]
 
 	config := meta.(ConfiguredClient)
 
@@ -140,21 +140,21 @@ func resourceTFEProjectPolicySetImporter(ctx context.Context, d *schema.Resource
 	for {
 		list, err := config.Client.PolicySets.List(ctx, organization, options)
 		if err != nil {
-			return nil, fmt.Errorf("Error retrieving policy sets: %w", err)
+			return nil, fmt.Errorf("error retrieving organization's list of policy sets: %w", err)
 		}
 		for _, policySet := range list.Items {
-			if policySet.Name != pSName {
+			if policySet.Name != policySetName {
 				continue
 			}
 
-			for _, pj := range policySet.Projects {
-				if pj.ID != projectID {
+			for _, project := range policySet.Projects {
+				if project.ID != projectID {
 					continue
 				}
 
-				d.Set("project_id", pj.ID)
+				d.Set("project_id", project.ID)
 				d.Set("policy_set_id", policySet.ID)
-				d.SetId(fmt.Sprintf("%s_%s", pj.ID, policySet.ID))
+				d.SetId(fmt.Sprintf("%s_%s", project.ID, policySet.ID))
 
 				return []*schema.ResourceData{d}, nil
 			}
@@ -169,5 +169,5 @@ func resourceTFEProjectPolicySetImporter(ctx context.Context, d *schema.Resource
 		options.PageNumber = list.NextPage
 	}
 
-	return nil, fmt.Errorf("project %s has not been assigned to policy set %s", projectID, pSName)
+	return nil, fmt.Errorf("project %s has not been assigned to policy set %s", projectID, policySetName)
 }
