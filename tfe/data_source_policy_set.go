@@ -97,6 +97,12 @@ func dataSourceTFEPolicySet() *schema.Resource {
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Computed: true,
 			},
+
+			"project_ids": {
+				Type:     schema.TypeSet,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Computed: true,
+			},
 		},
 	}
 }
@@ -163,6 +169,14 @@ func dataSourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error 
 					}
 				}
 				d.Set("workspace_ids", workspaceIDs)
+
+				var projectIDs []interface{}
+				if !policySet.Global {
+					for _, project := range policySet.Projects {
+						projectIDs = append(projectIDs, project.ID)
+					}
+				}
+				d.Set("project_ids", projectIDs)
 
 				d.SetId(policySet.ID)
 

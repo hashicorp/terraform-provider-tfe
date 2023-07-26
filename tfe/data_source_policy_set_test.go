@@ -14,6 +14,7 @@ import (
 )
 
 func TestAccTFEPolicySetDataSource_basic(t *testing.T) {
+	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -44,6 +45,8 @@ func TestAccTFEPolicySetDataSource_basic(t *testing.T) {
 						"data.tfe_policy_set.bar", "policy_ids.#", "1"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_policy_set.bar", "workspace_ids.#", "1"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_policy_set.bar", "project_ids.#", "1"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_policy_set.bar", "vcs_repo.#", "0"),
 				),
@@ -87,6 +90,8 @@ func TestAccTFEPolicySetDataSourceOPA_basic(t *testing.T) {
 						"data.tfe_policy_set.bar", "overridable", "true"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_policy_set.bar", "workspace_ids.#", "1"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_policy_set.bar", "project_ids.#", "1"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_policy_set.bar", "vcs_repo.#", "0"),
 				),
@@ -145,6 +150,8 @@ func TestAccTFEPolicySetDataSource_vcs(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_policy_set.bar", "workspace_ids.#", "0"),
 					resource.TestCheckResourceAttr(
+						"data.tfe_policy_set.bar", "project_ids.#", "0"),
+					resource.TestCheckResourceAttr(
 						"data.tfe_policy_set.bar", "vcs_repo.#", "1"),
 				),
 			},
@@ -180,6 +187,11 @@ resource "tfe_workspace" "foobar" {
   organization = local.organization_name
 }
 
+resource "tfe_project" "foobar" {
+  name         = "project-foo-%d"
+  organization = local.organization_name
+}
+
 resource "tfe_sentinel_policy" "foo" {
   name         = "policy-foo"
   policy       = "main = rule { true }"
@@ -192,12 +204,18 @@ resource "tfe_policy_set" "foobar" {
   organization = local.organization_name
   policy_ids   = [tfe_sentinel_policy.foo.id]
   workspace_ids = [tfe_workspace.foobar.id]
+  
+}
+
+resource "tfe_project_policy_set" "foobar" {
+	policy_set_id = tfe_policy_set.foobar.id
+	project_id = tfe_project.foobar.id
 }
 
 data "tfe_policy_set" "bar" {
   name = tfe_policy_set.foobar.name
   organization = local.organization_name
-}`, organization, rInt, rInt)
+}`, organization, rInt, rInt, rInt)
 }
 
 func testAccTFEPolicySetDataSourceConfigOPA_basic(organization string, rInt int) string {
@@ -211,6 +229,11 @@ resource "tfe_workspace" "foobar" {
   organization = local.organization_name
 }
 
+resource "tfe_project" "foobar" {
+  name         = "project-foo-%d"
+  organization = local.organization_name
+}
+
 resource "tfe_policy_set" "foobar" {
   name         = "tst-policy-set-%d"
   description  = "Policy Set"
@@ -220,11 +243,16 @@ resource "tfe_policy_set" "foobar" {
   workspace_ids = [tfe_workspace.foobar.id]
 }
 
+resource "tfe_project_policy_set" "foobar" {
+	policy_set_id = tfe_policy_set.foobar.id
+	project_id = tfe_project.foobar.id
+}
+
 data "tfe_policy_set" "bar" {
   name = tfe_policy_set.foobar.name
   organization = local.organization_name
   kind = "opa"
-}`, organization, rInt, rInt)
+}`, organization, rInt, rInt, rInt)
 }
 
 func testAccTFEPolicySetDataSourceConfig_vcs(organization string, rInt int) string {
