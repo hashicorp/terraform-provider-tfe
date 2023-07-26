@@ -122,7 +122,7 @@ func testAccCheckTFEProjectPolicySetExists(n string) resource.TestCheckFunc {
 			Include: []tfe.PolicySetIncludeOpt{tfe.PolicySetProjects},
 		})
 		if err != nil {
-			return fmt.Errorf("error reading polciy set %s: %w", policySetID, err)
+			return fmt.Errorf("error reading policy set %s: %w", policySetID, err)
 		}
 		for _, project := range policySet.Projects {
 			if project.ID == projectID {
@@ -148,7 +148,7 @@ func testAccCheckTFEProjectPolicySetDestroy(s *terraform.State) error {
 
 		_, err := config.Client.PolicySets.Read(ctx, rs.Primary.ID)
 		if err == nil {
-			return fmt.Errorf("policy Set %s still exists", rs.Primary.ID)
+			return fmt.Errorf("policy set %s still exists", rs.Primary.ID)
 		}
 	}
 
