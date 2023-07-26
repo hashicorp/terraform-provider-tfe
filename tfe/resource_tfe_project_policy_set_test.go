@@ -31,7 +31,7 @@ func TestAccTFEProjectPolicySet_basic(t *testing.T) {
 	t.Cleanup(orgCleanup)
 
 	// Make a project
-	prj := createProject(t, tfeClient, org.Name, tfe.ProjectCreateOptions{
+	project := createProject(t, tfeClient, org.Name, tfe.ProjectCreateOptions{
 		Name: randomString(t),
 	})
 
@@ -41,7 +41,7 @@ func TestAccTFEProjectPolicySet_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFEProjectPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEProjectPolicySet_basic(org.Name, prj.ID),
+				Config: testAccTFEProjectPolicySet_basic(org.Name, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEProjectPolicySetExists(
 						"tfe_project_policy_set.test"),
@@ -50,7 +50,7 @@ func TestAccTFEProjectPolicySet_basic(t *testing.T) {
 			{
 				ResourceName:      "tfe_project_policy_set.test",
 				ImportState:       true,
-				ImportStateId:     fmt.Sprintf("%s/%s/policy_set_test", org.Name, prj.ID),
+				ImportStateId:     fmt.Sprintf("%s/%s/policy_set_test", org.Name, project.ID),
 				ImportStateVerify: true,
 			},
 		},
@@ -73,7 +73,7 @@ func TestAccTFEProjectPolicySet_incorrectImportSyntax(t *testing.T) {
 	t.Cleanup(orgCleanup)
 
 	// Make a project
-	prj := createProject(t, tfeClient, org.Name, tfe.ProjectCreateOptions{
+	project := createProject(t, tfeClient, org.Name, tfe.ProjectCreateOptions{
 		Name: randomString(t),
 	})
 
@@ -82,7 +82,7 @@ func TestAccTFEProjectPolicySet_incorrectImportSyntax(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEProjectPolicySet_basic(org.Name, prj.ID),
+				Config: testAccTFEProjectPolicySet_basic(org.Name, project.ID),
 			},
 			{
 				ResourceName:  "tfe_project_policy_set.test",
@@ -100,22 +100,22 @@ func testAccCheckTFEProjectPolicySetExists(n string) resource.TestCheckFunc {
 
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
-			return fmt.Errorf("Not found: %s", n)
+			return fmt.Errorf("not found: %s", n)
 		}
 
 		id := rs.Primary.ID
 		if id == "" {
-			return fmt.Errorf("No ID is set")
+			return fmt.Errorf("no ID is set")
 		}
 
 		policySetID := rs.Primary.Attributes["policy_set_id"]
 		if policySetID == "" {
-			return fmt.Errorf("No policy set id set")
+			return fmt.Errorf("no policy set id set")
 		}
 
 		projectID := rs.Primary.Attributes["project_id"]
 		if projectID == "" {
-			return fmt.Errorf("No project id set")
+			return fmt.Errorf("no project id set")
 		}
 
 		policySet, err := config.Client.PolicySets.ReadWithOptions(ctx, policySetID, &tfe.PolicySetReadOptions{
@@ -130,7 +130,7 @@ func testAccCheckTFEProjectPolicySetExists(n string) resource.TestCheckFunc {
 			}
 		}
 
-		return fmt.Errorf("Project (%s) is not attached to policy set (%s).", projectID, policySetID)
+		return fmt.Errorf("project (%s) is not attached to policy set (%s).", projectID, policySetID)
 	}
 }
 
@@ -143,12 +143,12 @@ func testAccCheckTFEProjectPolicySetDestroy(s *terraform.State) error {
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("No instance ID is set")
+			return fmt.Errorf("no instance ID is set")
 		}
 
 		_, err := config.Client.PolicySets.Read(ctx, rs.Primary.ID)
 		if err == nil {
-			return fmt.Errorf("Policy Set %s still exists", rs.Primary.ID)
+			return fmt.Errorf("policy Set %s still exists", rs.Primary.ID)
 		}
 	}
 
