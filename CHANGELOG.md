@@ -1,5 +1,8 @@
 ## Unreleased
 
+BUG FIXES:
+* `r/tfe_workspace`: Fix panic when updating `trigger_patterns` attribute, by @liamstevens [969](https://github.com/hashicorp/terraform-provider-tfe/pull/969)
+
 FEATURES:
 * **New Resource**: `r/tfe_saml_settings` manages SAML Settings, by @karvounis-form3 [970](https://github.com/hashicorp/terraform-provider-tfe/pull/970)
 * `d/tfe_saml_settings`: Add PrivateKey (sensitive), SignatureSigningMethod, and SignatureDigestMethod attributes, by @karvounis-form3 [970](https://github.com/hashicorp/terraform-provider-tfe/pull/970)
