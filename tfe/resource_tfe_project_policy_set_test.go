@@ -170,7 +170,7 @@ func testAccTFEProjectPolicySet_basic(orgName string, prjID string) string {
 	return testAccTFEProjectPolicySet_base(orgName) + fmt.Sprintf(`
 resource "tfe_project_policy_set" "test" {
   policy_set_id = tfe_policy_set.test.id
-  project_id      = "%s"
+  project_id    = "%s"
 }
 `, prjID)
 }
