@@ -4,6 +4,7 @@
 package tfe
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"regexp"
@@ -47,6 +48,27 @@ func TestAccTFEAdminOrganizationSettings_basic(t *testing.T) {
 			{
 				Config:      testConfigTFEAdminOrganizationSettings_conflict(rInt1, rInt2),
 				ExpectError: regexp.MustCompile(`global_module_sharing cannot be true if module_sharing_consumer_organizations are set`),
+			},
+			{
+				PreConfig: deleteOrganization(fmt.Sprintf("tst-terraform-%d", rInt1)),
+				Config:    testConfigTFEAdminOrganizationSettings_basic(rInt1, rInt2, rInt3),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					// organization attribute */
+					resource.TestCheckResourceAttr(
+						"tfe_admin_organization_settings.settings", "organization", fmt.Sprintf("tst-terraform-%d", rInt1)),
+					resource.TestCheckResourceAttr(
+						"tfe_admin_organization_settings.settings", "global_module_sharing", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_admin_organization_settings.settings", "access_beta_tools", "true"),
+
+					// module_consumers attribute
+					resource.TestCheckResourceAttr(
+						"tfe_admin_organization_settings.settings", "module_sharing_consumer_organizations.#", "2"),
+					resource.TestCheckResourceAttrSet(
+						"tfe_admin_organization_settings.settings", "module_sharing_consumer_organizations.0"),
+					resource.TestCheckResourceAttrSet(
+						"tfe_admin_organization_settings.settings", "module_sharing_consumer_organizations.1"),
+				),
 			},
 		},
 	})
@@ -95,4 +117,11 @@ resource "tfe_admin_organization_settings" "settings" {
 	global_module_sharing = true
 	module_sharing_consumer_organizations = [tfe_organization.foo.id]
 }`, rInt1, rInt2)
+}
+
+func deleteOrganization(name string) func() {
+	return func() {
+		client := testAccProvider.Meta().(ConfiguredClient).Client
+		client.Organizations.Delete(context.Background(), name)
+	}
 }
