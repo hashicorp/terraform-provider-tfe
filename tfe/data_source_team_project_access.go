@@ -5,6 +5,7 @@ package tfe
 
 import (
 	"context"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -30,18 +31,88 @@ func dataSourceTFETeamProjectAccess() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+
+			"project_access": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"settings": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"teams": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+					},
+				},
+			},
+
+			"workspace_access": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"create": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+
+						"locking": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+
+						"move": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+
+						"delete": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+
+						"run_tasks": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+
+						"runs": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"sentinel_mocks": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"state_versions": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"variables": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
 
 func dataSourceTFETeamProjectAccessRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	config := meta.(ConfiguredClient)
-
 	// Get the team ID.
 	teamID := d.Get("team_id").(string)
-
 	// Get the project
 	projectID := d.Get("project_id").(string)
+
 	proj, err := config.Client.Projects.Read(ctx, projectID)
 	if err != nil {
 		return diag.Errorf(
