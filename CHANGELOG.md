@@ -1,5 +1,7 @@
 ## Unreleased
 
+## v0.48.0 (August 7, 2023)
+
 BUG FIXES:
 * `r/tfe_workspace`: Fix panic when updating `trigger_patterns` attribute, by @liamstevens [969](https://github.com/hashicorp/terraform-provider-tfe/pull/969)
 * `r/tfe_admin_organization_settings`: Allow reprovisioning when the parent organization has been deleted, by @ctrombley [982](https://github.com/hashicorp/terraform-provider-tfe/pull/982)
@@ -14,8 +16,7 @@ various customizable permissions options to apply to a project and all of the wo
 * `d/team_project_access`: Add a `custom` option to the `access` attribute as well as `project_access` and `workspace_access` attributes, by @rberecka [983](https://github.com/hashicorp/terraform-provider-tfe/pull/983)
 
 NOTES:
-* The provider is now using go-tfe [v1.30.0](https://github.com/hashicorp/go-tfe/releases/tag/v1.30.0), by @karvounis-form3 [970](https://github.com/hashicorp/terraform-provider-tfe/pull/970)
-
+* The provider is now using go-tfe [v1.32.0](https://github.com/hashicorp/go-tfe/releases/tag/v1.32.0)
 ## v0.47.0 (July 18, 2023)
 
 FEATURES:
