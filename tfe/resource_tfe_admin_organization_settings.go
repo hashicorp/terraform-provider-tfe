@@ -66,6 +66,12 @@ func resourceTFEAdminOrganizationSettingsRead(d *schema.ResourceData, meta inter
 	log.Printf("[DEBUG] Read configuration of admin organization: %s", name)
 	org, err := config.Client.Admin.Organizations.Read(ctx, name)
 	if err != nil {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			log.Printf("[DEBUG] Organization %s no longer exists", d.Id())
+			d.SetId("")
+			return nil
+		}
+
 		return fmt.Errorf("failed to read admin organization %s: %w", name, err)
 	}
 
@@ -86,7 +92,7 @@ func resourceTFEAdminOrganizationSettingsRead(d *schema.ResourceData, meta inter
 			consumerList, err := config.Client.Admin.Organizations.ListModuleConsumers(ctx, d.Id(), options)
 			if err != nil {
 				if errors.Is(err, tfe.ErrResourceNotFound) {
-					log.Printf("[DEBUG] Organization %s does not longer exist", d.Id())
+					log.Printf("[DEBUG] Organization %s no longer exists", d.Id())
 					d.SetId("")
 					return nil
 				}
@@ -144,7 +150,7 @@ func resourceTFEAdminOrganizationSettingsUpdate(d *schema.ResourceData, meta int
 		}
 	}
 
-	if !globalModuleSharing && set != nil {
+	if !globalModuleSharing && set != nil && set.Len() > 0 {
 		if err != nil {
 			return fmt.Errorf("failed to fetch admin organizations for module consumer ids: %w", err)
 		}

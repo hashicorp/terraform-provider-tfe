@@ -2,6 +2,7 @@
 
 BUG FIXES:
 * `r/tfe_workspace`: Fix panic when updating `trigger_patterns` attribute, by @liamstevens [969](https://github.com/hashicorp/terraform-provider-tfe/pull/969)
+* `r/tfe_admin_organization_settings`: Allow reprovisioning when the parent organization has been deleted, by @ctrombley [982](https://github.com/hashicorp/terraform-provider-tfe/pull/982)
 
 FEATURES:
 * **New Resource**: `r/tfe_saml_settings` manages SAML Settings, by @karvounis-form3 [970](https://github.com/hashicorp/terraform-provider-tfe/pull/970)
