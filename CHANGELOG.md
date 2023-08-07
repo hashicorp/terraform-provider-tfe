@@ -9,6 +9,9 @@ FEATURES:
 * `d/tfe_saml_settings`: Add PrivateKey (sensitive), SignatureSigningMethod, and SignatureDigestMethod attributes, by @karvounis-form3 [970](https://github.com/hashicorp/terraform-provider-tfe/pull/970)
 * **New Resource**: `r/tfe_project_policy_set` is a new resource to attach/detach an existing `project` to an existing `policy set`, by @Netra2104 [972](https://github.com/hashicorp/terraform-provider-tfe/pull/972)
 * `d/tfe_policy_set`: Add `project_ids` attribute, by @Netra2104 [974](https://github.com/hashicorp/terraform-provider-tfe/pull/974/files)
+* `r/tfe_team_project_access`: Add a `custom` option to the `access` attribute as well as `project_access` and `workspace_access` attributes with
+various customizable permissions options to apply to a project and all of the workspaces therein, by @rberecka [983](https://github.com/hashicorp/terraform-provider-tfe/pull/983)
+* `d/team_project_access`: Add a `custom` option to the `access` attribute as well as `project_access` and `workspace_access` attributes, by @rberecka [983](https://github.com/hashicorp/terraform-provider-tfe/pull/983)
 
 NOTES:
 * The provider is now using go-tfe [v1.30.0](https://github.com/hashicorp/go-tfe/releases/tag/v1.30.0), by @karvounis-form3 [970](https://github.com/hashicorp/terraform-provider-tfe/pull/970)
