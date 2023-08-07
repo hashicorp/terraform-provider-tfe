@@ -75,7 +75,7 @@ automatically installed by `terraform init` in the future:
 terraform {
   required_providers {
     tfe = {
-      version = "~> 0.46.0"
+      version = "~> 0.48.0"
     }
   }
 }
@@ -88,7 +88,7 @@ The above snippet using `requiredProviders` is for Terraform 0.13+; if you are u
 
 ```hcl
 provider "tfe" {
-  version = "~> 0.46.0"
+  version = "~> 0.48.0"
   ...
 }
 ```
@@ -101,7 +101,7 @@ For more information on provider installation and constraining provider versions
 provider "tfe" {
   hostname = var.hostname # Optional, defaults to Terraform Cloud `appTerraformIo`
   token    = var.token
-  version  = "~> 0.46.0"
+  version  = "~> 0.48.0"
 }
 
 # Create an organization
