@@ -56,6 +56,8 @@ func TestAccTFEVariableSetsDataSource_full(t *testing.T) {
 						"data.tfe_variable_set.foobar", "workspace_ids.#", "1"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_variable_set.foobar", "variable_ids.#", "1"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_variable_set.foobar", "project_ids.#", "1"),
 				),
 			},
 		},
@@ -94,11 +96,17 @@ resource "tfe_workspace" "foobar" {
   organization = tfe_organization.foobar.id
 }
 
+resource "tfe_project" "foobar" {
+  name         = "project-foo-%d"
+  organization = tfe_organization.foobar.id
+}
+
 resource "tfe_variable_set" "foobar" {
   name = "varset-foo-%d"
 	description = "a description"
 	organization = tfe_organization.foobar.id
 	workspace_ids = [tfe_workspace.foobar.id]
+	project_ids = [tfe_project.foobar.id]
 }
 
 resource "tfe_variable" "envfoo" {
@@ -112,5 +120,5 @@ data "tfe_variable_set" "foobar" {
   name = tfe_variable_set.foobar.name
 	organization = tfe_variable_set.foobar.organization
 	depends_on = [tfe_variable.envfoo]
-}`, rInt, rInt, rInt)
+}`, rInt, rInt, rInt, rInt)
 }
