@@ -106,7 +106,11 @@ resource "tfe_variable_set" "foobar" {
 	description = "a description"
 	organization = tfe_organization.foobar.id
 	workspace_ids = [tfe_workspace.foobar.id]
-	project_ids = [tfe_project.foobar.id]
+}
+
+resource "tfe_project_variable_set" "foobar" {
+	variable_set_id = tfe_variable_set.foobar.id
+	project_id = tfe_project.foobar.id
 }
 
 resource "tfe_variable" "envfoo" {
