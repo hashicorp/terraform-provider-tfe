@@ -36,3 +36,4 @@ The following arguments are supported:
 * `global` - Whether or not the variable set applies to all workspaces in the organization.
 * `workspace_ids` - IDs of the workspaces that use the variable set.
 * `variable_ids` - IDs of the variables attached to the variable set.
+* `project_ids` - IDs of the projects that use the variable set.

@@ -1,5 +1,8 @@
 ## Unreleased
 
+FEATURES:
+* `d/tfe_variable_set`: Add `project_ids` attribute, by @Netra2104 [994](https://github.com/hashicorp/terraform-provider-tfe/pull/994)
+  
 ## v0.48.0 (August 7, 2023)
 
 BUG FIXES:
