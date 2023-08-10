@@ -1,5 +1,7 @@
 ## Unreleased
 
+* **New Data Source**: `d/tfe_teams` is a new data source to return names and IDs of Teams in an Organization, by @isaacmcollins [992] https://github.com/hashicorp/terraform-provider-tfe/pull/992
+
 ## v0.48.0 (August 7, 2023)
 
 BUG FIXES:
@@ -14,6 +16,7 @@ FEATURES:
 * `r/tfe_team_project_access`: Add a `custom` option to the `access` attribute as well as `project_access` and `workspace_access` attributes with
 various customizable permissions options to apply to a project and all of the workspaces therein, by @rberecka [983](https://github.com/hashicorp/terraform-provider-tfe/pull/983)
 * `d/team_project_access`: Add a `custom` option to the `access` attribute as well as `project_access` and `workspace_access` attributes, by @rberecka [983](https://github.com/hashicorp/terraform-provider-tfe/pull/983)
+
 
 NOTES:
 * The provider is now using go-tfe [v1.32.0](https://github.com/hashicorp/go-tfe/releases/tag/v1.32.0)
