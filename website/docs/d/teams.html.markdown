@@ -7,7 +7,7 @@ description: |-
 
 # Data Source: tfe_teams
 
-Use this data source to get a list of Teams in an Organization and a map of their IDs.
+Use this data source to get a list of Teams in an Organization and a map of their IDs. The Teams returned may be a subset of all teams in an Organization based on the permissions of the API token.
 
 ## Example Usage
 
@@ -21,7 +21,7 @@ data "tfe_teams" "foo" {
 
 The following arguments are supported:
 
-* `organization` - (Required) Name of the organization.
+* `organization` - (Optional) Name of the organization.
 
 ## Attributes Reference
 
