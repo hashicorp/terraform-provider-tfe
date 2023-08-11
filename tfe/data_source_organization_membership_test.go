@@ -34,6 +34,18 @@ func TestAccTFEOrganizationMembershipDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet("data.tfe_organization_membership.foobar", "user_id"),
 				),
 			},
+			{
+				Config: testAccTFEOrganizationMembershipDataSourceConfigWithOrgMemberID(rInt),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"data.tfe_organization_membership.foobar", "email", "example@hashicorp.com"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_organization_membership.foobar", "username", ""),
+					resource.TestCheckResourceAttr(
+						"data.tfe_organization_membership.foobar", "organization", orgName),
+					resource.TestCheckResourceAttrSet("data.tfe_organization_membership.foobar", "user_id"),
+				),
+			},
 		},
 	})
 }
@@ -128,5 +140,23 @@ resource "tfe_organization_membership" "foobar" {
 
 data "tfe_organization_membership" "foobar" {
   organization = tfe_organization.foobar.name
+}`, rInt)
+}
+
+func testAccTFEOrganizationMembershipDataSourceConfigWithOrgMemberID(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_organization_membership" "foobar" {
+  email        = "example@hashicorp.com"
+  organization = tfe_organization.foobar.id
+}
+
+data "tfe_organization_membership" "foobar" {
+  organization 								= tfe_organization.foobar.name
+  organization_membership_id  = tfe_organization_membership.foobar.id
 }`, rInt)
 }

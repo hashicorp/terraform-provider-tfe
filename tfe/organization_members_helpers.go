@@ -47,7 +47,7 @@ func fetchOrganizationMembers(client *tfe.Client, orgName string) ([]map[string]
 
 func fetchOrganizationMemberByNameOrEmail(ctx context.Context, client *tfe.Client, organization, username, email string) (*tfe.OrganizationMembership, error) {
 	if email == "" && username == "" {
-		return nil, fmt.Errorf("you must specify a username or email")
+		return nil, fmt.Errorf("you must specify a username, email, or organization_membership_id")
 	}
 
 	options := &tfe.OrganizationMembershipListOptions{

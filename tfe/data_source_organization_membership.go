@@ -35,6 +35,12 @@ func dataSourceTFEOrganizationMembership() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+
+			"organization_membership_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -45,17 +51,23 @@ func dataSourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interf
 	// Get the user email and organization.
 	email := d.Get("email").(string)
 	username := d.Get("username").(string)
+	orgMemberID := d.Get("organization_membership_id").(string)
 
 	organization, err := config.schemaOrDefaultOrganization(d)
 	if err != nil {
 		return err
 	}
 
-	orgMember, err := fetchOrganizationMemberByNameOrEmail(context.Background(), config.Client, organization, username, email)
-	if err != nil {
-		return fmt.Errorf("could not find organization membership for organization %s: %w", organization, err)
+	if orgMemberID == "" {
+		orgMember, err := fetchOrganizationMemberByNameOrEmail(context.Background(), config.Client, organization, username, email)
+		if err != nil {
+			return fmt.Errorf("could not find organization membership for organization %s: %w", organization, err)
+		}
+
+		d.SetId(orgMember.ID)
+	} else {
+		d.SetId(orgMemberID)
 	}
 
-	d.SetId(orgMember.ID)
 	return resourceTFEOrganizationMembershipRead(d, meta)
 }
