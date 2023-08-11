@@ -1,7 +1,8 @@
 ## Unreleased
 
-* **New Data Source**: `d/tfe_teams` is a new data source to return names and IDs of Teams in an Organization, by @isaacmcollins [992] https://github.com/hashicorp/terraform-provider-tfe/pull/992
-
+FEATURES:
+* `d/tfe_variable_set`: Add `project_ids` attribute, by @Netra2104 [994](https://github.com/hashicorp/terraform-provider-tfe/pull/994)
+* **New Data Source**: `d/tfe_teams` is a new data source to return names and IDs of Teams in an Organization, by @isaacmcollins [992](https://github.com/hashicorp/terraform-provider-tfe/pull/992)
 ## v0.48.0 (August 7, 2023)
 
 BUG FIXES:

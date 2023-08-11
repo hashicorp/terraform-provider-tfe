@@ -48,6 +48,13 @@ func dataSourceTFEVariableSet() *schema.Resource {
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
+
+			"project_ids": {
+				Type:     schema.TypeSet,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
 		},
 	}
 }
@@ -103,6 +110,12 @@ func dataSourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) erro
 					variables = append(variables, variable.ID)
 				}
 				d.Set("variable_ids", variables)
+
+				var projects []interface{}
+				for _, project := range vs.Projects {
+					projects = append(projects, project.ID)
+				}
+				d.Set("project_ids", projects)
 
 				d.SetId(vs.ID)
 				return nil
