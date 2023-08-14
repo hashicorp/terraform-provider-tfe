@@ -121,6 +121,7 @@ func Provider() *schema.Provider {
 			"tfe_slug":                    dataSourceTFESlug(),
 			"tfe_ssh_key":                 dataSourceTFESSHKey(),
 			"tfe_team":                    dataSourceTFETeam(),
+			"tfe_teams":                   dataSourceTFETeams(),
 			"tfe_team_access":             dataSourceTFETeamAccess(),
 			"tfe_team_project_access":     dataSourceTFETeamProjectAccess(),
 			"tfe_workspace":               dataSourceTFEWorkspace(),
