@@ -94,7 +94,7 @@ func TestAccTFEOrganizationMembershipDataSource_missingParams(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEOrganizationMembershipDataSourceMissingParams(rInt),
-				ExpectError: regexp.MustCompile("you must specify a username, email, or organization_membership_id"),
+				ExpectError: regexp.MustCompile("`email,organization_membership_id,username` must be specified"),
 			},
 		},
 	})

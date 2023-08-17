@@ -37,9 +37,10 @@ func dataSourceTFEOrganizationMembership() *schema.Resource {
 			},
 
 			"organization_membership_id": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Type:         schema.TypeString,
+				Optional:     true,
+				Computed:     true,
+				AtLeastOneOf: []string{"email", "username"},
 			},
 		},
 	}
