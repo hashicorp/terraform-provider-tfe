@@ -28,10 +28,19 @@ data "tfe_organization_membership" "test" {
 
 ### Fetch by username
 
-```
+```hcl
 data "tfe_organization_membership" "test" {
   organization  = "my-org-name"
   username = "my-username"
+}
+```
+
+### Fetch by organization membership ID
+
+```hcl
+data "tfe_organization_membership" "test" {
+  organization  = "my-org-name"
+  organization_membership_id = "ou-xxxxxxxxxxx"
 }
 ```
 
@@ -39,11 +48,12 @@ data "tfe_organization_membership" "test" {
 
 The following arguments are supported:
 
-* `organization` - (Required) Name of the organization.
+* `organization` - (Optional) Name of the organization.
 * `email` - (Optional) Email of the user.
 * `username` - (Optional) The username of the user.
+* `organization_membership_id` - (Optional) ID belonging to the organziation membership.
 
-~> **NOTE:** While `email` and `username` are optional arguments, one or the other is required.
+~> **NOTE:** While `email` and `username` are optional arguments, one or the other is required if `organization_membership_id` argument is not provided.
 
 ## Attributes Reference
 
