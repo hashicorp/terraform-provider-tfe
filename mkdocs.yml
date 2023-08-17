@@ -15,6 +15,7 @@ nav:
           - Testing: testing.md
           - Introducing Beta Features: beta.md
           - Debugging: debugging.md
+          - Backwards Compatibility: backwards-compatibility.md
       - Acceptance Tests: writing-acceptance-tests.md
       - Changelog Process: changelog-process.md
 
