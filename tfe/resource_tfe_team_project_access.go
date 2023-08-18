@@ -310,29 +310,34 @@ func resourceTFETeamProjectAccessRead(ctx context.Context, d *schema.ResourceDat
 		d.Set("project_id", "")
 	}
 
-	project_access := []map[string]interface{}{{
-		"settings": tmAccess.ProjectAccess.ProjectSettingsPermission,
-		"teams":    tmAccess.ProjectAccess.ProjectTeamsPermission,
-	}}
+	// These two fields are only available in TFC and TFE v202308-1 and later
+	if tmAccess.ProjectAccess != nil {
+		project_access := []map[string]interface{}{{
+			"settings": tmAccess.ProjectAccess.ProjectSettingsPermission,
+			"teams":    tmAccess.ProjectAccess.ProjectTeamsPermission,
+		}}
 
-	workspace_access := []map[string]interface{}{{
-		"state_versions": tmAccess.WorkspaceAccess.WorkspaceStateVersionsPermission,
-		"sentinel_mocks": tmAccess.WorkspaceAccess.WorkspaceSentinelMocksPermission,
-		"runs":           tmAccess.WorkspaceAccess.WorkspaceRunsPermission,
-		"variables":      tmAccess.WorkspaceAccess.WorkspaceVariablesPermission,
-		"create":         tmAccess.WorkspaceAccess.WorkspaceCreatePermission,
-		"locking":        tmAccess.WorkspaceAccess.WorkspaceLockingPermission,
-		"move":           tmAccess.WorkspaceAccess.WorkspaceMovePermission,
-		"delete":         tmAccess.WorkspaceAccess.WorkspaceDeletePermission,
-		"run_tasks":      tmAccess.WorkspaceAccess.WorkspaceRunTasksPermission,
-	}}
-
-	if err := d.Set("project_access", project_access); err != nil {
-		return diag.Errorf("Error setting configuration of team project access %s: %v", d.Id(), err)
+		if err := d.Set("project_access", project_access); err != nil {
+			return diag.Errorf("Error setting configuration of team project access %s: %v", d.Id(), err)
+		}
 	}
 
-	if err := d.Set("workspace_access", workspace_access); err != nil {
-		return diag.Errorf("Error setting configuration of team workspace access %s: %v", d.Id(), err)
+	if tmAccess.WorkspaceAccess != nil {
+		workspace_access := []map[string]interface{}{{
+			"state_versions": tmAccess.WorkspaceAccess.WorkspaceStateVersionsPermission,
+			"sentinel_mocks": tmAccess.WorkspaceAccess.WorkspaceSentinelMocksPermission,
+			"runs":           tmAccess.WorkspaceAccess.WorkspaceRunsPermission,
+			"variables":      tmAccess.WorkspaceAccess.WorkspaceVariablesPermission,
+			"create":         tmAccess.WorkspaceAccess.WorkspaceCreatePermission,
+			"locking":        tmAccess.WorkspaceAccess.WorkspaceLockingPermission,
+			"move":           tmAccess.WorkspaceAccess.WorkspaceMovePermission,
+			"delete":         tmAccess.WorkspaceAccess.WorkspaceDeletePermission,
+			"run_tasks":      tmAccess.WorkspaceAccess.WorkspaceRunTasksPermission,
+		}}
+
+		if err := d.Set("workspace_access", workspace_access); err != nil {
+			return diag.Errorf("Error setting configuration of team workspace access %s: %v", d.Id(), err)
+		}
 	}
 
 	return nil
