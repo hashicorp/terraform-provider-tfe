@@ -42,7 +42,7 @@ resource "tfe_workspace_variable_set" "test" {
 
 The following arguments are supported:
 
-* `variable_set_id` - (Required) Name of the variable set to add.
+* `variable_set_id` - (Required) The variable set ID.
 * `workspace_id` - (Required) Workspace ID to add the variable set to.
 
 ## Attributes Reference
