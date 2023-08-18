@@ -46,7 +46,7 @@ that affect the project itself and all workspaces in the project, by using `proj
 
 The following permissions apply to the project itself.
 
-| project-access      | Description, Default, Valid Values          | 
+| project_access      | Description, Default, Valid Values          |
 |---------------------|---------------------------------------------|
 | `settings`          | The permission to grant for the project's settings. Default: `read`. Valid strings: `read`, `update`, or `delete` |
 | `teams`             | The permission to grant for the project's teams. Default: `none`, Valid strings: `none`, `read`, or `manage` |
@@ -57,17 +57,17 @@ The following permissions apply to the project itself.
 
 The following permissions apply to all workpsaces (and future workspaces) in the project.
 
-| workspace-access     | Description, Default, Valid Values                    | 
+| workspace_access     | Description, Default, Valid Values                    |
 |----------------------|-------------------------------------------------------|
 | `runs`               | The permission to grant project's workspaces' runs. Default: `read`. Valid strings: `read`, `plan`, or `apply`. |
-| `sentinel-mocks`     | The permission to grant project's workspaces' Sentinel mocks. Default: `none`. Valid strings: `none`, or `read`. |
-| `state-versions`     | The permission to grant project's workspaces' state versions. Default: `none` Valid strings: `none`, `read-outputs`, `read`, or `write`.|
+| `sentinel_mocks`     | The permission to grant project's workspaces' Sentinel mocks. Default: `none`. Valid strings: `none`, or `read`. |
+| `state_versions`     | The permission to grant project's workspaces' state versions. Default: `none` Valid strings: `none`, `read-outputs`, `read`, or `write`.|
 | `variables`          | The permission to grant project's workspaces' variables. Default `none`. Valid strings: `none`, `read`, or `write`. |
 | `create`             | The permission to create project's workspaces in the project. Default: `false`. Valid booleans `true`, `false` |
 | `locking`            | The permission to manually lock or unlock the project's workspaces. Default `false`. Valid booleans `true`, `false` |
 | `delete`             | The permission to delete the project's workspaces. Default: `false`. Valid booleans: `true`, `false` |
 | `move`               | This permission to move workspaces into and out of the project. The team must also have permissions to the project(s) receiving the the workspace(s). Default: `false`. Valid booleans: `true`, `false` |
-| `run-tasks`          | The permission to manage run tasks within the project's workspaces. Default `false`. Valid booleans: `true`, `false` |
+| `run_tasks`          | The permission to manage run tasks within the project's workspaces. Default `false`. Valid booleans: `true`, `false` |
 
 
 ## Example Usage with Custom Project Permissions
