@@ -189,7 +189,7 @@ The `vcs_repo` block supports:
   string.
 * `identifier` - (Required) A reference to your VCS repository in the format
   `<organization>/<repository>` where `<organization>` and `<repository>` refer to the organization (or project key, for Bitbucket Server)
-  and repository in your VCS provider. The format for Azure DevOps is <organization>/<project>/\_git/<repository>.
+  and repository in your VCS provider. The format for Azure DevOps is `<ado organization>/<ado project>/_git/<ado repository>`.
 * `oauth_token_id` - (Optional) Token ID of the VCS Connection (OAuth Connection Token) to use. This conflicts with `github_app_installation_id` and can only be used if `github_app_installation_id` is not used.
 * `github_app_installation_id` - (Optional) The installation id of the Github App. This conflicts with `oauth_token_id` and can only be used if `oauth_token_id` is not used.
 
