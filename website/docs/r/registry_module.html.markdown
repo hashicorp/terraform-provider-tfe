@@ -128,7 +128,7 @@ The following arguments are supported:
 The `vcs_repo` block supports:
 
 * `display_identifier` - (Required) The display identifier for your VCS repository.
-  For most VCS providers outside of BitBucket Cloud, this will match the `identifier`
+  For most VCS providers outside of BitBucket Cloud and Azure DevOps, this will match the `identifier`
   string.
 * `identifier` - (Required) A reference to your VCS repository in the format
   `<organization>/<repository>` where `<organization>` and `<repository>` refer to the organization (or project key, for Bitbucket Server)
