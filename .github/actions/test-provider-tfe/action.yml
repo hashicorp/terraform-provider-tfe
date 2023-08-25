@@ -103,7 +103,7 @@ runs:
         GITHUB_WORKSPACE_BRANCH: "test"
         GITHUB_TOKEN: "${{ inputs.testing-github-token }}"
         MOD_PROVIDER: github.com/hashicorp/terraform-provider-tfe
-        MOD_TFE: github.com/hashicorp/terraform-provider-tfe/tfe
+        MOD_TFE: github.com/hashicorp/terraform-provider-tfe/internal/provider
         MOD_VERSION: github.com/hashicorp/terraform-provider-tfe/version
       run: |
         gotestsum --junitfile summary.xml --format short-verbose -- $MOD_PROVIDER $MOD_TFE $MOD_VERSION -v -timeout=30m -run "${{ steps.test_split.outputs.run }}"
