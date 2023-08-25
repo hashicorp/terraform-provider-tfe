@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5/tf5server"
 	"github.com/hashicorp/terraform-plugin-mux/tf5muxserver"
-	"github.com/hashicorp/terraform-provider-tfe/tfe"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider"
 )
 
 const (
@@ -45,9 +45,9 @@ func main() {
 	//   complex behavior, and should only be used for functionality that is not
 	//   available otherwise. We suspect the framework can supplant it, but have
 	//   not proven that out yet.
-	nextProvider := providerserver.NewProtocol5(tfe.NewFrameworkProvider())
-	classicProvider := tfe.Provider().GRPCProvider
-	lowLevelProvider := tfe.PluginProviderServer
+	nextProvider := providerserver.NewProtocol5(provider.NewFrameworkProvider())
+	classicProvider := provider.Provider().GRPCProvider
+	lowLevelProvider := provider.PluginProviderServer
 	mux, err := tf5muxserver.NewMuxServer(
 		ctx, nextProvider, classicProvider, lowLevelProvider,
 	)
