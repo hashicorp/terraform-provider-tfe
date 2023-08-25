@@ -20,16 +20,16 @@ require (
 	github.com/hashicorp/terraform-plugin-framework-validators v0.11.0
 	github.com/hashicorp/terraform-plugin-go v0.18.0
 	github.com/hashicorp/terraform-plugin-mux v0.11.2
-	github.com/hashicorp/terraform-plugin-sdk/v2 v2.27.0
+	github.com/hashicorp/terraform-plugin-sdk/v2 v2.28.0
 	github.com/hashicorp/terraform-svchost v0.1.1
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/zclconf/go-cty v1.13.2
-	golang.org/x/crypto v0.10.0 // indirect
+	golang.org/x/crypto v0.12.0 // indirect
 	golang.org/x/net v0.11.0 // indirect
 	golang.org/x/oauth2 v0.9.0 // indirect
-	golang.org/x/sys v0.9.0 // indirect
-	golang.org/x/text v0.10.0 // indirect
+	golang.org/x/sys v0.11.0 // indirect
+	golang.org/x/text v0.12.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 )
@@ -47,7 +47,7 @@ require (
 	github.com/hashicorp/jsonapi v0.0.0-20210826224640-ee7dae0fb22d // indirect
 	github.com/hashicorp/logutils v1.0.0 // indirect
 	github.com/hashicorp/terraform-exec v0.18.1 // indirect
-	github.com/hashicorp/terraform-json v0.17.0 // indirect
+	github.com/hashicorp/terraform-json v0.17.1 // indirect
 	github.com/hashicorp/yamux v0.1.1 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
