@@ -24,7 +24,7 @@ require (
 	github.com/hashicorp/terraform-svchost v0.1.1
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
-	github.com/zclconf/go-cty v1.13.2
+	github.com/zclconf/go-cty v1.13.3
 	golang.org/x/crypto v0.10.0 // indirect
 	golang.org/x/net v0.11.0 // indirect
 	golang.org/x/oauth2 v0.9.0 // indirect
