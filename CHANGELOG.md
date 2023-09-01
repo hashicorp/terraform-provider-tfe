@@ -3,6 +3,7 @@
 BUG FIXES:
 * `r/tfe_team_project_access`: Fixes a panic that occurs when the client is configured against an older TFE release, by @sebasslash [1011](https://github.com/hashicorp/terraform-provider-tfe/pull/1011)
 * The provider no longer makes two service discovery requests per provider config, by @brandonc [1034](https://github.com/hashicorp/terraform-provider-tfe/pull/1034)
+* `d/tfe_policy_set`: Add `excluded_workspace_ids` attribute, by @Netra2104 [1035](https://github.com/hashicorp/terraform-provider-tfe/pull/1035)
 
 FEATURES:
 * `d/tfe_organization_membership`: Add `organization_membership_id` attribute, by @laurenolivia [997](https://github.com/hashicorp/terraform-provider-tfe/pull/997)
