@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net/http"
 	"net/url"
 	"os"
 	"sort"
@@ -16,7 +15,6 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/go-version"
-	"github.com/hashicorp/terraform-provider-tfe/internal/logging"
 	providerVersion "github.com/hashicorp/terraform-provider-tfe/version"
 	svchost "github.com/hashicorp/terraform-svchost"
 	"github.com/hashicorp/terraform-svchost/disco"
@@ -143,19 +141,12 @@ func GetClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
 		return nil, discoErr
 	}
 
-	// Wrap the configured transport to enable logging.
-	transport := config.HTTPClient.Transport.(*http.Transport)
-	config.HTTPClient.Transport = logging.NewLoggingTransport("TFE", transport)
-
-	// Create a new TFE client config
-	cfg := &tfe.Config{
+	// Create a new TFE client.
+	client, err := tfe.NewClient(&tfe.Config{
 		Address:    address.String(),
 		Token:      token,
 		HTTPClient: config.HTTPClient,
-	}
-
-	// Create a new TFE client.
-	client, err := tfe.NewClient(cfg)
+	})
 	if err != nil {
 		return nil, err
 	}

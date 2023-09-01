@@ -21,6 +21,11 @@ import (
 	"github.com/hashicorp/terraform-svchost/disco"
 )
 
+var (
+	// TFEUserAgent is the user agent string sent with all requests made by the provider
+	TFEUserAgent = fmt.Sprintf("terraform-provider-tfe/%s", providerVersion.ProviderVersion)
+)
+
 type CredentialsMap map[string]map[string]interface{}
 
 // CLIHostConfig is the structure of the configuration for the Terraform CLI.
@@ -210,8 +215,8 @@ func configure(tfeHost, token string, insecure bool) (*ClientConfiguration, erro
 	// Create a new credential source and service discovery object.
 	credsSrc := credentialsSource(config.Credentials)
 	services := disco.NewWithCredentialsSource(credsSrc)
-	services.SetUserAgent(fmt.Sprintf("terraform-provider-tfe/%s", providerVersion.ProviderVersion))
-	services.Transport = logging.NewLoggingTransport("TFE Discovery", transport)
+	services.SetUserAgent(TFEUserAgent)
+	services.Transport = logging.NewLoggingTransport("TFE", transport)
 
 	// Add any static host configurations service discovery object.
 	for userHost, hostConfig := range config.Hosts {
