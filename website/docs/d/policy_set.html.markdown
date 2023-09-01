@@ -37,6 +37,7 @@ The following arguments are supported:
 * `kind` - The policy-as-code framework for the policy. Valid values are "sentinel" and "opa".
 * `overridable` - Whether users can override this policy when it fails during a run. Only valid for OPA policies.
 * `workspace_ids` - IDs of the workspaces that use the policy set.
+* `excluded_workspace_ids` - IDs of the workspaces that do not use the policy set.
 * `project_ids` - IDs of the projects that use the policy set.
 * `policy_ids` - IDs of the policies attached to the policy set.
 * `policies_path` - The sub-path within the attached VCS repository when using `vcs_repo`.
