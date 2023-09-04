@@ -17,7 +17,7 @@ jobs:
     outputs:
       version: ${{ steps.remove-leading-v.outputs.version }}
     steps:
-      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
 
       - uses: actions-ecosystem/action-get-latest-tag@b7c32daec3395a9616f88548363a42652b22d435 # v1.6.0
         id: get-latest-tag
@@ -33,7 +33,7 @@ jobs:
   buildBinary:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
       - name: Set up Go
         uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe # v4.1.0
         with:
@@ -68,7 +68,7 @@ jobs:
       CHECKPOINT_DISABLE: "1"
     timeout-minutes: 120
     steps:
-      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
       - run: git config --global user.email "bcroft@hashicorp.com"
       - run: git config --global user.name "Brandon Croft"
       - name: Get yarn cache directory path
