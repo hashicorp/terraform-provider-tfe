@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-provider-tfe/internal/client"
 )
 
 // frameworkProvider is a type that implements the terraform-plugin-framework
@@ -94,7 +95,7 @@ func (p *frameworkProvider) Configure(ctx context.Context, req provider.Configur
 		data.Organization = types.StringValue(os.Getenv("TFE_ORGANIZATION"))
 	}
 
-	client, err := getClient(data.Hostname.ValueString(), data.Token.ValueString(), data.SSLSkipVerify.ValueBool())
+	client, err := client.GetClient(data.Hostname.ValueString(), data.Token.ValueString(), data.SSLSkipVerify.ValueBool())
 
 	if err != nil {
 		res.Diagnostics.AddError("Failed to initialize HTTP client", err.Error())
