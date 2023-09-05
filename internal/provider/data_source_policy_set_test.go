@@ -217,7 +217,7 @@ resource "tfe_project_policy_set" "foobar" {
 	project_id = tfe_project.foobar.id
 }
 
-resource "tfe_workspace_policy_set_exclusion" {
+resource "tfe_workspace_policy_set_exclusion" "foobar" {
 	policy_set_id = tfe_policy_set.foobar.id
 	workspace_id = tfe_workspace.foobar.id
 }
@@ -258,7 +258,7 @@ resource "tfe_project_policy_set" "foobar" {
 	project_id = tfe_project.foobar.id
 }
 
-resource "tfe_workspace_policy_set_exclusion" {
+resource "tfe_workspace_policy_set_exclusion" "foobar" {
 	policy_set_id = tfe_policy_set.foobar.id
 	workspace_id = tfe_workspace.foobar.id
 }

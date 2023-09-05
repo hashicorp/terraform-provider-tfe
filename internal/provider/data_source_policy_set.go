@@ -177,10 +177,8 @@ func dataSourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error 
 				d.Set("workspace_ids", workspaceIDs)
 
 				var excludedWorkspaceIDs []interface{}
-				if !policySet.Global {
-					for _, excludedWorkspace := range policySet.WorkspaceExclusions {
-						excludedWorkspaceIDs = append(excludedWorkspaceIDs, excludedWorkspace.ID)
-					}
+				for _, excludedWorkspace := range policySet.WorkspaceExclusions {
+					excludedWorkspaceIDs = append(excludedWorkspaceIDs, excludedWorkspace.ID)
 				}
 				d.Set("excluded_workspace_ids", excludedWorkspaceIDs)
 
