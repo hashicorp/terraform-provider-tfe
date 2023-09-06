@@ -169,5 +169,5 @@ func resourceTFEWorkspacePolicySetExclusionImporter(ctx context.Context, d *sche
 		options.PageNumber = list.NextPage
 	}
 
-	return nil, fmt.Errorf("excluded workspace %s has not been assigned to policy set %s", wsName, pSName)
+	return nil, fmt.Errorf("excluded workspace %s has not been added to policy set %s", wsName, pSName)
 }
