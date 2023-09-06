@@ -117,11 +117,11 @@ func resourceTFEWorkspacePolicySetExclusionDelete(d *schema.ResourceData, meta i
 }
 
 func resourceTFEWorkspacePolicySetExclusionImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	// The format of the import ID is <ORGANIZATION/WORKSPACE_EXCLUSIONS NAME/POLICYSET NAME>
+	// The format of the import ID is <ORGANIZATION/WORKSPACE NAME/POLICYSET NAME>
 	splitID := strings.SplitN(d.Id(), "/", 3)
 	if len(splitID) != 3 {
 		return nil, fmt.Errorf(
-			"invalid excluded workspace policy set input format: %s (expected <ORGANIZATION>/<WORKSPACE_EXCLUSIONS NAME>/<POLICYSET NAME>)",
+			"invalid excluded workspace policy set input format: %s (expected <ORGANIZATION>/<WORKSPACE NAME>/<POLICYSET NAME>)",
 			splitID,
 		)
 	}

@@ -51,8 +51,8 @@ The following arguments are supported:
 
 ## Import
 
-Excluded Workspace Policy Sets can be imported; use `<ORGANIZATION>/<WORKSPACE_EXCLUSIONS NAME>/<POLICY SET NAME>`. For example:
+Excluded Workspace Policy Sets can be imported; use `<ORGANIZATION>/<WORKSPACE NAME>/<POLICY SET NAME>`. For example:
 
 ```shell
-terraform import tfe_workspace_policy_set_exclusion.test 'my-org-name/workspace-exclusion/policy-set-name'
+terraform import tfe_workspace_policy_set_exclusion.test 'my-org-name/workspace/policy-set-name'
 ```
