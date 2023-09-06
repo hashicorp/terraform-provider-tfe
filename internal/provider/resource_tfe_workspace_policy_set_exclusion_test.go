@@ -114,7 +114,7 @@ func testAccCheckTFEWorkspacePolicySetExclusionExists(n string) resource.TestChe
 			}
 		}
 
-		return fmt.Errorf("excluded workspace (%s) is not attached to policy set (%s)", workspaceExclusionsID, policySetID)
+		return fmt.Errorf("excluded workspace (%s) is not added to policy set (%s)", workspaceExclusionsID, policySetID)
 	}
 }
 
