@@ -51,7 +51,7 @@ func resourceTFEWorkspacePolicySetExclusionCreate(d *schema.ResourceData, meta i
 	err := config.Client.PolicySets.AddWorkspaceExclusions(ctx, policySetID, policySetAddWorkspaceExclusionsOptions)
 	if err != nil {
 		return fmt.Errorf(
-			"error attaching policy set id %s to excluded workspace %s: %w", policySetID, workspaceExclusionID, err)
+			"error adding workspace exclusion %s to policy set id %s: %w", workspaceExclusionID, policySetID, err)
 	}
 
 	d.SetId(fmt.Sprintf("%s_%s", workspaceExclusionID, policySetID))
@@ -103,7 +103,7 @@ func resourceTFEWorkspacePolicySetExclusionDelete(d *schema.ResourceData, meta i
 	policySetID := d.Get("policy_set_id").(string)
 	workspaceExclusionsID := d.Get("workspace_id").(string)
 
-	log.Printf("[DEBUG] Detaching excluded workspace (%s) from policy set (%s)", workspaceExclusionsID, policySetID)
+	log.Printf("[DEBUG] Removing excluded workspace (%s) from policy set (%s)", workspaceExclusionsID, policySetID)
 	policySetRemoveWorkspaceExclusionsOptions := tfe.PolicySetRemoveWorkspaceExclusionsOptions{}
 	policySetRemoveWorkspaceExclusionsOptions.WorkspaceExclusions = append(policySetRemoveWorkspaceExclusionsOptions.WorkspaceExclusions, &tfe.Workspace{ID: workspaceExclusionsID})
 
