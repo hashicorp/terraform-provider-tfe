@@ -98,6 +98,12 @@ func dataSourceTFEPolicySet() *schema.Resource {
 				Computed: true,
 			},
 
+			"excluded_workspace_ids": {
+				Type:     schema.TypeSet,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Computed: true,
+			},
+
 			"project_ids": {
 				Type:     schema.TypeSet,
 				Elem:     &schema.Schema{Type: schema.TypeString},
@@ -169,6 +175,12 @@ func dataSourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error 
 					}
 				}
 				d.Set("workspace_ids", workspaceIDs)
+
+				var excludedWorkspaceIDs []interface{}
+				for _, excludedWorkspace := range policySet.WorkspaceExclusions {
+					excludedWorkspaceIDs = append(excludedWorkspaceIDs, excludedWorkspace.ID)
+				}
+				d.Set("excluded_workspace_ids", excludedWorkspaceIDs)
 
 				var projectIDs []interface{}
 				if !policySet.Global {

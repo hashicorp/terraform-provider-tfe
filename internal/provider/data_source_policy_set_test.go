@@ -46,6 +46,8 @@ func TestAccTFEPolicySetDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_policy_set.bar", "workspace_ids.#", "1"),
 					resource.TestCheckResourceAttr(
+						"data.tfe_policy_set.bar", "excluded_workspace_ids.#", "1"),
+					resource.TestCheckResourceAttr(
 						"data.tfe_policy_set.bar", "project_ids.#", "1"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_policy_set.bar", "vcs_repo.#", "0"),
@@ -90,6 +92,8 @@ func TestAccTFEPolicySetDataSourceOPA_basic(t *testing.T) {
 						"data.tfe_policy_set.bar", "overridable", "true"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_policy_set.bar", "workspace_ids.#", "1"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_policy_set.bar", "excluded_workspace_ids.#", "1"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_policy_set.bar", "project_ids.#", "1"),
 					resource.TestCheckResourceAttr(
@@ -150,6 +154,8 @@ func TestAccTFEPolicySetDataSource_vcs(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_policy_set.bar", "workspace_ids.#", "0"),
 					resource.TestCheckResourceAttr(
+						"data.tfe_policy_set.bar", "excluded_workspace_ids.#", "0"),
+					resource.TestCheckResourceAttr(
 						"data.tfe_policy_set.bar", "project_ids.#", "0"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_policy_set.bar", "vcs_repo.#", "1"),
@@ -204,12 +210,16 @@ resource "tfe_policy_set" "foobar" {
   organization = local.organization_name
   policy_ids   = [tfe_sentinel_policy.foo.id]
   workspace_ids = [tfe_workspace.foobar.id]
-  
 }
 
 resource "tfe_project_policy_set" "foobar" {
 	policy_set_id = tfe_policy_set.foobar.id
 	project_id = tfe_project.foobar.id
+}
+
+resource "tfe_workspace_policy_set_exclusion" "foobar" {
+	policy_set_id = tfe_policy_set.foobar.id
+	workspace_id = tfe_workspace.foobar.id
 }
 
 data "tfe_policy_set" "bar" {
@@ -246,6 +256,11 @@ resource "tfe_policy_set" "foobar" {
 resource "tfe_project_policy_set" "foobar" {
 	policy_set_id = tfe_policy_set.foobar.id
 	project_id = tfe_project.foobar.id
+}
+
+resource "tfe_workspace_policy_set_exclusion" "foobar" {
+	policy_set_id = tfe_policy_set.foobar.id
+	workspace_id = tfe_workspace.foobar.id
 }
 
 data "tfe_policy_set" "bar" {
