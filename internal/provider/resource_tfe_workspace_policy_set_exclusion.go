@@ -133,7 +133,7 @@ func resourceTFEWorkspacePolicySetExclusionImporter(ctx context.Context, d *sche
 	// Ensure the named workspace exists before fetching all the policy sets in the org
 	_, err := config.Client.Workspaces.Read(ctx, organization, wsName)
 	if err != nil {
-		return nil, fmt.Errorf("error reading configuration of excluded workspace %s in organization %s: %w", wsName, organization, err)
+		return nil, fmt.Errorf("error reading configuration of the workspace to exclude %s in organization %s: %w", wsName, organization, err)
 	}
 
 	options := &tfe.PolicySetListOptions{Include: []tfe.PolicySetIncludeOpt{tfe.PolicySetWorkspaceExclusions}}
