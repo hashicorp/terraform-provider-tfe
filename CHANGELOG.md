@@ -8,6 +8,7 @@ FEATURES:
 * `d/tfe_organization_membership`: Add `organization_membership_id` attribute, by @laurenolivia [997](https://github.com/hashicorp/terraform-provider-tfe/pull/997)
 * `d/tfe_variable_set`: Add `project_ids` attribute, by @Netra2104 [994](https://github.com/hashicorp/terraform-provider-tfe/pull/994)
 * **New Data Source**: `d/tfe_teams` is a new data source to return names and IDs of Teams in an Organization, by @isaacmcollins [992](https://github.com/hashicorp/terraform-provider-tfe/pull/992)
+* **New Resource**: `r/tfe_workspace_policy_set_exclusion` is a new resource allowing the exclusion of one or more existing workspaces from an existing `policy set`, by @Netra2104 [1033](https://github.com/hashicorp/terraform-provider-tfe/pull/1033)
 
 ## v0.48.0 (August 7, 2023)
 
