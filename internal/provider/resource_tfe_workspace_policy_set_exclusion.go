@@ -43,18 +43,18 @@ func resourceTFEWorkspacePolicySetExclusionCreate(d *schema.ResourceData, meta i
 	config := meta.(ConfiguredClient)
 
 	policySetID := d.Get("policy_set_id").(string)
-	workspaceExclusionsID := d.Get("workspace_id").(string)
+	workspaceExclusionID := d.Get("workspace_id").(string)
 
 	policySetAddWorkspaceExclusionsOptions := tfe.PolicySetAddWorkspaceExclusionsOptions{}
-	policySetAddWorkspaceExclusionsOptions.WorkspaceExclusions = append(policySetAddWorkspaceExclusionsOptions.WorkspaceExclusions, &tfe.Workspace{ID: workspaceExclusionsID})
+	policySetAddWorkspaceExclusionsOptions.WorkspaceExclusions = append(policySetAddWorkspaceExclusionsOptions.WorkspaceExclusions, &tfe.Workspace{ID: workspaceExclusionID})
 
 	err := config.Client.PolicySets.AddWorkspaceExclusions(ctx, policySetID, policySetAddWorkspaceExclusionsOptions)
 	if err != nil {
 		return fmt.Errorf(
-			"error attaching policy set id %s to excluded workspace %s: %w", policySetID, workspaceExclusionsID, err)
+			"error attaching policy set id %s to excluded workspace %s: %w", policySetID, workspaceExclusionID, err)
 	}
 
-	d.SetId(fmt.Sprintf("%s_%s", workspaceExclusionsID, policySetID))
+	d.SetId(fmt.Sprintf("%s_%s", workspaceExclusionID, policySetID))
 
 	return resourceTFEWorkspacePolicySetExclusionRead(d, meta)
 }
