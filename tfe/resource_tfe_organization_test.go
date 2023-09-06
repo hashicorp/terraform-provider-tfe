@@ -80,6 +80,8 @@ func TestAccTFEOrganization_full(t *testing.T) {
 						"tfe_organization.foobar", "assessments_enforced", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "allow_force_delete_workspaces", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "default_execution_mode", "remote"),
 				),
 			},
 		},
@@ -106,6 +108,52 @@ func TestAccTFEOrganization_defaultProject(t *testing.T) {
 						}
 						return nil
 					}),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEOrganization_update_defaultExecutionMode(t *testing.T) {
+	org := &tfe.Organization{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEOrganizationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOrganization_full(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOrganizationExists(
+						"tfe_organization.foobar", org),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "default_execution_mode", "remote"),
+				),
+			},
+			{
+				Config: testAccTFEOrganization_agent_execution_mode(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOrganizationExists(
+						"tfe_organization.foobar", org),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "default_execution_mode", "agent"),
+					resource.TestCheckResourceAttrWith("tfe_organization.foobar", "default_agent_pool_id", func(value string) error {
+						if value == "" {
+							return errors.New("default agent pool ID not exposed")
+						}
+						return nil
+					}),
+				),
+			},
+			{
+				Config: testAccTFEOrganization_full(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOrganizationExists(
+						"tfe_organization.foobar", org),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "default_execution_mode", "remote"),
 				),
 			},
 		},
@@ -418,7 +466,31 @@ resource "tfe_organization" "foobar" {
   cost_estimation_enabled           = false
   assessments_enforced              = false
   allow_force_delete_workspaces     = false
+  default_execution_mode            = "remote"
 }`, rInt)
+}
+
+func testAccTFEOrganization_agent_execution_mode(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name                              = "tst-terraform-%d"
+  email                             = "admin@company.com"
+  session_timeout_minutes           = 30
+  session_remember_minutes          = 30
+  collaborator_auth_policy          = "password"
+  owners_team_saml_role_id          = "owners"
+  cost_estimation_enabled           = false
+  assessments_enforced              = false
+  allow_force_delete_workspaces     = false
+  default_execution_mode            = "agent"
+  default_agent_pool_id             = tfe_agent_pool.foobar.id
+}
+
+resource "tfe_agent_pool" "foobar" {
+  name = "agent-pool-test"
+  organization = "tst-terraform-%d"
+}
+`, rInt, rInt)
 }
 
 func testAccTFEOrganization_update(orgName string, orgEmail string, costEstimationEnabled bool, assessmentsEnforced bool, allowForceDeleteWorkspaces bool) string {

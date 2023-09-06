@@ -91,6 +91,17 @@ func resourceTFEOrganization() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+
+			"default_execution_mode": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "remote",
+			},
+
+			"default_agent_pool_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -141,6 +152,8 @@ func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error
 	d.Set("owners_team_saml_role_id", org.OwnersTeamSAMLRoleID)
 	d.Set("cost_estimation_enabled", org.CostEstimationEnabled)
 	d.Set("send_passing_statuses_for_untriggered_speculative_plans", org.SendPassingStatusesForUntriggeredSpeculativePlans)
+	d.Set("default_execution_mode", org.DefaultExecutionMode)
+
 	// TFE (onprem) does not currently have this feature and this value won't be returned in those cases.
 	// org.AssessmentsEnforced will default to false
 	d.Set("assessments_enforced", org.AssessmentsEnforced)
@@ -148,6 +161,10 @@ func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error
 
 	if org.DefaultProject != nil {
 		d.Set("default_project_id", org.DefaultProject.ID)
+	}
+
+	if org.DefaultAgentPool != nil {
+		d.Set("default_agent_pool_id", org.DefaultAgentPool.ID)
 	}
 
 	return nil
@@ -200,6 +217,18 @@ func resourceTFEOrganizationUpdate(d *schema.ResourceData, meta interface{}) err
 	// If allow_force_delete_workspaces is supplied, set it using the options struct.
 	if allowForceDeleteWorkspaces, ok := d.GetOkExists("allow_force_delete_workspaces"); ok {
 		options.AllowForceDeleteWorkspaces = tfe.Bool(allowForceDeleteWorkspaces.(bool))
+	}
+
+	// If default_execution_mode is supplied, set it using the options struct.
+	if defaultExecutionMode, ok := d.GetOkExists("default_execution_mode"); ok {
+		options.DefaultExecutionMode = tfe.String(defaultExecutionMode.(string))
+	}
+
+	// If default_agent_pool_id is supplied, set it using the options struct.
+	if defaultAgentPoolId, ok := d.GetOkExists("default_agent_pool_id"); ok {
+		options.DefaultAgentPool = &tfe.AgentPool{
+			ID: defaultAgentPoolId.(string),
+		}
 	}
 
 	log.Printf("[DEBUG] Update configuration of organization: %s", d.Id())

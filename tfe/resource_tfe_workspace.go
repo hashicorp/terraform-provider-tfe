@@ -964,6 +964,7 @@ func overwriteDefaultExecutionMode(_ context.Context, d *schema.ResourceDiff) er
 					"agent_pool":     false,
 				}
 				d.SetNew("setting_overwrites", []interface{}{newSettingOverwrites})
+				d.SetNewComputed("execution_mode")
 			}
 			return nil
 		}
