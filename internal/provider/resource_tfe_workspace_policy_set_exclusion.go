@@ -110,7 +110,7 @@ func resourceTFEWorkspacePolicySetExclusionDelete(d *schema.ResourceData, meta i
 	err := config.Client.PolicySets.RemoveWorkspaceExclusions(ctx, policySetID, policySetRemoveWorkspaceExclusionsOptions)
 	if err != nil {
 		return fmt.Errorf(
-			"error detaching excluded workspace %s from policy set %s: %w", workspaceExclusionsID, policySetID, err)
+			"error removing excluded workspace %s from policy set %s: %w", workspaceExclusionsID, policySetID, err)
 	}
 
 	return nil
