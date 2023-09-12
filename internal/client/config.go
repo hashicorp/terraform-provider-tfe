@@ -117,26 +117,27 @@ func locateConfigFile() string {
 	return filePath
 }
 
+// All the errors returned by the helper methods called in this function get ignored (down the road we throw an error when all auth methods have failed.) We only use these errors to log warnings to the user.
 func readCliConfigFile(configFilePath string) CLIHostConfig {
 	config := CLIHostConfig{}
 
 	// Read the CLI config file content.
 	content, err := os.ReadFile(configFilePath)
 	if err != nil {
-		log.Printf("[ERROR] Error reading CLI config or credentials file %s: %v", configFilePath, err)
+		log.Printf("[WARN] Error reading CLI config or credentials file %s: %v", configFilePath, err)
 		return config
 	}
 
 	// Parse the CLI config file content.
 	obj, err := hcl.Parse(string(content))
 	if err != nil {
-		log.Printf("[ERROR] Error parsing CLI config or credentials file %s: %v", configFilePath, err)
+		log.Printf("[WARN] Error parsing CLI config or credentials file %s: %v", configFilePath, err)
 		return config
 	}
 
 	// Decode the CLI config file content.
 	if err := hcl.DecodeObject(&config, obj); err != nil {
-		log.Printf("[ERROR] Error decoding CLI config or credentials file %s: %v", configFilePath, err)
+		log.Printf("[WARN] Error decoding CLI config or credentials file %s: %v", configFilePath, err)
 	}
 
 	return config
