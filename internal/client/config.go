@@ -124,20 +124,20 @@ func readCliConfigFile(configFilePath string) CLIHostConfig {
 	// Read the CLI config file content.
 	content, err := os.ReadFile(configFilePath)
 	if err != nil {
-		log.Printf("[WARN] Error reading CLI config or credentials file %s: %v", configFilePath, err)
+		log.Printf("[WARN] Unable to read CLI config or credentials file %s: %v", configFilePath, err)
 		return config
 	}
 
 	// Parse the CLI config file content.
 	obj, err := hcl.Parse(string(content))
 	if err != nil {
-		log.Printf("[WARN] Error parsing CLI config or credentials file %s: %v", configFilePath, err)
+		log.Printf("[WARN] Unable to parse CLI config or credentials file %s: %v", configFilePath, err)
 		return config
 	}
 
 	// Decode the CLI config file content.
 	if err := hcl.DecodeObject(&config, obj); err != nil {
-		log.Printf("[WARN] Error decoding CLI config or credentials file %s: %v", configFilePath, err)
+		log.Printf("[WARN] Unable to decode CLI config or credentials file %s: %v", configFilePath, err)
 	}
 
 	return config
