@@ -19,13 +19,13 @@ jobs:
         run: echo "EPIC_LINK=TF-7331" >> $GITHUB_ENV
         if: contains(github.event.issue.labels.*.name, 'bug')
 
-      - name: call-workflow
-        uses: ./.github/workflows/jira-issue-sync.yml
-        with:
-          project: TF
-          issue-extra-fields: |
-            { "customfield_10091": ["TF-CLI"],
-              "customfield_10008": "${{ env.EPIC_LINK }}"
-              "labels": "${{ github.event.repository.name }}"
-            }
-        secrets: inherit
+  call-workflow:
+    uses: ./.github/workflows/jira-issue-sync.yml
+    with:
+      project: TF
+      issue-extra-fields: |
+        { "customfield_10091": ["TF-CLI"],
+          "customfield_10008": "${{ github.env.EPIC_LINK }}"
+          "labels": "${{ github.event.repository.name }}"
+        }
+    secrets: inherit
