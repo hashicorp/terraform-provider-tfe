@@ -17,7 +17,7 @@ jobs:
       project: TF
       issue-extra-fields: |
         { "customfield_10091": ["TF-CLI"],
-          "customfield_10008": "${{ contains(github.event.issue.labels.*.name, 'bug') && github.env.EPIC_LINK_BUG || github.env.EPIC_LINK_FEATURE }}",
+          "customfield_10008": ["${{ contains(github.event.issue.labels.*.name, 'bug') && github.env.EPIC_LINK_BUG || github.env.EPIC_LINK_FEATURE }}"],
           "labels": "${{ github.event.repository.name }}"
         }
     secrets: inherit
