@@ -6,10 +6,6 @@ on:
   issue_comment:
     types: [created]
 
-env:
-  EPIC_LINK_BUG: "TF-7331"
-  EPIC_LINK_FEATURE: "TF-3484"
-
 jobs:
   call-workflow:
     uses: ./.github/workflows/jira-issue-sync.yml
@@ -17,7 +13,7 @@ jobs:
       project: TF
       issue-extra-fields: |
         { "customfield_10091": ["TF-CLI"],
-          "customfield_10008": ["${{ contains(github.event.issue.labels.*.name, 'bug') && github.env.EPIC_LINK_BUG || github.env.EPIC_LINK_FEATURE }}"],
+          "customfield_10008": ["${{ contains(github.event.issue.labels.*.name, 'bug') && 'TF-7331' || 'TF-3484' }}"],
           "labels": "${{ github.event.repository.name }}"
         }
     secrets: inherit
