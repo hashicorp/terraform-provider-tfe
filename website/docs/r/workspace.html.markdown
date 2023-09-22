@@ -54,31 +54,30 @@ resource "tfe_workspace" "test" {
 The following arguments are supported:
 
 * `name` - (Required) Name of the workspace.
-* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
-* `description` - (Optional) A description for the workspace.
 * `agent_pool_id` - (Optional) The ID of an agent pool to assign to the workspace. Requires `execution_mode`
   to be set to `agent`. This value _must not_ be provided if `execution_mode` is set to any other value or if `operations` is
   provided.
 * `allow_destroy_plan` - (Optional) Whether destroy plans can be queued on the workspace.
-* `auto_apply` - (Optional) Whether to automatically apply changes when a
-  Terraform plan is successful. Defaults to `false`.
+* `auto_apply` - (Optional) Whether to automatically apply changes when a Terraform plan is successful. Defaults to `false`.
+* `assessments_enabled` - (Optional) Whether to regularly run health assessments such as drift detection on the workspace. Defaults to `false`.
+* `description` - (Optional) A description for the workspace.
 * `execution_mode` - (Optional) Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode)
   to use. Using Terraform Cloud, valid values are `remote`, `local` or`agent`.
   Defaults to `remote`. Using Terraform Enterprise, only `remote`and `local`
   execution modes are valid.  When set to `local`, the workspace will be used
   for state storage only. This value _must not_ be provided if `operations`
   is provided.
-* `assessments_enabled` - (Optional) Whether to regularly run health assessments such as drift detection on the workspace. Defaults to `false`.
 * `file_triggers_enabled` - (Optional) Whether to filter runs based on the changed files
   in a VCS push. Defaults to `true`. If enabled, the working directory and
   trigger prefixes describe a set of paths which must contain changes for a
   VCS push to trigger a run. If disabled, any push will trigger a run.
+* `force_delete` - (Optional) If this attribute is present on a workspace that is being deleted through the provider, it will use the existing force delete API. If this attribute is not present or false it will safe delete the workspace.
 * `global_remote_state` - (Optional) Whether the workspace allows all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (`remote_state_consumer_ids`).
-* `remote_state_consumer_ids` - (Optional) The set of workspace IDs set as explicit remote state consumers for the given workspace.
 * `operations` - **Deprecated** Whether to use remote execution mode.
   Defaults to `true`. When set to `false`, the workspace will be used for
   state storage only. This value _must not_ be provided if `execution_mode` is
   provided.
+* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `project_id` - (Optional) ID of the project where the workspace should be created.
 * `queue_all_runs` - (Optional) Whether the workspace should start
   automatically performing runs immediately after its creation. Defaults to
@@ -88,6 +87,7 @@ The following arguments are supported:
   is `false`. The provider uses `true` as any workspace provisioned with
   `false` would need to then have a run manually queued out-of-band before
   accepting webhooks.
+* `remote_state_consumer_ids` - (Optional) The set of workspace IDs set as explicit remote state consumers for the given workspace.
 * `source_name` - (Optional) A friendly name for the application or client
    creating this workspace. If set, this will be displayed on the workspace as
    "Created via <SOURCE NAME>".
@@ -116,15 +116,13 @@ The following arguments are supported:
   (like `~> 1.0.0`); if you specify a constraint, the workspace will always use
   the newest release that meets that constraint. Defaults to the latest
   available version.
+* `trigger_patterns` - (Optional) List of [glob patterns](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/vcs#glob-patterns-for-automatic-run-triggering) that describe the files Terraform Cloud monitors for changes. Trigger patterns are always appended to the root directory of the repository. Mutually exclusive with `trigger-prefixes`.
 * `trigger_prefixes` - (Optional) List of repository-root-relative paths which describe all locations
   to be tracked for changes.
-* `trigger_patterns` - (Optional) List of [glob patterns](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/vcs#glob-patterns-for-automatic-run-triggering) that describe the files Terraform Cloud monitors for changes. Trigger patterns are always appended to the root directory of the repository. Mutually exclusive with `trigger-prefixes`.
-* `working_directory` - (Optional) A relative path that Terraform will execute
-  within.  Defaults to the root of your repository.
 * `vcs_repo` - (Optional) Settings for the workspace's VCS repository, enabling the [UI/VCS-driven run workflow](https://developer.hashicorp.com/terraform/cloud-docs/run/ui).
   Omit this argument to utilize the [CLI-driven](https://developer.hashicorp.com/terraform/cloud-docs/run/cli) and [API-driven](https://developer.hashicorp.com/terraform/cloud-docs/run/api)
   workflows, where runs are not driven by webhooks on your VCS provider.
-* `force_delete` - (Optional) If this attribute is present on a workspace that is being deleted through the provider, it will use the existing force delete API. If this attribute is not present or false it will safe delete the workspace.
+* `working_directory` - (Optional) A relative path that Terraform will execute within.  Defaults to the root of your repository.
 
 The `vcs_repo` block supports:
 
@@ -137,7 +135,7 @@ The `vcs_repo` block supports:
   cloning the VCS repository. Defaults to `false`.
 * `oauth_token_id` - (Optional) The VCS Connection (OAuth Connection + Token) to use.
   This ID can be obtained from a `tfe_oauth_client` resource. This conflicts with `github_app_installation_id` and can only be used if `github_app_installation_id` is not used.
-* `github_app_installation_id` - (Optional) The installation id of the Github App. This conflicts with `oauth_token_id` and can only be used if `oauth_token_id` is not used. 
+* `github_app_installation_id` - (Optional) The installation id of the Github App. This conflicts with `oauth_token_id` and can only be used if `oauth_token_id` is not used.
 * `tags_regex` - (Optional) A regular expression used to trigger a Workspace run for matching Git tags. This option conflicts with `trigger_patterns` and `trigger_prefixes`. Should only set this value if the former is not being used.
 
 ## Attributes Reference
