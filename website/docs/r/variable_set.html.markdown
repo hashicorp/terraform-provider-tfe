@@ -94,13 +94,46 @@ resource "tfe_variable" "test-b" {
 }
 ```
 
+Creating an enforced variable set:
+
+```hcl
+resource "tfe_organization" "test" {
+  name  = "my-org-name"
+  email = "admin@company.com"
+}
+
+resource "tfe_variable_set" "test" {
+  name         = "Global Varset"
+  description  = "Variable set applied to all workspaces."
+  enforced     = true
+  organization = tfe_organization.test.name
+}
+
+resource "tfe_variable" "test-a" {
+  key             = "seperate_variable"
+  value           = "my_value_name"
+  category        = "terraform"
+  description     = "a useful description"
+  variable_set_id = tfe_variable_set.test.id
+}
+
+resource "tfe_variable" "test-b" {
+  key             = "another_variable"
+  value           = "my_value_name"
+  category        = "env"
+  description     = "an environment variable"
+  variable_set_id = tfe_variable_set.test.id
+}
+```
+
 ## Argument Reference
 
 The following arguments are supported:
 
 * `name` - (Required) Name of the variable set.
 * `description` - (Optional) Description of the variable set.
-* `global` - (Optional) Whether or not the variable set applies to all workspaces in the organization. Defaults to `false`.
+* `global` - (Optional) Whether the variable set applies to all workspaces in the organization. Defaults to `false`.
+* `enforced` - (Optional) Whether the variables in this set are able to be over-written. Defaults to `false`.
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `workspace_ids` - **Deprecated** (Optional) IDs of the workspaces that use the variable set.
   Must not be set if `global` is set. This argument is mutually exclusive with using the resource
