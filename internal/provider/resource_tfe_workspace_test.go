@@ -3427,17 +3427,10 @@ func testAccTFEWorkspace_updateRemoveVCSBlockFromTagsRegex(rInt int) string {
     force_delete            = true
 		file_triggers_enabled   = true
 		trigger_patterns        = ["foo/**/*"]
-		vcs_repo {
-			identifier     = "%s"
-			oauth_token_id = tfe_oauth_client.test.oauth_token_id
-			branch         = "%s"
-		}
 	}
 	`,
 		rInt,
 		envGithubToken,
-		envGithubWorkspaceIdentifier,
-		envGithubWorkspaceBranch,
 	)
 }
 
