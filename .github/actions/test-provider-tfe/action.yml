@@ -100,7 +100,7 @@ runs:
         GITHUB_POLICY_SET_IDENTIFIER: "hashicorp/test-policy-set"
         GITHUB_REGISTRY_MODULE_IDENTIFIER: "hashicorp/terraform-random-module"
         GITHUB_WORKSPACE_IDENTIFIER: "hashicorp/terraform-random-module"
-        GITHUB_WORKSPACE_BRANCH: "test"
+        GITHUB_WORKSPACE_BRANCH: "main"
         GITHUB_TOKEN: "${{ inputs.testing-github-token }}"
         MOD_PROVIDER: github.com/hashicorp/terraform-provider-tfe
         MOD_TFE: github.com/hashicorp/terraform-provider-tfe/internal/provider
