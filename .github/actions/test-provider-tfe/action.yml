@@ -99,7 +99,7 @@ runs:
         TFC_RUN_TASK_URL: "https://httpstat.us/200"
         GITHUB_POLICY_SET_IDENTIFIER: "hashicorp/test-policy-set"
         GITHUB_REGISTRY_MODULE_IDENTIFIER: "hashicorp/terraform-random-module"
-        GITHUB_WORKSPACE_IDENTIFIER: "hashicorp/terraform-random-tfe-utility"
+        GITHUB_WORKSPACE_IDENTIFIER: "hashicorp/terraform-random-module"
         GITHUB_WORKSPACE_BRANCH: "test"
         GITHUB_TOKEN: "${{ inputs.testing-github-token }}"
         MOD_PROVIDER: github.com/hashicorp/terraform-provider-tfe
