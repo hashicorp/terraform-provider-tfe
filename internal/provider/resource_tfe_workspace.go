@@ -410,7 +410,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	remoteStateConsumerIDs, ok := d.GetOk("remote_state_consumer_ids")
-	if ok && globalRemoteState.(bool) == false {
+	if ok && !globalRemoteState.(bool) {
 		options := tfe.WorkspaceAddRemoteStateConsumersOptions{}
 		for _, remoteStateConsumerID := range remoteStateConsumerIDs.(*schema.Set).List() {
 			options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: remoteStateConsumerID.(string)})
