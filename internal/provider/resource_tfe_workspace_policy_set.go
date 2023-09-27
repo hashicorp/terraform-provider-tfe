@@ -66,9 +66,7 @@ func resourceTFEWorkspacePolicySetRead(d *schema.ResourceData, meta interface{})
 	workspaceID := d.Get("workspace_id").(string)
 
 	log.Printf("[DEBUG] Read configuration of workspace policy set: %s", policySetID)
-	policySet, err := config.Client.PolicySets.ReadWithOptions(ctx, policySetID, &tfe.PolicySetReadOptions{
-		Include: []tfe.PolicySetIncludeOpt{tfe.PolicySetWorkspaces},
-	})
+	policySet, err := config.Client.PolicySets.Read(ctx, policySetID)
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			log.Printf("[DEBUG] Policy set %s no longer exists", policySetID)
