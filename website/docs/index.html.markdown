@@ -75,7 +75,7 @@ automatically installed by `terraform init` in the future:
 terraform {
   required_providers {
     tfe = {
-      version = "~> 0.49.0"
+      version = "~> 0.49.1"
     }
   }
 }
@@ -88,7 +88,7 @@ The above snippet using `required_providers` is for Terraform 0.13+; if you are 
 
 ```hcl
 provider "tfe" {
-  version = "~> 0.49.0"
+  version = "~> 0.49.1"
   ...
 }
 ```
