@@ -1,4 +1,4 @@
-## Unreleased
+## v0.49.0 (October 2, 2023)
 
 BUG FIXES:
 * `r/tfe_team_project_access`: Fixes a panic that occurs when the client is configured against an older TFE release, by @sebasslash [1011](https://github.com/hashicorp/terraform-provider-tfe/pull/1011)
