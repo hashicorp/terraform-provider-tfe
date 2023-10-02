@@ -1,7 +1,7 @@
 ## v0.49.1 (October 2, 2023)
 
 BUG FIXES:
-* Reverts previous bug fix for provider making two service discovery requests per provider config. This was an internal refactor that broke some token configuration, by @brandonc [1085](https://github.com/hashicorp/terraform-provider-tfe/pull/1085)"
+* Reverts previous bug fix for provider making two service discovery requests per provider config. This was an internal refactor that broke provider token configuration, by @brandonc [1085](https://github.com/hashicorp/terraform-provider-tfe/pull/1085)
 
 ## v0.49.0 (October 2, 2023)
 
