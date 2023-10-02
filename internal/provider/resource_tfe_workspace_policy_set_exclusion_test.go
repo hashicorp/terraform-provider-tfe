@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
@@ -102,9 +101,7 @@ func testAccCheckTFEWorkspacePolicySetExclusionExists(n string) resource.TestChe
 			return fmt.Errorf("no excluded workspace id set")
 		}
 
-		policySet, err := config.Client.PolicySets.ReadWithOptions(ctx, policySetID, &tfe.PolicySetReadOptions{
-			Include: []tfe.PolicySetIncludeOpt{tfe.PolicySetWorkspaces},
-		})
+		policySet, err := config.Client.PolicySets.Read(ctx, policySetID)
 		if err != nil {
 			return fmt.Errorf("error reading polciy set %s: %w", policySetID, err)
 		}
