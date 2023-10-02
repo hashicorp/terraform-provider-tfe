@@ -29,7 +29,7 @@ Declare the provider in your configuration and `terraform init` will automatical
 terraform {
   required_providers {
     tfe = {
-      version = "~> 0.49.0"
+      version = "~> 0.49.1"
     }
   }
 }
