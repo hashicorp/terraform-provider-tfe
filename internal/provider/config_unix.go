@@ -4,7 +4,7 @@
 //go:build !windows
 // +build !windows
 
-package client
+package provider
 
 import (
 	"errors"
