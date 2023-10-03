@@ -42,7 +42,7 @@ func resourceTFEVariableSet() *schema.Resource {
 				ConflictsWith: []string{"workspace_ids"},
 			},
 
-			"enforced": {
+			"priority": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
@@ -79,7 +79,7 @@ func resourceTFEVariableSetCreate(d *schema.ResourceData, meta interface{}) erro
 	options := tfe.VariableSetCreateOptions{
 		Name:     tfe.String(name),
 		Global:   tfe.Bool(d.Get("global").(bool)),
-		Enforced: tfe.Bool(d.Get("enforced").(bool)),
+		Priority: tfe.Bool(d.Get("priority").(bool)),
 	}
 
 	if description, descriptionSet := d.GetOk("description"); descriptionSet {
@@ -135,7 +135,7 @@ func resourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("name", variableSet.Name)
 	d.Set("description", variableSet.Description)
 	d.Set("global", variableSet.Global)
-	d.Set("enforced", variableSet.Enforced)
+	d.Set("priority", variableSet.Priority)
 	d.Set("organization", variableSet.Organization.Name)
 
 	var wids []interface{}
@@ -155,7 +155,7 @@ func resourceTFEVariableSetUpdate(d *schema.ResourceData, meta interface{}) erro
 			Name:        tfe.String(d.Get("name").(string)),
 			Description: tfe.String(d.Get("description").(string)),
 			Global:      tfe.Bool(d.Get("global").(bool)),
-			Enforced:    tfe.Bool(d.Get("enforced").(bool)),
+			Priority:    tfe.Bool(d.Get("priority").(bool)),
 		}
 
 		log.Printf("[DEBUG] Update variable set: %s", d.Id())

@@ -31,7 +31,7 @@ func TestAccTFEVariableSetsDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_variable_set.foobar", "global", "false"),
 					resource.TestCheckResourceAttr(
-						"data.tfe_variable_set.foobar", "enforced", "false"),
+						"data.tfe_variable_set.foobar", "priority", "false"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_variable_set.foobar", "organization", orgName),
 				),
@@ -78,7 +78,7 @@ func testAccTFEVariableSetsDataSourceConfig_basic(rInt int) string {
 			name = "varset-foo-%d"
 			description = "a description"
 			global = false
-			enforced = false
+			priority = false
 			organization = tfe_organization.foobar.id
 		}
 		

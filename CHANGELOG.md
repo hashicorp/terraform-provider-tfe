@@ -23,8 +23,8 @@ FEATURES:
 * **New Resource**: `r/tfe_workspace_policy_set_exclusion` is a new resource allowing the exclusion of one or more existing workspaces from an existing `policy set`, by @Netra2104 [1033](https://github.com/hashicorp/terraform-provider-tfe/pull/1033)
 
 ENHANCEMENTS:
-* `r/tfe_variable_set`: Add `enforced` attribute, by @Netra2104 [1075](https://github.com/hashicorp/terraform-provider-tfe/pull/1075)
-* `d/tfe_variable_set`: Add `enforced` attribute, by @Netra2104 [1075](https://github.com/hashicorp/terraform-provider-tfe/pull/1075)
+* `r/tfe_variable_set`: Add `priority` attribute, by @Netra2104 [1075](https://github.com/hashicorp/terraform-provider-tfe/pull/1075)
+* `d/tfe_variable_set`: Add `priority` attribute, by @Netra2104 [1075](https://github.com/hashicorp/terraform-provider-tfe/pull/1075)
 
 ## v0.48.0 (August 7, 2023)
 

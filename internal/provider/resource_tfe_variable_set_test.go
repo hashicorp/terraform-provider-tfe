@@ -36,7 +36,7 @@ func TestAccTFEVariableSet_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_variable_set.foobar", "global", "false"),
 					resource.TestCheckResourceAttr(
-						"tfe_variable_set.foobar", "enforced", "false"),
+						"tfe_variable_set.foobar", "priority", "false"),
 				),
 			},
 		},
@@ -65,7 +65,7 @@ func TestAccTFEVariableSet_full(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_variable_set.foobar", "global", "false"),
 					resource.TestCheckResourceAttr(
-						"tfe_variable_set.foobar", "enforced", "false"),
+						"tfe_variable_set.foobar", "priority", "false"),
 					testAccCheckTFEVariableSetExists(
 						"tfe_variable_set.applied", variableSet),
 					testAccCheckTFEVariableSetApplication(variableSet),
@@ -97,7 +97,7 @@ func TestAccTFEVariableSet_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_variable_set.foobar", "global", "false"),
 					resource.TestCheckResourceAttr(
-						"tfe_variable_set.foobar", "enforced", "false"),
+						"tfe_variable_set.foobar", "priority", "false"),
 					testAccCheckTFEVariableSetApplicationUpdate(variableSet),
 				),
 			},
@@ -115,7 +115,7 @@ func TestAccTFEVariableSet_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_variable_set.foobar", "global", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_variable_set.foobar", "enforced", "true"),
+						"tfe_variable_set.foobar", "priority", "true"),
 				),
 			},
 		},
@@ -185,8 +185,8 @@ func testAccCheckTFEVariableSetAttributes(
 		if variableSet.Global != false {
 			return fmt.Errorf("Bad global: %t", variableSet.Global)
 		}
-		if variableSet.Enforced != false {
-			return fmt.Errorf("Bad enforced: %t", variableSet.Enforced)
+		if variableSet.Priority != false {
+			return fmt.Errorf("Bad priority: %t", variableSet.Priority)
 		}
 
 		return nil
@@ -205,8 +205,8 @@ func testAccCheckTFEVariableSetAttributesUpdate(
 		if variableSet.Global != true {
 			return fmt.Errorf("Bad global: %t", variableSet.Global)
 		}
-		if variableSet.Enforced != true {
-			return fmt.Errorf("Bad enforced: %t", variableSet.Enforced)
+		if variableSet.Priority != true {
+			return fmt.Errorf("Bad priority: %t", variableSet.Priority)
 		}
 
 		return nil
@@ -265,7 +265,7 @@ func testAccTFEVariableSet_basic(rInt int) string {
 			name         = "variable_set_test"
 			description  = "a test variable set"
 			global       = false
-			enforced     = false
+			priority     = false
 			organization = tfe_organization.foobar.id
 		}`, rInt)
 }
@@ -286,7 +286,7 @@ func testAccTFEVariableSet_full(rInt int) string {
 			name         = "variable_set_test"
 			description  = "a test variable set"
 			global       = false
-			enforced     = false
+			priority     = false
 			organization = tfe_organization.foobar.id
 		}
 		
@@ -314,7 +314,7 @@ func testAccTFEVariableSet_update(rInt int) string {
 			name         = "variable_set_test_updated"
 			description  = "another description"
 			global       = true
-			enforced     = true
+			priority     = true
 			organization = tfe_organization.foobar.id
 		}
 		
