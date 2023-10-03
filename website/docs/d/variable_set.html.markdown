@@ -34,7 +34,7 @@ The following arguments are supported:
 * `name` - Name of the variable set.
 * `description` - Description of the variable set.
 * `global` - Whether the variable set applies to all workspaces in the organization.
-* `enforced` - Whether the variables in this set are able to be over-written.
+* `priority` - Whether the variables in this set are able to be over-written.
 * `workspace_ids` - IDs of the workspaces that use the variable set.
 * `variable_ids` - IDs of the variables attached to the variable set.
 * `project_ids` - IDs of the projects that use the variable set.
