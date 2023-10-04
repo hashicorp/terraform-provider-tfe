@@ -1,3 +1,8 @@
+## v0.49.2 (October 4, 2023)
+
+BUG FIXES:
+* `d/tfe_outputs`: Fix incompatibility with the newly-released Terraform 1.6, which would result in a "Data Source Not Implemented" error.
+
 ## v0.49.1 (October 2, 2023)
 
 BUG FIXES:
