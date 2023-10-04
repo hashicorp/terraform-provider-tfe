@@ -45,7 +45,16 @@ type providerMeta struct {
 }
 
 func (p *pluginProviderServer) GetMetadata(ctx context.Context, req *tfprotov5.GetMetadataRequest) (*tfprotov5.GetMetadataResponse, error) {
-	return &tfprotov5.GetMetadataResponse{}, nil
+	return &tfprotov5.GetMetadataResponse{
+		ServerCapabilities: &tfprotov5.ServerCapabilities{
+			GetProviderSchemaOptional: true,
+		},
+		DataSources: []tfprotov5.DataSourceMetadata{
+			{
+				TypeName: "tfe_outputs",
+			},
+		},
+	}, nil
 }
 
 func (p *pluginProviderServer) GetProviderSchema(ctx context.Context, req *tfprotov5.GetProviderSchemaRequest) (*tfprotov5.GetProviderSchemaResponse, error) {
