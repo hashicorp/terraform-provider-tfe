@@ -60,7 +60,7 @@ that affect the project itself and all workspaces in the project, by using `Proj
 
 The following permissions apply to the project itself.
 
-| project-access      | Description, Default, Valid Values          | 
+| project_access      | Description, Default, Valid Values          |
 |---------------------|---------------------------------------------|
 | `Settings`          | The permission to grant for the project's settings. Default: `Read`. Valid strings: `Read`, `Update`, or `Delete` |
 | `Teams`             | The permission to grant for the project's teams. Default: `None`, Valid strings: `None`, `Read`, or `Manage` |
@@ -71,7 +71,7 @@ The following permissions apply to the project itself.
 
 The following permissions apply to all workpsaces (and future workspaces) in the project.
 
-| workspace-access     | Description, Default, Valid Values                    | 
+| workspace_access     | Description, Default, Valid Values                    |
 |----------------------|-------------------------------------------------------|
 | `Runs`               | The permission to grant project's workspaces' runs. Default: `Read`. Valid strings: `Read`, `Plan`, or `Apply`. |
 | `SentinelMocks`     | The permission to grant project's workspaces' Sentinel mocks. Default: `None`. Valid strings: `None`, or `Read`. |
@@ -106,13 +106,13 @@ class MyConvertedCode : TerraformStack
         });
         new TeamProjectAccess.TeamProjectAccess(this, "custom", new TeamProjectAccessConfig {
             Access = "custom",
-            ProjectAccess = new [] { new Struct {
+            ProjectAccess = new [] { new TeamProjectAccessProjectAccess {
                 Settings = "read",
                 Teams = "none"
             } },
             ProjectId = Token.AsString(tfeProjectTest.Id),
             TeamId = Token.AsString(tfeTeamDev.Id),
-            WorkspaceAccess = new [] { new Struct {
+            WorkspaceAccess = new [] { new TeamProjectAccessWorkspaceAccess {
                 Create = true,
                 Delete = false,
                 Locking = true,
@@ -141,4 +141,4 @@ example:
 terraform import tfe_team_project_access.admin tprj-2pmtXpZa4YzVMTPi
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-59adea41bbc7af7bc7a002d9559654563be61c40bff73cd4d03e018ea34597df -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-854ab92b8935bb95bbbbbfaddb8b56a313c125e5e13f6684debaa55ee93499f5 -->

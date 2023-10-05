@@ -49,6 +49,7 @@ The following arguments are supported:
 * `kind` - The policy-as-code framework for the policy. Valid values are "sentinel" and "opa".
 * `overridable` - Whether users can override this policy when it fails during a run. Only valid for OPA policies.
 * `workspaceIds` - IDs of the workspaces that use the policy set.
+* `excludedWorkspaceIds` - IDs of the workspaces that do not use the policy set.
 * `projectIds` - IDs of the projects that use the policy set.
 * `policyIds` - IDs of the policies attached to the policy set.
 * `policiesPath` - The sub-path within the attached VCS repository when using `vcsRepo`.
@@ -65,4 +66,4 @@ The `vcsRepo` block contains:
 * `oauthTokenId` - OAuth token ID of the configured VCS connection.
 
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-54cb92dfae22abe76f4a8306daadcae6353d03b00d72dfbb74c8950c625507e0 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-bff8c51389c3dbd386e33f4eb88fd654798f5c7d466c1606e6c90d22ca8ae19a -->
