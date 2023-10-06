@@ -34,7 +34,7 @@ The following arguments are supported:
 
 * `name` - (Required) Name of the agent pool.
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
-* `organization_scoped` - (Optional) Whether or not the agent pool is scoped to all workspaces in the organization. Defaults to `true`.
+* `organization_scoped` - (Optional) Whether or not the agent pool is scoped to all workspaces in the organization. Defaults to `true`. Should be `false` when limiting workspaces that can use the agent pool with the [tfe_agent_pool_allowed_workspaces](agent_pool_allowed_workspaces.html) resource.
 
 ## Attributes Reference
 
