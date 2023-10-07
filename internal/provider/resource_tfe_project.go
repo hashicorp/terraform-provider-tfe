@@ -13,6 +13,7 @@ import (
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 var projectIDRegexp = regexp.MustCompile("^prj-[a-zA-Z0-9]{16}$")
@@ -31,6 +32,11 @@ func resourceTFEProject() *schema.Resource {
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
+				ValidateFunc: validation.All(
+					validation.StringLenBetween(3, 36),
+					validation.StringMatch(regexp.MustCompile(`\A[\w\_\- ]+\z`),
+						"can only include letters, numbers, spaces, -, and _."),
+				),
 			},
 
 			"organization": {
