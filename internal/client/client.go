@@ -63,7 +63,7 @@ func getTokenFromEnv() string {
 }
 
 func getTokenFromCreds(services *disco.Disco, hostname svchost.Hostname) string {
-	log.Printf("[DEBUG] Attempting to fetch token from Terraform CLI configuration for hostname %s...", hostname)
+	log.Printf("[DEBUG] Attempting to fetch token from Terraform CLI configuration for hostname %q...", hostname)
 	creds, err := services.CredentialsForHost(hostname)
 	if err != nil {
 		log.Printf("[DEBUG] Failed to get credentials for %s: %s (ignoring)", hostname, err)
@@ -144,7 +144,7 @@ func GetClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
 	// Create a new TFE client.
 	client, err := tfe.NewClient(&tfe.Config{
 		Address:    address.String(),
-		Token:      token,
+		Token:      config.Token,
 		HTTPClient: config.HTTPClient,
 	})
 	if err != nil {
