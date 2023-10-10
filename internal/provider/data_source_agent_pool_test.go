@@ -118,5 +118,6 @@ resource "tfe_agent_pool_allowed_workspaces" "foobar" {
 data "tfe_agent_pool" "foobar" {
   name         = tfe_agent_pool.foobar.name
   organization = "%s"
+	depends_on = [ tfe_agent_pool_allowed_workspaces.foobar ]
 }`, rInt, organization, workspaceID, organization)
 }
