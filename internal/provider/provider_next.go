@@ -95,7 +95,7 @@ func (p *frameworkProvider) Configure(ctx context.Context, req provider.Configur
 		data.Organization = types.StringValue(os.Getenv("TFE_ORGANIZATION"))
 	}
 
-	client, err := client.GetClient(data.Hostname.ValueString(), data.Token.ValueString(), data.SSLSkipVerify.ValueBool())
+	tfeClient, err := client.GetClient(data.Hostname.ValueString(), data.Token.ValueString(), data.SSLSkipVerify.ValueBool())
 
 	if err != nil {
 		res.Diagnostics.AddError("Failed to initialize HTTP client", err.Error())
@@ -103,7 +103,7 @@ func (p *frameworkProvider) Configure(ctx context.Context, req provider.Configur
 	}
 
 	configuredClient := ConfiguredClient{
-		Client:       client,
+		Client:       tfeClient,
 		Organization: data.Organization.ValueString(),
 	}
 

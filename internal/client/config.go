@@ -185,7 +185,7 @@ func configure(tfeHost, token string, insecure bool) (*ClientConfiguration, erro
 		v := os.Getenv("TFE_SSL_SKIP_VERIFY")
 		insecure, err = strconv.ParseBool(v)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("TFE_SSL_SKIP_VERIFY has unrecognized value %q", v)
 		}
 	}
 
@@ -197,7 +197,7 @@ func configure(tfeHost, token string, insecure bool) (*ClientConfiguration, erro
 	// Parse the hostname for comparison,
 	hostname, err := svchost.ForComparison(tfeHost)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid hostname %q: %w", tfeHost, err)
 	}
 
 	httpClient := tfe.DefaultConfig().HTTPClient

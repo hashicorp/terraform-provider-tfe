@@ -146,7 +146,7 @@ func getRunArgs(d *schema.ResourceData, isDestroyRun bool) map[string]interface{
 	return runArgs
 }
 
-func createRun(client *tfe.Client, waitForRun bool, manualConfirm bool, isDestroyRun bool, ws *tfe.Workspace) (*tfe.Run, error) {
+func createRun(tfeClient *tfe.Client, waitForRun bool, manualConfirm bool, isDestroyRun bool, ws *tfe.Workspace) (*tfe.Run, error) {
 	// In fire-and-forget mode (waitForRun=false), autoapply is set to !manualConfirm
 	// This should be intuitive, as "manual confirm" is the opposite of "auto apply"
 	//
@@ -166,7 +166,7 @@ func createRun(client *tfe.Client, waitForRun bool, manualConfirm bool, isDestro
 		AutoApply: tfe.Bool(autoApply),
 	}
 	log.Printf("[DEBUG] Create run for workspace: %s", ws.ID)
-	run, err := client.Runs.Create(ctx, runConfig)
+	run, err := tfeClient.Runs.Create(ctx, runConfig)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"error creating run for workspace %s: %w", ws.ID, err)
@@ -182,32 +182,41 @@ func createRun(client *tfe.Client, waitForRun bool, manualConfirm bool, isDestro
 	return run, nil
 }
 
-func confirmRun(client *tfe.Client, manualConfirm bool, isPlanOp bool, run *tfe.Run, ws *tfe.Workspace) error {
+func confirmRun(tfeClient *tfe.Client, manualConfirm bool, isPlanOp bool, run *tfe.Run, ws *tfe.Workspace) error {
 	// if human approval is required, an apply will auto kick off when run is manually approved
 	if manualConfirm {
 		confirmationPendingStatus := map[tfe.RunStatus]bool{}
 		confirmationPendingStatus[run.Status] = true
 
 		log.Printf("[INFO] Plan complete, waiting for manual confirm before proceeding run %q", run.ID)
-		_, err := awaitRun(client, run.ID, ws.Organization.Name, isPlanOp, confirmationPendingStatus, isConfirmed)
+		_, err := awaitRun(tfeClient, run.ID, ws.Organization.Name, isPlanOp, confirmationPendingStatus, isConfirmed)
 		if err != nil {
 			return err
 		}
 	} else {
 		// if human approval is NOT required, go ahead and kick off an apply
-		log.Printf("[INFO] Plan complete, confirming an apply for run %q", run.ID)
-		err := client.Runs.Apply(ctx, run.ID, tfe.RunApplyOptions{
-			Comment: tfe.String(fmt.Sprintf("Run confirmed by tfe_workspace_run resource via terraform-provider-tfe on %s",
-				time.Now().Format(time.UnixDate))),
-		})
+		err := applyRun(tfeClient, run)
 		if err != nil {
-			refreshed, fetchErr := client.Runs.Read(ctx, run.ID)
-			if fetchErr != nil {
-				err = fmt.Errorf("%w\n additionally, got an error while reading the run: %s", err, fetchErr.Error())
-			}
-			return fmt.Errorf("run errored while applying run %s (waited til status %s, currently status %s): %w", run.ID, run.Status, refreshed.Status, err)
+			return err
 		}
 	}
+	return nil
+}
+
+func applyRun(tfeClient *tfe.Client, run *tfe.Run) error {
+	log.Printf("[INFO] Plan complete, confirming an apply for run %q", run.ID)
+	err := tfeClient.Runs.Apply(ctx, run.ID, tfe.RunApplyOptions{
+		Comment: tfe.String(fmt.Sprintf("Run confirmed by tfe_workspace_run resource via terraform-provider-tfe on %s",
+			time.Now().Format(time.UnixDate))),
+	})
+	if err != nil {
+		refreshed, fetchErr := tfeClient.Runs.Read(ctx, run.ID)
+		if fetchErr != nil {
+			err = fmt.Errorf("%w\n additionally, got an error while reading the run: %s", err, fetchErr.Error())
+		}
+		return fmt.Errorf("run errored while applying run %s (waited til status %s, currently status %s): %w", run.ID, run.Status, refreshed.Status, err)
+	}
+
 	return nil
 }
 
@@ -230,20 +239,20 @@ func completeOrRetryRun(meta interface{}, run *tfe.Run, d *schema.ResourceData, 
 	}
 }
 
-func awaitRun(client *tfe.Client, runID string, organization string, isPlanOp bool, runPendingStatus map[tfe.RunStatus]bool, isDone func(*tfe.Run) bool) (*tfe.Run, error) {
+func awaitRun(tfeClient *tfe.Client, runID string, organization string, isPlanOp bool, runPendingStatus map[tfe.RunStatus]bool, isDone func(*tfe.Run) bool) (*tfe.Run, error) {
 	for i := 0; ; i++ {
 		select {
 		case <-ctx.Done():
 			return nil, fmt.Errorf("context canceled: %w", ctx.Err())
 		case <-time.After(backoff(backoffMin, backoffMax, i)):
 			log.Printf("[DEBUG] Polling run %s", runID)
-			run, err := client.Runs.Read(ctx, runID)
+			run, err := tfeClient.Runs.Read(ctx, runID)
 			if err != nil {
 				log.Printf("[ERROR] Could not read run %s: %v", runID, err)
 				continue
 			}
 
-			run, err = hasFinalStatus(client, run, organization, isPlanOp, runPendingStatus, isDone)
+			run, err = hasFinalStatus(tfeClient, run, organization, isPlanOp, runPendingStatus, isDone)
 			if run == nil && err == nil {
 				// if both error and run is nil, then run is still in progress
 				continue
@@ -254,7 +263,7 @@ func awaitRun(client *tfe.Client, runID string, organization string, isPlanOp bo
 	}
 }
 
-func hasFinalStatus(client *tfe.Client, run *tfe.Run, organization string, isPlanOp bool, runPendingStatus map[tfe.RunStatus]bool, isDone func(*tfe.Run) bool) (*tfe.Run, error) {
+func hasFinalStatus(tfeClient *tfe.Client, run *tfe.Run, organization string, isPlanOp bool, runPendingStatus map[tfe.RunStatus]bool, isDone func(*tfe.Run) bool) (*tfe.Run, error) {
 	_, runIsInProgress := runPendingStatus[run.Status]
 
 	switch {
@@ -262,7 +271,7 @@ func hasFinalStatus(client *tfe.Client, run *tfe.Run, organization string, isPla
 		log.Printf("[INFO] Run %s has reached a terminal state: %s", run.ID, run.Status)
 		return run, nil
 	case runIsInProgress:
-		logRunProgress(client, organization, isPlanOp, run)
+		logRunProgress(tfeClient, organization, isPlanOp, run)
 		return nil, nil
 	case run.Status == tfe.RunCanceled:
 		log.Printf("[INFO] Run %s has been canceled, status is %s", run.ID, run.Status)
@@ -273,9 +282,9 @@ func hasFinalStatus(client *tfe.Client, run *tfe.Run, organization string, isPla
 	}
 }
 
-func logRunProgress(client *tfe.Client, organization string, isPlanOp bool, run *tfe.Run) {
+func logRunProgress(tfeClient *tfe.Client, organization string, isPlanOp bool, run *tfe.Run) {
 	log.Printf("[DEBUG] Reading workspace %s", run.Workspace.ID)
-	ws, err := client.Workspaces.ReadByID(ctx, run.Workspace.ID)
+	ws, err := tfeClient.Workspaces.ReadByID(ctx, run.Workspace.ID)
 	if err != nil {
 		log.Printf("[ERROR] Unable to read workspace %s: %v", run.Workspace.ID, err)
 		return
@@ -284,7 +293,7 @@ func logRunProgress(client *tfe.Client, organization string, isPlanOp bool, run 
 	// if the workspace is locked and the current run has not started, assume that workspace was locked for other purposes.
 	// display a message to indicate that the workspace is waiting to be manually unlocked before the run can proceed
 	if ws.Locked && ws.CurrentRun != nil {
-		currentRun, err := client.Runs.Read(ctx, ws.CurrentRun.ID)
+		currentRun, err := tfeClient.Runs.Read(ctx, ws.CurrentRun.ID)
 		if err != nil {
 			log.Printf("[ERROR] Unable to read current run %s: %v", ws.CurrentRun.ID, err)
 			return
@@ -298,13 +307,13 @@ func logRunProgress(client *tfe.Client, organization string, isPlanOp bool, run 
 
 	// if this run is the current run in it's workspace, display it's position in the organization queue
 	if ws.CurrentRun != nil && ws.CurrentRun.ID == run.ID {
-		runPositionInOrg, err := readRunPositionInOrgQueue(client, run.ID, organization)
+		runPositionInOrg, err := readRunPositionInOrgQueue(tfeClient, run.ID, organization)
 		if err != nil {
 			log.Printf("[ERROR] Unable to read run position in organization queue %v", err)
 			return
 		}
 
-		orgCapacity, err := client.Organizations.ReadCapacity(ctx, organization)
+		orgCapacity, err := tfeClient.Organizations.ReadCapacity(ctx, organization)
 		if err != nil {
 			log.Printf("[ERROR] Unable to read capacity for organization %s: %v", organization, err)
 			return
@@ -316,7 +325,7 @@ func logRunProgress(client *tfe.Client, organization string, isPlanOp bool, run 
 	}
 
 	// if this run is not the current run in it's workspace, display it's position in the workspace queue
-	runPositionInWorkspace, err := readRunPositionInWorkspaceQueue(client, run.ID, ws.ID, isPlanOp, ws.CurrentRun)
+	runPositionInWorkspace, err := readRunPositionInWorkspaceQueue(tfeClient, run.ID, ws.ID, isPlanOp, ws.CurrentRun)
 	if err != nil {
 		log.Printf("[ERROR] Unable to read run position in workspace queue %v", err)
 		return
@@ -334,12 +343,12 @@ func logRunProgress(client *tfe.Client, organization string, isPlanOp bool, run 
 	log.Printf("[INFO] Waiting for run %s, status is %s", run.ID, run.Status)
 }
 
-func readRunPositionInOrgQueue(client *tfe.Client, runID string, organization string) (int, error) {
+func readRunPositionInOrgQueue(tfeClient *tfe.Client, runID string, organization string) (int, error) {
 	position := 0
 	options := tfe.ReadRunQueueOptions{}
 
 	for {
-		runQueue, err := client.Organizations.ReadRunQueue(ctx, organization, options)
+		runQueue, err := tfeClient.Organizations.ReadRunQueue(ctx, organization, options)
 		if err != nil {
 			return position, fmt.Errorf("unable to read run queue for organization %s: %w", organization, err)
 		}
@@ -361,13 +370,13 @@ func readRunPositionInOrgQueue(client *tfe.Client, runID string, organization st
 	return position, nil
 }
 
-func readRunPositionInWorkspaceQueue(client *tfe.Client, runID string, wsID string, isPlanOp bool, currentRun *tfe.Run) (int, error) {
+func readRunPositionInWorkspaceQueue(tfeClient *tfe.Client, runID string, wsID string, isPlanOp bool, currentRun *tfe.Run) (int, error) {
 	position := 0
 	options := tfe.RunListOptions{}
 	found := false
 
 	for {
-		runList, err := client.Runs.List(ctx, wsID, &options)
+		runList, err := tfeClient.Runs.List(ctx, wsID, &options)
 		if err != nil {
 			return position, fmt.Errorf("unable to read run list for workspace %s: %w", wsID, err)
 		}
@@ -419,14 +428,14 @@ func backoff(min, max float64, iter int) time.Duration {
 	return time.Duration(backoff) * time.Millisecond
 }
 
-func readPostPlanTaskStageInRun(client *tfe.Client, runID string) (bool, error) {
+func readPostPlanTaskStageInRun(tfeClient *tfe.Client, runID string) (bool, error) {
 	hasPostPlanTaskStage := false
 	options := tfe.TaskStageListOptions{}
 
 	for {
-		taskStages, err := client.TaskStages.List(ctx, runID, &options)
+		taskStages, err := tfeClient.TaskStages.List(ctx, runID, &options)
 		if err != nil {
-			return hasPostPlanTaskStage, fmt.Errorf("[ERROR] Could not read task stages for run %s: %v", runID, err)
+			return hasPostPlanTaskStage, fmt.Errorf("[ERROR] Could not read task stages for run %s: %w", runID, err)
 		}
 		for _, item := range taskStages.Items {
 			if item.Stage == tfe.PostPlan {

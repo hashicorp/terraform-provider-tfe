@@ -23,7 +23,7 @@ var testToken = "test-token-1234567890"
 // this base set of routes.
 var testDefaultRequestHandlers = map[string]func(http.ResponseWriter, *http.Request){
 	// Respond to service discovery calls.
-	"/.well-known/terraform.json": func(w http.ResponseWriter, r *http.Request) {
+	"/.well-known/terraform.json": func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		io.WriteString(w, `{
 	"tfe.v2": "/api/v2/",
@@ -33,7 +33,7 @@ var testDefaultRequestHandlers = map[string]func(http.ResponseWriter, *http.Requ
 	},
 
 	// Respond to pings to get the API version header.
-	"/api/v2/ping": func(w http.ResponseWriter, r *http.Request) {
+	"/api/v2/ping": func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("TFP-API-Version", "2.5")
 	},
@@ -68,7 +68,7 @@ func Test_GetClient(t *testing.T) {
 		srv.Close()
 	})
 
-	url, err := url.Parse(srv.URL)
+	serverURL, err := url.Parse(srv.URL)
 	if err != nil {
 		t.Fatalf("Unexpected error when parsing testServer URL: %q", err)
 	}
@@ -81,11 +81,10 @@ func Test_GetClient(t *testing.T) {
 		os.Remove(cliConfig.Name())
 	})
 
-	io.WriteString(cliConfig, fmt.Sprintf(`
+	fmt.Fprintf(cliConfig, `
 credentials "%s" {
 	token = "%s"
-}
-`, url.Host, testToken))
+}`, serverURL.Host, testToken)
 
 	cases := map[string]struct {
 		env               map[string]string
@@ -95,13 +94,13 @@ credentials "%s" {
 	}{
 		"everything from env": {
 			env: map[string]string{
-				"TFE_HOSTNAME": url.Host,
+				"TFE_HOSTNAME": serverURL.Host,
 				"TFE_TOKEN":    testToken,
 			},
 		},
 		"token from env": {
 			env: map[string]string{
-				"TFE_HOSTNAME": url.Host,
+				"TFE_HOSTNAME": serverURL.Host,
 				"TFE_TOKEN":    "",
 			},
 			token: testToken,
@@ -111,7 +110,7 @@ credentials "%s" {
 				"TFE_HOSTNAME": "",
 				"TFE_TOKEN":    "",
 			},
-			hostname: url.Host,
+			hostname: serverURL.Host,
 			token:    testToken,
 		},
 		"token missing": {
@@ -119,7 +118,7 @@ credentials "%s" {
 				"TFE_HOSTNAME": "",
 				"TFE_TOKEN":    "",
 			},
-			hostname:          url.Host,
+			hostname:          serverURL.Host,
 			expectMissingAuth: true,
 		},
 		"token from CLI config": {
@@ -127,7 +126,7 @@ credentials "%s" {
 				"TFE_TOKEN":          "",
 				"TF_CLI_CONFIG_FILE": cliConfig.Name(),
 			},
-			hostname: url.Host,
+			hostname: serverURL.Host,
 		},
 	}
 

@@ -69,12 +69,12 @@ func setupDefaultOrganization(t *testing.T) (string, int) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	defaultOrgName := fmt.Sprintf("tst-default-org-%d", rInt)
 
-	client, err := getClientUsingEnv()
+	testClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, cleanup := createOrganization(t, client, tfe.OrganizationCreateOptions{
+	_, cleanup := createOrganization(t, testClient, tfe.OrganizationCreateOptions{
 		Name:  &defaultOrgName,
 		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
 	})
@@ -90,11 +90,11 @@ func getClientUsingEnv() (*tfe.Client, error) {
 	}
 	token := os.Getenv("TFE_TOKEN")
 
-	client, err := client.GetClient(hostname, token, defaultSSLSkipVerify)
+	tfeClient, err := client.GetClient(hostname, token, defaultSSLSkipVerify)
 	if err != nil {
 		return nil, fmt.Errorf("Error getting client: %w", err)
 	}
-	return client, nil
+	return tfeClient, nil
 }
 
 func TestProvider(t *testing.T) {

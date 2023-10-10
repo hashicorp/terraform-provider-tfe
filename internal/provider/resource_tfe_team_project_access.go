@@ -312,18 +312,18 @@ func resourceTFETeamProjectAccessRead(ctx context.Context, d *schema.ResourceDat
 
 	// These two fields are only available in TFC and TFE v202308-1 and later
 	if tmAccess.ProjectAccess != nil {
-		project_access := []map[string]interface{}{{
+		projectAccess := []map[string]interface{}{{
 			"settings": tmAccess.ProjectAccess.ProjectSettingsPermission,
 			"teams":    tmAccess.ProjectAccess.ProjectTeamsPermission,
 		}}
 
-		if err := d.Set("project_access", project_access); err != nil {
+		if err := d.Set("project_access", projectAccess); err != nil {
 			return diag.Errorf("Error setting configuration of team project access %s: %v", d.Id(), err)
 		}
 	}
 
 	if tmAccess.WorkspaceAccess != nil {
-		workspace_access := []map[string]interface{}{{
+		workspaceAccess := []map[string]interface{}{{
 			"state_versions": tmAccess.WorkspaceAccess.WorkspaceStateVersionsPermission,
 			"sentinel_mocks": tmAccess.WorkspaceAccess.WorkspaceSentinelMocksPermission,
 			"runs":           tmAccess.WorkspaceAccess.WorkspaceRunsPermission,
@@ -335,7 +335,7 @@ func resourceTFETeamProjectAccessRead(ctx context.Context, d *schema.ResourceDat
 			"run_tasks":      tmAccess.WorkspaceAccess.WorkspaceRunTasksPermission,
 		}}
 
-		if err := d.Set("workspace_access", workspace_access); err != nil {
+		if err := d.Set("workspace_access", workspaceAccess); err != nil {
 			return diag.Errorf("Error setting configuration of team workspace access %s: %v", d.Id(), err)
 		}
 	}
@@ -371,15 +371,15 @@ func resourceTFETeamProjectAccessUpdate(ctx context.Context, d *schema.ResourceD
 	}
 
 	if d.HasChange("workspace_access.0.state_versions") {
-		if state_versions, ok := d.GetOk("workspace_access.0.state_versions"); ok {
-			workspaceStateVersionsPermissionType := tfe.WorkspaceStateVersionsPermissionType(state_versions.(string))
+		if stateVersions, ok := d.GetOk("workspace_access.0.state_versions"); ok {
+			workspaceStateVersionsPermissionType := tfe.WorkspaceStateVersionsPermissionType(stateVersions.(string))
 			options.WorkspaceAccess.StateVersions = &workspaceStateVersionsPermissionType
 		}
 	}
 
 	if d.HasChange("workspace_access.0.sentinel_mocks") {
-		if sentinel_mocks, ok := d.GetOk("workspace_access.0.sentinel_mocks"); ok {
-			workspaceSentinelMocksPermissionType := tfe.WorkspaceSentinelMocksPermissionType(sentinel_mocks.(string))
+		if sentinelMocks, ok := d.GetOk("workspace_access.0.sentinel_mocks"); ok {
+			workspaceSentinelMocksPermissionType := tfe.WorkspaceSentinelMocksPermissionType(sentinelMocks.(string))
 			options.WorkspaceAccess.SentinelMocks = &workspaceSentinelMocksPermissionType
 		}
 	}
@@ -418,14 +418,14 @@ func resourceTFETeamProjectAccessUpdate(ctx context.Context, d *schema.ResourceD
 	}
 
 	if d.HasChange("workspace_access.0.delete") {
-		if delete, ok := d.GetOkExists("workspace_access.0.delete"); ok {
-			options.WorkspaceAccess.Delete = tfe.Bool(delete.(bool))
+		if deleteAttr, ok := d.GetOkExists("workspace_access.0.delete"); ok {
+			options.WorkspaceAccess.Delete = tfe.Bool(deleteAttr.(bool))
 		}
 	}
 
 	if d.HasChange("workspace_access.0.run_tasks") {
-		if run_tasks, ok := d.GetOkExists("workspace_access.0.run_tasks"); ok {
-			options.WorkspaceAccess.RunTasks = tfe.Bool(run_tasks.(bool))
+		if runTasks, ok := d.GetOkExists("workspace_access.0.run_tasks"); ok {
+			options.WorkspaceAccess.RunTasks = tfe.Bool(runTasks.(bool))
 		}
 	}
 
@@ -456,17 +456,16 @@ func resourceTFETeamProjectAccessDelete(ctx context.Context, d *schema.ResourceD
 
 // You cannot set custom permissions when access level is not "custom"
 func checkForCustomPermissions(_ context.Context, d *schema.ResourceDiff, meta interface{}) error {
-
 	if access, ok := d.GetOk("access"); ok && access != "custom" {
 		// is an empty [] if project_access is not in the config
-		project_access := d.GetRawConfig().GetAttr("project_access").AsValueSet().Values()
-		if len(project_access) != 0 {
+		projectAccess := d.GetRawConfig().GetAttr("project_access").AsValueSet().Values()
+		if len(projectAccess) != 0 {
 			return fmt.Errorf("you can only set project_access permissions with access level custom")
 		}
 
 		// is an empty [] if project_access is not in the config
-		workspace_access := d.GetRawConfig().GetAttr("workspace_access").AsValueSet().Values()
-		if len(workspace_access) != 0 {
+		workspaceAccess := d.GetRawConfig().GetAttr("workspace_access").AsValueSet().Values()
+		if len(workspaceAccess) != 0 {
 			return fmt.Errorf("you can only set workspace_access permissions with access level custom")
 		}
 	}

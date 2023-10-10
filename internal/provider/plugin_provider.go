@@ -85,7 +85,7 @@ func (p *pluginProviderServer) ConfigureProvider(ctx context.Context, req *tfpro
 		return resp, nil
 	}
 
-	client, err := client.GetClient(meta.hostname, meta.token, meta.sslSkipVerify)
+	tfeClient, err := client.GetClient(meta.hostname, meta.token, meta.sslSkipVerify)
 	if err != nil {
 		resp.Diagnostics = append(resp.Diagnostics, &tfprotov5.Diagnostic{
 			Severity: tfprotov5.DiagnosticSeverityError,
@@ -99,7 +99,7 @@ func (p *pluginProviderServer) ConfigureProvider(ctx context.Context, req *tfpro
 		meta.organization = os.Getenv("TFE_ORGANIZATION")
 	}
 
-	p.tfeClient = client
+	p.tfeClient = tfeClient
 	p.organization = meta.organization
 	return resp, nil
 }

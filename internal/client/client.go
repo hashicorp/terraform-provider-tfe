@@ -99,7 +99,7 @@ func GetClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
 	// Discover the Terraform Enterprise address.
 	host, err := config.Services.Discover(config.TFEHost)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create client: %w", err)
 	}
 
 	// Get the full Terraform Enterprise service address.
@@ -107,15 +107,18 @@ func GetClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
 	var discoErr error
 	for _, tfeServiceID := range tfeServiceIDs {
 		service, err := host.ServiceURL(tfeServiceID)
-		if _, ok := err.(*disco.ErrVersionNotSupported); !ok && err != nil {
-			return nil, err
+		target := &disco.ErrVersionNotSupported{}
+		if err != nil && !errors.As(err, &target) {
+			return nil, fmt.Errorf("failed to create client: %w", err)
 		}
+
 		// If discoErr is nil we save the first error. When multiple services
 		// are checked and we found one that didn't give an error we need to
 		// reset the discoErr. So if err is nil, we assign it as well.
 		if discoErr == nil || err == nil {
 			discoErr = err
 		}
+
 		if service != nil {
 			address = service
 			break
@@ -148,7 +151,7 @@ func GetClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
 		HTTPClient: config.HTTPClient,
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create client: %w", err)
 	}
 
 	client.RetryServerErrors(true)

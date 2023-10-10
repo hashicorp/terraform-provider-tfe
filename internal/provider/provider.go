@@ -156,13 +156,13 @@ func configure() schema.ConfigureContextFunc {
 			providerOrganization = os.Getenv("TFE_ORGANIZATION")
 		}
 
-		client, err := configureClient(rd)
+		tfeClient, err := configureClient(rd)
 		if err != nil {
-			return nil, diag.Errorf("failed to create SDK client: %s", err)
+			return nil, diag.FromErr(err)
 		}
 
 		return ConfiguredClient{
-			client,
+			tfeClient,
 			providerOrganization,
 		}, nil
 	}
