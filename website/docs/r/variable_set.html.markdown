@@ -133,7 +133,7 @@ The following arguments are supported:
 * `name` - (Required) Name of the variable set.
 * `description` - (Optional) Description of the variable set.
 * `global` - (Optional) Whether the variable set applies to all workspaces in the organization. Defaults to `false`.
-* `priority` - (Optional) Whether the variables in this set are able to be over-written. Defaults to `false`.
+* `priority` - (Optional) Whether the variables in this set are able to be over-written by more specific scopes. Defaults to `false`.
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `workspace_ids` - **Deprecated** (Optional) IDs of the workspaces that use the variable set.
   Must not be set if `global` is set. This argument is mutually exclusive with using the resource
