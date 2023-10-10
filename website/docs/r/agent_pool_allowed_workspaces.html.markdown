@@ -44,7 +44,7 @@ resource "tfe_agent_pool_allowed_workspaces" "foobar" {
 
 The following arguments are supported:
 
-* `agent_pool_id` - (Required) ID of the team.
+* `agent_pool_id` - (Required) The ID of the agent pool.
 * `allowed_workspace_ids` - (Required) IDs of workspaces to be added as allowed workspaces on the agent pool.
 
 
