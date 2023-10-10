@@ -4,6 +4,7 @@
 package provider
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"testing"
@@ -207,19 +208,15 @@ func TestAccTFESAMLSettings_import(t *testing.T) {
 					rs := s[0]
 					if rs.Attributes["private_key"] != "" {
 						return fmt.Errorf("expected private_key attribute to not be set, received: %s", rs.Attributes["private_key"])
-
 					}
 					if rs.Attributes["idp_cert"] != idpCert {
 						return fmt.Errorf("expected idp_cert attribute to be equal to %s, received: %s", idpCert, rs.Attributes["idp_cert"])
-
 					}
 					if rs.Attributes["slo_endpoint_url"] != slo {
 						return fmt.Errorf("expected slo_endpoint_url attribute to be equal to %s, received: %s", slo, rs.Attributes["slo_endpoint_url"])
-
 					}
 					if rs.Attributes["sso_endpoint_url"] != sso {
 						return fmt.Errorf("expected sso_endpoint_url attribute to be equal to %s, received: %s", sso, rs.Attributes["sso_endpoint_url"])
-
 					}
 					return nil
 				},
@@ -231,22 +228,22 @@ func TestAccTFESAMLSettings_import(t *testing.T) {
 func testAccTFESAMLSettingsDestroy(_ *terraform.State) error {
 	s, err := testAccProvider.Meta().(ConfiguredClient).Client.Admin.Settings.SAML.Read(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to read SAML Settings: %v", err)
+		return fmt.Errorf("failed to read SAML Settings: %w", err)
 	}
 	if s.Enabled {
-		return fmt.Errorf("SAML settings are still enabled")
+		return errors.New("SAML settings are still enabled")
 	}
 	if s.Debug {
-		return fmt.Errorf("SAML settings debug is set to true")
+		return errors.New("SAML settings debug is set to true")
 	}
 	if s.AuthnRequestsSigned {
-		return fmt.Errorf("SAML settings AuthnRequestsSigned is set to true")
+		return errors.New("SAML settings AuthnRequestsSigned is set to true")
 	}
 	if s.WantAssertionsSigned {
-		return fmt.Errorf("SAML settings WantAssertionsSigned is set to true")
+		return errors.New("SAML settings WantAssertionsSigned is set to true")
 	}
 	if s.TeamManagementEnabled {
-		return fmt.Errorf("SAML settings TeamManagementEnabled is set to true")
+		return errors.New("SAML settings TeamManagementEnabled is set to true")
 	}
 	if s.IDPCert != "" {
 		return fmt.Errorf("SAML settings IDPCert is not empty: `%s`", s.IDPCert)
@@ -261,7 +258,7 @@ func testAccTFESAMLSettingsDestroy(_ *terraform.State) error {
 		return fmt.Errorf("SAML settings Certificate is not empty: `%s`", s.Certificate)
 	}
 	if s.PrivateKey != "" {
-		return fmt.Errorf("SAML settings PrivateKey is not empty")
+		return errors.New("SAML settings PrivateKey is not empty")
 	}
 	if s.AttrUsername != samlDefaultAttrUsername {
 		return fmt.Errorf("SAML settings AttrUsername is not `%s`", samlDefaultAttrUsername)
