@@ -150,7 +150,7 @@ func resourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) error 
 func resourceTFEVariableSetUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
-	if d.HasChange("name") || d.HasChange("description") || d.HasChange("global") {
+	if d.HasChange("name") || d.HasChange("description") || d.HasChange("global") || d.HasChange("priority") {
 		options := tfe.VariableSetUpdateOptions{
 			Name:        tfe.String(d.Get("name").(string)),
 			Description: tfe.String(d.Get("description").(string)),
