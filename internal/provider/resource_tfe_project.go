@@ -34,7 +34,7 @@ func resourceTFEProject() *schema.Resource {
 				Required: true,
 				ValidateFunc: validation.All(
 					validation.StringLenBetween(3, 36),
-					validation.StringMatch(regexp.MustCompile(`\A[\w\_\- ]+\z`),
+					validation.StringMatch(regexp.MustCompile(`\A[\w\-][\w\- ]+[\w\-]\z`),
 						"can only include letters, numbers, spaces, -, and _."),
 				),
 			},
