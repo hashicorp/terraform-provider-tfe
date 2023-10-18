@@ -1,3 +1,8 @@
+## UNRELEASED
+
+BUG FIXES:
+* `r/tfe_policy`: Fix the provider ignoring updates to the `query` field and pretending it issued an API call when it didn't.
+
 ## v0.49.2 (October 4, 2023)
 
 BUG FIXES:
