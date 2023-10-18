@@ -288,7 +288,7 @@ func resourceTFEPolicyUpdate(d *schema.ResourceData, meta interface{}) error {
 			}
 		}
 
-		if query, ok := d.HasChange("query"); ok {
+		if query, ok := d.GetOk("query"); ok {
 			options.Query = tfe.String(query.(string))
 		}
 
