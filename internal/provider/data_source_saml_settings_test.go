@@ -9,6 +9,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
+// FLAKE ALERT: SAML settings are a singleton resource shared by the entire TFE
+// instance, and any test touching them is at high risk to flake.
+// This test is fine, because it only checks that the attributes have SOME
+// value. Testing for any _particular_ value would not be viable, because
+// `resource_tfe_saml_settings_test.go` exists. See that file for more color on
+// this.
 func TestAccTFESAMLSettingsDataSource_basic(t *testing.T) {
 	resourceAddress := "data.tfe_saml_settings.foobar"
 	resource.Test(t, resource.TestCase{
