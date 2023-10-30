@@ -23,20 +23,20 @@ resource "tfe_organization" "test-organization" {
   email = "admin@company.com"
 }
 
-resource "tfe_workspace" "test" {
+resource "tfe_workspace" "test-workspace" {
   name         = "my-workspace-name"
-  organization = tfe_organization.test.name
+  organization = tfe_organization.test-organization.name
 }
 
 resource "tfe_agent_pool" "test-agent-pool" {
-  name         = "my-agent-pool-name"
-  organization = tfe_organization.test-organization.name
-  organization_scoped = true
+  name                = "my-agent-pool-name"
+  organization        = tfe_organization.test-organization.name
+  organization_scoped = false
 }
 
-resource "tfe_agent_pool_allowed_workspaces" "foobar" {
-  agent_pool_id = tfe_agent_pool.foobar.id
-  allowed_workspace_ids = [tfe_workspace.test.id]
+resource "tfe_agent_pool_allowed_workspaces" "test-allowed-workspaces" {
+  agent_pool_id         = tfe_agent_pool.test-agent-pool.id
+  allowed_workspace_ids = [tfe_workspace.test-workspace.id]
 }
 ```
 
@@ -44,7 +44,7 @@ resource "tfe_agent_pool_allowed_workspaces" "foobar" {
 
 The following arguments are supported:
 
-* `agent_pool_id` - (Required) ID of the team.
+* `agent_pool_id` - (Required) The ID of the agent pool.
 * `allowed_workspace_ids` - (Required) IDs of workspaces to be added as allowed workspaces on the agent pool.
 
 

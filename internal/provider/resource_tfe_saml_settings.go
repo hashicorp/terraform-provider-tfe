@@ -359,7 +359,7 @@ func (r *resourceTFESAMLSettings) updateSAMLSettings(ctx context.Context, m mode
 		SignatureDigestMethod:     m.SignatureDigestMethod.ValueStringPointer(),
 	})
 	if err != nil {
-		return s, fmt.Errorf("failed to update SAML Settings %v", err)
+		return s, fmt.Errorf("failed to update SAML Settings: %w", err)
 	}
-	return s, err
+	return s, nil
 }

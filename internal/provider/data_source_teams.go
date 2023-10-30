@@ -47,31 +47,33 @@ func dataSourceTFETeamsRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if len(teams.Items) == 0 {
-		return fmt.Errorf("Could not find teams in  %s", organization)
-	} else {
-		options := &tfe.TeamListOptions{}
-		names := []string{}
-		ids := map[string]string{}
-		for {
-			for _, team := range teams.Items {
-				names = append(names, team.Name)
-				ids[team.Name] = team.ID
-			}
-
-			if teams.CurrentPage >= teams.TotalPages {
-				break
-			}
-
-			options.PageNumber = teams.NextPage
-
-			teams, err = config.Client.Teams.List(ctx, organization, options)
-			if err != nil {
-				return fmt.Errorf("Error retrieving teams: %w", err)
-			}
-		}
-		d.SetId(organization)
-		d.Set("names", names)
-		d.Set("ids", ids)
+		return fmt.Errorf("could not find teams in %q", organization)
 	}
+
+	options := &tfe.TeamListOptions{}
+	names := []string{}
+	ids := map[string]string{}
+	for {
+		for _, team := range teams.Items {
+			names = append(names, team.Name)
+			ids[team.Name] = team.ID
+		}
+
+		if teams.CurrentPage >= teams.TotalPages {
+			break
+		}
+
+		options.PageNumber = teams.NextPage
+
+		teams, err = config.Client.Teams.List(ctx, organization, options)
+		if err != nil {
+			return fmt.Errorf("Error retrieving teams: %w", err)
+		}
+	}
+
+	d.SetId(organization)
+	d.Set("names", names)
+	d.Set("ids", ids)
+
 	return nil
 }
