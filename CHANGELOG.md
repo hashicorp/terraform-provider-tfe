@@ -2,9 +2,11 @@
 <!-- Add CHANGELOG entry to this section for any PR awaiting the next release -->
 <!-- Please also include if this is a Bug Fix, Enhancement, or Feature -->
 
-ENHANCEMENTS:
+FEATURES:
 * `r/tfe_variable_set`: Add `priority` attribute, by @Netra2104 [1075](https://github.com/hashicorp/terraform-provider-tfe/pull/1075)
 * `d/tfe_variable_set`: Add `priority` attribute, by @Netra2104 [1075](https://github.com/hashicorp/terraform-provider-tfe/pull/1075)
+* `r/tfe_workspace`: Add `auto_apply_run_trigger` attribute, by @nfagerlund [1123](https://github.com/hashicorp/terraform-provider-tfe/pull/1123)
+* `d/tfe_workspace`: Add `auto_apply_run_trigger` attribute, by @nfagerlund [1123](https://github.com/hashicorp/terraform-provider-tfe/pull/1123)
 
 BUG FIXES:
 
