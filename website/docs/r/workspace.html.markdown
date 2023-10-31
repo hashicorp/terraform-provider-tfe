@@ -60,6 +60,7 @@ The following arguments are supported:
 * `allow_destroy_plan` - (Optional) Whether destroy plans can be queued on the workspace.
 * `assessments_enabled` - (Optional) Whether to regularly run health assessments such as drift detection on the workspace. Defaults to `false`.
 * `auto_apply` - (Optional) Whether to automatically apply changes when a Terraform plan is successful. Defaults to `false`.
+* `auto_apply_run_trigger` - (Optional) Whether to automatically apply changes for runs that were created by run triggers from another workspace. Defaults to `false`.
 * `description` - (Optional) A description for the workspace.
 * `execution_mode` - (Optional) Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode)
   to use. Using Terraform Cloud, valid values are `remote`, `local` or`agent`.
