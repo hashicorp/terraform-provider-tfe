@@ -2296,6 +2296,10 @@ func testAccCheckTFEWorkspaceHasRemoteConsumers(ws string, wsConsumers []string)
 	}
 }
 
+// Helper that checks the actual workspace attribute values in the remote
+// service (as opposed to just checking the terraform resource state). This
+// makes hardcoded assumptions about the attribute values in the configuration,
+// so it can only be used with configs that match those assumptions.
 func testAccCheckTFEWorkspaceAttributes(
 	workspace *tfe.Workspace) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
