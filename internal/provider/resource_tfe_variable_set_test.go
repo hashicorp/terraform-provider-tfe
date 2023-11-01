@@ -35,6 +35,8 @@ func TestAccTFEVariableSet_basic(t *testing.T) {
 						"tfe_variable_set.foobar", "description", "a test variable set"),
 					resource.TestCheckResourceAttr(
 						"tfe_variable_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable_set.foobar", "priority", "false"),
 				),
 			},
 		},
@@ -62,6 +64,8 @@ func TestAccTFEVariableSet_full(t *testing.T) {
 						"tfe_variable_set.foobar", "description", "a test variable set"),
 					resource.TestCheckResourceAttr(
 						"tfe_variable_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable_set.foobar", "priority", "false"),
 					testAccCheckTFEVariableSetExists(
 						"tfe_variable_set.applied", variableSet),
 					testAccCheckTFEVariableSetApplication(variableSet),
@@ -92,6 +96,8 @@ func TestAccTFEVariableSet_update(t *testing.T) {
 						"tfe_variable_set.foobar", "description", "a test variable set"),
 					resource.TestCheckResourceAttr(
 						"tfe_variable_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable_set.foobar", "priority", "false"),
 					testAccCheckTFEVariableSetApplicationUpdate(variableSet),
 				),
 			},
@@ -108,6 +114,8 @@ func TestAccTFEVariableSet_update(t *testing.T) {
 						"tfe_variable_set.foobar", "description", "another description"),
 					resource.TestCheckResourceAttr(
 						"tfe_variable_set.foobar", "global", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable_set.foobar", "priority", "true"),
 				),
 			},
 		},
@@ -177,6 +185,9 @@ func testAccCheckTFEVariableSetAttributes(
 		if variableSet.Global != false {
 			return fmt.Errorf("Bad global: %t", variableSet.Global)
 		}
+		if variableSet.Priority != false {
+			return fmt.Errorf("Bad priority: %t", variableSet.Priority)
+		}
 
 		return nil
 	}
@@ -193,6 +204,9 @@ func testAccCheckTFEVariableSetAttributesUpdate(
 		}
 		if variableSet.Global != true {
 			return fmt.Errorf("Bad global: %t", variableSet.Global)
+		}
+		if variableSet.Priority != true {
+			return fmt.Errorf("Bad priority: %t", variableSet.Priority)
 		}
 
 		return nil
@@ -242,69 +256,72 @@ func testAccCheckTFEVariableSetDestroy(s *terraform.State) error {
 
 func testAccTFEVariableSet_basic(rInt int) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name = "tst-terraform-%d"
-	email = "admin@company.com"
-}
-
-resource "tfe_variable_set" "foobar" {
-  name         = "variable_set_test"
-	description  = "a test variable set"
-	global       = false
-	organization = tfe_organization.foobar.id
-}`, rInt)
+		resource "tfe_organization" "foobar" {
+			name = "tst-terraform-%d"
+			email = "admin@company.com"
+		}
+	
+		resource "tfe_variable_set" "foobar" {
+			name         = "variable_set_test"
+			description  = "a test variable set"
+			global       = false
+			priority     = false
+			organization = tfe_organization.foobar.id
+		}`, rInt)
 }
 
 func testAccTFEVariableSet_full(rInt int) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name = "tst-terraform-%d"
-	email = "admin@company.com"
-}
-
-resource "tfe_workspace" "foobar" {
-  name = "foobar"
-	organization = tfe_organization.foobar.id
-}
-
-resource "tfe_variable_set" "foobar" {
-  name         = "variable_set_test"
-	description  = "a test variable set"
-	global       = false
-	organization = tfe_organization.foobar.id
-}
-
-resource "tfe_variable_set" "applied" {
-  name         = "variable_set_applied"
-	description  = "a test variable set"
-	workspace_ids   = [tfe_workspace.foobar.id]
-	organization = tfe_organization.foobar.id
-}`, rInt)
+		resource "tfe_organization" "foobar" {
+			name = "tst-terraform-%d"
+			email = "admin@company.com"
+		}
+	
+		resource "tfe_workspace" "foobar" {
+			name = "foobar"
+			organization = tfe_organization.foobar.id
+		}
+		
+		resource "tfe_variable_set" "foobar" {
+			name         = "variable_set_test"
+			description  = "a test variable set"
+			global       = false
+			priority     = false
+			organization = tfe_organization.foobar.id
+		}
+		
+		resource "tfe_variable_set" "applied" {
+			name         = "variable_set_applied"
+			description  = "a test variable set"
+			workspace_ids   = [tfe_workspace.foobar.id]
+			organization = tfe_organization.foobar.id
+		}`, rInt)
 }
 
 func testAccTFEVariableSet_update(rInt int) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
-resource "tfe_workspace" "foobar" {
-  name = "foobar"
-	organization = tfe_organization.foobar.id
-}
-
-resource "tfe_variable_set" "foobar" {
-  name         = "variable_set_test_updated"
-	description  = "another description"
-	global       = true
-	organization = tfe_organization.foobar.id
-}
-
-resource "tfe_variable_set" "applied" {
-  name         = "variable_set_applied"
-	description  = "a test variable set"
-	workspace_ids   = []
-	organization = tfe_organization.foobar.id
-}`, rInt)
+		resource "tfe_organization" "foobar" {
+			name  = "tst-terraform-%d"
+			email = "admin@company.com"
+		}
+		
+		resource "tfe_workspace" "foobar" {
+			name = "foobar"
+			organization = tfe_organization.foobar.id
+		}
+		
+		resource "tfe_variable_set" "foobar" {
+			name         = "variable_set_test_updated"
+			description  = "another description"
+			global       = true
+			priority     = true
+			organization = tfe_organization.foobar.id
+		}
+		
+		resource "tfe_variable_set" "applied" {
+			name         = "variable_set_applied"
+			description  = "a test variable set"
+			workspace_ids   = []
+			organization = tfe_organization.foobar.id
+		}`, rInt)
 }

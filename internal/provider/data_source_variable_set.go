@@ -35,6 +35,11 @@ func dataSourceTFEVariableSet() *schema.Resource {
 				Computed: true,
 			},
 
+			"priority": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
+
 			"workspace_ids": {
 				Type:     schema.TypeSet,
 				Optional: true,
@@ -88,6 +93,7 @@ func dataSourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) erro
 				d.Set("name", vs.Name)
 				d.Set("description", vs.Description)
 				d.Set("global", vs.Global)
+				d.Set("priority", vs.Priority)
 
 				// Only now include vars and workspaces to cut down on request load.
 				readOptions := tfe.VariableSetReadOptions{

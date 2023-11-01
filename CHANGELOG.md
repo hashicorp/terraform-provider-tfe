@@ -1,3 +1,11 @@
+# UNRELEASED
+<!-- Add CHANGELOG entry to this section for any PR awaiting the next release -->
+<!-- Please also include if this is a Bug Fix, Enhancement, or Feature -->
+
+ENHANCEMENTS:
+* `r/tfe_variable_set`: Add `priority` attribute, by @Netra2104 [1075](https://github.com/hashicorp/terraform-provider-tfe/pull/1075)
+* `d/tfe_variable_set`: Add `priority` attribute, by @Netra2104 [1075](https://github.com/hashicorp/terraform-provider-tfe/pull/1075)
+
 ## v0.49.2 (October 4, 2023)
 
 BUG FIXES:
