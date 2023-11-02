@@ -51,7 +51,7 @@ jobs:
           admin_subscription_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.subscription }}
           admin_support_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.support }}
           admin_version_maintenance_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.version-maintenance }}
-          list_tests: "!^TestAccTFESAMLSettings_omnibus"
+          list_tests: "[^(TestAccTFESAMLSettings_omnibus)]"
 
   tests-combine-summaries:
     name: Combine Test Reports
