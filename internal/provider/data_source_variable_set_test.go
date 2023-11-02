@@ -127,6 +127,6 @@ func testAccTFEVariableSetsDataSourceConfig_full(rInt int) string {
 		data "tfe_variable_set" "foobar" {
 			name = tfe_variable_set.foobar.name
 			organization = tfe_variable_set.foobar.organization
-			depends_on = [tfe_variable.envfoo]
+			depends_on = [tfe_variable.envfoo, tfe_project_variable_set.foobar]
 		}`, rInt, rInt, rInt, rInt)
 }
