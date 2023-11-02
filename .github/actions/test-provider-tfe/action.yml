@@ -46,6 +46,7 @@ inputs:
   list_tests:
     description: Accepts regex rules to either include or exclude specific tests from running in either CI or nightly workflows.
     required: false
+    default: "."
 
 runs:
   using: composite
