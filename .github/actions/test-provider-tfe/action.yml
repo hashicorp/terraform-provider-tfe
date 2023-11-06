@@ -43,6 +43,10 @@ inputs:
   enterprise:
     description: Test enterprise features (`hostname` must be running in ON_PREM mode)
     required: false
+  list_tests:
+    description: Accepts regex rules to either include or exclude specific tests from running in either CI or nightly workflows.
+    required: false
+    default: "."
 
 runs:
   using: composite
@@ -79,6 +83,8 @@ runs:
         index: ${{ inputs.matrix_index }}
         total: ${{ inputs.matrix_total }}
         junit-summary: ./ci-summary-provider.xml
+        # When tests are split and run concurrently, lists_tests arg in ci.yml will skip the TestAccTFESAMLSettings_omnibus test suite
+        list: ${{ inputs.list_tests }}
 
     - name: Run Tests
       shell: bash

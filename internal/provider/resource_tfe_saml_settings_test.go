@@ -27,6 +27,9 @@ const testResourceName = "tfe_saml_settings.foobar"
 // different test runner partitions in CI, then they will inevitably flake, as
 // tests running concurrently in different containers will be competing to set
 // the same shared global state in the TFE instance.
+
+// TestAccTFESAMLSettings_omnibus test suite is skipped in the CI, and will only run in TFE Nightly workflow
+// Should this test name ever change, you will also need to update the regex in ci.yml
 func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 	t.Run("basic SAML settings resource", func(t *testing.T) {
 		s := tfe.AdminSAMLSetting{
