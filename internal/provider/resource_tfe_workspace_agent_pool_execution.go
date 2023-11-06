@@ -34,34 +34,34 @@ func resourceTFEWorkspaceAgentPoolExecution() *schema.Resource {
 }
 
 func resourceTFEWorkspaceAgentPoolExecutionCreate(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(ConfiguredClient)
+	// config := meta.(ConfiguredClient)
 
-	poolID := d.Get("agent_pool_id").(string)
-	workpaceID := d.Get("workspace_id").(string)
+	// poolID := d.Get("agent_pool_id").(string)
+	// workpaceID := d.Get("workspace_id").(string)
 
 	return resourceTFEWorkspaceAgentPoolExecutionRead(d, meta)
 }
 
 func resourceTFEWorkspaceAgentPoolExecutionRead(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(ConfiguredClient)
+	// config := meta.(ConfiguredClient)
 
 	return nil
 }
 
 func resourceTFEWorkspaceAgentPoolExecutionUpdate(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(ConfiguredClient)
+	// config := meta.(ConfiguredClient)
 
-	poolID := d.Get("agent_pool_id").(string)
-	workpaceID := d.Get("workspace_id").(string)
+	// poolID := d.Get("agent_pool_id").(string)
+	// workpaceID := d.Get("workspace_id").(string)
 
 	return resourceTFEWorkspaceAgentPoolExecutionRead(d, meta)
 }
 
 func resourceTFEWorkspaceAgentPoolExecutionDelete(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(ConfiguredClient)
+	// config := meta.(ConfiguredClient)
 
-	poolID := d.Get("agent_pool_id").(string)
-	workpaceID := d.Get("workspace_id").(string)
+	// poolID := d.Get("agent_pool_id").(string)
+	// workpaceID := d.Get("workspace_id").(string)
 
 	return nil
 }
