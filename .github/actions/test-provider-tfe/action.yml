@@ -83,6 +83,7 @@ runs:
         index: ${{ inputs.matrix_index }}
         total: ${{ inputs.matrix_total }}
         junit-summary: ./ci-summary-provider.xml
+        # When tests are split and run concurrently, lists_tests arg in ci.yml will skip the TestAccTFESAMLSettings_omnibus test suite
         list: ${{ inputs.list_tests }}
 
     - name: Run Tests
