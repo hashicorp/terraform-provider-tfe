@@ -49,9 +49,10 @@ The following arguments are supported:
 * `organization` - Name of the organization.
 * `name` - Name of the variable set.
 * `description` - Description of the variable set.
-* `global` - Whether or not the variable set applies to all workspaces in the organization.
+* `global` - Whether the variable set applies to all workspaces in the organization.
+* `priority` - Whether the variables in this set are able to be over-written.
 * `workspaceIds` - IDs of the workspaces that use the variable set.
 * `variableIds` - IDs of the variables attached to the variable set.
 * `projectIds` - IDs of the projects that use the variable set.
 
-<!-- cache-key: cdktf-0.18.0 input-ae45fb346c802a01a9f7b3651d998c5c2a99783e046d2e156817923efbbe7dc3 -->
+<!-- cache-key: cdktf-0.18.0 input-69cc7771506b3265795fe469ee556bc13e62b7222aa6d0f36adeae7b5aa799c2 -->
