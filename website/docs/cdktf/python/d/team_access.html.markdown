@@ -55,4 +55,4 @@ The `permissions` block contains:
 * `workspace_locking` - Whether permission is granted to manually lock the workspace or not.
 * `run_tasks` - Boolean determining whether or not to grant the team permission to manage workspace run tasks.
 
-<!-- cache-key: cdktf-0.18.0 input-95b20b8ad069cffffc1863d16cd9001f0074da34b788353d4b343912d7784d80 -->
+<!-- cache-key: cdktf-0.19.0 input-95b20b8ad069cffffc1863d16cd9001f0074da34b788353d4b343912d7784d80 -->
