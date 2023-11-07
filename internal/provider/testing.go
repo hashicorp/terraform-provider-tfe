@@ -273,6 +273,8 @@ func skipIfUnitTest(t *testing.T) {
 // A wrapper for resource.TestCheckResourceAttr that skips the check if running tests against
 // Terraform Enterprise. Useful for testing new attributes that haven't been added to TFE
 // yet, without having to skip an entire test.
+//
+//nolint:unparam
 func testCheckResourceAttrUnlessEnterprise(name, key, value string) resource.TestCheckFunc {
 	if enterpriseEnabled() {
 		return func(s *terraform.State) error {
