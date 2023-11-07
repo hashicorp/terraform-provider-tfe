@@ -147,7 +147,7 @@ func TestAccTFEAgentPoolAllowedWorkspaces_import(t *testing.T) {
 	})
 }
 
-func testAccTFEAgentPoolAllowedWorkspaces_destroy(organization string) string {
+func testAccTFEAgentPoolAllowedWorkspaces_basic(organization string) string {
 	return fmt.Sprintf(`
 resource "tfe_workspace" "foobar" {
   name = "foobar"
@@ -163,6 +163,14 @@ resource "tfe_agent_pool" "foobar" {
   name         = "agent-pool-updated"
   organization = "%s"
   organization_scoped = false
+}
+
+resource "tfe_agent_pool_allowed_workspaces" "foobar"{
+  agent_pool_id 		= tfe_agent_pool.foobar.id
+  allowed_workspace_ids = [
+	tfe_workspace.foobar.id,
+	tfe_workspace.test-workspace.id
+   ]
 }`, organization, organization, organization)
 }
 
@@ -190,7 +198,7 @@ resource "tfe_agent_pool_allowed_workspaces" "foobar"{
 }`, organization, organization, organization)
 }
 
-func testAccTFEAgentPoolAllowedWorkspaces_basic(organization string) string {
+func testAccTFEAgentPoolAllowedWorkspaces_destroy(organization string) string {
 	return fmt.Sprintf(`
 resource "tfe_workspace" "foobar" {
   name = "foobar"
@@ -206,13 +214,5 @@ resource "tfe_agent_pool" "foobar" {
   name         = "agent-pool-updated"
   organization = "%s"
   organization_scoped = false
-}
-
-resource "tfe_agent_pool_allowed_workspaces" "foobar"{
-  agent_pool_id 		= tfe_agent_pool.foobar.id
-  allowed_workspace_ids = [
-	tfe_workspace.foobar.id,
-	tfe_workspace.test-workspace.id
-   ]
 }`, organization, organization, organization)
 }
