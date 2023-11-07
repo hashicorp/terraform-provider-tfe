@@ -15,6 +15,7 @@ FEATURES:
 * `d/tfe_workspace`: Add `auto_apply_run_trigger` attribute, by @nfagerlund [1123](https://github.com/hashicorp/terraform-provider-tfe/pull/1123)
 * `r/tfe_variable_set`: Add `priority` attribute, by @Netra2104 [1075](https://github.com/hashicorp/terraform-provider-tfe/pull/1075)
 * `d/tfe_variable_set`: Add `priority` attribute, by @Netra2104 [1075](https://github.com/hashicorp/terraform-provider-tfe/pull/1075)
+* **New Resource**: `r/tfe_workspace_agent_pool_execution` is a new resource to attach/detach an agent pool to a workspace, by @laurenolivia [1119](https://github.com/hashicorp/terraform-provider-tfe/pull/1119)
 
 BUG FIXES:
 
