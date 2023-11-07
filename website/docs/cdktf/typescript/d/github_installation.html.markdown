@@ -70,5 +70,5 @@ Must be one of: `installationId` or `name`.
 
 In addition to all arguments above, the following attributes are exported:
 
-* `id` - The internal ID of the Github Installation. This is different from the `installationId`.
-<!-- cache-key: cdktf-0.18.0 input-0a4ff055d60c44b213a5dc7ce9fcb8c10208e9d24cd4e44f3a552a718ea64d50 -->
+* `id` - The internal ID of the Github Installation. This is different from the `installation_id`.
+<!-- cache-key: cdktf-0.19.0 input-0a4ff055d60c44b213a5dc7ce9fcb8c10208e9d24cd4e44f3a552a718ea64d50 -->
