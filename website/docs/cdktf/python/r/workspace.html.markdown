@@ -183,4 +183,4 @@ terraform import tfe_workspace.test ws-CH5in3chf8RJjrVd
 terraform import tfe_workspace.test my-org-name/my-wkspace-name
 ```
 
-<!-- cache-key: cdktf-0.18.0 input-1d97132dd27c5c2de3f8a57af632a1e6455a32862dd3149f72527b836d7707f5 -->
+<!-- cache-key: cdktf-0.19.0 input-1d97132dd27c5c2de3f8a57af632a1e6455a32862dd3149f72527b836d7707f5 -->
