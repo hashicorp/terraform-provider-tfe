@@ -60,19 +60,49 @@ func resourceTFEWorkspaceAgentPoolExecutionCreate(d *schema.ResourceData, meta i
 }
 
 func resourceTFEWorkspaceAgentPoolExecutionRead(d *schema.ResourceData, meta interface{}) error {
-	// config := meta.(ConfiguredClient)
+	config := meta.(ConfiguredClient)
+
+	log.Printf("[DEBUG] Read configuration: %s", d.Id())
+	workspace, err := config.Client.Workspaces.ReadByID(ctx, d.Id())
+	if err != nil {
+		if err == tfe.ErrResourceNotFound {
+			log.Printf("[DEBUG] Workspace %s no longer exists", d.Id())
+			d.SetId("")
+			return nil
+		}
+		return fmt.Errorf("Error reading configuration of workspace %s: %w", d.Id(), err)
+	}
+
+	d.Set("workspace_id", workspace.ID)
+
+	var poolID string
+	if workspace.AgentPool != nil {
+		poolID = workspace.AgentPool.ID
+	}
+	d.Set("agent_pool_id", poolID)
 
 	return nil
 }
 
-// func resourceTFEWorkspaceAgentPoolExecutionUpdate(d *schema.ResourceData, meta interface{}) error {
-// 	config := meta.(ConfiguredClient)
+func resourceTFEWorkspaceAgentPoolExecutionUpdate(d *schema.ResourceData, meta interface{}) error {
+	config := meta.(ConfiguredClient)
 
-// 	poolID := d.Get("agent_pool_id").(string)
-// 	workpaceID := d.Get("workspace_id").(string)
+	workspaceID := d.Get("workspace_id").(string)
 
-// 	return resourceTFEWorkspaceAgentPoolExecutionRead(d, meta)
-// }
+	if d.HasChange("agent_pool_id") {
+		poolID := d.Get("agent_pool_id").(string)
+		if poolID != "" {
+			_, err := config.Client.Workspaces.UpdateByID(ctx, workspaceID, tfe.WorkspaceUpdateOptions{
+				AgentPoolID: tfe.String(poolID),
+			})
+			if err != nil {
+				return fmt.Errorf("error updating workspace %s: %w", id, err)
+			}
+		}
+	}
+
+	return resourceTFEWorkspaceAgentPoolExecutionRead(d, meta)
+}
 
 // func resourceTFEWorkspaceAgentPoolExecutionDelete(d *schema.ResourceData, meta interface{}) error {
 // 	config := meta.(ConfiguredClient)
