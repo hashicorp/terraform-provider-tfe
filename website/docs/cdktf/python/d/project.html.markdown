@@ -44,4 +44,4 @@ In addition to all arguments above, the following attributes are exported:
 
 * `id` - The project ID.
 * `workspace_ids` - IDs of the workspaces that are associated with the project.
-<!-- cache-key: cdktf-0.18.0 input-6d3f57f584544e1199917337f5f8954b7b7709d2cb911131273294430f81b2f2 -->
+<!-- cache-key: cdktf-0.19.0 input-6d3f57f584544e1199917337f5f8954b7b7709d2cb911131273294430f81b2f2 -->
