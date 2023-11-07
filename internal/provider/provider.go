@@ -139,12 +139,12 @@ func Provider() *schema.Provider {
 			"tfe_terraform_version":              resourceTFETerraformVersion(),
 			"tfe_variable_set":                   resourceTFEVariableSet(),
 			"tfe_workspace":                      resourceTFEWorkspace(),
+			"tfe_workspace_agent_pool_execution": resourceTFEWorkspaceAgentPoolExecution(),
 			"tfe_workspace_policy_set":           resourceTFEWorkspacePolicySet(),
 			"tfe_workspace_policy_set_exclusion": resourceTFEWorkspacePolicySetExclusion(),
 			"tfe_workspace_run":                  resourceTFEWorkspaceRun(),
 			"tfe_workspace_run_task":             resourceTFEWorkspaceRunTask(),
 			"tfe_workspace_variable_set":         resourceTFEWorkspaceVariableSet(),
-			"tfe_workspace_agent_pool_execution": resourceTFEWorkspaceAgentPoolExecution(),
 		},
 		ConfigureContextFunc: configure(),
 	}
