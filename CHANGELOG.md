@@ -11,6 +11,7 @@ FEATURES:
 BUG FIXES:
 
 * `r/tfe_variable`: Fix nil pointer dereference segfault on client error during Update operations, by @nfagerlund [1131](https://github.com/hashicorp/terraform-provider-tfe/1131)
+* `r/tfe_policy_set`: Fix detecting spurious changes on every run when providing file contents with `tfe_slug`. This may require an updated version of tfc-agent for the full fix to take effect. Fixed by upgrading go-slug to v0.13.1 [1123](https://github.com/hashicorp/terraform-provider-tfe/pull/1123)
 
 ## v0.49.2 (October 4, 2023)
 
