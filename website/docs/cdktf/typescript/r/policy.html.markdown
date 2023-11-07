@@ -86,8 +86,8 @@ The following arguments are supported:
    needs to run within your Rego code. Required for all OPA policies.
 * `policy` - (Required) The actual policy itself.
 * `enforceMode` - (Optional) The enforcement level of the policy. Valid
-  values for Sentinel are `advisory`, `hardMandatory` and `softMandatory`. Defaults
-  to `softMandatory`. Valid values for OPA are `advisory` and `mandatory`. Defaults
+  values for Sentinel are `advisory`, `hard-mandatory` and `soft-mandatory`. Defaults
+  to `soft-mandatory`. Valid values for OPA are `advisory` and `mandatory`. Defaults
   to `advisory`.
 
 ## Attributes Reference
@@ -103,4 +103,4 @@ import ID. For example:
 terraform import tfe_policy.test my-org-name/pol-wAs3zYmWAhYK7peR
 ```
 
-<!-- cache-key: cdktf-0.18.0 input-ea229695faa93801409757c25356cacdfc7085cbdb339121ab75a922171703db -->
+<!-- cache-key: cdktf-0.19.0 input-ea229695faa93801409757c25356cacdfc7085cbdb339121ab75a922171703db -->
