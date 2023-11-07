@@ -98,6 +98,12 @@ func resourceTFEWorkspace() *schema.Resource {
 				Default:  false,
 			},
 
+			"auto_apply_run_trigger": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
+
 			"execution_mode": {
 				Type:          schema.TypeString,
 				Optional:      true,
@@ -299,6 +305,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		Name:                       tfe.String(name),
 		AllowDestroyPlan:           tfe.Bool(d.Get("allow_destroy_plan").(bool)),
 		AutoApply:                  tfe.Bool(d.Get("auto_apply").(bool)),
+		AutoApplyRunTrigger:        tfe.Bool(d.Get("auto_apply_run_trigger").(bool)),
 		Description:                tfe.String(d.Get("description").(string)),
 		AssessmentsEnabled:         tfe.Bool(d.Get("assessments_enabled").(bool)),
 		FileTriggersEnabled:        tfe.Bool(d.Get("file_triggers_enabled").(bool)),
@@ -448,6 +455,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("assessments_enabled", workspace.AssessmentsEnabled)
 
 	d.Set("auto_apply", workspace.AutoApply)
+	d.Set("auto_apply_run_trigger", workspace.AutoApplyRunTrigger)
 	d.Set("description", workspace.Description)
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
 	d.Set("operations", workspace.Operations)
@@ -533,7 +541,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 	config := meta.(ConfiguredClient)
 	id := d.Id()
 
-	if d.HasChange("name") || d.HasChange("auto_apply") || d.HasChange("queue_all_runs") ||
+	if d.HasChange("name") || d.HasChange("auto_apply") || d.HasChange("auto_apply_run_trigger") || d.HasChange("queue_all_runs") ||
 		d.HasChange("terraform_version") || d.HasChange("working_directory") ||
 		d.HasChange("vcs_repo") || d.HasChange("file_triggers_enabled") ||
 		d.HasChange("trigger_prefixes") || d.HasChange("trigger_patterns") ||
@@ -547,6 +555,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			Name:                       tfe.String(d.Get("name").(string)),
 			AllowDestroyPlan:           tfe.Bool(d.Get("allow_destroy_plan").(bool)),
 			AutoApply:                  tfe.Bool(d.Get("auto_apply").(bool)),
+			AutoApplyRunTrigger:        tfe.Bool(d.Get("auto_apply_run_trigger").(bool)),
 			Description:                tfe.String(d.Get("description").(string)),
 			FileTriggersEnabled:        tfe.Bool(d.Get("file_triggers_enabled").(bool)),
 			GlobalRemoteState:          tfe.Bool(d.Get("global_remote_state").(bool)),

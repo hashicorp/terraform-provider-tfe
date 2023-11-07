@@ -42,6 +42,11 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Computed: true,
 			},
 
+			"auto_apply_run_trigger": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
+
 			"file_triggers_enabled": {
 				Type:     schema.TypeBool,
 				Computed: true,
@@ -223,6 +228,7 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	// Update the config.
 	d.Set("allow_destroy_plan", workspace.AllowDestroyPlan)
 	d.Set("auto_apply", workspace.AutoApply)
+	d.Set("auto_apply_run_trigger", workspace.AutoApplyRunTrigger)
 	d.Set("description", workspace.Description)
 	d.Set("assessments_enabled", workspace.AssessmentsEnabled)
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)

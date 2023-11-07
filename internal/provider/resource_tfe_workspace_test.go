@@ -47,6 +47,7 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 						"tfe_workspace.foobar", "allow_destroy_plan", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "auto_apply", "true"),
+					testCheckResourceAttrUnlessEnterprise("tfe_workspace.foobar", "auto_apply_run_trigger", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "file_triggers_enabled", "true"),
 					resource.TestCheckResourceAttr(
@@ -315,6 +316,7 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 						"tfe_workspace.foobar", "allow_destroy_plan", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "auto_apply", "true"),
+					testCheckResourceAttrUnlessEnterprise("tfe_workspace.foobar", "auto_apply_run_trigger", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "operations", "true"),
 					resource.TestCheckResourceAttr(
@@ -335,6 +337,7 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 						"tfe_workspace.foobar", "allow_destroy_plan", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "auto_apply", "false"),
+					testCheckResourceAttrUnlessEnterprise("tfe_workspace.foobar", "auto_apply_run_trigger", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "file_triggers_enabled", "true"),
 					resource.TestCheckResourceAttr(
@@ -2293,6 +2296,10 @@ func testAccCheckTFEWorkspaceHasRemoteConsumers(ws string, wsConsumers []string)
 	}
 }
 
+// Helper that checks the actual workspace attribute values in the remote
+// service (as opposed to just checking the terraform resource state). This
+// makes hardcoded assumptions about the attribute values in the configuration,
+// so it can only be used with configs that match those assumptions.
 func testAccCheckTFEWorkspaceAttributes(
 	workspace *tfe.Workspace) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
@@ -2650,6 +2657,13 @@ func TestAccTFEWorkspace_createWithSourceURLAndName(t *testing.T) {
 }
 
 func testAccTFEWorkspace_basic(rInt int) string {
+	// Only test auto-apply-run-trigger outside enterprise... once the feature
+	// flag is removed, just put it in the normal config.
+	var aart string
+	if !enterpriseEnabled() {
+		aart = "auto_apply_run_trigger = true\n"
+	}
+
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
@@ -2663,7 +2677,8 @@ resource "tfe_workspace" "foobar" {
   allow_destroy_plan = false
   auto_apply         = true
   tag_names          = ["fav", "test"]
-}`, rInt)
+  %s
+}`, rInt, aart)
 }
 
 func testAccTFEWorkspace_defaultOrg() string {
@@ -2947,6 +2962,13 @@ resource "tfe_workspace" "foobar" {
 }
 
 func testAccTFEWorkspace_renamed(rInt int) string {
+	// Only test auto-apply-run-trigger outside enterprise... once the feature
+	// flag is removed, just put it in the normal config.
+	var aart string
+	if !enterpriseEnabled() {
+		aart = "auto_apply_run_trigger = true\n"
+	}
+
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
@@ -2959,10 +2981,18 @@ resource "tfe_workspace" "foobar" {
   description        = "My favorite workspace!"
   allow_destroy_plan = false
   auto_apply         = true
-}`, rInt)
+  %s
+}`, rInt, aart)
 }
 
 func testAccTFEWorkspace_update(rInt int) string {
+	// Only test auto-apply-run-trigger outside enterprise... once the feature
+	// flag is removed, just put it in the normal config.
+	var aart string
+	if !enterpriseEnabled() {
+		aart = "auto_apply_run_trigger = false\n"
+	}
+
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
@@ -2980,7 +3010,8 @@ resource "tfe_workspace" "foobar" {
   trigger_prefixes      = ["/modules", "/shared"]
   working_directory     = "terraform/test"
   operations            = false
-}`, rInt)
+  %s
+}`, rInt, aart)
 }
 
 func testAccTFEWorkspace_updateAssessmentsEnabled(rInt int) string {

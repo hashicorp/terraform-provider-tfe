@@ -83,6 +83,7 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 						"data.tfe_workspace.foobar", "allow_destroy_plan", "false"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "auto_apply", "true"),
+					testCheckResourceAttrUnlessEnterprise("data.tfe_workspace.foobar", "auto_apply_run_trigger", "true"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "file_triggers_enabled", "true"),
 					resource.TestCheckResourceAttr(
@@ -204,6 +205,13 @@ func TestAccTFEWorkspaceDataSource_readProjectIDNonDefault(t *testing.T) {
 }
 
 func testAccTFEWorkspaceDataSourceConfig(rInt int) string {
+	// Only test auto-apply-run-trigger outside enterprise... once the feature
+	// flag is removed, just put it in the normal config.
+	var aart string
+	if !enterpriseEnabled() {
+		aart = "auto_apply_run_trigger = true\n"
+	}
+
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
@@ -225,13 +233,14 @@ resource "tfe_workspace" "foobar" {
   trigger_prefixes      = ["/modules", "/shared"]
   working_directory     = "terraform/test"
   global_remote_state   = true
+  %s
 }
 
 data "tfe_workspace" "foobar" {
   name         = tfe_workspace.foobar.name
   organization = tfe_workspace.foobar.organization
   depends_on   = [tfe_workspace.foobar]
-}`, rInt, rInt)
+}`, rInt, rInt, aart)
 }
 
 func testAccTFEWorkspaceDataSourceConfigWithTriggerPatterns(workspaceName string, organizationName string) string {
