@@ -479,6 +479,7 @@ func (r *resourceTFEVariable) updateWithWorkspace(ctx context.Context, req resou
 			"Error updating variable",
 			fmt.Sprintf("Couldn't update variable %s: %s", variableID, err.Error()),
 		)
+		return
 	}
 	// Update state
 	result := modelFromTFEVariable(*variable, plan.Value)
@@ -524,6 +525,7 @@ func (r *resourceTFEVariable) updateWithVariableSet(ctx context.Context, req res
 			"Error updating variable",
 			fmt.Sprintf("Couldn't update variable %s: %s", variableID, err.Error()),
 		)
+		return
 	}
 	// Update state
 	result := modelFromTFEVariableSetVariable(*variable, plan.Value)
