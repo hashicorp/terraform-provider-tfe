@@ -4,6 +4,10 @@
 package provider
 
 import (
+	"fmt"
+	"log"
+
+	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -34,10 +38,23 @@ func resourceTFEWorkspaceAgentPoolExecution() *schema.Resource {
 }
 
 func resourceTFEWorkspaceAgentPoolExecutionCreate(d *schema.ResourceData, meta interface{}) error {
-	// config := meta.(ConfiguredClient)
+	config := meta.(ConfiguredClient)
 
-	// poolID := d.Get("agent_pool_id").(string)
-	// workpaceID := d.Get("workspace_id").(string)
+	poolID := d.Get("agent_pool_id").(string)
+	workspaceID := d.Get("workspace_id").(string)
+
+	// Create a new options struct to attach the agent pool to workspace
+	options := tfe.WorkspaceUpdateOptions{
+		AgentPoolID: tfe.String(poolID),
+	}
+
+	log.Printf("[DEBUG] Create attachment on workspace with agent pool ID: %s", poolID)
+	workspace, err := config.Client.Workspaces.UpdateByID(ctx, workspaceID, options)
+	if err != nil {
+		return fmt.Errorf("error attaching agent pool ID %s: to workspace ID %s: %w", poolID, workspaceID, err)
+	}
+
+	d.SetId(workspace.ID)
 
 	return resourceTFEWorkspaceAgentPoolExecutionRead(d, meta)
 }
@@ -48,20 +65,20 @@ func resourceTFEWorkspaceAgentPoolExecutionRead(d *schema.ResourceData, meta int
 	return nil
 }
 
-func resourceTFEWorkspaceAgentPoolExecutionUpdate(d *schema.ResourceData, meta interface{}) error {
-	// config := meta.(ConfiguredClient)
+// func resourceTFEWorkspaceAgentPoolExecutionUpdate(d *schema.ResourceData, meta interface{}) error {
+// 	config := meta.(ConfiguredClient)
 
-	// poolID := d.Get("agent_pool_id").(string)
-	// workpaceID := d.Get("workspace_id").(string)
+// 	poolID := d.Get("agent_pool_id").(string)
+// 	workpaceID := d.Get("workspace_id").(string)
 
-	return resourceTFEWorkspaceAgentPoolExecutionRead(d, meta)
-}
+// 	return resourceTFEWorkspaceAgentPoolExecutionRead(d, meta)
+// }
 
-func resourceTFEWorkspaceAgentPoolExecutionDelete(d *schema.ResourceData, meta interface{}) error {
-	// config := meta.(ConfiguredClient)
+// func resourceTFEWorkspaceAgentPoolExecutionDelete(d *schema.ResourceData, meta interface{}) error {
+// 	config := meta.(ConfiguredClient)
 
-	// poolID := d.Get("agent_pool_id").(string)
-	// workpaceID := d.Get("workspace_id").(string)
+// 	poolID := d.Get("agent_pool_id").(string)
+// 	workpaceID := d.Get("workspace_id").(string)
 
-	return nil
-}
+// 	return nil
+// }
