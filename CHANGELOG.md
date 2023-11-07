@@ -17,10 +17,6 @@ FEATURES:
 * `d/tfe_variable_set`: Add `priority` attribute, by @Netra2104 [1075](https://github.com/hashicorp/terraform-provider-tfe/pull/1075)
 * **New Resource**: `r/tfe_workspace_agent_pool_execution` is a new resource to attach/detach an agent pool to a workspace, by @laurenolivia [1119](https://github.com/hashicorp/terraform-provider-tfe/pull/1119)
 
-ENHANCEMENTS:
-* `r/tfe_variable_set`: Add `priority` attribute, by @Netra2104 [1075](https://github.com/hashicorp/terraform-provider-tfe/pull/1075)
-* `d/tfe_variable_set`: Add `priority` attribute, by @Netra2104 [1075](https://github.com/hashicorp/terraform-provider-tfe/pull/1075)
-
 BUG FIXES:
 
 * `r/tfe_policy_set`: Fix detecting spurious changes on every run when providing file contents with `tfe_slug`. This may require an updated version of tfc-agent for the full fix to take effect. Fixed by upgrading go-slug to v0.13.1 [1123](https://github.com/hashicorp/terraform-provider-tfe/pull/1123)
