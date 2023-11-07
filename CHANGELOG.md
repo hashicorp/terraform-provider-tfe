@@ -6,6 +6,10 @@ ENHANCEMENTS:
 * `r/tfe_variable_set`: Add `priority` attribute, by @Netra2104 [1075](https://github.com/hashicorp/terraform-provider-tfe/pull/1075)
 * `d/tfe_variable_set`: Add `priority` attribute, by @Netra2104 [1075](https://github.com/hashicorp/terraform-provider-tfe/pull/1075)
 
+BUG FIXES:
+
+* `r/tfe_variable`: Fix nil pointer dereference segfault on client error during Update operations, by @nfagerlund [1131](https://github.com/hashicorp/terraform-provider-tfe/1131)
+
 ## v0.49.2 (October 4, 2023)
 
 BUG FIXES:
