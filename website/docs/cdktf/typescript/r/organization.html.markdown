@@ -47,7 +47,7 @@ The following arguments are supported:
 * `sessionRememberMinutes` - (Optional) Session expiration. Defaults to
   `20160`.
 * `collaboratorAuthPolicy` - (Optional) Authentication policy (`password`
-  or `twoFactorMandatory`). Defaults to `password`.
+  or `two_factor_mandatory`). Defaults to `password`.
 * `ownersTeamSamlRoleId` - (Optional) The name of the "owners" team.
 * `costEstimationEnabled` - (Optional) Whether or not the cost estimation feature is enabled for all workspaces in the organization. Defaults to true. In a Terraform Cloud organization which does not have Teams & Governance features, this value is always false and cannot be changed. In Terraform Enterprise, Cost Estimation must also be enabled in Site Administration.
 * `sendPassingStatusesForUntriggeredSpeculativePlans` - (Optional) Whether or not to send VCS status updates for untriggered speculative plans. This can be useful if large numbers of untriggered workspaces are exhausting request limits for connected version control service providers like GitHub. Defaults to false. In Terraform Enterprise, this setting has no effect and cannot be changed but is also available in Site Administration.
@@ -67,4 +67,4 @@ example:
 terraform import tfe_organization.test my-org-name
 ```
 
-<!-- cache-key: cdktf-0.18.0 input-e999dce0c812e7592cf4dee664b3d7cf3ca7d5544304b1163f915d3bcd134ee2 -->
+<!-- cache-key: cdktf-0.19.0 input-e999dce0c812e7592cf4dee664b3d7cf3ca7d5544304b1163f915d3bcd134ee2 -->
