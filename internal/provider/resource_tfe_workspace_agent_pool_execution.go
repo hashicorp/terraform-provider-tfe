@@ -4,6 +4,7 @@
 package provider
 
 import (
+	"errors"
 	"fmt"
 	"log"
 
@@ -51,7 +52,7 @@ func resourceTFEWorkspaceAgentPoolExecutionCreate(d *schema.ResourceData, meta i
 	log.Printf("[DEBUG] Create attachment on workspace with agent pool ID: %s", poolID)
 	workspace, err := config.Client.Workspaces.UpdateByID(ctx, workspaceID, options)
 	if err != nil {
-		return fmt.Errorf("error attaching agent pool ID %s: to workspace ID %s: %w", poolID, workspaceID, err)
+		return fmt.Errorf("error attaching agent pool ID %s to workspace ID %s: %w", poolID, workspaceID, err)
 	}
 
 	d.SetId(workspace.ID)
@@ -65,12 +66,12 @@ func resourceTFEWorkspaceAgentPoolExecutionRead(d *schema.ResourceData, meta int
 	log.Printf("[DEBUG] Read configuration: %s", d.Id())
 	workspace, err := config.Client.Workspaces.ReadByID(ctx, d.Id())
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			log.Printf("[DEBUG] Workspace %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading configuration of workspace %s: %w", d.Id(), err)
+		return fmt.Errorf("error reading configuration of workspace %s: %w", d.Id(), err)
 	}
 
 	d.Set("workspace_id", workspace.ID)
@@ -89,6 +90,7 @@ func resourceTFEWorkspaceAgentPoolExecutionUpdate(d *schema.ResourceData, meta i
 
 	workspaceID := d.Get("workspace_id").(string)
 
+	log.Printf("[DEBUG] Update agent pool that is attached to workspace %s", d.Id())
 	if d.HasChange("agent_pool_id") {
 		poolID := d.Get("agent_pool_id").(string)
 		if poolID != "" {
@@ -96,7 +98,7 @@ func resourceTFEWorkspaceAgentPoolExecutionUpdate(d *schema.ResourceData, meta i
 				AgentPoolID: tfe.String(poolID),
 			})
 			if err != nil {
-				return fmt.Errorf("error updating workspace %s: %w", id, err)
+				return fmt.Errorf("error updating workspace %s: %w", workspaceID, err)
 			}
 		}
 	}
@@ -104,11 +106,30 @@ func resourceTFEWorkspaceAgentPoolExecutionUpdate(d *schema.ResourceData, meta i
 	return resourceTFEWorkspaceAgentPoolExecutionRead(d, meta)
 }
 
-// func resourceTFEWorkspaceAgentPoolExecutionDelete(d *schema.ResourceData, meta interface{}) error {
-// 	config := meta.(ConfiguredClient)
+func resourceTFEWorkspaceAgentPoolExecutionDelete(d *schema.ResourceData, meta interface{}) error {
+	config := meta.(ConfiguredClient)
 
-// 	poolID := d.Get("agent_pool_id").(string)
-// 	workpaceID := d.Get("workspace_id").(string)
+	poolID := d.Get("agent_pool_id").(string)
+	workspaceID := d.Get("workspace_id").(string)
 
-// 	return nil
-// }
+	log.Printf("[DEBUG] Delete the agent pool %s attached to workspace %s", poolID, workspaceID)
+
+	_, err := config.Client.Workspaces.ReadByID(ctx, workspaceID)
+	if err != nil {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			log.Printf("[DEBUG] Workspace %s no longer exists", workspaceID)
+			d.SetId("")
+			return nil
+		}
+		return fmt.Errorf("error reading configuration of workspace %s: %w", workspaceID, err)
+	} else {
+		_, err := config.Client.Workspaces.UpdateByID(ctx, workspaceID, tfe.WorkspaceUpdateOptions{
+			AgentPoolID: tfe.String(""),
+		})
+		if err != nil {
+			return fmt.Errorf("error detaching agent pool %s from workspace %s: %w", poolID, workspaceID, err)
+		}
+	}
+
+	return nil
+}
