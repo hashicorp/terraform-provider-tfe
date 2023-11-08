@@ -100,13 +100,13 @@ func resourceTFEWorkspaceAgentPoolExecutionDelete(d *schema.ResourceData, meta i
 			return nil
 		}
 		return fmt.Errorf("error reading configuration of workspace %s: %w", workspaceID, err)
-	} else {
-		_, err := config.Client.Workspaces.UpdateByID(ctx, workspaceID, tfe.WorkspaceUpdateOptions{
-			AgentPoolID: tfe.String(""),
-		})
-		if err != nil {
-			return fmt.Errorf("error detaching agent pool %s from workspace %s: %w", poolID, workspaceID, err)
-		}
+	}
+
+	_, errs := config.Client.Workspaces.UpdateByID(ctx, workspaceID, tfe.WorkspaceUpdateOptions{
+		AgentPoolID: tfe.String(""),
+	})
+	if errs != nil {
+		return fmt.Errorf("error detaching agent pool %s from workspace %s: %w", poolID, workspaceID, errs)
 	}
 
 	return nil
