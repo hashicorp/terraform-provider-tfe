@@ -30,7 +30,7 @@ func resourceTFEWorkspaceAgentPoolExecution() *schema.Resource {
 			},
 
 			"workspace_id": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
@@ -112,7 +112,7 @@ func resourceTFEWorkspaceAgentPoolExecutionDelete(d *schema.ResourceData, meta i
 	poolID := d.Get("agent_pool_id").(string)
 	workspaceID := d.Get("workspace_id").(string)
 
-	log.Printf("[DEBUG] Delete the agent pool %s attached to workspace %s", poolID, workspaceID)
+	log.Printf("[DEBUG] Detach agent pool %s from workspace %s", poolID, workspaceID)
 
 	_, err := config.Client.Workspaces.ReadByID(ctx, workspaceID)
 	if err != nil {

@@ -13,10 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-// create and update
-// when workspace does not exist
-// when agent pool ID does not exist
-
 func TestAccTFEWorkspaceAgentPoolExecution_create_update(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
@@ -117,7 +113,7 @@ resource "tfe_agent_pool_allowed_workspaces" "permit"{
   agent_pool_id 		= tfe_agent_pool.foobar.id
   allowed_workspace_ids = [
 	tfe_workspace.foobar.id,
-	tfe_workspace.test-workspace.id
+	tfe_workspace.workspace.id
    ]
 }
 resource "tfe_workspace_agent_pool_execution" "attach"{
