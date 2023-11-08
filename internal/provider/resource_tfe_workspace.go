@@ -84,6 +84,7 @@ func resourceTFEWorkspace() *schema.Resource {
 				Optional:      true,
 				Default:       "",
 				ConflictsWith: []string{"operations"},
+				Deprecated:    "Configure tfe_workspace_agent_pool_execution to attach an agent pool to a workspace. This attribute will be removed in the next major version of the provider.",
 			},
 
 			"allow_destroy_plan": {

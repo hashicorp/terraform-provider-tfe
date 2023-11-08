@@ -129,8 +129,6 @@ func testAccTFEWorkspaceAgentPoolExecution_basic(organization string) string {
 resource "tfe_workspace" "workspace" {
   name = "test-workspace"
   organization = "%s"
-	agent_pool_id = tfe_agent_pool.pool.id
-	execution_mode = "agent"
 }
 
 resource "tfe_agent_pool" "pool" {
@@ -157,8 +155,6 @@ func testAccTFEWorkspaceAgentPoolExecution_update(organization string) string {
 resource "tfe_workspace" "workspace" {
   name = "test-workspace"
   organization = "%s"
-	agent_pool_id = tfe_agent_pool.pool.id
-	execution_mode = "agent"
 }
 
 resource "tfe_agent_pool" "pool" {
@@ -169,7 +165,9 @@ resource "tfe_agent_pool" "pool" {
 
 resource "tfe_agent_pool_allowed_workspaces" "permit"{
   agent_pool_id 		= tfe_agent_pool.pool.id
-  allowed_workspace_ids = [tfe_workspace.workspace.id]
+  allowed_workspace_ids = [
+		tfe_workspace.workspace.id
+		]
 }
 
 resource "tfe_workspace_agent_pool_execution" "attach"{
@@ -184,8 +182,6 @@ func testAccTFEWorkspaceAgentPoolExecution_destroy(organization string) string {
 	resource "tfe_workspace" "workspace" {
 		name = "test-workspace"
 		organization = "%s"
-		agent_pool_id = tfe_agent_pool.pool.id
-		execution_mode = "agent"
 	}
 
 	resource "tfe_agent_pool" "pool" {
