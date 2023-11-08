@@ -145,7 +145,7 @@ resource "tfe_agent_pool_allowed_workspaces" "permit"{
 }
 resource "tfe_workspace_agent_pool_execution" "attach"{
 	workspace_id = tfe_workspace.workspace.id
-	agent_pool_id = tfe_agent_pool_id.pool.id
+	agent_pool_id = tfe_agent_pool.pool.id
 	depends_on = [tfe_agent_pool_allowed_workspaces.permit]
 }`, organization, organization)
 }
@@ -170,7 +170,7 @@ resource "tfe_agent_pool_allowed_workspaces" "permit"{
 
 resource "tfe_workspace_agent_pool_execution" "attach"{
 	workspace_id = tfe_workspace.workspace.id
-	agent_pool_id = tfe_agent_pool_id.pool.id
+	agent_pool_id = tfe_agent_pool.pool.id
 	depends_on = [tfe_agent_pool_allowed_workspaces.permit]
 }`, organization, organization)
 }
@@ -197,7 +197,7 @@ func testAccTFEWorkspaceAgentPoolExecution_destroy(organization string) string {
 
 	resource "tfe_workspace_agent_pool_execution" "attach"{
 		workspace_id = tfe_workspace.workspace.id
-		agent_pool_id = tfe_agent_pool_id.pool.id
+		agent_pool_id = tfe_agent_pool.pool.id
 		depends_on = [tfe_agent_pool_allowed_workspaces.permit]
 	}`, organization, organization)
 }
