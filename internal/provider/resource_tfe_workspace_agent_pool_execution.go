@@ -16,7 +16,6 @@ func resourceTFEWorkspaceAgentPoolExecution() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceTFEWorkspaceAgentPoolExecutionCreate,
 		Read:   resourceTFEWorkspaceAgentPoolExecutionRead,
-		Update: resourceTFEWorkspaceAgentPoolExecutionUpdate,
 		Delete: resourceTFEWorkspaceAgentPoolExecutionDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -83,27 +82,6 @@ func resourceTFEWorkspaceAgentPoolExecutionRead(d *schema.ResourceData, meta int
 	d.Set("agent_pool_id", poolID)
 
 	return nil
-}
-
-func resourceTFEWorkspaceAgentPoolExecutionUpdate(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(ConfiguredClient)
-
-	workspaceID := d.Get("workspace_id").(string)
-
-	log.Printf("[DEBUG] Update agent pool that is attached to workspace %s", d.Id())
-	if d.HasChange("agent_pool_id") {
-		poolID := d.Get("agent_pool_id").(string)
-		if poolID != "" {
-			_, err := config.Client.Workspaces.UpdateByID(ctx, workspaceID, tfe.WorkspaceUpdateOptions{
-				AgentPoolID: tfe.String(poolID),
-			})
-			if err != nil {
-				return fmt.Errorf("error updating workspace %s: %w", workspaceID, err)
-			}
-		}
-	}
-
-	return resourceTFEWorkspaceAgentPoolExecutionRead(d, meta)
 }
 
 func resourceTFEWorkspaceAgentPoolExecutionDelete(d *schema.ResourceData, meta interface{}) error {

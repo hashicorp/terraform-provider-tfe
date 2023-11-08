@@ -29,67 +29,95 @@ func TestAccTFEWorkspaceAgentPoolExecution_create_update(t *testing.T) {
 			{
 				Config: testAccTFEWorkspaceAgentPoolExecution_basic(org.Name),
 				Check: resource.ComposeTestCheckFunc(
-					testAccTFECheckWorkspaceAgentPoolExists("tfe_agent_pool.pool"),
+					testAccTFECheckWorkspaceAgentPoolAttached("tfe_workspace.workspace", "tfe_agent_pool.pool"),
 					resource.TestCheckResourceAttr("tfe_agent_pool.pool", "organization_scoped", "false"),
 				),
 			},
 			{
 				Config: testAccTFEWorkspaceAgentPoolExecution_update(org.Name),
 				Check: resource.ComposeTestCheckFunc(
-					testAccTFECheckWorkspaceAgentPoolExists("tfe_agent_pool.pool"),
+					testAccTFECheckWorkspaceAgentPoolAttached("tfe_workspace.workspace", "tfe_agent_pool.pool"),
 					resource.TestCheckResourceAttr("tfe_agent_pool.pool", "organization_scoped", "false"),
 				),
 			},
 			{
 				Config: testAccTFEWorkspaceAgentPoolExecution_destroy(org.Name),
 				Check: resource.ComposeTestCheckFunc(
-					testAccTFECheckWorkspaceAgentPoolNotExists("tfe_agent_pool.pool"),
+					testAccTFECheckWorkspaceAgentPoolNotDetached("tfe_workspace.workspace", "tfe_agent_pool.pool"),
 				),
 			},
 		},
 	})
 }
 
-func testAccTFECheckWorkspaceAgentPoolExists(resource string) resource.TestCheckFunc {
+func testAccTFECheckWorkspaceAgentPoolAttached(workspace string, pool string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		config := testAccProvider.Meta().(ConfiguredClient)
 
-		rs, ok := s.RootModule().Resources[resource]
+		ws, ok := s.RootModule().Resources[workspace]
 		if !ok {
-			return fmt.Errorf("Resource not found: %s", resource)
+			return fmt.Errorf("Resource not found: %s", workspace)
 		}
 
-		// Resource ID equals the Agent Pool ID
-		if rs.Primary.ID == "" {
+		// Resource ID equals the Workspace ID
+		if ws.Primary.ID == "" {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.AgentPools.Read(ctx, rs.Primary.ID)
+		workspace, err := config.Client.Workspaces.ReadByID(ctx, ws.Primary.ID)
 		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
-			return fmt.Errorf("error fetching agent pool: %w", err)
+			return fmt.Errorf("error fetching workspace: %w", err)
+		}
+
+		ap, ok := s.RootModule().Resources[pool]
+		if !ok {
+			return fmt.Errorf("Resource not found: %s", pool)
+		}
+
+		// Resource ID equals the Agent Pool ID
+		if ap.Primary.ID == "" {
+			return fmt.Errorf("No instance ID is set")
+		}
+
+		if workspace.AgentPoolID != ap.Primary.ID {
+			return fmt.Errorf("error attaching agent pool %s: %w", ap.Primary.ID, err)
 		}
 
 		return nil
 	}
 }
 
-func testAccTFECheckWorkspaceAgentPoolNotExists(resource string) resource.TestCheckFunc {
+func testAccTFECheckWorkspaceAgentPoolNotDetached(workspace string, pool string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		config := testAccProvider.Meta().(ConfiguredClient)
 
-		rs, ok := s.RootModule().Resources[resource]
+		ws, ok := s.RootModule().Resources[workspace]
 		if !ok {
-			return fmt.Errorf("Resource not found: %s", resource)
+			return fmt.Errorf("Resource not found: %s", workspace)
 		}
 
-		// Resource ID equals the Agent Pool ID
-		if rs.Primary.ID == "" {
+		// Resource ID equals the Workspace ID
+		if ws.Primary.ID == "" {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.AgentPools.Read(ctx, rs.Primary.ID)
+		workspace, err := config.Client.Workspaces.ReadByID(ctx, ws.Primary.ID)
 		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
-			return fmt.Errorf("error fetching agent pool: %w", err)
+			return fmt.Errorf("error fetching workspace: %w", err)
+		}
+
+		ap, ok := s.RootModule().Resources[pool]
+		if !ok {
+			return fmt.Errorf("Resource not found: %s", pool)
+		}
+
+		// Resource ID equals the Agent Pool ID
+		if ap.Primary.ID == "" {
+			return fmt.Errorf("No instance ID is set")
+		}
+
+		if workspace.AgentPoolID != "" {
+			return fmt.Errorf("error detaching agent pool %s: %w", ap.Primary.ID, err)
 		}
 
 		return nil
