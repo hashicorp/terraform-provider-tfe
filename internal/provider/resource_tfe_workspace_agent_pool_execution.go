@@ -50,13 +50,13 @@ func resourceTFEWorkspaceAgentPoolExecutionCreate(d *schema.ResourceData, meta i
 
 	log.Printf("[DEBUG] Create attachment on workspace with agent pool ID: %s", poolID)
 	workspace, err := config.Client.Workspaces.UpdateByID(ctx, workspaceID, options)
+	if err != nil {
+		return fmt.Errorf("error attaching agent pool ID %s to workspace ID %s: %w", poolID, workspaceID, err)
+	}
 	// log a WARN if exeuction mode is "agent" because this mode requires
 	// also providing an agent_pool_id to the workspace resource and that attr is now deprecated
 	if workspace.ExecutionMode == "agent" {
 		warnWorkspaceAgentPoolIDDeprecation()
-	}
-	if err != nil {
-		return fmt.Errorf("error attaching agent pool ID %s to workspace ID %s: %w", poolID, workspaceID, err)
 	}
 
 	d.SetId(workspace.ID)
