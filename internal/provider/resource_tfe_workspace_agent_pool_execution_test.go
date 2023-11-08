@@ -127,7 +127,7 @@ func testAccTFECheckWorkspaceAgentPoolNotDetached(workspace string, pool string)
 func testAccTFEWorkspaceAgentPoolExecution_basic(organization string) string {
 	return fmt.Sprintf(`
 resource "tfe_workspace" "workspace" {
-  name = "foobar"
+  name = "test-workspace"
   organization = "%s"
 }
 
@@ -138,11 +138,10 @@ resource "tfe_agent_pool" "pool" {
 }
 
 resource "tfe_agent_pool_allowed_workspaces" "permit"{
-  agent_pool_id 		= tfe_agent_pool.foobar.id
+  agent_pool_id 		= tfe_agent_pool.pool.id
   allowed_workspace_ids = [
-	tfe_workspace.foobar.id,
-	tfe_workspace.workspace.id
-   ]
+		tfe_workspace.workspace.id
+		]
 }
 resource "tfe_workspace_agent_pool_execution" "attach"{
 	workspace_id = tfe_workspace.workspace.id
@@ -165,8 +164,8 @@ resource "tfe_agent_pool" "pool" {
 }
 
 resource "tfe_agent_pool_allowed_workspaces" "permit"{
-  agent_pool_id 		= tfe_agent_pool.foobar.id
-  allowed_workspace_ids = [tfe_workspace.foobar.id]
+  agent_pool_id 		= tfe_agent_pool.pool.id
+  allowed_workspace_ids = [tfe_workspace.workspace.id]
 }
 
 resource "tfe_workspace_agent_pool_execution" "attach"{
@@ -190,8 +189,10 @@ func testAccTFEWorkspaceAgentPoolExecution_destroy(organization string) string {
 	}
 
 	resource "tfe_agent_pool_allowed_workspaces" "permit"{
-		agent_pool_id 		= tfe_agent_pool.foobar.id
-		allowed_workspace_ids = [tfe_workspace.foobar.id]
+		agent_pool_id 		= tfe_agent_pool.pool.id
+		allowed_workspace_ids = [
+			tfe_workspace.workspace.id
+			]
 	}
 
 	resource "tfe_workspace_agent_pool_execution" "attach"{
