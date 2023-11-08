@@ -45,7 +45,8 @@ func resourceTFEWorkspaceAgentPoolExecutionCreate(d *schema.ResourceData, meta i
 
 	// Create a new options struct to attach the agent pool to workspace
 	options := tfe.WorkspaceUpdateOptions{
-		AgentPoolID: tfe.String(poolID),
+		AgentPoolID:   tfe.String(poolID),
+		ExecutionMode: tfe.String("agent"),
 	}
 
 	log.Printf("[DEBUG] Create attachment on workspace with agent pool ID: %s", poolID)
