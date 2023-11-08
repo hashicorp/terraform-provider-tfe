@@ -7,6 +7,7 @@ FEATURES:
 * `d/tfe_variable_set`: Add `priority` attribute, by @Netra2104 [1075](https://github.com/hashicorp/terraform-provider-tfe/pull/1075)
 * `r/tfe_workspace`: Add `auto_apply_run_trigger` attribute, by @nfagerlund [1123](https://github.com/hashicorp/terraform-provider-tfe/pull/1123)
 * `d/tfe_workspace`: Add `auto_apply_run_trigger` attribute, by @nfagerlund [1123](https://github.com/hashicorp/terraform-provider-tfe/pull/1123)
+* `d/tfe_organization`: Make `name` argument optional if configured for the provider, by @tmatilai [1133](https://github.com/hashicorp/terraform-provider-tfe/pull/1133)
 
 BUG FIXES:
 
