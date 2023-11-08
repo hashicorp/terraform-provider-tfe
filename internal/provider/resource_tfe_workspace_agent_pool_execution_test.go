@@ -129,6 +129,7 @@ func testAccTFEWorkspaceAgentPoolExecution_basic(organization string) string {
 resource "tfe_workspace" "workspace" {
   name = "test-workspace"
   organization = "%s"
+	agent_pool_id = tfe_agent_pool.pool.id
 	execution_mode = "agent"
 }
 
@@ -156,6 +157,7 @@ func testAccTFEWorkspaceAgentPoolExecution_update(organization string) string {
 resource "tfe_workspace" "workspace" {
   name = "test-workspace"
   organization = "%s"
+	agent_pool_id = tfe_agent_pool.pool.id
 	execution_mode = "agent"
 }
 
@@ -182,6 +184,7 @@ func testAccTFEWorkspaceAgentPoolExecution_destroy(organization string) string {
 	resource "tfe_workspace" "workspace" {
 		name = "test-workspace"
 		organization = "%s"
+		agent_pool_id = tfe_agent_pool.pool.id
 		execution_mode = "agent"
 	}
 
