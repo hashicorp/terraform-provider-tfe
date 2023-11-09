@@ -42,13 +42,15 @@ func resourceTFEWorkspace() *schema.Resource {
 
 		CustomizeDiff: func(c context.Context, d *schema.ResourceDiff, meta interface{}) error {
 			// NOTE: execution mode must be set to default first before calling the validation functions
-			if err := setExecutionModeDefault(c, d); err != nil {
-				return err
-			}
+			// SCHEDULED FOR DELETION
+			// WE WILL NO LONGER USE setExecutionModeDefault()
+			// if err := setExecutionModeDefault(c, d); err != nil {
+			// 	return err
+			// }
 
-			if err := validateAgentExecution(c, d); err != nil {
-				return err
-			}
+			// if err := validateAgentExecution(c, d); err != nil {
+			// 	return err
+			// }
 
 			if err := validateRemoteState(c, d); err != nil {
 				return err
@@ -86,7 +88,6 @@ func resourceTFEWorkspace() *schema.Resource {
 				Type:          schema.TypeString,
 				Optional:      true,
 				Computed:      true,
-				Default:       "",
 				ConflictsWith: []string{"operations"},
 			},
 
