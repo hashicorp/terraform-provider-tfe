@@ -75,7 +75,7 @@ func resourceTFEWorkspaceAgentPoolExecutionCreate(d *schema.ResourceData, meta i
 	log.Printf("[DEBUG] Create attachment on workspace with agent pool ID: %s", agentPoolID)
 	workspace, err := config.Client.Workspaces.UpdateByID(ctx, workspaceID, options)
 	if err != nil {
-		return fmt.Errorf("error attaching agent pool ID %s to workspace ID %s: %w", agent_pool_id, workspaceID, err)
+		return fmt.Errorf("error attaching agent pool ID %s to workspace ID %s: %w", agentPoolID, workspaceID, err)
 	}
 
 	d.SetId(workspace.ID)
