@@ -55,6 +55,7 @@ func testAccTFECheckWorkspaceAgentPoolAttached(workspace string, pool string) re
 	return func(s *terraform.State) error {
 		config := testAccProvider.Meta().(ConfiguredClient)
 
+		// Read state file for workspace
 		ws, ok := s.RootModule().Resources[workspace]
 		if !ok {
 			return fmt.Errorf("Resource not found: %s", workspace)
@@ -70,6 +71,7 @@ func testAccTFECheckWorkspaceAgentPoolAttached(workspace string, pool string) re
 			return fmt.Errorf("error fetching workspace: %w", err)
 		}
 
+		// Read state file for agent pool
 		ap, ok := s.RootModule().Resources[pool]
 		if !ok {
 			return fmt.Errorf("Resource not found: %s", pool)

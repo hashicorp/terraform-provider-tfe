@@ -10,6 +10,7 @@ import (
 
 	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func resourceTFEWorkspaceAgentPoolExecution() *schema.Resource {
@@ -33,6 +34,21 @@ func resourceTFEWorkspaceAgentPoolExecution() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
+
+			"execution_mode": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Computed:      true,
+				ConflictsWith: []string{"operations"},
+				ValidateFunc: validation.StringInSlice(
+					[]string{
+						"agent",
+						"local",
+						"remote",
+					},
+					false,
+				),
+			},
 		},
 	}
 }
@@ -54,13 +70,12 @@ func resourceTFEWorkspaceAgentPoolExecutionCreate(d *schema.ResourceData, meta i
 	if err != nil {
 		return fmt.Errorf("error attaching agent pool ID %s to workspace ID %s: %w", poolID, workspaceID, err)
 	}
-	// log a WARN if exeuction mode is "agent" because this mode requires
-	// also providing an agent_pool_id to the workspace resource and that attr is now deprecated
-	if workspace.ExecutionMode == "agent" {
-		warnWorkspaceAgentPoolIDDeprecation()
-	}
 
 	d.SetId(workspace.ID)
+	// This will update state where tfe_workspace execution_mode because Computed: true
+	// will now read as "agent"
+	// It defaults to remote
+	d.Set("execution_mode", workspace.ExecutionMode)
 
 	return resourceTFEWorkspaceAgentPoolExecutionRead(d, meta)
 }
@@ -116,8 +131,4 @@ func resourceTFEWorkspaceAgentPoolExecutionDelete(d *schema.ResourceData, meta i
 	}
 
 	return nil
-}
-
-func warnWorkspaceAgentPoolIDDeprecation() {
-	log.Printf("[WARN] The agent_pool_id field of tfe_workspace is deprecated as of release 0.50.0 and may be removed in a future version. The preferred method of associating an agent pool to a workspace is by using the tfe_workspace_agent_pool_execution resource.")
 }
