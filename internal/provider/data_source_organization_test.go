@@ -6,6 +6,7 @@ package provider
 import (
 	"fmt"
 	"math/rand"
+	"regexp"
 	"testing"
 	"time"
 
@@ -63,6 +64,27 @@ func TestAccTFEOrganizationDataSource_defaultProject(t *testing.T) {
 	})
 }
 
+// The data source will use the default org name from provider config if omitted.
+func TestAccTFEOrganizationDataSource_defaultOrganization(t *testing.T) {
+	defaultOrgName, _ := setupDefaultOrganization(t)
+	providers := providerWithDefaultOrganization(defaultOrgName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: providers,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOrganizationDataSourceConfig_noName(),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					// check data attrs
+					resource.TestCheckResourceAttr("data.tfe_organization.foo", "name", defaultOrgName),
+					resource.TestMatchResourceAttr("data.tfe_organization.foo", "email", regexp.MustCompile(`@tfe\.local\z`)),
+				),
+			},
+		},
+	})
+}
+
 func testAccTFEOrganizationDataSourceConfig_basic(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foo" {
@@ -74,4 +96,10 @@ data "tfe_organization" "foo" {
   name  = tfe_organization.foo.name
 	depends_on = [tfe_organization.foo]
 }`, rInt)
+}
+
+func testAccTFEOrganizationDataSourceConfig_noName() string {
+	return `
+data "tfe_organization" "foo" {
+}`
 }
