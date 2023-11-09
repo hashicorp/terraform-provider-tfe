@@ -47,6 +47,7 @@ In addition to all arguments above, the following attributes are exported:
 * `Id` - The workspace ID.
 * `AllowDestroyPlan` - Indicates whether destroy plans can be queued on the workspace.
 * `AutoApply` - Indicates whether to automatically apply changes when a Terraform plan is successful.
+* `AutoApplyRunTrigger` - Whether the workspace will automatically apply changes for runs that were created by run triggers from another workspace.
 * `AssessmentsEnabled` - (Available only in Terraform Cloud) Indicates whether health assessments such as drift detection are enabled for the workspace.
 * `FileTriggersEnabled` - Indicates whether runs are triggered based on the changed files in a VCS push (if `True`) or always triggered on every push (if `False`).
 * `GlobalRemoteState` - (Optional) Whether the workspace should allow all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (determined by the `RemoteStateConsumerIds` argument).
@@ -87,4 +88,4 @@ The `VcsRepo` block contains:
 * `OauthTokenId` - OAuth token ID of the configured VCS connection.
 * `TagsRegex` - A regular expression used to trigger a Workspace run for matching Git tags.
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-031765b2961bc629e8d9019635a143979617a42923c522fb8f14fba23a365b45 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-82f43ee78054a4a88c04b2768dd5c3b6ba74cdac1de55fecef133b85fe5aee8a -->

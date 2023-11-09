@@ -81,6 +81,7 @@ The following arguments are supported:
 * `AllowDestroyPlan` - (Optional) Whether destroy plans can be queued on the workspace.
 * `AssessmentsEnabled` - (Optional) Whether to regularly run health assessments such as drift detection on the workspace. Defaults to `False`.
 * `AutoApply` - (Optional) Whether to automatically apply changes when a Terraform plan is successful. Defaults to `False`.
+* `AutoApplyRunTrigger` - (Optional) Whether to automatically apply changes for runs that were created by run triggers from another workspace. Defaults to `False`.
 * `Description` - (Optional) A description for the workspace.
 * `ExecutionMode` - (Optional) Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode)
   to use. Using Terraform Cloud, valid values are `Remote`, `Local` or`Agent`.
@@ -180,4 +181,4 @@ terraform import tfe_workspace.test ws-CH5in3chf8RJjrVd
 terraform import tfe_workspace.test my-org-name/my-wkspace-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-1d97132dd27c5c2de3f8a57af632a1e6455a32862dd3149f72527b836d7707f5 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-ce8c5d41ebbc57c1df647c807e38b748d12221b61915ccc24e4f1530f58312b5 -->
