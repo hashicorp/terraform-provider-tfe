@@ -56,10 +56,10 @@ func resourceTFEWorkspaceAgentPoolExecution() *schema.Resource {
 func resourceTFEWorkspaceAgentPoolExecutionCreate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
-	execution_mode := d.Get("execution_mode").(string)
-	agent_pool_id := d.Get("agent_pool_id").(string)
+	executionMode := d.Get("execution_mode").(string)
+	agentPoolID := d.Get("agent_pool_id").(string)
 
-	if execution_mode == "agent" && agent_pool_id == "" {
+	if executionMode == "agent" && agentPoolID == "" {
 		return fmt.Errorf(`error with either execution mode set as "agent" with no agent_pool_ID,
 		or agent_pool_id is set but execution_mode is not set to "agent"`)
 	}
@@ -68,11 +68,11 @@ func resourceTFEWorkspaceAgentPoolExecutionCreate(d *schema.ResourceData, meta i
 
 	// Create a new options struct to attach the agent pool to workspace
 	options := tfe.WorkspaceUpdateOptions{
-		AgentPoolID:   tfe.String(agent_pool_id),
-		ExecutionMode: tfe.String(execution_mode),
+		AgentPoolID:   tfe.String(agentPoolID),
+		ExecutionMode: tfe.String(executionMode),
 	}
 
-	log.Printf("[DEBUG] Create attachment on workspace with agent pool ID: %s", agent_pool_id)
+	log.Printf("[DEBUG] Create attachment on workspace with agent pool ID: %s", agentPoolID)
 	workspace, err := config.Client.Workspaces.UpdateByID(ctx, workspaceID, options)
 	if err != nil {
 		return fmt.Errorf("error attaching agent pool ID %s to workspace ID %s: %w", agent_pool_id, workspaceID, err)
@@ -81,7 +81,7 @@ func resourceTFEWorkspaceAgentPoolExecutionCreate(d *schema.ResourceData, meta i
 	d.SetId(workspace.ID)
 	// d.Set() will update state file on tfe_workspace for execution_mode and agent pool ID
 	d.Set("execution_mode", workspace.ExecutionMode)
-	d.Set("agent_pool_id", workspace.AgentPoolID)
+	d.Set("agentPoolID", workspace.AgentPoolID)
 
 	return resourceTFEWorkspaceAgentPoolExecutionRead(d, meta)
 }
