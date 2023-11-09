@@ -57,7 +57,7 @@ class MyConvertedCode(TerraformStack):
 
 The following arguments are supported:
 
-* `agent_pool_id` - (Required) ID of the team.
+* `agent_pool_id` - (Required) The ID of the agent pool.
 * `allowed_workspace_ids` - (Required) IDs of workspaces to be added as allowed workspaces on the agent pool.
 
 
@@ -70,4 +70,4 @@ terraform import tfe_agent_pool_allowed_workspaces.foobar apool-rW0KoLSlnuNb5adB
 ```
 
 
-<!-- cache-key: cdktf-0.18.0 input-0830c2350c9bc1d08e42086147e2faab617c9e3df62a7fdecdc74ef5e6b8439f -->
+<!-- cache-key: cdktf-0.18.0 input-1edcc1e20e20d09be179b6cbf843d4e338182551c66eae16aa55ff17f44986bb -->

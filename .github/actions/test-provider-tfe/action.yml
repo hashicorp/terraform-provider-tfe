@@ -43,6 +43,10 @@ inputs:
   enterprise:
     description: Test enterprise features (`hostname` must be running in ON_PREM mode)
     required: false
+  list_tests:
+    description: Accepts regex rules to either include or exclude specific tests from running in either CI or nightly workflows.
+    required: false
+    default: "."
 
 runs:
   using: composite
@@ -79,6 +83,8 @@ runs:
         index: ${{ inputs.matrix_index }}
         total: ${{ inputs.matrix_total }}
         junit-summary: ./ci-summary-provider.xml
+        # When tests are split and run concurrently, lists_tests arg in ci.yml will skip the TestAccTFESAMLSettings_omnibus test suite
+        list: ${{ inputs.list_tests }}
 
     - name: Run Tests
       shell: bash
@@ -99,11 +105,11 @@ runs:
         TFC_RUN_TASK_URL: "https://httpstat.us/200"
         GITHUB_POLICY_SET_IDENTIFIER: "hashicorp/test-policy-set"
         GITHUB_REGISTRY_MODULE_IDENTIFIER: "hashicorp/terraform-random-module"
-        GITHUB_WORKSPACE_IDENTIFIER: "hashicorp/terraform-random-1"
-        GITHUB_WORKSPACE_BRANCH: "test"
+        GITHUB_WORKSPACE_IDENTIFIER: "hashicorp/terraform-random-module"
+        GITHUB_WORKSPACE_BRANCH: "main"
         GITHUB_TOKEN: "${{ inputs.testing-github-token }}"
         MOD_PROVIDER: github.com/hashicorp/terraform-provider-tfe
-        MOD_TFE: github.com/hashicorp/terraform-provider-tfe/tfe
+        MOD_TFE: github.com/hashicorp/terraform-provider-tfe/internal/provider
         MOD_VERSION: github.com/hashicorp/terraform-provider-tfe/version
       run: |
         gotestsum --junitfile summary.xml --format short-verbose -- $MOD_PROVIDER $MOD_TFE $MOD_VERSION -v -timeout=30m -run "${{ steps.test_split.outputs.run }}"

@@ -81,7 +81,7 @@ class MyConvertedCode extends TerraformStack {
     super(scope, name);
     new DataTfeOrganizationMembership(this, "test", {
       organization: "my-org-name",
-      organization_membership_id: "ou-xxxxxxxxxxx",
+      organizationMembershipId: "ou-xxxxxxxxxxx",
     });
   }
 }

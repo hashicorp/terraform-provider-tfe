@@ -182,11 +182,11 @@ The following arguments are supported:
 The `vcsRepo` block supports:
 
 * `displayIdentifier` - (Required) The display identifier for your VCS repository.
-  For most VCS providers outside of BitBucket Cloud, this will match the `identifier`
+  For most VCS providers outside of BitBucket Cloud and Azure DevOps, this will match the `identifier`
   string.
 * `identifier` - (Required) A reference to your VCS repository in the format
   `<organization>/<repository>` where `<organization>` and `<repository>` refer to the organization (or project key, for Bitbucket Server)
-  and repository in your VCS provider. The format for Azure DevOps is <organization>/<project>/\_git/<repository>.
+  and repository in your VCS provider. The format for Azure DevOps is `<ado organization>/<ado project>/_git/<ado repository>`.
 * `oauthTokenId` - (Optional) Token ID of the VCS Connection (OAuth Connection Token) to use. This conflicts with `githubAppInstallationId` and can only be used if `githubAppInstallationId` is not used.
 * `githubAppInstallationId` - (Optional) The installation id of the Github App. This conflicts with `oauthTokenId` and can only be used if `oauthTokenId` is not used.
 
@@ -215,4 +215,4 @@ terraform import tfe_registry_module.test my-org-name/public/namespace/name/prov
 terraform import tfe_registry_module.test my-org-name/name/provider/mod-qV9JnKRkmtMa4zcA
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-73fb04cba01303aff48c3c32c7ea49194a8f795307ef90c104807e23257c79ac -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-d0184f94e79f432f50dea11aef3a9b7449006807fb197c05220e48a2f1f3f71e -->

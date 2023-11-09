@@ -34,8 +34,8 @@ jobs:
               "labels": ${{ toJSON(github.event.issue.labels.*.name) }}
             }
         run: |
-          echo "extra=$(echo '${{ env.EXTRA_FIELDS }}' '${{ inputs.issue-extra-fields }}' | jq -rcs '.[0] * .[1]')" >> $GITHUB_OUTPUT       
-          
+          echo "extra=$(echo '${{ env.EXTRA_FIELDS }}' '${{ inputs.issue-extra-fields }}' | jq -rcs '.[0] * .[1]')" >> $GITHUB_OUTPUT
+
 
       # Creates a new issue, only if this is a new PR or GH Issue, and only if an existing issue is not in the branch name
       - name: Create Issue

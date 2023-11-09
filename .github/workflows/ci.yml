@@ -13,7 +13,7 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
       - uses: ./.github/actions/lint-provider-tfe
 
   tests:
@@ -35,7 +35,7 @@ jobs:
           organization: hashicorp-v2
           workspace: tflocal-terraform-provider-tfe
 
-      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
 
       - uses: ./.github/actions/test-provider-tfe
         with:
@@ -51,6 +51,11 @@ jobs:
           admin_subscription_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.subscription }}
           admin_support_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.support }}
           admin_version_maintenance_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.version-maintenance }}
+          # Run terminal cmd 'go help testflag' to learn more about -list flag
+          # action.yml uses https://github.com/hashicorp-forge/go-test-split-action/blob/main/action.yml to split acceptance tests
+          # which runs against all tests using the list arg
+          # lists_tests regex is used to skip the TestAccTFESAMLSettings_omnibus test suite for CI tests only
+          list_tests: "[^(TestAccTFESAMLSettings_omnibus)]"
 
   tests-combine-summaries:
     name: Combine Test Reports
@@ -71,7 +76,7 @@ jobs:
         run: jrm ./ci-summary-provider.xml "junit-test-summary-0/*.xml" "junit-test-summary-1/*.xml" "junit-test-summary-2/*.xml" "junit-test-summary-3/*.xml" "junit-test-summary-4/*.xml"
 
       - name: Upload test artifacts
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: junit-test-summary
           path: ./ci-summary-provider.xml
