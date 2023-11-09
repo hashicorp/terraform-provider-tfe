@@ -1,11 +1,11 @@
 ---
 layout: "tfe"
-page_title: "Terraform Enterprise: tfe_workspace_agent_pool_execution"
+page_title: "Terraform Enterprise: tfe_workspace_execution_mode"
 description: |-
   Change the execution mode of a workspace to use a particular agent pool
 ---
 
-# tfe_workspace_agent_pool_execution
+# tfe_workspace_execution_mode
 
 Changes the execution mode of a workspace to use a particular agent pool.
 
@@ -37,7 +37,7 @@ resource "tfe_agent_pool_allowed_workspaces" "test-allowed-workspaces" {
   allowed_workspace_ids = [tfe_workspace.test-workspace.id]
 }
 
-resource "tfe_workspace_agent_pool_execution" "test" {
+resource "tfe_workspace_execution_mode" "test" {
   workspace_id = tfe_workspace.test-workspace.id
   agent_pool_id = tfe_agent_pool.test-workspace.id
 }
@@ -55,5 +55,5 @@ The following arguments are supported:
 Excluded Workspace Policy Sets can be imported; use `<ORGANIZATION>/<WORKSPACE NAME>`. For example:
 
 ```shell
-terraform import tfe_workspace_agent_pool_execution.test 'my-org-name/workspace-name'
+terraform import tfe_workspace_execution_mode.test 'my-org-name/workspace-name'
 ```

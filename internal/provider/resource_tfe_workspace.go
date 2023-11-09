@@ -83,7 +83,7 @@ func resourceTFEWorkspace() *schema.Resource {
 
 			"agent_pool_id": {
 				Deprecated: `Please do not use this argument to set an agent pool ID.
-				Instead, configure tfe_workspace_agent_pool_execution to attach an agent pool to a workspace.
+				Instead, configure tfe_workspace_execution_mode to attach an agent pool to a workspace.
 				This attribute may be removed in the next major version of the provider.`,
 				Type:          schema.TypeString,
 				Optional:      true,
@@ -111,7 +111,7 @@ func resourceTFEWorkspace() *schema.Resource {
 
 			"execution_mode": {
 				Deprecated: `Please do not use this argument to set execution_mode to "agent".
-				Instead, configure tfe_workspace_agent_pool_execution to set execution_mode = "agent",
+				Instead, configure tfe_workspace_execution_mode to set execution_mode = "agent",
 				if attaching an agent pool to a workspace.
 				This attribute may be removed in the next major version of the provider.`,
 				Type:          schema.TypeString,

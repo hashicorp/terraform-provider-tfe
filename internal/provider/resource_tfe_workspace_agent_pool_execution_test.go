@@ -71,6 +71,8 @@ func testAccTFECheckWorkspaceAgentPoolAttached(workspace string, pool string) re
 			return fmt.Errorf("error fetching workspace: %w", err)
 		}
 
+		fmt.Println("!!!!!!", workspace.AgentPoolID)
+
 		// Read state file for agent pool
 		ap, ok := s.RootModule().Resources[pool]
 		if !ok {
