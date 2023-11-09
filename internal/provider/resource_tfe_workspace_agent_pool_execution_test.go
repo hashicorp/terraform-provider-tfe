@@ -6,6 +6,7 @@ package provider
 import (
 	"errors"
 	"fmt"
+	"log"
 	"testing"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -96,8 +97,18 @@ func testAccTFECheckWorkspaceAgentPoolNotDetached(workspace string, pool string)
 			return fmt.Errorf("Resource not found: %s", workspace)
 		}
 
+		ap, ok := s.RootModule().Resources[pool]
+		if !ok {
+			return fmt.Errorf("Resource not found: %s", pool)
+		}
+
 		// Resource ID equals the Workspace ID
 		if ws.Primary.ID == "" {
+			return fmt.Errorf("No instance ID is set")
+		}
+
+		// Resource ID equals the Agent Pool ID
+		if ap.Primary.ID == "" {
 			return fmt.Errorf("No instance ID is set")
 		}
 
@@ -106,18 +117,14 @@ func testAccTFECheckWorkspaceAgentPoolNotDetached(workspace string, pool string)
 			return fmt.Errorf("error fetching workspace: %w", err)
 		}
 
-		ap, ok := s.RootModule().Resources[pool]
-		if !ok {
-			return fmt.Errorf("Resource not found: %s", pool)
-		}
-
-		// Resource ID equals the Agent Pool ID
-		if ap.Primary.ID == "" {
-			return fmt.Errorf("No instance ID is set")
-		}
-
 		if workspace.AgentPoolID != "" {
 			return fmt.Errorf("error detaching agent pool %s: %w", ap.Primary.ID, err)
+		}
+
+		pool, err := config.Client.AgentPools.Read(ctx, ap.Primary.ID)
+		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+			log.Printf("[DEBUB] THERE IS SOMETHING WRONG WITH THIS AGENT POOL %s", pool.ID)
+			return fmt.Errorf("error fetching agent pool: %w", err)
 		}
 
 		return nil
