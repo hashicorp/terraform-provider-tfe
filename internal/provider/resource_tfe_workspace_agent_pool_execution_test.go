@@ -71,8 +71,6 @@ func testAccTFECheckWorkspaceAgentPoolAttached(workspace string, pool string) re
 			return fmt.Errorf("error fetching workspace: %w", err)
 		}
 
-		fmt.Println("!!!!!!!", workspace.AgentPoolID)
-
 		// Read state file for agent pool
 		ap, ok := s.RootModule().Resources[pool]
 		if !ok {
@@ -83,7 +81,6 @@ func testAccTFECheckWorkspaceAgentPoolAttached(workspace string, pool string) re
 		if ap.Primary.ID == "" {
 			return fmt.Errorf("No instance ID is set")
 		}
-		fmt.Println("!!!!!!!", ap.Primary.ID)
 
 		if workspace.AgentPoolID != ap.Primary.ID {
 			return fmt.Errorf("error attaching agent pool %s: %w", ap.Primary.ID, err)
