@@ -73,9 +73,9 @@ func resourceTFEWorkspaceAgentPoolExecutionCreate(d *schema.ResourceData, meta i
 
 	d.SetId(workspace.ID)
 	// This will update state where tfe_workspace execution_mode because Computed: true
-	// will now read as "agent"
-	// It defaults to remote
+	// execution_mode will now read as "agent" in the workspace resource state file
 	d.Set("execution_mode", workspace.ExecutionMode)
+	d.Set("agent_pool_id", poolID)
 
 	return resourceTFEWorkspaceAgentPoolExecutionRead(d, meta)
 }
