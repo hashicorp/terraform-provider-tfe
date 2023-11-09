@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccTFEWorkspaceAgentPoolExecution_create_update(t *testing.T) {
+func TestAccTFEWorkspaceExecutionMode_create_update(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -28,21 +28,21 @@ func TestAccTFEWorkspaceAgentPoolExecution_create_update(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspaceAgentPoolExecution_basic(org.Name),
+				Config: testAccTFEWorkspaceExecutionMode_basic(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccTFECheckWorkspaceAgentPoolAttached("tfe_workspace.workspace", "tfe_agent_pool.pool"),
 					resource.TestCheckResourceAttr("tfe_agent_pool.pool", "organization_scoped", "false"),
 				),
 			},
 			{
-				Config: testAccTFEWorkspaceAgentPoolExecution_update(org.Name),
+				Config: testAccTFEWorkspaceExecutionMode_update(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccTFECheckWorkspaceAgentPoolAttached("tfe_workspace.workspace", "tfe_agent_pool.pool"),
 					resource.TestCheckResourceAttr("tfe_agent_pool.pool", "organization_scoped", "false"),
 				),
 			},
 			{
-				Config: testAccTFEWorkspaceAgentPoolExecution_destroy(org.Name),
+				Config: testAccTFEWorkspaceExecutionMode_destroy(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccTFECheckWorkspaceAgentPoolNotDetached("tfe_workspace.workspace", "tfe_agent_pool.pool"),
 				),
@@ -71,6 +71,8 @@ func testAccTFECheckWorkspaceAgentPoolAttached(workspace string, pool string) re
 			return fmt.Errorf("error fetching workspace: %w", err)
 		}
 
+		fmt.Println("!!!!!!!", workspace.AgentPoolID)
+
 		// Read state file for agent pool
 		ap, ok := s.RootModule().Resources[pool]
 		if !ok {
@@ -81,6 +83,7 @@ func testAccTFECheckWorkspaceAgentPoolAttached(workspace string, pool string) re
 		if ap.Primary.ID == "" {
 			return fmt.Errorf("No instance ID is set")
 		}
+		fmt.Println("!!!!!!!", ap.Primary.ID)
 
 		if workspace.AgentPoolID != ap.Primary.ID {
 			return fmt.Errorf("error attaching agent pool %s: %w", ap.Primary.ID, err)
@@ -133,7 +136,7 @@ func testAccTFECheckWorkspaceAgentPoolNotDetached(workspace string, pool string)
 	}
 }
 
-func testAccTFEWorkspaceAgentPoolExecution_basic(organization string) string {
+func testAccTFEWorkspaceExecutionMode_basic(organization string) string {
 	return fmt.Sprintf(`
 resource "tfe_workspace" "workspace" {
   name = "test-workspace"
@@ -152,14 +155,15 @@ resource "tfe_agent_pool_allowed_workspaces" "permit"{
 		tfe_workspace.workspace.id
 		]
 }
-resource "tfe_workspace_agent_pool_execution" "attach"{
+resource "tfe_workspace_execution_mode" "attach"{
 	workspace_id = tfe_workspace.workspace.id
-	agent_pool_id = tfe_agent_pool.pool.id
+	agent_pool_id = tfe_agent_pool_allowed_workspaces.permit.agent_pool_id
+	execution_mode = "agent"
 	depends_on = [tfe_agent_pool_allowed_workspaces.permit]
 }`, organization, organization)
 }
 
-func testAccTFEWorkspaceAgentPoolExecution_update(organization string) string {
+func testAccTFEWorkspaceExecutionMode_update(organization string) string {
 	return fmt.Sprintf(`
 resource "tfe_workspace" "workspace" {
   name = "test-workspace"
@@ -179,14 +183,15 @@ resource "tfe_agent_pool_allowed_workspaces" "permit"{
 		]
 }
 
-resource "tfe_workspace_agent_pool_execution" "attach"{
+resource "tfe_workspace_execution_mode" "attach"{
 	workspace_id = tfe_workspace.workspace.id
-	agent_pool_id = tfe_agent_pool.pool.id
+	agent_pool_id = tfe_agent_pool_allowed_workspaces.permit.agent_pool_id
+	execution_mode = "agent"
 	depends_on = [tfe_agent_pool_allowed_workspaces.permit]
 }`, organization, organization)
 }
 
-func testAccTFEWorkspaceAgentPoolExecution_destroy(organization string) string {
+func testAccTFEWorkspaceExecutionMode_destroy(organization string) string {
 	return fmt.Sprintf(`
 	resource "tfe_workspace" "workspace" {
 		name = "test-workspace"
@@ -206,9 +211,10 @@ func testAccTFEWorkspaceAgentPoolExecution_destroy(organization string) string {
 			]
 	}
 
-	resource "tfe_workspace_agent_pool_execution" "attach"{
+	resource "tfe_workspace_execution_mode" "attach"{
 		workspace_id = tfe_workspace.workspace.id
-		agent_pool_id = tfe_agent_pool.pool.id
+		agent_pool_id = tfe_agent_pool_allowed_workspaces.permit.agent_pool_id
+		execution_mode = "agent"
 		depends_on = [tfe_agent_pool_allowed_workspaces.permit]
 	}`, organization, organization)
 }

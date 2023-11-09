@@ -13,12 +13,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func resourceTFEWorkspaceAgentPoolExecution() *schema.Resource {
+func resourceTFEWorkspaceExecutionMode() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceTFEWorkspaceAgentPoolExecutionCreate,
-		Update: resourceTFEWorkspaceAgentPoolExecutionUpdate,
-		Read:   resourceTFEWorkspaceAgentPoolExecutionRead,
-		Delete: resourceTFEWorkspaceAgentPoolExecutionDelete,
+		Create: resourceTFEWorkspaceExecutionModeCreate,
+		Update: resourceTFEWorkspaceExecutionModeUpdate,
+		Read:   resourceTFEWorkspaceExecutionModeRead,
+		Delete: resourceTFEWorkspaceExecutionModeDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -52,7 +52,7 @@ func resourceTFEWorkspaceAgentPoolExecution() *schema.Resource {
 	}
 }
 
-func resourceTFEWorkspaceAgentPoolExecutionCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEWorkspaceExecutionModeCreate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
 	executionMode := d.Get("execution_mode").(string)
@@ -80,12 +80,12 @@ func resourceTFEWorkspaceAgentPoolExecutionCreate(d *schema.ResourceData, meta i
 	d.SetId(workspace.ID)
 	// d.Set() will update state file on tfe_workspace for execution_mode and agent pool ID
 	d.Set("execution_mode", workspace.ExecutionMode)
-	d.Set("agentPoolID", workspace.AgentPoolID)
+	d.Set("agent_pool_id", workspace.AgentPoolID)
 
-	return resourceTFEWorkspaceAgentPoolExecutionRead(d, meta)
+	return resourceTFEWorkspaceExecutionModeRead(d, meta)
 }
 
-func resourceTFEWorkspaceAgentPoolExecutionRead(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEWorkspaceExecutionModeRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read configuration: %s", d.Id())
@@ -110,7 +110,7 @@ func resourceTFEWorkspaceAgentPoolExecutionRead(d *schema.ResourceData, meta int
 	return nil
 }
 
-func resourceTFEWorkspaceAgentPoolExecutionUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEWorkspaceExecutionModeUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
 	executionMode := d.Get("execution_mode").(string)
@@ -138,12 +138,12 @@ func resourceTFEWorkspaceAgentPoolExecutionUpdate(d *schema.ResourceData, meta i
 	d.SetId(workspace.ID)
 	// d.Set() will update state file on tfe_workspace for execution_mode and agent pool ID
 	d.Set("execution_mode", workspace.ExecutionMode)
-	d.Set("agentPoolID", workspace.AgentPoolID)
+	d.Set("aagent_pool_id", workspace.AgentPoolID)
 
-	return resourceTFEWorkspaceAgentPoolExecutionRead(d, meta)
+	return resourceTFEWorkspaceExecutionModeRead(d, meta)
 }
 
-func resourceTFEWorkspaceAgentPoolExecutionDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEWorkspaceExecutionModeDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
 	poolID := d.Get("agent_pool_id").(string)
