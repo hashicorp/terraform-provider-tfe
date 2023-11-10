@@ -26,7 +26,7 @@ func resourceTFEWorkspaceExecutionMode() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"agent_pool_id": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 				ForceNew: true,
 			},
 
@@ -74,13 +74,13 @@ func resourceTFEWorkspaceExecutionModeCreate(d *schema.ResourceData, meta interf
 	log.Printf("[DEBUG] Create attachment on workspace with agent pool ID: %s", agentPoolID)
 	workspace, err := config.Client.Workspaces.UpdateByID(ctx, workspaceID, options)
 	if err != nil {
-		return fmt.Errorf("error attaching agent pool ID %s to workspace ID %s: %w", agentPoolID, workspaceID, err)
+		return fmt.Errorf("error attaching agent pool ID %s to workspace ID on CREATE %s: %w", agentPoolID, workspaceID, err)
 	}
 
 	d.SetId(workspace.ID)
 	// d.Set() will update the resource state file for execution_mode and agent pool ID
-	d.Set("execution_mode", workspace.ExecutionMode)
-	d.Set("agent_pool_id", workspace.AgentPoolID)
+	// d.Set("execution_mode", workspace.ExecutionMode)
+	// d.Set("agent_pool_id", workspace.AgentPoolID)
 
 	return resourceTFEWorkspaceExecutionModeRead(d, meta)
 }

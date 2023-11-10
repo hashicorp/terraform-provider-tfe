@@ -4,6 +4,7 @@
 
 FEATURES:
 * `d/tfe_registry_module`: Add `vcs_repo.tags` and `vcs_repo.branch` attributes to allow configuration of `publishing_mechanism`. Add `test_config` to support running tests on `branch`-based registry modules, by @hashimoon [1096](https://github.com/hashicorp/terraform-provider-tfe/pull/1096)
+* **New Resource**: `r/tfe_workspace_agent_pool_execution` is a new resource to attach/detach an agent pool to a workspace, by @laurenolivia [1119](https://github.com/hashicorp/terraform-provider-tfe/pull/1119)
 
 ENHANCEMENTS:
 * `d/tfe_organization`: Make `name` argument optional if configured for the provider, by @tmatilai [1133](https://github.com/hashicorp/terraform-provider-tfe/pull/1133)
@@ -15,7 +16,7 @@ FEATURES:
 * `d/tfe_workspace`: Add `auto_apply_run_trigger` attribute, by @nfagerlund [1123](https://github.com/hashicorp/terraform-provider-tfe/pull/1123)
 * `r/tfe_variable_set`: Add `priority` attribute, by @Netra2104 [1075](https://github.com/hashicorp/terraform-provider-tfe/pull/1075)
 * `d/tfe_variable_set`: Add `priority` attribute, by @Netra2104 [1075](https://github.com/hashicorp/terraform-provider-tfe/pull/1075)
-* **New Resource**: `r/tfe_workspace_agent_pool_execution` is a new resource to attach/detach an agent pool to a workspace, by @laurenolivia [1119](https://github.com/hashicorp/terraform-provider-tfe/pull/1119)
+
 
 BUG FIXES:
 
