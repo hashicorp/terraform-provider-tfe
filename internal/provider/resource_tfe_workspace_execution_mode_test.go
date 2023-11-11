@@ -195,6 +195,6 @@ func testAccTFEWorkspaceExecutionMode_destroy(organization string) string {
 	resource "tfe_workspace_execution_mode" "attach"{
 		workspace_id = tfe_workspace.workspace.id
 		agent_pool_id = tfe_agent_pool_allowed_workspaces.permit.agent_pool_id
-		execution_mode = "remote"
+		execution_mode = "agent"
 	}`, organization, organization)
 }
