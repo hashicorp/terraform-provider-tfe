@@ -59,8 +59,11 @@ func resourceTFEWorkspaceExecutionModeCreate(d *schema.ResourceData, meta interf
 	agentPoolID := d.Get("agent_pool_id").(string)
 
 	if executionMode == "agent" && agentPoolID == "" {
-		return fmt.Errorf(`error with either execution mode set as "agent" with no agent_pool_ID,
-		or agent_pool_id is set but execution_mode is not set to "agent"`)
+		return fmt.Errorf(`agent_pool_id must be provided when execution_mode is "agent"`)
+	}
+
+	if executionMode != "agent" && agentPoolID != "" {
+		return fmt.Errorf(`execution_mode must be set to "agent" to assign agent_pool_id`)
 	}
 
 	workspaceID := d.Get("workspace_id").(string)
@@ -117,8 +120,11 @@ func resourceTFEWorkspaceExecutionModeUpdate(d *schema.ResourceData, meta interf
 	agentPoolID := d.Get("agent_pool_id").(string)
 
 	if executionMode == "agent" && agentPoolID == "" {
-		return fmt.Errorf(`error with either execution mode set as "agent" with no agent_pool_ID,
-		or agent_pool_id is set but execution_mode is not set to "agent"`)
+		return fmt.Errorf(`agent_pool_id must be provided when execution_mode is "agent"`)
+	}
+
+	if executionMode != "agent" && agentPoolID != "" {
+		return fmt.Errorf(`execution_mode must be set to "agent" to assign agent_pool_id`)
 	}
 
 	workspaceID := d.Get("workspace_id").(string)
