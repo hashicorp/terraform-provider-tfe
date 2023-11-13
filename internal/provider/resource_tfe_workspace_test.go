@@ -1875,53 +1875,54 @@ func TestAccTFEWorkspace_operationsAndExecutionModeInteroperability(t *testing.T
 	})
 }
 
-func TestAccTFEWorkspace_unsetExecutionMode(t *testing.T) {
-	skipIfEnterprise(t)
+// SCHEDULED FOR DELETION!!
+// func TestAccTFEWorkspace_unsetExecutionMode(t *testing.T) {
+// 	skipIfEnterprise(t)
 
-	tfeClient, err := getClientUsingEnv()
-	if err != nil {
-		t.Fatal(err)
-	}
+// 	tfeClient, err := getClientUsingEnv()
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
 
-	org, orgCleanup := createBusinessOrganization(t, tfeClient)
-	t.Cleanup(orgCleanup)
+// 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+// 	t.Cleanup(orgCleanup)
 
-	workspace := &tfe.Workspace{}
+// 	workspace := &tfe.Workspace{}
 
-	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccTFEWorkspace_executionModeAgent(org.Name),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "operations", "true"),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "execution_mode", "agent"),
-					resource.TestCheckResourceAttrSet(
-						"tfe_workspace.foobar", "agent_pool_id"),
-				),
-			},
-			{
-				Config: testAccTFEWorkspace_executionModeNull(org.Name),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "operations", "true"),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "execution_mode", "remote"),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "agent_pool_id", ""),
-				),
-			},
-		},
-	})
-}
+// 	resource.Test(t, resource.TestCase{
+// 		PreCheck:     func() { testAccPreCheck(t) },
+// 		Providers:    testAccProviders,
+// 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+// 		Steps: []resource.TestStep{
+// 			{
+// 				Config: testAccTFEWorkspace_executionModeAgent(org.Name),
+// 				Check: resource.ComposeTestCheckFunc(
+// 					testAccCheckTFEWorkspaceExists(
+// 						"tfe_workspace.foobar", workspace, testAccProvider),
+// 					resource.TestCheckResourceAttr(
+// 						"tfe_workspace.foobar", "operations", "true"),
+// 					resource.TestCheckResourceAttr(
+// 						"tfe_workspace.foobar", "execution_mode", "agent"),
+// 					resource.TestCheckResourceAttrSet(
+// 						"tfe_workspace.foobar", "agent_pool_id"),
+// 				),
+// 			},
+// 			{
+// 				Config: testAccTFEWorkspace_executionModeNull(org.Name),
+// 				Check: resource.ComposeTestCheckFunc(
+// 					testAccCheckTFEWorkspaceExists(
+// 						"tfe_workspace.foobar", workspace, testAccProvider),
+// 					resource.TestCheckResourceAttr(
+// 						"tfe_workspace.foobar", "operations", "true"),
+// 					resource.TestCheckResourceAttr(
+// 						"tfe_workspace.foobar", "execution_mode", "remote"),
+// 					resource.TestCheckResourceAttr(
+// 						"tfe_workspace.foobar", "agent_pool_id", ""),
+// 				),
+// 			},
+// 		},
+// 	})
+// }
 
 func TestAccTFEWorkspace_globalRemoteState(t *testing.T) {
 	workspace := &tfe.Workspace{}
@@ -2917,18 +2918,19 @@ resource "tfe_workspace" "foobar" {
 // while testing the flow of unsetting execution mode as in TestAccTFEWorkspace_unsetExecutionMode
 // the resource "tfe_agent_pool" has been kept in both configs(testAccTFEWorkspace_executionModeAgent & testAccTFEWorkspace_executionModeNull)
 // this prevents an attempt to destroy the agent pool before dissasociating it from the workspace
-func testAccTFEWorkspace_executionModeNull(organization string) string {
-	return fmt.Sprintf(`
-resource "tfe_agent_pool" "foobar" {
-  name = "agent-pool-test"
-  organization = "%s"
-}
+// SCHEDULED FOR DELETION!!
+// func testAccTFEWorkspace_executionModeNull(organization string) string {
+// 	return fmt.Sprintf(`
+// resource "tfe_agent_pool" "foobar" {
+//   name = "agent-pool-test"
+//   organization = "%s"
+// }
 
-resource "tfe_workspace" "foobar" {
-  name         = "workspace-test"
-  organization = "%s"
-}`, organization, organization)
-}
+// resource "tfe_workspace" "foobar" {
+//   name         = "workspace-test"
+//   organization = "%s"
+// }`, organization, organization)
+// }
 
 func testAccTFEWorkspace_basicSpeculativeOff(rInt int) string {
 	return fmt.Sprintf(`

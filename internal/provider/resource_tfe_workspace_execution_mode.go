@@ -172,7 +172,7 @@ func resourceTFEWorkspaceExecutionModeDelete(d *schema.ResourceData, meta interf
 		ExecutionMode: tfe.String("remote"),
 	})
 	if errs != nil {
-		return fmt.Errorf("error detaching agent pool %s from workspace %s: %w", poolID, workspaceID, errs)
+		return fmt.Errorf("error detaching agent pool from workspace: %w", errs)
 	}
 
 	return nil

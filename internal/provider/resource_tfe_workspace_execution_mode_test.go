@@ -108,8 +108,8 @@ func testAccTFECheckWorkspaceAgentPoolNotDetached(w string, detachPool *tfe.Work
 			return fmt.Errorf("error fetching workspace: %w", err)
 		}
 
-		if workspace.AgentPool.ID != "" {
-			return fmt.Errorf("error detaching agent pool %w", err)
+		if workspace.AgentPool != nil {
+			return fmt.Errorf("error detaching agent pool (test file) %w", err)
 		}
 
 		*detachPool = *workspace
