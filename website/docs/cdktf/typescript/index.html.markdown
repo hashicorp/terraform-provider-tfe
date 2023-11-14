@@ -44,7 +44,7 @@ There are several ways to provide the required token:
 the `token` argument in the provider configuration.  Use an input variable for
 the token.
 - **Set the `tfeToken` environment variable:** The provider can read the
-`tfeToken` environment variable and the token stored there to authenticate.
+`TFE_TOKEN` environment variable and the token stored there to authenticate.
 
 When configuring the input variable for either of these options, mark them as sensitive.
 
@@ -62,9 +62,9 @@ Terraform on your local command line, it can automatically discover the credenti
 [`terraform login`](https://developer.hashicorp.com/terraform/cli/commands/login).
 - **Set a `credentials` block in your CLI config file (.terraformrc):** See
 the [CLI Configuration File documentation](/docs/commands/cli-config.html).
-If you used the `tfCliConfigFile` environment variable to specify a
+If you used the `TF_CLI_CONFIG_FILE` environment variable to specify a
 non-default location for .terraformrc, the provider will also use that location.
-Using a `credentialsHelper` block is not supported.
+Using a `credentials_helper` block is not supported.
 
 
 ## Versions
@@ -92,7 +92,7 @@ The above snippet using `requiredProviders` is for Terraform 0.13+; if you are u
 
 ```hcl
 provider "tfe" {
-  version = "~> 0.49.2"
+  version = "~> 0.50.0"
   ...
 }
 ```
@@ -136,16 +136,16 @@ class MyConvertedCode extends TerraformStack {
 The following arguments are supported:
 
 * `hostname` - (Optional) The Terraform Cloud/Enterprise hostname to connect to.
-  Defaults to `appTerraformIo`. Can be overridden by setting the
-  `tfeHostname` environment variable.
+  Defaults to `app.terraform.io`. Can be overridden by setting the
+  `TFE_HOSTNAME` environment variable.
 * `token` - (Optional) The token used to authenticate with Terraform Cloud/Enterprise.
   See [Authentication](#authentication) above for more information.
 * `sslSkipVerify` - (Optional) Whether or not to skip certificate verifications.
-  Defaults to `false`. Can be overridden setting the `tfeSslSkipVerify`
+  Defaults to `false`. Can be overridden setting the `TFE_SSL_SKIP_VERIFY`
   environment variable.
 * `organization` - (Optional) The default organization that resources should
   belong to. If provided, it's usually possible to omit resource-specific `organization`
   arguments. Ensure that the organization already exists prior to using this argument.
-  This can also be specified using the `tfeOrganization` environment variable.
+  This can also be specified using the `TFE_ORGANIZATION` environment variable.
 
-<!-- cache-key: cdktf-0.18.0 input-33fe894f2a52223676bdccc7d758f6743af2cb3c4901d8dbb5367eb16795f07a -->
+<!-- cache-key: cdktf-0.19.0 input-71b632c8101c3bde9d1598273955499b3ab09c1fe1051d376b5fc6c5538335fe -->

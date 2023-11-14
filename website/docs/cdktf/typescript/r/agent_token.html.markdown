@@ -60,4 +60,4 @@ The following arguments are supported:
 * `description` - The description of agent token.
 * `token` - The generated token.
 
-<!-- cache-key: cdktf-0.18.0 input-0b48bd828d88ed48d140d96f6cf5b5dd1fd182cfb82d3bf6211f7610464c0f01 -->
+<!-- cache-key: cdktf-0.19.0 input-0b48bd828d88ed48d140d96f6cf5b5dd1fd182cfb82d3bf6211f7610464c0f01 -->

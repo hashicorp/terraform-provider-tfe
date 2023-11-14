@@ -119,7 +119,7 @@ The following arguments are supported:
 * `description` - (Optional) A description of the policy set's purpose.
 * `global` - (Optional) Whether or not policies in this set will apply to
   all workspaces. Defaults to `false`. This value _must not_ be provided if
-  `workspaceIds` is provided.
+  `workspace_ids` is provided.
 * `kind` - (Optional) The policy-as-code framework associated with the policy.
    Defaults to `sentinel` if not provided. Valid values are `sentinel` and `opa`.
    A policy set can only have policies that have the same underlying kind.
@@ -127,19 +127,19 @@ The following arguments are supported:
    it fails during a run. Defaults to `false`. Only valid for OPA policies.
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `policiesPath` - (Optional) The sub-path within the attached VCS repository
-  to ingress when using `vcsRepo`. All files and directories outside of this
-  sub-path will be ignored. This option can only be supplied when `vcsRepo` is
+  to ingress when using `vcs_repo`. All files and directories outside of this
+  sub-path will be ignored. This option can only be supplied when `vcs_repo` is
   present. Forces a new resource if changed.
 * `policyIds` - (Optional) A list of Sentinel policy IDs. This value _must not_ be provided
-  if `vcsRepo` is provided.
+  if `vcs_repo` is provided.
 * `vcsRepo` - (Optional) Settings for the policy sets VCS repository. Forces a
-  new resource if changed. This value _must not_ be provided if `policyIds` are provided.
+  new resource if changed. This value _must not_ be provided if `policy_ids` are provided.
 * `workspaceIds` - (Optional) A list of workspace IDs. This value _must not_ be provided
   if `global` is provided.
-* `slug` - (Optional) A reference to the `tfeSlug` data source that contains
-  the `sourcePath` to where the local policies are located. This is used when
+* `slug` - (Optional) A reference to the `tfe_slug` data source that contains
+  the `source_path` to where the local policies are located. This is used when
 policies are located locally, and can only be used when there is no VCS repo or
-explicit Policy IDs. This _requires_ the usage of the `tfeSlug` data source.
+explicit Policy IDs. This _requires_ the usage of the `tfe_slug` data source.
 
 -> **Note:** When neither `vcsRepo` or `policyIds` is not specified, the current
 default is to create an empty non-VCS policy set.
@@ -153,8 +153,8 @@ The `vcsRepo` block supports:
   This defaults to the repository's default branch (e.g. main).
 * `ingressSubmodules` - (Optional) Whether submodules should be fetched when
   cloning the VCS repository. Defaults to `false`.
-* `oauthTokenId` - (Optional) Token ID of the VCS Connection (OAuth Connection Token) to use. This conflicts with `githubAppInstallationId` and can only be used if `githubAppInstallationId` is not used.
-* `githubAppInstallationId` - (Optional) The installation id of the Github App. This conflicts with `oauthTokenId` and can only be used if `oauthTokenId` is not used.
+* `oauthTokenId` - (Optional) Token ID of the VCS Connection (OAuth Connection Token) to use. This conflicts with `github_app_installation_id` and can only be used if `github_app_installation_id` is not used.
+* `githubAppInstallationId` - (Optional) The installation id of the Github App. This conflicts with `oauth_token_id` and can only be used if `oauth_token_id` is not used.
 
 ## Attributes Reference
 
@@ -168,4 +168,4 @@ Policy sets can be imported; use `<POLICY SET ID>` as the import ID. For example
 terraform import tfe_policy_set.test polset-wAs3zYmWAhYK7peR
 ```
 
-<!-- cache-key: cdktf-0.18.0 input-87dbe1491f5d0ac7c103cc9c7efc59a2174d7dcb1ad313a0a80615bf40216578 -->
+<!-- cache-key: cdktf-0.19.0 input-87dbe1491f5d0ac7c103cc9c7efc59a2174d7dcb1ad313a0a80615bf40216578 -->

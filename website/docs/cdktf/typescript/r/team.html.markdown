@@ -75,7 +75,7 @@ The following arguments are supported:
 The `organizationAccess` block supports:
 
 * `readWorkspaces` - (Optional) Allow members to view all workspaces in this organization.
-* `readProjects` - (Optional) Allow members to view all projects within the organization. Requires `readWorkspaces` to be set to `true`.
+* `readProjects` - (Optional) Allow members to view all projects within the organization. Requires `read_workspaces` to be set to `true`.
 * `managePolicies` - (Optional) Allows members to create, edit, and delete the organization's Sentinel policies.
 * `managePolicyOverrides` - (Optional) Allows members to override soft-mandatory policy checks.
 * `manageWorkspaces` - (Optional) Allows members to create and administrate all workspaces within the organization.
@@ -83,7 +83,7 @@ The `organizationAccess` block supports:
 * `manageProviders` - (Optional) Allow members to publish and delete providers in the organization's private registry.
 * `manageModules` - (Optional) Allow members to publish and delete modules in the organization's private registry.
 * `manageRunTasks` - (Optional) Allow members to create, edit, and delete the organization's run tasks.
-* `manageProjects` - (Optional) Allow members to create and administrate all projects within the organization. Requires `manageWorkspaces` to be set to `true`.
+* `manageProjects` - (Optional) Allow members to create and administrate all projects within the organization. Requires `manage_workspaces` to be set to `true`.
 * `manageMembership` - (Optional) Allow members to add/remove users from the organization, and to add/remove users from visible teams.
 
 ## Attributes Reference
@@ -103,4 +103,4 @@ or
 terraform import tfe_team.test my-org-name/my-team-name
 ```
 
-<!-- cache-key: cdktf-0.18.0 input-dc64726d4c7e0673d2977d4ee669481de15489f255f8be717ed7c1c037e736b8 -->
+<!-- cache-key: cdktf-0.19.0 input-dc64726d4c7e0673d2977d4ee669481de15489f255f8be717ed7c1c037e736b8 -->
