@@ -1,4 +1,4 @@
-package tfe
+package provider
 
 import (
 	"fmt"
@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"errors"
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"errors"
 )
 
 func TestAccTFEOrganizationDefaultExecutionMode_remote(t *testing.T) {
@@ -69,7 +69,7 @@ func TestAccTFEOrganizationDefaultExecutionMode_agent(t *testing.T) {
 					testAccCheckTFEOrganizationExists(
 						"tfe_organization.foobar", org),
 					testAccCheckTFEOrganizationDefaultExecutionMode(org, "agent"),
-					testAccCheckTFEOrganizationDefaultAgentPoolIdExists(org),
+					testAccCheckTFEOrganizationDefaultAgentPoolIDExists(org),
 				),
 			},
 		},
@@ -99,7 +99,7 @@ func TestAccTFEOrganizationDefaultExecutionMode_update(t *testing.T) {
 					testAccCheckTFEOrganizationExists(
 						"tfe_organization.foobar", org),
 					testAccCheckTFEOrganizationDefaultExecutionMode(org, "agent"),
-					testAccCheckTFEOrganizationDefaultAgentPoolIdExists(org),
+					testAccCheckTFEOrganizationDefaultAgentPoolIDExists(org),
 				),
 			},
 			{
@@ -153,7 +153,7 @@ func testAccCheckTFEOrganizationDefaultExecutionMode(org *tfe.Organization, expe
 	}
 }
 
-func testAccCheckTFEOrganizationDefaultAgentPoolIdExists(org *tfe.Organization) resource.TestCheckFunc {
+func testAccCheckTFEOrganizationDefaultAgentPoolIDExists(org *tfe.Organization) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if org.DefaultAgentPool == nil {
 			return errors.New("default agent pool was not set")

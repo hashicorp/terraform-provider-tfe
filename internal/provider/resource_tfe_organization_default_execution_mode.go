@@ -1,12 +1,13 @@
-package tfe
+package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	tfe "github.com/hashicorp/go-tfe"
-	"log"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"log"
 )
 
 func resourceTFEOrganizationDefaultExecutionMode() *schema.Resource {
@@ -55,7 +56,7 @@ func resourceTFEOrganizationDefaultExecutionModeCreate(d *schema.ResourceData, m
 	// Get the organization name.
 	organization, err := config.schemaOrDefaultOrganization(d)
 	if err != nil {
-		return err
+		return fmt.Errorf("error getting organization name: %w", err)
 	}
 
 	// If the "default_agent_pool_id" was provided, get the agent pool
@@ -79,7 +80,7 @@ func resourceTFEOrganizationDefaultExecutionModeCreate(d *schema.ResourceData, m
 		DefaultAgentPool:     agentPool,
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("error setting default execution mode of organization %s: %w", d.Id(), err)
 	}
 
 	d.SetId(organization)
@@ -93,7 +94,7 @@ func resourceTFEOrganizationDefaultExecutionModeRead(d *schema.ResourceData, met
 	log.Printf("[DEBUG] Read the organization: %s", d.Id())
 	organization, err := config.Client.Organizations.Read(ctx, d.Id())
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			log.Printf("[DEBUG] organization %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
@@ -121,7 +122,7 @@ func resourceTFEOrganizationDefaultExecutionModeDelete(d *schema.ResourceData, m
 	// Get the organization name.
 	organization, err := config.schemaOrDefaultOrganization(d)
 	if err != nil {
-		return err
+		return fmt.Errorf("error getting organization name: %w", err)
 	}
 
 	log.Printf("[DEBUG] Reseting default execution mode of organization: %s", organization)
@@ -131,7 +132,7 @@ func resourceTFEOrganizationDefaultExecutionModeDelete(d *schema.ResourceData, m
 		DefaultAgentPool:     nil,
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("error updating organization default execution mode: %w", err)
 	}
 
 	return nil
@@ -143,7 +144,7 @@ func resourceTFEOrganizationDefaultExecutionModeImporter(ctx context.Context, d 
 	log.Printf("[DEBUG] Read the organization: %s", d.Id())
 	organization, err := config.Client.Organizations.Read(ctx, d.Id())
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			log.Printf("[DEBUG] organization %s no longer exists", d.Id())
 			d.SetId("")
 		}

@@ -46,6 +46,10 @@ func resourceTFEWorkspace() *schema.Resource {
 				return err
 			}
 
+			if err := overwriteDefaultExecutionMode(c, d); err != nil {
+				return err
+			}
+
 			if err := validateAgentExecution(c, d); err != nil {
 				return err
 			}
@@ -82,7 +86,8 @@ func resourceTFEWorkspace() *schema.Resource {
 			"agent_pool_id": {
 				Type:          schema.TypeString,
 				Optional:      true,
-				Default:       "",
+				Computed:      true,
+				Default:       nil,
 				ConflictsWith: []string{"operations"},
 			},
 
@@ -117,6 +122,24 @@ func resourceTFEWorkspace() *schema.Resource {
 					},
 					false,
 				),
+			},
+
+			"setting_overwrites": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"execution_mode": {
+							Type:     schema.TypeBool,
+							Required: true,
+						},
+
+						"agent_pool": {
+							Type:     schema.TypeBool,
+							Required: true,
+						},
+					},
+				},
 			},
 
 			"file_triggers_enabled": {
@@ -323,14 +346,34 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 
 	if v, ok := d.GetOk("agent_pool_id"); ok && v.(string) != "" {
 		options.AgentPoolID = tfe.String(v.(string))
+		options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{
+			ExecutionMode: tfe.Bool(true),
+			AgentPool:     tfe.Bool(true),
+		}
 	}
 
 	if v, ok := d.GetOk("execution_mode"); ok {
-		options.ExecutionMode = tfe.String(v.(string))
+		executionMode := tfe.String(v.(string))
+		options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{
+			ExecutionMode: tfe.Bool(true),
+			AgentPool:     tfe.Bool(true),
+		}
+		options.ExecutionMode = executionMode
 	}
 
 	if v, ok := d.GetOkExists("operations"); ok {
 		options.Operations = tfe.Bool(v.(bool))
+		options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{
+			ExecutionMode: tfe.Bool(true),
+			AgentPool:     tfe.Bool(true),
+		}
+	}
+
+	if options.SettingOverwrites == nil {
+		options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{
+			ExecutionMode: tfe.Bool(false),
+			AgentPool:     tfe.Bool(false),
+		}
 	}
 
 	if v, ok := d.GetOk("source_url"); ok {
@@ -438,7 +481,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Read configuration of workspace: %s", id)
 	workspace, err := config.Client.Workspaces.ReadByID(ctx, id)
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			log.Printf("[DEBUG] Workspace %s no longer exists", id)
 			d.SetId("")
 			return nil
@@ -471,6 +514,18 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("working_directory", workspace.WorkingDirectory)
 	d.Set("organization", workspace.Organization.Name)
 	d.Set("resource_count", workspace.ResourceCount)
+
+	var settingOverwrites []interface{}
+	if workspace.SettingOverwrites != nil {
+		settingOverwrites = append(settingOverwrites, map[string]interface{}{
+			"execution_mode": workspace.SettingOverwrites.ExecutionMode,
+			"agent_pool":     workspace.SettingOverwrites.AgentPool,
+		})
+	}
+	err = d.Set("setting_overwrites", settingOverwrites)
+	if err != nil {
+		return err
+	}
 
 	if workspace.Links["self-html"] != nil {
 		baseAPI := config.Client.BaseURL()
@@ -541,15 +596,18 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 	config := meta.(ConfiguredClient)
 	id := d.Id()
 
+	workspaceControlsAgentPool := isSettingOverwritten("agent_pool", d)
+	workspaceControlsExecutionMode := isSettingOverwritten("execution_mode", d)
+
 	if d.HasChange("name") || d.HasChange("auto_apply") || d.HasChange("auto_apply_run_trigger") || d.HasChange("queue_all_runs") ||
 		d.HasChange("terraform_version") || d.HasChange("working_directory") ||
 		d.HasChange("vcs_repo") || d.HasChange("file_triggers_enabled") ||
 		d.HasChange("trigger_prefixes") || d.HasChange("trigger_patterns") ||
 		d.HasChange("allow_destroy_plan") || d.HasChange("speculative_enabled") ||
-		d.HasChange("operations") || d.HasChange("execution_mode") ||
-		d.HasChange("description") || d.HasChange("agent_pool_id") ||
+		d.HasChange("operations") || (d.HasChange("execution_mode") && workspaceControlsExecutionMode) ||
+		d.HasChange("description") || (d.HasChange("agent_pool_id") && workspaceControlsAgentPool) ||
 		d.HasChange("global_remote_state") || d.HasChange("structured_run_output_enabled") ||
-		d.HasChange("assessments_enabled") || d.HasChange("project_id") {
+		d.HasChange("assessments_enabled") || d.HasChange("project_id") || d.HasChange("setting_overwrites") {
 		// Create a new options struct.
 		options := tfe.WorkspaceUpdateOptions{
 			Name:                       tfe.String(d.Get("name").(string)),
@@ -577,15 +635,42 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			}
 		}
 
-		if d.HasChange("agent_pool_id") {
+		if d.HasChange("agent_pool_id") && workspaceControlsAgentPool {
 			if v, ok := d.GetOk("agent_pool_id"); ok && v.(string) != "" {
 				options.AgentPoolID = tfe.String(v.(string))
+
+				if options.SettingOverwrites == nil {
+					// avoid overwriting setting-overwrites that may have been set previously
+					options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{}
+				}
 			}
 		}
 
-		if d.HasChange("execution_mode") {
-			if v, ok := d.GetOk("execution_mode"); ok {
-				options.ExecutionMode = tfe.String(v.(string))
+		if (d.HasChange("execution_mode") && workspaceControlsExecutionMode) || d.HasChange("setting_overwrites") {
+			executionMode := d.GetRawConfig().GetAttr("execution_mode")
+
+			// if the TFE instance knows about setting setting-overwrites...
+			if _, ok := d.GetOk("setting_overwrites"); ok {
+				if options.SettingOverwrites == nil {
+					// avoid overwriting setting-overwrites that may have been set previously
+					options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{}
+				}
+
+				// if execution mode is current unset...
+				operations := d.GetRawConfig().GetAttr("operations")
+				if executionMode.IsNull() && operations.IsNull() {
+					// set execution mode to default (inherit from the parent organization/project)
+					options.SettingOverwrites.ExecutionMode = tfe.Bool(false)
+				}
+				if !executionMode.IsNull() {
+					options.SettingOverwrites.ExecutionMode = tfe.Bool(true)
+					options.ExecutionMode = tfe.String(executionMode.AsString())
+				}
+			} else {
+				// since the TFE instances doesn't know about setting-overwrites, set the execution mode as normal
+				if v, ok := d.GetOk("execution_mode"); ok {
+					options.ExecutionMode = tfe.String(v.(string))
+				}
 			}
 		}
 
@@ -852,11 +937,70 @@ func setExecutionModeDefault(_ context.Context, d *schema.ResourceDiff) error {
 	executionMode, executionModeReadOk := configMap["execution_mode"]
 	executionModeState := d.Get("execution_mode")
 	if operationsReadOk && executionModeReadOk {
+		// forcefully setting the execution mode default is only necessary when an existing workspace is being updated
+		isRecordPersisted := d.Id() != ""
+		if isRecordPersisted != true {
+			return nil
+		}
+
+		// if current TFE version supports setting-overwrites...
+		if v, ok := d.GetOkExists("setting_overwrites"); ok {
+			settingOverwrites := v.([]interface{})
+			if operations.IsNull() && executionMode.IsNull() && len(settingOverwrites) != 0 {
+				// ... don't set execution mode to remote
+				return nil
+			}
+		}
+
 		if operations.IsNull() && executionMode.IsNull() && executionModeState != "remote" {
 			err := d.SetNew("execution_mode", "remote")
 			if err != nil {
 				return fmt.Errorf("failed to set execution_mode: %w", err)
 			}
+		}
+	}
+
+	return nil
+}
+
+func overwriteDefaultExecutionMode(_ context.Context, d *schema.ResourceDiff) error {
+	configMap := d.GetRawConfig().AsValueMap()
+	executionMode, executionModeReadOk := configMap["execution_mode"]
+	operations, operationsReadOk := configMap["operations"]
+
+	// if the execution mode is currently overwritten, but being set to default in the current config, make sure that
+	// the setting overwrites will be set to false
+	if executionMode.IsNull() && operations.IsNull() {
+		if v, ok := d.GetOk("setting_overwrites"); ok {
+			settingOverwrites := v.([]interface{})[0].(map[string]interface{})
+			if settingOverwrites["execution_mode"] == true {
+				newSettingOverwrites := map[string]interface{}{
+					"execution_mode": false,
+					"agent_pool":     false,
+				}
+				d.SetNew("setting_overwrites", []interface{}{newSettingOverwrites})
+				d.SetNewComputed("execution_mode")
+			}
+			return nil
+		}
+	}
+
+	if (executionMode.IsNull() || !executionModeReadOk) && (operations.IsNull() || !operationsReadOk) {
+		return nil
+	}
+
+	// if the default execution mode and the execution_mode in the config matches, nothing will happen
+	// unless we inform TFE that the new execution_mode is meant to overwrite the current execution mode
+	if v, ok := d.GetOk("setting_overwrites"); ok {
+		settingOverwrites := v.([]interface{})[0].(map[string]interface{})
+		if settingOverwrites["execution_mode"] == false {
+			agentPool, agentPoolReadOk := configMap["agent_pool"]
+
+			newSettingOverwrites := map[string]interface{}{
+				"execution_mode": true,
+				"agent_pool":     agentPool.IsKnown() && agentPoolReadOk,
+			}
+			d.SetNew("setting_overwrites", []interface{}{newSettingOverwrites})
 		}
 	}
 
@@ -969,4 +1113,24 @@ func errWorkspaceResourceCountCheck(workspaceID string, resourceCount int) error
 			"error deleting workspace %s: This workspace has %v resources under management and must be force deleted by setting force_delete = true", workspaceID, resourceCount)
 	}
 	return nil
+}
+
+// isSettingOverwritten checks if the value of a setting is being overwritten by the workspace or not. in other words,
+// if the value of the setting is determined by the workspace, this function will return true for that setting
+func isSettingOverwritten(setting string, d *schema.ResourceData) bool {
+	if v, ok := d.GetOk("setting_overwrites"); ok {
+		settingOverwrites := v.([]interface{})
+		if len(settingOverwrites) != 1 {
+			// current TFE version does not support setting-overwrites, so all settings are set at workspace-level
+			return true
+		}
+
+		// check the value of the setting
+		settingOverwritesValue := settingOverwrites[0].(map[string]interface{})
+		executionModeOverwritten := settingOverwritesValue[setting]
+
+		return executionModeOverwritten.(bool)
+	}
+
+	return true
 }

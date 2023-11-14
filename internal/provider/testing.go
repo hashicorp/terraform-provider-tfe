@@ -149,7 +149,7 @@ func createBusinessOrganizationWithAgentDefaultExecutionMode(t *testing.T, tfeCl
 			DefaultAgentPool:     nil,
 		})
 		if err != nil {
-			err = fmt.Errorf("failure occured while trying to unlink organization from agent pool: %w", err)
+			err = fmt.Errorf("failure occurred while trying to unlink organization from agent pool: %w", err)
 			t.Fatal(err)
 		}
 
