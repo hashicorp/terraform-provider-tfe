@@ -199,6 +199,24 @@ func createAndUploadConfigurationVersion(t *testing.T, workspace *tfe.Workspace,
 	}
 }
 
+func createWorkspace(t *testing.T, client *tfe.Client, orgName string, options tfe.WorkspaceCreateOptions) *tfe.Workspace {
+	ctx := context.Background()
+	ws, err := client.Workspaces.Create(ctx, orgName, options)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() {
+		if err := client.Workspaces.Delete(ctx, orgName, ws.Name); err != nil {
+			t.Errorf("Error destroying workspace! WARNING: Dangling resources\n"+
+				"may exist! The full error is show below:\n\n"+
+				"Workspace:%s\nError: %s", ws.ID, err)
+		}
+	})
+
+	return ws
+}
+
 func createProject(t *testing.T, client *tfe.Client, orgName string, options tfe.ProjectCreateOptions) *tfe.Project {
 	ctx := context.Background()
 	proj, err := client.Projects.Create(ctx, orgName, options)
