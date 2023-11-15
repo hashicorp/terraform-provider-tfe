@@ -843,47 +843,6 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 	return nil
 }
 
-// since execution_mode is marked as Optional: true, and Computed: true,
-// unsetting the execution_mode in the config after it's been set to a valid
-// value is not detected by ResourceDiff so read value from RawConfig instead
-func setExecutionModeDefault(_ context.Context, d *schema.ResourceDiff) error {
-	configMap := d.GetRawConfig().AsValueMap()
-	operations, operationsReadOk := configMap["operations"]
-	executionMode, executionModeReadOk := configMap["execution_mode"]
-	executionModeState := d.Get("execution_mode")
-	if operationsReadOk && executionModeReadOk {
-		if operations.IsNull() && executionMode.IsNull() && executionModeState != "remote" {
-			err := d.SetNew("execution_mode", "remote")
-			if err != nil {
-				return fmt.Errorf("failed to set execution_mode: %w", err)
-			}
-		}
-	}
-
-	return nil
-}
-
-// An agent pool can only be specified when execution_mode is set to "agent". You currently cannot specify a
-// schema validation based on a different argument's value, so we do so here at plan time instead.
-func validateAgentExecution(_ context.Context, d *schema.ResourceDiff) error {
-	if executionMode, ok := d.GetOk("execution_mode"); ok {
-		executionModeIsAgent := executionMode.(string) == "agent"
-		if !executionModeIsAgent && d.Get("agent_pool_id") != "" {
-			return fmt.Errorf("execution_mode must be set to 'agent' to assign agent_pool_id")
-		} else if executionModeIsAgent && d.NewValueKnown("agent_pool_id") && d.Get("agent_pool_id") == "" {
-			return fmt.Errorf("agent_pool_id must be provided when execution_mode is 'agent'")
-		}
-	}
-
-	if d.HasChange("execution_mode") {
-		d.SetNewComputed("operations")
-	} else if d.HasChange("operations") {
-		d.SetNewComputed("execution_mode")
-	}
-
-	return nil
-}
-
 func validTagName(tag string) bool {
 	// Tags are re-validated here because the API will accept uppercase letters and automatically
 	// downcase them, causing resource drift. It's better to catch this issue during the plan phase
