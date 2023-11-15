@@ -47,13 +47,6 @@ func TestAccTFEWorkspaceExecutionMode_create_update(t *testing.T) {
 					resource.TestCheckResourceAttr("tfe_workspace_execution_mode.attach", "execution_mode", "agent"),
 				),
 			},
-			// {
-			// 	Config: testAccTFEWorkspaceExecutionMode_destroy(org.Name),
-			// 	Check: resource.ComposeTestCheckFunc(
-			// 		testAccTFECheckWorkspaceAgentPoolNotDetached("tfe_workspace_execution_mode.attach", attachPool),
-			// 		resource.TestCheckResourceAttr("tfe_workspace_execution_mode.attach", "execution_mode", "agent"),
-			// 	),
-			// },
 		},
 	})
 }
@@ -87,36 +80,6 @@ func testAccTFECheckWorkspaceAgentPoolAttached(w string, attachPool *tfe.Workspa
 		}
 
 		*attachPool = *workspace
-
-		return nil
-	}
-}
-
-func testAccTFECheckWorkspaceAgentPoolNotDetached(w string, detachPool *tfe.Workspace) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
-		ws, ok := s.RootModule().Resources[w]
-		if !ok {
-			return fmt.Errorf("Resource not found: %s", w)
-		}
-
-		// Resource ID equals the Workspace ID
-		if ws.Primary.ID == "" {
-			return fmt.Errorf("No instance ID is set")
-		}
-
-		workspace, err := config.Client.Workspaces.ReadByID(ctx, ws.Primary.ID)
-		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
-			return fmt.Errorf("error fetching workspace: %w", err)
-		}
-
-		if workspace.AgentPool.ID == ws.Primary.Attributes["agent_pool_id"] {
-			fmt.Println("!!!", workspace.AgentPool.ID)
-			return fmt.Errorf("error detaching agent pool (test file) %w", err)
-		}
-
-		*detachPool = *workspace
 
 		return nil
 	}
@@ -209,31 +172,4 @@ resource "tfe_workspace_execution_mode" "attach"{
 	agent_pool_id = tfe_agent_pool_allowed_workspaces.permit.agent_pool_id
 	execution_mode = "agent"
 }`, workspace, organization, organization, organization)
-}
-
-func testAccTFEWorkspaceExecutionMode_destroy(organization string) string {
-	return fmt.Sprintf(`
-	resource "tfe_workspace" "workspace" {
-		name = "test-workspace"
-		organization = "%s"
-	}
-
-	resource "tfe_agent_pool" "pool" {
-		name         = "agent-pool-updated"
-		organization = "%s"
-		organization_scoped = false
-	}
-
-	resource "tfe_agent_pool_allowed_workspaces" "permit"{
-		agent_pool_id 		= tfe_agent_pool.pool.id
-		allowed_workspace_ids = [
-			tfe_workspace.workspace.id
-			]
-	}
-
-	resource "tfe_workspace_execution_mode" "attach"{
-		workspace_id = tfe_workspace.workspace.id
-		agent_pool_id = tfe_agent_pool_allowed_workspaces.permit.agent_pool_id
-		execution_mode = "remote"
-	}`, organization, organization)
 }
