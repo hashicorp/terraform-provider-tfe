@@ -115,7 +115,7 @@ func resourceTFEOrganizationCreate(d *schema.ResourceData, meta interface{}) err
 
 	d.SetId(org.Name)
 
-	return resourceTFEOrganizationRead(d, meta)
+	return resourceTFEOrganizationUpdate(d, meta)
 }
 
 func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error {
