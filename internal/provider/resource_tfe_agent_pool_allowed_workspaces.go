@@ -63,7 +63,7 @@ func resourceTFEAgentPoolAllowedWorkspacesCreate(d *schema.ResourceData, meta in
 
 	d.SetId(apID)
 
-	return resourceTFEAgentPoolAllowedWorkspacesRead(d, meta)
+	return nil
 }
 
 func resourceTFEAgentPoolAllowedWorkspacesRead(d *schema.ResourceData, meta interface{}) error {
