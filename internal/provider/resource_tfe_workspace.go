@@ -112,6 +112,7 @@ func resourceTFEWorkspace() *schema.Resource {
 				ValidateFunc: validation.StringInSlice(
 					[]string{
 						"agent",
+						"organization_default",
 						"local",
 						"remote",
 					},
@@ -313,6 +314,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		SpeculativeEnabled:         tfe.Bool(d.Get("speculative_enabled").(bool)),
 		StructuredRunOutputEnabled: tfe.Bool(d.Get("structured_run_output_enabled").(bool)),
 		WorkingDirectory:           tfe.String(d.Get("working_directory").(string)),
+		SettingOverwrites:          &tfe.WorkspaceSettingOverwritesOptions{},
 	}
 
 	// Send global_remote_state if it's set; otherwise, let it be computed.
@@ -326,7 +328,12 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	if v, ok := d.GetOk("execution_mode"); ok {
-		options.ExecutionMode = tfe.String(v.(string))
+		if v.(string) == "organization_default" {
+			options.SettingOverwrites.ExecutionMode = tfe.Bool(false)
+			options.SettingOverwrites.AgentPool = tfe.Bool(false)
+		} else {
+			options.ExecutionMode = tfe.String(v.(string))
+		}
 	}
 
 	if v, ok := d.GetOkExists("operations"); ok {
@@ -472,6 +479,12 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("organization", workspace.Organization.Name)
 	d.Set("resource_count", workspace.ResourceCount)
 
+	if workspace.SettingOverwrites != nil {
+		if mode := workspace.SettingOverwrites.ExecutionMode; mode != nil && !*mode {
+			d.Set("execution_mode", "organization_default")
+		}
+	}
+
 	if workspace.Links["self-html"] != nil {
 		baseAPI := config.Client.BaseURL()
 		htmlURL := url.URL{
@@ -563,6 +576,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			SpeculativeEnabled:         tfe.Bool(d.Get("speculative_enabled").(bool)),
 			StructuredRunOutputEnabled: tfe.Bool(d.Get("structured_run_output_enabled").(bool)),
 			WorkingDirectory:           tfe.String(d.Get("working_directory").(string)),
+			SettingOverwrites:          &tfe.WorkspaceSettingOverwritesOptions{},
 		}
 
 		if d.HasChange("project_id") {
@@ -585,7 +599,12 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 
 		if d.HasChange("execution_mode") {
 			if v, ok := d.GetOk("execution_mode"); ok {
-				options.ExecutionMode = tfe.String(v.(string))
+				if v.(string) == "organization_default" {
+					options.SettingOverwrites.ExecutionMode = tfe.Bool(false)
+					options.SettingOverwrites.AgentPool = tfe.Bool(false)
+				} else {
+					options.ExecutionMode = tfe.String(v.(string))
+				}
 			}
 		}
 

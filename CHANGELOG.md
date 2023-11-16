@@ -4,6 +4,7 @@
 
 FEATURES:
 * `d/tfe_registry_module`: Add `vcs_repo.tags` and `vcs_repo.branch` attributes to allow configuration of `publishing_mechanism`. Add `test_config` to support running tests on `branch`-based registry modules, by @hashimoon [1096](https://github.com/hashicorp/terraform-provider-tfe/pull/1096)
+* `r/tfe_workspace`: Support `organization_default` value for the `execution_mode` argument, by @tmatilai [1143](https://github.com/hashicorp/terraform-provider-tfe/pull/1143)
 
 ## v0.50.0
 

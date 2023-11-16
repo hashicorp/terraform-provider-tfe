@@ -63,11 +63,12 @@ The following arguments are supported:
 * `auto_apply_run_trigger` - (Optional) Whether to automatically apply changes for runs that were created by run triggers from another workspace. Defaults to `false`.
 * `description` - (Optional) A description for the workspace.
 * `execution_mode` - (Optional) Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode)
-  to use. Using Terraform Cloud, valid values are `remote`, `local` or`agent`.
-  Defaults to `remote`. Using Terraform Enterprise, only `remote`and `local`
-  execution modes are valid.  When set to `local`, the workspace will be used
-  for state storage only. This value _must not_ be provided if `operations`
-  is provided.
+  to use. Using Terraform Cloud, valid values are `remote`, `local`, `agent` or
+  `organization_default`. Defaults to `remote`. Using Terraform Enterprise,
+  only `remote` and `local` execution modes are valid. When set to
+  `organization_default`, the default execution mode of the organization is
+  used. When set to `local`, the workspace will be used for state storage only.
+  This value _must not_ be provided if `operations` is provided.
 * `file_triggers_enabled` - (Optional) Whether to filter runs based on the changed files
   in a VCS push. Defaults to `true`. If enabled, the working directory and
   trigger prefixes describe a set of paths which must contain changes for a

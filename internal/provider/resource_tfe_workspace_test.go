@@ -1923,6 +1923,41 @@ func TestAccTFEWorkspace_unsetExecutionMode(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspace_withOrganizationDefaultExecutionMode(t *testing.T) {
+	skipIfEnterprise(t)
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	workspace := &tfe.Workspace{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_executionModeOrganizationDefault(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace, testAccProvider),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "operations", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "execution_mode", "organization_default"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "agent_pool_id", ""),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEWorkspace_globalRemoteState(t *testing.T) {
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -2928,6 +2963,15 @@ resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
   organization = "%s"
 }`, organization, organization)
+}
+
+func testAccTFEWorkspace_executionModeOrganizationDefault(organization string) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = "%s"
+  execution_mode = "organization_default"
+}`, organization)
 }
 
 func testAccTFEWorkspace_basicSpeculativeOff(rInt int) string {
