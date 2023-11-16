@@ -4,6 +4,7 @@
 package provider
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -23,11 +24,12 @@ func resourceTFEWorkspaceExecutionMode() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 
+		CustomizeDiff: validateExecutionMode,
+
 		Schema: map[string]*schema.Schema{
 			"agent_pool_id": {
 				Type:     schema.TypeString,
 				Optional: true,
-				ForceNew: true,
 			},
 
 			"workspace_id": {
@@ -57,15 +59,6 @@ func resourceTFEWorkspaceExecutionModeCreate(d *schema.ResourceData, meta interf
 
 	executionMode := d.Get("execution_mode").(string)
 	agentPoolID := d.Get("agent_pool_id").(string)
-
-	if executionMode == "agent" && agentPoolID == "" {
-		return fmt.Errorf(`agent_pool_id must be provided when execution_mode is "agent"`)
-	}
-
-	if executionMode != "agent" && agentPoolID != "" {
-		return fmt.Errorf(`execution_mode must be set to "agent" to assign agent_pool_id`)
-	}
-
 	workspaceID := d.Get("workspace_id").(string)
 
 	// Create a new options struct to attach the agent pool to workspace
@@ -116,29 +109,22 @@ func resourceTFEWorkspaceExecutionModeRead(d *schema.ResourceData, meta interfac
 func resourceTFEWorkspaceExecutionModeUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
-	executionMode := d.Get("execution_mode").(string)
-	agentPoolID := d.Get("agent_pool_id").(string)
-
-	if executionMode == "agent" && agentPoolID == "" {
-		return fmt.Errorf(`agent_pool_id must be provided when execution_mode is "agent"`)
-	}
-
-	if executionMode != "agent" && agentPoolID != "" {
-		return fmt.Errorf(`execution_mode must be set to "agent" to assign agent_pool_id`)
-	}
-
 	workspaceID := d.Get("workspace_id").(string)
 
-	// Create a new options struct to attach the agent pool to workspace
-	options := tfe.WorkspaceUpdateOptions{
-		AgentPoolID:   tfe.String(agentPoolID),
-		ExecutionMode: tfe.String(executionMode),
+	options := tfe.WorkspaceUpdateOptions{}
+
+	if d.HasChange("execution_mode") {
+		options.ExecutionMode = tfe.String(d.Get("execution_mode").(string))
 	}
 
-	log.Printf("[DEBUG] Create attachment on workspace with agent pool ID: %s", agentPoolID)
+	if d.HasChange("agent_pool_id") {
+		options.AgentPoolID = tfe.String(d.Get("agent_pool_id").(string))
+	}
+
+	log.Printf("[DEBUG] Update attachment on workspace with agent pool ID: %s", d.Get("agent_pool_id"))
 	workspace, err := config.Client.Workspaces.UpdateByID(ctx, workspaceID, options)
 	if err != nil {
-		return fmt.Errorf("error attaching agent pool ID %s to workspace ID %s: %w", agentPoolID, workspaceID, err)
+		return fmt.Errorf("error attaching agent pool ID %s to workspace ID %s: %w", d.Get("agent_pool_id"), workspaceID, err)
 	}
 
 	d.SetId(workspace.ID)
@@ -175,5 +161,21 @@ func resourceTFEWorkspaceExecutionModeDelete(d *schema.ResourceData, meta interf
 		return fmt.Errorf("error detaching agent pool from workspace: %w", errs)
 	}
 
+	return nil
+}
+
+func validateExecutionMode(_ context.Context, d *schema.ResourceDiff, meta interface{}) error {
+	executionMode := d.Get("execution_mode").(string)
+	agentPoolID := d.Get("agent_pool_id").(string)
+
+	if executionMode == "agent" {
+		if d.NewValueKnown("agent_pool_id") && agentPoolID == "" {
+			return fmt.Errorf(`agent_pool_id must be provided when execution_mode is "agent"`)
+		}
+	}
+
+	if executionMode != "agent" && agentPoolID != "" {
+		return fmt.Errorf(`execution_mode must be set to "agent" to assign agent_pool_id`)
+	}
 	return nil
 }
