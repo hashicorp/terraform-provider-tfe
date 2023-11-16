@@ -56,7 +56,7 @@ The following arguments are supported:
 * `excludedWorkspaceIds` - IDs of the workspaces that do not use the policy set.
 * `projectIds` - IDs of the projects that use the policy set.
 * `policyIds` - IDs of the policies attached to the policy set.
-* `policiesPath` - The sub-path within the attached VCS repository when using `vcsRepo`.
+* `policiesPath` - The sub-path within the attached VCS repository when using `vcs_repo`.
 * `vcsRepo` - Settings for the workspace's VCS repository.
 
 The `vcsRepo` block contains:
@@ -70,4 +70,4 @@ The `vcsRepo` block contains:
 * `oauthTokenId` - OAuth token ID of the configured VCS connection.
 
 
-<!-- cache-key: cdktf-0.18.0 input-bff8c51389c3dbd386e33f4eb88fd654798f5c7d466c1606e6c90d22ca8ae19a -->
+<!-- cache-key: cdktf-0.19.0 input-bff8c51389c3dbd386e33f4eb88fd654798f5c7d466c1606e6c90d22ca8ae19a -->

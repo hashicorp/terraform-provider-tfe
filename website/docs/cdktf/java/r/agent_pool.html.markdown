@@ -46,7 +46,7 @@ The following arguments are supported:
 
 * `name` - (Required) Name of the agent pool.
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
-* `organizationScoped` - (Optional) Whether or not the agent pool is scoped to all workspaces in the organization. Defaults to `true`.
+* `organizationScoped` - (Optional) Whether or not the agent pool is scoped to all workspaces in the organization. Defaults to `true`. Should be `false` when limiting workspaces that can use the agent pool with the [tfe_agent_pool_allowed_workspaces](agent_pool_allowed_workspaces.html) resource.
 
 ## Attributes Reference
 
@@ -66,4 +66,4 @@ terraform import tfe_agent_pool.test apool-rW0KoLSlnuNb5adB
 terraform import tfe_workspace.test my-org-name/my-agent-pool-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-0c7f696f1755518d4d25139bde27181a2162728db0756dfc60a6fe8e169b3689 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-34df65a2eaec9900096b8c5dafac6d4d71de1bb94a65e6a1dc1e75cba2f439a2 -->

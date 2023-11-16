@@ -53,9 +53,9 @@ The `permissions` block contains:
 
 * `runs` - The permission granted to runs. Valid values are `read`, `plan`, or `apply`
 * `variables` - The permissions granted to variables. Valid values are `none`, `read`, or `write`
-* `stateVersions` - The permissions granted to state versions. Valid values are `none`, `readOutputs`, `read`, or `write`
+* `stateVersions` - The permissions granted to state versions. Valid values are `none`, `read-outputs`, `read`, or `write`
 * `sentinelMocks` - The permissions granted to Sentinel mocks. Valid values are `none` or `read`
 * `workspaceLocking` - Whether permission is granted to manually lock the workspace or not.
 * `runTasks` - Boolean determining whether or not to grant the team permission to manage workspace run tasks.
 
-<!-- cache-key: cdktf-0.18.0 input-95b20b8ad069cffffc1863d16cd9001f0074da34b788353d4b343912d7784d80 -->
+<!-- cache-key: cdktf-0.19.0 input-95b20b8ad069cffffc1863d16cd9001f0074da34b788353d4b343912d7784d80 -->

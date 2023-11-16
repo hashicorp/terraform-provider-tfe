@@ -92,15 +92,15 @@ be set.
 * `oauthClientId` - (Optional) ID of the OAuth client.
 * `organization` - (Optional) The name of the organization in which to search.
 * `serviceProvider` - (Optional) The API identifier of the OAuth service provider. If set,
-  must be one of: `adoServer`, `adoServices`, `bitbucketHosted`, `bitbucketServer`,
-  `github`, `githubEnterprise`, `gitlabHosted`, `gitlabCommunityEdition`, or
-  `gitlabEnterpriseEdition`.
+  must be one of: `ado_server`, `ado_services`, `bitbucket_hosted`, `bitbucket_server`,
+  `github`, `github_enterprise`, `gitlab_hosted`, `gitlab_community_edition`, or
+  `gitlab_enterprise_edition`.
 
 ## Attributes Reference
 
 In addition to all arguments above, the following attributes are exported:
 
-* `id` - The OAuth client ID. This will match `oauthClientId`.
+* `id` - The OAuth client ID. This will match `oauth_client_id`.
 * `apiUrl` - The client's API URL.
 * `callbackUrl` - OAuth callback URL to provide to the OAuth service provider.
 * `createdAt` - The date and time this OAuth client was created in RFC3339 format.
@@ -111,4 +111,4 @@ In addition to all arguments above, the following attributes are exported:
 * `serviceProvider` - The API identifier of the OAuth service provider.
 * `serviceProviderDisplayName` - The display name of the OAuth service provider.
 
-<!-- cache-key: cdktf-0.18.0 input-59b4bcbbb310e7ee913a245f3c751829442542dbcf1bbb4c87ac286043b69348 -->
+<!-- cache-key: cdktf-0.19.0 input-59b4bcbbb310e7ee913a245f3c751829442542dbcf1bbb4c87ac286043b69348 -->

@@ -198,12 +198,12 @@ class MyConvertedCode extends TerraformStack {
 The following arguments are supported:
 
 * `vcsRepo` - (Optional) Settings for the registry module's VCS repository. Forces a
-  new resource if changed. One of `vcsRepo` or `moduleProvider` is required.
+  new resource if changed. One of `vcs_repo` or `module_provider` is required.
 * `moduleProvider` - (Optional) Specifies the Terraform provider that this module is used for. For example, "aws"
-* `name` - (Optional) The name of registry module. It must be set if `moduleProvider` is used.
-* `organization` - (Optional) The name of the organization associated with the registry module. It must be set if `moduleProvider` is used, or if `vcsRepo` is used via a GitHub App.
-* `namespace` - (Optional) The namespace of a public registry module. It can be used if `moduleProvider` is set and `registryName` is public.
-* `registryName` - (Optional) Whether the registry module is private or public. It can be used if `moduleProvider` is set.
+* `name` - (Optional) The name of registry module. It must be set if `module_provider` is used.
+* `organization` - (Optional) The name of the organization associated with the registry module. It must be set if `module_provider` is used, or if `vcs_repo` is used via a GitHub App.
+* `namespace` - (Optional) The namespace of a public registry module. It can be used if `module_provider` is set and `registry_name` is public.
+* `registryName` - (Optional) Whether the registry module is private or public. It can be used if `module_provider` is set.
 
 The `vcsRepo` block supports:
 
@@ -213,8 +213,8 @@ The `vcsRepo` block supports:
 * `identifier` - (Required) A reference to your VCS repository in the format
   `<organization>/<repository>` where `<organization>` and `<repository>` refer to the organization (or project key, for Bitbucket Server)
   and repository in your VCS provider. The format for Azure DevOps is `<ado organization>/<ado project>/_git/<ado repository>`.
-* `oauthTokenId` - (Optional) Token ID of the VCS Connection (OAuth Connection Token) to use. This conflicts with `githubAppInstallationId` and can only be used if `githubAppInstallationId` is not used.
-* `githubAppInstallationId` - (Optional) The installation id of the Github App. This conflicts with `oauthTokenId` and can only be used if `oauthTokenId` is not used.
+* `oauthTokenId` - (Optional) Token ID of the VCS Connection (OAuth Connection Token) to use. This conflicts with `github_app_installation_id` and can only be used if `github_app_installation_id` is not used.
+* `githubAppInstallationId` - (Optional) The installation id of the Github App. This conflicts with `oauth_token_id` and can only be used if `oauth_token_id` is not used.
 
 ## Attributes Reference
 
@@ -241,4 +241,4 @@ terraform import tfe_registry_module.test my-org-name/public/namespace/name/prov
 terraform import tfe_registry_module.test my-org-name/name/provider/mod-qV9JnKRkmtMa4zcA
 ```
 
-<!-- cache-key: cdktf-0.18.0 input-d0184f94e79f432f50dea11aef3a9b7449006807fb197c05220e48a2f1f3f71e -->
+<!-- cache-key: cdktf-0.19.0 input-d0184f94e79f432f50dea11aef3a9b7449006807fb197c05220e48a2f1f3f71e -->

@@ -2,20 +2,24 @@
 <!-- Add CHANGELOG entry to this section for any PR awaiting the next release -->
 <!-- Please also include if this is a Bug Fix, Enhancement, or Feature -->
 
-FEATURES:
-* `r/tfe_variable_set`: Add `priority` attribute, by @Netra2104 [1075](https://github.com/hashicorp/terraform-provider-tfe/pull/1075)
-* `d/tfe_variable_set`: Add `priority` attribute, by @Netra2104 [1075](https://github.com/hashicorp/terraform-provider-tfe/pull/1075)
-* `r/tfe_workspace`: Add `auto_apply_run_trigger` attribute, by @nfagerlund [1123](https://github.com/hashicorp/terraform-provider-tfe/pull/1123)
-* `d/tfe_workspace`: Add `auto_apply_run_trigger` attribute, by @nfagerlund [1123](https://github.com/hashicorp/terraform-provider-tfe/pull/1123)
-
 ENHANCEMENTS:
 
 * `d/tfe_organization`: Make `name` argument optional if configured for the provider, by @tmatilai [1133](https://github.com/hashicorp/terraform-provider-tfe/pull/1133)
 
+## v0.50.0
+
+FEATURES:
+* `r/tfe_workspace`: Add `auto_apply_run_trigger` attribute, by @nfagerlund [1123](https://github.com/hashicorp/terraform-provider-tfe/pull/1123)
+* `d/tfe_workspace`: Add `auto_apply_run_trigger` attribute, by @nfagerlund [1123](https://github.com/hashicorp/terraform-provider-tfe/pull/1123)
+* `r/tfe_variable_set`: Add `priority` attribute, by @Netra2104 [1075](https://github.com/hashicorp/terraform-provider-tfe/pull/1075)
+* `d/tfe_variable_set`: Add `priority` attribute, by @Netra2104 [1075](https://github.com/hashicorp/terraform-provider-tfe/pull/1075)
+
 BUG FIXES:
 
-* `r/tfe_variable`: Fix nil pointer dereference segfault on client error during Update operations, by @nfagerlund [1131](https://github.com/hashicorp/terraform-provider-tfe/1131)
 * `r/tfe_policy_set`: Fix detecting spurious changes on every run when providing file contents with `tfe_slug`. This may require an updated version of tfc-agent for the full fix to take effect. Fixed by upgrading go-slug to v0.13.1 [1123](https://github.com/hashicorp/terraform-provider-tfe/pull/1123)
+* `r/tfe_variable`: Fix nil pointer dereference segfault on client error during Update operations, by @nfagerlund [1131](https://github.com/hashicorp/terraform-provider-tfe/1131)
+* provider: Fix an issue where the request body is not preserved during certain retry scenarios, by @sebasslash [1135](https://github.com/hashicorp/terraform-provider-tfe/pull/1135)
+* provider: Fix a build failure for 32 bit linux architectures by @brandonc [1139](https://github.com/hashicorp/terraform-provider-tfe/pull/1139)
 
 ## v0.49.2 (October 4, 2023)
 

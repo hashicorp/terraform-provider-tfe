@@ -53,8 +53,8 @@ The following arguments are supported:
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `policy` - (Required) The actual policy itself.
 * `enforceMode` - (Optional) The enforcement level of the policy. Valid
-  values are `advisory`, `hardMandatory` and `softMandatory`. Defaults
-  to `softMandatory`.
+  values are `advisory`, `hard-mandatory` and `soft-mandatory`. Defaults
+  to `soft-mandatory`.
 
 ## Attributes Reference
 
@@ -69,4 +69,4 @@ import ID. For example:
 terraform import tfe_sentinel_policy.test my-org-name/pol-wAs3zYmWAhYK7peR
 ```
 
-<!-- cache-key: cdktf-0.18.0 input-e8ffab24beacc256a0ab1c1b8664c815d96f0c934f344a8cf4867f273b7a4ab1 -->
+<!-- cache-key: cdktf-0.19.0 input-e8ffab24beacc256a0ab1c1b8664c815d96f0c934f344a8cf4867f273b7a4ab1 -->

@@ -46,7 +46,7 @@ The following arguments are supported:
 * `enforcementLevel` - (Required) The enforcement level of the task. Valid values are `advisory` and `mandatory`.
 * `taskId` - (Required) The id of the Run task to associate to the Workspace.
 * `workspaceId` - (Required) The id of the workspace to associate the Run task to.
-* `stage` - (Optional) The stage to run the task in. Valid values are `prePlan`, `postPlan`, and `preApply`.
+* `stage` - (Optional) The stage to run the task in. Valid values are `pre_plan`, `post_plan`, and `pre_apply`.
 
 ## Attributes Reference
 
@@ -61,4 +61,4 @@ import ID. For example:
 terraform import tfe_workspace_run_task.test my-org-name/workspace/task-name
 ```
 
-<!-- cache-key: cdktf-0.18.0 input-c6eef700127257dfb3fc46f3f9dc706d6e4c14877b176dfe4e276fe83d59d5db -->
+<!-- cache-key: cdktf-0.19.0 input-c6eef700127257dfb3fc46f3f9dc706d6e4c14877b176dfe4e276fe83d59d5db -->

@@ -64,7 +64,7 @@ The `permissions` block supports:
 
 * `runs` - (Required) The permission to grant the team on the workspace's runs. Valid values are `read`, `plan`, or `apply`.
 * `variables` - (Required) The permission to grant the team on the workspace's variables. Valid values are `none`, `read`, or `write`.
-* `stateVersions` - (Required) The permission to grant the team on the workspace's state versions. Valid values are `none`, `read`, `readOutputs`, or `write`.
+* `stateVersions` - (Required) The permission to grant the team on the workspace's state versions. Valid values are `none`, `read`, `read-outputs`, or `write`.
 * `sentinelMocks` - (Required) The permission to grant the team on the workspace's generated Sentinel mocks, Valid values are `none` or `read`.
 * `workspaceLocking` - (Required) Boolean determining whether or not to grant the team permission to manually lock/unlock the workspace.
 * `runTasks` - (Required) Boolean determining whether or not to grant the team permission to manage workspace run tasks.
@@ -85,4 +85,4 @@ example:
 terraform import tfe_team_access.test my-org-name/my-workspace-name/tws-8S5wnRbRpogw6apb
 ```
 
-<!-- cache-key: cdktf-0.18.0 input-1f416915697c1b047d62f590ef6bc829e7f2a7f58be51029af4020952110b5d6 -->
+<!-- cache-key: cdktf-0.19.0 input-1f416915697c1b047d62f590ef6bc829e7f2a7f58be51029af4020952110b5d6 -->
