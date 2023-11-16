@@ -47,6 +47,10 @@ func resourceTFERegistryModule() *schema.Resource {
 				Computed: true,
 				ForceNew: true,
 			},
+			"publishing_mechanism": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			"vcs_repo": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -78,6 +82,14 @@ func resourceTFERegistryModule() *schema.Resource {
 							ConflictsWith: []string{"vcs_repo.0.oauth_token_id"},
 							AtLeastOneOf:  []string{"vcs_repo.0.oauth_token_id", "vcs_repo.0.github_app_installation_id"},
 						},
+						"branch": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"tags": {
+							Type:     schema.TypeBool,
+							Optional: true,
+						},
 					},
 				},
 			},
@@ -104,6 +116,18 @@ func resourceTFERegistryModule() *schema.Resource {
 					true,
 				),
 			},
+			"test_config": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"tests_enabled": {
+							Type:     schema.TypeBool,
+							Optional: true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -113,6 +137,15 @@ func resourceTFERegistryModuleCreateWithVCS(v interface{}, meta interface{}, d *
 	// Create module with VCS repo configuration block.
 	options := tfe.RegistryModuleCreateWithVCSConnectionOptions{}
 	vcsRepo := v.([]interface{})[0].(map[string]interface{})
+	var testConfig map[string]interface{}
+
+	if tc, ok := d.GetOk("test_config"); ok {
+		if tc.([]interface{})[0] == nil {
+			return nil, fmt.Errorf("tests_enabled must be provided when configuring a test_config")
+		}
+
+		testConfig = tc.([]interface{})[0].(map[string]interface{})
+	}
 
 	orgName, err := config.schemaOrDefaultOrganization(d)
 	if err != nil {
@@ -126,8 +159,25 @@ func resourceTFERegistryModuleCreateWithVCS(v interface{}, meta interface{}, d *
 		OrganizationName:  tfe.String(orgName),
 	}
 
+	tags, tagsOk := vcsRepo["tags"].(bool)
+	branch, branchOk := vcsRepo["branch"].(string)
+
+	if tagsOk && tags && branchOk && branch != "" {
+		return nil, fmt.Errorf("tags must be set to false when a branch is provided")
+	}
+
+	if branchOk && branch != "" {
+		options.VCSRepo.Branch = tfe.String(branch)
+	}
+
 	if vcsRepo["oauth_token_id"] != nil && vcsRepo["oauth_token_id"].(string) != "" {
 		options.VCSRepo.OAuthTokenID = tfe.String(vcsRepo["oauth_token_id"].(string))
+	}
+
+	if testsEnabled, ok := testConfig["tests_enabled"].(bool); ok {
+		options.TestConfig = &tfe.RegistryModuleTestConfigOptions{
+			TestsEnabled: tfe.Bool(testsEnabled),
+		}
 	}
 
 	log.Printf("[DEBUG] Create registry module from repository %s", *options.VCSRepo.Identifier)
@@ -174,7 +224,6 @@ func resourceTFERegistryModuleCreateWithoutVCS(meta interface{}, d *schema.Resou
 
 func resourceTFERegistryModuleCreate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
-
 	var registryModule *tfe.RegistryModule
 	var err error
 
@@ -242,6 +291,40 @@ func resourceTFERegistryModuleUpdate(d *schema.ResourceData, meta interface{}) e
 		RegistryName: tfe.RegistryName(d.Get("registry_name").(string)),
 	}
 
+	if v, ok := d.GetOk("vcs_repo"); ok { //nolint:nestif
+		vcsRepo := v.([]interface{})[0].(map[string]interface{})
+		options.VCSRepo = &tfe.RegistryModuleVCSRepoUpdateOptions{}
+
+		tags, tagsOk := vcsRepo["tags"].(bool)
+		branch, branchOk := vcsRepo["branch"].(string)
+
+		if tagsOk && tags && branchOk && branch != "" {
+			return fmt.Errorf("tags must be set to false when a branch is provided")
+		}
+
+		if tagsOk {
+			options.VCSRepo.Tags = tfe.Bool(tags)
+		}
+
+		if branchOk {
+			options.VCSRepo.Branch = tfe.String(branch)
+		}
+	}
+
+	if v, ok := d.GetOk("test_config"); ok {
+		if v.([]interface{})[0] == nil {
+			return fmt.Errorf("tests_enabled must be provided when configuring a test_config")
+		}
+
+		testConfig := v.([]interface{})[0].(map[string]interface{})
+
+		options.TestConfig = &tfe.RegistryModuleTestConfigOptions{}
+
+		if testsEnabled, ok := testConfig["tests_enabled"].(bool); ok {
+			options.TestConfig.TestsEnabled = tfe.Bool(testsEnabled)
+		}
+	}
+
 	err = resource.Retry(time.Duration(5)*time.Minute, func() *resource.RetryError {
 		registryModule, err = config.Client.RegistryModules.Update(ctx, rmID, options)
 		if err != nil {
@@ -291,6 +374,7 @@ func resourceTFERegistryModuleRead(d *schema.ResourceData, meta interface{}) err
 	d.Set("namespace", registryModule.Namespace)
 	d.Set("registry_name", registryModule.RegistryName)
 	d.Set("no_code", registryModule.NoCode)
+	d.Set("publishing_mechanism", registryModule.PublishingMechanism)
 
 	// Set VCS repo options.
 	var vcsRepo []interface{}
@@ -300,10 +384,23 @@ func resourceTFERegistryModuleRead(d *schema.ResourceData, meta interface{}) err
 			"oauth_token_id":             registryModule.VCSRepo.OAuthTokenID,
 			"github_app_installation_id": registryModule.VCSRepo.GHAInstallationID,
 			"display_identifier":         registryModule.VCSRepo.DisplayIdentifier,
+			"branch":                     registryModule.VCSRepo.Branch,
+			"tags":                       registryModule.VCSRepo.Tags,
 		}
 		vcsRepo = append(vcsRepo, vcsConfig)
 
 		d.Set("vcs_repo", vcsRepo)
+	}
+
+	var testConfig []interface{}
+	if registryModule.TestConfig != nil {
+		testConfigValues := map[string]interface{}{
+			"tests_enabled": registryModule.TestConfig.TestsEnabled,
+		}
+
+		testConfig = append(testConfig, testConfigValues)
+
+		d.Set("test_config", testConfig)
 	}
 
 	return nil
