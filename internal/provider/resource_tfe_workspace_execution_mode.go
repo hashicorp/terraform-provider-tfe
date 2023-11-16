@@ -177,5 +177,10 @@ func validateExecutionMode(_ context.Context, d *schema.ResourceDiff, meta inter
 	if executionMode != "agent" && agentPoolID != "" {
 		return fmt.Errorf(`execution_mode must be set to "agent" to assign agent_pool_id`)
 	}
+
+	if executionMode != "agent" && d.GetRawConfig().GetAttr("agent_pool_id").IsNull() {
+		return fmt.Errorf(`agent_pool_id cannot be null, while execution_mode is not set to "agent"`)
+	}
+
 	return nil
 }
