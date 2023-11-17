@@ -41,6 +41,9 @@ func TestAccTFEOAuthClientDataSource_findByID(t *testing.T) {
 					resource.TestCheckResourceAttrPair(
 						"tfe_oauth_client.test", "oauth_token_id",
 						"data.tfe_oauth_client.client", "oauth_token_id"),
+					resource.TestCheckResourceAttrPair(
+						"tfe_oauth_client.test", "organization_scoped",
+						"data.tfe_oauth_client.client", "organization_scoped"),
 				),
 			},
 		},
@@ -68,6 +71,9 @@ func TestAccTFEOAuthClientDataSource_findByName(t *testing.T) {
 					resource.TestCheckResourceAttrPair(
 						"tfe_oauth_client.test", "oauth_token_id",
 						"data.tfe_oauth_client.client", "oauth_token_id"),
+					resource.TestCheckResourceAttrPair(
+						"tfe_oauth_client.test", "organization_scoped",
+						"data.tfe_oauth_client.client", "organization_scoped"),
 				),
 			},
 		},
@@ -197,6 +203,7 @@ resource "tfe_oauth_client" "test" {
 	http_url         = "https://github.com"
 	oauth_token      = "%s"
 	service_provider = "github"
+	organization_scoped = false
 }
 data "tfe_oauth_client" "client" {
 	oauth_client_id = tfe_oauth_client.test.id
@@ -217,6 +224,7 @@ resource "tfe_oauth_client" "test" {
 	name             = "tst-github-%d"
 	oauth_token      = "%s"
 	service_provider = "github"
+	organization_scoped = false
 }
 data "tfe_oauth_client" "client" {
     organization = "tst-terraform-%d"
