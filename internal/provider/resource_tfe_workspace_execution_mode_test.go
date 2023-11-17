@@ -161,6 +161,13 @@ resource "tfe_agent_pool" "pool-updated" {
 }
 
 resource "tfe_agent_pool_allowed_workspaces" "permit"{
+  agent_pool_id 				= tfe_agent_pool.pool.id
+  allowed_workspace_ids = [
+		data.tfe_workspace.workspace.id
+		]
+}
+
+resource "tfe_agent_pool_allowed_workspaces" "permit-updated"{
   agent_pool_id 				= tfe_agent_pool.pool-updated.id
   allowed_workspace_ids = [
 		data.tfe_workspace.workspace.id
@@ -169,7 +176,7 @@ resource "tfe_agent_pool_allowed_workspaces" "permit"{
 
 resource "tfe_workspace_execution_mode" "attach"{
 	workspace_id   = data.tfe_workspace.workspace.id
-	agent_pool_id  = tfe_agent_pool_allowed_workspaces.permit.agent_pool_id
+	agent_pool_id  = tfe_agent_pool_allowed_workspaces.permit-updated.agent_pool_id
 	execution_mode = "agent"
 }`, workspace, organization, organization, organization)
 }
