@@ -30,22 +30,36 @@ resource "tfe_workspace" "test" {
 
 With `execution_mode` of `agent`:
 
+~> **NOTE:** The `execution_mode` and `agent_pool_id` fields on this resource are deprecated. They are now managed in the **tfe_workspace_execution_mode** resource.
+
+Example usage:
+
 ```hcl
-resource "tfe_organization" "test-organization" {
+resource "tfe_organization" "test" {
   name  = "my-org-name"
   email = "admin@company.com"
 }
 
-resource "tfe_agent_pool" "test-agent-pool" {
-  name         = "my-agent-pool-name"
-  organization = tfe_organization.test-organization.name
+resource "tfe_workspace" "test-workspace" {
+  name         = "my-workspace-name"
+  organization = tfe_organization.test.name
 }
 
-resource "tfe_workspace" "test" {
-  name           = "my-workspace-name"
-  organization   = tfe_organization.test-organization.name
-  agent_pool_id  = tfe_agent_pool.test-agent-pool.id
+resource "tfe_agent_pool" "test-agent-pool" {
+  name                = "my-agent-pool-name"
+  organization        = tfe_organization.test.name
+  organization_scoped = false
+}
+
+resource "tfe_agent_pool_allowed_workspaces" "test-allowed-workspaces" {
+  agent_pool_id         = tfe_agent_pool.test.id
+  allowed_workspace_ids = [tfe_workspace.test-workspace.id]
+}
+
+resource "tfe_workspace_execution_mode" "test" {
   execution_mode = "agent"
+  workspace_id = tfe_workspace.test-workspace.id
+  agent_pool_id = tfe_agent_pool.test-workspace.id
 }
 ```
 

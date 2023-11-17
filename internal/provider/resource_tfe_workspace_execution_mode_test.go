@@ -117,26 +117,26 @@ func testAccCheckTFEWorkspaceExecutionModeDestroy(s *terraform.State) error {
 func testAccTFEWorkspaceExecutionMode_basic(organization string, workspace string) string {
 	return fmt.Sprintf(`
 data "tfe_workspace" "workspace" {
-  name = "%s"
+  name 				 = "%s"
   organization = "%s"
 }
 
 resource "tfe_agent_pool" "pool" {
-  name         = "new-pool"
-  organization = "%s"
+  name         				= "new-pool"
+  organization 				= "%s"
   organization_scoped = false
 }
 
 resource "tfe_agent_pool_allowed_workspaces" "permit"{
-  agent_pool_id 		= tfe_agent_pool.pool.id
+  agent_pool_id 				= tfe_agent_pool.pool.id
   allowed_workspace_ids = [
 		data.tfe_workspace.workspace.id
 		]
 }
 
 resource "tfe_workspace_execution_mode" "attach"{
-	workspace_id = data.tfe_workspace.workspace.id
-	agent_pool_id = tfe_agent_pool_allowed_workspaces.permit.agent_pool_id
+	workspace_id   = data.tfe_workspace.workspace.id
+	agent_pool_id  = tfe_agent_pool_allowed_workspaces.permit.agent_pool_id
 	execution_mode = "agent"
 }`, workspace, organization, organization)
 }
@@ -144,32 +144,32 @@ resource "tfe_workspace_execution_mode" "attach"{
 func testAccTFEWorkspaceExecutionMode_update(organization string, workspace string) string {
 	return fmt.Sprintf(`
 data "tfe_workspace" "workspace" {
-		name = "%s"
+		name 			   = "%s"
 		organization = "%s"
 	}
 
 resource "tfe_agent_pool" "pool" {
-  name         = "new-pool"
-  organization = "%s"
+  name         			  = "new-pool"
+  organization 			  = "%s"
   organization_scoped = false
 }
 
 resource "tfe_agent_pool" "pool-updated" {
-  name         = "pool-updated"
-  organization = "%s"
+  name         				= "pool-updated"
+  organization 				= "%s"
   organization_scoped = false
 }
 
 resource "tfe_agent_pool_allowed_workspaces" "permit"{
-  agent_pool_id 		= tfe_agent_pool.pool-updated.id
+  agent_pool_id 				= tfe_agent_pool.pool-updated.id
   allowed_workspace_ids = [
 		data.tfe_workspace.workspace.id
 		]
 }
 
 resource "tfe_workspace_execution_mode" "attach"{
-	workspace_id = data.tfe_workspace.workspace.id
-	agent_pool_id = tfe_agent_pool_allowed_workspaces.permit.agent_pool_id
+	workspace_id   = data.tfe_workspace.workspace.id
+	agent_pool_id  = tfe_agent_pool_allowed_workspaces.permit.agent_pool_id
 	execution_mode = "agent"
 }`, workspace, organization, organization, organization)
 }
