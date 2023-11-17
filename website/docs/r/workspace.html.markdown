@@ -30,7 +30,7 @@ resource "tfe_workspace" "test" {
 
 With `execution_mode` of `agent`:
 
-~> **NOTE:** The `execution_mode` and `agent_pool_id` fields on this resource are deprecated. They are now managed in the **tfe_workspace_execution_mode** resource.
+~> **NOTE:** The `execution_mode` and `agent_pool_id` arguments on this resource are deprecated. They are now managed in the **tfe_workspace_execution_mode** resource.
 
 Example usage:
 
