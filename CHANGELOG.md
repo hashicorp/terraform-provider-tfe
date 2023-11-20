@@ -4,8 +4,8 @@
 
 FEATURES:
 * `d/tfe_registry_module`: Add `vcs_repo.tags` and `vcs_repo.branch` attributes to allow configuration of `publishing_mechanism`. Add `test_config` to support running tests on `branch`-based registry modules, by @hashimoon [1096](https://github.com/hashicorp/terraform-provider-tfe/pull/1096)
-* `d/tfe_oauth_client`: Add `project_ids` attribute, by @Netra2104
-* `d/tfe_oauth_client`: Add `organization_scoped` attribute, by @Netra2104
+* `d/tfe_oauth_client`: Add `project_ids` attribute, by @Netra2104 [1148](https://github.com/hashicorp/terraform-provider-tfe/pull/1148)
+* `d/tfe_oauth_client`: Add `organization_scoped` attribute, by @Netra2104 [1148](https://github.com/hashicorp/terraform-provider-tfe/pull/1148)
 
 ## v0.50.0
 
