@@ -20,6 +20,30 @@ func testAccTFEOAuthClientDataSourcePreCheck(t *testing.T) {
 	}
 }
 
+func TestAccTFEOAuthClientDataSource_basic(t *testing.T) {
+	skipUnlessBeta(t)
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccTFEOAuthClientDataSourcePreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOAuthClientDataSourceConfig_basic(rInt),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.tfe_oauth_client.client", "id"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_oauth_client.client", "organization_scoped", "false"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_oauth_client.client", "project_ids.#", "1"),
+				),
+			},
+		},
+	},
+	)
+}
+
 func TestAccTFEOAuthClientDataSource_findByID(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	resource.Test(t, resource.TestCase{
@@ -189,6 +213,38 @@ func TestAccTFEOAuthClientDataSource_sameServiceProvider(t *testing.T) {
 			},
 		},
 	})
+}
+
+func testAccTFEOAuthClientDataSourceConfig_basic(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+	name  = "tst-terraform-%d"
+	email = "admin@company.com"
+}
+
+resource "tfe_project" "foobar" {
+  name         = "project-foo-%d"
+  organization = local.organization_name
+}
+
+resource "tfe_oauth_client" "test" {
+	organization     = tfe_organization.foobar.name
+	api_url          = "https://api.github.com"
+	http_url         = "https://github.com"
+	oauth_token      = "%s"
+	service_provider = "github"
+	organization_scoped = false
+}
+
+resource "tfe_project_oauth_client" "foobar" {
+	oauth_client_id = tfe_oauth_client.test.id
+	project_id = tfe_project.foobar.id
+}
+
+data "tfe_oauth_client" "client" {
+	oauth_client_id = tfe_oauth_client.test.id
+}
+`, rInt, rInt, envGithubToken)
 }
 
 func testAccTFEOAuthClientDataSourceConfig_findByID(rInt int) string {
