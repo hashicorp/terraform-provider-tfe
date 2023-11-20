@@ -2973,7 +2973,7 @@ resource "tfe_workspace" "foobar" {
 
 // while testing the flow of unsetting execution mode as in TestAccTFEWorkspace_unsetExecutionMode
 // the resource "tfe_agent_pool" has been kept in both configs(testAccTFEWorkspace_executionModeAgent & testAccTFEWorkspace_executionModeNull)
-// this prevents an attempt to destroy the agent pool before dissasociating it from the workspace
+// this prevents an attempt to destroy the agent pool before disassociating it from the workspace
 func testAccTFEWorkspace_executionModeNull(organization string) string {
 	return fmt.Sprintf(`
 resource "tfe_agent_pool" "foobar" {

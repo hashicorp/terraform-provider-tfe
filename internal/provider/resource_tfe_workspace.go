@@ -638,10 +638,9 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		if d.HasChange("agent_pool_id") && workspaceControlsAgentPool {
 			if v, ok := d.GetOk("agent_pool_id"); ok && v.(string) != "" {
 				options.AgentPoolID = tfe.String(v.(string))
-
-				if options.SettingOverwrites == nil {
-					// avoid overwriting setting-overwrites that may have been set previously
-					options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{}
+				// set setting overwrites
+				options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{
+					AgentPool: tfe.Bool(true),
 				}
 			}
 		}
@@ -966,7 +965,7 @@ func setComputedDefaults(_ context.Context, d *schema.ResourceDiff) error {
 	}
 
 	agentPoolWasUnset := (agentPoolID.IsNull() || !agentPoolIDReadOk) && agentPoolIDState != ""
-	if agentPoolWasUnset {
+	if agentPoolWasUnset && !currentTfeSupportsSettingOverwrites {
 		err := d.SetNew("agent_pool_id", nil)
 		if err != nil {
 			return fmt.Errorf("failed to clear agent_pool_id: %w", err)
@@ -1008,11 +1007,11 @@ func overwriteDefaultExecutionMode(_ context.Context, d *schema.ResourceDiff) er
 	if v, ok := d.GetOk("setting_overwrites"); ok {
 		settingOverwrites := v.([]interface{})[0].(map[string]interface{})
 		if settingOverwrites["execution_mode"] == false {
-			agentPool, agentPoolReadOk := configMap["agent_pool"]
+			agentPoolID, agentPoolReadOk := configMap["agent_pool_id"]
 
 			newSettingOverwrites := map[string]interface{}{
 				"execution_mode": true,
-				"agent_pool":     agentPool.IsKnown() && agentPoolReadOk,
+				"agent_pool":     agentPoolID.IsKnown() && agentPoolReadOk,
 			}
 			d.SetNew("setting_overwrites", []interface{}{newSettingOverwrites})
 		}
@@ -1024,11 +1023,20 @@ func overwriteDefaultExecutionMode(_ context.Context, d *schema.ResourceDiff) er
 // An agent pool can only be specified when execution_mode is set to "agent". You currently cannot specify a
 // schema validation based on a different argument's value, so we do so here at plan time instead.
 func validateAgentExecution(_ context.Context, d *schema.ResourceDiff) error {
-	if executionMode, ok := d.GetOk("execution_mode"); ok {
-		executionModeIsAgent := executionMode.(string) == "agent"
-		if !executionModeIsAgent && d.Get("agent_pool_id") != "" {
+	// since execution_mode and agent_pool_id are marked as Optional: true, and
+	// Computed: true, unsetting the execution_mode/agent_pool_id in the config
+	// after it's been set to a valid value is not detected by ResourceDiff so
+	// we need to read the value from RawConfig instead
+	configMap := d.GetRawConfig().AsValueMap()
+	executionMode, executionModeReadOk := configMap["execution_mode"]
+	agentPoolID, agentPoolIDReadOk := configMap["agent_pool_id"]
+	executionModeSet := !executionMode.IsNull() && executionModeReadOk
+	agentPoolIDSet := !agentPoolID.IsNull() && agentPoolIDReadOk
+	if executionModeSet {
+		executionModeIsAgent := executionMode.AsString() == "agent"
+		if executionModeIsAgent && !agentPoolIDSet {
 			return fmt.Errorf("execution_mode must be set to 'agent' to assign agent_pool_id")
-		} else if executionModeIsAgent && d.NewValueKnown("agent_pool_id") && d.Get("agent_pool_id") == "" {
+		} else if !executionModeIsAgent && agentPoolIDSet {
 			return fmt.Errorf("agent_pool_id must be provided when execution_mode is 'agent'")
 		}
 	}
