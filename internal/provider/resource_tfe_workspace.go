@@ -937,8 +937,8 @@ func setComputedDefaults(_ context.Context, d *schema.ResourceDiff) error {
 	operations, operationsReadOk := configMap["operations"]
 	executionMode, executionModeReadOk := configMap["execution_mode"]
 	executionModeState := d.Get("execution_mode")
-	agentPoolId, agentPoolIdReadOk := configMap["agent_pool_id"]
-	agentPoolIdState := d.Get("agent_pool_id")
+	agentPoolID, agentPoolIDReadOk := configMap["agent_pool_id"]
+	agentPoolIDState := d.Get("agent_pool_id")
 
 	// forcefully setting the defaults is only necessary when an existing workspace is being updated
 	isRecordPersisted := d.Id() != ""
@@ -946,7 +946,7 @@ func setComputedDefaults(_ context.Context, d *schema.ResourceDiff) error {
 		return nil
 	}
 
-	if !operationsReadOk || !executionModeReadOk || !agentPoolIdReadOk {
+	if !operationsReadOk || !executionModeReadOk || !agentPoolIDReadOk {
 		return nil
 	}
 
@@ -965,7 +965,7 @@ func setComputedDefaults(_ context.Context, d *schema.ResourceDiff) error {
 		}
 	}
 
-	agentPoolWasUnset := (agentPoolId.IsNull() || !agentPoolIdReadOk) && agentPoolIdState != ""
+	agentPoolWasUnset := (agentPoolID.IsNull() || !agentPoolIDReadOk) && agentPoolIDState != ""
 	if agentPoolWasUnset {
 		err := d.SetNew("agent_pool_id", nil)
 		if err != nil {
