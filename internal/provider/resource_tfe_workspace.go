@@ -41,8 +41,9 @@ func resourceTFEWorkspace() *schema.Resource {
 		},
 
 		CustomizeDiff: func(c context.Context, d *schema.ResourceDiff, meta interface{}) error {
-			// NOTE: execution mode must be set to default first before calling the validation functions
-			if err := setExecutionModeDefault(c, d); err != nil {
+			// NOTE: execution mode and agent_pool_id must be set to default first before calling
+			// the validation functions
+			if err := setComputedDefaults(c, d); err != nil {
 				return err
 			}
 
@@ -87,7 +88,6 @@ func resourceTFEWorkspace() *schema.Resource {
 				Type:          schema.TypeString,
 				Optional:      true,
 				Computed:      true,
-				Default:       nil,
 				ConflictsWith: []string{"operations"},
 			},
 
@@ -928,35 +928,48 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 	return nil
 }
 
-// since execution_mode is marked as Optional: true, and Computed: true,
-// unsetting the execution_mode in the config after it's been set to a valid
-// value is not detected by ResourceDiff so read value from RawConfig instead
-func setExecutionModeDefault(_ context.Context, d *schema.ResourceDiff) error {
+// since execution_mode and agent_pool_id are marked as Optional: true, and
+// Computed: true, unsetting the execution_mode/agent_pool_id in the config
+// after it's been set to a valid value is not detected by ResourceDiff so
+// we need to read the value from RawConfig instead
+func setComputedDefaults(_ context.Context, d *schema.ResourceDiff) error {
 	configMap := d.GetRawConfig().AsValueMap()
 	operations, operationsReadOk := configMap["operations"]
 	executionMode, executionModeReadOk := configMap["execution_mode"]
 	executionModeState := d.Get("execution_mode")
-	if operationsReadOk && executionModeReadOk {
-		// forcefully setting the execution mode default is only necessary when an existing workspace is being updated
-		isRecordPersisted := d.Id() != ""
-		if isRecordPersisted != true {
-			return nil
-		}
+	agentPoolId, agentPoolIdReadOk := configMap["agent_pool_id"]
+	agentPoolIdState := d.Get("agent_pool_id")
 
-		// if current TFE version supports setting-overwrites...
-		if v, ok := d.GetOkExists("setting_overwrites"); ok {
-			settingOverwrites := v.([]interface{})
-			if operations.IsNull() && executionMode.IsNull() && len(settingOverwrites) != 0 {
-				// ... don't set execution mode to remote
-				return nil
-			}
-		}
+	// forcefully setting the defaults is only necessary when an existing workspace is being updated
+	isRecordPersisted := d.Id() != ""
+	if isRecordPersisted != true {
+		return nil
+	}
 
-		if operations.IsNull() && executionMode.IsNull() && executionModeState != "remote" {
-			err := d.SetNew("execution_mode", "remote")
-			if err != nil {
-				return fmt.Errorf("failed to set execution_mode: %w", err)
-			}
+	if !operationsReadOk || !executionModeReadOk || !agentPoolIdReadOk {
+		return nil
+	}
+
+	// find out current TFE version supports setting-overwrites
+	currentTfeSupportsSettingOverwrites := false
+	if v, ok := d.GetOkExists("setting_overwrites"); ok {
+		settingOverwrites := v.([]interface{})
+		currentTfeSupportsSettingOverwrites = len(settingOverwrites) != 0
+	}
+
+	executionModeWasUnset := executionModeState != "remote" && operations.IsNull() && executionMode.IsNull()
+	if executionModeWasUnset && !currentTfeSupportsSettingOverwrites {
+		err := d.SetNew("execution_mode", "remote")
+		if err != nil {
+			return fmt.Errorf("failed to set execution_mode: %w", err)
+		}
+	}
+
+	agentPoolWasUnset := (agentPoolId.IsNull() || !agentPoolIdReadOk) && agentPoolIdState != ""
+	if agentPoolWasUnset {
+		err := d.SetNew("agent_pool_id", nil)
+		if err != nil {
+			return fmt.Errorf("failed to clear agent_pool_id: %w", err)
 		}
 	}
 
@@ -980,6 +993,7 @@ func overwriteDefaultExecutionMode(_ context.Context, d *schema.ResourceDiff) er
 				}
 				d.SetNew("setting_overwrites", []interface{}{newSettingOverwrites})
 				d.SetNewComputed("execution_mode")
+				d.SetNewComputed("agent_pool_id")
 			}
 			return nil
 		}
