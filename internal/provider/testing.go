@@ -132,7 +132,7 @@ func createBusinessOrganization(t *testing.T, client *tfe.Client) (*tfe.Organiza
 func createBusinessOrganizationWithAgentDefaultExecutionMode(t *testing.T, tfeClient *tfe.Client) (*tfe.Organization, *tfe.AgentPool, func()) {
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 
-	agentPool, agentPoolCleanup := createAgentPool(t, tfeClient, org)
+	agentPool, _ := createAgentPool(t, tfeClient, org)
 
 	// update organization to use default execution mode of "agent"
 	org, err := tfeClient.Organizations.Update(context.Background(), org.Name, tfe.OrganizationUpdateOptions{
@@ -144,16 +144,6 @@ func createBusinessOrganizationWithAgentDefaultExecutionMode(t *testing.T, tfeCl
 	}
 
 	return org, agentPool, func() {
-		org, err = tfeClient.Organizations.Update(context.Background(), org.Name, tfe.OrganizationUpdateOptions{
-			DefaultExecutionMode: tfe.String("remote"),
-			DefaultAgentPool:     nil,
-		})
-		if err != nil {
-			err = fmt.Errorf("failure occurred while trying to unlink organization from agent pool: %w", err)
-			t.Fatal(err)
-		}
-
-		agentPoolCleanup()
 		orgCleanup()
 	}
 }
