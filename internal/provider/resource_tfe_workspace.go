@@ -635,7 +635,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			}
 		}
 
-		if d.HasChange("agent_pool_id") && workspaceControlsAgentPool {
+		if (d.HasChange("agent_pool_id") && workspaceControlsAgentPool) || d.HasChange("setting_overwrites") {
 			if v, ok := d.GetOk("agent_pool_id"); ok && v.(string) != "" {
 				options.AgentPoolID = tfe.String(v.(string))
 				// set setting overwrites
