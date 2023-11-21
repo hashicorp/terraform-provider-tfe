@@ -18,7 +18,7 @@ func dataSourceTFEOrganization() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 
 			"external_id": {
@@ -88,6 +88,7 @@ func dataSourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) err
 
 	log.Printf("[DEBUG] Setting Organization Attributes")
 	d.SetId(org.ExternalID)
+	d.Set("name", org.Name)
 	d.Set("external_id", org.ExternalID)
 	d.Set("collaborator_auth_policy", org.CollaboratorAuthPolicy)
 	d.Set("cost_estimation_enabled", org.CostEstimationEnabled)
