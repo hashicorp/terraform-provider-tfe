@@ -648,25 +648,28 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		if (d.HasChange("execution_mode") && workspaceControlsExecutionMode) || d.HasChange("setting_overwrites") {
 			executionMode := d.GetRawConfig().GetAttr("execution_mode")
 
-			// if the TFE instance knows about setting setting-overwrites...
+			// if the TFE instance knows about setting-overwrites
 			if _, ok := d.GetOk("setting_overwrites"); ok {
 				if options.SettingOverwrites == nil {
-					// avoid overwriting setting-overwrites that may have been set previously
+					// initialize setting-overwrites if it has not been initialized already
 					options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{}
 				}
 
-				// if execution mode is current unset...
+				// if execution mode is currently unset...
 				operations := d.GetRawConfig().GetAttr("operations")
 				if executionMode.IsNull() && operations.IsNull() {
 					// set execution mode to default (inherit from the parent organization/project)
 					options.SettingOverwrites.ExecutionMode = tfe.Bool(false)
 				}
+
+				// if execution has been set...
 				if !executionMode.IsNull() {
+					// set the execution mode to be "overwritten"
 					options.SettingOverwrites.ExecutionMode = tfe.Bool(true)
 					options.ExecutionMode = tfe.String(executionMode.AsString())
 				}
 			} else {
-				// since the TFE instances doesn't know about setting-overwrites, set the execution mode as normal
+				// since the TFE instance doesn't know about setting-overwrites, set the execution mode as normal
 				if v, ok := d.GetOk("execution_mode"); ok {
 					options.ExecutionMode = tfe.String(v.(string))
 				}
@@ -949,7 +952,7 @@ func setComputedDefaults(_ context.Context, d *schema.ResourceDiff) error {
 		return nil
 	}
 
-	// find out current TFE version supports setting-overwrites
+	// find out if the current TFE version supports setting-overwrites
 	currentTfeSupportsSettingOverwrites := false
 	if v, ok := d.GetOkExists("setting_overwrites"); ok {
 		settingOverwrites := v.([]interface{})
