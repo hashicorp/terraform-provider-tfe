@@ -1,9 +1,12 @@
 # UNRELEASED
 <!-- Add CHANGELOG entry to this section for any PR awaiting the next release -->
-<!-- Please also include if this is a Bug Fix, Enhancement, or Feature -->
+<!-- Please also include if this is a Bug Fix, Enhancement, Feature, or Deprecation -->
+
+DEPRECATIONS:
+* `r/tfe_workspace`: `agent_pool_id` and `execution_mode` are now managed in `r/tfe_workspace_execution_mode`, by @laurenolivia [1119](https://github.com/hashicorp/terraform-provider-tfe/pull/1119)
 
 FEATURES:
-* **New Resource**: `r/tfe_workspace_agent_pool_execution` is a new resource to attach/detach an agent pool to a workspace, by @laurenolivia [1119](https://github.com/hashicorp/terraform-provider-tfe/pull/1119)
+* **New Resource**: `r/tfe_workspace_execution_mode` is a new resource to manage the execution mode of a workspace, by @laurenolivia [1119](https://github.com/hashicorp/terraform-provider-tfe/pull/1119)
 * `d/tfe_registry_module`: Add `vcs_repo.tags` and `vcs_repo.branch` attributes to allow configuration of `publishing_mechanism`. Add `test_config` to support running tests on `branch`-based registry modules, by @hashimoon [1096](https://github.com/hashicorp/terraform-provider-tfe/pull/1096)
 
 ENHANCEMENTS:

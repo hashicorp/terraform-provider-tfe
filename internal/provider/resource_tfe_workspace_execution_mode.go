@@ -78,13 +78,12 @@ func resourceTFEWorkspaceExecutionModeCreate(d *schema.ResourceData, meta interf
 	d.Set("execution_mode", workspace.ExecutionMode)
 	d.Set("agent_pool_id", workspace.AgentPool.ID)
 
-	return resourceTFEWorkspaceExecutionModeRead(d, meta)
+	return resourceTFEWorkspaceExecutionModeUpdate(d, meta)
 }
 
 func resourceTFEWorkspaceExecutionModeRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
-	log.Printf("[DEBUG] Read configuration: %s", d.Id())
 	workspace, err := config.Client.Workspaces.ReadByID(ctx, d.Id())
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
@@ -121,10 +120,11 @@ func resourceTFEWorkspaceExecutionModeUpdate(d *schema.ResourceData, meta interf
 		options.AgentPoolID = tfe.String(d.Get("agent_pool_id").(string))
 	}
 
-	log.Printf("[DEBUG] Update attachment on workspace with agent pool ID: %s", d.Get("agent_pool_id"))
+	log.Printf("[DEBUG] Update execution mode on workspace: %s", d.Get("workspace_id"))
+
 	workspace, err := config.Client.Workspaces.UpdateByID(ctx, workspaceID, options)
 	if err != nil {
-		return fmt.Errorf("error attaching agent pool ID %s to workspace ID %s: %w", d.Get("agent_pool_id"), workspaceID, err)
+		return fmt.Errorf("error updating execution mode %s on workspace ID %s: %w", d.Get("execution_mode"), workspaceID, err)
 	}
 
 	d.SetId(workspace.ID)
