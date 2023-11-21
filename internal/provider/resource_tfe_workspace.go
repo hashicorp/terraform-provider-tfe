@@ -636,8 +636,16 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		}
 
 		if (d.HasChange("agent_pool_id") && workspaceControlsAgentPool) || d.HasChange("setting_overwrites") {
-			if v, ok := d.GetOk("agent_pool_id"); ok && v.(string) != "" {
-				options.AgentPoolID = tfe.String(v.(string))
+			// Need the raw configuration value of the agent_pool_id because when the workspace's execution mode is set
+			// to default, we can't know for certain what the default value of the agent pool will be. This means we can
+			// only set the agent_pool_id as "NewComputed", meaning that the value returned by the ResourceData will be
+			// whatever the agent_pool_id was in the state
+			agentPoolID := d.GetRawConfig().GetAttr("agent_pool_id")
+
+			// If the agent pool ID was not provided or did not change, the changes made to the execution mode will
+			// be sufficient
+			if !agentPoolID.IsNull() {
+				options.AgentPoolID = tfe.String(agentPoolID.AsString())
 				// set setting overwrites
 				options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{
 					AgentPool: tfe.Bool(true),
@@ -958,21 +966,26 @@ func setComputedDefaults(_ context.Context, d *schema.ResourceDiff) error {
 		settingOverwrites := v.([]interface{})
 		currentTfeSupportsSettingOverwrites = len(settingOverwrites) != 0
 	}
-
 	executionModeWasUnset := executionModeState != "remote" && operations.IsNull() && executionMode.IsNull()
-	if executionModeWasUnset && !currentTfeSupportsSettingOverwrites {
-		err := d.SetNew("execution_mode", "remote")
-		if err != nil {
-			return fmt.Errorf("failed to set execution_mode: %w", err)
-		}
-	}
-
 	agentPoolWasUnset := (agentPoolID.IsNull() || !agentPoolIDReadOk) && agentPoolIDState != ""
-	if agentPoolWasUnset && !currentTfeSupportsSettingOverwrites {
-		err := d.SetNew("agent_pool_id", nil)
-		if err != nil {
-			return fmt.Errorf("failed to clear agent_pool_id: %w", err)
+
+	// if current version of TFE does not support setting-overwrites, update the computed values if either of
+	// them have been set to a nil value
+	if !currentTfeSupportsSettingOverwrites {
+		if executionModeWasUnset {
+			err := d.SetNew("execution_mode", "remote")
+			if err != nil {
+				return fmt.Errorf("failed to set execution_mode: %w", err)
+			}
 		}
+
+		if agentPoolWasUnset {
+			err := d.SetNew("agent_pool_id", nil)
+			if err != nil {
+				return fmt.Errorf("failed to clear agent_pool_id: %w", err)
+			}
+		}
+		return nil
 	}
 
 	return nil
@@ -983,8 +996,9 @@ func overwriteDefaultExecutionMode(_ context.Context, d *schema.ResourceDiff) er
 	executionMode, executionModeReadOk := configMap["execution_mode"]
 	operations, operationsReadOk := configMap["operations"]
 
-	// if the execution mode is currently overwritten, but being set to default in the current config, make sure that
-	// the setting overwrites will be set to false
+	// if the execution mode was previously overwritten, but being set to default in the current config, make sure that
+	// the setting overwrites will be set to false and the execution_mode and agent_pool_id are set to computed as we
+	// are not able to tell what the default execution mode is until after we update the workspace
 	if executionMode.IsNull() && operations.IsNull() {
 		if v, ok := d.GetOk("setting_overwrites"); ok {
 			settingOverwrites := v.([]interface{})[0].(map[string]interface{})
