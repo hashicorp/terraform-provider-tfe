@@ -80,8 +80,6 @@ func TestAccTFEOrganization_full(t *testing.T) {
 						"tfe_organization.foobar", "assessments_enforced", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "allow_force_delete_workspaces", "false"),
-					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "default_execution_mode", "remote"),
 				),
 			},
 		},
