@@ -74,7 +74,6 @@ func resourceTFEWorkspaceExecutionModeCreate(d *schema.ResourceData, meta interf
 	}
 
 	d.SetId(workspace.ID)
-	// d.Set() will update the resource state file for execution_mode and agent pool ID
 	d.Set("execution_mode", workspace.ExecutionMode)
 	d.Set("agent_pool_id", workspace.AgentPool.ID)
 
@@ -128,9 +127,11 @@ func resourceTFEWorkspaceExecutionModeUpdate(d *schema.ResourceData, meta interf
 	}
 
 	d.SetId(workspace.ID)
-	// d.Set() will update state file on tfe_workspace for execution_mode and agent pool ID
 	d.Set("execution_mode", workspace.ExecutionMode)
-	d.Set("agent_pool_id", workspace.AgentPool.ID)
+
+	if workspace.AgentPool == nil {
+		d.Set("agent_pool_id", nil)
+	}
 
 	return resourceTFEWorkspaceExecutionModeRead(d, meta)
 }
