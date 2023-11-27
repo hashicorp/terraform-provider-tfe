@@ -150,6 +150,7 @@ func TestAccTFEPolicy_update(t *testing.T) {
 					testAccCheckTFEPolicyExists(
 						"tfe_policy.foobar", policy),
 					testAccCheckTFEPolicyAttributes(policy),
+					testAccCheckTFEPolicyContent(policy, "main = rule { true }"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy.foobar", "name", "policy-test"),
 					resource.TestCheckResourceAttr(
@@ -169,6 +170,7 @@ func TestAccTFEPolicy_update(t *testing.T) {
 					testAccCheckTFEPolicyExists(
 						"tfe_policy.foobar", policy),
 					testAccCheckTFEPolicyAttributesUpdated(policy),
+					testAccCheckTFEPolicyContent(policy, "main = rule { false }"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy.foobar", "name", "policy-test"),
 					resource.TestCheckResourceAttr(
@@ -261,6 +263,7 @@ func TestAccTFEPolicyOPA_update(t *testing.T) {
 					testAccCheckTFEPolicyExists(
 						"tfe_policy.foobar", policy),
 					testAccCheckTFEOPAPolicyAttributes(policy),
+					testAccCheckTFEPolicyContent(policy, "package example rule[\"not allowed\"] { false }"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy.foobar", "name", "policy-test"),
 					resource.TestCheckResourceAttr(
@@ -282,6 +285,7 @@ func TestAccTFEPolicyOPA_update(t *testing.T) {
 					testAccCheckTFEPolicyExists(
 						"tfe_policy.foobar", policy),
 					testAccCheckTFEOPAPolicyAttributesUpdated(policy),
+					testAccCheckTFEPolicyContent(policy, "package example ruler[\"not allowed\"] { true }"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy.foobar", "name", "policy-test"),
 					resource.TestCheckResourceAttr(
@@ -352,6 +356,22 @@ func testAccCheckTFEPolicyExists(
 
 		*policy = *p
 
+		return nil
+	}
+}
+
+func testAccCheckTFEPolicyContent(policy *tfe.Policy, content string) resource.TestCheckFunc {
+	return func(_ *terraform.State) error {
+		config := testAccProvider.Meta().(ConfiguredClient)
+
+		b, err := config.Client.Policies.Download(ctx, policy.ID)
+		if err != nil {
+			return err
+		}
+		s := string(b)
+		if s != content {
+			return fmt.Errorf("Policy content didn't match. Expected: %q; got: %q", content, s)
+		}
 		return nil
 	}
 }
