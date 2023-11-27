@@ -20,7 +20,6 @@ func TestAccTFEWorkspaceExecutionMode_create_update(t *testing.T) {
 	}
 
 	org, _ := createBusinessOrganization(t, tfeClient)
-	// t.Cleanup(orgCleanup)
 
 	ws := createWorkspace(t, tfeClient, org.Name, tfe.WorkspaceCreateOptions{Name: tfe.String("test-workspace")})
 
@@ -121,7 +120,6 @@ func TestAccTFEWorkspaceExecutionMode_import(t *testing.T) {
 	}
 
 	org, _ := createBusinessOrganization(t, tfeClient)
-	// t.Cleanup(orgCleanup)
 
 	ws := createWorkspace(t, tfeClient, org.Name, tfe.WorkspaceCreateOptions{Name: tfe.String("test-workspace")})
 
