@@ -33,13 +33,12 @@ class MyConvertedCode(TerraformStack):
 ## Argument Reference
 
 The following arguments are supported:
-* `name` - (Required) Name of the organization.
+* `name` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 
 ## Attributes Reference
 
 In addition to all arguments above, the following attributes are exported:
 
-* `name` - Name of the organization.
 * `email` - Admin email address.
 * `external_id` - An identifier for the organization.
 * `assessments_enforced` - (Available only in Terraform Cloud) Whether to force health assessments (drift detection) on all eligible workspaces or allow workspaces to set thier own preferences.
@@ -48,4 +47,4 @@ In addition to all arguments above, the following attributes are exported:
 * `owners_team_saml_role_id` - The name of the "owners" team.
 * `send_passing_statuses_for_untriggered_speculative_plans` - Whether or not to send VCS status updates for untriggered speculative plans. This can be useful if large numbers of untriggered workspaces are exhausting request limits for connected version control service providers like GitHub. Defaults to true. In Terraform Enterprise, this setting has no effect and cannot be changed but is also available in Site Administration.
 * `default_project_id` - ID of the organization's default project. All workspaces created without specifying a project ID are created in this project.
-<!-- cache-key: cdktf-0.19.0 input-73ec7085b3dbf61a45984fb7c74bac9c042ca20c175259f0650faf7acfa99133 -->
+<!-- cache-key: cdktf-0.19.0 input-8846c33fbd01c623b80272d126fa694263f6e0fb3286ff1830ae6d051a5ae2a2 -->

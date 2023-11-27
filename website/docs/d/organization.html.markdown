@@ -20,13 +20,12 @@ data "tfe_organization" "foo" {
 ## Argument Reference
 
 The following arguments are supported:
-* `name` - (Required) Name of the organization.
+* `name` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 
 ## Attributes Reference
 
 In addition to all arguments above, the following attributes are exported:
 
-* `name` - Name of the organization.
 * `email` - Admin email address.
 * `external_id` - An identifier for the organization.
 * `assessments_enforced` - (Available only in Terraform Cloud) Whether to force health assessments (drift detection) on all eligible workspaces or allow workspaces to set thier own preferences.
