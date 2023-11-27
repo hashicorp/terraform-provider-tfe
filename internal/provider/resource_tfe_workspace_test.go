@@ -1923,6 +1923,63 @@ func TestAccTFEWorkspace_unsetExecutionMode(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspace_unsetExecutionModeWithOrgLevelDefault(t *testing.T) {
+	skipIfEnterprise(t)
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, agentPool, orgCleanup := createBusinessOrganizationWithAgentDefaultExecutionMode(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	workspace := &tfe.Workspace{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_executionModeAgent(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace, testAccProvider),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "operations", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "execution_mode", "agent"),
+					resource.TestCheckResourceAttrSet(
+						"tfe_workspace.foobar", "agent_pool_id"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "setting_overwrites.0.execution_mode", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "setting_overwrites.0.agent_pool", "true"),
+				),
+			},
+			{
+				Config: testAccTFEWorkspace_executionModeNull(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace, testAccProvider),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "operations", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "execution_mode", "agent"),
+					// workspace should now be using the organization default agent pool
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "agent_pool_id", agentPool.ID),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "setting_overwrites.0.execution_mode", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "setting_overwrites.0.agent_pool", "false"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEWorkspace_globalRemoteState(t *testing.T) {
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -2916,7 +2973,7 @@ resource "tfe_workspace" "foobar" {
 
 // while testing the flow of unsetting execution mode as in TestAccTFEWorkspace_unsetExecutionMode
 // the resource "tfe_agent_pool" has been kept in both configs(testAccTFEWorkspace_executionModeAgent & testAccTFEWorkspace_executionModeNull)
-// this prevents an attempt to destroy the agent pool before dissasociating it from the workspace
+// this prevents an attempt to destroy the agent pool before disassociating it from the workspace
 func testAccTFEWorkspace_executionModeNull(organization string) string {
 	return fmt.Sprintf(`
 resource "tfe_agent_pool" "foobar" {
