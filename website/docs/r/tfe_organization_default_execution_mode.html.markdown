@@ -45,4 +45,8 @@ The following arguments are supported:
 
 ## Import
 
-This resource does not manage the creation of an organization and there is no need to import it.
+Organization default execution mode can be imported; use `<ORGANIZATION NAME>` as the import ID. For example:
+
+```shell
+terraform import tfe_organization_default_execution_mode.test my-org-name
+```
