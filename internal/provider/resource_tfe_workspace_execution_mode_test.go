@@ -137,7 +137,6 @@ func TestAccTFEWorkspaceExecutionMode_import(t *testing.T) {
 			},
 		},
 	})
-
 }
 
 func testAccTFEWorkspaceExecutionMode_basic(organization string, workspace string) string {
