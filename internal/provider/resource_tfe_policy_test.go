@@ -366,7 +366,7 @@ func testAccCheckTFEPolicyContent(policy *tfe.Policy, content string) resource.T
 
 		b, err := config.Client.Policies.Download(ctx, policy.ID)
 		if err != nil {
-			return err
+			return fmt.Errorf("Problem downloading policy content: %w", err)
 		}
 		s := string(b)
 		if s != content {
