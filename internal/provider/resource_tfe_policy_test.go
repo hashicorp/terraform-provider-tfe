@@ -287,9 +287,9 @@ func TestAccTFEPolicyOPA_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy.foobar", "description", "An updated test policy"),
 					resource.TestCheckResourceAttr(
-						"tfe_policy.foobar", "policy", "package example rule[\"not allowed\"] { true }"),
+						"tfe_policy.foobar", "policy", "package example ruler[\"not allowed\"] { true }"),
 					resource.TestCheckResourceAttr(
-						"tfe_policy.foobar", "query", "data.example.rule"),
+						"tfe_policy.foobar", "query", "data.example.ruler"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy.foobar", "enforce_mode", "advisory"),
 				),
@@ -382,6 +382,10 @@ func testAccCheckTFEOPAPolicyAttributes(
 			return fmt.Errorf("Bad enforce mode: %s", policy.Enforce[0].Mode)
 		}
 
+		if *policy.Query != "data.example.rule" {
+			return fmt.Errorf("Bad OPA query string: %s", *policy.Query)
+		}
+
 		return nil
 	}
 }
@@ -430,6 +434,10 @@ func testAccCheckTFEOPAPolicyAttributesUpdated(
 
 		if policy.Enforce[0].Mode != "advisory" {
 			return fmt.Errorf("Bad enforce mode: %s", policy.Enforce[0].Mode)
+		}
+
+		if *policy.Query != "data.example.ruler" {
+			return fmt.Errorf("Bad OPA query string: %s", *policy.Query)
 		}
 
 		return nil
@@ -519,8 +527,8 @@ resource "tfe_policy" "foobar" {
   description  = "An updated test policy"
   organization = "%s"
   kind         = "opa"
-  policy       = "package example rule[\"not allowed\"] { true }"
-  query        = "data.example.rule"
+  policy       = "package example ruler[\"not allowed\"] { true }"
+  query        = "data.example.ruler"
   enforce_mode = "advisory"
 }`, organization)
 }
