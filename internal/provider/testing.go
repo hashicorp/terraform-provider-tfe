@@ -129,6 +129,25 @@ func createBusinessOrganization(t *testing.T, client *tfe.Client) (*tfe.Organiza
 	return org, orgCleanup
 }
 
+func createBusinessOrganizationWithAgentDefaultExecutionMode(t *testing.T, tfeClient *tfe.Client) (*tfe.Organization, *tfe.AgentPool, func()) {
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+
+	agentPool, _ := createAgentPool(t, tfeClient, org)
+
+	// update organization to use default execution mode of "agent"
+	org, err := tfeClient.Organizations.Update(context.Background(), org.Name, tfe.OrganizationUpdateOptions{
+		DefaultExecutionMode: tfe.String("agent"),
+		DefaultAgentPool:     agentPool,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return org, agentPool, func() {
+		orgCleanup()
+	}
+}
+
 func createOrganization(t *testing.T, client *tfe.Client, options tfe.OrganizationCreateOptions) (*tfe.Organization, func()) {
 	ctx := context.Background()
 	org, err := client.Organizations.Create(ctx, options)
@@ -141,6 +160,24 @@ func createOrganization(t *testing.T, client *tfe.Client, options tfe.Organizati
 			t.Errorf("Error destroying organization! WARNING: Dangling resources\n"+
 				"may exist! The full error is show below:\n\n"+
 				"Organization:%s\nError: %s", org.Name, err)
+		}
+	}
+}
+
+func createAgentPool(t *testing.T, client *tfe.Client, org *tfe.Organization) (*tfe.AgentPool, func()) {
+	ctx := context.Background()
+	pool, err := client.AgentPools.Create(ctx, org.Name, tfe.AgentPoolCreateOptions{
+		Name: tfe.String(randomString(t)),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return pool, func() {
+		if err := client.AgentPools.Delete(ctx, pool.ID); err != nil {
+			t.Logf("Error destroying agent pool! WARNING: Dangling resources "+
+				"may exist! The full error is shown below.\n\n"+
+				"Agent pool ID: %s\nError: %s", pool.ID, err)
 		}
 	}
 }

@@ -725,6 +725,7 @@ resource "tfe_organization" "foobar" {
 resource "tfe_workspace" "foobar" {
   name         = "workspace-test"
   organization = tfe_organization.foobar.id
+  execution_mode = "remote"
 }
 
 resource "tfe_variable" "ws_env" {
