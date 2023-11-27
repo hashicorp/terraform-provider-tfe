@@ -52,10 +52,20 @@ The following arguments are supported:
 * `workspace_id` - (Required) ID of the workspace being managed.
 * `agent_pool_id` - (Optional) ID of the agent pool being assigned to the managed workspace. Requires `execution_mode` to be set to `agent`. This value _must not_ be provided if `execution_mode` is set to any other mode, or if `operations` is provided.
 
+## Attributes Reference
+
+In addition to the arguments above, the following attribute is also exported:
+
+* `id` - The workspace ID.
+
 ## Import
 
-Excluded Workspace Policy Sets can be imported; use `<ORGANIZATION>/<WORKSPACE NAME>`. For example:
+Workspaces can be imported; use `<WORKSPACE ID>` or `<ORGANIZATION NAME>/<WORKSPACE NAME>` as the import ID. For example:
 
 ```shell
-terraform import tfe_workspace_execution_mode.test 'my-org-name/workspace-name'
+terraform import tfe_workspace_execution_mode.test ws-CH5in3chf8RJjrVd
+```
+
+```shell
+terraform import tfe_workspace_execution_mode.test my-org-name/my-wkspace-name
 ```
