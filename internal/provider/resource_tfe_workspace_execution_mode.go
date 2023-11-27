@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -21,7 +22,7 @@ func resourceTFEWorkspaceExecutionMode() *schema.Resource {
 		Read:   resourceTFEWorkspaceExecutionModeRead,
 		Delete: resourceTFEWorkspaceExecutionModeDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: resourceTFEWorkspaceExectionModeImporter,
 		},
 
 		CustomizeDiff: validateExecutionMode,
@@ -184,4 +185,26 @@ func validateExecutionMode(_ context.Context, d *schema.ResourceDiff, meta inter
 	}
 
 	return nil
+}
+
+func resourceTFEWorkspaceExectionModeImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	config := meta.(ConfiguredClient)
+
+	s := strings.Split(d.Id(), "/")
+	if len(s) >= 3 {
+		return nil, fmt.Errorf(
+			"invalid workspace input format: %s (expected <ORGANIZATION>/<WORKSPACE NAME> or <WORKSPACE ID>)",
+			d.Id(),
+		)
+	} else if len(s) == 2 {
+		workspaceID, err := fetchWorkspaceExternalID(s[0]+"/"+s[1], config.Client)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"error retrieving workspace with name %s from organization %s %w", s[1], s[0], err)
+		}
+
+		d.SetId(workspaceID)
+	}
+
+	return []*schema.ResourceData{d}, nil
 }

@@ -19,8 +19,8 @@ func TestAccTFEWorkspaceExecutionMode_create_update(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	org, orgCleanup := createBusinessOrganization(t, tfeClient)
-	t.Cleanup(orgCleanup)
+	org, _ := createBusinessOrganization(t, tfeClient)
+	// t.Cleanup(orgCleanup)
 
 	ws := createWorkspace(t, tfeClient, org.Name, tfe.WorkspaceCreateOptions{Name: tfe.String("test-workspace")})
 
@@ -112,6 +112,34 @@ func testAccCheckTFEWorkspaceExecutionModeDestroy(s *terraform.State) error {
 	}
 
 	return nil
+}
+
+func TestAccTFEWorkspaceExecutionMode_import(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, _ := createBusinessOrganization(t, tfeClient)
+	// t.Cleanup(orgCleanup)
+
+	ws := createWorkspace(t, tfeClient, org.Name, tfe.WorkspaceCreateOptions{Name: tfe.String("test-workspace")})
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceExecutionModeDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspaceExecutionMode_basic(org.Name, ws.Name),
+			},
+			{
+				ResourceName: "tfe_workspace_execution_mode.attach",
+				ImportState:  true,
+			},
+		},
+	})
+
 }
 
 func testAccTFEWorkspaceExecutionMode_basic(organization string, workspace string) string {
