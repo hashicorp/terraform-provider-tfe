@@ -182,6 +182,7 @@ func createUpdateWorkspaceExecutionMode(d *schema.ResourceData, meta interface{}
 	d.SetId(workspace.ID)
 	d.Set("execution_mode", workspace.ExecutionMode)
 
+	// to avoid a panic, check for agent pool ID == nil
 	if workspace.AgentPool == nil {
 		d.Set("agent_pool_id", nil)
 	} else {
