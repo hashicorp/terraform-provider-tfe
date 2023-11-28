@@ -264,7 +264,7 @@ func resourceTFEPolicyUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
 	// nolint:nestif
-	if d.HasChange("description") || d.HasChange("enforce_mode") || d.HasChange("query") {
+	if d.HasChange("description") || d.HasChange("enforce_mode") {
 		// Create a new options struct.
 		options := tfe.PolicyUpdateOptions{}
 
@@ -286,10 +286,6 @@ func resourceTFEPolicyUpdate(d *schema.ResourceData, meta interface{}) error {
 					Mode: tfe.EnforcementMode(tfe.EnforcementLevel(d.Get("enforce_mode").(string))),
 				},
 			}
-		}
-
-		if query, ok := d.HasChange("query"); ok {
-			options.Query = tfe.String(query.(string))
 		}
 
 		log.Printf("[DEBUG] Update configuration for %s policy: %s", vKind, d.Id())
