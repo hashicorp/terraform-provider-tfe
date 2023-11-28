@@ -5,6 +5,9 @@
 BREAKING CHANGES:
 * `r/tfe_workspace`: Default value of the `execution_mode` field now uses the organization's `default_execution_mode`. If no `default_execution_mode` has been set, the default `execution_mode` will be unchanged (i.e. `remote`).
 
+BUG FIXES:
+* `r/tfe_policy`: Fix the provider ignoring updates to the `query` field, by @skeggse [1108](https://github.com/hashicorp/terraform-provider-tfe/pull/1108)
+
 FEATURES:
 * `d/tfe_registry_module`: Add `vcs_repo.tags` and `vcs_repo.branch` attributes to allow configuration of `publishing_mechanism`. Add `test_config` to support running tests on `branch`-based registry modules, by @hashimoon [1096](https://github.com/hashicorp/terraform-provider-tfe/pull/1096)
 * **New Resource**: `r/tfe_organization_default_execution_mode` is a new resource to set the `default_execution_mode` and `default_agent_pool_id` for an organization, by @SwiftEngineer [1137](https://github.com/hashicorp/terraform-provider-tfe/pull/1137)'
