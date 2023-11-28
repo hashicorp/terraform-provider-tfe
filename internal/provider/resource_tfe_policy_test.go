@@ -280,11 +280,32 @@ func TestAccTFEPolicyOPA_update(t *testing.T) {
 			},
 
 			{
-				Config: testAccTFEPolicyOPA_update(org.Name),
+				Config: testAccTFEPolicyOPA_updateQuery(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicyExists(
 						"tfe_policy.foobar", policy),
-					testAccCheckTFEOPAPolicyAttributesUpdated(policy),
+					testAccCheckTFEOPAPolicyAttributesUpdatedQuery(policy),
+					resource.TestCheckResourceAttr(
+						"tfe_policy.foobar", "name", "policy-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy.foobar", "description", "A test policy"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy.foobar", "kind", "opa"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy.foobar", "policy", "package example rule[\"not allowed\"] { false }"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy.foobar", "query", "data.example.ruler"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy.foobar", "enforce_mode", "mandatory"),
+				),
+			},
+
+			{
+				Config: testAccTFEPolicyOPA_updateAll(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicyExists(
+						"tfe_policy.foobar", policy),
+					testAccCheckTFEOPAPolicyAttributesUpdatedAll(policy),
 					testAccCheckTFEPolicyContent(policy, "package example ruler[\"not allowed\"] { true }"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy.foobar", "name", "policy-test"),
@@ -445,7 +466,26 @@ func testAccCheckTFEPolicyAttributesUpdated(
 	}
 }
 
-func testAccCheckTFEOPAPolicyAttributesUpdated(
+func testAccCheckTFEOPAPolicyAttributesUpdatedQuery(
+	policy *tfe.Policy) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if policy.Name != "policy-test" {
+			return fmt.Errorf("Bad name: %s", policy.Name)
+		}
+
+		if policy.Enforce[0].Mode != "mandatory" {
+			return fmt.Errorf("Bad enforce mode: %s", policy.Enforce[0].Mode)
+		}
+
+		if *policy.Query != "data.example.ruler" {
+			return fmt.Errorf("Bad OPA query string: %s", *policy.Query)
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckTFEOPAPolicyAttributesUpdatedAll(
 	policy *tfe.Policy) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if policy.Name != "policy-test" {
@@ -540,7 +580,20 @@ func testAccTFEPolicy_emptyEnforce(organization string) string {
 }`, organization)
 }
 
-func testAccTFEPolicyOPA_update(organization string) string {
+func testAccTFEPolicyOPA_updateQuery(organization string) string {
+	return fmt.Sprintf(`
+resource "tfe_policy" "foobar" {
+  name         = "policy-test"
+  description  = "A test policy"
+  organization = "%s"
+  kind         = "opa"
+  policy       = "package example rule[\"not allowed\"] { false }"
+  query        = "data.example.ruler"
+  enforce_mode = "mandatory"
+}`, organization)
+}
+
+func testAccTFEPolicyOPA_updateAll(organization string) string {
 	return fmt.Sprintf(`
 resource "tfe_policy" "foobar" {
   name         = "policy-test"
