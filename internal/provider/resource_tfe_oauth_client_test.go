@@ -39,6 +39,38 @@ func TestAccTFEOAuthClient_basic(t *testing.T) {
 						"tfe_oauth_client.foobar", "http_url", "https://github.com"),
 					resource.TestCheckResourceAttr(
 						"tfe_oauth_client.foobar", "service_provider", "github"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEOAuthClientWithOrganizationScoped_basic(t *testing.T) {
+	skipUnlessBeta(t)
+	oc := &tfe.OAuthClient{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			if envGithubToken == "" {
+				t.Skip("Please set GITHUB_TOKEN to run this test")
+			}
+		},
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEOAuthClientDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOAuthClient_basic(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOAuthClientExists("tfe_oauth_client.foobar", oc),
+					testAccCheckTFEOAuthClientAttributes(oc),
+					resource.TestCheckResourceAttr(
+						"tfe_oauth_client.foobar", "api_url", "https://api.github.com"),
+					resource.TestCheckResourceAttr(
+						"tfe_oauth_client.foobar", "http_url", "https://github.com"),
+					resource.TestCheckResourceAttr(
+						"tfe_oauth_client.foobar", "service_provider", "github"),
 					resource.TestCheckResourceAttr(
 						"tfe_oauth_client.foobar", "organization_scoped", "true"),
 				),
