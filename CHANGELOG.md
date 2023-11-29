@@ -14,6 +14,7 @@ FEATURES:
 * `r/tfe_workspace`: Now uses the organization's `default_execution_mode` and `default_agent_pool_id` as the default `execution_mode`, by @SwiftEngineer [1137](https://github.com/hashicorp/terraform-provider-tfe/pull/1137)'
 * **New Resource**: `r/tfe_project_oauth_client` attaches/detaches an existing `project` to an existing `oauth client`, by @Netra2104 [1144](https://github.com/hashicorp/terraform-provider-tfe/pull/1144)
   **NOTE:** `r/tfe_project_oauth_client` resource is currently in beta and isn't generally available to all users. It is subject to change or removal.
+
 ENHANCEMENTS:
 * `d/tfe_organization`: Make `name` argument optional if configured for the provider, by @tmatilai [1133](https://github.com/hashicorp/terraform-provider-tfe/pull/1133)
 
