@@ -112,6 +112,7 @@ func Provider() *schema.Provider {
 			"tfe_agent_token":                         resourceTFEAgentToken(),
 			"tfe_notification_configuration":          resourceTFENotificationConfiguration(),
 			"tfe_oauth_client":                        resourceTFEOAuthClient(),
+			"tfe_project_oauth_client":                resourceTFEProjectOAuthClient(),
 			"tfe_organization":                        resourceTFEOrganization(),
 			"tfe_organization_default_execution_mode": resourceTFEOrganizationDefaultExecutionMode(),
 			"tfe_organization_membership":             resourceTFEOrganizationMembership(),
