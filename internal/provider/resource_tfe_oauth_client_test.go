@@ -39,6 +39,8 @@ func TestAccTFEOAuthClient_basic(t *testing.T) {
 						"tfe_oauth_client.foobar", "http_url", "https://github.com"),
 					resource.TestCheckResourceAttr(
 						"tfe_oauth_client.foobar", "service_provider", "github"),
+					resource.TestCheckResourceAttr(
+						"tfe_oauth_client.foobar", "organization_scoped", "true"),
 				),
 			},
 		},
@@ -153,6 +155,7 @@ resource "tfe_oauth_client" "foobar" {
   http_url         = "https://github.com"
   oauth_token      = "%s"
   service_provider = "github"
+  organization_scoped = true
 }`, rInt, envGithubToken)
 }
 
