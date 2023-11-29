@@ -226,7 +226,7 @@ func resourceTFEOAuthClientUpdate(d *schema.ResourceData, meta interface{}) erro
 		OrganizationScoped: tfe.Bool(d.Get("organization_scoped").(bool)),
 	}
 
-	log.Printf("[DEBUG] Update agent pool: %s", d.Id())
+	log.Printf("[DEBUG] Update OAuth client %s", d.Id())
 	_, err := config.Client.OAuthClients.Update(ctx, d.Id(), options)
 	if err != nil {
 		return fmt.Errorf("Error updating oauth client %s: %w", d.Id(), err)
