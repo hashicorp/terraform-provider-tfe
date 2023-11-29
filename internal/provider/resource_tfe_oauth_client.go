@@ -229,7 +229,7 @@ func resourceTFEOAuthClientUpdate(d *schema.ResourceData, meta interface{}) erro
 	log.Printf("[DEBUG] Update OAuth client %s", d.Id())
 	_, err := config.Client.OAuthClients.Update(ctx, d.Id(), options)
 	if err != nil {
-		return fmt.Errorf("Error updating oauth client %s: %w", d.Id(), err)
+		return fmt.Errorf("Error updating OAuth client %s: %w", d.Id(), err)
 	}
 
 	return resourceTFEOAuthClientRead(d, meta)
