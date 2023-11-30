@@ -28,7 +28,7 @@ resource "tfe_workspace" "test" {
 }
 ```
 
-With `execution_mode` of `agent`:
+Usage with vcs_repo:
 
 ```hcl
 resource "tfe_organization" "test-organization" {
@@ -36,25 +36,31 @@ resource "tfe_organization" "test-organization" {
   email = "admin@company.com"
 }
 
-resource "tfe_agent_pool" "test-agent-pool" {
-  name         = "my-agent-pool-name"
-  organization = tfe_organization.test-organization.name
+resource "tfe_oauth_client" "test" {
+  organization     = tfe_organization.test-organization
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "oauth_token_id"
+  service_provider = "github"
 }
 
-resource "tfe_workspace" "test" {
-  name           = "my-workspace-name"
-  organization   = tfe_organization.test-organization.name
-  agent_pool_id  = tfe_agent_pool.test-agent-pool.id
-  execution_mode = "agent"
+resource "tfe_workspace" "parent" {
+  name                 = "parent-ws"
+  organization         = tfe_organization.test-organization
+  queue_all_runs       = false
+  vcs_repo {
+    branch             = "main"
+    identifier         = "my-org-name/vcs-repository"
+    oauth_token_id     = tfe_oauth_client.test.oauth_token_id
+  }
 }
-```
 
 ## Argument Reference
 
 The following arguments are supported:
 
 * `name` - (Required) Name of the workspace.
-* `agent_pool_id` - (Optional) The ID of an agent pool to assign to the workspace. Requires `execution_mode`
+* `agent_pool_id` - (Optional) **Deprecated** The ID of an agent pool to assign to the workspace. Requires `execution_mode`
   to be set to `agent`. This value _must not_ be provided if `execution_mode` is set to any other value or if `operations` is
   provided.
 * `allow_destroy_plan` - (Optional) Whether destroy plans can be queued on the workspace.
@@ -62,12 +68,8 @@ The following arguments are supported:
 * `auto_apply` - (Optional) Whether to automatically apply changes when a Terraform plan is successful. Defaults to `false`.
 * `auto_apply_run_trigger` - (Optional) Whether to automatically apply changes for runs that were created by run triggers from another workspace. Defaults to `false`.
 * `description` - (Optional) A description for the workspace.
-* `execution_mode` - (Optional) Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode)
-  to use. Using Terraform Cloud, valid values are `remote`, `local` or `agent`.
-  Defaults  your organization's default execution mode, or `remote` if no organization default is set. Using Terraform Enterprise, only `remote` and `local`
-  execution modes are valid.  When set to `local`, the workspace will be used
-  for state storage only. This value _must not_ be provided if `operations`
-  is provided.
+* `execution_mode` - (Optional) **Deprecated** Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode)
+  to use. Using Terraform Cloud, valid values are `remote`, `local` or `agent`. Using Terraform Enterprise, only `remote` and `local` execution modes are valid.  When set to `local`, the workspace will be used for state storage only. This value _must not_ be provided if `operations` is provided.
 * `file_triggers_enabled` - (Optional) Whether to filter runs based on the changed files
   in a VCS push. Defaults to `true`. If enabled, the working directory and
   trigger prefixes describe a set of paths which must contain changes for a
@@ -146,9 +148,6 @@ In addition to all arguments above, the following attributes are exported:
 * `id` - The workspace ID.
 * `resource_count` - The number of resources managed by the workspace.
 * `html_url` - The URL to the browsable HTML overview of the workspace.
-* `setting_overwrites` - Can be used to check whether a setting is currently inheriting its value from another resource.
-  - `execution_mode` - Set to `true` if the execution mode of the workspace is being determined by the setting on the workspace itself. It will be `false` if the execution mode is inherited from another resource (e.g. the organization's default execution mode)   
-  - `agent_pool` - Set to `true` if the agent pool of the workspace is being determined by the setting on the workspace itself. It will be `false` if the agent pool is inherited from another resource (e.g. the organization's default agent pool)
 
 ## Import
 

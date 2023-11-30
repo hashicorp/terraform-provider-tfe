@@ -83,6 +83,7 @@ func resourceTFEWorkspace() *schema.Resource {
 				Optional:      true,
 				Computed:      true,
 				ConflictsWith: []string{"operations"},
+				Deprecated:    "Use resource tfe_workspace_settings to modify the workspace execution settings. This attribute will be removed in a future release of the provider.",
 			},
 
 			"allow_destroy_plan": {
@@ -108,6 +109,7 @@ func resourceTFEWorkspace() *schema.Resource {
 				Optional:      true,
 				Computed:      true,
 				ConflictsWith: []string{"operations"},
+				Deprecated:    "Use resource tfe_workspace_settings to modify the workspace execution settings. This attribute will be removed in a future release of the provider.",
 				ValidateFunc: validation.StringInSlice(
 					[]string{
 						"agent",
@@ -146,7 +148,7 @@ func resourceTFEWorkspace() *schema.Resource {
 				Type:          schema.TypeBool,
 				Optional:      true,
 				Computed:      true,
-				Deprecated:    "Use execution_mode instead.",
+				Deprecated:    "Use tfe_workspace_settings to modify the workspace execution settings. This attribute will be removed in a future release of the provider.",
 				ConflictsWith: []string{"execution_mode", "agent_pool_id"},
 			},
 
