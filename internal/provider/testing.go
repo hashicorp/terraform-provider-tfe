@@ -129,25 +129,6 @@ func createBusinessOrganization(t *testing.T, client *tfe.Client) (*tfe.Organiza
 	return org, orgCleanup
 }
 
-func createBusinessOrganizationWithAgentDefaultExecutionMode(t *testing.T, tfeClient *tfe.Client) (*tfe.Organization, *tfe.AgentPool, func()) {
-	org, orgCleanup := createBusinessOrganization(t, tfeClient)
-
-	agentPool, _ := createAgentPool(t, tfeClient, org)
-
-	// update organization to use default execution mode of "agent"
-	org, err := tfeClient.Organizations.Update(context.Background(), org.Name, tfe.OrganizationUpdateOptions{
-		DefaultExecutionMode: tfe.String("agent"),
-		DefaultAgentPool:     agentPool,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return org, agentPool, func() {
-		orgCleanup()
-	}
-}
-
 func createOrganization(t *testing.T, client *tfe.Client, options tfe.OrganizationCreateOptions) (*tfe.Organization, func()) {
 	ctx := context.Background()
 	org, err := client.Organizations.Create(ctx, options)
