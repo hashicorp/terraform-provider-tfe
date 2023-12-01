@@ -2,17 +2,18 @@
 <!-- Add CHANGELOG entry to this section for any PR awaiting the next release -->
 <!-- Please also include if this is a Bug Fix, Enhancement, or Feature -->
 
-BREAKING CHANGES:
-* `r/tfe_workspace`: Default value of the `execution_mode` field now uses the organization's `default_execution_mode`. If no `default_execution_mode` has been set, the default `execution_mode` will be unchanged (i.e. `remote`).
+DEPRECATIONS and BREAKING CHANGES:
+* `r/tfe_workspace`: `execution_mode` and `agent_pool_id` attributes have been deprecated in favor of a new resource, `tfe_workspace_settings`. Note that these fields no longer compute defaults which is consistent with using a new resource to manage these same settings. What this means in practice is that if you unset `execution_mode` or `agent_pool_id` without also creating a `tfe_workspace_settings`, the setting will no longer revert to the default "remote" mode. To migrate, relocate the `execution_mode` and `agent_pool_id` arguments to `tfe_workspace_settings`.
 
 BUG FIXES:
 * `r/tfe_policy`: Fix the provider ignoring updates to the `query` field, by @skeggse [1108](https://github.com/hashicorp/terraform-provider-tfe/pull/1108)
 * Fix the undetected change when modifying the `organization` default in the provider configuration by @brandonc [1152](https://github.com/hashicorp/terraform-provider-tfe/issue/1152)
+* New resource `r/tfe_workspace_settings`: Can be used to break any circular dependency between `tfe_workspace` and `tfe_agent_pool_allowed_workspaces` by managing the `agent_pool_id` for a Workspace by @brandonc [1159](https://github.com/hashicorp/terraform-provider-tfe/pull/1159)
 
 FEATURES:
 * `d/tfe_registry_module`: Add `vcs_repo.tags` and `vcs_repo.branch` attributes to allow configuration of `publishing_mechanism`. Add `test_config` to support running tests on `branch`-based registry modules, by @hashimoon [1096](https://github.com/hashicorp/terraform-provider-tfe/pull/1096)
-* **New Resource**: `r/tfe_organization_default_execution_mode` is a new resource to set the `default_execution_mode` and `default_agent_pool_id` for an organization, by @SwiftEngineer [1137](https://github.com/hashicorp/terraform-provider-tfe/pull/1137)'
-* `r/tfe_workspace`: Now uses the organization's `default_execution_mode` and `default_agent_pool_id` as the default `execution_mode`, by @SwiftEngineer [1137](https://github.com/hashicorp/terraform-provider-tfe/pull/1137)'
+* **New Resource**: `r/tfe_organization_default_settings` is a new resource to set the `default_execution_mode` and `default_agent_pool_id` for an organization, by @SwiftEngineer [1137](https://github.com/hashicorp/terraform-provider-tfe/pull/1137)'
+* **New Resource**: `r/tfe_workspace_settings` Uses the `tfe_organization_default_settings` `default_execution_mode` and `default_agent_pool_id` as the default `execution_mode` by @brandonc [1159](https://github.com/hashicorp/terraform-provider-tfe/pull/1159)
 
 ENHANCEMENTS:
 * `d/tfe_organization`: Make `name` argument optional if configured for the provider, by @tmatilai [1133](https://github.com/hashicorp/terraform-provider-tfe/pull/1133)
