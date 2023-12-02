@@ -12,7 +12,6 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -245,12 +244,6 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 		DeprecationMessage:  "",
 		Version:             1,
 	}
-}
-
-// AttrGettable is a small enabler for helper functions that need to read one
-// attribute of a Plan or State.
-type AttrGettable interface {
-	GetAttribute(ctx context.Context, path path.Path, target interface{}) diag.Diagnostics
 }
 
 // isWorkspaceVariable is a helper function for switching between tfe_variable's
