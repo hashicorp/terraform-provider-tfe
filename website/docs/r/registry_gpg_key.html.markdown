@@ -1,0 +1,44 @@
+---
+layout: "tfe"
+page_title: "Terraform Enterprise: tfe_registry_gpg_key"
+description: |-
+  Manages private registry GPG keys.
+---
+
+# tfe_registry_gpg_key
+
+Manages a public key of the GPG key pair used to sign releases of private providers in the private registry.
+
+The provided GPG key must be ASCII-armored, i.e. starting with:
+"`-----BEGIN PGP PUBLIC KEY BLOCK-----\n\n...`".
+
+## Example Usage
+
+```hcl
+resource "tfe_registry_gpg_key" "example" {
+  organization = "my-org-name"
+  ascii_armor  = file("my-public-key.asc")
+}
+```
+
+## Argument Reference
+
+The following arguments are supported:
+
+* `ascii_armor` - (Required) ASCII-armored representation of the GPG key.
+* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
+
+## Attributes Reference
+
+* `id` - ID of the GPG key.
+* `created_at` - The time when the GPG key was created.
+* `updated_at` - The time when the GPG key was last updated.
+
+## Import
+
+Keys can be imported; use `<ORGANIZATION NAME>/<KEY ID>` as the import ID. For
+example:
+
+```shell
+terraform import tfe_registry_gpg_key.example my-org-name/34365D9472D7468F
+```
