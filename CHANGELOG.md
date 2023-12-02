@@ -15,6 +15,7 @@ FEATURES:
 * `r/tfe_workspace`: Now uses the organization's `default_execution_mode` and `default_agent_pool_id` as the default `execution_mode`, by @SwiftEngineer [1137](https://github.com/hashicorp/terraform-provider-tfe/pull/1137)'
 * **New Resource**: `r/tfe_registry_gpg_key` is a new resource for managing private registry GPG keys, by @tmatilai
 * **New Data Source**: `d/tfe_registry_gpg_key` is a new data source to retrieve a private registry GPG key, by @tmatilai
+* **New Data Source**: `d/tfe_registry_gpg_keys` is a new data source to retrieve all private registry GPG keys of an organization, by @tmatilai
 
 ENHANCEMENTS:
 * `d/tfe_organization`: Make `name` argument optional if configured for the provider, by @tmatilai [1133](https://github.com/hashicorp/terraform-provider-tfe/pull/1133)
