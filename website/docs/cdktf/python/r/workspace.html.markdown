@@ -87,8 +87,8 @@ The following arguments are supported:
 * `auto_apply_run_trigger` - (Optional) Whether to automatically apply changes for runs that were created by run triggers from another workspace. Defaults to `false`.
 * `description` - (Optional) A description for the workspace.
 * `execution_mode` - (Optional) Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode)
-  to use. Using Terraform Cloud, valid values are `remote`, `local` or`agent`.
-  Defaults to `remote`. Using Terraform Enterprise, only `remote`and `local`
+  to use. Using Terraform Cloud, valid values are `remote`, `local` or `agent`.
+  Defaults  your organization's default execution mode, or `remote` if no organization default is set. Using Terraform Enterprise, only `remote` and `local`
   execution modes are valid.  When set to `local`, the workspace will be used
   for state storage only. This value _must not_ be provided if `operations`
   is provided.
@@ -169,7 +169,10 @@ In addition to all arguments above, the following attributes are exported:
 
 * `id` - The workspace ID.
 * `resource_count` - The number of resources managed by the workspace.
-* `html_url` - The URL to the browsable HTML overview of the workspace
+* `html_url` - The URL to the browsable HTML overview of the workspace.
+* `setting_overwrites` - Can be used to check whether a setting is currently inheriting its value from another resource.
+  - `execution_mode` - Set to `true` if the execution mode of the workspace is being determined by the setting on the workspace itself. It will be `false` if the execution mode is inherited from another resource (e.g. the organization's default execution mode)   
+  - `agent_pool` - Set to `true` if the agent pool of the workspace is being determined by the setting on the workspace itself. It will be `false` if the agent pool is inherited from another resource (e.g. the organization's default agent pool)
 
 ## Import
 
@@ -184,4 +187,4 @@ terraform import tfe_workspace.test ws-CH5in3chf8RJjrVd
 terraform import tfe_workspace.test my-org-name/my-wkspace-name
 ```
 
-<!-- cache-key: cdktf-0.19.0 input-ce8c5d41ebbc57c1df647c807e38b748d12221b61915ccc24e4f1530f58312b5 -->
+<!-- cache-key: cdktf-0.19.0 input-25e2316b67d698d4aec45557feedf54b6a8dfa43a6381d9c433cf7afabed73c9 -->
