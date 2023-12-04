@@ -63,6 +63,10 @@ func resourceTFEWorkspace() *schema.Resource {
 				return err
 			}
 
+			if err := customizeDiffIfProviderDefaultOrganizationChanged(c, d, meta); err != nil {
+				return err
+			}
+
 			return nil
 		},
 

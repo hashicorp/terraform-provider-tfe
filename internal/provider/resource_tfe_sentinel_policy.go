@@ -25,6 +25,8 @@ func resourceTFESentinelPolicy() *schema.Resource {
 			StateContext: resourceTFESentinelPolicyImporter,
 		},
 
+		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
+
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,

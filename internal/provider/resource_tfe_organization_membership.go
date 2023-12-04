@@ -22,6 +22,8 @@ func resourceTFEOrganizationMembership() *schema.Resource {
 			StateContext: resourceTFEOrganizationMembershipImporter,
 		},
 
+		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
+
 		Schema: map[string]*schema.Schema{
 			"email": {
 				Type:     schema.TypeString,

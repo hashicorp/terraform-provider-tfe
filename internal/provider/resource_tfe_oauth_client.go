@@ -18,6 +18,8 @@ func resourceTFEOAuthClient() *schema.Resource {
 		Read:   resourceTFEOAuthClientRead,
 		Delete: resourceTFEOAuthClientDelete,
 
+		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
+
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,

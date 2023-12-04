@@ -26,6 +26,8 @@ func resourceTFEPolicy() *schema.Resource {
 			StateContext: resourceTFEPolicyImporter,
 		},
 
+		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
+
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "The name of the policy",
