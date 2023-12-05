@@ -13,7 +13,7 @@ BUG FIXES:
 FEATURES:
 * `d/tfe_registry_module`: Add `vcs_repo.tags` and `vcs_repo.branch` attributes to allow configuration of `publishing_mechanism`. Add `test_config` to support running tests on `branch`-based registry modules, by @hashimoon [1096](https://github.com/hashicorp/terraform-provider-tfe/pull/1096)
 * **New Resource**: `r/tfe_organization_default_settings` is a new resource to set the `default_execution_mode` and `default_agent_pool_id` for an organization, by @SwiftEngineer [1137](https://github.com/hashicorp/terraform-provider-tfe/pull/1137)'
-* **New Resource**: `r/tfe_workspace_settings` Uses the `tfe_organization_default_settings` `default_execution_mode` and `default_agent_pool_id` as the default `execution_mode` by @brandonc [1159](https://github.com/hashicorp/terraform-provider-tfe/pull/1159)
+* **New Resource**: `r/tfe_workspace_settings` Uses the `tfe_organization_default_settings` `default_execution_mode` and `default_agent_pool_id` as the default `execution_mode` by @brandonc and @laurenolivia [1159](https://github.com/hashicorp/terraform-provider-tfe/pull/1159)
 
 ENHANCEMENTS:
 * `d/tfe_organization`: Make `name` argument optional if configured for the provider, by @tmatilai [1133](https://github.com/hashicorp/terraform-provider-tfe/pull/1133)
