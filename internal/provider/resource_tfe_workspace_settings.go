@@ -36,7 +36,8 @@ var overwritesElementType = types.ObjectType{
 }
 
 type workspaceSettings struct {
-	config ConfiguredClient
+	config             ConfiguredClient
+	supportsOverwrites bool
 }
 
 type modelWorkspaceSettings struct {
@@ -117,6 +118,11 @@ func (m revertOverwritesIfExecutionModeUnset) PlanModifyList(ctx context.Context
 	resp.Diagnostics.Append(req.Config.Get(ctx, &configured)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
+	// Check if overwrites are supported by the platform
+	if state.Overwrites.IsNull() {
+		return
+	}
+
 	overwritesState := make([]modelOverwrites, 1)
 	state.Overwrites.ElementsAs(ctx, &overwritesState, true)
 
@@ -152,20 +158,26 @@ func (m unknownIfExecutionModeUnset) PlanModifyString(ctx context.Context, req p
 	resp.Diagnostics.Append(req.Config.Get(ctx, &configured)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
-	overwritesState := make([]modelOverwrites, 1)
-	state.Overwrites.ElementsAs(ctx, &overwritesState, true)
+	if !state.Overwrites.IsNull() {
+		// Normal operation
+		overwritesState := make([]modelOverwrites, 1)
+		state.Overwrites.ElementsAs(ctx, &overwritesState, true)
 
-	if configured.ExecutionMode.IsNull() && overwritesState[0].ExecutionMode.ValueBool() {
-		resp.PlanValue = types.StringUnknown()
+		if configured.ExecutionMode.IsNull() && overwritesState[0].ExecutionMode.ValueBool() {
+			resp.PlanValue = types.StringUnknown()
+		}
+	} else if req.Path.Equal(path.Root("execution_mode")) {
+		// TFE does not support overwrites so default the execution mode to "remote"
+		resp.PlanValue = types.StringValue("remote")
 	}
 }
 
 func (m unknownIfExecutionModeUnset) Description(_ context.Context) string {
-	return "Resets execution_mode to \"remote\" if it is unset"
+	return "Resets execution_mode to an unknown value if it is unset"
 }
 
 func (m unknownIfExecutionModeUnset) MarkdownDescription(_ context.Context) string {
-	return "Resets execution_mode to \"remote\" if it is unset"
+	return "Resets execution_mode to an unknown value if it is unset"
 }
 
 func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -237,7 +249,7 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 }
 
 // workspaceSettingsModelFromTFEWorkspace builds a resource model from the TFE model
-func workspaceSettingsModelFromTFEWorkspace(ws *tfe.Workspace) *modelWorkspaceSettings {
+func (r *workspaceSettings) workspaceSettingsModelFromTFEWorkspace(ws *tfe.Workspace) *modelWorkspaceSettings {
 	result := modelWorkspaceSettings{
 		ID:            types.StringValue(ws.ID),
 		WorkspaceID:   types.StringValue(ws.ID),
@@ -248,24 +260,20 @@ func workspaceSettingsModelFromTFEWorkspace(ws *tfe.Workspace) *modelWorkspaceSe
 		result.AgentPoolID = types.StringValue(ws.AgentPool.ID)
 	}
 
-	settingsModel := modelOverwrites{
-		ExecutionMode: types.BoolValue(false),
-		AgentPool:     types.BoolValue(false),
-	}
-
-	if ws.SettingOverwrites != nil {
-		settingsModel = modelOverwrites{
+	result.Overwrites = types.ListNull(overwritesElementType)
+	if r.supportsOverwrites = ws.SettingOverwrites != nil; r.supportsOverwrites {
+		settingsModel := modelOverwrites{
 			ExecutionMode: types.BoolValue(*ws.SettingOverwrites.ExecutionMode),
 			AgentPool:     types.BoolValue(*ws.SettingOverwrites.AgentPool),
 		}
-	}
 
-	listOverwrites, diags := types.ListValueFrom(ctx, overwritesElementType, []modelOverwrites{settingsModel})
-	if diags.HasError() {
-		panic("Could not build list value from slice of models. This should not be possible unless the model breaks reflection rules.")
-	}
+		listOverwrites, diags := types.ListValueFrom(ctx, overwritesElementType, []modelOverwrites{settingsModel})
+		if diags.HasError() {
+			panic("Could not build list value from slice of models. This should not be possible unless the model breaks reflection rules.")
+		}
 
-	result.Overwrites = listOverwrites
+		result.Overwrites = listOverwrites
+	}
 
 	return &result
 }
@@ -296,7 +304,7 @@ func (r *workspaceSettings) readSettings(ctx context.Context, workspaceID string
 		return nil, fmt.Errorf("couldn't read workspace %s: %s", workspaceID, err.Error())
 	}
 
-	return workspaceSettingsModelFromTFEWorkspace(ws), nil
+	return r.workspaceSettingsModelFromTFEWorkspace(ws), nil
 }
 
 func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorkspaceSettings, state *tfsdk.State) error {
@@ -309,13 +317,17 @@ func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorks
 		},
 	}
 
-	if executionMode := data.ExecutionMode.ValueString(); executionMode != "" {
+	executionMode := data.ExecutionMode.ValueString()
+	if executionMode != "" {
 		updateOptions.ExecutionMode = tfe.String(executionMode)
 		updateOptions.SettingOverwrites.ExecutionMode = tfe.Bool(true)
 		updateOptions.SettingOverwrites.AgentPool = tfe.Bool(true)
 
 		agentPoolID := data.AgentPoolID.ValueString() // may be empty
 		updateOptions.AgentPoolID = tfe.String(agentPoolID)
+	} else if executionMode == "" && data.Overwrites.IsNull() {
+		// Not supported by TFE
+		updateOptions.ExecutionMode = tfe.String("remote")
 	}
 
 	ws, err := r.config.Client.Workspaces.UpdateByID(ctx, workspaceID, updateOptions)
