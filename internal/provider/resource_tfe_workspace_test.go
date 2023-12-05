@@ -17,6 +17,7 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -103,6 +104,57 @@ func TestAccTFEWorkspace_defaultOrg(t *testing.T) {
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", &workspace, providers["tfe"]),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "organization", defaultOrgName),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspaceProviderDefaultOrgChanged(t *testing.T) {
+	// Tests the situation when the provider default organization changes but the
+	// config does not change.
+	workspace := &tfe.Workspace{}
+	defaultOrgName, rInt := setupDefaultOrganization(t)
+	providers := providerWithDefaultOrganization(defaultOrgName)
+
+	client, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	anotherOrg, cleanup := createOrganization(t, client, tfe.OrganizationCreateOptions{
+		Name:  tfe.String(fmt.Sprintf("another-organization-%d", rInt)),
+		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
+	})
+	t.Cleanup(cleanup)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    providers,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroyProvider(providers["tfe"]),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_defaultOrg(),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace, providers["tfe"]),
+					resource.TestCheckResourceAttr("tfe_workspace.foobar", "organization", defaultOrgName),
+				),
+			},
+			{
+				PreConfig: func() {
+					// Modify the provider to return a different default organization
+					providers["tfe"].ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
+						client, err := getClientUsingEnv()
+						return ConfiguredClient{
+							Client:       client,
+							Organization: anotherOrg.Name,
+						}, diag.FromErr(err)
+					}
+				},
+				Config: testAccTFEWorkspace_defaultOrg(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_workspace.foobar", "organization", anotherOrg.Name),
 				),
 			},
 		},
@@ -3700,4 +3752,11 @@ resource "tfe_workspace" "foobar" {
   source_url         = "https://example.com"
   source_name        = "Example Source"
 }`, rInt)
+}
+
+func testAccTFEWorkspace_mismatchOrganization() string {
+	return `resource "tfe_workspace" "foobar" {
+		name               = "workspace-test"
+		description        = "My favorite workspace!"
+	}`
 }
