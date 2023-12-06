@@ -15,7 +15,7 @@ import (
 type modelTFERegistryGPGKey struct {
 	ID           types.String `tfsdk:"id"`
 	Organization types.String `tfsdk:"organization"`
-	AsciiArmor   types.String `tfsdk:"ascii_armor"`
+	ASCIIArmor   types.String `tfsdk:"ascii_armor"`
 	CreatedAt    types.String `tfsdk:"created_at"`
 	UpdatedAt    types.String `tfsdk:"updated_at"`
 }
@@ -26,7 +26,7 @@ func modelFromTFEVGPGKey(v *tfe.GPGKey) modelTFERegistryGPGKey {
 	return modelTFERegistryGPGKey{
 		ID:           types.StringValue(v.KeyID),
 		Organization: types.StringValue(v.Namespace),
-		AsciiArmor:   types.StringValue(v.AsciiArmor),
+		ASCIIArmor:   types.StringValue(v.AsciiArmor),
 		CreatedAt:    types.StringValue(v.CreatedAt.Format(time.RFC3339)),
 		UpdatedAt:    types.StringValue(v.UpdatedAt.Format(time.RFC3339)),
 	}

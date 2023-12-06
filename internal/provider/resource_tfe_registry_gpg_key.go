@@ -117,7 +117,7 @@ func (r *resourceTFERegistryGPGKey) Create(ctx context.Context, req resource.Cre
 	options := tfe.GPGKeyCreateOptions{
 		Type:       "gpg-keys",
 		Namespace:  organization,
-		AsciiArmor: plan.AsciiArmor.ValueString(),
+		AsciiArmor: plan.ASCIIArmor.ValueString(),
 	}
 
 	tflog.Debug(ctx, "Creating private registry GPG key")
