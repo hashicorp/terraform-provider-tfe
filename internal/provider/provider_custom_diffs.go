@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -40,7 +39,6 @@ func modifyPlanForDefaultOrganizationChange(ctx context.Context, providerDefault
 	if configOrg == nil && plannedOrg != nil && providerDefaultOrg != *plannedOrg {
 		// There is no organization configured on the resource, yet the provider org is different from
 		// the planned organization value. We must conclude that the provider default organization changed.
-		resp.Diagnostics.AddWarning(fmt.Sprintf("plannedOrg = %q, providerOrg = %q", *plannedOrg, providerDefaultOrg), "")
 		resp.Plan.SetAttribute(ctx, orgPath, types.StringValue(providerDefaultOrg))
 		resp.RequiresReplace.Append(orgPath)
 	}
