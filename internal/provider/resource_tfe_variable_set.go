@@ -24,6 +24,8 @@ func resourceTFEVariableSet() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 
+		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
+
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,

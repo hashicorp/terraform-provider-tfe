@@ -19,6 +19,8 @@ func resourceTFEAdminOrganizationSettings() *schema.Resource {
 		Update: resourceTFEAdminOrganizationSettingsUpdate,
 		Delete: resourceTFEAdminOrganizationSettingsDelete,
 
+		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
+
 		Schema: map[string]*schema.Schema{
 			"organization": {
 				Type:     schema.TypeString,

@@ -19,6 +19,9 @@ func resourceTFEOrganizationModuleSharing() *schema.Resource {
 		Read:               resourceTFEOrganizationModuleSharingRead,
 		Update:             resourceTFEOrganizationModuleSharingUpdate,
 		Delete:             resourceTFEOrganizationModuleSharingDelete,
+
+		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
+
 		Schema: map[string]*schema.Schema{
 			"organization": {
 				Type:     schema.TypeString,

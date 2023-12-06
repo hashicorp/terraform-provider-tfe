@@ -24,6 +24,8 @@ func resourceTFEOrganizationRunTask() *schema.Resource {
 			StateContext: resourceTFEOrganizationRunTaskImporter,
 		},
 
+		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
+
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,

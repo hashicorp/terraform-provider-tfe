@@ -23,6 +23,8 @@ func resourceTFEAgentPool() *schema.Resource {
 			StateContext: resourceTFEAgentPoolImporter,
 		},
 
+		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
+
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,

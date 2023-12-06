@@ -18,6 +18,8 @@ func resourceTFESSHKey() *schema.Resource {
 		Update: resourceTFESSHKeyUpdate,
 		Delete: resourceTFESSHKeyDelete,
 
+		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
+
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,

@@ -26,6 +26,8 @@ func resourceTFERegistryModule() *schema.Resource {
 			StateContext: resourceTFERegistryModuleImporter,
 		},
 
+		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
+
 		Schema: map[string]*schema.Schema{
 			"organization": {
 				Type:     schema.TypeString,

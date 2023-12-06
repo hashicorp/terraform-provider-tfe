@@ -25,6 +25,8 @@ func resourceTFENoCodeModule() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 
+		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
+
 		Schema: map[string]*schema.Schema{
 			"organization": {
 				Type:     schema.TypeString,

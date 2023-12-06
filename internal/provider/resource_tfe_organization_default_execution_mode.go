@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
+
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"log"
 )
 
 func resourceTFEOrganizationDefaultExecutionMode() *schema.Resource {
@@ -18,6 +19,8 @@ func resourceTFEOrganizationDefaultExecutionMode() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: resourceTFEOrganizationDefaultExecutionModeImporter,
 		},
+
+		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
 
 		Schema: map[string]*schema.Schema{
 			"organization": {

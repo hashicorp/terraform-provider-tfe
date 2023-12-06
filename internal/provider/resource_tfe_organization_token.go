@@ -23,6 +23,8 @@ func resourceTFEOrganizationToken() *schema.Resource {
 			StateContext: resourceTFEOrganizationTokenImporter,
 		},
 
+		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
+
 		Schema: map[string]*schema.Schema{
 			"organization": {
 				Type:     schema.TypeString,
