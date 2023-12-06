@@ -37,6 +37,10 @@ func (r *resourceTFERegistryGPGKey) Metadata(ctx context.Context, req resource.M
 	resp.TypeName = req.ProviderTypeName + "_registry_gpg_key"
 }
 
+func (r *resourceTFERegistryGPGKey) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	modifyPlanForDefaultOrganizationChange(ctx, r.config.Organization, req, resp)
+}
+
 func (r *resourceTFERegistryGPGKey) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Manages a public key of the GPG key pair used to sign releases of private providers in the private registry.",
@@ -56,6 +60,9 @@ func (r *resourceTFERegistryGPGKey) Schema(ctx context.Context, req resource.Sch
 				Computed:    true,
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"ascii_armor": schema.StringAttribute{
@@ -175,12 +182,10 @@ func (r *resourceTFERegistryGPGKey) Update(ctx context.Context, req resource.Upd
 
 	// Read Terraform plan data into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
 
 	// Read Terraform prior state data into the model
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
