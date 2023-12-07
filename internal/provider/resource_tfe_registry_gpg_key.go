@@ -23,6 +23,7 @@ import (
 var _ resource.Resource = &resourceTFERegistryGPGKey{}
 var _ resource.ResourceWithConfigure = &resourceTFERegistryGPGKey{}
 var _ resource.ResourceWithImportState = &resourceTFERegistryGPGKey{}
+var _ resource.ResourceWithModifyPlan = &resourceTFERegistryGPGKey{}
 
 func NewRegistryGPGKeyResource() resource.Resource {
 	return &resourceTFERegistryGPGKey{}
