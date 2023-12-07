@@ -123,12 +123,15 @@ func (p *frameworkProvider) Configure(ctx context.Context, req provider.Configur
 
 func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
+		NewRegistryGPGKeyDataSource,
+		NewRegistryGPGKeysDataSource,
 		NewSAMLSettingsDataSource,
 	}
 }
 
 func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
+		NewRegistryGPGKeyResource,
 		NewResourceVariable,
 		NewSAMLSettingsResource,
 		NewResourceWorkspaceSettings,
