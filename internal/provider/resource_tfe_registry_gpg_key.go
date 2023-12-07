@@ -177,40 +177,11 @@ func (r *resourceTFERegistryGPGKey) Read(ctx context.Context, req resource.ReadR
 }
 
 func (r *resourceTFERegistryGPGKey) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan modelTFERegistryGPGKey
-	var state modelTFERegistryGPGKey
-
-	// Read Terraform plan data into the model
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-
-	// Read Terraform prior state data into the model
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	keyID := tfe.GPGKeyID{
-		RegistryName: "private",
-		Namespace:    state.Organization.ValueString(), // The old namespace
-		KeyID:        plan.ID.ValueString(),
-	}
-	options := tfe.GPGKeyUpdateOptions{
-		Type:      "gpg-keys",
-		Namespace: plan.Organization.ValueString(), // The new namespace
-	}
-
-	tflog.Debug(ctx, "Updating private registry GPG key")
-	key, err := r.config.Client.GPGKeys.Update(ctx, keyID, options)
-	if err != nil {
-		resp.Diagnostics.AddError("Unable to update private registry GPG key", err.Error())
-		return
-	}
-
-	result := modelFromTFEVGPGKey(key)
-
-	// Save updated data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+	// If the resource does not support modification and should always be recreated on
+	// configuration value updates, the Update logic can be left empty and ensure all
+	// configurable schema attributes implement the resource.RequiresReplace()
+	// attribute plan modifier.
+	resp.Diagnostics.AddError("Update not supported", "The update operation is not supported on this resource. This is a bug in the provider.")
 }
 
 func (r *resourceTFERegistryGPGKey) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
