@@ -77,9 +77,17 @@ func resourceTFEOrganization() *schema.Resource {
 			},
 
 			"send_passing_statuses_for_untriggered_speculative_plans": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Computed: true,
+				Type:          schema.TypeBool,
+				Optional:      true,
+				Computed:      true,
+				ConflictsWith: []string{"aggregated_commit_status_enabled"},
+			},
+
+			"aggregated_commit_status_enabled": {
+				Type:          schema.TypeBool,
+				Optional:      true,
+				Computed:      true,
+				ConflictsWith: []string{"send_passing_statuses_for_untriggered_speculative_plans"},
 			},
 
 			"assessments_enforced": {
@@ -146,6 +154,7 @@ func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error
 	d.Set("owners_team_saml_role_id", org.OwnersTeamSAMLRoleID)
 	d.Set("cost_estimation_enabled", org.CostEstimationEnabled)
 	d.Set("send_passing_statuses_for_untriggered_speculative_plans", org.SendPassingStatusesForUntriggeredSpeculativePlans)
+	d.Set("aggregated_commit_status_enabled", org.AggregatedCommitStatusEnabled)
 	// TFE (onprem) does not currently have this feature and this value won't be returned in those cases.
 	// org.AssessmentsEnforced will default to false
 	d.Set("assessments_enforced", org.AssessmentsEnforced)
@@ -195,6 +204,10 @@ func resourceTFEOrganizationUpdate(d *schema.ResourceData, meta interface{}) err
 	// If send_passing_statuses_for_untriggered_speculative_plans is supplied, set it using the options struct.
 	if sendPassingStatusesForUntriggeredSpeculativePlans, ok := d.GetOk("send_passing_statuses_for_untriggered_speculative_plans"); ok {
 		options.SendPassingStatusesForUntriggeredSpeculativePlans = tfe.Bool(sendPassingStatusesForUntriggeredSpeculativePlans.(bool))
+	}
+
+	if aggregatedCommitStatusEnabled, ok := d.GetOk("aggregated_commit_status_enabled"); ok {
+		options.AggregatedCommitStatusEnabled = tfe.Bool(aggregatedCommitStatusEnabled.(bool))
 	}
 
 	// If assessments_enforced is supplied, set it using the options struct.
