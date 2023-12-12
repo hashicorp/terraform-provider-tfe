@@ -1,13 +1,13 @@
 ---
 layout: "tfe"
-page_title: "Terraform Enterprise: tfe_organization_default_execution_mode"
+page_title: "Terraform Enterprise: tfe_organization_default_settings
 description: |-
-  Sets the default execution mode of an organization
+  Sets the workspace defaults for an organization
 ---
 
-# tfe_organization_default_execution_mode
+# tfe_organization_default_settings
 
-Sets the default execution mode of an organization. This default execution mode will be used as the default execution mode for all workspaces in the organization.
+Primarily, this is used to set the default execution mode of an organization. This setting will be used as the default for all workspaces in the organization.
 
 ## Example Usage
 
@@ -20,14 +20,20 @@ resource "tfe_organization" "test" {
 }
 
 resource "tfe_agent_pool" "my_agents" {
-  name = "agent_smiths"
+  name         = "agent_smiths"
   organization = tfe_organization.test.name
 }
 
-resource "tfe_organization_default_execution_mode" "org_default" {
-  organization = tfe_organization.test.name
+resource "tfe_organization_default_settings" "org_default" {
+  organization           = tfe_organization.test.name
   default_execution_mode = "agent"
-  default_agent_pool_id = tfe_agent_pool.my_agents.id
+  default_agent_pool_id  = tfe_agent_pool.my_agents.id
+}
+
+resource "tfe_workspace" "my_workspace" {
+  name       = "my-workspace"
+  # Ensures this workspace will inherit the org defaults
+  depends_on = [tfe_organization_default_settings.org_default]
 }
 ```
 
@@ -37,9 +43,7 @@ The following arguments are supported:
 
 * `default_execution_mode` - (Optional) Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode)
   to use as the default for all workspaces in the organization. Valid values are `remote`, `local` or`agent`.
-* `agent_pool_id` - (Optional) The ID of an agent pool to assign to the workspace. Requires `default_execution_mode`
-  to be set to `agent`. This value _must not_ be provided if `default_execution_mode` is set to any other value or if `operations` is
-  provided.
+* `default_agent_pool_id` - (Optional) The ID of an agent pool to assign to the workspace. Requires `default_execution_mode` to be set to `agent`. This value _must not_ be provided if `default_execution_mode` is set to any other value.
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 
 
