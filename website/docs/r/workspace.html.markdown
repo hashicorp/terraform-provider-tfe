@@ -68,6 +68,7 @@ The following arguments are supported:
 * `assessments_enabled` - (Optional) Whether to regularly run health assessments such as drift detection on the workspace. Defaults to `false`.
 * `auto_apply` - (Optional) Whether to automatically apply changes when a Terraform plan is successful. Defaults to `false`.
 * `auto_apply_run_trigger` - (Optional) Whether to automatically apply changes for runs that were created by run triggers from another workspace. Defaults to `false`.
+* `data_retention_policy` - (Optional) The workspace's [data retention policy](https://developer.hashicorp.com/terraform/enterprise/workspaces/settings/deletion#data-retention-policies). 
 * `description` - (Optional) A description for the workspace.
 * `execution_mode` - (Optional) **Deprecated** Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode) to use. Use [tfe_workspace_settings](workspace_settings) instead.
 * `file_triggers_enabled` - (Optional) Whether to filter runs based on the changed files
@@ -126,6 +127,10 @@ The following arguments are supported:
   Omit this argument to utilize the [CLI-driven](https://developer.hashicorp.com/terraform/cloud-docs/run/cli) and [API-driven](https://developer.hashicorp.com/terraform/cloud-docs/run/api)
   workflows, where runs are not driven by webhooks on your VCS provider.
 * `working_directory` - (Optional) A relative path that Terraform will execute within.  Defaults to the root of your repository.
+
+The `data_retention_policy` block supports:
+
+* `delete_older_than_n_days` - (Required) Automatically delete backing data for state versions and configuration versions older than N days.
 
 The `vcs_repo` block supports:
 

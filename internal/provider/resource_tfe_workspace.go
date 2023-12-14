@@ -230,6 +230,21 @@ func resourceTFEWorkspace() *schema.Resource {
 				Default:  "",
 			},
 
+			"data_retention_policy": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MinItems: 1,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"delete_older_than_n_days": {
+							Type:     schema.TypeInt,
+							Required: true,
+						},
+					},
+				},
+			},
+
 			"vcs_repo": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -428,6 +443,18 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 
 	d.SetId(workspace.ID)
 
+	if v, ok := d.GetOk("data_retention_policy"); ok {
+		drp := v.([]interface{})[0].(map[string]interface{})
+
+		_, err = config.Client.Workspaces.SetDataRetentionPolicy(ctx, workspace.ID, tfe.DataRetentionPolicySetOptions{
+			DeleteOlderThanNDays: drp["delete_older_than_n_days"].(int),
+		})
+
+		if err != nil {
+			return fmt.Errorf("Error setting data retention policy on workspace %s: %w", name, err)
+		}
+	}
+
 	if sshKeyID, ok := d.GetOk("ssh_key_id"); ok {
 		_, err = config.Client.Workspaces.AssignSSHKey(ctx, workspace.ID, tfe.WorkspaceAssignSSHKeyOptions{
 			SSHKeyID: tfe.String(sshKeyID.(string)),
@@ -541,6 +568,22 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	d.Set("vcs_repo", vcsRepo)
+
+	var dataRetentionPolicy []interface{}
+	if workspace.DataRetentionPolicy != nil {
+		policy, err := config.Client.Workspaces.ReadDataRetentionPolicy(ctx, id)
+
+		if err != nil {
+			return fmt.Errorf(
+				"Error data retention policy for workspace %s: %w", id, err)
+		}
+
+		drp := map[string]interface{}{
+			"delete_older_than_n_days": policy.DeleteOlderThanNDays,
+		}
+		dataRetentionPolicy = append(dataRetentionPolicy, drp)
+	}
+	d.Set("data_retention_policy", dataRetentionPolicy)
 
 	if workspace.GlobalRemoteState {
 		d.Set("global_remote_state", true)
@@ -730,6 +773,25 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			_, err := config.Client.Workspaces.UnassignSSHKey(ctx, id)
 			if err != nil {
 				return fmt.Errorf("Error unassigning SSH key from workspace %s: %w", id, err)
+			}
+		}
+	}
+
+	// nolint: nestif
+	if d.HasChange("data_retention_policy") {
+		v, ok := d.GetOk("data_retention_policy")
+		if ok {
+			drp := v.([]interface{})[0].(map[string]interface{})
+			_, err := config.Client.Workspaces.SetDataRetentionPolicy(ctx, id, tfe.DataRetentionPolicySetOptions{DeleteOlderThanNDays: drp["delete_older_than_n_days"].(int)})
+			if err != nil {
+				d.Partial(true)
+				return fmt.Errorf("Error setting data retention policy on workspace %s: %w", d.Id(), err)
+			}
+		} else {
+			err := config.Client.Workspaces.DeleteDataRetentionPolicy(ctx, id)
+			if err != nil {
+				d.Partial(true)
+				return fmt.Errorf("Error deleting data retention policy from workspace %s: %w", d.Id(), err)
 			}
 		}
 	}
