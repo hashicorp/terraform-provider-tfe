@@ -251,6 +251,75 @@ func TestAccTFEOrganization_import(t *testing.T) {
 	})
 }
 
+func TestAccTFEOrganization_updateDataRetentionPolicy(t *testing.T) {
+	skipIfCloud(t)
+
+	org := &tfe.Organization{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+		},
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEOrganizationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOrganization_basic(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOrganizationExists(
+						"tfe_organization.foobar", org),
+					resource.TestCheckNoResourceAttr("tfe_organization.foobar", "data_retention_policy.0.delete_older_than_n_days"),
+				),
+			},
+			{
+				Config: testAccTFEOrganization_dataRetentionPolicy(rInt, 8),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "data_retention_policy.0.delete_older_than_n_days", "8"),
+				),
+			},
+			{
+				Config: testAccTFEOrganization_dataRetentionPolicy(rInt, 20),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "data_retention_policy.0.delete_older_than_n_days", "20"),
+				),
+			},
+			{
+				Config: testAccTFEOrganization_basic(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOrganizationExists(
+						"tfe_organization.foobar", org),
+					resource.TestCheckNoResourceAttr("tfe_organization.foobar", "data_retention_policy.0.delete_older_than_n_days"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEOrganization_importDataRetentionPolicy(t *testing.T) {
+	skipIfCloud(t)
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOrganization_dataRetentionPolicy(rInt, 10),
+			},
+			{
+				ResourceName:      "tfe_organization.foobar",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func testAccCheckTFEOrganizationExists(
 	n string, org *tfe.Organization) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
@@ -433,4 +502,15 @@ resource "tfe_organization" "foobar" {
   assessments_enforced              = %t
   allow_force_delete_workspaces     = %t
 }`, orgName, orgEmail, costEstimationEnabled, assessmentsEnforced, allowForceDeleteWorkspaces)
+}
+
+func testAccTFEOrganization_dataRetentionPolicy(rInt int, deleteOlderThanNDays int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+  data_retention_policy {
+    delete_older_than_n_days = %d
+  }
+}`, rInt, deleteOlderThanNDays)
 }

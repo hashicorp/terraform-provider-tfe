@@ -24,6 +24,7 @@ resource "tfe_organization" "test" {
 
 The following arguments are supported:
 
+* `data_retention_policy` - (Optional) The organization's [data retention policy](https://developer.hashicorp.com/terraform/enterprise/workspaces/settings/deletion#data-retention-policies).
 * `name` - (Required) Name of the organization.
 * `email` - (Required) Admin email address.
 * `session_timeout_minutes` - (Optional) Session timeout after inactivity.
@@ -37,6 +38,11 @@ The following arguments are supported:
 * `send_passing_statuses_for_untriggered_speculative_plans` - (Optional) Whether or not to send VCS status updates for untriggered speculative plans. This can be useful if large numbers of untriggered workspaces are exhausting request limits for connected version control service providers like GitHub. Defaults to false. In Terraform Enterprise, this setting has no effect and cannot be changed but is also available in Site Administration.
 * `assessments_enforced` - (Optional) (Available only in Terraform Cloud) Whether to force health assessments (drift detection) on all eligible workspaces or allow workspaces to set their own preferences.
 * `allow_force_delete_workspaces` - (Optional) Whether workspace administrators are permitted to delete workspaces with resources under management. If false, only organization owners may delete these workspaces. Defaults to false.
+
+The `data_retention_policy` block supports:
+
+* `delete_older_than_n_days` - (Required) Automatically delete backing data for state versions and configuration versions older than N days.
+
 
 ## Attributes Reference
 

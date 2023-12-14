@@ -91,6 +91,21 @@ func resourceTFEOrganization() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+
+			"data_retention_policy": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MinItems: 1,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"delete_older_than_n_days": {
+							Type:     schema.TypeInt,
+							Required: true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -114,6 +129,19 @@ func resourceTFEOrganizationCreate(d *schema.ResourceData, meta interface{}) err
 	}
 
 	d.SetId(org.Name)
+
+	if v, ok := d.GetOk("data_retention_policy"); ok {
+		drp := v.([]interface{})[0].(map[string]interface{})
+
+		_, err = config.Client.Organizations.SetDataRetentionPolicy(ctx, org.Name, tfe.DataRetentionPolicySetOptions{
+			DeleteOlderThanNDays: drp["delete_older_than_n_days"].(int),
+		})
+
+		if err != nil {
+			d.Partial(true)
+			return fmt.Errorf("Error setting data retention policy on organization %s: %w", org.Name, err)
+		}
+	}
 
 	return resourceTFEOrganizationUpdate(d, meta)
 }
@@ -149,6 +177,22 @@ func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error
 	if org.DefaultProject != nil {
 		d.Set("default_project_id", org.DefaultProject.ID)
 	}
+
+	var dataRetentionPolicy []interface{}
+	if org.DataRetentionPolicy != nil {
+		policy, err := config.Client.Organizations.ReadDataRetentionPolicy(ctx, org.Name)
+
+		if err != nil {
+			return fmt.Errorf(
+				"Error getting data retention policy for organization %s: %w", org.Name, err)
+		}
+
+		drp := map[string]interface{}{
+			"delete_older_than_n_days": policy.DeleteOlderThanNDays,
+		}
+		dataRetentionPolicy = append(dataRetentionPolicy, drp)
+	}
+	d.Set("data_retention_policy", dataRetentionPolicy)
 
 	return nil
 }
@@ -209,6 +253,25 @@ func resourceTFEOrganizationUpdate(d *schema.ResourceData, meta interface{}) err
 	}
 
 	d.SetId(org.Name)
+
+	// nolint: nestif
+	if d.HasChange("data_retention_policy") {
+		v, ok := d.GetOk("data_retention_policy")
+		if ok {
+			drp := v.([]interface{})[0].(map[string]interface{})
+			_, err := config.Client.Organizations.SetDataRetentionPolicy(ctx, org.Name, tfe.DataRetentionPolicySetOptions{DeleteOlderThanNDays: drp["delete_older_than_n_days"].(int)})
+			if err != nil {
+				d.Partial(true)
+				return fmt.Errorf("Error setting data retention policy on organization %s: %w", org.Name, err)
+			}
+		} else {
+			err := config.Client.Organizations.DeleteDataRetentionPolicy(ctx, org.Name)
+			if err != nil {
+				d.Partial(true)
+				return fmt.Errorf("Error deleting data retention policy from organization %s: %w", org.Name, err)
+			}
+		}
+	}
 
 	return resourceTFEOrganizationRead(d, meta)
 }
