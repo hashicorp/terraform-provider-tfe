@@ -598,6 +598,12 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			}
 		}
 
+		// NOTE: since agent_pool_id and execution_mode are both deprecated on
+		// tfe_workspace and we want tfe_workspace_settings to be authoritative,
+		// we must not set the overwrites values to false in the checks below.
+		// (Actually, I think we don't need to set them to true here either,
+		// since the API understands an explicit value in an update request to
+		// also result in an implicit overwrite = true.)
 		if d.HasChange("agent_pool_id") {
 			// Need the raw configuration value of the agent_pool_id because when the workspace's execution mode is set
 			// to default, we can't know for certain what the default value of the agent pool will be. This means we can

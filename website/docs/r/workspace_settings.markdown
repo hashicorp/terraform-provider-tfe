@@ -7,7 +7,7 @@ description: |-
 
 # tfe_workspace_settings
 
-Manages or reads execution mode and agent pool settings for a workspace. If [tfe_organization_default_settings](organization_default_settings.html) are used, those settings may be read using a combination of the read-only `overwrites` argument and the setting itself.
+Manages or reads execution mode and agent pool settings for a workspace. This also interacts with the organization's default values for several settings, which can be managed with [tfe_organization_default_settings](organization_default_settings.html). If other resources need to identify whether a setting is a default or an explicit value set for the workspace, you can refer to the read-only `overwrites` argument.
 
 ## Example Usage
 
@@ -88,7 +88,7 @@ The following arguments are supported:
 * `agent_pool_id` - (Optional) The ID of an agent pool to assign to the workspace. Requires `execution_mode`
   to be set to `agent`. This value _must not_ be provided if `execution_mode` is set to any other value.
 * `execution_mode` - (Optional) Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode)
-  to use. Using Terraform Cloud, valid values are `remote`, `local` or `agent`. Defaults  your organization's default execution mode, or `remote` if no organization default is set. Using Terraform Enterprise, only `remote` and `local` execution modes are valid.  When set to `local`, the workspace will be used for state storage only.
+  to use. Using Terraform Cloud, valid values are `remote`, `local` or `agent`. Using Terraform Enterprise, only `remote` and `local` execution modes are valid. When set to `local`, the workspace will be used for state storage only. **Important:** If you omit this attribute, the resource configures the workspace to use your organization's default execution mode (which in turn defaults to `remote`), removing any explicit value that might have previously been set for the workspace.
 
 ## Attributes Reference
 

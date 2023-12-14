@@ -7,7 +7,7 @@ description: |-
 
 # tfe_organization_default_settings
 
-Primarily, this is used to set the default execution mode of an organization. This setting will be used as the default for all workspaces in the organization.
+Primarily, this is used to set the default execution mode of an organization. Settings configured here will be used as the default for all workspaces in the organization, unless they specify their own values with a [`tfe_workspace_settings` resource](workspace_settings.html) (or deprecated attributes on the workspace resource).
 
 ## Example Usage
 
@@ -32,7 +32,9 @@ resource "tfe_organization_default_settings" "org_default" {
 
 resource "tfe_workspace" "my_workspace" {
   name       = "my-workspace"
-  # Ensures this workspace will inherit the org defaults
+  # This workspace will use the org defaults, and will report those defaults as
+  # the values of its corresponding attributes. Use depends_on to get accurate
+  # values immediately, and to ensure reliable behavior of tfe_workspace_run.
   depends_on = [tfe_organization_default_settings.org_default]
 }
 ```
