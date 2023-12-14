@@ -9,7 +9,7 @@ description: |-
 
 Provides a workspace resource.
 
-~> **NOTE:** Setting the execution mode and agent pool affinity directly on the workspace has been deprecated in favor of using both [tfe_workspace_settings](workspace_settings) and [tfe_organization_default_settings](organization_default_settings). Use caution when unsetting `execution_mode` because the default value `"remote"` is no longer applied when the `execution_mode` is unset.
+~> **NOTE:** Setting the execution mode and agent pool affinity directly on the workspace is deprecated in favor of using both [tfe_workspace_settings](workspace_settings) and [tfe_organization_default_settings](organization_default_settings), since they allow more precise control and fully support [agent_pool_allowed_workspaces](agent_pool_allowed_workspaces). Use caution when unsetting `execution_mode`, as it now leaves any prior value unmanaged instead of reverting to the old default value of `"remote"`.
 
 ~> **NOTE:** Using `global_remote_state` or `remote_state_consumer_ids` requires using the provider with Terraform Cloud or an instance of Terraform Enterprise at least as recent as v202104-1.
 
