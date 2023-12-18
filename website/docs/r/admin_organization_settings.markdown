@@ -63,7 +63,3 @@ The following arguments are supported:
 ## Attributes Reference
 
 * `sso_enabled` - True if SSO is enabled in this organization
-
-## Import
-
-This resource does not manage the creation of an organization and there is no need to import it.
