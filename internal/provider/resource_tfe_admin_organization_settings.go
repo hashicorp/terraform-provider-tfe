@@ -26,6 +26,7 @@ func resourceTFEAdminOrganizationSettings() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
+				Computed: true,
 			},
 			"access_beta_tools": {
 				Type:     schema.TypeBool,
