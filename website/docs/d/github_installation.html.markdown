@@ -15,7 +15,7 @@ Use this data source to get information about the Github App Installation.
 
 ```hcl
 data "tfe_github_app_installation" "gha_installation" {
-  installation_id = 12345
+  installation_id = 12345678
 }
 ```
 
@@ -23,17 +23,17 @@ data "tfe_github_app_installation" "gha_installation" {
 
 ```hcl
 data "tfe_github_app_installation" "gha_installation" {
-  name = "installation_name"
+  name = "github_username_or_organization"
 }
 ```
 
 ## Argument Reference
 
-The following arguments are supported. At least one of `name`, `installation_id` must be set. 
+The following arguments are supported. At least one of `name`, `installation_id` must be set.
 
-* `installation_id` - (Optional) ID of the Github Installation as shown in Github.
-* `name` - (Optional) Name of the Github Installation as shown in Github.
- 
+* `installation_id` - (Optional) ID of the Github Installation. The installation ID can be found in the URL slug when visiting the installation's configuration page, e.g `https://github.com/settings/installations/12345678`.
+* `name` - (Optional) Name of the Github user or organization account that installed the app.
+
 Must be one of: `installation_id` or `name`.
 
 ## Attributes Reference
