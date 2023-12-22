@@ -1,7 +1,8 @@
 # UNRELEASED
 
 BUG FIXES:
-* Fixed default provider organization usage for `r/tfe_admin_organization_settings`, by @brandonc [1183](https://github.com/hashicorp/terraform-provider-tfe/pull/1183)
+* `r/tfe_admin_organization_settings`: Fixed default provider organization usage, by @brandonc [1183](https://github.com/hashicorp/terraform-provider-tfe/pull/1183)
+* `r/tfe_registry_gpg_key`: Fixed update plans when using default organization, by @brandonc [1190](https://github.com/hashicorp/terraform-provider-tfe/pull/1190)
 
 # v0.51.0
 
