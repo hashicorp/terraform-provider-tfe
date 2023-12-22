@@ -39,7 +39,7 @@ func (r *resourceTFERegistryGPGKey) Metadata(ctx context.Context, req resource.M
 }
 
 func (r *resourceTFERegistryGPGKey) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	modifyPlanForDefaultOrganizationChange(ctx, r.config.Organization, req, resp)
+	modifyPlanForDefaultOrganizationChange(ctx, r.config.Organization, req.State, req.Config, req.Plan, resp)
 }
 
 func (r *resourceTFERegistryGPGKey) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
