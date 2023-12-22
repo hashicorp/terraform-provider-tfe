@@ -2,6 +2,7 @@
 
 BUG FIXES:
 * Fixed default provider organization usage for `r/tfe_admin_organization_settings`, by @brandonc [1183](https://github.com/hashicorp/terraform-provider-tfe/pull/1183)
+* `/r/tfe_workspace_settings`: Fix compatibility with older versions of Terraform Enterprise when using agent execution by @brandonc [1193](https://github.com/hashicorp/terraform-provider-tfe/pull/1193)
 
 # v0.51.0
 
