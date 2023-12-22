@@ -1,11 +1,11 @@
-# UNRELEASED
+## v0.51.1
 
 BUG FIXES:
 * `r/tfe_admin_organization_settings`: Fixed default provider organization usage, by @brandonc [1183](https://github.com/hashicorp/terraform-provider-tfe/pull/1183)
 * `r/tfe_registry_gpg_key`: Fixed update plans when using default organization, by @brandonc [1190](https://github.com/hashicorp/terraform-provider-tfe/pull/1190)
 * `/r/tfe_workspace_settings`: Fix compatibility with older versions of Terraform Enterprise when using agent execution by @brandonc [1193](https://github.com/hashicorp/terraform-provider-tfe/pull/1193)
 
-# v0.51.0
+## v0.51.0
 
 DEPRECATIONS and BREAKING CHANGES:
 * `r/tfe_workspace`: `execution_mode` and `agent_pool_id` attributes have been deprecated in favor of a new resource, `tfe_workspace_settings`. Note that these fields no longer compute defaults which is consistent with using a new resource to manage these same settings. In practice, this means that if you unset `execution_mode` or `agent_pool_id` without also creating a `tfe_workspace_settings`, the setting will no longer revert to the default "remote" mode. To migrate, relocate the `execution_mode` and `agent_pool_id` arguments to `tfe_workspace_settings`.
