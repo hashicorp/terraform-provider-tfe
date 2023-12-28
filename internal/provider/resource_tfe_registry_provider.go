@@ -175,7 +175,7 @@ func (r *resourceTFERegistryProvider) ValidateConfig(ctx context.Context, req re
 }
 
 func (r *resourceTFERegistryProvider) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	modifyPlanForDefaultOrganizationChange(ctx, r.config.Organization, req, resp)
+	modifyPlanForDefaultOrganizationChange(ctx, r.config.Organization, req.State, req.Config, req.Plan, resp)
 }
 
 func (r *resourceTFERegistryProvider) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

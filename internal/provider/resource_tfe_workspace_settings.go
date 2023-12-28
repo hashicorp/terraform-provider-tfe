@@ -166,9 +166,11 @@ func (m unknownIfExecutionModeUnset) PlanModifyString(ctx context.Context, req p
 		if configured.ExecutionMode.IsNull() && overwritesState[0].ExecutionMode.ValueBool() {
 			resp.PlanValue = types.StringUnknown()
 		}
-	} else if req.Path.Equal(path.Root("execution_mode")) {
+	} else if configured.ExecutionMode.IsNull() && req.Path.Equal(path.Root("execution_mode")) {
 		// TFE does not support overwrites so default the execution mode to "remote"
 		resp.PlanValue = types.StringValue("remote")
+	} else if configured.AgentPoolID.IsNull() && req.Path.Equal(path.Root("agent_pool_id")) {
+		resp.PlanValue = types.StringNull()
 	}
 }
 

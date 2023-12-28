@@ -73,7 +73,7 @@ In addition to all arguments above, the following attributes are exported:
 * `trigger_patterns` - List of [glob patterns](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/vcs#glob-patterns-for-automatic-run-triggering) that describe the files Terraform Cloud monitors for changes. Trigger patterns are always appended to the root directory of the repository.
 * `vcs_repo` - Settings for the workspace's VCS repository.
 * `working_directory` - A relative path that Terraform will execute within.
-* `execution_mode` - Indicates the [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode) of the workspace. Possible values include `remote`, `local`, or `agent`.
+* `execution_mode` - Indicates the [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode) of the workspace. **Note:** This value might be derived from an organization-level default or set on the workspace itself; see the [`tfe_workspace_settings` resource](tfe_workspace_settings) for details.
 * `html_url` - The URL to the browsable HTML overview of the workspace
 
 
@@ -88,4 +88,4 @@ The `vcs_repo` block contains:
 * `oauth_token_id` - OAuth token ID of the configured VCS connection.
 * `tags_regex` - A regular expression used to trigger a Workspace run for matching Git tags.
 
-<!-- cache-key: cdktf-0.19.0 input-82f43ee78054a4a88c04b2768dd5c3b6ba74cdac1de55fecef133b85fe5aee8a -->
+<!-- cache-key: cdktf-0.19.0 input-8a792abd68f0096121aefa7f2c56aa2455a7b698bf2cb5574b25e73321236d1e -->
