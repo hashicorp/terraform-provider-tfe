@@ -84,7 +84,7 @@ func (d *dataSourceTFERegistryProvider) Schema(_ context.Context, _ datasource.S
 	}
 }
 
-func (r *dataSourceTFERegistryProvider) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
+func (d *dataSourceTFERegistryProvider) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
 	var config modelTFERegistryProvider
 
 	// Read Terraform plan data into the model
