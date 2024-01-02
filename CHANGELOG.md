@@ -1,3 +1,12 @@
+## UNRELEASED
+<!-- Add CHANGELOG entry to this section for any PR awaiting the next release -->
+<!-- Please also include if this is a Bug Fix, Enhancement, or Feature -->
+
+FEATURES:
+* **New Resource**: `r/tfe_registry_provider` is a new resource for managing public and private providers in the private registry, by @tmatilai [1185](https://github.com/hashicorp/terraform-provider-tfe/pull/1185)
+* **New Data Source**: `d/tfe_registry_provider` is a new data source to retrieve information about a public or private provider in the private registry, by @tmatilai [1185](https://github.com/hashicorp/terraform-provider-tfe/pull/1185)
+* **New Data Source**: `d/tfe_registry_providers` is a new data source to retrieve information about public and private providers in the private registry, by @tmatilai [1185](https://github.com/hashicorp/terraform-provider-tfe/pull/1185)
+
 ## v0.51.1
 
 BUG FIXES:
