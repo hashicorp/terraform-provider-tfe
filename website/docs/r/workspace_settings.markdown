@@ -55,7 +55,7 @@ resource "tfe_workspace" "test" {
 
 resource "tfe_workspace_settings" "test-settings" {
   workspace_id   = tfe_workspace.test.id
-  agent_pool_id  = tfe_agent_pool.test-agent-pool.id
+  agent_pool_id  = tfe_agent_pool_allowed_workspaces.test.agent_pool_id
   execution_mode = "agent"
 }
 ```
