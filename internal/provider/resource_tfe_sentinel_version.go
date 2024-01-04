@@ -5,6 +5,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -96,7 +97,7 @@ func resourceTFESentinelVersionRead(d *schema.ResourceData, meta interface{}) er
 	log.Printf("[DEBUG] Read configuration of Sentinel version: %s", d.Id())
 	v, err := config.Client.Admin.SentinelVersions.Read(ctx, d.Id())
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			log.Printf("[DEBUG] Sentinel version %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
@@ -147,7 +148,7 @@ func resourceTFESentinelVersionDelete(d *schema.ResourceData, meta interface{}) 
 	log.Printf("[DEBUG] Delete Sentinel version: %s", d.Id())
 	err := config.Client.Admin.SentinelVersions.Delete(ctx, d.Id())
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			return nil
 		}
 		return fmt.Errorf("Error deleting Sentinel version %s: %w", d.Id(), err)

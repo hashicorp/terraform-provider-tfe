@@ -141,6 +141,8 @@ func Provider() *schema.Provider {
 			"tfe_team_members":                   resourceTFETeamMembers(),
 			"tfe_team_token":                     resourceTFETeamToken(),
 			"tfe_terraform_version":              resourceTFETerraformVersion(),
+			"tfe_sentinel_version":               resourceTFESentinelVersion(),
+			"tfe_opa_version":                    resourceTFEOPAVersion(),
 			"tfe_workspace":                      resourceTFEWorkspace(),
 			"tfe_workspace_run_task":             resourceTFEWorkspaceRunTask(),
 			"tfe_variable_set":                   resourceTFEVariableSet(),

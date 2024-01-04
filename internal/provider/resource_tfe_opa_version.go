@@ -5,6 +5,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -96,7 +97,7 @@ func resourceTFEOPAVersionRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Read configuration of OPA version: %s", d.Id())
 	v, err := config.Client.Admin.OPAVersions.Read(ctx, d.Id())
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			log.Printf("[DEBUG] OPA version %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
@@ -147,7 +148,7 @@ func resourceTFEOPAVersionDelete(d *schema.ResourceData, meta interface{}) error
 	log.Printf("[DEBUG] Delete OPA version: %s", d.Id())
 	err := config.Client.Admin.OPAVersions.Delete(ctx, d.Id())
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			return nil
 		}
 		return fmt.Errorf("Error deleting OPA version %s: %w", d.Id(), err)
