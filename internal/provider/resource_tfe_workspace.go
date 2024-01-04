@@ -903,9 +903,9 @@ func validateAgentExecution(_ context.Context, d *schema.ResourceDiff) error {
 	if executionModeSet {
 		executionModeIsAgent := executionMode.AsString() == "agent"
 		if executionModeIsAgent && !agentPoolIDSet {
-			return fmt.Errorf("execution_mode must be set to 'agent' to assign agent_pool_id")
-		} else if !executionModeIsAgent && agentPoolIDSet {
 			return fmt.Errorf("agent_pool_id must be provided when execution_mode is 'agent'")
+		} else if !executionModeIsAgent && agentPoolIDSet {
+			return fmt.Errorf("execution_mode must be set to 'agent' to assign agent_pool_id")
 		}
 	}
 
