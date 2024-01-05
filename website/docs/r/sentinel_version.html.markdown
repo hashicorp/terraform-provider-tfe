@@ -40,7 +40,7 @@ The following arguments are supported:
 
 ## Import
 
-Sentinel versions can be imported; use `<SENTINEL VERSION ID>` or `<TERRAFORM VERSION NUMBER>` as the import ID. For example:
+Sentinel versions can be imported; use `<SENTINEL VERSION ID>` or `<SENTINEL VERSION NUMBER>` as the import ID. For example:
 
 ```shell
 terraform import tfe_sentinel_version.test tool-L4oe7rNwn7J4E5Yr
