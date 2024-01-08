@@ -31,6 +31,8 @@ FEATURES:
 * **New Resource**: `r/tfe_registry_gpg_key` is a new resource for managing private registry GPG keys, by @tmatilai [1160](https://github.com/hashicorp/terraform-provider-tfe/pull/1160)
 * **New Data Source**: `d/tfe_registry_gpg_key` is a new data source to retrieve a private registry GPG key, by @tmatilai [1160](https://github.com/hashicorp/terraform-provider-tfe/pull/1160)
 * **New Data Source**: `d/tfe_registry_gpg_keys` is a new data source to retrieve all private registry GPG keys of an organization, by @tmatilai [1160](https://github.com/hashicorp/terraform-provider-tfe/pull/1160)
+* `r/tfe_workspace`: Add `data_retention_policy` attribute to allow configuration of a workspace's data retention policy, by @mwudka [1170](https://github.com/hashicorp/terraform-provider-tfe/pull/1170)
+* `r/tfe_organization`: Add `data_retention_policy` attribute to allow configuration of an organization's data retention policy, by @mwudka [1170](https://github.com/hashicorp/terraform-provider-tfe/pull/1170)
 
 ENHANCEMENTS:
 * `d/tfe_organization`: Make `name` argument optional if configured for the provider, by @tmatilai [1133](https://github.com/hashicorp/terraform-provider-tfe/pull/1133)

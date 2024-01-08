@@ -1484,6 +1484,83 @@ func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspace_updateDataRetentionPolicy(t *testing.T) {
+	skipIfCloud(t)
+
+	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+		},
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_basicForceDeleteEnabled(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace, testAccProvider),
+					resource.TestCheckNoResourceAttr("tfe_workspace.foobar", "data_retention_policy.0.delete_older_than_n_days"),
+				),
+			},
+			{
+				Config: testAccTFEWorkspace_dataRetentionPolicy(rInt, 8),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "data_retention_policy.0.delete_older_than_n_days", "8"),
+				),
+			},
+			{
+				Config: testAccTFEWorkspace_dataRetentionPolicy(rInt, 20),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "data_retention_policy.0.delete_older_than_n_days", "20"),
+				),
+			},
+			{
+				Config: testAccTFEWorkspace_basicForceDeleteEnabled(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace, testAccProvider),
+					resource.TestCheckNoResourceAttr("tfe_workspace.foobar", "data_retention_policy.0.delete_older_than_n_days"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspace_importDataRetentionPolicy(t *testing.T) {
+	skipIfCloud(t)
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_dataRetentionPolicy(rInt, 10),
+			},
+			{
+				ResourceName:            "tfe_workspace.foobar",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"force_delete"},
+			},
+			{
+				ResourceName:            "tfe_workspace.foobar",
+				ImportState:             true,
+				ImportStateId:           fmt.Sprintf("tst-terraform-%d/workspace-test", rInt),
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"force_delete"},
+			},
+		},
+	})
+}
+
 func TestAccTFEWorkspace_updateGitHubAppRepo(t *testing.T) {
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -3654,4 +3731,21 @@ func testAccTFEWorkspace_mismatchOrganization() string {
 		name               = "workspace-test"
 		description        = "My favorite workspace!"
 	}`
+}
+
+func testAccTFEWorkspace_dataRetentionPolicy(rInt int, deleteOlderThanNDays int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+  data_retention_policy {
+    delete_older_than_n_days = %d
+  }
+}
+`, rInt, deleteOlderThanNDays)
 }
