@@ -83,7 +83,7 @@ func resourceTFEOPAVersionCreate(d *schema.ResourceData, meta interface{}) error
 	log.Printf("[DEBUG] Create new OPA version: %s", opts.Version)
 	v, err := config.Client.Admin.OPAVersions.Create(ctx, opts)
 	if err != nil {
-		return fmt.Errorf("Error creating the new OPA version %s: %w", opts.Version, err)
+		return fmt.Errorf("error creating the new OPA version %s: %w", opts.Version, err)
 	}
 
 	d.SetId(v.ID)
@@ -134,7 +134,7 @@ func resourceTFEOPAVersionUpdate(d *schema.ResourceData, meta interface{}) error
 	log.Printf("[DEBUG] Update configuration of OPA version: %s", d.Id())
 	v, err := config.Client.Admin.OPAVersions.Update(ctx, d.Id(), opts)
 	if err != nil {
-		return fmt.Errorf("Error updating OPA version %s: %w", d.Id(), err)
+		return fmt.Errorf("error updating OPA version %s: %w", d.Id(), err)
 	}
 
 	d.SetId(v.ID)
@@ -149,9 +149,10 @@ func resourceTFEOPAVersionDelete(d *schema.ResourceData, meta interface{}) error
 	err := config.Client.Admin.OPAVersions.Delete(ctx, d.Id())
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
+			log.Printf("[DEBUG] OPA version: %s not found", d.Id())
 			return nil
 		}
-		return fmt.Errorf("Error deleting OPA version %s: %w", d.Id(), err)
+		return fmt.Errorf("error deleting OPA version %s: %w", d.Id(), err)
 	}
 
 	return nil

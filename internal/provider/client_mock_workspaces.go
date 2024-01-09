@@ -21,18 +21,6 @@ type mockWorkspaces struct {
 	workspaceNames map[workspaceNamesKey]*tfe.Workspace
 }
 
-func (m *mockWorkspaces) ReadDataRetentionPolicy(ctx context.Context, workspaceID string) (*tfe.DataRetentionPolicy, error) {
-	panic("not implemented")
-}
-
-func (m *mockWorkspaces) SetDataRetentionPolicy(ctx context.Context, workspaceID string, options tfe.DataRetentionPolicySetOptions) (*tfe.DataRetentionPolicy, error) {
-	panic("not implemented")
-}
-
-func (m *mockWorkspaces) DeleteDataRetentionPolicy(ctx context.Context, workspaceID string) error {
-	panic("not implemented")
-}
-
 // newMockWorkspaces creates a mock workspaces implementation. Any created
 // workspaces will have the id given in defaultWorkspaceID.
 func newMockWorkspaces(options testClientOptions) *mockWorkspaces {

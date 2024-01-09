@@ -83,7 +83,7 @@ func resourceTFESentinelVersionCreate(d *schema.ResourceData, meta interface{}) 
 	log.Printf("[DEBUG] Create new Sentinel version: %s", opts.Version)
 	v, err := config.Client.Admin.SentinelVersions.Create(ctx, opts)
 	if err != nil {
-		return fmt.Errorf("Error creating the new Sentinel version %s: %w", opts.Version, err)
+		return fmt.Errorf("error creating the new Sentinel version %s: %w", opts.Version, err)
 	}
 
 	d.SetId(v.ID)
@@ -134,7 +134,7 @@ func resourceTFESentinelVersionUpdate(d *schema.ResourceData, meta interface{}) 
 	log.Printf("[DEBUG] Update configuration of Sentinel version: %s", d.Id())
 	v, err := config.Client.Admin.SentinelVersions.Update(ctx, d.Id(), opts)
 	if err != nil {
-		return fmt.Errorf("Error updating Sentinel version %s: %w", d.Id(), err)
+		return fmt.Errorf("error updating Sentinel version %s: %w", d.Id(), err)
 	}
 
 	d.SetId(v.ID)
@@ -149,9 +149,10 @@ func resourceTFESentinelVersionDelete(d *schema.ResourceData, meta interface{}) 
 	err := config.Client.Admin.SentinelVersions.Delete(ctx, d.Id())
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
+			log.Printf("[DEBUG] Sentinel version: %s not found", d.Id())
 			return nil
 		}
-		return fmt.Errorf("Error deleting Sentinel version %s: %w", d.Id(), err)
+		return fmt.Errorf("error deleting Sentinel version %s: %w", d.Id(), err)
 	}
 
 	return nil
