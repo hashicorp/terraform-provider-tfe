@@ -52,4 +52,4 @@ The following arguments are supported:
 * `variable_ids` - IDs of the variables attached to the variable set.
 * `project_ids` - IDs of the projects that use the variable set.
 
-<!-- cache-key: cdktf-0.19.0 input-69cc7771506b3265795fe469ee556bc13e62b7222aa6d0f36adeae7b5aa799c2 -->
+<!-- cache-key: cdktf-0.20.0 input-69cc7771506b3265795fe469ee556bc13e62b7222aa6d0f36adeae7b5aa799c2 -->

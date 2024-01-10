@@ -45,4 +45,4 @@ In addition to all arguments above, the following attributes are exported:
 * `id` - The ID of the team.
 * `sso_team_id` - (Optional) The [SSO Team ID](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/single-sign-on#team-names-and-sso-team-ids) of the team, if it has been defined
 
-<!-- cache-key: cdktf-0.19.0 input-d231d33c8a4a4e5d2ef8d59dddd50d6c6faa1cb5310de9b973f9095ca67523a9 -->
+<!-- cache-key: cdktf-0.20.0 input-d231d33c8a4a4e5d2ef8d59dddd50d6c6faa1cb5310de9b973f9095ca67523a9 -->

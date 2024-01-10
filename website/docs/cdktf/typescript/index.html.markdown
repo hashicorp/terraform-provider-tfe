@@ -43,7 +43,7 @@ There are several ways to provide the required token:
 - **Set the `token` argument in the provider configuration.** You can set
 the `token` argument in the provider configuration.  Use an input variable for
 the token.
-- **Set the `tfeToken` environment variable:** The provider can read the
+- **Set the `TFE_TOKEN` environment variable:** The provider can read the
 `TFE_TOKEN` environment variable and the token stored there to authenticate.
 
 When configuring the input variable for either of these options, mark them as sensitive.
@@ -88,7 +88,7 @@ class MyConvertedCode extends TerraformStack {
 As this provider is still at version zero, you should constrain the acceptable
 provider versions on the minor version.
 
-The above snippet using `requiredProviders` is for Terraform 0.13+; if you are using Terraform version 0.12, you can constrain by adding the version constraint to the `provider` block instead:
+The above snippet using `required_providers` is for Terraform 0.13+; if you are using Terraform version 0.12, you can constrain by adding the version constraint to the `provider` block instead:
 
 ```hcl
 provider "tfe" {
@@ -148,4 +148,4 @@ The following arguments are supported:
   arguments. Ensure that the organization already exists prior to using this argument.
   This can also be specified using the `TFE_ORGANIZATION` environment variable.
 
-<!-- cache-key: cdktf-0.19.0 input-71b632c8101c3bde9d1598273955499b3ab09c1fe1051d376b5fc6c5538335fe -->
+<!-- cache-key: cdktf-0.20.0 input-cc2c69da645bbea9a47c7e55a044b25006ed75ff4fd63fcbb0ce0bd98ee9a7b7 -->

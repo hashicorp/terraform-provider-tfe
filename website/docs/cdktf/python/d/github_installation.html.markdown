@@ -28,7 +28,7 @@ class MyConvertedCode(TerraformStack):
     def __init__(self, scope, name):
         super().__init__(scope, name)
         DataTfeGithubAppInstallation(self, "gha_installation",
-            installation_id=12345
+            installation_id=12345678
         )
 ```
 
@@ -47,17 +47,17 @@ class MyConvertedCode(TerraformStack):
     def __init__(self, scope, name):
         super().__init__(scope, name)
         DataTfeGithubAppInstallation(self, "gha_installation",
-            name="installation_name"
+            name="github_username_or_organization"
         )
 ```
 
 ## Argument Reference
 
-The following arguments are supported. At least one of `name`, `installation_id` must be set. 
+The following arguments are supported. At least one of `name`, `installation_id` must be set.
 
-* `installation_id` - (Optional) ID of the Github Installation as shown in Github.
-* `name` - (Optional) Name of the Github Installation as shown in Github.
- 
+* `installation_id` - (Optional) ID of the Github Installation. The installation ID can be found in the URL slug when visiting the installation's configuration page, e.g `https://github.com/settings/installations/12345678`.
+* `name` - (Optional) Name of the Github user or organization account that installed the app.
+
 Must be one of: `installation_id` or `name`.
 
 ## Attributes Reference
@@ -65,4 +65,5 @@ Must be one of: `installation_id` or `name`.
 In addition to all arguments above, the following attributes are exported:
 
 * `id` - The internal ID of the Github Installation. This is different from the `installation_id`.
-<!-- cache-key: cdktf-0.19.0 input-0a4ff055d60c44b213a5dc7ce9fcb8c10208e9d24cd4e44f3a552a718ea64d50 -->
+
+<!-- cache-key: cdktf-0.20.0 input-5d439ec2ae1e837495b8cb500e2fcfe96d47a32f9fce3a10ffac876fe18a89dc -->

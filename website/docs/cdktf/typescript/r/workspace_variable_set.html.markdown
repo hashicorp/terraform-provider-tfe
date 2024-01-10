@@ -11,7 +11,7 @@ description: |-
 
 Adds and removes variable sets from a workspace
 
--> **Note:** `tfeVariableSet` has a deprecated argument `workspaceIds` that should not be used alongside this resource. They attempt to manage the same attachments and are mutually exclusive.
+-> **Note:** `tfe_variable_set` has a deprecated argument `workspaceIds` that should not be used alongside this resource. They attempt to manage the same attachments and are mutually exclusive.
 
 ## Example Usage
 
@@ -83,4 +83,4 @@ Workspace Variable Sets can be imported; use `<ORGANIZATION>/<WORKSPACE NAME>/<V
 terraform import tfe_workspace_variable_set.test 'my-org-name/workspace/My Variable Set'
 ```
 
-<!-- cache-key: cdktf-0.19.0 input-0e93a89fc33e5f30b980a6183974fb86043d6296ff2c7122f52cfeca3fdd3ba4 -->
+<!-- cache-key: cdktf-0.20.0 input-0e93a89fc33e5f30b980a6183974fb86043d6296ff2c7122f52cfeca3fdd3ba4 -->

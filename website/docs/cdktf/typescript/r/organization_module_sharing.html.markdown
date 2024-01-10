@@ -12,7 +12,7 @@ description: |-
 Manage module sharing for an organization. This resource requires the
 use of an admin token and is for Terraform Enterprise only.
 
--> **NOTE:** `tfeOrganizationModuleSharing` is deprecated in favor of using `tfeAdminOrganizationSettings` which also allows the management of the global module sharing setting. They attempt to manage the same resource and are mutually exclusive.
+-> **NOTE:** `tfe_organization_module_sharing` is deprecated in favor of using `tfe_admin_organization_settings` which also allows the management of the global module sharing setting. They attempt to manage the same resource and are mutually exclusive.
 
 ## Example Usage
 
@@ -46,4 +46,4 @@ The following arguments are supported:
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `moduleConsumers` - (Required) Names of the organizations to consume the module registry.
 
-<!-- cache-key: cdktf-0.19.0 input-02a08f841b4b6228f7e4901255d3f9ff1f43a4bb23ea25bd0ba880c20069f448 -->
+<!-- cache-key: cdktf-0.20.0 input-02a08f841b4b6228f7e4901255d3f9ff1f43a4bb23ea25bd0ba880c20069f448 -->

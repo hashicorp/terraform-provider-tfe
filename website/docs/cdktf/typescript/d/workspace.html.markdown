@@ -53,8 +53,8 @@ In addition to all arguments above, the following attributes are exported:
 * `autoApplyRunTrigger` - Whether the workspace will automatically apply changes for runs that were created by run triggers from another workspace.
 * `assessmentsEnabled` - (Available only in Terraform Cloud) Indicates whether health assessments such as drift detection are enabled for the workspace.
 * `fileTriggersEnabled` - Indicates whether runs are triggered based on the changed files in a VCS push (if `true`) or always triggered on every push (if `false`).
-* `globalRemoteState` - (Optional) Whether the workspace should allow all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (determined by the `remote_state_consumer_ids` argument).
-* `remoteStateConsumerIds` - (Optional) A set of workspace IDs that will be set as the remote state consumers for the given workspace. Cannot be used if `global_remote_state` is set to `true`.
+* `globalRemoteState` - (Optional) Whether the workspace should allow all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (determined by the `remoteStateConsumerIds` argument).
+* `remoteStateConsumerIds` - (Optional) A set of workspace IDs that will be set as the remote state consumers for the given workspace. Cannot be used if `globalRemoteState` is set to `true`.
 * `operations` - Indicates whether the workspace is using remote execution mode. Set to `false` to switch execution mode to local. `true` by default.
 * `policyCheckFailures` - The number of policy check failures from the latest run.
 * `projectId` - ID of the workspace's project
@@ -91,4 +91,4 @@ The `vcsRepo` block contains:
 * `oauthTokenId` - OAuth token ID of the configured VCS connection.
 * `tagsRegex` - A regular expression used to trigger a Workspace run for matching Git tags.
 
-<!-- cache-key: cdktf-0.19.0 input-8a792abd68f0096121aefa7f2c56aa2455a7b698bf2cb5574b25e73321236d1e -->
+<!-- cache-key: cdktf-0.20.0 input-8a792abd68f0096121aefa7f2c56aa2455a7b698bf2cb5574b25e73321236d1e -->
