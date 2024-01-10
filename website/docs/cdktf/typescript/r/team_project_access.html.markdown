@@ -79,7 +79,7 @@ The following permissions apply to all workpsaces (and future workspaces) in the
 |----------------------|-------------------------------------------------------|
 | `runs`               | The permission to grant project's workspaces' runs. Default: `read`. Valid strings: `read`, `plan`, or `apply`. |
 | `sentinelMocks`     | The permission to grant project's workspaces' Sentinel mocks. Default: `none`. Valid strings: `none`, or `read`. |
-| `stateVersions`     | The permission to grant project's workspaces' state versions. Default: `none` Valid strings: `none`, `readOutputs`, `read`, or `write`.|
+| `stateVersions`     | The permission to grant project's workspaces' state versions. Default: `none` Valid strings: `none`, `read-outputs`, `read`, or `write`.|
 | `variables`          | The permission to grant project's workspaces' variables. Default `none`. Valid strings: `none`, `read`, or `write`. |
 | `create`             | The permission to create project's workspaces in the project. Default: `false`. Valid booleans `true`, `false` |
 | `locking`            | The permission to manually lock or unlock the project's workspaces. Default `false`. Valid booleans `true`, `false` |
@@ -154,4 +154,4 @@ example:
 terraform import tfe_team_project_access.admin tprj-2pmtXpZa4YzVMTPi
 ```
 
-<!-- cache-key: cdktf-0.19.0 input-854ab92b8935bb95bbbbbfaddb8b56a313c125e5e13f6684debaa55ee93499f5 -->
+<!-- cache-key: cdktf-0.20.0 input-854ab92b8935bb95bbbbbfaddb8b56a313c125e5e13f6684debaa55ee93499f5 -->
