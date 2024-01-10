@@ -47,4 +47,4 @@ In addition to all arguments above, the following attributes are exported:
 * `owners_team_saml_role_id` - The name of the "owners" team.
 * `send_passing_statuses_for_untriggered_speculative_plans` - Whether or not to send VCS status updates for untriggered speculative plans. This can be useful if large numbers of untriggered workspaces are exhausting request limits for connected version control service providers like GitHub. Defaults to true. In Terraform Enterprise, this setting has no effect and cannot be changed but is also available in Site Administration.
 * `default_project_id` - ID of the organization's default project. All workspaces created without specifying a project ID are created in this project.
-<!-- cache-key: cdktf-0.19.0 input-8846c33fbd01c623b80272d126fa694263f6e0fb3286ff1830ae6d051a5ae2a2 -->
+<!-- cache-key: cdktf-0.20.0 input-8846c33fbd01c623b80272d126fa694263f6e0fb3286ff1830ae6d051a5ae2a2 -->
