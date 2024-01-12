@@ -7,6 +7,10 @@ FEATURES:
 * **New Data Source**: `d/tfe_registry_provider` is a new data source to retrieve information about a public or private provider in the private registry, by @tmatilai [1185](https://github.com/hashicorp/terraform-provider-tfe/pull/1185)
 * **New Data Source**: `d/tfe_registry_providers` is a new data source to retrieve information about public and private providers in the private registry, by @tmatilai [1185](https://github.com/hashicorp/terraform-provider-tfe/pull/1185)
 
+BUG FIXES:
+
+* `r/tfe_workspace`: Fix panic on creation when `trigger_prefixes = [""]`, by @nfagerlund [1214](https://github.com/hashicorp/terraform-provider-tfe/pull/1214)
+
 ## v0.51.1
 
 BUG FIXES:
