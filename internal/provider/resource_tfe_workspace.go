@@ -1,6 +1,11 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
+// NOTE: This is a legacy resource and should be migrated to the Plugin
+// Framework if substantial modifications are planned. See
+// docs/new-resources.md if planning to use this code as boilerplate for
+// a new resource.
+
 package provider
 
 import (
@@ -903,9 +908,9 @@ func validateAgentExecution(_ context.Context, d *schema.ResourceDiff) error {
 	if executionModeSet {
 		executionModeIsAgent := executionMode.AsString() == "agent"
 		if executionModeIsAgent && !agentPoolIDSet {
-			return fmt.Errorf("execution_mode must be set to 'agent' to assign agent_pool_id")
-		} else if !executionModeIsAgent && agentPoolIDSet {
 			return fmt.Errorf("agent_pool_id must be provided when execution_mode is 'agent'")
+		} else if !executionModeIsAgent && agentPoolIDSet {
+			return fmt.Errorf("execution_mode must be set to 'agent' to assign agent_pool_id")
 		}
 	}
 

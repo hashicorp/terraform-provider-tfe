@@ -23,9 +23,6 @@ func TestAccTFEOrganizationsDataSource_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationsDataSourceConfig_basic_resource(rInt),
-			},
-			{
-				Config: testAccTFEOrganizationsDataSourceConfig_basic_data(),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckTFEOrganizationHasNames("data.tfe_organizations.foobarbaz", []string{
 						fmt.Sprintf("tst-terraform-foo-%d", rInt),
@@ -107,9 +104,9 @@ resource "tfe_organization" "bar" {
 resource "tfe_organization" "baz" {
   name  = "tst-terraform-baz-%d"
   email = "admin@company.com"
-}`, rInt, rInt, rInt)
 }
 
-func testAccTFEOrganizationsDataSourceConfig_basic_data() string {
-	return `data "tfe_organizations" "foobarbaz" {}`
+data "tfe_organizations" "foobarbaz" {
+	depends_on = [tfe_organization.foo, tfe_organization.bar, tfe_organization.baz]
+}`, rInt, rInt, rInt)
 }
