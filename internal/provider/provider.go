@@ -103,6 +103,9 @@ func Provider() *schema.Provider {
 			"tfe_policy_set":              dataSourceTFEPolicySet(),
 			"tfe_organization_members":    dataSourceTFEOrganizationMembers(),
 			"tfe_github_app_installation": dataSourceTFEGHAInstallation(),
+			// IMPORTANT:
+			// New data sources should be defined in provider_next.go using
+			// the [Plugin Framework](https://developer.hashicorp.com/terraform/plugin/framework).
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
@@ -145,6 +148,9 @@ func Provider() *schema.Provider {
 			"tfe_workspace_policy_set_exclusion": resourceTFEWorkspacePolicySetExclusion(),
 			"tfe_workspace_run":                  resourceTFEWorkspaceRun(),
 			"tfe_workspace_variable_set":         resourceTFEWorkspaceVariableSet(),
+			// IMPORTANT:
+			// New resources should be defined in provider_next.go using
+			// the [Plugin Framework](https://developer.hashicorp.com/terraform/plugin/framework).
 		},
 		ConfigureContextFunc: configure(),
 	}
