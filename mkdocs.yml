@@ -12,6 +12,7 @@ nav:
       - Development Environment: development-environment.md
       - Test Infrastructure: test-infrastructure.md
       - Contribution Guides:
+          - New Resources: new-resources.md
           - Testing: testing.md
           - Introducing Beta Features: beta.md
           - Debugging: debugging.md

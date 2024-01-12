@@ -177,7 +177,7 @@ func testAccCheckTFETeamMembersAttributes(
 }
 
 func usernamesFromTFEUsers(users []*tfe.User) []string {
-	usernames := make([]string, len(users), len(users))
+	usernames := make([]string, len(users))
 	for i, user := range users {
 		usernames[i] = user.Username
 	}
