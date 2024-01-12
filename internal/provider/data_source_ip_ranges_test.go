@@ -4,7 +4,6 @@
 package provider
 
 import (
-	"fmt"
 	"regexp"
 	"testing"
 
@@ -38,5 +37,5 @@ func TestAccTFEIPRangesDataSource_basic(t *testing.T) {
 }
 
 func testAccTFEIPRangesDataSourceConfig() string {
-	return fmt.Sprintf(`data "tfe_ip_ranges" "ips" {}`)
+	return `data "tfe_ip_ranges" "ips" {}`
 }
