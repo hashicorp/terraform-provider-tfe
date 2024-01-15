@@ -88,7 +88,7 @@ func resourceTFEOPAVersionCreate(d *schema.ResourceData, meta interface{}) error
 
 	d.SetId(v.ID)
 
-	return resourceTFEOPAVersionUpdate(d, meta)
+	return resourceTFEOPAVersionRead(d, meta)
 }
 
 func resourceTFEOPAVersionRead(d *schema.ResourceData, meta interface{}) error {

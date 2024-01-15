@@ -88,7 +88,7 @@ func resourceTFESentinelVersionCreate(d *schema.ResourceData, meta interface{}) 
 
 	d.SetId(v.ID)
 
-	return resourceTFESentinelVersionUpdate(d, meta)
+	return resourceTFESentinelVersionRead(d, meta)
 }
 
 func resourceTFESentinelVersionRead(d *schema.ResourceData, meta interface{}) error {

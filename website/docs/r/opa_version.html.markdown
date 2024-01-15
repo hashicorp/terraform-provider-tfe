@@ -5,9 +5,9 @@ description: |-
   Manages OPA versions
 ---
 
-# tfe_sentinel_version
+# tfe_opa_version
 
-Manage OPA versions available on Terraform Cloud/Enterprise.
+Manage OPA versions available on Terraform Enterprise.
 
 ## Example Usage
 
@@ -40,7 +40,7 @@ The following arguments are supported:
 
 ## Import
 
-Sentinel versions can be imported; use `<OPA VERSION ID>` or `<OPA VERSION NUMBER>` as the import ID. For example:
+OPA versions can be imported; use `<OPA VERSION ID>` or `<OPA VERSION NUMBER>` as the import ID. For example:
 
 ```shell
 terraform import tfe_opa_version.test tool-L4oe7rNwn7J4E5Yr
