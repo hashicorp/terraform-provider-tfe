@@ -70,9 +70,9 @@ func resourceTFEOPAVersionCreate(d *schema.ResourceData, meta interface{}) error
 	config := meta.(ConfiguredClient)
 
 	opts := tfe.AdminOPAVersionCreateOptions{
-		Version:          *tfe.String(d.Get("version").(string)),
-		URL:              *tfe.String(d.Get("url").(string)),
-		SHA:              *tfe.String(d.Get("sha").(string)),
+		Version:          d.Get("version").(string),
+		URL:              d.Get("url").(string),
+		SHA:              d.Get("sha").(string),
 		Official:         tfe.Bool(d.Get("official").(bool)),
 		Enabled:          tfe.Bool(d.Get("enabled").(bool)),
 		Beta:             tfe.Bool(d.Get("beta").(bool)),
