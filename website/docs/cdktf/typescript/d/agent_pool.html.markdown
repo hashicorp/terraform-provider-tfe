@@ -48,4 +48,4 @@ In addition to all arguments above, the following attributes are exported:
 * `id` - The agent pool ID.
 * `organizationScoped` - Whether or not the agent pool can be used by all workspaces in the organization.
 
-<!-- cache-key: cdktf-0.20.0 input-b223e1934ef43efb927b0566eadbb97c45112079ed23b335806e0098961b16f3 -->
+<!-- cache-key: cdktf-0.20.1 input-b223e1934ef43efb927b0566eadbb97c45112079ed23b335806e0098961b16f3 -->
