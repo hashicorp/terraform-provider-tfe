@@ -82,4 +82,4 @@ A resource can be imported; use `<AGENT POOL ID>` as the import ID. For example:
 terraform import tfe_agent_pool_allowed_workspaces.foobar apool-rW0KoLSlnuNb5adB
 ```
 
-<!-- cache-key: cdktf-0.20.0 input-de3bb23c998fa1d7b1d6fadb2f671fda9e7a1f166eb6c368662962f9be2af35f -->
+<!-- cache-key: cdktf-0.20.1 input-de3bb23c998fa1d7b1d6fadb2f671fda9e7a1f166eb6c368662962f9be2af35f -->
