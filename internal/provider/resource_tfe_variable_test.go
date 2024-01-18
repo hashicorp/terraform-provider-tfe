@@ -59,7 +59,7 @@ func TestAccTFEVariable_testingvariables(t *testing.T) {
 		CheckDestroy:             testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testingvariables(rInt),
+				Config: testAccTFEVariable_test_variable(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEVariableExists(
 						"tfe_variable.foobar", variable),
@@ -702,7 +702,7 @@ resource "tfe_variable" "foobar" {
 }`, rInt)
 }
 
-func testingvariables(rInt int) string {
+func testAccTFEVariable_test_variable(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"

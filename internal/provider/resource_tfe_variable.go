@@ -514,8 +514,10 @@ func (r *resourceTFEVariable) readWithVariableSet(ctx context.Context, req resou
 func (r *resourceTFEVariable) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	if isWorkspaceVariable(ctx, &req.Plan) {
 		r.updateWithWorkspace(ctx, req, resp)
-	} else {
+	} else if isVarSetVariable(ctx, &req.Plan) {
 		r.updateWithVariableSet(ctx, req, resp)
+	} else {
+		r.updateWithTestConfig(ctx, req, resp)
 	}
 }
 
@@ -621,12 +623,65 @@ func (r *resourceTFEVariable) updateWithVariableSet(ctx context.Context, req res
 	resp.Diagnostics.Append(diags...)
 }
 
+// updateWithTestConfig is the test config version of Update.
+func (r *resourceTFEVariable) updateWithTestConfig(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan modelTFEVariable
+	var state modelTFEVariable
+	diags := req.Plan.Get(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	diags = req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	variableID := plan.ID.ValueString()
+	moduleId := tfe.RegistryModuleID{
+		Organization: plan.Organization.ValueString(),
+		Name:         plan.ModuleName.ValueString(),
+		Provider:     plan.ModuleProvider.ValueString(),
+		Namespace:    plan.Organization.ValueString(),
+		RegistryName: "private",
+	}
+
+	options := tfe.VariableUpdateOptions{
+		Key:         plan.Key.ValueStringPointer(),
+		Description: plan.Description.ValueStringPointer(),
+		HCL:         plan.HCL.ValueBoolPointer(),
+		Sensitive:   plan.Sensitive.ValueBoolPointer(),
+	}
+	// We ONLY want to set Value if our planned value would be a CHANGE from the
+	// prior state. See comments in updateWithWorkspace for more color.
+	if state.Value.ValueString() != plan.Value.ValueString() {
+		options.Value = plan.Value.ValueStringPointer()
+	}
+
+	log.Printf("[DEBUG] Update variable: %s", variableID)
+	variable, err := r.config.Client.TestVariables.Update(ctx, moduleId, variableID, options)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error updating variable",
+			fmt.Sprintf("Couldn't update variable %s: %s", variableID, err.Error()),
+		)
+		return
+	}
+	// Update state
+	result := modelFromTFETestVariable(*variable, plan.Value)
+	diags = resp.State.Set(ctx, &result)
+	resp.Diagnostics.Append(diags...)
+}
+
 // Delete implements resource.Resource
 func (r *resourceTFEVariable) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	if isWorkspaceVariable(ctx, &req.State) {
 		r.deleteWithWorkspace(ctx, req, resp)
-	} else {
+	} else if isVarSetVariable(ctx, &req.State) {
 		r.deleteWithVariableSet(ctx, req, resp)
+	} else {
+		r.deleteWithTestConfig(ctx, req, resp)
 	}
 }
 
@@ -668,6 +723,35 @@ func (r *resourceTFEVariable) deleteWithVariableSet(ctx context.Context, req res
 
 	log.Printf("[DEBUG] Delete variable: %s", variableID)
 	err := r.config.Client.VariableSetVariables.Delete(ctx, variableSetID, variableID)
+	// Ignore 404s for delete
+	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+		resp.Diagnostics.AddError(
+			"Error deleting variable",
+			fmt.Sprintf("Couldn't delete variable %s: %s", variableID, err.Error()),
+		)
+	}
+	// Resource is implicitly deleted from resp.State if diagnostics have no errors.
+}
+
+// deleteWithTestConfig is the test config version of Delete.
+func (r *resourceTFEVariable) deleteWithTestConfig(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data modelTFEVariable
+	diags := req.State.Get(ctx, &data)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	variableID := data.ID.ValueString()
+	moduleId := tfe.RegistryModuleID{
+		Organization: data.Organization.ValueString(),
+		Name:         data.ModuleName.ValueString(),
+		Provider:     data.ModuleProvider.ValueString(),
+		Namespace:    data.Organization.ValueString(),
+		RegistryName: "private",
+	}
+	log.Printf("[DEBUG] Delete variable: %s", variableID)
+	err := r.config.Client.TestVariables.Delete(ctx, moduleId, variableID)
 	// Ignore 404s for delete
 	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 		resp.Diagnostics.AddError(
