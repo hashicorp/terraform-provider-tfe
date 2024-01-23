@@ -36,19 +36,16 @@ type resourceTFEVariable struct {
 
 // modelTFEVariable maps the resource schema data to a struct.
 type modelTFEVariable struct {
-	ID             types.String `tfsdk:"id"`
-	Key            types.String `tfsdk:"key"`
-	Value          types.String `tfsdk:"value"`
-	ReadableValue  types.String `tfsdk:"readable_value"`
-	Category       types.String `tfsdk:"category"`
-	Description    types.String `tfsdk:"description"`
-	HCL            types.Bool   `tfsdk:"hcl"`
-	Sensitive      types.Bool   `tfsdk:"sensitive"`
-	WorkspaceID    types.String `tfsdk:"workspace_id"`
-	VariableSetID  types.String `tfsdk:"variable_set_id"`
-	Organization   types.String `tfsdk:"organization"`
-	ModuleName     types.String `tfsdk:"module_name"`
-	ModuleProvider types.String `tfsdk:"module_provider"`
+	ID            types.String `tfsdk:"id"`
+	Key           types.String `tfsdk:"key"`
+	Value         types.String `tfsdk:"value"`
+	ReadableValue types.String `tfsdk:"readable_value"`
+	Category      types.String `tfsdk:"category"`
+	Description   types.String `tfsdk:"description"`
+	HCL           types.Bool   `tfsdk:"hcl"`
+	Sensitive     types.Bool   `tfsdk:"sensitive"`
+	WorkspaceID   types.String `tfsdk:"workspace_id"`
+	VariableSetID types.String `tfsdk:"variable_set_id"`
 }
 
 // modelFromTFEVariable builds a modelTFEVariable struct from a tfe.Variable
@@ -56,18 +53,15 @@ type modelTFEVariable struct {
 func modelFromTFEVariable(v tfe.Variable, lastValue types.String) modelTFEVariable {
 	// Initialize all fields from the provided API struct
 	m := modelTFEVariable{
-		ID:             types.StringValue(v.ID),
-		Key:            types.StringValue(v.Key),
-		Value:          types.StringValue(v.Value),
-		Category:       types.StringValue(string(v.Category)),
-		Description:    types.StringValue(v.Description),
-		HCL:            types.BoolValue(v.HCL),
-		Sensitive:      types.BoolValue(v.Sensitive),
-		WorkspaceID:    types.StringValue(v.Workspace.ID),
-		VariableSetID:  types.StringNull(), // never present on workspace vars
-		Organization:   types.StringNull(), // never present on workspace vars
-		ModuleName:     types.StringNull(), // never present on workspace vars
-		ModuleProvider: types.StringNull(), // never present on workspace vars
+		ID:            types.StringValue(v.ID),
+		Key:           types.StringValue(v.Key),
+		Value:         types.StringValue(v.Value),
+		Category:      types.StringValue(string(v.Category)),
+		Description:   types.StringValue(v.Description),
+		HCL:           types.BoolValue(v.HCL),
+		Sensitive:     types.BoolValue(v.Sensitive),
+		WorkspaceID:   types.StringValue(v.Workspace.ID),
+		VariableSetID: types.StringNull(), // never present on workspace vars
 	}
 	// BUT: if the variable is sensitive, carry forward the last known value
 	// instead, because the API never lets us read it again.
@@ -86,18 +80,15 @@ func modelFromTFEVariable(v tfe.Variable, lastValue types.String) modelTFEVariab
 func modelFromTFEVariableSetVariable(v tfe.VariableSetVariable, lastValue types.String) modelTFEVariable {
 	// Initialize all fields from the provided API struct
 	m := modelTFEVariable{
-		ID:             types.StringValue(v.ID),
-		Key:            types.StringValue(v.Key),
-		Value:          types.StringValue(v.Value),
-		Category:       types.StringValue(string(v.Category)),
-		Description:    types.StringValue(v.Description),
-		HCL:            types.BoolValue(v.HCL),
-		Sensitive:      types.BoolValue(v.Sensitive),
-		WorkspaceID:    types.StringNull(), // never present on variable set vars
-		VariableSetID:  types.StringValue(v.VariableSet.ID),
-		Organization:   types.StringNull(), // never present on variable set vars
-		ModuleName:     types.StringNull(), // never present on variable set vars
-		ModuleProvider: types.StringNull(), // never present on variable set vars
+		ID:            types.StringValue(v.ID),
+		Key:           types.StringValue(v.Key),
+		Value:         types.StringValue(v.Value),
+		Category:      types.StringValue(string(v.Category)),
+		Description:   types.StringValue(v.Description),
+		HCL:           types.BoolValue(v.HCL),
+		Sensitive:     types.BoolValue(v.Sensitive),
+		WorkspaceID:   types.StringNull(), // never present on variable set vars
+		VariableSetID: types.StringValue(v.VariableSet.ID),
 	}
 	// BUT: if the variable is sensitive, carry forward the last known value
 	// instead, because the API never lets us read it again.
@@ -109,35 +100,6 @@ func modelFromTFEVariableSetVariable(v tfe.VariableSetVariable, lastValue types.
 	}
 	return m
 }
-
-// // modelFromTFETestVariable builds a modelTFEVariable struct from a tfe.TestVariable
-// // value (plus the last known value of the variable's `value` attribute).
-// func modelFromTFETestVariable(v tfe.Variable, lastValue types.String) modelTFEVariable {
-// 	// Initialize all fields from the provided API struct
-// 	m := modelTFEVariable{
-// 		ID:             types.StringValue(v.ID),
-// 		Key:            types.StringValue(v.Key),
-// 		Value:          types.StringValue(v.Value),
-// 		Category:       types.StringValue(string(v.Category)),
-// 		Description:    types.StringValue(v.Description),
-// 		HCL:            types.BoolValue(v.HCL),
-// 		Sensitive:      types.BoolValue(v.Sensitive),
-// 		WorkspaceID:    types.StringNull(),
-// 		VariableSetID:  types.StringNull(),
-// 		Organization:   types.StringUnknown(), // wip
-// 		ModuleName:     types.StringUnknown(), // wip
-// 		ModuleProvider: types.StringUnknown(), // wip
-// 	}
-// 	// BUT: if the variable is sensitive, carry forward the last known value
-// 	// instead, because the API never lets us read it again.
-// 	if v.Sensitive {
-// 		m.Value = lastValue
-// 		m.ReadableValue = types.StringNull()
-// 	} else {
-// 		m.ReadableValue = m.Value
-// 	}
-// 	return m
-// }
 
 // Configure implements resource.ResourceWithConfigure
 func (r *resourceTFEVariable) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -295,25 +257,12 @@ func isWorkspaceVariable(ctx context.Context, data AttrGettable) bool {
 	return !workspaceID.IsNull()
 }
 
-// isWorkspaceVariable is a helper function for switching between tfe_variable's
-// two separate CRUD implementations.
-func isVarSetVariable(ctx context.Context, data AttrGettable) bool {
-	var varsetId types.String
-	// We're ignoring the diagnostics returned by GetAttribute, because we'll
-	// be destructuring the entire schema value shortly in the real
-	// implementations; any notable problems will be reported at that point.
-	data.GetAttribute(ctx, path.Root("variable_set_id"), &varsetId)
-	return !varsetId.IsNull()
-}
-
 // Create implements resource.Resource
 func (r *resourceTFEVariable) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if isWorkspaceVariable(ctx, &req.Plan) {
 		r.createWithWorkspace(ctx, req, resp)
-	} else if isVarSetVariable(ctx, &req.Plan) {
-		r.createWithVariableSet(ctx, req, resp)
 	} else {
-		r.createWithTestVariable(ctx, req, resp)
+		r.createWithVariableSet(ctx, req, resp)
 	}
 }
 
@@ -389,50 +338,6 @@ func (r *resourceTFEVariable) createWithVariableSet(ctx context.Context, req res
 
 	// We got a variable, so set state to new values
 	result := modelFromTFEVariableSetVariable(*variable, data.Value)
-	diags = resp.State.Set(ctx, &result)
-	resp.Diagnostics.Append(diags...)
-}
-
-// createWithTestVariable is the test version of Create.
-func (r *resourceTFEVariable) createWithTestVariable(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var data modelTFEVariable
-	diags := req.Plan.Get(ctx, &data)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	key := data.Key.ValueString()
-	category := data.Category.ValueString()
-	moduleId := tfe.RegistryModuleID{
-		Organization: data.Organization.ValueString(),
-		Name:         data.ModuleName.ValueString(),
-		Provider:     data.ModuleProvider.ValueString(),
-		Namespace:    data.Organization.ValueString(),
-		RegistryName: "private",
-	}
-
-	options := tfe.VariableCreateOptions{
-		Key:         data.Key.ValueStringPointer(),
-		Value:       data.Value.ValueStringPointer(),
-		Category:    tfe.Category(tfe.CategoryType(category)),
-		HCL:         data.HCL.ValueBoolPointer(),
-		Sensitive:   data.Sensitive.ValueBoolPointer(),
-		Description: data.Description.ValueStringPointer(),
-	}
-
-	log.Printf("[DEBUG] Create %s variable: %s", category, key)
-	variable, err := r.config.Client.TestVariables.Create(ctx, moduleId, options)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error creating variable",
-			fmt.Sprintf("Couldn't create %s variable %s: %s", category, key, err.Error()),
-		)
-		return
-	}
-
-	// We got a variable, so set state to new values
-	result := modelFromTFETestVariable(*variable, data.Value)
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -514,10 +419,8 @@ func (r *resourceTFEVariable) readWithVariableSet(ctx context.Context, req resou
 func (r *resourceTFEVariable) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	if isWorkspaceVariable(ctx, &req.Plan) {
 		r.updateWithWorkspace(ctx, req, resp)
-	} else if isVarSetVariable(ctx, &req.Plan) {
-		r.updateWithVariableSet(ctx, req, resp)
 	} else {
-		r.updateWithTestConfig(ctx, req, resp)
+		r.updateWithVariableSet(ctx, req, resp)
 	}
 }
 
@@ -623,65 +526,12 @@ func (r *resourceTFEVariable) updateWithVariableSet(ctx context.Context, req res
 	resp.Diagnostics.Append(diags...)
 }
 
-// updateWithTestConfig is the test config version of Update.
-func (r *resourceTFEVariable) updateWithTestConfig(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan modelTFEVariable
-	var state modelTFEVariable
-	diags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	diags = req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	variableID := plan.ID.ValueString()
-	moduleId := tfe.RegistryModuleID{
-		Organization: plan.Organization.ValueString(),
-		Name:         plan.ModuleName.ValueString(),
-		Provider:     plan.ModuleProvider.ValueString(),
-		Namespace:    plan.Organization.ValueString(),
-		RegistryName: "private",
-	}
-
-	options := tfe.VariableUpdateOptions{
-		Key:         plan.Key.ValueStringPointer(),
-		Description: plan.Description.ValueStringPointer(),
-		HCL:         plan.HCL.ValueBoolPointer(),
-		Sensitive:   plan.Sensitive.ValueBoolPointer(),
-	}
-	// We ONLY want to set Value if our planned value would be a CHANGE from the
-	// prior state. See comments in updateWithWorkspace for more color.
-	if state.Value.ValueString() != plan.Value.ValueString() {
-		options.Value = plan.Value.ValueStringPointer()
-	}
-
-	log.Printf("[DEBUG] Update variable: %s", variableID)
-	variable, err := r.config.Client.TestVariables.Update(ctx, moduleId, variableID, options)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error updating variable",
-			fmt.Sprintf("Couldn't update variable %s: %s", variableID, err.Error()),
-		)
-		return
-	}
-	// Update state
-	result := modelFromTFETestVariable(*variable, plan.Value)
-	diags = resp.State.Set(ctx, &result)
-	resp.Diagnostics.Append(diags...)
-}
-
 // Delete implements resource.Resource
 func (r *resourceTFEVariable) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	if isWorkspaceVariable(ctx, &req.State) {
 		r.deleteWithWorkspace(ctx, req, resp)
-	} else if isVarSetVariable(ctx, &req.State) {
-		r.deleteWithVariableSet(ctx, req, resp)
 	} else {
-		r.deleteWithTestConfig(ctx, req, resp)
+		r.deleteWithVariableSet(ctx, req, resp)
 	}
 }
 
@@ -723,35 +573,6 @@ func (r *resourceTFEVariable) deleteWithVariableSet(ctx context.Context, req res
 
 	log.Printf("[DEBUG] Delete variable: %s", variableID)
 	err := r.config.Client.VariableSetVariables.Delete(ctx, variableSetID, variableID)
-	// Ignore 404s for delete
-	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
-		resp.Diagnostics.AddError(
-			"Error deleting variable",
-			fmt.Sprintf("Couldn't delete variable %s: %s", variableID, err.Error()),
-		)
-	}
-	// Resource is implicitly deleted from resp.State if diagnostics have no errors.
-}
-
-// deleteWithTestConfig is the test config version of Delete.
-func (r *resourceTFEVariable) deleteWithTestConfig(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var data modelTFEVariable
-	diags := req.State.Get(ctx, &data)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	variableID := data.ID.ValueString()
-	moduleId := tfe.RegistryModuleID{
-		Organization: data.Organization.ValueString(),
-		Name:         data.ModuleName.ValueString(),
-		Provider:     data.ModuleProvider.ValueString(),
-		Namespace:    data.Organization.ValueString(),
-		RegistryName: "private",
-	}
-	log.Printf("[DEBUG] Delete variable: %s", variableID)
-	err := r.config.Client.TestVariables.Delete(ctx, moduleId, variableID)
 	// Ignore 404s for delete
 	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 		resp.Diagnostics.AddError(
