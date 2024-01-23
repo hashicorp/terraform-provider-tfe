@@ -110,34 +110,34 @@ func modelFromTFEVariableSetVariable(v tfe.VariableSetVariable, lastValue types.
 	return m
 }
 
-// modelFromTFETestVariable builds a modelTFEVariable struct from a tfe.TestVariable
-// value (plus the last known value of the variable's `value` attribute).
-func modelFromTFETestVariable(v tfe.Variable, lastValue types.String) modelTFEVariable {
-	// Initialize all fields from the provided API struct
-	m := modelTFEVariable{
-		ID:             types.StringValue(v.ID),
-		Key:            types.StringValue(v.Key),
-		Value:          types.StringValue(v.Value),
-		Category:       types.StringValue(string(v.Category)),
-		Description:    types.StringValue(v.Description),
-		HCL:            types.BoolValue(v.HCL),
-		Sensitive:      types.BoolValue(v.Sensitive),
-		WorkspaceID:    types.StringNull(),
-		VariableSetID:  types.StringNull(),
-		Organization:   types.StringUnknown(), // wip
-		ModuleName:     types.StringUnknown(), // wip
-		ModuleProvider: types.StringUnknown(), // wip
-	}
-	// BUT: if the variable is sensitive, carry forward the last known value
-	// instead, because the API never lets us read it again.
-	if v.Sensitive {
-		m.Value = lastValue
-		m.ReadableValue = types.StringNull()
-	} else {
-		m.ReadableValue = m.Value
-	}
-	return m
-}
+// // modelFromTFETestVariable builds a modelTFEVariable struct from a tfe.TestVariable
+// // value (plus the last known value of the variable's `value` attribute).
+// func modelFromTFETestVariable(v tfe.Variable, lastValue types.String) modelTFEVariable {
+// 	// Initialize all fields from the provided API struct
+// 	m := modelTFEVariable{
+// 		ID:             types.StringValue(v.ID),
+// 		Key:            types.StringValue(v.Key),
+// 		Value:          types.StringValue(v.Value),
+// 		Category:       types.StringValue(string(v.Category)),
+// 		Description:    types.StringValue(v.Description),
+// 		HCL:            types.BoolValue(v.HCL),
+// 		Sensitive:      types.BoolValue(v.Sensitive),
+// 		WorkspaceID:    types.StringNull(),
+// 		VariableSetID:  types.StringNull(),
+// 		Organization:   types.StringUnknown(), // wip
+// 		ModuleName:     types.StringUnknown(), // wip
+// 		ModuleProvider: types.StringUnknown(), // wip
+// 	}
+// 	// BUT: if the variable is sensitive, carry forward the last known value
+// 	// instead, because the API never lets us read it again.
+// 	if v.Sensitive {
+// 		m.Value = lastValue
+// 		m.ReadableValue = types.StringNull()
+// 	} else {
+// 		m.ReadableValue = m.Value
+// 	}
+// 	return m
+// }
 
 // Configure implements resource.ResourceWithConfigure
 func (r *resourceTFEVariable) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
