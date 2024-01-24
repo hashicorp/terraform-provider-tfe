@@ -77,7 +77,7 @@ func TestAccTFEOrganization_full(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "send_passing_statuses_for_untriggered_speculative_plans", "false"),
 					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "aggregated_commit_status_enabled", "false"),
+						"tfe_organization.foobar", "aggregated_commit_status_enabled", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "assessments_enforced", "false"),
 					resource.TestCheckResourceAttr(
@@ -164,7 +164,7 @@ func TestAccTFEOrganization_update_costEstimation(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "send_passing_statuses_for_untriggered_speculative_plans", "false"),
 					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "aggregated_commit_status_enabled", "false"),
+						"tfe_organization.foobar", "aggregated_commit_status_enabled", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "assessments_enforced", strconv.FormatBool(assessmentsEnforced1)),
 					resource.TestCheckResourceAttr(
