@@ -27,6 +27,16 @@ type resourceTFETestVariable struct {
 	config ConfiguredClient
 }
 
+// todo: look into implementing this
+// // NewTestVariableDataSource is a helper function to simplify the provider implementation.
+// func NewTestVariableDataSource() datasource.DataSource {
+// 	return &{}
+// }
+
+func NewTestVariableResource() resource.Resource {
+	return &resourceTFETestVariable{}
+}
+
 // modelTFETestVariable maps the resource schema data to a struct.
 type modelTFETestVariable struct {
 	ID             types.String `tfsdk:"id"`
@@ -237,6 +247,40 @@ func (r *resourceTFETestVariable) createWithTestVariable(ctx context.Context, re
 
 	// We got a variable, so set state to new values
 	result := modelFromTFETestVariable(*variable, data.Value)
+	diags = resp.State.Set(ctx, &result)
+	resp.Diagnostics.Append(diags...)
+}
+
+// Read implements resource.Resource
+// todo: migrate this to go.tfe.testvariables.read once it gets merged
+func (r *resourceTFETestVariable) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data modelTFETestVariable
+
+	diags := req.State.Get(ctx, &data)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	variableID := data.ID.ValueString()
+	// wip - replace with testvariables once its implemented
+	variable, err := r.config.Client.Variables.Read(ctx, "", variableID)
+	if err != nil {
+		// If it's gone: that's not an error, but we are done.
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			log.Printf("[DEBUG] Variable %s no longer exists", variableID)
+			resp.State.RemoveResource(ctx)
+		} else {
+			resp.Diagnostics.AddError(
+				"Error reading variable",
+				fmt.Sprintf("Couldn't read variable %s: %s", variableID, err.Error()),
+			)
+		}
+		return
+	}
+
+	// We got a variable, so update state:
+	result := modelFromTFEVariable(*variable, data.Value)
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }

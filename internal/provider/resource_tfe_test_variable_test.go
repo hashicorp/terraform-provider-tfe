@@ -51,7 +51,7 @@ func testAccTFETestVariable_test_variable(rInt int) string {
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
-  }
+}
   
 resource "tfe_oauth_client" "foobar" {
   organization     = tfe_organization.foobar.name
@@ -62,27 +62,29 @@ resource "tfe_oauth_client" "foobar" {
 }
 
 resource "tfe_registry_module" "foobar" {
-	organization     = tfe_organization.foobar.name
-	vcs_repo {
-	  display_identifier = "%s"
-	  identifier         = "%s"
-	  oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
-	  branch             = "main"
-	  tags				 = false
-	}
-	test_config {
-	  tests_enabled = true
-	}
-	resource "tfe_test_variable" "foobar" {
-		key          = "key_test"
-		value        = "value_test"
-		description  = "some description"
-		category     = "env"
-		organization = tfe_organization.foobar.name
-		module_name = tfe_registry_module.foobar.name
-		module_provider = tfe_registry_module.foobar.module_provider
-	}  
-}`,
+  organization     = tfe_organization.foobar.name
+  vcs_repo {
+  display_identifier = "%s"
+  identifier         = "%s"
+  oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
+  branch             = "main"
+  tags				 = false
+}
+  test_config {
+	tests_enabled = true
+  }
+}
+
+resource "tfe_test_variable" "foobar" {
+  key          = "key_test"
+  value        = "value_test"
+  description  = "some description"
+  category     = "env"
+  organization = tfe_organization.foobar.name
+  module_name = tfe_registry_module.foobar.name
+  module_provider = tfe_registry_module.foobar.module_provider
+}
+`,
 		rInt,
 		envGithubToken,
 		envGithubRegistryModuleIdentifer,
