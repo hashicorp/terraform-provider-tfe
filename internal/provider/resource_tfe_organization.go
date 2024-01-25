@@ -212,6 +212,8 @@ func resourceTFEOrganizationUpdate(d *schema.ResourceData, meta interface{}) err
 		// If aggregated_commit_status_enabled is supplied, set it using the options struct.
 		if aggregatedCommitStatusEnabled, ok := d.GetOk("aggregated_commit_status_enabled"); ok {
 			options.AggregatedCommitStatusEnabled = tfe.Bool(aggregatedCommitStatusEnabled.(bool))
+		} else {
+			options.AggregatedCommitStatusEnabled = tfe.Bool(false)
 		}
 	}
 
