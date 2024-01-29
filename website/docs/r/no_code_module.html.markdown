@@ -26,7 +26,7 @@ resource "tfe_registry_module" "foobar" {
 }
 
 resource "tfe_no_code_module" "foobar" {
-	organization = tfe_organization.foobar.id
+	organization = tfe_organization.foobar.name
 	registry_module = tfe_registry_module.foobar.id
 }
 ```
@@ -46,7 +46,7 @@ resource "tfe_registry_module" "foobar" {
 }
 
 resource "tfe_no_code_module" "foobar" {
-	organization = tfe_organization.foobar.id
+	organization = tfe_organization.foobar.name
 	registry_module = tfe_registry_module.foobar.id
 
 	variable_options {
