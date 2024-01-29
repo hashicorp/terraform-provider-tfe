@@ -199,22 +199,16 @@ func resourceTFEOrganizationUpdate(d *schema.ResourceData, meta interface{}) err
 		options.CostEstimationEnabled = tfe.Bool(costEstimationEnabled.(bool))
 	}
 
+	// If send_passing_statuses_for_untriggered_speculative_plans is supplied, set it using the options struct.
 	if d.HasChange("send_passing_statuses_for_untriggered_speculative_plans") {
-		// If send_passing_statuses_for_untriggered_speculative_plans is supplied, set it using the options struct.
-		if sendPassingStatusesForUntriggeredSpeculativePlans, ok := d.GetOk("send_passing_statuses_for_untriggered_speculative_plans"); ok {
-			options.SendPassingStatusesForUntriggeredSpeculativePlans = tfe.Bool(sendPassingStatusesForUntriggeredSpeculativePlans.(bool))
-		} else {
-			options.SendPassingStatusesForUntriggeredSpeculativePlans = tfe.Bool(false)
-		}
+		_, newVal := d.GetChange("send_passing_statuses_for_untriggered_speculative_plans")
+		options.SendPassingStatusesForUntriggeredSpeculativePlans = tfe.Bool(newVal.(bool))
 	}
 
+	// If aggregated_commit_status_enabled is supplied, set it using the options struct.
 	if d.HasChange("aggregated_commit_status_enabled") {
-		// If aggregated_commit_status_enabled is supplied, set it using the options struct.
-		if aggregatedCommitStatusEnabled, ok := d.GetOk("aggregated_commit_status_enabled"); ok {
-			options.AggregatedCommitStatusEnabled = tfe.Bool(aggregatedCommitStatusEnabled.(bool))
-		} else {
-			options.AggregatedCommitStatusEnabled = tfe.Bool(false)
-		}
+		_, newVal := d.GetChange("aggregated_commit_status_enabled")
+		options.AggregatedCommitStatusEnabled = tfe.Bool(newVal.(bool))
 	}
 
 	// If assessments_enforced is supplied, set it using the options struct.
