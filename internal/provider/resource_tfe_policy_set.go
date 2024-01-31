@@ -79,12 +79,14 @@ func resourceTFEPolicySet() *schema.Resource {
 				Description: "Whether the policy set is executed in the TFC agent. True by default for OPA policies",
 				Type:        schema.TypeBool,
 				Optional:    true,
+				Computed:    true,
 			},
 
 			"policy_tool_version": {
 				Description: "The policy tool version to run the policy evaluation against",
 				Type:        schema.TypeString,
 				Optional:    true,
+				Computed:    true,
 			},
 
 			"policies_path": {
