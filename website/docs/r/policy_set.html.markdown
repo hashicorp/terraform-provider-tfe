@@ -21,12 +21,14 @@ Basic usage (VCS-based policy set):
 
 ```hcl
 resource "tfe_policy_set" "test" {
-  name          = "my-policy-set"
-  description   = "A brand new policy set"
-  organization  = "my-org-name"
-  kind          = "sentinel"
-  policies_path = "policies/my-policy-set"
-  workspace_ids = [tfe_workspace.test.id]
+  name                = "my-policy-set"
+  description         = "A brand new policy set"
+  organization        = "my-org-name"
+  kind                = "sentinel"
+  agent_enabled       = "true"
+  policy_tool_version = "0.24.1"
+  policies_path       = "policies/my-policy-set"
+  workspace_ids       = [tfe_workspace.test.id]
 
   vcs_repo {
     identifier         = "my-org-name/my-policy-set-repository"
@@ -41,12 +43,14 @@ Using manually-specified policies:
 
 ```hcl
 resource "tfe_policy_set" "test" {
-  name          = "my-policy-set"
-  description   = "A brand new policy set"
-  organization  = "my-org-name"
-  kind          = "sentinel"
-  policy_ids    = [tfe_sentinel_policy.test.id]
-  workspace_ids = [tfe_workspace.test.id]
+  name                = "my-policy-set"
+  description         = "A brand new policy set"
+  organization        = "my-org-name"
+  kind                = "sentinel"
+  agent_enabled       = "true"
+  policy_tool_version = "0.24.1"
+  policy_ids          = [tfe_sentinel_policy.test.id]
+  workspace_ids       = [tfe_workspace.test.id]
 }
 ```
 
@@ -81,6 +85,9 @@ The following arguments are supported:
 * `kind` - (Optional) The policy-as-code framework associated with the policy.
    Defaults to `sentinel` if not provided. Valid values are `sentinel` and `opa`.
    A policy set can only have policies that have the same underlying kind.
+* `agent_enabled` - (Optional) Whether or not the policy set is run as a policy evaluation within the agent. 
+   True by default for all "opa" policy sets.
+* `policy_tool_version` - (Optional) The policy tool version to run the evaluation against.
 * `overridable` - (Optional) Whether or not users can override this policy when
    it fails during a run. Defaults to `false`. Only valid for OPA policies.
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
