@@ -9,7 +9,9 @@ FEATURES:
 * **New Resource**: `r/tfe_sentinel_version` adds the ability for admins to configure settings for sentinel versions ([#1202](https://github.com/hashicorp/terraform-provider-tfe/pull/1202))
 * **New Resource**: `r/tfe_opa_version` adds the ability for admins to configure settings for OPA versions ([#1202](https://github.com/hashicorp/terraform-provider-tfe/pull/1202))
 * `r/tfe_policy_set`: Add `agent_enabled` and `policy_tool_version` attributes to allow setting a policy runtime version to the policy set, by @mrinalirao [1234](https://github.com/hashicorp/terraform-provider-tfe/pull/1234)
-* `d/tfe_policy_set`: Add `agent_enabled` and `policy_tool_version` attributes to get the policy runtime version of a policy set, by @mrinalirao [1234](https://github.com/hashicorp/terraform-provider-tfe/pull/1234) 
+* `d/tfe_policy_set`: Add `agent_enabled` and `policy_tool_version` attributes to get the policy runtime version of a policy set, by @mrinalirao [1234](https://github.com/hashicorp/terraform-provider-tfe/pull/1234)
+* `r/tfe_organization`: Add `aggregated_commit_status_enabled` attribute, by @mjyocca [1169](https://github.com/hashicorp/terraform-provider-tfe/pull/1169)
+* `d/tfe_organization`: Add `aggregated_commit_status_enabled` attribute, by @mjyocca [1169](https://github.com/hashicorp/terraform-provider-tfe/pull/1169)
 
 BUG FIXES:
 
