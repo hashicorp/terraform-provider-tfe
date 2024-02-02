@@ -140,7 +140,7 @@ func modelFromTFENoCodeModule(v *tfe.RegistryNoCodeModule) modelNoCodeModule {
 	return modelNoCodeModule{
 		ID:               types.StringValue(v.ID),
 		Organization:     types.StringValue(v.Organization.Name),
-		RegistryModuleID: types.StringValue(string(v.RegistryModule.ID)),
+		RegistryModuleID: types.StringValue(v.RegistryModule.ID),
 		Namespace:        types.StringValue(v.RegistryModule.Namespace),
 		VersionPin:       types.StringValue(v.VersionPin),
 		Enabled:          types.BoolValue(v.Enabled),
