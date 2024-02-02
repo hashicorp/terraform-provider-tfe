@@ -8,98 +8,80 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ datasource.DataSource                   = &dataSourceTFENoCodeModuleProvider{}
-	_ datasource.DataSourceWithConfigure      = &dataSourceTFENoCodeModuleProvider{}
-	_ datasource.DataSourceWithValidateConfig = &dataSourceTFENoCodeModuleProvider{}
+	_ datasource.DataSource                   = &dataSourceTFENoCodeModule{}
+	_ datasource.DataSourceWithConfigure      = &dataSourceTFENoCodeModule{}
+	_ datasource.DataSourceWithValidateConfig = &dataSourceTFENoCodeModule{}
 )
 
-// NewNoCodeModuleDataSource is a helper function to simplify the provider implementation.
+// NewNoCodeModuleDataSource is a helper function to simplify the implementation.
 func NewNoCodeModuleDataSource() datasource.DataSource {
-	return &dataSourceTFENoCodeModuleProvider{}
+	return &dataSourceTFENoCodeModule{}
 }
 
-// dataSourceTFENoCodeModuleProvider is the data source implementation.
-type dataSourceTFENoCodeModuleProvider struct {
+// dataSourceTFENoCodeModule is the data source implementation.
+type dataSourceTFENoCodeModule struct {
 	config ConfiguredClient
 }
 
+// modelNoCodeModule maps the data source schema data.
+type modelNoCodeModule struct {
+	ID               types.String `tfsdk:"id"`
+	Organization     types.String `tfsdk:"organization"`
+	Namespace        types.String `tfsdk:"namespace"`
+	VersionPin       types.String `tfsdk:"version_pin"`
+	RegistryModuleID types.String `tfsdk:"registry_module_id"`
+	Enabled          types.Bool   `tfsdk:"enabled"`
+}
+
 // Metadata returns the data source type name.
-func (d *dataSourceTFENoCodeModuleProvider) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (d *dataSourceTFENoCodeModule) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_no_code_module"
 }
 
-// need:
-//  :organization_name
-//  :registry_name
-//  :namespace
-//  :name
-//  :provider
-
 // Schema defines the schema for the data source.
-func (d *dataSourceTFENoCodeModuleProvider) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *dataSourceTFENoCodeModule) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "This data source can be used to retrieve a public or private provider from the private registry.",
+		Description: "This data source can be used to retrieve a public or private no-code module.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "ID of the provider.",
-				Computed:    true,
+				Description: "ID of the no-code module.",
+				Required:    true,
 			},
 			"organization": schema.StringAttribute{
-				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
+				Description: "Name of the organization.",
 				Optional:    true,
 				Computed:    true,
-			},
-			"registry_name": schema.StringAttribute{
-				Description: "Whether this is a publicly maintained provider or private. Must be either `public` or `private`.",
-				Optional:    true,
-				Computed:    true,
-				Validators: []validator.String{
-					stringvalidator.OneOf(
-						string(tfe.PrivateRegistry),
-						string(tfe.PublicRegistry),
-					),
-				},
 			},
 			"namespace": schema.StringAttribute{
-				Description: "The namespace of the provider. For private providers this is the same as the oraganization.",
-				Optional:    true,
+				Description: "The namespace of the no-code module.",
 				Computed:    true,
 			},
-			"name": schema.StringAttribute{
-				Description: "Name of the provider.",
-				Required:    true,
-			},
-			"provider": schema.StringAttribute{
-				Description: "Name of the provider.",
-				Required:    true,
-			},
-			"created_at": schema.StringAttribute{
-				Description: "The time when the provider was created.",
+			"registry_module_id": schema.StringAttribute{
+				Description: "ID of the registry module.",
 				Computed:    true,
 			},
-			"updated_at": schema.StringAttribute{
-				Description: "The time when the provider was last updated.",
+			"version_pin": schema.StringAttribute{
+				Description: "Version pin of the no-code module.",
+				Computed:    true,
+			},
+			"enabled": schema.BoolAttribute{
+				Description: "Indiate if this no-code module is currently enabled.",
 				Computed:    true,
 			},
 		},
 	}
 }
 
-func (d *dataSourceTFENoCodeModuleProvider) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
-	var config modelTFERegistryProvider
-	// TODO: Remove hardcode
-	config.Provider = types.StringValue("aws")
+func (d *dataSourceTFENoCodeModule) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
+	var config modelNoCodeModule
 
 	// Read Terraform plan data into the model
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
@@ -107,24 +89,10 @@ func (d *dataSourceTFENoCodeModuleProvider) ValidateConfig(ctx context.Context, 
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	if config.RegistryName.ValueString() == "public" && config.Namespace.IsNull() {
-		resp.Diagnostics.AddAttributeError(
-			path.Root("namespace"),
-			"Missing Attribute Configuration",
-			"Expected namespace to be configured when registry_name is \"public\".",
-		)
-	} else if (config.RegistryName.IsNull() || config.RegistryName.ValueString() == "private") && !config.Namespace.IsNull() && !config.Namespace.IsUnknown() {
-		resp.Diagnostics.AddAttributeError(
-			path.Root("namespace"),
-			"Invalid Attribute Combination",
-			"The namespace attribute cannot be configured when registry_name is \"private\".",
-		)
-	}
 }
 
 // Configure adds the provider configured client to the data source.
-func (d *dataSourceTFENoCodeModuleProvider) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *dataSourceTFENoCodeModule) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -142,8 +110,8 @@ func (d *dataSourceTFENoCodeModuleProvider) Configure(_ context.Context, req dat
 }
 
 // Read refreshes the Terraform state with the latest data.
-func (d *dataSourceTFENoCodeModuleProvider) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var data modelTFERegistryProvider
+func (d *dataSourceTFENoCodeModule) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var data modelNoCodeModule
 
 	// Read Terraform configuration data into the model
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -152,45 +120,29 @@ func (d *dataSourceTFENoCodeModuleProvider) Read(ctx context.Context, req dataso
 		return
 	}
 
-	var organization string
-	resp.Diagnostics.Append(d.config.dataOrDefaultOrganization(ctx, req.Config, &organization)...)
-
-	if resp.Diagnostics.HasError() {
-		return
+	options := &tfe.RegistryNoCodeModuleReadOptions{
+		Include: []tfe.RegistryNoCodeModuleIncludeOpt{tfe.RegistryNoCodeIncludeVariableOptions},
 	}
 
-	var registryName string
-	if data.RegistryName.IsNull() {
-		registryName = "private"
-	} else {
-		registryName = data.RegistryName.ValueString()
-	}
-
-	var namespace string
-	if registryName == "private" {
-		namespace = organization
-	} else {
-		namespace = data.Namespace.ValueString()
-	}
-
-	providerID := tfe.RegistryProviderID{
-		OrganizationName: organization,
-		RegistryName:     tfe.RegistryName(registryName),
-		Namespace:        namespace,
-		Name:             data.Name.ValueString(),
-	}
-
-	options := tfe.RegistryProviderReadOptions{}
-
-	tflog.Debug(ctx, "Reading private registry provider")
-	provider, err := d.config.Client.RegistryProviders.Read(ctx, providerID, &options)
+	tflog.Debug(ctx, "Reading no code module")
+	module, err := d.config.Client.RegistryNoCodeModules.Read(ctx, data.ID.ValueString(), options)
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to read private registry provider", err.Error())
+		resp.Diagnostics.AddError("Unable to read no code module", err.Error())
 		return
 	}
 
-	data = modelFromTFERegistryProvider(provider)
+	data = modelFromTFENoCodeModule(module)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+func modelFromTFENoCodeModule(v *tfe.RegistryNoCodeModule) modelNoCodeModule {
+	return modelNoCodeModule{
+		ID:               types.StringValue(v.ID),
+		Organization:     types.StringValue(v.Organization.Name),
+		RegistryModuleID: types.StringValue(string(v.RegistryModule.ID)),
+		Namespace:        types.StringValue(v.RegistryModule.Namespace),
+		VersionPin:       types.StringValue(v.VersionPin),
+		Enabled:          types.BoolValue(v.Enabled),
+	}
 }
