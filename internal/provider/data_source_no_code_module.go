@@ -16,9 +16,8 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ datasource.DataSource                   = &dataSourceTFENoCodeModule{}
-	_ datasource.DataSourceWithConfigure      = &dataSourceTFENoCodeModule{}
-	_ datasource.DataSourceWithValidateConfig = &dataSourceTFENoCodeModule{}
+	_ datasource.DataSource              = &dataSourceTFENoCodeModule{}
+	_ datasource.DataSourceWithConfigure = &dataSourceTFENoCodeModule{}
 )
 
 // NewNoCodeModuleDataSource is a helper function to simplify the implementation.
@@ -76,17 +75,6 @@ func (d *dataSourceTFENoCodeModule) Schema(_ context.Context, _ datasource.Schem
 				Computed:    true,
 			},
 		},
-	}
-}
-
-func (d *dataSourceTFENoCodeModule) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
-	var config modelNoCodeModule
-
-	// Read Terraform plan data into the model
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-
-	if resp.Diagnostics.HasError() {
-		return
 	}
 }
 
