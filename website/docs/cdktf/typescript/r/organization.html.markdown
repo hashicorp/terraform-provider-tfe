@@ -51,6 +51,7 @@ The following arguments are supported:
 * `ownersTeamSamlRoleId` - (Optional) The name of the "owners" team.
 * `costEstimationEnabled` - (Optional) Whether or not the cost estimation feature is enabled for all workspaces in the organization. Defaults to true. In a Terraform Cloud organization which does not have Teams & Governance features, this value is always false and cannot be changed. In Terraform Enterprise, Cost Estimation must also be enabled in Site Administration.
 * `sendPassingStatusesForUntriggeredSpeculativePlans` - (Optional) Whether or not to send VCS status updates for untriggered speculative plans. This can be useful if large numbers of untriggered workspaces are exhausting request limits for connected version control service providers like GitHub. Defaults to false. In Terraform Enterprise, this setting has no effect and cannot be changed but is also available in Site Administration.
+* `aggregated_commit_status_enabled` - (Optional) Whether or not to enable Aggregated Status Checks. This can be useful for monorepo repositories with multiple workspaces receiving status checks for events such as a pull request. If enabled, `sendPassingStatusesForUntriggeredSpeculativePlans` needs to be false.
 * `assessmentsEnforced` - (Optional) (Available only in Terraform Cloud) Whether to force health assessments (drift detection) on all eligible workspaces or allow workspaces to set their own preferences.
 * `allowForceDeleteWorkspaces` - (Optional) Whether workspace administrators are permitted to delete workspaces with resources under management. If false, only organization owners may delete these workspaces. Defaults to false.
 
@@ -67,4 +68,4 @@ example:
 terraform import tfe_organization.test my-org-name
 ```
 
-<!-- cache-key: cdktf-0.20.1 input-e999dce0c812e7592cf4dee664b3d7cf3ca7d5544304b1163f915d3bcd134ee2 -->
+<!-- cache-key: cdktf-0.20.1 input-8232e931ceb3d6923cd408b51f119f4ae4c80b0a47e8df4bbdd7277ee90208d9 -->
