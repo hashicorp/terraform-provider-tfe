@@ -57,7 +57,6 @@ func (d *dataSourceTFENoCodeModule) Schema(_ context.Context, _ datasource.Schem
 			},
 			"organization": schema.StringAttribute{
 				Description: "Name of the organization.",
-				Optional:    true,
 				Computed:    true,
 			},
 			"namespace": schema.StringAttribute{
