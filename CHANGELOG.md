@@ -6,6 +6,7 @@ FEATURES:
 * **New Resource**: `r/tfe_registry_provider` is a new resource for managing public and private providers in the private registry, by @tmatilai [1185](https://github.com/hashicorp/terraform-provider-tfe/pull/1185)
 * **New Data Source**: `d/tfe_registry_provider` is a new data source to retrieve information about a public or private provider in the private registry, by @tmatilai [1185](https://github.com/hashicorp/terraform-provider-tfe/pull/1185)
 * **New Data Source**: `d/tfe_registry_providers` is a new data source to retrieve information about public and private providers in the private registry, by @tmatilai [1185](https://github.com/hashicorp/terraform-provider-tfe/pull/1185)
+* **New Data Source**: `d/tfe_no_code_module` is a new data source to retrieve information about a no-code module, by @catsby [1242](https://github.com/hashicorp/terraform-provider-tfe/pull/1242)
 * **New Resource**: `r/tfe_sentinel_version` adds the ability for admins to configure settings for sentinel versions ([#1202](https://github.com/hashicorp/terraform-provider-tfe/pull/1202))
 * **New Resource**: `r/tfe_opa_version` adds the ability for admins to configure settings for OPA versions ([#1202](https://github.com/hashicorp/terraform-provider-tfe/pull/1202))
 * `r/tfe_policy_set`: Add `agent_enabled` and `policy_tool_version` attributes to allow setting a policy runtime version to the policy set, by @mrinalirao [1234](https://github.com/hashicorp/terraform-provider-tfe/pull/1234)
