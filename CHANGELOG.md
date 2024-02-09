@@ -45,7 +45,7 @@ FEATURES:
 
 ENHANCEMENTS:
 * `d/tfe_organization`: Make `name` argument optional if configured for the provider, by @tmatilai [1133](https://github.com/hashicorp/terraform-provider-tfe/pull/1133)
-* `r/tfe_workspace`: Add `exclusive_tags` boolean to allow the provider to ignore externally created tags
+* `r/tfe_workspace`: Add `exclusive_tags` boolean to allow the provider to ignore externally created tags, by @mbillow [1251](https://github.com/hashicorp/terraform-provider-tfe/pull/1251)
 
 ## v0.50.0
 
