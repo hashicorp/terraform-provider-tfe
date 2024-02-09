@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
@@ -207,6 +208,12 @@ func resourceTFEWorkspace() *schema.Resource {
 				Optional: true,
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+
+			"exclusive_tags": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
 			},
 
 			"terraform_version": {
@@ -528,9 +535,20 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	d.Set("agent_pool_id", agentPoolID)
 
-	var tagNames []interface{}
-	for _, tagName := range workspace.TagNames {
-		tagNames = append(tagNames, tagName)
+	tagNames := make([]interface{}, 0)
+	if d.Get("exclusive_tags").(bool) {
+		for _, tagName := range workspace.TagNames {
+			tagNames = append(tagNames, tagName)
+		}
+	} else {
+		controlledTags := d.Get("tag_names").(*schema.Set).List()
+		for _, controlledTag := range controlledTags {
+			for _, apiTag := range workspace.TagNames {
+				if reflect.DeepEqual(controlledTag, apiTag) {
+					tagNames = append(tagNames, apiTag)
+				}
+			}
+		}
 	}
 	d.Set("tag_names", tagNames)
 

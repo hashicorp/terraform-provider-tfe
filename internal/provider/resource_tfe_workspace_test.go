@@ -1226,6 +1226,10 @@ func TestAccTFEWorkspace_patternsAndPrefixesConflicting(t *testing.T) {
 func TestAccTFEWorkspace_changeTags(t *testing.T) {
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -1338,6 +1342,41 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 				// bad tags
 				Config:      testAccTFEWorkspace_basicBadTag(rInt),
 				ExpectError: regexp.MustCompile(`"-Hello" is not a valid tag name.`),
+			},
+			{
+				Config: testAccTFEWorkspace_basicNonExclusiveTags(rInt),
+			},
+			{
+				PreConfig: func() {
+					newTags := tfe.WorkspaceAddTagsOptions{Tags: []*tfe.Tag{{Name: "external"}}}
+					err := tfeClient.Workspaces.AddTags(context.Background(), workspace.ID, newTags)
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				Config: testAccTFEWorkspace_basicNonExclusiveTags(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace, testAccProvider),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_names.#", "2"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_names.0", "fav"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_names.1", "test"),
+					func(state *terraform.State) error {
+						r, err := tfeClient.Workspaces.ListTags(context.Background(), workspace.ID, &tfe.WorkspaceTagListOptions{})
+						if err != nil {
+							return err
+						}
+						for _, tag := range r.Items {
+							if tag.Name == "external" {
+								return nil
+							}
+						}
+						return fmt.Errorf("externally managed tag not found on workspace")
+					},
+				),
 			},
 		},
 	})
@@ -2763,6 +2802,22 @@ resource "tfe_workspace" "foobar" {
   organization       = tfe_organization.foobar.id
   auto_apply         = true
   tag_names          = ["fav", "prod"]
+}`, rInt)
+}
+
+func testAccTFEWorkspace_basicNonExclusiveTags(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name               = "workspace-test"
+  organization       = tfe_organization.foobar.id
+  auto_apply         = true
+  tag_names          = ["fav", "test"]
+  exclusive_tags     = false
 }`, rInt)
 }
 
