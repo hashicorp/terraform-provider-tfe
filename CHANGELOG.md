@@ -1,3 +1,8 @@
+## UNRELEASED
+
+FEATURES:
+* `r/tfe_workspace`: Add `ignore_additional_tag_names` which explicitly ignores tag_names _not_ defined by config to exist on the workspace without being overwritten when the resource is refreshed, by @brandonc and @mbillow
+
 ## v0.52.0
 
 FEATURES:

@@ -113,7 +113,7 @@ The following arguments are supported:
   workspace will display their output as text logs.
 * `ssh_key_id` - (Optional) The ID of an SSH key to assign to the workspace.
 * `tag_names` - (Optional) A list of tag names for this workspace. Note that tags must only contain lowercase letters, numbers, colons, or hyphens.
-* `terraform_version` - (Optional) The version of Terraform to use for this
+* `ignore_additional_tag_names` - (Optional) A boolean value that, when set to true, allows additional unmanaged tags to be applied to this workspace outside of terraform without being overwritten by `tag_names` config. This creates exceptional behavior in terraform with respect to `tag_names` and is not recommended.
   workspace. This can be either an exact version or a
   [version constraint](https://developer.hashicorp.com/terraform/language/expressions/version-constraints)
   (like `~> 1.0.0`); if you specify a constraint, the workspace will always use
