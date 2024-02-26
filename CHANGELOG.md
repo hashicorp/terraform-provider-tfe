@@ -1,7 +1,7 @@
 ## UNRELEASED
 
 FEATURES:
-* `r/tfe_workspace`: Add `ignore_additional_tag_names` which explicitly ignores tag_names _not_ defined by config to exist on the workspace without being overwritten when the resource is refreshed, by @brandonc and @mbillow
+* `r/tfe_workspace`: Add `ignore_additional_tag_names` which explicitly ignores `tag_names` _not_ defined by config so they will not be overwritten by the configured tags, by @brandonc and @mbillow [1254](https://github.com/hashicorp/terraform-provider-tfe/pull/1254)
 
 ## v0.52.0
 
