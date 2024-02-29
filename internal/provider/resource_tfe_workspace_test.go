@@ -1226,6 +1226,10 @@ func TestAccTFEWorkspace_patternsAndPrefixesConflicting(t *testing.T) {
 func TestAccTFEWorkspace_changeTags(t *testing.T) {
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -1338,6 +1342,44 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 				// bad tags
 				Config:      testAccTFEWorkspace_basicBadTag(rInt),
 				ExpectError: regexp.MustCompile(`"-Hello" is not a valid tag name.`),
+			},
+			{
+				Config: testAccTFEWorkspace_ignoreAdditional(rInt),
+			},
+			{
+				PreConfig: func() {
+					newTags := tfe.WorkspaceAddTagsOptions{Tags: []*tfe.Tag{{Name: "unmanaged"}}}
+					err := tfeClient.Workspaces.AddTags(context.Background(), workspace.ID, newTags)
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				Config: testAccTFEWorkspace_ignoreAdditional(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace, testAccProvider),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_names.#", "2"),
+					resource.TestCheckTypeSetElemAttr(
+						"tfe_workspace.foobar", "tag_names.*", "foo"),
+					resource.TestCheckTypeSetElemAttr(
+						"tfe_workspace.foobar", "tag_names.*", "bar"),
+					func(state *terraform.State) error {
+						r, err := tfeClient.Workspaces.ListTags(context.Background(), workspace.ID, &tfe.WorkspaceTagListOptions{})
+						if err != nil {
+							return err
+						}
+						if len(r.Items) != 3 {
+							return fmt.Errorf("expected 3 tags, got %d", len(r.Items))
+						}
+						for _, tag := range r.Items {
+							if tag.Name == "unmanaged" {
+								return nil
+							}
+						}
+						return fmt.Errorf("unmanaged tag not found on workspace")
+					},
+				),
 			},
 		},
 	})
@@ -2778,6 +2820,21 @@ resource "tfe_workspace" "foobar" {
   organization       = tfe_organization.foobar.id
   auto_apply         = true
   tag_names          = []
+}`, rInt)
+}
+
+func testAccTFEWorkspace_ignoreAdditional(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+resource "tfe_workspace" "foobar" {
+  name                        = "workspace-test"
+  organization                = tfe_organization.foobar.id
+  auto_apply                  = true
+  tag_names                   = ["foo", "bar"]
+  ignore_additional_tag_names = true
 }`, rInt)
 }
 

@@ -209,6 +209,11 @@ func resourceTFEWorkspace() *schema.Resource {
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
+			"ignore_additional_tag_names": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+
 			"terraform_version": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -529,8 +534,11 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("agent_pool_id", agentPoolID)
 
 	var tagNames []interface{}
+	managedTags := d.Get("tag_names").(*schema.Set)
 	for _, tagName := range workspace.TagNames {
-		tagNames = append(tagNames, tagName)
+		if managedTags.Contains(tagName) || !d.Get("ignore_additional_tag_names").(bool) {
+			tagNames = append(tagNames, tagName)
+		}
 	}
 	d.Set("tag_names", tagNames)
 
