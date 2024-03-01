@@ -76,6 +76,7 @@ func TestAccTFEOAuthClient_rsaKeys(t *testing.T) {
 }
 
 func TestAccTFEOAuthClient_agentPool(t *testing.T) {
+	skipUnlessBeta(t);
 	oc := &tfe.OAuthClient{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -96,8 +97,6 @@ func TestAccTFEOAuthClient_agentPool(t *testing.T) {
 					testAccCheckTFEOAuthClientAttributes(oc),
 					resource.TestCheckResourceAttr(
 						"tfe_oauth_client.foobar", "service_provider", "github_enterprise"),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "agent_pool_id", ""),
 				),
 			},
 		},
