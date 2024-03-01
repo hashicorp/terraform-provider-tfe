@@ -76,10 +76,8 @@ func TestAccTFEOAuthClient_rsaKeys(t *testing.T) {
 }
 
 func TestAccTFEOAuthClient_agentPool(t *testing.T) {
-	skipUnlessBeta(t);
+	skipUnlessBeta(t)
 	oc := &tfe.OAuthClient{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
@@ -91,7 +89,7 @@ func TestAccTFEOAuthClient_agentPool(t *testing.T) {
 		CheckDestroy: testAccCheckTFEOAuthClientDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOAuthClient_agentPool(rInt),
+				Config: testAccTFEOAuthClient_agentPool(),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOAuthClientExists("tfe_oauth_client.foobar", oc),
 					testAccCheckTFEOAuthClientAttributes(oc),
@@ -212,24 +210,23 @@ EOT
 }`, rInt)
 }
 
-func testAccTFEOAuthClient_agentPool(rInt int) string {
+func testAccTFEOAuthClient_agentPool() string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
+data "tfe_organization" "foobar" {
+  name  = "xxx"
 }
 
-resource "tfe_agent_pool" "foobar" {
-  name = "agent-pool-test"
-  organization = tfe_organization.foobar.name
+data "tfe_agent_pool" "foobar" {
+  name = "xxx"
+  organization = data.tfe_organization.foobar.name
 }
 
 resource "tfe_oauth_client" "foobar" {
-  organization     = tfe_organization.foobar.id
-  api_url          = "https://githubenterprise.xxx"
+  organization     = data.tfe_organization.foobar.name
+  api_url          = "https://githubenterprise.xxx/api/v3"
   http_url         = "https://githubenterprise.xxx"
   oauth_token      = "%s"
   service_provider = "github_enterprise"
-  agent_pool_id    = tfe_agent_pool.foobar.id
-}`, rInt, envGithubToken)
+  agent_pool_id    = data.tfe_agent_pool.foobar.id
+}`, envGithubToken)
 }
