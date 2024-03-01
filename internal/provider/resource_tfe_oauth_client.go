@@ -115,7 +115,6 @@ func resourceTFEOAuthClient() *schema.Resource {
 			"agent_pool_id": {
 				Type:     schema.TypeString,
 				Optional: true,
-				Computed: true,
 			},
 		},
 	}
