@@ -33,18 +33,15 @@ from imports.tfe.data_tfe_outputs import DataTfeOutputs
 class MyConvertedCode(TerraformStack):
     def __init__(self, scope, name):
         super().__init__(scope, name)
-        # The following providers are missing schema information and might need manual adjustments to synthesize correctly: random.
-        #     For a more precise conversion please use the --provider flag in convert.
         foo = DataTfeOutputs(self, "foo",
             organization="my-org",
             workspace="my-workspace"
         )
         Id(self, "vpc_id",
             byte_length=8,
-            keepers=[{
+            keepers={
                 "bar": foo.values.bar
             }
-            ]
         )
 ```
 
@@ -62,4 +59,4 @@ The following attributes are exported:
 * `values` - The current output values for the specified workspace.
 * `nonsensitive_values` - The current non-sensitive output values for the specified workspace, this is a subset of all output values.
 
-<!-- cache-key: cdktf-0.19.0 input-c5e0e650228e3496c8423d4ac324d85b57a7698f1129677436d66e6843b6b758 -->
+<!-- cache-key: cdktf-0.20.1 input-c5e0e650228e3496c8423d4ac324d85b57a7698f1129677436d66e6843b6b758 -->

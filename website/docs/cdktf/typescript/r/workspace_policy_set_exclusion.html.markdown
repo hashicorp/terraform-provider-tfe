@@ -11,7 +11,7 @@ description: |-
 
 Adds and removes policy sets from an excluded workspace
 
--> **Note:** `tfePolicySet` has an argument `workspaceIds` that should not be used alongside this resource. They attempt to manage the same attachments.
+-> **Note:** `tfe_policy_set` has an argument `workspaceIds` that should not be used alongside this resource. They attempt to manage the same attachments.
 
 ## Example Usage
 
@@ -83,4 +83,4 @@ Excluded Workspace Policy Sets can be imported; use `<ORGANIZATION>/<WORKSPACE N
 terraform import tfe_workspace_policy_set_exclusion.test 'my-org-name/workspace/policy-set-name'
 ```
 
-<!-- cache-key: cdktf-0.19.0 input-997093454ffecd4c222a0dd8330d635ee80e18f9571307774bda8fd64ae29fa2 -->
+<!-- cache-key: cdktf-0.20.1 input-997093454ffecd4c222a0dd8330d635ee80e18f9571307774bda8fd64ae29fa2 -->

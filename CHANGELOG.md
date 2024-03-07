@@ -1,18 +1,55 @@
-# UNRELEASED
-<!-- Add CHANGELOG entry to this section for any PR awaiting the next release -->
-<!-- Please also include if this is a Bug Fix, Enhancement, or Feature -->
+## UNRELEASED
 
-BREAKING CHANGES:
-* `r/tfe_workspace`: Default value of the `execution_mode` field now uses the organization's `default_execution_mode`. If no `default_execution_mode` has been set, the default `execution_mode` will be unchanged (i.e. `remote`).
+FEATURES:
+* `r/tfe_workspace`: Add `ignore_additional_tag_names` which explicitly ignores `tag_names` _not_ defined by config so they will not be overwritten by the configured tags, by @brandonc and @mbillow [1254](https://github.com/hashicorp/terraform-provider-tfe/pull/1254)
+* `r/tfe_oauth_client`: Add `organization_scoped` attribute, by @Netra2104 [1142](https://github.com/hashicorp/terraform-provider-tfe/pull/1142)
+
+BUG FIXES:
+
+* `r/tfe_registry_module`: Fix registry module always triggering re-creation when an organization is not present, by @hashimoon [1263](https://github.com/hashicorp/terraform-provider-tfe/pull/1263)
+
+## v0.52.0
+
+FEATURES:
+* **New Resource**: `r/tfe_registry_provider` is a new resource for managing public and private providers in the private registry, by @tmatilai [1185](https://github.com/hashicorp/terraform-provider-tfe/pull/1185)
+* **New Data Source**: `d/tfe_registry_provider` is a new data source to retrieve information about a public or private provider in the private registry, by @tmatilai [1185](https://github.com/hashicorp/terraform-provider-tfe/pull/1185)
+* **New Data Source**: `d/tfe_registry_providers` is a new data source to retrieve information about public and private providers in the private registry, by @tmatilai [1185](https://github.com/hashicorp/terraform-provider-tfe/pull/1185)
+* **New Data Source**: `d/tfe_no_code_module` is a new data source to retrieve information about a no-code module, by @catsby [1242](https://github.com/hashicorp/terraform-provider-tfe/pull/1242)
+* **New Resource**: `r/tfe_sentinel_version` adds the ability for Terraform Enterprise admins to configure settings for sentinel versions ([#1202](https://github.com/hashicorp/terraform-provider-tfe/pull/1202))
+* **New Resource**: `r/tfe_opa_version` adds the ability for Terraform Enterprise admins to configure settings for OPA versions ([#1202](https://github.com/hashicorp/terraform-provider-tfe/pull/1202))
+* `r/tfe_policy_set`: Add `agent_enabled` and `policy_tool_version` attributes to allow setting a policy runtime version to the policy set, by @mrinalirao [1234](https://github.com/hashicorp/terraform-provider-tfe/pull/1234)
+* `d/tfe_policy_set`: Add `agent_enabled` and `policy_tool_version` attributes to get the policy runtime version of a policy set, by @mrinalirao [1234](https://github.com/hashicorp/terraform-provider-tfe/pull/1234)
+* `r/tfe_organization`: Add `aggregated_commit_status_enabled` attribute, by @mjyocca [1169](https://github.com/hashicorp/terraform-provider-tfe/pull/1169)
+* `d/tfe_organization`: Add `aggregated_commit_status_enabled` attribute, by @mjyocca [1169](https://github.com/hashicorp/terraform-provider-tfe/pull/1169)
+
+BUG FIXES:
+
+* `r/tfe_workspace`: Fix panic on creation when `trigger_prefixes = [""]`, by @nfagerlund [1214](https://github.com/hashicorp/terraform-provider-tfe/pull/1214)
+
+## v0.51.1
+
+BUG FIXES:
+* `r/tfe_admin_organization_settings`: Fixed default provider organization usage, by @brandonc [1183](https://github.com/hashicorp/terraform-provider-tfe/pull/1183)
+* `r/tfe_registry_gpg_key`: Fixed update plans when using default organization, by @brandonc [1190](https://github.com/hashicorp/terraform-provider-tfe/pull/1190)
+* `/r/tfe_workspace_settings`: Fix compatibility with older versions of Terraform Enterprise when using agent execution by @brandonc [1193](https://github.com/hashicorp/terraform-provider-tfe/pull/1193)
+
+## v0.51.0
+
+DEPRECATIONS and BREAKING CHANGES:
+* `r/tfe_workspace`: `execution_mode` and `agent_pool_id` attributes have been deprecated in favor of a new resource, `tfe_workspace_settings`. Note that these fields no longer compute defaults which is consistent with using a new resource to manage these same settings. In practice, this means that if you unset `execution_mode` or `agent_pool_id` without also creating a `tfe_workspace_settings`, the setting will no longer revert to the default "remote" mode. To migrate, relocate the `execution_mode` and `agent_pool_id` arguments to `tfe_workspace_settings`.
 
 BUG FIXES:
 * `r/tfe_policy`: Fix the provider ignoring updates to the `query` field, by @skeggse [1108](https://github.com/hashicorp/terraform-provider-tfe/pull/1108)
+* Fix the undetected change when modifying the `organization` default in the provider configuration by @brandonc [1152](https://github.com/hashicorp/terraform-provider-tfe/issue/1152)
+* New resource `r/tfe_workspace_settings`: Can be used to break any circular dependency between `tfe_workspace` and `tfe_agent_pool_allowed_workspaces` by managing the `agent_pool_id` for a Workspace by @brandonc [1159](https://github.com/hashicorp/terraform-provider-tfe/pull/1159)
 
 FEATURES:
 * `d/tfe_registry_module`: Add `vcs_repo.tags` and `vcs_repo.branch` attributes to allow configuration of `publishing_mechanism`. Add `test_config` to support running tests on `branch`-based registry modules, by @hashimoon [1096](https://github.com/hashicorp/terraform-provider-tfe/pull/1096)
-* **New Resource**: `r/tfe_organization_default_execution_mode` is a new resource to set the `default_execution_mode` and `default_agent_pool_id` for an organization, by @SwiftEngineer [1137](https://github.com/hashicorp/terraform-provider-tfe/pull/1137)'
-* `r/tfe_workspace`: Now uses the organization's `default_execution_mode` and `default_agent_pool_id` as the default `execution_mode`, by @SwiftEngineer [1137](https://github.com/hashicorp/terraform-provider-tfe/pull/1137)'
-* `r/tfe_oauth_client`: Add `organization_scoped` attribute, by @Netra2104 [1142](https://github.com/hashicorp/terraform-provider-tfe/pull/1142)
+* **New Resource**: `r/tfe_organization_default_settings` is a new resource to set the `default_execution_mode` and `default_agent_pool_id` for an organization, by @SwiftEngineer [1137](https://github.com/hashicorp/terraform-provider-tfe/pull/1137)'
+* **New Resource**: `r/tfe_workspace_settings` Uses the `tfe_organization_default_settings` `default_execution_mode` and `default_agent_pool_id` as the default `execution_mode` by @brandonc and @laurenolivia [1159](https://github.com/hashicorp/terraform-provider-tfe/pull/1159)
+* **New Resource**: `r/tfe_registry_gpg_key` is a new resource for managing private registry GPG keys, by @tmatilai [1160](https://github.com/hashicorp/terraform-provider-tfe/pull/1160)
+* **New Data Source**: `d/tfe_registry_gpg_key` is a new data source to retrieve a private registry GPG key, by @tmatilai [1160](https://github.com/hashicorp/terraform-provider-tfe/pull/1160)
+* **New Data Source**: `d/tfe_registry_gpg_keys` is a new data source to retrieve all private registry GPG keys of an organization, by @tmatilai [1160](https://github.com/hashicorp/terraform-provider-tfe/pull/1160)
 
 ENHANCEMENTS:
 * `d/tfe_organization`: Make `name` argument optional if configured for the provider, by @tmatilai [1133](https://github.com/hashicorp/terraform-provider-tfe/pull/1133)

@@ -29,7 +29,7 @@ Declare the provider in your configuration and `terraform init` will automatical
 terraform {
   required_providers {
     tfe = {
-      version = "~> 0.50.0"
+      version = "~> 0.51.1"
     }
   }
 }
@@ -45,7 +45,7 @@ The above snippet using `required_providers` is for Terraform 0.13+; if you are 
 
 ```hcl
 provider "tfe" {
-  version = "~> 0.50.0"
+  version = "~> 0.51.1"
   ...
 }
 ```

@@ -17,6 +17,7 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -103,6 +104,57 @@ func TestAccTFEWorkspace_defaultOrg(t *testing.T) {
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", &workspace, providers["tfe"]),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "organization", defaultOrgName),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspaceProviderDefaultOrgChanged(t *testing.T) {
+	// Tests the situation when the provider default organization changes but the
+	// config does not change.
+	workspace := &tfe.Workspace{}
+	defaultOrgName, rInt := setupDefaultOrganization(t)
+	providers := providerWithDefaultOrganization(defaultOrgName)
+
+	client, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	anotherOrg, cleanup := createOrganization(t, client, tfe.OrganizationCreateOptions{
+		Name:  tfe.String(fmt.Sprintf("another-organization-%d", rInt)),
+		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
+	})
+	t.Cleanup(cleanup)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    providers,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroyProvider(providers["tfe"]),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_defaultOrg(),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace, providers["tfe"]),
+					resource.TestCheckResourceAttr("tfe_workspace.foobar", "organization", defaultOrgName),
+				),
+			},
+			{
+				PreConfig: func() {
+					// Modify the provider to return a different default organization
+					providers["tfe"].ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
+						client, err := getClientUsingEnv()
+						return ConfiguredClient{
+							Client:       client,
+							Organization: anotherOrg.Name,
+						}, diag.FromErr(err)
+					}
+				},
+				Config: testAccTFEWorkspace_defaultOrg(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_workspace.foobar", "organization", anotherOrg.Name),
 				),
 			},
 		},
@@ -1174,6 +1226,10 @@ func TestAccTFEWorkspace_patternsAndPrefixesConflicting(t *testing.T) {
 func TestAccTFEWorkspace_changeTags(t *testing.T) {
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -1286,6 +1342,44 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 				// bad tags
 				Config:      testAccTFEWorkspace_basicBadTag(rInt),
 				ExpectError: regexp.MustCompile(`"-Hello" is not a valid tag name.`),
+			},
+			{
+				Config: testAccTFEWorkspace_ignoreAdditional(rInt),
+			},
+			{
+				PreConfig: func() {
+					newTags := tfe.WorkspaceAddTagsOptions{Tags: []*tfe.Tag{{Name: "unmanaged"}}}
+					err := tfeClient.Workspaces.AddTags(context.Background(), workspace.ID, newTags)
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				Config: testAccTFEWorkspace_ignoreAdditional(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace, testAccProvider),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_names.#", "2"),
+					resource.TestCheckTypeSetElemAttr(
+						"tfe_workspace.foobar", "tag_names.*", "foo"),
+					resource.TestCheckTypeSetElemAttr(
+						"tfe_workspace.foobar", "tag_names.*", "bar"),
+					func(state *terraform.State) error {
+						r, err := tfeClient.Workspaces.ListTags(context.Background(), workspace.ID, &tfe.WorkspaceTagListOptions{})
+						if err != nil {
+							return err
+						}
+						if len(r.Items) != 3 {
+							return fmt.Errorf("expected 3 tags, got %d", len(r.Items))
+						}
+						for _, tag := range r.Items {
+							if tag.Name == "unmanaged" {
+								return nil
+							}
+						}
+						return fmt.Errorf("unmanaged tag not found on workspace")
+					},
+				),
 			},
 		},
 	})
@@ -1869,111 +1963,6 @@ func TestAccTFEWorkspace_operationsAndExecutionModeInteroperability(t *testing.T
 						"tfe_workspace.foobar", "execution_mode", "agent"),
 					resource.TestCheckResourceAttrSet(
 						"tfe_workspace.foobar", "agent_pool_id"),
-				),
-			},
-		},
-	})
-}
-
-func TestAccTFEWorkspace_unsetExecutionMode(t *testing.T) {
-	skipIfEnterprise(t)
-
-	tfeClient, err := getClientUsingEnv()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	org, orgCleanup := createBusinessOrganization(t, tfeClient)
-	t.Cleanup(orgCleanup)
-
-	workspace := &tfe.Workspace{}
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccTFEWorkspace_executionModeAgent(org.Name),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "operations", "true"),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "execution_mode", "agent"),
-					resource.TestCheckResourceAttrSet(
-						"tfe_workspace.foobar", "agent_pool_id"),
-				),
-			},
-			{
-				Config: testAccTFEWorkspace_executionModeNull(org.Name),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "operations", "true"),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "execution_mode", "remote"),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "agent_pool_id", ""),
-				),
-			},
-		},
-	})
-}
-
-func TestAccTFEWorkspace_unsetExecutionModeWithOrgLevelDefault(t *testing.T) {
-	skipIfEnterprise(t)
-
-	tfeClient, err := getClientUsingEnv()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	org, agentPool, orgCleanup := createBusinessOrganizationWithAgentDefaultExecutionMode(t, tfeClient)
-	t.Cleanup(orgCleanup)
-
-	workspace := &tfe.Workspace{}
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccTFEWorkspace_executionModeAgent(org.Name),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "operations", "true"),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "execution_mode", "agent"),
-					resource.TestCheckResourceAttrSet(
-						"tfe_workspace.foobar", "agent_pool_id"),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "setting_overwrites.0.execution_mode", "true"),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "setting_overwrites.0.agent_pool", "true"),
-				),
-			},
-			{
-				Config: testAccTFEWorkspace_executionModeNull(org.Name),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "operations", "true"),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "execution_mode", "agent"),
-					// workspace should now be using the organization default agent pool
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "agent_pool_id", agentPool.ID),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "setting_overwrites.0.execution_mode", "false"),
-					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "setting_overwrites.0.agent_pool", "false"),
 				),
 			},
 		},
@@ -2834,6 +2823,21 @@ resource "tfe_workspace" "foobar" {
 }`, rInt)
 }
 
+func testAccTFEWorkspace_ignoreAdditional(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+resource "tfe_workspace" "foobar" {
+  name                        = "workspace-test"
+  organization                = tfe_organization.foobar.id
+  auto_apply                  = true
+  tag_names                   = ["foo", "bar"]
+  ignore_additional_tag_names = true
+}`, rInt)
+}
+
 func testAccTFEWorkspace_basicBadTag(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
@@ -2968,22 +2972,6 @@ resource "tfe_workspace" "foobar" {
   organization = "%s"
   execution_mode = "agent"
   agent_pool_id = tfe_agent_pool.foobar.id
-}`, organization, organization)
-}
-
-// while testing the flow of unsetting execution mode as in TestAccTFEWorkspace_unsetExecutionMode
-// the resource "tfe_agent_pool" has been kept in both configs(testAccTFEWorkspace_executionModeAgent & testAccTFEWorkspace_executionModeNull)
-// this prevents an attempt to destroy the agent pool before disassociating it from the workspace
-func testAccTFEWorkspace_executionModeNull(organization string) string {
-	return fmt.Sprintf(`
-resource "tfe_agent_pool" "foobar" {
-  name = "agent-pool-test"
-  organization = "%s"
-}
-
-resource "tfe_workspace" "foobar" {
-  name         = "workspace-test"
-  organization = "%s"
 }`, organization, organization)
 }
 

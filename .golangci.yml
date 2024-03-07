@@ -24,7 +24,6 @@ linters:
     - gosec #https://github.com/securego/gosec
     - predeclared #https://github.com/nishanths/predeclared
     - unconvert #https://github.com/mdempsky/unconvert
-    - wrapcheck #https://github.com/tomarrell/wrapcheck
 
 issues:
   exclude-rules:
@@ -101,19 +100,6 @@ issues:
       -|resource_tfe_run_trigger|resource_tfe_team_access|resource_tfe_organization_membership|resource_tfe_policy_set|resource_tfe_team_member|
       -|resource_tfe_workspace|resource_tfe_team_organization_member|resource_tfe_variable_set|resource_tfe_team_project_access)\.go
     text: "SA1019"
-  - linters:
-      - wrapcheck
-    path: (config_unix|data_source_slug|data_source_workspace|provider|resource_tfe_variable|resource_tfe_workspace|provider_test)\.go
-    text: "error returned from external package is unwrapped"
-  - linters:
-      - wrapcheck
-    path: (logging|plugin_provider|resource_tfe_oauth_client|resource_tfe_organization|resource_tfe_terraform_version|workspace_helpers|resource_tfe_agent_pool_test|
-      -|resource_tfe_agent_token_test|resource_tfe_notification_configuration_test|resource_tfe_oauth_client_test|resource_tfe_organization_membership_test|
-      -|resource_tfe_organization_test|resource_tfe_organization_token_test|resource_tfe_policy_set_parameter_test|resource_tfe_policy_set_test|resource_tfe_registry_module_test|
-      -|resource_tfe_run_trigger_test|resource_tfe_sentinel_policy_test|resource_tfe_ssh_key_test|resource_tfe_team_access_test|resource_tfe_team_member_test|
-      -|resource_tfe_team_member_test|resource_tfe_team_organization_member_test|resource_tfe_team_test|resource_tfe_team_token_test|resource_tfe_terraform_version_test|
-      -|resource_tfe_variable_set_test|resource_tfe_workspace_test|resource_tfe_team_members_test|resource_tfe_team_members_test|resource_tfe_variable_test)\.go
-    text: "error returned from interface method should be wrapped"
 linters-settings:
   # errcheck:
   #   # https://github.com/kisielk/errcheck#excluding-functions

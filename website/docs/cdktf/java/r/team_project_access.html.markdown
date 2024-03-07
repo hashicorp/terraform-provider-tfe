@@ -70,7 +70,7 @@ The following permissions apply to the project itself.
 </n>
 </n>
 
-The following permissions apply to all workpsaces (and future workspaces) in the project.
+The following permissions apply to all workspaces (and future workspaces) in the project.
 
 | workspace_access     | Description, Default, Valid Values                    |
 |----------------------|-------------------------------------------------------|

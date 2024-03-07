@@ -1,23 +1,34 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
+// NOTE: This is a legacy resource and should be migrated to the Plugin
+// Framework if substantial modifications are planned. See
+// docs/new-resources.md if planning to use this code as boilerplate for
+// a new resource.
+
 package provider
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
+
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"log"
 )
 
-func resourceTFEOrganizationDefaultExecutionMode() *schema.Resource {
+func resourceTFEOrganizationDefaultSettings() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceTFEOrganizationDefaultExecutionModeCreate,
-		Read:   resourceTFEOrganizationDefaultExecutionModeRead,
-		Delete: resourceTFEOrganizationDefaultExecutionModeDelete,
+		Create: resourceTFEOrganizationDefaultSettingsCreate,
+		Read:   resourceTFEOrganizationDefaultSettingsRead,
+		Delete: resourceTFEOrganizationDefaultSettingsDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: resourceTFEOrganizationDefaultExecutionModeImporter,
+			StateContext: resourceTFEOrganizationDefaultSettingsImporter,
 		},
+
+		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
 
 		Schema: map[string]*schema.Schema{
 			"organization": {
@@ -50,7 +61,7 @@ func resourceTFEOrganizationDefaultExecutionMode() *schema.Resource {
 	}
 }
 
-func resourceTFEOrganizationDefaultExecutionModeCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEOrganizationDefaultSettingsCreate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
 	// Get the organization name.
@@ -85,10 +96,10 @@ func resourceTFEOrganizationDefaultExecutionModeCreate(d *schema.ResourceData, m
 
 	d.SetId(organization)
 
-	return resourceTFEOrganizationDefaultExecutionModeRead(d, meta)
+	return resourceTFEOrganizationDefaultSettingsRead(d, meta)
 }
 
-func resourceTFEOrganizationDefaultExecutionModeRead(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEOrganizationDefaultSettingsRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read the organization: %s", d.Id())
@@ -116,7 +127,7 @@ func resourceTFEOrganizationDefaultExecutionModeRead(d *schema.ResourceData, met
 	return nil
 }
 
-func resourceTFEOrganizationDefaultExecutionModeDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEOrganizationDefaultSettingsDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
 	// Get the organization name.
@@ -138,7 +149,7 @@ func resourceTFEOrganizationDefaultExecutionModeDelete(d *schema.ResourceData, m
 	return nil
 }
 
-func resourceTFEOrganizationDefaultExecutionModeImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceTFEOrganizationDefaultSettingsImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read the organization: %s", d.Id())
