@@ -66,3 +66,5 @@ In addition to all arguments above, the following attributes are exported:
 * `organization` - The organization in which the OAuth client is registered.
 * `service_provider` - The API identifier of the OAuth service provider.
 * `service_provider_display_name` - The display name of the OAuth service provider.
+* `organization_scoped` - Whether or not the agent pool can be used by all workspaces and projects in the organization.
+* `project_ids` - IDs of the projects that use the oauth client.
