@@ -1,6 +1,11 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
+// NOTE: This is a legacy resource and should be migrated to the Plugin
+// Framework if substantial modifications are planned. See
+// docs/new-resources.md if planning to use this code as boilerplate for
+// a new resource.
+
 package provider
 
 import (
@@ -25,6 +30,8 @@ func resourceTFEPolicy() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: resourceTFEPolicyImporter,
 		},
+
+		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -264,7 +271,7 @@ func resourceTFEPolicyUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
 	// nolint:nestif
-	if d.HasChange("description") || d.HasChange("enforce_mode") {
+	if d.HasChange("description") || d.HasChange("enforce_mode") || d.HasChange("query") {
 		// Create a new options struct.
 		options := tfe.PolicyUpdateOptions{}
 
@@ -286,6 +293,10 @@ func resourceTFEPolicyUpdate(d *schema.ResourceData, meta interface{}) error {
 					Mode: tfe.EnforcementMode(tfe.EnforcementLevel(d.Get("enforce_mode").(string))),
 				},
 			}
+		}
+
+		if query, ok := d.GetOk("query"); ok {
+			options.Query = tfe.String(query.(string))
 		}
 
 		log.Printf("[DEBUG] Update configuration for %s policy: %s", vKind, d.Id())

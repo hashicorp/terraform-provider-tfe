@@ -42,6 +42,8 @@ func TestAccTFEPolicySet_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "global", "false"),
 					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "agent_enabled", "false"),
+					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "policy_ids.#", "1"),
 				),
 			},
@@ -49,12 +51,14 @@ func TestAccTFEPolicySet_basic(t *testing.T) {
 	})
 }
 
-func TestAccTFEPolicySetOPA_basic(t *testing.T) {
-	skipUnlessBeta(t)
+func TestAccTFEPolicySet_pinnedPolicyRuntimeVersion(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	sha := genSentinelSha(t, "secret", "data")
+	version := genSafeRandomSentinelVersion()
 
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
@@ -67,7 +71,49 @@ func TestAccTFEPolicySetOPA_basic(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySetOPA_basic(org.Name),
+				Config: testAccTFEPolicySet_pinnedPolicyRuntimeVersion(org.Name, version, sha),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					testAccCheckTFEPolicySetAttributes(policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "tst-terraform"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "description", "Policy Set"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "agent_enabled", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_tool_version", version),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_ids.#", "1"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEPolicySetOPA_basic(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sha := genSentinelSha(t, "secret", "data")
+	version := genSafeRandomOPAVersion()
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	policySet := &tfe.PolicySet{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicySetOPA_basic(org.Name, version, sha),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
@@ -76,7 +122,11 @@ func TestAccTFEPolicySetOPA_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "kind", "opa"),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "overridable", "false"),
+						"tfe_policy_set.foobar", "overridable", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "agent_enabled", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_tool_version", version),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "description", "Policy Set"),
 					resource.TestCheckResourceAttr(
@@ -88,11 +138,12 @@ func TestAccTFEPolicySetOPA_basic(t *testing.T) {
 }
 
 func TestAccTFEPolicySet_updateOverridable(t *testing.T) {
-	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
 	}
+	sha := genSentinelSha(t, "secret", "data")
+	version := genSafeRandomOPAVersion()
 
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
@@ -105,7 +156,7 @@ func TestAccTFEPolicySet_updateOverridable(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySetOPA_basic(org.Name),
+				Config: testAccTFEPolicySetOPA_basic(org.Name, version, sha),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
@@ -116,6 +167,8 @@ func TestAccTFEPolicySet_updateOverridable(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "kind", "opa"),
 					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "agent_enabled", "true"),
+					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "global", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "overridable", "true"),
@@ -123,7 +176,7 @@ func TestAccTFEPolicySet_updateOverridable(t *testing.T) {
 			},
 
 			{
-				Config: testAccTFEPolicySetOPA_overridable(org.Name),
+				Config: testAccTFEPolicySetOPA_overridable(org.Name, version, sha),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					resource.TestCheckResourceAttr(
@@ -132,6 +185,8 @@ func TestAccTFEPolicySet_updateOverridable(t *testing.T) {
 						"tfe_policy_set.foobar", "global", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "kind", "opa"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "agent_enabled", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "workspace_ids.#", "1"),
 					resource.TestCheckResourceAttr(
@@ -979,15 +1034,48 @@ resource "tfe_policy_set" "foobar" {
 }`, organization, organization)
 }
 
-func testAccTFEPolicySetOPA_basic(organization string) string {
+func testAccTFEPolicySet_pinnedPolicyRuntimeVersion(organization string, version string, sha string) string {
 	return fmt.Sprintf(`
+resource "tfe_sentinel_version" "foobar" {
+  version = "%s"
+  url = "https://www.hashicorp.com"
+  sha = "%s"
+}
+
+resource "tfe_sentinel_policy" "foo" {
+  name         = "policy-foo"
+  policy       = "main = rule { true }"
+  organization = "%s"
+}
+
+resource "tfe_policy_set" "foobar" {
+  name         = "tst-terraform"
+  description  = "Policy Set"
+  organization = "%s"
+  agent_enabled = true
+  policy_tool_version = "%s"
+  policy_ids   = [tfe_sentinel_policy.foo.id]
+}`, version, sha, organization, organization, version)
+}
+
+func testAccTFEPolicySetOPA_basic(organization string, version string, sha string) string {
+	return fmt.Sprintf(`
+resource "tfe_opa_version" "foobar" {
+  version = "%s"
+  url = "https://www.hashicorp.com"
+  sha = "%s"
+}
+
 resource "tfe_policy_set" "foobar" {
   name         = "tst-terraform"
   description  = "Policy Set"
   organization = "%s"
   kind         = "opa"
   overridable = "true"
-}`, organization)
+  agent_enabled = "true"
+  policy_tool_version = "%s"
+  depends_on = [tfe_opa_version.foobar]
+}`, version, sha, organization, version)
 }
 
 func testAccTFEPolicySet_empty(organization string) string {
@@ -1024,10 +1112,16 @@ resource "tfe_policy_set" "foobar" {
 }`, organization)
 }
 
-func testAccTFEPolicySetOPA_overridable(organization string) string {
+func testAccTFEPolicySetOPA_overridable(organization string, version string, sha string) string {
 	return fmt.Sprintf(`
 locals {
     organization_name = "%s"
+}
+
+resource "tfe_opa_version" "foobar" {
+  version = "%s"
+  url = "https://www.hashicorp.com"
+  sha = "%s"
 }
 
 resource "tfe_workspace" "foo" {
@@ -1040,8 +1134,10 @@ resource "tfe_policy_set" "foobar" {
   organization = local.organization_name
   workspace_ids = [tfe_workspace.foo.id]
   overridable = "false"
+  agent_enabled = "true"
+  policy_tool_version = "%s"
   kind = "opa"
-}`, organization)
+}`, organization, version, sha, version)
 }
 
 func testAccTFEPolicySet_updatePopulated(organization string) string {

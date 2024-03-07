@@ -703,10 +703,6 @@ func testAccCheckTFENotificationConfigurationAttributesSlack(notificationConfigu
 			return fmt.Errorf("Bad triggers: %v", notificationConfiguration.Triggers)
 		}
 
-		if notificationConfiguration.URL != "http://example.com" {
-			return fmt.Errorf("Bad URL: %s", notificationConfiguration.URL)
-		}
-
 		return nil
 	}
 }

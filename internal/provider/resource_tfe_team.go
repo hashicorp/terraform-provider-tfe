@@ -1,6 +1,11 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
+// NOTE: This is a legacy resource and should be migrated to the Plugin
+// Framework if substantial modifications are planned. See
+// docs/new-resources.md if planning to use this code as boilerplate for
+// a new resource.
+
 package provider
 
 import (
@@ -10,6 +15,8 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+
+	"errors"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -162,7 +169,7 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Create team %s for organization: %s", name, organization)
 	team, err := config.Client.Teams.Create(ctx, organization, options)
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			entitlements, _ := config.Client.Organizations.ReadEntitlements(ctx, organization)
 			if entitlements == nil {
 				return fmt.Errorf("Error creating team %s for organization %s: %w", name, organization, err)
@@ -274,7 +281,7 @@ func resourceTFETeamDelete(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Delete team: %s", d.Id())
 	err := config.Client.Teams.Delete(ctx, d.Id())
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			return nil
 		}
 		return fmt.Errorf("Error deleting team %s: %w", d.Id(), err)

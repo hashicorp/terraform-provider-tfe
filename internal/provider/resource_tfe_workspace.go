@@ -1,6 +1,11 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
+// NOTE: This is a legacy resource and should be migrated to the Plugin
+// Framework if substantial modifications are planned. See
+// docs/new-resources.md if planning to use this code as boilerplate for
+// a new resource.
+
 package provider
 
 import (
@@ -41,11 +46,6 @@ func resourceTFEWorkspace() *schema.Resource {
 		},
 
 		CustomizeDiff: func(c context.Context, d *schema.ResourceDiff, meta interface{}) error {
-			// NOTE: execution mode must be set to default first before calling the validation functions
-			if err := setExecutionModeDefault(c, d); err != nil {
-				return err
-			}
-
 			if err := validateAgentExecution(c, d); err != nil {
 				return err
 			}
@@ -55,6 +55,10 @@ func resourceTFEWorkspace() *schema.Resource {
 			}
 
 			if err := validateTagNames(c, d); err != nil {
+				return err
+			}
+
+			if err := customizeDiffIfProviderDefaultOrganizationChanged(c, d, meta); err != nil {
 				return err
 			}
 
@@ -82,8 +86,9 @@ func resourceTFEWorkspace() *schema.Resource {
 			"agent_pool_id": {
 				Type:          schema.TypeString,
 				Optional:      true,
-				Default:       "",
+				Computed:      true,
 				ConflictsWith: []string{"operations"},
+				Deprecated:    "Use resource tfe_workspace_settings to modify the workspace execution settings. This attribute will be removed in a future release of the provider.",
 			},
 
 			"allow_destroy_plan": {
@@ -109,6 +114,7 @@ func resourceTFEWorkspace() *schema.Resource {
 				Optional:      true,
 				Computed:      true,
 				ConflictsWith: []string{"operations"},
+				Deprecated:    "Use resource tfe_workspace_settings to modify the workspace execution settings. This attribute will be removed in a future release of the provider.",
 				ValidateFunc: validation.StringInSlice(
 					[]string{
 						"agent",
@@ -147,7 +153,7 @@ func resourceTFEWorkspace() *schema.Resource {
 				Type:          schema.TypeBool,
 				Optional:      true,
 				Computed:      true,
-				Deprecated:    "Use execution_mode instead.",
+				Deprecated:    "Use tfe_workspace_settings to modify the workspace execution settings. This attribute will be removed in a future release of the provider.",
 				ConflictsWith: []string{"execution_mode", "agent_pool_id"},
 			},
 
@@ -201,6 +207,11 @@ func resourceTFEWorkspace() *schema.Resource {
 				Optional: true,
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+
+			"ignore_additional_tag_names": {
+				Type:     schema.TypeBool,
+				Optional: true,
 			},
 
 			"terraform_version": {
@@ -323,14 +334,34 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 
 	if v, ok := d.GetOk("agent_pool_id"); ok && v.(string) != "" {
 		options.AgentPoolID = tfe.String(v.(string))
+		options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{
+			ExecutionMode: tfe.Bool(true),
+			AgentPool:     tfe.Bool(true),
+		}
 	}
 
 	if v, ok := d.GetOk("execution_mode"); ok {
-		options.ExecutionMode = tfe.String(v.(string))
+		executionMode := tfe.String(v.(string))
+		options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{
+			ExecutionMode: tfe.Bool(true),
+			AgentPool:     tfe.Bool(true),
+		}
+		options.ExecutionMode = executionMode
 	}
 
 	if v, ok := d.GetOkExists("operations"); ok {
 		options.Operations = tfe.Bool(v.(bool))
+		options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{
+			ExecutionMode: tfe.Bool(true),
+			AgentPool:     tfe.Bool(true),
+		}
+	}
+
+	if options.SettingOverwrites == nil {
+		options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{
+			ExecutionMode: tfe.Bool(false),
+			AgentPool:     tfe.Bool(false),
+		}
 	}
 
 	if v, ok := d.GetOk("source_url"); ok {
@@ -347,7 +378,9 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 
 	if tps, ok := d.GetOk("trigger_prefixes"); ok {
 		for _, tp := range tps.([]interface{}) {
-			options.TriggerPrefixes = append(options.TriggerPrefixes, tp.(string))
+			if val, ok := tp.(string); ok {
+				options.TriggerPrefixes = append(options.TriggerPrefixes, val)
+			}
 		}
 	} else {
 		options.TriggerPrefixes = nil
@@ -438,7 +471,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Read configuration of workspace: %s", id)
 	workspace, err := config.Client.Workspaces.ReadByID(ctx, id)
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			log.Printf("[DEBUG] Workspace %s no longer exists", id)
 			d.SetId("")
 			return nil
@@ -501,8 +534,11 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("agent_pool_id", agentPoolID)
 
 	var tagNames []interface{}
+	managedTags := d.Get("tag_names").(*schema.Set)
 	for _, tagName := range workspace.TagNames {
-		tagNames = append(tagNames, tagName)
+		if managedTags.Contains(tagName) || !d.Get("ignore_additional_tag_names").(bool) {
+			tagNames = append(tagNames, tagName)
+		}
 	}
 	d.Set("tag_names", tagNames)
 
@@ -577,15 +613,39 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			}
 		}
 
+		// NOTE: since agent_pool_id and execution_mode are both deprecated on
+		// tfe_workspace and we want tfe_workspace_settings to be authoritative,
+		// we must not set the overwrites values to false in the checks below.
+		// (Actually, I think we don't need to set them to true here either,
+		// since the API understands an explicit value in an update request to
+		// also result in an implicit overwrite = true.)
 		if d.HasChange("agent_pool_id") {
-			if v, ok := d.GetOk("agent_pool_id"); ok && v.(string) != "" {
-				options.AgentPoolID = tfe.String(v.(string))
+			// Need the raw configuration value of the agent_pool_id because when the workspace's execution mode is set
+			// to default, we can't know for certain what the default value of the agent pool will be. This means we can
+			// only set the agent_pool_id as "NewComputed", meaning that the value returned by the ResourceData will be
+			// whatever the agent_pool_id was in the state
+			agentPoolID := d.GetRawConfig().GetAttr("agent_pool_id")
+
+			// If the agent pool ID was not provided or did not change, the changes made to the execution mode will
+			// be sufficient
+			if !agentPoolID.IsNull() {
+				options.AgentPoolID = tfe.String(agentPoolID.AsString())
+
+				// set setting overwrites
+				options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{
+					AgentPool: tfe.Bool(true),
+				}
 			}
 		}
 
 		if d.HasChange("execution_mode") {
 			if v, ok := d.GetOk("execution_mode"); ok {
 				options.ExecutionMode = tfe.String(v.(string))
+
+				// set setting overwrites
+				options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{
+					ExecutionMode: tfe.Bool(true),
+				}
 			}
 		}
 
@@ -843,35 +903,24 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 	return nil
 }
 
-// since execution_mode is marked as Optional: true, and Computed: true,
-// unsetting the execution_mode in the config after it's been set to a valid
-// value is not detected by ResourceDiff so read value from RawConfig instead
-func setExecutionModeDefault(_ context.Context, d *schema.ResourceDiff) error {
-	configMap := d.GetRawConfig().AsValueMap()
-	operations, operationsReadOk := configMap["operations"]
-	executionMode, executionModeReadOk := configMap["execution_mode"]
-	executionModeState := d.Get("execution_mode")
-	if operationsReadOk && executionModeReadOk {
-		if operations.IsNull() && executionMode.IsNull() && executionModeState != "remote" {
-			err := d.SetNew("execution_mode", "remote")
-			if err != nil {
-				return fmt.Errorf("failed to set execution_mode: %w", err)
-			}
-		}
-	}
-
-	return nil
-}
-
 // An agent pool can only be specified when execution_mode is set to "agent". You currently cannot specify a
 // schema validation based on a different argument's value, so we do so here at plan time instead.
 func validateAgentExecution(_ context.Context, d *schema.ResourceDiff) error {
-	if executionMode, ok := d.GetOk("execution_mode"); ok {
-		executionModeIsAgent := executionMode.(string) == "agent"
-		if !executionModeIsAgent && d.Get("agent_pool_id") != "" {
-			return fmt.Errorf("execution_mode must be set to 'agent' to assign agent_pool_id")
-		} else if executionModeIsAgent && d.NewValueKnown("agent_pool_id") && d.Get("agent_pool_id") == "" {
+	// since execution_mode and agent_pool_id are marked as Optional: true, and
+	// Computed: true, unsetting the execution_mode/agent_pool_id in the config
+	// after it's been set to a valid value is not detected by ResourceDiff so
+	// we need to read the value from RawConfig instead
+	configMap := d.GetRawConfig().AsValueMap()
+	executionMode, executionModeReadOk := configMap["execution_mode"]
+	agentPoolID, agentPoolIDReadOk := configMap["agent_pool_id"]
+	executionModeSet := !executionMode.IsNull() && executionModeReadOk
+	agentPoolIDSet := !agentPoolID.IsNull() && agentPoolIDReadOk
+	if executionModeSet {
+		executionModeIsAgent := executionMode.AsString() == "agent"
+		if executionModeIsAgent && !agentPoolIDSet {
 			return fmt.Errorf("agent_pool_id must be provided when execution_mode is 'agent'")
+		} else if !executionModeIsAgent && agentPoolIDSet {
+			return fmt.Errorf("execution_mode must be set to 'agent' to assign agent_pool_id")
 		}
 	}
 

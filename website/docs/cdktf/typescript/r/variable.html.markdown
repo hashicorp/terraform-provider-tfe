@@ -114,8 +114,8 @@ The following arguments are supported:
 * `sensitive` - (Optional) Whether the value is sensitive. If true then the
 variable is written once and not visible thereafter. Defaults to `false`.
 * One of the following (Required)
-    * `workspace_id` - ID of the workspace that owns the variable.
-    * `variable_set_id` - ID of the variable set that owns the variable.
+    * `workspaceId` - ID of the workspace that owns the variable.
+    * `variableSetId` - ID of the variable set that owns the variable.
 
 ~> **NOTE:** When `sensitive` is set to true, Terraform cannot detect and repair
 drift if `value` is later changed out-of-band via the Terraform Cloud UI.
@@ -198,4 +198,4 @@ example:
 terraform import tfe_variable.test my-org-name/varset-47qC3LmA47piVan7/var-5rTwnSaRPogw6apb
 ```
 
-<!-- cache-key: cdktf-0.19.0 input-c3bad9baf89e2964d9e69299417eec51d0597f0fb81bde0ba7db8d5ce2d6617e -->
+<!-- cache-key: cdktf-0.20.1 input-c3bad9baf89e2964d9e69299417eec51d0597f0fb81bde0ba7db8d5ce2d6617e -->

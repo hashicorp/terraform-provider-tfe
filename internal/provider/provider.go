@@ -103,6 +103,9 @@ func Provider() *schema.Provider {
 			"tfe_policy_set":              dataSourceTFEPolicySet(),
 			"tfe_organization_members":    dataSourceTFEOrganizationMembers(),
 			"tfe_github_app_installation": dataSourceTFEGHAInstallation(),
+			// IMPORTANT:
+			// New data sources should be defined in provider_next.go using
+			// the [Plugin Framework](https://developer.hashicorp.com/terraform/plugin/framework).
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
@@ -112,7 +115,9 @@ func Provider() *schema.Provider {
 			"tfe_agent_token":                    resourceTFEAgentToken(),
 			"tfe_notification_configuration":     resourceTFENotificationConfiguration(),
 			"tfe_oauth_client":                   resourceTFEOAuthClient(),
+			"tfe_opa_version":                    resourceTFEOPAVersion(),
 			"tfe_organization":                   resourceTFEOrganization(),
+			"tfe_organization_default_settings":  resourceTFEOrganizationDefaultSettings(),
 			"tfe_organization_membership":        resourceTFEOrganizationMembership(),
 			"tfe_organization_module_sharing":    resourceTFEOrganizationModuleSharing(),
 			"tfe_organization_run_task":          resourceTFEOrganizationRunTask(),
@@ -127,6 +132,7 @@ func Provider() *schema.Provider {
 			"tfe_no_code_module":                 resourceTFENoCodeModule(),
 			"tfe_run_trigger":                    resourceTFERunTrigger(),
 			"tfe_sentinel_policy":                resourceTFESentinelPolicy(),
+			"tfe_sentinel_version":               resourceTFESentinelVersion(),
 			"tfe_ssh_key":                        resourceTFESSHKey(),
 			"tfe_team":                           resourceTFETeam(),
 			"tfe_team_access":                    resourceTFETeamAccess(),
@@ -144,6 +150,9 @@ func Provider() *schema.Provider {
 			"tfe_workspace_policy_set_exclusion": resourceTFEWorkspacePolicySetExclusion(),
 			"tfe_workspace_run":                  resourceTFEWorkspaceRun(),
 			"tfe_workspace_variable_set":         resourceTFEWorkspaceVariableSet(),
+			// IMPORTANT:
+			// New resources should be defined in provider_next.go using
+			// the [Plugin Framework](https://developer.hashicorp.com/terraform/plugin/framework).
 		},
 		ConfigureContextFunc: configure(),
 	}

@@ -145,6 +145,28 @@ func createOrganization(t *testing.T, client *tfe.Client, options tfe.Organizati
 	}
 }
 
+func createTempWorkspace(t *testing.T, client *tfe.Client, orgName string) *tfe.Workspace {
+	t.Helper()
+
+	ctx := context.Background()
+	ws, err := client.Workspaces.Create(ctx, orgName, tfe.WorkspaceCreateOptions{
+		Name: tfe.String(fmt.Sprintf("tst-workspace-%s", randomString(t))),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() {
+		if err := client.Workspaces.DeleteByID(ctx, ws.ID); err != nil {
+			t.Errorf("Error destroying workspace! WARNING: Dangling resources\n"+
+				"may exist! The full error is show below:\n\n"+
+				"Workspace:%s\nError: %s", ws.ID, err)
+		}
+	})
+
+	return ws
+}
+
 func createOrganizationMembership(t *testing.T, client *tfe.Client, orgName string, options tfe.OrganizationMembershipCreateOptions) *tfe.OrganizationMembership {
 	ctx := context.Background()
 	orgMembership, err := client.OrganizationMemberships.Create(ctx, orgName, options)

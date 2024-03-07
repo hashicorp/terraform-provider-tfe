@@ -48,4 +48,4 @@ In addition to all arguments above, the following attributes are exported:
 * `id` The team project access ID.
 * `access` - The type of access granted to the team on the project.
 
-<!-- cache-key: cdktf-0.19.0 input-204103613e94c6b9eafe1ca3f90afd99a5659e7479ad472937135a7066629cf3 -->
+<!-- cache-key: cdktf-0.20.1 input-204103613e94c6b9eafe1ca3f90afd99a5659e7479ad472937135a7066629cf3 -->

@@ -1,6 +1,11 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
+// NOTE: This is a legacy resource and should be migrated to the Plugin
+// Framework if substantial modifications are planned. See
+// docs/new-resources.md if planning to use this code as boilerplate for
+// a new resource.
+
 package provider
 
 import (
@@ -46,6 +51,18 @@ func dataSourceTFEPolicySet() *schema.Resource {
 				Description: "Whether users can override this policy when it fails during a run. Only valid for OPA policies",
 				Type:        schema.TypeBool,
 				Optional:    true,
+			},
+
+			"agent_enabled": {
+				Description: "Whether the policy set is executed in the TFC agent. True by default for OPA policies",
+				Type:        schema.TypeBool,
+				Computed:    true,
+			},
+
+			"policy_tool_version": {
+				Description: "The policy tool version to run the policy evaluation against",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 
 			"policies_path": {
@@ -141,6 +158,7 @@ func dataSourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error 
 				d.Set("description", policySet.Description)
 				d.Set("global", policySet.Global)
 				d.Set("policies_path", policySet.PoliciesPath)
+				d.Set("agent_enabled", policySet.AgentEnabled)
 
 				if policySet.Kind != "" {
 					d.Set("kind", policySet.Kind)
@@ -148,6 +166,10 @@ func dataSourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error 
 
 				if policySet.Overridable != nil {
 					d.Set("overridable", policySet.Overridable)
+				}
+
+				if policySet.PolicyToolVersion != "" {
+					d.Set("policy_tool_version", policySet.PolicyToolVersion)
 				}
 
 				var vcsRepo []interface{}

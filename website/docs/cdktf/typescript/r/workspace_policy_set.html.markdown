@@ -11,7 +11,7 @@ description: |-
 
 Adds and removes policy sets from a workspace
 
--> **Note:** `tfePolicySet` has an argument `workspaceIds` that should not be used alongside this resource. They attempt to manage the same attachments.
+-> **Note:** `tfe_policy_set` has an argument `workspaceIds` that should not be used alongside this resource. They attempt to manage the same attachments.
 
 ## Example Usage
 
@@ -79,4 +79,4 @@ Workspace Policy Sets can be imported; use `<ORGANIZATION>/<WORKSPACE NAME>/<POL
 terraform import tfe_workspace_policy_set.test 'my-org-name/workspace/policy-set-name'
 ```
 
-<!-- cache-key: cdktf-0.19.0 input-063704782b0ed470f47929ea2ae102aff05366cceeb62a7760562407d4442e44 -->
+<!-- cache-key: cdktf-0.20.1 input-063704782b0ed470f47929ea2ae102aff05366cceeb62a7760562407d4442e44 -->

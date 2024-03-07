@@ -1,6 +1,11 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
+// NOTE: This is a legacy resource and should be migrated to the Plugin
+// Framework if substantial modifications are planned. See
+// docs/new-resources.md if planning to use this code as boilerplate for
+// a new resource.
+
 package provider
 
 import (
@@ -77,6 +82,12 @@ func resourceTFEOrganization() *schema.Resource {
 				Computed: true,
 			},
 
+			"aggregated_commit_status_enabled": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Computed: true,
+			},
+
 			"assessments_enforced": {
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -141,6 +152,7 @@ func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error
 	d.Set("owners_team_saml_role_id", org.OwnersTeamSAMLRoleID)
 	d.Set("cost_estimation_enabled", org.CostEstimationEnabled)
 	d.Set("send_passing_statuses_for_untriggered_speculative_plans", org.SendPassingStatusesForUntriggeredSpeculativePlans)
+	d.Set("aggregated_commit_status_enabled", org.AggregatedCommitStatusEnabled)
 	// TFE (onprem) does not currently have this feature and this value won't be returned in those cases.
 	// org.AssessmentsEnforced will default to false
 	d.Set("assessments_enforced", org.AssessmentsEnforced)
@@ -188,8 +200,15 @@ func resourceTFEOrganizationUpdate(d *schema.ResourceData, meta interface{}) err
 	}
 
 	// If send_passing_statuses_for_untriggered_speculative_plans is supplied, set it using the options struct.
-	if sendPassingStatusesForUntriggeredSpeculativePlans, ok := d.GetOk("send_passing_statuses_for_untriggered_speculative_plans"); ok {
-		options.SendPassingStatusesForUntriggeredSpeculativePlans = tfe.Bool(sendPassingStatusesForUntriggeredSpeculativePlans.(bool))
+	if d.HasChange("send_passing_statuses_for_untriggered_speculative_plans") {
+		_, newVal := d.GetChange("send_passing_statuses_for_untriggered_speculative_plans")
+		options.SendPassingStatusesForUntriggeredSpeculativePlans = tfe.Bool(newVal.(bool))
+	}
+
+	// If aggregated_commit_status_enabled is supplied, set it using the options struct.
+	if d.HasChange("aggregated_commit_status_enabled") {
+		_, newVal := d.GetChange("aggregated_commit_status_enabled")
+		options.AggregatedCommitStatusEnabled = tfe.Bool(newVal.(bool))
 	}
 
 	// If assessments_enforced is supplied, set it using the options struct.

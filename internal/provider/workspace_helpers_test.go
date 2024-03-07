@@ -35,7 +35,7 @@ func TestFetchWorkspaceExternalID(t *testing.T) {
 
 	client := testTfeClient(t, testClientOptions{defaultWorkspaceID: "ws-123"})
 	name := "a-workspace"
-	client.Workspaces.Create(nil, "hashicorp", tfe.WorkspaceCreateOptions{
+	client.Workspaces.Create(context.TODO(), "hashicorp", tfe.WorkspaceCreateOptions{
 		Name: &name,
 	})
 
