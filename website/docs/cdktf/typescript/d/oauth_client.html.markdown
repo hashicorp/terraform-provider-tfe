@@ -100,7 +100,7 @@ be set.
 
 In addition to all arguments above, the following attributes are exported:
 
-* `id` - The OAuth client ID. This will match `oauth_client_id`.
+* `id` - The OAuth client ID. This will match `oauthClientId`.
 * `apiUrl` - The client's API URL.
 * `callbackUrl` - OAuth callback URL to provide to the OAuth service provider.
 * `createdAt` - The date and time this OAuth client was created in RFC3339 format.
@@ -111,4 +111,4 @@ In addition to all arguments above, the following attributes are exported:
 * `serviceProvider` - The API identifier of the OAuth service provider.
 * `serviceProviderDisplayName` - The display name of the OAuth service provider.
 
-<!-- cache-key: cdktf-0.19.0 input-59b4bcbbb310e7ee913a245f3c751829442542dbcf1bbb4c87ac286043b69348 -->
+<!-- cache-key: cdktf-0.20.1 input-59b4bcbbb310e7ee913a245f3c751829442542dbcf1bbb4c87ac286043b69348 -->

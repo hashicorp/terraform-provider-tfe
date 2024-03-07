@@ -974,7 +974,6 @@ func testAccTFERegistryModule_vcs(rInt int) string {
 resource "tfe_organization" "foobar" {
  name  = "tst-terraform-%d"
  email = "admin@company.com"
-
 }
 
 resource "tfe_oauth_client" "foobar" {
@@ -986,6 +985,7 @@ resource "tfe_oauth_client" "foobar" {
 }
 
 resource "tfe_registry_module" "foobar" {
+ organization = tfe_organization.foobar.name
  vcs_repo {
    display_identifier = "%s"
    identifier         = "%s"
@@ -1055,7 +1055,7 @@ resource "tfe_registry_module" "foobar" {
    identifier         = "%s"
    oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
    branch             = "main"
-   tags				  = false 
+   tags				  = false
  }
 
  test_config {

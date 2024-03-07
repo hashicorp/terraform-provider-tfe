@@ -1,6 +1,10 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
+// NOTE: This resource uses the low level plugin framework in order to
+// deal with sensitive values. It may be possible to migrate this to the
+// Plugin Framework. Do not use this code as boilerplate for new resources.
+
 package provider
 
 import (

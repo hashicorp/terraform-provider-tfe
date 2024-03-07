@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package provider
 
 import (
@@ -7,12 +10,13 @@ import (
 	"time"
 
 	"errors"
+
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccTFEOrganizationDefaultExecutionMode_remote(t *testing.T) {
+func TestAccTFEOrganizationDefaultSettings_remote(t *testing.T) {
 	org := &tfe.Organization{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -22,18 +26,18 @@ func TestAccTFEOrganizationDefaultExecutionMode_remote(t *testing.T) {
 		CheckDestroy: testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOrganizationDefaultExecutionMode_remote(rInt),
+				Config: testAccTFEOrganizationDefaultSettings_remote(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
 						"tfe_organization.foobar", org),
-					testAccCheckTFEOrganizationDefaultExecutionMode(org, "remote"),
+					testAccCheckTFEOrganizationDefaultSettings(org, "remote"),
 				),
 			},
 		},
 	})
 }
 
-func TestAccTFEOrganizationDefaultExecutionMode_local(t *testing.T) {
+func TestAccTFEOrganizationDefaultSettings_local(t *testing.T) {
 	org := &tfe.Organization{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -43,18 +47,18 @@ func TestAccTFEOrganizationDefaultExecutionMode_local(t *testing.T) {
 		CheckDestroy: testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOrganizationDefaultExecutionMode_local(rInt),
+				Config: testAccTFEOrganizationDefaultSettings_local(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
 						"tfe_organization.foobar", org),
-					testAccCheckTFEOrganizationDefaultExecutionMode(org, "local"),
+					testAccCheckTFEOrganizationDefaultSettings(org, "local"),
 				),
 			},
 		},
 	})
 }
 
-func TestAccTFEOrganizationDefaultExecutionMode_agent(t *testing.T) {
+func TestAccTFEOrganizationDefaultSettings_agent(t *testing.T) {
 	org := &tfe.Organization{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -64,11 +68,11 @@ func TestAccTFEOrganizationDefaultExecutionMode_agent(t *testing.T) {
 		CheckDestroy: testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOrganizationDefaultExecutionMode_agent(rInt),
+				Config: testAccTFEOrganizationDefaultSettings_agent(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
 						"tfe_organization.foobar", org),
-					testAccCheckTFEOrganizationDefaultExecutionMode(org, "agent"),
+					testAccCheckTFEOrganizationDefaultSettings(org, "agent"),
 					testAccCheckTFEOrganizationDefaultAgentPoolIDExists(org),
 				),
 			},
@@ -76,7 +80,7 @@ func TestAccTFEOrganizationDefaultExecutionMode_agent(t *testing.T) {
 	})
 }
 
-func TestAccTFEOrganizationDefaultExecutionMode_update(t *testing.T) {
+func TestAccTFEOrganizationDefaultSettings_update(t *testing.T) {
 	org := &tfe.Organization{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -86,43 +90,43 @@ func TestAccTFEOrganizationDefaultExecutionMode_update(t *testing.T) {
 		CheckDestroy: testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOrganizationDefaultExecutionMode_remote(rInt),
+				Config: testAccTFEOrganizationDefaultSettings_remote(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
 						"tfe_organization.foobar", org),
-					testAccCheckTFEOrganizationDefaultExecutionMode(org, "remote"),
+					testAccCheckTFEOrganizationDefaultSettings(org, "remote"),
 				),
 			},
 			{
-				Config: testAccTFEOrganizationDefaultExecutionMode_agent(rInt),
+				Config: testAccTFEOrganizationDefaultSettings_agent(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
 						"tfe_organization.foobar", org),
-					testAccCheckTFEOrganizationDefaultExecutionMode(org, "agent"),
+					testAccCheckTFEOrganizationDefaultSettings(org, "agent"),
 					testAccCheckTFEOrganizationDefaultAgentPoolIDExists(org),
 				),
 			},
 			{
-				Config: testAccTFEOrganizationDefaultExecutionMode_local(rInt),
+				Config: testAccTFEOrganizationDefaultSettings_local(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
 						"tfe_organization.foobar", org),
-					testAccCheckTFEOrganizationDefaultExecutionMode(org, "local"),
+					testAccCheckTFEOrganizationDefaultSettings(org, "local"),
 				),
 			},
 			{
-				Config: testAccTFEOrganizationDefaultExecutionMode_remote(rInt),
+				Config: testAccTFEOrganizationDefaultSettings_remote(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
 						"tfe_organization.foobar", org),
-					testAccCheckTFEOrganizationDefaultExecutionMode(org, "remote"),
+					testAccCheckTFEOrganizationDefaultSettings(org, "remote"),
 				),
 			},
 		},
 	})
 }
 
-func TestAccTFEOrganizationDefaultExecutionMode_import(t *testing.T) {
+func TestAccTFEOrganizationDefaultSettings_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -131,11 +135,11 @@ func TestAccTFEOrganizationDefaultExecutionMode_import(t *testing.T) {
 		CheckDestroy: testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOrganizationDefaultExecutionMode_remote(rInt),
+				Config: testAccTFEOrganizationDefaultSettings_remote(rInt),
 			},
 
 			{
-				ResourceName:      "tfe_organization_default_execution_mode.foobar",
+				ResourceName:      "tfe_organization_default_settings.foobar",
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -143,7 +147,7 @@ func TestAccTFEOrganizationDefaultExecutionMode_import(t *testing.T) {
 	})
 }
 
-func testAccCheckTFEOrganizationDefaultExecutionMode(org *tfe.Organization, expectedExecutionMode string) resource.TestCheckFunc {
+func testAccCheckTFEOrganizationDefaultSettings(org *tfe.Organization, expectedExecutionMode string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if org.DefaultExecutionMode != expectedExecutionMode {
 			return fmt.Errorf("default Execution Mode did not match, expected: %s, but was: %s", expectedExecutionMode, org.DefaultExecutionMode)
@@ -163,33 +167,33 @@ func testAccCheckTFEOrganizationDefaultAgentPoolIDExists(org *tfe.Organization) 
 	}
 }
 
-func testAccTFEOrganizationDefaultExecutionMode_remote(rInt int) string {
+func testAccTFEOrganizationDefaultSettings_remote(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
-resource "tfe_organization_default_execution_mode" "foobar" {
+resource "tfe_organization_default_settings" "foobar" {
   organization = tfe_organization.foobar.name
   default_execution_mode = "remote"
 }`, rInt)
 }
 
-func testAccTFEOrganizationDefaultExecutionMode_local(rInt int) string {
+func testAccTFEOrganizationDefaultSettings_local(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
 
-resource "tfe_organization_default_execution_mode" "foobar" {
+resource "tfe_organization_default_settings" "foobar" {
   organization = tfe_organization.foobar.name
   default_execution_mode = "local"
 }`, rInt)
 }
 
-func testAccTFEOrganizationDefaultExecutionMode_agent(rInt int) string {
+func testAccTFEOrganizationDefaultSettings_agent(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
@@ -201,7 +205,7 @@ resource "tfe_agent_pool" "foobar" {
   organization = tfe_organization.foobar.name
 }
 
-resource "tfe_organization_default_execution_mode" "foobar" {
+resource "tfe_organization_default_settings" "foobar" {
   organization = tfe_organization.foobar.name
   default_execution_mode = "agent"
   default_agent_pool_id = tfe_agent_pool.foobar.id

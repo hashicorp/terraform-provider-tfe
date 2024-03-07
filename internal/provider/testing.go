@@ -129,25 +129,6 @@ func createBusinessOrganization(t *testing.T, client *tfe.Client) (*tfe.Organiza
 	return org, orgCleanup
 }
 
-func createBusinessOrganizationWithAgentDefaultExecutionMode(t *testing.T, tfeClient *tfe.Client) (*tfe.Organization, *tfe.AgentPool, func()) {
-	org, orgCleanup := createBusinessOrganization(t, tfeClient)
-
-	agentPool, _ := createAgentPool(t, tfeClient, org)
-
-	// update organization to use default execution mode of "agent"
-	org, err := tfeClient.Organizations.Update(context.Background(), org.Name, tfe.OrganizationUpdateOptions{
-		DefaultExecutionMode: tfe.String("agent"),
-		DefaultAgentPool:     agentPool,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return org, agentPool, func() {
-		orgCleanup()
-	}
-}
-
 func createOrganization(t *testing.T, client *tfe.Client, options tfe.OrganizationCreateOptions) (*tfe.Organization, func()) {
 	ctx := context.Background()
 	org, err := client.Organizations.Create(ctx, options)
@@ -164,22 +145,26 @@ func createOrganization(t *testing.T, client *tfe.Client, options tfe.Organizati
 	}
 }
 
-func createAgentPool(t *testing.T, client *tfe.Client, org *tfe.Organization) (*tfe.AgentPool, func()) {
+func createTempWorkspace(t *testing.T, client *tfe.Client, orgName string) *tfe.Workspace {
+	t.Helper()
+
 	ctx := context.Background()
-	pool, err := client.AgentPools.Create(ctx, org.Name, tfe.AgentPoolCreateOptions{
-		Name: tfe.String(randomString(t)),
+	ws, err := client.Workspaces.Create(ctx, orgName, tfe.WorkspaceCreateOptions{
+		Name: tfe.String(fmt.Sprintf("tst-workspace-%s", randomString(t))),
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	return pool, func() {
-		if err := client.AgentPools.Delete(ctx, pool.ID); err != nil {
-			t.Logf("Error destroying agent pool! WARNING: Dangling resources "+
-				"may exist! The full error is shown below.\n\n"+
-				"Agent pool ID: %s\nError: %s", pool.ID, err)
+	t.Cleanup(func() {
+		if err := client.Workspaces.DeleteByID(ctx, ws.ID); err != nil {
+			t.Errorf("Error destroying workspace! WARNING: Dangling resources\n"+
+				"may exist! The full error is show below:\n\n"+
+				"Workspace:%s\nError: %s", ws.ID, err)
 		}
-	}
+	})
+
+	return ws
 }
 
 func createOrganizationMembership(t *testing.T, client *tfe.Client, orgName string, options tfe.OrganizationMembershipCreateOptions) *tfe.OrganizationMembership {

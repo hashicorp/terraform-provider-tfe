@@ -34,11 +34,13 @@ class MyConvertedCode extends TerraformStack {
   constructor(scope: Construct, name: string) {
     super(scope, name);
     new PolicySet(this, "test", {
+      agentEnabled: Token.asBoolean("true"),
       description: "A brand new policy set",
       kind: "sentinel",
       name: "my-policy-set",
       organization: "my-org-name",
       policiesPath: "policies/my-policy-set",
+      policyToolVersion: "0.24.1",
       vcsRepo: {
         branch: "main",
         identifier: "my-org-name/my-policy-set-repository",
@@ -67,11 +69,13 @@ class MyConvertedCode extends TerraformStack {
   constructor(scope: Construct, name: string) {
     super(scope, name);
     new PolicySet(this, "test", {
+      agentEnabled: Token.asBoolean("true"),
       description: "A brand new policy set",
       kind: "sentinel",
       name: "my-policy-set",
       organization: "my-org-name",
       policyIds: [Token.asString(tfeSentinelPolicyTest.id)],
+      policyToolVersion: "0.24.1",
       workspaceIds: [Token.asString(tfeWorkspaceTest.id)],
     });
   }
@@ -119,25 +123,28 @@ The following arguments are supported:
 * `description` - (Optional) A description of the policy set's purpose.
 * `global` - (Optional) Whether or not policies in this set will apply to
   all workspaces. Defaults to `false`. This value _must not_ be provided if
-  `workspace_ids` is provided.
+  `workspaceIds` is provided.
 * `kind` - (Optional) The policy-as-code framework associated with the policy.
    Defaults to `sentinel` if not provided. Valid values are `sentinel` and `opa`.
    A policy set can only have policies that have the same underlying kind.
+* `agentEnabled` - (Optional) Whether or not the policy set is run as a policy evaluation within the agent. 
+   True by default for all "opa" policy sets.
+* `policyToolVersion` - (Optional) The policy tool version to run the evaluation against.
 * `overridable` - (Optional) Whether or not users can override this policy when
    it fails during a run. Defaults to `false`. Only valid for OPA policies.
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `policiesPath` - (Optional) The sub-path within the attached VCS repository
-  to ingress when using `vcs_repo`. All files and directories outside of this
-  sub-path will be ignored. This option can only be supplied when `vcs_repo` is
+  to ingress when using `vcsRepo`. All files and directories outside of this
+  sub-path will be ignored. This option can only be supplied when `vcsRepo` is
   present. Forces a new resource if changed.
 * `policyIds` - (Optional) A list of Sentinel policy IDs. This value _must not_ be provided
-  if `vcs_repo` is provided.
+  if `vcsRepo` is provided.
 * `vcsRepo` - (Optional) Settings for the policy sets VCS repository. Forces a
-  new resource if changed. This value _must not_ be provided if `policy_ids` are provided.
+  new resource if changed. This value _must not_ be provided if `policyIds` are provided.
 * `workspaceIds` - (Optional) A list of workspace IDs. This value _must not_ be provided
   if `global` is provided.
 * `slug` - (Optional) A reference to the `tfe_slug` data source that contains
-  the `source_path` to where the local policies are located. This is used when
+  the `sourcePath` to where the local policies are located. This is used when
 policies are located locally, and can only be used when there is no VCS repo or
 explicit Policy IDs. This _requires_ the usage of the `tfe_slug` data source.
 
@@ -153,8 +160,8 @@ The `vcsRepo` block supports:
   This defaults to the repository's default branch (e.g. main).
 * `ingressSubmodules` - (Optional) Whether submodules should be fetched when
   cloning the VCS repository. Defaults to `false`.
-* `oauthTokenId` - (Optional) Token ID of the VCS Connection (OAuth Connection Token) to use. This conflicts with `github_app_installation_id` and can only be used if `github_app_installation_id` is not used.
-* `githubAppInstallationId` - (Optional) The installation id of the Github App. This conflicts with `oauth_token_id` and can only be used if `oauth_token_id` is not used.
+* `oauthTokenId` - (Optional) Token ID of the VCS Connection (OAuth Connection Token) to use. This conflicts with `githubAppInstallationId` and can only be used if `githubAppInstallationId` is not used.
+* `githubAppInstallationId` - (Optional) The installation id of the Github App. This conflicts with `oauthTokenId` and can only be used if `oauthTokenId` is not used.
 
 ## Attributes Reference
 
@@ -168,4 +175,4 @@ Policy sets can be imported; use `<POLICY SET ID>` as the import ID. For example
 terraform import tfe_policy_set.test polset-wAs3zYmWAhYK7peR
 ```
 
-<!-- cache-key: cdktf-0.19.0 input-87dbe1491f5d0ac7c103cc9c7efc59a2174d7dcb1ad313a0a80615bf40216578 -->
+<!-- cache-key: cdktf-0.20.1 input-f5ed6bbfb0faff4fcc68c3079d0530b38a7e6e2ba8e335c2c36cb9bdf7764c47 -->

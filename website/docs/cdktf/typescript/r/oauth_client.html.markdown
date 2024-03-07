@@ -116,7 +116,7 @@ class MyConvertedCode extends TerraformStack {
 
 The following arguments are supported:
 
-* `name` - (Optional) Display name for the OAuth Client. Defaults to the `service_provider` if not supplied.
+* `name` - (Optional) Display name for the OAuth Client. Defaults to the `serviceProvider` if not supplied.
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `apiUrl` - (Required) The base URL of your VCS provider's API (e.g.
   `https://api.github.com` or `https://ghe.example.com/api/v3`).
@@ -142,4 +142,4 @@ Link.
 * `id` - The ID of the OAuth client.
 * `oauthTokenId` - The ID of the OAuth token associated with the OAuth client.
 
-<!-- cache-key: cdktf-0.19.0 input-0dea494ef76c038939d94b5ae6a0e741e36a87509a350f558cd11d098bf1bde9 -->
+<!-- cache-key: cdktf-0.20.1 input-0dea494ef76c038939d94b5ae6a0e741e36a87509a350f558cd11d098bf1bde9 -->
