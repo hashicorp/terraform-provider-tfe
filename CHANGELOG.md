@@ -2,6 +2,7 @@
 
 FEATURES:
 * `r/tfe_workspace`: Add `ignore_additional_tag_names` which explicitly ignores `tag_names` _not_ defined by config so they will not be overwritten by the configured tags, by @brandonc and @mbillow [1254](https://github.com/hashicorp/terraform-provider-tfe/pull/1254)
+* `r/tfe_oauth_client`: Add `agent_pool_id` as an optional argument to enable Private VCS support, by @rolee.sinha [1255](https://github.com/hashicorp/terraform-provider-tfe/pull/1255)
 
 BUG FIXES:
 

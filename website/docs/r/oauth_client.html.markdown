@@ -89,6 +89,7 @@ Link.
 * `service_provider` - (Required) The VCS provider being connected with. Valid
   options are `ado_server`, `ado_services`, `bitbucket_hosted`, `bitbucket_server`, `github`, `github_enterprise`, `gitlab_hosted`,
   `gitlab_community_edition`, or `gitlab_enterprise_edition`.
+* `agent_pool_id` - (Optional) An existing Agent pool id within the organization which has Private VCS support enabled via Premium SKU.
 
 ## Attributes Reference
 
