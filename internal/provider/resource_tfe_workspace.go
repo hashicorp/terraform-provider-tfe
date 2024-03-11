@@ -1005,7 +1005,7 @@ func resourceTFEWorkspaceImporter(ctx context.Context, d *schema.ResourceData, m
 func errWorkspaceSafeDeleteWithPermission(workspaceID string, err error) error {
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "conflict") {
-			return fmt.Errorf("error deleting workspace %s: %w\nTo delete this workspace without destroying the managed resources, add force_delete = true to the resource config", workspaceID, err)
+			return fmt.Errorf("error deleting workspace %s: %w\nThis workspace may either have managed resources in state or has a latest state that's still being processed. Add force_delete = true to the resource config to delete this workspace", workspaceID, err)
 		}
 		return err
 	}
