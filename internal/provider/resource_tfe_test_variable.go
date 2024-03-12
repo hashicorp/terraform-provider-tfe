@@ -54,16 +54,19 @@ type modelTFETestVariable struct {
 
 // modelFromTFETestVariable builds a modelTFETestVariable struct from a tfe.TestVariable
 // value (plus the last known value of the variable's `value` attribute).
-func modelFromTFETestVariable(v tfe.Variable, lastValue types.String) modelTFETestVariable {
+func modelFromTFETestVariable(v tfe.Variable, lastValue types.String, moduleId tfe.RegistryModuleID) modelTFETestVariable {
 	// Initialize all fields from the provided API struct
 	m := modelTFETestVariable{
-		ID:          types.StringValue(v.ID),
-		Key:         types.StringValue(v.Key),
-		Value:       types.StringValue(v.Value),
-		Category:    types.StringValue(string(v.Category)),
-		Description: types.StringValue(v.Description),
-		HCL:         types.BoolValue(v.HCL),
-		Sensitive:   types.BoolValue(v.Sensitive),
+		ID:             types.StringValue(v.ID),
+		Key:            types.StringValue(v.Key),
+		Value:          types.StringValue(v.Value),
+		Category:       types.StringValue(string(v.Category)),
+		Description:    types.StringValue(v.Description),
+		HCL:            types.BoolValue(v.HCL),
+		Sensitive:      types.BoolValue(v.Sensitive),
+		Organization:   types.StringValue(moduleId.Organization),
+		ModuleName:     types.StringValue(moduleId.Name),
+		ModuleProvider: types.StringValue(moduleId.Provider),
 	}
 	// BUT: if the variable is sensitive, carry forward the last known value
 	// instead, because the API never lets us read it again.
@@ -199,13 +202,7 @@ func (r *resourceTFETestVariable) Schema(ctx context.Context, req resource.Schem
 	}
 }
 
-// Create implements resource.Resource
 func (r *resourceTFETestVariable) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	r.createWithTestVariable(ctx, req, resp)
-}
-
-// createWithTestVariable is the test version of Create.
-func (r *resourceTFETestVariable) createWithTestVariable(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data modelTFETestVariable
 	diags := req.Plan.Get(ctx, &data)
 	resp.Diagnostics.Append(diags...)
@@ -243,7 +240,7 @@ func (r *resourceTFETestVariable) createWithTestVariable(ctx context.Context, re
 	}
 
 	// We got a variable, so set state to new values
-	result := modelFromTFETestVariable(*variable, data.Value)
+	result := modelFromTFETestVariable(*variable, data.Value, moduleID)
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -284,18 +281,12 @@ func (r *resourceTFETestVariable) Read(ctx context.Context, req resource.ReadReq
 	}
 
 	// We got a variable, so update state:
-	result := modelFromTFETestVariable(*variable, data.Value)
+	result := modelFromTFETestVariable(*variable, data.Value, moduleID)
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
 
-// Update implements resource.Resource
 func (r *resourceTFETestVariable) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	r.updateWithTestConfig(ctx, req, resp)
-}
-
-// updateWithTestConfig is the test config version of Update.
-func (r *resourceTFETestVariable) updateWithTestConfig(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan modelTFETestVariable
 	var state modelTFETestVariable
 	diags := req.Plan.Get(ctx, &plan)
@@ -340,18 +331,12 @@ func (r *resourceTFETestVariable) updateWithTestConfig(ctx context.Context, req 
 		return
 	}
 	// Update state
-	result := modelFromTFETestVariable(*variable, plan.Value)
+	result := modelFromTFETestVariable(*variable, plan.Value, moduleID)
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
 
-// Delete implements resource.Resource
 func (r *resourceTFETestVariable) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	r.deleteWithTestConfig(ctx, req, resp)
-}
-
-// deleteWithTestConfig is the test config version of Delete.
-func (r *resourceTFETestVariable) deleteWithTestConfig(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var data modelTFETestVariable
 	diags := req.State.Get(ctx, &data)
 	resp.Diagnostics.Append(diags...)
