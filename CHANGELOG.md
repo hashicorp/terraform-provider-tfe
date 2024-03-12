@@ -9,6 +9,9 @@ BUG FIXES:
 * `r/tfe_workspace`: Change the error message returned when a workspace cannot be safe-deleted to reflect that the error can happen when the latest state is still being processed @uturunku1 [1274](https://github.com/hashicorp/terraform-provider-tfe/pull/1274)
 
 
+ENHANCEMENTS:
+* `r/tfe_registry_module`: Update `Delete` method to call `DeleteByName` when `module_provider` is not present, and `DeleteProvider` when `module_provider` exists @laurenolivia[1267](https://github.com/hashicorp/terraform-provider-tfe/pull/1267)
+
 ## v0.52.0
 
 FEATURES:

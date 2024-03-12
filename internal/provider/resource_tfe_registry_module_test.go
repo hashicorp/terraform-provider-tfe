@@ -803,6 +803,7 @@ func TestAccTFERegistryModule_invalidWithRegistryNameAndNoModuleProvider(t *test
 		},
 	})
 }
+
 func testAccCheckTFERegistryModuleExists(n string, rmID tfe.RegistryModuleID, registryModule *tfe.RegistryModule) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		config := testAccProvider.Meta().(ConfiguredClient)
