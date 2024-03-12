@@ -57,16 +57,13 @@ type modelTFETestVariable struct {
 func modelFromTFETestVariable(v tfe.Variable, lastValue types.String) modelTFETestVariable {
 	// Initialize all fields from the provided API struct
 	m := modelTFETestVariable{
-		ID:             types.StringValue(v.ID),
-		Key:            types.StringValue(v.Key),
-		Value:          types.StringValue(v.Value),
-		Category:       types.StringValue(string(v.Category)),
-		Description:    types.StringValue(v.Description),
-		HCL:            types.BoolValue(v.HCL),
-		Sensitive:      types.BoolValue(v.Sensitive),
-		Organization:   types.StringUnknown(), // wip
-		ModuleName:     types.StringUnknown(), // wip
-		ModuleProvider: types.StringUnknown(), // wip
+		ID:          types.StringValue(v.ID),
+		Key:         types.StringValue(v.Key),
+		Value:       types.StringValue(v.Value),
+		Category:    types.StringValue(string(v.Category)),
+		Description: types.StringValue(v.Description),
+		HCL:         types.BoolValue(v.HCL),
+		Sensitive:   types.BoolValue(v.Sensitive),
 	}
 	// BUT: if the variable is sensitive, carry forward the last known value
 	// instead, because the API never lets us read it again.
@@ -218,7 +215,7 @@ func (r *resourceTFETestVariable) createWithTestVariable(ctx context.Context, re
 
 	key := data.Key.ValueString()
 	category := data.Category.ValueString()
-	moduleId := tfe.RegistryModuleID{
+	moduleID := tfe.RegistryModuleID{
 		Organization: data.Organization.ValueString(),
 		Name:         data.ModuleName.ValueString(),
 		Provider:     data.ModuleProvider.ValueString(),
@@ -236,7 +233,7 @@ func (r *resourceTFETestVariable) createWithTestVariable(ctx context.Context, re
 	}
 
 	log.Printf("[DEBUG] Create %s variable: %s", category, key)
-	variable, err := r.config.Client.TestVariables.Create(ctx, moduleId, options)
+	variable, err := r.config.Client.TestVariables.Create(ctx, moduleID, options)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating variable",
@@ -262,7 +259,7 @@ func (r *resourceTFETestVariable) Read(ctx context.Context, req resource.ReadReq
 		return
 	}
 
-	moduleId := tfe.RegistryModuleID{
+	moduleID := tfe.RegistryModuleID{
 		Organization: data.Organization.ValueString(),
 		Name:         data.ModuleName.ValueString(),
 		Provider:     data.ModuleProvider.ValueString(),
@@ -271,7 +268,7 @@ func (r *resourceTFETestVariable) Read(ctx context.Context, req resource.ReadReq
 	}
 
 	variableID := data.ID.ValueString()
-	variable, err := r.config.Client.TestVariables.Read(ctx, moduleId, variableID)
+	variable, err := r.config.Client.TestVariables.Read(ctx, moduleID, variableID)
 	if err != nil {
 		// If it's gone: that's not an error, but we are done.
 		if errors.Is(err, tfe.ErrResourceNotFound) {
@@ -287,7 +284,7 @@ func (r *resourceTFETestVariable) Read(ctx context.Context, req resource.ReadReq
 	}
 
 	// We got a variable, so update state:
-	result := modelFromTFEVariable(*variable, data.Value)
+	result := modelFromTFETestVariable(*variable, data.Value)
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -313,7 +310,7 @@ func (r *resourceTFETestVariable) updateWithTestConfig(ctx context.Context, req 
 	}
 
 	variableID := plan.ID.ValueString()
-	moduleId := tfe.RegistryModuleID{
+	moduleID := tfe.RegistryModuleID{
 		Organization: plan.Organization.ValueString(),
 		Name:         plan.ModuleName.ValueString(),
 		Provider:     plan.ModuleProvider.ValueString(),
@@ -334,7 +331,7 @@ func (r *resourceTFETestVariable) updateWithTestConfig(ctx context.Context, req 
 	}
 
 	log.Printf("[DEBUG] Update variable: %s", variableID)
-	variable, err := r.config.Client.TestVariables.Update(ctx, moduleId, variableID, options)
+	variable, err := r.config.Client.TestVariables.Update(ctx, moduleID, variableID, options)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error updating variable",
