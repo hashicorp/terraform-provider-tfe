@@ -34,11 +34,13 @@ class MyConvertedCode extends TerraformStack {
   constructor(scope: Construct, name: string) {
     super(scope, name);
     new PolicySet(this, "test", {
+      agentEnabled: Token.asBoolean("true"),
       description: "A brand new policy set",
       kind: "sentinel",
       name: "my-policy-set",
       organization: "my-org-name",
       policiesPath: "policies/my-policy-set",
+      policyToolVersion: "0.24.1",
       vcsRepo: {
         branch: "main",
         identifier: "my-org-name/my-policy-set-repository",
@@ -67,11 +69,13 @@ class MyConvertedCode extends TerraformStack {
   constructor(scope: Construct, name: string) {
     super(scope, name);
     new PolicySet(this, "test", {
+      agentEnabled: Token.asBoolean("true"),
       description: "A brand new policy set",
       kind: "sentinel",
       name: "my-policy-set",
       organization: "my-org-name",
       policyIds: [Token.asString(tfeSentinelPolicyTest.id)],
+      policyToolVersion: "0.24.1",
       workspaceIds: [Token.asString(tfeWorkspaceTest.id)],
     });
   }
@@ -123,6 +127,9 @@ The following arguments are supported:
 * `kind` - (Optional) The policy-as-code framework associated with the policy.
    Defaults to `sentinel` if not provided. Valid values are `sentinel` and `opa`.
    A policy set can only have policies that have the same underlying kind.
+* `agentEnabled` - (Optional) Whether or not the policy set is run as a policy evaluation within the agent. 
+   True by default for all "opa" policy sets.
+* `policyToolVersion` - (Optional) The policy tool version to run the evaluation against.
 * `overridable` - (Optional) Whether or not users can override this policy when
    it fails during a run. Defaults to `false`. Only valid for OPA policies.
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
@@ -168,4 +175,4 @@ Policy sets can be imported; use `<POLICY SET ID>` as the import ID. For example
 terraform import tfe_policy_set.test polset-wAs3zYmWAhYK7peR
 ```
 
-<!-- cache-key: cdktf-0.20.0 input-87dbe1491f5d0ac7c103cc9c7efc59a2174d7dcb1ad313a0a80615bf40216578 -->
+<!-- cache-key: cdktf-0.20.1 input-f5ed6bbfb0faff4fcc68c3079d0530b38a7e6e2ba8e335c2c36cb9bdf7764c47 -->

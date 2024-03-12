@@ -209,6 +209,11 @@ func resourceTFEWorkspace() *schema.Resource {
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
+			"ignore_additional_tag_names": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+
 			"terraform_version": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -529,8 +534,11 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("agent_pool_id", agentPoolID)
 
 	var tagNames []interface{}
+	managedTags := d.Get("tag_names").(*schema.Set)
 	for _, tagName := range workspace.TagNames {
-		tagNames = append(tagNames, tagName)
+		if managedTags.Contains(tagName) || !d.Get("ignore_additional_tag_names").(bool) {
+			tagNames = append(tagNames, tagName)
+		}
 	}
 	d.Set("tag_names", tagNames)
 
@@ -997,7 +1005,7 @@ func resourceTFEWorkspaceImporter(ctx context.Context, d *schema.ResourceData, m
 func errWorkspaceSafeDeleteWithPermission(workspaceID string, err error) error {
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "conflict") {
-			return fmt.Errorf("error deleting workspace %s: %w\nTo delete this workspace without destroying the managed resources, add force_delete = true to the resource config", workspaceID, err)
+			return fmt.Errorf("error deleting workspace %s: %w\nThis workspace may either have managed resources in state or has a latest state that's still being processed. Add force_delete = true to the resource config to delete this workspace", workspaceID, err)
 		}
 		return err
 	}

@@ -49,5 +49,7 @@ In addition to all arguments above, the following attributes are exported:
 * `costEstimationEnabled` - Whether or not the cost estimation feature is enabled for all workspaces in the organization. Defaults to true. In a Terraform Cloud organization which does not have Teams & Governance features, this value is always false and cannot be changed. In Terraform Enterprise, Cost Estimation must also be enabled in Site Administration.
 * `ownersTeamSamlRoleId` - The name of the "owners" team.
 * `sendPassingStatusesForUntriggeredSpeculativePlans` - Whether or not to send VCS status updates for untriggered speculative plans. This can be useful if large numbers of untriggered workspaces are exhausting request limits for connected version control service providers like GitHub. Defaults to true. In Terraform Enterprise, this setting has no effect and cannot be changed but is also available in Site Administration.
+* `aggregatedCommitStatusEnabled` - Whether or not to enable Aggregated Status Checks. This can be useful for monorepo repositories with multiple workspaces receiving status checks for events such as a pull request.
 * `defaultProjectId` - ID of the organization's default project. All workspaces created without specifying a project ID are created in this project.
-<!-- cache-key: cdktf-0.20.0 input-8846c33fbd01c623b80272d126fa694263f6e0fb3286ff1830ae6d051a5ae2a2 -->
+
+<!-- cache-key: cdktf-0.20.1 input-944effb44f4d14fb4476a9f26014b95ea0376bb130076243476598735562f471 -->

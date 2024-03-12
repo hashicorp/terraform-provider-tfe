@@ -75,6 +75,20 @@ func resourceTFEPolicySet() *schema.Resource {
 				Default:  false,
 			},
 
+			"agent_enabled": {
+				Description: "Whether the policy set is executed in the TFC agent. True by default for OPA policies",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
+
+			"policy_tool_version": {
+				Description: "The policy tool version to run the policy evaluation against",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+
 			"policies_path": {
 				Type:          schema.TypeString,
 				Optional:      true,
@@ -171,6 +185,14 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 		options.Overridable = tfe.Bool(vOverridable.(bool))
 	}
 
+	if vAgentEnabled, ok := d.GetOk("agent_enabled"); ok {
+		options.AgentEnabled = tfe.Bool(vAgentEnabled.(bool))
+	}
+
+	if vPolicyToolVersion, ok := d.GetOk("policy_tool_version"); ok {
+		options.PolicyToolVersion = tfe.String(vPolicyToolVersion.(string))
+	}
+
 	if desc, ok := d.GetOk("description"); ok {
 		options.Description = tfe.String(desc.(string))
 	}
@@ -243,6 +265,7 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("description", policySet.Description)
 	d.Set("global", policySet.Global)
 	d.Set("policies_path", policySet.PoliciesPath)
+	d.Set("agent_enabled", policySet.AgentEnabled)
 
 	if policySet.Organization != nil {
 		d.Set("organization", policySet.Organization.Name)
@@ -255,6 +278,10 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 
 	if policySet.Overridable != nil {
 		d.Set("overridable", policySet.Overridable)
+	}
+
+	if policySet.PolicyToolVersion != "" {
+		d.Set("policy_tool_version", policySet.PolicyToolVersion)
 	}
 
 	// Set VCS policy set options.
@@ -330,7 +357,7 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	// Don't bother updating the policy set's attributes if they haven't changed
-	if d.HasChange("name") || d.HasChange("description") || d.HasChange("global") || d.HasChange("vcs_repo") || d.HasChange("overridable") {
+	if d.HasChange("name") || d.HasChange("description") || d.HasChange("global") || d.HasChange("vcs_repo") || d.HasChange("overridable") || d.HasChange("agent_enabled") || d.HasChange("policy_tool_version") {
 		// Create a new options struct.
 		options := tfe.PolicySetUpdateOptions{
 			Name:   tfe.String(name),
@@ -344,6 +371,15 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 		if d.HasChange("overridable") {
 			o := d.Get("overridable").(bool)
 			options.Overridable = tfe.Bool(o)
+		}
+
+		if d.HasChange("agent_enabled") {
+			o := d.Get("agent_enabled").(bool)
+			options.AgentEnabled = tfe.Bool(o)
+		}
+
+		if policyToolVersion, ok := d.GetOk("policy_tool_version"); ok {
+			options.PolicyToolVersion = tfe.String(policyToolVersion.(string))
 		}
 
 		if v, ok := d.GetOk("vcs_repo"); ok {
