@@ -262,9 +262,16 @@ func (r *resourceTFETestVariable) Read(ctx context.Context, req resource.ReadReq
 		return
 	}
 
+	moduleId := tfe.RegistryModuleID{
+		Organization: data.Organization.ValueString(),
+		Name:         data.ModuleName.ValueString(),
+		Provider:     data.ModuleProvider.ValueString(),
+		Namespace:    data.Organization.ValueString(),
+		RegistryName: "private",
+	}
+
 	variableID := data.ID.ValueString()
-	// wip - replace with testvariables once its implemented
-	variable, err := r.config.Client.Variables.Read(ctx, "", variableID)
+	variable, err := r.config.Client.TestVariables.Read(ctx, moduleId, variableID)
 	if err != nil {
 		// If it's gone: that's not an error, but we are done.
 		if errors.Is(err, tfe.ErrResourceNotFound) {
