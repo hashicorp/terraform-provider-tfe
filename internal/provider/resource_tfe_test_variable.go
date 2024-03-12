@@ -54,7 +54,7 @@ type modelTFETestVariable struct {
 
 // modelFromTFETestVariable builds a modelTFETestVariable struct from a tfe.TestVariable
 // value (plus the last known value of the variable's `value` attribute).
-func modelFromTFETestVariable(v tfe.Variable, lastValue types.String, moduleId tfe.RegistryModuleID) modelTFETestVariable {
+func modelFromTFETestVariable(v tfe.Variable, lastValue types.String, moduleID tfe.RegistryModuleID) modelTFETestVariable {
 	// Initialize all fields from the provided API struct
 	m := modelTFETestVariable{
 		ID:             types.StringValue(v.ID),
@@ -64,9 +64,9 @@ func modelFromTFETestVariable(v tfe.Variable, lastValue types.String, moduleId t
 		Description:    types.StringValue(v.Description),
 		HCL:            types.BoolValue(v.HCL),
 		Sensitive:      types.BoolValue(v.Sensitive),
-		Organization:   types.StringValue(moduleId.Organization),
-		ModuleName:     types.StringValue(moduleId.Name),
-		ModuleProvider: types.StringValue(moduleId.Provider),
+		Organization:   types.StringValue(moduleID.Organization),
+		ModuleName:     types.StringValue(moduleID.Name),
+		ModuleProvider: types.StringValue(moduleID.Provider),
 	}
 	// BUT: if the variable is sensitive, carry forward the last known value
 	// instead, because the API never lets us read it again.
@@ -345,7 +345,7 @@ func (r *resourceTFETestVariable) Delete(ctx context.Context, req resource.Delet
 	}
 
 	variableID := data.ID.ValueString()
-	moduleId := tfe.RegistryModuleID{
+	moduleID := tfe.RegistryModuleID{
 		Organization: data.Organization.ValueString(),
 		Name:         data.ModuleName.ValueString(),
 		Provider:     data.ModuleProvider.ValueString(),
@@ -353,7 +353,7 @@ func (r *resourceTFETestVariable) Delete(ctx context.Context, req resource.Delet
 		RegistryName: "private",
 	}
 	log.Printf("[DEBUG] Delete variable: %s", variableID)
-	err := r.config.Client.TestVariables.Delete(ctx, moduleId, variableID)
+	err := r.config.Client.TestVariables.Delete(ctx, moduleID, variableID)
 	// Ignore 404s for delete
 	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 		resp.Diagnostics.AddError(
