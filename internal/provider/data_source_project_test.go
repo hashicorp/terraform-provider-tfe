@@ -27,7 +27,7 @@ func TestAccTFEProjectDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_project.foobar", "name", fmt.Sprintf("project-test-%d", rInt)),
 					resource.TestCheckResourceAttr(
-						"data.tfe_project.foobar", "description", fmt.Sprintf("project description")),
+						"data.tfe_project.foobar", "description", "project description"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_project.foobar", "organization", orgName),
 					resource.TestCheckResourceAttrSet("data.tfe_project.foobar", "id"),
