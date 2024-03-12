@@ -21,7 +21,7 @@ func TestAccTFEVariable_testingvariables(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: testAccMuxedProviders,
-		CheckDestroy:             testAccCheckTFEVariableDestroy,
+		CheckDestroy:             testAccCheckTFETestVariableDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETestVariable_test_variable(rInt),
@@ -64,7 +64,7 @@ func testAccCheckTFETestVariableExists(
 			Organization: rs.Primary.Attributes["organization"],
 			Name:         rs.Primary.Attributes["module_name"],
 			Provider:     rs.Primary.Attributes["module_provider"],
-			Namespace:    rs.Primary.Attributes["module_namespace"],
+			Namespace:    rs.Primary.Attributes["organization"],
 			RegistryName: "private",
 		}
 
@@ -77,6 +77,35 @@ func testAccCheckTFETestVariableExists(
 
 		return nil
 	}
+}
+
+func testAccCheckTFETestVariableDestroy(s *terraform.State) error {
+	config := testAccProvider.Meta().(ConfiguredClient)
+
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != "tfe_variable" {
+			continue
+		}
+
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("No instance ID is set")
+		}
+
+		moduleID := tfe.RegistryModuleID{
+			Organization: rs.Primary.Attributes["organization"],
+			Name:         rs.Primary.Attributes["module_name"],
+			Provider:     rs.Primary.Attributes["module_provider"],
+			Namespace:    rs.Primary.Attributes["organization"],
+			RegistryName: "private",
+		}
+
+		_, err := config.Client.TestVariables.Read(ctx, moduleID, rs.Primary.ID)
+		if err == nil {
+			return fmt.Errorf("Variable %s still exists", rs.Primary.ID)
+		}
+	}
+
+	return nil
 }
 
 func testAccTFETestVariable_test_variable(rInt int) string {
