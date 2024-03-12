@@ -6,7 +6,6 @@ package provider
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"os"
 	"testing"
 	"time"
@@ -23,29 +22,6 @@ type testClientOptions struct {
 	defaultOrganization          string
 	defaultWorkspaceID           string
 	remoteStateConsumersResponse string
-}
-
-type featureSet struct {
-	ID string `jsonapi:"primary,feature-sets"`
-}
-
-type featureSetList struct {
-	Items []*featureSet
-	*tfe.Pagination
-}
-
-type featureSetListOptions struct {
-	Q string `url:"q,omitempty"`
-}
-
-type updateFeatureSetOptions struct {
-	Type               string    `jsonapi:"primary,subscription"`
-	RunsCeiling        int       `jsonapi:"attr,runs-ceiling"`
-	ContractStartAt    time.Time `jsonapi:"attr,contract-start-at,iso8601"`
-	ContractUserLimit  int       `jsonapi:"attr,contract-user-limit"`
-	ContractApplyLimit int       `jsonapi:"attr,contract-apply-limit"`
-
-	FeatureSet *featureSet `jsonapi:"relation,feature-set"`
 }
 
 // testTfeClient creates a mock client that creates workspaces with their ID
@@ -72,50 +48,10 @@ func testTfeClient(t *testing.T, options testClientOptions) *tfe.Client {
 	return client
 }
 
-func upgradeOrganizationSubscription(t *testing.T, client *tfe.Client, org *tfe.Organization) {
-	if enterpriseEnabled() {
-		t.Skip("Cannot upgrade an organization's subscription when enterprise is enabled. Set ENABLE_TFE=0 to run.")
-	}
-
-	req, err := client.NewRequest("GET", "admin/feature-sets", featureSetListOptions{
-		Q: "Business",
-	})
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
-
-	fsl := &featureSetList{}
-	err = req.Do(context.Background(), fsl)
-	if err != nil {
-		t.Fatalf("failed to enumerate feature sets: %v", err)
-		return
-	} else if len(fsl.Items) == 0 {
-		// this will serve as our catch all if enterprise is not enabled
-		// but the instance itself is enterprise
-		t.Fatalf("feature set response was empty")
-		return
-	}
-
-	opts := updateFeatureSetOptions{
-		RunsCeiling:        10,
-		ContractStartAt:    time.Now(),
-		ContractUserLimit:  1000,
-		ContractApplyLimit: 5000,
-		FeatureSet:         fsl.Items[0],
-	}
-
-	u := fmt.Sprintf("admin/organizations/%s/subscription", url.QueryEscape(org.Name))
-	req, err = client.NewRequest("POST", u, &opts)
-	if err != nil {
-		t.Fatalf("Failed to create request: %v", err)
-		return
-	}
-
-	err = req.Do(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("Failed to upgrade subscription: %v", err)
-	}
+// Attempts to upgrade an organization to the business plan. Requires a user token with admin access.
+// DEPRECATED : Please use the newSubscriptionUpdater instead.
+func upgradeOrganizationSubscription(t *testing.T, _ *tfe.Client, organization *tfe.Organization) {
+	newSubscriptionUpdater(organization).WithBusinessPlan().Update(t)
 }
 
 func createBusinessOrganization(t *testing.T, client *tfe.Client) (*tfe.Organization, func()) {
@@ -124,7 +60,7 @@ func createBusinessOrganization(t *testing.T, client *tfe.Client) (*tfe.Organiza
 		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
 	})
 
-	upgradeOrganizationSubscription(t, client, org)
+	newSubscriptionUpdater(org).WithBusinessPlan().Update(t)
 
 	return org, orgCleanup
 }
