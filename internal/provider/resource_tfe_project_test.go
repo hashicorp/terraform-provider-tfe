@@ -103,6 +103,7 @@ func TestAccTFEProject_update(t *testing.T) {
 }
 
 func TestAccTFEProject_import(t *testing.T) {
+	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	project := &tfe.Project{}
 	resource.Test(t, resource.TestCase{
