@@ -27,12 +27,6 @@ type resourceTFETestVariable struct {
 	config ConfiguredClient
 }
 
-// todo: look into implementing this
-// // NewTestVariableDataSource is a helper function to simplify the provider implementation.
-// func NewTestVariableDataSource() datasource.DataSource {
-// 	return &{}
-// }
-
 func NewTestVariableResource() resource.Resource {
 	return &resourceTFETestVariable{}
 }
@@ -245,8 +239,6 @@ func (r *resourceTFETestVariable) Create(ctx context.Context, req resource.Creat
 	resp.Diagnostics.Append(diags...)
 }
 
-// Read implements resource.Resource
-// todo: migrate this to go.tfe.testvariables.read once it gets merged
 func (r *resourceTFETestVariable) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var data modelTFETestVariable
 
