@@ -2,6 +2,7 @@
 
 FEATURES:
 * `r/tfe_workspace`: Add `ignore_additional_tag_names` which explicitly ignores `tag_names` _not_ defined by config so they will not be overwritten by the configured tags, by @brandonc and @mbillow [1254](https://github.com/hashicorp/terraform-provider-tfe/pull/1254)
+* **New Resource**: `r/tfe_test_variable` is a new resource for creating environment variables used by registry modules for terraform test, by @aaabdelgany [1285](https://github.com/hashicorp/terraform-provider-tfe/pull/1285)
 
 BUG FIXES:
 
