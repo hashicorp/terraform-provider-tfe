@@ -13,6 +13,7 @@ import (
 )
 
 func TestAccTFEProjectDataSource_basic(t *testing.T) {
+	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
@@ -25,6 +26,8 @@ func TestAccTFEProjectDataSource_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"data.tfe_project.foobar", "name", fmt.Sprintf("project-test-%d", rInt)),
+					resource.TestCheckResourceAttr(
+						"data.tfe_project.foobar", "description", "project description"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_project.foobar", "organization", orgName),
 					resource.TestCheckResourceAttrSet("data.tfe_project.foobar", "id"),
@@ -67,6 +70,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_project" "foobar" {
   name         = "project-test-%d"
+  description  = "project description"
   organization = tfe_organization.foobar.id
 }
 

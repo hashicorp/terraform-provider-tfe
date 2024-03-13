@@ -31,6 +31,7 @@ The following arguments are supported:
 
 * `name` - (Required) Name of the project.
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
+* `description` - (Optional) A description for the project.
 
 ## Attributes Reference
 
