@@ -11,6 +11,8 @@ description: |-
 
 Provides a workspace resource.
 
+~> **NOTE:** Setting the execution mode and agent pool affinity directly on the workspace is deprecated in favor of using both [tfe_workspace_settings](workspace_settings) and [tfe_organization_default_settings](organization_default_settings), since they allow more precise control and fully support [agent_pool_allowed_workspaces](agent_pool_allowed_workspaces). Use caution when unsetting `ExecutionMode`, as it now leaves any prior value unmanaged instead of reverting to the old default value of `"remote"`.
+
 ~> **NOTE:** Using `GlobalRemoteState` or `RemoteStateConsumerIds` requires using the provider with Terraform Cloud or an instance of Terraform Enterprise at least as recent as v202104-1.
 
 ## Example Usage
@@ -40,7 +42,7 @@ class MyConvertedCode : TerraformStack
 }
 ```
 
-With `ExecutionMode` of `Agent`:
+Usage with vcs_repo:
 
 ```csharp
 using Constructs;
@@ -56,15 +58,22 @@ class MyConvertedCode : TerraformStack
             Email = "admin@company.com",
             Name = "my-org-name"
         });
-        var tfeAgentPoolTestAgentPool = new AgentPool.AgentPool(this, "test-agent-pool", new AgentPoolConfig {
-            Name = "my-agent-pool-name",
-            Organization = Token.AsString(tfeOrganizationTestOrganization.Name)
+        var tfeOauthClientTest = new OauthClient.OauthClient(this, "test", new OauthClientConfig {
+            ApiUrl = "https://api.github.com",
+            HttpUrl = "https://github.com",
+            OauthToken = "oauth_token_id",
+            Organization = tfeOrganizationTestOrganization,
+            ServiceProvider = "github"
         });
-        new Workspace.Workspace(this, "test", new WorkspaceConfig {
-            AgentPoolId = Token.AsString(tfeAgentPoolTestAgentPool.Id),
-            ExecutionMode = "agent",
-            Name = "my-workspace-name",
-            Organization = Token.AsString(tfeOrganizationTestOrganization.Name)
+        new Workspace.Workspace(this, "parent", new WorkspaceConfig {
+            Name = "parent-ws",
+            Organization = tfeOrganizationTestOrganization,
+            QueueAllRuns = false,
+            VcsRepo = new WorkspaceVcsRepo {
+                Branch = "main",
+                Identifier = "my-org-name/vcs-repository",
+                OauthTokenId = Token.AsString(tfeOauthClientTest.OauthTokenId)
+            }
         });
     }
 }
@@ -75,20 +84,13 @@ class MyConvertedCode : TerraformStack
 The following arguments are supported:
 
 * `Name` - (Required) Name of the workspace.
-* `AgentPoolId` - (Optional) The ID of an agent pool to assign to the workspace. Requires `ExecutionMode`
-  to be set to `Agent`. This value _must not_ be provided if `ExecutionMode` is set to any other value or if `Operations` is
-  provided.
+* `AgentPoolId` - (Optional) **Deprecated** The ID of an agent pool to assign to the workspace. Use [tfe_workspace_settings](workspace_settings) instead.
 * `AllowDestroyPlan` - (Optional) Whether destroy plans can be queued on the workspace.
 * `AssessmentsEnabled` - (Optional) Whether to regularly run health assessments such as drift detection on the workspace. Defaults to `False`.
 * `AutoApply` - (Optional) Whether to automatically apply changes when a Terraform plan is successful. Defaults to `False`.
 * `AutoApplyRunTrigger` - (Optional) Whether to automatically apply changes for runs that were created by run triggers from another workspace. Defaults to `False`.
 * `Description` - (Optional) A description for the workspace.
-* `ExecutionMode` - (Optional) Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode)
-  to use. Using Terraform Cloud, valid values are `Remote`, `Local` or`Agent`.
-  Defaults to `Remote`. Using Terraform Enterprise, only `Remote`and `Local`
-  execution modes are valid.  When set to `Local`, the workspace will be used
-  for state storage only. This value _must not_ be provided if `Operations`
-  is provided.
+* `ExecutionMode` - (Optional) **Deprecated** Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode) to use. Use [tfe_workspace_settings](workspace_settings) instead.
 * `FileTriggersEnabled` - (Optional) Whether to filter runs based on the changed files
   in a VCS push. Defaults to `True`. If enabled, the working directory and
   trigger prefixes describe a set of paths which must contain changes for a
@@ -132,6 +134,11 @@ The following arguments are supported:
   workspace will display their output as text logs.
 * `SshKeyId` - (Optional) The ID of an SSH key to assign to the workspace.
 * `TagNames` - (Optional) A list of tag names for this workspace. Note that tags must only contain lowercase letters, numbers, colons, or hyphens.
+* `IgnoreAdditionalTagNames` - (Optional) Explicitly ignores `TagNames`
+_not_ defined by config so they will not be overwritten by the configured
+tags. This creates exceptional behavior in terraform with respect
+to `TagNames` and is not recommended. This value must be applied before it
+will be used.
 * `TerraformVersion` - (Optional) The version of Terraform to use for this
   workspace. This can be either an exact version or a
   [version constraint](https://developer.hashicorp.com/terraform/language/expressions/version-constraints)
@@ -166,7 +173,7 @@ In addition to all arguments above, the following attributes are exported:
 
 * `Id` - The workspace ID.
 * `ResourceCount` - The number of resources managed by the workspace.
-* `HtmlUrl` - The URL to the browsable HTML overview of the workspace
+* `HtmlUrl` - The URL to the browsable HTML overview of the workspace.
 
 ## Import
 
@@ -181,4 +188,4 @@ terraform import tfe_workspace.test ws-CH5in3chf8RJjrVd
 terraform import tfe_workspace.test my-org-name/my-wkspace-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-ce8c5d41ebbc57c1df647c807e38b748d12221b61915ccc24e4f1530f58312b5 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-a5797bfc1d563d3420d63a8c2aa349bc2e5be65c170398643e0b7b798b52d421 -->
