@@ -14,7 +14,6 @@ import (
 )
 
 func TestAccTFEPolicySetDataSource_basic(t *testing.T) {
-	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -113,7 +112,6 @@ func TestAccTFEPolicySetDataSource_pinnedPolicyRuntimeVersion(t *testing.T) {
 }
 
 func TestAccTFEPolicySetDataSourceOPA_basic(t *testing.T) {
-	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)

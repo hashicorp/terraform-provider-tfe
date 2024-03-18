@@ -15,7 +15,6 @@ import (
 )
 
 func TestAccTFEWorkspacePolicySetExclusion_basic(t *testing.T) {
-	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	tfeClient, err := getClientUsingEnv()
@@ -49,7 +48,6 @@ func TestAccTFEWorkspacePolicySetExclusion_basic(t *testing.T) {
 }
 
 func TestAccTFEWorkspacePolicySetExclusion_incorrectImportSyntax(t *testing.T) {
-	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	tfeClient, err := getClientUsingEnv()
