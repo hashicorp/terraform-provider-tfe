@@ -66,6 +66,11 @@ func (r *resourceOrgRunTask) Metadata(_ context.Context, req resource.MetadataRe
 	resp.TypeName = req.ProviderTypeName + "_organization_run_task"
 }
 
+func (r *resourceOrgRunTask) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	// If a Run Tasks uses the default organization, then if the deafault org. changes, it should trigger a modification
+	modifyPlanForDefaultOrganizationChange(ctx, r.config.Organization, req.State, req.Config, req.Plan, resp)
+}
+
 // Configure implements resource.ResourceWithConfigure
 func (r *resourceOrgRunTask) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	// Prevent panic if the provider has not been configured.
