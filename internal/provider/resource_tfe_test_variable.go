@@ -172,13 +172,13 @@ func (r *resourceTFETestVariable) Schema(ctx context.Context, req resource.Schem
 				},
 			},
 			"organization": schema.StringAttribute{
-				Optional: true,
+				Required: true,
 			},
 			"module_name": schema.StringAttribute{
-				Optional: true,
+				Required: true,
 			},
 			"module_provider": schema.StringAttribute{
-				Optional: true,
+				Required: true,
 			},
 			"readable_value": schema.StringAttribute{
 				Computed: true,

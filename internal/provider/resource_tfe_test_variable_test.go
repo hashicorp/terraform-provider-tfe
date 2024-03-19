@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccTFEVariable_testingvariables(t *testing.T) {
+func TestAccTFETestVariable_basic(t *testing.T) {
 	variable := &tfe.Variable{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
