@@ -17,6 +17,7 @@ import (
 )
 
 const RunTasksURLEnvName = "RUN_TASKS_URL"
+const RunTasksHMACKeyEnvName = "RUN_TASKS_HMAC"
 
 type testClientOptions struct {
 	defaultOrganization          string
@@ -209,6 +210,10 @@ func isAcceptanceTest() bool {
 
 func runTasksURL() string {
 	return os.Getenv(RunTasksURLEnvName)
+}
+
+func runTasksHMACKey() string {
+	return os.Getenv(RunTasksHMACKeyEnvName)
 }
 
 // Checks to see if ENABLE_BETA is set to 1, thereby enabling tests for beta features.
