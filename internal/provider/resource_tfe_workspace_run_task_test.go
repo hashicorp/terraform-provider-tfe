@@ -35,47 +35,11 @@ func TestAccTFEWorkspaceRunTask_create(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceRunTaskExists("tfe_workspace_run_task.foobar", workspaceTask),
 					resource.TestCheckResourceAttr("tfe_workspace_run_task.foobar", "enforcement_level", "advisory"),
-				),
-			},
-			{
-				Config: testAccTFEWorkspaceRunTask_update(org.Name, runTasksURL()),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("tfe_workspace_run_task.foobar", "enforcement_level", "mandatory"),
-				),
-			},
-		},
-	})
-}
-
-func TestAccTFEWorkspaceRunTask_beta_create(t *testing.T) {
-	skipUnlessRunTasksDefined(t)
-	skipUnlessBeta(t)
-
-	tfeClient, err := getClientUsingEnv()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	org, orgCleanup := createBusinessOrganization(t, tfeClient)
-	t.Cleanup(orgCleanup)
-
-	workspaceTask := &tfe.WorkspaceRunTask{}
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceRunTaskDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccTFEWorkspaceRunTask_beta_basic(org.Name, runTasksURL()),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceRunTaskExists("tfe_workspace_run_task.foobar", workspaceTask),
-					resource.TestCheckResourceAttr("tfe_workspace_run_task.foobar", "enforcement_level", "advisory"),
 					resource.TestCheckResourceAttr("tfe_workspace_run_task.foobar", "stage", "post_plan"),
 				),
 			},
 			{
-				Config: testAccTFEWorkspaceRunTask_beta_update(org.Name, runTasksURL()),
+				Config: testAccTFEWorkspaceRunTask_update(org.Name, runTasksURL()),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_workspace_run_task.foobar", "enforcement_level", "mandatory"),
 					resource.TestCheckResourceAttr("tfe_workspace_run_task.foobar", "stage", "pre_plan"),
@@ -190,62 +154,12 @@ resource "tfe_workspace_run_task" "foobar" {
   workspace_id      = resource.tfe_workspace.foobar.id
   task_id           = resource.tfe_organization_run_task.foobar.id
   enforcement_level = "advisory"
-}
-`, orgName, runTaskURL)
-}
-
-func testAccTFEWorkspaceRunTask_update(orgName, runTaskURL string) string {
-	return fmt.Sprintf(`
-locals {
-    organization_name = "%s"
-}
-
-resource "tfe_organization_run_task" "foobar" {
-  organization = local.organization_name
-  url          = "%s"
-  name         = "foobar-task"
-}
-
-resource "tfe_workspace" "foobar" {
-  name         = "workspace-test"
-  organization = local.organization_name
-}
-
-resource "tfe_workspace_run_task" "foobar" {
-  workspace_id      = resource.tfe_workspace.foobar.id
-  task_id           = resource.tfe_organization_run_task.foobar.id
-  enforcement_level = "mandatory"
-}
-`, orgName, runTaskURL)
-}
-
-func testAccTFEWorkspaceRunTask_beta_basic(orgName, runTaskURL string) string {
-	return fmt.Sprintf(`
-locals {
-    organization_name = "%s"
-}
-
-resource "tfe_organization_run_task" "foobar" {
-  organization = local.organization_name
-  url          = "%s"
-  name         = "foobar-task"
-}
-
-resource "tfe_workspace" "foobar" {
-  name         = "workspace-test"
-  organization = tfe_organization.foobar.id
-}
-
-resource "tfe_workspace_run_task" "foobar" {
-  workspace_id      = resource.tfe_workspace.foobar.id
-  task_id           = resource.tfe_organization_run_task.foobar.id
-  enforcement_level = "advisory"
   stage             = "post_plan"
 }
 `, orgName, runTaskURL)
 }
 
-func testAccTFEWorkspaceRunTask_beta_update(orgName, runTaskURL string) string {
+func testAccTFEWorkspaceRunTask_update(orgName, runTaskURL string) string {
 	return fmt.Sprintf(`
 locals {
     organization_name = "%s"

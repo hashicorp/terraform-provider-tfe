@@ -13,8 +13,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
+// Known Tool Versions that will exist in the TFE/TFC instance that's
+// being used for acceptance testing. Once the /api/v2/tool-versions endpoint
+// is available in go-tfe, we can retrieve this dynamically.
+const KnownOPAToolVersion = "0.44.0"
+const KnownSentinelToolVersion = "0.22.1"
+
 func TestAccTFEPolicySetDataSource_basic(t *testing.T) {
-	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -66,9 +71,6 @@ func TestAccTFEPolicySetDataSource_pinnedPolicyRuntimeVersion(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	sha := genSentinelSha(t, "secret", "data")
-	version := genSafeRandomSentinelVersion()
-
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
@@ -80,7 +82,7 @@ func TestAccTFEPolicySetDataSource_pinnedPolicyRuntimeVersion(t *testing.T) {
 		Providers:    testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySetDataSourceConfig_pinnedPolicyRuntimeVersion(org.Name, rInt, version, sha),
+				Config: testAccTFEPolicySetDataSourceConfig_pinnedPolicyRuntimeVersion(org.Name, rInt, KnownSentinelToolVersion),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.tfe_policy_set.bar", "id"),
 					resource.TestCheckResourceAttr(
@@ -96,7 +98,7 @@ func TestAccTFEPolicySetDataSource_pinnedPolicyRuntimeVersion(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_policy_set.bar", "agent_enabled", "true"),
 					resource.TestCheckResourceAttr(
-						"data.tfe_policy_set.bar", "policy_tool_version", version),
+						"data.tfe_policy_set.bar", "policy_tool_version", KnownSentinelToolVersion),
 					resource.TestCheckResourceAttr(
 						"data.tfe_policy_set.bar", "workspace_ids.#", "1"),
 					resource.TestCheckResourceAttr(
@@ -113,14 +115,10 @@ func TestAccTFEPolicySetDataSource_pinnedPolicyRuntimeVersion(t *testing.T) {
 }
 
 func TestAccTFEPolicySetDataSourceOPA_basic(t *testing.T) {
-	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	sha := genSentinelSha(t, "secret", "data")
-	version := genSafeRandomOPAVersion()
 
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
@@ -133,7 +131,7 @@ func TestAccTFEPolicySetDataSourceOPA_basic(t *testing.T) {
 		Providers:    testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySetDataSourceConfigOPA_basic(org.Name, rInt, version, sha),
+				Config: testAccTFEPolicySetDataSourceConfigOPA_basic(org.Name, rInt, KnownOPAToolVersion),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.tfe_policy_set.bar", "id"),
 					resource.TestCheckResourceAttr(
@@ -291,17 +289,10 @@ data "tfe_policy_set" "bar" {
 }`, organization, rInt, rInt, rInt)
 }
 
-func testAccTFEPolicySetDataSourceConfig_pinnedPolicyRuntimeVersion(organization string, rInt int, version string, sha string) string {
+func testAccTFEPolicySetDataSourceConfig_pinnedPolicyRuntimeVersion(organization string, rInt int, version string) string {
 	return fmt.Sprintf(`
 locals {
   organization_name = "%s"
-}
-
-
-resource "tfe_sentinel_version" "foobar" {
-  version = "%s"
-  url = "https://www.hashicorp.com"
-  sha = "%s"
 }
 
 resource "tfe_workspace" "foobar" {
@@ -344,20 +335,13 @@ data "tfe_policy_set" "bar" {
   name = tfe_policy_set.foobar.name
   organization = local.organization_name
   depends_on=[tfe_policy_set.foobar, tfe_project_policy_set.foobar, tfe_workspace_policy_set_exclusion.foobar]
-}`, organization, version, sha, rInt, rInt, rInt, version)
+}`, organization, rInt, rInt, rInt, version)
 }
 
-func testAccTFEPolicySetDataSourceConfigOPA_basic(organization string, rInt int, version string, sha string) string {
+func testAccTFEPolicySetDataSourceConfigOPA_basic(organization string, rInt int, version string) string {
 	return fmt.Sprintf(`
 locals {
   organization_name = "%s"
-}
-
-
-resource "tfe_opa_version" "foobar" {
-  version = "%s"
-  url = "https://www.hashicorp.com"
-  sha = "%s"
 }
 
 resource "tfe_workspace" "foobar" {
@@ -396,7 +380,7 @@ data "tfe_policy_set" "bar" {
   organization = local.organization_name
   kind = "opa"
   depends_on=[tfe_policy_set.foobar, tfe_project_policy_set.foobar, tfe_workspace_policy_set_exclusion.foobar]
-}`, organization, version, sha, rInt, rInt, rInt, version)
+}`, organization, rInt, rInt, rInt, version)
 }
 
 func testAccTFEPolicySetDataSourceConfig_vcs(organization string, rInt int) string {
