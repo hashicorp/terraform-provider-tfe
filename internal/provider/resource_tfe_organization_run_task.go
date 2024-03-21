@@ -28,6 +28,11 @@ type resourceOrgRunTask struct {
 	config ConfiguredClient
 }
 
+var _ resource.Resource = &resourceOrgRunTask{}
+var _ resource.ResourceWithConfigure = &resourceOrgRunTask{}
+var _ resource.ResourceWithImportState = &resourceOrgRunTask{}
+var _ resource.ResourceWithModifyPlan = &resourceOrgRunTask{}
+
 func NewOrganizationRunTaskResource() resource.Resource {
 	return &resourceOrgRunTask{}
 }
