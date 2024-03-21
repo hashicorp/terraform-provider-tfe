@@ -26,9 +26,9 @@ func TestAccTFEWorkspaceRunTask_create(t *testing.T) {
 	workspaceTask := &tfe.WorkspaceRunTask{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceRunTaskDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceRunTaskDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceRunTask_basic(org.Name, runTasksURL()),
@@ -61,9 +61,9 @@ func TestAccTFEWorkspaceRunTask_import(t *testing.T) {
 	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamAccessDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceRunTask_basic(org.Name, runTasksURL()),

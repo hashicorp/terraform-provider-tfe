@@ -17,8 +17,8 @@ import (
 
 func TestAccTFEOrganizationRunTask_validateSchemaAttributeUrl(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEOrganizationRunTask_basic("org", 1, "", ""),
@@ -56,9 +56,9 @@ func TestAccTFEOrganizationRunTask_create(t *testing.T) {
 	hmacKey := runTasksHMACKey()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationRunTaskDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationRunTaskDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationRunTask_basic(org.Name, rInt, runTasksURL(), hmacKey),
@@ -101,9 +101,9 @@ func TestAccTFEOrganizationRunTask_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamAccessDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationRunTask_basic(org.Name, rInt, runTasksURL(), runTasksHMACKey()),
