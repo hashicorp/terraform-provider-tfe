@@ -191,9 +191,3 @@ var descriptions = map[string]string{
 	"organization": "The organization to apply to a resource if one is not defined on\n" +
 		"the resource itself",
 }
-
-// A commonly used helper method to check if the error
-// returned was tfe.ErrResourceNotFound
-func isErrResourceNotFound(err error) bool {
-	return errors.Is(err, tfe.ErrResourceNotFound)
-}
