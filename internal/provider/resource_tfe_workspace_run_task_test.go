@@ -5,12 +5,30 @@ package provider
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
+
+func TestAccTFEWorkspaceRunTask_validateSchemaAttributes(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFEWorkspaceRunTask_attributes("bad_level", string(tfe.PostPlan)),
+				ExpectError: regexp.MustCompile(`enforcement_level value must be one of:`),
+			},
+			{
+				Config:      testAccTFEWorkspaceRunTask_attributes(string(tfe.Advisory), "bad_stage"),
+				ExpectError: regexp.MustCompile(`stage value must be one of:`),
+			},
+		},
+	})
+}
 
 func TestAccTFEWorkspaceRunTask_create(t *testing.T) {
 	skipUnlessRunTasksDefined(t)
@@ -132,6 +150,17 @@ func testAccCheckTFEWorkspaceRunTaskDestroy(s *terraform.State) error {
 	}
 
 	return nil
+}
+
+func testAccTFEWorkspaceRunTask_attributes(enforcementLevel, stage string) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace_run_task" "foobar" {
+  workspace_id      = "ws-abc123"
+  task_id           = "task-abc123"
+  enforcement_level = "%s"
+  stage             = "%s"
+}
+`, enforcementLevel, stage)
 }
 
 func testAccTFEWorkspaceRunTask_basic(orgName, runTaskURL string) string {

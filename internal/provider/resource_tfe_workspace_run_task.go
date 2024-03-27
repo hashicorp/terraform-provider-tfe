@@ -1,22 +1,25 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
-// NOTE: This is a legacy resource and should be migrated to the Plugin
-// Framework if substantial modifications are planned. See
-// docs/new-resources.md if planning to use this code as boilerplate for
-// a new resource.
-
 package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"log"
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 func workspaceRunTaskEnforcementLevels() []string {
@@ -51,186 +54,271 @@ func sentenceList(items []string, prefix string, suffix string, conjunction stri
 	return b.String()
 }
 
-func resourceTFEWorkspaceRunTask() *schema.Resource {
-	return &schema.Resource{
-		Create: resourceTFEWorkspaceRunTaskCreate,
-		Read:   resourceTFEWorkspaceRunTaskRead,
-		Delete: resourceTFEWorkspaceRunTaskDelete,
-		Update: resourceTFEWorkspaceRunTaskUpdate,
-		Importer: &schema.ResourceImporter{
-			StateContext: resourceTFEWorkspaceRunTaskImporter,
-		},
+type resourceWorkspaceRunTask struct {
+	config ConfiguredClient
+}
 
-		Schema: map[string]*schema.Schema{
-			"workspace_id": {
+var _ resource.Resource = &resourceWorkspaceRunTask{}
+var _ resource.ResourceWithConfigure = &resourceWorkspaceRunTask{}
+var _ resource.ResourceWithImportState = &resourceWorkspaceRunTask{}
+
+func NewWorkspaceRunTaskResource() resource.Resource {
+	return &resourceWorkspaceRunTask{}
+}
+
+type modelTFEWorkspaceRunTaskV0 struct {
+	ID               types.String `tfsdk:"id"`
+	WorkspaceID      types.String `tfsdk:"workspace_id"`
+	TaskID           types.String `tfsdk:"task_id"`
+	EnforcementLevel types.String `tfsdk:"enforcement_level"`
+	Stage            types.String `tfsdk:"stage"`
+}
+
+func modelFromTFEWorkspaceRunTask(v *tfe.WorkspaceRunTask) modelTFEWorkspaceRunTaskV0 {
+	return modelTFEWorkspaceRunTaskV0{
+		ID:               types.StringValue(v.ID),
+		WorkspaceID:      types.StringValue(v.Workspace.ID),
+		TaskID:           types.StringValue(v.RunTask.ID),
+		EnforcementLevel: types.StringValue(string(v.EnforcementLevel)),
+		Stage:            types.StringValue(string(v.Stage)),
+	}
+}
+
+func (r *resourceWorkspaceRunTask) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_workspace_run_task"
+}
+
+// Configure implements resource.ResourceWithConfigure
+func (r *resourceWorkspaceRunTask) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	// Prevent panic if the provider has not been configured.
+	if req.ProviderData == nil {
+		return
+	}
+
+	client, ok := req.ProviderData.(ConfiguredClient)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected resource Configure type",
+			fmt.Sprintf("Expected tfe.ConfiguredClient, got %T. This is a bug in the tfe provider, so please report it on GitHub.", req.ProviderData),
+		)
+	}
+	r.config = client
+}
+
+func (r *resourceWorkspaceRunTask) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Version: 0,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed:    true,
+				Description: "Service-generated identifier for the workspace task",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"workspace_id": schema.StringAttribute{
 				Description: "The id of the workspace to associate the Run task to.",
-				Type:        schema.TypeString,
-				ForceNew:    true,
 				Required:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
-
-			"task_id": {
+			"task_id": schema.StringAttribute{
 				Description: "The id of the Run task to associate to the Workspace.",
-
-				Type:     schema.TypeString,
-				ForceNew: true,
-				Required: true,
+				Required:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
-
-			"enforcement_level": {
+			"enforcement_level": schema.StringAttribute{
 				Description: fmt.Sprintf("The enforcement level of the task. Valid values are %s.", sentenceList(
 					workspaceRunTaskEnforcementLevels(),
 					"`",
 					"`",
 					"and",
 				)),
-				Type:     schema.TypeString,
 				Required: true,
-				ValidateFunc: validation.StringInSlice(
-					workspaceRunTaskEnforcementLevels(),
-					false,
-				),
+				Validators: []validator.String{
+					stringvalidator.OneOf(workspaceRunTaskEnforcementLevels()...),
+				},
 			},
-
-			"stage": {
+			"stage": schema.StringAttribute{
 				Description: fmt.Sprintf("The stage to run the task in. Valid values are %s.", sentenceList(
 					workspaceRunTaskStages(),
 					"`",
 					"`",
 					"and",
 				)),
-				Type:     schema.TypeString,
 				Optional: true,
-				Default:  tfe.PostPlan,
-				ValidateFunc: validation.StringInSlice(
-					workspaceRunTaskStages(),
-					false,
-				),
+				Computed: true,
+				Default:  stringdefault.StaticString(string(tfe.PostPlan)),
+				Validators: []validator.String{
+					stringvalidator.OneOf(workspaceRunTaskStages()...),
+				},
 			},
 		},
 	}
 }
 
-func resourceTFEWorkspaceRunTaskCreate(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(ConfiguredClient)
+func (r *resourceWorkspaceRunTask) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state modelTFEWorkspaceRunTaskV0
 
-	workspaceID := d.Get("workspace_id").(string)
-	taskID := d.Get("task_id").(string)
-
-	task, err := config.Client.RunTasks.Read(ctx, taskID)
-	if err != nil {
-		return fmt.Errorf(
-			"Error retrieving task %s: %w", taskID, err)
+	// Read Terraform current state into the model
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	ws, err := config.Client.Workspaces.ReadByID(ctx, workspaceID)
+	wstaskID := state.ID.ValueString()
+	workspaceID := state.WorkspaceID.ValueString()
+
+	tflog.Debug(ctx, "Reading workspace run task")
+	wstask, err := r.config.Client.WorkspaceRunTasks.Read(ctx, workspaceID, wstaskID)
 	if err != nil {
-		return fmt.Errorf(
-			"Error retrieving workspace %s: %w", workspaceID, err)
+		resp.Diagnostics.AddError("Error reading Workspace Run Task", "Could not read Workspace Run Task, unexpected error: "+err.Error())
+		return
 	}
-	stage := tfe.Stage(d.Get("stage").(string))
+
+	result := modelFromTFEWorkspaceRunTask(wstask)
+
+	// Save updated data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+}
+
+func (r *resourceWorkspaceRunTask) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan modelTFEWorkspaceRunTaskV0
+
+	// Read Terraform planned changes into the model
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	taskID := plan.TaskID.ValueString()
+	task, err := r.config.Client.RunTasks.Read(ctx, taskID)
+	if err != nil {
+		resp.Diagnostics.AddError("Error retrieving task", "Could not read Organization Run Task "+taskID+", unexpected error: "+err.Error())
+		return
+	}
+
+	workspaceID := plan.WorkspaceID.ValueString()
+	if _, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID); err != nil {
+		resp.Diagnostics.AddError("Error retrieving workspace", "Could not read Workspace "+workspaceID+", unexpected error: "+err.Error())
+		return
+	}
+
+	stage := tfe.Stage(plan.Stage.ValueString())
+	level := tfe.TaskEnforcementLevel(plan.EnforcementLevel.ValueString())
 
 	options := tfe.WorkspaceRunTaskCreateOptions{
 		RunTask:          task,
-		EnforcementLevel: tfe.TaskEnforcementLevel(d.Get("enforcement_level").(string)),
+		EnforcementLevel: level,
 		Stage:            &stage,
 	}
 
-	log.Printf("[DEBUG] Create task %s in workspace %s", task.ID, ws.ID)
-	wstask, err := config.Client.WorkspaceRunTasks.Create(ctx, ws.ID, options)
+	tflog.Debug(ctx, fmt.Sprintf("Create task %s in workspace: %s", taskID, workspaceID))
+	wstask, err := r.config.Client.WorkspaceRunTasks.Create(ctx, workspaceID, options)
 	if err != nil {
-		return fmt.Errorf("Error creating task %s in workspace %s: %w", task.ID, ws.ID, err)
+		resp.Diagnostics.AddError("Unable to create workspace task", err.Error())
+		return
 	}
 
-	d.SetId(wstask.ID)
+	result := modelFromTFEWorkspaceRunTask(wstask)
 
-	return resourceTFEWorkspaceRunTaskRead(d, meta)
+	// Save data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
-func resourceTFEWorkspaceRunTaskDelete(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(ConfiguredClient)
-
-	// Get the workspace
-	workspaceID := d.Get("workspace_id").(string)
-
-	log.Printf("[DEBUG] Delete task %s in workspace %s", d.Id(), workspaceID)
-	err := config.Client.WorkspaceRunTasks.Delete(ctx, workspaceID, d.Id())
-	if err != nil && !isErrResourceNotFound(err) {
-		return fmt.Errorf("Error deleting task %s in workspace %s: %w", d.Id(), workspaceID, err)
+func (r *resourceWorkspaceRunTask) stringPointerToStagePointer(val *string) *tfe.Stage {
+	if val == nil {
+		return nil
 	}
-
-	return nil
+	newVal := tfe.Stage(*val)
+	return &newVal
 }
 
-func resourceTFEWorkspaceRunTaskUpdate(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(ConfiguredClient)
+func (r *resourceWorkspaceRunTask) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan modelTFEWorkspaceRunTaskV0
 
-	// Get the workspace
-	workspaceID := d.Get("workspace_id").(string)
-
-	// Setup the options struct
-	options := tfe.WorkspaceRunTaskUpdateOptions{}
-	if d.HasChange("enforcement_level") {
-		options.EnforcementLevel = tfe.TaskEnforcementLevel(d.Get("enforcement_level").(string))
-	}
-	if d.HasChange("stage") {
-		stage := tfe.Stage(d.Get("stage").(string))
-		options.Stage = &stage
+	// Read Terraform planned changes into the model
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	log.Printf("[DEBUG] Update configuration of task %s in workspace %s", d.Id(), workspaceID)
-	_, err := config.Client.WorkspaceRunTasks.Update(ctx, workspaceID, d.Id(), options)
+	level := tfe.TaskEnforcementLevel(plan.EnforcementLevel.ValueString())
+	stage := r.stringPointerToStagePointer(plan.Stage.ValueStringPointer())
+
+	options := tfe.WorkspaceRunTaskUpdateOptions{
+		EnforcementLevel: level,
+		Stage:            stage,
+	}
+
+	wstaskID := plan.ID.ValueString()
+	workspaceID := plan.WorkspaceID.ValueString()
+
+	tflog.Debug(ctx, fmt.Sprintf("Update task %s in workspace %s", wstaskID, workspaceID))
+	wstask, err := r.config.Client.WorkspaceRunTasks.Update(ctx, workspaceID, wstaskID, options)
 	if err != nil {
-		return fmt.Errorf("Error updating task %s in workspace %s: %w", d.Id(), workspaceID, err)
+		resp.Diagnostics.AddError("Unable to update workspace task", err.Error())
+		return
 	}
 
-	return nil
+	result := modelFromTFEWorkspaceRunTask(wstask)
+
+	// Save data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
-func resourceTFEWorkspaceRunTaskRead(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(ConfiguredClient)
-
-	// Get the workspace
-	workspaceID := d.Get("workspace_id").(string)
-
-	wstask, err := config.Client.WorkspaceRunTasks.Read(ctx, workspaceID, d.Id())
-	if err != nil {
-		if isErrResourceNotFound(err) {
-			log.Printf("[DEBUG] Workspace Task %s does not exist in workspace %s", d.Id(), workspaceID)
-			d.SetId("")
-			return nil
-		}
-		return fmt.Errorf("Error reading configuration of task %s in workspace %s: %w", d.Id(), workspaceID, err)
+func (r *resourceWorkspaceRunTask) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state modelTFEWorkspaceRunTaskV0
+	diags := req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	// Update the config.
-	d.Set("workspace_id", wstask.Workspace.ID)
-	d.Set("task_id", wstask.RunTask.ID)
-	d.Set("enforcement_level", string(wstask.EnforcementLevel))
-	d.Set("stage", string(wstask.Stage))
+	wstaskID := state.ID.ValueString()
+	workspaceID := state.WorkspaceID.ValueString()
 
-	return nil
-}
-
-func resourceTFEWorkspaceRunTaskImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	config := meta.(ConfiguredClient)
-
-	s := strings.Split(d.Id(), "/")
-	if len(s) != 3 {
-		return nil, fmt.Errorf(
-			"invalid task input format: %s (expected <ORGANIZATION>/<WORKSPACE NAME>/<TASK NAME>)",
-			d.Id(),
+	tflog.Debug(ctx, fmt.Sprintf("Delete task %s in workspace %s", wstaskID, workspaceID))
+	err := r.config.Client.WorkspaceRunTasks.Delete(ctx, workspaceID, wstaskID)
+	// Ignore 404s for delete
+	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+		resp.Diagnostics.AddError(
+			"Error deleting workspace run task",
+			fmt.Sprintf("Couldn't delete task %s in workspace %s: %s", wstaskID, workspaceID, err.Error()),
 		)
 	}
+	// Resource is implicitly deleted from resp.State if diagnostics have no errors.
+}
 
-	wstask, err := fetchWorkspaceRunTask(s[2], s[1], s[0], config.Client)
-	if err != nil {
-		return nil, err
+func (r *resourceWorkspaceRunTask) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	s := strings.SplitN(req.ID, "/", 3)
+	if len(s) != 3 {
+		resp.Diagnostics.AddError(
+			"Error importing workspace run task",
+			fmt.Sprintf("Invalid task input format: %s (expected <ORGANIZATION>/<WORKSPACE NAME>/<TASK NAME>)", req.ID),
+		)
+		return
 	}
 
-	d.Set("workspace_id", wstask.Workspace.ID)
-	d.Set("task_id", wstask.RunTask.ID)
-	d.SetId(wstask.ID)
+	taskName := s[2]
+	workspaceName := s[1]
+	orgName := s[0]
 
-	return []*schema.ResourceData{d}, nil
+	if wstask, err := fetchWorkspaceRunTask(taskName, workspaceName, orgName, r.config.Client); err != nil {
+		resp.Diagnostics.AddError(
+			"Error importing workspace run task",
+			err.Error(),
+		)
+	} else if wstask == nil {
+		resp.Diagnostics.AddError(
+			"Error importing workspace run task",
+			"Workspace task does not exist or has no details",
+		)
+	} else {
+		result := modelFromTFEWorkspaceRunTask(wstask)
+		resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+	}
 }
