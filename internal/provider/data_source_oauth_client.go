@@ -45,6 +45,7 @@ func dataSourceTFEOAuthClient() *schema.Resource {
 						string(tfe.ServiceProviderAzureDevOpsServer),
 						string(tfe.ServiceProviderAzureDevOpsServices),
 						string(tfe.ServiceProviderBitbucket),
+						string(tfe.ServiceProviderBitbucketDataCenter),
 						string(tfe.ServiceProviderBitbucketServer),
 						string(tfe.ServiceProviderBitbucketServerLegacy),
 						string(tfe.ServiceProviderGithub),

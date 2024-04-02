@@ -48,7 +48,7 @@ be set.
 * `oauth_client_id` - (Optional) ID of the OAuth client.
 * `organization` - (Optional) The name of the organization in which to search.
 * `service_provider` - (Optional) The API identifier of the OAuth service provider. If set,
-  must be one of: `ado_server`, `ado_services`, `bitbucket_hosted`, `bitbucket_server`,
+  must be one of: `ado_server`, `ado_services`, `bitbucket_data_center`,  `bitbucket_hosted`, `bitbucket_server`(deprecated),
   `github`, `github_enterprise`, `gitlab_hosted`, `gitlab_community_edition`, or
   `gitlab_enterprise_edition`.
 

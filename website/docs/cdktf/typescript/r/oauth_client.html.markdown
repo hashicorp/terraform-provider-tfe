@@ -70,11 +70,11 @@ class MyConvertedCode extends cdktf.TerraformStack {
 
 ```
 
-#### BitBucket Server Usage
+#### BitBucket Data Center Usage
 
-See [documentation for TFC/E setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/bitbucket-server).
+See [documentation for TFC/E setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/bitbucket-data-center).
 
-When using BitBucket Server, you must use three required fields: `key`, `secret`, `rsaPublicKey`.
+When using BitBucket Data Center, you must use three required fields: `key`, `secret`, `rsaPublicKey`.
 
 
 ```typescript
@@ -87,16 +87,16 @@ class MyConvertedCode extends cdktf.TerraformStack {
   constructor(scope: constructs.Construct, name: string) {
     super(scope, name);
     new tfe.oauthClient.OauthClient(this, "test", {
-      apiUrl: "https://bbs.example.com",
-      httpUrl: "https://bss.example.com",
+      apiUrl: "https://bbdc.example.com",
+      httpUrl: "https://bbdc.example.com",
       key: "<consumer key>",
-      name: "my-bbs-oauth-client",
+      name: "my-bbdc-oauth-client",
       organization: "my-org-name",
       rsaPublicKey:
         "-----BEGIN PUBLIC KEY-----\ncontent\n-----END PUBLIC KEY-----\n",
       secret:
         "-----BEGIN RSA PRIVATE KEY-----\ncontent\n-----END RSA PRIVATE KEY-----\n",
-      serviceProvider: "bitbucket_server",
+      serviceProvider: "bitbucket_data_center",
     });
   }
 }
@@ -117,15 +117,15 @@ The following arguments are supported:
 * `privateKey` - (Required for `adoServer`) The text of the private key associated with your Azure DevOps Server account
 * `key` - The OAuth Client key can refer to a Consumer Key, Application Key,
   or another type of client key for the VCS provider.
-* `secret` - (Required for `bitbucketServer`) The OAuth Client secret is used for BitBucket Server, this secret is the
-  the text of the SSH private key associated with your BitBucket Server
+* `secret` - (Required for `bitbucketDataCenter`) The OAuth Client secret is used for Bitbucket Data Center, this secret is the
+  the text of the SSH private key associated with your Bitbucket Data Center
 Application Link.
-* `rsaPublicKey` - (Required for `bitbucketServer`) Required for BitBucket
+* `rsaPublicKey` - (Required for `bitbucketDataCenter`) Required for BitBucket
   Server in conjunction with the secret. Not used for any other providers. The
-text of the SSH public key associated with your BitBucket Server Application
+text of the SSH public key associated with your Bitbucket Data Center Application
 Link.
 * `serviceProvider` - (Required) The VCS provider being connected with. Valid
-  options are `adoServer`, `adoServices`, `bitbucketHosted`, `bitbucketServer`, `github`, `githubEnterprise`, `gitlabHosted`,
+  options are `adoServer`, `adoServices`, `bitbucketDataCenter`, `bitbucketHosted`, `bitbucketServer`(deprecated), `github`, `githubEnterprise`, `gitlabHosted`,
   `gitlabCommunityEdition`, or `gitlabEnterpriseEdition`.
 
 ## Attributes Reference
