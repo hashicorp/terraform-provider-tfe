@@ -143,7 +143,6 @@ func Provider() *schema.Provider {
 			"tfe_team_token":                     resourceTFETeamToken(),
 			"tfe_terraform_version":              resourceTFETerraformVersion(),
 			"tfe_workspace":                      resourceTFEWorkspace(),
-			"tfe_workspace_run_task":             resourceTFEWorkspaceRunTask(),
 			"tfe_variable_set":                   resourceTFEVariableSet(),
 			"tfe_workspace_policy_set":           resourceTFEWorkspacePolicySet(),
 			"tfe_workspace_policy_set_exclusion": resourceTFEWorkspacePolicySetExclusion(),
@@ -191,10 +190,4 @@ var descriptions = map[string]string{
 	"ssl_skip_verify": "Whether or not to skip certificate verifications.",
 	"organization": "The organization to apply to a resource if one is not defined on\n" +
 		"the resource itself",
-}
-
-// A commonly used helper method to check if the error
-// returned was tfe.ErrResourceNotFound
-func isErrResourceNotFound(err error) bool {
-	return errors.Is(err, tfe.ErrResourceNotFound)
 }
