@@ -98,7 +98,7 @@ issues:
       - staticcheck
     path: (data_source_outputs|resource_tfe_agent_pool|resource_tfe_notification_configuration|resource_tfe_organization|resource_tfe_registry_module|
       -|resource_tfe_run_trigger|resource_tfe_team_access|resource_tfe_organization_membership|resource_tfe_policy_set|resource_tfe_team_member|
-      -|resource_tfe_workspace|resource_tfe_team_organization_member|resource_tfe_variable_set|resource_tfe_team_project_access)\.go
+      -|resource_tfe_workspace|resource_tfe_team_organization_member|resource_tfe_variable_set|resource_tfe_team_project_access|client_mock_workspaces_test)\.go
     text: "SA1019"
 linters-settings:
   # errcheck:
