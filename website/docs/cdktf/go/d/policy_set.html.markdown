@@ -51,6 +51,8 @@ The following arguments are supported:
 * `Description` - Description of the policy set.
 * `Global` - Whether or not the policy set applies to all workspaces in the organization.
 * `Kind` - The policy-as-code framework for the policy. Valid values are "sentinel" and "opa".
+* `AgentEnabled` - Whether or not the policy set is run as a policy evaluation within the agent. True by default for all "opa" policy sets.
+* `PolicyToolVersion` - The policy tool version to run the evaluation against.
 * `Overridable` - Whether users can override this policy when it fails during a run. Only valid for OPA policies.
 * `WorkspaceIds` - IDs of the workspaces that use the policy set.
 * `ExcludedWorkspaceIds` - IDs of the workspaces that do not use the policy set.
@@ -70,4 +72,4 @@ The `VcsRepo` block contains:
 * `OauthTokenId` - OAuth token ID of the configured VCS connection.
 
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-bff8c51389c3dbd386e33f4eb88fd654798f5c7d466c1606e6c90d22ca8ae19a -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-d02c3079dfc63899f78fd83cad73af0b541d3dfa9605f525b0e217acf3e5f6c6 -->
