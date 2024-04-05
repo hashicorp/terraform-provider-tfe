@@ -26,11 +26,11 @@ func TestAccTFEOrganizationRunTaskDataSource_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOrganizationRunTaskDataSourceConfig(org.Name, rInt, runTasksURL()),
+				Config: testAccTFEOrganizationRunTaskDataSourceConfig(org.Name, rInt, runTasksURL(), runTasksHMACKey()),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.tfe_organization_run_task.foobar", "name", fmt.Sprintf("foobar-task-%d", rInt)),
 					resource.TestCheckResourceAttr("data.tfe_organization_run_task.foobar", "url", runTasksURL()),
@@ -45,7 +45,7 @@ func TestAccTFEOrganizationRunTaskDataSource_basic(t *testing.T) {
 	})
 }
 
-func testAccTFEOrganizationRunTaskDataSourceConfig(orgName string, rInt int, runTaskURL string) string {
+func testAccTFEOrganizationRunTaskDataSourceConfig(orgName string, rInt int, runTaskURL, runTaskHMACKey string) string {
 	return fmt.Sprintf(`
 locals {
     organization_name = "%s"
@@ -55,7 +55,7 @@ resource "tfe_organization_run_task" "foobar" {
 	organization = local.organization_name
 	url          = "%s"
 	name         = "foobar-task-%d"
-	hmac_key     = "Password1"
+	hmac_key     = "%s"
 	enabled      = false
 	description = "a description"
 }
@@ -64,5 +64,5 @@ data "tfe_organization_run_task" "foobar" {
 	organization      = local.organization_name
 	name              = "foobar-task-%d"
 	depends_on = [tfe_organization_run_task.foobar]
-}`, orgName, runTaskURL, rInt, rInt)
+}`, orgName, runTaskURL, rInt, runTaskHMACKey, rInt)
 }
