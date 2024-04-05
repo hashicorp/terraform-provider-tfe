@@ -102,7 +102,7 @@ runs:
         TFE_USER2: tfe-provider-user2
         TF_ACC: "1"
         ENABLE_TFE: "${{ inputs.enterprise }}"
-        TFC_RUN_TASK_URL: "https://httpstat.us/200"
+        RUN_TASKS_URL: "http://testing-mocks.tfe:22180/runtasks/pass"
         GITHUB_POLICY_SET_IDENTIFIER: "hashicorp/test-policy-set"
         GITHUB_REGISTRY_MODULE_IDENTIFIER: "hashicorp/terraform-random-module"
         GITHUB_WORKSPACE_IDENTIFIER: "hashicorp/terraform-random-module"

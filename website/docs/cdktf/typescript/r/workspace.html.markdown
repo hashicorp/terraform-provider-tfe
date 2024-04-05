@@ -143,6 +143,11 @@ The following arguments are supported:
   workspace will display their output as text logs.
 * `sshKeyId` - (Optional) The ID of an SSH key to assign to the workspace.
 * `tagNames` - (Optional) A list of tag names for this workspace. Note that tags must only contain lowercase letters, numbers, colons, or hyphens.
+* `ignoreAdditionalTagNames` - (Optional) Explicitly ignores `tagNames`
+_not_ defined by config so they will not be overwritten by the configured
+tags. This creates exceptional behavior in terraform with respect
+to `tagNames` and is not recommended. This value must be applied before it
+will be used.
 * `terraformVersion` - (Optional) The version of Terraform to use for this
   workspace. This can be either an exact version or a
   [version constraint](https://developer.hashicorp.com/terraform/language/expressions/version-constraints)
@@ -192,4 +197,4 @@ terraform import tfe_workspace.test ws-CH5in3chf8RJjrVd
 terraform import tfe_workspace.test my-org-name/my-wkspace-name
 ```
 
-<!-- cache-key: cdktf-0.20.1 input-1e1393c305fc1bc0e20e87ba524816e7ea2945e6904ebc7678f9fdab56db339f -->
+<!-- cache-key: cdktf-0.20.1 input-a5797bfc1d563d3420d63a8c2aa349bc2e5be65c170398643e0b7b798b52d421 -->

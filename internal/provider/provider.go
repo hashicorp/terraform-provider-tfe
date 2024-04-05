@@ -86,7 +86,6 @@ func Provider() *schema.Provider {
 			"tfe_ip_ranges":               dataSourceTFEIPRanges(),
 			"tfe_oauth_client":            dataSourceTFEOAuthClient(),
 			"tfe_organization_membership": dataSourceTFEOrganizationMembership(),
-			"tfe_organization_run_task":   dataSourceTFEOrganizationRunTask(),
 			"tfe_organization_tags":       dataSourceTFEOrganizationTags(),
 			"tfe_project":                 dataSourceTFEProject(),
 			"tfe_slug":                    dataSourceTFESlug(),
@@ -97,7 +96,6 @@ func Provider() *schema.Provider {
 			"tfe_team_project_access":     dataSourceTFETeamProjectAccess(),
 			"tfe_workspace":               dataSourceTFEWorkspace(),
 			"tfe_workspace_ids":           dataSourceTFEWorkspaceIDs(),
-			"tfe_workspace_run_task":      dataSourceTFEWorkspaceRunTask(),
 			"tfe_variables":               dataSourceTFEWorkspaceVariables(),
 			"tfe_variable_set":            dataSourceTFEVariableSet(),
 			"tfe_policy_set":              dataSourceTFEPolicySet(),
@@ -120,7 +118,6 @@ func Provider() *schema.Provider {
 			"tfe_organization_default_settings":  resourceTFEOrganizationDefaultSettings(),
 			"tfe_organization_membership":        resourceTFEOrganizationMembership(),
 			"tfe_organization_module_sharing":    resourceTFEOrganizationModuleSharing(),
-			"tfe_organization_run_task":          resourceTFEOrganizationRunTask(),
 			"tfe_organization_token":             resourceTFEOrganizationToken(),
 			"tfe_policy":                         resourceTFEPolicy(),
 			"tfe_policy_set":                     resourceTFEPolicySet(),
@@ -145,7 +142,6 @@ func Provider() *schema.Provider {
 			"tfe_team_token":                     resourceTFETeamToken(),
 			"tfe_terraform_version":              resourceTFETerraformVersion(),
 			"tfe_workspace":                      resourceTFEWorkspace(),
-			"tfe_workspace_run_task":             resourceTFEWorkspaceRunTask(),
 			"tfe_variable_set":                   resourceTFEVariableSet(),
 			"tfe_workspace_policy_set":           resourceTFEWorkspacePolicySet(),
 			"tfe_workspace_policy_set_exclusion": resourceTFEWorkspacePolicySetExclusion(),
@@ -193,10 +189,4 @@ var descriptions = map[string]string{
 	"ssl_skip_verify": "Whether or not to skip certificate verifications.",
 	"organization": "The organization to apply to a resource if one is not defined on\n" +
 		"the resource itself",
-}
-
-// A commonly used helper method to check if the error
-// returned was tfe.ErrResourceNotFound
-func isErrResourceNotFound(err error) bool {
-	return errors.Is(err, tfe.ErrResourceNotFound)
 }

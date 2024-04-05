@@ -1,5 +1,7 @@
 ## UNRELEASED
 
+## v0.53.0
+
 FEATURES:
 * `r/tfe_workspace`: Add `ignore_additional_tag_names` which explicitly ignores `tag_names` _not_ defined by config so they will not be overwritten by the configured tags, by @brandonc and @mbillow [1254](https://github.com/hashicorp/terraform-provider-tfe/pull/1254)
 * **New Resource**: `r/tfe_project_oauth_client` attaches/detaches an existing `project` to an existing `oauth client`, by @Netra2104 [1144](https://github.com/hashicorp/terraform-provider-tfe/pull/1144)
@@ -8,6 +10,11 @@ FEATURES:
 BUG FIXES:
 
 * `r/tfe_registry_module`: Fix registry module always triggering re-creation when an organization is not present, by @hashimoon [1263](https://github.com/hashicorp/terraform-provider-tfe/pull/1263)
+* `r/tfe_workspace`: Change the error message returned when a workspace cannot be safe-deleted to reflect that the error can happen when the latest state is still being processed @uturunku1 [1274](https://github.com/hashicorp/terraform-provider-tfe/pull/1274)
+
+
+ENHANCEMENTS:
+* `r/tfe_registry_module`: Update `Delete` method to call `DeleteByName` when `module_provider` is not present, and `DeleteProvider` when `module_provider` exists @laurenolivia[1267](https://github.com/hashicorp/terraform-provider-tfe/pull/1267)
 
 ## v0.52.0
 
