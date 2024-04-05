@@ -45,8 +45,7 @@ func TestAccTFEOAuthClient_basic(t *testing.T) {
 	})
 }
 
-func TestAccTFEOAuthClientWithOrganizationScoped_basic(t *testing.T) {
-	skipUnlessBeta(t)
+func TestAccTFEOAuthClientWithOrganizationScoped_basic(t *testing.T) {	
 	oc := &tfe.OAuthClient{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
