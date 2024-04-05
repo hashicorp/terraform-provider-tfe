@@ -34,6 +34,7 @@ func workspaceRunTaskStages() []string {
 		string(tfe.PrePlan),
 		string(tfe.PostPlan),
 		string(tfe.PreApply),
+		string(tfe.PostApply),
 	}
 }
 
