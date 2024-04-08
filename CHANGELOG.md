@@ -1,5 +1,6 @@
 ## UNRELEASED
-
+### Enhancements
+* Adds `post_apply` to list of possible `stages` for Run Tasks by @carolinaborim [#1307](https://github.com/hashicorp/terraform-provider-tfe/pull/1307)
 ## v0.53.0
 
 FEATURES:
