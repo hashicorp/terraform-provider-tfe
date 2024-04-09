@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccTFEProjectOAuthClient_basic(t *testing.T) {	
+func TestAccTFEProjectOAuthClient_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	tfeClient, err := getClientUsingEnv()
@@ -56,7 +56,7 @@ func TestAccTFEProjectOAuthClient_basic(t *testing.T) {
 	})
 }
 
-func TestAccTFEProjectOAuthClient_incorrectImportSyntax(t *testing.T) {	
+func TestAccTFEProjectOAuthClient_incorrectImportSyntax(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	tfeClient, err := getClientUsingEnv()
