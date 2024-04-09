@@ -1,11 +1,12 @@
 ## UNRELEASED
-
+### Enhancements
+* Adds `post_apply` to list of possible `stages` for Run Tasks by @carolinaborim [#1307](https://github.com/hashicorp/terraform-provider-tfe/pull/1307)
+* **New Resource**: `r/tfe_project_oauth_client` attaches/detaches an existing `project` to an existing `oauth client`, by @Netra2104 [1144](https://github.com/hashicorp/terraform-provider-tfe/pull/1144)
 ## v0.53.0
 
 FEATURES:
 * `r/tfe_workspace`: Add `ignore_additional_tag_names` which explicitly ignores `tag_names` _not_ defined by config so they will not be overwritten by the configured tags, by @brandonc and @mbillow [1254](https://github.com/hashicorp/terraform-provider-tfe/pull/1254)
-* **New Resource**: `r/tfe_project_oauth_client` attaches/detaches an existing `project` to an existing `oauth client`, by @Netra2104 [1144](https://github.com/hashicorp/terraform-provider-tfe/pull/1144)
-  **NOTE:** `r/tfe_project_oauth_client` resource is currently in beta and isn't generally available to all users. It is subject to change or removal.
+* `r/tfe_oauth_client`: Add `organization_scoped` attribute, by @Netra2104 [1142](https://github.com/hashicorp/terraform-provider-tfe/pull/1142)
 
 BUG FIXES:
 
