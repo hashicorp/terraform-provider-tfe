@@ -177,10 +177,22 @@ func (m *mockWorkspaces) DeleteDataRetentionPolicy(ctx context.Context, workspac
 	panic("not implemented")
 }
 
+//nolint:staticcheck // This method still needs to be implemented even though deprecated
 func (m *mockWorkspaces) ReadDataRetentionPolicy(ctx context.Context, workspaceID string) (*tfe.DataRetentionPolicy, error) {
 	panic("not implemented")
 }
 
+//nolint:staticcheck // This method still needs to be implemented even though deprecated
 func (m *mockWorkspaces) SetDataRetentionPolicy(ctx context.Context, workspaceID string, options tfe.DataRetentionPolicySetOptions) (*tfe.DataRetentionPolicy, error) {
+	panic("not implemented")
+}
+
+func (m *mockWorkspaces) ReadDataRetentionPolicyChoice(ctx context.Context, organization string) (*tfe.DataRetentionPolicyChoice, error) {
+	panic("not implemented")
+}
+func (m *mockWorkspaces) SetDataRetentionPolicyDeleteOlder(ctx context.Context, organization string, options tfe.DataRetentionPolicyDeleteOlderSetOptions) (*tfe.DataRetentionPolicyDeleteOlder, error) {
+	panic("not implemented")
+}
+func (m *mockWorkspaces) SetDataRetentionPolicyDontDelete(ctx context.Context, organization string, options tfe.DataRetentionPolicyDontDeleteSetOptions) (*tfe.DataRetentionPolicyDontDelete, error) {
 	panic("not implemented")
 }
