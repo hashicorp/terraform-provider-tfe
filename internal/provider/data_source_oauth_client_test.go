@@ -21,7 +21,6 @@ func testAccTFEOAuthClientDataSourcePreCheck(t *testing.T) {
 }
 
 func TestAccTFEOAuthClientDataSource_basic(t *testing.T) {
-
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
