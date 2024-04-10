@@ -17,7 +17,6 @@ import (
 )
 
 func TestAccTFEProject_basic(t *testing.T) {
-	skipUnlessBeta(t)
 	project := &tfe.Project{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -65,7 +64,6 @@ func TestAccTFEProject_invalidName(t *testing.T) {
 }
 
 func TestAccTFEProject_update(t *testing.T) {
-	skipUnlessBeta(t)
 	project := &tfe.Project{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -103,7 +101,6 @@ func TestAccTFEProject_update(t *testing.T) {
 }
 
 func TestAccTFEProject_import(t *testing.T) {
-	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	project := &tfe.Project{}
 	resource.Test(t, resource.TestCase{
