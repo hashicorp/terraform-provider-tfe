@@ -32,7 +32,7 @@ func TestAccTFEOAuthClientDataSource_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.tfe_oauth_client.client", "id"),
 					resource.TestCheckResourceAttr(
-						"data.tfe_oauth_client.client", "organization_scoped", "false"),
+						"data.tfe_oauth_client.client", "organization_scoped", "true"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_oauth_client.client", "project_ids.#", "1"),
 				),
@@ -221,8 +221,8 @@ resource "tfe_organization" "foobar" {
 }
 
 resource "tfe_project" "foobar" {
-  name         = "project-foo-%d"
-  organization = local.organization_name
+  	name         = "project-foo-%d"
+  	organization = tfe_organization.foobar.name
 }
 
 resource "tfe_oauth_client" "test" {
@@ -231,7 +231,7 @@ resource "tfe_oauth_client" "test" {
 	http_url         = "https://github.com"
 	oauth_token      = "%s"
 	service_provider = "github"
-	organization_scoped = false
+	organization_scoped = true
 }
 
 resource "tfe_project_oauth_client" "foobar" {
@@ -240,7 +240,10 @@ resource "tfe_project_oauth_client" "foobar" {
 }
 
 data "tfe_oauth_client" "client" {
+	name  = tfe_oauth_client.test.name
+	organization = tfe_organization.foobar.name
 	oauth_client_id = tfe_oauth_client.test.id
+	depends_on=[tfe_project_oauth_client.foobar]
 }
 `, rInt, rInt, envGithubToken)
 }
@@ -257,7 +260,7 @@ resource "tfe_oauth_client" "test" {
 	http_url         = "https://github.com"
 	oauth_token      = "%s"
 	service_provider = "github"
-	organization_scoped = false
+	organization_scoped = true
 }
 data "tfe_oauth_client" "client" {
 	oauth_client_id = tfe_oauth_client.test.id
@@ -278,7 +281,7 @@ resource "tfe_oauth_client" "test" {
 	name             = "tst-github-%d"
 	oauth_token      = "%s"
 	service_provider = "github"
-	organization_scoped = false
+	organization_scoped = true
 }
 data "tfe_oauth_client" "client" {
     organization = "tst-terraform-%d"
