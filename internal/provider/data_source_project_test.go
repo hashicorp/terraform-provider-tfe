@@ -13,7 +13,6 @@ import (
 )
 
 func TestAccTFEProjectDataSource_basic(t *testing.T) {
-	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
