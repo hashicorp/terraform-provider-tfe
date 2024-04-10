@@ -89,7 +89,7 @@ The above snippet using `required_providers` is for Terraform 0.13+; if you are 
 
 ```hcl
 provider "tfe" {
-  version = "~> 0.52.0"
+  version = "~> 0.53.0"
   ...
 }
 ```
@@ -138,4 +138,4 @@ The following arguments are supported:
   arguments. Ensure that the organization already exists prior to using this argument.
   This can also be specified using the `TFE_ORGANIZATION` environment variable.
 
-<!-- cache-key: cdktf-0.20.1 input-c9919d4cb1aaeb1d26cb11fc216246a27b831da5d78af26d1e01b428ba6bf7df -->
+<!-- cache-key: cdktf-0.20.1 input-0f1d4ec527475826682d45e6c65349a810ec40c497fb363f4a2468e8beb378f7 -->

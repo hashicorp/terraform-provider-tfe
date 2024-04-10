@@ -10,6 +10,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -414,15 +415,30 @@ func resourceTFERegistryModuleRead(d *schema.ResourceData, meta interface{}) err
 func resourceTFERegistryModuleDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
-	log.Printf("[DEBUG] Delete registry module: %s", d.Id())
-	organization := d.Get("organization").(string)
-	name := d.Get("name").(string)
-	err := config.Client.RegistryModules.Delete(ctx, organization, name)
-	if err != nil {
-		if err == tfe.ErrResourceNotFound {
-			return nil
+	// Fields required to delete registry module by provider
+	// To delete by name, Provider field is not required
+	rModID := tfe.RegistryModuleID{
+		Organization: d.Get("organization").(string),
+		Name:         d.Get("name").(string),
+		Provider:     d.Get("module_provider").(string),
+		Namespace:    d.Get("namespace").(string),
+		RegistryName: tfe.RegistryName(d.Get("registry_name").(string)),
+	}
+
+	if v, ok := d.GetOk("module_provider"); ok && v.(string) != "" {
+		log.Printf("[DEBUG] Delete registry module by provider: %s", d.Id())
+
+		err := config.Client.RegistryModules.DeleteProvider(ctx, rModID)
+		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+			return fmt.Errorf("error deleting registry module provider: %w", err)
 		}
-		return fmt.Errorf("Error deleting registry module %s: %w", d.Id(), err)
+	} else {
+		log.Printf("[DEBUG] Delete registry module by name: %s", d.Id())
+
+		err := config.Client.RegistryModules.DeleteByName(ctx, rModID)
+		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+			return fmt.Errorf("Error deleting registry module %s: %w", d.Id(), err)
+		}
 	}
 
 	return nil
