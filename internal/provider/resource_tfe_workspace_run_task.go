@@ -12,12 +12,6 @@ import (
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
@@ -67,22 +61,21 @@ func NewWorkspaceRunTaskResource() resource.Resource {
 	return &resourceWorkspaceRunTask{}
 }
 
-type modelTFEWorkspaceRunTaskV0 struct {
-	ID               types.String `tfsdk:"id"`
-	WorkspaceID      types.String `tfsdk:"workspace_id"`
-	TaskID           types.String `tfsdk:"task_id"`
-	EnforcementLevel types.String `tfsdk:"enforcement_level"`
-	Stage            types.String `tfsdk:"stage"`
-}
-
-func modelFromTFEWorkspaceRunTask(v *tfe.WorkspaceRunTask) modelTFEWorkspaceRunTaskV0 {
-	return modelTFEWorkspaceRunTaskV0{
+func modelFromTFEWorkspaceRunTask(v *tfe.WorkspaceRunTask) modelTFEWorkspaceRunTaskV1 {
+	result := modelTFEWorkspaceRunTaskV1{
 		ID:               types.StringValue(v.ID),
 		WorkspaceID:      types.StringValue(v.Workspace.ID),
 		TaskID:           types.StringValue(v.RunTask.ID),
 		EnforcementLevel: types.StringValue(string(v.EnforcementLevel)),
 		Stage:            types.StringValue(string(v.Stage)),
+		Stages:           types.ListNull(types.StringType),
 	}
+
+	if stages, err := types.ListValueFrom(ctx, types.StringType, v.Stages); err == nil {
+		result.Stages = stages
+	}
+
+	return result
 }
 
 func (r *resourceWorkspaceRunTask) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -107,62 +100,11 @@ func (r *resourceWorkspaceRunTask) Configure(ctx context.Context, req resource.C
 }
 
 func (r *resourceWorkspaceRunTask) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-	resp.Schema = schema.Schema{
-		Version: 0,
-		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "Service-generated identifier for the workspace task",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
-			},
-			"workspace_id": schema.StringAttribute{
-				Description: "The id of the workspace to associate the Run task to.",
-				Required:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-			},
-			"task_id": schema.StringAttribute{
-				Description: "The id of the Run task to associate to the Workspace.",
-				Required:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-			},
-			"enforcement_level": schema.StringAttribute{
-				Description: fmt.Sprintf("The enforcement level of the task. Valid values are %s.", sentenceList(
-					workspaceRunTaskEnforcementLevels(),
-					"`",
-					"`",
-					"and",
-				)),
-				Required: true,
-				Validators: []validator.String{
-					stringvalidator.OneOf(workspaceRunTaskEnforcementLevels()...),
-				},
-			},
-			"stage": schema.StringAttribute{
-				Description: fmt.Sprintf("The stage to run the task in. Valid values are %s.", sentenceList(
-					workspaceRunTaskStages(),
-					"`",
-					"`",
-					"and",
-				)),
-				Optional: true,
-				Computed: true,
-				Default:  stringdefault.StaticString(string(tfe.PostPlan)),
-				Validators: []validator.String{
-					stringvalidator.OneOf(workspaceRunTaskStages()...),
-				},
-			},
-		},
-	}
+	resp.Schema = resourceWorkspaceRunTaskSchemaV1
 }
 
 func (r *resourceWorkspaceRunTask) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state modelTFEWorkspaceRunTaskV0
+	var state modelTFEWorkspaceRunTaskV1
 
 	// Read Terraform current state into the model
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -187,7 +129,7 @@ func (r *resourceWorkspaceRunTask) Read(ctx context.Context, req resource.ReadRe
 }
 
 func (r *resourceWorkspaceRunTask) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan modelTFEWorkspaceRunTaskV0
+	var plan modelTFEWorkspaceRunTaskV1
 
 	// Read Terraform planned changes into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -239,7 +181,7 @@ func (r *resourceWorkspaceRunTask) stringPointerToStagePointer(val *string) *tfe
 }
 
 func (r *resourceWorkspaceRunTask) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan modelTFEWorkspaceRunTaskV0
+	var plan modelTFEWorkspaceRunTaskV1
 
 	// Read Terraform planned changes into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -272,7 +214,7 @@ func (r *resourceWorkspaceRunTask) Update(ctx context.Context, req resource.Upda
 }
 
 func (r *resourceWorkspaceRunTask) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state modelTFEWorkspaceRunTaskV0
+	var state modelTFEWorkspaceRunTaskV1
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -321,5 +263,37 @@ func (r *resourceWorkspaceRunTask) ImportState(ctx context.Context, req resource
 	} else {
 		result := modelFromTFEWorkspaceRunTask(wstask)
 		resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+	}
+}
+
+func (r *resourceWorkspaceRunTask) UpgradeState(ctx context.Context) map[int64]resource.StateUpgrader {
+	return map[int64]resource.StateUpgrader{
+		0: {
+			PriorSchema: &resourceWorkspaceRunTaskSchemaV0,
+			StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
+				var oldData modelTFEWorkspaceRunTaskV0
+				diags := req.State.Get(ctx, &oldData)
+				resp.Diagnostics.Append(diags...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				oldWorkspaceID := oldData.WorkspaceID.ValueString()
+				oldID := oldData.ID.ValueString()
+
+				wstask, err := r.config.Client.WorkspaceRunTasks.Read(ctx, oldWorkspaceID, oldID)
+				if err != nil || wstask == nil {
+					resp.Diagnostics.AddError(
+						"Error reading workspace run task",
+						fmt.Sprintf("Couldn't read workspace run task %s while trying to upgrade state of tfe_workspace_run_task: %s", oldID, err.Error()),
+					)
+					return
+				}
+
+				newData := modelFromTFEWorkspaceRunTask(wstask)
+				diags = resp.State.Set(ctx, newData)
+				resp.Diagnostics.Append(diags...)
+			},
+		},
 	}
 }
