@@ -79,6 +79,12 @@ func TestAccTFETeam_full(t *testing.T) {
 						"tfe_team.foobar", "organization_access.0.read_workspaces", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_membership", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_teams", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_organization_access", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.access_secret_teams", "true"),
 				),
 			},
 		},
@@ -126,6 +132,12 @@ func TestAccTFETeam_full_update(t *testing.T) {
 						"tfe_team.foobar", "organization_access.0.read_workspaces", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_membership", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_teams", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_organization_access", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.access_secret_teams", "true"),
 				),
 			},
 			{
@@ -160,6 +172,12 @@ func TestAccTFETeam_full_update(t *testing.T) {
 						"tfe_team.foobar", "sso_team_id", "changed-sso-id"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_membership", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_teams", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_organization_access", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.access_secret_teams", "false"),
 				),
 			},
 			{
@@ -195,6 +213,12 @@ func TestAccTFETeam_full_update(t *testing.T) {
 						"tfe_team.foobar", "sso_team_id", ""),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_membership", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_teams", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_organization_access", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.access_secret_teams", "false"),
 				),
 			},
 		},
@@ -447,6 +471,16 @@ func testAccCheckTFETeamAttributes_full(
 		if !team.OrganizationAccess.ManageMembership {
 			return fmt.Errorf("OrganizationAccess.ManageMembership should be true")
 		}
+		if !team.OrganizationAccess.ManageTeams {
+			return fmt.Errorf("OrganizationAccess.ManageTeams should be true")
+		}
+		if !team.OrganizationAccess.ManageOrganizationAccess {
+			return fmt.Errorf("OrganizationAccess.ManageOrganizationAccess should be true")
+		}
+		if !team.OrganizationAccess.AccessSecretTeams {
+			return fmt.Errorf("OrganizationAccess.AccessSecretTeams should be true")
+		}
+
 		if team.SSOTeamID != "team-test-sso-id" {
 			return fmt.Errorf("Bad SSO Team ID: %s", team.SSOTeamID)
 		}
@@ -483,6 +517,15 @@ func testAccCheckTFETeamAttributes_full_update(
 		}
 		if team.OrganizationAccess.ManageMembership {
 			return fmt.Errorf("OrganizationAccess.ManageMembership should be false")
+		}
+		if team.OrganizationAccess.ManageTeams {
+			return fmt.Errorf("OrganizationAccess.ManageTeams should be false")
+		}
+		if team.OrganizationAccess.ManageOrganizationAccess {
+			return fmt.Errorf("OrganizationAccess.ManageOrganizationAccess should be false")
+		}
+		if team.OrganizationAccess.AccessSecretTeams {
+			return fmt.Errorf("OrganizationAccess.AccessSecretTeams should be false")
 		}
 
 		if team.SSOTeamID != "changed-sso-id" {
@@ -552,6 +595,9 @@ resource "tfe_team" "foobar" {
 	read_workspaces = true
 	read_projects = true
 	manage_membership = true
+	manage_teams = true
+	manage_organization_access = true
+	access_secret_teams = true
   }
   sso_team_id = "team-test-sso-id"
 }`, rInt)
@@ -582,6 +628,9 @@ resource "tfe_team" "foobar" {
 	read_projects = false
 	read_workspaces = false
 	manage_membership = false
+	manage_teams = false
+	manage_organization_access = false
+	access_secret_teams = false
   }
 
   sso_team_id = "changed-sso-id"

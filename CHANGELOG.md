@@ -11,6 +11,7 @@ FEATURES:
 * `d/tfe_oauth_client`: Add `organization_scoped` attribute, by @Netra2104 [1148](https://github.com/hashicorp/terraform-provider-tfe/pull/1148)
 * **New Resource**: `r/tfe_project_oauth_client` attaches/detaches an existing `project` to an existing `oauth client`, by @Netra2104 [1144](https://github.com/hashicorp/terraform-provider-tfe/pull/1144)
 * **New Resource**: `r/tfe_test_variable` is a new resource for creating environment variables used by registry modules for terraform test, by @aaabdelgany [1285](https://github.com/hashicorp/terraform-provider-tfe/pull/1285)
+* `r/tfe_team`: Add attributes `manage_teams`, `manage_organization_access`, and `access_secret_teams` to `organization_access` on `tfe_team` by @juliannatetreault [#1313](https://github.com/hashicorp/terraform-provider-tfe/pull/1313)
 
 BUG FIXES:
 * `r/tfe_organization_default_settings`: Fix import resource address documentation by @Uk1288 [#1324](https://github.com/hashicorp/terraform-provider-tfe/pull/1324)

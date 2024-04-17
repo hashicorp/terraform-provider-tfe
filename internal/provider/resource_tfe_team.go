@@ -105,6 +105,21 @@ func resourceTFETeam() *schema.Resource {
 							Optional: true,
 							Default:  false,
 						},
+						"manage_teams": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
+						},
+						"manage_organization_access": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
+						},
+						"access_secret_teams": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
+						},
 					},
 				},
 			},
@@ -144,17 +159,20 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 		organizationAccess := v.([]interface{})[0].(map[string]interface{})
 
 		options.OrganizationAccess = &tfe.OrganizationAccessOptions{
-			ManagePolicies:        tfe.Bool(organizationAccess["manage_policies"].(bool)),
-			ManagePolicyOverrides: tfe.Bool(organizationAccess["manage_policy_overrides"].(bool)),
-			ManageWorkspaces:      tfe.Bool(organizationAccess["manage_workspaces"].(bool)),
-			ManageVCSSettings:     tfe.Bool(organizationAccess["manage_vcs_settings"].(bool)),
-			ManageProviders:       tfe.Bool(organizationAccess["manage_providers"].(bool)),
-			ManageModules:         tfe.Bool(organizationAccess["manage_modules"].(bool)),
-			ManageRunTasks:        tfe.Bool(organizationAccess["manage_run_tasks"].(bool)),
-			ManageProjects:        tfe.Bool(organizationAccess["manage_projects"].(bool)),
-			ReadWorkspaces:        tfe.Bool(organizationAccess["read_workspaces"].(bool)),
-			ReadProjects:          tfe.Bool(organizationAccess["read_projects"].(bool)),
-			ManageMembership:      tfe.Bool(organizationAccess["manage_membership"].(bool)),
+			ManagePolicies:           tfe.Bool(organizationAccess["manage_policies"].(bool)),
+			ManagePolicyOverrides:    tfe.Bool(organizationAccess["manage_policy_overrides"].(bool)),
+			ManageWorkspaces:         tfe.Bool(organizationAccess["manage_workspaces"].(bool)),
+			ManageVCSSettings:        tfe.Bool(organizationAccess["manage_vcs_settings"].(bool)),
+			ManageProviders:          tfe.Bool(organizationAccess["manage_providers"].(bool)),
+			ManageModules:            tfe.Bool(organizationAccess["manage_modules"].(bool)),
+			ManageRunTasks:           tfe.Bool(organizationAccess["manage_run_tasks"].(bool)),
+			ManageProjects:           tfe.Bool(organizationAccess["manage_projects"].(bool)),
+			ReadWorkspaces:           tfe.Bool(organizationAccess["read_workspaces"].(bool)),
+			ReadProjects:             tfe.Bool(organizationAccess["read_projects"].(bool)),
+			ManageMembership:         tfe.Bool(organizationAccess["manage_membership"].(bool)),
+			ManageTeams:              tfe.Bool(organizationAccess["manage_teams"].(bool)),
+			ManageOrganizationAccess: tfe.Bool(organizationAccess["manage_organization_access"].(bool)),
+			AccessSecretTeams:        tfe.Bool(organizationAccess["access_secret_teams"].(bool)),
 		}
 	}
 
@@ -204,17 +222,20 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", team.Name)
 	if team.OrganizationAccess != nil {
 		organizationAccess := []map[string]bool{{
-			"manage_policies":         team.OrganizationAccess.ManagePolicies,
-			"manage_policy_overrides": team.OrganizationAccess.ManagePolicyOverrides,
-			"manage_workspaces":       team.OrganizationAccess.ManageWorkspaces,
-			"manage_vcs_settings":     team.OrganizationAccess.ManageVCSSettings,
-			"manage_providers":        team.OrganizationAccess.ManageProviders,
-			"manage_modules":          team.OrganizationAccess.ManageModules,
-			"manage_run_tasks":        team.OrganizationAccess.ManageRunTasks,
-			"manage_projects":         team.OrganizationAccess.ManageProjects,
-			"read_projects":           team.OrganizationAccess.ReadProjects,
-			"read_workspaces":         team.OrganizationAccess.ReadWorkspaces,
-			"manage_membership":       team.OrganizationAccess.ManageMembership,
+			"manage_policies":            team.OrganizationAccess.ManagePolicies,
+			"manage_policy_overrides":    team.OrganizationAccess.ManagePolicyOverrides,
+			"manage_workspaces":          team.OrganizationAccess.ManageWorkspaces,
+			"manage_vcs_settings":        team.OrganizationAccess.ManageVCSSettings,
+			"manage_providers":           team.OrganizationAccess.ManageProviders,
+			"manage_modules":             team.OrganizationAccess.ManageModules,
+			"manage_run_tasks":           team.OrganizationAccess.ManageRunTasks,
+			"manage_projects":            team.OrganizationAccess.ManageProjects,
+			"read_projects":              team.OrganizationAccess.ReadProjects,
+			"read_workspaces":            team.OrganizationAccess.ReadWorkspaces,
+			"manage_membership":          team.OrganizationAccess.ManageMembership,
+			"manage_teams":               team.OrganizationAccess.ManageTeams,
+			"manage_organization_access": team.OrganizationAccess.ManageOrganizationAccess,
+			"access_secret_teams":        team.OrganizationAccess.AccessSecretTeams,
 		}}
 		if err := d.Set("organization_access", organizationAccess); err != nil {
 			return fmt.Errorf("error setting organization access for team %s: %w", d.Id(), err)
@@ -241,17 +262,20 @@ func resourceTFETeamUpdate(d *schema.ResourceData, meta interface{}) error {
 		organizationAccess := v.([]interface{})[0].(map[string]interface{})
 
 		options.OrganizationAccess = &tfe.OrganizationAccessOptions{
-			ManagePolicies:        tfe.Bool(organizationAccess["manage_policies"].(bool)),
-			ManagePolicyOverrides: tfe.Bool(organizationAccess["manage_policy_overrides"].(bool)),
-			ManageWorkspaces:      tfe.Bool(organizationAccess["manage_workspaces"].(bool)),
-			ManageVCSSettings:     tfe.Bool(organizationAccess["manage_vcs_settings"].(bool)),
-			ManageProviders:       tfe.Bool(organizationAccess["manage_providers"].(bool)),
-			ManageModules:         tfe.Bool(organizationAccess["manage_modules"].(bool)),
-			ManageRunTasks:        tfe.Bool(organizationAccess["manage_run_tasks"].(bool)),
-			ManageProjects:        tfe.Bool(organizationAccess["manage_projects"].(bool)),
-			ReadProjects:          tfe.Bool(organizationAccess["read_projects"].(bool)),
-			ReadWorkspaces:        tfe.Bool(organizationAccess["read_workspaces"].(bool)),
-			ManageMembership:      tfe.Bool(organizationAccess["manage_membership"].(bool)),
+			ManagePolicies:           tfe.Bool(organizationAccess["manage_policies"].(bool)),
+			ManagePolicyOverrides:    tfe.Bool(organizationAccess["manage_policy_overrides"].(bool)),
+			ManageWorkspaces:         tfe.Bool(organizationAccess["manage_workspaces"].(bool)),
+			ManageVCSSettings:        tfe.Bool(organizationAccess["manage_vcs_settings"].(bool)),
+			ManageProviders:          tfe.Bool(organizationAccess["manage_providers"].(bool)),
+			ManageModules:            tfe.Bool(organizationAccess["manage_modules"].(bool)),
+			ManageRunTasks:           tfe.Bool(organizationAccess["manage_run_tasks"].(bool)),
+			ManageProjects:           tfe.Bool(organizationAccess["manage_projects"].(bool)),
+			ReadProjects:             tfe.Bool(organizationAccess["read_projects"].(bool)),
+			ReadWorkspaces:           tfe.Bool(organizationAccess["read_workspaces"].(bool)),
+			ManageMembership:         tfe.Bool(organizationAccess["manage_membership"].(bool)),
+			ManageTeams:              tfe.Bool(organizationAccess["manage_teams"].(bool)),
+			ManageOrganizationAccess: tfe.Bool(organizationAccess["manage_organization_access"].(bool)),
+			AccessSecretTeams:        tfe.Bool(organizationAccess["access_secret_teams"].(bool)),
 		}
 	}
 
