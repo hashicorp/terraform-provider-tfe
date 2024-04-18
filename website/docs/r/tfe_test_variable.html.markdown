@@ -12,12 +12,12 @@ Creates, updates and destroys environment variables used for testing in the Priv
 ## Example Usage
 
 ```hcl
-resource "tfe_organization" "test" {
+resource "tfe_organization" "test_rg" {
   name  = "my-org-name"
   email = "admin@company.com"
 }
   
-resource "tfe_oauth_client" "test" {
+resource "tfe_oauth_client" "test_client" {
   organization     = tfe_organization.test.name
   api_url          = "https://api.github.com"
   http_url         = "https://github.com"
@@ -25,7 +25,7 @@ resource "tfe_oauth_client" "test" {
   service_provider = "github"
 }
 
-resource "tfe_registry_module" "test" {
+resource "tfe_registry_module" "test_module" {
   organization     = "test-module"
   vcs_repo {
   display_identifier = "GH_NAME/REPO_NAME"
@@ -39,7 +39,7 @@ resource "tfe_registry_module" "test" {
   }
 }
 
-resource "tfe_test_variable" "test" {
+resource "tfe_test_variable" "tf_test_test_variable" {
   key          = "key_test"
   value        = "value_test"
   description  = "some description"
