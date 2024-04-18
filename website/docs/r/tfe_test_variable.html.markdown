@@ -12,7 +12,7 @@ Creates, updates and destroys environment variables used for testing in the Priv
 ## Example Usage
 
 ```hcl
-resource "tfe_organization" "test_rg" {
+resource "tfe_organization" "test_org" {
   name  = "my-org-name"
   email = "admin@company.com"
 }
