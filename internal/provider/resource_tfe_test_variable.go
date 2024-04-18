@@ -21,6 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 type resourceTFETestVariable struct {
@@ -223,7 +224,7 @@ func (r *resourceTFETestVariable) Create(ctx context.Context, req resource.Creat
 		Description: data.Description.ValueStringPointer(),
 	}
 
-	log.Printf("[DEBUG] Create %s variable: %s", category, key)
+	tflog.Debug(ctx, fmt.Sprintf("Create %s variable: %s", category, key))
 	variable, err := r.config.Client.TestVariables.Create(ctx, moduleID, options)
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -261,7 +262,7 @@ func (r *resourceTFETestVariable) Read(ctx context.Context, req resource.ReadReq
 	if err != nil {
 		// If it's gone: that's not an error, but we are done.
 		if errors.Is(err, tfe.ErrResourceNotFound) {
-			log.Printf("[DEBUG] Variable %s no longer exists", variableID)
+			tflog.Debug(ctx, fmt.Sprintf("Variable %s no longer exists", variableID))
 			resp.State.RemoveResource(ctx)
 		} else {
 			resp.Diagnostics.AddError(
@@ -313,7 +314,7 @@ func (r *resourceTFETestVariable) Update(ctx context.Context, req resource.Updat
 		options.Value = plan.Value.ValueStringPointer()
 	}
 
-	log.Printf("[DEBUG] Update variable: %s", variableID)
+	tflog.Debug(ctx, fmt.Sprintf("Update variable: %s", variableID))
 	variable, err := r.config.Client.TestVariables.Update(ctx, moduleID, variableID, options)
 	if err != nil {
 		resp.Diagnostics.AddError(
