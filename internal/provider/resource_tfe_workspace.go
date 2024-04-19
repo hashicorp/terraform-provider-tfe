@@ -10,6 +10,7 @@ package provider
 
 import (
 	"context"
+	"crypto/md5"
 	"errors"
 	"fmt"
 	"log"
@@ -22,6 +23,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-provider-tfe/internal/stateinfo"
 )
 
 var workspaceIDRegexp = regexp.MustCompile("^ws-[a-zA-Z0-9]{16}$")
@@ -297,6 +299,13 @@ func resourceTFEWorkspace() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"initial_state": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Optional:    true,
+				Sensitive:   true,
+				Description: "",
+			},
 		},
 	}
 }
@@ -461,7 +470,58 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		}
 	}
 
+	if stateContent, ok := d.GetOk("initial_state"); ok {
+		err = uploadState(ctx, config.Client, workspace.ID, stateContent.(string))
+		if err != nil {
+			log.Printf("[ERROR] invalid initial state: %s", err)
+		}
+	}
+
 	return resourceTFEWorkspaceRead(d, meta)
+}
+
+func uploadState(ctx context.Context, client *tfe.Client, wsID string, content string) error {
+	contentBytes := []byte(content)
+	info, err := stateinfo.Read(contentBytes)
+
+	if err != nil {
+		return fmt.Errorf("Error reading state contents: %w", err.Error())
+	}
+
+	log.Printf("[DEBUG] Uploading initial state for workspace %s", wsID)
+
+	_, err = client.Workspaces.Lock(ctx, wsID, tfe.WorkspaceLockOptions{
+		Reason: tfe.String("Uploading initial state from terraform-provider-tfe"),
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to lock workspace: %w", err)
+	}
+
+	_, err = client.StateVersions.Upload(ctx, wsID, tfe.StateVersionUploadOptions{
+		StateVersionCreateOptions: tfe.StateVersionCreateOptions{
+			Lineage: &info.Lineage,
+			Serial:  tfe.Int64(info.SerialValueInt64()),
+			MD5:     tfe.String(fmt.Sprintf("%x", md5.Sum(contentBytes))),
+			Force:   tfe.Bool(true),
+		},
+		RawState: contentBytes,
+	})
+
+	if err != nil {
+		if errors.Is(err, tfe.ErrStateVersionUploadNotSupported) {
+			log.Printf("[ERROR] Initial state was not uploaded. The workspace was created, but this Terraform Enterprise version does not support state uploads.")
+		} else {
+			log.Printf("[ERROR] Initial state was not uploaded. The workspace was created, but an error occurred while creating its initial state: %s", err.Error())
+		}
+	}
+
+	_, err = client.Workspaces.Unlock(ctx, wsID)
+	if err != nil {
+		log.Printf("[ERROR] The workspace could not be unlocked")
+	}
+
+	return nil
 }
 
 func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
@@ -825,6 +885,28 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			err := config.Client.Workspaces.RemoveRemoteStateConsumers(ctx, d.Id(), options)
 			if err != nil {
 				return fmt.Errorf("Error removing remote state consumers from workspace %s: %w", d.Id(), err)
+			}
+		}
+	}
+
+	if initialState, ok := d.GetOk("initial_state"); ok {
+		list, err := config.Client.StateVersions.List(ctx, &tfe.StateVersionListOptions{
+			ListOptions: tfe.ListOptions{
+				PageSize: 1,
+			},
+		})
+
+		if err != nil {
+			log.Printf("[ERROR] initial_state was ignored because provider could not determine if this workspace already has state or not. The underlying error was: %s", err)
+		} else {
+			if list.TotalCount == 0 {
+				// OK to upload initial state
+				err = uploadState(ctx, config.Client, id, initialState.(string))
+				if err != nil {
+					log.Printf("[ERROR] initial_state was ignored because the provider could not upload it. The underlying error was: %s", err)
+				}
+			} else {
+				log.Print("[INFO] initial_state was ignored because this workspace already has state.")
 			}
 		}
 	}
