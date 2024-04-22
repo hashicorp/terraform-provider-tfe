@@ -7,7 +7,7 @@ description: |-
 
 # tfe_notification_configuration
 
-Terraform Cloud can be configured to send notifications for run state transitions.
+HCP Terraform can be configured to send notifications for run state transitions.
 Notification configurations allow you to specify a URL, destination type, and what events will trigger the notification.
 Each workspace can have up to 20 notification configurations, and they apply to all runs for that workspace.
 
@@ -102,9 +102,9 @@ The following arguments are supported:
 * `destination_type` - (Required) The type of notification configuration payload to send.
   Valid values are:
   * `generic`
-  * `email` available in Terraform Cloud or Terraform Enterprise v202005-1 or later
+  * `email` available in HCP Terraform or Terraform Enterprise v202005-1 or later
   * `slack`
-  * `microsoft-teams` available in Terraform Cloud or Terraform Enterprise v202206-1 or later
+  * `microsoft-teams` available in HCP Terraform or Terraform Enterprise v202206-1 or later
 * `email_addresses` - (Optional) **TFE only** A list of email addresses. This value
   _must not_ be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.
 * `email_user_ids` - (Optional) A list of user IDs. This value _must not_ be provided

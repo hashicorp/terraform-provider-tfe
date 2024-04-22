@@ -9,7 +9,7 @@ description: |-
 
 Use this data source to get information about an organization membership.
 
-~> **NOTE:** This data source requires using the provider with Terraform Cloud or
+~> **NOTE:** This data source requires using the provider with HCP Terraform or
 an instance of Terraform Enterprise at least as recent as v202004-1.
 
 ~> **NOTE:** If a user updates their email address, configurations using the email address should

@@ -42,7 +42,7 @@ The following arguments are supported:
 * `Url` - (Required) The URL where a 64-bit Linux binary of this version can be downloaded.
 * `Sha` - (Required) The SHA-256 checksum of the compressed OPA binary.
 * `Official` - (Optional) Whether or not this is an official release of OPA. Defaults to "false".
-* `Enabled` - (Optional) Whether or not this version of OPA is enabled for use in Terraform Cloud/Enterprise. Defaults to "true".
+* `Enabled` - (Optional) Whether or not this version of OPA is enabled for use in HCP Terraform and Terraform Enterprise. Defaults to "true".
 * `Beta` - (Optional) Whether or not this version of OPA is beta pre-release. Defaults to "false".
 * `Deprecated` - (Optional) Whether or not this version of OPA is deprecated. Defaults to "false".
 * `DeprecatedReason` - (Optional) Additional context about why a version of OPA is deprecated. Defaults to "null" unless `Deprecated` is true.

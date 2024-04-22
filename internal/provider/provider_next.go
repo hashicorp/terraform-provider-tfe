@@ -28,7 +28,7 @@ var _ provider.Provider = &frameworkProvider{}
 // Can be used to construct ID regexp patterns
 var base58Alphabet = "[1-9A-HJ-NP-Za-km-z]"
 
-// IDPattern constructs a regexp pattern for Terraform Cloud with the given prefix
+// IDPattern constructs a regexp pattern for HCP Terraform with the given prefix
 func IDPattern(prefix string) *regexp.Regexp {
 	return regexp.MustCompile(fmt.Sprintf("^%s-%s{16}$", prefix, base58Alphabet))
 }
@@ -81,7 +81,7 @@ func (p *frameworkProvider) Schema(_ context.Context, _ provider.SchemaRequest, 
 	}
 }
 
-// Configure (a Provider interface function) sets up the TFC client per the
+// Configure (a Provider interface function) sets up the HCP Terraform client per the
 // specified provider configuration block and env vars.
 func (p *frameworkProvider) Configure(ctx context.Context, req provider.ConfigureRequest, res *provider.ConfigureResponse) {
 	var data FrameworkProviderConfig

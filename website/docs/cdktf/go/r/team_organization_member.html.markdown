@@ -14,7 +14,7 @@ Add or remove a team member using a
 resources for managing team memberships. This - along with [tfe_organization_membership](organization_membership.html) - is the preferred method as it
 allows you to add members to a team by email addresses. The [tfe_team_organization_member](team_organization_member.html) is used to manage a single team membership whereas [tfe_team_organization_members](team_organization_members.html) is used to manage all team memberships at once. All four resources cannot be used for the same team simultaneously.
 
-~> **NOTE:** This resource requires using the provider with Terraform Cloud or
+~> **NOTE:** This resource requires using the provider with HCP Terraform or
 an instance of Terraform Enterprise at least as recent as v202004-1.
 
 ## Example Usage

@@ -45,7 +45,7 @@ The following arguments are supported:
 * `url` - (Required) The URL where a 64-bit Linux binary of this version can be downloaded.
 * `sha` - (Required) The SHA-256 checksum of the compressed OPA binary.
 * `official` - (Optional) Whether or not this is an official release of OPA. Defaults to "false".
-* `enabled` - (Optional) Whether or not this version of OPA is enabled for use in Terraform Cloud/Enterprise. Defaults to "true".
+* `enabled` - (Optional) Whether or not this version of OPA is enabled for use in HCP Terraform and Terraform Enterprise. Defaults to "true".
 * `beta` - (Optional) Whether or not this version of OPA is beta pre-release. Defaults to "false".
 * `deprecated` - (Optional) Whether or not this version of OPA is deprecated. Defaults to "false".
 * `deprecatedReason` - (Optional) Additional context about why a version of OPA is deprecated. Defaults to "null" unless `deprecated` is true.
@@ -66,6 +66,6 @@ terraform import tfe_opa_version.test tool-L4oe7rNwn7J4E5Yr
 terraform import tfe_opa_version.test 0.58.0
 ```
 
--> **Note:** You can fetch a OPA version ID from the URL of an existing version in the Terraform Cloud UI. The ID is in the format `tool-<RANDOM STRING>`
+-> **Note:** You can fetch a OPA version ID from the URL of an existing version in the HCP Terraform UI. The ID is in the format `tool-<RANDOM STRING>`
 
 <!-- cache-key: cdktf-0.20.1 input-1151e0ea0d86797d0c36341e282f903e6350d08f2e7a0bcb8dda931532eabc46 -->

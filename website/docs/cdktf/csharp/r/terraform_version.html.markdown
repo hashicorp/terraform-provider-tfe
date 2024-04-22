@@ -7,7 +7,7 @@ description: |-
 
 # tfe_terraform_version
 
-Manage Terraform versions available on Terraform Cloud/Enterprise.
+Manage Terraform versions available on HCP Terraform and Terraform Enterprise.
 
 ## Example Usage
 
@@ -40,7 +40,7 @@ The following arguments are supported:
 * `Url` - (Required) The URL where a ZIP-compressed 64-bit Linux binary of this version can be downloaded.
 * `Sha` - (Required) The SHA-256 checksum of the compressed Terraform binary.
 * `Official` - (Optional) Whether or not this is an official release of Terraform. Defaults to "false".
-* `Enabled` - (Optional) Whether or not this version of Terraform is enabled for use in Terraform Cloud/Enterprise. Defaults to "true".
+* `Enabled` - (Optional) Whether or not this version of Terraform is enabled for use in HCP Terraform and Terraform Enterprise. Defaults to "true".
 * `Beta` - (Optional) Whether or not this version of Terraform is beta pre-release. Defaults to "false".
 * `Deprecated` - (Optional) Whether or not this version of Terraform is deprecated. Defaults to "false".
 * `DeprecatedReason` - (Optional) Additional context about why a version of Terraform is deprecated. Defaults to "null" unless `Deprecated` is true.
@@ -61,6 +61,6 @@ terraform import tfe_terraform_version.test tool-L4oe7rNwn7J4E5Yr
 terraform import tfe_terraform_version.test 1.1.2
 ```
 
--> **Note:** You can fetch a Terraform version ID from the URL of an existing version in the Terraform Cloud UI. The ID is in the format `tool-<RANDOM STRING>`
+-> **Note:** You can fetch a Terraform version ID from the URL of an existing version in the HCP Terraform UI. The ID is in the format `tool-<RANDOM STRING>`
 
 <!-- cache-key: cdktf-0.17.0-pre.15 input-432c6fecfa9af93e492bead8b0ced7287250b8cd14070d2af0bbbadc42927b88 -->

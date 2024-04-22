@@ -30,7 +30,7 @@ resource "tfe_oauth_client" "test" {
 
 #### Azure DevOps Server Usage
 
-See [documentation for TFC/E setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/azure-devops-server).
+See [documentation for HCP Terraform and Terraform Enterprise setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/azure-devops-server).
 
 **Note:** This resource requires a private key when creating Azure DevOps Server OAuth clients.
 
@@ -48,7 +48,7 @@ resource "tfe_oauth_client" "test" {
 
 #### BitBucket Server Usage
 
-See [documentation for TFC/E setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/bitbucket-server).
+See [documentation for HCP Terraform and Terraform Enterprise setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/bitbucket-server).
 
 When using BitBucket Server, you must use three required fields: `key`, `secret`, `rsa_public_key`.
 

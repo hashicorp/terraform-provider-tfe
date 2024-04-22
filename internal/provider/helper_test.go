@@ -178,7 +178,7 @@ func createProject(t *testing.T, client *tfe.Client, orgName string, options tfe
 
 func skipIfCloud(t *testing.T) {
 	if !enterpriseEnabled() {
-		t.Skip("Skipping test for a feature unavailable in Terraform Cloud. Set 'ENABLE_TFE=1' to run.")
+		t.Skip("Skipping test for a feature unavailable in HCP Terraform. Set 'ENABLE_TFE=1' to run.")
 	}
 }
 
@@ -196,7 +196,7 @@ func skipUnlessRunTasksDefined(t *testing.T) {
 
 func skipUnlessBeta(t *testing.T) {
 	if !betaFeaturesEnabled() {
-		t.Skip("Skipping test related to a Terraform Cloud/Enterprise beta feature. Set ENABLE_BETA=1 to run.")
+		t.Skip("Skipping test related to a HCP Terraform and Terraform Enterprise beta feature. Set ENABLE_BETA=1 to run.")
 	}
 }
 

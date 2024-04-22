@@ -315,7 +315,7 @@ func resourceTFETeamProjectAccessRead(ctx context.Context, d *schema.ResourceDat
 		d.Set("project_id", "")
 	}
 
-	// These two fields are only available in TFC and TFE v202308-1 and later
+	// These two fields are only available in HCP Terraform and TFE v202308-1 and later
 	if tmAccess.ProjectAccess != nil {
 		projectAccess := []map[string]interface{}{{
 			"settings": tmAccess.ProjectAccess.ProjectSettingsPermission,

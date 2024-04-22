@@ -46,10 +46,10 @@ The following arguments are supported:
 * `CollaboratorAuthPolicy` - (Optional) Authentication policy (`Password`
   or `TwoFactorMandatory`). Defaults to `Password`.
 * `OwnersTeamSamlRoleId` - (Optional) The name of the "owners" team.
-* `CostEstimationEnabled` - (Optional) Whether or not the cost estimation feature is enabled for all workspaces in the organization. Defaults to true. In a Terraform Cloud organization which does not have Teams & Governance features, this value is always false and cannot be changed. In Terraform Enterprise, Cost Estimation must also be enabled in Site Administration.
+* `CostEstimationEnabled` - (Optional) Whether or not the cost estimation feature is enabled for all workspaces in the organization. Defaults to true. In a HCP Terraform organization which does not have Teams & Governance features, this value is always false and cannot be changed. In Terraform Enterprise, Cost Estimation must also be enabled in Site Administration.
 * `SendPassingStatusesForUntriggeredSpeculativePlans` - (Optional) Whether or not to send VCS status updates for untriggered speculative plans. This can be useful if large numbers of untriggered workspaces are exhausting request limits for connected version control service providers like GitHub. Defaults to false. In Terraform Enterprise, this setting has no effect and cannot be changed but is also available in Site Administration.
 * `AggregatedCommitStatusEnabled` - (Optional) Whether or not to enable Aggregated Status Checks. This can be useful for monorepo repositories with multiple workspaces receiving status checks for events such as a pull request. If enabled, `SendPassingStatusesForUntriggeredSpeculativePlans` needs to be false.
-* `AssessmentsEnforced` - (Optional) (Available only in Terraform Cloud) Whether to force health assessments (drift detection) on all eligible workspaces or allow workspaces to set their own preferences.
+* `AssessmentsEnforced` - (Optional) (Available only in HCP Terraform) Whether to force health assessments (drift detection) on all eligible workspaces or allow workspaces to set their own preferences.
 * `AllowForceDeleteWorkspaces` - (Optional) Whether workspace administrators are permitted to delete workspaces with resources under management. If false, only organization owners may delete these workspaces. Defaults to false.
 
 ## Attributes Reference
