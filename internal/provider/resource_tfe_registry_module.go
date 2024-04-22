@@ -95,6 +95,7 @@ func resourceTFERegistryModule() *schema.Resource {
 						"tags": {
 							Type:     schema.TypeBool,
 							Optional: true,
+							Computed: true,
 						},
 					},
 				},
@@ -125,11 +126,13 @@ func resourceTFERegistryModule() *schema.Resource {
 			"test_config": {
 				Type:     schema.TypeList,
 				Optional: true,
+				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"tests_enabled": {
 							Type:     schema.TypeBool,
 							Optional: true,
+							Computed: true,
 						},
 					},
 				},
