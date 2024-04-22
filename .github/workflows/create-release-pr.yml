@@ -51,7 +51,7 @@ jobs:
           go build -o terraform-provider-tfe
 
       - name: Upload test artifacts
-        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
+        uses: actions/upload-artifact@1746f4ab65b179e0ea60a494b83293b640dd5bba # v4.3.2
         with:
           name: terraform-provider-tfe
           path: terraform-provider-tfe
@@ -102,7 +102,7 @@ jobs:
           TF_PLUGIN_CACHE_DIR: ${{ steps.global-cache-dir-path.outputs.dir }}/terraform-plugins
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@70a41aba780001da0a30141984ae2a0c95d8704e # v6.0.2
+        uses: peter-evans/create-pull-request@9153d834b60caba6d51c9b9510b087acf9f33f83 # v6.0.4
         with:
           commit-message: "cdktf: update documentation"
           title: "release: ${{ github.event.inputs.version }}"
