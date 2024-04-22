@@ -20,6 +20,28 @@ func testAccTFEOAuthClientDataSourcePreCheck(t *testing.T) {
 	}
 }
 
+func TestAccTFEOAuthClientDataSource_basic(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccTFEOAuthClientDataSourcePreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOAuthClientDataSourceConfig_basic(rInt),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.tfe_oauth_client.client", "id"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_oauth_client.client", "organization_scoped", "true"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_oauth_client.client", "project_ids.#", "1"),
+				),
+			},
+		},
+	},
+	)
+}
+
 func TestAccTFEOAuthClientDataSource_findByID(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	resource.Test(t, resource.TestCase{
@@ -41,6 +63,9 @@ func TestAccTFEOAuthClientDataSource_findByID(t *testing.T) {
 					resource.TestCheckResourceAttrPair(
 						"tfe_oauth_client.test", "oauth_token_id",
 						"data.tfe_oauth_client.client", "oauth_token_id"),
+					resource.TestCheckResourceAttrPair(
+						"tfe_oauth_client.test", "organization_scoped",
+						"data.tfe_oauth_client.client", "organization_scoped"),
 				),
 			},
 		},
@@ -68,6 +93,9 @@ func TestAccTFEOAuthClientDataSource_findByName(t *testing.T) {
 					resource.TestCheckResourceAttrPair(
 						"tfe_oauth_client.test", "oauth_token_id",
 						"data.tfe_oauth_client.client", "oauth_token_id"),
+					resource.TestCheckResourceAttrPair(
+						"tfe_oauth_client.test", "organization_scoped",
+						"data.tfe_oauth_client.client", "organization_scoped"),
 				),
 			},
 		},
@@ -185,6 +213,41 @@ func TestAccTFEOAuthClientDataSource_sameServiceProvider(t *testing.T) {
 	})
 }
 
+func testAccTFEOAuthClientDataSourceConfig_basic(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+	name  = "tst-terraform-%d"
+	email = "admin@company.com"
+}
+
+resource "tfe_project" "foobar" {
+  	name         = "project-foo-%d"
+  	organization = tfe_organization.foobar.name
+}
+
+resource "tfe_oauth_client" "test" {
+	organization     = tfe_organization.foobar.name
+	api_url          = "https://api.github.com"
+	http_url         = "https://github.com"
+	oauth_token      = "%s"
+	service_provider = "github"
+	organization_scoped = true
+}
+
+resource "tfe_project_oauth_client" "foobar" {
+	oauth_client_id = tfe_oauth_client.test.id
+	project_id = tfe_project.foobar.id
+}
+
+data "tfe_oauth_client" "client" {
+	name  = tfe_oauth_client.test.name
+	organization = tfe_organization.foobar.name
+	oauth_client_id = tfe_oauth_client.test.id
+	depends_on=[tfe_project_oauth_client.foobar]
+}
+`, rInt, rInt, envGithubToken)
+}
+
 func testAccTFEOAuthClientDataSourceConfig_findByID(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
@@ -197,6 +260,7 @@ resource "tfe_oauth_client" "test" {
 	http_url         = "https://github.com"
 	oauth_token      = "%s"
 	service_provider = "github"
+	organization_scoped = true
 }
 data "tfe_oauth_client" "client" {
 	oauth_client_id = tfe_oauth_client.test.id
@@ -217,6 +281,7 @@ resource "tfe_oauth_client" "test" {
 	name             = "tst-github-%d"
 	oauth_token      = "%s"
 	service_provider = "github"
+	organization_scoped = true
 }
 data "tfe_oauth_client" "client" {
     organization = "tst-terraform-%d"
