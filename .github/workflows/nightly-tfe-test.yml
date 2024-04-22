@@ -8,7 +8,7 @@ on:
 jobs:
   instance:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - name: Build nightly tflocal instance
         uses: hashicorp-forge/terraform-cloud-action/apply@4adbe7eea886138ac10a4c09e63c5c568aaa6672 # main
@@ -36,7 +36,7 @@ jobs:
           organization: hashicorp-v2
           workspace: tflocal-terraform-provider-tfe-nightly
 
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
 
       - uses: ./.github/actions/test-provider-tfe
         with:
@@ -65,7 +65,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Send slack notification on failure
-        uses: slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001 # v1.25.0
+        uses: slackapi/slack-github-action@70cd7be8e40a46e8b0eced40b0de447bdb42f68e # v1.26.0
         with:
           payload: |
             {
@@ -96,7 +96,7 @@ jobs:
     needs: [tests-summarize]
     if: "${{ always() }}"
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
 
       - name: Set up Go
         uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0

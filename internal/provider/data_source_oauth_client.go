@@ -80,6 +80,15 @@ func dataSourceTFEOAuthClient() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"organization_scoped": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
+			"project_ids": {
+				Type:     schema.TypeSet,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Computed: true,
+			},
 		},
 	}
 }
@@ -132,6 +141,7 @@ func dataSourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) erro
 	}
 	d.Set("service_provider", oc.ServiceProvider)
 	d.Set("service_provider_display_name", oc.ServiceProviderName)
+	d.Set("organization_scoped", oc.OrganizationScoped)
 
 	switch len(oc.OAuthTokens) {
 	case 0:
@@ -141,6 +151,12 @@ func dataSourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) erro
 	default:
 		return fmt.Errorf("unexpected number of OAuth tokens: %d", len(oc.OAuthTokens))
 	}
+
+	var projectIDs []interface{}
+	for _, project := range oc.Projects {
+		projectIDs = append(projectIDs, project.ID)
+	}
+	d.Set("project_ids", projectIDs)
 
 	return nil
 }
