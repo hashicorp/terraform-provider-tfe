@@ -36,6 +36,7 @@ class MyConvertedCode extends TerraformStack {
       name: "my-github-oauth-client",
       oauthToken: "my-vcs-provider-token",
       organization: "my-org-name",
+      organization_scoped: true,
       serviceProvider: "github",
     });
   }
@@ -136,10 +137,11 @@ Link.
 * `serviceProvider` - (Required) The VCS provider being connected with. Valid
   options are `ado_server`, `ado_services`, `bitbucket_hosted`, `bitbucket_server`, `github`, `github_enterprise`, `gitlab_hosted`,
   `gitlab_community_edition`, or `gitlab_enterprise_edition`.
+* `organizationScoped` - (Optional) Whether or not the oauth client is scoped to all projects and workspaces in the organization. Defaults to `true`.
 
 ## Attributes Reference
 
 * `id` - The ID of the OAuth client.
 * `oauthTokenId` - The ID of the OAuth token associated with the OAuth client.
 
-<!-- cache-key: cdktf-0.20.1 input-0dea494ef76c038939d94b5ae6a0e741e36a87509a350f558cd11d098bf1bde9 -->
+<!-- cache-key: cdktf-0.20.1 input-38ca706431603edf4e03a97e9d37609e126389f2e4a5f6f56bf1d0988735cf1e -->
