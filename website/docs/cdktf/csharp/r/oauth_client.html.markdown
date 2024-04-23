@@ -88,10 +88,10 @@ class MyConvertedCode : TerraformStack
     public MyConvertedCode(Construct scope, string name) : base(scope, name)
     {
         new OauthClient.OauthClient(this, "test", new OauthClientConfig {
-            ApiUrl = "https://bbs.example.com",
-            HttpUrl = "https://bss.example.com",
+            ApiUrl = "https://bbdc.example.com",
+            HttpUrl = "https://bbdc.example.com",
             Key = "<consumer key>",
-            Name = "my-bbs-oauth-client",
+            Name = "my-bbdc-oauth-client",
             Organization = "my-org-name",
             RsaPublicKey = @"-----BEGIN PUBLIC KEY-----
             content

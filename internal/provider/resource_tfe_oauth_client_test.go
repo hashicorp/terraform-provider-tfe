@@ -200,9 +200,9 @@ resource "tfe_organization" "foobar" {
 resource "tfe_oauth_client" "foobar" {
   organization     = tfe_organization.foobar.id
 	name 						 = "foobar_oauth"
-  api_url          = "https://bbs.example.com"
-  http_url         = "https://bbs.example.com"
-  service_provider = "bitbucket_server"
+  api_url          = "https://bbdc.example.com"
+  http_url         = "https://bbdc.example.com"
+  service_provider = "bitbucket_data_center"
   key       			 = "1e4843e138b0d44911a50d15e0f7cee4"
   secret           = <<EOT
 -----BEGIN RSA PRIVATE KEY-----

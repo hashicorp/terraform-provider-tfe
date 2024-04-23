@@ -94,10 +94,10 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
 	oauthClient.NewOauthClient(this, jsii.String("test"), &oauthClientConfig{
-		apiUrl: jsii.String("https://bbs.example.com"),
-		httpUrl: jsii.String("https://bss.example.com"),
+		apiUrl: jsii.String("https://bbdc.example.com"),
+		httpUrl: jsii.String("https://bbdc.example.com"),
 		key: jsii.String("<consumer key>"),
-		name: jsii.String("my-bbs-oauth-client"),
+		name: jsii.String("my-bbdc-oauth-client"),
 		organization: jsii.String("my-org-name"),
 		rsaPublicKey: jsii.String("-----BEGIN PUBLIC KEY-----\ncontent\n-----END PUBLIC KEY-----\n"),
 		secret: jsii.String("-----BEGIN RSA PRIVATE KEY-----\ncontent\n-----END RSA PRIVATE KEY-----\n"),

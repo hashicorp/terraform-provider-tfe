@@ -82,8 +82,8 @@ public class MyConvertedCode extends TerraformStack {
     public MyConvertedCode(Construct scope, String name) {
         super(scope, name);
         new OauthClient(this, "test", new OauthClientConfig()
-                .apiUrl("https://bbs.example.com")
-                .httpUrl("https://bss.example.com")
+                .apiUrl("https://bbdc.example.com")
+                .httpUrl("https://bbdc.example.com")
                 .key("<consumer key>")
                 .name("my-bbdc-oauth-client")
                 .organization("my-org-name")

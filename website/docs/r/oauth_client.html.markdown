@@ -55,14 +55,14 @@ When using Bitbucket Data Center, you must use three required fields: `key`, `se
 
 ```hcl
 resource "tfe_oauth_client" "test" {
-  name             = "my-bbs-oauth-client"
+  name             = "my-bbdc-oauth-client"
   organization     = "my-org-name"
-  api_url          = "https://bbs.example.com"
-  http_url         = "https://bss.example.com"
+  api_url          = "https://bbdc.example.com"
+  http_url         = "https://bbdc.example.com"
   key              = "<consumer key>"
   secret           = "-----BEGIN RSA PRIVATE KEY-----\ncontent\n-----END RSA PRIVATE KEY-----"
   rsa_public_key   = "-----BEGIN PUBLIC KEY-----\ncontent\n-----END PUBLIC KEY-----"
-  service_provider = "bitbucket_server"
+  service_provider = "bitbucket_data_center"
 }
 ```
 
@@ -80,11 +80,11 @@ The following arguments are supported:
 * `private_key` - (Required for `ado_server`) The text of the private key associated with your Azure DevOps Server account
 * `key` - The OAuth Client key can refer to a Consumer Key, Application Key,
   or another type of client key for the VCS provider.
-* `secret` - (Required for `bitbucket_server`) The OAuth Client secret is used for Bitbucket Data Center, this secret is the
+* `secret` - (Required for `bitbucket_data_center`) The OAuth Client secret is used for Bitbucket Data Center, this secret is the
   the text of the SSH private key associated with your Bitbucket Data Center
 Application Link.
-* `rsa_public_key` - (Required for `bitbucket_server`) Required for BitBucket
-  Server in conjunction with the secret. Not used for any other providers. The
+* `rsa_public_key` - (Required for `bitbucket_data_center`) Required for Bitbucket
+  Data Center in conjunction with the secret. Not used for any other providers. The
 text of the SSH public key associated with your Bitbucket Data Center Application
 Link.
 * `service_provider` - (Required) The VCS provider being connected with. Valid
