@@ -28,6 +28,11 @@ func dataSourceTFEProject() *schema.Resource {
 				Required: true,
 			},
 
+			"description": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+
 			"organization": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -92,6 +97,7 @@ func dataSourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta 
 			}
 
 			d.Set("workspace_ids", workspaces)
+			d.Set("description", proj.Description)
 			d.SetId(proj.ID)
 			return nil
 		}
