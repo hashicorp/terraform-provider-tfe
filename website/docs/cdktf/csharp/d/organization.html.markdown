@@ -41,9 +41,9 @@ In addition to all arguments above, the following attributes are exported:
 
 * `Email` - Admin email address.
 * `ExternalId` - An identifier for the organization.
-* `AssessmentsEnforced` - (Available only in Terraform Cloud) Whether to force health assessments (drift detection) on all eligible workspaces or allow workspaces to set thier own preferences.
+* `AssessmentsEnforced` - (Available only in HCP Terraform) Whether to force health assessments (drift detection) on all eligible workspaces or allow workspaces to set thier own preferences.
 * `CollaboratorAuthPolicy` - Authentication policy (`Password` or `TwoFactorMandatory`). Defaults to `Password`.
-* `CostEstimationEnabled` - Whether or not the cost estimation feature is enabled for all workspaces in the organization. Defaults to true. In a Terraform Cloud organization which does not have Teams & Governance features, this value is always false and cannot be changed. In Terraform Enterprise, Cost Estimation must also be enabled in Site Administration.
+* `CostEstimationEnabled` - Whether or not the cost estimation feature is enabled for all workspaces in the organization. Defaults to true. In a HCP Terraform organization which does not have Teams & Governance features, this value is always false and cannot be changed. In Terraform Enterprise, Cost Estimation must also be enabled in Site Administration.
 * `OwnersTeamSamlRoleId` - The name of the "owners" team.
 * `SendPassingStatusesForUntriggeredSpeculativePlans` - Whether or not to send VCS status updates for untriggered speculative plans. This can be useful if large numbers of untriggered workspaces are exhausting request limits for connected version control service providers like GitHub. Defaults to true. In Terraform Enterprise, this setting has no effect and cannot be changed but is also available in Site Administration.
 * `AggregatedCommitStatusEnabled` - Whether or not to enable Aggregated Status Checks. This can be useful for monorepo repositories with multiple workspaces receiving status checks for events such as a pull request.

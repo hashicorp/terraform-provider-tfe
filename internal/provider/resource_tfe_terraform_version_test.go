@@ -255,8 +255,8 @@ func genSha(t *testing.T, secret, data string) string {
 }
 
 // genSafeRandomTerraformVersion returns a random version number of the form
-// `1.0.<RANDOM>`, which TFC won't ever select as the latest available
-// Terraform. (At the time of writing, a fresh TFC instance will include
+// `1.0.<RANDOM>`, which HCP Terraform won't ever select as the latest available
+// Terraform. (At the time of writing, a fresh HCP Terraform instance will include
 // official Terraforms 1.2 and higher.) This is necessary because newly created
 // workspaces default to the latest available version, and there's nothing
 // preventing unrelated processes from creating workspaces during these tests.

@@ -111,7 +111,7 @@ jobs:
 
             This PR is meant to automate certain preparations for release and instruct maintainers on the manual release tasks. Push any changes you make to this branch and merge it just before creating a release.
 
-            1. Ensure both main and nightly CI actions passed. These test the release version against TFC and TFE, respectively.
+            1. Ensure both main and nightly CI actions passed. These test the release version against HCP Terraform and Terraform Enterprise, respectively.
             2. Review the CHANGELOG and ensure and ensure [everything that's changed since the last release](https://github.com/hashicorp/terraform-provider-tfe/compare/v${{ needs.releasedVersion.outputs.version }}...main) is described. If anything is missing, inaccurate, or unclear, now is the time to fix it! Check the CHANGELOG organization: pull breaking changes to the top and make sure the most important features are at the top of the FEATURES list. Check the version header in the changelog. It must be: `## v${{ github.event.inputs.version }}`
             3. Bump the static versions given as an example in the `website/docs/index.html.markdown` docs
             4. Bump the static versions given in the README installation section.

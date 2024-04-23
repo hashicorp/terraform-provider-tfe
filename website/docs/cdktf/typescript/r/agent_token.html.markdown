@@ -10,7 +10,7 @@ description: |-
 # tfe_agent_token
 
 Each agent pool has its own set of tokens which are not shared across pools.
-These tokens allow agents to communicate securely with Terraform Cloud.
+These tokens allow agents to communicate securely with HCP Terraform.
 
 ## Example Usage
 

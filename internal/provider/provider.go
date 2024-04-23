@@ -50,7 +50,7 @@ var ctx = context.Background()
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		// Note that defaults and fallbacks which are usually handled by DefaultFunc here are
-		// instead handled when fetching a TFC/E client in getClient(). This is because the this
+		// instead handled when fetching a HCP Terraform and Terraform Enterprise client in getClient(). This is because the this
 		// provider is actually two muxed providers which must respect the same logic for fetching
 		// those values in each schema.
 		Schema: map[string]*schema.Schema{

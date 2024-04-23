@@ -5,25 +5,25 @@ name: Test
 description: Tests terraform-provider-tfe within a matrix
 inputs:
   admin_configuration_token:
-    description: TFC Admin API Configuration role token
+    description: HCP Terraform Admin API Configuration role token
     required: true
   admin_provision_licenses_token:
-    description: TFC Admin API Provision Licenses role token
+    description: HCP Terraform Admin API Provision Licenses role token
     required: true
   admin_security_maintenance_token:
-    description: TFC Admin API Security Maintenance role token
+    description: HCP Terraform Admin API Security Maintenance role token
     required: true
   admin_site_admin_token:
-    description: TFC Admin API Site Admin role token
+    description: HCP Terraform Admin API Site Admin role token
     required: true
   admin_subscription_token:
-    description: TFC Admin API Subscription role token
+    description: HCP Terraform Admin API Subscription role token
     required: true
   admin_support_token:
-    description: TFC Admin API Support role token
+    description: HCP Terraform Admin API Support role token
     required: true
   admin_version_maintenance_token:
-    description: TFC Admin API Version Maintenance role token
+    description: HCP Terraform Admin API Version Maintenance role token
     required: true
   matrix_index:
     description: Index of the matrix strategy runner
@@ -32,10 +32,10 @@ inputs:
     description: Total number of matrix strategy runners
     required: true
   hostname:
-    description: Hostname of the Terraform Cloud instance to test against
+    description: Hostname of the HCP Terraform or Terraform Enterprise instance to test against
     required: true
   token:
-    description: Terraform Cloud token
+    description: HCP Terraform or Terraform Enterprise token
     required: true
   testing-github-token:
     description: The GitHub token used for testing scenarios

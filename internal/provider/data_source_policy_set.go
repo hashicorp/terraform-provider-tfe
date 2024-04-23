@@ -54,7 +54,7 @@ func dataSourceTFEPolicySet() *schema.Resource {
 			},
 
 			"agent_enabled": {
-				Description: "Whether the policy set is executed in the TFC agent. True by default for OPA policies",
+				Description: "Whether the policy set is executed in the HCP Terraform agent. True by default for OPA policies",
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},

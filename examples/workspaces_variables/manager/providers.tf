@@ -8,7 +8,7 @@ variable "tf_api_token" {
 }
 
 variable "tf_hostname" {
-  description = "The Terraform Cloud or Enterprise hostname."
+  description = "The HCP Terraform or Enterprise hostname."
   default = "app.terraform.io"
 }
 

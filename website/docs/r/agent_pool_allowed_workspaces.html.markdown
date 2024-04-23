@@ -9,9 +9,9 @@ description: |-
 
 Adds and removes allowed workspaces on an agent pool.
 
-~> **NOTE:** This resource requires using the provider with Terraform Cloud and a Terraform Cloud
+~> **NOTE:** This resource requires using the provider with HCP Terraform and a HCP Terraform
 for Business account.
-[Learn more about Terraform Cloud pricing here](https://www.hashicorp.com/products/terraform/pricing).
+[Learn more about HCP Terraform pricing here](https://www.hashicorp.com/products/terraform/pricing).
 
 ## Example Usage
 

@@ -2287,7 +2287,7 @@ func testAccCheckTFEWorkspacePanic(n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		config := testAccProvider.Meta().(ConfiguredClient)
 
-		// Grab the resource out of the state and delete it from TFC/E directly.
+		// Grab the resource out of the state and delete it from HCP Terraform and Terraform Enterprise directly.
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)

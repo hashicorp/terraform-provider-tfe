@@ -213,8 +213,8 @@ The following arguments are supported:
 
 Both `apply` and `destroy` block supports:
 
-* `manual_confirm` - (Required) If set to true a human will have to manually confirm a plan in Terraform Cloud's UI to start an apply. If set to false, this resource will be automatically applied. Defaults to `false`.
-  * If `wait_for_run` is set to `false`, this auto-apply will be done by Terraform Cloud.
+* `manual_confirm` - (Required) If set to true a human will have to manually confirm a plan in HCP Terraform's UI to start an apply. If set to false, this resource will be automatically applied. Defaults to `false`.
+  * If `wait_for_run` is set to `false`, this auto-apply will be done by HCP Terraform.
   * If `wait_for_run` is set to `true`, the apply will be confirmed by the provider. The exception is the case of policy check soft-failed where a human has to perform an override by manually confirming the plan even though `manual_confirm` is set to false.
   * Note that this setting will override the workspace's default apply mode. To use the workspace default apply mode, look up the setting for `auto_apply` with the `tfe_workspace` data source.
 * `retry` - (Optional) Whether or not to retry on plan or apply errors. When set to true, `retry_attempts` must also be greater than zero inorder for retries to happen. Defaults to `true`.
@@ -227,5 +227,5 @@ Both `apply` and `destroy` block supports:
 
 In addition to all arguments above, the following attributes are exported:
 
-* `id` - The ID of the run created by this resource. Note, if the resource was created without an `apply{}` configuration block, then this ID will not refer to a real run in Terraform Cloud.
+* `id` - The ID of the run created by this resource. Note, if the resource was created without an `apply{}` configuration block, then this ID will not refer to a real run in HCP Terraform.
 <!-- cache-key: cdktf-0.20.1 input-041419f518c0405e85227f2933aa7402414ae5b4f96725d448d521ecc7a24518 -->
