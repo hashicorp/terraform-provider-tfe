@@ -1,0 +1,10 @@
+---
+
+schema: 1.1
+partition: tfc
+category: library
+
+summary:
+  owner: team-tf-cli
+  description: Official Terraform Cloud/Enterprise provider, maintained by HashiCorp. Provision Terraform Cloud or Terraform Enterprise - with Terraform!
+  visibility: external

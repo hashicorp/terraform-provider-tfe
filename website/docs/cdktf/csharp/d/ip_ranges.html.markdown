@@ -2,12 +2,12 @@
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_ip_ranges"
 description: |-
-  Get Terraform Cloud/Enterprise's IP ranges of its services
+  Get HCP Terraform and Terraform Enterprise's IP ranges of its services
 ---
 
 # Data Source: tfe_ip_ranges
 
-Use this data source to retrieve a list of Terraform Cloud's IP ranges. For more information about these IP ranges, view our [documentation about Terraform Cloud IP Ranges](https://developer.hashicorp.com/terraform/cloud-docs/architectural-details/ip-ranges).
+Use this data source to retrieve a list of HCP Terraform's IP ranges. For more information about these IP ranges, view our [documentation about HCP Terraform IP Ranges](https://developer.hashicorp.com/terraform/cloud-docs/architectural-details/ip-ranges).
 
 ## Example Usage
 
@@ -37,7 +37,7 @@ No arguments are required for this datasource.
 
 The following attributes are exported:
 
-* `Api` - The list of IP ranges in CIDR notation used for connections from user site to Terraform Cloud APIs.
+* `Api` - The list of IP ranges in CIDR notation used for connections from user site to HCP Terraform APIs.
 * `Notifications` - The list of IP ranges in CIDR notation used for notifications.
 * `Sentinel` - The list of IP ranges in CIDR notation used for outbound requests from Sentinel policies.
 * `Vcs` - The list of IP ranges in CIDR notation used for connecting to VCS providers.

@@ -122,7 +122,7 @@ The following arguments are supported:
 * `agentPoolId` - (Optional) The ID of an agent pool to assign to the workspace. Requires `executionMode`
   to be set to `agent`. This value _must not_ be provided if `executionMode` is set to any other value.
 * `executionMode` - (Optional) Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode)
-  to use. Using Terraform Cloud, valid values are `remote`, `local` or `agent`. Using Terraform Enterprise, only `remote` and `local` execution modes are valid. When set to `local`, the workspace will be used for state storage only. **Important:** If you omit this attribute, the resource configures the workspace to use your organization's default execution mode (which in turn defaults to `remote`), removing any explicit value that might have previously been set for the workspace.
+  to use. Using HCP Terraform, valid values are `remote`, `local` or `agent`. Using Terraform Enterprise, only `remote` and `local` execution modes are valid. When set to `local`, the workspace will be used for state storage only. **Important:** If you omit this attribute, the resource configures the workspace to use your organization's default execution mode (which in turn defaults to `remote`), removing any explicit value that might have previously been set for the workspace.
 
 ## Attributes Reference
 

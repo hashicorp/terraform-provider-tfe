@@ -1,9 +1,22 @@
 ## UNRELEASED
+### Enhancements
+* Adds `post_apply` to list of possible `stages` for Run Tasks by @carolinaborim [#1307](https://github.com/hashicorp/terraform-provider-tfe/pull/1307)
+
+### Features
+* `d/tfe_oauth_client`: Add `project_ids` attribute, by @Netra2104 [1148](https://github.com/hashicorp/terraform-provider-tfe/pull/1148)
+* `d/tfe_oauth_client`: Add `organization_scoped` attribute, by @Netra2104 [1148](https://github.com/hashicorp/terraform-provider-tfe/pull/1148)
+* **New Resource**: `r/tfe_project_oauth_client` attaches/detaches an existing `project` to an existing `oauth client`, by @Netra2104 [1144](https://github.com/hashicorp/terraform-provider-tfe/pull/1144)
+* **New Resource**: `r/tfe_test_variable` is a new resource for creating environment variables used by registry modules for terraform test, by @aaabdelgany [1285](https://github.com/hashicorp/terraform-provider-tfe/pull/1285)
 
 ## v0.53.0
 
+ENHANCEMENTS:
+* `r/tfe_project`: Add `description` attribute, by @netramali [1271](https://github.com/hashicorp/terraform-provider-tfe/pull/1271)
+* `d/tfe_project`: Add `description` attribute, by @netramali [1271](https://github.com/hashicorp/terraform-provider-tfe/pull/1271)
+
 FEATURES:
 * `r/tfe_workspace`: Add `ignore_additional_tag_names` which explicitly ignores `tag_names` _not_ defined by config so they will not be overwritten by the configured tags, by @brandonc and @mbillow [1254](https://github.com/hashicorp/terraform-provider-tfe/pull/1254)
+* `r/tfe_oauth_client`: Add `organization_scoped` attribute, by @Netra2104 [1142](https://github.com/hashicorp/terraform-provider-tfe/pull/1142)
 
 BUG FIXES:
 
@@ -339,7 +352,7 @@ BREAKING CHANGES:
 * **Removed Authentication Method**: Host-specific TF_TOKEN_... environment variable (added in 0.31.0) can no longer be used for token authentication. This method of authentication is incompatible with the Terraform Cloud remote execution model. Please use the TFE_TOKEN environment variable.
 * r/tfe_workspace: Default value of the `file_triggers_enabled` field is changed to `false`. This will align the
   `file_triggers_enabled` field default value with the default value for the same field in the
-  [TFC API](https://www.terraform.io/cloud-docs/api-docs/workspaces).
+  [Terraform Cloud API](https://www.terraform.io/cloud-docs/api-docs/workspaces).
   If the value of the `file_triggers_enabled` field was not explicitly set and either of the fields `working_directory`
   (not an empty string) or `trigger_prefixes` was used - to keep the behavior unchanged, the `file_trigger_enabled`
   field should now explicitly be set to `true`. ([#510](https://github.com/hashicorp/terraform-provider-tfe/pull/510/files))
@@ -438,7 +451,7 @@ ENHANCEMENTS:
 * r/oauth_client: Added `key`, `secret`, and `rsa_public_key` arguments, used for configuring
   BitBucket Server and Azure DevOps Server. ([#395](https://github.com/hashicorp/terraform-provider-tfe/pull/395))
 * Improved discovery and loading of credentials from Terraform configuration files; the provider
-  will attempt to use Terraform CLI's authentication with Terraform Cloud/Enterprise for its own
+  will attempt to use Terraform CLI's authentication with Terraform Cloud or Terraform Enterprise for its own
   authentication, when present. ([#360](https://github.com/hashicorp/terraform-provider-tfe/pull/360))
 
 BUG FIXES:
@@ -652,7 +665,7 @@ If you have already changed all references to this data source's `ids` attribute
 ## 0.17.1 (May 27, 2020)
 
 BUG FIXES:
-* r/tfe_team: Fixed a panic occurring with importing Owners teams on Free TFC organizations which do not include visible organization access. ([#181](https://github.com/hashicorp/terraform-provider-tfe/pull/181))
+* r/tfe_team: Fixed a panic occurring with importing Owners teams on Free Terraform Cloud organizations which do not include visible organization access. ([#181](https://github.com/hashicorp/terraform-provider-tfe/pull/181))
 
 ## 0.17.0 (May 21, 2020)
 

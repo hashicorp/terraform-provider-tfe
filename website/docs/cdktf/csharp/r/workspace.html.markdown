@@ -12,8 +12,7 @@ description: |-
 Provides a workspace resource.
 
 ~> **NOTE:** Setting the execution mode and agent pool affinity directly on the workspace is deprecated in favor of using both [tfe_workspace_settings](workspace_settings) and [tfe_organization_default_settings](organization_default_settings), since they allow more precise control and fully support [agent_pool_allowed_workspaces](agent_pool_allowed_workspaces). Use caution when unsetting `ExecutionMode`, as it now leaves any prior value unmanaged instead of reverting to the old default value of `"remote"`.
-
-~> **NOTE:** Using `GlobalRemoteState` or `RemoteStateConsumerIds` requires using the provider with Terraform Cloud or an instance of Terraform Enterprise at least as recent as v202104-1.
+~> **NOTE:** Using `GlobalRemoteState` or `RemoteStateConsumerIds` requires using the provider with HCP Terraform or an instance of Terraform Enterprise at least as recent as v202104-1.
 
 ## Example Usage
 
@@ -107,7 +106,7 @@ The following arguments are supported:
   automatically performing runs immediately after its creation. Defaults to
   `True`. When set to `False`, runs triggered by a webhook (such as a commit
   in VCS) will not be queued until at least one run has been manually queued.
-  **Note:** This default differs from the Terraform Cloud API default, which
+  **Note:** This default differs from the HCP Terraform API default, which
   is `False`. The provider uses `True` as any workspace provisioned with
   `False` would need to then have a run manually queued out-of-band before
   accepting webhooks.
@@ -124,7 +123,7 @@ The following arguments are supported:
    workspace has been created, so modifying this value will result in the
    workspace being replaced. To disable this, use an [ignore changes](https://developer.hashicorp.com/terraform/language/meta-arguments/lifecycle#ignore_changes) lifecycle meta-argument
 * `SpeculativeEnabled` - (Optional) Whether this workspace allows speculative
-  plans. Defaults to `True`. Setting this to `False` prevents Terraform Cloud
+  plans. Defaults to `True`. Setting this to `False` prevents HCP Terraform
   or the Terraform Enterprise instance from running plans on pull requests,
   which can improve security if the VCS repository is public or includes
   untrusted contributors.
@@ -145,7 +144,7 @@ will be used.
   (like `~> 1.0.0`); if you specify a constraint, the workspace will always use
   the newest release that meets that constraint. Defaults to the latest
   available version.
-* `TriggerPatterns` - (Optional) List of [glob patterns](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/vcs#glob-patterns-for-automatic-run-triggering) that describe the files Terraform Cloud monitors for changes. Trigger patterns are always appended to the root directory of the repository. Mutually exclusive with `TriggerPrefixes`.
+* `TriggerPatterns` - (Optional) List of [glob patterns](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/vcs#glob-patterns-for-automatic-run-triggering) that describe the files HCP Terraform monitors for changes. Trigger patterns are always appended to the root directory of the repository. Mutually exclusive with `TriggerPrefixes`.
 * `TriggerPrefixes` - (Optional) List of repository-root-relative paths which describe all locations
   to be tracked for changes.
 * `VcsRepo` - (Optional) Settings for the workspace's VCS repository, enabling the [UI/VCS-driven run workflow](https://developer.hashicorp.com/terraform/cloud-docs/run/ui).

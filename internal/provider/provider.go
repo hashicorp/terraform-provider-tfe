@@ -50,7 +50,7 @@ var ctx = context.Background()
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		// Note that defaults and fallbacks which are usually handled by DefaultFunc here are
-		// instead handled when fetching a TFC/E client in getClient(). This is because the this
+		// instead handled when fetching a HCP Terraform and Terraform Enterprise client in getClient(). This is because the this
 		// provider is actually two muxed providers which must respect the same logic for fetching
 		// those values in each schema.
 		Schema: map[string]*schema.Schema{
@@ -86,7 +86,6 @@ func Provider() *schema.Provider {
 			"tfe_ip_ranges":               dataSourceTFEIPRanges(),
 			"tfe_oauth_client":            dataSourceTFEOAuthClient(),
 			"tfe_organization_membership": dataSourceTFEOrganizationMembership(),
-			"tfe_organization_run_task":   dataSourceTFEOrganizationRunTask(),
 			"tfe_organization_tags":       dataSourceTFEOrganizationTags(),
 			"tfe_project":                 dataSourceTFEProject(),
 			"tfe_slug":                    dataSourceTFESlug(),
@@ -97,7 +96,6 @@ func Provider() *schema.Provider {
 			"tfe_team_project_access":     dataSourceTFETeamProjectAccess(),
 			"tfe_workspace":               dataSourceTFEWorkspace(),
 			"tfe_workspace_ids":           dataSourceTFEWorkspaceIDs(),
-			"tfe_workspace_run_task":      dataSourceTFEWorkspaceRunTask(),
 			"tfe_variables":               dataSourceTFEWorkspaceVariables(),
 			"tfe_variable_set":            dataSourceTFEVariableSet(),
 			"tfe_policy_set":              dataSourceTFEPolicySet(),
@@ -125,6 +123,7 @@ func Provider() *schema.Provider {
 			"tfe_policy_set":                     resourceTFEPolicySet(),
 			"tfe_policy_set_parameter":           resourceTFEPolicySetParameter(),
 			"tfe_project":                        resourceTFEProject(),
+			"tfe_project_oauth_client":           resourceTFEProjectOAuthClient(),
 			"tfe_project_policy_set":             resourceTFEProjectPolicySet(),
 			"tfe_project_variable_set":           resourceTFEProjectVariableSet(),
 			"tfe_registry_module":                resourceTFERegistryModule(),
@@ -143,7 +142,6 @@ func Provider() *schema.Provider {
 			"tfe_team_token":                     resourceTFETeamToken(),
 			"tfe_terraform_version":              resourceTFETerraformVersion(),
 			"tfe_workspace":                      resourceTFEWorkspace(),
-			"tfe_workspace_run_task":             resourceTFEWorkspaceRunTask(),
 			"tfe_variable_set":                   resourceTFEVariableSet(),
 			"tfe_workspace_policy_set":           resourceTFEWorkspacePolicySet(),
 			"tfe_workspace_policy_set_exclusion": resourceTFEWorkspacePolicySetExclusion(),
@@ -191,10 +189,4 @@ var descriptions = map[string]string{
 	"ssl_skip_verify": "Whether or not to skip certificate verifications.",
 	"organization": "The organization to apply to a resource if one is not defined on\n" +
 		"the resource itself",
-}
-
-// A commonly used helper method to check if the error
-// returned was tfe.ErrResourceNotFound
-func isErrResourceNotFound(err error) bool {
-	return errors.Is(err, tfe.ErrResourceNotFound)
 }

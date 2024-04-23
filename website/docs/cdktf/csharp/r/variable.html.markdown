@@ -106,7 +106,7 @@ variable is written once and not visible thereafter. Defaults to `False`.
     * `VariableSetId` - ID of the variable set that owns the variable.
 
 ~> **NOTE:** When `Sensitive` is set to true, Terraform cannot detect and repair
-drift if `Value` is later changed out-of-band via the Terraform Cloud UI.
+drift if `Value` is later changed out-of-band via the HCP Terraform UI.
 Terraform will only change the value for a sensitive variable if you change
 `Value` in the configuration, so that it no longer matches the last known value
 in the state.

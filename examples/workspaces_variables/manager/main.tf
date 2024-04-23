@@ -1,14 +1,14 @@
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0
 
-# This configuration creates and manages workspaces in Terraform Cloud /
+# This configuration creates and manages workspaces in HCP Terraform /
 # Enterprise. Workspaces and the variables that should be set on them come from
 # two maps, and can come from additional sources as well, such as individual
 # variable resource blocks. The maps are merged, and then the result is
 # iterated over using for_each.
 
 variable "tf_organization" {
-  description = "The Terraform Cloud or Enterprise organization under which all operations should be performed."
+  description = "The HCP Terraform or Enterprise organization under which all operations should be performed."
   type = string
 }
 

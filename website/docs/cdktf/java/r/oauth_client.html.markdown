@@ -39,7 +39,7 @@ public class MyConvertedCode extends TerraformStack {
 
 #### Azure DevOps Server Usage
 
-See [documentation for TFC/E setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/azure-devops-server).
+See [documentation for HCP Terraform and Terraform Enterprise setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/azure-devops-server).
 
 **Note:** This resource requires a private key when creating Azure DevOps Server OAuth clients.
 
@@ -67,7 +67,7 @@ public class MyConvertedCode extends TerraformStack {
 
 #### BitBucket Data Center Usage
 
-See [documentation for TFC/E setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/bitbucket-data-center).
+See [documentation for HCP Terraform and Terraform Enterprise setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/bitbucket-data-center).
 
 When using BitBucket Data Center, you must use three required fields: `key`, `secret`, `rsaPublicKey`.
 

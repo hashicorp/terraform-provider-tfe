@@ -7,7 +7,7 @@ description: |-
 # Data Source: tfe_slug
 
 This data source is used to represent configuration files on a local filesystem
-intended to be uploaded to Terraform Cloud/Enterprise, in lieu of those files being
+intended to be uploaded to HCP Terraform and Terraform Enterprise, in lieu of those files being
 sourced from a configured VCS provider.
 
 A unique checksum is generated for the specified local directory, which allows

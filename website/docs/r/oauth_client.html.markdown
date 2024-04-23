@@ -24,12 +24,13 @@ resource "tfe_oauth_client" "test" {
   http_url         = "https://github.com"
   oauth_token      = "my-vcs-provider-token"
   service_provider = "github"
+  organization_scoped = true
 }
 ```
 
 #### Azure DevOps Server Usage
 
-See [documentation for TFC/E setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/azure-devops-server).
+See [documentation for HCP Terraform and Terraform Enterprise setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/azure-devops-server).
 
 **Note:** This resource requires a private key when creating Azure DevOps Server OAuth clients.
 
@@ -47,7 +48,7 @@ resource "tfe_oauth_client" "test" {
 
 #### Bitbucket Data Center Usage
 
-See [documentation for TFC/E setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/bitbucket-server).
+See [documentation for HCP Terraform and Terraform Enterprise setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/bitbucket-server).
 
 When using Bitbucket Data Center, you must use three required fields: `key`, `secret`, `rsa_public_key`.
 
@@ -89,6 +90,7 @@ Link.
 * `service_provider` - (Required) The VCS provider being connected with. Valid
   options are `ado_server`, `ado_services`, `bitbucket_data_center`, `bitbucket_hosted`, `bitbucket_server`(deprecated), `github`, `github_enterprise`, `gitlab_hosted`,
   `gitlab_community_edition`, or `gitlab_enterprise_edition`.
+* `organization_scoped` - (Optional) Whether or not the oauth client is scoped to all projects and workspaces in the organization. Defaults to `true`.
 
 ## Attributes Reference
 
