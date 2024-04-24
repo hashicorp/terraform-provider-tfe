@@ -75,7 +75,7 @@ automatically installed by `terraform init` in the future:
 terraform {
   required_providers {
     tfe = {
-      version = "~> 0.53.0"
+      version = "~> 0.54.0"
     }
   }
 }

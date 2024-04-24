@@ -1,12 +1,19 @@
 ## UNRELEASED
-### Enhancements
+
+## v0.54.0
+
+ENHANCEMENTS:
+* Rebrand Terraform Cloud to HCP Terraform by @sebasslash [#1328](https://github.com/hashicorp/terraform-provider-tfe/pull/1328)
 * Adds `post_apply` to list of possible `stages` for Run Tasks by @carolinaborim [#1307](https://github.com/hashicorp/terraform-provider-tfe/pull/1307)
 
-### Features
+FEATURES:
 * `d/tfe_oauth_client`: Add `project_ids` attribute, by @Netra2104 [1148](https://github.com/hashicorp/terraform-provider-tfe/pull/1148)
 * `d/tfe_oauth_client`: Add `organization_scoped` attribute, by @Netra2104 [1148](https://github.com/hashicorp/terraform-provider-tfe/pull/1148)
 * **New Resource**: `r/tfe_project_oauth_client` attaches/detaches an existing `project` to an existing `oauth client`, by @Netra2104 [1144](https://github.com/hashicorp/terraform-provider-tfe/pull/1144)
 * **New Resource**: `r/tfe_test_variable` is a new resource for creating environment variables used by registry modules for terraform test, by @aaabdelgany [1285](https://github.com/hashicorp/terraform-provider-tfe/pull/1285)
+
+BUG FIXES:
+* `r/tfe_organization_default_settings`: Fix import resource address documentation by @Uk1288 [#1324](https://github.com/hashicorp/terraform-provider-tfe/pull/1324)
 
 ## v0.53.0
 
