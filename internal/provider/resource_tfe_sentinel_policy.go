@@ -135,10 +135,7 @@ func resourceTFESentinelPolicyRead(d *schema.ResourceData, meta interface{}) err
 	// Update the config.
 	d.Set("name", policy.Name)
 	d.Set("description", policy.Description)
-
-	if len(policy.Enforce) == 1 {
-		d.Set("enforce_mode", string(policy.Enforce[0].Mode))
-	}
+	d.Set("enforce_mode", policy.EnforcementLevel)
 
 	content, err := config.Client.Policies.Download(ctx, policy.ID)
 	if err != nil {

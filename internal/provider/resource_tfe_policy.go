@@ -182,19 +182,11 @@ func resourceTFEPolicyCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func createOPAPolicyOptions(options *tfe.PolicyCreateOptions, d *schema.ResourceData) (*tfe.PolicyCreateOptions, error) {
-	name := d.Get("name").(string)
-	path := name + ".rego"
-	enforceOpts := &tfe.EnforcementOptions{
-		Path: tfe.String(path),
-	}
-
 	if v, ok := d.GetOk("enforce_mode"); !ok {
-		enforceOpts.Mode = tfe.EnforcementMode(getDefaultEnforcementMode(tfe.OPA))
+		options.EnforcementLevel = tfe.EnforcementMode(getDefaultEnforcementMode(tfe.OPA))
 	} else {
-		enforceOpts.Mode = tfe.EnforcementMode(tfe.EnforcementLevel(v.(string)))
+		options.EnforcementLevel = tfe.EnforcementMode(tfe.EnforcementLevel(v.(string)))
 	}
-
-	options.Enforce = []*tfe.EnforcementOptions{enforceOpts}
 
 	vQuery, ok := d.GetOk("query")
 	if !ok {
@@ -206,19 +198,12 @@ func createOPAPolicyOptions(options *tfe.PolicyCreateOptions, d *schema.Resource
 }
 
 func createSentinelPolicyOptions(options *tfe.PolicyCreateOptions, d *schema.ResourceData) *tfe.PolicyCreateOptions {
-	name := d.Get("name").(string)
-	path := name + ".sentinel"
-	enforceOpts := &tfe.EnforcementOptions{
-		Path: tfe.String(path),
-	}
-
 	if v, ok := d.GetOk("enforce_mode"); !ok {
-		enforceOpts.Mode = tfe.EnforcementMode(getDefaultEnforcementMode(tfe.Sentinel))
+		options.EnforcementLevel = tfe.EnforcementMode(getDefaultEnforcementMode(tfe.Sentinel))
 	} else {
-		enforceOpts.Mode = tfe.EnforcementMode(tfe.EnforcementLevel(v.(string)))
+		options.EnforcementLevel = tfe.EnforcementMode(tfe.EnforcementLevel(v.(string)))
 	}
 
-	options.Enforce = []*tfe.EnforcementOptions{enforceOpts}
 	return options
 }
 
@@ -253,10 +238,7 @@ func resourceTFEPolicyRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", policy.Name)
 	d.Set("description", policy.Description)
 	d.Set("kind", policy.Kind)
-
-	if len(policy.Enforce) == 1 {
-		d.Set("enforce_mode", string(policy.Enforce[0].Mode))
-	}
+	d.Set("enforce_mode", policy.EnforcementLevel)
 
 	content, err := config.Client.Policies.Download(ctx, policy.ID)
 	if err != nil {
@@ -279,20 +261,10 @@ func resourceTFEPolicyUpdate(d *schema.ResourceData, meta interface{}) error {
 			options.Description = tfe.String(desc.(string))
 		}
 
-		path := d.Get("name").(string) + ".sentinel"
-		vKind, ok := d.GetOk("kind")
-		if ok {
-			if vKind == tfe.OPA {
-				path = d.Get("name").(string) + ".rego"
-			}
-		}
-		if d.HasChange("enforce_mode") {
-			options.Enforce = []*tfe.EnforcementOptions{
-				{
-					Path: tfe.String(path),
-					Mode: tfe.EnforcementMode(tfe.EnforcementLevel(d.Get("enforce_mode").(string))),
-				},
-			}
+		vKind, _ := d.GetOk("kind")
+
+		if enforce_mode, ok := d.GetOk("enforce_mode"); ok {
+			options.EnforcementLevel = tfe.EnforcementMode(tfe.EnforcementLevel(enforce_mode.(string)))
 		}
 
 		if query, ok := d.GetOk("query"); ok {
