@@ -147,6 +147,7 @@ func testAccCheckTFESentinelPolicyAttributes(
 			return fmt.Errorf("Bad name: %s", policy.Name)
 		}
 
+		//nolint:staticcheck // this is still used by TFE version 202306-1
 		if policy.Enforce[0].Mode != "hard-mandatory" {
 			return fmt.Errorf("Bad enforce mode: %s", policy.Enforce[0].Mode)
 		}
@@ -162,6 +163,7 @@ func testAccCheckTFESentinelPolicyAttributesUpdated(
 			return fmt.Errorf("Bad name: %s", policy.Name)
 		}
 
+		//nolint:staticcheck // this is still used by TFE version 202306-1
 		if policy.Enforce[0].Mode != "soft-mandatory" {
 			return fmt.Errorf("Bad enforce mode: %s", policy.Enforce[0].Mode)
 		}
