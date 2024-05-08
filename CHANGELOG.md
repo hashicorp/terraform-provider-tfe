@@ -8,6 +8,9 @@ ENHANCEMENTS:
 FEATURES:
 * `r/tfe_team`: Add attributes `manage_teams`, `manage_organization_access`, and `access_secret_teams` to `organization_access` on `tfe_team` by @juliannatetreault [#1313](https://github.com/hashicorp/terraform-provider-tfe/pull/1313)
 
+ENHANCEMENTS:
+* `r/tfe_project`: Increase the Project name length from 36 to 40 characters @hs26gill [#1351](https://github.com/hashicorp/terraform-provider-tfe/pull/1351)
+
 ## v0.54.0
 
 ENHANCEMENTS:
