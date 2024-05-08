@@ -57,7 +57,7 @@ func TestAccTFEProject_invalidName(t *testing.T) {
 			},
 			{
 				Config:      testAccTFEProject_invalidNameLen(rInt),
-				ExpectError: regexp.MustCompile(`expected length of name to be in the range \(3 - 36\),`),
+				ExpectError: regexp.MustCompile(`expected length of name to be in the range \(3 - 40\),`),
 			},
 		},
 	})
