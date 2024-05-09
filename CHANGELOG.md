@@ -1,4 +1,7 @@
-## UNRELEASED
+## v0.55.0
+
+FEATURES:
+* `r/tfe_team`: Add attributes `manage_teams`, `manage_organization_access`, and `access_secret_teams` to `organization_access` on `tfe_team` by @juliannatetreault [#1313](https://github.com/hashicorp/terraform-provider-tfe/pull/1313)
 
 ## v0.54.0
 
