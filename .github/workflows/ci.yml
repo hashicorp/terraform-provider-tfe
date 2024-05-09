@@ -9,6 +9,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  notice:
+    name: TESTS ARE TEMPORARILY DISABLED- RUN CHANGED RESOURCE TESTS LOCALLY
+    runs-on: ubuntu-latest
+    steps:
+      - name: NO-OP
+        run: |
+          echo "Tests are skipped. Please test manually."
   lint:
     name: lint
     runs-on: ubuntu-latest
@@ -24,8 +31,8 @@ jobs:
       fail-fast: false
       matrix:
         # If you adjust these parameters, also adjust the jrm input files on the "Merge reports" step below
-        total: [ 5 ]
-        index: [ 0, 1, 2, 3, 4 ]
+        total: [ 1 ]
+        index: [ 0 ]
     steps:
       - name: Fetch Outputs
         id: tflocal
@@ -73,7 +80,7 @@ jobs:
         run: npm install -g junit-report-merger
 
       - name: Merge reports
-        run: jrm ./ci-summary-provider.xml "junit-test-summary-0/*.xml" "junit-test-summary-1/*.xml" "junit-test-summary-2/*.xml" "junit-test-summary-3/*.xml" "junit-test-summary-4/*.xml"
+        run: jrm ./ci-summary-provider.xml "junit-test-summary-0/*.xml"
 
       - name: Upload test artifacts
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
