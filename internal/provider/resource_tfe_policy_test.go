@@ -404,6 +404,7 @@ func testAccCheckTFEPolicyAttributes(
 			return fmt.Errorf("Bad name: %s", policy.Name)
 		}
 
+		//nolint:staticcheck // this is still used by TFE versions older than 202306-1
 		if policy.Enforce[0].Mode != "hard-mandatory" {
 			return fmt.Errorf("Bad enforce mode: %s", policy.Enforce[0].Mode)
 		}
@@ -419,6 +420,7 @@ func testAccCheckTFEOPAPolicyAttributes(
 			return fmt.Errorf("Bad name: %s", policy.Name)
 		}
 
+		//nolint:staticcheck // this is still used by TFE versions older than 202306-1
 		if policy.Enforce[0].Mode != "mandatory" {
 			return fmt.Errorf("Bad enforce mode: %s", policy.Enforce[0].Mode)
 		}
@@ -438,10 +440,12 @@ func testAccCheckTFEDefaultPolicyAttributes(policy *tfe.Policy) resource.TestChe
 		}
 
 		switch policy.Kind {
+		//nolint:staticcheck // this is still used by TFE versions older than 202306-1
 		case tfe.Sentinel:
 			if policy.Enforce[0].Mode != "soft-mandatory" {
 				return fmt.Errorf("Bad enforce mode: %s", policy.Enforce[0].Mode)
 			}
+		//nolint:staticcheck // this is still used by TFE versions older than 202306-1
 		case tfe.OPA:
 			if policy.Enforce[0].Mode != "advisory" {
 				return fmt.Errorf("Bad enforce mode: %s", policy.Enforce[0].Mode)
@@ -458,6 +462,7 @@ func testAccCheckTFEPolicyAttributesUpdated(
 			return fmt.Errorf("Bad name: %s", policy.Name)
 		}
 
+		//nolint:staticcheck // this is still used by TFE versions older than 202306-1
 		if policy.Enforce[0].Mode != "soft-mandatory" {
 			return fmt.Errorf("Bad enforce mode: %s", policy.Enforce[0].Mode)
 		}
@@ -473,6 +478,7 @@ func testAccCheckTFEOPAPolicyAttributesUpdatedQuery(
 			return fmt.Errorf("Bad name: %s", policy.Name)
 		}
 
+		//nolint:staticcheck // this is still used by TFE versions older than 202306-1
 		if policy.Enforce[0].Mode != "mandatory" {
 			return fmt.Errorf("Bad enforce mode: %s", policy.Enforce[0].Mode)
 		}
@@ -492,6 +498,7 @@ func testAccCheckTFEOPAPolicyAttributesUpdatedAll(
 			return fmt.Errorf("Bad name: %s", policy.Name)
 		}
 
+		//nolint:staticcheck // this is still used by TFE versions older than 202306-1
 		if policy.Enforce[0].Mode != "advisory" {
 			return fmt.Errorf("Bad enforce mode: %s", policy.Enforce[0].Mode)
 		}

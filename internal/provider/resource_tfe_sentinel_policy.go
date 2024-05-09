@@ -136,6 +136,7 @@ func resourceTFESentinelPolicyRead(d *schema.ResourceData, meta interface{}) err
 	d.Set("name", policy.Name)
 	d.Set("description", policy.Description)
 
+	//nolint:staticcheck // this is still used by TFE versions older than 202306-1
 	if len(policy.Enforce) == 1 {
 		d.Set("enforce_mode", string(policy.Enforce[0].Mode))
 	}
@@ -161,6 +162,7 @@ func resourceTFESentinelPolicyUpdate(d *schema.ResourceData, meta interface{}) e
 		}
 
 		if d.HasChange("enforce_mode") {
+			//nolint:staticcheck // this is still used by TFE versions older than 202306-1
 			options.Enforce = []*tfe.EnforcementOptions{
 				{
 					Path: tfe.String(d.Get("name").(string) + ".sentinel"),
