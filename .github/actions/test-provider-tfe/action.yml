@@ -51,76 +51,72 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: NO-OP
+    - name: Set up Go
+      uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
+      with:
+        go-version-file: go.mod
+        cache: true
+
+    - name: Sync dependencies
       shell: bash
       run: |
-        echo "Tests are skipped. Please test manually."
-    # - name: Set up Go
-    #   uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
-    #   with:
-    #     go-version-file: go.mod
-    #     cache: true
+        go mod download
+        go mod tidy
 
-    # - name: Sync dependencies
-    #   shell: bash
-    #   run: |
-    #     go mod download
-    #     go mod tidy
+    - name: Install gotestsum
+      shell: bash
+      run: go install gotest.tools/gotestsum@latest
 
-    # - name: Install gotestsum
-    #   shell: bash
-    #   run: go install gotest.tools/gotestsum@latest
+    - name: Download artifact
+      id: download-artifact
+      uses: dawidd6/action-download-artifact@246dbf436b23d7c49e21a7ab8204ca9ecd1fe615 # v2.27.0
+      with:
+        workflow_conclusion: success
+        name: junit-test-summary
+        if_no_artifact_found: warn
+        branch: main
 
-    # - name: Download artifact
-    #   id: download-artifact
-    #   uses: dawidd6/action-download-artifact@246dbf436b23d7c49e21a7ab8204ca9ecd1fe615 # v2.27.0
-    #   with:
-    #     workflow_conclusion: success
-    #     name: junit-test-summary
-    #     if_no_artifact_found: warn
-    #     branch: main
+    - name: Split acceptance tests
+      id: test_split
+      uses: hashicorp-forge/go-test-split-action@796beedbdb3d1bea14cad2d3057bab5c5cf15fe5 # v1.0.2
+      with:
+        index: ${{ inputs.matrix_index }}
+        total: ${{ inputs.matrix_total }}
+        junit-summary: ./ci-summary-provider.xml
+        # When tests are split and run concurrently, lists_tests arg in ci.yml will skip the TestAccTFESAMLSettings_omnibus test suite
+        list: ${{ inputs.list_tests }}
 
-    # - name: Split acceptance tests
-    #   id: test_split
-    #   uses: hashicorp-forge/go-test-split-action@796beedbdb3d1bea14cad2d3057bab5c5cf15fe5 # v1.0.2
-    #   with:
-    #     index: ${{ inputs.matrix_index }}
-    #     total: ${{ inputs.matrix_total }}
-    #     junit-summary: ./ci-summary-provider.xml
-    #     # When tests are split and run concurrently, lists_tests arg in ci.yml will skip the TestAccTFESAMLSettings_omnibus test suite
-    #     list: ${{ inputs.list_tests }}
+    - name: Run Tests
+      shell: bash
+      env:
+        TFE_HOSTNAME: "${{ inputs.hostname }}"
+        TFE_TOKEN: "${{ inputs.token }}"
+        TFE_ADMIN_CONFIGURATION_TOKEN: ${{ inputs.admin_configuration_token }}
+        TFE_ADMIN_PROVISION_LICENSES_TOKEN: ${{ inputs.admin_provision_licenses_token }}
+        TFE_ADMIN_SECURITY_MAINTENANCE_TOKEN: ${{ inputs.admin_security_maintenance_token }}
+        TFE_ADMIN_SITE_ADMIN_TOKEN: ${{ inputs.admin_site_admin_token }}
+        TFE_ADMIN_SUBSCRIPTION_TOKEN: ${{ inputs.admin_subscription_token }}
+        TFE_ADMIN_SUPPORT_TOKEN: ${{ inputs.admin_support_token }}
+        TFE_ADMIN_VERSION_MAINTENANCE_TOKEN: ${{ inputs.admin_version_maintenance_token }}
+        TFE_USER1: tfe-provider-user1
+        TFE_USER2: tfe-provider-user2
+        TF_ACC: "1"
+        ENABLE_TFE: "${{ inputs.enterprise }}"
+        RUN_TASKS_URL: "http://testing-mocks.tfe:22180/runtasks/pass"
+        GITHUB_POLICY_SET_IDENTIFIER: "hashicorp/test-policy-set"
+        GITHUB_REGISTRY_MODULE_IDENTIFIER: "hashicorp/terraform-random-module"
+        GITHUB_WORKSPACE_IDENTIFIER: "hashicorp/terraform-random-module"
+        GITHUB_WORKSPACE_BRANCH: "main"
+        GITHUB_TOKEN: "${{ inputs.testing-github-token }}"
+        MOD_PROVIDER: github.com/hashicorp/terraform-provider-tfe
+        MOD_TFE: github.com/hashicorp/terraform-provider-tfe/internal/provider
+        MOD_VERSION: github.com/hashicorp/terraform-provider-tfe/version
+      run: |
+        gotestsum --junitfile summary.xml --format short-verbose -- $MOD_PROVIDER $MOD_TFE $MOD_VERSION -v -timeout=30m -run "${{ steps.test_split.outputs.run }}"
 
-    # - name: Run Tests
-    #   shell: bash
-    #   env:
-    #     TFE_HOSTNAME: "${{ inputs.hostname }}"
-    #     TFE_TOKEN: "${{ inputs.token }}"
-    #     TFE_ADMIN_CONFIGURATION_TOKEN: ${{ inputs.admin_configuration_token }}
-    #     TFE_ADMIN_PROVISION_LICENSES_TOKEN: ${{ inputs.admin_provision_licenses_token }}
-    #     TFE_ADMIN_SECURITY_MAINTENANCE_TOKEN: ${{ inputs.admin_security_maintenance_token }}
-    #     TFE_ADMIN_SITE_ADMIN_TOKEN: ${{ inputs.admin_site_admin_token }}
-    #     TFE_ADMIN_SUBSCRIPTION_TOKEN: ${{ inputs.admin_subscription_token }}
-    #     TFE_ADMIN_SUPPORT_TOKEN: ${{ inputs.admin_support_token }}
-    #     TFE_ADMIN_VERSION_MAINTENANCE_TOKEN: ${{ inputs.admin_version_maintenance_token }}
-    #     TFE_USER1: tfe-provider-user1
-    #     TFE_USER2: tfe-provider-user2
-    #     TF_ACC: "1"
-    #     ENABLE_TFE: "${{ inputs.enterprise }}"
-    #     RUN_TASKS_URL: "http://testing-mocks.tfe:22180/runtasks/pass"
-    #     GITHUB_POLICY_SET_IDENTIFIER: "hashicorp/test-policy-set"
-    #     GITHUB_REGISTRY_MODULE_IDENTIFIER: "hashicorp/terraform-random-module"
-    #     GITHUB_WORKSPACE_IDENTIFIER: "hashicorp/terraform-random-module"
-    #     GITHUB_WORKSPACE_BRANCH: "main"
-    #     GITHUB_TOKEN: "${{ inputs.testing-github-token }}"
-    #     MOD_PROVIDER: github.com/hashicorp/terraform-provider-tfe
-    #     MOD_TFE: github.com/hashicorp/terraform-provider-tfe/internal/provider
-    #     MOD_VERSION: github.com/hashicorp/terraform-provider-tfe/version
-    #   run: |
-    #     gotestsum --junitfile summary.xml --format short-verbose -- $MOD_PROVIDER $MOD_TFE $MOD_VERSION -v -timeout=30m -run "${{ steps.test_split.outputs.run }}"
-
-    # - name: Upload test artifacts
-    #   uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
-    #   with:
-    #     name: junit-test-summary-${{ matrix.index }}
-    #     path: summary.xml
-    #     retention-days: 1
+    - name: Upload test artifacts
+      uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+      with:
+        name: junit-test-summary-${{ matrix.index }}
+        path: summary.xml
+        retention-days: 1

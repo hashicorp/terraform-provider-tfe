@@ -31,8 +31,8 @@ jobs:
       fail-fast: false
       matrix:
         # If you adjust these parameters, also adjust the jrm input files on the "Merge reports" step below
-        total: [ 1 ]
-        index: [ 0 ]
+        total: [ 5 ]
+        index: [ 0, 1, 2, 3, 4 ]
     steps:
       - name: Fetch Outputs
         id: tflocal
