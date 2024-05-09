@@ -68,6 +68,7 @@ The following arguments are supported:
 * `assessments_enabled` - (Optional) Whether to regularly run health assessments such as drift detection on the workspace. Defaults to `false`.
 * `auto_apply` - (Optional) Whether to automatically apply changes when a Terraform plan is successful. Defaults to `false`.
 * `auto_apply_run_trigger` - (Optional) Whether to automatically apply changes for runs that were created by run triggers from another workspace. Defaults to `false`.
+* `auto_destroy_at` - (Optional) A future date/time string at which point all resources in a workspace will be scheduled for deletion. Must be a string in RFC3339 format (e.g. "2100-01-01T00:00:00Z").
 * `description` - (Optional) A description for the workspace.
 * `execution_mode` - (Optional) **Deprecated** Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode) to use. Use [tfe_workspace_settings](workspace_settings) instead.
 * `file_triggers_enabled` - (Optional) Whether to filter runs based on the changed files

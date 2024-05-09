@@ -1,5 +1,9 @@
 ## UNRELEASED
 
+ENHANCEMENTS:
+* `r/tfe_workspace`: Add an `auto_destroy_at` attribute for scheduling an auto-destroy run in the future, by @notchairmk [1354](https://github.com/hashicorp/terraform-provider-tfe/pull/1354)
+* `d/tfe_workspace`: Add an `auto_destroy_at` attribute for reading a scheduled auto-destroy, by @notchairmk [1354](https://github.com/hashicorp/terraform-provider-tfe/pull/1354)
+
 ## v0.54.0
 
 ENHANCEMENTS:
