@@ -9,13 +9,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  notice:
-    name: TESTS ARE TEMPORARILY DISABLED- RUN CHANGED RESOURCE TESTS LOCALLY
-    runs-on: ubuntu-latest
-    steps:
-      - name: NO-OP
-        run: |
-          echo "Tests are skipped. Please test manually."
   lint:
     name: lint
     runs-on: ubuntu-latest

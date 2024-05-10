@@ -1,7 +1,7 @@
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0
 
-name: TESTS ARE TEMPOARILY DISABLED
+name: Test
 description: Tests terraform-provider-tfe within a matrix
 inputs:
   admin_configuration_token:
