@@ -6,6 +6,9 @@ ENHANCEMENTS:
 * `d/tfe_workspace`: Add an `auto_destroy_at` attribute for reading a scheduled auto-destroy, by @notchairmk [1354](https://github.com/hashicorp/terraform-provider-tfe/pull/1354)
 * `r/tfe_registry_module`: Add `initial_version` support for Branch Based Modules by @aaabdelgany [#1363](https://github.com/hashicorp/terraform-provider-tfe/pull/1363)
 
+BUG FIXES:
+* `r/tfe_registry_module`: Prevents constant diff after a successful apply when `tags` and `tests_enabled` is not set by @Uk1288 [#1357](https://github.com/hashicorp/terraform-provider-tfe/pull/1357)
+
 ## v0.55.0
 
 FEATURES:
