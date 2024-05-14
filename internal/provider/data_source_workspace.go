@@ -247,7 +247,7 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 
 	autoDestroyAt, err := flattenAutoDestroyAt(workspace.AutoDestroyAt)
 	if err != nil {
-		return fmt.Errorf("Error flattening auto_destroy_at from workspace response: %w", err)
+		return fmt.Errorf("Error flattening auto destroy during read: %w", err)
 	}
 	d.Set("auto_destroy_at", autoDestroyAt)
 

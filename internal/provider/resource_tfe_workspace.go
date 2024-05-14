@@ -349,7 +349,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 	if _, ok := d.GetOk("auto_destroy_at"); ok {
 		autoDestroyAt, err := expandAutoDestroyAt(d)
 		if err != nil {
-			return err
+			return fmt.Errorf("Error expanding auto destroy during create: %w", err)
 		}
 		options.AutoDestroyAt = autoDestroyAt
 	}
@@ -549,7 +549,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 
 	autoDestroyAt, err := flattenAutoDestroyAt(workspace.AutoDestroyAt)
 	if err != nil {
-		return fmt.Errorf("Error flattening autoDestroyAt: %w", err)
+		return fmt.Errorf("Error flattening auto destroy during read: %w", err)
 	}
 	d.Set("auto_destroy_at", autoDestroyAt)
 
@@ -661,7 +661,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		if d.HasChange("auto_destroy_at") {
 			autoDestroyAt, err := expandAutoDestroyAt(d)
 			if err != nil {
-				return fmt.Errorf("Error expanding autoDestroyAt: %w", err)
+				return fmt.Errorf("Error expanding auto destroy during update: %w", err)
 			}
 			options.AutoDestroyAt = autoDestroyAt
 		}
