@@ -1,3 +1,8 @@
+## Unreleased
+
+ENHANCEMENTS:
+* `r/tfe_oauth_client`: Add Bitbucket Data Center support with the `bitbucket_data_center` option for `service_provider` by @zainq11 [#1303](https://github.com/hashicorp/terraform-provider-tfe/pull/1304)
+
 ## v0.55.0
 
 FEATURES:
@@ -8,7 +13,6 @@ FEATURES:
 ENHANCEMENTS:
 * Rebrand Terraform Cloud to HCP Terraform by @sebasslash [#1328](https://github.com/hashicorp/terraform-provider-tfe/pull/1328)
 * Adds `post_apply` to list of possible `stages` for Run Tasks by @carolinaborim [#1307](https://github.com/hashicorp/terraform-provider-tfe/pull/1307)
-* `r/tfe_oauth_client`: Add Bitbucket Data Center support with the `bitbucket_data_center` option for `service_provider` by @zainq11 [#1303](https://github.com/hashicorp/terraform-provider-tfe/pull/1304)
 
 FEATURES:
 * `d/tfe_oauth_client`: Add `project_ids` attribute, by @Netra2104 [1148](https://github.com/hashicorp/terraform-provider-tfe/pull/1148)
