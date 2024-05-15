@@ -1,3 +1,8 @@
+## Unreleased
+
+ENHANCEMENTS:
+* `r/tfe_oauth_client`: Add Bitbucket Data Center support with the `bitbucket_data_center` option for `service_provider` by @zainq11 [#1303](https://github.com/hashicorp/terraform-provider-tfe/pull/1304)
+
 ## v0.55.0
 
 FEATURES:
