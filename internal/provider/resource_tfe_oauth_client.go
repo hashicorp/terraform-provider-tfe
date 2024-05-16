@@ -84,7 +84,7 @@ func resourceTFEOAuthClient() *schema.Resource {
 				Type:     schema.TypeString,
 				ForceNew: true,
 				Optional: true,
-				// this field is only for BitBucket Server, and requires these other
+				// this field is only for BitBucket Data Center, and requires these other
 				RequiredWith: []string{"secret", "key"},
 			},
 
@@ -98,6 +98,7 @@ func resourceTFEOAuthClient() *schema.Resource {
 						string(tfe.ServiceProviderAzureDevOpsServices),
 						string(tfe.ServiceProviderBitbucket),
 						string(tfe.ServiceProviderBitbucketServer),
+						string(tfe.ServiceProviderBitbucketDataCenter),
 						string(tfe.ServiceProviderGithub),
 						string(tfe.ServiceProviderGithubEE),
 						string(tfe.ServiceProviderGitlab),
@@ -157,7 +158,7 @@ func resourceTFEOAuthClientCreate(d *schema.ResourceData, meta interface{}) erro
 	if serviceProvider == tfe.ServiceProviderAzureDevOpsServer {
 		options.PrivateKey = tfe.String(privateKey)
 	}
-	if serviceProvider == tfe.ServiceProviderBitbucketServer {
+	if serviceProvider == tfe.ServiceProviderBitbucketServer || serviceProvider == tfe.ServiceProviderBitbucketDataCenter {
 		options.RSAPublicKey = tfe.String(rsaPublicKey)
 		options.Secret = tfe.String(secret)
 	}

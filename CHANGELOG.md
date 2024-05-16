@@ -1,4 +1,12 @@
-## UNRELEASED
+## Unreleased
+
+ENHANCEMENTS:
+* `r/tfe_oauth_client`: Add Bitbucket Data Center support with the `bitbucket_data_center` option for `service_provider` by @zainq11 [#1303](https://github.com/hashicorp/terraform-provider-tfe/pull/1304)
+
+## v0.55.0
+
+FEATURES:
+* `r/tfe_team`: Add attributes `manage_teams`, `manage_organization_access`, and `access_secret_teams` to `organization_access` on `tfe_team` by @juliannatetreault [#1313](https://github.com/hashicorp/terraform-provider-tfe/pull/1313)
 
 ENHANCEMENTS:
 * `r/tfe_workspace`: Add an `auto_destroy_at` attribute for scheduling an auto-destroy run in the future, by @notchairmk [1354](https://github.com/hashicorp/terraform-provider-tfe/pull/1354)

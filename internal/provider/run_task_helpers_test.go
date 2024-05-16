@@ -7,9 +7,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/hashicorp/go-tfe"
 	tfemocks "github.com/hashicorp/go-tfe/mocks"
+	"go.uber.org/mock/gomock"
 )
 
 func MockASingleOrgRunTask(t *testing.T, client *tfe.Client, task tfe.RunTask) {

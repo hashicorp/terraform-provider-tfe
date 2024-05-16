@@ -194,7 +194,7 @@ func createOPAPolicyOptions(options *tfe.PolicyCreateOptions, d *schema.Resource
 		enforceOpts.Mode = tfe.EnforcementMode(tfe.EnforcementLevel(v.(string)))
 	}
 
-	options.Enforce = []*tfe.EnforcementOptions{enforceOpts}
+	options.Enforce = []*tfe.EnforcementOptions{enforceOpts} //nolint:staticcheck // this is still used by TFE versions older than 202306-1
 
 	vQuery, ok := d.GetOk("query")
 	if !ok {
@@ -218,7 +218,7 @@ func createSentinelPolicyOptions(options *tfe.PolicyCreateOptions, d *schema.Res
 		enforceOpts.Mode = tfe.EnforcementMode(tfe.EnforcementLevel(v.(string)))
 	}
 
-	options.Enforce = []*tfe.EnforcementOptions{enforceOpts}
+	options.Enforce = []*tfe.EnforcementOptions{enforceOpts} //nolint:staticcheck // this is still used by TFE versions older than 202306-1
 	return options
 }
 
@@ -254,6 +254,7 @@ func resourceTFEPolicyRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("description", policy.Description)
 	d.Set("kind", policy.Kind)
 
+	//nolint:staticcheck // this is still used by TFE versions older than 202306-1
 	if len(policy.Enforce) == 1 {
 		d.Set("enforce_mode", string(policy.Enforce[0].Mode))
 	}
@@ -287,6 +288,7 @@ func resourceTFEPolicyUpdate(d *schema.ResourceData, meta interface{}) error {
 			}
 		}
 		if d.HasChange("enforce_mode") {
+			//nolint:staticcheck // this is still used by TFE versions older than 202306-1
 			options.Enforce = []*tfe.EnforcementOptions{
 				{
 					Path: tfe.String(path),

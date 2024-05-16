@@ -6,9 +6,9 @@ package provider
 import (
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	tfe "github.com/hashicorp/go-tfe"
 	tfemocks "github.com/hashicorp/go-tfe/mocks"
+	"go.uber.org/mock/gomock"
 )
 
 func MockOrganizationMemberships(t *testing.T, client *tfe.Client, orgName string, organizationMemberships []*tfe.OrganizationMembership) {
