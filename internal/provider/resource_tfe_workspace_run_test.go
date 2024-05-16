@@ -23,7 +23,10 @@ func TestAccTFEWorkspaceRun_withApplyOnlyBlock(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	organization, orgCleanup := createBusinessOrganization(t, tfeClient)
+	organization, orgCleanup := createOrganization(t, tfeClient, tfe.OrganizationCreateOptions{
+		Name:  tfe.String(fmt.Sprintf("tst-terraform-%d", rInt)),
+		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
+	})
 	t.Cleanup(orgCleanup)
 
 	parentWorkspace, childWorkspace := setupWorkspacesWithConfig(t, tfeClient, rInt, organization.Name, "test-fixtures/basic-config")
@@ -260,7 +263,6 @@ func testAccCheckTFEWorkspaceRunDestroy(workspaceID string, expectedDestroyCount
 
 		runList, err := config.Client.Runs.List(ctx, workspaceID, &tfe.RunListOptions{
 			Operation: "destroy",
-			Status:    string(tfe.RunApplied),
 		})
 		if err != nil {
 			return fmt.Errorf("Unable to find destroy run, %w", err)
