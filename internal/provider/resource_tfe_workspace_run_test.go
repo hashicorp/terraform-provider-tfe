@@ -260,7 +260,6 @@ func testAccCheckTFEWorkspaceRunDestroy(workspaceID string, expectedDestroyCount
 
 		runList, err := config.Client.Runs.List(ctx, workspaceID, &tfe.RunListOptions{
 			Operation: "destroy",
-			Status:    string(tfe.RunApplied),
 		})
 		if err != nil {
 			return fmt.Errorf("Unable to find destroy run, %w", err)
