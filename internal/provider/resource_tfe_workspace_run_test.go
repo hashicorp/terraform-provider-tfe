@@ -258,18 +258,22 @@ func testAccCheckTFEWorkspaceRunDestroy(workspaceID string, expectedDestroyCount
 	return func(s *terraform.State) error {
 		config := testAccProvider.Meta().(ConfiguredClient)
 
-		runList, err := config.Client.Runs.List(ctx, workspaceID, &tfe.RunListOptions{
-			Operation: "destroy",
+		_, err := retryFn(10, 1, func() (interface{}, error) {
+			runList, err := config.Client.Runs.List(ctx, workspaceID, &tfe.RunListOptions{
+				Operation: "destroy",
+			})
+			if err != nil {
+				return nil, fmt.Errorf("Unable to find destroy run, %w", err)
+			}
+
+			if len(runList.Items) != expectedDestroyCount {
+				return nil, fmt.Errorf("Expected %d destroy runs but found %d", expectedDestroyCount, len(runList.Items))
+			}
+
+			return nil, nil
 		})
-		if err != nil {
-			return fmt.Errorf("Unable to find destroy run, %w", err)
-		}
 
-		if len(runList.Items) != expectedDestroyCount {
-			return fmt.Errorf("Expected %d destroy runs but found %d", expectedDestroyCount, len(runList.Items))
-		}
-
-		return nil
+		return err
 	}
 }
 
