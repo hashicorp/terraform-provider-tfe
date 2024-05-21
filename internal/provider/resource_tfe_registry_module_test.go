@@ -403,7 +403,6 @@ func TestAccTFERegistryModuleImport_vcsPrivateRMRecommendedFormat(t *testing.T) 
 }
 
 func TestAccTFERegistryModuleImport_vcsPublishingMechanismBranchToTagsToBranch(t *testing.T) {
-	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -463,7 +462,6 @@ func TestAccTFERegistryModuleImport_vcsPublishingMechanismBranchToTagsToBranch(t
 }
 
 func TestAccTFERegistryModuleImport_vcsPublishingMechanismBranchToTagsToBranchWithTests(t *testing.T) {
-	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -505,7 +503,6 @@ func TestAccTFERegistryModuleImport_vcsPublishingMechanismBranchToTagsToBranchWi
 }
 
 func TestAccTFERegistryModuleImport_vcsPublishingMechanismTagsToBranchToTags(t *testing.T) {
-	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -556,7 +553,6 @@ func TestAccTFERegistryModuleImport_vcsPublishingMechanismTagsToBranchToTags(t *
 }
 
 func TestAccTFERegistryModule_invalidTestConfigOnCreate(t *testing.T) {
-	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -575,7 +571,6 @@ func TestAccTFERegistryModule_invalidTestConfigOnCreate(t *testing.T) {
 }
 
 func TestAccTFERegistryModule_invalidTestConfigOnUpdate(t *testing.T) {
-	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -603,7 +598,6 @@ func TestAccTFERegistryModule_invalidTestConfigOnUpdate(t *testing.T) {
 }
 
 func TestAccTFERegistryModule_branchAndInvalidTagsOnCreate(t *testing.T) {
-	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -622,7 +616,6 @@ func TestAccTFERegistryModule_branchAndInvalidTagsOnCreate(t *testing.T) {
 }
 
 func TestAccTFERegistryModule_branchAndTagsEnabledOnCreate(t *testing.T) {
-	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -641,7 +634,6 @@ func TestAccTFERegistryModule_branchAndTagsEnabledOnCreate(t *testing.T) {
 }
 
 func TestAccTFERegistryModule_branchAndTagsEnabledOnUpdate(t *testing.T) {
-	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -1025,6 +1017,8 @@ resource "tfe_registry_module" "foobar" {
    tags				  = false
  }
 
+ initial_version = "1.0.0"
+
  test_config {
    tests_enabled = false
  }
@@ -1059,6 +1053,8 @@ resource "tfe_registry_module" "foobar" {
    tags				  = false
  }
 
+ initial_version = "1.0.0"
+
  test_config {
  }
 }`,
@@ -1091,6 +1087,8 @@ resource "tfe_registry_module" "foobar" {
    branch             = "main"
    tags				  = false
  }
+
+ initial_version = "1.0.0"
 
  test_config {
    tests_enabled = true
@@ -1127,6 +1125,8 @@ resource "tfe_registry_module" "foobar" {
    tags				  = false
  }
 
+ initial_version = "1.0.0"
+
  test_config {
  }
 }`,
@@ -1160,6 +1160,8 @@ resource "tfe_registry_module" "foobar" {
    branch             = "main"
    tags				  = true
  }
+
+ initial_version = "1.0.0"
 
  test_config {
    tests_enabled = true
