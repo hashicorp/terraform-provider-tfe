@@ -300,6 +300,30 @@ func TestAccTFERegistryModule_publicRegistryModule(t *testing.T) {
 	})
 }
 
+func TestAccTFERegistryModule_vcsRepoWithTagField(t *testing.T) {
+	skipUnlessBeta(t)
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccPreCheckTFERegistryModule(t)
+		},
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFERegistryModule_vcsRepoWithFalseTagField(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "publishing_mechanism", "branch"),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "test_config.0.tests_enabled", strconv.FormatBool(false)),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "vcs_repo.0.tags", strconv.FormatBool(false)),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "vcs_repo.0.branch", "main"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFERegistryModule_noCodeModule(t *testing.T) {
 	skipIfEnterprise(t)
 
@@ -633,6 +657,25 @@ func TestAccTFERegistryModule_branchAndTagsEnabledOnCreate(t *testing.T) {
 	})
 }
 
+func TestAccTFERegistryModule_branchAndTagsDisabledOnCreate(t *testing.T) {
+	skipUnlessBeta(t)
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccPreCheckTFERegistryModule(t)
+		},
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFERegistryModule_vcsWithBranchAndTagsDisabled(rInt),
+				ExpectError: regexp.MustCompile(`tags must be set to true when no branch is provided`),
+			},
+		},
+	})
+}
+
 func TestAccTFERegistryModule_branchAndTagsEnabledOnUpdate(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -655,6 +698,34 @@ func TestAccTFERegistryModule_branchAndTagsEnabledOnUpdate(t *testing.T) {
 			{
 				Config:      testAccTFERegistryModule_vcsBranchWithTestsAndTagsEnabled(rInt),
 				ExpectError: regexp.MustCompile(`tags must be set to false when a branch is provided`),
+			},
+		},
+	})
+}
+
+func TestAccTFERegistryModule_branchAndTagsDisabledOnUpdate(t *testing.T) {
+	skipUnlessBeta(t)
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccPreCheckTFERegistryModule(t)
+		},
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFERegistryModule_vcsTags(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "publishing_mechanism", "git_tag"),
+					resource.TestCheckNoResourceAttr("tfe_registry_module.foobar", "test_config.0.tests_enabled"),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "vcs_repo.0.tags", strconv.FormatBool(true)),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "vcs_repo.0.branch", ""),
+				),
+			},
+			{
+				Config:      testAccTFERegistryModule_vcsWithBranchAndTagsDisabled(rInt),
+				ExpectError: regexp.MustCompile(`tags must be set to true when no branch is provided`),
 			},
 		},
 	})
@@ -1175,6 +1246,37 @@ resource "tfe_registry_module" "foobar" {
 		envGithubRegistryModuleIdentifer)
 }
 
+func testAccTFERegistryModule_vcsWithBranchAndTagsDisabled(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+ name  = "tst-terraform-%d"
+ email = "admin@company.com"
+}
+
+resource "tfe_oauth_client" "foobar" {
+ organization     = tfe_organization.foobar.name
+ api_url          = "https://api.github.com"
+ http_url         = "https://github.com"
+ oauth_token      = "%s"
+ service_provider = "github"
+}
+
+resource "tfe_registry_module" "foobar" {
+ organization     = tfe_organization.foobar.name
+ vcs_repo {
+   display_identifier = "%s"
+   identifier         = "%s"
+   oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
+   branch             = ""
+   tags				  = false
+ }
+}`,
+		rInt,
+		envGithubToken,
+		envGithubRegistryModuleIdentifer,
+		envGithubRegistryModuleIdentifer)
+}
+
 func testAccTFERegistryModule_vcsTags(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
@@ -1198,6 +1300,36 @@ resource "tfe_registry_module" "foobar" {
    oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
    tags               = true
    branch 			  = ""
+ }
+}`,
+		rInt,
+		envGithubToken,
+		envGithubRegistryModuleIdentifer,
+		envGithubRegistryModuleIdentifer)
+}
+func testAccTFERegistryModule_vcsRepoWithFalseTagField(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+ name  = "tst-terraform-%d"
+ email = "admin@company.com"
+}
+
+resource "tfe_oauth_client" "foobar" {
+ organization     = tfe_organization.foobar.name
+ api_url          = "https://api.github.com"
+ http_url         = "https://github.com"
+ oauth_token      = "%s"
+ service_provider = "github"
+}
+
+resource "tfe_registry_module" "foobar" {
+ organization     = tfe_organization.foobar.name
+ vcs_repo {
+   display_identifier = "%s"
+   identifier         = "%s"
+   oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
+	 branch             = "main"
+	 tags               = false
  }
 }`,
 		rInt,

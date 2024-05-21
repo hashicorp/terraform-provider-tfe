@@ -132,7 +132,6 @@ func resourceTFERegistryModule() *schema.Resource {
 						"tests_enabled": {
 							Type:     schema.TypeBool,
 							Optional: true,
-							Computed: true,
 						},
 					},
 				},
@@ -176,8 +175,13 @@ func resourceTFERegistryModuleCreateWithVCS(v interface{}, meta interface{}, d *
 	branch, branchOk := vcsRepo["branch"].(string)
 	initialVersion, initialVersionOk := d.GetOk("initial_version")
 
-	if tagsOk && tags && branchOk && branch != "" {
-		return nil, fmt.Errorf("tags must be set to false when a branch is provided")
+	err = validateVcsRepo(tagsOk, tags, branchOk, branch)
+	if err != nil {
+		return nil, err
+	}
+
+	if tagsOk {
+		options.VCSRepo.Tags = tfe.Bool(tags)
 	}
 
 	if branchOk && branch != "" {
@@ -315,8 +319,9 @@ func resourceTFERegistryModuleUpdate(d *schema.ResourceData, meta interface{}) e
 		tags, tagsOk := vcsRepo["tags"].(bool)
 		branch, branchOk := vcsRepo["branch"].(string)
 
-		if tagsOk && tags && branchOk && branch != "" {
-			return fmt.Errorf("tags must be set to false when a branch is provided")
+		err = validateVcsRepo(tagsOk, tags, branchOk, branch)
+		if err != nil {
+			return err
 		}
 
 		if tagsOk {
@@ -416,9 +421,9 @@ func resourceTFERegistryModuleRead(d *schema.ResourceData, meta interface{}) err
 		}
 
 		testConfig = append(testConfig, testConfigValues)
-
-		d.Set("test_config", testConfig)
 	}
+
+	d.Set("test_config", testConfig)
 
 	return nil
 }
@@ -483,4 +488,15 @@ func resourceTFERegistryModuleImporter(ctx context.Context, d *schema.ResourceDa
 		"invalid registry module import format: %s (expected <ORGANIZATION>/<REGISTRY_NAME>/<NAMESPACE>/<REGISTRY MODULE NAME>/<REGISTRY MODULE PROVIDER>/<REGISTRY MODULE ID>)",
 		d.Id(),
 	)
+}
+
+func validateVcsRepo(tagsOk bool, tags bool, branchOk bool, branch string) error {
+	// tags must be set to true or branch provided but not both
+	if tagsOk && tags && branchOk && branch != "" {
+		return fmt.Errorf("tags must be set to false when a branch is provided")
+	} else if tagsOk && !tags && branchOk && branch == "" {
+		return fmt.Errorf("tags must be set to true when no branch is provided")
+	}
+
+	return nil
 }
