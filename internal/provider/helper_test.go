@@ -273,9 +273,9 @@ func randomString(t *testing.T) string {
 	return v
 }
 
-type retryableFn func() (interface{}, error)
+type retryableFn func() (any, error)
 
-func retryFn(maxRetries, secondsBetween int, f retryableFn) (interface{}, error) {
+func retryFn(maxRetries, secondsBetween int, f retryableFn) (any, error) {
 	tick := time.NewTicker(time.Duration(secondsBetween) * time.Second)
 	retries := 0
 

@@ -258,7 +258,7 @@ func testAccCheckTFEWorkspaceRunDestroy(workspaceID string, expectedDestroyCount
 	return func(s *terraform.State) error {
 		config := testAccProvider.Meta().(ConfiguredClient)
 
-		_, err := retryFn(10, 1, func() (interface{}, error) {
+		mustBeNil, err := retryFn(10, 1, func() (any, error) {
 			runList, err := config.Client.Runs.List(ctx, workspaceID, &tfe.RunListOptions{
 				Operation: "destroy",
 			})
@@ -272,6 +272,11 @@ func testAccCheckTFEWorkspaceRunDestroy(workspaceID string, expectedDestroyCount
 
 			return nil, nil
 		})
+
+		// This just makes the unparam linter happy and will always be nil
+		if mustBeNil != nil {
+			return fmt.Errorf("expected mustBeNil to be nil, but was %v", mustBeNil)
+		}
 
 		return err
 	}
