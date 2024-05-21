@@ -70,7 +70,7 @@ The following arguments are supported:
 * `auto_apply_run_trigger` - (Optional) Whether to automatically apply changes for runs that were created by run triggers from another workspace. Defaults to `false`.
 * `auto_destroy_at` - (Optional) A future date/time string at which point all resources in a workspace will be scheduled for deletion. Must be a string in RFC3339 format (e.g. "2100-01-01T00:00:00Z").
 
-~> **NOTE:** `auto_destroy_at` is not intended for workspaces containing production resources. Additionally, the field is partially managed by HCP Terraform so usage with any long-lived workspaces may cause a perpetual diff.
+~> **NOTE:** `auto_destroy_at` is not intended for workspaces containing production resources. Additionally, the field is partially managed by HCP Terraform so usage with any long-lived workspaces may cause unintentional drift.
 
 * `description` - (Optional) A description for the workspace.
 * `execution_mode` - (Optional) **Deprecated** Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode) to use. Use [tfe_workspace_settings](workspace_settings) instead.
