@@ -2,6 +2,7 @@
 
 ENHANCEMENTS:
 * `r/tfe_oauth_client`: Add Bitbucket Data Center support with the `bitbucket_data_center` option for `service_provider` by @zainq11 [#1303](https://github.com/hashicorp/terraform-provider-tfe/pull/1304)
+* `r/tfe_registry_module`: Add `initial_version` support for Branch Based Modules by @aaabdelgany [#1363](https://github.com/hashicorp/terraform-provider-tfe/pull/1363)
 
 ## v0.55.0
 
