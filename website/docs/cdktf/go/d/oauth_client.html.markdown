@@ -90,7 +90,7 @@ be set.
 * `OauthClientId` - (Optional) ID of the OAuth client.
 * `Organization` - (Optional) The name of the organization in which to search.
 * `ServiceProvider` - (Optional) The API identifier of the OAuth service provider. If set,
-  must be one of: `AdoServer`, `AdoServices`, `BitbucketHosted`, `BitbucketServer`,
+  must be one of: `AdoServer`, `AdoServices`, `BitbucketDataCenter`, `BitbucketHosted`, `BitbucketServer`(deprecated),
   `Github`, `GithubEnterprise`, `GitlabHosted`, `GitlabCommunityEdition`, or
   `GitlabEnterpriseEdition`.
 
