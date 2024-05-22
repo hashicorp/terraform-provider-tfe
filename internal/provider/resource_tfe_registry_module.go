@@ -32,6 +32,9 @@ func resourceTFERegistryModule() *schema.Resource {
 			StateContext: resourceTFERegistryModuleImporter,
 		},
 
+		CustomizeDiff: func(c context.Context, d *schema.ResourceDiff, meta interface{}) error {
+			return validateVcsRepo(d)
+		},
 		Schema: map[string]*schema.Schema{
 			"organization": {
 				Type:     schema.TypeString,
@@ -175,11 +178,6 @@ func resourceTFERegistryModuleCreateWithVCS(v interface{}, meta interface{}, d *
 	branch, branchOk := vcsRepo["branch"].(string)
 	initialVersion, initialVersionOk := d.GetOk("initial_version")
 
-	err = validateVcsRepo(tagsOk, tags, branchOk, branch)
-	if err != nil {
-		return nil, err
-	}
-
 	if tagsOk {
 		options.VCSRepo.Tags = tfe.Bool(tags)
 	}
@@ -319,11 +317,6 @@ func resourceTFERegistryModuleUpdate(d *schema.ResourceData, meta interface{}) e
 		tags, tagsOk := vcsRepo["tags"].(bool)
 		branch, branchOk := vcsRepo["branch"].(string)
 
-		err = validateVcsRepo(tagsOk, tags, branchOk, branch)
-		if err != nil {
-			return err
-		}
-
 		if tagsOk {
 			options.VCSRepo.Tags = tfe.Bool(tags)
 		}
@@ -356,7 +349,7 @@ func resourceTFERegistryModuleUpdate(d *schema.ResourceData, meta interface{}) e
 	})
 
 	if err != nil {
-		return fmt.Errorf("Error while waiting for module %s/%s to be updated: %w", registryModule.Organization.Name, registryModule.Name, err)
+		return fmt.Errorf("Error while waiting for module %s/%s to be updated: %w", rmID.Organization, rmID.Name, err)
 	}
 
 	d.SetId(registryModule.ID)
@@ -490,12 +483,28 @@ func resourceTFERegistryModuleImporter(ctx context.Context, d *schema.ResourceDa
 	)
 }
 
-func validateVcsRepo(tagsOk bool, tags bool, branchOk bool, branch string) error {
-	// tags must be set to true or branch provided but not both
-	if tagsOk && tags && branchOk && branch != "" {
-		return fmt.Errorf("tags must be set to false when a branch is provided")
-	} else if tagsOk && !tags && branchOk && branch == "" {
-		return fmt.Errorf("tags must be set to true when no branch is provided")
+func validateVcsRepo(d *schema.ResourceDiff) error {
+	vcsRepo, ok := d.GetRawConfig().AsValueMap()["vcs_repo"]
+	if !ok || vcsRepo.LengthInt() == 0 {
+		return nil
+	}
+
+	branchValue := vcsRepo.AsValueSlice()[0].GetAttr("branch")
+	tagsValue := vcsRepo.AsValueSlice()[0].GetAttr("tags")
+
+	if !tagsValue.IsNull() && tagsValue.False() && branchValue.IsNull() {
+		return fmt.Errorf("branch must be provided when tags is set to false")
+	}
+
+	if !tagsValue.IsNull() && !branchValue.IsNull() {
+		tags := tagsValue.True()
+		branch := branchValue.AsString()
+		// tags must be set to true or branch provided but not both
+		if tags && branch != "" {
+			return fmt.Errorf("tags must be set to false when a branch is provided")
+		} else if !tags && branch == "" {
+			return fmt.Errorf("tags must be set to true when no branch is provided")
+		}
 	}
 
 	return nil
