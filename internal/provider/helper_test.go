@@ -52,10 +52,6 @@ func testTfeClient(t *testing.T, options testClientOptions) *tfe.Client {
 // Attempts to upgrade an organization to the business plan. Requires a user token with admin access.
 // DEPRECATED : Please use the newSubscriptionUpdater instead.
 func upgradeOrganizationSubscription(t *testing.T, _ *tfe.Client, organization *tfe.Organization) {
-	if enterpriseEnabled() {
-		return
-	}
-
 	newSubscriptionUpdater(organization).WithBusinessPlan().Update(t)
 }
 
@@ -65,9 +61,7 @@ func createBusinessOrganization(t *testing.T, client *tfe.Client) (*tfe.Organiza
 		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
 	})
 
-	if !enterpriseEnabled() {
-		newSubscriptionUpdater(org).WithBusinessPlan().Update(t)
-	}
+	newSubscriptionUpdater(org).WithBusinessPlan().Update(t)
 
 	return org, orgCleanup
 }
