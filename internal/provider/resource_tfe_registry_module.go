@@ -134,6 +134,10 @@ func resourceTFERegistryModule() *schema.Resource {
 					},
 				},
 			},
+			"initial_version": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -167,6 +171,7 @@ func resourceTFERegistryModuleCreateWithVCS(v interface{}, meta interface{}, d *
 
 	tags, tagsOk := vcsRepo["tags"].(bool)
 	branch, branchOk := vcsRepo["branch"].(string)
+	initialVersion, initialVersionOk := d.GetOk("initial_version")
 
 	if tagsOk && tags && branchOk && branch != "" {
 		return nil, fmt.Errorf("tags must be set to false when a branch is provided")
@@ -174,6 +179,9 @@ func resourceTFERegistryModuleCreateWithVCS(v interface{}, meta interface{}, d *
 
 	if branchOk && branch != "" {
 		options.VCSRepo.Branch = tfe.String(branch)
+		if initialVersionOk && initialVersion.(string) != "" {
+			options.InitialVersion = tfe.String(initialVersion.(string))
+		}
 	}
 
 	if vcsRepo["oauth_token_id"] != nil && vcsRepo["oauth_token_id"].(string) != "" {
