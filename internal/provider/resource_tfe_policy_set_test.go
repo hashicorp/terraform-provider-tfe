@@ -61,7 +61,10 @@ func TestAccTFEPolicySet_pinnedPolicyRuntimeVersion(t *testing.T) {
 	sha := genSentinelSha(t, "secret", "data")
 	version := genSafeRandomSentinelVersion()
 
-	adminClient := testAdminClient(t, versionMaintenanceAdmin)
+	adminClient := tfeClient
+	if !enterpriseEnabled() {
+		adminClient = testAdminClient(t, versionMaintenanceAdmin)
+	}
 
 	opts := tfe.AdminSentinelVersionCreateOptions{
 		Version: version,
