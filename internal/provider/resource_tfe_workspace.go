@@ -19,6 +19,7 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/jsonapi"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -107,6 +108,11 @@ func resourceTFEWorkspace() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
+			},
+
+			"auto_destroy_at": {
+				Type:     schema.TypeString,
+				Optional: true,
 			},
 
 			"execution_mode": {
@@ -340,6 +346,14 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		}
 	}
 
+	if _, ok := d.GetOk("auto_destroy_at"); ok {
+		autoDestroyAt, err := expandAutoDestroyAt(d)
+		if err != nil {
+			return fmt.Errorf("Error expanding auto destroy during create: %w", err)
+		}
+		options.AutoDestroyAt = autoDestroyAt
+	}
+
 	if v, ok := d.GetOk("execution_mode"); ok {
 		executionMode := tfe.String(v.(string))
 		options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{
@@ -533,6 +547,12 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	d.Set("agent_pool_id", agentPoolID)
 
+	autoDestroyAt, err := flattenAutoDestroyAt(workspace.AutoDestroyAt)
+	if err != nil {
+		return fmt.Errorf("Error flattening auto destroy during read: %w", err)
+	}
+	d.Set("auto_destroy_at", autoDestroyAt)
+
 	var tagNames []interface{}
 	managedTags := d.Get("tag_names").(*schema.Set)
 	for _, tagName := range workspace.TagNames {
@@ -585,7 +605,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		d.HasChange("operations") || d.HasChange("execution_mode") ||
 		d.HasChange("description") || d.HasChange("agent_pool_id") ||
 		d.HasChange("global_remote_state") || d.HasChange("structured_run_output_enabled") ||
-		d.HasChange("assessments_enabled") || d.HasChange("project_id") {
+		d.HasChange("assessments_enabled") || d.HasChange("project_id") || d.HasChange("auto_destroy_at") {
 		// Create a new options struct.
 		options := tfe.WorkspaceUpdateOptions{
 			Name:                       tfe.String(d.Get("name").(string)),
@@ -636,6 +656,14 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 					AgentPool: tfe.Bool(true),
 				}
 			}
+		}
+
+		if d.HasChange("auto_destroy_at") {
+			autoDestroyAt, err := expandAutoDestroyAt(d)
+			if err != nil {
+				return fmt.Errorf("Error expanding auto destroy during update: %w", err)
+			}
+			options.AutoDestroyAt = autoDestroyAt
 		}
 
 		if d.HasChange("execution_mode") {
@@ -931,6 +959,35 @@ func validateAgentExecution(_ context.Context, d *schema.ResourceDiff) error {
 	}
 
 	return nil
+}
+
+func expandAutoDestroyAt(d *schema.ResourceData) (jsonapi.NullableAttr[time.Time], error) {
+	v, ok := d.GetOk("auto_destroy_at")
+
+	if !ok {
+		return jsonapi.NewNullNullableAttr[time.Time](), nil
+	}
+
+	autoDestroyAt, err := time.Parse(time.RFC3339, v.(string))
+	if err != nil {
+		return nil, err
+	}
+
+	return jsonapi.NewNullableAttrWithValue(autoDestroyAt), nil
+}
+
+func flattenAutoDestroyAt(a jsonapi.NullableAttr[time.Time]) (*string, error) {
+	if !a.IsSpecified() {
+		return nil, nil
+	}
+
+	autoDestroyTime, err := a.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	autoDestroyAt := autoDestroyTime.Format(time.RFC3339)
+	return &autoDestroyAt, nil
 }
 
 func validTagName(tag string) bool {
