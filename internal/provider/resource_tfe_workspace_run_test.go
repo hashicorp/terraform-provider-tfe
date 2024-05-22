@@ -16,6 +16,10 @@ import (
 )
 
 func TestAccTFEWorkspaceRun_withApplyOnlyBlock(t *testing.T) {
+	// Currently, tflocal cloud box is incapable of running terraform more than once at a time
+	// due to the use of the raw_exec nomad driver.
+	skipUnlessAfterDate(t, time.Date(2025, 5, 1, 0, 0, 0, 0, time.UTC))
+
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	tfeClient, err := getClientUsingEnv()
@@ -65,6 +69,10 @@ func TestAccTFEWorkspaceRun_withApplyOnlyBlock(t *testing.T) {
 }
 
 func TestAccTFEWorkspaceRun_withBothApplyAndDestroyBlocks(t *testing.T) {
+	// Currently, tflocal cloud box is incapable of running terraform more than once at a time
+	// due to the use of the raw_exec nomad driver.
+	skipUnlessAfterDate(t, time.Date(2025, 5, 1, 0, 0, 0, 0, time.UTC))
+
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	tfeClient, err := getClientUsingEnv()
@@ -258,19 +266,27 @@ func testAccCheckTFEWorkspaceRunDestroy(workspaceID string, expectedDestroyCount
 	return func(s *terraform.State) error {
 		config := testAccProvider.Meta().(ConfiguredClient)
 
-		runList, err := config.Client.Runs.List(ctx, workspaceID, &tfe.RunListOptions{
-			Operation: "destroy",
-			Status:    string(tfe.RunApplied),
+		mustBeNil, err := retryFn(10, 1, func() (any, error) {
+			runList, err := config.Client.Runs.List(ctx, workspaceID, &tfe.RunListOptions{
+				Operation: "destroy",
+			})
+			if err != nil {
+				return nil, fmt.Errorf("Unable to find destroy run, %w", err)
+			}
+
+			if len(runList.Items) != expectedDestroyCount {
+				return nil, fmt.Errorf("Expected %d destroy runs but found %d", expectedDestroyCount, len(runList.Items))
+			}
+
+			return nil, nil
 		})
-		if err != nil {
-			return fmt.Errorf("Unable to find destroy run, %w", err)
+
+		// This just makes the unparam linter happy and will always be nil
+		if mustBeNil != nil {
+			return fmt.Errorf("expected mustBeNil to be nil, but was %v", mustBeNil)
 		}
 
-		if len(runList.Items) != expectedDestroyCount {
-			return fmt.Errorf("Expected %d destroy runs but found %d", expectedDestroyCount, len(runList.Items))
-		}
-
-		return nil
+		return err
 	}
 }
 

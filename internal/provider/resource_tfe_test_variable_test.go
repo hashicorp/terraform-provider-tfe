@@ -19,7 +19,10 @@ func TestAccTFETestVariable_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccGithubPreCheck(t)
+		},
 		ProtoV5ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETestVariableDestroy,
 		Steps: []resource.TestStep{
@@ -52,7 +55,10 @@ func TestAccTFETestVariable_update(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccGithubPreCheck(t)
+		},
 		ProtoV5ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETestVariableDestroy,
 		Steps: []resource.TestStep{
@@ -199,7 +205,7 @@ resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
   email = "admin@company.com"
 }
-  
+
 resource "tfe_oauth_client" "foobar" {
   organization     = tfe_organization.foobar.name
   api_url          = "https://api.github.com"
