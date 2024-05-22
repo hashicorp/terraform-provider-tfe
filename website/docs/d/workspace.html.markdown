@@ -35,6 +35,7 @@ In addition to all arguments above, the following attributes are exported:
 * `allow_destroy_plan` - Indicates whether destroy plans can be queued on the workspace.
 * `auto_apply` - Indicates whether to automatically apply changes when a Terraform plan is successful.
 * `auto_apply_run_trigger` - Whether the workspace will automatically apply changes for runs that were created by run triggers from another workspace.
+* `auto_destroy_at` - Future date/time string at which point all resources in a workspace will be scheduled to be deleted.
 * `assessments_enabled` - (Available only in HCP Terraform) Indicates whether health assessments such as drift detection are enabled for the workspace.
 * `file_triggers_enabled` - Indicates whether runs are triggered based on the changed files in a VCS push (if `true`) or always triggered on every push (if `false`).
 * `global_remote_state` - (Optional) Whether the workspace should allow all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (determined by the `remote_state_consumer_ids` argument).
