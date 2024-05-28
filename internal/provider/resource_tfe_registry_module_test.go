@@ -934,7 +934,7 @@ func testAccCheckTFERegistryModuleDestroy(s *terraform.State) error {
 }
 
 func testAccPreCheckTFERegistryModule(t *testing.T) {
-	skipUnlessAfterDate(t, time.Date(2024, 5, 24, 0, 0, 0, 0, time.UTC))
+	skipUnlessAfterDate(t, time.Date(2024, 7, 1, 0, 0, 0, 0, time.UTC))
 
 	if envGithubToken == "" {
 		t.Skip("Please set GITHUB_TOKEN to run this test")
