@@ -108,7 +108,6 @@ func resourceTFEOAuthClient() *schema.Resource {
 					false,
 				),
 			},
-
 			"oauth_token_id": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -117,7 +116,7 @@ func resourceTFEOAuthClient() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
-      },
+			},
 			"organization_scoped": {
 				Type:     schema.TypeBool,
 				Optional: true,
