@@ -45,7 +45,7 @@ See the [Provider Requirements](https://developer.hashicorp.com/terraform/langua
 
 ## Running the Tests
 
-The provider is mainly tested using a suite of acceptance tests that run against an internal instance of Terraform Cloud. We also test against Terraform Enterprise prior to release.
+The provider is mainly tested using a suite of acceptance tests that run against an internal instance of HCP Terraform. We also test against Terraform Enterprise prior to release.
 
 To run the acceptance tests, run `make testacc`
 

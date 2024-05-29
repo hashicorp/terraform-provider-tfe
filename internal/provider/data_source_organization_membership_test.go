@@ -55,7 +55,7 @@ func TestAccTFEOrganizationMembershipDataSource_findByName(t *testing.T) {
 		t.Skip("CI Seeded users are not in the hashicorp org in CI")
 	}
 
-	// This test requires a user that exists in a TFC organization called "hashicorp".
+	// This test requires a user that exists in a HCP Terraform organization called "hashicorp".
 	// Our CI instance has a default organization "hashicorp" and prepopulates it
 	// with users (i.e TFE_USER1, etc) since we are unable to create users via the API.
 	// In order to run this against your own organization, simply modify the organization

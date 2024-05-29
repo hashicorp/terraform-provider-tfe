@@ -9,8 +9,8 @@ labels: feature-request
 Hi there,
 
 Thank you for opening a request! Please note that we try to keep the this issue tracker reserved for
-bug reports and feature requests related to the Terraform Cloud/Enterprise provider. If you know
-your request relates to the Terraform Cloud/Enterprise platform itself, please contact
+bug reports and feature requests related to the HCP Terraform and Terraform Enterprise provider. If you know
+your request relates to the HCP Terraform and Terraform Enterprise platform itself, please contact
 tf-cloud@hashicorp.support. For general usage questions, please post to our community forum:
 https://discuss.hashicorp.com.
 -->

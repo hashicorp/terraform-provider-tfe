@@ -1,6 +1,6 @@
 # Running tests
 
-Running all the tests for this provider requires access to Terraform Cloud with
+Running all the tests for this provider requires access to HCP Terraform with
 a full feature set; most tests can be run against your own installation of
 Terraform Enterprise.
 
@@ -31,11 +31,11 @@ default, these are loaded from the `credentials` in the [CLI config
 file](https://developer.hashicorp.com/terraform/cli/config/config-file). You can override
 these values with the environment variables specified below:
 
-1. `TFE_HOSTNAME` - URL of a Terraform Cloud or Terraform Enterprise instance to be used for testing, without the scheme. Example: `tfe.local`
-1. `TFE_TOKEN` - A [user API token](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/users#tokens) for an administrator account on the Terraform Cloud or Terraform Enterprise instance being used for testing.
+1. `TFE_HOSTNAME` - URL of a HCP Terraform or Terraform Enterprise instance to be used for testing, without the scheme. Example: `tfe.local`
+1. `TFE_TOKEN` - A [user API token](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/users#tokens) for an administrator account on the HCP Terraform or Terraform Enterprise instance being used for testing.
 
 ##### Optional:
-1. `TFE_USER1` and `TFE_USER2`: The usernames of two pre-existing users on the Terraform Cloud or Terraform Enterprise instance being used for testing. Required for running team membership tests.
+1. `TFE_USER1` and `TFE_USER2`: The usernames of two pre-existing users on the HCP Terraform or Terraform Enterprise instance being used for testing. Required for running team membership tests.
 2. `GITHUB_TOKEN` - [GitHub personal access token](https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line). Used to establish a VCS provider connection.
 3. `GITHUB_POLICY_SET_IDENTIFIER` - GitHub policy set repository identifier in the format `username/repository`. Required for running policy set tests.
 4. `GITHUB_POLICY_SET_BRANCH`: A GitHub branch for the repository specified by `GITHUB_POLICY_SET_IDENTIFIER`. Required for running policy set tests.
@@ -43,12 +43,13 @@ these values with the environment variables specified below:
 6. `GITHUB_REGISTRY_MODULE_IDENTIFIER` - GitHub registry module repository identifier in the format `username/repository`. Required for running registry module tests.
 7. `GITHUB_WORKSPACE_IDENTIFIER` - GitHub workspace repository identifier in the format `username/repository`. Required for running workspace tests.
 8. `GITHUB_WORKSPACE_BRANCH`: A GitHub branch for the repository specified by `GITHUB_WORKSPACE_IDENTIFIER`. Required for running workspace tests.
-9. `ENABLE_TFE` - Some tests cover features available only in Terraform Cloud. To skip these tests when running against a Terraform Enterprise instance, set `ENABLE_TFE=1`.
+9. `ENABLE_TFE` - Some tests cover features available only in HCP Terraform. To skip these tests when running against a Terraform Enterprise instance, set `ENABLE_TFE=1`.
 10. `RUN_TASKS_URL` - External URL to use for testing Run Tasks operations, for example `RUN_TASKS_URL=http://somewhere.local:8080/pass`. Required for running run tasks tests.
-11. `GITHUB_APP_INSTALLATION_ID` - GitHub App installation internal id in the format `ghain-xxxxxxx`. Required for running any tests that use GitHub App VCS (workspace, policy sets, registry module).
-12. `GITHUB_APP_INSTALLATION_NAME` - GitHub App installation name. Required for running tfe_github_app_installation data source test.
+11. `RUN_TASKS_HMAC` - The optional HMAC Key that should be used for Run Task operations. The default is no key.
+12. `GITHUB_APP_INSTALLATION_ID` - GitHub App installation internal id in the format `ghain-xxxxxxx`. Required for running any tests that use GitHub App VCS (workspace, policy sets, registry module).
+13. `GITHUB_APP_INSTALLATION_NAME` - GitHub App installation name. Required for running tfe_github_app_installation data source test.
 
-**Note:** In order to run integration tests for **Paid** features you will need a token `TFE_TOKEN` with TFC/E administrator privileges, otherwise the attempt to upgrade an organization's feature set will fail.
+**Note:** In order to run integration tests for **Paid** features you will need a token `TFE_TOKEN` with HCP Terraform or Terraform Enterprise administrator privileges, otherwise the attempt to upgrade an organization's feature set will fail.
 
 You can set your environment variables up however you prefer. The following are instructions for setting up environment variables using [envchain](https://github.com/sorah/envchain).
    1. Make sure you have envchain installed. [Instructions for this can be found in the envchain README](https://github.com/sorah/envchain#installation).

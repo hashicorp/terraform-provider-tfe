@@ -22,6 +22,7 @@ func resourceTFEOAuthClient() *schema.Resource {
 		Create: resourceTFEOAuthClientCreate,
 		Read:   resourceTFEOAuthClientRead,
 		Delete: resourceTFEOAuthClientDelete,
+		Update: resourceTFEOAuthClientUpdate,
 
 		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
 
@@ -83,7 +84,7 @@ func resourceTFEOAuthClient() *schema.Resource {
 				Type:     schema.TypeString,
 				ForceNew: true,
 				Optional: true,
-				// this field is only for BitBucket Server, and requires these other
+				// this field is only for BitBucket Data Center, and requires these other
 				RequiredWith: []string{"secret", "key"},
 			},
 
@@ -97,6 +98,7 @@ func resourceTFEOAuthClient() *schema.Resource {
 						string(tfe.ServiceProviderAzureDevOpsServices),
 						string(tfe.ServiceProviderBitbucket),
 						string(tfe.ServiceProviderBitbucketServer),
+						string(tfe.ServiceProviderBitbucketDataCenter),
 						string(tfe.ServiceProviderGithub),
 						string(tfe.ServiceProviderGithubEE),
 						string(tfe.ServiceProviderGitlab),
@@ -111,11 +113,15 @@ func resourceTFEOAuthClient() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-
 			"agent_pool_id": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
+      },
+			"organization_scoped": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
 			},
 		},
 	}
@@ -144,18 +150,19 @@ func resourceTFEOAuthClientCreate(d *schema.ResourceData, meta interface{}) erro
 	// The tfe.OAuthClientCreateOptions has omitempty for these values, so if it
 	// is empty, then it will be ignored in the create request
 	options := tfe.OAuthClientCreateOptions{
-		Name:            tfe.String(name),
-		APIURL:          tfe.String(d.Get("api_url").(string)),
-		HTTPURL:         tfe.String(d.Get("http_url").(string)),
-		OAuthToken:      tfe.String(d.Get("oauth_token").(string)),
-		Key:             tfe.String(key),
-		ServiceProvider: tfe.ServiceProvider(serviceProvider),
+		Name:               tfe.String(name),
+		APIURL:             tfe.String(d.Get("api_url").(string)),
+		HTTPURL:            tfe.String(d.Get("http_url").(string)),
+		OAuthToken:         tfe.String(d.Get("oauth_token").(string)),
+		Key:                tfe.String(key),
+		ServiceProvider:    tfe.ServiceProvider(serviceProvider),
+		OrganizationScoped: tfe.Bool(d.Get("organization_scoped").(bool)),
 	}
 
 	if serviceProvider == tfe.ServiceProviderAzureDevOpsServer {
 		options.PrivateKey = tfe.String(privateKey)
 	}
-	if serviceProvider == tfe.ServiceProviderBitbucketServer {
+	if serviceProvider == tfe.ServiceProviderBitbucketServer || serviceProvider == tfe.ServiceProviderBitbucketDataCenter {
 		options.RSAPublicKey = tfe.String(rsaPublicKey)
 		options.Secret = tfe.String(secret)
 	}
@@ -197,6 +204,7 @@ func resourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("api_url", oc.APIURL)
 	d.Set("http_url", oc.HTTPURL)
 	d.Set("service_provider", string(oc.ServiceProvider))
+	d.Set("organization_scoped", oc.OrganizationScoped)
 
 	switch len(oc.OAuthTokens) {
 	case 0:
@@ -223,4 +231,21 @@ func resourceTFEOAuthClientDelete(d *schema.ResourceData, meta interface{}) erro
 	}
 
 	return nil
+}
+
+func resourceTFEOAuthClientUpdate(d *schema.ResourceData, meta interface{}) error {
+	config := meta.(ConfiguredClient)
+
+	// Create a new options struct.
+	options := tfe.OAuthClientUpdateOptions{
+		OrganizationScoped: tfe.Bool(d.Get("organization_scoped").(bool)),
+	}
+
+	log.Printf("[DEBUG] Update OAuth client %s", d.Id())
+	_, err := config.Client.OAuthClients.Update(ctx, d.Id(), options)
+	if err != nil {
+		return fmt.Errorf("Error updating OAuth client %s: %w", d.Id(), err)
+	}
+
+	return resourceTFEOAuthClientRead(d, meta)
 }

@@ -52,6 +52,11 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Computed: true,
 			},
 
+			"auto_destroy_at": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+
 			"file_triggers_enabled": {
 				Type:     schema.TypeBool,
 				Computed: true,
@@ -239,6 +244,12 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
 	d.Set("operations", workspace.Operations)
 	d.Set("policy_check_failures", workspace.PolicyCheckFailures)
+
+	autoDestroyAt, err := flattenAutoDestroyAt(workspace.AutoDestroyAt)
+	if err != nil {
+		return fmt.Errorf("Error flattening auto destroy during read: %w", err)
+	}
+	d.Set("auto_destroy_at", autoDestroyAt)
 
 	// If target tfe instance predates projects, then workspace.Project will be nil
 	if workspace.Project != nil {

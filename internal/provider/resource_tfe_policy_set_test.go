@@ -4,6 +4,7 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"regexp"
@@ -60,6 +61,22 @@ func TestAccTFEPolicySet_pinnedPolicyRuntimeVersion(t *testing.T) {
 	sha := genSentinelSha(t, "secret", "data")
 	version := genSafeRandomSentinelVersion()
 
+	adminClient := tfeClient
+	if !enterpriseEnabled() {
+		adminClient = testAdminClient(t, versionMaintenanceAdmin)
+	}
+
+	opts := tfe.AdminSentinelVersionCreateOptions{
+		Version: version,
+		SHA:     sha,
+		URL:     "https://hashicorp.com",
+	}
+
+	tool, err := adminClient.Admin.SentinelVersions.Create(context.Background(), opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
@@ -71,7 +88,7 @@ func TestAccTFEPolicySet_pinnedPolicyRuntimeVersion(t *testing.T) {
 		CheckDestroy: testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySet_pinnedPolicyRuntimeVersion(org.Name, version, sha),
+				Config: testAccTFEPolicySet_pinnedPolicyRuntimeVersion(org.Name, tool.Version),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					testAccCheckTFEPolicySetAttributes(policySet),
@@ -1034,14 +1051,8 @@ resource "tfe_policy_set" "foobar" {
 }`, organization, organization)
 }
 
-func testAccTFEPolicySet_pinnedPolicyRuntimeVersion(organization string, version string, sha string) string {
+func testAccTFEPolicySet_pinnedPolicyRuntimeVersion(organization string, version string) string {
 	return fmt.Sprintf(`
-resource "tfe_sentinel_version" "foobar" {
-  version = "%s"
-  url = "https://www.hashicorp.com"
-  sha = "%s"
-}
-
 resource "tfe_sentinel_policy" "foo" {
   name         = "policy-foo"
   policy       = "main = rule { true }"
@@ -1055,7 +1066,7 @@ resource "tfe_policy_set" "foobar" {
   agent_enabled = true
   policy_tool_version = "%s"
   policy_ids   = [tfe_sentinel_policy.foo.id]
-}`, version, sha, organization, organization, version)
+}`, organization, organization, version)
 }
 
 func testAccTFEPolicySetOPA_basic(organization string, version string, sha string) string {

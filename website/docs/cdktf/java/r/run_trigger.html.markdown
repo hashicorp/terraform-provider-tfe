@@ -7,7 +7,7 @@ description: |-
 
 # tfe_run_trigger
 
-Terraform Cloud provides a way to connect your workspace to one or more workspaces within your organization, 
+HCP Terraform provides a way to connect your workspace to one or more workspaces within your organization, 
 known as "source workspaces". These connections, called run triggers, allow runs to queue automatically in 
 your workspace on successful apply of runs in any of the source workspaces. You can connect your workspace 
 to up to 20 source workspaces.

@@ -55,6 +55,9 @@ The `organization_access` block supports:
 * `manage_run_tasks` - (Optional) Allow members to create, edit, and delete the organization's run tasks.
 * `manage_projects` - (Optional) Allow members to create and administrate all projects within the organization. Requires `manage_workspaces` to be set to `true`.
 * `manage_membership` - (Optional) Allow members to add/remove users from the organization, and to add/remove users from visible teams.
+* `manage_teams` - (Optional) Allow members to create, update, and delete teams.
+* `manage_organization_access` - (Optional) Allow members to update the organization access settings of teams.
+* `access_secret_teams` - (Optional) Allow members access to secret teams up to the level of permissions granted by their team permissions setting.
 
 ## Attributes Reference
 

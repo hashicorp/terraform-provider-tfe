@@ -28,7 +28,7 @@ if tmAccess.ProjectAccess != nil {
 
 ### Explicit Enterprise Checks
 
-If a resource or attribute is **only** available in Terraform Enterprise, use the go-tfe helper [IsEnterprise()](https://pkg.go.dev/github.com/hashicorp/go-tfe#Client.IsEnterprise) to ensure the client is configured against a TFE instance. This check is derived from the `TFP-AppName` header that Terraform Cloud emits, of which if not present, indicates a Terraform Enterprise installation.
+If a resource or attribute is **only** available in Terraform Enterprise, use the go-tfe helper [IsEnterprise()](https://pkg.go.dev/github.com/hashicorp/go-tfe#Client.IsEnterprise) to ensure the client is configured against a Terraform Enterprise instance. This check is derived from the `TFP-AppName` header that HCP Terraform or Terraform Enterprise emits.
 
 ```go
 config := meta.(ConfiguredClient)
@@ -51,7 +51,7 @@ For a new resource, add the minimum release required to the top level documentat
 
 Provides a my new resource.
 
-~> **NOTE:** Using this resource requires using the provider with Terraform Cloud or an instance of Terraform Enterprise at least as recent as v202302-1.
+~> **NOTE:** Using this resource requires using the provider with HCP Terraform or an instance of Terraform Enterprise at least as recent as v202302-1.
 ```
 
 
@@ -64,5 +64,5 @@ The following arguments are supported:
 
 * `foo` - (Required) Foo is bar.
 * `bar` - (Optional) Bar is foo.
-* `foobar` - (Optional) Foobar is barfoo. This attribute requires Terraform Cloud or an instance of Terraform Enterprise at least as recent as `v202302-1`.
+* `foobar` - (Optional) Foobar is barfoo. This attribute requires HCP Terraform or an instance of Terraform Enterprise at least as recent as `v202302-1`.
 ```

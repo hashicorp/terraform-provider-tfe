@@ -24,12 +24,13 @@ resource "tfe_oauth_client" "test" {
   http_url         = "https://github.com"
   oauth_token      = "my-vcs-provider-token"
   service_provider = "github"
+  organization_scoped = true
 }
 ```
 
 #### Azure DevOps Server Usage
 
-See [documentation for TFC/E setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/azure-devops-server).
+See [documentation for HCP Terraform and Terraform Enterprise setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/azure-devops-server).
 
 **Note:** This resource requires a private key when creating Azure DevOps Server OAuth clients.
 
@@ -45,23 +46,23 @@ resource "tfe_oauth_client" "test" {
 }
 ```
 
-#### BitBucket Server Usage
+#### Bitbucket Data Center Usage
 
-See [documentation for TFC/E setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/bitbucket-server).
+See [documentation for HCP Terraform and Terraform Enterprise setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/bitbucket-server).
 
-When using BitBucket Server, you must use three required fields: `key`, `secret`, `rsa_public_key`.
+When using Bitbucket Data Center, you must use three required fields: `key`, `secret`, `rsa_public_key`.
 
 
 ```hcl
 resource "tfe_oauth_client" "test" {
-  name             = "my-bbs-oauth-client"
+  name             = "my-bbdc-oauth-client"
   organization     = "my-org-name"
-  api_url          = "https://bbs.example.com"
-  http_url         = "https://bss.example.com"
+  api_url          = "https://bbdc.example.com"
+  http_url         = "https://bbdc.example.com"
   key              = "<consumer key>"
   secret           = "-----BEGIN RSA PRIVATE KEY-----\ncontent\n-----END RSA PRIVATE KEY-----"
   rsa_public_key   = "-----BEGIN PUBLIC KEY-----\ncontent\n-----END PUBLIC KEY-----"
-  service_provider = "bitbucket_server"
+  service_provider = "bitbucket_data_center"
 }
 ```
 
@@ -79,17 +80,18 @@ The following arguments are supported:
 * `private_key` - (Required for `ado_server`) The text of the private key associated with your Azure DevOps Server account
 * `key` - The OAuth Client key can refer to a Consumer Key, Application Key,
   or another type of client key for the VCS provider.
-* `secret` - (Required for `bitbucket_server`) The OAuth Client secret is used for BitBucket Server, this secret is the
-  the text of the SSH private key associated with your BitBucket Server
+* `secret` - (Required for `bitbucket_data_center`) The OAuth Client secret is used for Bitbucket Data Center, this secret is the
+  the text of the SSH private key associated with your Bitbucket Data Center
 Application Link.
-* `rsa_public_key` - (Required for `bitbucket_server`) Required for BitBucket
-  Server in conjunction with the secret. Not used for any other providers. The
-text of the SSH public key associated with your BitBucket Server Application
+* `rsa_public_key` - (Required for `bitbucket_data_center`) Required for Bitbucket
+  Data Center in conjunction with the secret. Not used for any other providers. The
+text of the SSH public key associated with your Bitbucket Data Center Application
 Link.
 * `service_provider` - (Required) The VCS provider being connected with. Valid
-  options are `ado_server`, `ado_services`, `bitbucket_hosted`, `bitbucket_server`, `github`, `github_enterprise`, `gitlab_hosted`,
+  options are `ado_server`, `ado_services`, `bitbucket_data_center`, `bitbucket_hosted`, `bitbucket_server`(deprecated), `github`, `github_enterprise`, `gitlab_hosted`,
   `gitlab_community_edition`, or `gitlab_enterprise_edition`.
 * `agent_pool_id` - (Optional) An existing Agent pool id within the organization which has Private VCS support enabled via Premium SKU.
+* `organization_scoped` - (Optional) Whether or not the oauth client is scoped to all projects and workspaces in the organization. Defaults to `true`.
 
 ## Attributes Reference
 

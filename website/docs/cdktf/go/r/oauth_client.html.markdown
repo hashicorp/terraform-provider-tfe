@@ -43,7 +43,7 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 
 #### Azure DevOps Server Usage
 
-See [documentation for TFC/E setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/azure-devops-server).
+See [documentation for HCP Terraform and Terraform Enterprise setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/azure-devops-server).
 
 **Note:** This resource requires a private key when creating Azure DevOps Server OAuth clients.
 
@@ -73,11 +73,11 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 }
 ```
 
-#### BitBucket Server Usage
+#### BitBucket Data Center Usage
 
-See [documentation for TFC/E setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/bitbucket-server).
+See [documentation for HCP Terraform and Terraform Enterprise setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/bitbucket-data-center).
 
-When using BitBucket Server, you must use three required fields: `Key`, `Secret`, `RsaPublicKey`.
+When using BitBucket Data Center, you must use three required fields: `Key`, `Secret`, `RsaPublicKey`.
 
 
 ```go
@@ -94,14 +94,14 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
 	oauthClient.NewOauthClient(this, jsii.String("test"), &oauthClientConfig{
-		apiUrl: jsii.String("https://bbs.example.com"),
-		httpUrl: jsii.String("https://bss.example.com"),
+		apiUrl: jsii.String("https://bbdc.example.com"),
+		httpUrl: jsii.String("https://bbdc.example.com"),
 		key: jsii.String("<consumer key>"),
-		name: jsii.String("my-bbs-oauth-client"),
+		name: jsii.String("my-bbdc-oauth-client"),
 		organization: jsii.String("my-org-name"),
 		rsaPublicKey: jsii.String("-----BEGIN PUBLIC KEY-----\ncontent\n-----END PUBLIC KEY-----\n"),
 		secret: jsii.String("-----BEGIN RSA PRIVATE KEY-----\ncontent\n-----END RSA PRIVATE KEY-----\n"),
-		serviceProvider: jsii.String("bitbucket_server"),
+		serviceProvider: jsii.String("bitbucket_data_center"),
 	})
 	return this
 }
@@ -121,15 +121,15 @@ The following arguments are supported:
 * `PrivateKey` - (Required for `AdoServer`) The text of the private key associated with your Azure DevOps Server account
 * `Key` - The OAuth Client key can refer to a Consumer Key, Application Key,
   or another type of client key for the VCS provider.
-* `Secret` - (Required for `BitbucketServer`) The OAuth Client secret is used for BitBucket Server, this secret is the
-  the text of the SSH private key associated with your BitBucket Server
+* `Secret` - (Required for `BitbucketDataCenter`) The OAuth Client secret is used for Bitbucket Data Center, this secret is the
+  the text of the SSH private key associated with your Bitbucket Data Center
 Application Link.
-* `RsaPublicKey` - (Required for `BitbucketServer`) Required for BitBucket
-  Server in conjunction with the secret. Not used for any other providers. The
-text of the SSH public key associated with your BitBucket Server Application
+* `RsaPublicKey` - (Required for `BitbucketDataCenter`) Required for Bitbucket Data Center
+   in conjunction with the secret. Not used for any other providers. The
+text of the SSH public key associated with your Bitbucket Data Center Application
 Link.
 * `ServiceProvider` - (Required) The VCS provider being connected with. Valid
-  options are `AdoServer`, `AdoServices`, `BitbucketHosted`, `BitbucketServer`, `Github`, `GithubEnterprise`, `GitlabHosted`,
+  options are `AdoServer`, `AdoServices`, `BitbucketDataCenter`, `BitbucketHosted`, `BitbucketServer`(deprecated), `Github`, `GithubEnterprise`, `GitlabHosted`,
   `GitlabCommunityEdition`, or `GitlabEnterpriseEdition`.
 
 ## Attributes Reference

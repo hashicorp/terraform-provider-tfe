@@ -34,6 +34,8 @@ func TestAccTFEProject_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_project.foobar", "name", "projecttest"),
 					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "description", "project description"),
+					resource.TestCheckResourceAttr(
 						"tfe_project.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
 				),
 			},
@@ -55,7 +57,7 @@ func TestAccTFEProject_invalidName(t *testing.T) {
 			},
 			{
 				Config:      testAccTFEProject_invalidNameLen(rInt),
-				ExpectError: regexp.MustCompile(`expected length of name to be in the range \(3 - 36\),`),
+				ExpectError: regexp.MustCompile(`expected length of name to be in the range \(3 - 40\),`),
 			},
 		},
 	})
@@ -78,6 +80,8 @@ func TestAccTFEProject_update(t *testing.T) {
 					testAccCheckTFEProjectAttributes(project),
 					resource.TestCheckResourceAttr(
 						"tfe_project.foobar", "name", "projecttest"),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "description", "project description"),
 				),
 			},
 			{
@@ -88,6 +92,8 @@ func TestAccTFEProject_update(t *testing.T) {
 					testAccCheckTFEProjectAttributesUpdated(project),
 					resource.TestCheckResourceAttr(
 						"tfe_project.foobar", "name", "project updated"),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "description", "project description updated"),
 				),
 			},
 		},
@@ -133,6 +139,7 @@ resource "tfe_organization" "foobar" {
 resource "tfe_project" "foobar" {
   organization = tfe_organization.foobar.name
   name = "project updated"
+  description = "project description updated"
 }`, rInt)
 }
 
@@ -146,6 +153,7 @@ resource "tfe_organization" "foobar" {
 resource "tfe_project" "foobar" {
   organization = tfe_organization.foobar.name
   name = "projecttest"
+  description = "project description"
 }`, rInt)
 }
 

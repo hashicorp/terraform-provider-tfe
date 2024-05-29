@@ -1,11 +1,11 @@
 <img alt="Terraform" src="https://www.datocms-assets.com/2885/1629941242-logo-terraform-main.svg" width="600px">
 
 
-# Terraform Cloud/Enterprise Provider
+# HCP Terraform and Terraform Enterprise Provider
 
-The official Terraform provider for [Terraform Cloud/Enterprise](https://www.hashicorp.com/products/terraform).
+The official Terraform provider for [HCP Terraform and Terraform Enterprise](https://www.hashicorp.com/products/terraform).
 
-As Terraform Enterprise is a self-hosted distribution of Terraform Cloud, this
+As Terraform Enterprise is a self-hosted distribution of HCP Terraform, this
 provider supports both Cloud and Enterprise use cases. In all/most
 documentation, the platform will always be stated as 'Terraform Enterprise' -
 but a feature will be explicitly noted as only supported in one or the other, if
@@ -29,7 +29,7 @@ Declare the provider in your configuration and `terraform init` will automatical
 terraform {
   required_providers {
     tfe = {
-      version = "~> 0.51.1"
+      version = "~> 0.55.0"
     }
   }
 }
@@ -45,7 +45,7 @@ The above snippet using `required_providers` is for Terraform 0.13+; if you are 
 
 ```hcl
 provider "tfe" {
-  version = "~> 0.51.1"
+  version = "~> 0.53.0"
   ...
 }
 ```
@@ -56,7 +56,7 @@ For more information on provider installation and constraining provider versions
 
 ## Usage
 
-[Create a user or team API token in Terraform Cloud/Enterprise](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/api-tokens), and use the token in the provider configuration block:
+[Create a user or team API token in HCP Terraform or Terraform Enterprise](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/api-tokens), and use the token in the provider configuration block:
 
 ```hcl
 provider "tfe" {

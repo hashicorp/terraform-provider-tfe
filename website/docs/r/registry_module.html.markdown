@@ -7,7 +7,7 @@ description: |-
 
 # tfe_registry_module
 
-Terraform Cloud's private module registry helps you share Terraform modules across your organization.
+HCP Terraform's private module registry helps you share Terraform modules across your organization.
 
 ## Example Usage
 
@@ -154,6 +154,7 @@ The following arguments are supported:
 * `organization` - (Optional) The name of the organization associated with the registry module. It must be set if `module_provider` is used, or if `vcs_repo` is used via a GitHub App.
 * `namespace` - (Optional) The namespace of a public registry module. It can be used if `module_provider` is set and `registry_name` is public.
 * `registry_name` - (Optional) Whether the registry module is private or public. It can be used if `module_provider` is set.
+* `initial_version` - (Optional) This specifies the initial version for a branch based module. It can be used if `vcs_repo.branch` is set. If it is omitted, the initial modules version will default to `0.0.0`.
 
 The `test_config` block supports
 * `tests_enabled` - (Optional) Specifies whether tests run for the registry module. Tests are only supported for branch-based publishing.
@@ -164,7 +165,7 @@ The `vcs_repo` block supports:
   For most VCS providers outside of BitBucket Cloud and Azure DevOps, this will match the `identifier`
   string.
 * `identifier` - (Required) A reference to your VCS repository in the format
-  `<organization>/<repository>` where `<organization>` and `<repository>` refer to the organization (or project key, for Bitbucket Server)
+  `<organization>/<repository>` where `<organization>` and `<repository>` refer to the organization (or project key, for Bitbucket Data Center)
   and repository in your VCS provider. The format for Azure DevOps is `<ado organization>/<ado project>/_git/<ado repository>`.
 * `oauth_token_id` - (Optional) Token ID of the VCS Connection (OAuth Connection Token) to use. This conflicts with `github_app_installation_id` and can only be used if `github_app_installation_id` is not used.
 * `github_app_installation_id` - (Optional) The installation id of the Github App. This conflicts with `oauth_token_id` and can only be used if `oauth_token_id` is not used.

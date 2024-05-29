@@ -9,7 +9,7 @@ description: |-
 
 Add or remove a user from an organization.
 
-~> **NOTE:** This resource requires using the provider with Terraform Cloud or
+~> **NOTE:** This resource requires using the provider with HCP Terraform or
 an instance of Terraform Enterprise at least as recent as v202004-1.
 
 ~> **NOTE:** This resource cannot be used to update an existing user's email address

@@ -9,16 +9,16 @@ labels: bug
 Hi there,
 
 Thank you for opening an issue! Please note that we try to keep the this issue tracker reserved for
-bug reports and feature requests related to the Terraform Cloud/Enterprise provider. If you know
-your issue relates to the Terraform Cloud/Enterprise platform itself, please contact
+bug reports and feature requests related to the HCP Terraform and Terraform Enterprise provider. If you know
+your issue relates to the HCP Terraform or Terraform Enterprise platform itself, please contact
 tf-cloud@hashicorp.support. For general usage questions, please post to our community forum:
 https://discuss.hashicorp.com.
 -->
 
-#### Terraform Cloud/Enterprise version
+#### Terraform Enterprise version
 
 <!---
-Are you using Terraform Cloud or Terraform Enterprise? If Terraform Enterprise, please include the version
+If you are using Terraform Enterprise, please include the version
 Example: Terraform Enterprise v202104-1
 -->
 
@@ -27,8 +27,8 @@ Example: Terraform Enterprise v202104-1
 <!---
 If you are using Terraform CLI, run `terraform version` to show the version.
 
-If you are using Terraform Cloud or Terraform Enterprise, see the Terraform version being used by a
-workspace in the workspace's Overview tab.
+If you are using a remote workspace in HCP Terraform or Terraform Enterprise, see the Terraform version 
+being used by the workspace in the workspace's Overview tab.
 
 Paste the result between the ``` marks below.
 -->

@@ -40,10 +40,15 @@ func resourceTFEProject() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ValidateFunc: validation.All(
-					validation.StringLenBetween(3, 36),
+					validation.StringLenBetween(3, 40),
 					validation.StringMatch(regexp.MustCompile(`\A[\w\-][\w\- ]+[\w\-]\z`),
 						"can only include letters, numbers, spaces, -, and _."),
 				),
+			},
+
+			"description": {
+				Type:     schema.TypeString,
+				Optional: true,
 			},
 
 			"organization": {
@@ -66,7 +71,8 @@ func resourceTFEProjectCreate(ctx context.Context, d *schema.ResourceData, meta 
 	name := d.Get("name").(string)
 
 	options := tfe.ProjectCreateOptions{
-		Name: name,
+		Name:        name,
+		Description: tfe.String(d.Get("description").(string)),
 	}
 
 	log.Printf("[DEBUG] Create new project: %s", name)
@@ -95,6 +101,7 @@ func resourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	d.Set("name", project.Name)
+	d.Set("description", project.Description)
 	d.Set("organization", project.Organization.Name)
 
 	return nil
@@ -104,7 +111,8 @@ func resourceTFEProjectUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	config := meta.(ConfiguredClient)
 
 	options := tfe.ProjectUpdateOptions{
-		Name: tfe.String(d.Get("name").(string)),
+		Name:        tfe.String(d.Get("name").(string)),
+		Description: tfe.String(d.Get("description").(string)),
 	}
 
 	log.Printf("[DEBUG] Update configuration of project: %s", d.Id())

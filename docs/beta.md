@@ -1,6 +1,6 @@
 # Introducing Beta Features
 
-This guide discusses how to introduce features that are not yet generally available in Terraform Cloud.
+This guide discusses how to introduce features that are not yet generally available in HCP Terraform .
 
 In general, beta features should not be merged/released until generally available (GA). However, the maintainers recognize almost any reason to release beta features on a case-by-case basis. These could include: partial customer availability, software dependency, or any reason short of feature completeness.
 

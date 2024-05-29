@@ -171,6 +171,25 @@ func TestAccTFEWorkspaceDataSourceWithTriggerPatterns(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspaceDataSource_readAutoDestroyAt(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspaceDataSourceConfig_basic(rInt),
+				Check:  resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "auto_destroy_at", ""),
+			},
+			{
+				Config: testAccTFEWorkspaceDataSourceConfig_basicWithAutoDestroy(rInt),
+				Check:  resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "auto_destroy_at", "2100-01-01T00:00:00Z"),
+			},
+		},
+	})
+}
+
 func TestAccTFEWorkspaceDataSource_readProjectIDDefault(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -243,6 +262,44 @@ data "tfe_workspace" "foobar" {
 }`, rInt, rInt, aart)
 }
 
+func testAccTFEWorkspaceDataSourceConfig_basic(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name                  = "workspace-test-%d"
+  organization          = tfe_organization.foobar.id
+  description           = "provider-testing"
+}
+
+data "tfe_workspace" "foobar" {
+  name         = tfe_workspace.foobar.name
+  organization = tfe_workspace.foobar.organization
+}`, rInt, rInt)
+}
+
+func testAccTFEWorkspaceDataSourceConfig_basicWithAutoDestroy(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name            = "workspace-test-%d"
+  organization    = tfe_organization.foobar.id
+  description     = "provider-testing"
+  auto_destroy_at = "2100-01-01T00:00:00Z"
+}
+
+data "tfe_workspace" "foobar" {
+  name         = tfe_workspace.foobar.name
+  organization = tfe_workspace.foobar.organization
+}`, rInt, rInt)
+}
 func testAccTFEWorkspaceDataSourceConfigWithTriggerPatterns(workspaceName string, organizationName string) string {
 	return fmt.Sprintf(`
 data "tfe_workspace" "foobar" {

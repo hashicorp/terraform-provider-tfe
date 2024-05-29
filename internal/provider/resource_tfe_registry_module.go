@@ -10,6 +10,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -31,6 +32,9 @@ func resourceTFERegistryModule() *schema.Resource {
 			StateContext: resourceTFERegistryModuleImporter,
 		},
 
+		CustomizeDiff: func(c context.Context, d *schema.ResourceDiff, meta interface{}) error {
+			return validateVcsRepo(d)
+		},
 		Schema: map[string]*schema.Schema{
 			"organization": {
 				Type:     schema.TypeString,
@@ -94,6 +98,7 @@ func resourceTFERegistryModule() *schema.Resource {
 						"tags": {
 							Type:     schema.TypeBool,
 							Optional: true,
+							Computed: true,
 						},
 					},
 				},
@@ -124,6 +129,7 @@ func resourceTFERegistryModule() *schema.Resource {
 			"test_config": {
 				Type:     schema.TypeList,
 				Optional: true,
+				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"tests_enabled": {
@@ -132,6 +138,10 @@ func resourceTFERegistryModule() *schema.Resource {
 						},
 					},
 				},
+			},
+			"initial_version": {
+				Type:     schema.TypeString,
+				Optional: true,
 			},
 		},
 	}
@@ -166,13 +176,17 @@ func resourceTFERegistryModuleCreateWithVCS(v interface{}, meta interface{}, d *
 
 	tags, tagsOk := vcsRepo["tags"].(bool)
 	branch, branchOk := vcsRepo["branch"].(string)
+	initialVersion, initialVersionOk := d.GetOk("initial_version")
 
-	if tagsOk && tags && branchOk && branch != "" {
-		return nil, fmt.Errorf("tags must be set to false when a branch is provided")
+	if tagsOk {
+		options.VCSRepo.Tags = tfe.Bool(tags)
 	}
 
 	if branchOk && branch != "" {
 		options.VCSRepo.Branch = tfe.String(branch)
+		if initialVersionOk && initialVersion.(string) != "" {
+			options.InitialVersion = tfe.String(initialVersion.(string))
+		}
 	}
 
 	if vcsRepo["oauth_token_id"] != nil && vcsRepo["oauth_token_id"].(string) != "" {
@@ -303,10 +317,6 @@ func resourceTFERegistryModuleUpdate(d *schema.ResourceData, meta interface{}) e
 		tags, tagsOk := vcsRepo["tags"].(bool)
 		branch, branchOk := vcsRepo["branch"].(string)
 
-		if tagsOk && tags && branchOk && branch != "" {
-			return fmt.Errorf("tags must be set to false when a branch is provided")
-		}
-
 		if tagsOk {
 			options.VCSRepo.Tags = tfe.Bool(tags)
 		}
@@ -339,7 +349,7 @@ func resourceTFERegistryModuleUpdate(d *schema.ResourceData, meta interface{}) e
 	})
 
 	if err != nil {
-		return fmt.Errorf("Error while waiting for module %s/%s to be updated: %w", registryModule.Organization.Name, registryModule.Name, err)
+		return fmt.Errorf("Error while waiting for module %s/%s to be updated: %w", rmID.Organization, rmID.Name, err)
 	}
 
 	d.SetId(registryModule.ID)
@@ -404,9 +414,9 @@ func resourceTFERegistryModuleRead(d *schema.ResourceData, meta interface{}) err
 		}
 
 		testConfig = append(testConfig, testConfigValues)
-
-		d.Set("test_config", testConfig)
 	}
+
+	d.Set("test_config", testConfig)
 
 	return nil
 }
@@ -414,15 +424,30 @@ func resourceTFERegistryModuleRead(d *schema.ResourceData, meta interface{}) err
 func resourceTFERegistryModuleDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
-	log.Printf("[DEBUG] Delete registry module: %s", d.Id())
-	organization := d.Get("organization").(string)
-	name := d.Get("name").(string)
-	err := config.Client.RegistryModules.Delete(ctx, organization, name)
-	if err != nil {
-		if err == tfe.ErrResourceNotFound {
-			return nil
+	// Fields required to delete registry module by provider
+	// To delete by name, Provider field is not required
+	rModID := tfe.RegistryModuleID{
+		Organization: d.Get("organization").(string),
+		Name:         d.Get("name").(string),
+		Provider:     d.Get("module_provider").(string),
+		Namespace:    d.Get("namespace").(string),
+		RegistryName: tfe.RegistryName(d.Get("registry_name").(string)),
+	}
+
+	if v, ok := d.GetOk("module_provider"); ok && v.(string) != "" {
+		log.Printf("[DEBUG] Delete registry module by provider: %s", d.Id())
+
+		err := config.Client.RegistryModules.DeleteProvider(ctx, rModID)
+		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+			return fmt.Errorf("error deleting registry module provider: %w", err)
 		}
-		return fmt.Errorf("Error deleting registry module %s: %w", d.Id(), err)
+	} else {
+		log.Printf("[DEBUG] Delete registry module by name: %s", d.Id())
+
+		err := config.Client.RegistryModules.DeleteByName(ctx, rModID)
+		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+			return fmt.Errorf("Error deleting registry module %s: %w", d.Id(), err)
+		}
 	}
 
 	return nil
@@ -456,4 +481,31 @@ func resourceTFERegistryModuleImporter(ctx context.Context, d *schema.ResourceDa
 		"invalid registry module import format: %s (expected <ORGANIZATION>/<REGISTRY_NAME>/<NAMESPACE>/<REGISTRY MODULE NAME>/<REGISTRY MODULE PROVIDER>/<REGISTRY MODULE ID>)",
 		d.Id(),
 	)
+}
+
+func validateVcsRepo(d *schema.ResourceDiff) error {
+	vcsRepo, ok := d.GetRawConfig().AsValueMap()["vcs_repo"]
+	if !ok || vcsRepo.LengthInt() == 0 {
+		return nil
+	}
+
+	branchValue := vcsRepo.AsValueSlice()[0].GetAttr("branch")
+	tagsValue := vcsRepo.AsValueSlice()[0].GetAttr("tags")
+
+	if !tagsValue.IsNull() && tagsValue.False() && branchValue.IsNull() {
+		return fmt.Errorf("branch must be provided when tags is set to false")
+	}
+
+	if !tagsValue.IsNull() && !branchValue.IsNull() {
+		tags := tagsValue.True()
+		branch := branchValue.AsString()
+		// tags must be set to true or branch provided but not both
+		if tags && branch != "" {
+			return fmt.Errorf("tags must be set to false when a branch is provided")
+		} else if !tags && branch == "" {
+			return fmt.Errorf("tags must be set to true when no branch is provided")
+		}
+	}
+
+	return nil
 }
