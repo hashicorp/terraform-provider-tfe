@@ -108,6 +108,32 @@ func TestAccTFEOAuthClient_rsaKeys(t *testing.T) {
 	})
 }
 
+func TestAccTFEOAuthClient_agentPool(t *testing.T) {
+	skipUnlessBeta(t)
+	oc := &tfe.OAuthClient{}
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			if envGithubToken == "" {
+				t.Skip("Please set GITHUB_TOKEN to run this test")
+			}
+		},
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEOAuthClientDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOAuthClient_agentPool(),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOAuthClientExists("tfe_oauth_client.foobar", oc),
+					testAccCheckTFEOAuthClientAttributes(oc),
+					resource.TestCheckResourceAttr(
+						"tfe_oauth_client.foobar", "service_provider", "github_enterprise"),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckTFEOAuthClientExists(
 	n string, oc *tfe.OAuthClient) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
@@ -216,4 +242,25 @@ hwIDAQAB
 -----END PUBLIC KEY-----
 EOT
 }`, rInt)
+}
+
+func testAccTFEOAuthClient_agentPool() string {
+	return fmt.Sprintf(`
+data "tfe_organization" "foobar" {
+  name  = "xxx"
+}
+
+data "tfe_agent_pool" "foobar" {
+  name = "xxx"
+  organization = data.tfe_organization.foobar.name
+}
+
+resource "tfe_oauth_client" "foobar" {
+  organization     = data.tfe_organization.foobar.name
+  api_url          = "https://githubenterprise.xxx/api/v3"
+  http_url         = "https://githubenterprise.xxx"
+  oauth_token      = "%s"
+  service_provider = "github_enterprise"
+  agent_pool_id    = data.tfe_agent_pool.foobar.id
+}`, envGithubToken)
 }

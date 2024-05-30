@@ -5,6 +5,7 @@ ENHANCEMENTS:
 * `r/tfe_workspace`: Add an `auto_destroy_at` attribute for scheduling an auto-destroy run in the future, by @notchairmk [1354](https://github.com/hashicorp/terraform-provider-tfe/pull/1354)
 * `d/tfe_workspace`: Add an `auto_destroy_at` attribute for reading a scheduled auto-destroy, by @notchairmk [1354](https://github.com/hashicorp/terraform-provider-tfe/pull/1354)
 * `r/tfe_registry_module`: Add `initial_version` support for Branch Based Modules by @aaabdelgany [#1363](https://github.com/hashicorp/terraform-provider-tfe/pull/1363)
+* `r/tfe_oauth_client`: Add `agent_pool_id` as an optional argument to enable Private VCS support, by @roleesinhaHC [1255](https://github.com/hashicorp/terraform-provider-tfe/pull/1255)
 
 BUG FIXES:
 * `r/tfe_registry_module`: Prevents constant diff after a successful apply when `tags` and `tests_enabled` is not set by @Uk1288 [#1357](https://github.com/hashicorp/terraform-provider-tfe/pull/1357)

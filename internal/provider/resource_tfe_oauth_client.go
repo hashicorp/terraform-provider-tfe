@@ -108,12 +108,15 @@ func resourceTFEOAuthClient() *schema.Resource {
 					false,
 				),
 			},
-
 			"oauth_token_id": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-
+			"agent_pool_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 			"organization_scoped": {
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -164,6 +167,9 @@ func resourceTFEOAuthClientCreate(d *schema.ResourceData, meta interface{}) erro
 	}
 	if serviceProvider == tfe.ServiceProviderBitbucket {
 		options.Secret = tfe.String(secret)
+	}
+	if v, ok := d.GetOk("agent_pool_id"); ok && v.(string) != "" {
+		options.AgentPool = &tfe.AgentPool{ID: *tfe.String(v.(string))}
 	}
 
 	log.Printf("[DEBUG] Create an OAuth client for organization: %s", organization)
