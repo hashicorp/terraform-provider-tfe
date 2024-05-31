@@ -90,7 +90,7 @@ Link.
 * `service_provider` - (Required) The VCS provider being connected with. Valid
   options are `ado_server`, `ado_services`, `bitbucket_data_center`, `bitbucket_hosted`, `bitbucket_server`(deprecated), `github`, `github_enterprise`, `gitlab_hosted`,
   `gitlab_community_edition`, or `gitlab_enterprise_edition`.
-* `agent_pool_id` - (Optional) An existing Agent pool id within the organization which has Private VCS support enabled via Premium SKU.
+* `agent_pool_id` - (Optional) An existing agent pool id within the organization that has Private VCS support enabled.
 * `organization_scoped` - (Optional) Whether or not the oauth client is scoped to all projects and workspaces in the organization. Defaults to `true`.
 
 ## Attributes Reference
