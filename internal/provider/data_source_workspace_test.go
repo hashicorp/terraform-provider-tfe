@@ -190,6 +190,25 @@ func TestAccTFEWorkspaceDataSource_readAutoDestroyAt(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspaceDataSource_readAutoDestroyDuration(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspaceDataSourceConfig_basic(rInt),
+				Check:  resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "auto_destroy_activity_duration", ""),
+			},
+			{
+				Config: testAccTFEWorkspaceDataSourceConfig_basicWithAutoDestroyDuration(rInt),
+				Check:  resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "auto_destroy_activity_duration", "1d"),
+			},
+		},
+	})
+}
+
 func TestAccTFEWorkspaceDataSource_readProjectIDDefault(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -300,6 +319,27 @@ data "tfe_workspace" "foobar" {
   organization = tfe_workspace.foobar.organization
 }`, rInt, rInt)
 }
+
+func testAccTFEWorkspaceDataSourceConfig_basicWithAutoDestroyDuration(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name                           = "workspace-test-%d"
+  organization                   = tfe_organization.foobar.id
+  description                    = "provider-testing"
+  auto_destroy_activity_duration = "1d"
+}
+
+data "tfe_workspace" "foobar" {
+  name         = tfe_workspace.foobar.name
+  organization = tfe_workspace.foobar.organization
+}`, rInt, rInt)
+}
+
 func testAccTFEWorkspaceDataSourceConfigWithTriggerPatterns(workspaceName string, organizationName string) string {
 	return fmt.Sprintf(`
 data "tfe_workspace" "foobar" {
