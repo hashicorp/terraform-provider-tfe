@@ -36,11 +36,11 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 	})
 	tfeWorkspaceTest := workspace.NewWorkspace(this, jsii.String("test"), &workspaceConfig{
 		name: jsii.String("my-workspace-name"),
-		organization: cdktf.Token_AsString(tfeOrganizationTestOrganization.name),
+		organization: cdktf.*token_AsString(tfeOrganizationTestOrganization.name),
 	})
 	workspaceSettings.NewWorkspaceSettings(this, jsii.String("test-settings"), &workspaceSettingsConfig{
 		executionMode: jsii.String("local"),
-		workspaceId: cdktf.Token_*AsString(tfeWorkspaceTest.id),
+		workspaceId: cdktf.*token_*AsString(tfeWorkspaceTest.id),
 	})
 	return this
 }
@@ -71,25 +71,25 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 	})
 	tfeWorkspaceTest := workspace.NewWorkspace(this, jsii.String("test"), &workspaceConfig{
 		name: jsii.String("my-workspace-name"),
-		organization: cdktf.Token_AsString(tfeOrganizationTestOrganization.name),
+		organization: cdktf.*token_AsString(tfeOrganizationTestOrganization.name),
 	})
 	tfeAgentPoolTestAgentPool := agentPool.NewAgentPool(this, jsii.String("test-agent-pool"), &agentPoolConfig{
 		name: jsii.String("my-agent-pool-name"),
-		organization: cdktf.Token_*AsString(tfeOrganizationTestOrganization.name),
+		organization: cdktf.*token_*AsString(tfeOrganizationTestOrganization.name),
 	})
 	tfeAgentPoolAllowedWorkspacesTest :=
 	agentPoolAllowedWorkspaces.NewAgentPoolAllowedWorkspaces(this, jsii.String("test_3"), &agentPoolAllowedWorkspacesConfig{
-		agentPoolId: cdktf.Token_*AsString(tfeAgentPoolTestAgentPool.id),
+		agentPoolId: cdktf.*token_*AsString(tfeAgentPoolTestAgentPool.id),
 		allowedWorkspaceIds: []*string{
-			cdktf.Token_*AsString(tfeWorkspaceTest.id),
+			cdktf.*token_*AsString(tfeWorkspaceTest.id),
 		},
 	})
 	/*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
 	tfeAgentPoolAllowedWorkspacesTest.OverrideLogicalId(jsii.String("test"))
 	workspaceSettings.NewWorkspaceSettings(this, jsii.String("test-settings"), &workspaceSettingsConfig{
-		agentPoolId: cdktf.Token_*AsString(tfeAgentPoolAllowedWorkspacesTest.agentPoolId),
+		agentPoolId: cdktf.*token_*AsString(tfeAgentPoolAllowedWorkspacesTest.agentPoolId),
 		executionMode: jsii.String("agent"),
-		workspaceId: cdktf.Token_*AsString(tfeWorkspaceTest.id),
+		workspaceId: cdktf.*token_*AsString(tfeWorkspaceTest.id),
 	})
 	return this
 }
@@ -117,12 +117,12 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 	})
 	tfeWorkspaceSettingsTest :=
 	workspaceSettings.NewWorkspaceSettings(this, jsii.String("test_1"), &workspaceSettingsConfig{
-		workspaceId: cdktf.Token_AsString(dataTfeWorkspaceTest.id),
+		workspaceId: cdktf.*token_AsString(dataTfeWorkspaceTest.id),
 	})
 	/*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
 	tfeWorkspaceSettingsTest.OverrideLogicalId(jsii.String("test"))
 	cdktf.NewTerraformOutput(this, jsii.String("workspace-explicit-local-execution"), &TerraformOutputConfig{
-		Value: cdktf.Fn_Alltrue(cdktf.Token_AsAny([]interface{}{
+		Value: cdktf.*fn_Alltrue(cdktf.*token_*AsAny([]interface{}{
 			cdktf.Op_Eq(tfeWorkspaceSettingsTest.executionMode, jsii.String("local")),
 			cdktf.propertyAccess(tfeWorkspaceSettingsTest.overwrites, []interface{}{
 				jsii.String("0"),
@@ -142,7 +142,7 @@ The following arguments are supported:
 * `AgentPoolId` - (Optional) The ID of an agent pool to assign to the workspace. Requires `ExecutionMode`
   to be set to `Agent`. This value _must not_ be provided if `ExecutionMode` is set to any other value.
 * `ExecutionMode` - (Optional) Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode)
-  to use. Using HCP Terraform, valid values are `Remote`, `Local` or `Agent`. Using Terraform Enterprise, only `Remote` and `Local` execution modes are valid. When set to `Local`, the workspace will be used for state storage only. **Important:** If you omit this attribute, the resource configures the workspace to use your organization's default execution mode (which in turn defaults to `Remote`), removing any explicit value that might have previously been set for the workspace.
+  to use. Using HCP Terraform, valid values are `Remote`, `Local` or `Agent`. When set to `Local`, the workspace will be used for state storage only. **Important:** If you omit this attribute, the resource configures the workspace to use your organization's default execution mode (which in turn defaults to `Remote`), removing any explicit value that might have previously been set for the workspace.
 
 ## Attributes Reference
 
@@ -166,4 +166,4 @@ terraform import tfe_workspace_settings.test ws-CH5in3chf8RJjrVd
 terraform import tfe_workspace_settings.test my-org-name/my-wkspace-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-21ae5bfc5685737786e686595d5f2c56dda05cf11e96b5c4f9cfd31f697e712f -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-e567651e80d935c1297d2d63ac7bf6052ff86525f29c4e5f59a3395787d5761b -->

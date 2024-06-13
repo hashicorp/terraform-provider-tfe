@@ -213,6 +213,7 @@ The following arguments are supported:
 * `Organization` - (Optional) The name of the organization associated with the registry module. It must be set if `ModuleProvider` is used, or if `VcsRepo` is used via a GitHub App.
 * `Namespace` - (Optional) The namespace of a public registry module. It can be used if `ModuleProvider` is set and `RegistryName` is public.
 * `RegistryName` - (Optional) Whether the registry module is private or public. It can be used if `ModuleProvider` is set.
+* `InitialVersion` - (Optional) This specifies the initial version for a branch based module. It can be used if `VcsRepoBranch` is set. If it is omitted, the initial modules version will default to `000`.
 
 The `TestConfig` block supports
 * `TestsEnabled` - (Optional) Specifies whether tests run for the registry module. Tests are only supported for branch-based publishing.
@@ -256,4 +257,4 @@ terraform import tfe_registry_module.test my-org-name/public/namespace/name/prov
 terraform import tfe_registry_module.test my-org-name/name/provider/mod-qV9JnKRkmtMa4zcA
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-456a79854887a1ea146b73701b97c25121ac10198e434b748c3268fc7de9d53f -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-83bb5f1b9e18171b736eafaa3cee5546bbb042f6dcf960e215905b4b8a26ffac -->

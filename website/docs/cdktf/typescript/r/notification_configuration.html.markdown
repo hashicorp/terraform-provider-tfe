@@ -115,7 +115,7 @@ class MyConvertedCode extends cdktf.TerraformStack {
 
 ```
 
-(**TFE only**) With `destinationType` of `email`, using `emailAddresses` list and `email_users`:
+(**TFE only**) With `destinationType` of `email`, using `emailAddresses` list and `emailUsers`:
 
 ```typescript
 import * as constructs from "constructs";
@@ -184,22 +184,22 @@ The following arguments are supported:
   * `generic`
   * `email` available in HCP Terraform or Terraform Enterprise v202005-1 or later
   * `slack`
-  * `microsoft-teams` available in HCP Terraform or Terraform Enterprise v202206-1 or later
+  * `microsoftTeams` available in HCP Terraform or Terraform Enterprise v202206-1 or later
 * `emailAddresses` - (Optional) **TFE only** A list of email addresses. This value
-  _must not_ be provided if `destinationType` is `generic`, `microsoft-teams`, or `slack`.
+  _must not_ be provided if `destinationType` is `generic`, `microsoftTeams`, or `slack`.
 * `emailUserIds` - (Optional) A list of user IDs. This value _must not_ be provided
-  if `destinationType` is `generic`, `microsoft-teams`, or `slack`.
+  if `destinationType` is `generic`, `microsoftTeams`, or `slack`.
 * `enabled` - (Optional) Whether the notification configuration should be enabled or not.
   Disabled configurations will not send any notifications. Defaults to `false`.
 * `token` - (Optional) A write-only secure token for the notification configuration, which can
   be used by the receiving server to verify request authenticity when configured for notification
   configurations with a destination type of `generic`. Defaults to `null`.
-  This value _must not_ be provided if `destinationType` is `email`, `microsoft-teams`, or `slack`.
+  This value _must not_ be provided if `destinationType` is `email`, `microsoftTeams`, or `slack`.
 * `triggers` - (Optional) The array of triggers for which this notification configuration will
-  send notifications. Valid values are `run:created`, `run:planning`, `run:needs_attention`, `run:applying`
-  `run:completed`, `run:errored`, `assessment:check_failure`, `assessment:drifted`, or `assessment:failed`.
+  send notifications. Valid values are `run:created`, `run:planning`, `run:needsAttention`, `run:applying`
+  `run:completed`, `run:errored`, `assessment:checkFailure`, `assessment:drifted`, or `assessment:failed`.
   If omitted, no notification triggers are configured.
-* `url` - (Required if `destinationType` is `generic`, `microsoft-teams`, or `slack`) The HTTP or HTTPS URL of the notification
+* `url` - (Required if `destinationType` is `generic`, `microsoftTeams`, or `slack`) The HTTP or HTTPS URL of the notification
   configuration where notification requests will be made. This value _must not_ be provided if `destinationType`
   is `email`.
 * `workspaceId` - (Required) The id of the workspace that owns the notification configuration.
@@ -216,4 +216,4 @@ Notification configurations can be imported; use `<NOTIFICATION CONFIGURATION ID
 terraform import tfe_notification_configuration.test nc-qV9JnKRkmtMa4zcA
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-9d0816dcd22f4150cde8c310824fc0b8fbead7ab67241d3e7c43d64ea82d47e5 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-51e766a4c44b6ce67b59c3e0006ed5c2511164cb524d4d67da8afdbca5241e7c -->

@@ -14,10 +14,10 @@ Provides a resource to manage the _initial_ and/or _final_ Terraform run in a gi
 There are a few main use cases this resource was designed for:
 
 - **Workspaces that depend on other workspaces.** If a workspace will create infrastructure that other workspaces rely on (for example, a Kubernetes cluster to deploy resources into), those downstream workspaces can depend on an initial `apply` with `wait_for_run = true`, so they aren't created before their infrastructure dependencies.
-- **A more reliable `queue_all_runs = true`.** The `queueAllRuns` argument on `tfe_workspace` requests an initial run, which can complete asynchronously outside of the Terraform run that creates the workspace. Unfortunately, it can't be used with workspaces that require variables to be set, because the `tfe_variable` resources themselves depend on the `tfe_workspace`. By managing an initial `apply` with `wait_for_run = false` that depends on your `tfe_variables`, you can accomplish the same goal without a circular dependency.
-- **Safe workspace destruction.** To ensure a workspace's managed resources are destroyed before deleting it, manage a `destroy` with `wait_for_run = true`. When you destroy the whole configuration, Terraform will wait for the destroy run to complete before deleting the workspace. This pattern is compatible with the `tfe_workspace` resource's default safe deletion behavior.
+- **A more reliable `queue_all_runs = true`.** The `queueAllRuns` argument on `tfeWorkspace` requests an initial run, which can complete asynchronously outside of the Terraform run that creates the workspace. Unfortunately, it can't be used with workspaces that require variables to be set, because the `tfeVariable` resources themselves depend on the `tfeWorkspace`. By managing an initial `apply` with `wait_for_run = false` that depends on your `tfeVariables`, you can accomplish the same goal without a circular dependency.
+- **Safe workspace destruction.** To ensure a workspace's managed resources are destroyed before deleting it, manage a `destroy` with `wait_for_run = true`. When you destroy the whole configuration, Terraform will wait for the destroy run to complete before deleting the workspace. This pattern is compatible with the `tfeWorkspace` resource's default safe deletion behavior.
 
-The `tfe_workspace_run` expects to own exactly one apply during a creation and/or one destroy during a destruction. This implies that even if previous successful applies exist in the workspace, a `tfe_workspace_run` resource that includes an `apply` block will queue a new apply when added to a config.
+The `tfeWorkspaceRun` expects to own exactly one apply during a creation and/or one destroy during a destruction. This implies that even if previous successful applies exist in the workspace, a `tfeWorkspaceRun` resource that includes an `apply` block will queue a new apply when added to a config.
 
 ## Example Usage
 
@@ -223,16 +223,16 @@ Both `apply` and `destroy` block supports:
 * `manualConfirm` - (Required) If set to true a human will have to manually confirm a plan in HCP Terraform's UI to start an apply. If set to false, this resource will be automatically applied. Defaults to `false`.
   * If `waitForRun` is set to `false`, this auto-apply will be done by HCP Terraform.
   * If `waitForRun` is set to `true`, the apply will be confirmed by the provider. The exception is the case of policy check soft-failed where a human has to perform an override by manually confirming the plan even though `manualConfirm` is set to false.
-  * Note that this setting will override the workspace's default apply mode. To use the workspace default apply mode, look up the setting for `autoApply` with the `tfe_workspace` data source.
+  * Note that this setting will override the workspace's default apply mode. To use the workspace default apply mode, look up the setting for `autoApply` with the `tfeWorkspace` data source.
 * `retry` - (Optional) Whether or not to retry on plan or apply errors. When set to true, `retryAttempts` must also be greater than zero inorder for retries to happen. Defaults to `true`.
 * `retryAttempts` - (Optional) The number to retry attempts made after an initial error. Defaults to `3`.
 * `retryBackoffMin` - (Optional) The minimum time in seconds to backoff before attempting a retry. Defaults to `1`.
 * `retryBackoffMax` - (Optional) The maximum time in seconds to backoff before attempting a retry. Defaults to `30`.
-* `waitForRun` - (Optional) Whether or not to wait for a run to reach completion before considering this a success. When set to `false`, the provider considers the `tfe_workspace_run` resource to have been created immediately after the run has been queued. When set to `true`, the provider waits for a successful apply on the target workspace to have applied successfully (or if it resulted in a no-change plan). Defaults to `true`.
+* `waitForRun` - (Optional) Whether or not to wait for a run to reach completion before considering this a success. When set to `false`, the provider considers the `tfeWorkspaceRun` resource to have been created immediately after the run has been queued. When set to `true`, the provider waits for a successful apply on the target workspace to have applied successfully (or if it resulted in a no-change plan). Defaults to `true`.
 
 ## Attributes Reference
 
 In addition to all arguments above, the following attributes are exported:
 
 * `id` - The ID of the run created by this resource. Note, if the resource was created without an `apply{}` configuration block, then this ID will not refer to a real run in HCP Terraform.
-<!-- cache-key: cdktf-0.17.0-pre.15 input-041419f518c0405e85227f2933aa7402414ae5b4f96725d448d521ecc7a24518 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-ef1d4e75ac0c6d99c8a7fe481ebea7451bae3648d17da23e434d8dfb5749ce2b -->

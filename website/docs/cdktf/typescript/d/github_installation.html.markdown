@@ -28,7 +28,7 @@ class MyConvertedCode extends cdktf.TerraformStack {
       this,
       "gha_installation",
       {
-        installationId: 12345,
+        installationId: 12345678,
       }
     );
   }
@@ -51,7 +51,7 @@ class MyConvertedCode extends cdktf.TerraformStack {
       this,
       "gha_installation",
       {
-        name: "installation_name",
+        name: "github_username_or_organization",
       }
     );
   }
@@ -63,7 +63,7 @@ class MyConvertedCode extends cdktf.TerraformStack {
 
 The following arguments are supported. At least one of `name`, `installationId` must be set.
 
-* `installationId` - (Optional) ID of the Github Installation. The installation ID can be found in the URL slug when visiting the installation's configuration page, e.g `https://github.com/settings/installations/12345678`.
+* `installationId` - (Optional) ID of the Github Installation. The installation ID can be found in the URL slug when visiting the installation's configuration page, e.g `https://githubCom/settings/installations/12345678`.
 * `name` - (Optional) Name of the Github user or organization account that installed the app.
 
 Must be one of: `installationId` or `name`.
@@ -73,4 +73,5 @@ Must be one of: `installationId` or `name`.
 In addition to all arguments above, the following attributes are exported:
 
 * `id` - The internal ID of the Github Installation. This is different from the `installationId`.
-<!-- cache-key: cdktf-0.17.0-pre.15 input-0a4ff055d60c44b213a5dc7ce9fcb8c10208e9d24cd4e44f3a552a718ea64d50 -->
+
+<!-- cache-key: cdktf-0.17.0-pre.15 input-5d439ec2ae1e837495b8cb500e2fcfe96d47a32f9fce3a10ffac876fe18a89dc -->

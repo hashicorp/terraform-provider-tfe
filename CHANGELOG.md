@@ -8,6 +8,7 @@ ENHANCEMENTS:
 * `d/tfe_workspace`: Add an `auto_destroy_at` attribute for reading a scheduled auto-destroy, by @notchairmk [1354](https://github.com/hashicorp/terraform-provider-tfe/pull/1354)
 * `r/tfe_registry_module`: Add `initial_version` support for Branch Based Modules by @aaabdelgany [#1363](https://github.com/hashicorp/terraform-provider-tfe/pull/1363)
 * `r/tfe_oauth_client`: Add `agent_pool_id` as an optional argument to enable Private VCS support, by @roleesinhaHC [1255](https://github.com/hashicorp/terraform-provider-tfe/pull/1255)
+* `r/tfe_project`: Increase the Project name length from 36 to 40 characters @hs26gill [#1351](https://github.com/hashicorp/terraform-provider-tfe/pull/1351)
 
 BUG FIXES:
 * `r/tfe_registry_module`: Prevents constant diff after a successful apply when `tags` and `tests_enabled` is not set by @Uk1288 [#1357](https://github.com/hashicorp/terraform-provider-tfe/pull/1357)
@@ -16,9 +17,6 @@ BUG FIXES:
 
 FEATURES:
 * `r/tfe_team`: Add attributes `manage_teams`, `manage_organization_access`, and `access_secret_teams` to `organization_access` on `tfe_team` by @juliannatetreault [#1313](https://github.com/hashicorp/terraform-provider-tfe/pull/1313)
-
-ENHANCEMENTS:
-* `r/tfe_project`: Increase the Project name length from 36 to 40 characters @hs26gill [#1351](https://github.com/hashicorp/terraform-provider-tfe/pull/1351)
 
 ## v0.54.0
 
