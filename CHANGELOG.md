@@ -18,6 +18,9 @@ BUG FIXES:
 FEATURES:
 * `r/tfe_team`: Add attributes `manage_teams`, `manage_organization_access`, and `access_secret_teams` to `organization_access` on `tfe_team` by @juliannatetreault [#1313](https://github.com/hashicorp/terraform-provider-tfe/pull/1313)
 
+NOTES:
+* This release's changes have been edited for correctness. [#1351](https://github.com/hashicorp/terraform-provider-tfe/pull/1351) (`r/tfe_project`: Increase the Project name length from 36 to 40 characters) was erroneously reported as included in the v0.55.0 release. Those changes have been included in v0.56.0.
+
 ## v0.54.0
 
 ENHANCEMENTS:
