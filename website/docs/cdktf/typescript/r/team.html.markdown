@@ -79,6 +79,9 @@ The `organizationAccess` block supports:
 * `manageRunTasks` - (Optional) Allow members to create, edit, and delete the organization's run tasks.
 * `manageProjects` - (Optional) Allow members to create and administrate all projects within the organization. Requires `manageWorkspaces` to be set to `true`.
 * `manageMembership` - (Optional) Allow members to add/remove users from the organization, and to add/remove users from visible teams.
+* `manageTeams` - (Optional) Allow members to create, update, and delete teams.
+* `manageOrganizationAccess` - (Optional) Allow members to update the organization access settings of teams.
+* `accessSecretTeams` - (Optional) Allow members access to secret teams up to the level of permissions granted by their team permissions setting.
 
 ## Attributes Reference
 
@@ -97,4 +100,4 @@ or
 terraform import tfe_team.test my-org-name/my-team-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-dc64726d4c7e0673d2977d4ee669481de15489f255f8be717ed7c1c037e736b8 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-149e3bfb2664af394787122edee494811239360acbf47aec19a7f0cc3ce08f42 -->

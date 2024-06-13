@@ -131,8 +131,4 @@ as the import ID. For example:
 terraform import tfe_team_organization_members.test team-47qC3LmA47piVan7
 ```
 
-<<<<<<< HEAD
-<!-- cache-key: cdktf-0.20.1 input-33aecc66311e81000883c796b8cb45f6d38854f98dd14521b79a586c8e4b4566 -->
-=======
-<!-- cache-key: cdktf-0.17.0-pre.15 input-33aecc66311e81000883c796b8cb45f6d38854f98dd14521b79a586c8e4b4566 -->
->>>>>>> adf61bce (cdktf: update documentation)
+<!-- cache-key: cdktf-0.17.0-pre.15 input-641324e3bfad1336563feb20d81abd6386c5badfdeab86ffc533fda09946b35e -->

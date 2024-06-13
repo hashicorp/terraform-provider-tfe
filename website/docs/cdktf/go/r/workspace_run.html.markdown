@@ -57,7 +57,7 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 		vcsRepo: &workspaceVcsRepo{
 			branch: jsii.String("main"),
 			identifier: jsii.String("my-org-name/vcs-repository"),
-			oauthTokenId: cdktf.Token_AsString(tfeOauthClientTest.oauthTokenId),
+			oauthTokenId: cdktf.*token_AsString(tfeOauthClientTest.oauthTokenId),
 		},
 	})
 	tfeWorkspaceParent := workspace.NewWorkspace(this, jsii.String("parent"), &workspaceConfig{
@@ -67,7 +67,7 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 		vcsRepo: &workspaceVcsRepo{
 			branch: jsii.String("main"),
 			identifier: jsii.String("my-org-name/vcs-repository"),
-			oauthTokenId: cdktf.Token_*AsString(tfeOauthClientTest.oauthTokenId),
+			oauthTokenId: cdktf.*token_*AsString(tfeOauthClientTest.oauthTokenId),
 		},
 	})
 	tfeWorkspaceRunWsRunParent := workspaceRun.NewWorkspaceRun(this, jsii.String("ws_run_parent"), &workspaceRunConfig{
@@ -83,7 +83,7 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 			retryBackoffMin: jsii.Number(10),
 			waitForRun: jsii.Boolean(true),
 		},
-		workspaceId: cdktf.Token_*AsString(tfeWorkspaceParent.id),
+		workspaceId: cdktf.*token_*AsString(tfeWorkspaceParent.id),
 	})
 	workspaceRun.NewWorkspaceRun(this, jsii.String("ws_run_child"), &workspaceRunConfig{
 		apply: &workspaceRunApply{
@@ -100,7 +100,7 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 			retryBackoffMin: jsii.Number(10),
 			waitForRun: jsii.Boolean(true),
 		},
-		workspaceId: cdktf.Token_*AsString(tfeWorkspaceChild.id),
+		workspaceId: cdktf.*token_*AsString(tfeWorkspaceChild.id),
 	})
 	return this
 }
@@ -142,7 +142,7 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 		vcsRepo: &workspaceVcsRepo{
 			branch: jsii.String("main"),
 			identifier: jsii.String("my-org-name/vcs-repository"),
-			oauthTokenId: cdktf.Token_AsString(tfeOauthClientTest.oauthTokenId),
+			oauthTokenId: cdktf.*token_AsString(tfeOauthClientTest.oauthTokenId),
 		},
 	})
 	workspaceRun.NewWorkspaceRun(this, jsii.String("ws_run_parent"), &workspaceRunConfig{
@@ -153,7 +153,7 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 			manualConfirm: jsii.Boolean(true),
 			waitForRun: jsii.Boolean(true),
 		},
-		workspaceId: cdktf.Token_*AsString(tfeWorkspaceParent.id),
+		workspaceId: cdktf.*token_*AsString(tfeWorkspaceParent.id),
 	})
 	return this
 }
@@ -195,7 +195,7 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 		vcsRepo: &workspaceVcsRepo{
 			branch: jsii.String("main"),
 			identifier: jsii.String("my-org-name/vcs-repository"),
-			oauthTokenId: cdktf.Token_AsString(tfeOauthClientTest.oauthTokenId),
+			oauthTokenId: cdktf.*token_AsString(tfeOauthClientTest.oauthTokenId),
 		},
 	})
 	workspaceRun.NewWorkspaceRun(this, jsii.String("ws_run_parent"), &workspaceRunConfig{
@@ -208,7 +208,7 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 			retry: jsii.Boolean(false),
 			waitForRun: jsii.Boolean(true),
 		},
-		workspaceId: cdktf.Token_*AsString(tfeWorkspaceParent.id),
+		workspaceId: cdktf.*token_*AsString(tfeWorkspaceParent.id),
 	})
 	return this
 }
@@ -239,4 +239,4 @@ Both `Apply` and `Destroy` block supports:
 In addition to all arguments above, the following attributes are exported:
 
 * `Id` - The ID of the run created by this resource. Note, if the resource was created without an `Apply{}` configuration block, then this ID will not refer to a real run in HCP Terraform.
-<!-- cache-key: cdktf-0.17.0-pre.15 input-041419f518c0405e85227f2933aa7402414ae5b4f96725d448d521ecc7a24518 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-ef1d4e75ac0c6d99c8a7fe481ebea7451bae3648d17da23e434d8dfb5749ce2b -->

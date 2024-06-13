@@ -65,21 +65,22 @@ class MyConvertedCode extends cdktf.TerraformStack {
         name: "my-org-name",
       }
     );
-    const tfeAgentPoolTestAgentPool = new tfe.agentPool.AgentPool(
-      this,
-      "test-agent-pool",
-      {
-        name: "my-agent-pool-name",
-        organization: cdktf.Token.asString(
-          tfeOrganizationTestOrganization.name
-        ),
-      }
-    );
-    new tfe.workspace.Workspace(this, "test", {
-      agentPoolId: cdktf.Token.asString(tfeAgentPoolTestAgentPool.id),
-      executionMode: "agent",
-      name: "my-workspace-name",
-      organization: cdktf.Token.asString(tfeOrganizationTestOrganization.name),
+    const tfeOauthClientTest = new tfe.oauthClient.OauthClient(this, "test", {
+      apiUrl: "https://api.github.com",
+      httpUrl: "https://github.com",
+      oauthToken: "oauth_token_id",
+      organization: tfeOrganizationTestOrganization,
+      serviceProvider: "github",
+    });
+    new tfe.workspace.Workspace(this, "parent", {
+      name: "parent-ws",
+      organization: tfeOrganizationTestOrganization,
+      queueAllRuns: false,
+      vcsRepo: {
+        branch: "main",
+        identifier: "my-org-name/vcs-repository",
+        oauthTokenId: cdktf.Token.asString(tfeOauthClientTest.oauthTokenId),
+      },
     });
   }
 }
@@ -96,6 +97,10 @@ The following arguments are supported:
 * `assessmentsEnabled` - (Optional) Whether to regularly run health assessments such as drift detection on the workspace. Defaults to `false`.
 * `autoApply` - (Optional) Whether to automatically apply changes when a Terraform plan is successful. Defaults to `false`.
 * `autoApplyRunTrigger` - (Optional) Whether to automatically apply changes for runs that were created by run triggers from another workspace. Defaults to `false`.
+* `autoDestroyAt` - (Optional) A future date/time string at which point all resources in a workspace will be scheduled for deletion. Must be a string in RFC3339 format (e.g. "2100-01-01T00:00:00Z").
+
+~> **NOTE:** `autoDestroyAt` is not intended for workspaces containing production resources or long-lived workspaces. Since this attribute is in-part managed by HCP Terraform, using `ignoreChanges` for this attribute may be preferred.
+
 * `description` - (Optional) A description for the workspace.
 * `executionMode` - (Optional) **Deprecated** Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode) to use. Use [tfe_workspace_settings](workspace_settings) instead.
 * `fileTriggersEnabled` - (Optional) Whether to filter runs based on the changed files
@@ -152,7 +157,7 @@ will be used.
   (like `~> 1.0.0`); if you specify a constraint, the workspace will always use
   the newest release that meets that constraint. Defaults to the latest
   available version.
-* `triggerPatterns` - (Optional) List of [glob patterns](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/vcs#glob-patterns-for-automatic-run-triggering) that describe the files HCP Terraform monitors for changes. Trigger patterns are always appended to the root directory of the repository. Mutually exclusive with `trigger-prefixes`.
+* `triggerPatterns` - (Optional) List of [glob patterns](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/vcs#glob-patterns-for-automatic-run-triggering) that describe the files HCP Terraform monitors for changes. Trigger patterns are always appended to the root directory of the repository. Mutually exclusive with `triggerPrefixes`.
 * `triggerPrefixes` - (Optional) List of repository-root-relative paths which describe all locations
   to be tracked for changes.
 * `vcsRepo` - (Optional) Settings for the workspace's VCS repository, enabling the [UI/VCS-driven run workflow](https://developer.hashicorp.com/terraform/cloud-docs/run/ui).
@@ -171,7 +176,7 @@ The `vcsRepo` block supports:
 * `ingressSubmodules` - (Optional) Whether submodules should be fetched when
   cloning the VCS repository. Defaults to `false`.
 * `oauthTokenId` - (Optional) The VCS Connection (OAuth Connection + Token) to use.
-  This ID can be obtained from a `tfe_oauth_client` resource. This conflicts with `githubAppInstallationId` and can only be used if `githubAppInstallationId` is not used.
+  This ID can be obtained from a `tfeOauthClient` resource. This conflicts with `githubAppInstallationId` and can only be used if `githubAppInstallationId` is not used.
 * `tagsRegex` - (Optional) A regular expression used to trigger a Workspace run for matching Git tags. This option conflicts with `triggerPatterns` and `triggerPrefixes`. Should only set this value if the former is not being used.
 
 ## Attributes Reference
@@ -195,4 +200,4 @@ terraform import tfe_workspace.test ws-CH5in3chf8RJjrVd
 terraform import tfe_workspace.test my-org-name/my-wkspace-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-ce8c5d41ebbc57c1df647c807e38b748d12221b61915ccc24e4f1530f58312b5 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-8e3a1d0fda532ac3731fa67e4959298cca05137574cdd1bee70b1f4d52482ea3 -->

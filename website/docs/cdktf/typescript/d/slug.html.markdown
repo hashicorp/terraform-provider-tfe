@@ -13,7 +13,7 @@ intended to be uploaded to HCP Terraform and Terraform Enterprise, in lieu of th
 sourced from a configured VCS provider.
 
 A unique checksum is generated for the specified local directory, which allows
-resources such as `tfe_policy_set` track the files and upload a new gzip compressed
+resources such as `tfePolicySet` track the files and upload a new gzip compressed
 tar file containing configuration files (a Terraform "slug") when those files change.
 
 ## Example Usage
@@ -50,4 +50,4 @@ The following arguments are supported:
 
 * `sourcePath` - (Required) The path to the directory where the files are located.
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-8546d8f7537661b4b2d4d594c4cb0f6ebd1b0e70ae9e1bcc6e145f33bd763e70 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-fa2c542204f0df625488e508b9c38200a5fbba730db218a920e6358651a4f10c -->

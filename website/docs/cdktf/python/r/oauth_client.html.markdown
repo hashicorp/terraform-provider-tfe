@@ -33,6 +33,7 @@ class MyConvertedCode(cdktf.TerraformStack):
             name="my-github-oauth-client",
             oauth_token="my-vcs-provider-token",
             organization="my-org-name",
+            organization_scoped=True,
             service_provider="github"
         )
 ```
@@ -63,11 +64,11 @@ class MyConvertedCode(cdktf.TerraformStack):
         )
 ```
 
-#### BitBucket Data Center Usage
+#### Bitbucket Data Center Usage
 
-See [documentation for HCP Terraform and Terraform Enterprise setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/bitbucket-data-center).
+See [documentation for HCP Terraform and Terraform Enterprise setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/bitbucket-server).
 
-When using BitBucket Data Center, you must use three required fields: `key`, `secret`, `rsa_public_key`.
+When using Bitbucket Data Center, you must use three required fields: `key`, `secret`, `rsa_public_key`.
 
 
 ```python
@@ -108,16 +109,19 @@ The following arguments are supported:
 * `secret` - (Required for `bitbucket_data_center`) The OAuth Client secret is used for Bitbucket Data Center, this secret is the
   the text of the SSH private key associated with your Bitbucket Data Center
 Application Link.
-* `rsa_public_key` - (Required for `bitbucket_data_center`) Required for Bitbucket Data Center in conjunction with the secret. Not used for any other providers. The
+* `rsa_public_key` - (Required for `bitbucket_data_center`) Required for Bitbucket
+  Data Center in conjunction with the secret. Not used for any other providers. The
 text of the SSH public key associated with your Bitbucket Data Center Application
 Link.
 * `service_provider` - (Required) The VCS provider being connected with. Valid
   options are `ado_server`, `ado_services`, `bitbucket_data_center`, `bitbucket_hosted`, `bitbucket_server`(deprecated), `github`, `github_enterprise`, `gitlab_hosted`,
   `gitlab_community_edition`, or `gitlab_enterprise_edition`.
+* `agent_pool_id` - (Optional) An existing agent pool ID within the organization that has Private VCS support enabled.
+* `organization_scoped` - (Optional) Whether or not the oauth client is scoped to all projects and workspaces in the organization. Defaults to `true`.
 
 ## Attributes Reference
 
 * `id` - The ID of the OAuth client.
 * `oauth_token_id` - The ID of the OAuth token associated with the OAuth client.
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-0dea494ef76c038939d94b5ae6a0e741e36a87509a350f558cd11d098bf1bde9 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-26be2bcaedcea0e7d49fb518991e7a5f7d59ff32f8b91e689cbbf463768f9804 -->

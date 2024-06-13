@@ -62,7 +62,7 @@ The following arguments are supported:
 Organization default execution mode can be imported; use `<ORGANIZATION NAME>` as the import ID. For example:
 
 ```shell
-terraform import tfe_organization_default_execution_mode.test my-org-name
+terraform import tfe_organization_default_settings.test my-org-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-131403d8bfaba1dae78b9751415a0563f3f8e7f7bc52ca8bb1517c4637beb7bb -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-b7467c77fffd159e3cdab9b6ddfb780bc812a3e93de10c97674b55c73546de26 -->

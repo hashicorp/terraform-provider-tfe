@@ -25,7 +25,7 @@ class MyConvertedCode(cdktf.TerraformStack):
     def __init__(self, scope, name):
         super().__init__(scope, name)
         tfe.data_tfe_github_app_installation.DataTfeGithubAppInstallation(self, "gha_installation",
-            installation_id=12345
+            installation_id=12345678
         )
 ```
 
@@ -41,7 +41,7 @@ class MyConvertedCode(cdktf.TerraformStack):
     def __init__(self, scope, name):
         super().__init__(scope, name)
         tfe.data_tfe_github_app_installation.DataTfeGithubAppInstallation(self, "gha_installation",
-            name="installation_name"
+            name="github_username_or_organization"
         )
 ```
 
@@ -59,4 +59,5 @@ Must be one of: `installation_id` or `name`.
 In addition to all arguments above, the following attributes are exported:
 
 * `id` - The internal ID of the Github Installation. This is different from the `installation_id`.
-<!-- cache-key: cdktf-0.17.0-pre.15 input-0a4ff055d60c44b213a5dc7ce9fcb8c10208e9d24cd4e44f3a552a718ea64d50 -->
+
+<!-- cache-key: cdktf-0.17.0-pre.15 input-5d439ec2ae1e837495b8cb500e2fcfe96d47a32f9fce3a10ffac876fe18a89dc -->
