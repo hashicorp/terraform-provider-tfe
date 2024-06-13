@@ -1,5 +1,7 @@
 ## Unreleased
 
+## v0.56.0
+
 ENHANCEMENTS:
 * `r/tfe_oauth_client`: Add Bitbucket Data Center support with the `bitbucket_data_center` option for `service_provider` by @zainq11 [#1303](https://github.com/hashicorp/terraform-provider-tfe/pull/1304)
 * `r/tfe_workspace`: Add an `auto_destroy_at` attribute for scheduling an auto-destroy run in the future, by @notchairmk [1354](https://github.com/hashicorp/terraform-provider-tfe/pull/1354)
