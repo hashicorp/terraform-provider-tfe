@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"fmt"
+	"os"
 )
 
 func TestAccTFEDataRetentionPolicy_basic(t *testing.T) {
@@ -21,10 +22,9 @@ func TestAccTFEDataRetentionPolicy_basic(t *testing.T) {
 		CheckDestroy:             testAccCheckTFEDataRetentionPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEDataRetentionPolicy_basic(rInt),
+				Config: testAccTFEDataRetentionPolicy_basic(rInt, 42),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEDataRetentionPolicyExists("tfe_data_retention_policy.foobar", policy),
-					testAccCheckTFEDataRetentionPolicyAttributes(policy),
 					resource.TestCheckResourceAttr(
 						"tfe_data_retention_policy.foobar", "delete_older_than.days", "42"),
 				),
@@ -33,7 +33,68 @@ func TestAccTFEDataRetentionPolicy_basic(t *testing.T) {
 	})
 }
 
-func testAccTFEDataRetentionPolicy_basic(rInt int) string {
+func TestAccTFEDataRetentionPolicy_update(t *testing.T) {
+	policy := &tfe.DataRetentionPolicyChoice{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEDataRetentionPolicyDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEDataRetentionPolicy_basic(rInt, 42),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEDataRetentionPolicyExists("tfe_data_retention_policy.foobar", policy),
+					resource.TestCheckResourceAttr(
+						"tfe_data_retention_policy.foobar", "delete_older_than.days", "42"),
+				),
+			},
+
+			{
+				Config: testAccTFEDataRetentionPolicy_basic(rInt, 1337),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEDataRetentionPolicyExists("tfe_data_retention_policy.foobar", policy),
+					resource.TestCheckResourceAttr(
+						"tfe_data_retention_policy.foobar", "delete_older_than.days", "1337"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEDataRetentionPolicy_organization_level(t *testing.T) {
+	policy := &tfe.DataRetentionPolicyChoice{}
+	defaultOrgName, _ := setupDefaultOrganization(t)
+
+	os.Setenv("TFE_ORGANIZATION", defaultOrgName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEDataRetentionPolicyDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEDataRetentionPolicy_implicit_organization(42),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEDataRetentionPolicyExists("tfe_data_retention_policy.foobar", policy),
+					resource.TestCheckResourceAttr(
+						"tfe_data_retention_policy.foobar", "delete_older_than.days", "42"),
+				),
+			},
+			{
+				Config: testAccTFEDataRetentionPolicy_implicit_organization(1337),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEDataRetentionPolicyExists("tfe_data_retention_policy.foobar", policy),
+					resource.TestCheckResourceAttr(
+						"tfe_data_retention_policy.foobar", "delete_older_than.days", "1337"),
+				),
+			},
+		},
+	})
+}
+
+func testAccTFEDataRetentionPolicy_basic(rInt int, deleteOlderThan int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
@@ -49,9 +110,18 @@ resource "tfe_data_retention_policy" "foobar" {
   workspace_id = tfe_workspace.foobar.id
 	
   delete_older_than {
-    days = 42
+    days = %d
   }
-}`, rInt)
+}`, rInt, deleteOlderThan)
+}
+
+func testAccTFEDataRetentionPolicy_implicit_organization(deleteOlderThan int) string {
+	return fmt.Sprintf(`
+resource "tfe_data_retention_policy" "foobar" {
+  delete_older_than {
+    days = %d
+  }
+}`, deleteOlderThan)
 }
 
 func testAccCheckTFEDataRetentionPolicyExists(
@@ -69,33 +139,31 @@ func testAccCheckTFEDataRetentionPolicyExists(
 		}
 
 		wsID := rs.Primary.Attributes["workspace_id"]
-		ws, err := config.Client.Workspaces.ReadByID(ctx, wsID)
-		if err != nil {
-			return fmt.Errorf(
-				"Error retrieving workspace %s: %w", wsID, err)
-		}
 
-		drp, err := config.Client.Workspaces.ReadDataRetentionPolicyChoice(ctx, ws.ID)
-		if err != nil {
-			return fmt.Errorf(
-				"Error retrieving data retention policy for workspace %s: %w", ws.ID, err)
-		}
+		if wsID != "" {
+			ws, err := config.Client.Workspaces.ReadByID(ctx, wsID)
+			if err != nil {
+				return fmt.Errorf(
+					"Error retrieving workspace %s: %w", wsID, err)
+			}
 
-		*policy = *drp
+			drp, err := config.Client.Workspaces.ReadDataRetentionPolicyChoice(ctx, ws.ID)
+			if err != nil {
+				return fmt.Errorf(
+					"Error retrieving data retention policy for workspace %s: %w", ws.ID, err)
+			}
 
-		return nil
-	}
-}
+			*policy = *drp
+		} else {
+			orgName := rs.Primary.Attributes["organization"]
 
-func testAccCheckTFEDataRetentionPolicyAttributes(
-	policy *tfe.DataRetentionPolicyChoice) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		if policy.DataRetentionPolicyDeleteOlder == nil {
-			return fmt.Errorf("policy wasn't of type 'delete_older'")
-		}
+			drp, err := config.Client.Organizations.ReadDataRetentionPolicyChoice(ctx, orgName)
+			if err != nil {
+				return fmt.Errorf(
+					"Error retrieving data retention policy for organization %s: %w", orgName, err)
+			}
 
-		if policy.DataRetentionPolicyDeleteOlder.DeleteOlderThanNDays != 42 {
-			return fmt.Errorf("bad delete_older_than_n_days: %d", policy.DataRetentionPolicyDeleteOlder.DeleteOlderThanNDays)
+			*policy = *drp
 		}
 
 		return nil

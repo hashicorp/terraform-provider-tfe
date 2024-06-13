@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/objectvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -57,10 +58,17 @@ func (r *resourceTFEDataRetentionPolicy) Schema(ctx context.Context, req resourc
 			"organization": schema.StringAttribute{
 				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
 				Optional:    true,
+				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"workspace_id": schema.StringAttribute{
 				Description: "ID of the workspace that the data retention policy should apply to. If omitted, the data retention policy will apply to the entire organization.",
 				Optional:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 		},
 		Blocks: map[string]schema.Block{
@@ -70,6 +78,9 @@ func (r *resourceTFEDataRetentionPolicy) Schema(ctx context.Context, req resourc
 					"days": schema.NumberAttribute{
 						Description: "Number of days",
 						Required:    true,
+						PlanModifiers: []planmodifier.Number{
+							numberplanmodifier.RequiresReplace(),
+						},
 					},
 				},
 				Validators: []validator.Object{
@@ -250,41 +261,46 @@ func (r *resourceTFEDataRetentionPolicy) Update(ctx context.Context, req resourc
 }
 
 func (r *resourceTFEDataRetentionPolicy) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	//var state modelTFERegistryGPGKey
-	//
-	//// Read Terraform prior state data into the model
-	//resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	//
-	//if resp.Diagnostics.HasError() {
-	//	return
-	//}
-	//
-	//keyID := tfe.GPGKeyID{
-	//	RegistryName: "private",
-	//	Namespace:    state.Organization.ValueString(),
-	//	KeyID:        state.ID.ValueString(),
-	//}
-	//
-	//tflog.Debug(ctx, "Deleting private registry GPG key")
-	//err := r.config.Client.GPGKeys.Delete(ctx, keyID)
-	//if err != nil {
-	//	resp.Diagnostics.AddError("Unable to delete private registry GPG key", err.Error())
-	//	return
-	//}
+	var state modelTFEDataRetentionPolicy
+
+	// Read Terraform prior state data into the model
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if state.WorkspaceId.IsNull() {
+		tflog.Debug(ctx, fmt.Sprintf("Deleting data retention policy for organization: %s", state.Organization))
+		err := r.config.Client.Organizations.DeleteDataRetentionPolicy(ctx, state.Organization.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError(fmt.Sprintf("Deleting data retention policy for organization: %s", state.Organization), err.Error())
+			return
+		}
+	} else {
+		tflog.Debug(ctx, fmt.Sprintf("Deleting data retention policy for workspace: %s", state.WorkspaceId))
+		err := r.config.Client.Workspaces.DeleteDataRetentionPolicy(ctx, state.WorkspaceId.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError(fmt.Sprintf("Deleting data retention policy for workspace: %s", state.WorkspaceId), err.Error())
+			return
+		}
+	}
+
 }
 
 func (r *resourceTFEDataRetentionPolicy) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	s := strings.SplitN(req.ID, "/", 2)
-	if len(s) != 2 {
+
+	if len(s) != 2 && len(s) != 1 {
 		resp.Diagnostics.AddError(
 			"Error importing variable",
-			fmt.Sprintf("Invalid variable import format: %s (expected <ORGANIZATION>/<KEY ID>)", req.ID),
+			fmt.Sprintf("Invalid variable import format: %s (expected <ORGANIZATION>/<WORKSPACE ID> or <ORGANIZATION>)", req.ID),
 		)
 		return
 	}
 	org := s[0]
-	id := s[1]
+	wsId := s[1]
 
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("organization"), org)...)
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("workspace_id"), wsId)...)
 }
