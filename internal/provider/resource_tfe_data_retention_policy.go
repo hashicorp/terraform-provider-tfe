@@ -3,8 +3,6 @@ package provider
 import (
 	"context"
 	"fmt"
-	"strings"
-
 	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -16,14 +14,16 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/objectvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"strings"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework-validators/numbervalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &resourceTFEDataRetentionPolicy{}
 var _ resource.ResourceWithConfigure = &resourceTFEDataRetentionPolicy{}
 var _ resource.ResourceWithImportState = &resourceTFEDataRetentionPolicy{}
-var _ resource.ResourceWithModifyPlan = &resourceTFEDataRetentionPolicy{}
 
 func NewDataRetentionPolicyResource() resource.Resource {
 	return &resourceTFEDataRetentionPolicy{}
@@ -36,10 +36,6 @@ type resourceTFEDataRetentionPolicy struct {
 
 func (r *resourceTFEDataRetentionPolicy) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_data_retention_policy"
-}
-
-func (r *resourceTFEDataRetentionPolicy) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	modifyPlanForDefaultOrganizationChange(ctx, r.config.Organization, req.State, req.Config, req.Plan, resp)
 }
 
 func (r *resourceTFEDataRetentionPolicy) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -60,6 +56,7 @@ func (r *resourceTFEDataRetentionPolicy) Schema(ctx context.Context, req resourc
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
@@ -77,16 +74,16 @@ func (r *resourceTFEDataRetentionPolicy) Schema(ctx context.Context, req resourc
 				Attributes: map[string]schema.Attribute{
 					"days": schema.NumberAttribute{
 						Description: "Number of days",
-						Required:    true,
+						Optional:    true,
 						PlanModifiers: []planmodifier.Number{
 							numberplanmodifier.RequiresReplace(),
 						},
+						Validators: []validator.Number{
+							numbervalidator.ExactlyOneOf(
+								path.MatchRelative().AtParent().AtParent().AtName("dont_delete"),
+							),
+						},
 					},
-				},
-				Validators: []validator.Object{
-					objectvalidator.ExactlyOneOf(
-						path.MatchRelative().AtParent().AtName("dont_delete"),
-					),
 				},
 			},
 			"dont_delete": schema.SingleNestedBlock{
@@ -128,11 +125,7 @@ func (r *resourceTFEDataRetentionPolicy) Create(ctx context.Context, req resourc
 		return
 	}
 
-	var organization string
-	if plan.WorkspaceId.IsNull() {
-		resp.Diagnostics.Append(r.config.dataOrDefaultOrganization(ctx, req.Plan, &organization)...)
-		plan.Organization = types.StringValue(organization)
-	}
+	r.ensureOrganizationIsSet(ctx, &plan, req.Plan, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -148,6 +141,19 @@ func (r *resourceTFEDataRetentionPolicy) Create(ctx context.Context, req resourc
 		return
 	}
 
+}
+
+func (r *resourceTFEDataRetentionPolicy) ensureOrganizationIsSet(ctx context.Context, model *modelTFEDataRetentionPolicy, data AttrGettable, diags *diag.Diagnostics) {
+	if !model.Organization.IsUnknown() || model.Organization.ValueString() != "" {
+		// skip this method if the organization has already been set
+		return
+	}
+
+	if model.WorkspaceId.IsNull() {
+		var organization string
+		diags.Append(r.config.dataOrDefaultOrganization(ctx, data, &organization)...)
+		model.Organization = types.StringValue(organization)
+	}
 }
 
 func (r *resourceTFEDataRetentionPolicy) createDeleteOlderThanRetentionPolicy(ctx context.Context, plan modelTFEDataRetentionPolicy, resp *resource.CreateResponse) {
@@ -183,8 +189,12 @@ func (r *resourceTFEDataRetentionPolicy) createDeleteOlderThanRetentionPolicy(ct
 		return
 	}
 
+	// set organization if it is still not known after creating the data retention policy
+	r.ensureOrganizationSetAfterApply(&result, &resp.Diagnostics)
+
 	// Save data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+	diags = resp.State.Set(ctx, &result)
+	resp.Diagnostics.Append(diags...)
 }
 
 func (r *resourceTFEDataRetentionPolicy) createDontDeleteRetentionPolicy(ctx context.Context, plan modelTFEDataRetentionPolicy, resp *resource.CreateResponse) {
@@ -213,8 +223,23 @@ func (r *resourceTFEDataRetentionPolicy) createDontDeleteRetentionPolicy(ctx con
 
 	result := modelFromTFEDataRetentionPolicyDontDelete(plan, dataRetentionPolicy)
 
+	// set organization if it is still not known after creating the data retention policy
+	r.ensureOrganizationSetAfterApply(&result, &resp.Diagnostics)
+
 	// Save data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+	diags = resp.State.Set(ctx, &result)
+	resp.Diagnostics.Append(diags...)
+}
+
+func (r *resourceTFEDataRetentionPolicy) ensureOrganizationSetAfterApply(policy *modelTFEDataRetentionPolicy, diags *diag.Diagnostics) {
+	if policy.Organization.IsUnknown() {
+		workspace, err := r.config.Client.Workspaces.ReadByID(ctx, policy.WorkspaceId.ValueString())
+		if err != nil {
+			diags.AddError("Unable to create data retention policy", err.Error())
+			return
+		}
+		policy.Organization = types.StringValue(workspace.Organization.Name)
+	}
 }
 
 func (r *resourceTFEDataRetentionPolicy) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -289,18 +314,50 @@ func (r *resourceTFEDataRetentionPolicy) Delete(ctx context.Context, req resourc
 }
 
 func (r *resourceTFEDataRetentionPolicy) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	s := strings.SplitN(req.ID, "/", 2)
+	s := strings.Split(req.ID, "/")
+	if len(s) >= 3 {
+		resp.Diagnostics.AddError("Error importing workspace settings", fmt.Sprintf(
+			"invalid workspace input format: %s (expected <ORGANIZATION>/<WORKSPACE NAME> or <ORGANIZATION>)",
+			req.ID,
+		))
+	} else if len(s) == 2 {
+		workspaceID, err := fetchWorkspaceExternalID(s[0]+"/"+s[1], r.config.Client)
+		if err != nil {
+			resp.Diagnostics.AddError("Error importing data retention policy", fmt.Sprintf(
+				"error retrieving workspace with name %s from organization %s: %s", s[1], s[0], err.Error(),
+			))
+		}
 
-	if len(s) != 2 && len(s) != 1 {
-		resp.Diagnostics.AddError(
-			"Error importing variable",
-			fmt.Sprintf("Invalid variable import format: %s (expected <ORGANIZATION>/<WORKSPACE ID> or <ORGANIZATION>)", req.ID),
-		)
-		return
+		policy, err := r.config.Client.Workspaces.ReadDataRetentionPolicyChoice(ctx, workspaceID)
+		if err != nil {
+			resp.Diagnostics.AddError("Error importing data retention policy", fmt.Sprintf(
+				"error retrieving data policy for workspace %s from organization %s: %s", s[1], s[0], err.Error(),
+			))
+		}
+
+		req.ID = r.getPolicyID(policy)
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("workspace_id"), workspaceID)...)
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("organization"), s[0])...)
+	} else if len(s) == 1 {
+		policy, err := r.config.Client.Organizations.ReadDataRetentionPolicyChoice(ctx, s[0])
+		if err != nil {
+			resp.Diagnostics.AddError("Error importing data retention policy", fmt.Sprintf(
+				"error retrieving data policy for organization %s: %s", s[0], err.Error(),
+			))
+		}
+		req.ID = r.getPolicyID(policy)
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("organization"), s[0])...)
 	}
-	org := s[0]
-	wsId := s[1]
+}
 
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("organization"), org)...)
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("workspace_id"), wsId)...)
+func (r *resourceTFEDataRetentionPolicy) getPolicyID(policy *tfe.DataRetentionPolicyChoice) string {
+	if policy.DataRetentionPolicyDeleteOlder != nil {
+		return policy.DataRetentionPolicyDeleteOlder.ID
+	}
+
+	if policy.DataRetentionPolicyDontDelete != nil {
+		return policy.DataRetentionPolicyDontDelete.ID
+	}
+
+	return policy.ConvertToLegacyStruct().ID
 }

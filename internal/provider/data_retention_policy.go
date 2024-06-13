@@ -61,11 +61,31 @@ func modelFromTFEDataRetentionPolicyDontDelete(model modelTFEDataRetentionPolicy
 	}
 }
 
+func modelFromTFELegacyDataRetentionPolicy(ctx context.Context, model modelTFEDataRetentionPolicy, legacy *tfe.DataRetentionPolicy) (modelTFEDataRetentionPolicy, diag.Diagnostics) {
+	deleteOlderThan := modelTFEDeleteOlderThan{
+		Days: types.NumberValue(big.NewFloat(float64(legacy.DeleteOlderThanNDays))),
+	}
+	deleteOlderThanObject, diags := types.ObjectValueFrom(ctx, deleteOlderThan.AttributeTypes(), deleteOlderThan)
+
+	return modelTFEDataRetentionPolicy{
+		ID:              types.StringValue(legacy.ID),
+		Organization:    model.Organization,
+		WorkspaceId:     model.WorkspaceId,
+		DeleteOlderThan: deleteOlderThanObject,
+		DontDelete:      types.ObjectNull(map[string]attr.Type{}),
+	}, diags
+}
+
 func modelFromTFEDataRetentionPolicyChoice(ctx context.Context, model modelTFEDataRetentionPolicy, choice *tfe.DataRetentionPolicyChoice) (modelTFEDataRetentionPolicy, diag.Diagnostics) {
 	if choice.DataRetentionPolicyDeleteOlder != nil {
 		return modelFromTFEDataRetentionPolicyDeleteOlder(ctx, model, choice.DataRetentionPolicyDeleteOlder)
 	}
 
 	var emptyDiag []diag.Diagnostic
-	return modelFromTFEDataRetentionPolicyDontDelete(model, choice.DataRetentionPolicyDontDelete), emptyDiag
+	if choice.DataRetentionPolicyDontDelete != nil {
+		return modelFromTFEDataRetentionPolicyDontDelete(model, choice.DataRetentionPolicyDontDelete), emptyDiag
+	}
+
+	legacyPolicy := choice.ConvertToLegacyStruct()
+	return modelFromTFELegacyDataRetentionPolicy(ctx, model, legacyPolicy)
 }
