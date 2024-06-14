@@ -13,6 +13,8 @@ import (
 )
 
 func TestAccTFEDataRetentionPolicy_basic(t *testing.T) {
+	skipIfCloud(t)
+
 	policy := &tfe.DataRetentionPolicyChoice{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -48,6 +50,8 @@ func TestAccTFEDataRetentionPolicy_basic(t *testing.T) {
 }
 
 func TestAccTFEDataRetentionPolicy_dontdelete_basic(t *testing.T) {
+	skipIfCloud(t)
+
 	policy := &tfe.DataRetentionPolicyChoice{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -74,6 +78,8 @@ func TestAccTFEDataRetentionPolicy_dontdelete_basic(t *testing.T) {
 }
 
 func TestAccTFEDataRetentionPolicy_explicit_organization(t *testing.T) {
+	skipIfCloud(t)
+
 	policy := &tfe.DataRetentionPolicyChoice{}
 	orgName, _ := setupDefaultOrganization(t)
 
@@ -111,6 +117,8 @@ func TestAccTFEDataRetentionPolicy_explicit_organization(t *testing.T) {
 }
 
 func TestAccTFEDataRetentionPolicy_implicit_organization(t *testing.T) {
+	skipIfCloud(t)
+
 	policy := &tfe.DataRetentionPolicyChoice{}
 	defaultOrgName, _ := setupDefaultOrganization(t)
 
@@ -148,6 +156,8 @@ func TestAccTFEDataRetentionPolicy_implicit_organization(t *testing.T) {
 }
 
 func TestAccTFEDataRetentionPolicy_dontdelete_organization_level(t *testing.T) {
+	skipIfCloud(t)
+
 	policy := &tfe.DataRetentionPolicyChoice{}
 	defaultOrgName, _ := setupDefaultOrganization(t)
 
