@@ -256,14 +256,14 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	}
 	d.Set("auto_destroy_at", autoDestroyAt)
 
+	var autoDestroyDuration string
 	if workspace.AutoDestroyActivityDuration.IsSpecified() {
-		v, err := workspace.AutoDestroyActivityDuration.Get()
+		autoDestroyDuration, err = workspace.AutoDestroyActivityDuration.Get()
 		if err != nil {
 			return fmt.Errorf("Error reading auto destroy activity duration: %w", err)
 		}
-
-		d.Set("auto_destroy_activity_duration", v)
 	}
+	d.Set("auto_destroy_activity_duration", autoDestroyDuration)
 
 	// If target tfe instance predates projects, then workspace.Project will be nil
 	if workspace.Project != nil {
