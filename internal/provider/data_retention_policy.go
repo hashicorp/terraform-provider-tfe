@@ -1,11 +1,11 @@
 package provider
 
 import (
-	"github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 	"context"
+	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"math/big"
 )
