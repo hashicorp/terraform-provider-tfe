@@ -1141,7 +1141,7 @@ func flattenAutoDestroyAt(a jsonapi.NullableAttr[time.Time]) (*string, error) {
 	return &autoDestroyAt, nil
 }
 
-func hasAutoDestroyAtChange(d schemaResourceData) bool {
+func hasAutoDestroyAtChange(d *schema.ResourceData) bool {
 	state := d.GetRawState()
 	if state.IsNull() {
 		return d.HasChange("auto_destroy_at")

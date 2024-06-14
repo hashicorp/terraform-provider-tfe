@@ -6,19 +6,12 @@ package provider
 import (
 	"context"
 
-	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
-
-type schemaResourceData interface {
-	GetRawConfig() cty.Value
-	GetRawState() cty.Value
-	HasChange(string) bool
-}
 
 func customizeDiffIfProviderDefaultOrganizationChanged(c context.Context, diff *schema.ResourceDiff, meta interface{}) error {
 	config := meta.(ConfiguredClient)
