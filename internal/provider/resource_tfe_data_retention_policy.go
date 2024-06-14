@@ -140,7 +140,6 @@ func (r *resourceTFEDataRetentionPolicy) Create(ctx context.Context, req resourc
 		r.createDontDeleteRetentionPolicy(ctx, plan, resp)
 		return
 	}
-
 }
 
 func (r *resourceTFEDataRetentionPolicy) ensureOrganizationIsSet(ctx context.Context, model *modelTFEDataRetentionPolicy, data AttrGettable, diags *diag.Diagnostics) {
@@ -149,7 +148,7 @@ func (r *resourceTFEDataRetentionPolicy) ensureOrganizationIsSet(ctx context.Con
 		return
 	}
 
-	if model.WorkspaceId.IsNull() {
+	if model.WorkspaceID.IsNull() {
 		var organization string
 		diags.Append(r.config.dataOrDefaultOrganization(ctx, data, &organization)...)
 		model.Organization = types.StringValue(organization)
@@ -173,10 +172,10 @@ func (r *resourceTFEDataRetentionPolicy) createDeleteOlderThanRetentionPolicy(ct
 	tflog.Debug(ctx, "Creating data retention policy")
 	var dataRetentionPolicy *tfe.DataRetentionPolicyDeleteOlder
 	var err error
-	if plan.WorkspaceId.IsNull() {
+	if plan.WorkspaceID.IsNull() {
 		dataRetentionPolicy, err = r.config.Client.Organizations.SetDataRetentionPolicyDeleteOlder(ctx, plan.Organization.ValueString(), options)
 	} else {
-		dataRetentionPolicy, err = r.config.Client.Workspaces.SetDataRetentionPolicyDeleteOlder(ctx, plan.WorkspaceId.ValueString(), options)
+		dataRetentionPolicy, err = r.config.Client.Workspaces.SetDataRetentionPolicyDeleteOlder(ctx, plan.WorkspaceID.ValueString(), options)
 	}
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to create data retention policy", err.Error())
@@ -211,10 +210,10 @@ func (r *resourceTFEDataRetentionPolicy) createDontDeleteRetentionPolicy(ctx con
 	tflog.Debug(ctx, "Creating data retention policy")
 	var dataRetentionPolicy *tfe.DataRetentionPolicyDontDelete
 	var err error
-	if plan.WorkspaceId.IsNull() {
+	if plan.WorkspaceID.IsNull() {
 		dataRetentionPolicy, err = r.config.Client.Organizations.SetDataRetentionPolicyDontDelete(ctx, plan.Organization.ValueString(), options)
 	} else {
-		dataRetentionPolicy, err = r.config.Client.Workspaces.SetDataRetentionPolicyDontDelete(ctx, plan.WorkspaceId.ValueString(), options)
+		dataRetentionPolicy, err = r.config.Client.Workspaces.SetDataRetentionPolicyDontDelete(ctx, plan.WorkspaceID.ValueString(), options)
 	}
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to create data retention policy", err.Error())
@@ -233,7 +232,7 @@ func (r *resourceTFEDataRetentionPolicy) createDontDeleteRetentionPolicy(ctx con
 
 func (r *resourceTFEDataRetentionPolicy) ensureOrganizationSetAfterApply(policy *modelTFEDataRetentionPolicy, diags *diag.Diagnostics) {
 	if policy.Organization.IsUnknown() {
-		workspace, err := r.config.Client.Workspaces.ReadByID(ctx, policy.WorkspaceId.ValueString())
+		workspace, err := r.config.Client.Workspaces.ReadByID(ctx, policy.WorkspaceID.ValueString())
 		if err != nil {
 			diags.AddError("Unable to create data retention policy", err.Error())
 			return
@@ -254,14 +253,14 @@ func (r *resourceTFEDataRetentionPolicy) Read(ctx context.Context, req resource.
 
 	var policy *tfe.DataRetentionPolicyChoice
 	var err error
-	if state.WorkspaceId.IsNull() {
+	if state.WorkspaceID.IsNull() {
 		policy, err = r.config.Client.Organizations.ReadDataRetentionPolicyChoice(ctx, state.Organization.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddError("Failed to read data retention policy", err.Error())
 			return
 		}
 	} else {
-		policy, err = r.config.Client.Workspaces.ReadDataRetentionPolicyChoice(ctx, state.WorkspaceId.ValueString())
+		policy, err = r.config.Client.Workspaces.ReadDataRetentionPolicyChoice(ctx, state.WorkspaceID.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddError("Failed to read data retention policy", err.Error())
 			return
@@ -295,7 +294,7 @@ func (r *resourceTFEDataRetentionPolicy) Delete(ctx context.Context, req resourc
 		return
 	}
 
-	if state.WorkspaceId.IsNull() {
+	if state.WorkspaceID.IsNull() {
 		tflog.Debug(ctx, fmt.Sprintf("Deleting data retention policy for organization: %s", state.Organization))
 		err := r.config.Client.Organizations.DeleteDataRetentionPolicy(ctx, state.Organization.ValueString())
 		if err != nil {
@@ -303,29 +302,32 @@ func (r *resourceTFEDataRetentionPolicy) Delete(ctx context.Context, req resourc
 			return
 		}
 	} else {
-		tflog.Debug(ctx, fmt.Sprintf("Deleting data retention policy for workspace: %s", state.WorkspaceId))
-		err := r.config.Client.Workspaces.DeleteDataRetentionPolicy(ctx, state.WorkspaceId.ValueString())
+		tflog.Debug(ctx, fmt.Sprintf("Deleting data retention policy for workspace: %s", state.WorkspaceID))
+		err := r.config.Client.Workspaces.DeleteDataRetentionPolicy(ctx, state.WorkspaceID.ValueString())
 		if err != nil {
-			resp.Diagnostics.AddError(fmt.Sprintf("Deleting data retention policy for workspace: %s", state.WorkspaceId), err.Error())
+			resp.Diagnostics.AddError(fmt.Sprintf("Deleting data retention policy for workspace: %s", state.WorkspaceID), err.Error())
 			return
 		}
 	}
-
 }
 
 func (r *resourceTFEDataRetentionPolicy) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	s := strings.Split(req.ID, "/")
-	if len(s) >= 3 {
+	if len(s) >= 3 || len(s) == 0 {
 		resp.Diagnostics.AddError("Error importing workspace settings", fmt.Sprintf(
 			"invalid workspace input format: %s (expected <ORGANIZATION>/<WORKSPACE NAME> or <ORGANIZATION>)",
 			req.ID,
 		))
-	} else if len(s) == 2 {
+		return
+	}
+
+	if len(s) == 2 {
 		workspaceID, err := fetchWorkspaceExternalID(s[0]+"/"+s[1], r.config.Client)
 		if err != nil {
 			resp.Diagnostics.AddError("Error importing data retention policy", fmt.Sprintf(
 				"error retrieving workspace with name %s from organization %s: %s", s[1], s[0], err.Error(),
 			))
+			return
 		}
 
 		policy, err := r.config.Client.Workspaces.ReadDataRetentionPolicyChoice(ctx, workspaceID)
@@ -333,21 +335,24 @@ func (r *resourceTFEDataRetentionPolicy) ImportState(ctx context.Context, req re
 			resp.Diagnostics.AddError("Error importing data retention policy", fmt.Sprintf(
 				"error retrieving data policy for workspace %s from organization %s: %s", s[1], s[0], err.Error(),
 			))
+			return
 		}
 
 		req.ID = r.getPolicyID(policy)
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("workspace_id"), workspaceID)...)
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("organization"), s[0])...)
-	} else if len(s) == 1 {
-		policy, err := r.config.Client.Organizations.ReadDataRetentionPolicyChoice(ctx, s[0])
-		if err != nil {
-			resp.Diagnostics.AddError("Error importing data retention policy", fmt.Sprintf(
-				"error retrieving data policy for organization %s: %s", s[0], err.Error(),
-			))
-		}
-		req.ID = r.getPolicyID(policy)
-		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("organization"), s[0])...)
+		return
 	}
+
+	policy, err := r.config.Client.Organizations.ReadDataRetentionPolicyChoice(ctx, s[0])
+	if err != nil {
+		resp.Diagnostics.AddError("Error importing data retention policy", fmt.Sprintf(
+			"error retrieving data policy for organization %s: %s", s[0], err.Error(),
+		))
+		return
+	}
+	req.ID = r.getPolicyID(policy)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("organization"), s[0])...)
 }
 
 func (r *resourceTFEDataRetentionPolicy) getPolicyID(policy *tfe.DataRetentionPolicyChoice) string {

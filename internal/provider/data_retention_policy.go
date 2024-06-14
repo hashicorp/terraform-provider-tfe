@@ -13,7 +13,7 @@ import (
 type modelTFEDataRetentionPolicy struct {
 	ID              types.String `tfsdk:"id"`
 	Organization    types.String `tfsdk:"organization"`
-	WorkspaceId     types.String `tfsdk:"workspace_id"`
+	WorkspaceID     types.String `tfsdk:"workspace_id"`
 	DeleteOlderThan types.Object `tfsdk:"delete_older_than"`
 	DontDelete      types.Object `tfsdk:"dont_delete"`
 }
@@ -45,7 +45,7 @@ func modelFromTFEDataRetentionPolicyDeleteOlder(ctx context.Context, model model
 	return modelTFEDataRetentionPolicy{
 		ID:              types.StringValue(deleteOlder.ID),
 		Organization:    model.Organization,
-		WorkspaceId:     model.WorkspaceId,
+		WorkspaceID:     model.WorkspaceID,
 		DeleteOlderThan: deleteOlderThanObject,
 		DontDelete:      types.ObjectNull(map[string]attr.Type{}),
 	}, diags
@@ -55,25 +55,10 @@ func modelFromTFEDataRetentionPolicyDontDelete(model modelTFEDataRetentionPolicy
 	return modelTFEDataRetentionPolicy{
 		ID:              types.StringValue(dontDelete.ID),
 		Organization:    model.Organization,
-		WorkspaceId:     model.WorkspaceId,
+		WorkspaceID:     model.WorkspaceID,
 		DeleteOlderThan: types.ObjectNull(modelTFEDeleteOlderThan{}.AttributeTypes()),
 		DontDelete:      DontDeleteEmptyObject(),
 	}
-}
-
-func modelFromTFELegacyDataRetentionPolicy(ctx context.Context, model modelTFEDataRetentionPolicy, legacy *tfe.DataRetentionPolicy) (modelTFEDataRetentionPolicy, diag.Diagnostics) {
-	deleteOlderThan := modelTFEDeleteOlderThan{
-		Days: types.NumberValue(big.NewFloat(float64(legacy.DeleteOlderThanNDays))),
-	}
-	deleteOlderThanObject, diags := types.ObjectValueFrom(ctx, deleteOlderThan.AttributeTypes(), deleteOlderThan)
-
-	return modelTFEDataRetentionPolicy{
-		ID:              types.StringValue(legacy.ID),
-		Organization:    model.Organization,
-		WorkspaceId:     model.WorkspaceId,
-		DeleteOlderThan: deleteOlderThanObject,
-		DontDelete:      types.ObjectNull(map[string]attr.Type{}),
-	}, diags
 }
 
 func modelFromTFEDataRetentionPolicyChoice(ctx context.Context, model modelTFEDataRetentionPolicy, choice *tfe.DataRetentionPolicyChoice) (modelTFEDataRetentionPolicy, diag.Diagnostics) {
@@ -82,10 +67,5 @@ func modelFromTFEDataRetentionPolicyChoice(ctx context.Context, model modelTFEDa
 	}
 
 	var emptyDiag []diag.Diagnostic
-	if choice.DataRetentionPolicyDontDelete != nil {
-		return modelFromTFEDataRetentionPolicyDontDelete(model, choice.DataRetentionPolicyDontDelete), emptyDiag
-	}
-
-	legacyPolicy := choice.ConvertToLegacyStruct()
-	return modelFromTFELegacyDataRetentionPolicy(ctx, model, legacyPolicy)
+	return modelFromTFEDataRetentionPolicyDontDelete(model, choice.DataRetentionPolicyDontDelete), emptyDiag
 }
