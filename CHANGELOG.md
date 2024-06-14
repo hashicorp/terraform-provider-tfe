@@ -1,5 +1,8 @@
 ## Unreleased
 
+FEATURES:
+* `r/tfe_team`: Add attribute `manage_agent_pools` to `organization_access` on `tfe_team` by @emlanctot [#1358](https://github.com/hashicorp/terraform-provider-tfe/pull/1358)
+
 ## v0.56.0
 
 ENHANCEMENTS:
