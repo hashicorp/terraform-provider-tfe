@@ -40,6 +40,7 @@ The following arguments are supported:
 
 * `name` - (Required) Name of the project.
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
+* `description` - (Optional) A description for the project.
 
 ## Attributes Reference
 
@@ -55,4 +56,4 @@ Projects can be imported; use `<PROJECT ID>` as the import ID. For example:
 terraform import tfe_project.test prj-niVoeESBXT8ZREhr
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-1474b825c9c589412c43de4a18e1a76520a956d36d14e4f1d48fea36baf71f3c -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-d1a8b41fe35391c9fd6740eabcec5228cdddbfa3c037fb2be0c0609646975e70 -->

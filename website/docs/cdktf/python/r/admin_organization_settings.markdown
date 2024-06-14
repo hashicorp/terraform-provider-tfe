@@ -66,8 +66,4 @@ The following arguments are supported:
 
 * `sso_enabled` - True if SSO is enabled in this organization
 
-## Import
-
-This resource does not manage the creation of an organization and there is no need to import it.
-
-<!-- cache-key: cdktf-0.17.0-pre.15 input-513d248f99cf75a1469fc2846ea390faf571c1296655be1472abf867f8405ff8 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-a01854d70d1a6325a861b17fcb030f6c8a29f8efc23c51bfd27d03211d653a5f -->

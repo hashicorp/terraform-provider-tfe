@@ -33,6 +33,7 @@ class MyConvertedCode extends cdktf.TerraformStack {
       name: "my-github-oauth-client",
       oauthToken: "my-vcs-provider-token",
       organization: "my-org-name",
+      organizationScoped: true,
       serviceProvider: "github",
     });
   }
@@ -70,11 +71,11 @@ class MyConvertedCode extends cdktf.TerraformStack {
 
 ```
 
-#### BitBucket Data Center Usage
+#### Bitbucket Data Center Usage
 
-See [documentation for HCP Terraform and Terraform Enterprise setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/bitbucket-data-center).
+See [documentation for HCP Terraform and Terraform Enterprise setup](https://developer.hashicorp.com/terraform/cloud-docs/vcs/bitbucket-server).
 
-When using BitBucket Data Center, you must use three required fields: `key`, `secret`, `rsaPublicKey`.
+When using Bitbucket Data Center, you must use three required fields: `key`, `secret`, `rsaPublicKey`.
 
 
 ```typescript
@@ -110,27 +111,29 @@ The following arguments are supported:
 * `name` - (Optional) Display name for the OAuth Client. Defaults to the `serviceProvider` if not supplied.
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `apiUrl` - (Required) The base URL of your VCS provider's API (e.g.
-  `https://api.github.com` or `https://ghe.example.com/api/v3`).
+  `https://apiGithubCom` or `https://gheExampleCom/api/v3`).
 * `httpUrl` - (Required) The homepage of your VCS provider (e.g.
-  `https://github.com` or `https://ghe.example.com`).
-* `oauthToken` - The token string you were given by your VCS provider, e.g. `ghp_xxxxxxxxxxxxxxx` for a GitHub personal access token. For more information on how to generate this token string for your VCS provider, see the [Create an OAuth Client](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/oauth-clients#create-an-oauth-client) documentation.
-* `privateKey` - (Required for `ado_server`) The text of the private key associated with your Azure DevOps Server account
+  `https://githubCom` or `https://gheExampleCom`).
+* `oauthToken` - The token string you were given by your VCS provider, e.g. `ghpXxxxxxxxxxxxxxx` for a GitHub personal access token. For more information on how to generate this token string for your VCS provider, see the [Create an OAuth Client](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/oauth-clients#create-an-oauth-client) documentation.
+* `privateKey` - (Required for `adoServer`) The text of the private key associated with your Azure DevOps Server account
 * `key` - The OAuth Client key can refer to a Consumer Key, Application Key,
   or another type of client key for the VCS provider.
-* `secret` - (Required for `bitbucket_data_center`) The OAuth Client secret is used for Bitbucket Data Center, this secret is the
+* `secret` - (Required for `bitbucketDataCenter`) The OAuth Client secret is used for Bitbucket Data Center, this secret is the
   the text of the SSH private key associated with your Bitbucket Data Center
 Application Link.
-* `rsaPublicKey` - (Required for `bitbucket_data_center`) Required for BitBucket
-  Server in conjunction with the secret. Not used for any other providers. The
+* `rsaPublicKey` - (Required for `bitbucketDataCenter`) Required for Bitbucket
+  Data Center in conjunction with the secret. Not used for any other providers. The
 text of the SSH public key associated with your Bitbucket Data Center Application
 Link.
 * `serviceProvider` - (Required) The VCS provider being connected with. Valid
-  options are `ado_server`, `ado_services`, `bitbucket_data_center`, `bitbucket_hosted`, `bitbucket_server`(deprecated), `github`, `github_enterprise`, `gitlab_hosted`,
-  `gitlab_community_edition`, or `gitlab_enterprise_edition`.
+  options are `adoServer`, `adoServices`, `bitbucketDataCenter`, `bitbucketHosted`, `bitbucketServer`(deprecated), `github`, `githubEnterprise`, `gitlabHosted`,
+  `gitlabCommunityEdition`, or `gitlabEnterpriseEdition`.
+* `agentPoolId` - (Optional) An existing agent pool ID within the organization that has Private VCS support enabled.
+* `organizationScoped` - (Optional) Whether or not the oauth client is scoped to all projects and workspaces in the organization. Defaults to `true`.
 
 ## Attributes Reference
 
 * `id` - The ID of the OAuth client.
 * `oauthTokenId` - The ID of the OAuth token associated with the OAuth client.
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-0dea494ef76c038939d94b5ae6a0e741e36a87509a350f558cd11d098bf1bde9 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-26be2bcaedcea0e7d49fb518991e7a5f7d59ff32f8b91e689cbbf463768f9804 -->
