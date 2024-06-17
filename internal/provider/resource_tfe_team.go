@@ -120,6 +120,11 @@ func resourceTFETeam() *schema.Resource {
 							Optional: true,
 							Default:  false,
 						},
+						"manage_agent_pools": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
+						},
 					},
 				},
 			},
@@ -173,6 +178,7 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 			ManageTeams:              tfe.Bool(organizationAccess["manage_teams"].(bool)),
 			ManageOrganizationAccess: tfe.Bool(organizationAccess["manage_organization_access"].(bool)),
 			AccessSecretTeams:        tfe.Bool(organizationAccess["access_secret_teams"].(bool)),
+			ManageAgentPools:         tfe.Bool(organizationAccess["manage_agent_pools"].(bool)),
 		}
 	}
 
@@ -236,6 +242,7 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 			"manage_teams":               team.OrganizationAccess.ManageTeams,
 			"manage_organization_access": team.OrganizationAccess.ManageOrganizationAccess,
 			"access_secret_teams":        team.OrganizationAccess.AccessSecretTeams,
+			"manage_agent_pools":         team.OrganizationAccess.ManageAgentPools,
 		}}
 		if err := d.Set("organization_access", organizationAccess); err != nil {
 			return fmt.Errorf("error setting organization access for team %s: %w", d.Id(), err)
@@ -276,6 +283,7 @@ func resourceTFETeamUpdate(d *schema.ResourceData, meta interface{}) error {
 			ManageTeams:              tfe.Bool(organizationAccess["manage_teams"].(bool)),
 			ManageOrganizationAccess: tfe.Bool(organizationAccess["manage_organization_access"].(bool)),
 			AccessSecretTeams:        tfe.Bool(organizationAccess["access_secret_teams"].(bool)),
+			ManageAgentPools:         tfe.Bool(organizationAccess["manage_agent_pools"].(bool)),
 		}
 	}
 
