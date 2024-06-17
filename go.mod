@@ -13,7 +13,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.5 // indirect
 	github.com/hashicorp/go-slug v0.15.0
 	github.com/hashicorp/go-tfe v1.56.0
-	github.com/hashicorp/go-version v1.6.0
+	github.com/hashicorp/go-version v1.7.0
 	github.com/hashicorp/hcl v1.0.0
 	github.com/hashicorp/hcl/v2 v2.19.1 // indirect
 	github.com/hashicorp/terraform-plugin-framework v1.8.0
