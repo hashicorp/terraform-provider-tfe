@@ -116,6 +116,47 @@ func TestAccTFEDataRetentionPolicy_explicit_organization(t *testing.T) {
 	})
 }
 
+func TestAccTFEDataRetentionPolicy_update_type(t *testing.T) {
+	skipIfCloud(t)
+
+	policy := &tfe.DataRetentionPolicyChoice{}
+	defaultOrgName, _ := setupDefaultOrganization(t)
+
+	os.Setenv("TFE_ORGANIZATION", defaultOrgName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEDataRetentionPolicyDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEDataRetentionPolicy_implicit_organization(42),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEDataRetentionPolicyExists("tfe_data_retention_policy.foobar", policy),
+					resource.TestCheckResourceAttr(
+						"tfe_data_retention_policy.foobar", "delete_older_than.days", "42"),
+				),
+			},
+			{
+				Config: testAccTFEDataRetentionPolicy_dontDelete_implicit_organization(),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEDataRetentionPolicyExists("tfe_data_retention_policy.foobar", policy),
+					resource.TestCheckResourceAttr(
+						"tfe_data_retention_policy.foobar", "organization", defaultOrgName),
+				),
+			},
+			{
+				Config: testAccTFEDataRetentionPolicy_implicit_organization(42),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEDataRetentionPolicyExists("tfe_data_retention_policy.foobar", policy),
+					resource.TestCheckResourceAttr(
+						"tfe_data_retention_policy.foobar", "delete_older_than.days", "42"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEDataRetentionPolicy_implicit_organization(t *testing.T) {
 	skipIfCloud(t)
 

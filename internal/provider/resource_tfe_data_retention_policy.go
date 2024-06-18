@@ -11,12 +11,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"log"
 	"strings"
 )
 
@@ -92,6 +94,9 @@ func (r *resourceTFEDataRetentionPolicy) Schema(ctx context.Context, req resourc
 					objectvalidator.ExactlyOneOf(
 						path.MatchRelative().AtParent().AtName("delete_older_than"),
 					),
+				},
+				PlanModifiers: []planmodifier.Object{
+					objectplanmodifier.RequiresReplace(),
 				},
 			},
 		},
@@ -255,16 +260,18 @@ func (r *resourceTFEDataRetentionPolicy) Read(ctx context.Context, req resource.
 	var err error
 	if state.WorkspaceID.IsNull() {
 		policy, err = r.config.Client.Organizations.ReadDataRetentionPolicyChoice(ctx, state.Organization.ValueString())
-		if err != nil {
-			resp.Diagnostics.AddError("Failed to read data retention policy", err.Error())
-			return
-		}
 	} else {
 		policy, err = r.config.Client.Workspaces.ReadDataRetentionPolicyChoice(ctx, state.WorkspaceID.ValueString())
-		if err != nil {
-			resp.Diagnostics.AddError("Failed to read data retention policy", err.Error())
-			return
-		}
+	}
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to read data retention policy", err.Error())
+		return
+	}
+	// remove the policy from state if it no longer exists or has been replaced by another policy
+	if policy == nil || r.getPolicyID(policy) != state.ID.ValueString() {
+		log.Printf("[DEBUG] Data retention policy %s no longer exists", state.ID)
+		resp.State.RemoveResource(ctx)
+		return
 	}
 	result, diags := modelFromTFEDataRetentionPolicyChoice(ctx, state, policy)
 	if diags.HasError() {
