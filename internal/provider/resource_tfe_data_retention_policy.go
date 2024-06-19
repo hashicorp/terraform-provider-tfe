@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework-validators/numbervalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/objectvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -20,7 +21,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"log"
 	"strings"
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
