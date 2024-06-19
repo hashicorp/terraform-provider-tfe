@@ -42,9 +42,14 @@ func modelFromTFEDataRetentionPolicyDeleteOlder(ctx context.Context, model model
 	}
 	deleteOlderThanObject, diags := types.ObjectValueFrom(ctx, deleteOlderThan.AttributeTypes(), deleteOlderThan)
 
+	organization := types.StringNull()
+	if model.WorkspaceID.IsNull() {
+		organization = model.Organization
+	}
+
 	return modelTFEDataRetentionPolicy{
 		ID:              types.StringValue(deleteOlder.ID),
-		Organization:    model.Organization,
+		Organization:    organization,
 		WorkspaceID:     model.WorkspaceID,
 		DeleteOlderThan: deleteOlderThanObject,
 		DontDelete:      types.ObjectNull(map[string]attr.Type{}),
@@ -52,9 +57,14 @@ func modelFromTFEDataRetentionPolicyDeleteOlder(ctx context.Context, model model
 }
 
 func modelFromTFEDataRetentionPolicyDontDelete(model modelTFEDataRetentionPolicy, dontDelete *tfe.DataRetentionPolicyDontDelete) modelTFEDataRetentionPolicy {
+	organization := types.StringNull()
+	if model.WorkspaceID.IsNull() {
+		organization = model.Organization
+	}
+
 	return modelTFEDataRetentionPolicy{
 		ID:              types.StringValue(dontDelete.ID),
-		Organization:    model.Organization,
+		Organization:    organization,
 		WorkspaceID:     model.WorkspaceID,
 		DeleteOlderThan: types.ObjectNull(modelTFEDeleteOlderThan{}.AttributeTypes()),
 		DontDelete:      DontDeleteEmptyObject(),

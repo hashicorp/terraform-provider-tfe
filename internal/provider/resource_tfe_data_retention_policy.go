@@ -20,6 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"log"
 	"strings"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -68,11 +69,11 @@ func (r *resourceTFEDataRetentionPolicy) Schema(ctx context.Context, req resourc
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
-				//Validators: []validator.String{
-				//	stringvalidator.ExactlyOneOf(
-				//		path.MatchRelative().AtParent().AtName("organization"),
-				//	),
-				//},
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(
+						path.MatchRelative().AtParent().AtName("organization"),
+					),
+				},
 			},
 		},
 		Blocks: map[string]schema.Block{
@@ -198,9 +199,6 @@ func (r *resourceTFEDataRetentionPolicy) createDeleteOlderThanRetentionPolicy(ct
 		return
 	}
 
-	// set organization if it is still not known after creating the data retention policy
-	r.ensureOrganizationSetAfterApply(&result, &resp.Diagnostics)
-
 	// Save data into Terraform state
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
@@ -232,23 +230,9 @@ func (r *resourceTFEDataRetentionPolicy) createDontDeleteRetentionPolicy(ctx con
 
 	result := modelFromTFEDataRetentionPolicyDontDelete(plan, dataRetentionPolicy)
 
-	// set organization if it is still not known after creating the data retention policy
-	r.ensureOrganizationSetAfterApply(&result, &resp.Diagnostics)
-
 	// Save data into Terraform state
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
-}
-
-func (r *resourceTFEDataRetentionPolicy) ensureOrganizationSetAfterApply(policy *modelTFEDataRetentionPolicy, diags *diag.Diagnostics) {
-	if policy.Organization.IsUnknown() {
-		workspace, err := r.config.Client.Workspaces.ReadByID(ctx, policy.WorkspaceID.ValueString())
-		if err != nil {
-			diags.AddError("Unable to create data retention policy", err.Error())
-			return
-		}
-		policy.Organization = types.StringValue(workspace.Organization.Name)
-	}
 }
 
 func (r *resourceTFEDataRetentionPolicy) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -353,7 +337,6 @@ func (r *resourceTFEDataRetentionPolicy) ImportState(ctx context.Context, req re
 		req.ID = r.getPolicyID(policy)
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), r.getPolicyID(policy))...)
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("workspace_id"), workspaceID)...)
-		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("organization"), s[0])...)
 		return
 	}
 
