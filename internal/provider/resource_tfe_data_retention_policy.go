@@ -68,6 +68,11 @@ func (r *resourceTFEDataRetentionPolicy) Schema(ctx context.Context, req resourc
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				//Validators: []validator.String{
+				//	stringvalidator.ExactlyOneOf(
+				//		path.MatchRelative().AtParent().AtName("organization"),
+				//	),
+				//},
 			},
 		},
 		Blocks: map[string]schema.Block{
@@ -346,6 +351,7 @@ func (r *resourceTFEDataRetentionPolicy) ImportState(ctx context.Context, req re
 		}
 
 		req.ID = r.getPolicyID(policy)
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), r.getPolicyID(policy))...)
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("workspace_id"), workspaceID)...)
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("organization"), s[0])...)
 		return
@@ -358,7 +364,7 @@ func (r *resourceTFEDataRetentionPolicy) ImportState(ctx context.Context, req re
 		))
 		return
 	}
-	req.ID = r.getPolicyID(policy)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), r.getPolicyID(policy))...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("organization"), s[0])...)
 }
 
