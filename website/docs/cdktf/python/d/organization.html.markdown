@@ -45,4 +45,5 @@ In addition to all arguments above, the following attributes are exported:
 * `send_passing_statuses_for_untriggered_speculative_plans` - Whether or not to send VCS status updates for untriggered speculative plans. This can be useful if large numbers of untriggered workspaces are exhausting request limits for connected version control service providers like GitHub. Defaults to true. In Terraform Enterprise, this setting has no effect and cannot be changed but is also available in Site Administration.
 * `aggregated_commit_status_enabled` - Whether or not to enable Aggregated Status Checks. This can be useful for monorepo repositories with multiple workspaces receiving status checks for events such as a pull request.
 * `default_project_id` - ID of the organization's default project. All workspaces created without specifying a project ID are created in this project.
-<!-- cache-key: cdktf-0.17.0-pre.15 input-73ec7085b3dbf61a45984fb7c74bac9c042ca20c175259f0650faf7acfa99133 -->
+
+<!-- cache-key: cdktf-0.17.0-pre.15 input-ef8f010996544db238976f7a2b7dfb50d77204d9275aeacc742c10b942f7c3e6 -->

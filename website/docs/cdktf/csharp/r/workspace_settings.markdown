@@ -118,7 +118,7 @@ The following arguments are supported:
 * `AgentPoolId` - (Optional) The ID of an agent pool to assign to the workspace. Requires `ExecutionMode`
   to be set to `Agent`. This value _must not_ be provided if `ExecutionMode` is set to any other value.
 * `ExecutionMode` - (Optional) Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode)
-  to use. Using HCP Terraform, valid values are `Remote`, `Local` or `Agent`. Using Terraform Enterprise, only `Remote` and `Local` execution modes are valid. When set to `Local`, the workspace will be used for state storage only. **Important:** If you omit this attribute, the resource configures the workspace to use your organization's default execution mode (which in turn defaults to `Remote`), removing any explicit value that might have previously been set for the workspace.
+  to use. Using HCP Terraform, valid values are `Remote`, `Local` or `Agent`. When set to `Local`, the workspace will be used for state storage only. **Important:** If you omit this attribute, the resource configures the workspace to use your organization's default execution mode (which in turn defaults to `Remote`), removing any explicit value that might have previously been set for the workspace.
 
 ## Attributes Reference
 
@@ -142,4 +142,4 @@ terraform import tfe_workspace_settings.test ws-CH5in3chf8RJjrVd
 terraform import tfe_workspace_settings.test my-org-name/my-wkspace-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-21ae5bfc5685737786e686595d5f2c56dda05cf11e96b5c4f9cfd31f697e712f -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-e567651e80d935c1297d2d63ac7bf6052ff86525f29c4e5f59a3395787d5761b -->

@@ -77,7 +77,7 @@ automatically installed by `terraform init` in the future:
 terraform {
   required_providers {
     tfe = {
-      version = "~> 0.55.0"
+      version = "~> 0.56.0"
     }
   }
 }
@@ -90,7 +90,7 @@ The above snippet using `required_providers` is for Terraform 0.13+; if you are 
 
 ```hcl
 provider "tfe" {
-  version = "~> 0.55.0"
+  version = "~> 0.56.0"
   ...
 }
 ```
@@ -101,9 +101,9 @@ For more information on provider installation and constraining provider versions
 
 ```hcl
 provider "tfe" {
-  hostname = var.hostname # Optional, defaults to Terraform Cloud `app.terraform.io`
+  hostname = var.hostname # Optional, defaults to HCP Terraform `app.terraform.io`
   token    = var.token
-  version  = "~> 0.55.0"
+  version  = "~> 0.56.0"
 }
 
 # Create an organization
@@ -116,10 +116,10 @@ resource "tfe_organization" "org" {
 
 The following arguments are supported:
 
-* `hostname` - (Optional) The HCP Terraform and Terraform Enterprise hostname to connect to.
+* `hostname` - (Optional) The HCP Terraform or Terraform Enterprise hostname to connect to.
   Defaults to `app.terraform.io`. Can be overridden by setting the
   `TFE_HOSTNAME` environment variable.
-* `token` - (Optional) The token used to authenticate with HCP Terraform and Terraform Enterprise.
+* `token` - (Optional) The token used to authenticate with HCP Terraform or Terraform Enterprise.
   See [Authentication](#authentication) above for more information.
 * `ssl_skip_verify` - (Optional) Whether or not to skip certificate verifications.
   Defaults to `false`. Can be overridden setting the `TFE_SSL_SKIP_VERIFY`
@@ -129,4 +129,4 @@ The following arguments are supported:
   arguments. Ensure that the organization already exists prior to using this argument.
   This can also be specified using the `TFE_ORGANIZATION` environment variable.
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-71b632c8101c3bde9d1598273955499b3ab09c1fe1051d376b5fc6c5538335fe -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-d72291151cea8709b729b9dcfb06e9dae682a8cb6e399d427d05e29354451180 -->

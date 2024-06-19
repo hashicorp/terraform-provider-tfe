@@ -74,7 +74,7 @@ be set.
 * `oauth_client_id` - (Optional) ID of the OAuth client.
 * `organization` - (Optional) The name of the organization in which to search.
 * `service_provider` - (Optional) The API identifier of the OAuth service provider. If set,
-  must be one of: `ado_server`, `ado_services`, `bitbucket_data_center`, `bitbucket_hosted`, `bitbucket_server`(deprecated),
+  must be one of: `ado_server`, `ado_services`, `bitbucket_data_center`,  `bitbucket_hosted`, `bitbucket_server`(deprecated),
   `github`, `github_enterprise`, `gitlab_hosted`, `gitlab_community_edition`, or
   `gitlab_enterprise_edition`.
 
@@ -92,5 +92,6 @@ In addition to all arguments above, the following attributes are exported:
 * `organization` - The organization in which the OAuth client is registered.
 * `service_provider` - The API identifier of the OAuth service provider.
 * `service_provider_display_name` - The display name of the OAuth service provider.
-
-<!-- cache-key: cdktf-0.17.0-pre.15 input-59b4bcbbb310e7ee913a245f3c751829442542dbcf1bbb4c87ac286043b69348 -->
+* `organization_scoped` - Whether or not the agent pool can be used by all workspaces and projects in the organization.
+* `project_ids` - IDs of the projects that use the oauth client.
+<!-- cache-key: cdktf-0.17.0-pre.15 input-001f05442f17fd9a94d45188c279515be0f5fbe96f6057ed44a16f3e9be03580 -->

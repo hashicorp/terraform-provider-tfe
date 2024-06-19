@@ -43,8 +43,8 @@ There are several ways to provide the required token:
 - **Set the `token` argument in the provider configuration.** You can set
 the `token` argument in the provider configuration.  Use an input variable for
 the token.
-- **Set the `TFE_TOKEN` environment variable:** The provider can read the
-`TFE_TOKEN` environment variable and the token stored there to authenticate.
+- **Set the `tfeToken` environment variable:** The provider can read the
+`tfeToken` environment variable and the token stored there to authenticate.
 
 When configuring the input variable for either of these options, mark them as sensitive.
 
@@ -62,9 +62,9 @@ Terraform on your local command line, it can automatically discover the credenti
 [`terraform login`](https://developer.hashicorp.com/terraform/cli/commands/login).
 - **Set a `credentials` block in your CLI config file (.terraformrc):** See
 the [CLI Configuration File documentation](/docs/commands/cli-config.html).
-If you used the `TF_CLI_CONFIG_FILE` environment variable to specify a
+If you used the `tfCliConfigFile` environment variable to specify a
 non-default location for .terraformrc, the provider will also use that location.
-Using a `credentials_helper` block is not supported.
+Using a `credentialsHelper` block is not supported.
 
 
 ## Versions
@@ -77,7 +77,7 @@ automatically installed by `terraform init` in the future:
 terraform {
   required_providers {
     tfe = {
-      version = "~> 0.50.0"
+      version = "~> 0.56.0"
     }
   }
 }
@@ -86,11 +86,11 @@ terraform {
 As this provider is still at version zero, you should constrain the acceptable
 provider versions on the minor version.
 
-The above snippet using `required_providers` is for Terraform 0.13+; if you are using Terraform version 0.12, you can constrain by adding the version constraint to the `provider` block instead:
+The above snippet using `requiredProviders` is for Terraform 0.13+; if you are using Terraform version 0.12, you can constrain by adding the version constraint to the `provider` block instead:
 
 ```hcl
 provider "tfe" {
-  version = "~> 0.55.0"
+  version = "~> 0.56.0"
   ...
 }
 ```
@@ -101,9 +101,9 @@ For more information on provider installation and constraining provider versions
 
 ```hcl
 provider "tfe" {
-  hostname = var.hostname # Optional, defaults to Terraform Cloud `appTerraformIo`
+  hostname = var.hostname # Optional, defaults to HCP Terraform `appTerraformIo`
   token    = var.token
-  version  = "~> 0.55.0"
+  version  = "~> 0.56.0"
 }
 
 # Create an organization
@@ -116,17 +116,17 @@ resource "tfe_organization" "org" {
 
 The following arguments are supported:
 
-* `hostname` - (Optional) The HCP Terraform and Terraform Enterprise hostname to connect to.
+* `hostname` - (Optional) The HCP Terraform or Terraform Enterprise hostname to connect to.
   Defaults to `app.terraform.io`. Can be overridden by setting the
-  `TFE_HOSTNAME` environment variable.
-* `token` - (Optional) The token used to authenticate with HCP Terraform and Terraform Enterprise.
+  `tfeHostname` environment variable.
+* `token` - (Optional) The token used to authenticate with HCP Terraform or Terraform Enterprise.
   See [Authentication](#authentication) above for more information.
 * `sslSkipVerify` - (Optional) Whether or not to skip certificate verifications.
-  Defaults to `false`. Can be overridden setting the `TFE_SSL_SKIP_VERIFY`
+  Defaults to `false`. Can be overridden setting the `tfeSslSkipVerify`
   environment variable.
 * `organization` - (Optional) The default organization that resources should
   belong to. If provided, it's usually possible to omit resource-specific `organization`
   arguments. Ensure that the organization already exists prior to using this argument.
-  This can also be specified using the `TFE_ORGANIZATION` environment variable.
+  This can also be specified using the `tfeOrganization` environment variable.
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-71b632c8101c3bde9d1598273955499b3ab09c1fe1051d376b5fc6c5538335fe -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-d72291151cea8709b729b9dcfb06e9dae682a8cb6e399d427d05e29354451180 -->
