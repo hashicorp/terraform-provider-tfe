@@ -24,7 +24,7 @@ Organization Permission usage:
 
 ```hcl
 resource "tfe_team" "test" {
-  name         = "my-team-name"
+  name         = "my-team-name
   organization = "my-org-name"
   organization_access {
     manage_vcs_settings = true
@@ -58,6 +58,7 @@ The `organization_access` block supports:
 * `manage_teams` - (Optional) Allow members to create, update, and delete teams.
 * `manage_organization_access` - (Optional) Allow members to update the organization access settings of teams.
 * `access_secret_teams` - (Optional) Allow members access to secret teams up to the level of permissions granted by their team permissions setting.
+* `manage_agent_pools` - (Optional) Allow members to create, edit, and delete agent pools within their organization.
 
 ## Attributes Reference
 

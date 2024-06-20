@@ -1,6 +1,7 @@
 ## Unreleased
 
-ENHANCEMENTS:
+FEATURES:
+* `r/tfe_team`: Add attribute `manage_agent_pools` to `organization_access` on `tfe_team` by @emlanctot [#1358](https://github.com/hashicorp/terraform-provider-tfe/pull/1358)
 * `r/tfe_workspace`: Add an `auto_destroy_activity_duration` attribute for automatic scheduling of auto-destroy runs based off of workspace activity, by @notchairmk [#1377](https://github.com/hashicorp/terraform-provider-tfe/pull/1377)
 * `d/tfe_workspace`: Add an `auto_destroy_activity_duration`, by @notchairmk [#1377](https://github.com/hashicorp/terraform-provider-tfe/pull/1377)
 

@@ -85,6 +85,8 @@ func TestAccTFETeam_full(t *testing.T) {
 						"tfe_team.foobar", "organization_access.0.manage_organization_access", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.access_secret_teams", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_agent_pools", "true"),
 				),
 			},
 		},
@@ -138,6 +140,8 @@ func TestAccTFETeam_full_update(t *testing.T) {
 						"tfe_team.foobar", "organization_access.0.manage_organization_access", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.access_secret_teams", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_agent_pools", "true"),
 				),
 			},
 			{
@@ -178,6 +182,8 @@ func TestAccTFETeam_full_update(t *testing.T) {
 						"tfe_team.foobar", "organization_access.0.manage_organization_access", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.access_secret_teams", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_agent_pools", "false"),
 				),
 			},
 			{
@@ -219,6 +225,8 @@ func TestAccTFETeam_full_update(t *testing.T) {
 						"tfe_team.foobar", "organization_access.0.manage_organization_access", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.access_secret_teams", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_agent_pools", "false"),
 				),
 			},
 		},
@@ -480,6 +488,9 @@ func testAccCheckTFETeamAttributes_full(
 		if !team.OrganizationAccess.AccessSecretTeams {
 			return fmt.Errorf("OrganizationAccess.AccessSecretTeams should be true")
 		}
+		if !team.OrganizationAccess.ManageAgentPools {
+			return fmt.Errorf("OrganizationAccess.ManageAgentPools should be true")
+		}
 
 		if team.SSOTeamID != "team-test-sso-id" {
 			return fmt.Errorf("Bad SSO Team ID: %s", team.SSOTeamID)
@@ -526,6 +537,9 @@ func testAccCheckTFETeamAttributes_full_update(
 		}
 		if team.OrganizationAccess.AccessSecretTeams {
 			return fmt.Errorf("OrganizationAccess.AccessSecretTeams should be false")
+		}
+		if team.OrganizationAccess.ManageAgentPools {
+			return fmt.Errorf("OrganizationAccess.ManageAgentPools should be false")
 		}
 
 		if team.SSOTeamID != "changed-sso-id" {
@@ -598,6 +612,7 @@ resource "tfe_team" "foobar" {
 	manage_teams = true
 	manage_organization_access = true
 	access_secret_teams = true
+	manage_agent_pools = true
   }
   sso_team_id = "team-test-sso-id"
 }`, rInt)
@@ -631,6 +646,7 @@ resource "tfe_team" "foobar" {
 	manage_teams = false
 	manage_organization_access = false
 	access_secret_teams = false
+	manage_agent_pools = false
   }
 
   sso_team_id = "changed-sso-id"
