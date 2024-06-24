@@ -124,7 +124,7 @@ func resourceTFEWorkspace() *schema.Resource {
 				Type:          schema.TypeString,
 				Optional:      true,
 				ConflictsWith: []string{"auto_destroy_at"},
-				ValidateFunc:  validation.StringMatch(regexp.MustCompile("^[0-9]{1,5}[dh]$"), "must be 1-5 digits followed by d or h"),
+				ValidateFunc:  validation.StringMatch(regexp.MustCompile(`^\d{1,5}[dh]$`), "must be 1-5 digits followed by d or h"),
 			},
 
 			"execution_mode": {
