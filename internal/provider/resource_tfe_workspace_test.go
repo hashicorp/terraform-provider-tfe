@@ -2785,7 +2785,7 @@ func TestAccTFEWorkspace_validationAutoDestroyDuration(t *testing.T) {
 	for _, value := range values {
 		steps = append(steps, resource.TestStep{
 			Config:      testAccTFEWorkspace_basicWithAutoDestroyDuration(rInt, value),
-			ExpectError: regexp.MustCompile("must be 1-5 digits followed by d or h"),
+			ExpectError: regexp.MustCompile("must be 1-4 digits followed by d or h"),
 		})
 	}
 
