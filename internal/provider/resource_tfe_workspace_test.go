@@ -2249,6 +2249,33 @@ func TestTFEWorkspace_delete_withoutCanForceDeletePermission(t *testing.T) {
 	}
 }
 
+func TestAutoDestroyDurationValdiation(t *testing.T) {
+	testCases := []struct {
+		tag   string
+		valid bool
+	}{
+		{"hello-world", true},
+		{"-helloworld", false},
+		{"H1", false},
+		{"h1", true},
+		{"1h", true},
+		{"1H", false},
+		{"aStater", false},
+		{"new_Cap", false},
+		{"new_cap-laugh", true},
+	}
+
+	for _, c := range testCases {
+		if validTagName(c.tag) != c.valid {
+			explain := "an invalid"
+			if c.valid {
+				explain = "a valid"
+			}
+			t.Errorf("expected %q to be %s tag", c.tag, explain)
+		}
+	}
+}
+
 func testAccCheckTFEWorkspaceExists(
 	n string, workspace *tfe.Workspace, p *schema.Provider) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
@@ -2703,7 +2730,7 @@ func TestAccTFEWorkspace_createWithAutoDestroyDuration(t *testing.T) {
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspace_basicWithAutoDestroyDuration(rInt),
+				Config: testAccTFEWorkspace_basicWithAutoDestroyDuration(rInt, "1d"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_activity_duration", "1d"),
@@ -2722,7 +2749,7 @@ func TestAccTFEWorkspace_updateWithAutoDestroyDuration(t *testing.T) {
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspace_basicWithAutoDestroyDuration(rInt),
+				Config: testAccTFEWorkspace_basicWithAutoDestroyDuration(rInt, "1d"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_activity_duration", "1d"),
@@ -2736,7 +2763,7 @@ func TestAccTFEWorkspace_updateWithAutoDestroyDuration(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFEWorkspace_basicWithAutoDestroyDuration(rInt),
+				Config: testAccTFEWorkspace_basicWithAutoDestroyDuration(rInt, "1d"),
 				Check:  resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_activity_duration", "1d"),
 			},
 			{
@@ -2747,6 +2774,26 @@ func TestAccTFEWorkspace_updateWithAutoDestroyDuration(t *testing.T) {
 				),
 			},
 		},
+	})
+}
+
+func TestAccTFEWorkspace_validationAutoDestroyDuration(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	values := []string{"d", "1w", "1d1", "123456h"}
+	steps := []resource.TestStep{}
+	for _, value := range values {
+		steps = append(steps, resource.TestStep{
+			Config:      testAccTFEWorkspace_basicWithAutoDestroyDuration(rInt, value),
+			ExpectError: regexp.MustCompile("must be 1-5 digits followed by d or h"),
+		})
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps:        steps,
 	})
 }
 
@@ -3042,7 +3089,7 @@ resource "tfe_workspace" "foobar" {
 }`, rInt)
 }
 
-func testAccTFEWorkspace_basicWithAutoDestroyDuration(rInt int) string {
+func testAccTFEWorkspace_basicWithAutoDestroyDuration(rInt int, value string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
@@ -3054,8 +3101,8 @@ resource "tfe_workspace" "foobar" {
   organization                   = tfe_organization.foobar.id
   auto_apply                     = true
   file_triggers_enabled           = false
-  auto_destroy_activity_duration = "1d"
-}`, rInt)
+  auto_destroy_activity_duration = "%s"
+}`, rInt, value)
 }
 
 func testAccTFEWorkspace_operationsTrue(organization string) string {

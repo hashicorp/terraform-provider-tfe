@@ -124,19 +124,7 @@ func resourceTFEWorkspace() *schema.Resource {
 				Type:          schema.TypeString,
 				Optional:      true,
 				ConflictsWith: []string{"auto_destroy_at"},
-				ValidateFunc: func(i interface{}, k string) (warnings []string, errors []error) {
-					value := i.(string)
-					matchValue, err := regexp.MatchString("^[0-9]{1,5}[dh]$", value) // 1-5 digits followed by d or h
-					if err != nil {
-						return nil, []error{err}
-					}
-
-					if !matchValue {
-						errors = append(errors, fmt.Errorf("invalid duration format: %s, should be 1-5 digits followed by d or h", value))
-					}
-
-					return warnings, errors
-				},
+				ValidateFunc:  validation.StringMatch(regexp.MustCompile("^[0-9]{1,5}[dh]$"), "must be 1-5 digits followed by d or h"),
 			},
 
 			"execution_mode": {
