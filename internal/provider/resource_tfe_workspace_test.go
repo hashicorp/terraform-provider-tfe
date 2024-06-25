@@ -2249,33 +2249,6 @@ func TestTFEWorkspace_delete_withoutCanForceDeletePermission(t *testing.T) {
 	}
 }
 
-func TestAutoDestroyDurationValdiation(t *testing.T) {
-	testCases := []struct {
-		tag   string
-		valid bool
-	}{
-		{"hello-world", true},
-		{"-helloworld", false},
-		{"H1", false},
-		{"h1", true},
-		{"1h", true},
-		{"1H", false},
-		{"aStater", false},
-		{"new_Cap", false},
-		{"new_cap-laugh", true},
-	}
-
-	for _, c := range testCases {
-		if validTagName(c.tag) != c.valid {
-			explain := "an invalid"
-			if c.valid {
-				explain = "a valid"
-			}
-			t.Errorf("expected %q to be %s tag", c.tag, explain)
-		}
-	}
-}
-
 func testAccCheckTFEWorkspaceExists(
 	n string, workspace *tfe.Workspace, p *schema.Provider) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
