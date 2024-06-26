@@ -47,8 +47,8 @@ The following arguments are supported:
 
 * `name` - (Required) Name of the stack.
 * `project_id` - (Required) ID of the project where the stack should be created.
-* `description` - (Optional) Description of the stack
 * `vcs_repo` - (Required) Settings for the stack's VCS repository.
+* `description` - (Optional) Description of the stack
 <!--
 NOTE: This is a proposed schema for allowing force-delete actions on a stack. Force delete is not implemented yet so I've commented it out for now.
 
@@ -64,7 +64,7 @@ The `vcs_repo` block supports:
 ## Attributes Reference
 
 * `id` - The stack ID.
-* `deployment_names` - A set of names of the deployments in the last configuration fetched for this stack. This attribute will be empty when the resource is created and will remain empty until a configuration is fetched.
+* `deployment_names` - The set of deployment names used in the last configuration for this stack. This attribute will be empty when the resource is created and will remain empty until a configuration is fetched.
 
 ## Import
 
