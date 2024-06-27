@@ -21,6 +21,9 @@ FEATURES:
 BUG FIXES:
 * `r/tfe_registry_module`: Prevents constant diff after a successful apply when `tags` and `tests_enabled` is not set by @Uk1288 [#1357](https://github.com/hashicorp/terraform-provider-tfe/pull/1357)
 
+FEATURES:
+* **New Data Source**: `d/tfe_projects` is a new data source to retrieve all projects in an organization, by @tdevelioglu
+
 ## v0.55.0
 
 FEATURES:
