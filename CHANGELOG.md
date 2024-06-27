@@ -15,6 +15,9 @@ ENHANCEMENTS:
 * `r/tfe_oauth_client`: Add `agent_pool_id` as an optional argument to enable Private VCS support, by @roleesinhaHC [1255](https://github.com/hashicorp/terraform-provider-tfe/pull/1255)
 * `r/tfe_project`: Increase the Project name length from 36 to 40 characters @hs26gill [#1351](https://github.com/hashicorp/terraform-provider-tfe/pull/1351)
 
+FEATURES:
+* **New Resource**: `r/tfe_data_retention_policy` is a new resource for managing data retention policies for organizations and workspaces, by @SwiftEngineer [1385](https://github.com/hashicorp/terraform-provider-tfe/pull/1385)
+
 BUG FIXES:
 * `r/tfe_registry_module`: Prevents constant diff after a successful apply when `tags` and `tests_enabled` is not set by @Uk1288 [#1357](https://github.com/hashicorp/terraform-provider-tfe/pull/1357)
 

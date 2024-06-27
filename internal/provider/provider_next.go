@@ -140,6 +140,7 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewRegistryGPGKeyResource,
 		NewRegistryProviderResource,
 		NewResourceVariable,
+		NewDataRetentionPolicyResource,
 		NewResourceWorkspaceSettings,
 		NewSAMLSettingsResource,
 		NewTestVariableResource,
