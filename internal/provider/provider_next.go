@@ -145,6 +145,7 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewDataRetentionPolicyResource,
 		NewResourceWorkspaceSettings,
 		NewSAMLSettingsResource,
+		NewStackResource,
 		NewTestVariableResource,
 		NewWorkspaceRunTaskResource,
 	}
