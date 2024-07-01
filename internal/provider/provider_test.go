@@ -213,7 +213,7 @@ func TestConfigureEnvOrganization(t *testing.T) {
 // The TFE Provider tests use these environment variables, which are set in the
 // GitHub Action workflow file .github/workflows/ci.yml.
 func testAccGithubPreCheck(t *testing.T) {
-	skipUnlessAfterDate(t, time.Date(2024, 7, 1, 0, 0, 0, 0, time.UTC))
+	skipUnlessAfterDate(t, time.Date(2024, 8, 1, 0, 0, 0, 0, time.UTC))
 
 	if envGithubToken == "" {
 		t.Skip("Please set GITHUB_TOKEN to run this test")
