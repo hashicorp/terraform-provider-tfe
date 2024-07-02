@@ -6,6 +6,7 @@ FEATURES:
 * `d/tfe_workspace`: Add an `auto_destroy_activity_duration`, by @notchairmk [#1377](https://github.com/hashicorp/terraform-provider-tfe/pull/1377)
 * `d/tfe_organization_run_task_global_settings`: Add a datasource to retrieve the global settings of Run tasks, by @glennsarti [#1328](https://github.com/hashicorp/terraform-provider-tfe/pull/1330)
 * `r/tfe_organization_run_task_global_settings`: Add a resource to manage the global settings of Run tasks, by @glennsarti [#1328](https://github.com/hashicorp/terraform-provider-tfe/pull/1330)
+* `r/tfe_notification_configuration`: Add `workspace:auto_destroy_reminder` and `workspace:auto_destroy_run_results` as allowed notification configuration trigger types, by @notchairmk [#1394](https://github.com/hashicorp/terraform-provider-tfe/pull/1394)
 
 DEPRECATIONS and BREAKING CHANGES:
 * `r/_workspace_run_task`: The `stage` attribute has been deprecated in favor of the `stages` attribute, by @glennsarti [#1328](https://github.com/hashicorp/terraform-provider-tfe/pull/1330)
