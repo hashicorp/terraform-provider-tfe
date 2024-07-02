@@ -37,6 +37,7 @@ func TestAccTFEWorkspaceRunTaskDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet("data.tfe_workspace_run_task.foobar", "id"),
 					resource.TestCheckResourceAttrSet("data.tfe_workspace_run_task.foobar", "task_id"),
 					resource.TestCheckResourceAttrSet("data.tfe_workspace_run_task.foobar", "workspace_id"),
+					resource.TestCheckResourceAttr("data.tfe_workspace_run_task.foobar", "stages.#", "1"),
 				),
 			},
 		},

@@ -2,6 +2,14 @@
 
 FEATURES:
 * `r/tfe_team`: Add attribute `manage_agent_pools` to `organization_access` on `tfe_team` by @emlanctot [#1358](https://github.com/hashicorp/terraform-provider-tfe/pull/1358)
+* `r/tfe_workspace`: Add an `auto_destroy_activity_duration` attribute for automatic scheduling of auto-destroy runs based off of workspace activity, by @notchairmk [#1377](https://github.com/hashicorp/terraform-provider-tfe/pull/1377)
+* `d/tfe_workspace`: Add an `auto_destroy_activity_duration`, by @notchairmk [#1377](https://github.com/hashicorp/terraform-provider-tfe/pull/1377)
+* `d/tfe_organization_run_task_global_settings`: Add a datasource to retrieve the global settings of Run tasks, by @glennsarti [#1328](https://github.com/hashicorp/terraform-provider-tfe/pull/1330)
+* `r/tfe_organization_run_task_global_settings`: Add a resource to manage the global settings of Run tasks, by @glennsarti [#1328](https://github.com/hashicorp/terraform-provider-tfe/pull/1330)
+
+DEPRECATIONS and BREAKING CHANGES:
+* `r/_workspace_run_task`: The `stage` attribute has been deprecated in favor of the `stages` attribute, by @glennsarti [#1328](https://github.com/hashicorp/terraform-provider-tfe/pull/1330)
+* `d/_workspace_run_task`: The `stage` attribute has been deprecated in favor of the `stages` attribute, by @glennsarti [#1328](https://github.com/hashicorp/terraform-provider-tfe/pull/1330)
 
 ## v0.56.0
 
@@ -12,6 +20,9 @@ ENHANCEMENTS:
 * `r/tfe_registry_module`: Add `initial_version` support for Branch Based Modules by @aaabdelgany [#1363](https://github.com/hashicorp/terraform-provider-tfe/pull/1363)
 * `r/tfe_oauth_client`: Add `agent_pool_id` as an optional argument to enable Private VCS support, by @roleesinhaHC [1255](https://github.com/hashicorp/terraform-provider-tfe/pull/1255)
 * `r/tfe_project`: Increase the Project name length from 36 to 40 characters @hs26gill [#1351](https://github.com/hashicorp/terraform-provider-tfe/pull/1351)
+
+FEATURES:
+* **New Resource**: `r/tfe_data_retention_policy` is a new resource for managing data retention policies for organizations and workspaces, by @SwiftEngineer [1385](https://github.com/hashicorp/terraform-provider-tfe/pull/1385)
 
 BUG FIXES:
 * `r/tfe_registry_module`: Prevents constant diff after a successful apply when `tags` and `tests_enabled` is not set by @Uk1288 [#1357](https://github.com/hashicorp/terraform-provider-tfe/pull/1357)
