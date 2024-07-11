@@ -46,6 +46,7 @@ In addition to all arguments above, the following attributes are exported:
 
 * `EnforcementLevel` - The enforcement level of the task.
 * `Id` - The ID of the Workspace Run task.
-* `Stage` - Which stage the task will run in.
+* `Stage` - **Deprecated** Use `Stages` instead.
+* `Stages` - Which stages the task will run in.
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-86410a403310625b9c9007c1409553681e71bb1d5dfb652c72477e846011cede -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-7fbd90d138dd4a2dc68a0f3441cd300ba07517660e0b7b4fdab7dbddd51d71b5 -->
