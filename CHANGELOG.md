@@ -1,5 +1,7 @@
 ## Unreleased
 
+## v0.57.0
+
 FEATURES:
 * `r/tfe_data_retention_policy` is a new resource for managing data retention policies for organizations and workspaces, by @SwiftEngineer [1385](https://github.com/hashicorp/terraform-provider-tfe/pull/1385)
 * `r/tfe_team`: Add attribute `manage_agent_pools` to `organization_access` on `tfe_team` by @emlanctot [#1358](https://github.com/hashicorp/terraform-provider-tfe/pull/1358)
