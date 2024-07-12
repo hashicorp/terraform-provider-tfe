@@ -21,8 +21,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-var projectIDRegexp = regexp.MustCompile("^prj-[a-zA-Z0-9]{16}$")
-
 func resourceTFEProject() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceTFEProjectCreate,
