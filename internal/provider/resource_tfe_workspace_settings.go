@@ -202,12 +202,6 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 					stringplanmodifier.RequiresReplace(),
 					stringplanmodifier.UseStateForUnknown(),
 				},
-				Validators: []validator.String{
-					stringvalidator.RegexMatches(
-						IDPattern("ws"),
-						"must be a valid workspace ID (ws-<RANDOM STRING>)",
-					),
-				},
 			},
 
 			"execution_mode": schema.StringAttribute{
@@ -227,12 +221,6 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 				PlanModifiers: []planmodifier.String{
 					unknownIfExecutionModeUnset{},
 					validateAgentExecutionMode{},
-				},
-				Validators: []validator.String{
-					stringvalidator.RegexMatches(
-						IDPattern("apool"),
-						"must be a valid workspace ID (apool-<RANDOM STRING>)",
-					),
 				},
 			},
 

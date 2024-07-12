@@ -59,10 +59,6 @@ func resourceTFETeamProjectAccess() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
-				ValidateFunc: validation.StringMatch(
-					projectIDRegexp,
-					"must be a valid project ID (prj-<RANDOM STRING>)",
-				),
 			},
 
 			"project_access": {
