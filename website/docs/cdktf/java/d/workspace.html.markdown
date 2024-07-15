@@ -47,6 +47,7 @@ In addition to all arguments above, the following attributes are exported:
 * `allowDestroyPlan` - Indicates whether destroy plans can be queued on the workspace.
 * `autoApply` - Indicates whether to automatically apply changes when a Terraform plan is successful.
 * `autoApplyRunTrigger` - Whether the workspace will automatically apply changes for runs that were created by run triggers from another workspace.
+* `autoDestroyActivityDuration` - A duration string representing time after workspace activity when an auto-destroy run will be triggered.
 * `autoDestroyAt` - Future date/time string at which point all resources in a workspace will be scheduled to be deleted.
 * `assessmentsEnabled` - (Available only in HCP Terraform) Indicates whether health assessments such as drift detection are enabled for the workspace.
 * `fileTriggersEnabled` - Indicates whether runs are triggered based on the changed files in a VCS push (if `true`) or always triggered on every push (if `false`).
@@ -88,4 +89,4 @@ The `vcsRepo` block contains:
 * `oauthTokenId` - OAuth token ID of the configured VCS connection.
 * `tagsRegex` - A regular expression used to trigger a Workspace run for matching Git tags.
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-7500b2311f3804feb075f040e60989aa8e4fc69cc4ef327b51b7e3ab1f599d6d -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-ae8f9f76e2d23dc67ab5c3690201b7bf88a8d93dc83db02352e0f31425999200 -->
