@@ -3,6 +3,9 @@
 * `r/tfe_stack` initial support for this BETA feature was released in v0.57.0 but the documentation link was broken and it was not mentioned in the release notes. NOTE: This resource is subject to change and has limited support in HCP Terraform.
 * `d/tfe_github_app_installation` the documentation link for this resource was incorrectly named tfe_github_installation
 
+BUG FIXES:
+* `r/tfe_workspace` html_url is now planned to be recomputed when `name` changes. Previously, changed values would show up on the next plan, by @brandonc [1422](https://github.com/hashicorp/terraform-provider-tfe/issues/1422)
+
 ## v0.57.0
 
 FEATURES:
