@@ -67,6 +67,12 @@ func resourceTFEWorkspace() *schema.Resource {
 				return err
 			}
 
+			if d.HasChange("name") {
+				if err := d.SetNewComputed("html_url"); err != nil {
+					return err
+				}
+			}
+
 			return nil
 		},
 
