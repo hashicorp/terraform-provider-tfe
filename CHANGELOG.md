@@ -1,6 +1,6 @@
 ## Unreleased
 ENHANCEMENTS:
-* `d/tfe_project`: Add `workspace_names` attribute, by @1natedawg [1429]([https://github.com/hashicorp/terraform-provider-tfe/pull/1271](https://github.com/hashicorp/terraform-provider-tfe/pull/1429))
+* `d/tfe_project`: Add `workspace_names` attribute, by @1natedawg [#1429](https://github.com/hashicorp/terraform-provider-tfe/pull/1429)
 
 ## v0.57.1
 
