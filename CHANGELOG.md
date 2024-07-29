@@ -1,4 +1,7 @@
-## Unreleased
+## v0.57.1
+
+* `r/tfe_stack` initial support for this BETA feature was released in v0.57.0 but the documentation link was broken and it was not mentioned in the release notes. NOTE: This resource is subject to change and has limited support in HCP Terraform.
+* `d/tfe_github_app_installation` the documentation link for this resource was incorrectly named tfe_github_installation
 
 ## v0.57.0
 
