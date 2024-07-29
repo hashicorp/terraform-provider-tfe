@@ -31,3 +31,4 @@ In addition to all arguments above, the following attributes are exported:
 
 * `id` - The project ID.
 * `workspace_ids` - IDs of the workspaces that are associated with the project.
+* `workspace_names` - Names of the workspaces that are associated with the project.
