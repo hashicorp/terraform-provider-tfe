@@ -1,3 +1,7 @@
+## Unreleased
+ENHANCEMENTS:
+* `d/tfe_project`: Add `workspace_names` attribute, by @1natedawg [1429]([https://github.com/hashicorp/terraform-provider-tfe/pull/1271](https://github.com/hashicorp/terraform-provider-tfe/pull/1429))
+
 ## v0.57.1
 
 * `r/tfe_stack` initial support for this BETA feature was released in v0.57.0 but the documentation link was broken and it was not mentioned in the release notes. NOTE: This resource is subject to change and has limited support in HCP Terraform.
