@@ -9,6 +9,8 @@ Get information on a Project.
 
 Use this data source to get information about a project.
 
+~> **NOTE:** The `workspace_ids` and `workspace_names` attributes are not guaranteed to return values in the same order, so they cannot be reliably mapped to one another. To map workspace names to IDs reliably, it is recommended to pass those names into the `tfe_workspace_ids` data source.
+
 ## Example Usage
 
 ```hcl
