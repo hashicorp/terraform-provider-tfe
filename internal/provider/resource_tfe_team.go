@@ -144,7 +144,6 @@ func resourceTFETeam() *schema.Resource {
 			"allow_member_token_management": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				Default:  true,
 			},
 		},
 	}

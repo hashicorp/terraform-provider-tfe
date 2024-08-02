@@ -1,6 +1,5 @@
 ## Unreleased
 
-<<<<<<< HEAD
 ENHANCEMENTS:
 * `d/tfe_project`: Add `workspace_names` attribute, by @1natedawg [#1429](https://github.com/hashicorp/terraform-provider-tfe/pull/1429)
 
