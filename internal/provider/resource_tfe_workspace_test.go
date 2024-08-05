@@ -203,6 +203,35 @@ func TestAccTFEWorkspace_customProject(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspace_HTMLURL(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	// When name is changed, the html_url should be updated as well
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_HTMLURL(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_workspace.foobar", "name", "workspace-test"),
+					resource.TestCheckResourceAttrPair("tfe_workspace.foobar", "html_url", "tfe_project.foobar", "description"),
+					testAccCheckTFEWorkspaceHTMLURLHasSuffix("tfe_workspace.foobar", "workspace-test"),
+				),
+			},
+			{
+				Config: testAccTFEWorkspace_HTMLURLRenamed(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_workspace.foobar", "name", "workspace-test-renamed"),
+					resource.TestCheckResourceAttrPair("tfe_workspace.foobar", "html_url", "tfe_project.foobar", "description"),
+					testAccCheckTFEWorkspaceHTMLURLHasSuffix("tfe_workspace.foobar", "workspace-test-renamed"),
+				),
+			},
+		},
+	})
+}
+
 func TestTagValidation(t *testing.T) {
 	testCases := []struct {
 		tag   string
@@ -2249,6 +2278,22 @@ func TestTFEWorkspace_delete_withoutCanForceDeletePermission(t *testing.T) {
 	}
 }
 
+func testAccCheckTFEWorkspaceHTMLURLHasSuffix(resourceName, suffix string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("not found: %s", resourceName)
+		}
+
+		url := rs.Primary.Attributes["html_url"]
+		if !strings.HasSuffix(url, suffix) {
+			return fmt.Errorf("expected %q to have suffix %q", url, suffix)
+		}
+
+		return nil
+	}
+}
+
 func testAccCheckTFEWorkspaceExists(
 	n string, workspace *tfe.Workspace, p *schema.Provider) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
@@ -2847,6 +2892,44 @@ resource "tfe_workspace" "foobar" {
   tag_names          = ["fav", "test"]
   %s
 }`, rInt, aart)
+}
+
+func testAccTFEWorkspace_HTMLURL(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "foobar" {
+  name = "testproject"
+  organization = tfe_organization.foobar.id
+	description = tfe_workspace.foobar.html_url
+}
+
+resource "tfe_workspace" "foobar" {
+  name               = "workspace-test"
+  organization       = tfe_organization.foobar.id
+}`, rInt)
+}
+
+func testAccTFEWorkspace_HTMLURLRenamed(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "foobar" {
+  name = "testproject"
+  organization = tfe_organization.foobar.id
+	description = tfe_workspace.foobar.html_url
+}
+
+resource "tfe_workspace" "foobar" {
+  name               = "workspace-test-renamed"
+  organization       = tfe_organization.foobar.id
+}`, rInt)
 }
 
 func testAccTFEWorkspace_defaultOrg() string {
