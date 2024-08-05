@@ -32,6 +32,8 @@ func TestAccTFEProjectDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet("data.tfe_project.foobar", "id"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_project.foobar", "workspace_ids.#", "1"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_project.foobar", "workspace_names.#", "1"),
 				),
 			},
 		},

@@ -44,6 +44,13 @@ func dataSourceTFEProject() *schema.Resource {
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
+
+			"workspace_names": {
+				Type:     schema.TypeSet,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
 		},
 	}
 }
@@ -76,7 +83,7 @@ func dataSourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta 
 				ProjectID: proj.ID,
 			}
 			var workspaces []interface{}
-
+			var workspaceNames []interface{}
 			for {
 				wl, err := config.Client.Workspaces.List(ctx, orgName, readOptions)
 				if err != nil {
@@ -85,6 +92,7 @@ func dataSourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta 
 
 				for _, workspace := range wl.Items {
 					workspaces = append(workspaces, workspace.ID)
+					workspaceNames = append(workspaceNames, workspace.Name)
 				}
 
 				// Exit the loop when we've seen all pages.
@@ -97,6 +105,7 @@ func dataSourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta 
 			}
 
 			d.Set("workspace_ids", workspaces)
+			d.Set("workspace_names", workspaceNames)
 			d.Set("description", proj.Description)
 			d.SetId(proj.ID)
 			return nil

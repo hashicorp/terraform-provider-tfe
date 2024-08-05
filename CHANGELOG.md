@@ -1,5 +1,8 @@
 ## Unreleased
 
+ENHANCEMENTS:
+* `d/tfe_project`: Add `workspace_names` attribute, by @1natedawg [#1429](https://github.com/hashicorp/terraform-provider-tfe/pull/1429)
+
 BUG FIXES:
 * `r/tfe_workspace` html_url is now planned to be recomputed when `name` changes. Previously, changed values would show up on the next plan, by @brandonc [1422](https://github.com/hashicorp/terraform-provider-tfe/issues/1422)
 
