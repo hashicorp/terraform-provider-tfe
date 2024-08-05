@@ -46,6 +46,8 @@ class MyConvertedCode extends TerraformStack {
 The following arguments are supported:
 
 * `name` - (Required) Name of the project.
+    *  TFE versions v202404-2 and earlier support between 3-36 characters
+    *  TFE versions v202405-1 and later support between 3-40 characters
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `description` - (Optional) A description for the project.
 
@@ -63,4 +65,4 @@ Projects can be imported; use `<PROJECT ID>` as the import ID. For example:
 terraform import tfe_project.test prj-niVoeESBXT8ZREhr
 ```
 
-<!-- cache-key: cdktf-0.20.1 input-d1a8b41fe35391c9fd6740eabcec5228cdddbfa3c037fb2be0c0609646975e70 -->
+<!-- cache-key: cdktf-0.20.1 input-43a63826c3cef967034969841a29eab7e340b22c271c86f196fdfaa7f4ba39c9 -->
