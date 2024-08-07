@@ -195,9 +195,7 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 		options.SSOTeamID = tfe.String(v.(string))
 	}
 
-	if v, ok := d.GetOk("allow_member_token_management"); ok {
-		options.AllowMemberTokenManagement = tfe.Bool(v.(bool))
-	}
+	options.AllowMemberTokenManagement = tfe.Bool(d.Get("allow_member_token_management").(bool))
 
 	log.Printf("[DEBUG] Create team %s for organization: %s", name, organization)
 	team, err := config.Client.Teams.Create(ctx, organization, options)
@@ -307,9 +305,7 @@ func resourceTFETeamUpdate(d *schema.ResourceData, meta interface{}) error {
 		options.SSOTeamID = tfe.String("")
 	}
 
-	if v, ok := d.GetOk("allow_member_token_management"); ok {
-		options.AllowMemberTokenManagement = tfe.Bool(v.(bool))
-	}
+	options.AllowMemberTokenManagement = tfe.Bool(d.Get("allow_member_token_management").(bool))
 
 	log.Printf("[DEBUG] Update team: %s", d.Id())
 	_, err := config.Client.Teams.Update(ctx, d.Id(), options)
