@@ -1,9 +1,7 @@
-## Unreleased
+## v0.58.0
 
 ENHANCEMENTS:
 * `d/tfe_project`: Add `workspace_names` attribute, by @1natedawg [#1429](https://github.com/hashicorp/terraform-provider-tfe/pull/1429)
-
-FEATURES:
 * `r/tfe_team`: Add attribute `allow_member_token_management` to `tfe_team` by @juliannatetreault [#1398](https://github.com/hashicorp/terraform-provider-tfe/pull/1398)
 
 BUG FIXES:
