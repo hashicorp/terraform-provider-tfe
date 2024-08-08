@@ -141,6 +141,11 @@ func resourceTFETeam() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"allow_member_token_management": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
+			},
 		},
 	}
 }
@@ -189,6 +194,8 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 	if v, ok := d.GetOk("sso_team_id"); ok {
 		options.SSOTeamID = tfe.String(v.(string))
 	}
+
+	options.AllowMemberTokenManagement = tfe.Bool(d.Get("allow_member_token_management").(bool))
 
 	log.Printf("[DEBUG] Create team %s for organization: %s", name, organization)
 	team, err := config.Client.Teams.Create(ctx, organization, options)
@@ -250,6 +257,7 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	d.Set("visibility", team.Visibility)
 	d.Set("sso_team_id", team.SSOTeamID)
+	d.Set("allow_member_token_management", team.AllowMemberTokenManagement)
 
 	return nil
 }
@@ -296,6 +304,8 @@ func resourceTFETeamUpdate(d *schema.ResourceData, meta interface{}) error {
 	} else {
 		options.SSOTeamID = tfe.String("")
 	}
+
+	options.AllowMemberTokenManagement = tfe.Bool(d.Get("allow_member_token_management").(bool))
 
 	log.Printf("[DEBUG] Update team: %s", d.Id())
 	_, err := config.Client.Teams.Update(ctx, d.Id(), options)

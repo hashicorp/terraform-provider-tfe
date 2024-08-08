@@ -58,6 +58,8 @@ func TestAccTFETeam_full(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "visibility", "organization"),
 					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "allow_member_token_management", "true"),
+					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_policies", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_policy_overrides", "true"),
@@ -113,6 +115,8 @@ func TestAccTFETeam_full_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "visibility", "organization"),
 					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "allow_member_token_management", "true"),
+					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_policies", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_policy_overrides", "true"),
@@ -155,6 +159,8 @@ func TestAccTFETeam_full_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "visibility", "secret"),
 					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "allow_member_token_management", "false"),
+					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_policies", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_policy_overrides", "false"),
@@ -195,6 +201,8 @@ func TestAccTFETeam_full_update(t *testing.T) {
 						"tfe_team.foobar", "name", "team-test-1"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "visibility", "secret"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "allow_member_token_management", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_policies", "false"),
 					resource.TestCheckResourceAttr(
@@ -461,6 +469,10 @@ func testAccCheckTFETeamAttributes_full(
 			return fmt.Errorf("Bad visibility: %s", team.Visibility)
 		}
 
+		if !team.AllowMemberTokenManagement {
+			return fmt.Errorf("team.AllowMemberTokenManagement should be true")
+		}
+
 		if !team.OrganizationAccess.ManagePolicies {
 			return fmt.Errorf("OrganizationAccess.ManagePolicies should be true")
 		}
@@ -509,6 +521,10 @@ func testAccCheckTFETeamAttributes_full_update(
 
 		if team.Visibility != "secret" {
 			return fmt.Errorf("Bad visibility: %s", team.Visibility)
+		}
+
+		if team.AllowMemberTokenManagement {
+			return fmt.Errorf("team.AllowMemberTokenManagement should be false")
 		}
 
 		if team.OrganizationAccess.ManagePolicies {
@@ -596,6 +612,7 @@ resource "tfe_team" "foobar" {
   organization = tfe_organization.foobar.id
 
   visibility = "organization"
+  allow_member_token_management = true
 
   organization_access {
     manage_policies = true
@@ -630,6 +647,7 @@ resource "tfe_team" "foobar" {
   organization = tfe_organization.foobar.id
 
   visibility = "secret"
+  allow_member_token_management = false
 
   organization_access {
     manage_policies = false
