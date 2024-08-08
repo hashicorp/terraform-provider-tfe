@@ -202,7 +202,7 @@ func TestAccTFETeam_full_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "visibility", "secret"),
 					resource.TestCheckResourceAttr(
-						"tfe_team.foobar", "allow_member_token_management", "false"),
+						"tfe_team.foobar", "allow_member_token_management", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_policies", "false"),
 					resource.TestCheckResourceAttr(
@@ -523,7 +523,7 @@ func testAccCheckTFETeamAttributes_full_update(
 			return fmt.Errorf("Bad visibility: %s", team.Visibility)
 		}
 
-		if !team.AllowMemberTokenManagement {
+		if team.AllowMemberTokenManagement {
 			return fmt.Errorf("team.AllowMemberTokenManagement should be false")
 		}
 
