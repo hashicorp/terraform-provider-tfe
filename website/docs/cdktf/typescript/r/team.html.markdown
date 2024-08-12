@@ -57,6 +57,7 @@ The following arguments are supported:
 * `visibility` - (Optional) The visibility of the team ("secret" or "organization"). Defaults to "secret".
 * `organizationAccess` - (Optional) Settings for the team's [organization access](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/permissions#organization-permissions).
 * `ssoTeamId` - (Optional) Unique Identifier to control [team membership](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/single-sign-on#team-names-and-sso-team-ids) via SAML. Defaults to `null`
+* `allowMemberTokenManagement` - (Optional) Used by Owners and users with "Manage Teams" permissions to control whether team members can manage team tokens. Defaults to `true`.
 
 The `organizationAccess` block supports:
 
@@ -74,7 +75,7 @@ The `organizationAccess` block supports:
 * `manageTeams` - (Optional) Allow members to create, update, and delete teams.
 * `manageOrganizationAccess` - (Optional) Allow members to update the organization access settings of teams.
 * `accessSecretTeams` - (Optional) Allow members access to secret teams up to the level of permissions granted by their team permissions setting.
-* `manage_agent_pools` - (Optional) Allow members to create, edit, and delete agent pools within their organization.
+* `manageAgentPools` - (Optional) Allow members to create, edit, and delete agent pools within their organization.
 
 ## Attributes Reference
 
@@ -93,4 +94,4 @@ or
 terraform import tfe_team.test my-org-name/my-team-name
 ```
 
-<!-- cache-key: cdktf-0.20.1 input-748b14985898b2ae85e5c71ce0f06dcb250357e98f5af312c2fff8363b529094 -->
+<!-- cache-key: cdktf-0.20.1 input-ab16e4d7ee3ccba28834583371d565cd428c3f9556e0811388a43ba640875649 -->
