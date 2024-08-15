@@ -38,7 +38,7 @@ The following arguments are supported:
 
 * `name` - (Required) Name of the team.
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
-* `visibility` - (Optional) The visibility of the team ("secret" or "organization"). Defaults to "secret".
+* `visibility` - (Optional) The visibility of the team ("secret" or "organization")
 * `organization_access` - (Optional) Settings for the team's [organization access](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/permissions#organization-permissions).
 * `sso_team_id` - (Optional) Unique Identifier to control [team membership](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/single-sign-on#team-names-and-sso-team-ids) via SAML. Defaults to `null`
 * `allow_member_token_management` - (Optional) Used by Owners and users with "Manage Teams" permissions to control whether team members can manage team tokens. Defaults to `true`.
