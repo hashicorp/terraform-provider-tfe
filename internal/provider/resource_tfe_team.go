@@ -131,7 +131,7 @@ func resourceTFETeam() *schema.Resource {
 			"visibility": {
 				Type:     schema.TypeString,
 				Optional: true,
-				Default:  "secret",
+				Computed: true,
 				ValidateFunc: validation.StringInSlice([]string{
 					"secret",
 					"organization",
