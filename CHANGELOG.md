@@ -4,6 +4,10 @@
 
 * `r/tfe_team`: Default "secret" visibility has been removed from tfe_team because it now requires explicit or owner access. The default, "organization", is now computed by the platform. by @brandonc [#1439](https://github.com/hashicorp/terraform-provider-tfe/pull/1439)
 
+## v0.58.1
+
+* `r/tfe_stack`: Fixes "inconsistent state" error due to decoding bug in upstream library by @brandonc
+
 ## v0.58.0
 
 ENHANCEMENTS:
