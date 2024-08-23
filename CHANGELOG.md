@@ -1,3 +1,9 @@
+## v0.58.1
+
+BUG FIXES:
+
+* `r/tfe_stack`: Fixes "inconsistent state" error due to decoding bug in upstream library by @brandonc
+
 ## v0.58.0
 
 ENHANCEMENTS:
