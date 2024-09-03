@@ -170,7 +170,7 @@ func (r *resourceWorkspaceRunTask) Create(ctx context.Context, req resource.Crea
 		options.Stage = stage //nolint:staticcheck
 	}
 	if stages != nil {
-		options.Stages = stages
+		options.Stages = &stages
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("Create task %s in workspace: %s", taskID, workspaceID))
@@ -218,7 +218,7 @@ func (r *resourceWorkspaceRunTask) Update(ctx context.Context, req resource.Upda
 		options.Stage = stage //nolint:staticcheck
 	}
 	if stages != nil {
-		options.Stages = stages
+		options.Stages = &stages
 	}
 
 	wstaskID := plan.ID.ValueString()
@@ -344,7 +344,7 @@ func (r *resourceWorkspaceRunTask) addStageSupportDiag(d *diag.Diagnostics, isEr
 	}
 }
 
-func (r *resourceWorkspaceRunTask) extractStageAndStages(plan modelTFEWorkspaceRunTaskV1, d *diag.Diagnostics) (*tfe.Stage, *[]tfe.Stage) {
+func (r *resourceWorkspaceRunTask) extractStageAndStages(plan modelTFEWorkspaceRunTaskV1, d *diag.Diagnostics) (*tfe.Stage, []tfe.Stage) {
 	// There are some complex interactions here between deprecated values in the TF model, and whether the backend server even supports the newer
 	// API call style. This function attempts to extract the Stage and Stages properties and emit useful diagnostics
 
@@ -358,7 +358,7 @@ func (r *resourceWorkspaceRunTask) extractStageAndStages(plan modelTFEWorkspaceR
 			// The user has supplied Stage but not Stages. They would already have received the deprecation warning so just munge
 			// the stage into a slice and we're fine
 			stages := []tfe.Stage{tfe.Stage(plan.Stage.ValueString())}
-			return nil, &stages
+			return nil, stages
 		}
 
 		// Convert the plan values into the slice we need
@@ -371,7 +371,7 @@ func (r *resourceWorkspaceRunTask) extractStageAndStages(plan modelTFEWorkspaceR
 		for idx, s := range stageStrings {
 			stages[idx] = tfe.Stage(s.ValueString())
 		}
-		return nil, &stages
+		return nil, stages
 	}
 
 	// The backend server doesn't support Stages
