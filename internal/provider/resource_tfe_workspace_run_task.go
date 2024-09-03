@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -50,7 +51,8 @@ func sentenceList(items []string, prefix string, suffix string, conjunction stri
 }
 
 type resourceWorkspaceRunTask struct {
-	config ConfiguredClient
+	config       ConfiguredClient
+	capabilities capabilitiesResolver
 }
 
 var _ resource.Resource = &resourceWorkspaceRunTask{}
@@ -97,6 +99,7 @@ func (r *resourceWorkspaceRunTask) Configure(ctx context.Context, req resource.C
 		)
 	}
 	r.config = client
+	r.capabilities = newDefaultCapabilityResolver(client.Client)
 }
 
 func (r *resourceWorkspaceRunTask) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -150,13 +153,23 @@ func (r *resourceWorkspaceRunTask) Create(ctx context.Context, req resource.Crea
 		return
 	}
 
-	stage := tfe.Stage(plan.Stage.ValueString())
 	level := tfe.TaskEnforcementLevel(plan.EnforcementLevel.ValueString())
 
 	options := tfe.WorkspaceRunTaskCreateOptions{
 		RunTask:          task,
 		EnforcementLevel: level,
-		Stage:            &stage,
+	}
+
+	stage, stages := r.extractStageAndStages(plan, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if stage != nil {
+		// Needed for older TFE instances
+		options.Stage = stage //nolint:staticcheck
+	}
+	if stages != nil {
+		options.Stages = stages
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("Create task %s in workspace: %s", taskID, workspaceID))
@@ -190,11 +203,21 @@ func (r *resourceWorkspaceRunTask) Update(ctx context.Context, req resource.Upda
 	}
 
 	level := tfe.TaskEnforcementLevel(plan.EnforcementLevel.ValueString())
-	stage := r.stringPointerToStagePointer(plan.Stage.ValueStringPointer())
 
 	options := tfe.WorkspaceRunTaskUpdateOptions{
 		EnforcementLevel: level,
-		Stage:            stage,
+	}
+
+	stage, stages := r.extractStageAndStages(plan, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if stage != nil {
+		// Needed for older TFE instances
+		options.Stage = stage //nolint:staticcheck
+	}
+	if stages != nil {
+		options.Stages = stages
 	}
 
 	wstaskID := plan.ID.ValueString()
@@ -296,4 +319,85 @@ func (r *resourceWorkspaceRunTask) UpgradeState(ctx context.Context) map[int64]r
 			},
 		},
 	}
+}
+
+func (r *resourceWorkspaceRunTask) supportsStagesProperty() bool {
+	// The Stages property is available in HCP Terraform and Terraform Enterprise v202404-1 onwards.
+	//
+	// The version comparison here can use plain string comparisons due to the nature of the naming scheme. If
+	// TFE every changes its scheme, the comparison will be problematic.
+	return r.capabilities.IsCloud() || r.capabilities.RemoteTFEVersion() > "v202404"
+}
+
+func (r *resourceWorkspaceRunTask) addStageSupportDiag(d *diag.Diagnostics, isError bool) {
+	summary := "Terraform Enterprise version"
+	detail := fmt.Sprintf("The version of Terraform Enterprise does not support the stages attribute on Workspace Run Tasks. Got %s but requires v202404-1+", r.config.Client.RemoteTFEVersion())
+	if isError {
+		d.AddError(detail, summary)
+	} else {
+		d.AddWarning(detail, summary)
+	}
+}
+
+func (r *resourceWorkspaceRunTask) extractStageAndStages(plan modelTFEWorkspaceRunTaskV1, d *diag.Diagnostics) (*tfe.Stage, *[]tfe.Stage) {
+	// There are some complex interactions here between deprecated values in the TF model, and whether the backend server even supports the newer
+	// API call style. This function attempts to extract the Stage and Stages properties and emit useful diagnostics
+
+	// If neither stage or stages is set, then it's all fine, we use the server defaults
+	if plan.Stage.IsUnknown() && plan.Stages.IsUnknown() {
+		return nil, nil
+	}
+
+	if r.supportsStagesProperty() {
+		if plan.Stages.IsUnknown() {
+			// The user has supplied Stage but not Stages. They would already have received the deprecation warning so just munge
+			// the stage into a slice and we're fine
+			stages := []tfe.Stage{tfe.Stage(plan.Stage.ValueString())}
+			return nil, &stages
+		}
+
+		// Convert the plan values into the slice we need
+		var stageStrings []types.String
+		if err := plan.Stages.ElementsAs(ctx, &stageStrings, false); err != nil && err.HasError() {
+			d.Append(err...)
+			return nil, nil
+		}
+		stages := make([]tfe.Stage, len(stageStrings))
+		for idx, s := range stageStrings {
+			stages[idx] = tfe.Stage(s.ValueString())
+		}
+		return nil, &stages
+	}
+
+	// The backend server doesn't support Stages
+	if !plan.Stages.IsUnknown() {
+		// The user has supplied a stages array. We need to figure out if we can munge this into a stage attribute
+		stagesCount := len(plan.Stages.Elements())
+
+		if stagesCount > 1 {
+			// The user has supplied more than one stage so we can't munge this
+			r.addStageSupportDiag(d, true)
+			return nil, nil
+		}
+
+		// Send the warning
+		r.addStageSupportDiag(d, false)
+
+		if stagesCount == 0 {
+			// Somehow we've got no stages listed. Use default server values
+			return nil, nil
+		}
+
+		// ... Otherwise there's a single Stages value which we can munge into Stage.
+		var stageStrings []types.String
+		if err := plan.Stages.ElementsAs(ctx, &stageStrings, false); err != nil && err.HasError() {
+			d.Append(err...)
+			return nil, nil
+		}
+		stage := tfe.Stage(stageStrings[0].ValueString())
+		return &stage, nil
+	}
+
+	// The user supplied a Stage value to a server that doesn't support stages
+	return r.stringPointerToStagePointer(plan.Stage.ValueStringPointer()), nil
 }
