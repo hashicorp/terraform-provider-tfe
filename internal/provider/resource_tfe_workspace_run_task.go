@@ -51,8 +51,9 @@ func sentenceList(items []string, prefix string, suffix string, conjunction stri
 }
 
 type resourceWorkspaceRunTask struct {
-	config       ConfiguredClient
-	capabilities capabilitiesResolver
+	config         ConfiguredClient
+	capabilities   capabilitiesResolver
+	supportsStages *bool
 }
 
 var _ resource.Resource = &resourceWorkspaceRunTask{}
@@ -326,7 +327,11 @@ func (r *resourceWorkspaceRunTask) supportsStagesProperty() bool {
 	//
 	// The version comparison here can use plain string comparisons due to the nature of the naming scheme. If
 	// TFE every changes its scheme, the comparison will be problematic.
-	return r.capabilities.IsCloud() || r.capabilities.RemoteTFEVersion() > "v202404"
+	if r.supportsStages == nil {
+		value := r.capabilities.IsCloud() || r.capabilities.RemoteTFEVersion() > "v202404"
+		r.supportsStages = &value
+	}
+	return *r.supportsStages
 }
 
 func (r *resourceWorkspaceRunTask) addStageSupportDiag(d *diag.Diagnostics, isError bool) {
