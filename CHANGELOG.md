@@ -4,6 +4,9 @@
 
 * `r/tfe_team`: Default "secret" visibility has been removed from tfe_team because it now requires explicit or owner access. The default, "organization", is now computed by the platform. by @brandonc [#1439](https://github.com/hashicorp/terraform-provider-tfe/pull/1439)
 
+BUG FIXES:
+* `r/tfe_workspace_run_task`: The Workspace Run Task resource will use the stages attribute by @glennsarti [#1459](https://github.com/hashicorp/terraform-provider-tfe/pull/1459)
+
 ## v0.58.0
 
 ENHANCEMENTS:
