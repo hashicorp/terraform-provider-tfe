@@ -14,13 +14,6 @@ import (
 )
 
 func TestTFEWorkspaceRunTask_stagesSupport(t *testing.T) {
-	resolver := &staticCapabilityResolver{}
-
-	subject := resourceWorkspaceRunTask{
-		config:       ConfiguredClient{Organization: "Mock", Client: &tfe.Client{}},
-		capabilities: resolver,
-	}
-
 	testCases := map[string]struct {
 		isCloud      bool
 		tfeVer       string
@@ -36,8 +29,14 @@ func TestTFEWorkspaceRunTask_stagesSupport(t *testing.T) {
 
 	for name, testCase := range testCases {
 		t.Run(name, func(t *testing.T) {
+			resolver := &staticCapabilityResolver{}
 			resolver.SetIsCloud(testCase.isCloud)
 			resolver.SetRemoteTFEVersion(testCase.tfeVer)
+
+			subject := resourceWorkspaceRunTask{
+				config:       ConfiguredClient{Organization: "Mock", Client: &tfe.Client{}},
+				capabilities: resolver,
+			}
 
 			actual := subject.supportsStagesProperty()
 			if actual != testCase.expectResult {
