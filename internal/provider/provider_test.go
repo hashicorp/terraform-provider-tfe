@@ -178,6 +178,11 @@ func testAccPreCheck(t *testing.T) {
 	}
 }
 
+func TestSkipUnlessAfterDate(t *testing.T) {
+	skipUnlessAfterDate(t, time.Date(2199, 1, 1, 0, 0, 0, 0, time.UTC))
+	t.Fatal("This test should have been skipped (Unless it's 2199!)")
+}
+
 func TestConfigureEnvOrganization(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	originalTFEOrganization := os.Getenv("TFE_ORGANIZATION")
@@ -213,8 +218,6 @@ func TestConfigureEnvOrganization(t *testing.T) {
 // The TFE Provider tests use these environment variables, which are set in the
 // GitHub Action workflow file .github/workflows/ci.yml.
 func testAccGithubPreCheck(t *testing.T) {
-	skipUnlessAfterDate(t, time.Date(2024, 9, 1, 0, 0, 0, 0, time.UTC))
-
 	if envGithubToken == "" {
 		t.Skip("Please set GITHUB_TOKEN to run this test")
 	}
