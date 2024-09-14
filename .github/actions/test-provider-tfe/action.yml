@@ -47,6 +47,10 @@ inputs:
     description: Accepts regex rules to either include or exclude specific tests from running in either CI or nightly workflows.
     required: false
     default: "."
+  run_tasks_url:
+    description: The mock run tasks URL to use for testing.
+    required: false
+    default: "http://testing-mocks.tfe:22180/runtasks/pass"
 
 runs:
   using: composite
@@ -102,7 +106,7 @@ runs:
         TFE_USER2: tfe-provider-user2
         TF_ACC: "1"
         ENABLE_TFE: "${{ inputs.enterprise }}"
-        RUN_TASKS_URL: "http://testing-mocks.tfe:22180/runtasks/pass"
+        RUN_TASKS_URL: "${{ inputs.run_tasks_url }}"
         GITHUB_POLICY_SET_IDENTIFIER: "hashicorp/test-policy-set"
         GITHUB_REGISTRY_MODULE_IDENTIFIER: "hashicorp/terraform-random-module"
         GITHUB_WORKSPACE_IDENTIFIER: "hashicorp/terraform-random-module"
