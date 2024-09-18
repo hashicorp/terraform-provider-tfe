@@ -124,7 +124,7 @@ func TestAccTFENotificationConfiguration_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_notification_configuration.foobar", "triggers.#", "2"),
 					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "url", fmt.Sprintf("%s/?update=true", runTasksURL())),
+						"tfe_notification_configuration.foobar", "url", fmt.Sprintf("%s?update=true", runTasksURL())),
 				),
 			},
 		},
@@ -484,6 +484,8 @@ func TestAccTFENotificationConfiguration_duplicateTriggers(t *testing.T) {
 func TestAccTFENotificationConfigurationImport_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
+	fmt.Printf("Config for testAccTFENotificationConfigurationImport_basic:\n %s\n", testAccTFENotificationConfiguration_basic(rInt))
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { preCheckTFENotificationConfiguration(t) },
 		Providers:    testAccProviders,
@@ -619,7 +621,7 @@ func testAccCheckTFENotificationConfigurationAttributesUpdate(notificationConfig
 			return fmt.Errorf("Bad triggers: %v", notificationConfiguration.Triggers)
 		}
 
-		if notificationConfiguration.URL != fmt.Sprintf("%s/?update=true", runTasksURL()) {
+		if notificationConfiguration.URL != fmt.Sprintf("%s?update=true", runTasksURL()) {
 			return fmt.Errorf("Bad URL: %s", notificationConfiguration.URL)
 		}
 
@@ -884,7 +886,7 @@ resource "tfe_notification_configuration" "foobar" {
   enabled          = true
   token            = "1234567890_update"
   triggers         = ["run:created", "run:needs_attention"]
-  url              = "%s/?update=true"
+  url              = "%s?update=true"
   workspace_id     = tfe_workspace.foobar.id
 }`, rInt, runTasksURL())
 }
