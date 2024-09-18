@@ -42,7 +42,6 @@ jobs:
           matrix_index: ${{ matrix.index }}
           matrix_total: ${{ matrix.total }}
           hostname: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).ngrok_domain }}
-          run_tasks_url: 'https://httpstat.us/200'
           token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_token }}
           testing-github-token: ${{ secrets.TESTING_GITHUB_TOKEN }}
           admin_configuration_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.configuration }}
