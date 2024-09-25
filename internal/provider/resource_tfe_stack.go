@@ -196,7 +196,7 @@ func (r *resourceTFEStack) Read(ctx context.Context, req resource.ReadRequest, r
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("Reading stack %q", state.ID.ValueString()))
-	stack, err := r.config.Client.Stacks.Read(ctx, state.ID.ValueString())
+	stack, err := r.config.Client.Stacks.Read(ctx, state.ID.ValueString(), nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read stack", err.Error())
 		return
