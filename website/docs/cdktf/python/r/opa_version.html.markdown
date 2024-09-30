@@ -65,4 +65,4 @@ terraform import tfe_opa_version.test 0.58.0
 
 -> **Note:** You can fetch a OPA version ID from the URL of an existing version in the HCP Terraform UI. The ID is in the format `tool-<RANDOM STRING>`
 
-<!-- cache-key: cdktf-0.20.1 input-85ffde68fbb6c7a9dffa29020e669cfcd70100de64e45be334cefb8837e2b8ca -->
+<!-- cache-key: cdktf-0.20.8 input-85ffde68fbb6c7a9dffa29020e669cfcd70100de64e45be334cefb8837e2b8ca -->

@@ -106,4 +106,4 @@ Or a public provider:
 terraform import tfe_registry_provider.example my-org-name/public/hashicorp/aws
 ```
 
-<!-- cache-key: cdktf-0.20.1 input-0ebe64517a20c552e9e19b3841e4dc62744abf91b85e717ca41ba8858f1723cc -->
+<!-- cache-key: cdktf-0.20.8 input-0ebe64517a20c552e9e19b3841e4dc62744abf91b85e717ca41ba8858f1723cc -->
