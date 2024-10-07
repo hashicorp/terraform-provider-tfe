@@ -51,4 +51,4 @@ The following arguments are supported:
 
 * `source_path` - (Required) The path to the directory where the files are located.
 
-<!-- cache-key: cdktf-0.20.1 input-fa2c542204f0df625488e508b9c38200a5fbba730db218a920e6358651a4f10c -->
+<!-- cache-key: cdktf-0.20.8 input-fa2c542204f0df625488e508b9c38200a5fbba730db218a920e6358651a4f10c -->
