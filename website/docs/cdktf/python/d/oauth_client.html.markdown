@@ -103,4 +103,4 @@ In addition to all arguments above, the following attributes are exported:
 * `service_provider_display_name` - The display name of the OAuth service provider.
 * `organization_scoped` - Whether or not the agent pool can be used by all workspaces and projects in the organization.
 * `project_ids` - IDs of the projects that use the oauth client.
-<!-- cache-key: cdktf-0.20.1 input-001f05442f17fd9a94d45188c279515be0f5fbe96f6057ed44a16f3e9be03580 -->
+<!-- cache-key: cdktf-0.20.8 input-001f05442f17fd9a94d45188c279515be0f5fbe96f6057ed44a16f3e9be03580 -->

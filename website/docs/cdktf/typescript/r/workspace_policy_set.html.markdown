@@ -79,4 +79,4 @@ Workspace Policy Sets can be imported; use `<ORGANIZATION>/<WORKSPACE NAME>/<POL
 terraform import tfe_workspace_policy_set.test 'my-org-name/workspace/policy-set-name'
 ```
 
-<!-- cache-key: cdktf-0.20.1 input-063704782b0ed470f47929ea2ae102aff05366cceeb62a7760562407d4442e44 -->
+<!-- cache-key: cdktf-0.20.8 input-063704782b0ed470f47929ea2ae102aff05366cceeb62a7760562407d4442e44 -->
