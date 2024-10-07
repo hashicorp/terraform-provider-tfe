@@ -102,6 +102,11 @@ func resourceTFEOrganization() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+
+			"speculative_plan_management_enabled": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -157,6 +162,7 @@ func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error
 	// org.AssessmentsEnforced will default to false
 	d.Set("assessments_enforced", org.AssessmentsEnforced)
 	d.Set("allow_force_delete_workspaces", org.AllowForceDeleteWorkspaces)
+	d.Set("speculative_plan_management_enabled", org.SpeculativePlanManagementEnabled)
 
 	if org.DefaultProject != nil {
 		d.Set("default_project_id", org.DefaultProject.ID)
@@ -219,6 +225,11 @@ func resourceTFEOrganizationUpdate(d *schema.ResourceData, meta interface{}) err
 	// If allow_force_delete_workspaces is supplied, set it using the options struct.
 	if allowForceDeleteWorkspaces, ok := d.GetOkExists("allow_force_delete_workspaces"); ok {
 		options.AllowForceDeleteWorkspaces = tfe.Bool(allowForceDeleteWorkspaces.(bool))
+	}
+
+	// If speculative_plan_management_enabled is supplied, set it using the options struct.
+	if speculativePlanManagementEnabled, ok := d.GetOkExists("speculative_plan_management_enabled"); ok {
+		options.SpeculativePlanManagementEnabled = tfe.Bool(speculativePlanManagementEnabled.(bool))
 	}
 
 	log.Printf("[DEBUG] Update configuration of organization: %s", d.Id())

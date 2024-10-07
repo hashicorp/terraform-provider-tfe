@@ -14,6 +14,10 @@ BUG FIXES:
 BUG FIXES:
 * `r/tfe_workspace_run_task`: The Workspace Run Task resource will use the stages attribute by @glennsarti [#1459](https://github.com/hashicorp/terraform-provider-tfe/pull/1459)
 
+FEATURES:
+* `r/tfe_organization`: Add `speculative_plan_management_enabled` attribute, by @lilincmu [TODO](https://github.com/hashicorp/terraform-provider-tfe/pulls/)
+* `d/tfe_organization`: Add `speculative_plan_management_enabled` attribute, by @lilincmu [TODO](https://github.com/hashicorp/terraform-provider-tfe/pulls/)
+
 ## v0.58.0
 
 ENHANCEMENTS:
