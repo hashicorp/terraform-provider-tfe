@@ -17,6 +17,9 @@ FEATURES:
 
 ## v0.59.0
 
+FEATURES:
+* `r/tfe_audit_trail_token` is a new resource for managing audit trail tokens in organization, by @c4po [1488](https://github.com/hashicorp/terraform-provider-tfe/pull/1488)
+
 ## BREAKING CHANGES
 
 * `r/tfe_team`: Default "secret" visibility has been removed from tfe_team because it now requires explicit or owner access. The default, "organization", is now computed by the platform. by @brandonc [#1439](https://github.com/hashicorp/terraform-provider-tfe/pull/1439)
