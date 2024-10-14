@@ -56,4 +56,4 @@ example:
 terraform import tfe_registry_gpg_key.example my-org-name/34365D9472D7468F
 ```
 
-<!-- cache-key: cdktf-0.20.1 input-730b5a234f42b288032d37e5a9ddea76c748a891a6ac2df444a35f192edf1bc4 -->
+<!-- cache-key: cdktf-0.20.8 input-730b5a234f42b288032d37e5a9ddea76c748a891a6ac2df444a35f192edf1bc4 -->
