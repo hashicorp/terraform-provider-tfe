@@ -122,7 +122,7 @@ func (r *resourceWorkspaceRunTask) Read(ctx context.Context, req resource.ReadRe
 	tflog.Debug(ctx, "Reading workspace run task")
 	wstask, err := r.config.Client.WorkspaceRunTasks.Read(ctx, workspaceID, wstaskID)
 	if err != nil {
-		resp.Diagnostics.AddError("Error reading Workspace Run Task", "Could not read Workspace Run Task, unexpected error: "+err.Error())
+		resp.Diagnostics.AddWarning("Error reading Workspace Run Task", "Could not read Workspace Run Task, unexpected error: "+err.Error())
 		return
 	}
 
