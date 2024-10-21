@@ -187,6 +187,22 @@ func createProject(t *testing.T, client *tfe.Client, orgName string, options tfe
 	return proj
 }
 
+func createRunTask(t *testing.T, client *tfe.Client, orgName string, options tfe.RunTaskCreateOptions) *tfe.RunTask {
+	ctx := context.Background()
+
+	if options.Category == "" {
+		options.Category = "task"
+	}
+
+	task, err := client.RunTasks.Create(ctx, orgName, options)
+	if err != nil {
+		t.Fatal(err)
+		return nil
+	}
+
+	return task
+}
+
 func skipIfCloud(t *testing.T) {
 	if !enterpriseEnabled() {
 		t.Skip("Skipping test for a feature unavailable in HCP Terraform. Set 'ENABLE_TFE=1' to run.")
@@ -268,6 +284,17 @@ func testCheckResourceAttrUnlessEnterprise(name, key, value string) resource.Tes
 		}
 	}
 	return resource.TestCheckResourceAttr(name, key, value)
+}
+
+// Tests whether a resource exists in the state
+func testCheckResourceNotExist(resourceName string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if item, ok := s.RootModule().Resources[resourceName]; ok {
+			return fmt.Errorf("Resource %s should not exist but found a resource with id %s", resourceName, item.Primary.ID)
+		}
+
+		return nil
+	}
 }
 
 func randomString(t *testing.T) string {

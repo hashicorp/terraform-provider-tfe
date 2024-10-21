@@ -145,6 +145,78 @@ func TestAccTFEOrganizationRunTaskGlobalSettings_import(t *testing.T) {
 	})
 }
 
+func TestAccTFEOrganizationRunTaskGlobalSettings_Read(t *testing.T) {
+	skipUnlessRunTasksDefined(t)
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+	key := runTasksHMACKey()
+	task := createRunTask(t, tfeClient, org.Name, tfe.RunTaskCreateOptions{
+		Name:    fmt.Sprintf("tst-task-%s", randomString(t)),
+		URL:     runTasksURL(),
+		HMACKey: &key,
+	})
+
+	org_tf := fmt.Sprintf(`data "tfe_organization" "orgtask" { name = %q }`, org.Name)
+
+	create_settings_tf := fmt.Sprintf(`
+		%s
+		resource "tfe_organization_run_task_global_settings" "sut" {
+			task_id = %q
+
+			enabled           = true
+			enforcement_level = "mandatory"
+			stages            = ["post_plan"]
+		}
+		`, org_tf, task.ID)
+
+	delete_task_settings := func() {
+		_, err := tfeClient.RunTasks.Update(ctx, task.ID, tfe.RunTaskUpdateOptions{
+			Global: &tfe.GlobalRunTaskOptions{
+				Enabled: tfe.Bool(false),
+			},
+		})
+		if err != nil {
+			t.Fatalf("Error updating task: %s", err)
+		}
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationRunTaskDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: create_settings_tf,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_organization_run_task_global_settings.sut", "enabled", "true"),
+				),
+			},
+			{
+				// Delete the created run task settings and ensure we can re-create it
+				PreConfig: delete_task_settings,
+				Config:    create_settings_tf,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_organization_run_task_global_settings.sut", "enabled", "true"),
+				),
+			},
+			{
+				// Delete the created run task settings and ensure we can ignore it if we no longer need to manage it
+				PreConfig: delete_task_settings,
+				Config:    org_tf,
+				Check: resource.ComposeTestCheckFunc(
+					testCheckResourceNotExist("tfe_organization_run_task_global_settings.sut"),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckTFEOrganizationRunTaskGlobalEnabled(resourceName string, expectedEnabled bool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		config := testAccProvider.Meta().(ConfiguredClient)

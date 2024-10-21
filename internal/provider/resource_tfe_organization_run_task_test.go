@@ -118,6 +118,72 @@ func TestAccTFEOrganizationRunTask_import(t *testing.T) {
 	})
 }
 
+func TestAccTFEOrganizationRunTask_Read(t *testing.T) {
+	skipUnlessRunTasksDefined(t)
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	hmacKey := runTasksHMACKey()
+
+	org_tf := fmt.Sprintf(`data "tfe_organization" "orgtask" { name = %q }`, org.Name)
+
+	create_task_tf := fmt.Sprintf(`
+		%s
+		%s
+		`, org_tf, testAccTFEOrganizationRunTask_basic(org.Name, rInt, runTasksURL(), hmacKey))
+
+	delete_tasks := func() {
+		tasks, err := tfeClient.RunTasks.List(ctx, org.Name, nil)
+		if err != nil || tasks == nil {
+			t.Fatalf("Error listing tasks: %s", err)
+			return
+		}
+		// There shouldn't be more that 25 run tasks so we don't need to worry about pagination
+		for _, task := range tasks.Items {
+			if task != nil {
+				if err := tfeClient.RunTasks.Delete(ctx, task.ID); err != nil {
+					t.Fatalf("Error deleting task: %s", err)
+				}
+			}
+		}
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: create_task_tf,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "name", fmt.Sprintf("foobar-task-%d", rInt)),
+				),
+			},
+			{
+				// Delete the created run task and ensure we can re-create it
+				PreConfig: delete_tasks,
+				Config:    create_task_tf,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "name", fmt.Sprintf("foobar-task-%d", rInt)),
+				),
+			},
+			{
+				// Delete the created run task and ensure we can ignore it if we no longer need to manage it
+				PreConfig: delete_tasks,
+				Config:    org_tf,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOrganizationRunTaskDestroy,
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckTFEOrganizationRunTaskExists(n string, runTask *tfe.RunTask) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		config := testAccProvider.Meta().(ConfiguredClient)

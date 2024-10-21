@@ -1,5 +1,12 @@
 ## Unreleased
 
+BUG FIXES:
+* `r/tfe_workspace_run_task`: Do not error when reading workspace tasks that no longer exist by @glennsarti [#1500](https://github.com/hashicorp/terraform-provider-tfe/pull/1459)
+* `r/tfe_organization_run_task`: Do not error when reading organization tasks that no longer exist by @glennsarti [#1500](https://github.com/hashicorp/terraform-provider-tfe/pull/1459)
+* `r/tfe_organization_run_task_global_settings`: Do not error when reading organization task global settings that no longer exist by @glennsarti [#1500](https://github.com/hashicorp/terraform-provider-tfe/pull/1459)
+
+## v0.59.0
+
 ## BREAKING CHANGES
 
 * `r/tfe_team`: Default "secret" visibility has been removed from tfe_team because it now requires explicit or owner access. The default, "organization", is now computed by the platform. by @brandonc [#1439](https://github.com/hashicorp/terraform-provider-tfe/pull/1439)
