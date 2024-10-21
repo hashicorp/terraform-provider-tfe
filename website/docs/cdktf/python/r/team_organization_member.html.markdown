@@ -75,4 +75,4 @@ or
 terraform import tfe_team_organization_member.test my-org-name/user@company.com/my-team-name
 ```
 ~> **NOTE:** The `<ORGANIZATION NAME>/<USER EMAIL>/<TEAM NAME>` import ID format cannot be used if there are `/` characters in the user's email. These users must be imported with the `<TEAM ID>/<ORGANIZATION MEMBERSHIP ID>` format instead  
-<!-- cache-key: cdktf-0.20.1 input-7251454fdf71a5749991a2615afcd7f66f40a26543f2967198dc400d5fcad76b -->
+<!-- cache-key: cdktf-0.20.8 input-7251454fdf71a5749991a2615afcd7f66f40a26543f2967198dc400d5fcad76b -->

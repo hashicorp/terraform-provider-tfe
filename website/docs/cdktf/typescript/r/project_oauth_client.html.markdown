@@ -79,4 +79,4 @@ Project OAuth Clients can be imported; use `<ORGANIZATION>/<PROJECT ID>/<OAUTH C
 terraform import tfe_project_oauth_client.test 'my-org-name/project/oauth-client-name'
 ```
 
-<!-- cache-key: cdktf-0.20.1 input-74e716b96a2f11693107d16605160ebd3c1858710f2cf85569428398a04b4072 -->
+<!-- cache-key: cdktf-0.20.8 input-74e716b96a2f11693107d16605160ebd3c1858710f2cf85569428398a04b4072 -->

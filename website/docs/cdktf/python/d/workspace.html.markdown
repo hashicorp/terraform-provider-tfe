@@ -90,4 +90,4 @@ The `vcs_repo` block contains:
 * `oauth_token_id` - OAuth token ID of the configured VCS connection.
 * `tags_regex` - A regular expression used to trigger a Workspace run for matching Git tags.
 
-<!-- cache-key: cdktf-0.20.1 input-ae8f9f76e2d23dc67ab5c3690201b7bf88a8d93dc83db02352e0f31425999200 -->
+<!-- cache-key: cdktf-0.20.8 input-ae8f9f76e2d23dc67ab5c3690201b7bf88a8d93dc83db02352e0f31425999200 -->

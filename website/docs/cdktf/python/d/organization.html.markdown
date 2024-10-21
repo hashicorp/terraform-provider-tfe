@@ -49,4 +49,4 @@ In addition to all arguments above, the following attributes are exported:
 * `aggregated_commit_status_enabled` - Whether or not to enable Aggregated Status Checks. This can be useful for monorepo repositories with multiple workspaces receiving status checks for events such as a pull request.
 * `default_project_id` - ID of the organization's default project. All workspaces created without specifying a project ID are created in this project.
 
-<!-- cache-key: cdktf-0.20.1 input-ef8f010996544db238976f7a2b7dfb50d77204d9275aeacc742c10b942f7c3e6 -->
+<!-- cache-key: cdktf-0.20.8 input-ef8f010996544db238976f7a2b7dfb50d77204d9275aeacc742c10b942f7c3e6 -->

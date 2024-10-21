@@ -293,4 +293,4 @@ terraform import tfe_registry_module.test my-org-name/public/namespace/name/prov
 terraform import tfe_registry_module.test my-org-name/name/provider/mod-qV9JnKRkmtMa4zcA
 ```
 
-<!-- cache-key: cdktf-0.20.1 input-83bb5f1b9e18171b736eafaa3cee5546bbb042f6dcf960e215905b4b8a26ffac -->
+<!-- cache-key: cdktf-0.20.8 input-83bb5f1b9e18171b736eafaa3cee5546bbb042f6dcf960e215905b4b8a26ffac -->

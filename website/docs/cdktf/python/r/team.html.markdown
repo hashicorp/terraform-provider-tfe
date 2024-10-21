@@ -51,9 +51,10 @@ The following arguments are supported:
 
 * `name` - (Required) Name of the team.
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
-* `visibility` - (Optional) The visibility of the team ("secret" or "organization"). Defaults to "secret".
+* `visibility` - (Optional) The visibility of the team ("secret" or "organization")
 * `organization_access` - (Optional) Settings for the team's [organization access](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/permissions#organization-permissions).
 * `sso_team_id` - (Optional) Unique Identifier to control [team membership](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/single-sign-on#team-names-and-sso-team-ids) via SAML. Defaults to `null`
+* `allow_member_token_management` - (Optional) Used by Owners and users with "Manage Teams" permissions to control whether team members can manage team tokens. Defaults to `true`.
 
 The `organization_access` block supports:
 
@@ -90,4 +91,4 @@ or
 terraform import tfe_team.test my-org-name/my-team-name
 ```
 
-<!-- cache-key: cdktf-0.20.1 input-748b14985898b2ae85e5c71ce0f06dcb250357e98f5af312c2fff8363b529094 -->
+<!-- cache-key: cdktf-0.20.8 input-d9bc393198d4cc776e7fe4082a32d50cc258f18eded6123cefeca267b75b61a6 -->

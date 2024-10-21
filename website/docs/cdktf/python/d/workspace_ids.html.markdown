@@ -64,4 +64,4 @@ In addition to all arguments above, the following attributes are exported:
 * `full_names` - A map of workspace names and their full names, which look like `<ORGANIZATION>/<WORKSPACE>`.
 * `ids` - A map of workspace names and their opaque, immutable IDs, which look like `ws-<RANDOM STRING>`.
 
-<!-- cache-key: cdktf-0.20.1 input-a50ddfd1d990de8d1cbdba1a7182f9b5d086fbc397439bdd1d0bd057263938e3 -->
+<!-- cache-key: cdktf-0.20.8 input-a50ddfd1d990de8d1cbdba1a7182f9b5d086fbc397439bdd1d0bd057263938e3 -->
