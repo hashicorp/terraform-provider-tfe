@@ -158,8 +158,8 @@ func variableOptionsMaptoStruct(variableOptions []interface{}) []*tfe.NoCodeVari
 	return variableOptionsRes
 }
 
-func getFullModuleID(ctx context.Context, client *tfe.Client, orgName, ID string) (tfe.RegistryModuleID, error) {
-	module, err := client.RegistryModules.Read(ctx, tfe.RegistryModuleID{ID: ID})
+func getFullModuleID(ctx context.Context, client *tfe.Client, orgName, id string) (tfe.RegistryModuleID, error) {
+	module, err := client.RegistryModules.Read(ctx, tfe.RegistryModuleID{ID: id})
 	if err != nil {
 		return tfe.RegistryModuleID{}, err
 	}
@@ -176,8 +176,8 @@ func waitForModuleVersion(ctx context.Context, client *tfe.Client, moduleID tfe.
 	timeout := time.Duration(5) * time.Minute
 	return retry.RetryContext(ctx, timeout, func() *retry.RetryError {
 		_, err := client.RegistryModules.ReadVersion(ctx, moduleID, versionPin)
-		if err == tfe.ErrResourceNotFound {
-			return retry.RetryableError(fmt.Errorf("Version %s not found for module %s", versionPin, moduleID))
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			return retry.RetryableError(fmt.Errorf("version %s not found for module %s", versionPin, moduleID))
 		}
 		if err != nil {
 			return retry.NonRetryableError(err)
