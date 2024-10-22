@@ -1,6 +1,7 @@
 ## Unreleased
 
 BUG FIXES:
+* `r/tfe_no_code_module`: Wait for the registry module version to be created before creating variable options. Also, the version_pin attribute must be set when variable options are created by @dsa0x [#1504](https://github.com/hashicorp/terraform-provider-tfe/pull/1504)
 * `r/tfe_workspace_run_task`: Do not error when reading workspace tasks that no longer exist by @glennsarti [#1500](https://github.com/hashicorp/terraform-provider-tfe/pull/1459)
 * `r/tfe_organization_run_task`: Do not error when reading organization tasks that no longer exist by @glennsarti [#1500](https://github.com/hashicorp/terraform-provider-tfe/pull/1459)
 * `r/tfe_organization_run_task_global_settings`: Do not error when reading organization task global settings that no longer exist by @glennsarti [#1500](https://github.com/hashicorp/terraform-provider-tfe/pull/1459)
