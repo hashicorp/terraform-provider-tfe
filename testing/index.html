@@ -1,0 +1,955 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Contributor documentation and reference for the hashicorp/tfe Terraform provider">
+      
+      
+      
+      
+        <link rel="prev" href="../new-resources/">
+      
+      
+        <link rel="next" href="../beta/">
+      
+      <link rel="icon" href="../images/hashicorp-black.png">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.0.6">
+    
+    
+      
+        <title>Testing - hashicorp/tfe Terraform Provider - Contributor Guide</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.558e4712.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.2505c338.min.css">
+      
+      
+
+    
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="hashicorp" data-md-color-primary="black" data-md-color-accent="blue">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#running-tests" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="hashicorp/tfe Terraform Provider - Contributor Guide" class="md-header__button md-logo" aria-label="hashicorp/tfe Terraform Provider - Contributor Guide" data-md-component="logo">
+      
+  <img src="../images/hashicorp.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            hashicorp/tfe Terraform Provider - Contributor Guide
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Testing
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/hashicorp/terraform-provider-tfe" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    hashicorp/terraform-provider-tfe
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="hashicorp/tfe Terraform Provider - Contributor Guide" class="md-nav__button md-logo" aria-label="hashicorp/tfe Terraform Provider - Contributor Guide" data-md-component="logo">
+      
+  <img src="../images/hashicorp.png" alt="logo">
+
+    </a>
+    hashicorp/tfe Terraform Provider - Contributor Guide
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/hashicorp/terraform-provider-tfe" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    hashicorp/terraform-provider-tfe
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        Welcome
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_2" type="checkbox" id="__nav_2" checked>
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2" tabindex="0" aria-expanded="true">
+          Contribute
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Contribute" data-md-level="1">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Contribute
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development-environment/" class="md-nav__link">
+        Development Environment
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../test-infrastructure/" class="md-nav__link">
+        Test Infrastructure
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_2_3" type="checkbox" id="__nav_2_3" checked>
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_3" tabindex="0" aria-expanded="true">
+          Contribution Guides
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Contribution Guides" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_3">
+          <span class="md-nav__icon md-icon"></span>
+          Contribution Guides
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../new-resources/" class="md-nav__link">
+        New Resources
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Testing
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Testing
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-optional-create-repositories-for-policy-sets-registry-modules-and-workspaces" class="md-nav__link">
+    1. (Optional) Create repositories for policy sets, registry modules, and workspaces
+  </a>
+  
+    <nav class="md-nav" aria-label="1. (Optional) Create repositories for policy sets, registry modules, and workspaces">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#2-set-up-environment-variables" class="md-nav__link">
+    2. Set up environment variables
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Set up environment variables">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#required" class="md-nav__link">
+    Required:
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optional" class="md-nav__link">
+    Optional:
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-run-the-tests" class="md-nav__link">
+    3. Run the tests
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Run the tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#run-all-acceptance-tests" class="md-nav__link">
+    Run all acceptance tests
+  </a>
+  
+    <nav class="md-nav" aria-label="Run all acceptance tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#with-envchain" class="md-nav__link">
+    With envchain:
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#without-envchain" class="md-nav__link">
+    Without envchain:
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-a-specific-acceptance-test" class="md-nav__link">
+    Run a specific acceptance test
+  </a>
+  
+    <nav class="md-nav" aria-label="Run a specific acceptance test">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#with-envchain_1" class="md-nav__link">
+    With envchain:
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#without-envchain_1" class="md-nav__link">
+    Without envchain:
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-all-unit-tests" class="md-nav__link">
+    Run all unit tests
+  </a>
+  
+    <nav class="md-nav" aria-label="Run all unit tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#with-envchain_2" class="md-nav__link">
+    With envchain:
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#without-envchain_2" class="md-nav__link">
+    Without envchain:
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-a-specific-unit-test" class="md-nav__link">
+    Run a specific unit test
+  </a>
+  
+    <nav class="md-nav" aria-label="Run a specific unit test">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#with-envchain_3" class="md-nav__link">
+    With envchain:
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#without-envchain_3" class="md-nav__link">
+    Without envchain:
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../beta/" class="md-nav__link">
+        Introducing Beta Features
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../debugging/" class="md-nav__link">
+        Debugging
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backwards-compatibility/" class="md-nav__link">
+        Backwards Compatibility
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../writing-acceptance-tests/" class="md-nav__link">
+        Acceptance Tests
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog-process/" class="md-nav__link">
+        Changelog Process
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-optional-create-repositories-for-policy-sets-registry-modules-and-workspaces" class="md-nav__link">
+    1. (Optional) Create repositories for policy sets, registry modules, and workspaces
+  </a>
+  
+    <nav class="md-nav" aria-label="1. (Optional) Create repositories for policy sets, registry modules, and workspaces">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#2-set-up-environment-variables" class="md-nav__link">
+    2. Set up environment variables
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Set up environment variables">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#required" class="md-nav__link">
+    Required:
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optional" class="md-nav__link">
+    Optional:
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-run-the-tests" class="md-nav__link">
+    3. Run the tests
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Run the tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#run-all-acceptance-tests" class="md-nav__link">
+    Run all acceptance tests
+  </a>
+  
+    <nav class="md-nav" aria-label="Run all acceptance tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#with-envchain" class="md-nav__link">
+    With envchain:
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#without-envchain" class="md-nav__link">
+    Without envchain:
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-a-specific-acceptance-test" class="md-nav__link">
+    Run a specific acceptance test
+  </a>
+  
+    <nav class="md-nav" aria-label="Run a specific acceptance test">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#with-envchain_1" class="md-nav__link">
+    With envchain:
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#without-envchain_1" class="md-nav__link">
+    Without envchain:
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-all-unit-tests" class="md-nav__link">
+    Run all unit tests
+  </a>
+  
+    <nav class="md-nav" aria-label="Run all unit tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#with-envchain_2" class="md-nav__link">
+    With envchain:
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#without-envchain_2" class="md-nav__link">
+    Without envchain:
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-a-specific-unit-test" class="md-nav__link">
+    Run a specific unit test
+  </a>
+  
+    <nav class="md-nav" aria-label="Run a specific unit test">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#with-envchain_3" class="md-nav__link">
+    With envchain:
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#without-envchain_3" class="md-nav__link">
+    Without envchain:
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+
+<h1 id="running-tests">Running tests<a class="headerlink" href="#running-tests" title="Permanent link">#</a></h1>
+<p>Running all the tests for this provider requires access to HCP Terraform with
+a full feature set; most tests can be run against your own installation of
+Terraform Enterprise.</p>
+<h2 id="1-optional-create-repositories-for-policy-sets-registry-modules-and-workspaces">1. (Optional) Create repositories for policy sets, registry modules, and workspaces<a class="headerlink" href="#1-optional-create-repositories-for-policy-sets-registry-modules-and-workspaces" title="Permanent link">#</a></h2>
+<p>If you are planning to run the full suite of tests or work on policy sets, registry modules, or workspaces, you'll need to set up repositories for them in GitHub.</p>
+<p>Your policy set repository will need the following:
+1. A policy set stored in a subdirectory
+1. A branch other than <code>main</code>.</p>
+<p>Your registry module repository will need to be a <a href="https://developer.hashicorp.com/terraform/cloud-docs/registry/publish-modules#preparing-a-module-repository">valid module</a>.
+It will need the following:
+1. To be named <code>terraform-&lt;PROVIDER&gt;-&lt;NAME&gt;</code>
+1. At least one valid SemVer tag in the format <code>x.y.z</code>
+<a href="https://github.com/caseylang/terraform-random-module">terraform-random-module</a> is a good example repo.</p>
+<p>Your workspace repository will need the following:
+1. A branch other than <code>main</code>.</p>
+<h3 id="2-set-up-environment-variables">2. Set up environment variables<a class="headerlink" href="#2-set-up-environment-variables" title="Permanent link">#</a></h3>
+<p>To run all tests, you will need to set the following environment variables:</p>
+<h5 id="required">Required:<a class="headerlink" href="#required" title="Permanent link">#</a></h5>
+<p>A hostname and token must be provided in order to run the acceptance tests. By
+default, these are loaded from the <code>credentials</code> in the <a href="https://developer.hashicorp.com/terraform/cli/config/config-file">CLI config
+file</a>. You can override
+these values with the environment variables specified below:</p>
+<ol>
+<li><code>TFE_HOSTNAME</code> - URL of a HCP Terraform or Terraform Enterprise instance to be used for testing, without the scheme. Example: <code>tfe.local</code></li>
+<li><code>TFE_TOKEN</code> - A <a href="https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/users#tokens">user API token</a> for an administrator account on the HCP Terraform or Terraform Enterprise instance being used for testing.</li>
+</ol>
+<h5 id="optional">Optional:<a class="headerlink" href="#optional" title="Permanent link">#</a></h5>
+<ol>
+<li><code>TFE_USER1</code> and <code>TFE_USER2</code>: The usernames of two pre-existing users on the HCP Terraform or Terraform Enterprise instance being used for testing. Required for running team membership tests.</li>
+<li><code>GITHUB_TOKEN</code> - <a href="https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line">GitHub personal access token</a>. Used to establish a VCS provider connection.</li>
+<li><code>GITHUB_POLICY_SET_IDENTIFIER</code> - GitHub policy set repository identifier in the format <code>username/repository</code>. Required for running policy set tests.</li>
+<li><code>GITHUB_POLICY_SET_BRANCH</code>: A GitHub branch for the repository specified by <code>GITHUB_POLICY_SET_IDENTIFIER</code>. Required for running policy set tests.</li>
+<li><code>GITHUB_POLICY_SET_PATH</code>: A GitHub subdirectory for the repository specified by <code>GITHUB_POLICY_SET_IDENTIFIER</code>. Required for running policy set tests.</li>
+<li><code>GITHUB_REGISTRY_MODULE_IDENTIFIER</code> - GitHub registry module repository identifier in the format <code>username/repository</code>. Required for running registry module tests.</li>
+<li><code>GITHUB_WORKSPACE_IDENTIFIER</code> - GitHub workspace repository identifier in the format <code>username/repository</code>. Required for running workspace tests.</li>
+<li><code>GITHUB_WORKSPACE_BRANCH</code>: A GitHub branch for the repository specified by <code>GITHUB_WORKSPACE_IDENTIFIER</code>. Required for running workspace tests.</li>
+<li><code>ENABLE_TFE</code> - Some tests cover features available only in HCP Terraform. To skip these tests when running against a Terraform Enterprise instance, set <code>ENABLE_TFE=1</code>.</li>
+<li><code>RUN_TASKS_URL</code> - External URL to use for testing Run Tasks operations, for example <code>RUN_TASKS_URL=http://somewhere.local:8080/pass</code>. Required for running run tasks tests.</li>
+<li><code>RUN_TASKS_HMAC</code> - The optional HMAC Key that should be used for Run Task operations. The default is no key.</li>
+<li><code>GITHUB_APP_INSTALLATION_ID</code> - GitHub App installation internal id in the format <code>ghain-xxxxxxx</code>. Required for running any tests that use GitHub App VCS (workspace, policy sets, registry module).</li>
+<li><code>GITHUB_APP_INSTALLATION_NAME</code> - GitHub App installation name. Required for running tfe_github_app_installation data source test.</li>
+</ol>
+<p><strong>Note:</strong> In order to run integration tests for <strong>Paid</strong> features you will need a token <code>TFE_TOKEN</code> with HCP Terraform or Terraform Enterprise administrator privileges, otherwise the attempt to upgrade an organization's feature set will fail.</p>
+<p>You can set your environment variables up however you prefer. The following are instructions for setting up environment variables using <a href="https://github.com/sorah/envchain">envchain</a>.
+   1. Make sure you have envchain installed. <a href="https://github.com/sorah/envchain#installation">Instructions for this can be found in the envchain README</a>.
+   1. Pick a namespace for storing your environment variables. I suggest <code>terraform-provider-tfe</code> or something similar.
+   1. For each environment variable you need to set, run the following command:
+      <div class="highlight"><pre><span></span><code>envchain<span class="w"> </span>--set<span class="w"> </span>YOUR_NAMESPACE_HERE<span class="w"> </span>ENVIRONMENT_VARIABLE_HERE
+</code></pre></div>
+      <strong>OR</strong></p>
+<div class="highlight"><pre><span></span><code>  Set all of the environment variables at once with the following command:
+  ```sh
+  envchain --set YOUR_NAMESPACE_HERE TFE_HOSTNAME TFE_TOKEN TFE_USER1 TFE_USER2 GITHUB_TOKEN GITHUB_POLICY_SET_IDENTIFIER GITHUB_POLICY_SET_BRANCH GITHUB_POLICY_SET_PATH GITHUB_REGISTRY_MODULE_IDENTIFIER GITHUB_WORKSPACE_IDENTIFIER GITHUB_WORKSPACE_BRANCH GITHUB_APP_INSTALLATION_ID GITHUB_APP_INSTALLATION_NAME
+  ```
+</code></pre></div>
+<h3 id="3-run-the-tests">3. Run the tests<a class="headerlink" href="#3-run-the-tests" title="Permanent link">#</a></h3>
+<p>There are two types of tests one can run for the provider: acceptance tests and unit tests. You can run acceptance tests using the Makefile target <code>testacc</code> and unit tests using the Makefile target <code>test</code>. Typically, when you write a test for a particular resource or data source it will be referred to as an acceptance test. On the other hand, unit tests are reserved for resource helpers or provider specific logic. These are semantics used by the Terraform Plugin SDKv2 and are maintained here for consistency, learn more about <a href="https://developer.hashicorp.com/terraform/plugin/sdkv2/testing/acceptance-tests">Acceptance Tests</a>. Furthermore, resource tests make use of the Terraform Plugin SDKv2 helper, <a href="https://pkg.go.dev/github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource#Test">resource.Test()</a>, which requires the environment variable <code>TF_ACC</code> to be set in order to run.</p>
+<p><strong>Note</strong>: The difference between <code>make testacc</code> and <code>make test</code> is whether <code>TF_ACC=1</code> is set or not. However, you can still run unit tests using the <code>testacc</code> target.</p>
+<h4 id="run-all-acceptance-tests">Run all acceptance tests<a class="headerlink" href="#run-all-acceptance-tests" title="Permanent link">#</a></h4>
+<h5 id="with-envchain">With envchain:<a class="headerlink" href="#with-envchain" title="Permanent link">#</a></h5>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>envchain<span class="w"> </span>YOUR_NAMESPACE_HERE<span class="w"> </span>make<span class="w"> </span>testacc
+</code></pre></div>
+<h5 id="without-envchain">Without envchain:<a class="headerlink" href="#without-envchain" title="Permanent link">#</a></h5>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>make<span class="w"> </span>testacc
+</code></pre></div>
+<h4 id="run-a-specific-acceptance-test">Run a specific acceptance test<a class="headerlink" href="#run-a-specific-acceptance-test" title="Permanent link">#</a></h4>
+<p>The commands below use notification configurations as an example.</p>
+<h5 id="with-envchain_1">With envchain:<a class="headerlink" href="#with-envchain_1" title="Permanent link">#</a></h5>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span><span class="nv">TESTARGS</span><span class="o">=</span><span class="s2">&quot;-run TestAccTFENotificationConfiguration&quot;</span><span class="w"> </span>envchain<span class="w"> </span>YOUR_NAMESPACE_HERE<span class="w"> </span>make<span class="w"> </span>testacc
+</code></pre></div>
+<h5 id="without-envchain_1">Without envchain:<a class="headerlink" href="#without-envchain_1" title="Permanent link">#</a></h5>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span><span class="nv">TESTARGS</span><span class="o">=</span><span class="s2">&quot;-run TestAccTFENotificationConfiguration&quot;</span><span class="w"> </span>make<span class="w"> </span>testacc
+</code></pre></div>
+<h4 id="run-all-unit-tests">Run all unit tests<a class="headerlink" href="#run-all-unit-tests" title="Permanent link">#</a></h4>
+<h5 id="with-envchain_2">With envchain:<a class="headerlink" href="#with-envchain_2" title="Permanent link">#</a></h5>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>envchain<span class="w"> </span>YOUR_NAMESPACE_HERE<span class="w"> </span>make<span class="w"> </span><span class="nb">test</span>
+</code></pre></div>
+<h5 id="without-envchain_2">Without envchain:<a class="headerlink" href="#without-envchain_2" title="Permanent link">#</a></h5>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>make<span class="w"> </span><span class="nb">test</span>
+</code></pre></div>
+<h4 id="run-a-specific-unit-test">Run a specific unit test<a class="headerlink" href="#run-a-specific-unit-test" title="Permanent link">#</a></h4>
+<p>The commands below test the organization run task helper as an example.</p>
+<h5 id="with-envchain_3">With envchain:<a class="headerlink" href="#with-envchain_3" title="Permanent link">#</a></h5>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span><span class="nv">TESTARGS</span><span class="o">=</span><span class="s2">&quot;-run TestFetchOrganizationRunTask&quot;</span><span class="w"> </span>envchain<span class="w"> </span>YOUR_NAMESPACE_HERE<span class="w"> </span>make<span class="w"> </span><span class="nb">test</span>
+</code></pre></div>
+<h5 id="without-envchain_3">Without envchain:<a class="headerlink" href="#without-envchain_3" title="Permanent link">#</a></h5>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span><span class="nv">TESTARGS</span><span class="o">=</span><span class="s2">&quot;-run TestFetchOrganizationRunTask&quot;</span><span class="w"> </span>make<span class="w"> </span><span class="nb">test</span>
+</code></pre></div>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      HashiCorp
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "content.tabs.link"], "search": "../assets/javascripts/workers/search.e5c33ebb.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.51d95adb.min.js"></script>
+      
+    
+  </body>
+</html>
