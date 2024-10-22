@@ -54,7 +54,7 @@ func TestAccTFENoCodeModule_with_variable_options(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    providers,
-		CheckDestroy: func(s *terraform.State) error { return nil },
+		CheckDestroy: testAccCheckTFENoCodeModuleDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: cfg,
@@ -89,6 +89,56 @@ func TestAccTFENoCodeModule_with_variable_options(t *testing.T) {
 									return fmt.Errorf("Bad 'min_lower' attribute options: %v", nocodeModule.VariableOptions)
 								}
 							}
+						}
+
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFENoCodeModule_with_version_pin(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatalf("error getting client %v", err)
+	}
+	org, cleanup := createBusinessOrganization(t, tfeClient)
+	defer cleanup()
+	providers := providerWithDefaultOrganization(org.Name)
+	cfg := testAccTFENoCodeModule_with_version_pin(org.Name)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    providers,
+		CheckDestroy: testAccCheckTFENoCodeModuleDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: cfg,
+				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						n := "tfe_no_code_module.sensitive"
+						rs, ok := s.RootModule().Resources[n]
+						if !ok || rs.Primary.ID == "" {
+							return fmt.Errorf("Not found: %s", n)
+						}
+
+						config := providers["tfe"].Meta().(ConfiguredClient)
+						opts := &tfe.RegistryNoCodeModuleReadOptions{
+							Include: []tfe.RegistryNoCodeModuleIncludeOpt{tfe.RegistryNoCodeIncludeVariableOptions},
+						}
+						nocodeModule, err := config.Client.RegistryNoCodeModules.Read(ctx, rs.Primary.ID, opts)
+						if err != nil {
+							return fmt.Errorf("unable to read nocodeModule with ID %s", rs.Primary.ID)
+						}
+
+						if !nocodeModule.Enabled {
+							return fmt.Errorf("Bad 'enabled' attribute: %t", nocodeModule.Enabled)
+						}
+
+						if nocodeModule.VersionPin != "1.1.0" {
+							return fmt.Errorf("Bad 'version_pin' attribute: %s", nocodeModule.VersionPin)
 						}
 
 						return nil
@@ -425,7 +475,38 @@ func testAccTFENoCodeModule_with_variable_options(org string) string {
 			name    = "min_lower"
 			type    = "number"
 			options = [ "1", "2", "3", "4", "5" ]
+	}
+}
+`, org, envGithubRegistryModuleIdentifer, envGithubToken)
+}
+
+func testAccTFENoCodeModule_with_version_pin(org string) string {
+	return fmt.Sprintf(`
+	locals {
+		organization_name = "%s"
+		identifier         = "%s"
+	}
+
+	resource "tfe_oauth_client" "github" {
+		organization     = local.organization_name
+		api_url          = "https://api.github.com"
+		http_url         = "https://github.com"
+		oauth_token      = "%s"
+		service_provider = "github"
+	}
+
+	resource "tfe_registry_module" "sensitive" {
+		vcs_repo {
+			display_identifier = local.identifier
+			identifier         = local.identifier
+			oauth_token_id     = tfe_oauth_client.github.oauth_token_id
 		}
 	}
+
+	resource "tfe_no_code_module" "sensitive" {
+	organization    = local.organization_name
+	registry_module = tfe_registry_module.sensitive.id
+	version_pin     = "1.1.0"
+}
 `, org, envGithubRegistryModuleIdentifer, envGithubToken)
 }
