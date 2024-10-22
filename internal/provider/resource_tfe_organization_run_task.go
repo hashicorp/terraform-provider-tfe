@@ -160,7 +160,11 @@ func (r *resourceOrgRunTask) Read(ctx context.Context, req resource.ReadRequest,
 	tflog.Debug(ctx, "Reading organization run task")
 	task, err := r.config.Client.RunTasks.Read(ctx, taskID)
 	if err != nil {
-		resp.Diagnostics.AddError("Error reading Organization Run Task", "Could not read Organization Run Task, unexpected error: "+err.Error())
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			resp.State.RemoveResource(ctx)
+		} else {
+			resp.Diagnostics.AddError("Error reading Organization Run Task", "Could not read Organization Run Task, unexpected error: "+err.Error())
+		}
 		return
 	}
 
