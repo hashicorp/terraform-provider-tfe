@@ -22,9 +22,11 @@ func TestAccTFENoCodeModule_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFENoCodeModuleDestroy,
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		CheckDestroy: func(s *terraform.State) error {
+			return testAccCheckTFENoCodeModuleDestroy(testAccProvider.Meta().(ConfiguredClient), s)
+		},
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENoCodeModule_basic(rInt),
@@ -52,9 +54,11 @@ func TestAccTFENoCodeModule_with_variable_options(t *testing.T) {
 	cfg := testAccTFENoCodeModule_with_variable_options(org.Name)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    providers,
-		CheckDestroy: testAccCheckTFENoCodeModuleDestroy,
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: providers,
+		CheckDestroy: func(s *terraform.State) error {
+			return testAccCheckTFENoCodeModuleDestroy(providers["tfe"].Meta().(ConfiguredClient), s)
+		},
 		Steps: []resource.TestStep{
 			{
 				Config: cfg,
@@ -110,9 +114,11 @@ func TestAccTFENoCodeModule_with_version_pin(t *testing.T) {
 	cfg := testAccTFENoCodeModule_with_version_pin(org.Name)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    providers,
-		CheckDestroy: testAccCheckTFENoCodeModuleDestroy,
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: providers,
+		CheckDestroy: func(s *terraform.State) error {
+			return testAccCheckTFENoCodeModuleDestroy(providers["tfe"].Meta().(ConfiguredClient), s)
+		},
 		Steps: []resource.TestStep{
 			{
 				Config: cfg,
@@ -155,9 +161,11 @@ func TestAccTFENoCodeModule_update(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFENoCodeModuleDestroy,
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		CheckDestroy: func(s *terraform.State) error {
+			return testAccCheckTFENoCodeModuleDestroy(testAccProvider.Meta().(ConfiguredClient), s)
+		},
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENoCodeModule_basic(rInt),
@@ -189,9 +197,11 @@ func TestAccTFENoCodeModule_update_variable_options(t *testing.T) {
 	updatedRegionOptions := `"eu-east-1", "eu-west-1", "us-west-2"`
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFENoCodeModuleDestroy,
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		CheckDestroy: func(s *terraform.State) error {
+			return testAccCheckTFENoCodeModuleDestroy(testAccProvider.Meta().(ConfiguredClient), s)
+		},
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENoCodeModule_with_options(rInt, regionOptions),
@@ -245,9 +255,11 @@ func TestAccTFENoCodeModule_delete(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFENoCodeModuleDestroy,
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		CheckDestroy: func(s *terraform.State) error {
+			return testAccCheckTFENoCodeModuleDestroy(testAccProvider.Meta().(ConfiguredClient), s)
+		},
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENoCodeModule_basic(rInt),
@@ -276,9 +288,11 @@ func TestAccTFENoCodeModule_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	nocodeModule := &tfe.RegistryNoCodeModule{}
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFENoCodeModuleDestroy,
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		CheckDestroy: func(s *terraform.State) error {
+			return testAccCheckTFENoCodeModuleDestroy(testAccProvider.Meta().(ConfiguredClient), s)
+		},
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENoCodeModule_basic(rInt),
@@ -372,9 +386,7 @@ resource "tfe_no_code_module" "foobar" {
 `, rInt, regionOpts)
 }
 
-func testAccCheckTFENoCodeModuleDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
+func testAccCheckTFENoCodeModuleDestroy(config ConfiguredClient, s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_no_code_module" {
 			continue

@@ -102,29 +102,28 @@ func resourceTFENoCodeModuleCreate(ctx context.Context, d *schema.ResourceData, 
 		options.Enabled = tfe.Bool(enabled.(bool))
 	}
 
-	versionPin, ok := d.GetOk("version_pin")
-	if ok {
-		options.VersionPin = versionPin.(string)
-	}
-
 	orgName, err := config.schemaOrDefaultOrganization(d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	// If variable_options are set, we need to ensure the pinned version is available
-	// before creating the no-code module with the variable options.
-	// We check for the version_pin and wait for the pinned version to be available.
-	if variableOptions, ok := d.GetOk("variable_options"); ok {
-		if options.VersionPin == "" {
-			return diag.Errorf("version_pin must be set when variable_options are set")
-		}
+	// If version_pin is set, ensure the version is available before creating the no-code module.
+	if versionPin, ok := d.GetOk("version_pin"); ok {
+		options.VersionPin = versionPin.(string)
 		moduleID, err := getFullModuleID(ctx, config.Client, orgName, options.RegistryModule.ID)
 		if err != nil {
 			return diag.Errorf("Error getting full module ID for registry module %s: %s", options.RegistryModule.ID, err)
 		}
 		if err := waitForModuleVersion(ctx, config.Client, moduleID, options.VersionPin); err != nil {
 			return diag.Errorf("Error reading registry module version %s: %s", options.VersionPin, err)
+		}
+	}
+
+	// If variable_options are set, the version_pin must be also set,
+	// because the variable options are tied to a specific version of the module.
+	if variableOptions, ok := d.GetOk("variable_options"); ok {
+		if options.VersionPin == "" {
+			return diag.Errorf("version_pin must be set when variable_options are set")
 		}
 		options.VariableOptions = variableOptionsMaptoStruct(variableOptions.([]interface{}))
 	}
