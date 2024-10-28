@@ -152,4 +152,4 @@ terraform import tfe_workspace_settings.test ws-CH5in3chf8RJjrVd
 terraform import tfe_workspace_settings.test my-org-name/my-wkspace-name
 ```
 
-<!-- cache-key: cdktf-0.20.1 input-e567651e80d935c1297d2d63ac7bf6052ff86525f29c4e5f59a3395787d5761b -->
+<!-- cache-key: cdktf-0.20.8 input-e567651e80d935c1297d2d63ac7bf6052ff86525f29c4e5f59a3395787d5761b -->
