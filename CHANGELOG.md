@@ -5,6 +5,10 @@ BUG FIXES:
 * `r/tfe_organization_run_task`: Do not error when reading organization tasks that no longer exist by @glennsarti [#1500](https://github.com/hashicorp/terraform-provider-tfe/pull/1459)
 * `r/tfe_organization_run_task_global_settings`: Do not error when reading organization task global settings that no longer exist by @glennsarti [#1500](https://github.com/hashicorp/terraform-provider-tfe/pull/1459)
 
+FEATURES:
+* `r/tfe_organization`: Add `speculative_plan_management_enabled` attribute, by @lilincmu [TODO](https://github.com/hashicorp/terraform-provider-tfe/pulls/)
+* `d/tfe_organization`: Add `speculative_plan_management_enabled` attribute, by @lilincmu [TODO](https://github.com/hashicorp/terraform-provider-tfe/pulls/)
+
 ## v0.59.0
 
 ## BREAKING CHANGES
