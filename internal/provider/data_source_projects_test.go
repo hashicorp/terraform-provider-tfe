@@ -22,13 +22,13 @@ func TestAccTFEProjectsDataSource_basic(t *testing.T) {
 	orgName := org.Name
 
 	prj1 := createProject(t, tfeClient, org.Name, tfe.ProjectCreateOptions{
-		Name: "project1", Description: "Project 1"
+		Name: "project1", Description: "Project 1",
 	})
 	prj2 := createProject(t, tfeClient, org.Name, tfe.ProjectCreateOptions{
-		Name: "project2", Description: "Project 2"
+		Name: "project2", Description: "Project 2",
 	})
 	prj3 := createProject(t, tfeClient, org.Name, tfe.ProjectCreateOptions{
-		Name: "project3", Description: "Project 3"
+		Name: "project3", Description: "Project 3",
 	})
 
 	resource.Test(t, resource.TestCase{
