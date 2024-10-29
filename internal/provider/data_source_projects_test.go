@@ -13,8 +13,23 @@ import (
 )
 
 func TestAccTFEProjectsDataSource_basic(t *testing.T) {
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+	orgName := org.Name
+
+	prj1 := createProject(t, tfeClient, org.Name, tfe.ProjectCreateOptions{
+		Name: "project1", Description: "Project 1"
+	})
+	prj2 := createProject(t, tfeClient, org.Name, tfe.ProjectCreateOptions{
+		Name: "project2", Description: "Project 2"
+	})
+	prj3 := createProject(t, tfeClient, org.Name, tfe.ProjectCreateOptions{
+		Name: "project3", Description: "Project 3"
+	})
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -59,22 +74,28 @@ func TestAccTFEProjectsDataSource_basic(t *testing.T) {
 						"data.tfe_projects.all", "projects.3.description", "Project 3"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_projects.all", "projects.3.organization", orgName),
-				),
+				  ),
 			},
 		},
 	})
 }
 
+
 func TestAccTFEProjectsDataSource_basicNoProjects(t *testing.T) {
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+	orgName := org.Name
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEProjectsDataSourceConfig_noProjects(orgName),
+				Config: testAccTFEProjectsDataSourceConfig(orgName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"data.tfe_projects.all", "organization", orgName),
@@ -90,39 +111,8 @@ func TestAccTFEProjectsDataSource_basicNoProjects(t *testing.T) {
 
 func testAccTFEProjectsDataSourceConfig(orgName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "organization" {
-  name  = "%s"
-  email = "admin@tfe.local"
-}
-resource "tfe_project" "project1" {
-  name         = "project1"
-  description  = "Project 1"
-  organization = tfe_organization.organization.name
-}
-resource "tfe_project" "project2" {
-  name        = "project2"
-  description = "Project 2"
-  organization = tfe_organization.organization.name
-}
-resource "tfe_project" "project3" {
-  name        = "project3"
-  description = "Project 3"
-  organization = tfe_organization.organization.name
-}
 data tfe_projects "all" {
-  organization = tfe_organization.organization.name
-}
-`, orgName)
-}
-
-func testAccTFEProjectsDataSourceConfig_noProjects(orgName string) string {
-	return fmt.Sprintf(`
-resource "tfe_organization" "organization" {
-  name  = "%s"
-  email = "admin@tfe.local"
-}
-data tfe_projects "all" {
-  organization = tfe_organization.organization.name
+  organization = "%s"
 }
 `, orgName)
 }
