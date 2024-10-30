@@ -22,9 +22,11 @@ func TestAccTFENoCodeModule_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFENoCodeModuleDestroy,
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		CheckDestroy: func(s *terraform.State) error {
+			return testAccCheckTFENoCodeModuleDestroy(testAccProvider.Meta().(ConfiguredClient), s)
+		},
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENoCodeModule_basic(rInt),
@@ -42,26 +44,111 @@ func TestAccTFENoCodeModule_basic(t *testing.T) {
 }
 
 func TestAccTFENoCodeModule_with_variable_options(t *testing.T) {
-	skipUnlessBeta(t)
-	nocodeModule := &tfe.RegistryNoCodeModule{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	regionOptions := `"us-east-1", "us-west-1", "eu-west-2"`
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatalf("error getting client %v", err)
+	}
+	org, cleanup := createBusinessOrganization(t, tfeClient)
+	defer cleanup()
+	providers := providerWithDefaultOrganization(org.Name)
+	cfg := testAccTFENoCodeModule_with_variable_options(org.Name)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFENoCodeModuleDestroy,
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: providers,
+		CheckDestroy: func(s *terraform.State) error {
+			return testAccCheckTFENoCodeModuleDestroy(providers["tfe"].Meta().(ConfiguredClient), s)
+		},
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFENoCodeModule_with_options(rInt, regionOptions),
+				Config: cfg,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFENoCodeModuleExists(
-						"tfe_no_code_module.foobar", nocodeModule),
-					resource.TestCheckResourceAttr(
-						"tfe_no_code_module.foobar", "enabled", "true"),
-					resource.TestCheckResourceAttr(
-						"tfe_no_code_module.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
-					testAccCheckTFENoCodeModuleVariableOptions(nocodeModule),
+					func(s *terraform.State) error {
+						n := "tfe_no_code_module.sensitive"
+						rs, ok := s.RootModule().Resources[n]
+						if !ok || rs.Primary.ID == "" {
+							return fmt.Errorf("Not found: %s", n)
+						}
+
+						config := providers["tfe"].Meta().(ConfiguredClient)
+						opts := &tfe.RegistryNoCodeModuleReadOptions{
+							Include: []tfe.RegistryNoCodeModuleIncludeOpt{tfe.RegistryNoCodeIncludeVariableOptions},
+						}
+						nocodeModule, err := config.Client.RegistryNoCodeModules.Read(ctx, rs.Primary.ID, opts)
+						if err != nil {
+							return fmt.Errorf("unable to read nocodeModule with ID %s", rs.Primary.ID)
+						}
+
+						if !nocodeModule.Enabled {
+							return fmt.Errorf("Bad 'enabled' attribute: %t", nocodeModule.Enabled)
+						}
+
+						if len(nocodeModule.VariableOptions) == 0 {
+							return fmt.Errorf("Bad 'variable_options' attribute: %v", nocodeModule.VariableOptions)
+						}
+
+						for _, vo := range nocodeModule.VariableOptions {
+							if vo.VariableName == "min_lower" {
+								if len(vo.Options) != 5 {
+									return fmt.Errorf("Bad 'min_lower' attribute options: %v", nocodeModule.VariableOptions)
+								}
+							}
+						}
+
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFENoCodeModule_with_version_pin(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatalf("error getting client %v", err)
+	}
+	org, cleanup := createBusinessOrganization(t, tfeClient)
+	defer cleanup()
+	providers := providerWithDefaultOrganization(org.Name)
+	cfg := testAccTFENoCodeModule_with_version_pin(org.Name)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: providers,
+		CheckDestroy: func(s *terraform.State) error {
+			return testAccCheckTFENoCodeModuleDestroy(providers["tfe"].Meta().(ConfiguredClient), s)
+		},
+		Steps: []resource.TestStep{
+			{
+				Config: cfg,
+				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						n := "tfe_no_code_module.sensitive"
+						rs, ok := s.RootModule().Resources[n]
+						if !ok || rs.Primary.ID == "" {
+							return fmt.Errorf("Not found: %s", n)
+						}
+
+						config := providers["tfe"].Meta().(ConfiguredClient)
+						opts := &tfe.RegistryNoCodeModuleReadOptions{
+							Include: []tfe.RegistryNoCodeModuleIncludeOpt{tfe.RegistryNoCodeIncludeVariableOptions},
+						}
+						nocodeModule, err := config.Client.RegistryNoCodeModules.Read(ctx, rs.Primary.ID, opts)
+						if err != nil {
+							return fmt.Errorf("unable to read nocodeModule with ID %s", rs.Primary.ID)
+						}
+
+						if !nocodeModule.Enabled {
+							return fmt.Errorf("Bad 'enabled' attribute: %t", nocodeModule.Enabled)
+						}
+
+						if nocodeModule.VersionPin != "1.1.0" {
+							return fmt.Errorf("Bad 'version_pin' attribute: %s", nocodeModule.VersionPin)
+						}
+
+						return nil
+					},
 				),
 			},
 		},
@@ -74,9 +161,11 @@ func TestAccTFENoCodeModule_update(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFENoCodeModuleDestroy,
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		CheckDestroy: func(s *terraform.State) error {
+			return testAccCheckTFENoCodeModuleDestroy(testAccProvider.Meta().(ConfiguredClient), s)
+		},
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENoCodeModule_basic(rInt),
@@ -108,9 +197,11 @@ func TestAccTFENoCodeModule_update_variable_options(t *testing.T) {
 	updatedRegionOptions := `"eu-east-1", "eu-west-1", "us-west-2"`
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFENoCodeModuleDestroy,
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		CheckDestroy: func(s *terraform.State) error {
+			return testAccCheckTFENoCodeModuleDestroy(testAccProvider.Meta().(ConfiguredClient), s)
+		},
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENoCodeModule_with_options(rInt, regionOptions),
@@ -164,9 +255,11 @@ func TestAccTFENoCodeModule_delete(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFENoCodeModuleDestroy,
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		CheckDestroy: func(s *terraform.State) error {
+			return testAccCheckTFENoCodeModuleDestroy(testAccProvider.Meta().(ConfiguredClient), s)
+		},
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENoCodeModule_basic(rInt),
@@ -195,9 +288,11 @@ func TestAccTFENoCodeModule_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	nocodeModule := &tfe.RegistryNoCodeModule{}
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFENoCodeModuleDestroy,
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		CheckDestroy: func(s *terraform.State) error {
+			return testAccCheckTFENoCodeModuleDestroy(testAccProvider.Meta().(ConfiguredClient), s)
+		},
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENoCodeModule_basic(rInt),
@@ -291,9 +386,7 @@ resource "tfe_no_code_module" "foobar" {
 `, rInt, regionOpts)
 }
 
-func testAccCheckTFENoCodeModuleDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
+func testAccCheckTFENoCodeModuleDestroy(config ConfiguredClient, s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_no_code_module" {
 			continue
@@ -360,4 +453,72 @@ func testAccCheckTFENoCodeModuleVariableOptions(
 
 		return nil
 	}
+}
+
+func testAccTFENoCodeModule_with_variable_options(org string) string {
+	return fmt.Sprintf(`
+	locals {
+		organization_name = "%s"
+		identifier         = "%s"
+	}
+
+	resource "tfe_oauth_client" "github" {
+		organization     = local.organization_name
+		api_url          = "https://api.github.com"
+		http_url         = "https://github.com"
+		oauth_token      = "%s"
+		service_provider = "github"
+	}
+
+	resource "tfe_registry_module" "sensitive" {
+		vcs_repo {
+			display_identifier = local.identifier
+			identifier         = local.identifier
+			oauth_token_id     = tfe_oauth_client.github.oauth_token_id
+		}
+	}
+
+	resource "tfe_no_code_module" "sensitive" {
+	organization    = local.organization_name
+	registry_module = tfe_registry_module.sensitive.id
+	version_pin     = "1.1.0"
+
+	variable_options {
+			name    = "min_lower"
+			type    = "number"
+			options = [ "1", "2", "3", "4", "5" ]
+	}
+}
+`, org, envGithubRegistryModuleIdentifer, envGithubToken)
+}
+
+func testAccTFENoCodeModule_with_version_pin(org string) string {
+	return fmt.Sprintf(`
+	locals {
+		organization_name = "%s"
+		identifier         = "%s"
+	}
+
+	resource "tfe_oauth_client" "github" {
+		organization     = local.organization_name
+		api_url          = "https://api.github.com"
+		http_url         = "https://github.com"
+		oauth_token      = "%s"
+		service_provider = "github"
+	}
+
+	resource "tfe_registry_module" "sensitive" {
+		vcs_repo {
+			display_identifier = local.identifier
+			identifier         = local.identifier
+			oauth_token_id     = tfe_oauth_client.github.oauth_token_id
+		}
+	}
+
+	resource "tfe_no_code_module" "sensitive" {
+	organization    = local.organization_name
+	registry_module = tfe_registry_module.sensitive.id
+	version_pin     = "1.1.0"
+}
+`, org, envGithubRegistryModuleIdentifer, envGithubToken)
 }
