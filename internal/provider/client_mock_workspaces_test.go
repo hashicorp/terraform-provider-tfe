@@ -196,3 +196,7 @@ func (m *mockWorkspaces) SetDataRetentionPolicyDeleteOlder(ctx context.Context, 
 func (m *mockWorkspaces) SetDataRetentionPolicyDontDelete(ctx context.Context, organization string, options tfe.DataRetentionPolicyDontDeleteSetOptions) (*tfe.DataRetentionPolicyDontDelete, error) {
 	panic("not implemented")
 }
+
+func (m *mockWorkspaces) ListTagBindings(ctx context.Context, workspaceID string) ([]*tfe.TagBinding, error) {
+	panic("not implemented")
+}
