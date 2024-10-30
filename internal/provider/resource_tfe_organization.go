@@ -106,6 +106,7 @@ func resourceTFEOrganization() *schema.Resource {
 			"speculative_plan_management_enabled": {
 				Type:     schema.TypeBool,
 				Optional: true,
+				Default:  true,
 			},
 		},
 	}
