@@ -75,6 +75,11 @@ func dataSourceTFEOrganization() *schema.Resource {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
+
+			"speculative_plan_management_enabled": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -113,6 +118,7 @@ func dataSourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) err
 	d.Set("send_passing_statuses_for_untriggered_speculative_plans", org.SendPassingStatusesForUntriggeredSpeculativePlans)
 	d.Set("aggregated_commit_status_enabled", org.AggregatedCommitStatusEnabled)
 	d.Set("assessments_enforced", org.AssessmentsEnforced)
+	d.Set("speculative_plan_management_enabled", org.SpeculativePlanManagementEnabled)
 
 	return nil
 }
