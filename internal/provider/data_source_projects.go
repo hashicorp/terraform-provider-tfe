@@ -26,6 +26,26 @@ func NewProjectsDataSource() datasource.DataSource {
 	return &dataSourceTFEProjects{}
 }
 
+// modelTFEProject maps the resource or data source schema data to a
+// struct.
+type modelTFEProject struct {
+	ID           types.String `tfsdk:"id"`
+	Name         types.String `tfsdk:"name"`
+	Description  types.String `tfsdk:"description"`
+	Organization types.String `tfsdk:"organization"`
+}
+
+// modelFromTFEProject builds a modelTFEProject struct from a
+// tfe.Project value.
+func modelFromTFEProject(v *tfe.Project) modelTFEProject {
+	return modelTFEProject{
+		ID:           types.StringValue(v.ID),
+		Name:         types.StringValue(v.Name),
+		Description:  types.StringValue(v.Description),
+		Organization: types.StringValue(v.Organization.Name),
+	}
+}
+
 // dataSourceTFEProjects is the data source implementation.
 type dataSourceTFEProjects struct {
 	config ConfiguredClient
@@ -33,9 +53,9 @@ type dataSourceTFEProjects struct {
 
 // modelTFEProjects maps the data source schema data.
 type modelTFEProjects struct {
-	ID           types.String  `tfsdk:"id"`
-	Organization types.String  `tfsdk:"organization"`
-	Projects     []tfe.Project `tfsdk:"projects"`
+	ID           types.String      `tfsdk:"id"`
+	Organization types.String      `tfsdk:"organization"`
+	Projects     []modelTFEProject `tfsdk:"projects"`
 }
 
 // Metadata returns the data source type name.
@@ -122,11 +142,11 @@ func (d *dataSourceTFEProjects) Read(ctx context.Context, req datasource.ReadReq
 
 	model.ID = types.StringValue(organization)
 	model.Organization = types.StringValue(organization)
-	model.Projects = []tfe.Project{}
+	model.Projects = []modelTFEProject{}
 
 	for { // paginate
 		for _, project := range projectList.Items {
-			model.Projects = append(model.Projects, *project)
+			model.Projects = append(model.Projects, modelFromTFEProject(project))
 		}
 
 		if projectList.CurrentPage >= projectList.TotalPages {
