@@ -33,9 +33,9 @@ type dataSourceTFEProjects struct {
 
 // modelTFEProjects maps the data source schema data.
 type modelTFEProjects struct {
-	ID           types.String      `tfsdk:"id"`
-	Organization types.String      `tfsdk:"organization"`
-	Projects     []modelTFEProject `tfsdk:"projects"`
+	ID           types.String  `tfsdk:"id"`
+	Organization types.String  `tfsdk:"organization"`
+	Projects     []tfe.Project `tfsdk:"projects"`
 }
 
 // Metadata returns the data source type name.
@@ -122,11 +122,11 @@ func (d *dataSourceTFEProjects) Read(ctx context.Context, req datasource.ReadReq
 
 	model.ID = types.StringValue(organization)
 	model.Organization = types.StringValue(organization)
-	model.Projects = []modelTFEProject{}
+	model.Projects = []tfe.Project{}
 
 	for { // paginate
 		for _, project := range projectList.Items {
-			model.Projects = append(model.Projects, modelFromTFEProject(project))
+			model.Projects = append(model.Projects, *project)
 		}
 
 		if projectList.CurrentPage >= projectList.TotalPages {
