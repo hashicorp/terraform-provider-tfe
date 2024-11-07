@@ -90,7 +90,8 @@ The following arguments are supported:
 * `assessmentsEnabled` - (Optional) Whether to regularly run health assessments such as drift detection on the workspace. Defaults to `false`.
 * `autoApply` - (Optional) Whether to automatically apply changes when a Terraform plan is successful. Defaults to `false`.
 * `autoApplyRunTrigger` - (Optional) Whether to automatically apply changes for runs that were created by run triggers from another workspace. Defaults to `false`.
-* `autoDestroyAt` - (Optional) A future date/time string at which point all resources in a workspace will be scheduled for deletion. Must be a string in RFC3339 format (e.g. "2100-01-01T00:00:00Z").
+* `autoDestroyActivityDuration` - (Optional) A duration string of the period of time after workspace activity to automatically schedule an auto-destroy run. Must be of the form `<number><unit>` where allowed unit values are "d" and "h". Conflicts with `autoDestroyAt`.
+* `autoDestroyAt` - (Optional) A future date/time string at which point all resources in a workspace will be scheduled for deletion. Must be a string in RFC3339 format (e.g. "2100-01-01T00:00:00Z"). Conflicts with `autoDestroyActivityDuration`.
 
 ~> **NOTE:** `autoDestroyAt` is not intended for workspaces containing production resources or long-lived workspaces. Since this attribute is in-part managed by HCP Terraform, using `ignoreChanges` for this attribute may be preferred.
 
@@ -193,4 +194,4 @@ terraform import tfe_workspace.test ws-CH5in3chf8RJjrVd
 terraform import tfe_workspace.test my-org-name/my-wkspace-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-8e3a1d0fda532ac3731fa67e4959298cca05137574cdd1bee70b1f4d52482ea3 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-d77de336a5a7ff992f384172426e4a08194946368dc6e0a8c28f78a10116913f -->
