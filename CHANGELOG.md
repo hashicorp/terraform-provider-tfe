@@ -1,4 +1,4 @@
-## Unreleased
+## v0.60.0
 
 BUG FIXES:
 * `r/tfe_no_code_module`: Wait for the registry module version to be created before creating the no-code-module. Also, the version_pin attribute must be set when variable options are created by @dsa0x [#1504](https://github.com/hashicorp/terraform-provider-tfe/pull/1504)
