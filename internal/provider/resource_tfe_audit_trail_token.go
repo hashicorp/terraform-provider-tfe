@@ -72,18 +72,18 @@ func resourceTFEAuditTrailTokenCreate(d *schema.ResourceData, meta interface{}) 
 	readOptions := tfe.OrganizationTokenReadOptions{
 		TokenType: &auditTrailTokenType,
 	}
-	log.Printf("[DEBUG] Check if a token already exists for organization: %s", organization)
+	log.Printf("[DEBUG] Check if an audit trail token already exists for organization: %s", organization)
 	_, err = config.Client.OrganizationTokens.ReadWithOptions(ctx, organization, readOptions)
 	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
-		return fmt.Errorf("error checking if a token exists for organization %s: %w", organization, err)
+		return fmt.Errorf("error checking if an audit token exists for organization %s: %w", organization, err)
 	}
 
 	// If error is nil, the token already exists.
 	if err == nil {
 		if !d.Get("force_regenerate").(bool) {
-			return fmt.Errorf("a token already exists for organization: %s", organization)
+			return fmt.Errorf("an audit trail token already exists for organization: %s", organization)
 		}
-		log.Printf("[DEBUG] Regenerating existing token for organization: %s", organization)
+		log.Printf("[DEBUG] Regenerating existing audit trail token for organization: %s", organization)
 	}
 
 	// Get the token create options.
@@ -108,7 +108,7 @@ func resourceTFEAuditTrailTokenCreate(d *schema.ResourceData, meta interface{}) 
 	token, err := config.Client.OrganizationTokens.CreateWithOptions(ctx, organization, createOptions)
 	if err != nil {
 		return fmt.Errorf(
-			"error creating new token for organization %s: %w", organization, err)
+			"error creating new audit trail token for organization %s: %w", organization, err)
 	}
 
 	d.SetId(organization)
@@ -117,7 +117,7 @@ func resourceTFEAuditTrailTokenCreate(d *schema.ResourceData, meta interface{}) 
 	// only be returned once during the creation of the token.
 	d.Set("token", token.Token)
 
-	return resourceTFEOrganizationTokenRead(d, meta)
+	return resourceTFEAuditTrailTokenRead(d, meta)
 }
 
 func resourceTFEAuditTrailTokenRead(d *schema.ResourceData, meta interface{}) error {
@@ -127,15 +127,15 @@ func resourceTFEAuditTrailTokenRead(d *schema.ResourceData, meta interface{}) er
 	readOptions := tfe.OrganizationTokenReadOptions{
 		TokenType: &auditTrailTokenType,
 	}
-	log.Printf("[DEBUG] Read the token from organization: %s", d.Id())
+	log.Printf("[DEBUG] Read the audit trail token from organization: %s", d.Id())
 	_, err := config.Client.OrganizationTokens.ReadWithOptions(ctx, d.Id(), readOptions)
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
-			log.Printf("[DEBUG] Token for organization %s no longer exists", d.Id())
+			log.Printf("[DEBUG] Audit trail token for organization %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("error reading token from organization %s: %w", d.Id(), err)
+		return fmt.Errorf("error reading audit trail token from organization %s: %w", d.Id(), err)
 	}
 
 	return nil
@@ -158,7 +158,7 @@ func resourceTFEAuditTrailTokenDelete(d *schema.ResourceData, meta interface{}) 
 		if err == tfe.ErrResourceNotFound {
 			return nil
 		}
-		return fmt.Errorf("error deleting token from organization %s: %w", d.Id(), err)
+		return fmt.Errorf("error deleting audit trail token from organization %s: %w", d.Id(), err)
 	}
 
 	return nil
