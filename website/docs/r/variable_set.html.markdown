@@ -139,6 +139,7 @@ The following arguments are supported:
   Must not be set if `global` is set. This argument is mutually exclusive with using the resource
   [tfe_workspace_variable_set](workspace_variable_set.html) which is the preferred method of associating a workspace
   with a variable set.
+* `parent_project_id` - (Optional) ID of the project that should own the variable set. If set, than the value of `global` must be `false`. This feature is currently in beta and is not available to all users.
 
 ## Attributes Reference
 
