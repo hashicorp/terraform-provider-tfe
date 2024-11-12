@@ -67,6 +67,31 @@ func TestAccTFEVariableSetsDataSource_full(t *testing.T) {
 	)
 }
 
+func TestAccTFEVariableSetsDataSource_ProjectOwned(t *testing.T) {
+	skipUnlessBeta(t)
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("org-%d", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEVariableSetsDataSourceConfig_ProjectOwned(rInt),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.tfe_variable_set.project_owned", "id"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_variable_set.project_owned", "organization", orgName),
+					resource.TestCheckResourceAttrPair(
+						"data.tfe_variable_set.project_owned", "parent_project_id", "tfe_project.foobar", "id"),
+				),
+			},
+		},
+	},
+	)
+}
+
 func testAccTFEVariableSetsDataSourceConfig_basic(rInt int) string {
 	return fmt.Sprintf(`
 		resource "tfe_organization" "foobar" {
@@ -129,4 +154,28 @@ func testAccTFEVariableSetsDataSourceConfig_full(rInt int) string {
 			organization = tfe_variable_set.foobar.organization
 			depends_on = [tfe_variable.envfoo, tfe_project_variable_set.foobar]
 		}`, rInt, rInt, rInt, rInt)
+}
+
+func testAccTFEVariableSetsDataSourceConfig_ProjectOwned(rInt int) string {
+	return fmt.Sprintf(`
+		resource "tfe_organization" "foobar" {
+			name  = "org-%d"
+			email = "admin@company.com"
+		}
+		resource "tfe_project" "foobar" {
+			organization = tfe_organization.foobar.id
+			name         = "project-%d"
+		}
+
+		resource "tfe_variable_set" "project_owned" {
+			name              = "project_owned_variable_set_test"
+			organization      = tfe_organization.foobar.id
+			parent_project_id = tfe_project.foobar.id
+		}
+
+		data "tfe_variable_set" "project_owned" {
+			name = tfe_variable_set.project_owned.name
+			organization = tfe_variable_set.project_owned.organization
+    }
+	`, rInt, rInt)
 }
