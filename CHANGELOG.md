@@ -1,4 +1,16 @@
-## Unreleased
+## v0.60.0
+
+BUG FIXES:
+* `r/tfe_no_code_module`: Wait for the registry module version to be created before creating the no-code-module. Also, the version_pin attribute must be set when variable options are created by @dsa0x [#1504](https://github.com/hashicorp/terraform-provider-tfe/pull/1504)
+* `r/tfe_workspace_run_task`: Do not error when reading workspace tasks that no longer exist by @glennsarti [#1500](https://github.com/hashicorp/terraform-provider-tfe/pull/1459)
+* `r/tfe_organization_run_task`: Do not error when reading organization tasks that no longer exist by @glennsarti [#1500](https://github.com/hashicorp/terraform-provider-tfe/pull/1459)
+* `r/tfe_organization_run_task_global_settings`: Do not error when reading organization task global settings that no longer exist by @glennsarti [#1500](https://github.com/hashicorp/terraform-provider-tfe/pull/1459)
+
+FEATURES:
+* `r/tfe_organization`: Add `speculative_plan_management_enabled` attribute, by @lilincmu [#1509](https://github.com/hashicorp/terraform-provider-tfe/pull/1509)
+* `d/tfe_organization`: Add `speculative_plan_management_enabled` attribute, by @lilincmu [#1509](https://github.com/hashicorp/terraform-provider-tfe/pull/1509)
+
+## v0.59.0
 
 FEATURES:
 * `r/tfe_audit_trail_token` is a new resource for managing audit trail tokens in organization, by @c4po [1488](https://github.com/hashicorp/terraform-provider-tfe/pull/1488)
@@ -54,6 +66,9 @@ ENHANCEMENTS:
 
 BUG FIXES:
 * `r/tfe_registry_module`: Prevents constant diff after a successful apply when `tags` and `tests_enabled` is not set by @Uk1288 [#1357](https://github.com/hashicorp/terraform-provider-tfe/pull/1357)
+
+FEATURES:
+* **New Data Source**: `d/tfe_projects` is a new data source to retrieve all projects in an organization, by @tdevelioglu
 
 ## v0.55.0
 

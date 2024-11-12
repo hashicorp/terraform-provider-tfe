@@ -116,6 +116,7 @@ func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource
 		NewNoCodeModuleDataSource,
 		NewOrganizationRunTaskDataSource,
 		NewOrganizationRunTaskGlobalSettingsDataSource,
+		NewProjectsDataSource,
 		NewRegistryGPGKeyDataSource,
 		NewRegistryGPGKeysDataSource,
 		NewRegistryProviderDataSource,
