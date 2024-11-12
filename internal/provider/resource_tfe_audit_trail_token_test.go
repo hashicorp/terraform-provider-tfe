@@ -203,7 +203,7 @@ func testAccCheckTFEAuditTrailTokenExists(
 		}
 
 		if ot == nil {
-			return fmt.Errorf("OrganizationToken not found")
+			return fmt.Errorf("Audit trail token not found")
 		}
 
 		*token = *ot
@@ -229,7 +229,7 @@ func testAccCheckTFEAuditTrailTokenDestroy(s *terraform.State) error {
 		}
 		_, err := config.Client.OrganizationTokens.ReadWithOptions(ctx, rs.Primary.ID, readOptions)
 		if err == nil {
-			return fmt.Errorf("OrganizationToken %s still exists", rs.Primary.ID)
+			return fmt.Errorf("Audit trail token %s still exists", rs.Primary.ID)
 		}
 	}
 
