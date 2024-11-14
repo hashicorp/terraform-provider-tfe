@@ -69,9 +69,9 @@ func unpackWorkspaceID(id string) (organization, name string, err error) {
 	return s[0], s[1], nil
 }
 
-func readWorkspaceStateConsumers(id string, client *tfe.Client) (bool, []interface{}, error) {
+func readWorkspaceStateConsumers(id string, client *tfe.Client) (bool, []string, error) {
 	options := &tfe.RemoteStateConsumersListOptions{ListOptions: tfe.ListOptions{PageSize: 100}}
-	var remoteStateConsumerIDs []interface{}
+	remoteStateConsumerIDs := make([]string, 0)
 
 	for {
 		wl, err := client.Workspaces.ListRemoteStateConsumers(ctx, id, options)
