@@ -1,5 +1,8 @@
 ## Unreleased
 
+DEPRECATIONS:
+* `r/tfe_workspace`: `global_remote_state` and `remote_state_consumer_ids` have been **deprecated** and moved to `tfe_workspace_settings` (see ENHANCEMENTS below for more details)
+
 FEATURES:
 * `r/tfe_audit_trail_token` is a new resource for managing audit trail tokens in organization, by @glensarti and @c4po [1533](https://github.com/hashicorp/terraform-provider-tfe/pull/1533)
 
@@ -7,6 +10,9 @@ FEATURES:
 
 BUG FIXES:
 * `r/tfe_policy`: enforcement level can be updated on OPA policies by @glennsarti [#1521](https://github.com/hashicorp/terraform-provider-tfe/pull/1521)
+
+ENHANCEMENTS:
+* `r/tfe_workspace_settings`: `global_remote_state` and `remote_state_consumer_ids` can now be managed using `tfe_workspace_settings`. This enhancement avoids the possibility of a mutual dependency between two or more workspaces that may access each others' state by @brandonc [#1524](https://github.com/hashicorp/terraform-provider-tfe/pull/1524)
 
 ## v0.60.0
 
