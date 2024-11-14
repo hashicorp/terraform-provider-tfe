@@ -6,6 +6,7 @@ package provider
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/go-tfe"
@@ -89,6 +90,58 @@ func TestAccTFEWorkspaceSettings(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace_settings.foobar", "overwrites.#", "1"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspaceSettingsRemoteState(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
+	ws := createTempWorkspace(t, tfeClient, org.Name)
+	ws2 := createTempWorkspace(t, tfeClient, org.Name)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceSettingsDestroy,
+		Steps: []resource.TestStep{
+			// Have remote state consumer ids
+			{
+				Config: testAccTFEWorkspaceSettingsRemoteState(ws.ID, ws2.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(
+						"tfe_workspace_settings.foobar", "id"),
+					resource.TestCheckResourceAttrSet(
+						"tfe_workspace_settings.foobar", "workspace_id"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.foobar", "global_remote_state", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.foobar", "remote_state_consumer_ids.0", ws2.ID),
+				),
+			},
+			// Unset remote state consumer ids and set global remote state
+			{
+				Config: testAccTFEWorkspaceSettingsRemoteState_Global(ws.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(
+						"tfe_workspace_settings.foobar", "id"),
+					resource.TestCheckResourceAttrSet(
+						"tfe_workspace_settings.foobar", "workspace_id"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.foobar", "global_remote_state", "true"),
+				),
+			},
+			// Unset execution mode
+			{
+				Config:      testAccTFEWorkspaceSettingsRemoteState_GlobalConflict(ws.ID, ws2.ID),
+				ExpectError: regexp.MustCompile("If global_remote_state is true, remote_state_consumer_ids must not be set"),
 			},
 		},
 	})
@@ -201,6 +254,35 @@ func testAccCheckTFEWorkspaceSettingsDestroyProvider(p *schema.Provider) func(s 
 
 		return nil
 	}
+}
+
+func testAccTFEWorkspaceSettingsRemoteState(workspaceID, workspaceID2 string) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace_settings" "foobar" {
+	workspace_id              = "%s"
+	global_remote_state       = false
+	remote_state_consumer_ids = ["%s"]
+}
+`, workspaceID, workspaceID2)
+}
+
+func testAccTFEWorkspaceSettingsRemoteState_Global(workspaceID string) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace_settings" "foobar" {
+	workspace_id              = "%s"
+	global_remote_state       = true
+}
+`, workspaceID)
+}
+
+func testAccTFEWorkspaceSettingsRemoteState_GlobalConflict(workspaceID, workspaceID2 string) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace_settings" "foobar" {
+	workspace_id              = "%s"
+	global_remote_state       = true
+	remote_state_consumer_ids = ["%s"]
+}
+`, workspaceID, workspaceID2)
 }
 
 func testAccTFEWorkspaceSettings_basic(workspaceID string) string {

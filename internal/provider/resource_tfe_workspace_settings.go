@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"slices"
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -41,11 +42,13 @@ type workspaceSettings struct {
 }
 
 type modelWorkspaceSettings struct {
-	ID            types.String `tfsdk:"id"`
-	WorkspaceID   types.String `tfsdk:"workspace_id"`
-	ExecutionMode types.String `tfsdk:"execution_mode"`
-	AgentPoolID   types.String `tfsdk:"agent_pool_id"`
-	Overwrites    types.List   `tfsdk:"overwrites"`
+	ID                     types.String `tfsdk:"id"`
+	WorkspaceID            types.String `tfsdk:"workspace_id"`
+	ExecutionMode          types.String `tfsdk:"execution_mode"`
+	AgentPoolID            types.String `tfsdk:"agent_pool_id"`
+	Overwrites             types.List   `tfsdk:"overwrites"`
+	GlobalRemoteState      types.Bool   `tfsdk:"global_remote_state"`
+	RemoteStateConsumerIDs types.Set    `tfsdk:"remote_state_consumer_ids"`
 }
 
 type modelOverwrites struct {
@@ -75,9 +78,18 @@ type revertOverwritesIfExecutionModeUnset struct{}
 // revertOverwritesIfExecutionModeUnset.
 type unknownIfExecutionModeUnset struct{}
 
+// validateRemoteStateConsumerIDs validates that if global_remote_state is
+// true, remote_state_consumer_ids is not set.
+type validateRemoteStateConsumerIDs struct{}
+
+// validateSelfReference validates that the workspace ID is not in the set of
+// remote state consumers.
+type validateSelfReference struct{}
+
 var _ planmodifier.String = (*validateAgentExecutionMode)(nil)
 var _ planmodifier.List = (*revertOverwritesIfExecutionModeUnset)(nil)
 var _ planmodifier.String = (*unknownIfExecutionModeUnset)(nil)
+var _ planmodifier.Set = (*validateRemoteStateConsumerIDs)(nil)
 
 func (m validateAgentExecutionMode) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
 	// Check if the resource is being created.
@@ -103,6 +115,81 @@ func (m validateAgentExecutionMode) Description(_ context.Context) string {
 
 func (m validateAgentExecutionMode) MarkdownDescription(_ context.Context) string {
 	return "Validates that configuration values for \"agent_pool_id\" and \"execution_mode\" are compatible"
+}
+
+func (m validateRemoteStateConsumerIDs) PlanModifySet(_ context.Context, req planmodifier.SetRequest, resp *planmodifier.SetResponse) {
+	var remoteStateConsumerIDs types.Set
+	diags := req.Config.GetAttribute(ctx, path.Root("remote_state_consumer_ids"), &remoteStateConsumerIDs)
+	if diags.HasError() {
+		resp.Diagnostics.Append(diags...)
+		return
+	}
+
+	if remoteStateConsumerIDs.IsNull() || len(remoteStateConsumerIDs.Elements()) == 0 {
+		return
+	}
+
+	// This situation is invalid if global_remote_state is true
+	var globalRemoteState types.Bool
+	diags = req.Config.GetAttribute(ctx, path.Root("global_remote_state"), &globalRemoteState)
+	if diags.HasError() {
+		resp.Diagnostics.Append(diags...)
+		return
+	}
+
+	log.Printf("[DEBUG] planned global_remote_state: %v", globalRemoteState.ValueBool())
+
+	if !globalRemoteState.IsNull() && globalRemoteState.ValueBool() {
+		resp.Diagnostics.AddError("Invalid remote_state_consumer_ids", "If global_remote_state is true, remote_state_consumer_ids must not be set")
+	}
+}
+
+func (m validateRemoteStateConsumerIDs) Description(_ context.Context) string {
+	return "Validates that configuration values for \"global_remote_state\" and \"remote_state_consumer_ids\" are compatible"
+}
+
+func (m validateRemoteStateConsumerIDs) MarkdownDescription(_ context.Context) string {
+	return "Validates that configuration values for \"global_remote_state\" and \"remote_state_consumer_ids\" are compatible"
+}
+
+func (m validateSelfReference) PlanModifySet(_ context.Context, req planmodifier.SetRequest, resp *planmodifier.SetResponse) {
+	var remoteStateConsumerIDSet types.Set
+	diags := req.Plan.GetAttribute(ctx, path.Root("remote_state_consumer_ids"), &remoteStateConsumerIDSet)
+	if diags.HasError() {
+		resp.Diagnostics.Append(diags...)
+		return
+	}
+
+	if remoteStateConsumerIDSet.IsNull() || len(remoteStateConsumerIDSet.Elements()) == 0 {
+		return
+	}
+
+	remoteStateConsumerIDs := make([]string, 0)
+	diags = remoteStateConsumerIDSet.ElementsAs(ctx, &remoteStateConsumerIDs, true)
+	if diags.HasError() {
+		resp.Diagnostics.Append(diags...)
+		return
+	}
+
+	var workspaceID types.String
+	diags = req.Config.GetAttribute(ctx, path.Root("workspace_id"), &workspaceID)
+	if diags.HasError() {
+		resp.Diagnostics.Append(diags...)
+		return
+	}
+
+	// Check if the workspace ID is in the set
+	if slices.Contains(remoteStateConsumerIDs, workspaceID.ValueString()) {
+		resp.Diagnostics.AddError("Invalid remote_state_consumer_ids", "workspace_id cannot be in the set of remote_state_consumer_ids")
+	}
+}
+
+func (m validateSelfReference) Description(_ context.Context) string {
+	return "Validates that configuration values for \"remote_state_consumer_ids\" does not include the workspace ID"
+}
+
+func (m validateSelfReference) MarkdownDescription(_ context.Context) string {
+	return "Validates that configuration values for \"remote_state_consumer_ids\" does not include the workspace ID"
 }
 
 func (m revertOverwritesIfExecutionModeUnset) PlanModifyList(ctx context.Context, req planmodifier.ListRequest, resp *planmodifier.ListResponse) {
@@ -234,6 +321,23 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 					revertOverwritesIfExecutionModeUnset{},
 				},
 			},
+
+			"global_remote_state": schema.BoolAttribute{
+				Description: "Whether the workspace allows all workspaces in the organization to access its state data during runs. If false, then only workspaces defined in `remote_state_consumer_ids` can access its state.",
+				Optional:    true,
+				Computed:    true,
+			},
+
+			"remote_state_consumer_ids": schema.SetAttribute{
+				Description: "The set of workspace IDs set as explicit remote state consumers for the given workspace.",
+				Optional:    true,
+				Computed:    true,
+				ElementType: types.StringType,
+				PlanModifiers: []planmodifier.Set{
+					validateRemoteStateConsumerIDs{},
+					validateSelfReference{},
+				},
+			},
 		},
 	}
 }
@@ -241,13 +345,31 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 // workspaceSettingsModelFromTFEWorkspace builds a resource model from the TFE model
 func (r *workspaceSettings) workspaceSettingsModelFromTFEWorkspace(ws *tfe.Workspace) *modelWorkspaceSettings {
 	result := modelWorkspaceSettings{
-		ID:            types.StringValue(ws.ID),
-		WorkspaceID:   types.StringValue(ws.ID),
-		ExecutionMode: types.StringValue(ws.ExecutionMode),
+		ID:                types.StringValue(ws.ID),
+		WorkspaceID:       types.StringValue(ws.ID),
+		ExecutionMode:     types.StringValue(ws.ExecutionMode),
+		GlobalRemoteState: types.BoolValue(ws.GlobalRemoteState),
 	}
 
 	if ws.AgentPool != nil && ws.ExecutionMode == "agent" {
 		result.AgentPoolID = types.StringValue(ws.AgentPool.ID)
+	}
+
+	result.RemoteStateConsumerIDs = types.SetNull(types.StringType)
+
+	_, remoteStateConsumerIDs, err := readWorkspaceStateConsumers(ws.ID, r.config.Client)
+	if err != nil {
+		log.Printf("[ERROR] Error reading remote state consumers for workspace %s: %s", ws.ID, err)
+		return nil
+	}
+
+	if !ws.GlobalRemoteState {
+		remoteStateConsumerIDValues, diags := types.SetValueFrom(ctx, types.StringType, remoteStateConsumerIDs)
+		if diags.HasError() {
+			log.Printf("[ERROR] Error reading remote state consumers for workspace %s: %v", ws.ID, diags)
+			return nil
+		}
+		result.RemoteStateConsumerIDs = remoteStateConsumerIDValues
 	}
 
 	result.Overwrites = types.ListNull(overwritesElementType)
@@ -301,6 +423,7 @@ func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorks
 	workspaceID := data.WorkspaceID.ValueString()
 
 	updateOptions := tfe.WorkspaceUpdateOptions{
+		GlobalRemoteState: tfe.Bool(data.GlobalRemoteState.ValueBool()),
 		SettingOverwrites: &tfe.WorkspaceSettingOverwritesOptions{
 			ExecutionMode: tfe.Bool(false),
 			AgentPool:     tfe.Bool(false),
@@ -325,11 +448,85 @@ func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorks
 		return fmt.Errorf("couldn't update workspace %s: %w", workspaceID, err)
 	}
 
+	if !data.GlobalRemoteState.ValueBool() {
+		r.addAndRemoveRemoteStateConsumers(workspaceID, data.RemoteStateConsumerIDs, state)
+	}
+
 	model, err := r.readSettings(ctx, ws.ID)
 	if err != nil {
 		return fmt.Errorf("couldn't read workspace %s after update: %w", workspaceID, err)
 	}
 	state.Set(ctx, model)
+	return nil
+}
+
+func (r *workspaceSettings) addAndRemoveRemoteStateConsumers(workspaceID string, newWorkspaceIDsSet types.Set, state *tfsdk.State) error {
+	var oldWorkspaceIDsSet types.Set
+	diags := state.GetAttribute(ctx, path.Root("remote_state_consumer_ids"), &oldWorkspaceIDsSet)
+	if diags.HasError() {
+		return fmt.Errorf("error comparing remote state consumer IDs: %s", diags.Errors())
+	}
+
+	var oldWorkspaceIDs []string
+	if !oldWorkspaceIDsSet.IsNull() {
+		diags = oldWorkspaceIDsSet.ElementsAs(ctx, &oldWorkspaceIDs, true)
+		if diags.HasError() {
+			return fmt.Errorf("error comparing remote state consumer IDs: %s", diags.Errors())
+		}
+	}
+
+	var newWorkspaceIDs []string
+	if !newWorkspaceIDsSet.IsNull() {
+		diags = newWorkspaceIDsSet.ElementsAs(ctx, &newWorkspaceIDs, true)
+		if diags.HasError() {
+			return fmt.Errorf("error comparing remote state consumer IDs: %s", diags.Errors())
+		}
+	}
+
+	var workspaceIDsToRemove []string
+	for _, id := range oldWorkspaceIDs {
+		if !slices.Contains(newWorkspaceIDs, id) {
+			workspaceIDsToRemove = append(workspaceIDsToRemove, id)
+		}
+	}
+
+	var workspaceIDsToAdd []string
+	for _, id := range newWorkspaceIDs {
+		if !slices.Contains(oldWorkspaceIDs, id) {
+			workspaceIDsToAdd = append(workspaceIDsToAdd, id)
+		}
+	}
+
+	// First add the new consumerss
+	if len(workspaceIDsToAdd) > 0 {
+		options := tfe.WorkspaceAddRemoteStateConsumersOptions{}
+
+		for _, wsID := range newWorkspaceIDs {
+			options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: wsID})
+		}
+
+		log.Printf("[DEBUG] Adding remote state consumers %v to workspace: %s", workspaceIDsToAdd, workspaceID)
+		err := r.config.Client.Workspaces.AddRemoteStateConsumers(ctx, workspaceID, options)
+		if err != nil {
+			return fmt.Errorf("Error adding remote state consumers to workspace %s: %w", workspaceID, err)
+		}
+	}
+
+	// Then remove all the old consumers.
+	if len(workspaceIDsToRemove) > 0 {
+		options := tfe.WorkspaceRemoveRemoteStateConsumersOptions{}
+
+		for _, wsID := range workspaceIDsToRemove {
+			options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: wsID})
+		}
+
+		log.Printf("[DEBUG] Removing remote state consumers %v from workspace: %s", workspaceIDsToRemove, workspaceID)
+		err := r.config.Client.Workspaces.RemoveRemoteStateConsumers(ctx, workspaceID, options)
+		if err != nil {
+			return fmt.Errorf("Error removing remote state consumers from workspace %s: %w", workspaceID, err)
+		}
+	}
+
 	return nil
 }
 
