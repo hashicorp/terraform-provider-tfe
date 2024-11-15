@@ -1,4 +1,5 @@
-## Unreleased
+## v0.60.1
+
 BUG FIXES:
 * `r/tfe_policy`: enforcement level can be updated on OPA policies by @glennsarti [#1521](https://github.com/hashicorp/terraform-provider-tfe/pull/1521)
 
