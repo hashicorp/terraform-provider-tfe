@@ -38,4 +38,4 @@ The following arguments are supported:
 * `workspace_ids` - IDs of the workspaces that use the variable set.
 * `variable_ids` - IDs of the variables attached to the variable set.
 * `project_ids` - IDs of the projects that use the variable set.
-* `parent_project_id` - ID of the project that owns the variable set. This feature is currently in beta and is not available to all users.
+* `parent_project_id` - ID of the project that owns the variable set.

@@ -1,7 +1,7 @@
 ## Unreleased
 
 FEATURES:
-* `r/tfe_variable_set`: Add `parent_project_id` attribute, which is a beta feature and is not available to all users, by @mkam [#1522](https://github.com/hashicorp/terraform-provider-tfe/pull/1522)
+* `r/tfe_variable_set`: Add `parent_project_id` attribute, by @mkam [#1522](https://github.com/hashicorp/terraform-provider-tfe/pull/1522)
 
 ## v0.61.0
 
