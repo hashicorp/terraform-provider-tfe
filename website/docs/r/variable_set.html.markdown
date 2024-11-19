@@ -126,6 +126,64 @@ resource "tfe_variable" "test-b" {
 }
 ```
 
+Creating a project-owned variable set that is applied to all workspaces in the project:
+
+```hcl
+resource "tfe_organization" "test" {
+  name  = "my-org-name"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "test" {
+  organization = tfe_organization.test.name
+  name = "projectname"
+}
+
+resource "tfe_variable_set" "test" {
+  name              = "Project-owned Varset"
+  description       = "Varset that is owned and managed by a project."
+  organization      = tfe_organization.test.name
+  parent_project_id = tfe_project.test.id
+}
+
+resource "tfe_project_variable_set" "test" {
+  project_id      = tfe_project.test.id
+  variable_set_id = tfe_variable_set.test.id
+}
+```
+
+Creating a project-owned variable set that is applied to specific workspaces:
+
+```hcl
+resource "tfe_organization" "test" {
+  name  = "my-org-name"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "test" {
+  organization = tfe_organization.test.name
+  name = "projectname"
+}
+
+resource "tfe_workspace" "test" {
+  name         = "my-workspace-name"
+  organization = tfe_organization.test.name
+  project_id   = tfe_project.test.id 
+}
+
+resource "tfe_variable_set" "test" {
+  name              = "Project-owned Varset"
+  description       = "Varset that is owned and managed by a project."
+  organization      = tfe_organization.test.name
+  parent_project_id = tfe_project.test.id
+}
+
+resource "tfe_workspace_variable_set" "test" {
+  workspace_id    = tfe_workspace.test.id
+  variable_set_id = tfe_variable_set.test.id
+}
+```
+
 ## Argument Reference
 
 The following arguments are supported:
@@ -140,6 +198,7 @@ The following arguments are supported:
   [tfe_workspace_variable_set](workspace_variable_set.html) which is the preferred method of associating a workspace
   with a variable set.
 * `parent_project_id` - (Optional) ID of the project that should own the variable set. If set, than the value of `global` must be `false`.
+  To assign whether a variable set should be applied to a project, use the [`tfe_project_variable_set`](project_variable_set.html) resource.
 
 ## Attributes Reference
 
