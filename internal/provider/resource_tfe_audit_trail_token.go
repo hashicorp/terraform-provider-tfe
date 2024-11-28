@@ -1,172 +1,284 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
-// NOTE: This is a legacy resource and should be migrated to the Plugin
-// Framework if substantial modifications are planned. See
-// docs/new-resources.md if planning to use this code as boilerplate for
-// a new resource.
-
 package provider
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-framework-timetypes/timetypes"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-func resourceTFEAuditTrailToken() *schema.Resource {
-	return &schema.Resource{
-		Create: resourceTFEAuditTrailTokenCreate,
-		Read:   resourceTFEAuditTrailTokenRead,
-		Delete: resourceTFEAuditTrailTokenDelete,
-		Importer: &schema.ResourceImporter{
-			StateContext: resourceTFEAuditTrailTokenImporter,
-		},
+type resourceAuditTrailToken struct {
+	config ConfiguredClient
+}
 
-		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
+var _ resource.Resource = &resourceAuditTrailToken{}
+var _ resource.ResourceWithConfigure = &resourceAuditTrailToken{}
+var _ resource.ResourceWithImportState = &resourceAuditTrailToken{}
+var _ resource.ResourceWithModifyPlan = &resourceAuditTrailToken{}
 
-		Schema: map[string]*schema.Schema{
-			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-				ForceNew: true,
+func NewAuditTrailTokenResource() resource.Resource {
+	return &resourceAuditTrailToken{}
+}
+
+type modelTFEAuditTrailTokenV0 struct {
+	ID              types.String      `tfsdk:"id"`
+	Organization    types.String      `tfsdk:"organization"`
+	Token           types.String      `tfsdk:"token"`
+	ExpiredAt       timetypes.RFC3339 `tfsdk:"expired_at"`
+	ForceRegenerate types.Bool        `tfsdk:"force_regenerate"`
+}
+
+func modelFromTFEOrganizationToken(v *tfe.OrganizationToken, organization string, token types.String, forceRegen types.Bool) modelTFEAuditTrailTokenV0 {
+	result := modelTFEAuditTrailTokenV0{
+		Organization:    types.StringValue(organization),
+		ID:              types.StringValue(organization),
+		ForceRegenerate: forceRegen,
+		Token:           token,
+	}
+
+	if !v.ExpiredAt.IsZero() {
+		result.ExpiredAt = timetypes.NewRFC3339TimeValue(v.ExpiredAt)
+	}
+
+	return result
+}
+
+func (r *resourceAuditTrailToken) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_audit_trail_token"
+}
+
+func (r *resourceAuditTrailToken) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	// If an audit trail token uses the default organization, then if the deafault org. changes, it should trigger a modification
+	modifyPlanForDefaultOrganizationChange(ctx, r.config.Organization, req.State, req.Config, req.Plan, resp)
+}
+
+func (r *resourceAuditTrailToken) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	// Prevent panic if the provider has not been configured.
+	if req.ProviderData == nil {
+		return
+	}
+
+	client, ok := req.ProviderData.(ConfiguredClient)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected resource Configure type",
+			fmt.Sprintf("Expected tfe.ConfiguredClient, got %T. This is a bug in the tfe provider, so please report it on GitHub.", req.ProviderData),
+		)
+	}
+	r.config = client
+}
+
+func (r *resourceAuditTrailToken) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Version: 0,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed:    true,
+				Description: "Service-generated identifier for the token",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
-
-			"force_regenerate": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				ForceNew: true,
+			"expired_at": schema.StringAttribute{
+				Description: "The time when the audit trail token will expire. This must be a valid ISO8601 timestamp.",
+				CustomType:  timetypes.RFC3339Type{},
+				Optional:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
-
-			"token": {
-				Type:      schema.TypeString,
-				Computed:  true,
-				Sensitive: true,
+			"organization": schema.StringAttribute{
+				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
+				Optional:    true,
+				Computed:    true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
-
-			"expired_at": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
+			"token": schema.StringAttribute{
+				Description: "The authentication token for accessing Audit Trails.",
+				Sensitive:   true,
+				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"force_regenerate": schema.BoolAttribute{
+				Description: "When set to true will force the audit trail token to be recreated.",
+				Optional:    true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
+				},
 			},
 		},
 	}
 }
 
-func resourceTFEAuditTrailTokenCreate(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(ConfiguredClient)
-	auditTrailTokenType := tfe.AuditTrailToken
+func (r *resourceAuditTrailToken) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state modelTFEAuditTrailTokenV0
 
-	// Get the organization name.
-	organization, err := config.schemaOrDefaultOrganization(d)
+	// Read Terraform current state into the model
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var organization string
+	resp.Diagnostics.Append(r.config.dataOrDefaultOrganization(ctx, req.State, &organization)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	tokenType := tfe.AuditTrailToken
+
+	tflog.Debug(ctx, "Reading audit trail token")
+	token, err := r.config.Client.OrganizationTokens.ReadWithOptions(ctx, organization, tfe.OrganizationTokenReadOptions{TokenType: &tokenType})
 	if err != nil {
-		return err
-	}
-
-	readOptions := tfe.OrganizationTokenReadOptions{
-		TokenType: &auditTrailTokenType,
-	}
-	log.Printf("[DEBUG] Check if an audit trail token already exists for organization: %s", organization)
-	_, err = config.Client.OrganizationTokens.ReadWithOptions(ctx, organization, readOptions)
-	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
-		return fmt.Errorf("error checking if an audit token exists for organization %s: %w", organization, err)
-	}
-
-	// If error is nil, the token already exists.
-	if err == nil {
-		if !d.Get("force_regenerate").(bool) {
-			return fmt.Errorf("an audit trail token already exists for organization: %s", organization)
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			resp.State.RemoveResource(ctx)
+		} else {
+			resp.Diagnostics.AddError("Error reading Organization Audit Trail Token", "Could not read Organization Audit Trail Token, unexpected error: "+err.Error())
 		}
-		log.Printf("[DEBUG] Regenerating existing audit trail token for organization: %s", organization)
+		return
 	}
 
-	// Get the token create options.
-	createOptions := tfe.OrganizationTokenCreateOptions{
-		TokenType: &auditTrailTokenType,
+	result := modelFromTFEOrganizationToken(token, organization, state.Token, state.ForceRegenerate)
+
+	// Save updated data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+}
+
+func (r *resourceAuditTrailToken) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan modelTFEAuditTrailTokenV0
+
+	// Read Terraform planned changes into the model
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	// Check whether the optional expiry was provided.
-	expiredAt, expiredAtProvided := d.GetOk("expired_at")
+	tokenType := tfe.AuditTrailToken
 
-	// If an expiry was provided, parse it and update the options struct.
-	if expiredAtProvided {
-		expiry, err := time.Parse(time.RFC3339, expiredAt.(string))
+	var organization string
+	resp.Diagnostics.Append(r.config.dataOrDefaultOrganization(ctx, req.Plan, &organization)...)
 
-		createOptions.ExpiredAt = &expiry
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
+	// Check if an audit trail token already exists for the organization and only
+	// continue if the force_regenerate flag is set.
+	tflog.Debug(ctx, fmt.Sprintf("Check if an audit trail token already exists for organization: %s", organization))
+	if token, err := r.config.Client.OrganizationTokens.ReadWithOptions(ctx, organization, tfe.OrganizationTokenReadOptions{TokenType: &tokenType}); err != nil {
+		if !errors.Is(err, tfe.ErrResourceNotFound) {
+			resp.Diagnostics.AddError("Error while checking if an audit token exists for organization", fmt.Sprintf("error checking if an audit token exists for organization %s: %s", organization, err))
+			return
+		}
+	} else if token != nil {
+		if !plan.ForceRegenerate.ValueBool() {
+			resp.Diagnostics.AddError("An audit trail token already exists", fmt.Sprintf("an audit trail token already exists for organization: %s", organization))
+			return
+		}
+		tflog.Debug(ctx, fmt.Sprintf("Regenerating existing audit trail token for organization: %s", organization))
+	}
+
+	options := tfe.OrganizationTokenCreateOptions{
+		TokenType: &tokenType,
+	}
+
+	// Optional ExpiryAt
+	expireString := plan.ExpiredAt.ValueString()
+	if expireString != "" {
+		expiry, err := time.Parse(time.RFC3339, expireString)
 		if err != nil {
-			return fmt.Errorf("%s must be a valid date or time, provided in iso8601 format", expiredAt)
+			resp.Diagnostics.AddError("Invalid date", fmt.Sprintf("%s must be a valid date or time, provided in iso8601 format", expireString))
+			return
 		}
+		options.ExpiredAt = &expiry
 	}
 
-	token, err := config.Client.OrganizationTokens.CreateWithOptions(ctx, organization, createOptions)
+	tflog.Debug(ctx, fmt.Sprintf("Create audit trail token for organization %s", organization))
+	token, err := r.config.Client.OrganizationTokens.CreateWithOptions(ctx, organization, options)
 	if err != nil {
-		return fmt.Errorf(
-			"error creating new audit trail token for organization %s: %w", organization, err)
+		resp.Diagnostics.AddError("Unable to create organization audit trail token", err.Error())
+		return
 	}
 
-	d.SetId(organization)
+	result := modelFromTFEOrganizationToken(token, organization, types.StringValue(token.Token), plan.ForceRegenerate)
 
-	// We need to set this here in the create function as this value will
-	// only be returned once during the creation of the token.
-	d.Set("token", token.Token)
-
-	return resourceTFEAuditTrailTokenRead(d, meta)
+	// Save data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
-func resourceTFEAuditTrailTokenRead(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(ConfiguredClient)
-
-	auditTrailTokenType := tfe.AuditTrailToken
-	readOptions := tfe.OrganizationTokenReadOptions{
-		TokenType: &auditTrailTokenType,
-	}
-	log.Printf("[DEBUG] Read the audit trail token from organization: %s", d.Id())
-	_, err := config.Client.OrganizationTokens.ReadWithOptions(ctx, d.Id(), readOptions)
-	if err != nil {
-		if err == tfe.ErrResourceNotFound {
-			log.Printf("[DEBUG] Audit trail token for organization %s no longer exists", d.Id())
-			d.SetId("")
-			return nil
-		}
-		return fmt.Errorf("error reading audit trail token from organization %s: %w", d.Id(), err)
-	}
-
-	return nil
+func (r *resourceAuditTrailToken) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	resp.Diagnostics.AddError("Audit trail tokens cannot be updated", "Audit trail tokens cannot be updated. Please regenerate token.")
 }
 
-func resourceTFEAuditTrailTokenDelete(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(ConfiguredClient)
-
-	organization, err := config.schemaOrDefaultOrganization(d)
-	if err != nil {
-		return err
-	}
-	auditTrailTokenType := tfe.AuditTrailToken
-	deleteOptions := tfe.OrganizationTokenDeleteOptions{
-		TokenType: &auditTrailTokenType,
-	}
-	log.Printf("[DEBUG] Delete token from organization: %s", organization)
-	err = config.Client.OrganizationTokens.DeleteWithOptions(ctx, organization, deleteOptions)
-	if err != nil {
-		if err == tfe.ErrResourceNotFound {
-			return nil
-		}
-		return fmt.Errorf("error deleting audit trail token from organization %s: %w", d.Id(), err)
+func (r *resourceAuditTrailToken) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state modelTFEAuditTrailTokenV0
+	diags := req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	return nil
+	var organization string
+	resp.Diagnostics.Append(r.config.dataOrDefaultOrganization(ctx, req.State, &organization)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	tokenType := tfe.AuditTrailToken
+
+	options := tfe.OrganizationTokenDeleteOptions{
+		TokenType: &tokenType,
+	}
+
+	tflog.Debug(ctx, fmt.Sprintf("Delete organization audit trail token %s", organization))
+	err := r.config.Client.OrganizationTokens.DeleteWithOptions(ctx, organization, options)
+	// Ignore 404s for delete
+	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+		resp.Diagnostics.AddError(
+			"Error deleting organization audit trail token",
+			fmt.Sprintf("Couldn't delete organization audit trail token %s: %s", organization, err.Error()),
+		)
+	}
+	// Resource is implicitly deleted from resp.State if diagnostics have no errors.
 }
 
-func resourceTFEAuditTrailTokenImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	// Set the organization field.
-	d.Set("organization", d.Id())
+func (r *resourceAuditTrailToken) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	organization := req.ID
 
-	return []*schema.ResourceData{d}, nil
+	tokenType := tfe.AuditTrailToken
+
+	tflog.Debug(ctx, "Reading audit trail token")
+	if token, err := r.config.Client.OrganizationTokens.ReadWithOptions(ctx, organization, tfe.OrganizationTokenReadOptions{TokenType: &tokenType}); err != nil {
+		resp.Diagnostics.AddError("Error importing organization audit trail token", err.Error())
+	} else if token == nil {
+		resp.Diagnostics.AddError(
+			"Error importing organization audit trail token",
+			"Audit trail token does not exist or has no details",
+		)
+	} else {
+		result := modelFromTFEOrganizationToken(token, organization, basetypes.NewStringNull(), basetypes.NewBoolNull())
+		resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+	}
 }

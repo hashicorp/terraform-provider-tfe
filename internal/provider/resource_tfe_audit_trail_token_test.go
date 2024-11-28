@@ -2,10 +2,8 @@ package provider
 
 import (
 	"fmt"
-	"math/rand"
 	"regexp"
 	"testing"
-	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -14,21 +12,26 @@ import (
 
 func TestAccTFEAuditTrailToken_basic(t *testing.T) {
 	token := &tfe.OrganizationToken{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEAuditTrailTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEAuditTrailTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEAuditTrailToken_basic(rInt),
+				Config: testAccTFEAuditTrailToken_basic(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEAuditTrailTokenExists(
 						"tfe_audit_trail_token.foobar", token),
 					resource.TestCheckResourceAttr(
-						"tfe_audit_trail_token.foobar", "organization", orgName),
+						"tfe_audit_trail_token.foobar", "organization", org.Name),
 				),
 			},
 		},
@@ -37,26 +40,31 @@ func TestAccTFEAuditTrailToken_basic(t *testing.T) {
 
 func TestAccTFEAuditTrailToken_existsWithoutForce(t *testing.T) {
 	token := &tfe.OrganizationToken{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEAuditTrailTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEAuditTrailTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEAuditTrailToken_basic(rInt),
+				Config: testAccTFEAuditTrailToken_basic(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEAuditTrailTokenExists(
 						"tfe_audit_trail_token.foobar", token),
 					resource.TestCheckResourceAttr(
-						"tfe_audit_trail_token.foobar", "organization", orgName),
+						"tfe_audit_trail_token.foobar", "organization", org.Name),
 				),
 			},
 
 			{
-				Config:      testAccTFEAuditTrailToken_existsWithoutForce(rInt),
+				Config:      testAccTFEAuditTrailToken_existsWithoutForce(org.Name),
 				ExpectError: regexp.MustCompile(`token already exists`),
 			},
 		},
@@ -65,54 +73,36 @@ func TestAccTFEAuditTrailToken_existsWithoutForce(t *testing.T) {
 
 func TestAccTFEAuditTrailToken_existsWithForce(t *testing.T) {
 	token := &tfe.OrganizationToken{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEAuditTrailTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEAuditTrailTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEAuditTrailToken_basic(rInt),
+				Config: testAccTFEAuditTrailToken_basic(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEAuditTrailTokenExists(
 						"tfe_audit_trail_token.foobar", token),
 					resource.TestCheckResourceAttr(
-						"tfe_audit_trail_token.foobar", "organization", orgName),
+						"tfe_audit_trail_token.foobar", "organization", org.Name),
 				),
 			},
 
 			{
-				Config: testAccTFEAuditTrailToken_existsWithForce(rInt),
+				Config: testAccTFEAuditTrailToken_existsWithForce(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEAuditTrailTokenExists(
 						"tfe_audit_trail_token.regenerated", token),
 					resource.TestCheckResourceAttr(
-						"tfe_audit_trail_token.regenerated", "organization", orgName),
-				),
-			},
-		},
-	})
-}
-
-func TestAccTFEAuditTrailToken_withBlankExpiry(t *testing.T) {
-	token := &tfe.OrganizationToken{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	expiredAt := ""
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEAuditTrailTokenDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccTFEAuditTrailToken_withBlankExpiry(rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEAuditTrailTokenExists(
-						"tfe_audit_trail_token.foobar", token),
-					resource.TestCheckResourceAttr(
-						"tfe_audit_trail_token.foobar", "expired_at", expiredAt),
+						"tfe_audit_trail_token.regenerated", "organization", org.Name),
 				),
 			},
 		},
@@ -121,16 +111,23 @@ func TestAccTFEAuditTrailToken_withBlankExpiry(t *testing.T) {
 
 func TestAccTFEAuditTrailToken_withValidExpiry(t *testing.T) {
 	token := &tfe.OrganizationToken{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
 	expiredAt := "2051-04-11T23:15:59Z"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEAuditTrailTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEAuditTrailTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEAuditTrailToken_withValidExpiry(rInt),
+				Config: testAccTFEAuditTrailToken_withValidExpiry(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEAuditTrailTokenExists(
 						"tfe_audit_trail_token.expiry", token),
@@ -143,31 +140,41 @@ func TestAccTFEAuditTrailToken_withValidExpiry(t *testing.T) {
 }
 
 func TestAccTFEAuditTrailToken_withInvalidExpiry(t *testing.T) {
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEAuditTrailTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEAuditTrailTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccTFEAuditTrailToken_withInvalidExpiry(rInt),
-				ExpectError: regexp.MustCompile(`must be a valid date or time, provided in iso8601 format`),
+				Config:      testAccTFEAuditTrailToken_withInvalidExpiry(org.Name),
+				ExpectError: regexp.MustCompile(`Invalid RFC3339 String Value`),
 			},
 		},
 	})
 }
 
 func TestAccTFEAuditTrailToken_import(t *testing.T) {
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEAuditTrailTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEAuditTrailTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEAuditTrailToken_basic(rInt),
+				Config: testAccTFEAuditTrailToken_basic(org.Name),
 			},
 
 			{
@@ -236,91 +243,61 @@ func testAccCheckTFEAuditTrailTokenDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccTFEAuditTrailToken_basic(rInt int) string {
+func testAccTFEAuditTrailToken_basic(orgName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
 resource "tfe_audit_trail_token" "foobar" {
-  organization = tfe_organization.foobar.id
-}`, rInt)
+  organization = "%s"
+}`, orgName)
 }
 
 // NOTE: This config is invalid because you cannot manage multiple tokens for
 // one org. It is expected to always error.
-func testAccTFEAuditTrailToken_existsWithoutForce(rInt int) string {
+func testAccTFEAuditTrailToken_existsWithoutForce(orgName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
 resource "tfe_audit_trail_token" "foobar" {
-  organization = tfe_organization.foobar.id
+  organization = "%s"
 }
 
 resource "tfe_audit_trail_token" "error" {
-  organization = tfe_organization.foobar.id
-}`, rInt)
+  organization = "%s"
+}`, orgName, orgName)
 }
 
 // NOTE: This config is invalid because you cannot manage multiple tokens for
 // one org. It can run without error _once_ due to the presence of
 // force_regenerate, but is expected to error on any subsequent run.
-func testAccTFEAuditTrailToken_existsWithForce(rInt int) string {
+func testAccTFEAuditTrailToken_existsWithForce(orgName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
 resource "tfe_audit_trail_token" "foobar" {
-  organization = tfe_organization.foobar.id
+  organization = "%s"
 }
 
 resource "tfe_audit_trail_token" "regenerated" {
-  organization     = tfe_organization.foobar.id
+  organization     = "%s"
   force_regenerate = true
-}`, rInt)
+}`, orgName, orgName)
 }
 
-func testAccTFEAuditTrailToken_withBlankExpiry(rInt int) string {
+func testAccTFEAuditTrailToken_withBlankExpiry(orgName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
 resource "tfe_audit_trail_token" "foobar" {
-  organization = tfe_organization.foobar.id
+  organization = "%s"
   expired_at = ""
-}`, rInt)
+}`, orgName)
 }
 
-func testAccTFEAuditTrailToken_withValidExpiry(rInt int) string {
+func testAccTFEAuditTrailToken_withValidExpiry(orgName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
 resource "tfe_audit_trail_token" "expiry" {
-  organization  = tfe_organization.foobar.id
+  organization  = "%s"
   expired_at 	= "2051-04-11T23:15:59Z"
-}`, rInt)
+}`, orgName)
 }
 
-func testAccTFEAuditTrailToken_withInvalidExpiry(rInt int) string {
+func testAccTFEAuditTrailToken_withInvalidExpiry(orgName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
 resource "tfe_audit_trail_token" "expiry" {
-  organization  = tfe_organization.foobar.id
+  organization  = "%s"
   expired_at 	= "2000-04-11"
-}`, rInt)
+}`, orgName)
 }

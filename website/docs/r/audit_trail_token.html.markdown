@@ -9,6 +9,8 @@ description: |-
 
 Generates a new audit trail token in organization, replacing any existing token.
 
+Note that only organizations that have the [audit-logging entitlement](https://developer.hashicorp.com/terraform/cloud-docs/api-docs#audit-logging) may create audit trail tokens.
+
 ## Example Usage
 
 Basic usage:
@@ -27,8 +29,8 @@ The following arguments are supported:
 * `force_regenerate` - (Optional) If set to `true`, a new token will be
   generated even if a token already exists. This will invalidate the existing
   token!
-* `expired_at` - (Optional) The token's expiration date. The expiration date must be a date/time string in RFC3339 
-format (e.g., "2024-12-31T23:59:59Z"). If no expiration date is supplied, the expiration date will default to null and 
+* `expired_at` - (Optional) The token's expiration date. The expiration date must be a date/time string in RFC3339
+format (e.g., "2024-12-31T23:59:59Z"). If no expiration date is supplied, the expiration date will default to null and
 never expire.
 
 ## Example Usage
