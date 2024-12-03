@@ -31,7 +31,7 @@ require (
 	golang.org/x/sys v0.25.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.6.0 // indirect
-	google.golang.org/protobuf v1.33.0 // indirect
+	google.golang.org/protobuf v1.34.0 // indirect
 )
 
 require (
@@ -59,6 +59,7 @@ require (
 )
 
 require (
+	github.com/hashicorp/terraform-plugin-framework-timetypes v0.3.0
 	github.com/hashicorp/terraform-plugin-log v0.9.0
 	github.com/stretchr/testify v1.9.0
 	go.uber.org/mock v0.4.0
