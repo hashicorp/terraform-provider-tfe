@@ -1,3 +1,8 @@
+## Unreleased
+
+FEATURES:
+* `r/tfe_audit_trail_token` is a new resource for managing audit trail tokens in organization, by @glensarti and @c4po [1533](https://github.com/hashicorp/terraform-provider-tfe/pull/1533)
+
 ## v0.60.1
 
 BUG FIXES:
@@ -16,9 +21,6 @@ FEATURES:
 * `d/tfe_organization`: Add `speculative_plan_management_enabled` attribute, by @lilincmu [#1509](https://github.com/hashicorp/terraform-provider-tfe/pull/1509)
 
 ## v0.59.0
-
-FEATURES:
-* `r/tfe_audit_trail_token` is a new resource for managing audit trail tokens in organization, by @c4po [1488](https://github.com/hashicorp/terraform-provider-tfe/pull/1488)
 
 ## BREAKING CHANGES
 
