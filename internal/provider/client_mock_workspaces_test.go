@@ -204,3 +204,7 @@ func (m *mockWorkspaces) ListTagBindings(ctx context.Context, workspaceID string
 func (m *mockWorkspaces) AddTagBindings(ctx context.Context, workspaceID string, options tfe.WorkspaceAddTagBindingsOptions) ([]*tfe.TagBinding, error) {
 	panic("not implemented")
 }
+
+func (m *mockWorkspaces) ListEffectiveTagBindings(ctx context.Context, workspaceID string) ([]*tfe.EffectiveTagBinding, error) {
+	panic("not implemented")
+}
