@@ -10,6 +10,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -53,6 +54,12 @@ func dataSourceTFEProject() *schema.Resource {
 			"workspace_names": {
 				Type:     schema.TypeSet,
 				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+
+			"effective_tags": {
+				Type:     schema.TypeMap,
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
@@ -111,9 +118,20 @@ func dataSourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta 
 			readOptions.PageNumber = wl.NextPage
 		}
 
-		d.Set("workspace_ids", workspaces)
-		d.Set("workspace_names", workspaceNames)
-		d.Set("description", proj.Description)
+		effectiveTagBindings := make(map[string]interface{})
+		effectiveBindings, err := config.Client.Projects.ListEffectiveTagBindings(ctx, proj.ID)
+		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+			return diag.Errorf("Error retrieving effective tag bindings for project %s: %v", proj.ID, err)
+		}
+		if err != nil {
+			// This endpoint may not be supported against a given TFE instance.
+			// Initialize to empty slice to avoid ranging over nil
+			effectiveBindings = []*tfe.EffectiveTagBinding{}
+		}
+
+		for _, binding := range effectiveBindings {
+			effectiveTagBindings[binding.Key] = binding.Value
+		}
 
 		var autoDestroyDuration string
 		if proj.AutoDestroyActivityDuration.IsSpecified() {
@@ -122,9 +140,13 @@ func dataSourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta 
 				return diag.Errorf("Error reading auto destroy activity duration: %v", err)
 			}
 		}
+
+		d.Set("workspace_ids", workspaces)
+		d.Set("workspace_names", workspaceNames)
+		d.Set("description", proj.Description)
+		d.Set("effective_tags", effectiveTagBindings)
 		d.Set("auto_destroy_activity_duration", autoDestroyDuration)
 		d.SetId(proj.ID)
-
 		return nil
 	}
 	return diag.Errorf("could not find project %s/%s", orgName, projName)
