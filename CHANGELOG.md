@@ -8,6 +8,9 @@ FEATURES:
 BUG FIXES:
 * `r/tfe_policy`: enforcement level can be updated on OPA policies by @glennsarti [#1521](https://github.com/hashicorp/terraform-provider-tfe/pull/1521)
 
+FEATURES:
+* `r/tfe_variable_set`: Add `parent_project_id` attribute, by @mkam [#1522](https://github.com/hashicorp/terraform-provider-tfe/pull/1522)
+
 ## v0.60.0
 
 BUG FIXES:
