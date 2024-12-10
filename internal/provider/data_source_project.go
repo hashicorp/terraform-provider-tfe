@@ -5,6 +5,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -35,9 +36,10 @@ type modelDataSourceTFEProject struct {
 	AutoDestroyActivityDuration types.String `tfsdk:"auto_destroy_activity_duration"`
 	WorkspaceIDs                types.Set    `tfsdk:"workspace_ids"`
 	WorkspaceNames              types.Set    `tfsdk:"workspace_names"`
+	EffectiveTags               types.Map    `tfsdk:"effective_tags"`
 }
 
-func modelDataSourceFromTFEProject(p *tfe.Project, workspaceIDs, workspaceNames []string) (modelDataSourceTFEProject, diag.Diagnostics) {
+func modelDataSourceFromTFEProject(p *tfe.Project, workspaceIDs, workspaceNames []string, effectiveTags []*tfe.EffectiveTagBinding) (modelDataSourceTFEProject, diag.Diagnostics) {
 	m := modelDataSourceTFEProject{
 		ID:           types.StringValue(p.ID),
 		Name:         types.StringValue(p.Name),
@@ -63,6 +65,12 @@ func modelDataSourceFromTFEProject(p *tfe.Project, workspaceIDs, workspaceNames 
 
 		m.AutoDestroyActivityDuration = types.StringValue(autoDestroyDuration)
 	}
+
+	tagElems := make(map[string]attr.Value)
+	for _, binding := range effectiveTags {
+		tagElems[binding.Key] = types.StringValue(binding.Value)
+	}
+	m.EffectiveTags = types.MapValueMust(types.StringType, tagElems)
 
 	return m, diags
 }
@@ -109,6 +117,12 @@ func (d *dataSourceTFEProject) Schema(_ context.Context, req datasource.SchemaRe
 			},
 			"workspace_names": schema.SetAttribute{
 				Description: "The names of the workspaces associated with the project.",
+				Computed:    true,
+				ElementType: types.StringType,
+			},
+
+			"effective_tags": schema.MapAttribute{
+				Description: "A map of key-value tags associated with the project.",
 				Computed:    true,
 				ElementType: types.StringType,
 			},
@@ -196,14 +210,25 @@ func (d *dataSourceTFEProject) Read(ctx context.Context, req datasource.ReadRequ
 			readOptions.PageNumber = wl.NextPage
 		}
 
-		m, diags := modelDataSourceFromTFEProject(proj, workspaceIDs, workspaceNames)
+		effectiveBindings, err := d.config.Client.Projects.ListEffectiveTagBindings(ctx, proj.ID)
+		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+			resp.Diagnostics.AddError(fmt.Sprintf("Error retrieving effective tag bindings for project %s", proj.Name), err.Error())
+			return
+		}
+		if err != nil {
+			// This endpoint may not be supported against a given TFE instance.
+			// Initialize to empty slice to avoid ranging over nil
+			effectiveBindings = []*tfe.EffectiveTagBinding{}
+		}
+
+		m, diags := modelDataSourceFromTFEProject(proj, workspaceIDs, workspaceNames, effectiveBindings)
 		if diags.HasError() {
 			resp.Diagnostics.Append(diags...)
 			return
 		}
 
-		// Update state
 		resp.Diagnostics.Append(resp.State.Set(ctx, m)...)
+		// Update state
 		return
 	}
 

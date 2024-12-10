@@ -9,6 +9,7 @@
 package provider
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/url"
@@ -148,11 +149,18 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Computed: true,
 			},
 
-			"tag_names": {
-				Type:     schema.TypeSet,
-				Optional: true,
+			"effective_tags": {
+				Type:     schema.TypeMap,
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+
+			"tag_names": {
+				Type:       schema.TypeSet,
+				Optional:   true,
+				Computed:   true,
+				Deprecated: "Use the tags attribute instead. This attribute will be removed in a future provider release.",
+				Elem:       &schema.Schema{Type: schema.TypeString},
 			},
 
 			"terraform_version": {
@@ -238,12 +246,25 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	log.Printf("[DEBUG] Read configuration of workspace: %s", name)
-	workspace, err := config.Client.Workspaces.Read(ctx, organization, name)
+	workspace, err := config.Client.Workspaces.ReadWithOptions(ctx, organization, name, &tfe.WorkspaceReadOptions{
+		Include: []tfe.WSIncludeOpt{tfe.WSEffectiveTagBindings},
+	})
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			return fmt.Errorf("could not find workspace %s/%s", organization, name)
 		}
-		return fmt.Errorf("Error retrieving workspace: %w", err)
+
+		if errors.Is(err, tfe.ErrInvalidIncludeValue) {
+			log.Printf("[DEBUG] Workspace %s read failed due to unsupported Include; retrying without it", name)
+			workspace, err = config.Client.Workspaces.Read(ctx, organization, name)
+			if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
+				return fmt.Errorf("could not find workspace %s/%s", organization, name)
+			} else if err != nil {
+				return fmt.Errorf("error reading workspace %s without include: %w", name, err)
+			}
+		} else {
+			return fmt.Errorf("Error retrieving workspace: %w", err)
+		}
 	}
 	// Update the config.
 	d.Set("allow_destroy_plan", workspace.AllowDestroyPlan)
@@ -325,6 +346,12 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	if workspace.SSHKey != nil {
 		d.Set("ssh_key_id", workspace.SSHKey.ID)
 	}
+
+	effectiveTagBindings := make(map[string]interface{})
+	for _, binding := range workspace.EffectiveTagBindings {
+		effectiveTagBindings[binding.Key] = binding.Value
+	}
+	d.Set("effective_tags", effectiveTagBindings)
 
 	// Update the tag names
 	var tagNames []interface{}
