@@ -25,6 +25,24 @@ resource "tfe_project" "test" {
 }
 ```
 
+With tag bindings:
+
+```hcl
+resource "tfe_organization" "test-organization" {
+  name  = "my-org-name"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "test" {
+  organization = tfe_organization.test-organization.name
+  name         = "projectname"
+  tag_bindings = {
+      cost_center = "infrastructure"
+      team = "platform"
+  }
+}
+```
+
 ## Argument Reference
 
 The following arguments are supported:
@@ -34,6 +52,7 @@ The following arguments are supported:
     *  TFE versions v202405-1 and later support between 3-40 characters
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `description` - (Optional) A description for the project.
+* `tag_bindings` - (Optional) A map of key-value tags to add to the project.
 
 ## Attributes Reference
 
