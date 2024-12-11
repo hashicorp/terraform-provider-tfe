@@ -34,6 +34,12 @@ func TestAccTFEProjectDataSource_basic(t *testing.T) {
 						"data.tfe_project.foobar", "workspace_ids.#", "1"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_project.foobar", "workspace_names.#", "1"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_project.foobar", "tag_bindings.%", "2"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_project.foobar", "tag_bindings.cost_center", "main"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_project.foobar", "tag_bindings.team_owner", "platform-team"),
 				),
 			},
 		},
@@ -73,6 +79,10 @@ resource "tfe_project" "foobar" {
   name         = "project-test-%d"
   description  = "project description"
   organization = tfe_organization.foobar.id
+  tag_bindings = {
+	  cost_center = "main"
+	  team_owner = "platform-team"
+  }
 }
 
 data "tfe_project" "foobar" {

@@ -225,15 +225,25 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"tag_names": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Type:       schema.TypeSet,
+				Optional:   true,
+				Computed:   true,
+				Elem:       &schema.Schema{Type: schema.TypeString},
+				Deprecated: "Use the tag_bindings attribute to manage tags. This attribute will be removed in a future release of the provider.",
 			},
 
 			"ignore_additional_tag_names": {
 				Type:     schema.TypeBool,
 				Optional: true,
+			},
+
+			"tag_bindings": {
+				Type:     schema.TypeMap,
+				Optional: true,
+				Computed: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
 			},
 
 			"terraform_version": {
@@ -405,6 +415,15 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		options.SourceName = tfe.String(v.(string))
 	}
 
+	if tagBindings, ok := d.Get("tag_bindings").(map[string]interface{}); ok {
+		for key, val := range tagBindings {
+			options.TagBindings = append(options.TagBindings, &tfe.TagBinding{
+				Key:   key,
+				Value: val.(string),
+			})
+		}
+	}
+
 	// Process all configured options.
 	if tfVersion, ok := d.GetOk("terraform_version"); ok {
 		options.TerraformVersion = tfe.String(tfVersion.(string))
@@ -513,6 +532,21 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error reading configuration of workspace %s: %w", id, err)
 	}
 
+	tagBindings, err := config.Client.Workspaces.ListTagBindings(ctx, workspace.ID)
+	if err != nil {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			log.Printf("[DEBUG] Workspace %s no longer exists", id)
+			d.SetId("")
+			return nil
+		}
+		return fmt.Errorf("Error reading tag bindings of workspace %s: %w", id, err)
+	}
+
+	bindings := make(map[string]interface{})
+	for _, binding := range tagBindings {
+		bindings[binding.Key] = binding.Value
+	}
+
 	// Update the config.
 	d.Set("name", workspace.Name)
 	d.Set("allow_destroy_plan", workspace.AllowDestroyPlan)
@@ -532,6 +566,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("source_url", workspace.SourceURL)
 	d.Set("speculative_enabled", workspace.SpeculativeEnabled)
 	d.Set("structured_run_output_enabled", workspace.StructuredRunOutputEnabled)
+	d.Set("tag_bindings", bindings)
 	d.Set("terraform_version", workspace.TerraformVersion)
 	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
 	d.Set("trigger_patterns", workspace.TriggerPatterns)
@@ -719,6 +754,15 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		if d.HasChange("operations") {
 			if v, ok := d.GetOkExists("operations"); ok {
 				options.Operations = tfe.Bool(v.(bool))
+			}
+		}
+
+		if tagBindings, ok := d.Get("tag_bindings").(map[string]interface{}); ok {
+			for key, val := range tagBindings {
+				options.TagBindings = append(options.TagBindings, &tfe.TagBinding{
+					Key:   key,
+					Value: val.(string),
+				})
 			}
 		}
 

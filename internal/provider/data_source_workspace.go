@@ -143,11 +143,18 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Computed: true,
 			},
 
-			"tag_names": {
-				Type:     schema.TypeSet,
-				Optional: true,
+			"tag_bindings": {
+				Type:     schema.TypeMap,
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+
+			"tag_names": {
+				Type:       schema.TypeSet,
+				Optional:   true,
+				Computed:   true,
+				Deprecated: "Use the tag_bindings attribute instead. This attribute will be removed in a future provider release.",
+				Elem:       &schema.Schema{Type: schema.TypeString},
 			},
 
 			"terraform_version": {
@@ -319,6 +326,18 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	if workspace.SSHKey != nil {
 		d.Set("ssh_key_id", workspace.SSHKey.ID)
 	}
+
+	// Update the tag bindings
+	tagBindings := make(map[string]interface{})
+	bindings, err := config.Client.Workspaces.ListTagBindings(ctx, workspace.ID)
+	if err != nil {
+		return fmt.Errorf("Error reading tag bindings for workspace %s: %v", workspace.ID, err)
+	}
+
+	for _, binding := range bindings {
+		tagBindings[binding.Key] = binding.Value
+	}
+	d.Set("tag_bindings", tagBindings)
 
 	// Update the tag names
 	var tagNames []interface{}

@@ -68,6 +68,14 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
 					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_bindings.%", "3"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_bindings.keyA", "valueA"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_bindings.keyB", "valueB"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_bindings.keyC", "valueC"),
+					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "working_directory", ""),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "resource_count", "0"),
@@ -1266,7 +1274,7 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
-				// create with 2 tags
+				// create with 2 legacy tags and 3 tag bindings
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
@@ -1277,6 +1285,14 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 						"tfe_workspace.foobar", "tag_names.0", "fav"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "tag_names.1", "test"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_bindings.%", "3"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_bindings.keyA", "valueA"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_bindings.keyB", "valueB"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_bindings.keyC", "valueC"),
 				),
 			},
 			{
@@ -1289,6 +1305,12 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 						"tfe_workspace.foobar", "tag_names.#", "1"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "tag_names.0", "prod"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_bindings.%", "2"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_bindings.keyA", "valueA"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_bindings.keyB", "valueB"),
 				),
 			},
 			{
@@ -1303,6 +1325,14 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 						"tfe_workspace.foobar", "tag_names.0", "fav"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "tag_names.1", "prod"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_bindings.%", "3"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_bindings.keyA", "valueA"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_bindings.keyB", "valueB"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_bindings.keyD", "valueD"),
 				),
 			},
 			{
@@ -1351,6 +1381,8 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 						"tfe_workspace.foobar", workspace, testAccProvider),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "tag_names.#", "0"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tag_bindings.%", "0"),
 				),
 			},
 			{
@@ -2890,6 +2922,11 @@ resource "tfe_workspace" "foobar" {
   allow_destroy_plan = false
   auto_apply         = true
   tag_names          = ["fav", "test"]
+  tag_bindings       = {
+	  keyA = "valueA"
+	  keyB = "valueB"
+	  keyC = "valueC"
+  }
   %s
 }`, rInt, aart)
 }
@@ -3010,6 +3047,11 @@ resource "tfe_workspace" "foobar" {
   organization       = tfe_organization.foobar.id
   auto_apply         = true
   tag_names          = ["fav", "prod"]
+  tag_bindings       = {
+	  keyA = "valueA"
+	  keyB = "valueB"
+	  keyD = "valueD"
+  }
 }`, rInt)
 }
 
@@ -3025,6 +3067,7 @@ resource "tfe_workspace" "foobar" {
   organization       = tfe_organization.foobar.id
   auto_apply         = true
   tag_names          = []
+  tag_bindings       = {}
 }`, rInt)
 }
 
@@ -3070,6 +3113,10 @@ resource "tfe_workspace" "foobar" {
   organization       = tfe_organization.foobar.id
   auto_apply         = true
   tag_names          = ["prod"]
+  tag_bindings       = {
+	  keyA = "valueA"
+	  keyB = "valueB"
+  }
 }`, rInt)
 }
 
@@ -3290,6 +3337,12 @@ resource "tfe_workspace" "foobar" {
   queue_all_runs        = false
   terraform_version     = "0.11.1"
   trigger_prefixes      = ["/modules", "/shared"]
+  tag_bindings          = {
+	  keyA = "valueA"
+	  keyB = "valueB"
+	  keyC = "valueC"
+	  keyD = "valueD"
+  }
   working_directory     = "terraform/test"
   operations            = false
   %s
