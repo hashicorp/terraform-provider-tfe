@@ -1,5 +1,7 @@
 ## Unreleased
 
+## v0.61.0
+
 DEPRECATIONS:
 * `r/tfe_workspace`: `global_remote_state` and `remote_state_consumer_ids` have been **deprecated** and moved to `tfe_workspace_settings` (see ENHANCEMENTS below for more details)
 
