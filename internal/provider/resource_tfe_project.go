@@ -120,8 +120,6 @@ func resourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta in
 		}
 
 		d.Set("auto_destroy_activity_duration", v)
-		workspaces, err := project.Workspaces.Get()
-
 	}
 
 	return nil
