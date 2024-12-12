@@ -37,6 +37,8 @@ func TestAccTFEProject_basic(t *testing.T) {
 						"tfe_project.foobar", "description", "project description"),
 					resource.TestCheckResourceAttr(
 						"tfe_project.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "auto_destroy_activity_duration", "3d"),
 				),
 			},
 		},

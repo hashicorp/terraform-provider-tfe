@@ -16,6 +16,7 @@ import (
 	"regexp"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/jsonapi"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -55,6 +56,12 @@ func resourceTFEProject() *schema.Resource {
 				Computed: true,
 				ForceNew: true,
 			},
+
+			"auto_destroy_activity_duration": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^\d{1,4}[dh]$`), "must be 1-4 digits followed by d or h"),
+			},
 		},
 	}
 }
@@ -71,6 +78,10 @@ func resourceTFEProjectCreate(ctx context.Context, d *schema.ResourceData, meta 
 	options := tfe.ProjectCreateOptions{
 		Name:        name,
 		Description: tfe.String(d.Get("description").(string)),
+	}
+
+	if v, ok := d.GetOk("auto_destroy_activity_duration"); ok {
+		options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(v.(string))
 	}
 
 	log.Printf("[DEBUG] Create new project: %s", name)
@@ -102,6 +113,17 @@ func resourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta in
 	d.Set("description", project.Description)
 	d.Set("organization", project.Organization.Name)
 
+	if project.AutoDestroyActivityDuration.IsSpecified() {
+		v, err := project.AutoDestroyActivityDuration.Get()
+		if err != nil {
+			return diag.Errorf("Error reading auto destroy activity duration: %v", err)
+		}
+
+		d.Set("auto_destroy_activity_duration", v)
+		workspaces, err := project.Workspaces.Get()
+
+	}
+
 	return nil
 }
 
@@ -111,6 +133,15 @@ func resourceTFEProjectUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	options := tfe.ProjectUpdateOptions{
 		Name:        tfe.String(d.Get("name").(string)),
 		Description: tfe.String(d.Get("description").(string)),
+	}
+
+	if d.HasChange("auto_destroy_activity_duration") {
+		duration, ok := d.GetOk("auto_destroy_activity_duration")
+		if !ok {
+			options.AutoDestroyActivityDuration = jsonapi.NewNullNullableAttr[string]()
+		} else {
+			options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(duration.(string))
+		}
 	}
 
 	log.Printf("[DEBUG] Update configuration of project: %s", d.Id())
