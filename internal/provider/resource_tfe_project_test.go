@@ -37,6 +37,12 @@ func TestAccTFEProject_basic(t *testing.T) {
 						"tfe_project.foobar", "description", "project description"),
 					resource.TestCheckResourceAttr(
 						"tfe_project.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "tag_bindings.%", "2"),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "tag_bindings.keyA", "valueA"),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "tag_bindings.keyB", "valueB"),
 				),
 			},
 		},
@@ -82,6 +88,8 @@ func TestAccTFEProject_update(t *testing.T) {
 						"tfe_project.foobar", "name", "projecttest"),
 					resource.TestCheckResourceAttr(
 						"tfe_project.foobar", "description", "project description"),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "tag_bindings.%", "2"),
 				),
 			},
 			{
@@ -94,6 +102,8 @@ func TestAccTFEProject_update(t *testing.T) {
 						"tfe_project.foobar", "name", "project updated"),
 					resource.TestCheckResourceAttr(
 						"tfe_project.foobar", "description", "project description updated"),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "tag_bindings.%", "1"),
 				),
 			},
 		},
@@ -140,6 +150,9 @@ resource "tfe_project" "foobar" {
   organization = tfe_organization.foobar.name
   name = "project updated"
   description = "project description updated"
+  tag_bindings = {
+	  keyB = "valueB"
+  }
 }`, rInt)
 }
 
@@ -154,6 +167,10 @@ resource "tfe_project" "foobar" {
   organization = tfe_organization.foobar.name
   name = "projecttest"
   description = "project description"
+  tag_bindings = {
+	  keyA = "valueA"
+	  keyB = "valueB"
+  }
 }`, rInt)
 }
 

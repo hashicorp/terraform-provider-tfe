@@ -51,6 +51,12 @@ func dataSourceTFEProject() *schema.Resource {
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
+
+			"tag_bindings": {
+				Type:     schema.TypeMap,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
 		},
 	}
 }
@@ -104,9 +110,20 @@ func dataSourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta 
 				readOptions.PageNumber = wl.NextPage
 			}
 
+			tagBindings := make(map[string]interface{})
+			bindings, err := config.Client.Projects.ListTagBindings(ctx, proj.ID)
+			if err != nil {
+				return diag.Errorf("Error retrieving tag bindings for project %s: %v", proj.ID, err)
+			}
+
+			for _, binding := range bindings {
+				tagBindings[binding.Key] = binding.Value
+			}
+
 			d.Set("workspace_ids", workspaces)
 			d.Set("workspace_names", workspaceNames)
 			d.Set("description", proj.Description)
+			d.Set("tag_bindings", tagBindings)
 			d.SetId(proj.ID)
 			return nil
 		}
