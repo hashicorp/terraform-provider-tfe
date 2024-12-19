@@ -535,8 +535,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	tagBindings, err := config.Client.Workspaces.ListTagBindings(ctx, workspace.ID)
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
-			log.Printf("[DEBUG] Workspace %s no longer exists", id)
-			d.SetId("")
+			log.Printf("[DEBUG] Workspace %s no longer exists or tag bindings are not supported by this instance", id)
 			return nil
 		}
 		return fmt.Errorf("Error reading tag bindings of workspace %s: %w", id, err)
