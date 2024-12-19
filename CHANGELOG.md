@@ -4,10 +4,14 @@ BREAKING_CHANGES:
 * `r/tfe_workspace`: Add attribute `inherits_project_auto_destroy` to tfe_workspace, existing workspaces with auto-destroy settings should add `inherits_project_auto_destroy: false` to tfe_workspace resource [1550](https://github.com/hashicorp/terraform-provider-tfe/pull/1550)
 
 FEATURES:
-* `r/tfe_variable_set`: Add `parent_project_id` attribute, by @mkam [#1522](https://github.com/hashicorp/terraform-provider-tfe/pull/1522)
 * `r/tfe_project`: Add `auto_destroy_activity_duration` field to the project resource, which automatically propagates auto-destroy settings to workspaces [1550](https://github.com/hashicorp/terraform-provider-tfe/pull/1550)
 * `d/tfe_project`: Add `auto_destroy_activity_duration` field to the project datasource [1550](https://github.com/hashicorp/terraform-provider-tfe/pull/1550)
 * `d/tfe_workspace`: Add attribute `inherits_project_auto_destroy` to tfe_workspace datasource [1550](https://github.com/hashicorp/terraform-provider-tfe/pull/1550)
+
+## v0.62.0
+
+FEATURES:
+* `r/tfe_variable_set`: Add `parent_project_id` attribute, by @mkam [#1522](https://github.com/hashicorp/terraform-provider-tfe/pull/1522)
 
 ## v0.61.0
 
