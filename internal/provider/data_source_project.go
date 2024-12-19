@@ -75,15 +75,6 @@ func dataSourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta 
 		Name: projName,
 	}
 
-	var autoDestroyDuration string
-	if project.AutoDestroyActivityDuration.IsSpecified() {
-		autoDestroyDuration, err = project.AutoDestroyActivityDuration.Get()
-		if err != nil {
-			return fmt.Errorf("Error reading auto destroy activity duration: %w", err)
-		}
-	}
-	d.Set("auto_destroy_activity_duration", autoDestroyDuration)
-
 	l, err := config.Client.Projects.List(ctx, orgName, options)
 	if err != nil {
 		return diag.Errorf("Error retrieving projects: %v", err)
@@ -121,6 +112,15 @@ func dataSourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta 
 			d.Set("workspace_ids", workspaces)
 			d.Set("workspace_names", workspaceNames)
 			d.Set("description", proj.Description)
+
+			var autoDestroyDuration string
+			if proj.AutoDestroyActivityDuration.IsSpecified() {
+				autoDestroyDuration, err = proj.AutoDestroyActivityDuration.Get()
+				if err != nil {
+					return diag.Errorf("Error reading auto destroy activity duration: %v", err)
+				}
+			}
+			d.Set("auto_destroy_activity_duration", autoDestroyDuration)
 			d.SetId(proj.ID)
 			return nil
 		}

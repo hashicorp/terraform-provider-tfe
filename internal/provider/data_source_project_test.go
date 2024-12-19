@@ -62,6 +62,26 @@ func TestAccTFEProjectDataSource_caseInsensitive(t *testing.T) {
 	})
 }
 
+func TestAccTFEProjectDataSource_basicWithAutoDestroy(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEProjectDataSourceConfigWithAutoDestroy(rInt, "3d"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"data.tfe_project.foobar", "name", fmt.Sprintf("project-test-%d", rInt)),
+					resource.TestCheckResourceAttr(
+						"data.tfe_project.foobar", "auto_destroy_activity_duration", "3d"),
+				),
+			},
+		},
+	})
+}
+
 func testAccTFEProjectDataSourceConfig(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
@@ -111,4 +131,34 @@ data "tfe_project" "foobar" {
     tfe_project.foobar
   ]
 }`, rInt, rInt, rInt)
+}
+
+func testAccTFEProjectDataSourceConfigWithAutoDestroy(rInt int, duration string) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "foobar" {
+  name         = "project-test-%d"
+  description  = "project description"
+  organization = tfe_organization.foobar.id
+  auto_destroy_activity_duration = "%s"
+}
+
+data "tfe_project" "foobar" {
+  name         = tfe_project.foobar.name
+  organization = tfe_project.foobar.organization
+  # Read the data source after creating the workspace, so counts match
+  depends_on = [
+	tfe_workspace.foobar
+  ]
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test-%d"
+  organization = tfe_organization.foobar.id
+  project_id  = tfe_project.foobar.id
+}`, rInt, rInt, duration, rInt)
 }
