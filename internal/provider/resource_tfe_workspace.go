@@ -158,6 +158,12 @@ func resourceTFEWorkspace() *schema.Resource {
 				Deprecated: "Use resource `tfe_workspace_settings` to modify the workspace `global_remote_state`. `global_remote_state` on `tfe_workspace` is no longer validated properly and will be removed in a future release of the provider.",
 			},
 
+			"inherits_project_auto_destroy": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
+			},
+
 			"remote_state_consumer_ids": {
 				Type:       schema.TypeSet,
 				Optional:   true,
@@ -362,6 +368,10 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		}
 	}
 
+	if v, ok := d.GetOkExists("inherits_project_auto_destroy"); ok {
+		options.InheritsProjectAutoDestroy = tfe.Bool(v.(bool))
+	}
+
 	if _, ok := d.GetOk("auto_destroy_at"); ok {
 		autoDestroyAt, err := expandAutoDestroyAt(d)
 		if err != nil {
@@ -538,6 +548,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("working_directory", workspace.WorkingDirectory)
 	d.Set("organization", workspace.Organization.Name)
 	d.Set("resource_count", workspace.ResourceCount)
+	d.Set("inherits_project_auto_destroy", workspace.InheritsProjectAutoDestroy)
 
 	if workspace.Links["self-html"] != nil {
 		baseAPI := config.Client.BaseURL()
@@ -567,19 +578,20 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	d.Set("agent_pool_id", agentPoolID)
 
-	autoDestroyAt, err := flattenAutoDestroyAt(workspace.AutoDestroyAt)
-	if err != nil {
-		return fmt.Errorf("Error flattening auto destroy during read: %w", err)
-	}
-	d.Set("auto_destroy_at", autoDestroyAt)
-
-	if workspace.AutoDestroyActivityDuration.IsSpecified() {
-		v, err := workspace.AutoDestroyActivityDuration.Get()
+	if !workspace.InheritsProjectAutoDestroy {
+		autoDestroyAt, err := flattenAutoDestroyAt(workspace.AutoDestroyAt)
 		if err != nil {
-			return fmt.Errorf("Error reading auto destroy activity duration: %w", err)
+			return fmt.Errorf("Error flattening auto destroy during read: %w", err)
 		}
+		d.Set("auto_destroy_at", autoDestroyAt)
 
-		d.Set("auto_destroy_activity_duration", v)
+		if workspace.AutoDestroyActivityDuration.IsSpecified() {
+			v, err := workspace.AutoDestroyActivityDuration.Get()
+			if err != nil {
+				return fmt.Errorf("Error reading auto destroy activity duration: %w", err)
+			}
+			d.Set("auto_destroy_activity_duration", v)
+		}
 	}
 
 	var tagNames []interface{}
@@ -635,7 +647,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		d.HasChange("description") || d.HasChange("agent_pool_id") ||
 		d.HasChange("global_remote_state") || d.HasChange("structured_run_output_enabled") ||
 		d.HasChange("assessments_enabled") || d.HasChange("project_id") ||
-		hasAutoDestroyAtChange(d) || d.HasChange("auto_destroy_activity_duration") {
+		hasAutoDestroyAtChange(d) || d.HasChange("auto_destroy_activity_duration") || d.HasChange("inherits_project_auto_destroy") {
 		// Create a new options struct.
 		options := tfe.WorkspaceUpdateOptions{
 			Name:                       tfe.String(d.Get("name").(string)),
@@ -685,6 +697,12 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 				options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{
 					AgentPool: tfe.Bool(true),
 				}
+			}
+		}
+
+		if d.HasChange("inherits_project_auto_destroy") {
+			if v, ok := d.GetOkExists("inherits_project_auto_destroy"); ok {
+				options.InheritsProjectAutoDestroy = tfe.Bool(v.(bool))
 			}
 		}
 
@@ -1075,6 +1093,11 @@ func customizeDiffAutoDestroyAt(_ context.Context, d *schema.ResourceDiff) error
 
 	// check if auto_destroy_activity_duration is set in config
 	if !config.GetAttr("auto_destroy_activity_duration").IsNull() {
+		return nil
+	}
+
+	// if the workspace inherits project auto destroy, we do not refresh the auto_destroy_at
+	if config.GetAttr("inherits_project_auto_destroy").True() {
 		return nil
 	}
 
