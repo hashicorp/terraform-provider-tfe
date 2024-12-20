@@ -3256,15 +3256,9 @@ resource "tfe_organization" "foobar" {
   email = "admin@company.com"
 }
 
-resource "tfe_project" "new_project" {
-  name = "testproject"
-  organization = tfe_organization.foobar.id
-}
-
 resource "tfe_workspace" "foobar" {
   name                          = "workspace-test"
   organization                  = tfe_organization.foobar.id
-  project_id		            = tfe_project.new_project.id
   auto_apply                    = true
   file_triggers_enabled         = false
   auto_destroy_at               = "2100-01-01T00:00:00Z"
@@ -3302,15 +3296,9 @@ resource "tfe_organization" "foobar" {
   email = "admin@company.com"
 }
 
-resource "tfe_project" "new_project" {
-  name = "testproject"
-  organization = tfe_organization.foobar.id
-}
-
 resource "tfe_workspace" "foobar" {
   name                           = "workspace-test"
   organization                   = tfe_organization.foobar.id
-  project_id		             = tfe_project.new_project.id
   auto_apply                     = true
   file_triggers_enabled          = false
   auto_destroy_activity_duration = "%s"
