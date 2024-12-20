@@ -24,7 +24,10 @@ resource "tfe_organization" "test-organization" {
 resource "tfe_workspace" "test" {
   name         = "my-workspace-name"
   organization = tfe_organization.test-organization.name
-  tag_names    = ["test", "app"]
+  tag_bindings = {
+      environment = "prod"
+      team_owner = "my-team"
+  }
 }
 ```
 
@@ -115,7 +118,8 @@ The following arguments are supported:
   Defaults to `true`. Setting this to `false` ensures that all runs in this
   workspace will display their output as text logs.
 * `ssh_key_id` - (Optional) The ID of an SSH key to assign to the workspace.
-* `tag_names` - (Optional) A list of tag names for this workspace. Note that tags must only contain lowercase letters, numbers, colons, or hyphens.
+* `tag_names` - (Optional) **Deprecated** A list of tag names for this workspace. Note that tags must only contain lowercase letters, numbers, colons, or hyphens.
+* `tag_bindings` - (Optional) A map of key value tags for this workspace.
 * `ignore_additional_tag_names` - (Optional) Explicitly ignores `tag_names`
 _not_ defined by config so they will not be overwritten by the configured
 tags. This creates exceptional behavior in terraform with respect

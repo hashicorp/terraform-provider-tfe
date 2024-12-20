@@ -22,6 +22,13 @@ data "tfe_workspace_ids" "all" {
   organization = "my-org-name"
 }
 
+data "tfe_workspace_ids" "dev-env-tags-only" {
+  organization = "my-org-name"
+  tag_bindings = {
+      environment = "dev"
+  }
+}
+
 data "tfe_workspace_ids" "prod-apps" {
   tag_names    = ["prod", "app", "aws"]
   organization = "my-org-name"
@@ -43,8 +50,9 @@ The following arguments are supported. At least one of `names` or `tag_names` mu
 
     To select _all_ workspaces for an organization, provide a list with a single
     asterisk, like `["*"]`. The asterisk also supports partial matching on prefix and/or suffix, like `[*-prod]`, `[test-*]`, `[*dev*]`.
-* `tag_names` - (Optional) A list of tag names to search for.
-* `exclude_tags` - (Optional) A list of tag names to exclude when searching.
+* `tag_bindings` - (Optional) A map of key value tags to search for.
+* `tag_names` - (Optional) **Deprecated** A list of tag names to search for.
+* `exclude_tags` - (Optional) **Deprecated** A list of tag names to exclude when searching.
 * `organization` - (Required) Name of the organization.
 
 ## Attributes Reference

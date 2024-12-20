@@ -25,17 +25,24 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 				Type:         schema.TypeList,
 				Elem:         &schema.Schema{Type: schema.TypeString},
 				Optional:     true,
-				AtLeastOneOf: []string{"names", "tag_names"},
+				AtLeastOneOf: []string{"names", "tag_names", "tag_bindings"},
 			},
 
 			"tag_names": {
-				Type:     schema.TypeList,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Optional: true,
+				Type:       schema.TypeList,
+				Elem:       &schema.Schema{Type: schema.TypeString},
+				Deprecated: "Use the tag_bindings attribute to search by tags. This attribute will be removed in a future provider release.",
+				Optional:   true,
 			},
 
 			"exclude_tags": {
 				Type:     schema.TypeSet,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Optional: true,
+			},
+
+			"tag_bindings": {
+				Type:     schema.TypeMap,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Optional: true,
 			},
@@ -148,7 +155,19 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 		options.Tags = tagSearch
 	}
 
-	hasOnlyTags := len(tagSearchParts) > 0 && len(names) == 0
+	// Filter by tag bindings if present
+	if tagBindings, ok := d.Get("tag_bindings").(map[string]interface{}); ok {
+		for key, val := range tagBindings {
+			options.TagBindings = append(options.TagBindings, &tfe.TagBinding{
+				Key:   key,
+				Value: val.(string),
+			})
+		}
+	}
+
+	hasLegacyTags := len(tagSearchParts) > 0
+	hasTagBindings := len(options.TagBindings) > 0
+	hasOnlyTags := (hasLegacyTags || hasTagBindings) && len(names) == 0
 
 	for {
 		wl, err := config.Client.Workspaces.List(ctx, organization, options)
