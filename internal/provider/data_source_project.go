@@ -38,6 +38,11 @@ func dataSourceTFEProject() *schema.Resource {
 				Optional: true,
 			},
 
+			"auto_destroy_activity_duration": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+
 			"workspace_ids": {
 				Type:     schema.TypeSet,
 				Optional: true,
@@ -107,6 +112,15 @@ func dataSourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta 
 			d.Set("workspace_ids", workspaces)
 			d.Set("workspace_names", workspaceNames)
 			d.Set("description", proj.Description)
+
+			var autoDestroyDuration string
+			if proj.AutoDestroyActivityDuration.IsSpecified() {
+				autoDestroyDuration, err = proj.AutoDestroyActivityDuration.Get()
+				if err != nil {
+					return diag.Errorf("Error reading auto destroy activity duration: %v", err)
+				}
+			}
+			d.Set("auto_destroy_activity_duration", autoDestroyDuration)
 			d.SetId(proj.ID)
 			return nil
 		}
