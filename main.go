@@ -53,6 +53,7 @@ func main() {
 	)
 	if err != nil {
 		log.Printf("[ERROR] Could not setup a mux server using the internal providers: %v", err)
+		log.Printf("Hello I'm Tushar")
 		os.Exit(1)
 	}
 
