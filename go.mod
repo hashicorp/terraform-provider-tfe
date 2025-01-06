@@ -83,4 +83,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/hashicorp/go-tfe => ../go-tfe
+replace github.com/hashicorp/go-tfe => github.com/hashicorp/go-tfe v1.71.1-0.20241219170950-98975f447700

@@ -700,12 +700,6 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			}
 		}
 
-		if d.HasChange("inherits_project_auto_destroy") {
-			if v, ok := d.GetOkExists("inherits_project_auto_destroy"); ok {
-				options.InheritsProjectAutoDestroy = tfe.Bool(v.(bool))
-			}
-		}
-
 		if hasAutoDestroyAtChange(d) {
 			autoDestroyAt, err := expandAutoDestroyAt(d)
 			if err != nil {
@@ -720,6 +714,13 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 				options.AutoDestroyActivityDuration = jsonapi.NewNullNullableAttr[string]()
 			} else {
 				options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(duration.(string))
+				options.InheritsProjectAutoDestroy = tfe.Bool(false)
+			}
+		}
+
+		if d.HasChange("inherits_project_auto_destroy") {
+			if v, ok := d.GetOkExists("inherits_project_auto_destroy"); ok {
+				options.InheritsProjectAutoDestroy = tfe.Bool(v.(bool))
 			}
 		}
 
