@@ -161,7 +161,6 @@ func resourceTFEWorkspace() *schema.Resource {
 			"inherits_project_auto_destroy": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				Default:  true,
 			},
 
 			"remote_state_consumer_ids": {
@@ -706,12 +705,19 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 				return fmt.Errorf("Error expanding auto destroy during update: %w", err)
 			}
 			options.AutoDestroyAt = autoDestroyAt
+
+			if autoDestroyAt.IsNull() {
+				options.InheritsProjectAutoDestroy = tfe.Bool(true)
+			} else {
+				options.InheritsProjectAutoDestroy = tfe.Bool(false)
+			}
 		}
 
 		if d.HasChange("auto_destroy_activity_duration") {
 			duration, ok := d.GetOk("auto_destroy_activity_duration")
 			if !ok {
 				options.AutoDestroyActivityDuration = jsonapi.NewNullNullableAttr[string]()
+				options.InheritsProjectAutoDestroy = tfe.Bool(true)
 			} else {
 				options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(duration.(string))
 				options.InheritsProjectAutoDestroy = tfe.Bool(false)

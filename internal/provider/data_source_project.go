@@ -82,48 +82,50 @@ func dataSourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta 
 
 	for _, proj := range l.Items {
 		// Case-insensitive uniqueness is enforced in TFC
-		if strings.EqualFold(proj.Name, projName) {
-			// Only now include workspaces to cut down on request load.
-			readOptions := &tfe.WorkspaceListOptions{
-				ProjectID: proj.ID,
-			}
-			var workspaces []interface{}
-			var workspaceNames []interface{}
-			for {
-				wl, err := config.Client.Workspaces.List(ctx, orgName, readOptions)
-				if err != nil {
-					return diag.Errorf("Error retrieving workspaces: %v", err)
-				}
-
-				for _, workspace := range wl.Items {
-					workspaces = append(workspaces, workspace.ID)
-					workspaceNames = append(workspaceNames, workspace.Name)
-				}
-
-				// Exit the loop when we've seen all pages.
-				if wl.CurrentPage >= wl.TotalPages {
-					break
-				}
-
-				// Update the page number to get the next page.
-				readOptions.PageNumber = wl.NextPage
-			}
-
-			d.Set("workspace_ids", workspaces)
-			d.Set("workspace_names", workspaceNames)
-			d.Set("description", proj.Description)
-
-			var autoDestroyDuration string
-			if proj.AutoDestroyActivityDuration.IsSpecified() {
-				autoDestroyDuration, err = proj.AutoDestroyActivityDuration.Get()
-				if err != nil {
-					return diag.Errorf("Error reading auto destroy activity duration: %v", err)
-				}
-			}
-			d.Set("auto_destroy_activity_duration", autoDestroyDuration)
-			d.SetId(proj.ID)
-			return nil
+		if !strings.EqualFold(proj.Name, projName) {
+			continue
 		}
+		// Only now include workspaces to cut down on request load.
+		readOptions := &tfe.WorkspaceListOptions{
+			ProjectID: proj.ID,
+		}
+		var workspaces []interface{}
+		var workspaceNames []interface{}
+		for {
+			wl, err := config.Client.Workspaces.List(ctx, orgName, readOptions)
+			if err != nil {
+				return diag.Errorf("Error retrieving workspaces: %v", err)
+			}
+
+			for _, workspace := range wl.Items {
+				workspaces = append(workspaces, workspace.ID)
+				workspaceNames = append(workspaceNames, workspace.Name)
+			}
+
+			// Exit the loop when we've seen all pages.
+			if wl.CurrentPage >= wl.TotalPages {
+				break
+			}
+
+			// Update the page number to get the next page.
+			readOptions.PageNumber = wl.NextPage
+		}
+
+		d.Set("workspace_ids", workspaces)
+		d.Set("workspace_names", workspaceNames)
+		d.Set("description", proj.Description)
+
+		var autoDestroyDuration string
+		if proj.AutoDestroyActivityDuration.IsSpecified() {
+			autoDestroyDuration, err = proj.AutoDestroyActivityDuration.Get()
+			if err != nil {
+				return diag.Errorf("Error reading auto destroy activity duration: %v", err)
+			}
+		}
+		d.Set("auto_destroy_activity_duration", autoDestroyDuration)
+		d.SetId(proj.ID)
+
+		return nil
 	}
 	return diag.Errorf("could not find project %s/%s", orgName, projName)
 }
