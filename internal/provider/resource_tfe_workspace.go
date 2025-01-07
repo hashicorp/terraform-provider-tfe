@@ -161,6 +161,7 @@ func resourceTFEWorkspace() *schema.Resource {
 			"inherits_project_auto_destroy": {
 				Type:     schema.TypeBool,
 				Optional: true,
+				Default:  true,
 			},
 
 			"remote_state_consumer_ids": {
@@ -699,35 +700,33 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			}
 		}
 
+		if d.HasChange("inherits_project_auto_destroy") {
+			if v, ok := d.GetOkExists("inherits_project_auto_destroy"); ok {
+				options.InheritsProjectAutoDestroy = tfe.Bool(v.(bool))
+			}
+		}
+
 		if hasAutoDestroyAtChange(d) {
 			autoDestroyAt, err := expandAutoDestroyAt(d)
 			if err != nil {
 				return fmt.Errorf("Error expanding auto destroy during update: %w", err)
 			}
 			options.AutoDestroyAt = autoDestroyAt
-
-			if autoDestroyAt.IsNull() {
-				options.InheritsProjectAutoDestroy = tfe.Bool(true)
-			} else {
-				options.InheritsProjectAutoDestroy = tfe.Bool(false)
-			}
 		}
 
 		if d.HasChange("auto_destroy_activity_duration") {
 			duration, ok := d.GetOk("auto_destroy_activity_duration")
 			if !ok {
 				options.AutoDestroyActivityDuration = jsonapi.NewNullNullableAttr[string]()
-				options.InheritsProjectAutoDestroy = tfe.Bool(true)
 			} else {
 				options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(duration.(string))
-				options.InheritsProjectAutoDestroy = tfe.Bool(false)
 			}
 		}
 
-		if d.HasChange("inherits_project_auto_destroy") {
-			if v, ok := d.GetOkExists("inherits_project_auto_destroy"); ok {
-				options.InheritsProjectAutoDestroy = tfe.Bool(v.(bool))
-			}
+		if d.GetRawConfig().GetAttr("auto_destroy_at").IsNull() && d.GetRawConfig().GetAttr("auto_destroy_activity_duration").IsNull() {
+			options.InheritsProjectAutoDestroy = tfe.Bool(true)
+		} else {
+			options.InheritsProjectAutoDestroy = tfe.Bool(false)
 		}
 
 		if d.HasChange("execution_mode") {
