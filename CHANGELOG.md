@@ -1,5 +1,8 @@
 ## Unreleased
 
+BUG FIXES:
+* Update dependency `github.com/hashicorp/go-slug` `v0.16.0` => `v0.16.3` to integrate latest changes.
+
 ## v0.62.0
 
 FEATURES:
