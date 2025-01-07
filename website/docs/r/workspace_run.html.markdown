@@ -13,9 +13,11 @@ There are a few main use cases this resource was designed for:
 
 - **Workspaces that depend on other workspaces.** If a workspace will create infrastructure that other workspaces rely on (for example, a Kubernetes cluster to deploy resources into), those downstream workspaces can depend on an initial `apply` with `wait_for_run = true`, so they aren't created before their infrastructure dependencies.
 - **A more reliable `queue_all_runs = true`.** The `queue_all_runs` argument on `tfe_workspace` requests an initial run, which can complete asynchronously outside of the Terraform run that creates the workspace. Unfortunately, it can't be used with workspaces that require variables to be set, because the `tfe_variable` resources themselves depend on the `tfe_workspace`. By managing an initial `apply` with `wait_for_run = false` that depends on your `tfe_variables`, you can accomplish the same goal without a circular dependency.
-- **Safe workspace destruction.** To ensure a workspace's managed resources are destroyed before deleting it, manage a `destroy` with `wait_for_run = true`. When you destroy the whole configuration, Terraform will wait for the destroy run to complete before deleting the workspace. This pattern is compatible with the `tfe_workspace` resource's default safe deletion behavior.
+- **Safe workspace destruction.** To ensure a workspace's managed resources are destroyed before deleting it, add a `destroy` block with `wait_for_run = true`. When you destroy the whole configuration, Terraform will wait for the destroy run to complete before deleting the workspace. This pattern is compatible with the `tfe_workspace` resource's default safe deletion behavior.
 
 The `tfe_workspace_run` expects to own exactly one apply during a creation and/or one destroy during a destruction. This implies that even if previous successful applies exist in the workspace, a `tfe_workspace_run` resource that includes an `apply` block will queue a new apply when added to a config.
+
+~> **NOTE:** Use caution when removing the `tfe_workspace_run` resource from your configuration, as destroying it with a `destroy` block present will create a destroy run which will destroy the workspace's underlying managed resources. To avoid this behavior, remove the `destroy` block first.
 
 ## Example Usage
 
@@ -185,8 +187,8 @@ resource "tfe_workspace_run" "ws_run_parent" {
 The following arguments are supported:
 
 * `workspace_id` - (Required) ID of the workspace to execute the run.
-* `apply` - (Optional) Settings for the workspace's apply run during creation.
-* `destroy` - (Optional) Settings for the workspace's destroy run during destruction.
+* `apply` - (Optional) Adding an apply block ensures an apply run is queued when the resource is created. The block controls settings for the workspace's apply run during creation. 
+* `destroy` - (Optional) Adding a destroy block ensures a destroy run is queued when the resource is destroyed. The block controls settings for the workspace's destroy run during destruction.
 
 Both `apply` and `destroy` block supports:
 
