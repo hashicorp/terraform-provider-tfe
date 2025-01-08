@@ -56,7 +56,7 @@ type modelTFETeamNotificationConfiguration struct {
 
 // modelFromTFETeamNotificationConfiguration builds a modelTFETeamNotificationConfiguration
 // struct from a tfe.TeamNotificationConfiguration value.
-func modelFromTFETeamNotificationConfiguration(v *tfe.TeamNotificationConfiguration) modelTFETeamNotificationConfiguration {
+func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration) modelTFETeamNotificationConfiguration {
 	result := modelTFETeamNotificationConfiguration{
 		ID:              types.StringValue(v.ID),
 		Name:            types.StringValue(v.Name),
@@ -272,7 +272,7 @@ func (r *resourceTFETeamNotificationConfiguration) Create(ctx context.Context, r
 	teamID := plan.TeamID.ValueString()
 
 	// Create a new options struct
-	options := tfe.TeamNotificationConfigurationCreateOptions{
+	options := tfe.NotificationConfigurationCreateOptions{
 		DestinationType: tfe.NotificationDestination(tfe.NotificationDestinationType(plan.DestinationType.ValueString())),
 		Enabled:         plan.Enabled.ValueBoolPointer(),
 		Name:            plan.Name.ValueStringPointer(),
@@ -314,7 +314,7 @@ func (r *resourceTFETeamNotificationConfiguration) Create(ctx context.Context, r
 	}
 
 	tflog.Debug(ctx, "Creating team notification configuration")
-	tnc, err := r.config.Client.TeamNotificationConfigurations.Create(ctx, teamID, options)
+	tnc, err := r.config.Client.NotificationConfigurations.Create(ctx, teamID, options)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to create team notification configuration", err.Error())
 		return
@@ -342,7 +342,7 @@ func (r *resourceTFETeamNotificationConfiguration) Read(ctx context.Context, req
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("Reading team notification configuration %q", state.ID.ValueString()))
-	tnc, err := r.config.Client.TeamNotificationConfigurations.Read(ctx, state.ID.ValueString())
+	tnc, err := r.config.Client.NotificationConfigurations.Read(ctx, state.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read team notification configuration", err.Error())
 		return
@@ -374,7 +374,7 @@ func (r *resourceTFETeamNotificationConfiguration) Update(ctx context.Context, r
 	}
 
 	// Create a new options struct
-	options := tfe.TeamNotificationConfigurationUpdateOptions{
+	options := tfe.NotificationConfigurationUpdateOptions{
 		Enabled: plan.Enabled.ValueBoolPointer(),
 		Name:    plan.Name.ValueStringPointer(),
 		Token:   plan.Token.ValueStringPointer(),
@@ -415,7 +415,7 @@ func (r *resourceTFETeamNotificationConfiguration) Update(ctx context.Context, r
 	}
 
 	tflog.Debug(ctx, "Updating team notification configuration")
-	tnc, err := r.config.Client.TeamNotificationConfigurations.Update(ctx, state.ID.ValueString(), options)
+	tnc, err := r.config.Client.NotificationConfigurations.Update(ctx, state.ID.ValueString(), options)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to update team notification configuration", err.Error())
 		return
@@ -443,7 +443,7 @@ func (r *resourceTFETeamNotificationConfiguration) Delete(ctx context.Context, r
 	}
 
 	tflog.Debug(ctx, "Deleting team notification configuration")
-	err := r.config.Client.TeamNotificationConfigurations.Delete(ctx, state.ID.ValueString())
+	err := r.config.Client.NotificationConfigurations.Delete(ctx, state.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to delete team notification configuration", err.Error())
 		return

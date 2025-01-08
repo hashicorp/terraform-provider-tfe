@@ -17,7 +17,7 @@ import (
 )
 
 func TestAccTFETeamNotificationConfiguration_basic(t *testing.T) {
-	notificationConfiguration := &tfe.TeamNotificationConfiguration{}
+	notificationConfiguration := &tfe.NotificationConfiguration{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -48,7 +48,7 @@ func TestAccTFETeamNotificationConfiguration_basic(t *testing.T) {
 }
 
 func TestAccTFETeamNotificationConfiguration_emailUserIDs(t *testing.T) {
-	notificationConfiguration := &tfe.TeamNotificationConfiguration{}
+	notificationConfiguration := &tfe.NotificationConfiguration{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -79,7 +79,7 @@ func TestAccTFETeamNotificationConfiguration_emailUserIDs(t *testing.T) {
 }
 
 func TestAccTFETeamNotificationConfiguration_update(t *testing.T) {
-	notificationConfiguration := &tfe.TeamNotificationConfiguration{}
+	notificationConfiguration := &tfe.NotificationConfiguration{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -132,7 +132,7 @@ func TestAccTFETeamNotificationConfiguration_update(t *testing.T) {
 }
 
 func TestAccTFETeamNotificationConfiguration_updateEmailUserIDs(t *testing.T) {
-	notificationConfiguration := &tfe.TeamNotificationConfiguration{}
+	notificationConfiguration := &tfe.NotificationConfiguration{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -294,7 +294,7 @@ func TestAccTFETeamNotificationConfiguration_validateSchemaAttributesBadDestinat
 }
 
 func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesEmail(t *testing.T) {
-	notificationConfiguration := &tfe.TeamNotificationConfiguration{}
+	notificationConfiguration := &tfe.NotificationConfiguration{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -336,7 +336,7 @@ func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesEmail
 }
 
 func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesGeneric(t *testing.T) {
-	notificationConfiguration := &tfe.TeamNotificationConfiguration{}
+	notificationConfiguration := &tfe.NotificationConfiguration{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -382,7 +382,7 @@ func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesGener
 }
 
 func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesSlack(t *testing.T) {
-	notificationConfiguration := &tfe.TeamNotificationConfiguration{}
+	notificationConfiguration := &tfe.NotificationConfiguration{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -432,7 +432,7 @@ func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesSlack
 }
 
 func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesMicrosoftTeams(t *testing.T) {
-	notificationConfiguration := &tfe.TeamNotificationConfiguration{}
+	notificationConfiguration := &tfe.NotificationConfiguration{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -478,7 +478,7 @@ func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesMicro
 }
 
 func TestAccTFETeamNotificationConfiguration_duplicateTriggers(t *testing.T) {
-	notificationConfiguration := &tfe.TeamNotificationConfiguration{}
+	notificationConfiguration := &tfe.NotificationConfiguration{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -574,7 +574,7 @@ func TestAccTFETeamNotificationConfigurationImport_emptyEmailUserIDs(t *testing.
 	})
 }
 
-func testAccCheckTFETeamNotificationConfigurationExists(n string, notificationConfiguration *tfe.TeamNotificationConfiguration) resource.TestCheckFunc {
+func testAccCheckTFETeamNotificationConfigurationExists(n string, notificationConfiguration *tfe.NotificationConfiguration) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		config := testAccProvider.Meta().(ConfiguredClient)
 
@@ -587,7 +587,7 @@ func testAccCheckTFETeamNotificationConfigurationExists(n string, notificationCo
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		nc, err := config.Client.TeamNotificationConfigurations.Read(ctx, rs.Primary.ID)
+		nc, err := config.Client.NotificationConfigurations.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -598,7 +598,7 @@ func testAccCheckTFETeamNotificationConfigurationExists(n string, notificationCo
 	}
 }
 
-func testAccCheckTFETeamNotificationConfigurationAttributes(notificationConfiguration *tfe.TeamNotificationConfiguration) resource.TestCheckFunc {
+func testAccCheckTFETeamNotificationConfigurationAttributes(notificationConfiguration *tfe.NotificationConfiguration) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if notificationConfiguration.Name != "notification_basic" {
 			return fmt.Errorf("Bad name: %s", notificationConfiguration.Name)
@@ -626,7 +626,7 @@ func testAccCheckTFETeamNotificationConfigurationAttributes(notificationConfigur
 	}
 }
 
-func testAccCheckTFETeamNotificationConfigurationAttributesUpdate(notificationConfiguration *tfe.TeamNotificationConfiguration) resource.TestCheckFunc {
+func testAccCheckTFETeamNotificationConfigurationAttributesUpdate(notificationConfiguration *tfe.NotificationConfiguration) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if notificationConfiguration.Name != "notification_update" {
 			return fmt.Errorf("Bad name: %s", notificationConfiguration.Name)
@@ -654,7 +654,7 @@ func testAccCheckTFETeamNotificationConfigurationAttributesUpdate(notificationCo
 	}
 }
 
-func testAccCheckTFETeamNotificationConfigurationAttributesEmailUserIDs(notificationConfiguration *tfe.TeamNotificationConfiguration) resource.TestCheckFunc {
+func testAccCheckTFETeamNotificationConfigurationAttributesEmailUserIDs(notificationConfiguration *tfe.NotificationConfiguration) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if notificationConfiguration.Name != "notification_email" {
 			return fmt.Errorf("Bad name: %s", notificationConfiguration.Name)
@@ -682,7 +682,7 @@ func testAccCheckTFETeamNotificationConfigurationAttributesEmailUserIDs(notifica
 	}
 }
 
-func testAccCheckTFETeamNotificationConfigurationAttributesUpdateEmailUserIDs(notificationConfiguration *tfe.TeamNotificationConfiguration) resource.TestCheckFunc {
+func testAccCheckTFETeamNotificationConfigurationAttributesUpdateEmailUserIDs(notificationConfiguration *tfe.NotificationConfiguration) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if notificationConfiguration.Name != "notification_email_update" {
 			return fmt.Errorf("Bad name: %s", notificationConfiguration.Name)
@@ -710,7 +710,7 @@ func testAccCheckTFETeamNotificationConfigurationAttributesUpdateEmailUserIDs(no
 	}
 }
 
-func testAccCheckTFETeamNotificationConfigurationAttributesSlack(notificationConfiguration *tfe.TeamNotificationConfiguration) resource.TestCheckFunc {
+func testAccCheckTFETeamNotificationConfigurationAttributesSlack(notificationConfiguration *tfe.NotificationConfiguration) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if notificationConfiguration.Name != "notification_slack" {
 			return fmt.Errorf("Bad name: %s", notificationConfiguration.Name)
@@ -734,7 +734,7 @@ func testAccCheckTFETeamNotificationConfigurationAttributesSlack(notificationCon
 	}
 }
 
-func testAccCheckTFETeamNotificationConfigurationAttributesMicrosoftTeams(notificationConfiguration *tfe.TeamNotificationConfiguration) resource.TestCheckFunc {
+func testAccCheckTFETeamNotificationConfigurationAttributesMicrosoftTeams(notificationConfiguration *tfe.NotificationConfiguration) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if notificationConfiguration.Name != "notification_msteams" {
 			return fmt.Errorf("Bad name: %s", notificationConfiguration.Name)
@@ -760,7 +760,7 @@ func testAccCheckTFETeamNotificationConfigurationAttributesMicrosoftTeams(notifi
 	}
 }
 
-func testAccCheckTFETeamNotificationConfigurationAttributesDuplicateTriggers(notificationConfiguration *tfe.TeamNotificationConfiguration) resource.TestCheckFunc {
+func testAccCheckTFETeamNotificationConfigurationAttributesDuplicateTriggers(notificationConfiguration *tfe.NotificationConfiguration) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if notificationConfiguration.Name != "notification_duplicate_triggers" {
 			return fmt.Errorf("Bad name: %s", notificationConfiguration.Name)
@@ -800,7 +800,7 @@ func testAccCheckTFETeamNotificationConfigurationDestroy(s *terraform.State) err
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.TeamNotificationConfigurations.Read(ctx, rs.Primary.ID)
+		_, err := config.Client.NotificationConfigurations.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Notification configuration %s still exists", rs.Primary.ID)
 		}

@@ -165,6 +165,10 @@ func (m *mockWorkspaces) RemoveTags(ctx context.Context, workspaceID string, opt
 	panic("not implemented")
 }
 
+func (m *mockWorkspaces) DeleteAllTagBindings(ctx context.Context, workspaceID string) error {
+	panic("not implemented")
+}
+
 func (m *mockWorkspaces) SafeDelete(ctx context.Context, organization string, workspace string) error {
 	panic("not implemented")
 }
