@@ -920,14 +920,13 @@ func testAccCheckTFETeamNotificationConfigurationDestroy(s *terraform.State) err
 
 func testAccTFETeamNotificationConfiguration_basic(orgName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "%s"
-  email = "admin@company.com"
+data "tfe_organization" "foobar" {
+  name = "%s"
 }
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = tfe_organization.foobar.id
+  organization = data.tfe_organization.foobar.name
 }
 
 resource "tfe_team_notification_configuration" "foobar" {
@@ -940,18 +939,17 @@ resource "tfe_team_notification_configuration" "foobar" {
 
 func testAccTFETeamNotificationConfiguration_emailUserIDs(orgName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "%s"
-  email = "admin@company.com"
+data "tfe_organization" "foobar" {
+  name = "%s"
 }
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = tfe_organization.foobar.id
+  organization = data.tfe_organization.foobar.name
 }
 
 resource "tfe_organization_membership" "foobar" {
-  organization = tfe_organization.foobar.id
+  organization = data.tfe_organization.foobar.name
   email        = "foo@foobar.com"
 }
 
@@ -964,14 +962,13 @@ resource "tfe_team_notification_configuration" "foobar" {
 
 func testAccTFETeamNotificationConfiguration_slack(orgName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "%s"
-  email = "admin@company.com"
+data "tfe_organization" "foobar" {
+  name = "%s"
 }
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = tfe_organization.foobar.id
+  organization = data.tfe_organization.foobar.name
 }
 
 resource "tfe_team_notification_configuration" "foobar" {
@@ -984,14 +981,13 @@ resource "tfe_team_notification_configuration" "foobar" {
 
 func testAccTFETeamNotificationConfiguration_microsoftTeams(orgName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "%s"
-  email = "admin@company.com"
+data "tfe_organization" "foobar" {
+  name = "%s"
 }
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = tfe_organization.foobar.id
+  organization = data.tfe_organization.foobar.name
 }
 
 resource "tfe_team_notification_configuration" "foobar" {
@@ -1004,14 +1000,13 @@ resource "tfe_team_notification_configuration" "foobar" {
 
 func testAccTFETeamNotificationConfiguration_badDestinationType(orgName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "%s"
-  email = "admin@company.com"
+data "tfe_organization" "foobar" {
+  name = "%s"
 }
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = tfe_organization.foobar.id
+  organization = data.tfe_organization.foobar.name
 }
 
 resource "tfe_team_notification_configuration" "foobar" {
@@ -1024,14 +1019,13 @@ resource "tfe_team_notification_configuration" "foobar" {
 
 func testAccTFETeamNotificationConfiguration_update(orgName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "%s"
-  email = "admin@company.com"
+data "tfe_organization" "foobar" {
+  name = "%s"
 }
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = tfe_organization.foobar.id
+  organization = data.tfe_organization.foobar.name
 }
 
 resource "tfe_team_notification_configuration" "foobar" {
@@ -1046,18 +1040,17 @@ resource "tfe_team_notification_configuration" "foobar" {
 }
 
 func testAccTFETeamNotificationConfiguration_updateEmailUserIDs(orgName string) string {
-	return fmt.Sprintf(`resource "tfe_organization" "foobar" {
-  name  = "%s"
-  email = "admin@company.com"
+	return fmt.Sprintf(`data "tfe_organization" "foobar" {
+  name = "%s"
 }
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = tfe_organization.foobar.id
+  organization = data.tfe_organization.foobar.name
 }
 
 resource "tfe_organization_membership" "foobar" {
-  organization = tfe_organization.foobar.id
+  organization = data.tfe_organization.foobar.name
   email        = "foo@foobar.com"
 }
 
@@ -1080,14 +1073,13 @@ resource "tfe_team_notification_configuration" "foobar" {
 
 func testAccTFETeamNotificationConfiguration_emailWithURL(orgName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "%s"
-  email = "admin@company.com"
+data "tfe_organization" "foobar" {
+  name = "%s"
 }
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = tfe_organization.foobar.id
+  organization = data.tfe_organization.foobar.name
 }
 
 resource "tfe_team_notification_configuration" "foobar" {
@@ -1100,14 +1092,13 @@ resource "tfe_team_notification_configuration" "foobar" {
 
 func testAccTFETeamNotificationConfiguration_emailWithToken(orgName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "%s"
-  email = "admin@company.com"
+data "tfe_organization" "foobar" {
+  name = "%s"
 }
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = tfe_organization.foobar.id
+  organization = data.tfe_organization.foobar.name
 }
 
 resource "tfe_team_notification_configuration" "foobar" {
@@ -1120,14 +1111,13 @@ resource "tfe_team_notification_configuration" "foobar" {
 
 func testAccTFETeamNotificationConfiguration_genericWithEmailAddresses(orgName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "%s"
-  email = "admin@company.com"
+data "tfe_organization" "foobar" {
+  name = "%s"
 }
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = tfe_organization.foobar.id
+  organization = data.tfe_organization.foobar.name
 }
 
 resource "tfe_team_notification_configuration" "foobar" {
@@ -1140,18 +1130,17 @@ resource "tfe_team_notification_configuration" "foobar" {
 
 func testAccTFETeamNotificationConfiguration_genericWithEmailUserIDs(orgName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "%s"
-  email = "admin@company.com"
+data "tfe_organization" "foobar" {
+  name = "%s"
 }
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = tfe_organization.foobar.id
+  organization = data.tfe_organization.foobar.name
 }
 
 resource "tfe_organization_membership" "foobar" {
-  organization = tfe_organization.foobar.id
+  organization = data.tfe_organization.foobar.name
   email        = "foo@foobar.com"
 }
 
@@ -1165,14 +1154,13 @@ resource "tfe_team_notification_configuration" "foobar" {
 
 func testAccTFETeamNotificationConfiguration_genericWithoutURL(orgName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "%s"
-  email = "admin@company.com"
+data "tfe_organization" "foobar" {
+  name = "%s"
 }
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = tfe_organization.foobar.id
+  organization = data.tfe_organization.foobar.name
 }
 
 resource "tfe_team_notification_configuration" "foobar" {
@@ -1184,14 +1172,13 @@ resource "tfe_team_notification_configuration" "foobar" {
 
 func testAccTFETeamNotificationConfiguration_slackWithEmailAddresses(orgName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "%s"
-  email = "admin@company.com"
+data "tfe_organization" "foobar" {
+  name = "%s"
 }
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = tfe_organization.foobar.id
+  organization = data.tfe_organization.foobar.name
 }
 
 resource "tfe_team_notification_configuration" "foobar" {
@@ -1204,18 +1191,17 @@ resource "tfe_team_notification_configuration" "foobar" {
 
 func testAccTFETeamNotificationConfiguration_slackWithEmailUserIDs(orgName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "%s"
-  email = "admin@company.com"
+data "tfe_organization" "foobar" {
+  name = "%s"
 }
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = tfe_organization.foobar.id
+  organization = data.tfe_organization.foobar.name
 }
 
 resource "tfe_organization_membership" "foobar" {
-  organization = tfe_organization.foobar.id
+  organization = data.tfe_organization.foobar.name
   email        = "foo@foobar.com"
 }
 
@@ -1229,14 +1215,13 @@ resource "tfe_team_notification_configuration" "foobar" {
 
 func testAccTFETeamNotificationConfiguration_slackWithToken(orgName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "%s"
-  email = "admin@company.com"
+data "tfe_organization" "foobar" {
+  name = "%s"
 }
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = tfe_organization.foobar.id
+  organization = data.tfe_organization.foobar.name
 }
 
 resource "tfe_team_notification_configuration" "foobar" {
@@ -1250,14 +1235,13 @@ resource "tfe_team_notification_configuration" "foobar" {
 
 func testAccTFETeamNotificationConfiguration_slackWithoutURL(orgName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "%s"
-  email = "admin@company.com"
+data "tfe_organization" "foobar" {
+  name = "%s"
 }
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = tfe_organization.foobar.id
+  organization = data.tfe_organization.foobar.name
 }
 
 resource "tfe_team_notification_configuration" "foobar" {
@@ -1269,14 +1253,13 @@ resource "tfe_team_notification_configuration" "foobar" {
 
 func testAccTFETeamNotificationConfiguration_microsoftTeamsWithEmailAddresses(orgName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "%s"
-  email = "admin@company.com"
+data "tfe_organization" "foobar" {
+  name = "%s"
 }
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = tfe_organization.foobar.id
+  organization = data.tfe_organization.foobar.name
 }
 
 resource "tfe_team_notification_configuration" "foobar" {
@@ -1289,18 +1272,17 @@ resource "tfe_team_notification_configuration" "foobar" {
 
 func testAccTFETeamNotificationConfiguration_microsoftTeamsWithEmailUserIDs(orgName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "%s"
-  email = "admin@company.com"
+data "tfe_organization" "foobar" {
+  name = "%s"
 }
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = tfe_organization.foobar.id
+  organization = data.tfe_organization.foobar.name
 }
 
 resource "tfe_organization_membership" "foobar" {
-  organization = tfe_organization.foobar.id
+  organization = data.tfe_organization.foobar.name
   email        = "foo@foobar.com"
 }
 
@@ -1314,14 +1296,13 @@ resource "tfe_team_notification_configuration" "foobar" {
 
 func testAccTFETeamNotificationConfiguration_microsoftTeamsWithToken(orgName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "%s"
-  email = "admin@company.com"
+data "tfe_organization" "foobar" {
+  name = "%s"
 }
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = tfe_organization.foobar.id
+  organization = data.tfe_organization.foobar.name
 }
 
 resource "tfe_team_notification_configuration" "foobar" {
@@ -1335,14 +1316,13 @@ resource "tfe_team_notification_configuration" "foobar" {
 
 func testAccTFETeamNotificationConfiguration_microsoftTeamsWithoutURL(orgName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "%s"
-  email = "admin@company.com"
+data "tfe_organization" "foobar" {
+  name = "%s"
 }
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = tfe_organization.foobar.id
+  organization = data.tfe_organization.foobar.name
 }
 
 resource "tfe_team_notification_configuration" "foobar" {
@@ -1354,14 +1334,13 @@ resource "tfe_team_notification_configuration" "foobar" {
 
 func testAccTFETeamNotificationConfiguration_duplicateTriggers(orgName string) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "%s"
-  email = "admin@company.com"
+data "tfe_organization" "foobar" {
+  name = "%s"
 }
 
 resource "tfe_team" "foobar" {
   name         = "team-test"
-  organization = tfe_organization.foobar.id
+  organization = data.tfe_organization.foobar.name
 }
 
 resource "tfe_team_notification_configuration" "foobar" {
