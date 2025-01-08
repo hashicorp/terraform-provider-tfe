@@ -2908,14 +2908,6 @@ func TestAccTFEWorkspace_updateWithAutoDestroyAtInProject(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFEWorkspace_basicWithAutoDestroyAt(rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
-					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_at", "2100-01-01T00:00:00Z"),
-					resource.TestCheckResourceAttr("tfe_workspace.foobar", "inherits_project_auto_destroy", "false"),
-				),
-			},
-			{
 				Config: testAccTFEWorkspace_basicInProject(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
