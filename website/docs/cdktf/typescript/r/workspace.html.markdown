@@ -13,8 +13,6 @@ Provides a workspace resource.
 
 ~> **NOTE:** Setting the execution mode and agent pool affinity directly on the workspace is deprecated in favor of using both [tfe_workspace_settings](workspace_settings) and [tfe_organization_default_settings](organization_default_settings), since they allow more precise control and fully support [agent_pool_allowed_workspaces](agent_pool_allowed_workspaces). Use caution when unsetting `executionMode`, as it now leaves any prior value unmanaged instead of reverting to the old default value of `"remote"`.
 
-~> **NOTE:** Using `globalRemoteState` or `remoteStateConsumerIds` requires using the provider with HCP Terraform or an instance of Terraform Enterprise at least as recent as v202104-1.
-
 ## Example Usage
 
 Basic usage:
@@ -109,7 +107,7 @@ The following arguments are supported:
   trigger prefixes describe a set of paths which must contain changes for a
   VCS push to trigger a run. If disabled, any push will trigger a run.
 * `forceDelete` - (Optional) If this attribute is present on a workspace that is being deleted through the provider, it will use the existing force delete API. If this attribute is not present or false it will safe delete the workspace.
-* `globalRemoteState` - (Optional) Whether the workspace allows all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (`remoteStateConsumerIds`).
+* `globalRemoteState` - (Optional) **Deprecated** Whether the workspace allows all workspaces in the organization to access its state data during runs. Use [tfe_workspace_settings](workspace_settings) instead.
 * `operations` - **Deprecated** Whether to use remote execution mode.
   Defaults to `true`. When set to `false`, the workspace will be used for
   state storage only. This value _must not_ be provided if `executionMode` is
@@ -124,7 +122,7 @@ The following arguments are supported:
   is `false`. The provider uses `true` as any workspace provisioned with
   `false` would need to then have a run manually queued out-of-band before
   accepting webhooks.
-* `remoteStateConsumerIds` - (Optional) The set of workspace IDs set as explicit remote state consumers for the given workspace.
+* `remoteStateConsumerIds` - (Optional) **Deprecated** The set of workspace IDs set as explicit remote state consumers for the given workspace. Use [tfe_workspace_settings](workspace_settings) instead.
 * `sourceName` - (Optional) A friendly name for the application or client
    creating this workspace. If set, this will be displayed on the workspace as
    "Created via <SOURCE NAME>".
@@ -201,4 +199,4 @@ terraform import tfe_workspace.test ws-CH5in3chf8RJjrVd
 terraform import tfe_workspace.test my-org-name/my-wkspace-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-d77de336a5a7ff992f384172426e4a08194946368dc6e0a8c28f78a10116913f -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-2359c8613d3559ab7c7a4c6129993314e7d1492991970cbde73305dbd190c688 -->

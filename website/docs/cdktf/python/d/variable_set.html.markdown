@@ -48,5 +48,6 @@ The following arguments are supported:
 * `workspace_ids` - IDs of the workspaces that use the variable set.
 * `variable_ids` - IDs of the variables attached to the variable set.
 * `project_ids` - IDs of the projects that use the variable set.
+* `parent_project_id` - ID of the project that owns the variable set.
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-69cc7771506b3265795fe469ee556bc13e62b7222aa6d0f36adeae7b5aa799c2 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-bf1bfbd6988140f428db72c174b6b91d124e83198e36d64ed719ce367b5f38fe -->

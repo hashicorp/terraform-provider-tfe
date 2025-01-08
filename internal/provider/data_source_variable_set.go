@@ -65,6 +65,12 @@ func dataSourceTFEVariableSet() *schema.Resource {
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
+
+			"parent_project_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -99,6 +105,10 @@ func dataSourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) erro
 				d.Set("description", vs.Description)
 				d.Set("global", vs.Global)
 				d.Set("priority", vs.Priority)
+
+				if vs.Parent != nil && vs.Parent.Project != nil {
+					d.Set("parent_project_id", vs.Parent.Project.ID)
+				}
 
 				// Only now include vars and workspaces to cut down on request load.
 				readOptions := tfe.VariableSetReadOptions{
