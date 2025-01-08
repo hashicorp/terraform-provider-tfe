@@ -62,7 +62,7 @@ func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration)
 		Name:            types.StringValue(v.Name),
 		DestinationType: types.StringValue(string(v.DestinationType)),
 		Enabled:         types.BoolValue(v.Enabled),
-		TeamID:          types.StringValue(v.Subscribable.ID),
+		TeamID:          types.StringValue(v.SubscribableChoice.Team.ID),
 	}
 
 	emailAddresses := make([]attr.Value, len(v.EmailAddresses))
@@ -278,6 +278,9 @@ func (r *resourceTFETeamNotificationConfiguration) Create(ctx context.Context, r
 		Name:            plan.Name.ValueStringPointer(),
 		Token:           plan.Token.ValueStringPointer(),
 		URL:             plan.URL.ValueStringPointer(),
+		SubscribableChoice: &tfe.NotificationConfigurationSubscribableChoice{
+			Team: &tfe.Team{ID: teamID},
+		},
 	}
 
 	// Add triggers set to the options struct
