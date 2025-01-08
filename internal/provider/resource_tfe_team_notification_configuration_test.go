@@ -5,11 +5,9 @@ package provider
 
 import (
 	"fmt"
-	"math/rand"
 	"reflect"
 	"regexp"
 	"testing"
-	"time"
 
 	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -17,8 +15,15 @@ import (
 )
 
 func TestAccTFETeamNotificationConfiguration_basic(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
 	notificationConfiguration := &tfe.NotificationConfiguration{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
@@ -26,7 +31,7 @@ func TestAccTFETeamNotificationConfiguration_basic(t *testing.T) {
 		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamNotificationConfiguration_basic(rInt),
+				Config: testAccTFETeamNotificationConfiguration_basic(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamNotificationConfigurationExists(
 						"tfe_team_notification_configuration.foobar", notificationConfiguration),
@@ -48,8 +53,15 @@ func TestAccTFETeamNotificationConfiguration_basic(t *testing.T) {
 }
 
 func TestAccTFETeamNotificationConfiguration_emailUserIDs(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
 	notificationConfiguration := &tfe.NotificationConfiguration{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
@@ -57,7 +69,7 @@ func TestAccTFETeamNotificationConfiguration_emailUserIDs(t *testing.T) {
 		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamNotificationConfiguration_emailUserIDs(rInt),
+				Config: testAccTFETeamNotificationConfiguration_emailUserIDs(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamNotificationConfigurationExists(
 						"tfe_team_notification_configuration.foobar", notificationConfiguration),
@@ -79,8 +91,15 @@ func TestAccTFETeamNotificationConfiguration_emailUserIDs(t *testing.T) {
 }
 
 func TestAccTFETeamNotificationConfiguration_update(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
 	notificationConfiguration := &tfe.NotificationConfiguration{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
@@ -88,7 +107,7 @@ func TestAccTFETeamNotificationConfiguration_update(t *testing.T) {
 		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamNotificationConfiguration_basic(rInt),
+				Config: testAccTFETeamNotificationConfiguration_basic(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamNotificationConfigurationExists(
 						"tfe_team_notification_configuration.foobar", notificationConfiguration),
@@ -106,7 +125,7 @@ func TestAccTFETeamNotificationConfiguration_update(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFETeamNotificationConfiguration_update(rInt),
+				Config: testAccTFETeamNotificationConfiguration_update(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamNotificationConfigurationExists(
 						"tfe_team_notification_configuration.foobar", notificationConfiguration),
@@ -132,8 +151,15 @@ func TestAccTFETeamNotificationConfiguration_update(t *testing.T) {
 }
 
 func TestAccTFETeamNotificationConfiguration_updateEmailUserIDs(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
 	notificationConfiguration := &tfe.NotificationConfiguration{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
@@ -141,7 +167,7 @@ func TestAccTFETeamNotificationConfiguration_updateEmailUserIDs(t *testing.T) {
 		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamNotificationConfiguration_emailUserIDs(rInt),
+				Config: testAccTFETeamNotificationConfiguration_emailUserIDs(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamNotificationConfigurationExists(
 						"tfe_team_notification_configuration.foobar", notificationConfiguration),
@@ -159,7 +185,7 @@ func TestAccTFETeamNotificationConfiguration_updateEmailUserIDs(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFETeamNotificationConfiguration_updateEmailUserIDs(rInt),
+				Config: testAccTFETeamNotificationConfiguration_updateEmailUserIDs(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamNotificationConfigurationExists(
 						"tfe_team_notification_configuration.foobar", notificationConfiguration),
@@ -183,18 +209,24 @@ func TestAccTFETeamNotificationConfiguration_updateEmailUserIDs(t *testing.T) {
 }
 
 func TestAccTFETeamNotificationConfiguration_validateSchemaAttributesEmail(t *testing.T) {
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
 		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccTFETeamNotificationConfiguration_emailWithURL(rInt),
+				Config:      testAccTFETeamNotificationConfiguration_emailWithURL(org.Name),
 				ExpectError: regexp.MustCompile(`The attribute 'url' cannot be set when 'destination_type' is 'email'`),
 			},
 			{
-				Config:      testAccTFETeamNotificationConfiguration_emailWithToken(rInt),
+				Config:      testAccTFETeamNotificationConfiguration_emailWithToken(org.Name),
 				ExpectError: regexp.MustCompile(`The attribute 'token' cannot be set when 'destination_type' is 'email'`),
 			},
 		},
@@ -202,22 +234,28 @@ func TestAccTFETeamNotificationConfiguration_validateSchemaAttributesEmail(t *te
 }
 
 func TestAccTFETeamNotificationConfiguration_validateSchemaAttributesGeneric(t *testing.T) {
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
 		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccTFETeamNotificationConfiguration_genericWithEmailAddresses(rInt),
+				Config:      testAccTFETeamNotificationConfiguration_genericWithEmailAddresses(org.Name),
 				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_addresses' cannot be set when 'destination_type' is.*'generic'`),
 			},
 			{
-				Config:      testAccTFETeamNotificationConfiguration_genericWithEmailUserIDs(rInt),
+				Config:      testAccTFETeamNotificationConfiguration_genericWithEmailUserIDs(org.Name),
 				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_user_ids' cannot be set when 'destination_type' is.*'generic'`),
 			},
 			{
-				Config:      testAccTFETeamNotificationConfiguration_genericWithoutURL(rInt),
+				Config:      testAccTFETeamNotificationConfiguration_genericWithoutURL(org.Name),
 				ExpectError: regexp.MustCompile(`The attribute 'url' is required when 'destination_type' is 'generic'`),
 			},
 		},
@@ -225,26 +263,32 @@ func TestAccTFETeamNotificationConfiguration_validateSchemaAttributesGeneric(t *
 }
 
 func TestAccTFETeamNotificationConfiguration_validateSchemaAttributesSlack(t *testing.T) {
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
 		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccTFETeamNotificationConfiguration_slackWithEmailAddresses(rInt),
+				Config:      testAccTFETeamNotificationConfiguration_slackWithEmailAddresses(org.Name),
 				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_addresses' cannot be set when 'destination_type' is.*'slack'`),
 			},
 			{
-				Config:      testAccTFETeamNotificationConfiguration_slackWithEmailUserIDs(rInt),
+				Config:      testAccTFETeamNotificationConfiguration_slackWithEmailUserIDs(org.Name),
 				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_user_ids' cannot be set when 'destination_type' is.*'slack'`),
 			},
 			{
-				Config:      testAccTFETeamNotificationConfiguration_slackWithToken(rInt),
+				Config:      testAccTFETeamNotificationConfiguration_slackWithToken(org.Name),
 				ExpectError: regexp.MustCompile(`The attribute 'token' cannot be set when 'destination_type' is 'slack'`),
 			},
 			{
-				Config:      testAccTFETeamNotificationConfiguration_slackWithoutURL(rInt),
+				Config:      testAccTFETeamNotificationConfiguration_slackWithoutURL(org.Name),
 				ExpectError: regexp.MustCompile(`The attribute 'url' is required when 'destination_type' is 'slack'`),
 			},
 		},
@@ -252,26 +296,32 @@ func TestAccTFETeamNotificationConfiguration_validateSchemaAttributesSlack(t *te
 }
 
 func TestAccTFETeamNotificationConfiguration_validateSchemaAttributesMicrosoftTeams(t *testing.T) {
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
 		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccTFETeamNotificationConfiguration_microsoftTeamsWithEmailAddresses(rInt),
+				Config:      testAccTFETeamNotificationConfiguration_microsoftTeamsWithEmailAddresses(org.Name),
 				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_addresses' cannot be set when 'destination_type' is.*'microsoft-teams'`),
 			},
 			{
-				Config:      testAccTFETeamNotificationConfiguration_microsoftTeamsWithEmailUserIDs(rInt),
+				Config:      testAccTFETeamNotificationConfiguration_microsoftTeamsWithEmailUserIDs(org.Name),
 				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_user_ids' cannot be set when 'destination_type' is.*'microsoft-teams'`),
 			},
 			{
-				Config:      testAccTFETeamNotificationConfiguration_microsoftTeamsWithToken(rInt),
+				Config:      testAccTFETeamNotificationConfiguration_microsoftTeamsWithToken(org.Name),
 				ExpectError: regexp.MustCompile(`(?s).*The attribute 'token' cannot be set when 'destination_type' is.*'microsoft-teams'`),
 			},
 			{
-				Config:      testAccTFETeamNotificationConfiguration_microsoftTeamsWithoutURL(rInt),
+				Config:      testAccTFETeamNotificationConfiguration_microsoftTeamsWithoutURL(org.Name),
 				ExpectError: regexp.MustCompile(`The attribute 'url' is required when 'destination_type' is 'microsoft-teams'`),
 			},
 		},
@@ -279,14 +329,20 @@ func TestAccTFETeamNotificationConfiguration_validateSchemaAttributesMicrosoftTe
 }
 
 func TestAccTFETeamNotificationConfiguration_validateSchemaAttributesBadDestinationType(t *testing.T) {
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
 		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccTFETeamNotificationConfiguration_badDestinationType(rInt),
+				Config:      testAccTFETeamNotificationConfiguration_badDestinationType(org.Name),
 				ExpectError: regexp.MustCompile(`.*Invalid Attribute Value Match.*`),
 			},
 		},
@@ -294,8 +350,15 @@ func TestAccTFETeamNotificationConfiguration_validateSchemaAttributesBadDestinat
 }
 
 func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesEmail(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
 	notificationConfiguration := &tfe.NotificationConfiguration{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
@@ -303,7 +366,7 @@ func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesEmail
 		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamNotificationConfiguration_emailUserIDs(rInt),
+				Config: testAccTFETeamNotificationConfiguration_emailUserIDs(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamNotificationConfigurationExists(
 						"tfe_team_notification_configuration.foobar", notificationConfiguration),
@@ -321,23 +384,30 @@ func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesEmail
 				),
 			},
 			{
-				Config:      testAccTFETeamNotificationConfiguration_emailWithURL(rInt),
+				Config:      testAccTFETeamNotificationConfiguration_emailWithURL(org.Name),
 				ExpectError: regexp.MustCompile(`The attribute 'url' cannot be set when 'destination_type' is 'email'`),
 			},
 			{
-				Config:      testAccTFETeamNotificationConfiguration_emailWithToken(rInt),
+				Config:      testAccTFETeamNotificationConfiguration_emailWithToken(org.Name),
 				ExpectError: regexp.MustCompile(`The attribute 'token' cannot be set when 'destination_type' is 'email'`),
 			},
 			{
-				Config: testAccTFETeamNotificationConfiguration_emailUserIDs(rInt),
+				Config: testAccTFETeamNotificationConfiguration_emailUserIDs(org.Name),
 			},
 		},
 	})
 }
 
 func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesGeneric(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
 	notificationConfiguration := &tfe.NotificationConfiguration{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
@@ -345,7 +415,7 @@ func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesGener
 		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamNotificationConfiguration_basic(rInt),
+				Config: testAccTFETeamNotificationConfiguration_basic(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamNotificationConfigurationExists(
 						"tfe_team_notification_configuration.foobar", notificationConfiguration),
@@ -363,27 +433,34 @@ func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesGener
 				),
 			},
 			{
-				Config:      testAccTFETeamNotificationConfiguration_genericWithEmailAddresses(rInt),
+				Config:      testAccTFETeamNotificationConfiguration_genericWithEmailAddresses(org.Name),
 				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_addresses' cannot be set when 'destination_type' is.*'generic'`),
 			},
 			{
-				Config:      testAccTFETeamNotificationConfiguration_genericWithEmailUserIDs(rInt),
+				Config:      testAccTFETeamNotificationConfiguration_genericWithEmailUserIDs(org.Name),
 				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_user_ids' cannot be set when 'destination_type' is.*'generic'`),
 			},
 			{
-				Config:      testAccTFETeamNotificationConfiguration_genericWithoutURL(rInt),
+				Config:      testAccTFETeamNotificationConfiguration_genericWithoutURL(org.Name),
 				ExpectError: regexp.MustCompile(`The attribute 'url' is required when 'destination_type' is 'generic'`),
 			},
 			{
-				Config: testAccTFETeamNotificationConfiguration_basic(rInt),
+				Config: testAccTFETeamNotificationConfiguration_basic(org.Name),
 			},
 		},
 	})
 }
 
 func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesSlack(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
 	notificationConfiguration := &tfe.NotificationConfiguration{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
@@ -391,7 +468,7 @@ func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesSlack
 		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamNotificationConfiguration_slack(rInt),
+				Config: testAccTFETeamNotificationConfiguration_slack(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamNotificationConfigurationExists(
 						"tfe_team_notification_configuration.foobar", notificationConfiguration),
@@ -409,31 +486,38 @@ func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesSlack
 				),
 			},
 			{
-				Config:      testAccTFETeamNotificationConfiguration_slackWithEmailAddresses(rInt),
+				Config:      testAccTFETeamNotificationConfiguration_slackWithEmailAddresses(org.Name),
 				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_addresses' cannot be set when 'destination_type' is.*'slack'`),
 			},
 			{
-				Config:      testAccTFETeamNotificationConfiguration_slackWithEmailUserIDs(rInt),
+				Config:      testAccTFETeamNotificationConfiguration_slackWithEmailUserIDs(org.Name),
 				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_user_ids' cannot be set when 'destination_type' is.*'slack'`),
 			},
 			{
-				Config:      testAccTFETeamNotificationConfiguration_slackWithToken(rInt),
+				Config:      testAccTFETeamNotificationConfiguration_slackWithToken(org.Name),
 				ExpectError: regexp.MustCompile(`The attribute 'token' cannot be set when 'destination_type' is 'slack'`),
 			},
 			{
-				Config:      testAccTFETeamNotificationConfiguration_slackWithoutURL(rInt),
+				Config:      testAccTFETeamNotificationConfiguration_slackWithoutURL(org.Name),
 				ExpectError: regexp.MustCompile(`The attribute 'url' is required when 'destination_type' is 'slack'`),
 			},
 			{
-				Config: testAccTFETeamNotificationConfiguration_slack(rInt),
+				Config: testAccTFETeamNotificationConfiguration_slack(org.Name),
 			},
 		},
 	})
 }
 
 func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesMicrosoftTeams(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
 	notificationConfiguration := &tfe.NotificationConfiguration{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
@@ -441,7 +525,7 @@ func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesMicro
 		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamNotificationConfiguration_microsoftTeams(rInt),
+				Config: testAccTFETeamNotificationConfiguration_microsoftTeams(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamNotificationConfigurationExists(
 						"tfe_team_notification_configuration.foobar", notificationConfiguration),
@@ -455,31 +539,38 @@ func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesMicro
 				),
 			},
 			{
-				Config:      testAccTFETeamNotificationConfiguration_microsoftTeamsWithEmailAddresses(rInt),
+				Config:      testAccTFETeamNotificationConfiguration_microsoftTeamsWithEmailAddresses(org.Name),
 				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_addresses' cannot be set when 'destination_type' is.*'microsoft-teams'`),
 			},
 			{
-				Config:      testAccTFETeamNotificationConfiguration_microsoftTeamsWithEmailUserIDs(rInt),
+				Config:      testAccTFETeamNotificationConfiguration_microsoftTeamsWithEmailUserIDs(org.Name),
 				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_user_ids' cannot be set when 'destination_type' is.*'microsoft-teams'`),
 			},
 			{
-				Config:      testAccTFETeamNotificationConfiguration_microsoftTeamsWithToken(rInt),
+				Config:      testAccTFETeamNotificationConfiguration_microsoftTeamsWithToken(org.Name),
 				ExpectError: regexp.MustCompile(`(?s).*The attribute 'token' cannot be set when 'destination_type' is.*'microsoft-teams'`),
 			},
 			{
-				Config:      testAccTFETeamNotificationConfiguration_microsoftTeamsWithoutURL(rInt),
+				Config:      testAccTFETeamNotificationConfiguration_microsoftTeamsWithoutURL(org.Name),
 				ExpectError: regexp.MustCompile(`The attribute 'url' is required when 'destination_type' is 'microsoft-teams'`),
 			},
 			{
-				Config: testAccTFETeamNotificationConfiguration_microsoftTeams(rInt),
+				Config: testAccTFETeamNotificationConfiguration_microsoftTeams(org.Name),
 			},
 		},
 	})
 }
 
 func TestAccTFETeamNotificationConfiguration_duplicateTriggers(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
 	notificationConfiguration := &tfe.NotificationConfiguration{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
@@ -487,7 +578,7 @@ func TestAccTFETeamNotificationConfiguration_duplicateTriggers(t *testing.T) {
 		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamNotificationConfiguration_duplicateTriggers(rInt),
+				Config: testAccTFETeamNotificationConfiguration_duplicateTriggers(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamNotificationConfigurationExists(
 						"tfe_team_notification_configuration.foobar", notificationConfiguration),
@@ -509,7 +600,13 @@ func TestAccTFETeamNotificationConfiguration_duplicateTriggers(t *testing.T) {
 }
 
 func TestAccTFETeamNotificationConfigurationImport_basic(t *testing.T) {
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
@@ -517,7 +614,7 @@ func TestAccTFETeamNotificationConfigurationImport_basic(t *testing.T) {
 		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamNotificationConfiguration_update(rInt),
+				Config: testAccTFETeamNotificationConfiguration_update(org.Name),
 			},
 
 			{
@@ -531,7 +628,13 @@ func TestAccTFETeamNotificationConfigurationImport_basic(t *testing.T) {
 }
 
 func TestAccTFETeamNotificationConfigurationImport_emailUserIDs(t *testing.T) {
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
@@ -539,7 +642,7 @@ func TestAccTFETeamNotificationConfigurationImport_emailUserIDs(t *testing.T) {
 		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamNotificationConfiguration_updateEmailUserIDs(rInt),
+				Config: testAccTFETeamNotificationConfiguration_updateEmailUserIDs(org.Name),
 			},
 
 			{
@@ -553,7 +656,13 @@ func TestAccTFETeamNotificationConfigurationImport_emailUserIDs(t *testing.T) {
 }
 
 func TestAccTFETeamNotificationConfigurationImport_emptyEmailUserIDs(t *testing.T) {
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
@@ -561,7 +670,7 @@ func TestAccTFETeamNotificationConfigurationImport_emptyEmailUserIDs(t *testing.
 		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamNotificationConfiguration_emailUserIDs(rInt),
+				Config: testAccTFETeamNotificationConfiguration_emailUserIDs(org.Name),
 			},
 
 			{
@@ -809,10 +918,10 @@ func testAccCheckTFETeamNotificationConfigurationDestroy(s *terraform.State) err
 	return nil
 }
 
-func testAccTFETeamNotificationConfiguration_basic(rInt int) string {
+func testAccTFETeamNotificationConfiguration_basic(orgName string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
+  name  = "%s"
   email = "admin@company.com"
 }
 
@@ -826,13 +935,13 @@ resource "tfe_team_notification_configuration" "foobar" {
   destination_type = "generic"
 	url              = "%s"
   team_id          = tfe_team.foobar.id
-}`, rInt, runTasksURL())
+}`, orgName, runTasksURL())
 }
 
-func testAccTFETeamNotificationConfiguration_emailUserIDs(rInt int) string {
+func testAccTFETeamNotificationConfiguration_emailUserIDs(orgName string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
+  name  = "%s"
   email = "admin@company.com"
 }
 
@@ -850,13 +959,13 @@ resource "tfe_team_notification_configuration" "foobar" {
   name             = "notification_email"
   destination_type = "email"
   team_id          = tfe_team.foobar.id
-}`, rInt)
+}`, orgName)
 }
 
-func testAccTFETeamNotificationConfiguration_slack(rInt int) string {
+func testAccTFETeamNotificationConfiguration_slack(orgName string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
+  name  = "%s"
   email = "admin@company.com"
 }
 
@@ -870,13 +979,13 @@ resource "tfe_team_notification_configuration" "foobar" {
   destination_type = "slack"
   url              = "%s"
   team_id          = tfe_team.foobar.id
-}`, rInt, runTasksURL())
+}`, orgName, runTasksURL())
 }
 
-func testAccTFETeamNotificationConfiguration_microsoftTeams(rInt int) string {
+func testAccTFETeamNotificationConfiguration_microsoftTeams(orgName string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
+  name  = "%s"
   email = "admin@company.com"
 }
 
@@ -890,13 +999,13 @@ resource "tfe_team_notification_configuration" "foobar" {
   destination_type = "microsoft-teams"
   url              = "%s"
   team_id          = tfe_team.foobar.id
-}`, rInt, runTasksURL())
+}`, orgName, runTasksURL())
 }
 
-func testAccTFETeamNotificationConfiguration_badDestinationType(rInt int) string {
+func testAccTFETeamNotificationConfiguration_badDestinationType(orgName string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
+  name  = "%s"
   email = "admin@company.com"
 }
 
@@ -910,13 +1019,13 @@ resource "tfe_team_notification_configuration" "foobar" {
   destination_type = "bad_type"
 	url              = "%s"
   team_id          = tfe_team.foobar.id
-}`, rInt, runTasksURL())
+}`, orgName, runTasksURL())
 }
 
-func testAccTFETeamNotificationConfiguration_update(rInt int) string {
+func testAccTFETeamNotificationConfiguration_update(orgName string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
+  name  = "%s"
   email = "admin@company.com"
 }
 
@@ -933,12 +1042,12 @@ resource "tfe_team_notification_configuration" "foobar" {
   triggers         = ["change_request:created"]
   url              = "%s?update=true"
   team_id          = tfe_team.foobar.id
-}`, rInt, runTasksURL())
+}`, orgName, runTasksURL())
 }
 
-func testAccTFETeamNotificationConfiguration_updateEmailUserIDs(rInt int) string {
+func testAccTFETeamNotificationConfiguration_updateEmailUserIDs(orgName string) string {
 	return fmt.Sprintf(`resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
+  name  = "%s"
   email = "admin@company.com"
 }
 
@@ -966,13 +1075,13 @@ resource "tfe_team_notification_configuration" "foobar" {
   team_id          = tfe_team.foobar.id
 
 	depends_on = [tfe_team_organization_member.foobar]
-}`, rInt)
+}`, orgName)
 }
 
-func testAccTFETeamNotificationConfiguration_emailWithURL(rInt int) string {
+func testAccTFETeamNotificationConfiguration_emailWithURL(orgName string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
+  name  = "%s"
   email = "admin@company.com"
 }
 
@@ -986,13 +1095,13 @@ resource "tfe_team_notification_configuration" "foobar" {
   destination_type = "email"
   url              = "%s"
   team_id          = tfe_team.foobar.id
-}`, rInt, runTasksURL())
+}`, orgName, runTasksURL())
 }
 
-func testAccTFETeamNotificationConfiguration_emailWithToken(rInt int) string {
+func testAccTFETeamNotificationConfiguration_emailWithToken(orgName string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
+  name  = "%s"
   email = "admin@company.com"
 }
 
@@ -1006,13 +1115,13 @@ resource "tfe_team_notification_configuration" "foobar" {
   destination_type = "email"
   token            = "1234567890"
   team_id          = tfe_team.foobar.id
-}`, rInt)
+}`, orgName)
 }
 
-func testAccTFETeamNotificationConfiguration_genericWithEmailAddresses(rInt int) string {
+func testAccTFETeamNotificationConfiguration_genericWithEmailAddresses(orgName string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
+  name  = "%s"
   email = "admin@company.com"
 }
 
@@ -1026,13 +1135,13 @@ resource "tfe_team_notification_configuration" "foobar" {
   destination_type = "generic"
   email_addresses  = ["test@example.com", "test2@example.com"]
   team_id          = tfe_team.foobar.id
-}`, rInt)
+}`, orgName)
 }
 
-func testAccTFETeamNotificationConfiguration_genericWithEmailUserIDs(rInt int) string {
+func testAccTFETeamNotificationConfiguration_genericWithEmailUserIDs(orgName string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
+  name  = "%s"
   email = "admin@company.com"
 }
 
@@ -1051,13 +1160,13 @@ resource "tfe_team_notification_configuration" "foobar" {
   destination_type = "generic"
   email_user_ids   = [tfe_organization_membership.foobar.id]
   team_id          = tfe_team.foobar.id
-}`, rInt)
+}`, orgName)
 }
 
-func testAccTFETeamNotificationConfiguration_genericWithoutURL(rInt int) string {
+func testAccTFETeamNotificationConfiguration_genericWithoutURL(orgName string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
+  name  = "%s"
   email = "admin@company.com"
 }
 
@@ -1070,13 +1179,13 @@ resource "tfe_team_notification_configuration" "foobar" {
   name             = "notification_generic_without_url"
   destination_type = "generic"
   team_id          = tfe_team.foobar.id
-}`, rInt)
+}`, orgName)
 }
 
-func testAccTFETeamNotificationConfiguration_slackWithEmailAddresses(rInt int) string {
+func testAccTFETeamNotificationConfiguration_slackWithEmailAddresses(orgName string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
+  name  = "%s"
   email = "admin@company.com"
 }
 
@@ -1090,13 +1199,13 @@ resource "tfe_team_notification_configuration" "foobar" {
   destination_type = "slack"
   email_addresses  = ["test@example.com", "test2@example.com"]
   team_id          = tfe_team.foobar.id
-}`, rInt)
+}`, orgName)
 }
 
-func testAccTFETeamNotificationConfiguration_slackWithEmailUserIDs(rInt int) string {
+func testAccTFETeamNotificationConfiguration_slackWithEmailUserIDs(orgName string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
+  name  = "%s"
   email = "admin@company.com"
 }
 
@@ -1115,13 +1224,13 @@ resource "tfe_team_notification_configuration" "foobar" {
   destination_type = "slack"
   email_user_ids   = [tfe_organization_membership.foobar.id]
   team_id          = tfe_team.foobar.id
-}`, rInt)
+}`, orgName)
 }
 
-func testAccTFETeamNotificationConfiguration_slackWithToken(rInt int) string {
+func testAccTFETeamNotificationConfiguration_slackWithToken(orgName string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
+  name  = "%s"
   email = "admin@company.com"
 }
 
@@ -1136,13 +1245,13 @@ resource "tfe_team_notification_configuration" "foobar" {
   token            = "1234567890"
   url              = "%s"
   team_id          = tfe_team.foobar.id
-}`, rInt, runTasksURL())
+}`, orgName, runTasksURL())
 }
 
-func testAccTFETeamNotificationConfiguration_slackWithoutURL(rInt int) string {
+func testAccTFETeamNotificationConfiguration_slackWithoutURL(orgName string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
+  name  = "%s"
   email = "admin@company.com"
 }
 
@@ -1155,13 +1264,13 @@ resource "tfe_team_notification_configuration" "foobar" {
   name             = "notification_slack_without_url"
   destination_type = "slack"
   team_id          = tfe_team.foobar.id
-}`, rInt)
+}`, orgName)
 }
 
-func testAccTFETeamNotificationConfiguration_microsoftTeamsWithEmailAddresses(rInt int) string {
+func testAccTFETeamNotificationConfiguration_microsoftTeamsWithEmailAddresses(orgName string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
+  name  = "%s"
   email = "admin@company.com"
 }
 
@@ -1175,13 +1284,13 @@ resource "tfe_team_notification_configuration" "foobar" {
   destination_type = "microsoft-teams"
   email_addresses  = ["test@example.com", "test2@example.com"]
   team_id          = tfe_team.foobar.id
-}`, rInt)
+}`, orgName)
 }
 
-func testAccTFETeamNotificationConfiguration_microsoftTeamsWithEmailUserIDs(rInt int) string {
+func testAccTFETeamNotificationConfiguration_microsoftTeamsWithEmailUserIDs(orgName string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
+  name  = "%s"
   email = "admin@company.com"
 }
 
@@ -1200,13 +1309,13 @@ resource "tfe_team_notification_configuration" "foobar" {
   destination_type = "microsoft-teams"
   email_user_ids   = [tfe_organization_membership.foobar.id]
   team_id          = tfe_team.foobar.id
-}`, rInt)
+}`, orgName)
 }
 
-func testAccTFETeamNotificationConfiguration_microsoftTeamsWithToken(rInt int) string {
+func testAccTFETeamNotificationConfiguration_microsoftTeamsWithToken(orgName string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
+  name  = "%s"
   email = "admin@company.com"
 }
 
@@ -1221,13 +1330,13 @@ resource "tfe_team_notification_configuration" "foobar" {
   token            = "1234567890"
   url              = "%s"
   team_id          = tfe_team.foobar.id
-}`, rInt, runTasksURL())
+}`, orgName, runTasksURL())
 }
 
-func testAccTFETeamNotificationConfiguration_microsoftTeamsWithoutURL(rInt int) string {
+func testAccTFETeamNotificationConfiguration_microsoftTeamsWithoutURL(orgName string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
+  name  = "%s"
   email = "admin@company.com"
 }
 
@@ -1240,13 +1349,13 @@ resource "tfe_team_notification_configuration" "foobar" {
   name             = "notification_msteams_without_url"
   destination_type = "microsoft-teams"
   team_id          = tfe_team.foobar.id
-}`, rInt)
+}`, orgName)
 }
 
-func testAccTFETeamNotificationConfiguration_duplicateTriggers(rInt int) string {
+func testAccTFETeamNotificationConfiguration_duplicateTriggers(orgName string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
+  name  = "%s"
   email = "admin@company.com"
 }
 
@@ -1261,7 +1370,7 @@ resource "tfe_team_notification_configuration" "foobar" {
   triggers         = ["change_request:created", "change_request:created", "change_request:created"]
   url              = "%s"
   team_id          = tfe_team.foobar.id
-}`, rInt, runTasksURL())
+}`, orgName, runTasksURL())
 }
 
 func preCheckTFETeamNotificationConfiguration(t *testing.T) {
