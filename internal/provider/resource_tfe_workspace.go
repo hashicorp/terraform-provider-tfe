@@ -763,6 +763,15 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 					Value: val.(string),
 				})
 			}
+
+			// If we have no tag bindings and this a deliberate change in config
+			// directly delete the existing bindings.
+			if len(options.TagBindings) == 0 {
+				err := config.Client.Workspaces.DeleteAllTagBindings(ctx, id)
+				if err != nil {
+					return fmt.Errorf("Error removing tag bindings from workspace %s: %w", id, err)
+				}
+			}
 		}
 
 		// Process all configured options.

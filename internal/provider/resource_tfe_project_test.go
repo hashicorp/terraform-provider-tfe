@@ -106,6 +106,20 @@ func TestAccTFEProject_update(t *testing.T) {
 						"tfe_project.foobar", "tag_bindings.%", "1"),
 				),
 			},
+			{
+				Config: testAccTFEProject_updateRemoveBindings(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEProjectExists(
+						"tfe_project.foobar", project),
+					testAccCheckTFEProjectAttributesUpdated(project),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "name", "project updated"),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "description", "project description updated"),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "tag_bindings.%", "0"),
+				),
+			},
 		},
 	})
 }
@@ -153,6 +167,21 @@ resource "tfe_project" "foobar" {
   tag_bindings = {
 	  keyB = "valueB"
   }
+}`, rInt)
+}
+
+func testAccTFEProject_updateRemoveBindings(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "foobar" {
+  organization = tfe_organization.foobar.name
+  name = "project updated"
+  description = "project description updated"
+  tag_bindings = {}
 }`, rInt)
 }
 

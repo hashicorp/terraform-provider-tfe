@@ -144,6 +144,13 @@ func resourceTFEProjectUpdate(ctx context.Context, d *schema.ResourceData, meta 
 				Value: val.(string),
 			})
 		}
+
+		if len(options.TagBindings) == 0 {
+			err := config.Client.Projects.DeleteAllTagBindings(ctx, d.Id())
+			if err != nil {
+				return diag.Errorf("Error removing tag bindings from project %s: %v", d.Id(), err)
+			}
+		}
 	}
 
 	log.Printf("[DEBUG] Update configuration of project: %s", d.Id())
