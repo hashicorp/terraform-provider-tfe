@@ -157,11 +157,19 @@ func (m *mockWorkspaces) ListTags(ctx context.Context, workspaceID string, optio
 	panic("not implemented")
 }
 
+func (m *mockWorkspaces) ListEffectiveTagBindings(ctx context.Context, workspaceID string) ([]*tfe.EffectiveTagBinding, error) {
+	panic("not implemented")
+}
+
 func (m *mockWorkspaces) AddTags(ctx context.Context, workspaceID string, options tfe.WorkspaceAddTagsOptions) error {
 	panic("not implemented")
 }
 
 func (m *mockWorkspaces) RemoveTags(ctx context.Context, workspaceID string, options tfe.WorkspaceRemoveTagsOptions) error {
+	panic("not implemented")
+}
+
+func (m *mockWorkspaces) DeleteAllTagBindings(ctx context.Context, workspaceID string) error {
 	panic("not implemented")
 }
 
