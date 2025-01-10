@@ -15,6 +15,7 @@ import (
 )
 
 func TestAccTFETeamNotificationConfiguration_basic(t *testing.T) {
+	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -53,6 +54,7 @@ func TestAccTFETeamNotificationConfiguration_basic(t *testing.T) {
 }
 
 func TestAccTFETeamNotificationConfiguration_emailUserIDs(t *testing.T) {
+	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -91,6 +93,7 @@ func TestAccTFETeamNotificationConfiguration_emailUserIDs(t *testing.T) {
 }
 
 func TestAccTFETeamNotificationConfiguration_update(t *testing.T) {
+	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -151,6 +154,7 @@ func TestAccTFETeamNotificationConfiguration_update(t *testing.T) {
 }
 
 func TestAccTFETeamNotificationConfiguration_updateEmailUserIDs(t *testing.T) {
+	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -562,6 +566,7 @@ func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesMicro
 }
 
 func TestAccTFETeamNotificationConfiguration_duplicateTriggers(t *testing.T) {
+	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -600,6 +605,7 @@ func TestAccTFETeamNotificationConfiguration_duplicateTriggers(t *testing.T) {
 }
 
 func TestAccTFETeamNotificationConfigurationImport_basic(t *testing.T) {
+	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -628,6 +634,7 @@ func TestAccTFETeamNotificationConfigurationImport_basic(t *testing.T) {
 }
 
 func TestAccTFETeamNotificationConfigurationImport_emailUserIDs(t *testing.T) {
+	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -656,6 +663,7 @@ func TestAccTFETeamNotificationConfigurationImport_emailUserIDs(t *testing.T) {
 }
 
 func TestAccTFETeamNotificationConfigurationImport_emptyEmailUserIDs(t *testing.T) {
+	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
