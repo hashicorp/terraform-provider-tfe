@@ -229,21 +229,26 @@ func resourceTFEWorkspace() *schema.Resource {
 				Optional:   true,
 				Computed:   true,
 				Elem:       &schema.Schema{Type: schema.TypeString},
-				Deprecated: "Use the tag_bindings attribute to manage tags. This attribute will be removed in a future release of the provider.",
+				Deprecated: "Use the tags attribute to manage tags. This attribute will be removed in a future release of the provider.",
 			},
 
 			"ignore_additional_tag_names": {
-				Type:     schema.TypeBool,
-				Optional: true,
+				Type:       schema.TypeBool,
+				Optional:   true,
+				Deprecated: "Use the ignore_additional_tags attribute to ignore tags added outside of configuration. This attribute will be removed in a future release of the provider.",
 			},
 
-			"tag_bindings": {
+			"tags": {
 				Type:     schema.TypeMap,
 				Optional: true,
-				Computed: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
+			},
+
+			"ignore_additional_tags": {
+				Type:     schema.TypeBool,
+				Optional: true,
 			},
 
 			"terraform_version": {
@@ -415,7 +420,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		options.SourceName = tfe.String(v.(string))
 	}
 
-	if tagBindings, ok := d.Get("tag_bindings").(map[string]interface{}); ok {
+	if tagBindings, ok := d.Get("tags").(map[string]interface{}); ok {
 		for key, val := range tagBindings {
 			options.TagBindings = append(options.TagBindings, &tfe.TagBinding{
 				Key:   key,
@@ -542,8 +547,12 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	bindings := make(map[string]interface{})
+	configBindings := d.Get("tags").(map[string]interface{})
 	for _, binding := range tagBindings {
-		bindings[binding.Key] = binding.Value
+		_, ok := configBindings[binding.Key]
+		if ok || !d.Get("ignore_additional_tags").(bool) {
+			bindings[binding.Key] = binding.Value
+		}
 	}
 
 	// Update the config.
@@ -565,7 +574,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("source_url", workspace.SourceURL)
 	d.Set("speculative_enabled", workspace.SpeculativeEnabled)
 	d.Set("structured_run_output_enabled", workspace.StructuredRunOutputEnabled)
-	d.Set("tag_bindings", bindings)
+	d.Set("tags", bindings)
 	d.Set("terraform_version", workspace.TerraformVersion)
 	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
 	d.Set("trigger_patterns", workspace.TriggerPatterns)
@@ -756,7 +765,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			}
 		}
 
-		if tagBindings, ok := d.Get("tag_bindings").(map[string]interface{}); ok {
+		if tagBindings, ok := d.Get("tags").(map[string]interface{}); ok {
 			for key, val := range tagBindings {
 				options.TagBindings = append(options.TagBindings, &tfe.TagBinding{
 					Key:   key,
@@ -766,7 +775,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 
 			// If we have no tag bindings and this a deliberate change in config
 			// directly delete the existing bindings.
-			if len(options.TagBindings) == 0 {
+			if len(options.TagBindings) == 0 && !d.Get("ignore_additional_tags").(bool) {
 				err := config.Client.Workspaces.DeleteAllTagBindings(ctx, id)
 				if err != nil {
 					return fmt.Errorf("Error removing tag bindings from workspace %s: %w", id, err)

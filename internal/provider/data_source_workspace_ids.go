@@ -25,13 +25,13 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 				Type:         schema.TypeList,
 				Elem:         &schema.Schema{Type: schema.TypeString},
 				Optional:     true,
-				AtLeastOneOf: []string{"names", "tag_names", "tag_bindings"},
+				AtLeastOneOf: []string{"names", "tag_names", "tags"},
 			},
 
 			"tag_names": {
 				Type:       schema.TypeList,
 				Elem:       &schema.Schema{Type: schema.TypeString},
-				Deprecated: "Use the tag_bindings attribute to search by tags. This attribute will be removed in a future provider release.",
+				Deprecated: "Use the tags attribute to search by tags. This attribute will be removed in a future provider release.",
 				Optional:   true,
 			},
 
@@ -41,7 +41,7 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 				Optional: true,
 			},
 
-			"tag_bindings": {
+			"tags": {
 				Type:     schema.TypeMap,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Optional: true,
@@ -156,7 +156,7 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 	}
 
 	// Filter by tag bindings if present
-	if tagBindings, ok := d.Get("tag_bindings").(map[string]interface{}); ok {
+	if tagBindings, ok := d.Get("tags").(map[string]interface{}); ok {
 		for key, val := range tagBindings {
 			options.TagBindings = append(options.TagBindings, &tfe.TagBinding{
 				Key:   key,

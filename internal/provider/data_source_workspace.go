@@ -9,6 +9,7 @@
 package provider
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/url"
@@ -143,7 +144,7 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Computed: true,
 			},
 
-			"tag_bindings": {
+			"tags": {
 				Type:     schema.TypeMap,
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
@@ -153,7 +154,7 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Type:       schema.TypeSet,
 				Optional:   true,
 				Computed:   true,
-				Deprecated: "Use the tag_bindings attribute instead. This attribute will be removed in a future provider release.",
+				Deprecated: "Use the tags attribute instead. This attribute will be removed in a future provider release.",
 				Elem:       &schema.Schema{Type: schema.TypeString},
 			},
 
@@ -330,14 +331,19 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	// Update the tag bindings
 	tagBindings := make(map[string]interface{})
 	bindings, err := config.Client.Workspaces.ListTagBindings(ctx, workspace.ID)
-	if err != nil {
+	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 		return fmt.Errorf("Error reading tag bindings for workspace %s: %w", workspace.ID, err)
+	}
+	if err != nil {
+		// This endpoint may not be supported by the configured TFE instance
+		// Initialize to empty slice to prevent range over nil error
+		bindings = []*tfe.TagBinding{}
 	}
 
 	for _, binding := range bindings {
 		tagBindings[binding.Key] = binding.Value
 	}
-	d.Set("tag_bindings", tagBindings)
+	d.Set("tags", tagBindings)
 
 	// Update the tag names
 	var tagNames []interface{}

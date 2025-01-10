@@ -107,11 +107,11 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "tag_names.1", "shared"),
 					resource.TestCheckResourceAttr(
-						"data.tfe_workspace.foobar", "tag_bindings.%", "2"),
+						"data.tfe_workspace.foobar", "tags.%", "2"),
 					resource.TestCheckResourceAttr(
-						"data.tfe_workspace.foobar", "tag_bindings.env", "prod"),
+						"data.tfe_workspace.foobar", "tags.env", "prod"),
 					resource.TestCheckResourceAttr(
-						"data.tfe_workspace.foobar", "tag_bindings.team", "engineering"),
+						"data.tfe_workspace.foobar", "tags.team", "engineering"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "terraform_version", "0.11.1"),
 					resource.TestCheckResourceAttr(
@@ -273,7 +273,7 @@ resource "tfe_workspace" "foobar" {
   speculative_enabled   = true
 	assessments_enabled       = false
   tag_names             = ["modules", "shared"]
-  tag_bindings          = {
+  tags = {
 	  env  = "prod"
 	  team = "engineering"
   }

@@ -458,7 +458,7 @@ func TestAccTFEWorkspaceIDsDataSource_empty(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEWorkspaceIDsDataSourceConfig_empty(rInt),
-				ExpectError: regexp.MustCompile("one of `names,tag_bindings,tag_names` must be specified"),
+				ExpectError: regexp.MustCompile("one of `names,tag_names,tags` must be specified"),
 			},
 		},
 	})
@@ -677,7 +677,7 @@ resource "tfe_organization" "foobar" {
 resource "tfe_workspace" "foo" {
   name         = "workspace-foo-%d"
   organization = tfe_organization.foobar.id
-  tag_bindings = {
+  tags = {
 	  keyA = "valueA"
 	  keyB = "valueB"
   }
@@ -686,7 +686,7 @@ resource "tfe_workspace" "foo" {
 resource "tfe_workspace" "bar" {
   name         = "workspace-bar-%d"
   organization = tfe_organization.foobar.id
-  tag_bindings = {
+  tags = {
 	  keyB = "valueB"
   }
 }
@@ -694,7 +694,7 @@ resource "tfe_workspace" "bar" {
 resource "tfe_workspace" "bar2" {
   name         = "workspace-bar2-%d"
   organization = tfe_organization.foobar.id
-  tag_bindings = {
+  tags = {
 	  keyA = "foobar"
   }
 }
@@ -705,7 +705,7 @@ resource "tfe_workspace" "dummy" {
 }
 
 data "tfe_workspace_ids" "good" {
-  tag_bindings = {
+  tags = {
 	  keyA = "valueA"
   }
   organization = tfe_workspace.foo.organization
@@ -728,7 +728,7 @@ resource "tfe_organization" "foobar" {
 resource "tfe_workspace" "foo" {
   name         = "workspace-foo-%d"
   organization = tfe_organization.foobar.id
-  tag_bindings = {
+  tags = {
 	  keyA = "valueA"
 	  keyB = "valueB"
   }
@@ -737,7 +737,7 @@ resource "tfe_workspace" "foo" {
 resource "tfe_workspace" "bar" {
   name         = "workspace-bar-%d"
   organization = tfe_organization.foobar.id
-  tag_bindings = {
+  tags = {
 	  keyB = "valueB"
   }
 }
@@ -745,7 +745,7 @@ resource "tfe_workspace" "bar" {
 resource "tfe_workspace" "bar2" {
   name         = "workspace-bar2-%d"
   organization = tfe_organization.foobar.id
-  tag_bindings = {
+  tags = {
 	  keyA = "foobar"
   }
 }
@@ -756,7 +756,7 @@ resource "tfe_workspace" "dummy" {
 }
 
 data "tfe_workspace_ids" "good" {
-  tag_bindings = {
+  tags = {
 	  keyB = "valueB"
   }
   names = ["workspace-bar-%d"]

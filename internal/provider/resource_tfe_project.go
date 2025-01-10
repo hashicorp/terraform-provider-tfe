@@ -56,13 +56,17 @@ func resourceTFEProject() *schema.Resource {
 				ForceNew: true,
 			},
 
-			"tag_bindings": {
+			"tags": {
 				Type:     schema.TypeMap,
 				Optional: true,
-				Computed: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
+			},
+
+			"ignore_additional_tags": {
+				Type:     schema.TypeBool,
+				Optional: true,
 			},
 		},
 	}
@@ -117,14 +121,18 @@ func resourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	bindings := make(map[string]interface{})
+	configBindings := d.Get("tags").(map[string]interface{})
 	for _, binding := range tagBindings {
-		bindings[binding.Key] = binding.Value
+		_, ok := configBindings[binding.Key]
+		if ok || !d.Get("ignore_additional_tags").(bool) {
+			bindings[binding.Key] = binding.Value
+		}
 	}
 
 	d.Set("name", project.Name)
 	d.Set("description", project.Description)
 	d.Set("organization", project.Organization.Name)
-	d.Set("tag_bindings", bindings)
+	d.Set("tags", bindings)
 
 	return nil
 }
@@ -137,7 +145,7 @@ func resourceTFEProjectUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		Description: tfe.String(d.Get("description").(string)),
 	}
 
-	if tagBindings, ok := d.Get("tag_bindings").(map[string]interface{}); ok {
+	if tagBindings, ok := d.Get("tags").(map[string]interface{}); ok {
 		for key, val := range tagBindings {
 			options.TagBindings = append(options.TagBindings, &tfe.TagBinding{
 				Key:   key,
@@ -145,7 +153,7 @@ func resourceTFEProjectUpdate(ctx context.Context, d *schema.ResourceData, meta 
 			})
 		}
 
-		if len(options.TagBindings) == 0 {
+		if len(options.TagBindings) == 0 && !d.Get("ignore_additional_tags").(bool) {
 			err := config.Client.Projects.DeleteAllTagBindings(ctx, d.Id())
 			if err != nil {
 				return diag.Errorf("Error removing tag bindings from project %s: %v", d.Id(), err)

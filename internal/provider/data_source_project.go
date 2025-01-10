@@ -10,6 +10,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -52,7 +53,7 @@ func dataSourceTFEProject() *schema.Resource {
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
-			"tag_bindings": {
+			"tags": {
 				Type:     schema.TypeMap,
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
@@ -112,8 +113,13 @@ func dataSourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta 
 
 			tagBindings := make(map[string]interface{})
 			bindings, err := config.Client.Projects.ListTagBindings(ctx, proj.ID)
-			if err != nil {
+			if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 				return diag.Errorf("Error retrieving tag bindings for project %s: %v", proj.ID, err)
+			}
+			if err != nil {
+				// This endpoint may not be supported against a given TFE instance.
+				// Initialize to empty slice to avoid ranging over nil
+				bindings = []*tfe.TagBinding{}
 			}
 
 			for _, binding := range bindings {
@@ -123,7 +129,7 @@ func dataSourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta 
 			d.Set("workspace_ids", workspaces)
 			d.Set("workspace_names", workspaceNames)
 			d.Set("description", proj.Description)
-			d.Set("tag_bindings", tagBindings)
+			d.Set("tags", tagBindings)
 			d.SetId(proj.ID)
 			return nil
 		}
