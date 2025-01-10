@@ -251,6 +251,14 @@ func resourceTFEWorkspace() *schema.Resource {
 				Optional: true,
 			},
 
+			"effective_tags": {
+				Type:     schema.TypeMap,
+				Computed: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
+
 			"terraform_version": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -555,6 +563,19 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
+	effectiveTagBindings, err := config.Client.Workspaces.ListEffectiveTagBindings(ctx, workspace.ID)
+	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+		return fmt.Errorf("Error reading effective tag bindings of workspace %s: %w", id, err)
+	}
+	if err != nil {
+		effectiveTagBindings = []*tfe.EffectiveTagBinding{}
+	}
+
+	effectiveBindings := make(map[string]interface{})
+	for _, binding := range effectiveTagBindings {
+		effectiveBindings[binding.Key] = binding.Value
+	}
+
 	// Update the config.
 	d.Set("name", workspace.Name)
 	d.Set("allow_destroy_plan", workspace.AllowDestroyPlan)
@@ -569,6 +590,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
 	d.Set("operations", workspace.Operations)
 	d.Set("execution_mode", workspace.ExecutionMode)
+	d.Set("effective_tags", effectiveBindings)
 	d.Set("queue_all_runs", workspace.QueueAllRuns)
 	d.Set("source_name", workspace.SourceName)
 	d.Set("source_url", workspace.SourceURL)

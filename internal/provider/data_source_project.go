@@ -58,6 +58,12 @@ func dataSourceTFEProject() *schema.Resource {
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
+
+			"effective_tags": {
+				Type:     schema.TypeMap,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
 		},
 	}
 }
@@ -126,10 +132,26 @@ func dataSourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta 
 				tagBindings[binding.Key] = binding.Value
 			}
 
+			effectiveTagBindings := make(map[string]interface{})
+			effectiveBindings, err := config.Client.Projects.ListEffectiveTagBindings(ctx, proj.ID)
+			if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+				return diag.Errorf("Error retrieving effective tag bindings for project %s: %v", proj.ID, err)
+			}
+			if err != nil {
+				// This endpoint may not be supported against a given TFE instance.
+				// Initialize to empty slice to avoid ranging over nil
+				effectiveBindings = []*tfe.EffectiveTagBinding{}
+			}
+
+			for _, binding := range effectiveBindings {
+				effectiveTagBindings[binding.Key] = binding.Value
+			}
+
 			d.Set("workspace_ids", workspaces)
 			d.Set("workspace_names", workspaceNames)
 			d.Set("description", proj.Description)
 			d.Set("tags", tagBindings)
+			d.Set("effective_tags", tagBindings)
 			d.SetId(proj.ID)
 			return nil
 		}

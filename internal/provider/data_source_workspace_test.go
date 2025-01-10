@@ -107,12 +107,6 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "tag_names.1", "shared"),
 					resource.TestCheckResourceAttr(
-						"data.tfe_workspace.foobar", "tags.%", "2"),
-					resource.TestCheckResourceAttr(
-						"data.tfe_workspace.foobar", "tags.env", "prod"),
-					resource.TestCheckResourceAttr(
-						"data.tfe_workspace.foobar", "tags.team", "engineering"),
-					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "terraform_version", "0.11.1"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "trigger_prefixes.#", "2"),
@@ -126,6 +120,47 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 						"data.tfe_workspace.foobar", "execution_mode", "remote"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "html_url", fmt.Sprintf("https://%s/app/%s/workspaces/%s", os.Getenv("TFE_HOSTNAME"), orgName, workspaceName)),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspaceDataSource_tagBindings(t *testing.T) {
+	skipUnlessBeta(t)
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+	workspaceName := fmt.Sprintf("workspace-test-%d", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspaceDataSourceConfig(rInt),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "id"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "name", workspaceName),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "organization", orgName),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "tag_names.0", "modules"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "tag_names.1", "shared"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "tags.%", "2"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "tags.env", "prod"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "tags.team", "engineering"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "effective_tags.%", "2"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "effective_tags.env", "prod"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "effective_tags.team", "engineering"),
 				),
 			},
 		},

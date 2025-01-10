@@ -187,6 +187,47 @@ func TestAccTFEProject_ignoreAdditionalTags(t *testing.T) {
 	})
 }
 
+func TestAccTFEProject_effectiveTags(t *testing.T) {
+	skipUnlessBeta(t)
+	project := &tfe.Project{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEProjectDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEProject_basic(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEProjectExists(
+						"tfe_project.foobar", project),
+					testAccCheckTFEProjectAttributes(project),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "name", "projecttest"),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "description", "project description"),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "tags.%", "2"),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "tags.keyA", "valueA"),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "tags.keyB", "valueB"),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "effective_tags.%", "2"),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "effective_tags.keyA", "valueA"),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "effective_tags.keyB", "valueB"),
+				),
+			},
+		},
+	})
+
+}
+
 func TestAccTFEProject_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	project := &tfe.Project{}

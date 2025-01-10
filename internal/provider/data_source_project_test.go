@@ -34,12 +34,48 @@ func TestAccTFEProjectDataSource_basic(t *testing.T) {
 						"data.tfe_project.foobar", "workspace_ids.#", "1"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_project.foobar", "workspace_names.#", "1"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEProjectDataSource_tagBindings(t *testing.T) {
+	skipUnlessBeta(t)
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEProjectDataSourceConfig(rInt),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"data.tfe_project.foobar", "name", fmt.Sprintf("project-test-%d", rInt)),
+					resource.TestCheckResourceAttr(
+						"data.tfe_project.foobar", "description", "project description"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_project.foobar", "organization", orgName),
+					resource.TestCheckResourceAttrSet("data.tfe_project.foobar", "id"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_project.foobar", "workspace_ids.#", "1"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_project.foobar", "workspace_names.#", "1"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_project.foobar", "tags.%", "2"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_project.foobar", "tags.cost_center", "main"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_project.foobar", "tags.team_owner", "platform-team"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_project.foobar", "effective_tags.%", "2"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_project.foobar", "effective_tags.cost_center", "main"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_project.foobar", "effective_tags.team_owner", "platform-team"),
 				),
 			},
 		},

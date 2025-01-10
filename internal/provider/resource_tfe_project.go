@@ -68,6 +68,14 @@ func resourceTFEProject() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 			},
+
+			"effective_tags": {
+				Type:     schema.TypeMap,
+				Computed: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
 		},
 	}
 }
@@ -129,8 +137,22 @@ func resourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta in
 		}
 	}
 
+	effectiveTagBindings, err := config.Client.Projects.ListEffectiveTagBindings(ctx, project.ID)
+	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+		return diag.FromErr(err)
+	}
+	if err != nil {
+		effectiveTagBindings = []*tfe.EffectiveTagBinding{}
+	}
+
+	effectiveBindings := make(map[string]interface{})
+	for _, binding := range effectiveTagBindings {
+		effectiveBindings[binding.Key] = binding.Value
+	}
+
 	d.Set("name", project.Name)
 	d.Set("description", project.Description)
+	d.Set("effective_tags", effectiveBindings)
 	d.Set("organization", project.Organization.Name)
 	d.Set("tags", bindings)
 

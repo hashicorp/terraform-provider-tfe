@@ -1446,6 +1446,38 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspace_effectiveTags(t *testing.T) {
+	skipUnlessBeta(t)
+
+	workspace := &tfe.Workspace{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspace_effectiveTags(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceExists(
+						"tfe_workspace.foobar", workspace, testAccProvider),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "tags.%", "1"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "effective_tags.%", "3"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "effective_tags.keyA", "valueA"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "effective_tags.keyB", "override"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.foobar", "effective_tags.keyC", "valueC"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEWorkspace_updateSpeculative(t *testing.T) {
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -3982,5 +4014,32 @@ resource "tfe_workspace" "foobar" {
   tag_names          = ["fav", "test"]
   source_url         = "https://example.com"
   source_name        = "Example Source"
+}`, rInt)
+}
+
+func testAccTFEWorkspace_effectiveTags(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "foobar" {
+  name = "project-test"
+  organization = tfe_organization.foobar.id
+  tags = {
+	  keyA = "valueA"
+	  keyB = "valueB"
+	  keyC = "valueC"
+  }
+}
+
+resource "tfe_workspace" "foobar" {
+  name               = "workspace-test"
+  organization       = tfe_organization.foobar.id
+  project_id         = tfe_project.foobar.id
+  tags               = {
+	  keyB = "override"
+  }
 }`, rInt)
 }
