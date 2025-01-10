@@ -354,6 +354,7 @@ func TestAccTFETeamNotificationConfiguration_validateSchemaAttributesBadDestinat
 }
 
 func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesEmail(t *testing.T) {
+	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -403,6 +404,7 @@ func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesEmail
 }
 
 func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesGeneric(t *testing.T) {
+	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -456,6 +458,7 @@ func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesGener
 }
 
 func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesSlack(t *testing.T) {
+	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -513,6 +516,7 @@ func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesSlack
 }
 
 func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesMicrosoftTeams(t *testing.T) {
+	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
