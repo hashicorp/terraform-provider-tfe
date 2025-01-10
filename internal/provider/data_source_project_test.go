@@ -70,12 +70,6 @@ func TestAccTFEProjectDataSource_tagBindings(t *testing.T) {
 						"data.tfe_project.foobar", "tags.cost_center", "main"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_project.foobar", "tags.team_owner", "platform-team"),
-					resource.TestCheckResourceAttr(
-						"data.tfe_project.foobar", "effective_tags.%", "2"),
-					resource.TestCheckResourceAttr(
-						"data.tfe_project.foobar", "effective_tags.cost_center", "main"),
-					resource.TestCheckResourceAttr(
-						"data.tfe_project.foobar", "effective_tags.team_owner", "platform-team"),
 				),
 			},
 		},

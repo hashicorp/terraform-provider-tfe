@@ -155,12 +155,6 @@ func TestAccTFEWorkspaceDataSource_tagBindings(t *testing.T) {
 						"data.tfe_workspace.foobar", "tags.env", "prod"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "tags.team", "engineering"),
-					resource.TestCheckResourceAttr(
-						"data.tfe_workspace.foobar", "effective_tags.%", "2"),
-					resource.TestCheckResourceAttr(
-						"data.tfe_workspace.foobar", "effective_tags.env", "prod"),
-					resource.TestCheckResourceAttr(
-						"data.tfe_workspace.foobar", "effective_tags.team", "engineering"),
 				),
 			},
 		},

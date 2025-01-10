@@ -225,7 +225,6 @@ func TestAccTFEProject_effectiveTags(t *testing.T) {
 			},
 		},
 	})
-
 }
 
 func TestAccTFEProject_import(t *testing.T) {
