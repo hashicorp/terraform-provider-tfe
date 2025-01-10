@@ -20,7 +20,7 @@ func TestAccTFETeamNotificationConfiguration_basic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	org, cleanupOrg := createPlusOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	notificationConfiguration := &tfe.NotificationConfiguration{}
@@ -58,7 +58,7 @@ func TestAccTFETeamNotificationConfiguration_emailUserIDs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	org, cleanupOrg := createPlusOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	notificationConfiguration := &tfe.NotificationConfiguration{}
@@ -96,7 +96,7 @@ func TestAccTFETeamNotificationConfiguration_update(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	org, cleanupOrg := createPlusOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	notificationConfiguration := &tfe.NotificationConfiguration{}
@@ -156,7 +156,7 @@ func TestAccTFETeamNotificationConfiguration_updateEmailUserIDs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	org, cleanupOrg := createPlusOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	notificationConfiguration := &tfe.NotificationConfiguration{}
@@ -214,7 +214,7 @@ func TestAccTFETeamNotificationConfiguration_validateSchemaAttributesEmail(t *te
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	org, cleanupOrg := createPlusOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	resource.Test(t, resource.TestCase{
@@ -239,7 +239,7 @@ func TestAccTFETeamNotificationConfiguration_validateSchemaAttributesGeneric(t *
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	org, cleanupOrg := createPlusOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	resource.Test(t, resource.TestCase{
@@ -268,7 +268,7 @@ func TestAccTFETeamNotificationConfiguration_validateSchemaAttributesSlack(t *te
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	org, cleanupOrg := createPlusOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	resource.Test(t, resource.TestCase{
@@ -301,7 +301,7 @@ func TestAccTFETeamNotificationConfiguration_validateSchemaAttributesMicrosoftTe
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	org, cleanupOrg := createPlusOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	resource.Test(t, resource.TestCase{
@@ -334,7 +334,7 @@ func TestAccTFETeamNotificationConfiguration_validateSchemaAttributesBadDestinat
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	org, cleanupOrg := createPlusOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	resource.Test(t, resource.TestCase{
@@ -355,7 +355,7 @@ func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesEmail
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	org, cleanupOrg := createPlusOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	notificationConfiguration := &tfe.NotificationConfiguration{}
@@ -404,7 +404,7 @@ func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesGener
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	org, cleanupOrg := createPlusOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	notificationConfiguration := &tfe.NotificationConfiguration{}
@@ -457,7 +457,7 @@ func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesSlack
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	org, cleanupOrg := createPlusOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	notificationConfiguration := &tfe.NotificationConfiguration{}
@@ -514,7 +514,7 @@ func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesMicro
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	org, cleanupOrg := createPlusOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	notificationConfiguration := &tfe.NotificationConfiguration{}
@@ -567,7 +567,7 @@ func TestAccTFETeamNotificationConfiguration_duplicateTriggers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	org, cleanupOrg := createPlusOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	notificationConfiguration := &tfe.NotificationConfiguration{}
@@ -605,7 +605,7 @@ func TestAccTFETeamNotificationConfigurationImport_basic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	org, cleanupOrg := createPlusOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	resource.Test(t, resource.TestCase{
@@ -633,7 +633,7 @@ func TestAccTFETeamNotificationConfigurationImport_emailUserIDs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	org, cleanupOrg := createPlusOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	resource.Test(t, resource.TestCase{
@@ -661,7 +661,7 @@ func TestAccTFETeamNotificationConfigurationImport_emptyEmailUserIDs(t *testing.
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	org, cleanupOrg := createPlusOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	resource.Test(t, resource.TestCase{
