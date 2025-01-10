@@ -3246,7 +3246,6 @@ resource "tfe_workspace" "foobar" {
   auto_apply                    = true
   file_triggers_enabled         = false
   auto_destroy_at               = "2100-01-01T00:00:00Z"
-  inherits_project_auto_destroy  = false
 }`, rInt)
 }
 
@@ -3269,7 +3268,6 @@ resource "tfe_workspace" "foobar" {
   project_id		             = tfe_project.new_project.id
   auto_apply                     = true
   auto_destroy_at                = "2100-01-01T00:00:00Z"
-  inherits_project_auto_destroy  = false
 }`, rInt, projectDuration)
 }
 
@@ -3286,7 +3284,6 @@ resource "tfe_workspace" "foobar" {
   auto_apply                     = true
   file_triggers_enabled          = false
   auto_destroy_activity_duration = "%s"
-  inherits_project_auto_destroy  = false
 }`, rInt, value)
 }
 
@@ -3309,7 +3306,6 @@ resource "tfe_workspace" "foobar" {
   project_id		             = tfe_project.new_project.id
   auto_apply                     = true
   auto_destroy_activity_duration = "%s"
-  inherits_project_auto_destroy  = false
 }`, rInt, projectDuration, workspaceDuration)
 }
 
@@ -3909,7 +3905,7 @@ func testAccTFEWorkspace_updateRemoveVCSBlockFromTagsRegex(rInt int) string {
 		description  			= "workspace-test-update-vcs-repo-tags-regex"
 		organization 			= tfe_organization.foobar.id
 		auto_apply   			= true
-    force_delete            = true
+    	force_delete            = true
 		file_triggers_enabled   = true
 		trigger_patterns        = ["foo/**/*"]
 	}

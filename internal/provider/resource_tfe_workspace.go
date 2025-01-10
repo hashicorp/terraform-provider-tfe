@@ -368,20 +368,18 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		}
 	}
 
-	if v, ok := d.GetOkExists("inherits_project_auto_destroy"); ok {
-		options.InheritsProjectAutoDestroy = tfe.Bool(v.(bool))
-	}
-
 	if _, ok := d.GetOk("auto_destroy_at"); ok {
 		autoDestroyAt, err := expandAutoDestroyAt(d)
 		if err != nil {
 			return fmt.Errorf("Error expanding auto destroy during create: %w", err)
 		}
 		options.AutoDestroyAt = autoDestroyAt
+		options.InheritsProjectAutoDestroy = tfe.Bool(false)
 	}
 
 	if v, ok := d.GetOk("auto_destroy_activity_duration"); ok {
 		options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(v.(string))
+		options.InheritsProjectAutoDestroy = tfe.Bool(false)
 	}
 
 	if v, ok := d.GetOk("execution_mode"); ok {
@@ -718,11 +716,11 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		}
 
 		// Reset the inherits field to default if no auto destroy settings are present
-		if d.GetRawConfig().GetAttr("auto_destroy_at").IsNull() && d.GetRawConfig().GetAttr("auto_destroy_activity_duration").IsNull() {
-			options.InheritsProjectAutoDestroy = tfe.Bool(true)
-		} else {
-			options.InheritsProjectAutoDestroy = tfe.Bool(false)
-		}
+		// if d.GetRawConfig().GetAttr("auto_destroy_at").IsNull() && d.GetRawConfig().GetAttr("auto_destroy_activity_duration").IsNull() {
+		// 	options.InheritsProjectAutoDestroy = tfe.Bool(true)
+		// } else {
+		// 	options.InheritsProjectAutoDestroy = tfe.Bool(false)
+		// }
 
 		if d.HasChange("inherits_project_auto_destroy") {
 			if v, ok := d.GetOkExists("inherits_project_auto_destroy"); ok {
