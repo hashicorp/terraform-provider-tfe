@@ -345,7 +345,9 @@ func TestAccTFEWorkspaceIDsDataSource_tags(t *testing.T) {
 	})
 }
 
-func TestAccTFEWorkspaceIDsDataSource_tagBindings(t *testing.T) {
+func TestAccTFEWorkspaceIDsDataSource_tagFilters(t *testing.T) {
+	skipUnlessBeta(t)
+
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
@@ -374,13 +376,72 @@ func TestAccTFEWorkspaceIDsDataSource_tagBindings(t *testing.T) {
 						"data.tfe_workspace_ids.good", "ids.%", "1"),
 					resource.TestCheckResourceAttrSet(
 						"data.tfe_workspace_ids.good", fmt.Sprintf("ids.workspace-foo-%d", rInt)),
-
 					// id attribute
 					resource.TestCheckResourceAttrSet("data.tfe_workspace_ids.good", "id"),
 				),
 			},
 			{
 				Config: testAccTFEWorkspaceIDsDataSourceConfig_tagBindingsWithNames(rInt),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					// organization attribute
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_ids.good", "organization", orgName),
+
+					// full_names attribute
+					resource.TestCheckResourceAttr(
+
+						"data.tfe_workspace_ids.good", "full_names.%", "2"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_ids.good",
+						fmt.Sprintf("full_names.workspace-foo-%d", rInt),
+						fmt.Sprintf("tst-terraform-%d/workspace-foo-%d", rInt, rInt),
+					),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_ids.good",
+						fmt.Sprintf("full_names.workspace-bar-%d", rInt),
+						fmt.Sprintf("tst-terraform-%d/workspace-bar-%d", rInt, rInt),
+					),
+
+					// ids attribute
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_ids.good", "ids.%", "2"),
+					resource.TestCheckResourceAttrSet(
+						"data.tfe_workspace_ids.good", fmt.Sprintf("ids.workspace-foo-%d", rInt)),
+					resource.TestCheckResourceAttrSet(
+						"data.tfe_workspace_ids.good", fmt.Sprintf("ids.workspace-bar-%d", rInt)),
+
+					// id attribute
+					resource.TestCheckResourceAttrSet("data.tfe_workspace_ids.good", "id"),
+				),
+			},
+			{
+				Config: testAccTFEWorkspaceIDsDataSourceConfig_tagBindingsExclude(rInt),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					// organization attribute
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_ids.good", "organization", orgName),
+
+					// full_names attribute
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_ids.good", "full_names.%", "1"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_ids.good",
+						fmt.Sprintf("full_names.workspace-bar2-%d", rInt),
+						fmt.Sprintf("tst-terraform-%d/workspace-bar2-%d", rInt, rInt),
+					),
+
+					// ids attribute
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace_ids.good", "ids.%", "1"),
+					resource.TestCheckResourceAttrSet(
+						"data.tfe_workspace_ids.good", fmt.Sprintf("ids.workspace-bar2-%d", rInt)),
+
+					// id attribute
+					resource.TestCheckResourceAttrSet("data.tfe_workspace_ids.good", "id"),
+				),
+			},
+			{
+				Config: testAccTFEWorkspaceIDsDataSourceConfig_tagBindingsExcludeAnyWithKey(rInt),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// organization attribute
 					resource.TestCheckResourceAttr(
@@ -458,7 +519,7 @@ func TestAccTFEWorkspaceIDsDataSource_empty(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEWorkspaceIDsDataSourceConfig_empty(rInt),
-				ExpectError: regexp.MustCompile("one of `names,tag_names,tags` must be specified"),
+				ExpectError: regexp.MustCompile("one of `filter_tags,names,tag_names` must be specified"),
 			},
 		},
 	})
@@ -705,8 +766,11 @@ resource "tfe_workspace" "dummy" {
 }
 
 data "tfe_workspace_ids" "good" {
-  tags = {
-	  keyA = "valueA"
+  filter_tags {
+	  include = {
+		  keyB = "valueB"
+		  keyA = "valueA"
+	  }
   }
   organization = tfe_workspace.foo.organization
   depends_on = [
@@ -716,6 +780,104 @@ data "tfe_workspace_ids" "good" {
     tfe_workspace.dummy
   ]
 }`, rInt, rInt, rInt, rInt, rInt)
+}
+
+func testAccTFEWorkspaceIDsDataSourceConfig_tagBindingsExclude(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foo" {
+  name         = "workspace-foo-%d"
+  organization = tfe_organization.foobar.id
+  tags = {
+	  keyA = "valueA"
+	  keyB = "valueB"
+  }
+}
+
+resource "tfe_workspace" "bar" {
+  name         = "workspace-bar-%d"
+  organization = tfe_organization.foobar.id
+  tags = {
+	  keyB = "valueB"
+  }
+}
+
+resource "tfe_workspace" "bar2" {
+  name         = "workspace-bar2-%d"
+  organization = tfe_organization.foobar.id
+  tags = {
+	  keyA = "foobar"
+  }
+}
+
+data "tfe_workspace_ids" "good" {
+  filter_tags {
+	  include = {
+		  keyA = ""
+	  }
+
+	  exclude = {
+		  keyB = "valueB"
+	  }
+  }
+  organization = tfe_workspace.foo.organization
+  depends_on = [
+    tfe_workspace.foo,
+    tfe_workspace.bar,
+    tfe_workspace.bar2,
+  ]
+}`, rInt, rInt, rInt, rInt)
+}
+
+func testAccTFEWorkspaceIDsDataSourceConfig_tagBindingsExcludeAnyWithKey(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foo" {
+  name         = "workspace-foo-%d"
+  organization = tfe_organization.foobar.id
+  tags = {
+	  keyA = "valueA"
+	  keyB = "valueB"
+  }
+}
+
+resource "tfe_workspace" "bar" {
+  name         = "workspace-bar-%d"
+  organization = tfe_organization.foobar.id
+  tags = {
+	  keyB = "valueB"
+  }
+}
+
+resource "tfe_workspace" "bar2" {
+  name         = "workspace-bar2-%d"
+  organization = tfe_organization.foobar.id
+  tags = {
+	  keyA = "foobar"
+  }
+}
+
+data "tfe_workspace_ids" "good" {
+  filter_tags {
+	  exclude = {
+		  keyA = "*"
+	  }
+  }
+  organization = tfe_workspace.foo.organization
+  depends_on = [
+    tfe_workspace.foo,
+    tfe_workspace.bar,
+    tfe_workspace.bar2,
+  ]
+}`, rInt, rInt, rInt, rInt)
 }
 
 func testAccTFEWorkspaceIDsDataSourceConfig_tagBindingsWithNames(rInt int) string {
@@ -756,10 +918,12 @@ resource "tfe_workspace" "dummy" {
 }
 
 data "tfe_workspace_ids" "good" {
-  tags = {
-	  keyB = "valueB"
+  filter_tags {
+	  include = {
+		  keyB = "valueB"
+	  }
   }
-  names = ["workspace-bar-%d"]
+
   organization = tfe_workspace.foo.organization
   depends_on = [
     tfe_workspace.foo,
@@ -767,7 +931,7 @@ data "tfe_workspace_ids" "good" {
     tfe_workspace.bar2,
     tfe_workspace.dummy
   ]
-}`, rInt, rInt, rInt, rInt, rInt, rInt)
+}`, rInt, rInt, rInt, rInt, rInt)
 }
 
 func testAccTFEWorkspaceIDsDataSourceConfig_empty(rInt int) string {
