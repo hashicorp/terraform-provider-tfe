@@ -187,7 +187,7 @@ func TestAccTFEProject_ignoreAdditionalTags(t *testing.T) {
 	})
 }
 
-func TestAccTFEProject_effectiveTags(t *testing.T) {
+func TestAccTFEProject_tagBindings(t *testing.T) {
 	skipUnlessBeta(t)
 	project := &tfe.Project{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -215,12 +215,6 @@ func TestAccTFEProject_effectiveTags(t *testing.T) {
 						"tfe_project.foobar", "tags.keyA", "valueA"),
 					resource.TestCheckResourceAttr(
 						"tfe_project.foobar", "tags.keyB", "valueB"),
-					resource.TestCheckResourceAttr(
-						"tfe_project.foobar", "effective_tags.%", "2"),
-					resource.TestCheckResourceAttr(
-						"tfe_project.foobar", "effective_tags.keyA", "valueA"),
-					resource.TestCheckResourceAttr(
-						"tfe_project.foobar", "effective_tags.keyB", "valueB"),
 				),
 			},
 		},
