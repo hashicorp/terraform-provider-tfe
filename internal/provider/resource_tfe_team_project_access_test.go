@@ -17,7 +17,6 @@ import (
 
 func TestAccTFETeamProjectAccess(t *testing.T) {
 	tmAccess := &tfe.TeamProjectAccess{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	for _, access := range []tfe.TeamProjectAccessType{tfe.TeamProjectAccessAdmin, tfe.TeamProjectAccessMaintain, tfe.TeamProjectAccessWrite, tfe.TeamProjectAccessRead} {
 		resource.Test(t, resource.TestCase{
@@ -26,7 +25,7 @@ func TestAccTFETeamProjectAccess(t *testing.T) {
 			CheckDestroy: testAccCheckTFETeamProjectAccessDestroy,
 			Steps: []resource.TestStep{
 				{
-					Config: testAccTFETeamProjectAccess(rInt, access),
+					Config: testAccTFETeamProjectAccess(rand.New(rand.NewSource(time.Now().UnixNano())).Int(), access),
 					Check: resource.ComposeTestCheckFunc(
 						testAccCheckTFETeamProjectAccessExists(
 							"tfe_team_project_access.foobar", tmAccess),
