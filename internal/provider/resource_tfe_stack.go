@@ -157,7 +157,7 @@ func (r *resourceTFEStack) Create(ctx context.Context, req resource.CreateReques
 
 	options := tfe.StackCreateOptions{
 		Name: plan.Name.ValueString(),
-		VCSRepo: &tfe.StackVCSRepo{
+		VCSRepo: &tfe.StackVCSRepoOptions{
 			Identifier:        plan.VCSRepo.Identifier.ValueString(),
 			Branch:            plan.VCSRepo.Branch.ValueString(),
 			GHAInstallationID: plan.VCSRepo.GHAInstallationID.ValueString(),
