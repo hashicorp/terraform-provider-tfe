@@ -65,35 +65,21 @@ func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration)
 		TeamID:          types.StringValue(v.SubscribableChoice.Team.ID),
 	}
 
-	emailAddresses := make([]attr.Value, len(v.EmailAddresses))
-	for i, emailAddress := range v.EmailAddresses {
-		emailAddresses[i] = types.StringValue(emailAddress)
+	if emailAddresses, err := types.SetValueFrom(ctx, types.StringType, v.EmailAddresses); err == nil {
+		result.EmailAddresses = emailAddresses
 	}
-	if len(emailAddresses) > 0 {
-		result.EmailAddresses = types.SetValueMust(types.StringType, emailAddresses)
-	} else {
-		result.EmailAddresses = types.SetNull(types.StringType)
+
+	if len(v.Triggers) == 0 {
+		result.Triggers = types.SetNull(types.StringType)
+	} else if triggers, err := types.SetValueFrom(ctx, types.StringType, v.Triggers); err == nil {
+		result.Triggers = triggers
 	}
 
 	emailUserIDs := make([]attr.Value, len(v.EmailUsers))
 	for i, emailUser := range v.EmailUsers {
 		emailUserIDs[i] = types.StringValue(emailUser.ID)
 	}
-	if len(emailUserIDs) > 0 {
-		result.EmailUserIDs = types.SetValueMust(types.StringType, emailUserIDs)
-	} else {
-		result.EmailUserIDs = types.SetNull(types.StringType)
-	}
-
-	triggers := make([]attr.Value, len(v.Triggers))
-	for i, trigger := range v.Triggers {
-		triggers[i] = types.StringValue(trigger)
-	}
-	if len(v.Triggers) > 0 {
-		result.Triggers = types.SetValueMust(types.StringType, triggers)
-	} else {
-		result.Triggers = types.SetNull(types.StringType)
-	}
+	result.EmailUserIDs = types.SetValueMust(types.StringType, emailUserIDs)
 
 	if v.Token != "" {
 		result.Token = types.StringValue(v.Token)
@@ -147,13 +133,9 @@ func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, r
 				Computed:    true,
 				ElementType: types.StringType,
 				Validators: []validator.Set{
-					validators.AttributeValueConflictSetValidator(
+					validators.AttributeValueConflictValidator(
 						"destination_type",
 						[]string{"generic", "microsoft-teams", "slack"},
-					),
-					setvalidator.ConflictsWith(
-						path.MatchRelative().AtParent().AtName("token"),
-						path.MatchRelative().AtParent().AtName("url"),
 					),
 				},
 			},
@@ -164,13 +146,9 @@ func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, r
 				Computed:    true,
 				ElementType: types.StringType,
 				Validators: []validator.Set{
-					validators.AttributeValueConflictSetValidator(
+					validators.AttributeValueConflictValidator(
 						"destination_type",
 						[]string{"generic", "microsoft-teams", "slack"},
-					),
-					setvalidator.ConflictsWith(
-						path.MatchRelative().AtParent().AtName("token"),
-						path.MatchRelative().AtParent().AtName("url"),
 					),
 				},
 			},
@@ -187,7 +165,7 @@ func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, r
 				Optional:    true,
 				Sensitive:   true,
 				Validators: []validator.String{
-					validators.AttributeValueConflictStringValidator(
+					validators.AttributeValueConflictValidator(
 						"destination_type",
 						[]string{"email", "microsoft-teams", "slack"},
 					),
@@ -215,7 +193,7 @@ func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, r
 						"destination_type",
 						[]string{"generic", "microsoft-teams", "slack"},
 					),
-					validators.AttributeValueConflictStringValidator(
+					validators.AttributeValueConflictValidator(
 						"destination_type",
 						[]string{"email"},
 					),
@@ -264,10 +242,6 @@ func (r *resourceTFETeamNotificationConfiguration) Create(ctx context.Context, r
 		return
 	}
 
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
 	// Get team
 	teamID := plan.TeamID.ValueString()
 
@@ -295,11 +269,12 @@ func (r *resourceTFETeamNotificationConfiguration) Create(ctx context.Context, r
 	}
 
 	// Add email_addresses set to the options struct
-	emailAddresses := make([]types.String, len(plan.EmailAddresses.Elements()))
+	emailAddresses := make([]types.String, 0)
 	if diags := plan.EmailAddresses.ElementsAs(ctx, &emailAddresses, true); diags != nil && diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return
 	}
+
 	options.EmailAddresses = []string{}
 	for _, emailAddress := range emailAddresses {
 		options.EmailAddresses = append(options.EmailAddresses, emailAddress.ValueString())
@@ -321,6 +296,8 @@ func (r *resourceTFETeamNotificationConfiguration) Create(ctx context.Context, r
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to create team notification configuration", err.Error())
 		return
+	} else if len(tnc.EmailUsers) != len(plan.EmailUserIDs.Elements()) {
+		resp.Diagnostics.AddError("Email user IDs produced an inconsistent result", "API returned a different number of email user IDs than were provided in the plan.")
 	}
 
 	// Restore token from plan because it is write only
@@ -385,7 +362,7 @@ func (r *resourceTFETeamNotificationConfiguration) Update(ctx context.Context, r
 	}
 
 	// Add triggers set to the options struct
-	triggers := make([]types.String, len(plan.Triggers.Elements()))
+	triggers := make([]types.String, 0)
 	if diags := plan.Triggers.ElementsAs(ctx, &triggers, true); diags != nil && diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return
@@ -396,7 +373,7 @@ func (r *resourceTFETeamNotificationConfiguration) Update(ctx context.Context, r
 	}
 
 	// Add email_addresses set to the options struct
-	emailAddresses := make([]types.String, len(plan.EmailAddresses.Elements()))
+	emailAddresses := make([]types.String, 0)
 	if diags := plan.EmailAddresses.ElementsAs(ctx, &emailAddresses, true); diags != nil && diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return
@@ -407,7 +384,7 @@ func (r *resourceTFETeamNotificationConfiguration) Update(ctx context.Context, r
 	}
 
 	// Add email_user_ids set to the options struct
-	emailUserIDs := make([]types.String, len(plan.EmailUserIDs.Elements()))
+	emailUserIDs := make([]types.String, 0)
 	if diags := plan.EmailUserIDs.ElementsAs(ctx, &emailUserIDs, true); diags != nil && diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return
@@ -422,6 +399,8 @@ func (r *resourceTFETeamNotificationConfiguration) Update(ctx context.Context, r
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to update team notification configuration", err.Error())
 		return
+	} else if len(tnc.EmailUsers) != len(plan.EmailUserIDs.Elements()) {
+		resp.Diagnostics.AddError("Email user IDs produced an inconsistent result", "API returned a different number of email user IDs than were provided in the plan.")
 	}
 
 	// Restore token from plan because it is write only
