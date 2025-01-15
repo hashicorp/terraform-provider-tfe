@@ -345,7 +345,7 @@ func TestAccTFEWorkspaceIDsDataSource_tags(t *testing.T) {
 	})
 }
 
-func TestAccTFEWorkspaceIDsDataSource_tagFilters(t *testing.T) {
+func TestAccTFEWorkspaceIDsDataSource_tagBindingFilters(t *testing.T) {
 	skipUnlessBeta(t)
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()

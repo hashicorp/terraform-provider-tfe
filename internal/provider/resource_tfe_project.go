@@ -112,12 +112,12 @@ func resourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	tagBindings, err := config.Client.Projects.ListTagBindings(ctx, project.ID)
-	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
-			log.Printf("[DEBUG] Project %s no longer exists or tag bindings are not supported by this instance", d.Id())
-			return nil
-		}
+	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 		return diag.FromErr(err)
+	}
+	if err != nil {
+		log.Printf("[DEBUG] Project %s no longer exists or tag bindings are not supported by this instance", d.Id())
+		tagBindings = []*tfe.TagBinding{}
 	}
 
 	bindings := make(map[string]interface{})

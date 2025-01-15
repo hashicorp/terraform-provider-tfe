@@ -545,13 +545,18 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error reading configuration of workspace %s: %w", id, err)
 	}
 
+	// Given this computed attribute will be null when tag bindings are not
+	// supported, directly set to an empty map to avoid continuous planned
+	// changes on this attribute.
+	d.Set("effective_tags", map[string]interface{}{})
+
 	tagBindings, err := config.Client.Workspaces.ListTagBindings(ctx, workspace.ID)
-	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
-			log.Printf("[DEBUG] Workspace %s no longer exists or tag bindings are not supported by this instance", id)
-			return nil
-		}
+	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 		return fmt.Errorf("Error reading tag bindings of workspace %s: %w", id, err)
+	}
+	if err != nil {
+		log.Printf("[DEBUG] Workspace %s no longer exists or tag bindings are not supported by this instance", id)
+		tagBindings = []*tfe.TagBinding{}
 	}
 
 	bindings := make(map[string]interface{})
@@ -568,6 +573,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error reading effective tag bindings of workspace %s: %w", id, err)
 	}
 	if err != nil {
+		log.Printf("[DEBUG] Workspace %s no longer exists or tag bindings are not supported by this instance", id)
 		effectiveTagBindings = []*tfe.EffectiveTagBinding{}
 	}
 

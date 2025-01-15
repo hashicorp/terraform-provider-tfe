@@ -51,7 +51,7 @@ func TestAccTFEProjectDataSource_tagBindings(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEProjectDataSourceConfig(rInt),
+				Config: testAccTFEProjectDataSourceConfig_tagBindings(rInt),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"data.tfe_project.foobar", "name", fmt.Sprintf("project-test-%d", rInt)),
@@ -99,6 +99,35 @@ func TestAccTFEProjectDataSource_caseInsensitive(t *testing.T) {
 }
 
 func testAccTFEProjectDataSourceConfig(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "foobar" {
+  name         = "project-test-%d"
+  description  = "project description"
+  organization = tfe_organization.foobar.id
+}
+
+data "tfe_project" "foobar" {
+  name         = tfe_project.foobar.name
+  organization = tfe_project.foobar.organization
+  # Read the data source after creating the workspace, so counts match
+  depends_on = [
+	tfe_workspace.foobar
+  ]
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test-%d"
+  organization = tfe_organization.foobar.id
+  project_id  = tfe_project.foobar.id
+}`, rInt, rInt, rInt)
+}
+
+func testAccTFEProjectDataSourceConfig_tagBindings(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"

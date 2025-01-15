@@ -138,17 +138,13 @@ func TestAccTFEWorkspaceDataSource_tagBindings(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspaceDataSourceConfig(rInt),
+				Config: testAccTFEWorkspaceDataSourceConfig_tagBindings(rInt),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "id"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "name", workspaceName),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "organization", orgName),
-					resource.TestCheckResourceAttr(
-						"data.tfe_workspace.foobar", "tag_names.0", "modules"),
-					resource.TestCheckResourceAttr(
-						"data.tfe_workspace.foobar", "tag_names.1", "shared"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "tags.%", "2"),
 					resource.TestCheckResourceAttr(
@@ -300,12 +296,8 @@ resource "tfe_workspace" "foobar" {
   file_triggers_enabled = true
   queue_all_runs        = false
   speculative_enabled   = true
-	assessments_enabled       = false
+  assessments_enabled   = false
   tag_names             = ["modules", "shared"]
-  tags = {
-	  env  = "prod"
-	  team = "engineering"
-  }
   terraform_version     = "0.11.1"
   trigger_prefixes      = ["/modules", "/shared"]
   working_directory     = "terraform/test"
@@ -318,6 +310,30 @@ data "tfe_workspace" "foobar" {
   organization = tfe_workspace.foobar.organization
   depends_on   = [tfe_workspace.foobar]
 }`, rInt, rInt, aart)
+}
+
+func testAccTFEWorkspaceDataSourceConfig_tagBindings(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name                  = "workspace-test-%d"
+  organization          = tfe_organization.foobar.id
+  description           = "provider-testing"
+  tags = {
+	  env  = "prod"
+	  team = "engineering"
+  }
+}
+
+data "tfe_workspace" "foobar" {
+  name         = tfe_workspace.foobar.name
+  organization = tfe_workspace.foobar.organization
+  depends_on   = [tfe_workspace.foobar]
+}`, rInt, rInt)
 }
 
 func testAccTFEWorkspaceDataSourceConfig_basic(rInt int) string {
