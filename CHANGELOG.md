@@ -1,5 +1,9 @@
 ## Unreleased
 
+DEPRECATIONS:
+* `r/tfe_workspace`: `tag_names` and `ignore_additional_tag_names` have been deprecated in favor of `tags` and `ignore_additional_tags` which manage key-value tags for a workspace.
+* `d/tfe_workspace_ids`: `tag_names` has been deprecated in favor of `tag_filters` to query for workspaces by key-value tags.
+
 FEATURES:
 
 * **New Ephemeral Resource:** `tfe_audit_trail_token` is a new ephemeral resource for creating and managing audit trail tokens, by @uturunku1 [#1675](https://github.com/hashicorp/terraform-provider-tfe/pull/1675)
@@ -15,8 +19,18 @@ FEATURES:
 * **New Data Source:** `tfe_registry_module` is a new data source for finding
   registry modules by @drewmullen and @danquack [#1667](https://github.com/hashicorp/terraform-provider-tfe/pull/1667)
 
-BUG FIXES:
-* `r/tfe_oauth_client`: Ensure `oauth_token_id` updates register when performing a `terraform apply`, by @hashimoon [#1631](https://github.com/hashicorp/terraform-provider-tfe/pull/1631)
+* **New Ephemeral Resource:** `agent_token` is a new ephemeral
+  resource for creating and managing agent tokens, by @uturunku1 ([#1627](https://github.com/hashicorp/terraform-provider-tfe/pull/1627))
+
+* `r/tfe_project`: Adds `tags` and `ignore_additional_tags` attribute, by @sebasslash [#1543](https://github.com/hashicorp/terraform-provider-tfe/pull/1543)
+
+* `r/tfe_workspace`: Adds `tags`, `ignore_additional_tags` and `effective_tags` attribute, by @sebasslash [#1543](https://github.com/hashicorp/terraform-provider-tfe/pull/1543)
+
+* `d/tfe_project`: Adds the `effective_tags` attribute, by @sebasslash [#1543](https://github.com/hashicorp/terraform-provider-tfe/pull/1543)
+
+* `d/tfe_workspace`: Adds the `effective_tags` attribute which reflects all effective tags computed on the workspace, by @sebasslash [#1543](https://github.com/hashicorp/terraform-provider-tfe/pull/1543)
+
+* `d/tfe_workspace_ids`: Adds the `tag_filters` attribute which filters the list of workspace IDs specified by the `include` or `exclude` fields, by @sebasslash [#1543](https://github.com/hashicorp/terraform-provider-tfe/pull/1543)
 
 ENHANCEMENTS:
 
@@ -35,6 +49,9 @@ ENHANCEMENTS:
 * `r/tfe_team_notification_configuration`: Add `token_wo` write-only attribute, by @shwetamurali ([#1665](https://github.com/hashicorp/terraform-provider-tfe/pull/1665))
 
 * `r/tfe_notification_configuration`: Add `token_wo` write-only attribute, by @uturunku1 ([#1664](https://github.com/hashicorp/terraform-provider-tfe/pull/1664))
+
+BUG FIXES:
+* `r/tfe_oauth_client`: Ensure `oauth_token_id` updates register when performing a `terraform apply`, by @hashimoon [#1631](https://github.com/hashicorp/terraform-provider-tfe/pull/1631)
 
 ## v.0.64.0
 
