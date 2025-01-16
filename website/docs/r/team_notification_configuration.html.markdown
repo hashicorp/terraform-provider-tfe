@@ -49,9 +49,14 @@ resource "tfe_team" "test" {
   organization = tfe_organization.test.id
 }
 
-resource "tfe_organization_membership" "test" {
-  organization = "my-org-name"
-  email        = "test.member@company.com"
+data "tfe_organization_membership" "test" {
+  organization = tfe_organization.test.name
+  email        = "example@example.com"
+}
+
+resource "tfe_team_organization_member" "test" {
+  team_id                    = tfe_team.test.id
+  organization_membership_id = data.tfe_organization_membership.test.id
 }
 
 resource "tfe_team_notification_configuration" "test" {
@@ -77,9 +82,14 @@ resource "tfe_team" "test" {
   organization = tfe_organization.test.id
 }
 
-resource "tfe_organization_membership" "test" {
-  organization = "my-org-name"
-  email        = "test.member@company.com"
+data "tfe_organization_membership" "test" {
+  organization = tfe_organization.test.name
+  email        = "example@example.com"
+}
+
+resource "tfe_team_organization_member" "test" {
+  team_id                    = tfe_team.test.id
+  organization_membership_id = data.tfe_organization_membership.test.id
 }
 
 resource "tfe_team_notification_configuration" "test" {
