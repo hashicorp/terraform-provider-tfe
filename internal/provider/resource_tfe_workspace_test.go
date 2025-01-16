@@ -2816,6 +2816,8 @@ func TestAccTFEWorkspace_updateWithAutoDestroyAt(t *testing.T) {
 }
 
 func TestAccTFEWorkspace_createWithAutoDestroyDuration(t *testing.T) {
+	skipUnlessAfterDate(t, time.Date(2025, time.February, 16, 0, 0, 0, 0, time.UTC))
+
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -2835,6 +2837,8 @@ func TestAccTFEWorkspace_createWithAutoDestroyDuration(t *testing.T) {
 }
 
 func TestAccTFEWorkspace_updateWithAutoDestroyDuration(t *testing.T) {
+	skipUnlessAfterDate(t, time.Date(2025, time.February, 16, 0, 0, 0, 0, time.UTC))
+
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{

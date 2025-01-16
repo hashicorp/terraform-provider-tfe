@@ -222,6 +222,8 @@ func TestAccTFEWorkspaceDataSource_readAutoDestroyAt(t *testing.T) {
 }
 
 func TestAccTFEWorkspaceDataSource_readAutoDestroyDuration(t *testing.T) {
+	skipUnlessAfterDate(t, time.Date(2025, time.February, 16, 0, 0, 0, 0, time.UTC))
+
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
