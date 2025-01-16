@@ -144,7 +144,7 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Computed: true,
 			},
 
-			"tags": {
+			"effective_tags": {
 				Type:     schema.TypeMap,
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
@@ -342,7 +342,7 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	for _, binding := range effectiveBindings {
 		effectiveTagBindings[binding.Key] = binding.Value
 	}
-	d.Set("tags", effectiveTagBindings)
+	d.Set("effective_tags", effectiveTagBindings)
 
 	// Update the tag names
 	var tagNames []interface{}
