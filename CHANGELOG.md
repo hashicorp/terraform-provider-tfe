@@ -1,5 +1,8 @@
 ## Unreleased
 
+FEATURES:
+* `r/tfe_team_project_access`: Add `variable_sets` attribute to `project_access`, by @mkam [#1565](https://github.com/hashicorp/terraform-provider-tfe/pull/1565)
+
 ## v0.62.0
 
 FEATURES:
