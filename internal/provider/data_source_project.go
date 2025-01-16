@@ -53,12 +53,6 @@ func dataSourceTFEProject() *schema.Resource {
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
-			"tags": {
-				Type:     schema.TypeMap,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-			},
-
 			"effective_tags": {
 				Type:     schema.TypeMap,
 				Computed: true,
@@ -137,7 +131,7 @@ func dataSourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta 
 		d.Set("workspace_ids", workspaces)
 		d.Set("workspace_names", workspaceNames)
 		d.Set("description", proj.Description)
-		d.Set("tags", effectiveTagBindings)
+		d.Set("effective_tags", effectiveTagBindings)
 		d.SetId(proj.ID)
 		return nil
 	}
