@@ -9,6 +9,7 @@
 package provider
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/url"
@@ -143,11 +144,18 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Computed: true,
 			},
 
-			"tag_names": {
-				Type:     schema.TypeSet,
-				Optional: true,
+			"effective_tags": {
+				Type:     schema.TypeMap,
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+
+			"tag_names": {
+				Type:       schema.TypeSet,
+				Optional:   true,
+				Computed:   true,
+				Deprecated: "Use the tags attribute instead. This attribute will be removed in a future provider release.",
+				Elem:       &schema.Schema{Type: schema.TypeString},
 			},
 
 			"terraform_version": {
@@ -319,6 +327,22 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	if workspace.SSHKey != nil {
 		d.Set("ssh_key_id", workspace.SSHKey.ID)
 	}
+
+	effectiveTagBindings := make(map[string]interface{})
+	effectiveBindings, err := config.Client.Workspaces.ListEffectiveTagBindings(ctx, workspace.ID)
+	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+		return fmt.Errorf("Error reading tag bindings for workspace %s: %w", workspace.ID, err)
+	}
+	if err != nil {
+		// This endpoint may not be supported by the configured TFE instance
+		// Initialize to empty slice to prevent range over nil error
+		effectiveBindings = []*tfe.EffectiveTagBinding{}
+	}
+
+	for _, binding := range effectiveBindings {
+		effectiveTagBindings[binding.Key] = binding.Value
+	}
+	d.Set("effective_tags", effectiveTagBindings)
 
 	// Update the tag names
 	var tagNames []interface{}
