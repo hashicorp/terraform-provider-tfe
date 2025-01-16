@@ -519,7 +519,7 @@ func TestAccTFEWorkspaceIDsDataSource_empty(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEWorkspaceIDsDataSourceConfig_empty(rInt),
-				ExpectError: regexp.MustCompile("one of `filter_tags,names,tag_names` must be specified"),
+				ExpectError: regexp.MustCompile("one of `names,tag_filters,tag_names` must be specified"),
 			},
 		},
 	})
@@ -766,7 +766,7 @@ resource "tfe_workspace" "dummy" {
 }
 
 data "tfe_workspace_ids" "good" {
-  filter_tags {
+  tag_filters {
 	  include = {
 		  keyB = "valueB"
 		  keyA = "valueA"
@@ -815,7 +815,7 @@ resource "tfe_workspace" "bar2" {
 }
 
 data "tfe_workspace_ids" "good" {
-  filter_tags {
+  tag_filters {
 	  include = {
 		  keyA = ""
 	  }
@@ -866,7 +866,7 @@ resource "tfe_workspace" "bar2" {
 }
 
 data "tfe_workspace_ids" "good" {
-  filter_tags {
+  tag_filters {
 	  exclude = {
 		  keyA = "*"
 	  }
@@ -918,7 +918,7 @@ resource "tfe_workspace" "dummy" {
 }
 
 data "tfe_workspace_ids" "good" {
-  filter_tags {
+  tag_filters {
 	  include = {
 		  keyB = "valueB"
 	  }

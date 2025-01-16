@@ -26,13 +26,13 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 				Type:         schema.TypeList,
 				Elem:         &schema.Schema{Type: schema.TypeString},
 				Optional:     true,
-				AtLeastOneOf: []string{"filter_tags", "names", "tag_names"},
+				AtLeastOneOf: []string{"tag_filters", "names", "tag_names"},
 			},
 
 			"tag_names": {
 				Type:       schema.TypeList,
 				Elem:       &schema.Schema{Type: schema.TypeString},
-				Deprecated: "Use the tags attribute to search by tags. This attribute will be removed in a future provider release.",
+				Deprecated: "Use the tag_filters attribute to search by tags. This attribute will be removed in a future provider release.",
 				Optional:   true,
 			},
 
@@ -42,7 +42,7 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 				Optional: true,
 			},
 
-			"filter_tags": {
+			"tag_filters": {
 				Type:     schema.TypeList,
 				Optional: true,
 				MinItems: 1,
@@ -172,8 +172,8 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 	}
 
 	excludeTagBindings := make(map[string]string)
-	if ft, ok := d.GetOk("filter_tags"); ok {
-		tagFilters := ft.([]interface{})[0].(map[string]interface{})
+	if tf, ok := d.GetOk("tag_filters"); ok {
+		tagFilters := tf.([]interface{})[0].(map[string]interface{})
 
 		if include, ok := tagFilters["include"].(map[string]interface{}); ok {
 			for key, val := range include {
