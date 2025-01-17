@@ -85,7 +85,6 @@ func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration)
 		}
 
 		result.Triggers = triggers
-
 	}
 
 	if len(v.EmailUsers) == 0 {
