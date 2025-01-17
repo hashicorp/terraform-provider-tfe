@@ -374,12 +374,10 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 			return fmt.Errorf("Error expanding auto destroy during create: %w", err)
 		}
 		options.AutoDestroyAt = autoDestroyAt
-		options.InheritsProjectAutoDestroy = tfe.Bool(false)
 	}
 
 	if v, ok := d.GetOk("auto_destroy_activity_duration"); ok {
 		options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(v.(string))
-		options.InheritsProjectAutoDestroy = tfe.Bool(false)
 	}
 
 	if v, ok := d.GetOk("execution_mode"); ok {
@@ -645,7 +643,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		d.HasChange("description") || d.HasChange("agent_pool_id") ||
 		d.HasChange("global_remote_state") || d.HasChange("structured_run_output_enabled") ||
 		d.HasChange("assessments_enabled") || d.HasChange("project_id") ||
-		hasAutoDestroyAtChange(d) || d.HasChange("auto_destroy_activity_duration") || d.HasChange("inherits_project_auto_destroy") {
+		hasAutoDestroyAtChange(d) || d.HasChange("auto_destroy_activity_duration") {
 		// Create a new options struct.
 		options := tfe.WorkspaceUpdateOptions{
 			Name:                       tfe.String(d.Get("name").(string)),
@@ -712,19 +710,6 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 				options.AutoDestroyActivityDuration = jsonapi.NewNullNullableAttr[string]()
 			} else {
 				options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(duration.(string))
-			}
-		}
-
-		// Reset the inherits field to default if no auto destroy settings are present
-		// if d.GetRawConfig().GetAttr("auto_destroy_at").IsNull() && d.GetRawConfig().GetAttr("auto_destroy_activity_duration").IsNull() {
-		// 	options.InheritsProjectAutoDestroy = tfe.Bool(true)
-		// } else {
-		// 	options.InheritsProjectAutoDestroy = tfe.Bool(false)
-		// }
-
-		if d.HasChange("inherits_project_auto_destroy") {
-			if v, ok := d.GetOkExists("inherits_project_auto_destroy"); ok {
-				options.InheritsProjectAutoDestroy = tfe.Bool(v.(bool))
 			}
 		}
 
@@ -1102,7 +1087,7 @@ func customizeDiffAutoDestroyAt(_ context.Context, d *schema.ResourceDiff) error
 	}
 
 	// if the workspace inherits project auto destroy, we do not refresh the auto_destroy_at
-	if config.GetAttr("inherits_project_auto_destroy").True() && config.GetAttr("auto_destroy_at").IsNull() {
+	if d.GetRawState().GetAttr("inherits_project_auto_destroy").True() && config.GetAttr("auto_destroy_at").IsNull() {
 		return nil
 	}
 
