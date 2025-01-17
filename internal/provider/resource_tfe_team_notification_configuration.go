@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -56,7 +57,7 @@ type modelTFETeamNotificationConfiguration struct {
 
 // modelFromTFETeamNotificationConfiguration builds a modelTFETeamNotificationConfiguration
 // struct from a tfe.TeamNotificationConfiguration value.
-func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration) modelTFETeamNotificationConfiguration {
+func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration) (*modelTFETeamNotificationConfiguration, *diag.Diagnostics) {
 	result := modelTFETeamNotificationConfiguration{
 		ID:              types.StringValue(v.ID),
 		Name:            types.StringValue(v.Name),
@@ -65,21 +66,38 @@ func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration)
 		TeamID:          types.StringValue(v.SubscribableChoice.Team.ID),
 	}
 
-	if emailAddresses, err := types.SetValueFrom(ctx, types.StringType, v.EmailAddresses); err == nil {
+	if len(v.EmailAddresses) == 0 {
+		result.EmailAddresses = types.SetNull(types.StringType)
+	} else {
+		emailAddresses, diags := types.SetValueFrom(ctx, types.StringType, v.EmailAddresses)
+		if diags != nil && diags.HasError() {
+			return nil, &diags
+		}
 		result.EmailAddresses = emailAddresses
 	}
 
 	if len(v.Triggers) == 0 {
 		result.Triggers = types.SetNull(types.StringType)
-	} else if triggers, err := types.SetValueFrom(ctx, types.StringType, v.Triggers); err == nil {
+	} else {
+		triggers, diags := types.SetValueFrom(ctx, types.StringType, v.Triggers)
+		if diags != nil && diags.HasError() {
+			return nil, &diags
+		}
+
 		result.Triggers = triggers
+
 	}
 
-	emailUserIDs := make([]attr.Value, len(v.EmailUsers))
-	for i, emailUser := range v.EmailUsers {
-		emailUserIDs[i] = types.StringValue(emailUser.ID)
+	if len(v.EmailUsers) == 0 {
+		result.EmailUserIDs = types.SetNull(types.StringType)
+	} else {
+		emailUserIDs := make([]attr.Value, len(v.EmailUsers))
+		for i, emailUser := range v.EmailUsers {
+			emailUserIDs[i] = types.StringValue(emailUser.ID)
+		}
+
+		result.EmailUserIDs = types.SetValueMust(types.StringType, emailUserIDs)
 	}
-	result.EmailUserIDs = types.SetValueMust(types.StringType, emailUserIDs)
 
 	if v.Token != "" {
 		result.Token = types.StringValue(v.Token)
@@ -89,7 +107,7 @@ func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration)
 		result.URL = types.StringValue(v.URL)
 	}
 
-	return result
+	return &result, nil
 }
 
 func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -298,6 +316,7 @@ func (r *resourceTFETeamNotificationConfiguration) Create(ctx context.Context, r
 		return
 	} else if len(tnc.EmailUsers) != len(plan.EmailUserIDs.Elements()) {
 		resp.Diagnostics.AddError("Email user IDs produced an inconsistent result", "API returned a different number of email user IDs than were provided in the plan.")
+		return
 	}
 
 	// Restore token from plan because it is write only
@@ -305,7 +324,11 @@ func (r *resourceTFETeamNotificationConfiguration) Create(ctx context.Context, r
 		tnc.Token = plan.Token.ValueString()
 	}
 
-	result := modelFromTFETeamNotificationConfiguration(tnc)
+	result, diags := modelFromTFETeamNotificationConfiguration(tnc)
+	if diags != nil && diags.HasError() {
+		resp.Diagnostics.Append((*diags)...)
+		return
+	}
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
@@ -333,7 +356,11 @@ func (r *resourceTFETeamNotificationConfiguration) Read(ctx context.Context, req
 		tnc.Token = state.Token.ValueString()
 	}
 
-	result := modelFromTFETeamNotificationConfiguration(tnc)
+	result, diags := modelFromTFETeamNotificationConfiguration(tnc)
+	if diags != nil && diags.HasError() {
+		resp.Diagnostics.Append((*diags)...)
+		return
+	}
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
@@ -401,6 +428,7 @@ func (r *resourceTFETeamNotificationConfiguration) Update(ctx context.Context, r
 		return
 	} else if len(tnc.EmailUsers) != len(plan.EmailUserIDs.Elements()) {
 		resp.Diagnostics.AddError("Email user IDs produced an inconsistent result", "API returned a different number of email user IDs than were provided in the plan.")
+		return
 	}
 
 	// Restore token from plan because it is write only
@@ -408,7 +436,11 @@ func (r *resourceTFETeamNotificationConfiguration) Update(ctx context.Context, r
 		tnc.Token = plan.Token.ValueString()
 	}
 
-	result := modelFromTFETeamNotificationConfiguration(tnc)
+	result, diags := modelFromTFETeamNotificationConfiguration(tnc)
+	if diags != nil && diags.HasError() {
+		resp.Diagnostics.Append((*diags)...)
+		return
+	}
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
