@@ -184,7 +184,10 @@ func TestAccTFEWorkspaceDataSource_readAutoDestroyAt(t *testing.T) {
 			},
 			{
 				Config: testAccTFEWorkspaceDataSourceConfig_basicWithAutoDestroy(rInt),
-				Check:  resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "auto_destroy_at", "2100-01-01T00:00:00Z"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "auto_destroy_at", "2100-01-01T00:00:00Z"),
+					resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "inherits_project_auto_destroy", "false"),
+				),
 			},
 		},
 	})
@@ -203,7 +206,10 @@ func TestAccTFEWorkspaceDataSource_readAutoDestroyDuration(t *testing.T) {
 			},
 			{
 				Config: testAccTFEWorkspaceDataSourceConfig_basicWithAutoDestroyDuration(rInt),
-				Check:  resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "auto_destroy_activity_duration", "1d"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "auto_destroy_activity_duration", "1d"),
+					resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "inherits_project_auto_destroy", "false"),
+				),
 			},
 		},
 	})
@@ -312,6 +318,7 @@ resource "tfe_workspace" "foobar" {
   organization    = tfe_organization.foobar.id
   description     = "provider-testing"
   auto_destroy_at = "2100-01-01T00:00:00Z"
+  inherits_project_auto_destroy = false
 }
 
 data "tfe_workspace" "foobar" {
@@ -332,6 +339,7 @@ resource "tfe_workspace" "foobar" {
   organization                   = tfe_organization.foobar.id
   description                    = "provider-testing"
   auto_destroy_activity_duration = "1d"
+  inherits_project_auto_destroy = false
 }
 
 data "tfe_workspace" "foobar" {

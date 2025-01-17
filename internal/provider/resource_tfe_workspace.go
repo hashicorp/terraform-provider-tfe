@@ -158,6 +158,12 @@ func resourceTFEWorkspace() *schema.Resource {
 				Deprecated: "Use resource `tfe_workspace_settings` to modify the workspace `global_remote_state`. `global_remote_state` on `tfe_workspace` is no longer validated properly and will be removed in a future release of the provider.",
 			},
 
+			"inherits_project_auto_destroy": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Computed: true,
+			},
+
 			"remote_state_consumer_ids": {
 				Type:       schema.TypeSet,
 				Optional:   true,
@@ -538,6 +544,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("working_directory", workspace.WorkingDirectory)
 	d.Set("organization", workspace.Organization.Name)
 	d.Set("resource_count", workspace.ResourceCount)
+	d.Set("inherits_project_auto_destroy", workspace.InheritsProjectAutoDestroy)
 
 	if workspace.Links["self-html"] != nil {
 		baseAPI := config.Client.BaseURL()
@@ -578,8 +585,9 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 		if err != nil {
 			return fmt.Errorf("Error reading auto destroy activity duration: %w", err)
 		}
-
-		d.Set("auto_destroy_activity_duration", v)
+		if !workspace.InheritsProjectAutoDestroy {
+			d.Set("auto_destroy_activity_duration", v)
+		}
 	}
 
 	var tagNames []interface{}
@@ -1075,6 +1083,11 @@ func customizeDiffAutoDestroyAt(_ context.Context, d *schema.ResourceDiff) error
 
 	// check if auto_destroy_activity_duration is set in config
 	if !config.GetAttr("auto_destroy_activity_duration").IsNull() {
+		return nil
+	}
+
+	// if the workspace inherits project auto destroy, we do not refresh the auto_destroy_at
+	if d.GetRawState().GetAttr("inherits_project_auto_destroy").True() && config.GetAttr("auto_destroy_at").IsNull() {
 		return nil
 	}
 
