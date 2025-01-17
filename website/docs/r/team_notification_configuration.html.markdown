@@ -114,6 +114,8 @@ The following arguments are supported:
   - `email` available in HCP Terraform or Terraform Enterprise v202005-1 or later
   - `slack`
   - `microsoft-teams` available in HCP Terraform or Terraform Enterprise v202206-1 or later
+- `team_id` - (Required) The ID of the team that owns the notification configuration.
+- `url` - (Required if `destination_type` is `generic`, `microsoft-teams`, or `slack`) The HTTP or HTTPS URL of the notification configuration where notification requests will be made. This value _must not_ be provided if `destination_type` is `email`.
 - `email_addresses` - (Optional) **TFE only** A list of email addresses. This value
   _must not_ be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.
 - `email_user_ids` - (Optional) A list of user IDs. This value _must not_ be provided
@@ -126,8 +128,6 @@ The following arguments are supported:
   This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.
 - `triggers` - (Optional) The array of triggers for which this notification configuration will
   send notifications. Currently, the only valid value is `change_request:created`.
-- `url` - (Required if `destination_type` is `generic`, `microsoft-teams`, or `slack`) The HTTP or HTTPS URL of the notification configuration where notification requests will be made. This value _must not_ be provided if `destination_type` is `email`.
-- `team_id` - (Required) The ID of the team that owns the notification configuration.
 
 ## Attributes Reference
 

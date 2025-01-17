@@ -186,7 +186,7 @@ func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, r
 			},
 
 			"url": schema.StringAttribute{
-				Description: "The HTTP or HTTPS URL where notification requests will be made. This value must not be provided if `destination_type` is `email`.",
+				Description: "The HTTP or HTTPS URL where notification requests will be made. This value must not be provided if `email_addresses` or `email_user_ids` is present, or if `destination_type` is `email`.",
 				Optional:    true,
 				Validators: []validator.String{
 					validators.AttributeRequiredIfValueString(
@@ -269,7 +269,7 @@ func (r *resourceTFETeamNotificationConfiguration) Create(ctx context.Context, r
 	}
 
 	// Add email_addresses set to the options struct
-	emailAddresses := make([]types.String, 0)
+	emailAddresses := make([]types.String, len(plan.EmailAddresses.Elements()))
 	if diags := plan.EmailAddresses.ElementsAs(ctx, &emailAddresses, true); diags != nil && diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return
@@ -362,7 +362,7 @@ func (r *resourceTFETeamNotificationConfiguration) Update(ctx context.Context, r
 	}
 
 	// Add triggers set to the options struct
-	triggers := make([]types.String, 0)
+	triggers := make([]types.String, len(plan.Triggers.Elements()))
 	if diags := plan.Triggers.ElementsAs(ctx, &triggers, true); diags != nil && diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return
@@ -373,7 +373,7 @@ func (r *resourceTFETeamNotificationConfiguration) Update(ctx context.Context, r
 	}
 
 	// Add email_addresses set to the options struct
-	emailAddresses := make([]types.String, 0)
+	emailAddresses := make([]types.String, len(plan.EmailAddresses.Elements()))
 	if diags := plan.EmailAddresses.ElementsAs(ctx, &emailAddresses, true); diags != nil && diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return
@@ -384,7 +384,7 @@ func (r *resourceTFETeamNotificationConfiguration) Update(ctx context.Context, r
 	}
 
 	// Add email_user_ids set to the options struct
-	emailUserIDs := make([]types.String, 0)
+	emailUserIDs := make([]types.String, len(plan.EmailUserIDs.Elements()))
 	if diags := plan.EmailUserIDs.ElementsAs(ctx, &emailUserIDs, true); diags != nil && diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return
