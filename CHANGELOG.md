@@ -1,5 +1,8 @@
 ## Unreleased
 
+FEATURES:
+* **New Resource:** `tfe_team_notification_configuration` is a new resource for managing team notification configurations, by @jfreda ([#1540](https://github.com/hashicorp/terraform-provider-tfe/pull/1540))
+
 ## v0.62.0
 
 FEATURES:
