@@ -7,7 +7,7 @@ description: |-
 
 # tfe_workspace_variable_set
 
-Adds and removes variable sets from a workspace
+Adds and removes a workspace from a variable set's scope.
 
 -> **Note:** `tfe_variable_set` has a deprecated argument `workspace_ids` that should not be used alongside this resource. They attempt to manage the same attachments and are mutually exclusive.
 

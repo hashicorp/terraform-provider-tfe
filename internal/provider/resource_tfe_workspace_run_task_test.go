@@ -182,6 +182,84 @@ func TestAccTFEWorkspaceRunTask_import(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspaceRunTask_Read(t *testing.T) {
+	skipUnlessRunTasksDefined(t)
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create test fixtures
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+	ws := createTempWorkspace(t, tfeClient, org.Name)
+	key := runTasksHMACKey()
+	task := createRunTask(t, tfeClient, org.Name, tfe.RunTaskCreateOptions{
+		Name:    fmt.Sprintf("tst-task-%s", randomString(t)),
+		URL:     runTasksURL(),
+		HMACKey: &key,
+	})
+
+	org_tf := fmt.Sprintf(`data "tfe_organization" "orgtask" { name = %q }`, org.Name)
+
+	create_wstask_tf := fmt.Sprintf(`
+		%s
+		resource "tfe_workspace_run_task" "foobar" {
+			workspace_id      = %q
+			task_id           = %q
+			enforcement_level = "advisory"
+			stage             = "post_plan"
+		}
+		`, org_tf, ws.ID, task.ID)
+
+	delete_wstasks := func() {
+		wstasks, err := tfeClient.WorkspaceRunTasks.List(ctx, ws.ID, nil)
+		if err != nil || wstasks == nil {
+			t.Fatalf("Error listing tasks: %s", err)
+			return
+		}
+		// There shouldn't be more that 25 run tasks so we don't need to worry about pagination
+		for _, wstask := range wstasks.Items {
+			if wstask != nil {
+				if err := tfeClient.WorkspaceRunTasks.Delete(ctx, ws.ID, wstask.ID); err != nil {
+					t.Fatalf("Error deleting workspace task: %s", err)
+				}
+			}
+		}
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamAccessDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: create_wstask_tf,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_workspace_run_task.foobar", "enforcement_level", "advisory"),
+				),
+			},
+			{
+				// Delete the created workspace run task and ensure we can re-create it
+				PreConfig: delete_wstasks,
+				Config:    create_wstask_tf,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_workspace_run_task.foobar", "enforcement_level", "advisory"),
+				),
+			},
+			{
+				// Delete the created workspace run task and ensure we can ignore it if we no longer need to manage it
+				PreConfig: delete_wstasks,
+				Config:    org_tf,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceRunTaskDestroy,
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckTFEWorkspaceRunTaskExists(n string, runTask *tfe.WorkspaceRunTask) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		config := testAccProvider.Meta().(ConfiguredClient)

@@ -1,6 +1,5 @@
 <img alt="Terraform" src="https://www.datocms-assets.com/2885/1629941242-logo-terraform-main.svg" width="600px">
 
-
 # HCP Terraform and Terraform Enterprise Provider
 
 The official Terraform provider for [HCP Terraform and Terraform Enterprise](https://www.hashicorp.com/products/terraform).
@@ -29,7 +28,7 @@ Declare the provider in your configuration and `terraform init` will automatical
 terraform {
   required_providers {
     tfe = {
-      version = "~> 0.58.0"
+      version = "~> 0.62.0"
     }
   }
 }
@@ -45,7 +44,7 @@ The above snippet using `required_providers` is for Terraform 0.13+; if you are 
 
 ```hcl
 provider "tfe" {
-  version = "~> 0.58.0"
+  version = "~> 0.62.0"
   ...
 }
 ```

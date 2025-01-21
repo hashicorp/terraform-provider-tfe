@@ -13,8 +13,6 @@ Provides a workspace resource.
 
 ~> **NOTE:** Setting the execution mode and agent pool affinity directly on the workspace is deprecated in favor of using both [tfe_workspace_settings](workspace_settings) and [tfe_organization_default_settings](organization_default_settings), since they allow more precise control and fully support [agent_pool_allowed_workspaces](agent_pool_allowed_workspaces). Use caution when unsetting `ExecutionMode`, as it now leaves any prior value unmanaged instead of reverting to the old default value of `"remote"`.
 
-~> **NOTE:** Using `GlobalRemoteState` or `RemoteStateConsumerIds` requires using the provider with HCP Terraform or an instance of Terraform Enterprise at least as recent as v202104-1.
-
 ## Example Usage
 
 Basic usage:
@@ -89,7 +87,8 @@ The following arguments are supported:
 * `AssessmentsEnabled` - (Optional) Whether to regularly run health assessments such as drift detection on the workspace. Defaults to `False`.
 * `AutoApply` - (Optional) Whether to automatically apply changes when a Terraform plan is successful. Defaults to `False`.
 * `AutoApplyRunTrigger` - (Optional) Whether to automatically apply changes for runs that were created by run triggers from another workspace. Defaults to `False`.
-* `AutoDestroyAt` - (Optional) A future date/time string at which point all resources in a workspace will be scheduled for deletion. Must be a string in RFC3339 format (e.g. "2100-01-01T00:00:00Z").
+* `AutoDestroyActivityDuration` - (Optional) A duration string of the period of time after workspace activity to automatically schedule an auto-destroy run. Must be of the form `<number><unit>` where allowed unit values are "d" and "h". Conflicts with `AutoDestroyAt`.
+* `AutoDestroyAt` - (Optional) A future date/time string at which point all resources in a workspace will be scheduled for deletion. Must be a string in RFC3339 format (e.g. "2100-01-01T00:00:00Z"). Conflicts with `AutoDestroyActivityDuration`.
 
 ~> **NOTE:** `AutoDestroyAt` is not intended for workspaces containing production resources or long-lived workspaces. Since this attribute is in-part managed by HCP Terraform, using `IgnoreChanges` for this attribute may be preferred.
 
@@ -100,7 +99,7 @@ The following arguments are supported:
   trigger prefixes describe a set of paths which must contain changes for a
   VCS push to trigger a run. If disabled, any push will trigger a run.
 * `ForceDelete` - (Optional) If this attribute is present on a workspace that is being deleted through the provider, it will use the existing force delete API. If this attribute is not present or false it will safe delete the workspace.
-* `GlobalRemoteState` - (Optional) Whether the workspace allows all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (`RemoteStateConsumerIds`).
+* `GlobalRemoteState` - (Optional) **Deprecated** Whether the workspace allows all workspaces in the organization to access its state data during runs. Use [tfe_workspace_settings](workspace_settings) instead.
 * `Operations` - **Deprecated** Whether to use remote execution mode.
   Defaults to `True`. When set to `False`, the workspace will be used for
   state storage only. This value _must not_ be provided if `ExecutionMode` is
@@ -115,7 +114,7 @@ The following arguments are supported:
   is `False`. The provider uses `True` as any workspace provisioned with
   `False` would need to then have a run manually queued out-of-band before
   accepting webhooks.
-* `RemoteStateConsumerIds` - (Optional) The set of workspace IDs set as explicit remote state consumers for the given workspace.
+* `RemoteStateConsumerIds` - (Optional) **Deprecated** The set of workspace IDs set as explicit remote state consumers for the given workspace. Use [tfe_workspace_settings](workspace_settings) instead.
 * `SourceName` - (Optional) A friendly name for the application or client
    creating this workspace. If set, this will be displayed on the workspace as
    "Created via <SOURCE NAME>".
@@ -192,4 +191,4 @@ terraform import tfe_workspace.test ws-CH5in3chf8RJjrVd
 terraform import tfe_workspace.test my-org-name/my-wkspace-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-8e3a1d0fda532ac3731fa67e4959298cca05137574cdd1bee70b1f4d52482ea3 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-2359c8613d3559ab7c7a4c6129993314e7d1492991970cbde73305dbd190c688 -->

@@ -51,10 +51,6 @@ func resourceTFEWorkspace() *schema.Resource {
 				return err
 			}
 
-			if err := validateRemoteState(c, d); err != nil {
-				return err
-			}
-
 			if err := validateTagNames(c, d); err != nil {
 				return err
 			}
@@ -156,16 +152,18 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"global_remote_state": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Computed: true,
+				Type:       schema.TypeBool,
+				Optional:   true,
+				Computed:   true,
+				Deprecated: "Use resource `tfe_workspace_settings` to modify the workspace `global_remote_state`. `global_remote_state` on `tfe_workspace` is no longer validated properly and will be removed in a future release of the provider.",
 			},
 
 			"remote_state_consumer_ids": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Type:       schema.TypeSet,
+				Optional:   true,
+				Computed:   true,
+				Elem:       &schema.Schema{Type: schema.TypeString},
+				Deprecated: "Use resource `tfe_workspace_settings` to modify the workspace `remote_state_consumer_ids`. `remote_state_consumer_ids` on `tfe_workspace` is no longer validated properly on this resource and This attribute will be removed in a future release of the provider.",
 			},
 
 			"assessments_enabled": {
@@ -1029,23 +1027,6 @@ func validateTagNames(_ context.Context, d *schema.ResourceDiff) error {
 			return fmt.Errorf("%q is not a valid tag name. Tag must be one or more characters; can include lowercase letters, numbers, colons, hyphens, and underscores; and must begin and end with a letter or number", tagName)
 		}
 	}
-	return nil
-}
-
-func validateRemoteState(_ context.Context, d *schema.ResourceDiff) error {
-	// If remote state consumers aren't set, the global setting can be either value and it
-	// doesn't matter.
-	_, ok := d.GetOk("remote_state_consumer_ids")
-	if !ok {
-		return nil
-	}
-
-	if globalRemoteState, ok := d.GetOk("global_remote_state"); ok {
-		if globalRemoteState.(bool) {
-			return fmt.Errorf("global_remote_state must be 'false' when setting remote_state_consumer_ids")
-		}
-	}
-
 	return nil
 }
 
