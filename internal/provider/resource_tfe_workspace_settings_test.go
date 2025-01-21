@@ -95,6 +95,34 @@ func TestAccTFEWorkspaceSettings(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspaceWithSettings(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			// Start with local execution
+			{
+				Config: testAccTFEWorkspaceSettingsUnknownIDRemoteState(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(
+						"tfe_workspace_settings.foobar", "id"),
+					resource.TestCheckResourceAttrSet(
+						"tfe_workspace_settings.foobar", "workspace_id",
+					),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEWorkspaceSettingsRemoteState(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
@@ -222,7 +250,7 @@ func testAccCheckTFEWorkspaceSettingsDestroy(s *terraform.State) error {
 	return testAccCheckTFEWorkspaceSettingsDestroyProvider(testAccProvider)(s)
 }
 
-func testAccCheckTFEWorkspaceSettingsDestroyProvider(p *schema.Provider) func(s *terraform.State) error {
+func testAccCheckTFEWorkspaceSettingsDestroyProvider(_ *schema.Provider) func(s *terraform.State) error {
 	return func(s *terraform.State) error {
 		tfeClient, err := getClientUsingEnv()
 		if err != nil {
@@ -254,6 +282,26 @@ func testAccCheckTFEWorkspaceSettingsDestroyProvider(p *schema.Provider) func(s 
 
 		return nil
 	}
+}
+
+func testAccTFEWorkspaceSettingsUnknownIDRemoteState(orgName string) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace" "foobar1" {
+	name = "foobar1"
+	organization = "%s"
+}
+
+resource "tfe_workspace" "foobar2" {
+	name = "foobar2"
+	organization = "%s"
+}
+
+resource "tfe_workspace_settings" "foobar" {
+	workspace_id              = tfe_workspace.foobar1.id
+	global_remote_state       = false
+	remote_state_consumer_ids = [tfe_workspace.foobar2.id]
+}
+`, orgName, orgName)
 }
 
 func testAccTFEWorkspaceSettingsRemoteState(workspaceID, workspaceID2 string) string {
