@@ -6,7 +6,7 @@ DEPRECATIONS:
 
 FEATURES:
 * `r/tfe_project`: Adds `tags` attribute, by @sebasslash [#1543](https://github.com/hashicorp/terraform-provider-tfe/pull/1543)
-* `r/tfe_workspace`: Adds `tags` and `effective_tags` attribute, by @sebasslash [#1543](https://github.com/hashicorp/terraform-provider-tfe/pull/1543)
+* `r/tfe_workspace`: Adds `tags` and `effective_tags` attributes, by @sebasslash [#1543](https://github.com/hashicorp/terraform-provider-tfe/pull/1543)
 * `d/tfe_project`: Adds the `effective_tags` attribute, by @sebasslash [#1543](https://github.com/hashicorp/terraform-provider-tfe/pull/1543)
 * `d/tfe_workspace`: Adds the `effective_tags` attribute which reflects all effective tags computed on the workspace, by @sebasslash [#1543](https://github.com/hashicorp/terraform-provider-tfe/pull/1543)
 * `d/tfe_workspace_ids`: Adds the `tag_filters` attribute which filters the list of workspace IDs specified by the `include` or `exclude` fields, by @sebasslash [#1543](https://github.com/hashicorp/terraform-provider-tfe/pull/1543)
