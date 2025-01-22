@@ -112,71 +112,6 @@ func TestAccTFEProject_update(t *testing.T) {
 	})
 }
 
-func TestAccTFEProject_ignoreAdditionalTags(t *testing.T) {
-	skipUnlessBeta(t)
-
-	project := &tfe.Project{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEProjectDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccTFEProject_ignoreAdditionalTags(rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEProjectExists(
-						"tfe_project.foobar", project),
-					testAccCheckTFEProjectAttributes(project),
-					resource.TestCheckResourceAttr(
-						"tfe_project.foobar", "name", "projecttest"),
-					resource.TestCheckResourceAttr(
-						"tfe_project.foobar", "description", "project description"),
-					resource.TestCheckResourceAttr(
-						"tfe_project.foobar", "tags.%", "2"),
-				),
-			},
-			{
-				Config: testAccTFEProject_ignoreAdditionalTags(rInt),
-				PreConfig: func() {
-					organization := fmt.Sprintf("tst-terraform-%d", rInt)
-					config := testAccProvider.Meta().(ConfiguredClient)
-					projects, err := config.Client.Projects.List(ctx, organization, &tfe.ProjectListOptions{Name: "projecttest"})
-					if err != nil {
-						t.Fatalf("failed reading projecttest: %v", err)
-					}
-					if len(projects.Items) == 0 {
-						t.Fatalf("expected to find projecttest, for %s", organization)
-					}
-
-					_, err = config.Client.Projects.AddTagBindings(ctx, projects.Items[0].ID, tfe.ProjectAddTagBindingsOptions{
-						TagBindings: []*tfe.TagBinding{{
-							Key:   "additional",
-							Value: "tag",
-						}},
-					})
-					if err != nil {
-						t.Fatalf("failed adding tag binding via API call: %v", err)
-					}
-				},
-				PlanOnly: true,
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEProjectExists(
-						"tfe_project.foobar", project),
-					testAccCheckTFEProjectAttributes(project),
-					resource.TestCheckResourceAttr(
-						"tfe_project.foobar", "name", "projecttest"),
-					resource.TestCheckResourceAttr(
-						"tfe_project.foobar", "description", "project description"),
-					resource.TestCheckResourceAttr(
-						"tfe_project.foobar", "tags.%", "2"),
-				),
-			},
-		},
-	})
-}
-
 func TestAccTFEProject_tagBindings(t *testing.T) {
 	skipUnlessBeta(t)
 
@@ -370,25 +305,6 @@ resource "tfe_project" "foobar" {
   name = "projecttest"
   description = "project description"
   tags = {}
-}`, rInt)
-}
-
-func testAccTFEProject_ignoreAdditionalTags(rInt int) string {
-	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
-resource "tfe_project" "foobar" {
-  organization = tfe_organization.foobar.name
-  name = "projecttest"
-  description = "project description"
-  tags = {
-	  keyA = "valueA"
-	  keyB = "valueB"
-  }
-  ignore_additional_tags = true
 }`, rInt)
 }
 

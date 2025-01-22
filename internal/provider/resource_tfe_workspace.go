@@ -233,9 +233,8 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"ignore_additional_tag_names": {
-				Type:       schema.TypeBool,
-				Optional:   true,
-				Deprecated: "Use the ignore_additional_tags attribute to ignore tags added outside of configuration. This attribute will be removed in a future release of the provider.",
+				Type:     schema.TypeBool,
+				Optional: true,
 			},
 
 			"tags": {
@@ -244,11 +243,6 @@ func resourceTFEWorkspace() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-			},
-
-			"ignore_additional_tags": {
-				Type:     schema.TypeBool,
-				Optional: true,
 			},
 
 			"effective_tags": {
@@ -560,12 +554,8 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	bindings := make(map[string]interface{})
-	configBindings := d.Get("tags").(map[string]interface{})
 	for _, binding := range tagBindings {
-		_, ok := configBindings[binding.Key]
-		if ok || !d.Get("ignore_additional_tags").(bool) {
-			bindings[binding.Key] = binding.Value
-		}
+		bindings[binding.Key] = binding.Value
 	}
 
 	effectiveTagBindings, err := config.Client.Workspaces.ListEffectiveTagBindings(ctx, workspace.ID)
@@ -803,7 +793,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 
 			// If we have no tag bindings and this a deliberate change in config
 			// directly delete the existing bindings.
-			if len(options.TagBindings) == 0 && !d.Get("ignore_additional_tags").(bool) {
+			if len(options.TagBindings) == 0 {
 				err := config.Client.Workspaces.DeleteAllTagBindings(ctx, id)
 				if err != nil {
 					return fmt.Errorf("Error removing tag bindings from workspace %s: %w", id, err)

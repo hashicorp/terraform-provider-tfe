@@ -63,11 +63,6 @@ func resourceTFEProject() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
-
-			"ignore_additional_tags": {
-				Type:     schema.TypeBool,
-				Optional: true,
-			},
 		},
 	}
 }
@@ -121,12 +116,8 @@ func resourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	bindings := make(map[string]interface{})
-	configBindings := d.Get("tags").(map[string]interface{})
 	for _, binding := range tagBindings {
-		_, ok := configBindings[binding.Key]
-		if ok || !d.Get("ignore_additional_tags").(bool) {
-			bindings[binding.Key] = binding.Value
-		}
+		bindings[binding.Key] = binding.Value
 	}
 
 	d.Set("name", project.Name)
@@ -153,7 +144,7 @@ func resourceTFEProjectUpdate(ctx context.Context, d *schema.ResourceData, meta 
 			})
 		}
 
-		if len(options.TagBindings) == 0 && !d.Get("ignore_additional_tags").(bool) {
+		if len(options.TagBindings) == 0 {
 			err := config.Client.Projects.DeleteAllTagBindings(ctx, d.Id())
 			if err != nil {
 				return diag.Errorf("Error removing tag bindings from project %s: %v", d.Id(), err)

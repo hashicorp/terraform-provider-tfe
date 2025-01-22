@@ -53,11 +53,6 @@ The following arguments are supported:
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `description` - (Optional) A description for the project.
 * `tags` - (Optional) A map of key-value tags to add to the project.
-* `ignore_additional_tags` - (Optional) Explicitly ignores `tags`
-_not_ defined by config so they will not be overwritten by the configured
-tags. This creates exceptional behavior in Terraform with respect
-to `tags` and is not recommended. This value must be applied before it
-will be used.
 
 ## Attributes Reference
 
