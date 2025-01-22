@@ -63,7 +63,6 @@ func TestAccTFEProjectDataSource_caseInsensitive(t *testing.T) {
 }
 
 func TestAccTFEProjectDataSource_basicWithAutoDestroy(t *testing.T) {
-	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	tfeClient, err := getClientUsingEnv()
