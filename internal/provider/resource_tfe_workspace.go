@@ -1086,11 +1086,6 @@ func customizeDiffAutoDestroyAt(_ context.Context, d *schema.ResourceDiff) error
 		return nil
 	}
 
-	// if the workspace inherits project auto destroy, we do not refresh the auto_destroy_at
-	if d.GetRawState().GetAttr("inherits_project_auto_destroy").True() && config.GetAttr("auto_destroy_at").IsNull() {
-		return nil
-	}
-
 	// if config auto_destroy_at is unset but it exists in state, clear it out
 	// required because auto_destroy_at is computed and we want to set it to null
 	if _, ok := d.GetOk("auto_destroy_at"); ok && config.GetAttr("auto_destroy_at").IsNull() {
@@ -1132,6 +1127,9 @@ func flattenAutoDestroyAt(a jsonapi.NullableAttr[time.Time]) (*string, error) {
 func hasAutoDestroyAtChange(d *schema.ResourceData) bool {
 	state := d.GetRawState()
 	if state.IsNull() {
+		if state.GetAttr("inherits_project_auto_destroy").True() {
+			return false
+		}
 		return d.HasChange("auto_destroy_at")
 	}
 
