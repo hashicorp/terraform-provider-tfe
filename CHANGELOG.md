@@ -1,7 +1,7 @@
 ## Unreleased
 
 DEPRECATIONS:
-* `r/tfe_workspace`: `tag_names` has been deprecated in favor of `tags` which manage key-value tags for a workspace.
+* `r/tfe_workspace`: `tag_names` has been deprecated in favor of `tags`, which manages key-value tags for a workspace.
 * `d/tfe_workspace_ids`: `tag_names` has been deprecated in favor of `tag_filters` to query for workspaces by key-value tags.
 
 FEATURES:
