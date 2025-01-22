@@ -138,6 +138,7 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewResourceWorkspaceSettings,
 		NewSAMLSettingsResource,
 		NewStackResource,
+		NewTeamNotificationConfigurationResource,
 		NewTestVariableResource,
 		NewWorkspaceRunTaskResource,
 	}
