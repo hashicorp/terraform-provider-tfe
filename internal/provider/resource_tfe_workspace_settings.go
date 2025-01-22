@@ -179,7 +179,7 @@ func (m validateSelfReference) PlanModifySet(_ context.Context, req planmodifier
 	}
 
 	// Check if the workspace ID is in the set
-	if slices.Contains(remoteStateConsumerIDs, workspaceID.ValueString()) {
+	if !workspaceID.IsUnknown() && slices.Contains(remoteStateConsumerIDs, workspaceID.ValueString()) {
 		resp.Diagnostics.AddError("Invalid remote_state_consumer_ids", "workspace_id cannot be in the set of remote_state_consumer_ids")
 	}
 }
