@@ -10,6 +10,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -51,6 +52,12 @@ func dataSourceTFEProject() *schema.Resource {
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
+
+			"effective_tags": {
+				Type:     schema.TypeMap,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
 		},
 	}
 }
@@ -77,39 +84,56 @@ func dataSourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta 
 
 	for _, proj := range l.Items {
 		// Case-insensitive uniqueness is enforced in TFC
-		if strings.EqualFold(proj.Name, projName) {
-			// Only now include workspaces to cut down on request load.
-			readOptions := &tfe.WorkspaceListOptions{
-				ProjectID: proj.ID,
-			}
-			var workspaces []interface{}
-			var workspaceNames []interface{}
-			for {
-				wl, err := config.Client.Workspaces.List(ctx, orgName, readOptions)
-				if err != nil {
-					return diag.Errorf("Error retrieving workspaces: %v", err)
-				}
-
-				for _, workspace := range wl.Items {
-					workspaces = append(workspaces, workspace.ID)
-					workspaceNames = append(workspaceNames, workspace.Name)
-				}
-
-				// Exit the loop when we've seen all pages.
-				if wl.CurrentPage >= wl.TotalPages {
-					break
-				}
-
-				// Update the page number to get the next page.
-				readOptions.PageNumber = wl.NextPage
-			}
-
-			d.Set("workspace_ids", workspaces)
-			d.Set("workspace_names", workspaceNames)
-			d.Set("description", proj.Description)
-			d.SetId(proj.ID)
-			return nil
+		if !strings.EqualFold(proj.Name, projName) {
+			continue
 		}
+		// Only now include workspaces to cut down on request load.
+		readOptions := &tfe.WorkspaceListOptions{
+			ProjectID: proj.ID,
+		}
+		var workspaces []interface{}
+		var workspaceNames []interface{}
+		for {
+			wl, err := config.Client.Workspaces.List(ctx, orgName, readOptions)
+			if err != nil {
+				return diag.Errorf("Error retrieving workspaces: %v", err)
+			}
+
+			for _, workspace := range wl.Items {
+				workspaces = append(workspaces, workspace.ID)
+				workspaceNames = append(workspaceNames, workspace.Name)
+			}
+
+			// Exit the loop when we've seen all pages.
+			if wl.CurrentPage >= wl.TotalPages {
+				break
+			}
+
+			// Update the page number to get the next page.
+			readOptions.PageNumber = wl.NextPage
+		}
+
+		effectiveTagBindings := make(map[string]interface{})
+		effectiveBindings, err := config.Client.Projects.ListEffectiveTagBindings(ctx, proj.ID)
+		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+			return diag.Errorf("Error retrieving effective tag bindings for project %s: %v", proj.ID, err)
+		}
+		if err != nil {
+			// This endpoint may not be supported against a given TFE instance.
+			// Initialize to empty slice to avoid ranging over nil
+			effectiveBindings = []*tfe.EffectiveTagBinding{}
+		}
+
+		for _, binding := range effectiveBindings {
+			effectiveTagBindings[binding.Key] = binding.Value
+		}
+
+		d.Set("workspace_ids", workspaces)
+		d.Set("workspace_names", workspaceNames)
+		d.Set("description", proj.Description)
+		d.Set("effective_tags", effectiveTagBindings)
+		d.SetId(proj.ID)
+		return nil
 	}
 	return diag.Errorf("could not find project %s/%s", orgName, projName)
 }

@@ -96,6 +96,91 @@ func TestAccTFEProject_update(t *testing.T) {
 						"tfe_project.foobar", "description", "project description updated"),
 				),
 			},
+			{
+				Config: testAccTFEProject_updateRemoveBindings(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEProjectExists(
+						"tfe_project.foobar", project),
+					testAccCheckTFEProjectAttributesUpdated(project),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "name", "project updated"),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "description", "project description updated"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEProject_tagBindings(t *testing.T) {
+	skipUnlessBeta(t)
+
+	project := &tfe.Project{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEProjectDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEProject_basicTagBindings(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEProjectExists(
+						"tfe_project.foobar", project),
+					testAccCheckTFEProjectAttributes(project),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "name", "projecttest"),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "description", "project description"),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "tags.%", "2"),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "tags.keyA", "valueA"),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "tags.keyB", "valueB"),
+				),
+			},
+			{
+				Config: testAccTFEProject_basicTagBindingsAddOne(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEProjectExists(
+						"tfe_project.foobar", project),
+					testAccCheckTFEProjectAttributes(project),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "name", "projecttest"),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "description", "project description"),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "tags.%", "3"),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "tags.keyA", "valueA"),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "tags.keyB", "valueB"),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "tags.keyC", "valueC"),
+				),
+			},
+			{
+				Config: testAccTFEProject_basicTagBindingsRemoveAll(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEProjectExists(
+						"tfe_project.foobar", project),
+					testAccCheckTFEProjectAttributes(project),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "name", "projecttest"),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "description", "project description"),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "tags.%", "0"),
+				),
+			},
 		},
 	})
 }
@@ -143,6 +228,20 @@ resource "tfe_project" "foobar" {
 }`, rInt)
 }
 
+func testAccTFEProject_updateRemoveBindings(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "foobar" {
+  organization = tfe_organization.foobar.name
+  name = "project updated"
+  description = "project description updated"
+}`, rInt)
+}
+
 func testAccTFEProject_basic(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
@@ -154,6 +253,58 @@ resource "tfe_project" "foobar" {
   organization = tfe_organization.foobar.name
   name = "projecttest"
   description = "project description"
+}`, rInt)
+}
+
+func testAccTFEProject_basicTagBindings(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "foobar" {
+  organization = tfe_organization.foobar.name
+  name = "projecttest"
+  description = "project description"
+  tags = {
+	  keyA = "valueA"
+	  keyB = "valueB"
+  }
+}`, rInt)
+}
+
+func testAccTFEProject_basicTagBindingsAddOne(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "foobar" {
+  organization = tfe_organization.foobar.name
+  name = "projecttest"
+  description = "project description"
+  tags = {
+	  keyA = "valueA"
+	  keyB = "valueB"
+	  keyC = "valueC"
+  }
+}`, rInt)
+}
+
+func testAccTFEProject_basicTagBindingsRemoveAll(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "foobar" {
+  organization = tfe_organization.foobar.name
+  name = "projecttest"
+  description = "project description"
+  tags = {}
 }`, rInt)
 }
 

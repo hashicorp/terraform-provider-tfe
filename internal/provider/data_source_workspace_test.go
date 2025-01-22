@@ -126,6 +126,37 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspaceDataSource_tagBindings(t *testing.T) {
+	skipUnlessBeta(t)
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+	workspaceName := fmt.Sprintf("workspace-test-%d", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspaceDataSourceConfig_tagBindings(rInt),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "id"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "name", workspaceName),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "organization", orgName),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "effective_tags.%", "2"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "effective_tags.env", "prod"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "effective_tags.team", "engineering"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEWorkspaceDataSourceWithTriggerPatterns(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
@@ -191,6 +222,8 @@ func TestAccTFEWorkspaceDataSource_readAutoDestroyAt(t *testing.T) {
 }
 
 func TestAccTFEWorkspaceDataSource_readAutoDestroyDuration(t *testing.T) {
+	skipUnlessAfterDate(t, time.Date(2025, time.February, 16, 0, 0, 0, 0, time.UTC))
+
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -265,7 +298,7 @@ resource "tfe_workspace" "foobar" {
   file_triggers_enabled = true
   queue_all_runs        = false
   speculative_enabled   = true
-	assessments_enabled       = false
+  assessments_enabled   = false
   tag_names             = ["modules", "shared"]
   terraform_version     = "0.11.1"
   trigger_prefixes      = ["/modules", "/shared"]
@@ -279,6 +312,30 @@ data "tfe_workspace" "foobar" {
   organization = tfe_workspace.foobar.organization
   depends_on   = [tfe_workspace.foobar]
 }`, rInt, rInt, aart)
+}
+
+func testAccTFEWorkspaceDataSourceConfig_tagBindings(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name                  = "workspace-test-%d"
+  organization          = tfe_organization.foobar.id
+  description           = "provider-testing"
+  tags = {
+	  env  = "prod"
+	  team = "engineering"
+  }
+}
+
+data "tfe_workspace" "foobar" {
+  name         = tfe_workspace.foobar.name
+  organization = tfe_workspace.foobar.organization
+  depends_on   = [tfe_workspace.foobar]
+}`, rInt, rInt)
 }
 
 func testAccTFEWorkspaceDataSourceConfig_basic(rInt int) string {
