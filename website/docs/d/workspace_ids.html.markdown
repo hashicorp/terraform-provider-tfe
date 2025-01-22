@@ -74,7 +74,7 @@ The following arguments are supported. At least one of `names` or `tag_names` mu
 
     To select _all_ workspaces for an organization, provide a list with a single
     asterisk, like `["*"]`. The asterisk also supports partial matching on prefix and/or suffix, like `[*-prod]`, `[test-*]`, `[*dev*]`.
-* `tag_filters` - (Optional) A set of key-value tag filters to search for workspaces.
+* `tag_filters` - (Optional) A set of key-value tags used to filter the search results.
 * `tag_names` - (Optional) **Deprecated** A list of tag names to search for.
 * `exclude_tags` - (Optional) **Deprecated** A list of tag names to exclude when searching.
 * `organization` - (Required) Name of the organization.
