@@ -1,5 +1,10 @@
 ## Unreleased
 
+## v.0.63.0
+
+BUG FIXES:
+* `r/tfe_workspace_settings`: Allow multiple unknown values in `remote_state_consumer_ids`, by @brandonc [#1569](https://github.com/hashicorp/terraform-provider-tfe/pull/1569)
+
 FEATURES:
 
 * `r/tfe_project`: Add `auto_destroy_activity_duration` field to the project resource, which automatically propagates auto-destroy settings to workspaces [1550](https://github.com/hashicorp/terraform-provider-tfe/pull/1550)
