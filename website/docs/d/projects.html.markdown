@@ -30,4 +30,4 @@ The following arguments are supported:
   * `name` - Name of the project.
   * `description` - Description of the organization.
   * `organization` - Name of the organization.
-
+  * `auto_destroy_activity_duration` - A duration string for all workspaces in the project, representing time after each workspace's activity when an auto-destroy run will be triggered.
