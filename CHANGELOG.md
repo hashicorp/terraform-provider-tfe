@@ -11,7 +11,6 @@ BUG FIXES:
 * `r/tfe_workspace_settings`: Allow multiple unknown values in `remote_state_consumer_ids`, by @brandonc [#1569](https://github.com/hashicorp/terraform-provider-tfe/pull/1569)
 
 FEATURES:
-
 * **New Resource:** `tfe_team_notification_configuration` is a new resource for managing team notification configurations, by @jfreda ([#1540](https://github.com/hashicorp/terraform-provider-tfe/pull/1540))
 
 ## v0.62.0
