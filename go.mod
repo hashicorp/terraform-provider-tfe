@@ -61,7 +61,7 @@ require (
 require (
 	github.com/hashicorp/terraform-plugin-framework-timetypes v0.3.0
 	github.com/hashicorp/terraform-plugin-log v0.9.0
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.9.0
 	go.uber.org/mock v0.4.0
 )
 

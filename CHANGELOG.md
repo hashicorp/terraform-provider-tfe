@@ -1,5 +1,10 @@
 ## Unreleased
 
+FEATURES:
+
+* `r/tfe_project`: Add `auto_destroy_activity_duration` field to the project resource, which automatically propagates auto-destroy settings to workspaces [1550](https://github.com/hashicorp/terraform-provider-tfe/pull/1550)
+* `d/tfe_project`: Add `auto_destroy_activity_duration` field to the project datasource [1550](https://github.com/hashicorp/terraform-provider-tfe/pull/1550)
+
 ## v.0.63.0
 
 BUG FIXES:
@@ -7,8 +12,6 @@ BUG FIXES:
 
 FEATURES:
 
-* `r/tfe_project`: Add `auto_destroy_activity_duration` field to the project resource, which automatically propagates auto-destroy settings to workspaces [1550](https://github.com/hashicorp/terraform-provider-tfe/pull/1550)
-* `d/tfe_project`: Add `auto_destroy_activity_duration` field to the project datasource [1550](https://github.com/hashicorp/terraform-provider-tfe/pull/1550)
 * **New Resource:** `tfe_team_notification_configuration` is a new resource for managing team notification configurations, by @jfreda ([#1540](https://github.com/hashicorp/terraform-provider-tfe/pull/1540))
 
 ## v0.62.0
