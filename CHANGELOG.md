@@ -5,6 +5,9 @@ FEATURES:
 * `r/tfe_project`: Add `auto_destroy_activity_duration` field to the project resource, which automatically propagates auto-destroy settings to workspaces [1550](https://github.com/hashicorp/terraform-provider-tfe/pull/1550)
 * `d/tfe_project`: Add `auto_destroy_activity_duration` field to the project datasource [1550](https://github.com/hashicorp/terraform-provider-tfe/pull/1550)
 
+BUG FIXES:
+* `r/tfe_stack`: Fix serialization issue when using github app installation within vcs_repo block, by @mjyocca [#1572](https://github.com/hashicorp/terraform-provider-tfe/pull/1572)
+
 ## v.0.63.0
 
 BUG FIXES:
