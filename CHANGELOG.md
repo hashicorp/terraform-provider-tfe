@@ -1,5 +1,8 @@
 ## Unreleased
 
+BUG FIXES:
+* `r/tfe_stack`: Fix serialization issue when using github app installation within vcs_repo block, by @mjyocca [#1572](https://github.com/hashicorp/terraform-provider-tfe/pull/1572)
+
 ## v.0.63.0
 
 BUG FIXES:
