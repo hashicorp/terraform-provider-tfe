@@ -63,6 +63,10 @@ func resourceTFEWorkspace() *schema.Resource {
 				return err
 			}
 
+			if err := customizeDiffAutoDestroyActivityDuration(c, d); err != nil {
+				return err
+			}
+
 			if d.HasChange("name") {
 				if err := d.SetNewComputed("html_url"); err != nil {
 					return err
@@ -124,6 +128,7 @@ func resourceTFEWorkspace() *schema.Resource {
 
 			"auto_destroy_activity_duration": {
 				Type:          schema.TypeString,
+				Computed:      true,
 				Optional:      true,
 				ConflictsWith: []string{"auto_destroy_at"},
 				ValidateFunc:  validation.StringMatch(regexp.MustCompile(`^\d{1,4}[dh]$`), "must be 1-4 digits followed by d or h"),
@@ -160,8 +165,9 @@ func resourceTFEWorkspace() *schema.Resource {
 
 			"inherits_project_auto_destroy": {
 				Type:     schema.TypeBool,
-				Optional: true,
+				Optional: false,
 				Computed: true,
+				Required: false,
 			},
 
 			"remote_state_consumer_ids": {
@@ -585,9 +591,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 		if err != nil {
 			return fmt.Errorf("Error reading auto destroy activity duration: %w", err)
 		}
-		if !workspace.InheritsProjectAutoDestroy {
-			d.Set("auto_destroy_activity_duration", v)
-		}
+		d.Set("auto_destroy_activity_duration", v)
 	}
 
 	var tagNames []interface{}
@@ -1095,6 +1099,19 @@ func customizeDiffAutoDestroyAt(_ context.Context, d *schema.ResourceDiff) error
 	// required because auto_destroy_at is computed and we want to set it to null
 	if _, ok := d.GetOk("auto_destroy_at"); ok && config.GetAttr("auto_destroy_at").IsNull() {
 		return d.SetNew("auto_destroy_at", nil)
+	}
+
+	return nil
+}
+
+func customizeDiffAutoDestroyActivityDuration(_ context.Context, d *schema.ResourceDiff) error {
+	inheritsProjectAutoDestroy, ok := d.GetOk("inherits_project_auto_destroy")
+	if ok && inheritsProjectAutoDestroy.(bool) {
+		return nil
+	}
+
+	if _, ok := d.GetOk("auto_destroy_activity_duration"); ok && d.GetRawConfig().GetAttr("auto_destroy_activity_duration").IsNull() {
+		return d.SetNew("auto_destroy_activity_duration", nil)
 	}
 
 	return nil
