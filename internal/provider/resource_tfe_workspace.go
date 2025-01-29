@@ -592,6 +592,8 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 			return fmt.Errorf("Error reading auto destroy activity duration: %w", err)
 		}
 		d.Set("auto_destroy_activity_duration", v)
+	} else {
+		d.Set("auto_destroy_activity_duration", nil)
 	}
 
 	var tagNames []interface{}
