@@ -103,7 +103,7 @@ issues:
   - linters:
       - staticcheck
     path: resource_tfe_workspace_run_task\.go
-    text: "SA1019: v.Stage is deprecated: Use Stages property instead"    
+    text: "SA1019: v.Stage is deprecated: Use Stages property instead"
 linters-settings:
   # errcheck:
   #   # https://github.com/kisielk/errcheck#excluding-functions
@@ -125,7 +125,6 @@ linters-settings:
       - singleCaseSwitch
       - ifElseChain
       - nestingReduce
-      - sloppyTestFuncName
   revive:
     # see https://github.com/mgechev/revive#available-rules for details.
     ignore-generated-header: false #recommended in their configuration

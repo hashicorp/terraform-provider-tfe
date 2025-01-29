@@ -21,10 +21,10 @@ runs:
       shell: bash
 
     - name: Install golangci-lint
-      run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/0b5709648c8ba9780e821faf16c5c2bb3262ce3e/install.sh | sh -s -- -b $(go env GOPATH)/bin $GOLANGCILINT_VERSION
+      run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/c1149695535fda62f6b574bc55dfbc333693647e/install.sh | sh -s -- -b $(go env GOPATH)/bin $GOLANGCILINT_VERSION
       shell: bash
       env:
-        GOLANGCILINT_VERSION: v1.55.2
+        GOLANGCILINT_VERSION: v1.63.4
 
     - run: make lint
       shell: bash

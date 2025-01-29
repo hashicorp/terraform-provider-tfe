@@ -420,10 +420,10 @@ func readRunPositionInWorkspaceQueue(tfeClient *tfe.Client, runID string, wsID s
 
 // perform exponential backoff based on the iteration and
 // limited by the provided min and max durations in milliseconds.
-func backoff(min, max float64, iter int) time.Duration {
-	backoff := math.Pow(2, float64(iter)/5) * min
-	if backoff > max {
-		backoff = max
+func backoff(minVal float64, maxVal float64, iter int) time.Duration {
+	backoff := math.Pow(2, float64(iter)/5) * minVal
+	if backoff > maxVal {
+		backoff = maxVal
 	}
 	return time.Duration(backoff) * time.Millisecond
 }
