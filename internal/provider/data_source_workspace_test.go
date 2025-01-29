@@ -318,7 +318,6 @@ resource "tfe_workspace" "foobar" {
   organization    = tfe_organization.foobar.id
   description     = "provider-testing"
   auto_destroy_at = "2100-01-01T00:00:00Z"
-  inherits_project_auto_destroy = false
 }
 
 data "tfe_workspace" "foobar" {
@@ -339,7 +338,6 @@ resource "tfe_workspace" "foobar" {
   organization                   = tfe_organization.foobar.id
   description                    = "provider-testing"
   auto_destroy_activity_duration = "1d"
-  inherits_project_auto_destroy = false
 }
 
 data "tfe_workspace" "foobar" {
