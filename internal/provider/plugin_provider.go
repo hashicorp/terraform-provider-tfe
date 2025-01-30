@@ -22,8 +22,10 @@ type pluginProviderServer struct {
 	tfeClient          *tfe.Client
 	organization       string
 
-	resourceRouter
 	dataSourceRouter map[string]func(ConfiguredClient) tfprotov5.DataSourceServer
+	ephemeralValuesRouter
+	functionRouter
+	resourceRouter
 }
 
 type errUnsupportedDataSource string
@@ -36,6 +38,18 @@ type errUnsupportedResource string
 
 func (e errUnsupportedResource) Error() string {
 	return "unsupported resource: " + string(e)
+}
+
+type errUnsupportedFunction string
+
+func (e errUnsupportedFunction) Error() string {
+	return "unsupported function: " + string(e)
+}
+
+type errUnsupportedEphemeralValue string
+
+func (e errUnsupportedEphemeralValue) Error() string {
+	return "unsupported ephemeral value: " + string(e)
 }
 
 type providerMeta struct {
@@ -124,6 +138,57 @@ func (p *pluginProviderServer) ReadDataSource(ctx context.Context, req *tfprotov
 	return ds(ConfiguredClient{p.tfeClient, p.organization}).ReadDataSource(ctx, req)
 }
 
+type ephemeralValuesRouter map[string]tfprotov5.EphemeralResourceServer
+
+func (r ephemeralValuesRouter) ValidateEphemeralResourceConfig(ctx context.Context, req *tfprotov5.ValidateEphemeralResourceConfigRequest) (*tfprotov5.ValidateEphemeralResourceConfigResponse, error) {
+	res, ok := r[req.TypeName]
+	if !ok {
+		return nil, errUnsupportedEphemeralValue(req.TypeName)
+	}
+	return res.ValidateEphemeralResourceConfig(ctx, req)
+}
+
+func (r ephemeralValuesRouter) OpenEphemeralResource(ctx context.Context, req *tfprotov5.OpenEphemeralResourceRequest) (*tfprotov5.OpenEphemeralResourceResponse, error) {
+	res, ok := r[req.TypeName]
+	if !ok {
+		return nil, errUnsupportedEphemeralValue(req.TypeName)
+	}
+	return res.OpenEphemeralResource(ctx, req)
+}
+
+func (r ephemeralValuesRouter) RenewEphemeralResource(ctx context.Context, req *tfprotov5.RenewEphemeralResourceRequest) (*tfprotov5.RenewEphemeralResourceResponse, error) {
+	res, ok := r[req.TypeName]
+	if !ok {
+		return nil, errUnsupportedEphemeralValue(req.TypeName)
+	}
+	return res.RenewEphemeralResource(ctx, req)
+}
+
+func (r ephemeralValuesRouter) CloseEphemeralResource(ctx context.Context, req *tfprotov5.CloseEphemeralResourceRequest) (*tfprotov5.CloseEphemeralResourceResponse, error) {
+	res, ok := r[req.TypeName]
+	if !ok {
+		return nil, errUnsupportedEphemeralValue(req.TypeName)
+	}
+	return res.CloseEphemeralResource(ctx, req)
+}
+
+type functionRouter map[string]tfprotov5.FunctionServer
+
+func (r functionRouter) CallFunction(ctx context.Context, req *tfprotov5.CallFunctionRequest) (*tfprotov5.CallFunctionResponse, error) {
+	res, ok := r[req.Name]
+	if !ok {
+		return nil, errUnsupportedFunction(req.Name)
+	}
+
+	return res.CallFunction(ctx, req)
+}
+
+func (r functionRouter) GetFunctions(ctx context.Context, req *tfprotov5.GetFunctionsRequest) (*tfprotov5.GetFunctionsResponse, error) {
+	return &tfprotov5.GetFunctionsResponse{
+		Functions: map[string]*tfprotov5.Function{},
+	}, nil
+}
+
 type resourceRouter map[string]tfprotov5.ResourceServer
 
 func (r resourceRouter) ValidateResourceTypeConfig(ctx context.Context, req *tfprotov5.ValidateResourceTypeConfigRequest) (*tfprotov5.ValidateResourceTypeConfigResponse, error) {
@@ -172,6 +237,10 @@ func (r resourceRouter) ImportResourceState(ctx context.Context, req *tfprotov5.
 		return nil, errUnsupportedResource(req.TypeName)
 	}
 	return res.ImportResourceState(ctx, req)
+}
+
+func (r resourceRouter) MoveResourceState(ctx context.Context, req *tfprotov5.MoveResourceStateRequest) (*tfprotov5.MoveResourceStateResponse, error) {
+	return &tfprotov5.MoveResourceStateResponse{}, nil
 }
 
 // PluginProviderServer returns the implementation of an interface for a lower
@@ -255,6 +324,7 @@ func PluginProviderServer() tfprotov5.ProviderServer {
 		dataSourceRouter: map[string]func(ConfiguredClient) tfprotov5.DataSourceServer{
 			"tfe_outputs": newDataSourceOutputs,
 		},
+		ephemeralValuesRouter: map[string]tfprotov5.EphemeralResourceServer{},
 	}
 }
 
