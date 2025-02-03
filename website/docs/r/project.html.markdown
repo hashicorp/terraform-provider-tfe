@@ -34,6 +34,7 @@ The following arguments are supported:
     *  TFE versions v202405-1 and later support between 3-40 characters
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `description` - (Optional) A description for the project.
+* `auto_destroy_activity_duration` - A duration string for all workspaces in the project, representing time after each workspace's activity when an auto-destroy run will be triggered.
 
 ## Attributes Reference
 

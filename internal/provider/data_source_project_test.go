@@ -62,6 +62,34 @@ func TestAccTFEProjectDataSource_caseInsensitive(t *testing.T) {
 	})
 }
 
+func TestAccTFEProjectDataSource_basicWithAutoDestroy(t *testing.T) {
+	skipIfEnterprise(t)
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEProjectDataSourceConfigWithAutoDestroy(rInt, org.Name, "3d"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"data.tfe_project.foobar", "name", fmt.Sprintf("project-test-%d", rInt)),
+					resource.TestCheckResourceAttr(
+						"data.tfe_project.foobar", "auto_destroy_activity_duration", "3d"),
+				),
+			},
+		},
+	})
+}
+
 func testAccTFEProjectDataSourceConfig(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
@@ -111,4 +139,19 @@ data "tfe_project" "foobar" {
     tfe_project.foobar
   ]
 }`, rInt, rInt, rInt)
+}
+
+func testAccTFEProjectDataSourceConfigWithAutoDestroy(rInt int, orgName string, duration string) string {
+	return fmt.Sprintf(`
+resource "tfe_project" "foobar" {
+  name         = "project-test-%d"
+  description  = "project description"
+  organization = "%s"
+  auto_destroy_activity_duration = "%s"
+}
+
+data "tfe_project" "foobar" {
+  name         = tfe_project.foobar.name
+  organization = tfe_project.foobar.organization
+}`, rInt, orgName, duration)
 }
