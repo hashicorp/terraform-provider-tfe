@@ -94,6 +94,20 @@ func resourceTFETeamProjectAccess() *schema.Resource {
 								false,
 							),
 						},
+
+						"variable_sets": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+							ValidateFunc: validation.StringInSlice(
+								[]string{
+									string(tfe.ProjectVariableSetsPermissionNone),
+									string(tfe.ProjectVariableSetsPermissionRead),
+									string(tfe.ProjectVariableSetsPermissionWrite),
+								},
+								false,
+							),
+						},
 					},
 				},
 			},
@@ -234,6 +248,10 @@ func resourceTFETeamProjectAccessCreate(ctx context.Context, d *schema.ResourceD
 		options.ProjectAccess.Teams = tfe.ProjectTeamsPermission(tfe.ProjectTeamsPermissionType(v.(string)))
 	}
 
+	if v, ok := d.GetOk("project_access.0.variable_sets"); ok {
+		options.ProjectAccess.VariableSets = tfe.ProjectVariableSetsPermission(tfe.ProjectVariableSetsPermissionType(v.(string)))
+	}
+
 	if v, ok := d.GetOk("workspace_access.0.state_versions"); ok {
 		options.WorkspaceAccess.StateVersions = tfe.WorkspaceStateVersionsPermission(tfe.WorkspaceStateVersionsPermissionType(v.(string)))
 	}
@@ -311,11 +329,11 @@ func resourceTFETeamProjectAccessRead(ctx context.Context, d *schema.ResourceDat
 		d.Set("project_id", "")
 	}
 
-	// These two fields are only available in HCP Terraform and TFE v202308-1 and later
 	if tmAccess.ProjectAccess != nil {
 		projectAccess := []map[string]interface{}{{
-			"settings": tmAccess.ProjectAccess.ProjectSettingsPermission,
-			"teams":    tmAccess.ProjectAccess.ProjectTeamsPermission,
+			"settings":      tmAccess.ProjectAccess.ProjectSettingsPermission,
+			"teams":         tmAccess.ProjectAccess.ProjectTeamsPermission,
+			"variable_sets": tmAccess.ProjectAccess.ProjectVariableSetsPermission,
 		}}
 
 		if err := d.Set("project_access", projectAccess); err != nil {
@@ -368,6 +386,13 @@ func resourceTFETeamProjectAccessUpdate(ctx context.Context, d *schema.ResourceD
 		if teams, ok := d.GetOk("project_access.0.teams"); ok {
 			projectTeamsPermissionType := tfe.ProjectTeamsPermissionType(teams.(string))
 			options.ProjectAccess.Teams = &projectTeamsPermissionType
+		}
+	}
+
+	if d.HasChange("project_access.0.variable_sets") {
+		if variableSets, ok := d.GetOk("project_access.0.variable_sets"); ok {
+			projectVariableSetsPermissionType := tfe.ProjectVariableSetsPermissionType(variableSets.(string))
+			options.ProjectAccess.VariableSets = &projectVariableSetsPermissionType
 		}
 	}
 

@@ -17,7 +17,6 @@ import (
 
 func TestAccTFETeamProjectAccess(t *testing.T) {
 	tmAccess := &tfe.TeamProjectAccess{}
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	for _, access := range []tfe.TeamProjectAccessType{tfe.TeamProjectAccessAdmin, tfe.TeamProjectAccessMaintain, tfe.TeamProjectAccessWrite, tfe.TeamProjectAccessRead} {
 		resource.Test(t, resource.TestCase{
@@ -26,7 +25,7 @@ func TestAccTFETeamProjectAccess(t *testing.T) {
 			CheckDestroy: testAccCheckTFETeamProjectAccessDestroy,
 			Steps: []resource.TestStep{
 				{
-					Config: testAccTFETeamProjectAccess(rInt, access),
+					Config: testAccTFETeamProjectAccess(rand.New(rand.NewSource(time.Now().UnixNano())).Int(), access),
 					Check: resource.ComposeTestCheckFunc(
 						testAccCheckTFETeamProjectAccessExists(
 							"tfe_team_project_access.foobar", tmAccess),
@@ -72,6 +71,32 @@ func TestAccTFETeamProjectCustomAccess(t *testing.T) {
 		},
 	})
 }
+
+func TestAccTFETeamProjectCustomAccess_with_project_variable_sets(t *testing.T) {
+	skipUnlessBeta(t)
+	tmAccess := &tfe.TeamProjectAccess{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	access := tfe.TeamProjectAccessCustom
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamProjectAccessDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeamProjectCustomAccess_with_project_variable_sets(rInt, access),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFETeamProjectAccessExists(
+						"tfe_team_project_access.custom_foobar", tmAccess),
+					testAccCheckTFETeamProjectAccessAttributesAccessIs(tmAccess, access),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "access", string(access)),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "project_access.0.variable_sets", "read"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFETeamProjectAccess_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -120,6 +145,36 @@ func TestAccTFETeamProjectCustomAccess_import(t *testing.T) {
 					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.move", "true"),
 					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.delete", "false"),
 					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.run_tasks", "false"),
+				),
+			},
+			{
+				ResourceName:      "tfe_team_project_access.custom_foobar",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccTFETeamProjectCustomAccess_import_with_project_variable_set(t *testing.T) {
+	skipUnlessBeta(t)
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	tmAccess := &tfe.TeamProjectAccess{}
+	access := tfe.TeamProjectAccessCustom
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFETeamProjectAccessDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeamProjectCustomAccess_with_project_variable_sets(rInt, access),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFETeamProjectAccessExists(
+						"tfe_team_project_access.custom_foobar", tmAccess),
+					testAccCheckTFETeamProjectAccessAttributesAccessIs(tmAccess, access),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "access", string(access)),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "project_access.0.variable_sets", "read"),
 				),
 			},
 			{
@@ -183,6 +238,61 @@ func TestAccTFETeamProjectCustomAccess_full_update(t *testing.T) {
 	})
 }
 
+func TestAccTFETeamProjectCustomAccess_full_update_with_project_variable_sets(t *testing.T) {
+	skipUnlessBeta(t)
+	tmAccess := &tfe.TeamProjectAccess{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	access := tfe.TeamProjectAccessCustom
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeamProjectCustomAccess_with_project_variable_sets(rInt, access),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFETeamProjectAccessExists(
+						"tfe_team_project_access.custom_foobar", tmAccess),
+					testAccCheckTFETeamProjectAccessAttributesAccessIs(tmAccess, access),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "access", string(access)),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "project_access.0.settings", "delete"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "project_access.0.teams", "manage"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "project_access.0.variable_sets", "read"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.state_versions", "write"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.sentinel_mocks", "read"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.runs", "read"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.variables", "write"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.create", "true"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.locking", "true"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.move", "true"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.delete", "false"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.run_tasks", "false"),
+				),
+			},
+			{
+				Config: testAccTFETeamProjectCustomAccess_full_update_with_project_variable_sets(rInt, access),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFETeamProjectAccessExists(
+						"tfe_team_project_access.custom_foobar", tmAccess),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "access", string(access)),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "project_access.0.settings", "read"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "project_access.0.teams", "none"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "project_access.0.variable_sets", "write"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.state_versions", "read"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.sentinel_mocks", "none"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.runs", "apply"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.variables", "read"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.create", "false"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.locking", "false"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.move", "false"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.delete", "true"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.run_tasks", "true"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFETeamProjectCustomAccess_partial_update(t *testing.T) {
 	tmAccess := &tfe.TeamProjectAccess{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -223,6 +333,63 @@ func TestAccTFETeamProjectCustomAccess_partial_update(t *testing.T) {
 					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.delete", "true"),
 					// unchanged access levels
 					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "project_access.0.teams", "manage"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.state_versions", "write"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.sentinel_mocks", "read"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.variables", "write"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.create", "true"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.locking", "true"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.move", "true"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.delete", "true"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.run_tasks", "false"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFETeamProjectCustomAccess_partial_update_with_project_variable_sets(t *testing.T) {
+	skipUnlessBeta(t)
+	tmAccess := &tfe.TeamProjectAccess{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	access := tfe.TeamProjectAccessCustom
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeamProjectCustomAccess_with_project_variable_sets(rInt, access),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFETeamProjectAccessExists(
+						"tfe_team_project_access.custom_foobar", tmAccess),
+					testAccCheckTFETeamProjectAccessAttributesAccessIs(tmAccess, access),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "access", string(access)),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "project_access.0.settings", "delete"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "project_access.0.teams", "manage"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "project_access.0.variable_sets", "read"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.state_versions", "write"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.sentinel_mocks", "read"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.variables", "write"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.create", "true"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.locking", "true"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.move", "true"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.delete", "false"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.run_tasks", "false"),
+				),
+			},
+			{
+				Config: testAccTFETeamProjectCustomAccess_partial_update(rInt, access),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFETeamProjectAccessExists(
+						"tfe_team_project_access.custom_foobar", tmAccess),
+					testAccCheckTFETeamProjectAccessAttributesAccessIs(tmAccess, access),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "access", string(access)),
+					// changed access levels
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "project_access.0.settings", "read"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.delete", "true"),
+					// unchanged access levels
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "project_access.0.teams", "manage"),
+					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "project_access.0.variable_sets", "read"),
 					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.state_versions", "write"),
 					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.sentinel_mocks", "read"),
 					resource.TestCheckResourceAttr("tfe_team_project_access.custom_foobar", "workspace_access.0.variables", "write"),
@@ -376,6 +543,47 @@ resource "tfe_team_project_access" "custom_foobar" {
 }`, rInt, access)
 }
 
+func testAccTFETeamProjectCustomAccess_with_project_variable_sets(rInt int, access tfe.TeamProjectAccessType) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar_2" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_team" "foobar_2" {
+  name         = "team-test"
+  organization = tfe_organization.foobar_2.id
+}
+
+resource "tfe_project" "foobar_2" {
+  name         = "projecttest"
+  organization = tfe_organization.foobar_2.id
+}
+
+resource "tfe_team_project_access" "custom_foobar" {
+  access       = "%s"
+  team_id      = tfe_team.foobar_2.id
+  project_id   = tfe_project.foobar_2.id
+  project_access {
+    settings      = "delete"
+    teams         = "manage"
+    variable_sets = "read"
+  }
+  workspace_access {
+    state_versions = "write"
+    sentinel_mocks = "read"
+    runs           = "read"
+    variables      = "write"
+    create         = true
+    locking        = true
+    move           = true
+    delete         = false
+    run_tasks      = false
+  }
+
+}`, rInt, access)
+}
+
 func testAccTFETeamProjectCustomAccess_full_update(rInt int, access tfe.TeamProjectAccessType) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar_2" {
@@ -400,6 +608,46 @@ resource "tfe_team_project_access" "custom_foobar" {
   project_access {
     settings = "read"
     teams    = "none"
+  }
+  workspace_access {
+    state_versions = "read"
+    sentinel_mocks = "none"
+    runs           = "apply"
+    variables      = "read"
+    create         = false
+    locking        = false
+    move           = false
+    delete         = true
+    run_tasks      = true
+  }
+}`, rInt, access)
+}
+
+func testAccTFETeamProjectCustomAccess_full_update_with_project_variable_sets(rInt int, access tfe.TeamProjectAccessType) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar_2" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_team" "foobar_2" {
+  name         = "team-test"
+  organization = tfe_organization.foobar_2.id
+}
+
+resource "tfe_project" "foobar_2" {
+  name         = "projecttest"
+  organization = tfe_organization.foobar_2.id
+}
+
+resource "tfe_team_project_access" "custom_foobar" {
+  access       = "%s"
+  team_id      = tfe_team.foobar_2.id
+  project_id   = tfe_project.foobar_2.id
+  project_access {
+    settings      = "read"
+    teams         = "none"
+    variable_sets = "write"
   }
   workspace_access {
     state_versions = "read"

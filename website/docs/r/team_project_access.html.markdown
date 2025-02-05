@@ -50,6 +50,7 @@ The following permissions apply to the project itself.
 |---------------------|---------------------------------------------|
 | `settings`          | The permission to grant for the project's settings. Default: `read`. Valid strings: `read`, `update`, or `delete` |
 | `teams`             | The permission to grant for the project's teams. Default: `none`, Valid strings: `none`, `read`, or `manage` |
+| `variable_sets`     | The permission to grant for the project's variable sets. Default: `none`, Valid strings: `none`, `read`, or `write` |
 
 </n>
 </n>
@@ -89,8 +90,9 @@ resource "tfe_team_project_access" "custom" {
   project_id   = tfe_project.test.id
 
   project_access {
-    settings = "read"
-    teams    = "none"
+    settings      = "read"
+    teams         = "none"
+    variable_sets = "write"
   }
   workspace_access {
     state_versions = "write"
