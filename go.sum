@@ -74,6 +74,8 @@ github.com/hashicorp/go-slug v0.16.4 h1:kI0mOUVjbBsyocwO29pZIQzzkBnfQNdU4eqlUpNd
 github.com/hashicorp/go-slug v0.16.4/go.mod h1:THWVTAXwJEinbsp4/bBRcmbaO5EYNLTqxbG4tZ3gCYQ=
 github.com/hashicorp/go-tfe v1.75.0 h1:7dixINN0rOmNo4Vpe/6aVCbF0j4bQpSVzw64CSLBTe8=
 github.com/hashicorp/go-tfe v1.75.0/go.mod h1:IyJtCSk6TxidVAWcZeEgFzc/6fDDjinf21wyaBBc2mg=
+github.com/hashicorp/go-tfe v1.75.1-0.20250210225844-d114b5d76004 h1:3BwbVozz6xQQEcdizD7inM35fCvFtNV/QNov69M2LqY=
+github.com/hashicorp/go-tfe v1.75.1-0.20250210225844-d114b5d76004/go.mod h1:0y+AMmGlixZulyaEWAFu/pwLC0PQmY6XYnKDGODytps=
 github.com/hashicorp/go-uuid v1.0.0/go.mod h1:6SBZvOh/SIDV7/2o3Jml5SYk/TvGqwFJ/bN7x4byOro=
 github.com/hashicorp/go-uuid v1.0.3 h1:2gKiV6YVmrJ1i2CKKa9obLvRieoRGviZFL26PcT/Co8=
 github.com/hashicorp/go-uuid v1.0.3/go.mod h1:6SBZvOh/SIDV7/2o3Jml5SYk/TvGqwFJ/bN7x4byOro=
@@ -87,6 +89,8 @@ github.com/hashicorp/hcl/v2 v2.23.0 h1:Fphj1/gCylPxHutVSEOf2fBOh1VE4AuLV7+kbJf3q
 github.com/hashicorp/hcl/v2 v2.23.0/go.mod h1:62ZYHrXgPoX8xBnzl8QzbWq4dyDsDtfCRgIq1rbJEvA=
 github.com/hashicorp/jsonapi v1.3.2 h1:gP3fX2ZT7qXi+PbwieptzkspIohO2kCSiBUvUTBAbMs=
 github.com/hashicorp/jsonapi v1.3.2/go.mod h1:kWfdn49yCjQvbpnvY1dxxAuAFzISwrrMDQOcu6NsFoM=
+github.com/hashicorp/jsonapi v1.4.1 h1:U6CZvnS70Sg7im0kpfhWAoF3NasLumaMndQhEWniHZA=
+github.com/hashicorp/jsonapi v1.4.1/go.mod h1:kWfdn49yCjQvbpnvY1dxxAuAFzISwrrMDQOcu6NsFoM=
 github.com/hashicorp/logutils v1.0.0 h1:dLEQVugN8vlakKOUE3ihGLTZJRB4j+M2cdTm/ORI65Y=
 github.com/hashicorp/logutils v1.0.0/go.mod h1:QIAnNjmIWmVIIkWDTG1z5v++HQmx9WQRO+LraFDTW64=
 github.com/hashicorp/terraform-exec v0.22.0 h1:G5+4Sz6jYZfRYUCg6eQgDsqTzkNXV+fP8l+uRmZHj64=

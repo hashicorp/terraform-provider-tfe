@@ -258,6 +258,11 @@ resource "tfe_organization" "foobar" {
   email = "admin@company.com"
 }
 
+resource "tfe_agent_pool" "foobar" {
+  name = "agent-pool-test"
+  organization = tfe_organization.foobar.name
+}
+
 resource "tfe_project" "foobar" {
   name = "project-test"
   organization = tfe_organization.foobar.name
@@ -265,6 +270,8 @@ resource "tfe_project" "foobar" {
 
 resource "tfe_organization_default_settings" "foobar" {
   organization       = tfe_organization.foobar.name
+  default_execution_mode = "agent"
+  default_agent_pool_id = tfe_agent_pool.foobar.id
   default_project_id = tfe_project.foobar.id
 }`, rInt)
 }
