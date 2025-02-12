@@ -97,6 +97,11 @@ func TestAccTFEOrganizationDefaultSettings_project(t *testing.T) {
 					testAccCheckTFEOrganizationDefaultProjectIDExists(org),
 				),
 			},
+			{
+				// Update the default project back to the original default project in order
+				// to be able to destroy the project created in the previous step.
+				Config: testAccTFEOrganizationDefaultSettings_project_update(rInt),
+			},
 		},
 	})
 }
@@ -273,5 +278,35 @@ resource "tfe_organization_default_settings" "foobar" {
   default_execution_mode = "agent"
   default_agent_pool_id = tfe_agent_pool.foobar.id
   default_project_id = tfe_project.foobar.id
+}`, rInt)
+}
+
+func testAccTFEOrganizationDefaultSettings_project_update(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_agent_pool" "foobar" {
+  name         = "agent-pool-test"
+  organization = tfe_organization.foobar.name
+}
+
+resource "tfe_project" "foobar" {
+  name         = "project-test"
+  organization = tfe_organization.foobar.name
+}
+
+data "tfe_project" "original" {
+  name         = "Default Project"
+  organization = tfe_organization.foobar.name
+}
+
+resource "tfe_organization_default_settings" "foobar" {
+  organization       = tfe_organization.foobar.name
+  default_execution_mode = "agent"
+  default_agent_pool_id = tfe_agent_pool.foobar.id
+  default_project_id = data.tfe_project.original.id
 }`, rInt)
 }
