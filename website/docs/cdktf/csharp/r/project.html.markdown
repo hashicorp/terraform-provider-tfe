@@ -46,6 +46,7 @@ The following arguments are supported:
     *  TFE versions v202405-1 and later support between 3-40 characters
 * `Organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `Description` - (Optional) A description for the project.
+* `AutoDestroyActivityDuration` - A duration string for all workspaces in the project, representing time after each workspace's activity when an auto-destroy run will be triggered.
 
 ## Attributes Reference
 
@@ -61,4 +62,4 @@ Projects can be imported; use `<PROJECT ID>` as the import ID. For example:
 terraform import tfe_project.test prj-niVoeESBXT8ZREhr
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-43a63826c3cef967034969841a29eab7e340b22c271c86f196fdfaa7f4ba39c9 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-befaa18bc6eb885ab6d87f984dacca7d79c9c43738c087905260f265ea57dc5d -->
