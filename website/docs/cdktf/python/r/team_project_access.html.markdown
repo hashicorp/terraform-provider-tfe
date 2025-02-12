@@ -61,6 +61,7 @@ The following permissions apply to the project itself.
 |---------------------|---------------------------------------------|
 | `settings`          | The permission to grant for the project's settings. Default: `read`. Valid strings: `read`, `update`, or `delete` |
 | `teams`             | The permission to grant for the project's teams. Default: `none`, Valid strings: `none`, `read`, or `manage` |
+| `variable_sets`     | The permission to grant for the project's variable sets. Default: `none`, Valid strings: `none`, `read`, or `write` |
 
 </n>
 </n>
@@ -104,7 +105,8 @@ class MyConvertedCode(cdktf.TerraformStack):
             access="custom",
             project_access=[TeamProjectAccessProjectAccess(
                 settings="read",
-                teams="none"
+                teams="none",
+                variable_sets="write"
             )
             ],
             project_id=cdktf.Token.as_string(tfe_project_test.id),
@@ -137,4 +139,4 @@ example:
 terraform import tfe_team_project_access.admin tprj-2pmtXpZa4YzVMTPi
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-70d51a3488cdf5b0f4c0f82652aa131c7657aa59a3694f18dcc5814c39bab829 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-9d287e81f7a933c07074422fa33873c0864ee9399463d646b8c6c4a8dda3dfca -->

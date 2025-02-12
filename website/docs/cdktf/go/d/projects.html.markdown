@@ -26,8 +26,8 @@ type myConvertedCode struct {
 func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	dataTfeProjects.NewDataTfeProjects(this, jsii.String("all"), map[string]*string{
-		"organization": jsii.String("my-org-name"),
+	dataTfeProjects.NewDataTfeProjects(this, jsii.String("all"), &dataTfeProjectsConfig{
+		organization: jsii.String("my-org-name"),
 	})
 	return this
 }
@@ -46,6 +46,6 @@ The following arguments are supported:
   * `Name` - Name of the project.
   * `Description` - Description of the organization.
   * `Organization` - Name of the organization.
+  * `AutoDestroyActivityDuration` - A duration string for all workspaces in the project, representing time after each workspace's activity when an auto-destroy run will be triggered.
 
-
-<!-- cache-key: cdktf-0.17.0-pre.15 input-98a90539531e97fa5e4034996187e685dd605e9a2a8a2d3a58acca240f7dc197 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-80f7374bb86183375fd75ccdf9e337a9635c8ca4a605c4f1544be31f69bcced8 -->
