@@ -2,13 +2,20 @@
 
 FEATURES:
 
+* `r/tfe_workspace_run`: Allow configuration without `apply` and `destroy` blocks, by @tmatilai [#1604](https://github.com/hashicorp/terraform-provider-tfe/pull/1604)
+
+## v.0.64.0
+
+FEATURES:
+
 * `r/tfe_project`: Add `auto_destroy_activity_duration` field to the project resource, which automatically propagates auto-destroy settings to workspaces [1550](https://github.com/hashicorp/terraform-provider-tfe/pull/1550)
 * `d/tfe_project`: Add `auto_destroy_activity_duration` field to the project datasource [1550](https://github.com/hashicorp/terraform-provider-tfe/pull/1550)
 * `r/tfe_team_project_access`: Add `variable_sets` attribute to `project_access`, by @mkam [#1565](https://github.com/hashicorp/terraform-provider-tfe/pull/1565)
-* `r/tfe_workspace_run`: Allow configuration without `apply` and `destroy` blocks, by @tmatilai [#1604](https://github.com/hashicorp/terraform-provider-tfe/pull/1604)
 
 BUG FIXES:
 * `r/tfe_stack`: Fix serialization issue when using github app installation within vcs_repo block, by @mjyocca [#1572](https://github.com/hashicorp/terraform-provider-tfe/pull/1572)
+
+* `r/tfe_workspace_settings`: Prevent fetching of all workspaces as the `remote_state_consumer_ids` when `global_remote_state` is set to true, by @uk1288 [#1606](https://github.com/hashicorp/terraform-provider-tfe/pull/1606)
 
 ## v.0.63.0
 

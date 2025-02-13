@@ -40,6 +40,6 @@ The following arguments are supported:
   * `name` - Name of the project.
   * `description` - Description of the organization.
   * `organization` - Name of the organization.
+  * `auto_destroy_activity_duration` - A duration string for all workspaces in the project, representing time after each workspace's activity when an auto-destroy run will be triggered.
 
-
-<!-- cache-key: cdktf-0.17.0-pre.15 input-98a90539531e97fa5e4034996187e685dd605e9a2a8a2d3a58acca240f7dc197 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-80f7374bb86183375fd75ccdf9e337a9635c8ca4a605c4f1544be31f69bcced8 -->

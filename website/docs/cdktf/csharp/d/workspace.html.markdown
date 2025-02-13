@@ -53,6 +53,7 @@ In addition to all arguments above, the following attributes are exported:
 * `AssessmentsEnabled` - (Available only in HCP Terraform) Indicates whether health assessments such as drift detection are enabled for the workspace.
 * `FileTriggersEnabled` - Indicates whether runs are triggered based on the changed files in a VCS push (if `True`) or always triggered on every push (if `False`).
 * `GlobalRemoteState` - (Optional) Whether the workspace should allow all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (determined by the `RemoteStateConsumerIds` argument).
+* `InheritsProjectAutoDestroy` - Indicates whether this workspace inherits project auto destroy settings.
 * `RemoteStateConsumerIds` - (Optional) A set of workspace IDs that will be set as the remote state consumers for the given workspace. Cannot be used if `GlobalRemoteState` is set to `True`.
 * `Operations` - Indicates whether the workspace is using remote execution mode. Set to `False` to switch execution mode to local. `True` by default.
 * `PolicyCheckFailures` - The number of policy check failures from the latest run.
@@ -90,4 +91,4 @@ The `VcsRepo` block contains:
 * `OauthTokenId` - OAuth token ID of the configured VCS connection.
 * `TagsRegex` - A regular expression used to trigger a Workspace run for matching Git tags.
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-ae8f9f76e2d23dc67ab5c3690201b7bf88a8d93dc83db02352e0f31425999200 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-d80e2cf72aa52f98270a38620225ac1ef8a4810885e13dedc294ad2c1d21c880 -->

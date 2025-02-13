@@ -178,6 +178,7 @@ In addition to all arguments above, the following attributes are exported:
 * `id` - The workspace ID.
 * `resourceCount` - The number of resources managed by the workspace.
 * `htmlUrl` - The URL to the browsable HTML overview of the workspace.
+* `inheritsProjectAutoDestroy` - Indicates whether this workspace inherits project auto destroy settings.
 
 ## Import
 
@@ -192,4 +193,4 @@ terraform import tfe_workspace.test ws-CH5in3chf8RJjrVd
 terraform import tfe_workspace.test my-org-name/my-wkspace-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-2359c8613d3559ab7c7a4c6129993314e7d1492991970cbde73305dbd190c688 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-4b1344d6931127aac5b21f2c92904baad7e55cce5d725e27e7c534c19ba0af5f -->

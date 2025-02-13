@@ -357,13 +357,13 @@ func (r *workspaceSettings) workspaceSettingsModelFromTFEWorkspace(ws *tfe.Works
 
 	result.RemoteStateConsumerIDs = types.SetNull(types.StringType)
 
-	_, remoteStateConsumerIDs, err := readWorkspaceStateConsumers(ws.ID, r.config.Client)
-	if err != nil {
-		log.Printf("[ERROR] Error reading remote state consumers for workspace %s: %s", ws.ID, err)
-		return nil
-	}
-
 	if !ws.GlobalRemoteState {
+		_, remoteStateConsumerIDs, err := readWorkspaceStateConsumers(ws.ID, r.config.Client)
+		if err != nil {
+			log.Printf("[ERROR] Error reading remote state consumers for workspace %s: %s", ws.ID, err)
+			return nil
+		}
+
 		remoteStateConsumerIDValues, diags := types.SetValueFrom(ctx, types.StringType, remoteStateConsumerIDs)
 		if diags.HasError() {
 			log.Printf("[ERROR] Error reading remote state consumers for workspace %s: %v", ws.ID, diags)
