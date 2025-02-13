@@ -97,6 +97,10 @@ func TestAccTFEOrganizationDefaultSettings_project(t *testing.T) {
 					testAccCheckTFEOrganizationDefaultProjectIDExists(org),
 				),
 			},
+			{
+				// Reset to the original default project to destroy the previously created one.
+				Config: testAccTFEOrganizationDefaultSettings_project_update(rInt),
+			},
 		},
 	})
 }
@@ -136,6 +140,10 @@ func TestAccTFEOrganizationDefaultSettings_update(t *testing.T) {
 				),
 			},
 			{
+				// Reset to the original default project to destroy the previously created one.
+				Config: testAccTFEOrganizationDefaultSettings_project_update(rInt),
+			},
+			{
 				Config: testAccTFEOrganizationDefaultSettings_local(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
@@ -166,7 +174,10 @@ func TestAccTFEOrganizationDefaultSettings_import(t *testing.T) {
 			{
 				Config: testAccTFEOrganizationDefaultSettings_remote(rInt),
 			},
-
+			{
+				// Reset to the original default project to destroy the previously created one.
+				Config: testAccTFEOrganizationDefaultSettings_project_update(rInt),
+			},
 			{
 				ResourceName:      "tfe_organization_default_settings.foobar",
 				ImportState:       true,
@@ -213,9 +224,15 @@ resource "tfe_organization" "foobar" {
   email = "admin@company.com"
 }
 
+resource "tfe_project" "foobar" {
+  name = "project-test"
+  organization = tfe_organization.foobar.name
+}
+
 resource "tfe_organization_default_settings" "foobar" {
   organization = tfe_organization.foobar.name
   default_execution_mode = "remote"
+  default_project_id = tfe_project.foobar.id
 }`, rInt)
 }
 
@@ -273,5 +290,31 @@ resource "tfe_organization_default_settings" "foobar" {
   default_execution_mode = "agent"
   default_agent_pool_id = tfe_agent_pool.foobar.id
   default_project_id = tfe_project.foobar.id
+}`, rInt)
+}
+
+func testAccTFEOrganizationDefaultSettings_project_update(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+resource "tfe_agent_pool" "foobar" {
+  name         = "agent-pool-test"
+  organization = tfe_organization.foobar.name
+}
+resource "tfe_project" "foobar" {
+  name         = "project-test"
+  organization = tfe_organization.foobar.name
+}
+data "tfe_project" "original" {
+  name         = "Default Project"
+  organization = tfe_organization.foobar.name
+}
+resource "tfe_organization_default_settings" "foobar" {
+  organization       = tfe_organization.foobar.name
+  default_execution_mode = "agent"
+  default_agent_pool_id = tfe_agent_pool.foobar.id
+  default_project_id = data.tfe_project.original.id
 }`, rInt)
 }
