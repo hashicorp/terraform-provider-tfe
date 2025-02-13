@@ -113,7 +113,7 @@ func TestAccTFEWorkspaceRun_withBothApplyAndDestroyBlocks(t *testing.T) {
 	})
 }
 
-func TestAccTFEWorkspaceRun_invalidParams(t *testing.T) {
+func TestAccTFEWorkspaceRun_withNoApplyOrDestroyBlock(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	tfeClient, err := getClientUsingEnv()
@@ -124,14 +124,32 @@ func TestAccTFEWorkspaceRun_invalidParams(t *testing.T) {
 	organization, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
+	parentWorkspace, _ := setupWorkspacesWithConfig(t, tfeClient, rInt, organization.Name, "test-fixtures/basic-config")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+		},
+		Providers: testAccProviders,
+		CheckDestroy: resource.ComposeTestCheckFunc(
+			testAccCheckTFEWorkspaceRunDestroy(parentWorkspace.ID, 0),
+		),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspaceRun_noApplyOrDestroyBlockProvided(organization.Name, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceRunDoesNotExist("tfe_workspace_run.ws_run_parent"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspaceRun_invalidParams(t *testing.T) {
 	invalidCases := []struct {
 		Config      string
 		ExpectError *regexp.Regexp
 	}{
-		{
-			Config:      testAccTFEWorkspaceRun_noApplyOrDestroyBlockProvided(organization.Name, rInt),
-			ExpectError: regexp.MustCompile("\"apply\": one of `apply,destroy` must be specified"),
-		},
 		{
 			Config:      testAccTFEWorkspaceRun_noWorkspaceProvided(),
 			ExpectError: regexp.MustCompile(`The argument "workspace_id" is required, but no definition was found`),
@@ -249,6 +267,30 @@ func testAccCheckTFEWorkspaceRunExistWithExpectedStatus(n string, run *tfe.Run, 
 		}
 
 		*run = *runData
+
+		return nil
+	}
+}
+
+func testAccCheckTFEWorkspaceRunDoesNotExist(n string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		config := testAccProvider.Meta().(ConfiguredClient)
+
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return fmt.Errorf("Not found: %s", n)
+		}
+
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("No instance ID is set")
+		}
+
+		// A workspace run resource without apply block has a random ID,
+		// and no run with that ID should exist.
+		_, err := config.Client.Runs.Read(ctx, rs.Primary.ID)
+		if err == nil {
+			return fmt.Errorf("Expected run to not exist")
+		}
 
 		return nil
 	}
