@@ -98,7 +98,6 @@ func TestAccTFEOrganizationDefaultSettings_project(t *testing.T) {
 				),
 			},
 			{
-				// Reset to the original default project to destroy the previously created one.
 				Config: testAccTFEOrganizationDefaultSettings_project_update(rInt),
 			},
 		},
@@ -140,7 +139,6 @@ func TestAccTFEOrganizationDefaultSettings_update(t *testing.T) {
 				),
 			},
 			{
-				// Reset to the original default project to destroy the previously created one.
 				Config: testAccTFEOrganizationDefaultSettings_project_update(rInt),
 			},
 			{
@@ -175,7 +173,6 @@ func TestAccTFEOrganizationDefaultSettings_import(t *testing.T) {
 				Config: testAccTFEOrganizationDefaultSettings_remote(rInt),
 			},
 			{
-				// Reset to the original default project to destroy the previously created one.
 				Config: testAccTFEOrganizationDefaultSettings_project_update(rInt),
 			},
 			{
@@ -293,6 +290,8 @@ resource "tfe_organization_default_settings" "foobar" {
 }`, rInt)
 }
 
+// Since we are setting the previously created project to be the default project, and a default project
+// cannot be deleted, we need to reset it to the original project so the project and organization can be deleted.
 func testAccTFEOrganizationDefaultSettings_project_update(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
