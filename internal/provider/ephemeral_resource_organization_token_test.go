@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/echoprovider"
 )
 
 func TestAccOrganizationTokenEphemeralResource_basic(t *testing.T) {
@@ -26,15 +28,16 @@ func TestAccOrganizationTokenEphemeralResource_basic(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: map[string]func() (tfprotov6.ProviderServer, error){
+			"echo": echoprovider.NewProviderServer(),
+		},
 		Steps: []resource.TestStep{
 			{
 				Config: testAccOrganizationTokenEphemeralResourceConfig(org.Name),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(
-						"ephemeral.tfe_organization_token.this", "token",
-						result.Token),
+					resource.TestCheckResourceAttr("echo.data", "token", result.Token),
 				),
 			},
 		},
@@ -45,5 +48,12 @@ func testAccOrganizationTokenEphemeralResourceConfig(orgName string) string {
 	return fmt.Sprintf(`
 ephemeral "tfe_organization_token" "this" {
   organization = "%s"
-}`, orgName)
+}
+
+provider "echo" {
+	data = ephemeral.tfe_organization_token.this.token
+}
+
+resource "echo" "this" {}
+`, orgName)
 }
