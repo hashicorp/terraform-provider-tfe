@@ -1,0 +1,53 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
+package provider
+
+import (
+	"fmt"
+	"testing"
+	"context"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+)
+
+func TestAcc{{.UpcaseName}}EphemeralResource_basic(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+  result, err := tfeClient.{{.UpcaseName}}s.Create(context.Background(), org.Name)
+  if err != nil {
+    t.Fatal(err)
+  }
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAcc{{.UpcaseName}}EphemeralResourceConfig(org.Name),
+				Check: resource.ComposeAggregateTestCheckFunc(
+        {{- range $val := .Fields}}
+        {{- if not $val.SuppressTestCheck}}
+          resource.TestCheckResourceAttr(
+            "ephemeral.{{$.Name}}.this", "{{.Name}}",
+            result.{{.UpcaseName}}),
+        {{- end}}
+        {{- end}}
+				),
+			},
+		},
+	})
+}
+
+func testAcc{{.UpcaseName}}EphemeralResourceConfig(orgName string) string {
+	return fmt.Sprintf(`
+ephemeral "organization_token" "this" {
+  organization = "%s"
+}`, orgName)
+}
