@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -22,6 +23,7 @@ type frameworkProvider struct{}
 
 // Compile-time interface check
 var _ provider.Provider = &frameworkProvider{}
+var _ provider.ProviderWithEphemeralResources = &frameworkProvider{}
 
 // FrameworkProviderConfig is a helper type for extracting the provider
 // configuration from the provider block.
@@ -141,5 +143,11 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewTeamNotificationConfigurationResource,
 		NewTestVariableResource,
 		NewWorkspaceRunTaskResource,
+	}
+}
+
+func (p *frameworkProvider) EphemeralResources(ctx context.Context) []func() ephemeral.EphemeralResource {
+	return []func() ephemeral.EphemeralResource{
+		NewOrganizationTokenEphemeralResource,
 	}
 }
