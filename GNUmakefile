@@ -63,5 +63,8 @@ test-compile:
 	fi
 	go test -c $(TEST) $(TESTARGS)
 
-.PHONY: build test testacc vet fmt fmtcheck errcheck test-compile sweep
+generate:
+	go run ./generate -name=$(NAME)
+
+.PHONY: build test testacc vet fmt fmtcheck errcheck test-compile sweep generate
 
