@@ -111,6 +111,7 @@ func (p *frameworkProvider) Configure(ctx context.Context, req provider.Configur
 
 	res.DataSourceData = configuredClient
 	res.ResourceData = configuredClient
+	res.EphemeralResourceData = configuredClient
 }
 
 func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource.DataSource {

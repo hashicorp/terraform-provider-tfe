@@ -35,9 +35,12 @@ type OrganizationTokenEphemeralResourceModel struct {
 
 func (e *OrganizationTokenEphemeralResource) Schema(ctx context.Context, req ephemeral.SchemaRequest, resp *ephemeral.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "This ephemeral resource can be used to retrieve an organization token without saving its value in state.",
 		Attributes: map[string]schema.Attribute{
 			"organization": schema.StringAttribute{
 				Description: `Name of the organization. If omitted, organization must be defined in the provider config.`,
+				Optional:    true,
+				Computed:    true,
 			},
 			"token": schema.StringAttribute{
 				Description: `The generated token.`,
@@ -45,9 +48,12 @@ func (e *OrganizationTokenEphemeralResource) Schema(ctx context.Context, req eph
 			},
 			"force_generate": schema.BoolAttribute{
 				Description: `If set to true, a new token will be generated even if a token already exists. This will invalidate the existing token!`,
+				Optional:    true,
 			},
 			"expired_at": schema.StringAttribute{
 				Description: `The token's expiration date. The expiration date must be a date/time string in RFC3339 format (e.g., "2024-12-31T23:59:59Z"). If no expiration date is supplied, the expiration date will default to null and never expire.`,
+				Optional:    true,
+				Computed:    true,
 			},
 		},
 	}
@@ -68,6 +74,7 @@ func (e *OrganizationTokenEphemeralResource) Configure(_ context.Context, req ep
 
 		return
 	}
+
 	e.config = client
 }
 
@@ -84,13 +91,19 @@ func (e *OrganizationTokenEphemeralResource) Open(ctx context.Context, req ephem
 		return
 	}
 
-	result, err := e.config.Client.OrganizationTokens.Read(ctx, data.Organization.String())
+	var orgName string
+	resp.Diagnostics.Append(e.config.dataOrDefaultOrganization(ctx, req.Config, &orgName)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	result, err := e.config.Client.OrganizationTokens.Read(ctx, orgName)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read resource", err.Error())
 		return
 	}
 
-	data = ephemeralResourceModelFromTFEOrganizationToken(result)
+	data = ephemeralResourceModelFromTFEOrganizationToken(orgName, result)
 
 	// Save to ephemeral result data
 	resp.Diagnostics.Append(resp.Result.Set(ctx, &data)...)
@@ -98,9 +111,11 @@ func (e *OrganizationTokenEphemeralResource) Open(ctx context.Context, req ephem
 
 // ephemeralResourceModelFromTFEOrganizationToken builds a OrganizationTokenEphemeralResourceModel struct from a
 // tfe.OrganizationToken value.
-func ephemeralResourceModelFromTFEOrganizationToken(v *tfe.OrganizationToken) OrganizationTokenEphemeralResourceModel {
+func ephemeralResourceModelFromTFEOrganizationToken(organization string, v *tfe.OrganizationToken) OrganizationTokenEphemeralResourceModel {
 	return OrganizationTokenEphemeralResourceModel{
-		Token:     types.StringValue(v.Token),
-		ExpiredAt: types.StringValue(v.ExpiredAt.String()),
+		ID:           types.StringValue(v.ID),
+		Organization: types.StringValue(organization),
+		Token:        types.StringValue(v.Token),
+		ExpiredAt:    types.StringValue(v.ExpiredAt.String()),
 	}
 }
