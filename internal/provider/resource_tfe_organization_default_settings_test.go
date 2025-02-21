@@ -80,6 +80,30 @@ func TestAccTFEOrganizationDefaultSettings_agent(t *testing.T) {
 	})
 }
 
+func TestAccTFEOrganizationDefaultSettings_project(t *testing.T) {
+	org := &tfe.Organization{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEOrganizationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOrganizationDefaultSettings_project(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOrganizationExists(
+						"tfe_organization.foobar", org),
+					testAccCheckTFEOrganizationDefaultProjectIDExists(org),
+				),
+			},
+			{
+				Config: testAccTFEOrganizationDefaultSettings_project_update(rInt),
+			},
+		},
+	})
+}
+
 func TestAccTFEOrganizationDefaultSettings_update(t *testing.T) {
 	org := &tfe.Organization{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -105,6 +129,17 @@ func TestAccTFEOrganizationDefaultSettings_update(t *testing.T) {
 					testAccCheckTFEOrganizationDefaultSettings(org, "agent"),
 					testAccCheckTFEOrganizationDefaultAgentPoolIDExists(org),
 				),
+			},
+			{
+				Config: testAccTFEOrganizationDefaultSettings_project(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOrganizationExists(
+						"tfe_organization.foobar", org),
+					testAccCheckTFEOrganizationDefaultProjectIDExists(org),
+				),
+			},
+			{
+				Config: testAccTFEOrganizationDefaultSettings_project_update(rInt),
 			},
 			{
 				Config: testAccTFEOrganizationDefaultSettings_local(rInt),
@@ -137,7 +172,9 @@ func TestAccTFEOrganizationDefaultSettings_import(t *testing.T) {
 			{
 				Config: testAccTFEOrganizationDefaultSettings_remote(rInt),
 			},
-
+			{
+				Config: testAccTFEOrganizationDefaultSettings_project_update(rInt),
+			},
 			{
 				ResourceName:      "tfe_organization_default_settings.foobar",
 				ImportState:       true,
@@ -167,6 +204,16 @@ func testAccCheckTFEOrganizationDefaultAgentPoolIDExists(org *tfe.Organization) 
 	}
 }
 
+func testAccCheckTFEOrganizationDefaultProjectIDExists(org *tfe.Organization) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if org.DefaultProject == nil {
+			return errors.New("default project was not set")
+		}
+
+		return nil
+	}
+}
+
 func testAccTFEOrganizationDefaultSettings_remote(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
@@ -174,9 +221,15 @@ resource "tfe_organization" "foobar" {
   email = "admin@company.com"
 }
 
+resource "tfe_project" "foobar" {
+  name = "project-test"
+  organization = tfe_organization.foobar.name
+}
+
 resource "tfe_organization_default_settings" "foobar" {
   organization = tfe_organization.foobar.name
   default_execution_mode = "remote"
+  default_project_id = tfe_project.foobar.id
 }`, rInt)
 }
 
@@ -209,5 +262,58 @@ resource "tfe_organization_default_settings" "foobar" {
   organization = tfe_organization.foobar.name
   default_execution_mode = "agent"
   default_agent_pool_id = tfe_agent_pool.foobar.id
+}`, rInt)
+}
+
+func testAccTFEOrganizationDefaultSettings_project(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_agent_pool" "foobar" {
+  name = "agent-pool-test"
+  organization = tfe_organization.foobar.name
+}
+
+resource "tfe_project" "foobar" {
+  name = "project-test"
+  organization = tfe_organization.foobar.name
+}
+
+resource "tfe_organization_default_settings" "foobar" {
+  organization       = tfe_organization.foobar.name
+  default_execution_mode = "agent"
+  default_agent_pool_id = tfe_agent_pool.foobar.id
+  default_project_id = tfe_project.foobar.id
+}`, rInt)
+}
+
+// Since we are setting the previously created project to be the default project, and a default project
+// cannot be deleted, we need to reset it to the original project so the project and organization can be deleted.
+func testAccTFEOrganizationDefaultSettings_project_update(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+resource "tfe_agent_pool" "foobar" {
+  name         = "agent-pool-test"
+  organization = tfe_organization.foobar.name
+}
+resource "tfe_project" "foobar" {
+  name         = "project-test"
+  organization = tfe_organization.foobar.name
+}
+data "tfe_project" "original" {
+  name         = "Default Project"
+  organization = tfe_organization.foobar.name
+}
+resource "tfe_organization_default_settings" "foobar" {
+  organization       = tfe_organization.foobar.name
+  default_execution_mode = "agent"
+  default_agent_pool_id = tfe_agent_pool.foobar.id
+  default_project_id = data.tfe_project.original.id
 }`, rInt)
 }
