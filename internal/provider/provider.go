@@ -20,7 +20,7 @@ var (
 	errMissingOrganization = errors.New("no organization was specified on the resource or provider")
 )
 
-// ConfiguredClient wraps the tfe.Clientoooooprovider uses, plus the default
+// ConfiguredClient wraps the tfe.Client the provider uses, plus the default
 // organization name to be used by resources that need an organization but don't
 // specify one.
 type ConfiguredClient struct {
