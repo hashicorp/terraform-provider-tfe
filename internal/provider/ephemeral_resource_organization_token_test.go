@@ -4,13 +4,16 @@
 package provider
 
 import (
-	"context"
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/echoprovider"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
+	"github.com/hashicorp/terraform-plugin-testing/statecheck"
+	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
 )
 
 func TestAccOrganizationTokenEphemeralResource_basic(t *testing.T) {
@@ -22,11 +25,6 @@ func TestAccOrganizationTokenEphemeralResource_basic(t *testing.T) {
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
-	result, err := tfeClient.OrganizationTokens.Create(context.Background(), org.Name)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: testAccMuxedProviders,
@@ -36,9 +34,9 @@ func TestAccOrganizationTokenEphemeralResource_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: testAccOrganizationTokenEphemeralResourceConfig(org.Name),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("echo.data", "token", result.Token),
-				),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectKnownValue("echo.this", tfjsonpath.New("data"), knownvalue.StringRegexp(regexp.MustCompile(`^[a-zA-Z0-9]+\.atlasv1\.[a-zA-Z0-9]+$`))),
+				},
 			},
 		},
 	})
