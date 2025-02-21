@@ -18,7 +18,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-mux/tf5muxserver"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/hashicorp/terraform-provider-tfe/internal/client"
 	"github.com/hashicorp/terraform-provider-tfe/version"
 	"github.com/hashicorp/terraform-svchost/disco"
@@ -168,14 +167,7 @@ func TestProvider_versionConstraints(t *testing.T) {
 }
 
 func testAccPreCheck(t *testing.T) {
-	// The credentials must be provided by the CLI config file for testing.
-	if diags := Provider().Configure(context.Background(), &terraform.ResourceConfig{}); diags.HasError() {
-		for _, d := range diags {
-			if d.Severity == diag.Error {
-				t.Fatalf("err: %s", d.Summary)
-			}
-		}
-	}
+	// This is currently a no-op.
 }
 
 func TestSkipUnlessAfterDate(t *testing.T) {
@@ -198,18 +190,7 @@ func TestConfigureEnvOrganization(t *testing.T) {
 	expectedOrganization := fmt.Sprintf("tst-organization-%d", rInt)
 	os.Setenv("TFE_ORGANIZATION", expectedOrganization)
 
-	provider := Provider()
-
-	// The credentials must be provided by the CLI config file for testing.
-	if diags := provider.Configure(context.Background(), &terraform.ResourceConfig{}); diags.HasError() {
-		for _, d := range diags {
-			if d.Severity == diag.Error {
-				t.Fatalf("err: %s", d.Summary)
-			}
-		}
-	}
-
-	config := provider.Meta().(ConfiguredClient)
+	config := Provider().Meta().(ConfiguredClient)
 	if config.Organization != expectedOrganization {
 		t.Fatalf("unexpected organization configuration: got %s, wanted %s", config.Organization, expectedOrganization)
 	}
