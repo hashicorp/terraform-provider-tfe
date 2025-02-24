@@ -15,6 +15,7 @@ import (
 	"log"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/jsonapi"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -85,11 +86,9 @@ func resourceTFEOrganizationDefaultSettingsCreate(d *schema.ResourceData, meta i
 	}
 
 	// If the default project id was provided, get the default project
-	var project *tfe.Project
+	var project jsonapi.NullableRelationship[*tfe.Project]
 	if v, ok := d.GetOk("default_project_id"); ok && v.(string) != "" {
-		project = &tfe.Project{
-			ID: v.(string),
-		}
+		project = jsonapi.NewNullableRelationshipWithValue[*tfe.Project](&tfe.Project{ID: v.(string)})
 	}
 
 	defaultExecutionMode := ""
@@ -156,7 +155,7 @@ func resourceTFEOrganizationDefaultSettingsDelete(d *schema.ResourceData, meta i
 	_, err = config.Client.Organizations.Update(context.Background(), organization, tfe.OrganizationUpdateOptions{
 		DefaultExecutionMode: tfe.String("remote"),
 		DefaultAgentPool:     nil,
-		DefaultProject:       nil,
+		DefaultProject:       jsonapi.NewNullNullableRelationship[*tfe.Project](),
 	})
 	if err != nil {
 		return fmt.Errorf("error updating organization default execution mode: %w", err)
