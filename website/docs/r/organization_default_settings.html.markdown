@@ -58,7 +58,7 @@ The following arguments are supported:
 
 ## Import
 
-Organization default execution mode can be imported; use `<ORGANIZATION NAME>` as the import ID. For example:
+Organization default execution mode and default project can be imported; use `<ORGANIZATION NAME>` as the import ID. For example:
 
 ```shell
 terraform import tfe_organization_default_settings.test my-org-name
