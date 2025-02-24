@@ -13,6 +13,7 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
@@ -229,8 +230,12 @@ func TestAccTFEOrganization_case(t *testing.T) {
 				),
 			},
 			{
-				Config:   testAccTFEOrganization_title_case(rInt),
-				PlanOnly: true,
+				Config: testAccTFEOrganization_title_case(rInt),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
 			},
 		},
 	})
