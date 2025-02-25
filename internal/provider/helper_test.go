@@ -12,8 +12,8 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/go-uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 const RunTasksURLEnvName = "RUN_TASKS_URL"
@@ -271,7 +271,7 @@ func betaFeaturesEnabled() bool {
 	return os.Getenv("ENABLE_BETA") == "1"
 }
 
-// Most tests rely on terraform-plugin-sdk/helper/resource.Test to run.  That test helper ensures
+// Most tests rely on terraform-plugin-testing/helper/resource.Test to run.  That test helper ensures
 // that TF_ACC=1 or else it skips. In some rare cases, however, tests do not use the SDK helper and
 // are acceptance tests.
 // This `skipIfUnitTest` is used when you are doing some extra setup work that may fail when `go
