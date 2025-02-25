@@ -87,7 +87,6 @@ func TestAccTFETeamProjectCustomAccessDataSource_basic(t *testing.T) {
 }
 
 func TestAccTFETeamProjectCustomAccessDataSource_basic_with_project_variable_sets(t *testing.T) {
-	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
