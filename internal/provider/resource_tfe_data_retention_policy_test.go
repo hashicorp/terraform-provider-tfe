@@ -9,10 +9,11 @@ import (
 	"time"
 
 	"fmt"
-	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"os"
+
+	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccTFEDataRetentionPolicy_basic(t *testing.T) {

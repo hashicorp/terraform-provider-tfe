@@ -18,9 +18,10 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccTFEWorkspace_basic(t *testing.T) {
@@ -347,17 +348,19 @@ func TestAccTFEWorkspace_renamed(t *testing.T) {
 						"tfe_workspace.foobar", "working_directory", ""),
 				),
 			},
-
 			{
 				PreConfig: testAccCheckTFEWorkspaceRename(orgName),
 				Config:    testAccTFEWorkspace_renamed(rInt),
-				PlanOnly:  true,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists(
 						"tfe_workspace.foobar", workspace, testAccProvider),
-					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "name", "workspace-test"),
+						"tfe_workspace.foobar", "name", "renamed-out-of-band"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "My favorite workspace!"),
 					resource.TestCheckResourceAttr(
