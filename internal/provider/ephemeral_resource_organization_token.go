@@ -5,8 +5,8 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"time"
 
 	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
@@ -28,14 +28,14 @@ type OrganizationTokenEphemeralResource struct {
 }
 
 type OrganizationTokenEphemeralResourceModel struct {
-	Organization types.String `tfsdk:"organization"`
-	Token        types.String `tfsdk:"token"`
-	ExpiredAt    types.String `tfsdk:"expired_at"`
+	Organization    types.String `tfsdk:"organization"`
+	Token           types.String `tfsdk:"token"`
+	ForceRegenerate types.Bool   `tfsdk:"force_regenerate"`
 }
 
 func (e *OrganizationTokenEphemeralResource) Schema(ctx context.Context, req ephemeral.SchemaRequest, resp *ephemeral.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "This ephemeral resource can be used to retrieve an organization token without saving its value in state.",
+		Description: "This ephemeral resource can be used to retrieve an organization token without saving its value in state. Using this ephemeral resource will generate a new token each time it is used, invalidating any existing organization token.",
 		Attributes: map[string]schema.Attribute{
 			"organization": schema.StringAttribute{
 				Description: `Name of the organization. If omitted, organization must be defined in the provider config.`,
@@ -45,12 +45,10 @@ func (e *OrganizationTokenEphemeralResource) Schema(ctx context.Context, req eph
 			"token": schema.StringAttribute{
 				Description: `The generated token.`,
 				Computed:    true,
-				Sensitive:   true,
 			},
-			"expired_at": schema.StringAttribute{
-				Description: `The token's expiration date.`,
+			"force_regenerate": schema.BoolAttribute{
+				Description: "If set to `false`, an existing organization token will cause the run to fail. If set to `true`, the check for an existing organization token will be suppressed. Defaults to `false`.",
 				Optional:    true,
-				Computed:    true,
 			},
 		},
 	}
@@ -80,35 +78,42 @@ func (e *OrganizationTokenEphemeralResource) Metadata(ctx context.Context, req e
 }
 
 func (e *OrganizationTokenEphemeralResource) Open(ctx context.Context, req ephemeral.OpenRequest, resp *ephemeral.OpenResponse) {
+	// Read Terraform config data
 	var data OrganizationTokenEphemeralResourceModel
-
-	// Read Terraform config data into the model
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	// Get org name or default
 	var orgName string
 	resp.Diagnostics.Append(e.config.dataOrDefaultOrganization(ctx, req.Config, &orgName)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Create a new options struct
-	options := tfe.OrganizationTokenCreateOptions{}
-	if data.ExpiredAt.IsUnknown() {
-		expiredAt := data.ExpiredAt.ValueString()
-		expiredAtTime, err := time.Parse(time.RFC3339, expiredAt)
-		if err != nil {
-			resp.Diagnostics.AddError("Invalid ExpiredAt value", "The ExpiredAt value must be set to a valid date.")
-			return
-		}
-		options.ExpiredAt = &expiredAtTime
+	// Check for existing token
+	existingToken, err := e.config.Client.OrganizationTokens.Read(ctx, orgName)
+	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+		resp.Diagnostics.AddError("Unable to read organization token", err.Error())
+		return
 	}
 
-	result, err := e.config.Client.OrganizationTokens.CreateWithOptions(ctx, orgName, options)
+	// Fail if a token exists unless `force_regenerate` is set
+	if existingToken != nil && !data.ForceRegenerate.ValueBool() {
+		resp.Diagnostics.AddError("Organization token already exists", "An organization token already exists. Set `force_regenerate` to `true` to suppress this check.")
+		return
+	}
+
+	result, err := e.config.Client.OrganizationTokens.Create(ctx, orgName)
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to read resource", err.Error())
+		resp.Diagnostics.AddError("Unable to create organization token", err.Error())
+		return
+	}
+
+	diags := resp.Private.SetKey(ctx, "organization", []byte(orgName))
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 
@@ -118,12 +123,25 @@ func (e *OrganizationTokenEphemeralResource) Open(ctx context.Context, req ephem
 	resp.Diagnostics.Append(resp.Result.Set(ctx, &data)...)
 }
 
+func (e *OrganizationTokenEphemeralResource) Close(ctx context.Context, req ephemeral.CloseRequest, resp *ephemeral.CloseResponse) {
+	privateBytes, diags := req.Private.GetKey(ctx, "organization")
+	if diags.HasError() {
+		resp.Diagnostics.Append(diags...)
+		return
+	}
+
+	if err := e.config.Client.OrganizationTokens.Delete(ctx, string(privateBytes)); err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+		fmt.Printf("%+v\n", err)
+		resp.Diagnostics.AddError("Unable to delete organization token", err.Error())
+		return
+	}
+}
+
 // ephemeralResourceModelFromTFEOrganizationToken builds a OrganizationTokenEphemeralResourceModel struct from a
 // tfe.OrganizationToken value.
 func ephemeralResourceModelFromTFEOrganizationToken(organization string, v *tfe.OrganizationToken) OrganizationTokenEphemeralResourceModel {
 	return OrganizationTokenEphemeralResourceModel{
 		Organization: types.StringValue(organization),
 		Token:        types.StringValue(v.Token),
-		ExpiredAt:    types.StringValue(v.ExpiredAt.String()),
 	}
 }
