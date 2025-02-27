@@ -131,7 +131,6 @@ func (e *OrganizationTokenEphemeralResource) Close(ctx context.Context, req ephe
 	}
 
 	if err := e.config.Client.OrganizationTokens.Delete(ctx, string(privateBytes)); err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
-		fmt.Printf("%+v\n", err)
 		resp.Diagnostics.AddError("Unable to delete organization token", err.Error())
 		return
 	}
