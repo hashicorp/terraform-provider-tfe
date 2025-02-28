@@ -1,11 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
-// NOTE: This is a legacy resource and should be migrated to the Plugin
-// Framework if substantial modifications are planned. See
-// docs/new-resources.md if planning to use this code as boilerplate for
-// a new resource.
-
 package provider
 
 import (
@@ -180,6 +172,7 @@ func resourceTFEOAuthClientCreate(d *schema.ResourceData, meta interface{}) erro
 	}
 
 	d.SetId(oc.ID)
+	d.Set("oauth_token_id", oc.OAuthTokens[0].ID)
 
 	return resourceTFEOAuthClientRead(d, meta)
 }

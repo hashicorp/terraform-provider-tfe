@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package provider
 
 import (
@@ -128,6 +125,50 @@ func TestAccTFEOAuthClient_agentPool(t *testing.T) {
 					testAccCheckTFEOAuthClientAttributes(oc),
 					resource.TestCheckResourceAttr(
 						"tfe_oauth_client.foobar", "service_provider", "github_enterprise"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEOAuthClient_updateOAuthTokenID(t *testing.T) {
+	oc := &tfe.OAuthClient{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			if envGithubToken == "" {
+				t.Skip("Please set GITHUB_TOKEN to run this test")
+			}
+		},
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEOAuthClientDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOAuthClient_basic(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOAuthClientExists("tfe_oauth_client.foobar", oc),
+					testAccCheckTFEOAuthClientAttributes(oc),
+					resource.TestCheckResourceAttr(
+						"tfe_oauth_client.foobar", "api_url", "https://api.github.com"),
+					resource.TestCheckResourceAttr(
+						"tfe_oauth_client.foobar", "http_url", "https://github.com"),
+					resource.TestCheckResourceAttr(
+						"tfe_oauth_client.foobar", "service_provider", "github"),
+				),
+			},
+			{
+				Config: testAccTFEOAuthClient_updateOAuthTokenID(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOAuthClientExists("tfe_oauth_client.foobar", oc),
+					testAccCheckTFEOAuthClientAttributes(oc),
+					resource.TestCheckResourceAttr(
+						"tfe_oauth_client.foobar", "api_url", "https://api.github.com"),
+					resource.TestCheckResourceAttr(
+						"tfe_oauth_client.foobar", "http_url", "https://github.com"),
+					resource.TestCheckResourceAttr(
+						"tfe_oauth_client.foobar", "service_provider", "github"),
 				),
 			},
 		},
@@ -263,4 +304,21 @@ resource "tfe_oauth_client" "foobar" {
   service_provider = "github_enterprise"
   agent_pool_id    = data.tfe_agent_pool.foobar.id
 }`, envGithubToken)
+}
+
+func testAccTFEOAuthClient_updateOAuthTokenID(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_oauth_client" "foobar" {
+  organization     = tfe_organization.foobar.id
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "%s"
+  service_provider = "github"
+  organization_scoped = true
+}`, rInt, envGithubToken)
 }
