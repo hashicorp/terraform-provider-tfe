@@ -27,7 +27,7 @@ type AgentTokenEphemeralResource struct {
 }
 
 type AgentTokenEphemeralResourceModel struct {
-	AgentPoolId types.String `tfsdk:"agent_pool_id"`
+	AgentPoolID types.String `tfsdk:"agent_pool_id"`
 	Description types.String `tfsdk:"description"`
 	Token       types.String `tfsdk:"token"`
 }
@@ -73,7 +73,7 @@ func (e *AgentTokenEphemeralResource) Configure(_ context.Context, req ephemeral
 }
 
 func (e *AgentTokenEphemeralResource) Metadata(ctx context.Context, req ephemeral.MetadataRequest, resp *ephemeral.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_agent_token" //tfe_agent_token
+	resp.TypeName = req.ProviderTypeName + "_agent_token" // tfe_agent_token
 }
 
 // The request contains the configuration supplied to Terraform for the ephemeral resource. The response contains the ephemeral result data. The data is defined by the schema of the ephemeral resource.
@@ -86,24 +86,24 @@ func (e *AgentTokenEphemeralResource) Open(ctx context.Context, req ephemeral.Op
 		return
 	}
 
-	agentPoolId := data.AgentPoolId.ValueString()
+	agentPoolID := data.AgentPoolID.ValueString()
 	description := data.Description.ValueString()
 
 	options := tfe.AgentTokenCreateOptions{
 		Description: tfe.String(description),
 	}
 
-	log.Printf("[DEBUG] Create new agent token for agent pool ID: %s", agentPoolId)
+	log.Printf("[DEBUG] Create new agent token for agent pool ID: %s", agentPoolID)
 	log.Printf("[DEBUG] Create new agent token with description: %s", description)
 
-	result, err := e.config.Client.AgentTokens.Create(ctx, agentPoolId, options)
+	result, err := e.config.Client.AgentTokens.Create(ctx, agentPoolID, options)
 
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to create agent token", err.Error())
 		return
 	}
 
-	data = ephemeralResourceModelFromTFEagentToken(agentPoolId, result)
+	data = ephemeralResourceModelFromTFEagentToken(agentPoolID, result)
 
 	// Save to ephemeral result data
 	resp.Diagnostics.Append(resp.Result.Set(ctx, &data)...)
@@ -111,9 +111,9 @@ func (e *AgentTokenEphemeralResource) Open(ctx context.Context, req ephemeral.Op
 
 // ephemeralResourceModelFromTFEagentToken builds a agentTokenEphemeralResourceModel struct from a
 // tfe.agentToken value.
-func ephemeralResourceModelFromTFEagentToken(Id string, v *tfe.AgentToken) AgentTokenEphemeralResourceModel {
+func ephemeralResourceModelFromTFEagentToken(id string, v *tfe.AgentToken) AgentTokenEphemeralResourceModel {
 	return AgentTokenEphemeralResourceModel{
-		AgentPoolId: types.StringValue(Id),
+		AgentPoolID: types.StringValue(id),
 		Description: types.StringValue(v.Description),
 		Token:       types.StringValue(v.Token),
 	}
