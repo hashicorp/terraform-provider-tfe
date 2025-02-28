@@ -22,7 +22,7 @@ func main() {
 	templates := map[string]string{
 		"ephemeral":     "generate/templates/ephemeral/ephemeral.tmpl",
 		"ephemeraltest": "generate/templates/ephemeral/ephemeraltest.tmpl",
-		//"websitedoc":    "generate/templates/ephemeral/websitedoc.tmpl",
+		// "websitedoc":    "generate/templates/ephemeral/websitedoc.tmpl",
 	}
 
 	var cfg GeneratorConfig
