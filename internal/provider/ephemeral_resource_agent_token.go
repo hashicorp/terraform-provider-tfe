@@ -6,6 +6,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"log"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
@@ -38,12 +39,11 @@ func (e *AgentTokenEphemeralResource) Schema(ctx context.Context, req ephemeral.
 		Attributes: map[string]schema.Attribute{
 			"agent_pool_id": schema.StringAttribute{
 				Description: `ID of the agent. If omitted, agent must be defined in the provider config.`,
-				Optional:    false,
-				Computed:    true,
+				Required:    true,
 			},
 			"description": schema.StringAttribute{
-				Description: `The token's expiration date.`,
-				Optional:    true,
+				Description: `Description of the agent token.`,
+				Required:    true,
 			},
 			"token": schema.StringAttribute{
 				Description: `The generated token.`,
@@ -86,9 +86,15 @@ func (e *AgentTokenEphemeralResource) Open(ctx context.Context, req ephemeral.Op
 		return
 	}
 
-	agentPoolId := data.AgentPoolId.String()
+	agentPoolId := data.AgentPoolId.ValueString()
+	description := data.Description.ValueString()
 
-	options := tfe.AgentTokenCreateOptions{}
+	options := tfe.AgentTokenCreateOptions{
+		Description: tfe.String(description),
+	}
+
+	log.Printf("[DEBUG] Create new agent token for agent pool ID: %s", agentPoolId)
+	log.Printf("[DEBUG] Create new agent token with description: %s", description)
 
 	result, err := e.config.Client.AgentTokens.Create(ctx, agentPoolId, options)
 
