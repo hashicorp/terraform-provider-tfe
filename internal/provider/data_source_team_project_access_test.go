@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccTFETeamProjectAccessDataSource_basic(t *testing.T) {
@@ -86,6 +86,30 @@ func TestAccTFETeamProjectCustomAccessDataSource_basic(t *testing.T) {
 	})
 }
 
+func TestAccTFETeamProjectCustomAccessDataSource_basic_with_project_variable_sets(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeamProjectCustomAccessDataSourceConfig_with_project_variable_sets(org.Name),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"data.tfe_team_project_access.foobar_custom", "project_access.0.variable_sets", "read"),
+				),
+			},
+		},
+	})
+}
+
 func testAccTFETeamProjectAccessDataSourceConfig(organization string) string {
 	return fmt.Sprintf(`
 resource "tfe_team" "foobar" {
@@ -135,6 +159,47 @@ resource "tfe_team_project_access" "foobar_custom" {
     state_versions = "write"
     sentinel_mocks = "read"
 		runs					 = "apply"
+    variables      = "write"
+    create         = true
+    locking        = true
+    move           = true
+    delete         = false
+    run_tasks      = false
+  }
+}
+
+data "tfe_team_project_access" "foobar_custom" {
+  team_id      = tfe_team.foobar_custom.id
+  project_id   = tfe_project.foobar_custom.id
+  depends_on   = [tfe_team_project_access.foobar_custom]
+}`, organization, organization)
+}
+
+func testAccTFETeamProjectCustomAccessDataSourceConfig_with_project_variable_sets(organization string) string {
+	return fmt.Sprintf(`
+resource "tfe_team" "foobar_custom" {
+  name         = "team-test2"
+  organization = "%s"
+}
+
+resource "tfe_project" "foobar_custom" {
+  name         = "projecttest2"
+  organization = "%s"
+}
+
+resource "tfe_team_project_access" "foobar_custom" {
+  access       = "custom"
+  team_id      = tfe_team.foobar_custom.id
+  project_id   = tfe_project.foobar_custom.id
+  project_access {
+    settings      = "delete"
+    teams         = "manage"
+    variable_sets = "read"
+  }
+  workspace_access {
+    state_versions = "write"
+    sentinel_mocks = "read"
+    runs           = "apply"
     variables      = "write"
     create         = true
     locking        = true

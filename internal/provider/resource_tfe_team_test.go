@@ -11,8 +11,8 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccTFETeam_basic(t *testing.T) {
@@ -58,6 +58,8 @@ func TestAccTFETeam_full(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "visibility", "organization"),
 					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "allow_member_token_management", "true"),
+					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_policies", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_policy_overrides", "true"),
@@ -85,6 +87,8 @@ func TestAccTFETeam_full(t *testing.T) {
 						"tfe_team.foobar", "organization_access.0.manage_organization_access", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.access_secret_teams", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_agent_pools", "true"),
 				),
 			},
 		},
@@ -111,6 +115,8 @@ func TestAccTFETeam_full_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "visibility", "organization"),
 					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "allow_member_token_management", "true"),
+					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_policies", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_policy_overrides", "true"),
@@ -138,6 +144,8 @@ func TestAccTFETeam_full_update(t *testing.T) {
 						"tfe_team.foobar", "organization_access.0.manage_organization_access", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.access_secret_teams", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_agent_pools", "true"),
 				),
 			},
 			{
@@ -150,6 +158,8 @@ func TestAccTFETeam_full_update(t *testing.T) {
 						"tfe_team.foobar", "name", "team-test-1"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "visibility", "secret"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "allow_member_token_management", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_policies", "false"),
 					resource.TestCheckResourceAttr(
@@ -178,6 +188,8 @@ func TestAccTFETeam_full_update(t *testing.T) {
 						"tfe_team.foobar", "organization_access.0.manage_organization_access", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.access_secret_teams", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_agent_pools", "false"),
 				),
 			},
 			{
@@ -189,6 +201,8 @@ func TestAccTFETeam_full_update(t *testing.T) {
 						"tfe_team.foobar", "name", "team-test-1"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "visibility", "secret"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "allow_member_token_management", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_policies", "false"),
 					resource.TestCheckResourceAttr(
@@ -219,6 +233,8 @@ func TestAccTFETeam_full_update(t *testing.T) {
 						"tfe_team.foobar", "organization_access.0.manage_organization_access", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.access_secret_teams", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "organization_access.0.manage_agent_pools", "false"),
 				),
 			},
 		},
@@ -453,6 +469,10 @@ func testAccCheckTFETeamAttributes_full(
 			return fmt.Errorf("Bad visibility: %s", team.Visibility)
 		}
 
+		if !team.AllowMemberTokenManagement {
+			return fmt.Errorf("team.AllowMemberTokenManagement should be true")
+		}
+
 		if !team.OrganizationAccess.ManagePolicies {
 			return fmt.Errorf("OrganizationAccess.ManagePolicies should be true")
 		}
@@ -480,6 +500,9 @@ func testAccCheckTFETeamAttributes_full(
 		if !team.OrganizationAccess.AccessSecretTeams {
 			return fmt.Errorf("OrganizationAccess.AccessSecretTeams should be true")
 		}
+		if !team.OrganizationAccess.ManageAgentPools {
+			return fmt.Errorf("OrganizationAccess.ManageAgentPools should be true")
+		}
 
 		if team.SSOTeamID != "team-test-sso-id" {
 			return fmt.Errorf("Bad SSO Team ID: %s", team.SSOTeamID)
@@ -498,6 +521,10 @@ func testAccCheckTFETeamAttributes_full_update(
 
 		if team.Visibility != "secret" {
 			return fmt.Errorf("Bad visibility: %s", team.Visibility)
+		}
+
+		if team.AllowMemberTokenManagement {
+			return fmt.Errorf("team.AllowMemberTokenManagement should be false")
 		}
 
 		if team.OrganizationAccess.ManagePolicies {
@@ -526,6 +553,9 @@ func testAccCheckTFETeamAttributes_full_update(
 		}
 		if team.OrganizationAccess.AccessSecretTeams {
 			return fmt.Errorf("OrganizationAccess.AccessSecretTeams should be false")
+		}
+		if team.OrganizationAccess.ManageAgentPools {
+			return fmt.Errorf("OrganizationAccess.ManageAgentPools should be false")
 		}
 
 		if team.SSOTeamID != "changed-sso-id" {
@@ -582,6 +612,7 @@ resource "tfe_team" "foobar" {
   organization = tfe_organization.foobar.id
 
   visibility = "organization"
+  allow_member_token_management = true
 
   organization_access {
     manage_policies = true
@@ -598,6 +629,7 @@ resource "tfe_team" "foobar" {
 	manage_teams = true
 	manage_organization_access = true
 	access_secret_teams = true
+	manage_agent_pools = true
   }
   sso_team_id = "team-test-sso-id"
 }`, rInt)
@@ -615,6 +647,7 @@ resource "tfe_team" "foobar" {
   organization = tfe_organization.foobar.id
 
   visibility = "secret"
+  allow_member_token_management = false
 
   organization_access {
     manage_policies = false
@@ -631,6 +664,7 @@ resource "tfe_team" "foobar" {
 	manage_teams = false
 	manage_organization_access = false
 	access_secret_teams = false
+	manage_agent_pools = false
   }
 
   sso_team_id = "changed-sso-id"

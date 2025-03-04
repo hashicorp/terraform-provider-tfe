@@ -12,7 +12,7 @@ description: |-
 Manage module sharing for an organization. This resource requires the
 use of an admin token and is for Terraform Enterprise only.
 
--> **NOTE:** `tfe_organization_module_sharing` is deprecated in favor of using `tfe_admin_organization_settings` which also allows the management of the global module sharing setting. They attempt to manage the same resource and are mutually exclusive.
+-> **NOTE:** `tfeOrganizationModuleSharing` is deprecated in favor of using `tfeAdminOrganizationSettings` which also allows the management of the global module sharing setting. They attempt to manage the same resource and are mutually exclusive.
 
 ## Example Usage
 

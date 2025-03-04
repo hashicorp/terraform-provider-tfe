@@ -57,6 +57,16 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Computed: true,
 			},
 
+			"auto_destroy_activity_duration": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+
+			"inherits_project_auto_destroy": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
+
 			"file_triggers_enabled": {
 				Type:     schema.TypeBool,
 				Computed: true,
@@ -244,12 +254,22 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
 	d.Set("operations", workspace.Operations)
 	d.Set("policy_check_failures", workspace.PolicyCheckFailures)
+	d.Set("inherits_project_auto_destroy", workspace.InheritsProjectAutoDestroy)
 
 	autoDestroyAt, err := flattenAutoDestroyAt(workspace.AutoDestroyAt)
 	if err != nil {
 		return fmt.Errorf("Error flattening auto destroy during read: %w", err)
 	}
 	d.Set("auto_destroy_at", autoDestroyAt)
+
+	var autoDestroyDuration string
+	if workspace.AutoDestroyActivityDuration.IsSpecified() {
+		autoDestroyDuration, err = workspace.AutoDestroyActivityDuration.Get()
+		if err != nil {
+			return fmt.Errorf("Error reading auto destroy activity duration: %w", err)
+		}
+	}
+	d.Set("auto_destroy_activity_duration", autoDestroyDuration)
 
 	// If target tfe instance predates projects, then workspace.Project will be nil
 	if workspace.Project != nil {

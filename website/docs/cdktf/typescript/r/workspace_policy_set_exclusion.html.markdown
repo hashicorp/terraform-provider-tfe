@@ -11,7 +11,7 @@ description: |-
 
 Adds and removes policy sets from an excluded workspace
 
--> **Note:** `tfe_policy_set` has an argument `workspaceIds` that should not be used alongside this resource. They attempt to manage the same attachments.
+-> **Note:** `tfePolicySet` has an argument `workspaceIds` that should not be used alongside this resource. They attempt to manage the same attachments.
 
 ## Example Usage
 

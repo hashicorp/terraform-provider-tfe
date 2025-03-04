@@ -46,6 +46,7 @@ The following arguments are supported:
 * `cost_estimation_enabled` - (Optional) Whether or not the cost estimation feature is enabled for all workspaces in the organization. Defaults to true. In a HCP Terraform organization which does not have Teams & Governance features, this value is always false and cannot be changed. In Terraform Enterprise, Cost Estimation must also be enabled in Site Administration.
 * `send_passing_statuses_for_untriggered_speculative_plans` - (Optional) Whether or not to send VCS status updates for untriggered speculative plans. This can be useful if large numbers of untriggered workspaces are exhausting request limits for connected version control service providers like GitHub. Defaults to false. In Terraform Enterprise, this setting has no effect and cannot be changed but is also available in Site Administration.
 * `aggregated_commit_status_enabled` - (Optional) Whether or not to enable Aggregated Status Checks. This can be useful for monorepo repositories with multiple workspaces receiving status checks for events such as a pull request. If enabled, `send_passing_statuses_for_untriggered_speculative_plans` needs to be false.
+* `speculative_plan_management_enabled` - (Optional) Whether or not to enable Speculative Plan Management. If true, pending VCS-triggered speculative plans from outdated commits will be cancelled if a newer commit is pushed to the same branch.
 * `assessments_enforced` - (Optional) (Available only in HCP Terraform) Whether to force health assessments (drift detection) on all eligible workspaces or allow workspaces to set their own preferences.
 * `allow_force_delete_workspaces` - (Optional) Whether workspace administrators are permitted to delete workspaces with resources under management. If false, only organization owners may delete these workspaces. Defaults to false.
 
@@ -62,4 +63,4 @@ example:
 terraform import tfe_organization.test my-org-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-99d966e88256fd2d5e4dbcb05e69b9e66930768fcc57759d015ae82ca06f7231 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-ea4761ba0fba70e5174be00cb7bdd57f234347fce87b9f58fdbf78d7ff5a2d5c -->

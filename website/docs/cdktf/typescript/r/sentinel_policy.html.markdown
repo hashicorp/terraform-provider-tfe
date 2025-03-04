@@ -50,8 +50,8 @@ The following arguments are supported:
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `policy` - (Required) The actual policy itself.
 * `enforceMode` - (Optional) The enforcement level of the policy. Valid
-  values are `advisory`, `hard-mandatory` and `soft-mandatory`. Defaults
-  to `soft-mandatory`.
+  values are `advisory`, `hardMandatory` and `softMandatory`. Defaults
+  to `softMandatory`.
 
 ## Attributes Reference
 

@@ -52,7 +52,7 @@ The following arguments are supported. At least one of `names` or `tagNames` mus
   match a valid workspace will be omitted from the results, but are not an error.
 
     To select _all_ workspaces for an organization, provide a list with a single
-    asterisk, like `["*"]`. The asterisk also supports partial matching on prefix and/or suffix, like `[*-prod]`, `[test-*]`, `[*dev*]`.
+    asterisk, like `["*"]`. The asterisk also supports partial matching on prefix and/or suffix, like `[*Prod]`, `[test-*]`, `[*dev*]`.
 * `tagNames` - (Optional) A list of tag names to search for.
 * `excludeTags` - (Optional) A list of tag names to exclude when searching.
 * `organization` - (Required) Name of the organization.

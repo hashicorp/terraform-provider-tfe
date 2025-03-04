@@ -11,6 +11,8 @@ Get information on a Project.
 
 Use this data source to get information about a project.
 
+~> **NOTE:** The `workspaceIds` and `workspaceNames` attributes are not guaranteed to return values in the same order, so they cannot be reliably mapped to one another. To map workspace names to IDs reliably, it is recommended to pass those names into the `tfeWorkspaceIds` data source.
+
 ## Example Usage
 
 ```typescript
@@ -44,4 +46,6 @@ In addition to all arguments above, the following attributes are exported:
 
 * `id` - The project ID.
 * `workspaceIds` - IDs of the workspaces that are associated with the project.
-<!-- cache-key: cdktf-0.17.0-pre.15 input-6d3f57f584544e1199917337f5f8954b7b7709d2cb911131273294430f81b2f2 -->
+* `workspaceNames` - Names of the workspaces that are associated with the project.
+
+<!-- cache-key: cdktf-0.17.0-pre.15 input-c0fb226c1ac838d85660d99cb036d77ac141264beb3f94ffd4b3e2369f67b971 -->

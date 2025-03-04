@@ -22,6 +22,7 @@ resource "tfe_workspace_run_task" "example" {
   workspace_id      = resource.tfe_workspace.example.id
   task_id           = resource.tfe_organization_run_task.example.id
   enforcement_level = "advisory"
+  stages = ["pre_plan"]
 }
 ```
 
@@ -32,7 +33,8 @@ The following arguments are supported:
 * `enforcement_level` - (Required) The enforcement level of the task. Valid values are `advisory` and `mandatory`.
 * `task_id` - (Required) The id of the Run task to associate to the Workspace.
 * `workspace_id` - (Required) The id of the workspace to associate the Run task to.
-* `stage` - (Optional) The stage to run the task in. Valid values are `pre_plan`, `post_plan`, and `pre_apply`.
+* `stage` - **Deprecated** Use `stages` instead.
+* `stages` - (Optional) The stages to run the task in. Valid values are one or more of `pre_plan`, `post_plan`, `pre_apply` and `post apply`.
 
 ## Attributes Reference
 
@@ -47,4 +49,4 @@ import ID. For example:
 terraform import tfe_workspace_run_task.test my-org-name/workspace/task-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-1ff926f0b17f19b66dec176e615aea06d6a32129fdfaa0276b22d531a1b8b3c7 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-7c0fda4da83078530689e0cd442abebba650706e1b4eced38c6a17c68801d9fb -->

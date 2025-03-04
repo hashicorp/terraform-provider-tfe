@@ -10,8 +10,8 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccTFEVariableSet_basic(t *testing.T) {
@@ -139,6 +139,34 @@ func TestAccTFEVariableSet_import(t *testing.T) {
 				ImportState:         true,
 				ImportStateIdPrefix: "",
 				ImportStateVerify:   true,
+			},
+		},
+	})
+}
+
+func TestAccTFEVariableSet_project_owned(t *testing.T) {
+	skipUnlessBeta(t)
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEVariableSetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testACCTFEVariableSet_ProjectOwned(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrPair(
+						"tfe_variable_set.project_owned", "parent_project_id", "tfe_project.foobar", "id"),
+				),
+			},
+
+			{
+				Config: testACCTFEVariableSet_UpdateProjectOwned(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrPair(
+						"tfe_variable_set.project_owned", "parent_project_id", "tfe_project.updated", "id"),
+				),
 			},
 		},
 	})
@@ -324,4 +352,50 @@ func testAccTFEVariableSet_update(rInt int) string {
 			workspace_ids   = []
 			organization = tfe_organization.foobar.id
 		}`, rInt)
+}
+
+func testACCTFEVariableSet_ProjectOwned(rInt int) string {
+	return fmt.Sprintf(`
+		resource "tfe_organization" "foobar" {
+			name = "tst-terraform-%d"
+			email = "admin@company.com"
+		}
+
+		resource "tfe_project" "foobar" {
+			organization = tfe_organization.foobar.id
+			name         = "tst-terraform-%d"
+		}
+
+		resource "tfe_variable_set" "project_owned" {
+			name              = "project_owned_variable_set_test"
+			description       = "a project-owned test variable set"
+			organization      = tfe_organization.foobar.id
+			parent_project_id = tfe_project.foobar.id
+		}`, rInt, rInt)
+}
+
+func testACCTFEVariableSet_UpdateProjectOwned(rInt int) string {
+	return fmt.Sprintf(`
+		resource "tfe_organization" "foobar" {
+			name = "tst-terraform-%d"
+			email = "admin@company.com"
+		}
+
+		resource "tfe_project" "foobar" {
+			organization = tfe_organization.foobar.id
+			name         = "tst-terraform-%d"
+		}
+
+		resource "tfe_project" "updated" {
+			organization = tfe_organization.foobar.id
+			name         = "updated-%d"
+		}
+
+		resource "tfe_variable_set" "project_owned" {
+			name              = "project_owned_variable_set_test"
+			description       = "a project-owned test variable set"
+			organization      = tfe_organization.foobar.id
+			global            = false
+			parent_project_id = tfe_project.updated.id
+		}`, rInt, rInt, rInt)
 }

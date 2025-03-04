@@ -10,14 +10,9 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
@@ -56,7 +51,9 @@ func sentenceList(items []string, prefix string, suffix string, conjunction stri
 }
 
 type resourceWorkspaceRunTask struct {
-	config ConfiguredClient
+	config         ConfiguredClient
+	capabilities   capabilitiesResolver
+	supportsStages *bool
 }
 
 var _ resource.Resource = &resourceWorkspaceRunTask{}
@@ -67,22 +64,21 @@ func NewWorkspaceRunTaskResource() resource.Resource {
 	return &resourceWorkspaceRunTask{}
 }
 
-type modelTFEWorkspaceRunTaskV0 struct {
-	ID               types.String `tfsdk:"id"`
-	WorkspaceID      types.String `tfsdk:"workspace_id"`
-	TaskID           types.String `tfsdk:"task_id"`
-	EnforcementLevel types.String `tfsdk:"enforcement_level"`
-	Stage            types.String `tfsdk:"stage"`
-}
-
-func modelFromTFEWorkspaceRunTask(v *tfe.WorkspaceRunTask) modelTFEWorkspaceRunTaskV0 {
-	return modelTFEWorkspaceRunTaskV0{
+func modelFromTFEWorkspaceRunTask(v *tfe.WorkspaceRunTask) modelTFEWorkspaceRunTaskV1 {
+	result := modelTFEWorkspaceRunTaskV1{
 		ID:               types.StringValue(v.ID),
 		WorkspaceID:      types.StringValue(v.Workspace.ID),
 		TaskID:           types.StringValue(v.RunTask.ID),
 		EnforcementLevel: types.StringValue(string(v.EnforcementLevel)),
 		Stage:            types.StringValue(string(v.Stage)),
+		Stages:           types.ListNull(types.StringType),
 	}
+
+	if stages, err := types.ListValueFrom(ctx, types.StringType, v.Stages); err == nil {
+		result.Stages = stages
+	}
+
+	return result
 }
 
 func (r *resourceWorkspaceRunTask) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -104,65 +100,15 @@ func (r *resourceWorkspaceRunTask) Configure(ctx context.Context, req resource.C
 		)
 	}
 	r.config = client
+	r.capabilities = newDefaultCapabilityResolver(client.Client)
 }
 
 func (r *resourceWorkspaceRunTask) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-	resp.Schema = schema.Schema{
-		Version: 0,
-		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "Service-generated identifier for the workspace task",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
-			},
-			"workspace_id": schema.StringAttribute{
-				Description: "The id of the workspace to associate the Run task to.",
-				Required:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-			},
-			"task_id": schema.StringAttribute{
-				Description: "The id of the Run task to associate to the Workspace.",
-				Required:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-			},
-			"enforcement_level": schema.StringAttribute{
-				Description: fmt.Sprintf("The enforcement level of the task. Valid values are %s.", sentenceList(
-					workspaceRunTaskEnforcementLevels(),
-					"`",
-					"`",
-					"and",
-				)),
-				Required: true,
-				Validators: []validator.String{
-					stringvalidator.OneOf(workspaceRunTaskEnforcementLevels()...),
-				},
-			},
-			"stage": schema.StringAttribute{
-				Description: fmt.Sprintf("The stage to run the task in. Valid values are %s.", sentenceList(
-					workspaceRunTaskStages(),
-					"`",
-					"`",
-					"and",
-				)),
-				Optional: true,
-				Computed: true,
-				Default:  stringdefault.StaticString(string(tfe.PostPlan)),
-				Validators: []validator.String{
-					stringvalidator.OneOf(workspaceRunTaskStages()...),
-				},
-			},
-		},
-	}
+	resp.Schema = resourceWorkspaceRunTaskSchemaV1
 }
 
 func (r *resourceWorkspaceRunTask) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state modelTFEWorkspaceRunTaskV0
+	var state modelTFEWorkspaceRunTaskV1
 
 	// Read Terraform current state into the model
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -176,7 +122,11 @@ func (r *resourceWorkspaceRunTask) Read(ctx context.Context, req resource.ReadRe
 	tflog.Debug(ctx, "Reading workspace run task")
 	wstask, err := r.config.Client.WorkspaceRunTasks.Read(ctx, workspaceID, wstaskID)
 	if err != nil {
-		resp.Diagnostics.AddError("Error reading Workspace Run Task", "Could not read Workspace Run Task, unexpected error: "+err.Error())
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			resp.State.RemoveResource(ctx)
+		} else {
+			resp.Diagnostics.AddError("Error reading Workspace Run Task", "Could not read Workspace Run Task, unexpected error: "+err.Error())
+		}
 		return
 	}
 
@@ -187,7 +137,7 @@ func (r *resourceWorkspaceRunTask) Read(ctx context.Context, req resource.ReadRe
 }
 
 func (r *resourceWorkspaceRunTask) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan modelTFEWorkspaceRunTaskV0
+	var plan modelTFEWorkspaceRunTaskV1
 
 	// Read Terraform planned changes into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -208,13 +158,23 @@ func (r *resourceWorkspaceRunTask) Create(ctx context.Context, req resource.Crea
 		return
 	}
 
-	stage := tfe.Stage(plan.Stage.ValueString())
 	level := tfe.TaskEnforcementLevel(plan.EnforcementLevel.ValueString())
 
 	options := tfe.WorkspaceRunTaskCreateOptions{
 		RunTask:          task,
 		EnforcementLevel: level,
-		Stage:            &stage,
+	}
+
+	stage, stages := r.extractStageAndStages(plan, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if stage != nil {
+		// Needed for older TFE instances
+		options.Stage = stage //nolint:staticcheck
+	}
+	if stages != nil {
+		options.Stages = &stages
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("Create task %s in workspace: %s", taskID, workspaceID))
@@ -239,7 +199,7 @@ func (r *resourceWorkspaceRunTask) stringPointerToStagePointer(val *string) *tfe
 }
 
 func (r *resourceWorkspaceRunTask) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan modelTFEWorkspaceRunTaskV0
+	var plan modelTFEWorkspaceRunTaskV1
 
 	// Read Terraform planned changes into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -248,11 +208,21 @@ func (r *resourceWorkspaceRunTask) Update(ctx context.Context, req resource.Upda
 	}
 
 	level := tfe.TaskEnforcementLevel(plan.EnforcementLevel.ValueString())
-	stage := r.stringPointerToStagePointer(plan.Stage.ValueStringPointer())
 
 	options := tfe.WorkspaceRunTaskUpdateOptions{
 		EnforcementLevel: level,
-		Stage:            stage,
+	}
+
+	stage, stages := r.extractStageAndStages(plan, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if stage != nil {
+		// Needed for older TFE instances
+		options.Stage = stage //nolint:staticcheck
+	}
+	if stages != nil {
+		options.Stages = &stages
 	}
 
 	wstaskID := plan.ID.ValueString()
@@ -272,7 +242,7 @@ func (r *resourceWorkspaceRunTask) Update(ctx context.Context, req resource.Upda
 }
 
 func (r *resourceWorkspaceRunTask) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state modelTFEWorkspaceRunTaskV0
+	var state modelTFEWorkspaceRunTaskV1
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -322,4 +292,121 @@ func (r *resourceWorkspaceRunTask) ImportState(ctx context.Context, req resource
 		result := modelFromTFEWorkspaceRunTask(wstask)
 		resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 	}
+}
+
+func (r *resourceWorkspaceRunTask) UpgradeState(ctx context.Context) map[int64]resource.StateUpgrader {
+	return map[int64]resource.StateUpgrader{
+		0: {
+			PriorSchema: &resourceWorkspaceRunTaskSchemaV0,
+			StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
+				var oldData modelTFEWorkspaceRunTaskV0
+				diags := req.State.Get(ctx, &oldData)
+				resp.Diagnostics.Append(diags...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				oldWorkspaceID := oldData.WorkspaceID.ValueString()
+				oldID := oldData.ID.ValueString()
+
+				wstask, err := r.config.Client.WorkspaceRunTasks.Read(ctx, oldWorkspaceID, oldID)
+				if err != nil || wstask == nil {
+					resp.Diagnostics.AddError(
+						"Error reading workspace run task",
+						fmt.Sprintf("Couldn't read workspace run task %s while trying to upgrade state of tfe_workspace_run_task: %s", oldID, err.Error()),
+					)
+					return
+				}
+
+				newData := modelFromTFEWorkspaceRunTask(wstask)
+				diags = resp.State.Set(ctx, newData)
+				resp.Diagnostics.Append(diags...)
+			},
+		},
+	}
+}
+
+func (r *resourceWorkspaceRunTask) supportsStagesProperty() bool {
+	// The Stages property is available in HCP Terraform and Terraform Enterprise v202404-1 onwards.
+	//
+	// The version comparison here can use plain string comparisons due to the nature of the naming scheme. If
+	// TFE every changes its scheme, the comparison will be problematic.
+	if r.supportsStages == nil {
+		value := r.capabilities.IsCloud() || r.capabilities.RemoteTFEVersion() > "v202404"
+		r.supportsStages = &value
+	}
+	return *r.supportsStages
+}
+
+func (r *resourceWorkspaceRunTask) addStageSupportDiag(d *diag.Diagnostics, isError bool) {
+	summary := "Terraform Enterprise version"
+	detail := fmt.Sprintf("The version of Terraform Enterprise does not support the stages attribute on Workspace Run Tasks. Got %s but requires v202404-1+", r.config.Client.RemoteTFEVersion())
+	if isError {
+		d.AddError(detail, summary)
+	} else {
+		d.AddWarning(detail, summary)
+	}
+}
+
+func (r *resourceWorkspaceRunTask) extractStageAndStages(plan modelTFEWorkspaceRunTaskV1, d *diag.Diagnostics) (*tfe.Stage, []tfe.Stage) {
+	// There are some complex interactions here between deprecated values in the TF model, and whether the backend server even supports the newer
+	// API call style. This function attempts to extract the Stage and Stages properties and emit useful diagnostics
+
+	// If neither stage or stages is set, then it's all fine, we use the server defaults
+	if plan.Stage.IsUnknown() && plan.Stages.IsUnknown() {
+		return nil, nil
+	}
+
+	if r.supportsStagesProperty() {
+		if plan.Stages.IsUnknown() {
+			// The user has supplied Stage but not Stages. They would already have received the deprecation warning so just munge
+			// the stage into a slice and we're fine
+			stages := []tfe.Stage{tfe.Stage(plan.Stage.ValueString())}
+			return nil, stages
+		}
+
+		// Convert the plan values into the slice we need
+		var stageStrings []types.String
+		if err := plan.Stages.ElementsAs(ctx, &stageStrings, false); err != nil && err.HasError() {
+			d.Append(err...)
+			return nil, nil
+		}
+		stages := make([]tfe.Stage, len(stageStrings))
+		for idx, s := range stageStrings {
+			stages[idx] = tfe.Stage(s.ValueString())
+		}
+		return nil, stages
+	}
+
+	// The backend server doesn't support Stages
+	if !plan.Stages.IsUnknown() {
+		// The user has supplied a stages array. We need to figure out if we can munge this into a stage attribute
+		stagesCount := len(plan.Stages.Elements())
+
+		if stagesCount > 1 {
+			// The user has supplied more than one stage so we can't munge this
+			r.addStageSupportDiag(d, true)
+			return nil, nil
+		}
+
+		// Send the warning
+		r.addStageSupportDiag(d, false)
+
+		if stagesCount == 0 {
+			// Somehow we've got no stages listed. Use default server values
+			return nil, nil
+		}
+
+		// ... Otherwise there's a single Stages value which we can munge into Stage.
+		var stageStrings []types.String
+		if err := plan.Stages.ElementsAs(ctx, &stageStrings, false); err != nil && err.HasError() {
+			d.Append(err...)
+			return nil, nil
+		}
+		stage := tfe.Stage(stageStrings[0].ValueString())
+		return &stage, nil
+	}
+
+	// The user supplied a Stage value to a server that doesn't support stages
+	return r.stringPointerToStagePointer(plan.Stage.ValueStringPointer()), nil
 }

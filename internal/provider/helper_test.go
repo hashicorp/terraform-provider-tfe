@@ -12,8 +12,8 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/go-uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 const RunTasksURLEnvName = "RUN_TASKS_URL"
@@ -62,6 +62,28 @@ func createBusinessOrganization(t *testing.T, client *tfe.Client) (*tfe.Organiza
 	})
 
 	newSubscriptionUpdater(org).WithBusinessPlan().Update(t)
+
+	return org, orgCleanup
+}
+
+func createPlusOrganization(t *testing.T, client *tfe.Client) (*tfe.Organization, func()) {
+	org, orgCleanup := createOrganization(t, client, tfe.OrganizationCreateOptions{
+		Name:  tfe.String("tst-" + randomString(t)),
+		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
+	})
+
+	newSubscriptionUpdater(org).WithPlusEntitlementPlan().Update(t)
+
+	return org, orgCleanup
+}
+
+func createTrialOrganization(t *testing.T, client *tfe.Client) (*tfe.Organization, func()) {
+	org, orgCleanup := createOrganization(t, client, tfe.OrganizationCreateOptions{
+		Name:  tfe.String("tst-" + randomString(t)),
+		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
+	})
+
+	newSubscriptionUpdater(org).WithTrialPlan().Update(t)
 
 	return org, orgCleanup
 }
@@ -176,6 +198,22 @@ func createProject(t *testing.T, client *tfe.Client, orgName string, options tfe
 	return proj
 }
 
+func createRunTask(t *testing.T, client *tfe.Client, orgName string, options tfe.RunTaskCreateOptions) *tfe.RunTask {
+	ctx := context.Background()
+
+	if options.Category == "" {
+		options.Category = "task"
+	}
+
+	task, err := client.RunTasks.Create(ctx, orgName, options)
+	if err != nil {
+		t.Fatal(err)
+		return nil
+	}
+
+	return task
+}
+
 func skipIfCloud(t *testing.T) {
 	if !enterpriseEnabled() {
 		t.Skip("Skipping test for a feature unavailable in HCP Terraform. Set 'ENABLE_TFE=1' to run.")
@@ -233,7 +271,7 @@ func betaFeaturesEnabled() bool {
 	return os.Getenv("ENABLE_BETA") == "1"
 }
 
-// Most tests rely on terraform-plugin-sdk/helper/resource.Test to run.  That test helper ensures
+// Most tests rely on terraform-plugin-testing/helper/resource.Test to run.  That test helper ensures
 // that TF_ACC=1 or else it skips. In some rare cases, however, tests do not use the SDK helper and
 // are acceptance tests.
 // This `skipIfUnitTest` is used when you are doing some extra setup work that may fail when `go
@@ -257,6 +295,17 @@ func testCheckResourceAttrUnlessEnterprise(name, key, value string) resource.Tes
 		}
 	}
 	return resource.TestCheckResourceAttr(name, key, value)
+}
+
+// Tests whether a resource exists in the state
+func testCheckResourceNotExist(resourceName string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if item, ok := s.RootModule().Resources[resourceName]; ok {
+			return fmt.Errorf("Resource %s should not exist but found a resource with id %s", resourceName, item.Primary.ID)
+		}
+
+		return nil
+	}
 }
 
 func randomString(t *testing.T) string {

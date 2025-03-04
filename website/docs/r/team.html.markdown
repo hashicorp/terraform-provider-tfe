@@ -24,7 +24,7 @@ Organization Permission usage:
 
 ```hcl
 resource "tfe_team" "test" {
-  name         = "my-team-name"
+  name         = "my-team-name
   organization = "my-org-name"
   organization_access {
     manage_vcs_settings = true
@@ -38,9 +38,10 @@ The following arguments are supported:
 
 * `name` - (Required) Name of the team.
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
-* `visibility` - (Optional) The visibility of the team ("secret" or "organization"). Defaults to "secret".
+* `visibility` - (Optional) The visibility of the team ("secret" or "organization")
 * `organization_access` - (Optional) Settings for the team's [organization access](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/permissions#organization-permissions).
 * `sso_team_id` - (Optional) Unique Identifier to control [team membership](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/single-sign-on#team-names-and-sso-team-ids) via SAML. Defaults to `null`
+* `allow_member_token_management` - (Optional) Used by Owners and users with "Manage Teams" permissions to control whether team members can manage team tokens. Defaults to `true`.
 
 The `organization_access` block supports:
 
@@ -58,6 +59,7 @@ The `organization_access` block supports:
 * `manage_teams` - (Optional) Allow members to create, update, and delete teams.
 * `manage_organization_access` - (Optional) Allow members to update the organization access settings of teams.
 * `access_secret_teams` - (Optional) Allow members access to secret teams up to the level of permissions granted by their team permissions setting.
+* `manage_agent_pools` - (Optional) Allow members to create, edit, and delete agent pools within their organization.
 
 ## Attributes Reference
 

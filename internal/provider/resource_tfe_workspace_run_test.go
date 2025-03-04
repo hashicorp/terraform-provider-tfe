@@ -11,15 +11,11 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccTFEWorkspaceRun_withApplyOnlyBlock(t *testing.T) {
-	// Currently, tflocal cloud box is incapable of running terraform more than once at a time
-	// due to the use of the raw_exec nomad driver.
-	skipUnlessAfterDate(t, time.Date(2025, 5, 1, 0, 0, 0, 0, time.UTC))
-
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	tfeClient, err := getClientUsingEnv()
@@ -69,10 +65,6 @@ func TestAccTFEWorkspaceRun_withApplyOnlyBlock(t *testing.T) {
 }
 
 func TestAccTFEWorkspaceRun_withBothApplyAndDestroyBlocks(t *testing.T) {
-	// Currently, tflocal cloud box is incapable of running terraform more than once at a time
-	// due to the use of the raw_exec nomad driver.
-	skipUnlessAfterDate(t, time.Date(2025, 5, 1, 0, 0, 0, 0, time.UTC))
-
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	tfeClient, err := getClientUsingEnv()

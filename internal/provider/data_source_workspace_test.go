@@ -13,8 +13,8 @@ import (
 
 	"github.com/hashicorp/go-tfe"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccTFEWorkspaceDataSource_remoteStateConsumers(t *testing.T) {
@@ -184,7 +184,32 @@ func TestAccTFEWorkspaceDataSource_readAutoDestroyAt(t *testing.T) {
 			},
 			{
 				Config: testAccTFEWorkspaceDataSourceConfig_basicWithAutoDestroy(rInt),
-				Check:  resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "auto_destroy_at", "2100-01-01T00:00:00Z"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "auto_destroy_at", "2100-01-01T00:00:00Z"),
+					resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "inherits_project_auto_destroy", "false"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspaceDataSource_readAutoDestroyDuration(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspaceDataSourceConfig_basic(rInt),
+				Check:  resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "auto_destroy_activity_duration", ""),
+			},
+			{
+				Config: testAccTFEWorkspaceDataSourceConfig_basicWithAutoDestroyDuration(rInt),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "auto_destroy_activity_duration", "1d"),
+					resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "inherits_project_auto_destroy", "false"),
+				),
 			},
 		},
 	})
@@ -300,6 +325,27 @@ data "tfe_workspace" "foobar" {
   organization = tfe_workspace.foobar.organization
 }`, rInt, rInt)
 }
+
+func testAccTFEWorkspaceDataSourceConfig_basicWithAutoDestroyDuration(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name                           = "workspace-test-%d"
+  organization                   = tfe_organization.foobar.id
+  description                    = "provider-testing"
+  auto_destroy_activity_duration = "1d"
+}
+
+data "tfe_workspace" "foobar" {
+  name         = tfe_workspace.foobar.name
+  organization = tfe_workspace.foobar.organization
+}`, rInt, rInt)
+}
+
 func testAccTFEWorkspaceDataSourceConfigWithTriggerPatterns(workspaceName string, organizationName string) string {
 	return fmt.Sprintf(`
 data "tfe_workspace" "foobar" {

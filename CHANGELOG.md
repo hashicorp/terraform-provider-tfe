@@ -1,4 +1,96 @@
-## Unreleased
+## v.0.64.0
+
+FEATURES:
+
+* `r/tfe_project`: Add `auto_destroy_activity_duration` field to the project resource, which automatically propagates auto-destroy settings to workspaces [1550](https://github.com/hashicorp/terraform-provider-tfe/pull/1550)
+* `d/tfe_project`: Add `auto_destroy_activity_duration` field to the project datasource [1550](https://github.com/hashicorp/terraform-provider-tfe/pull/1550)
+* `r/tfe_team_project_access`: Add `variable_sets` attribute to `project_access`, by @mkam [#1565](https://github.com/hashicorp/terraform-provider-tfe/pull/1565)
+
+BUG FIXES:
+* `r/tfe_stack`: Fix serialization issue when using github app installation within vcs_repo block, by @mjyocca [#1572](https://github.com/hashicorp/terraform-provider-tfe/pull/1572)
+
+* `r/tfe_workspace_settings`: Prevent fetching of all workspaces as the `remote_state_consumer_ids` when `global_remote_state` is set to true, by @uk1288 [#1606](https://github.com/hashicorp/terraform-provider-tfe/pull/1606)
+
+## v.0.63.0
+
+BUG FIXES:
+* `r/tfe_workspace_settings`: Allow multiple unknown values in `remote_state_consumer_ids`, by @brandonc [#1569](https://github.com/hashicorp/terraform-provider-tfe/pull/1569)
+
+FEATURES:
+* **New Resource:** `tfe_team_notification_configuration` is a new resource for managing team notification configurations, by @jfreda ([#1540](https://github.com/hashicorp/terraform-provider-tfe/pull/1540))
+
+## v0.62.0
+
+FEATURES:
+* `r/tfe_variable_set`: Add `parent_project_id` attribute, by @mkam [#1522](https://github.com/hashicorp/terraform-provider-tfe/pull/1522)
+
+## v0.61.0
+
+DEPRECATIONS:
+* `r/tfe_workspace`: `global_remote_state` and `remote_state_consumer_ids` have been **deprecated** and moved to `tfe_workspace_settings` (see ENHANCEMENTS below for more details)
+
+FEATURES:
+* `r/tfe_audit_trail_token` is a new resource for managing audit trail tokens in organization, by @glensarti and @c4po [1533](https://github.com/hashicorp/terraform-provider-tfe/pull/1533)
+
+## v0.60.1
+
+BUG FIXES:
+* `r/tfe_policy`: enforcement level can be updated on OPA policies by @glennsarti [#1521](https://github.com/hashicorp/terraform-provider-tfe/pull/1521)
+
+ENHANCEMENTS:
+* `r/tfe_workspace_settings`: `global_remote_state` and `remote_state_consumer_ids` can now be managed using `tfe_workspace_settings`. This enhancement avoids the possibility of a mutual dependency between two or more workspaces that may access each others' state by @brandonc [#1524](https://github.com/hashicorp/terraform-provider-tfe/pull/1524)
+
+## v0.60.0
+
+BUG FIXES:
+* `r/tfe_no_code_module`: Wait for the registry module version to be created before creating the no-code-module. Also, the version_pin attribute must be set when variable options are created by @dsa0x [#1504](https://github.com/hashicorp/terraform-provider-tfe/pull/1504)
+* `r/tfe_workspace_run_task`: Do not error when reading workspace tasks that no longer exist by @glennsarti [#1500](https://github.com/hashicorp/terraform-provider-tfe/pull/1459)
+* `r/tfe_organization_run_task`: Do not error when reading organization tasks that no longer exist by @glennsarti [#1500](https://github.com/hashicorp/terraform-provider-tfe/pull/1459)
+* `r/tfe_organization_run_task_global_settings`: Do not error when reading organization task global settings that no longer exist by @glennsarti [#1500](https://github.com/hashicorp/terraform-provider-tfe/pull/1459)
+
+FEATURES:
+* `r/tfe_organization`: Add `speculative_plan_management_enabled` attribute, by @lilincmu [#1509](https://github.com/hashicorp/terraform-provider-tfe/pull/1509)
+* `d/tfe_organization`: Add `speculative_plan_management_enabled` attribute, by @lilincmu [#1509](https://github.com/hashicorp/terraform-provider-tfe/pull/1509)
+
+## v0.59.0
+
+## BREAKING CHANGES
+
+* `r/tfe_team`: Default "secret" visibility has been removed from tfe_team because it now requires explicit or owner access. The default, "organization", is now computed by the platform. by @brandonc [#1439](https://github.com/hashicorp/terraform-provider-tfe/pull/1439)
+
+BUG FIXES:
+* `r/tfe_workspace_run_task`: The Workspace Run Task resource will use the stages attribute by @glennsarti [#1459](https://github.com/hashicorp/terraform-provider-tfe/pull/1459)
+
+## v0.58.0
+
+ENHANCEMENTS:
+* `d/tfe_project`: Add `workspace_names` attribute, by @1natedawg [#1429](https://github.com/hashicorp/terraform-provider-tfe/pull/1429)
+* `r/tfe_team`: Add attribute `allow_member_token_management` to `tfe_team` by @juliannatetreault [#1398](https://github.com/hashicorp/terraform-provider-tfe/pull/1398)
+
+BUG FIXES:
+* `r/tfe_workspace` html_url is now planned to be recomputed when `name` changes. Previously, changed values would show up on the next plan, by @brandonc [1422](https://github.com/hashicorp/terraform-provider-tfe/issues/1422)
+
+## v0.57.1
+
+* `r/tfe_stack` initial support for this BETA feature was released in v0.57.0 but the documentation link was broken and it was not mentioned in the release notes. NOTE: This resource is subject to change and has limited support in HCP Terraform.
+* `d/tfe_github_app_installation` the documentation link for this resource was incorrectly named tfe_github_installation
+
+## v0.57.0
+
+FEATURES:
+* `r/tfe_data_retention_policy` is a new resource for managing data retention policies for organizations and workspaces, by @SwiftEngineer [1385](https://github.com/hashicorp/terraform-provider-tfe/pull/1385)
+* `r/tfe_team`: Add attribute `manage_agent_pools` to `organization_access` on `tfe_team` by @emlanctot [#1358](https://github.com/hashicorp/terraform-provider-tfe/pull/1358)
+* `r/tfe_workspace`: Add an `auto_destroy_activity_duration` attribute for automatic scheduling of auto-destroy runs based off of workspace activity, by @notchairmk [#1377](https://github.com/hashicorp/terraform-provider-tfe/pull/1377)
+* `d/tfe_workspace`: Add an `auto_destroy_activity_duration`, by @notchairmk [#1377](https://github.com/hashicorp/terraform-provider-tfe/pull/1377)
+* `d/tfe_organization_run_task_global_settings`: Add a datasource to retrieve the global settings of Run tasks, by @glennsarti [#1328](https://github.com/hashicorp/terraform-provider-tfe/pull/1330)
+* `r/tfe_organization_run_task_global_settings`: Add a resource to manage the global settings of Run tasks, by @glennsarti [#1328](https://github.com/hashicorp/terraform-provider-tfe/pull/1330)
+* `r/tfe_notification_configuration`: Add `workspace:auto_destroy_reminder` and `workspace:auto_destroy_run_results` as allowed notification configuration trigger types, by @notchairmk [#1394](https://github.com/hashicorp/terraform-provider-tfe/pull/1394)
+* `r/tfe_workspace_settings`: Remove workspace and agent pool ID validations, by @joekarl [1418](https://github.com/hashicorp/terraform-provider-tfe/pull/1418)
+* `r/tfe_team_project_access`: Remove project ID validation, by @joekarl [1418](https://github.com/hashicorp/terraform-provider-tfe/pull/1418)
+
+DEPRECATIONS and BREAKING CHANGES:
+* `r/_workspace_run_task`: The `stage` attribute has been deprecated in favor of the `stages` attribute, by @glennsarti [#1328](https://github.com/hashicorp/terraform-provider-tfe/pull/1330)
+* `d/_workspace_run_task`: The `stage` attribute has been deprecated in favor of the `stages` attribute, by @glennsarti [#1328](https://github.com/hashicorp/terraform-provider-tfe/pull/1330)
 
 ## v0.56.0
 
@@ -10,8 +102,12 @@ ENHANCEMENTS:
 * `r/tfe_oauth_client`: Add `agent_pool_id` as an optional argument to enable Private VCS support, by @roleesinhaHC [1255](https://github.com/hashicorp/terraform-provider-tfe/pull/1255)
 * `r/tfe_project`: Increase the Project name length from 36 to 40 characters @hs26gill [#1351](https://github.com/hashicorp/terraform-provider-tfe/pull/1351)
 
+
 BUG FIXES:
 * `r/tfe_registry_module`: Prevents constant diff after a successful apply when `tags` and `tests_enabled` is not set by @Uk1288 [#1357](https://github.com/hashicorp/terraform-provider-tfe/pull/1357)
+
+FEATURES:
+* **New Data Source**: `d/tfe_projects` is a new data source to retrieve all projects in an organization, by @tdevelioglu
 
 ## v0.55.0
 

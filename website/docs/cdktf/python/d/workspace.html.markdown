@@ -45,10 +45,12 @@ In addition to all arguments above, the following attributes are exported:
 * `allow_destroy_plan` - Indicates whether destroy plans can be queued on the workspace.
 * `auto_apply` - Indicates whether to automatically apply changes when a Terraform plan is successful.
 * `auto_apply_run_trigger` - Whether the workspace will automatically apply changes for runs that were created by run triggers from another workspace.
+* `auto_destroy_activity_duration` - A duration string representing time after workspace activity when an auto-destroy run will be triggered.
 * `auto_destroy_at` - Future date/time string at which point all resources in a workspace will be scheduled to be deleted.
 * `assessments_enabled` - (Available only in HCP Terraform) Indicates whether health assessments such as drift detection are enabled for the workspace.
 * `file_triggers_enabled` - Indicates whether runs are triggered based on the changed files in a VCS push (if `true`) or always triggered on every push (if `false`).
 * `global_remote_state` - (Optional) Whether the workspace should allow all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (determined by the `remote_state_consumer_ids` argument).
+* `inherits_project_auto_destroy` - Indicates whether this workspace inherits project auto destroy settings.
 * `remote_state_consumer_ids` - (Optional) A set of workspace IDs that will be set as the remote state consumers for the given workspace. Cannot be used if `global_remote_state` is set to `true`.
 * `operations` - Indicates whether the workspace is using remote execution mode. Set to `false` to switch execution mode to local. `true` by default.
 * `policy_check_failures` - The number of policy check failures from the latest run.
@@ -86,4 +88,4 @@ The `vcs_repo` block contains:
 * `oauth_token_id` - OAuth token ID of the configured VCS connection.
 * `tags_regex` - A regular expression used to trigger a Workspace run for matching Git tags.
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-7500b2311f3804feb075f040e60989aa8e4fc69cc4ef327b51b7e3ab1f599d6d -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-d80e2cf72aa52f98270a38620225ac1ef8a4810885e13dedc294ad2c1d21c880 -->

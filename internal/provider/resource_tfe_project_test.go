@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccTFEProject_basic(t *testing.T) {
@@ -129,6 +129,43 @@ func TestAccTFEProject_import(t *testing.T) {
 	})
 }
 
+func TestAccTFEProject_withAutoDestroy(t *testing.T) {
+	project := &tfe.Project{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEProjectDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEProject_basicWithAutoDestroy(rInt, "3d"),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEProjectExists(
+						"tfe_project.foobar", project),
+					testAccCheckTFEProjectAttributes(project),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "auto_destroy_activity_duration", "3d"),
+				),
+			},
+			{
+				Config:      testAccTFEProject_basicWithAutoDestroy(rInt, "10m"),
+				ExpectError: regexp.MustCompile(`must be 1-4 digits followed by d or h`),
+			},
+			{
+				Config: testAccTFEProject_basic(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEProjectExists(
+						"tfe_project.foobar", project),
+					testAccCheckTFEProjectAttributes(project),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "auto_destroy_activity_duration", ""),
+				),
+			},
+		},
+	})
+}
+
 func testAccTFEProject_update(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
@@ -180,6 +217,20 @@ resource "tfe_project" "foobar" {
   organization = tfe_organization.foobar.name
   name = "aa"
 }`, rInt)
+}
+
+func testAccTFEProject_basicWithAutoDestroy(rInt int, duration string) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "foobar" {
+  organization = tfe_organization.foobar.name
+  name = "projecttest"
+  auto_destroy_activity_duration = "%s"
+}`, rInt, duration)
 }
 
 func testAccCheckTFEProjectDestroy(s *terraform.State) error {

@@ -120,13 +120,18 @@ func resourceTFETeam() *schema.Resource {
 							Optional: true,
 							Default:  false,
 						},
+						"manage_agent_pools": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
+						},
 					},
 				},
 			},
 			"visibility": {
 				Type:     schema.TypeString,
 				Optional: true,
-				Default:  "secret",
+				Computed: true,
 				ValidateFunc: validation.StringInSlice([]string{
 					"secret",
 					"organization",
@@ -135,6 +140,11 @@ func resourceTFETeam() *schema.Resource {
 			"sso_team_id": {
 				Type:     schema.TypeString,
 				Optional: true,
+			},
+			"allow_member_token_management": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
 			},
 		},
 	}
@@ -173,6 +183,7 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 			ManageTeams:              tfe.Bool(organizationAccess["manage_teams"].(bool)),
 			ManageOrganizationAccess: tfe.Bool(organizationAccess["manage_organization_access"].(bool)),
 			AccessSecretTeams:        tfe.Bool(organizationAccess["access_secret_teams"].(bool)),
+			ManageAgentPools:         tfe.Bool(organizationAccess["manage_agent_pools"].(bool)),
 		}
 	}
 
@@ -183,6 +194,8 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 	if v, ok := d.GetOk("sso_team_id"); ok {
 		options.SSOTeamID = tfe.String(v.(string))
 	}
+
+	options.AllowMemberTokenManagement = tfe.Bool(d.Get("allow_member_token_management").(bool))
 
 	log.Printf("[DEBUG] Create team %s for organization: %s", name, organization)
 	team, err := config.Client.Teams.Create(ctx, organization, options)
@@ -236,6 +249,7 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 			"manage_teams":               team.OrganizationAccess.ManageTeams,
 			"manage_organization_access": team.OrganizationAccess.ManageOrganizationAccess,
 			"access_secret_teams":        team.OrganizationAccess.AccessSecretTeams,
+			"manage_agent_pools":         team.OrganizationAccess.ManageAgentPools,
 		}}
 		if err := d.Set("organization_access", organizationAccess); err != nil {
 			return fmt.Errorf("error setting organization access for team %s: %w", d.Id(), err)
@@ -243,6 +257,7 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	d.Set("visibility", team.Visibility)
 	d.Set("sso_team_id", team.SSOTeamID)
+	d.Set("allow_member_token_management", team.AllowMemberTokenManagement)
 
 	return nil
 }
@@ -276,6 +291,7 @@ func resourceTFETeamUpdate(d *schema.ResourceData, meta interface{}) error {
 			ManageTeams:              tfe.Bool(organizationAccess["manage_teams"].(bool)),
 			ManageOrganizationAccess: tfe.Bool(organizationAccess["manage_organization_access"].(bool)),
 			AccessSecretTeams:        tfe.Bool(organizationAccess["access_secret_teams"].(bool)),
+			ManageAgentPools:         tfe.Bool(organizationAccess["manage_agent_pools"].(bool)),
 		}
 	}
 
@@ -288,6 +304,8 @@ func resourceTFETeamUpdate(d *schema.ResourceData, meta interface{}) error {
 	} else {
 		options.SSOTeamID = tfe.String("")
 	}
+
+	options.AllowMemberTokenManagement = tfe.Bool(d.Get("allow_member_token_management").(bool))
 
 	log.Printf("[DEBUG] Update team: %s", d.Id())
 	_, err := config.Client.Teams.Update(ctx, d.Id(), options)

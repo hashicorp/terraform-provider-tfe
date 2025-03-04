@@ -33,4 +33,5 @@ In addition to all arguments above, the following attributes are exported:
 
 * `enforcement_level` - The enforcement level of the task.
 * `id` - The ID of the Workspace Run task.
-* `stage` - Which stage the task will run in.
+* `stage` - **Deprecated** Use `stages` instead.
+* `stages` - Which stages the task will run in.

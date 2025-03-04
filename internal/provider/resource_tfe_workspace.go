@@ -51,16 +51,26 @@ func resourceTFEWorkspace() *schema.Resource {
 				return err
 			}
 
-			if err := validateRemoteState(c, d); err != nil {
-				return err
-			}
-
 			if err := validateTagNames(c, d); err != nil {
 				return err
 			}
 
 			if err := customizeDiffIfProviderDefaultOrganizationChanged(c, d, meta); err != nil {
 				return err
+			}
+
+			if err := customizeDiffAutoDestroyAt(c, d); err != nil {
+				return err
+			}
+
+			if err := customizeDiffAutoDestroyActivityDuration(c, d); err != nil {
+				return err
+			}
+
+			if d.HasChange("name") {
+				if err := d.SetNewComputed("html_url"); err != nil {
+					return err
+				}
 			}
 
 			return nil
@@ -112,7 +122,16 @@ func resourceTFEWorkspace() *schema.Resource {
 
 			"auto_destroy_at": {
 				Type:     schema.TypeString,
+				Computed: true,
 				Optional: true,
+			},
+
+			"auto_destroy_activity_duration": {
+				Type:          schema.TypeString,
+				Computed:      true,
+				Optional:      true,
+				ConflictsWith: []string{"auto_destroy_at"},
+				ValidateFunc:  validation.StringMatch(regexp.MustCompile(`^\d{1,4}[dh]$`), "must be 1-4 digits followed by d or h"),
 			},
 
 			"execution_mode": {
@@ -138,16 +157,25 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"global_remote_state": {
+				Type:       schema.TypeBool,
+				Optional:   true,
+				Computed:   true,
+				Deprecated: "Use resource `tfe_workspace_settings` to modify the workspace `global_remote_state`. `global_remote_state` on `tfe_workspace` is no longer validated properly and will be removed in a future release of the provider.",
+			},
+
+			"inherits_project_auto_destroy": {
 				Type:     schema.TypeBool,
-				Optional: true,
+				Optional: false,
 				Computed: true,
+				Required: false,
 			},
 
 			"remote_state_consumer_ids": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Type:       schema.TypeSet,
+				Optional:   true,
+				Computed:   true,
+				Elem:       &schema.Schema{Type: schema.TypeString},
+				Deprecated: "Use resource `tfe_workspace_settings` to modify the workspace `remote_state_consumer_ids`. `remote_state_consumer_ids` on `tfe_workspace` is no longer validated properly on this resource and This attribute will be removed in a future release of the provider.",
 			},
 
 			"assessments_enabled": {
@@ -354,6 +382,10 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		options.AutoDestroyAt = autoDestroyAt
 	}
 
+	if v, ok := d.GetOk("auto_destroy_activity_duration"); ok {
+		options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(v.(string))
+	}
+
 	if v, ok := d.GetOk("execution_mode"); ok {
 		executionMode := tfe.String(v.(string))
 		options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{
@@ -518,6 +550,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("working_directory", workspace.WorkingDirectory)
 	d.Set("organization", workspace.Organization.Name)
 	d.Set("resource_count", workspace.ResourceCount)
+	d.Set("inherits_project_auto_destroy", workspace.InheritsProjectAutoDestroy)
 
 	if workspace.Links["self-html"] != nil {
 		baseAPI := config.Client.BaseURL()
@@ -552,6 +585,16 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error flattening auto destroy during read: %w", err)
 	}
 	d.Set("auto_destroy_at", autoDestroyAt)
+
+	if workspace.AutoDestroyActivityDuration.IsSpecified() {
+		v, err := workspace.AutoDestroyActivityDuration.Get()
+		if err != nil {
+			return fmt.Errorf("Error reading auto destroy activity duration: %w", err)
+		}
+		d.Set("auto_destroy_activity_duration", v)
+	} else {
+		d.Set("auto_destroy_activity_duration", nil)
+	}
 
 	var tagNames []interface{}
 	managedTags := d.Get("tag_names").(*schema.Set)
@@ -605,7 +648,8 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		d.HasChange("operations") || d.HasChange("execution_mode") ||
 		d.HasChange("description") || d.HasChange("agent_pool_id") ||
 		d.HasChange("global_remote_state") || d.HasChange("structured_run_output_enabled") ||
-		d.HasChange("assessments_enabled") || d.HasChange("project_id") || d.HasChange("auto_destroy_at") {
+		d.HasChange("assessments_enabled") || d.HasChange("project_id") ||
+		hasAutoDestroyAtChange(d) || d.HasChange("auto_destroy_activity_duration") {
 		// Create a new options struct.
 		options := tfe.WorkspaceUpdateOptions{
 			Name:                       tfe.String(d.Get("name").(string)),
@@ -658,12 +702,21 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			}
 		}
 
-		if d.HasChange("auto_destroy_at") {
+		if hasAutoDestroyAtChange(d) {
 			autoDestroyAt, err := expandAutoDestroyAt(d)
 			if err != nil {
 				return fmt.Errorf("Error expanding auto destroy during update: %w", err)
 			}
 			options.AutoDestroyAt = autoDestroyAt
+		}
+
+		if d.HasChange("auto_destroy_activity_duration") {
+			duration, ok := d.GetOk("auto_destroy_activity_duration")
+			if !ok {
+				options.AutoDestroyActivityDuration = jsonapi.NewNullNullableAttr[string]()
+			} else {
+				options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(duration.(string))
+			}
 		}
 
 		if d.HasChange("execution_mode") {
@@ -961,35 +1014,6 @@ func validateAgentExecution(_ context.Context, d *schema.ResourceDiff) error {
 	return nil
 }
 
-func expandAutoDestroyAt(d *schema.ResourceData) (jsonapi.NullableAttr[time.Time], error) {
-	v, ok := d.GetOk("auto_destroy_at")
-
-	if !ok {
-		return jsonapi.NewNullNullableAttr[time.Time](), nil
-	}
-
-	autoDestroyAt, err := time.Parse(time.RFC3339, v.(string))
-	if err != nil {
-		return nil, err
-	}
-
-	return jsonapi.NewNullableAttrWithValue(autoDestroyAt), nil
-}
-
-func flattenAutoDestroyAt(a jsonapi.NullableAttr[time.Time]) (*string, error) {
-	if !a.IsSpecified() {
-		return nil, nil
-	}
-
-	autoDestroyTime, err := a.Get()
-	if err != nil {
-		return nil, err
-	}
-
-	autoDestroyAt := autoDestroyTime.Format(time.RFC3339)
-	return &autoDestroyAt, nil
-}
-
 func validTagName(tag string) bool {
 	// Tags are re-validated here because the API will accept uppercase letters and automatically
 	// downcase them, causing resource drift. It's better to catch this issue during the plan phase
@@ -1017,23 +1041,6 @@ func validateTagNames(_ context.Context, d *schema.ResourceDiff) error {
 			return fmt.Errorf("%q is not a valid tag name. Tag must be one or more characters; can include lowercase letters, numbers, colons, hyphens, and underscores; and must begin and end with a letter or number", tagName)
 		}
 	}
-	return nil
-}
-
-func validateRemoteState(_ context.Context, d *schema.ResourceDiff) error {
-	// If remote state consumers aren't set, the global setting can be either value and it
-	// doesn't matter.
-	_, ok := d.GetOk("remote_state_consumer_ids")
-	if !ok {
-		return nil
-	}
-
-	if globalRemoteState, ok := d.GetOk("global_remote_state"); ok {
-		if globalRemoteState.(bool) {
-			return fmt.Errorf("global_remote_state must be 'false' when setting remote_state_consumer_ids")
-		}
-	}
-
 	return nil
 }
 
@@ -1075,4 +1082,83 @@ func errWorkspaceResourceCountCheck(workspaceID string, resourceCount int) error
 			"error deleting workspace %s: This workspace has %v resources under management and must be force deleted by setting force_delete = true", workspaceID, resourceCount)
 	}
 	return nil
+}
+
+func customizeDiffAutoDestroyAt(_ context.Context, d *schema.ResourceDiff) error {
+	config := d.GetRawConfig()
+
+	// check if auto_destroy_activity_duration is set in config
+	if !config.GetAttr("auto_destroy_activity_duration").IsNull() {
+		return nil
+	}
+
+	inheritsProjectAutoDestroy, ok := d.GetOk("inherits_project_auto_destroy")
+	if ok && inheritsProjectAutoDestroy.(bool) {
+		return nil
+	}
+
+	// if config auto_destroy_at is unset but it exists in state, clear it out
+	// required because auto_destroy_at is computed and we want to set it to null
+	if _, ok := d.GetOk("auto_destroy_at"); ok && config.GetAttr("auto_destroy_at").IsNull() {
+		return d.SetNew("auto_destroy_at", nil)
+	}
+
+	return nil
+}
+
+func customizeDiffAutoDestroyActivityDuration(_ context.Context, d *schema.ResourceDiff) error {
+	inheritsProjectAutoDestroy, ok := d.GetOk("inherits_project_auto_destroy")
+	if ok && inheritsProjectAutoDestroy.(bool) {
+		return nil
+	}
+
+	if _, ok := d.GetOk("auto_destroy_activity_duration"); ok && d.GetRawConfig().GetAttr("auto_destroy_activity_duration").IsNull() {
+		return d.SetNew("auto_destroy_activity_duration", nil)
+	}
+
+	return nil
+}
+
+func expandAutoDestroyAt(d *schema.ResourceData) (jsonapi.NullableAttr[time.Time], error) {
+	v := d.GetRawConfig().GetAttr("auto_destroy_at")
+
+	if v.IsNull() {
+		return jsonapi.NewNullNullableAttr[time.Time](), nil
+	}
+
+	autoDestroyAt, err := time.Parse(time.RFC3339, v.AsString())
+	if err != nil {
+		return nil, err
+	}
+
+	return jsonapi.NewNullableAttrWithValue(autoDestroyAt), nil
+}
+
+func flattenAutoDestroyAt(a jsonapi.NullableAttr[time.Time]) (*string, error) {
+	if !a.IsSpecified() {
+		return nil, nil
+	}
+
+	autoDestroyTime, err := a.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	autoDestroyAt := autoDestroyTime.Format(time.RFC3339)
+	return &autoDestroyAt, nil
+}
+
+func hasAutoDestroyAtChange(d *schema.ResourceData) bool {
+	state := d.GetRawState()
+	if state.IsNull() {
+		return d.HasChange("auto_destroy_at")
+	}
+
+	config := d.GetRawConfig()
+	autoDestroyAt := config.GetAttr("auto_destroy_at")
+	if !autoDestroyAt.IsNull() {
+		return d.HasChange("auto_destroy_at")
+	}
+
+	return config.GetAttr("auto_destroy_at") != state.GetAttr("auto_destroy_at")
 }

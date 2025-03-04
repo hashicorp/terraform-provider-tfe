@@ -11,8 +11,6 @@ Provides a workspace resource.
 
 ~> **NOTE:** Setting the execution mode and agent pool affinity directly on the workspace is deprecated in favor of using both [tfe_workspace_settings](workspace_settings) and [tfe_organization_default_settings](organization_default_settings), since they allow more precise control and fully support [agent_pool_allowed_workspaces](agent_pool_allowed_workspaces). Use caution when unsetting `execution_mode`, as it now leaves any prior value unmanaged instead of reverting to the old default value of `"remote"`.
 
-~> **NOTE:** Using `global_remote_state` or `remote_state_consumer_ids` requires using the provider with HCP Terraform or an instance of Terraform Enterprise at least as recent as v202104-1.
-
 ## Example Usage
 
 Basic usage:
@@ -68,7 +66,8 @@ The following arguments are supported:
 * `assessments_enabled` - (Optional) Whether to regularly run health assessments such as drift detection on the workspace. Defaults to `false`.
 * `auto_apply` - (Optional) Whether to automatically apply changes when a Terraform plan is successful. Defaults to `false`.
 * `auto_apply_run_trigger` - (Optional) Whether to automatically apply changes for runs that were created by run triggers from another workspace. Defaults to `false`.
-* `auto_destroy_at` - (Optional) A future date/time string at which point all resources in a workspace will be scheduled for deletion. Must be a string in RFC3339 format (e.g. "2100-01-01T00:00:00Z").
+* `auto_destroy_activity_duration` - (Optional) A duration string of the period of time after workspace activity to automatically schedule an auto-destroy run. Must be of the form `<number><unit>` where allowed unit values are "d" and "h". Conflicts with `auto_destroy_at`.
+* `auto_destroy_at` - (Optional) A future date/time string at which point all resources in a workspace will be scheduled for deletion. Must be a string in RFC3339 format (e.g. "2100-01-01T00:00:00Z"). Conflicts with `auto_destroy_activity_duration`.
 
 ~> **NOTE:** `auto_destroy_at` is not intended for workspaces containing production resources or long-lived workspaces. Since this attribute is in-part managed by HCP Terraform, using `ignore_changes` for this attribute may be preferred.
 
@@ -79,7 +78,7 @@ The following arguments are supported:
   trigger prefixes describe a set of paths which must contain changes for a
   VCS push to trigger a run. If disabled, any push will trigger a run.
 * `force_delete` - (Optional) If this attribute is present on a workspace that is being deleted through the provider, it will use the existing force delete API. If this attribute is not present or false it will safe delete the workspace.
-* `global_remote_state` - (Optional) Whether the workspace allows all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (`remote_state_consumer_ids`).
+* `global_remote_state` - (Optional) **Deprecated** Whether the workspace allows all workspaces in the organization to access its state data during runs. Use [tfe_workspace_settings](workspace_settings) instead.
 * `operations` - **Deprecated** Whether to use remote execution mode.
   Defaults to `true`. When set to `false`, the workspace will be used for
   state storage only. This value _must not_ be provided if `execution_mode` is
@@ -94,7 +93,7 @@ The following arguments are supported:
   is `false`. The provider uses `true` as any workspace provisioned with
   `false` would need to then have a run manually queued out-of-band before
   accepting webhooks.
-* `remote_state_consumer_ids` - (Optional) The set of workspace IDs set as explicit remote state consumers for the given workspace.
+* `remote_state_consumer_ids` - (Optional) **Deprecated** The set of workspace IDs set as explicit remote state consumers for the given workspace. Use [tfe_workspace_settings](workspace_settings) instead.
 * `source_name` - (Optional) A friendly name for the application or client
    creating this workspace. If set, this will be displayed on the workspace as
    "Created via <SOURCE NAME>".
@@ -157,6 +156,7 @@ In addition to all arguments above, the following attributes are exported:
 * `id` - The workspace ID.
 * `resource_count` - The number of resources managed by the workspace.
 * `html_url` - The URL to the browsable HTML overview of the workspace.
+* `inherits_project_auto_destroy` - Indicates whether this workspace inherits project auto destroy settings.
 
 ## Import
 

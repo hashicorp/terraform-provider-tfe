@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccTFERegistryModule_vcsBasic(t *testing.T) {
@@ -1072,8 +1072,6 @@ func testAccCheckTFERegistryModuleDestroy(s *terraform.State) error {
 }
 
 func testAccPreCheckTFERegistryModule(t *testing.T) {
-	skipUnlessAfterDate(t, time.Date(2024, 7, 1, 0, 0, 0, 0, time.UTC))
-
 	if envGithubToken == "" {
 		t.Skip("Please set GITHUB_TOKEN to run this test")
 	}

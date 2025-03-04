@@ -59,7 +59,7 @@ The `permissions` block supports:
 
 * `runs` - (Required) The permission to grant the team on the workspace's runs. Valid values are `read`, `plan`, or `apply`.
 * `variables` - (Required) The permission to grant the team on the workspace's variables. Valid values are `none`, `read`, or `write`.
-* `stateVersions` - (Required) The permission to grant the team on the workspace's state versions. Valid values are `none`, `read`, `read-outputs`, or `write`.
+* `stateVersions` - (Required) The permission to grant the team on the workspace's state versions. Valid values are `none`, `read`, `readOutputs`, or `write`.
 * `sentinelMocks` - (Required) The permission to grant the team on the workspace's generated Sentinel mocks, Valid values are `none` or `read`.
 * `workspaceLocking` - (Required) Boolean determining whether or not to grant the team permission to manually lock/unlock the workspace.
 * `runTasks` - (Required) Boolean determining whether or not to grant the team permission to manage workspace run tasks.

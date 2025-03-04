@@ -10,25 +10,22 @@ import (
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ datasource.DataSource              = &dataSourceWorkspaceRunTask{}
 	_ datasource.DataSourceWithConfigure = &dataSourceWorkspaceRunTask{}
 )
 
-// NewWorkspaceRunTaskDataSource is a helper function to simplify the provider implementation.
 func NewWorkspaceRunTaskDataSource() datasource.DataSource {
 	return &dataSourceWorkspaceRunTask{}
 }
 
-// dataSourceWorkspaceRunTask is the data source implementation.
 type dataSourceWorkspaceRunTask struct {
 	config ConfiguredClient
 }
 
-// Metadata returns the data source type name.
 func (d *dataSourceWorkspaceRunTask) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_workspace_run_task"
 }
@@ -53,7 +50,13 @@ func (d *dataSourceWorkspaceRunTask) Schema(_ context.Context, _ datasource.Sche
 				Computed:    true,
 			},
 			"stage": schema.StringAttribute{
-				Description: "Which stage the task will run in.",
+				DeprecationMessage: "stage is deprecated, please use stages instead",
+				Description:        "Which stage the task will run in.",
+				Computed:           true,
+			},
+			"stages": schema.ListAttribute{
+				ElementType: types.StringType,
+				Description: "Which stages the task will run in.",
 				Computed:    true,
 			},
 		},
@@ -78,9 +81,8 @@ func (d *dataSourceWorkspaceRunTask) Configure(_ context.Context, req datasource
 	d.config = client
 }
 
-// Read refreshes the Terraform state with the latest data.
 func (d *dataSourceWorkspaceRunTask) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var data modelTFEWorkspaceRunTaskV0
+	var data modelTFEWorkspaceRunTaskV1
 
 	// Read Terraform configuration data into the model
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)

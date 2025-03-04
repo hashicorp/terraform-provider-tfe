@@ -60,6 +60,22 @@ resource "tfe_workspace_settings" "test-settings" {
 }
 ```
 
+Using `remote_state_consumer_ids`:
+
+```hcl
+resource "tfe_workspace" "test" {
+  for_each                  = toset(["qa","production"])
+  name                      = "${each.value}-test"
+}
+
+resource "tfe_workspace_settings" "test-settings" {
+  for_each                  = toset(["qa","production"])
+  workspace_id              = tfe_workspace.test[each.value].id
+  global_remote_state       = false
+  remote_state_consumer_ids = toset(compact([each.value == "production" ? tfe_workspace.test["qa"].id : ""]))
+}
+```
+
 This resource may be used as a data source when no optional arguments are defined:
 
 ```hcl
@@ -89,6 +105,8 @@ The following arguments are supported:
   to be set to `agent`. This value _must not_ be provided if `execution_mode` is set to any other value.
 * `execution_mode` - (Optional) Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode)
   to use. Using HCP Terraform, valid values are `remote`, `local` or `agent`. When set to `local`, the workspace will be used for state storage only. **Important:** If you omit this attribute, the resource configures the workspace to use your organization's default execution mode (which in turn defaults to `remote`), removing any explicit value that might have previously been set for the workspace.
+* `global_remote_state` - (Optional) Whether the workspace allows all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (`remote_state_consumer_ids`). By default, HashiCorp recommends you do not allow other workspaces to access their state. We recommend that you follow the principle of least privilege and only enable state access between workspaces that specifically need information from each other.
+* `remote_state_consumer_ids` - (Optional) The set of workspace IDs set as explicit remote state consumers for the given workspace. To set this attribute, global_remote_state must be false.
 
 ## Attributes Reference
 

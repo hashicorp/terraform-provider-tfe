@@ -46,8 +46,8 @@ The following arguments are supported:
 * `ssoApiTokenSessionTimeout` - (Optional) Specifies the Single Sign On session timeout in seconds. Defaults to 14 days.
 * `certificate` - (Optional) The certificate used for request and assertion signing.
 * `privateKey` - (Optional) The private key used for request and assertion signing.
-* `signatureSigningMethod` - (Optional) Signature Signing Method. Must be either `SHA1` or `SHA256`. Defaults to `SHA256`.
-* `signatureDigestMethod` - (Optional) Signature Digest Method. Must be either `SHA1` or `SHA256`. Defaults to `SHA256`.
+* `signatureSigningMethod` - (Optional) Signature Signing Method. Must be either `sha1` or `sha256`. Defaults to `sha256`.
+* `signatureDigestMethod` - (Optional) Signature Digest Method. Must be either `sha1` or `sha256`. Defaults to `sha256`.
 
 ## Attributes Reference
 

@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccTFEPolicy_basic(t *testing.T) {
@@ -317,6 +317,27 @@ func TestAccTFEPolicyOPA_update(t *testing.T) {
 						"tfe_policy.foobar", "query", "data.example.ruler"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy.foobar", "enforce_mode", "advisory"),
+				),
+			},
+			// And check that we can back to what we had before
+			{
+				Config: testAccTFEPolicyOPA_updateQuery(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicyExists(
+						"tfe_policy.foobar", policy),
+					testAccCheckTFEOPAPolicyAttributesUpdatedQuery(policy),
+					resource.TestCheckResourceAttr(
+						"tfe_policy.foobar", "name", "policy-test"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy.foobar", "description", "A test policy"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy.foobar", "kind", "opa"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy.foobar", "policy", "package example rule[\"not allowed\"] { false }"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy.foobar", "query", "data.example.ruler"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy.foobar", "enforce_mode", "mandatory"),
 				),
 			},
 		},

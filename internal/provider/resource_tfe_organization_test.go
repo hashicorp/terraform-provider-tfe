@@ -12,8 +12,9 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccTFEOrganization_basic(t *testing.T) {
@@ -82,6 +83,8 @@ func TestAccTFEOrganization_full(t *testing.T) {
 						"tfe_organization.foobar", "assessments_enforced", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "allow_force_delete_workspaces", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "speculative_plan_management_enabled", "true"),
 				),
 			},
 		},
@@ -227,8 +230,12 @@ func TestAccTFEOrganization_case(t *testing.T) {
 				),
 			},
 			{
-				Config:   testAccTFEOrganization_title_case(rInt),
-				PlanOnly: true,
+				Config: testAccTFEOrganization_title_case(rInt),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
 			},
 		},
 	})

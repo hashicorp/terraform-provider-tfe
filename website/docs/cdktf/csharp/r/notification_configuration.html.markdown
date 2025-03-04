@@ -165,7 +165,7 @@ The following arguments are supported:
   This value _must not_ be provided if `DestinationType` is `Email`, `MicrosoftTeams`, or `Slack`.
 * `Triggers` - (Optional) The array of triggers for which this notification configuration will
   send notifications. Valid values are `Run:created`, `Run:planning`, `Run:needsAttention`, `Run:applying`
-  `Run:completed`, `Run:errored`, `Assessment:checkFailure`, `Assessment:drifted`, or `Assessment:failed`.
+  `Run:completed`, `Run:errored`, `Assessment:checkFailure`, `Assessment:drifted`, `Assessment:failed`, `Workspace:autoDestroyReminder`, or `Workspace:autoDestroyRunResults`.
   If omitted, no notification triggers are configured.
 * `Url` - (Required if `DestinationType` is `Generic`, `MicrosoftTeams`, or `Slack`) The HTTP or HTTPS URL of the notification
   configuration where notification requests will be made. This value _must not_ be provided if `DestinationType`
@@ -184,4 +184,4 @@ Notification configurations can be imported; use `<NOTIFICATION CONFIGURATION ID
 terraform import tfe_notification_configuration.test nc-qV9JnKRkmtMa4zcA
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-51e766a4c44b6ce67b59c3e0006ed5c2511164cb524d4d67da8afdbca5241e7c -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-710b7782960f76dfa6c0cc90313ce4411ea1070e9620f03dafea7305849d1d27 -->
