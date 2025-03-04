@@ -10,6 +10,7 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -53,11 +54,16 @@ type modelTFEOrganizationDefaultSettings struct {
 }
 
 func modelFromTFEOrganization(v *tfe.Organization) modelTFEOrganizationDefaultSettings {
-	return modelTFEOrganizationDefaultSettings{
+	model := modelTFEOrganizationDefaultSettings{
 		Organization:         types.StringValue(v.Name),
 		DefaultExecutionMode: types.StringValue(v.DefaultExecutionMode),
-		DefaultAgentPoolID:   types.StringValue(v.DefaultAgentPool.ID),
 	}
+
+	if v.DefaultAgentPool != nil {
+		model.DefaultAgentPoolID = types.StringValue(v.DefaultAgentPool.ID)
+	}
+
+	return model
 }
 
 // Configure implements resource.ResourceWithConfigure
@@ -259,16 +265,5 @@ func (r *resourceTFEOrganizationDefaultSettings) Delete(ctx context.Context, req
 
 // ImportState implements resource.ResourceWithImportState
 func (r *resourceTFEOrganizationDefaultSettings) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Get organization
-	log.Printf("[DEBUG] Read the organization: %s", req.ID)
-	o, err := r.config.Client.Organizations.Read(ctx, req.ID)
-	if err != nil {
-		resp.Diagnostics.AddError("Unable to read organization", err.Error())
-		return
-	}
-
-	data := modelFromTFEOrganization(o)
-
-	diags := resp.State.Set(ctx, &data)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("organization"), req.ID)...)
 }
