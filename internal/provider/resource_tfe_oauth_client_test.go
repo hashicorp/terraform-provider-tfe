@@ -134,6 +134,46 @@ func TestAccTFEOAuthClient_agentPool(t *testing.T) {
 	})
 }
 
+func TestAccTFEOAuthClient_updateOAuthTokenID(t *testing.T) {
+	oc := &tfe.OAuthClient{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	initialTokenID := "initial-token-id"
+	updatedTokenID := "updated-token-id"
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			if envGithubToken == "" {
+				t.Skip("Please set GITHUB_TOKEN to run this test")
+			}
+		},
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEOAuthClientDestroy,
+		Steps: []resource.TestStep{
+			// Step 1: Create with the initial oauth_token_id.
+			{
+				Config: testAccTFEOAuthClient_updateOAuthTokenID(rInt, initialTokenID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOAuthClientExists("tfe_oauth_client.foobar", oc),
+					resource.TestCheckResourceAttr("tfe_oauth_client.foobar", "oauth_token_id", initialTokenID),
+				),
+			},
+			// Step 2: Update the oauth_token_id value.
+			{
+				Config: testAccTFEOAuthClient_updateOAuthTokenID(rInt, updatedTokenID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOAuthClientExists("tfe_oauth_client.foobar", oc),
+					resource.TestCheckResourceAttr("tfe_oauth_client.foobar", "oauth_token_id", updatedTokenID),
+				),
+			},
+			// Step 3: Run a plan-only step to ensure no changes.
+			{
+				Config:   testAccTFEOAuthClient_updateOAuthTokenID(rInt, updatedTokenID),
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
 func testAccCheckTFEOAuthClientExists(
 	n string, oc *tfe.OAuthClient) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
@@ -263,4 +303,20 @@ resource "tfe_oauth_client" "foobar" {
   service_provider = "github_enterprise"
   agent_pool_id    = data.tfe_agent_pool.foobar.id
 }`, envGithubToken)
+}
+
+func testAccTFEOAuthClient_updateOAuthTokenID(rInt int, tokenID string) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+resource "tfe_oauth_client" "foobar" {
+  organization     = tfe_organization.foobar.id
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token_id   = "%s"
+  service_provider = "github"
+  organization_scoped = true
+}`, rInt, tokenID)
 }
