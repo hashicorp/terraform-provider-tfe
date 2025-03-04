@@ -35,6 +35,8 @@ FEATURES:
 * `r/tfe_team_project_access`: Add `variable_sets` attribute to `project_access`, by @mkam [#1565](https://github.com/hashicorp/terraform-provider-tfe/pull/1565)
 
 BUG FIXES:
+* `r/tfe_oauth_client`: Ensure `oauth_token_id` updates register when performing a `terraform apply`, by @hashimoon[#1631](https://github.com/hashicorp/terraform-provider-tfe/pull/1631)
+
 * `r/tfe_stack`: Fix serialization issue when using github app installation within vcs_repo block, by @mjyocca [#1572](https://github.com/hashicorp/terraform-provider-tfe/pull/1572)
 
 * `r/tfe_workspace_settings`: Prevent fetching of all workspaces as the `remote_state_consumer_ids` when `global_remote_state` is set to true, by @uk1288 [#1606](https://github.com/hashicorp/terraform-provider-tfe/pull/1606)

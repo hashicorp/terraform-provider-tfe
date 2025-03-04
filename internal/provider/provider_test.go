@@ -264,6 +264,7 @@ func init() {
 	envGithubPolicySetPath = os.Getenv("GITHUB_POLICY_SET_PATH")
 	envGithubRegistryModuleIdentifer = os.Getenv("GITHUB_REGISTRY_MODULE_IDENTIFIER")
 	envGithubToken = os.Getenv("GITHUB_TOKEN")
+	envGithubToken2 = os.Getenv("GITHUB_TOKEN2")
 	envGithubAppInstallationID = os.Getenv("GITHUB_APP_INSTALLATION_ID")
 	envGithubAppInstallationName = os.Getenv("GITHUB_APP_INSTALLATION_NAME")
 	envGithubWorkspaceIdentifier = os.Getenv("GITHUB_WORKSPACE_IDENTIFIER")
@@ -277,6 +278,7 @@ var envGithubPolicySetBranch string
 var envGithubPolicySetPath string
 var envGithubRegistryModuleIdentifer string
 var envGithubToken string
+var envGithubToken2 string
 var envGithubAppInstallationID string
 var envGithubAppInstallationName string
 var envGithubWorkspaceIdentifier string

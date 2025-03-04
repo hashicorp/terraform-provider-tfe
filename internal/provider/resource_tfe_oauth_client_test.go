@@ -134,6 +134,60 @@ func TestAccTFEOAuthClient_agentPool(t *testing.T) {
 	})
 }
 
+func TestAccTFEOAuthClient_updateOAuthTokenID(t *testing.T) {
+	oc := &tfe.OAuthClient{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	var initialOAuthTokenID string
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			if envGithubToken == "" {
+				t.Skip("Please set GITHUB_TOKEN to run this test")
+			}
+
+			if envGithubToken2 == "" {
+				t.Skip("Please set GITHUB_TOKEN2 to run this test")
+			}
+		},
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEOAuthClientDestroy,
+		Steps: []resource.TestStep{
+			// Step 1: Create with the initial oauth_token_id.
+			{
+				Config: testAccTFEOAuthClient_updateOAuthTokenID(rInt, envGithubToken),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOAuthClientExists("tfe_oauth_client.foobar", oc),
+					resource.TestCheckResourceAttrSet("tfe_oauth_client.foobar", "oauth_token_id"),
+					func(s *terraform.State) error {
+						initialOAuthTokenID = oc.OAuthTokens[0].ID
+						return nil
+					},
+				),
+			},
+			// Step 2: Update the oauth_token_id value.
+			{
+				Config: testAccTFEOAuthClient_updateOAuthTokenID(rInt, envGithubToken2),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOAuthClientExists("tfe_oauth_client.foobar", oc),
+					resource.TestCheckResourceAttrSet("tfe_oauth_client.foobar", "oauth_token_id"),
+					func(s *terraform.State) error {
+						if initialOAuthTokenID == oc.OAuthTokens[0].ID {
+							return fmt.Errorf("oauth_token_id did not change")
+						}
+						return nil
+					},
+				),
+			},
+			// Step 3: Run a plan-only step to ensure no changes.
+			{
+				Config:   testAccTFEOAuthClient_updateOAuthTokenID(rInt, envGithubToken2),
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
 func testAccCheckTFEOAuthClientExists(
 	n string, oc *tfe.OAuthClient) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
@@ -259,4 +313,20 @@ resource "tfe_oauth_client" "foobar" {
   service_provider = "github_enterprise"
   agent_pool_id    = data.tfe_agent_pool.foobar.id
 }`, envGithubToken)
+}
+
+func testAccTFEOAuthClient_updateOAuthTokenID(rInt int, oAuthToken string) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+resource "tfe_oauth_client" "foobar" {
+  organization     = tfe_organization.foobar.id
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "%s"
+  service_provider = "github"
+  organization_scoped = true
+}`, rInt, oAuthToken)
 }
