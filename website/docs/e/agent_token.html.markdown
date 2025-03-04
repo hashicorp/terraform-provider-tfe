@@ -32,7 +32,7 @@ The following arguments are supported:
 ```hcl
 resource "tfe_agent_pool" "foobar" {
   name         = "agent-pool-test"
-  organization = my-org-name"
+  organization = "my-org-name"
 }
 
 ephemeral "tfe_agent_token" "this" {
