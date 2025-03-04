@@ -7,7 +7,13 @@ description: |-
 
 # tfe_agent_token
 
-Generates a new agent token as an ephemeral value.
+Generates a new agent token as an ephemeral value. 
+
+Each agent pool can have multiple tokens and they can be long-lived. For that reason, this ephemeral resource does not implement the Close method, which would tear the token down after the configuration is complete. 
+
+Agent token strings are sensitive and only returned on creation, so making those strings ephemeral values is beneficial to avoid state exposure.
+
+If you need to use this value in the future, make sure to capture the token and save it in a secure location. Any resource with write-only values can accept ephemeral resource attributes.
 
 ## Example Usage
 
