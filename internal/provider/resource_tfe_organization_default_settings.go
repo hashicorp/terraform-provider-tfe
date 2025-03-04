@@ -5,6 +5,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
@@ -280,6 +281,11 @@ func (r *resourceTFEOrganizationDefaultSettings) Read(ctx context.Context, req r
 	// Get organization
 	o, err := r.config.Client.Organizations.Read(ctx, orgName)
 	if err != nil {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			resp.Diagnostics.AddError("Organization not found", err.Error())
+			return
+		}
+
 		resp.Diagnostics.AddError("Unable to read organization", err.Error())
 		return
 	}
