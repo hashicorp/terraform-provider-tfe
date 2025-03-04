@@ -147,6 +147,35 @@ func TestAccTFEOrganizationDefaultSettings_import(t *testing.T) {
 	})
 }
 
+func TestAccTFEOrganizationDefaultSettings_defaultProject(t *testing.T) {
+	org := &tfe.Organization{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOrganizationDefaultSettings_defaultProject(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOrganizationExists(
+						"tfe_organization.foobar", org),
+					testAccCheckTFEOrganizationDefaultProjectExists(org),
+				),
+			},
+			{
+				Config: testAccTFEOrganizationDefaultSettings_removeDefaultProject(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOrganizationExists(
+						"tfe_organization.foobar", org),
+					testAccCheckTFEOrganizationDefaultProjectDoesNotExist(org),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckTFEOrganizationDefaultSettings(org *tfe.Organization, expectedExecutionMode string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if org.DefaultExecutionMode != expectedExecutionMode {
@@ -161,6 +190,26 @@ func testAccCheckTFEOrganizationDefaultAgentPoolIDExists(org *tfe.Organization) 
 	return func(s *terraform.State) error {
 		if org.DefaultAgentPool == nil {
 			return errors.New("default agent pool was not set")
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckTFEOrganizationDefaultProjectExists(org *tfe.Organization) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if org.DefaultProject == nil {
+			return errors.New("default project was not set")
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckTFEOrganizationDefaultProjectDoesNotExist(org *tfe.Organization) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if org.DefaultProject != nil {
+			return errors.New("default project was set, but expected nil")
 		}
 
 		return nil
@@ -209,5 +258,42 @@ resource "tfe_organization_default_settings" "foobar" {
   organization = tfe_organization.foobar.name
   default_execution_mode = "agent"
   default_agent_pool_id = tfe_agent_pool.foobar.id
+}`, rInt)
+}
+
+func testAccTFEOrganizationDefaultSettings_defaultProject(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "foobar" {
+  name = "project-test"
+  organization = tfe_organization.foobar.name
+}
+
+resource "tfe_organization_default_settings" "foobar" {
+  organization       = tfe_organization.foobar.name
+  default_execution_mode = "remote"
+  default_project_id = tfe_project.foobar.id
+}`, rInt)
+}
+
+func testAccTFEOrganizationDefaultSettings_removeDefaultProject(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "foobar" {
+  name = "project-test"
+  organization = tfe_organization.foobar.name
+}
+
+resource "tfe_organization_default_settings" "foobar" {
+  organization       = tfe_organization.foobar.name
+  default_execution_mode = "remote"
 }`, rInt)
 }
