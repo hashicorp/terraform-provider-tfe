@@ -15,6 +15,7 @@ import (
 	"log"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/jsonapi"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -57,6 +58,12 @@ func resourceTFEOrganizationDefaultSettings() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
+
+			"default_project_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
 		},
 	}
 }
@@ -78,6 +85,12 @@ func resourceTFEOrganizationDefaultSettingsCreate(d *schema.ResourceData, meta i
 		}
 	}
 
+	// If the default project id was provided, get the default project
+	var project jsonapi.NullableRelationship[*tfe.Project]
+	if v, ok := d.GetOk("default_project_id"); ok && v.(string) != "" {
+		project = jsonapi.NewNullableRelationshipWithValue[*tfe.Project](&tfe.Project{ID: v.(string)})
+	}
+
 	defaultExecutionMode := ""
 	if v, ok := d.GetOk("default_execution_mode"); ok {
 		defaultExecutionMode = v.(string)
@@ -89,6 +102,7 @@ func resourceTFEOrganizationDefaultSettingsCreate(d *schema.ResourceData, meta i
 	_, err = config.Client.Organizations.Update(context.Background(), organization, tfe.OrganizationUpdateOptions{
 		DefaultExecutionMode: tfe.String(defaultExecutionMode),
 		DefaultAgentPool:     agentPool,
+		DefaultProject:       project,
 	})
 	if err != nil {
 		return fmt.Errorf("error setting default execution mode of organization %s: %w", d.Id(), err)
@@ -141,6 +155,7 @@ func resourceTFEOrganizationDefaultSettingsDelete(d *schema.ResourceData, meta i
 	_, err = config.Client.Organizations.Update(context.Background(), organization, tfe.OrganizationUpdateOptions{
 		DefaultExecutionMode: tfe.String("remote"),
 		DefaultAgentPool:     nil,
+		DefaultProject:       jsonapi.NewNullNullableRelationship[*tfe.Project](),
 	})
 	if err != nil {
 		return fmt.Errorf("error updating organization default execution mode: %w", err)
@@ -167,6 +182,9 @@ func resourceTFEOrganizationDefaultSettingsImporter(ctx context.Context, d *sche
 	d.Set("default_execution_mode", organization.DefaultExecutionMode)
 	if organization.DefaultAgentPool != nil {
 		d.Set("default_agent_pool_id", organization.DefaultAgentPool.ID)
+	}
+	if organization.DefaultProject != nil {
+		d.Set("default_project_id", organization.DefaultProject.ID)
 	}
 
 	return []*schema.ResourceData{d}, nil
