@@ -31,6 +31,7 @@ var (
 	_ resource.Resource                = (*resourceTFEOrganizationDefaultSettings)(nil)
 	_ resource.ResourceWithConfigure   = (*resourceTFEOrganizationDefaultSettings)(nil)
 	_ resource.ResourceWithImportState = (*resourceTFEOrganizationDefaultSettings)(nil)
+	_ resource.ResourceWithModifyPlan  = (*resourceTFEOrganizationDefaultSettings)(nil)
 
 	ValidExecutionModes = []string{
 		AgentExecutionMode,
@@ -115,6 +116,7 @@ func (r *resourceTFEOrganizationDefaultSettings) Schema(ctx context.Context, req
 
 			"default_project_id": schema.StringAttribute{
 				Optional: true,
+				Computed: true,
 			},
 		},
 	}
@@ -154,7 +156,7 @@ func (r *resourceTFEOrganizationDefaultSettings) Create(ctx context.Context, req
 		options.DefaultAgentPool = agentPool
 	}
 
-	if !data.DefaultProjectID.IsNull() {
+	if !data.DefaultProjectID.IsNull() && !data.DefaultProjectID.IsUnknown() {
 		project, err := r.config.Client.Projects.Read(ctx, data.DefaultProjectID.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddError("Unable to read project", err.Error())
@@ -178,16 +180,17 @@ func (r *resourceTFEOrganizationDefaultSettings) Create(ctx context.Context, req
 
 // Update implements resource.Resource
 func (r *resourceTFEOrganizationDefaultSettings) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	// Read Terraform config data
 	// Read Terraform plan data
-	var planData modelTFEOrganizationDefaultSettings
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &planData)...)
+	var plan modelTFEOrganizationDefaultSettings
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Read Terraform state data
-	var stateData modelTFEOrganizationDefaultSettings
-	resp.Diagnostics.Append(req.State.Get(ctx, &stateData)...)
+	var state modelTFEOrganizationDefaultSettings
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -202,26 +205,27 @@ func (r *resourceTFEOrganizationDefaultSettings) Update(ctx context.Context, req
 	// Create options struct
 	options := tfe.OrganizationUpdateOptions{}
 
-	if !planData.DefaultExecutionMode.IsNull() {
-		options.DefaultExecutionMode = planData.DefaultExecutionMode.ValueStringPointer()
+	if !plan.DefaultExecutionMode.IsNull() {
+		options.DefaultExecutionMode = plan.DefaultExecutionMode.ValueStringPointer()
 	}
 
-	if !planData.DefaultAgentPoolID.IsNull() {
+	if !plan.DefaultAgentPoolID.IsNull() {
 		options.DefaultAgentPool = &tfe.AgentPool{
-			ID: planData.DefaultAgentPoolID.ValueString(),
+			ID: plan.DefaultAgentPoolID.ValueString(),
 		}
 	}
 
-	if !planData.DefaultProjectID.IsNull() {
-		project, err := r.config.Client.Projects.Read(ctx, planData.DefaultProjectID.ValueString())
+	// Check if an explicit null is being set for default project id
+	// This has the effect of removing the relationship
+	if plan.DefaultProjectID.IsNull() && !plan.DefaultProjectID.IsUnknown() {
+		options.DefaultProject = jsonapi.NewNullNullableRelationship[*tfe.Project]()
+	} else if !plan.DefaultProjectID.IsNull() && !plan.DefaultProjectID.IsUnknown() {
+		project, err := r.config.Client.Projects.Read(ctx, plan.DefaultProjectID.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddError("Unable to read project", err.Error())
 			return
 		}
 		options.DefaultProject = jsonapi.NewNullableRelationshipWithValue(project)
-	} else if !stateData.DefaultProjectID.IsNull() {
-		// If the project ID is being removed, we need to set it to null
-		options.DefaultProject = jsonapi.NewNullNullableRelationship[*tfe.Project]()
 	}
 
 	o, err := r.config.Client.Organizations.Update(ctx, orgName, options)
@@ -300,6 +304,23 @@ func (r *resourceTFEOrganizationDefaultSettings) Delete(ctx context.Context, req
 
 	result := modelFromTFEOrganization(o)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+}
+
+// Implement ModifyPlan to force updates when explicit null has been set for
+// default project id
+func (r *resourceTFEOrganizationDefaultSettings) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	// Read config data
+	var config modelTFEOrganizationDefaultSettings
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Check if an explicit null is being set for default project id
+	// This has the effect of removing the relationship
+	if config.DefaultProjectID.IsNull() && !config.DefaultProjectID.IsUnknown() {
+		resp.Plan.SetAttribute(ctx, path.Root("default_project_id"), types.StringNull())
+	}
 }
 
 // ImportState implements resource.ResourceWithImportState

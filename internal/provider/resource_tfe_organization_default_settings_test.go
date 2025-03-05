@@ -236,6 +236,11 @@ resource "tfe_organization" "foobar" {
   email = "admin@company.com"
 }
 
+resource "tfe_agent_pool" "foobar" {
+  name = "agent-pool-test"
+  organization = tfe_organization.foobar.name
+}
+
 resource "tfe_organization_default_settings" "foobar" {
   organization = tfe_organization.foobar.name
   default_execution_mode = "local"
@@ -295,5 +300,6 @@ resource "tfe_project" "foobar" {
 resource "tfe_organization_default_settings" "foobar" {
   organization       = tfe_organization.foobar.name
   default_execution_mode = "remote"
+  default_project_id = null
 }`, rInt)
 }
