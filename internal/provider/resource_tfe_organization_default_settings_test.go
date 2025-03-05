@@ -161,16 +161,14 @@ func TestAccTFEOrganizationDefaultSettings_defaultProject(t *testing.T) {
 			{
 				Config: testAccTFEOrganizationDefaultSettings_defaultProject(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEOrganizationExists(
-						"tfe_organization.foobar", org),
+					testAccCheckTFEOrganizationExists("tfe_organization.foobar", org),
 					testAccCheckTFEOrganizationDefaultProjectExists(org),
 				),
 			},
 			{
 				Config: testAccTFEOrganizationDefaultSettings_removeDefaultProject(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEOrganizationExists(
-						"tfe_organization.foobar", org),
+					testAccCheckTFEOrganizationExists("tfe_organization.foobar", org),
 					testAccCheckTFEOrganizationDefaultProjectDoesNotExist(org),
 				),
 			},

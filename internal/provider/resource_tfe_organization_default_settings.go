@@ -15,8 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -66,6 +64,10 @@ func modelFromTFEOrganization(v *tfe.Organization) modelTFEOrganizationDefaultSe
 		model.DefaultAgentPoolID = types.StringValue(v.DefaultAgentPool.ID)
 	}
 
+	if v.DefaultProject != nil {
+		model.DefaultProjectID = types.StringValue(v.DefaultProject.ID)
+	}
+
 	return model
 }
 
@@ -98,9 +100,6 @@ func (r *resourceTFEOrganizationDefaultSettings) Schema(ctx context.Context, req
 				Description: "The name of the organization.",
 				Optional:    true,
 				Computed:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 			},
 
 			"default_execution_mode": schema.StringAttribute{
@@ -108,23 +107,14 @@ func (r *resourceTFEOrganizationDefaultSettings) Schema(ctx context.Context, req
 				Validators: []validator.String{
 					stringvalidator.OneOf(ValidExecutionModes...),
 				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 			},
 
 			"default_agent_pool_id": schema.StringAttribute{
 				Optional: true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 			},
 
 			"default_project_id": schema.StringAttribute{
 				Optional: true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 			},
 		},
 	}
@@ -157,11 +147,6 @@ func (r *resourceTFEOrganizationDefaultSettings) Create(ctx context.Context, req
 		// Get the referenced agent pool
 		agentPool, err := r.config.Client.AgentPools.Read(ctx, data.DefaultAgentPoolID.ValueString())
 		if err != nil {
-			if errors.Is(err, tfe.ErrResourceNotFound) {
-				resp.Diagnostics.AddError("Agent pool not found", err.Error())
-				return
-			}
-
 			resp.Diagnostics.AddError("Unable to read agent pool", err.Error())
 			return
 		}
@@ -172,11 +157,6 @@ func (r *resourceTFEOrganizationDefaultSettings) Create(ctx context.Context, req
 	if !data.DefaultProjectID.IsNull() {
 		project, err := r.config.Client.Projects.Read(ctx, data.DefaultProjectID.ValueString())
 		if err != nil {
-			if errors.Is(err, tfe.ErrResourceNotFound) {
-				resp.Diagnostics.AddError("Project not found", err.Error())
-				return
-			}
-
 			resp.Diagnostics.AddError("Unable to read project", err.Error())
 			return
 		}
@@ -207,7 +187,7 @@ func (r *resourceTFEOrganizationDefaultSettings) Update(ctx context.Context, req
 
 	// Read Terraform state data
 	var stateData modelTFEOrganizationDefaultSettings
-	resp.Diagnostics.Append(req.State.Get(ctx, &planData)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &stateData)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -233,17 +213,11 @@ func (r *resourceTFEOrganizationDefaultSettings) Update(ctx context.Context, req
 	}
 
 	if !planData.DefaultProjectID.IsNull() {
-		project, err := r.config.Client.Projects.Read(ctx, planData.DefaultAgentPoolID.ValueString())
+		project, err := r.config.Client.Projects.Read(ctx, planData.DefaultProjectID.ValueString())
 		if err != nil {
-			if errors.Is(err, tfe.ErrResourceNotFound) {
-				resp.Diagnostics.AddError("Project not found", err.Error())
-				return
-			}
-
 			resp.Diagnostics.AddError("Unable to read project", err.Error())
 			return
 		}
-
 		options.DefaultProject = jsonapi.NewNullableRelationshipWithValue(project)
 	} else if !stateData.DefaultProjectID.IsNull() {
 		// If the project ID is being removed, we need to set it to null
