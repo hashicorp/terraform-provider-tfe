@@ -6,9 +6,9 @@ package provider
 import (
 	"context"
 	"fmt"
-	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-framework-timetypes/timetypes"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -28,9 +28,9 @@ type OrganizationTokenEphemeralResource struct {
 }
 
 type OrganizationTokenEphemeralResourceModel struct {
-	Organization types.String `tfsdk:"organization"`
-	ExpiredAt    types.String `tfsdk:"expired_at"`
-	Token        types.String `tfsdk:"token"`
+	Organization types.String      `tfsdk:"organization"`
+	Token        types.String      `tfsdk:"token"`
+	ExpiredAt    timetypes.RFC3339 `tfsdk:"expired_at"`
 }
 
 func (e *OrganizationTokenEphemeralResource) Schema(ctx context.Context, req ephemeral.SchemaRequest, resp *ephemeral.SchemaResponse) {
@@ -42,13 +42,15 @@ func (e *OrganizationTokenEphemeralResource) Schema(ctx context.Context, req eph
 				Optional:    true,
 				Computed:    true,
 			},
-			"expired_at": schema.StringAttribute{
-				Description: `The token's expiration date. The expiration date must be a date/time string in RFC3339 format (e.g., "2024-12-31T23:59:59Z"). If no expiration date is supplied, the expiration date will default to null and never expire.`,
-				Optional:    true,
-			},
 			"token": schema.StringAttribute{
 				Description: `The generated token.`,
 				Computed:    true,
+				Sensitive:   true,
+			},
+			"expired_at": schema.StringAttribute{
+				Description: `The token's expiration date. The expiration date must be a date/time string in RFC3339 format (e.g., "2024-12-31T23:59:59Z"). If no expiration date is supplied, the expiration date will default to null and never expire.`,
+				Optional:    true,
+				CustomType:  timetypes.RFC3339Type{},
 			},
 		},
 	}
@@ -78,7 +80,7 @@ func (e *OrganizationTokenEphemeralResource) Metadata(ctx context.Context, req e
 }
 
 func (e *OrganizationTokenEphemeralResource) Open(ctx context.Context, req ephemeral.OpenRequest, resp *ephemeral.OpenResponse) {
-	// Read Terraform config config
+	// Read Terraform config
 	var config OrganizationTokenEphemeralResourceModel
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
@@ -92,20 +94,17 @@ func (e *OrganizationTokenEphemeralResource) Open(ctx context.Context, req ephem
 		return
 	}
 
-	// Create options
-	var expiredAt *time.Time
+	// Create options struct
+	opts := tfe.OrganizationTokenCreateOptions{}
+
 	if !config.ExpiredAt.IsNull() {
-		parsed, err := time.Parse(time.RFC3339, config.ExpiredAt.String())
-		if err != nil {
-			resp.Diagnostics.AddError("Invalid expired_at value", err.Error())
+		expiredAt, diags := config.ExpiredAt.ValueRFC3339Time()
+		if diags.HasError() {
+			resp.Diagnostics.Append(diags...)
 			return
 		}
 
-		expiredAt = &parsed
-	}
-
-	opts := tfe.OrganizationTokenCreateOptions{
-		ExpiredAt: expiredAt,
+		opts.ExpiredAt = &expiredAt
 	}
 
 	// Create a new token
