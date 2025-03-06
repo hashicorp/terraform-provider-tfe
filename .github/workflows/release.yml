@@ -25,6 +25,7 @@ jobs:
   terraform-provider-release:
     name: 'Terraform Provider Release'
     needs: [release-notes]
+
     uses: hashicorp/ghaction-terraform-provider-release/.github/workflows/hashicorp.yml@v5
     secrets:
       hc-releases-github-token: '${{ secrets.HASHI_RELEASES_GITHUB_TOKEN }}'
