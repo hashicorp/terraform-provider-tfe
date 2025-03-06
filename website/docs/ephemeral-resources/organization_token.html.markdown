@@ -21,8 +21,23 @@ be written to state. Since organization tokens are singleton resources, using th
 This will invalidate any existing organization token.
 
 ```hcl
-resource "tfe_organization_token" "example" {
+ephemeral "tfe_organization_token" "example" {
   organization = "my-org-name"
+}
+```
+
+### Generate a new organization token with 30 day expiration:
+
+This will invalidate any existing organization token.
+
+```hcl
+resource "time_rotating" "example" {
+  rotation_days = 30
+}
+
+ephemeral "tfe_organization_token" "example" {
+  organization   = "my-org-name"
+  expired_at = time_rotating.example.rotation_rfc3339
 }
 ```
 
