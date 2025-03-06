@@ -210,6 +210,7 @@ func resourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("http_url", oc.HTTPURL)
 	d.Set("service_provider", string(oc.ServiceProvider))
 	d.Set("organization_scoped", oc.OrganizationScoped)
+	d.Set("agent_pool_id", oc.AgentPool.ID)
 
 	switch len(oc.OAuthTokens) {
 	case 0:
@@ -245,6 +246,9 @@ func resourceTFEOAuthClientUpdate(d *schema.ResourceData, meta interface{}) erro
 	options := tfe.OAuthClientUpdateOptions{
 		OrganizationScoped: tfe.Bool(d.Get("organization_scoped").(bool)),
 		OAuthToken:         tfe.String(d.Get("oauth_token").(string)),
+	}
+	if v, ok := d.GetOk("agent_pool_id"); ok && v.(string) != "" {
+		options.AgentPool = &tfe.AgentPool{ID: *tfe.String(v.(string))}
 	}
 
 	log.Printf("[DEBUG] Update OAuth client %s", d.Id())
