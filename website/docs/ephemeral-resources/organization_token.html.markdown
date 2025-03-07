@@ -10,7 +10,7 @@ description: |-
 
 Terraform ephemeral resource for managing a TFE organization token. This
 resource is used to generate a new organization token that is guaranteed not to
-be written to state. Since organization tokens are singleton resources, using this ephemeral resource will replace any existing organization token.
+be written to state. Since organization tokens are singleton resources, using this ephemeral resource will replace any existing organization token, including those managed by `tfe_organization_token`.
 
 ~> **NOTE:** Ephemeral resources are a new feature and may evolve as we continue to explore their most effective uses. [Learn more](https://developer.hashicorp.com/terraform/language/v1.10.x/resources/ephemeral).
 
@@ -45,7 +45,7 @@ ephemeral "tfe_organization_token" "example" {
 
 The following arguments are required:
 
-* `organization` - (Required) Name of the organization. If omitted, organization must be defined in the provider config.
+* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 
 The following arguments are optional:
 
