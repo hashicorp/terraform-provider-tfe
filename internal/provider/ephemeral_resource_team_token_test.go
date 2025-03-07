@@ -27,6 +27,9 @@ func TestAccTeamTokenEphemeralResource_basic(t *testing.T) {
 	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			tfversion.SkipBelow(tfversion.Version1_10_0),
+		},
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: testAccMuxedProviders,
 		ProtoV6ProviderFactories: map[string]func() (tfprotov6.ProviderServer, error){
