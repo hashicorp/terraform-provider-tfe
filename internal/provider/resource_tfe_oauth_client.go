@@ -180,6 +180,7 @@ func resourceTFEOAuthClientCreate(d *schema.ResourceData, meta interface{}) erro
 	}
 
 	d.SetId(oc.ID)
+	d.Set("oauth_token_id", oc.OAuthTokens[0].ID)
 
 	return resourceTFEOAuthClientRead(d, meta)
 }
@@ -238,6 +239,7 @@ func resourceTFEOAuthClientUpdate(d *schema.ResourceData, meta interface{}) erro
 	// Create a new options struct.
 	options := tfe.OAuthClientUpdateOptions{
 		OrganizationScoped: tfe.Bool(d.Get("organization_scoped").(bool)),
+		OAuthToken:         tfe.String(d.Get("oauth_token").(string)),
 	}
 
 	log.Printf("[DEBUG] Update OAuth client %s", d.Id())
