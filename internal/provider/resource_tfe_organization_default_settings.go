@@ -32,6 +32,7 @@ var (
 	_ resource.Resource                = (*resourceTFEOrganizationDefaultSettings)(nil)
 	_ resource.ResourceWithConfigure   = (*resourceTFEOrganizationDefaultSettings)(nil)
 	_ resource.ResourceWithImportState = (*resourceTFEOrganizationDefaultSettings)(nil)
+	_ resource.ResourceWithModifyPlan  = (*resourceTFEOrganizationDefaultSettings)(nil)
 
 	ValidExecutionModes = []string{
 		AgentExecutionMode,
@@ -272,4 +273,22 @@ func (r *resourceTFEOrganizationDefaultSettings) Delete(ctx context.Context, req
 // ImportState implements resource.ResourceWithImportState
 func (r *resourceTFEOrganizationDefaultSettings) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("organization"), req.ID)...)
+}
+
+func (r *resourceTFEOrganizationDefaultSettings) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	// Ensure that default_execution_mode is set to agent if default_agent_pool_id is set
+
+	// Read Terraform plan data
+	var data modelTFEOrganizationDefaultSettings
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !data.DefaultAgentPoolID.IsNull() && data.DefaultExecutionMode.ValueString() != AgentExecutionMode {
+		resp.Diagnostics.AddError(
+			"Invalid default_execution_mode",
+			"Default execution mode must be set to 'agent' when default_agent_pool_id is set",
+		)
+	}
 }
