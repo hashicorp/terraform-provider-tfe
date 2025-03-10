@@ -5,8 +5,9 @@ package provider
 
 import (
 	"fmt"
-	"regexp"
+	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-testing/echoprovider"
@@ -17,14 +18,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/tfversion"
 )
 
-func TestAccTeamTokenEphemeralResource_basic(t *testing.T) {
-	tfeClient, err := getClientUsingEnv()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	org, orgCleanup := createBusinessOrganization(t, tfeClient)
-	t.Cleanup(orgCleanup)
+func TestAccOrganizationTokenEphemeralResource_basic(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
 		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
@@ -37,25 +33,19 @@ func TestAccTeamTokenEphemeralResource_basic(t *testing.T) {
 		},
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTeamTokenEphemeralResourceConfig(org.Name),
+				Config: testAccOrganizationTokenEphemeralResourceConfig_basic(rInt),
 				ConfigStateChecks: []statecheck.StateCheck{
-					statecheck.ExpectKnownValue("echo.this", tfjsonpath.New("data").AtMapKey("team_id"), knownvalue.StringRegexp(regexp.MustCompile(`^team\-[a-zA-Z0-9]+$`))),
+					statecheck.ExpectKnownValue("echo.this", tfjsonpath.New("data").AtMapKey("organization"), knownvalue.StringExact(orgName)),
 				},
 			},
 		},
 	})
 }
 
-func TestAccTeamTokenEphemeralResource_expiredAt(t *testing.T) {
-	tfeClient, err := getClientUsingEnv()
-	if err != nil {
-		t.Fatal(err)
-	}
+func TestAccOrganizationTokenEphemeralResource_expiredAt(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
-	org, orgCleanup := createBusinessOrganization(t, tfeClient)
-	t.Cleanup(orgCleanup)
-
-	resource.UnitTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
 			tfversion.SkipBelow(tfversion.Version1_10_0),
 		},
@@ -66,45 +56,50 @@ func TestAccTeamTokenEphemeralResource_expiredAt(t *testing.T) {
 		},
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTeamTokenEphemeralResourceConfig_expiredAt(org.Name),
+				Config: testAccOrganizationTokenEphemeralResourceConfig_expiredAt(rInt),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectKnownValue("echo.this", tfjsonpath.New("data").AtMapKey("expired_at"), knownvalue.StringExact("2100-01-01T00:00:00Z")),
+				},
 			},
 		},
 	})
 }
 
-func testAccTeamTokenEphemeralResourceConfig(orgName string) string {
+func testAccOrganizationTokenEphemeralResourceConfig_basic(rInt int) string {
 	return fmt.Sprintf(`
-resource "tfe_team" "this" {
-  name         = "team-test"
-  organization = "%s"
+resource "tfe_organization" "this" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
 }
 
-ephemeral "tfe_team_token" "this" {
-  team_id = tfe_team.this.id
+ephemeral "tfe_organization_token" "this" {
+  organization = tfe_organization.this.id
 }
 
 provider "echo" {
-	data = ephemeral.tfe_team_token.this
+	data = ephemeral.tfe_organization_token.this
 }
 
 resource "echo" "this" {}
-`, orgName)
+`, rInt)
 }
 
-func testAccTeamTokenEphemeralResourceConfig_expiredAt(orgName string) string {
+func testAccOrganizationTokenEphemeralResourceConfig_expiredAt(rInt int) string {
 	return fmt.Sprintf(`
-resource "tfe_team" "this" {
-  name         = "team-test"
-  organization = "%s"
+resource "tfe_organization" "this" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
 }
 
-ephemeral "tfe_team_token" "this" {
-  team_id = tfe_team.this.id
+ephemeral "tfe_organization_token" "this" {
+  organization = tfe_organization.this.id
 	expired_at = "2100-01-01T00:00:00Z"
 }
+
 provider "echo" {
-	data = ephemeral.tfe_team_token.this
+	data = ephemeral.tfe_organization_token.this
 }
+
 resource "echo" "this" {}
-`, orgName)
+`, rInt)
 }
