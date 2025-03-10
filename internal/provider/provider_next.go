@@ -151,6 +151,7 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 func (p *frameworkProvider) EphemeralResources(ctx context.Context) []func() ephemeral.EphemeralResource {
 	return []func() ephemeral.EphemeralResource{
 		NewAgentTokenEphemeralResource,
+		NewOrganizationTokenEphemeralResource,
 		NewTeamTokenEphemeralResource,
 	}
 }
