@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -50,11 +51,13 @@ func modelFromTFEPolicySetParameter(v *tfe.PolicySetParameter, lastValue types.S
 	p := modelTFEPolicySetParameter{
 		ID:          types.StringValue(v.ID),
 		Key:         types.StringValue(v.Key),
+		Value:       types.StringValue(v.Value),
 		Sensitive:   types.BoolValue(v.Sensitive),
 		PolicySetID: types.StringValue(v.PolicySet.ID),
 	}
 
-	// Only set the value if its not sensitive, as otherwise it will be empty.
+	// If the variable is sensitive, carry forward the last known value
+	// instead, because the API never lets us read it again.
 	if v.Sensitive {
 		p.Value = lastValue
 	}
@@ -155,8 +158,8 @@ func (r *resourceTFEPolicySetParameter) Schema(ctx context.Context, req resource
 						// TODO: double-check behavior and ensure it includes current attr in that list
 					),
 					stringvalidator.RegexMatches(
-						workspaceIDRegexp,
-						"must be a valid workspace ID (ps-<RANDOM STRING>)",
+						regexp.MustCompile(`^polset-[a-zA-Z0-9]{16}$`),
+						"must be a valid policy set ID (polset-<RANDOM STRING>)",
 					),
 				},
 			},
@@ -212,7 +215,7 @@ func (r *resourceTFEPolicySetParameter) Read(ctx context.Context, req resource.R
 	p, err := r.config.Client.PolicySetParameters.Read(ctx, state.PolicySetID.ValueString(), state.ID.ValueString())
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
-			resp.Diagnostics.AddError(fmt.Sprintf("PolicySetParameter %s no longer exists", state.ID), err.Error())
+			log.Printf("[DEBUG] Parameter %s no longer exists", state.ID)
 			resp.State.RemoveResource(ctx)
 		}
 
@@ -245,6 +248,9 @@ func (r *resourceTFEPolicySetParameter) Update(ctx context.Context, req resource
 		Sensitive: plan.Sensitive.ValueBoolPointer(),
 	}
 
+	// Only set Value if our planned value would be a change from the prior state.
+	// This is so we don't accidentally reset the value of a sensitive variable on
+	// unrelated changes when `ignore_changes = [value]` is set.
 	if state.Value.ValueString() != plan.Value.ValueString() {
 		options.Value = plan.Value.ValueStringPointer()
 	}
@@ -254,7 +260,6 @@ func (r *resourceTFEPolicySetParameter) Update(ctx context.Context, req resource
 	p, err := r.config.Client.PolicySetParameters.Update(ctx, plan.PolicySetID.ValueString(), plan.ID.ValueString(), options)
 	if err != nil {
 		resp.Diagnostics.AddError(fmt.Sprintf("Error updating parameter %s", plan.ID), err.Error())
-		return
 	}
 
 	result := modelFromTFEPolicySetParameter(p, plan.Value)
