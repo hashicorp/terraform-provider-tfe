@@ -2,9 +2,8 @@
 
 FEATURES:
 
-* **New Ephemeral Resource:** `tfe_team_token` is a new ephemeral
-  resource for creating and managing team tokens in an organization, by
-  @shwetamurali and @ctrombley [#1628](https://github.com/hashicorp/terraform-provider-tfe/pull/1628)
+* **New Ephemeral Resource:** `tfe_team_token` is a new ephemeral resource for creating and managing team tokens in an organization, by @shwetamurali and @ctrombley [#1628](https://github.com/hashicorp/terraform-provider-tfe/pull/1628)
+* `r/tfe_oauth_client`: This change adds the `agent_pool_id` field to the read and update functions, which is used to associate a VCS Provider with an AgentPool for PrivateVCS support [1636](https://github.com/hashicorp/terraform-provider-tfe/pull/1636)
 
 ## v.0.64.0
 
