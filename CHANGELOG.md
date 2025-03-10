@@ -1,3 +1,12 @@
+
+FEATURES:
+
+* **New Ephemeral Resource:** `agent_token` ([#1627](https://github.com/hashicorp/terraform-provider-tfe/pull/1627))
+
+ENHANCEMENTS:
+
+* resource/tfe_variable: Add `value_wo` write-only attribute ([#](https://github.com/hashicorp/terraform-provider-tfe/pull/))
+
 ## v.0.64.0
 
 FEATURES:
