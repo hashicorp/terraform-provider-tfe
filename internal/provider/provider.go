@@ -120,7 +120,6 @@ func Provider() *schema.Provider {
 			"tfe_organization_token":             resourceTFEOrganizationToken(),
 			"tfe_policy":                         resourceTFEPolicy(),
 			"tfe_policy_set":                     resourceTFEPolicySet(),
-			"tfe_project":                        resourceTFEProject(),
 			"tfe_project_oauth_client":           resourceTFEProjectOAuthClient(),
 			"tfe_project_policy_set":             resourceTFEProjectPolicySet(),
 			"tfe_project_variable_set":           resourceTFEProjectVariableSet(),
