@@ -29,10 +29,10 @@ const (
 )
 
 var (
-	_ resource.Resource                = (*resourceTFEOrganizationDefaultSettings)(nil)
-	_ resource.ResourceWithConfigure   = (*resourceTFEOrganizationDefaultSettings)(nil)
-	_ resource.ResourceWithImportState = (*resourceTFEOrganizationDefaultSettings)(nil)
-	_ resource.ResourceWithModifyPlan  = (*resourceTFEOrganizationDefaultSettings)(nil)
+	_ resource.Resource                   = (*resourceTFEOrganizationDefaultSettings)(nil)
+	_ resource.ResourceWithConfigure      = (*resourceTFEOrganizationDefaultSettings)(nil)
+	_ resource.ResourceWithImportState    = (*resourceTFEOrganizationDefaultSettings)(nil)
+	_ resource.ResourceWithValidateConfig = (*resourceTFEOrganizationDefaultSettings)(nil)
 
 	ValidExecutionModes = []string{
 		AgentExecutionMode,
@@ -275,19 +275,15 @@ func (r *resourceTFEOrganizationDefaultSettings) ImportState(ctx context.Context
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("organization"), req.ID)...)
 }
 
-func (r *resourceTFEOrganizationDefaultSettings) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	if req.Plan.Raw.IsNull() {
-		return
-	}
-
+func (r *resourceTFEOrganizationDefaultSettings) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
 	// Read Terraform plan data
-	var data modelTFEOrganizationDefaultSettings
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	var config modelTFEOrganizationDefaultSettings
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	if !data.DefaultAgentPoolID.IsNull() && data.DefaultExecutionMode.ValueString() != AgentExecutionMode {
+	if !config.DefaultAgentPoolID.IsNull() && config.DefaultExecutionMode.ValueString() != AgentExecutionMode {
 		resp.Diagnostics.AddError(
 			"Invalid default_execution_mode",
 			"Default execution mode must be set to 'agent' when default_agent_pool_id is set",
