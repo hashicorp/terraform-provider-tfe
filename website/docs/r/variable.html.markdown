@@ -71,6 +71,7 @@ The following arguments are supported:
 
 * `key` - (Required) Name of the variable.
 * `value` - (Required) Value of the variable.
+* `value_wo` - (Optional) Write-Only value of the variable.
 * `category` - (Required) Whether this is a Terraform or environment variable.
   Valid values are `terraform` or `env`.
 * `description` - (Optional) Description of the variable.
@@ -87,6 +88,8 @@ drift if `value` is later changed out-of-band via the HCP Terraform UI.
 Terraform will only change the value for a sensitive variable if you change
 `value` in the configuration, so that it no longer matches the last known value
 in the state.
+
+-> **Note:** Write-Only argument `value_wo` is available to use in place of `value`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
 
 ## Attributes Reference
 
