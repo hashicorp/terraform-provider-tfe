@@ -133,6 +133,7 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 	return []func() resource.Resource{
 		NewAuditTrailTokenResource,
 		NewDataRetentionPolicyResource,
+		NewOrganizationDefaultSettings,
 		NewOrganizationRunTaskGlobalSettingsResource,
 		NewOrganizationRunTaskResource,
 		NewPolicySetParameterResource,
