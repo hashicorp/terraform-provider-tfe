@@ -276,7 +276,9 @@ func (r *resourceTFEOrganizationDefaultSettings) ImportState(ctx context.Context
 }
 
 func (r *resourceTFEOrganizationDefaultSettings) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	// Ensure that default_execution_mode is set to agent if default_agent_pool_id is set
+	if req.Plan.Raw.IsNull() {
+		return
+	}
 
 	// Read Terraform plan data
 	var data modelTFEOrganizationDefaultSettings
