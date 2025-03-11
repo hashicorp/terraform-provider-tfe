@@ -134,6 +134,7 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewAuditTrailTokenResource,
 		NewOrganizationRunTaskGlobalSettingsResource,
 		NewOrganizationRunTaskResource,
+		NewProjectResource,
 		NewRegistryGPGKeyResource,
 		NewRegistryProviderResource,
 		NewResourceVariable,
