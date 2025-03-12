@@ -5,6 +5,8 @@ package provider
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log"
@@ -43,26 +45,39 @@ type modelTFEPolicySetParameter struct {
 	ID          types.String `tfsdk:"id"`
 	Key         types.String `tfsdk:"key"`
 	Value       types.String `tfsdk:"value"`
+	ValueWO     types.String `tfsdk:"value_wo"`
 	Sensitive   types.Bool   `tfsdk:"sensitive"`
 	PolicySetID types.String `tfsdk:"policy_set_id"`
 }
 
-func modelFromTFEPolicySetParameter(v *tfe.PolicySetParameter, lastValue types.String) modelTFEPolicySetParameter {
+func modelFromTFEPolicySetParameter(v *tfe.PolicySetParameter, lastValue types.String, isWriteOnlyValue bool) modelTFEPolicySetParameter {
 	p := modelTFEPolicySetParameter{
 		ID:          types.StringValue(v.ID),
 		Key:         types.StringValue(v.Key),
 		Value:       types.StringValue(v.Value),
+		ValueWO:     types.StringValue(v.Value),
 		Sensitive:   types.BoolValue(v.Sensitive),
 		PolicySetID: types.StringValue(v.PolicySet.ID),
 	}
 
-	// If the variable is sensitive, carry forward the last known value
+	// If the parameter is sensitive, carry forward the last known value
 	// instead, because the API never lets us read it again.
 	if v.Sensitive {
 		p.Value = lastValue
 	}
 
+	// Don't retrieve values if write-only is being used. Unset the value and readable_value fields before updating the state.
+	if isWriteOnlyValue {
+		p.Value = types.StringValue("")
+	}
+
 	return p
+}
+
+func isWriteOnlyValueInPrivateState(req resource.ReadRequest, resp *resource.ReadResponse) bool {
+	storedValueWO, diags := req.Private.GetKey(ctx, "value_wo")
+	resp.Diagnostics.Append(diags...)
+	return len(storedValueWO) != 0
 }
 
 func (r *resourceTFEPolicySetParameter) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -103,17 +118,7 @@ func (r *resourceTFEPolicySetParameter) Schema(ctx context.Context, req resource
 				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplaceIf(
-						func(ctx context.Context, req planmodifier.StringRequest, resp *stringplanmodifier.RequiresReplaceIfFuncResponse) {
-							var stateSensitive types.Bool
-							diags := req.State.GetAttribute(ctx, path.Root("sensitive"), &stateSensitive)
-							if diags.HasError() {
-								resp.Diagnostics.Append(diags...)
-								return
-							}
-							if stateSensitive.ValueBool() && req.PlanValue.ValueString() != req.StateValue.ValueString() {
-								resp.RequiresReplace = true
-							}
-						},
+						r.requiresReplaceIfValueWOModifiedFunc,
 						"Force replacement if key changed and sensitive is true",
 						"Force replacement if key changed and sensitive is true",
 					),
@@ -126,8 +131,43 @@ func (r *resourceTFEPolicySetParameter) Schema(ctx context.Context, req resource
 				Computed:    true,
 				Default:     stringdefault.StaticString(""),
 				Sensitive:   true,
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRoot("value_wo")),
+				},
 			},
+			"value_wo": schema.StringAttribute{
+				Optional:    true,
+				WriteOnly:   true,
+				Sensitive:   true,
+				Description: "Value of the parameter in write-only mode",
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRoot("value")),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplaceIf(func(ctx context.Context, req planmodifier.StringRequest, resp *stringplanmodifier.RequiresReplaceIfFuncResponse) {
+						storedValueWO, diags := req.Private.GetKey(ctx, "value_wo")
+						resp.Diagnostics.Append(diags...)
+						if resp.Diagnostics.HasError() {
+							return
+						}
 
+						if !req.ConfigValue.IsNull() {
+							hashedValue := getSHA256Hash(req.ConfigValue.ValueString())
+
+							if string(storedValueWO) != hashedValue {
+								log.Printf("[DEBUG] Replacing resource because the value of `value_wo` attribute has changed")
+								resp.RequiresReplace = true
+							}
+						} else if len(storedValueWO) != 0 {
+							// `value_wo` was previously set in the config, but is no longer
+							resp.RequiresReplace = true
+						}
+					},
+						"Force replacement if value_wo changed",
+						"Force replacement if value_wo changed",
+					),
+				},
+			},
 			"sensitive": schema.BoolAttribute{
 				Description: "Whether the value is sensitive. If true then the parameter is written once and not visible thereafter.",
 				Optional:    true,
@@ -167,10 +207,42 @@ func (r *resourceTFEPolicySetParameter) Schema(ctx context.Context, req resource
 	}
 }
 
+func (r *resourceTFEPolicySetParameter) requiresReplaceIfValueWOModifiedFunc(ctx context.Context, req planmodifier.StringRequest, resp *stringplanmodifier.RequiresReplaceIfFuncResponse) {
+	storedValueWO, diags := req.Private.GetKey(ctx, "value_wo")
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if len(storedValueWO) != 0 {
+		if req.ConfigValue.IsNull() {
+			log.Printf("[DEBUG] Replacing resource because the value of `value_wo` attribute has been cleared")
+			resp.RequiresReplace = true
+			return
+		}
+
+		hashedValue := getSHA256Hash(req.ConfigValue.ValueString())
+		if string(storedValueWO) != hashedValue {
+			log.Printf("[DEBUG] Replacing resource because the value of `value_wo` attribute has changed")
+			resp.RequiresReplace = true
+		}
+	} else if !req.ConfigValue.IsNull() {
+		log.Printf("[DEBUG] Replacing resource because `value_wo` attribute has been added to a pre-existing policy set parameter resource")
+		resp.RequiresReplace = true
+	}
+}
+
 func (r *resourceTFEPolicySetParameter) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	// Read the Terraform plan into the model
+	// Read the plan into the model
 	var plan modelTFEPolicySetParameter
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Read the config into the model
+	var config modelTFEPolicySetParameter
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -178,9 +250,14 @@ func (r *resourceTFEPolicySetParameter) Create(ctx context.Context, req resource
 	// Create an options struct
 	options := tfe.PolicySetParameterCreateOptions{
 		Key:       plan.Key.ValueStringPointer(),
-		Value:     plan.Value.ValueStringPointer(),
 		Category:  tfe.Category(tfe.CategoryPolicySet),
 		Sensitive: plan.Sensitive.ValueBoolPointer(),
+	}
+
+	if !config.ValueWO.IsNull() {
+		options.Value = config.ValueWO.ValueStringPointer()
+	} else {
+		options.Value = plan.Value.ValueStringPointer()
 	}
 
 	// Create the policy set parameter
@@ -191,7 +268,18 @@ func (r *resourceTFEPolicySetParameter) Create(ctx context.Context, req resource
 		return
 	}
 
-	result := modelFromTFEPolicySetParameter(p, plan.Value)
+	result := modelFromTFEPolicySetParameter(p, plan.Value, !config.ValueWO.IsNull())
+
+	if !config.ValueWO.IsNull() {
+		// Use the resource's private state to store secure hashes of write-only argument values, the provider during planmodify will use the hash to determine if a write-only argument value has changed in later Terraform runs.
+		diags := resp.Private.SetKey(ctx, "value_wo", fmt.Appendf(nil, `"%s"`, config.ValueWO.ValueString()))
+		resp.Diagnostics.Append(diags...)
+	} else {
+		// if the value is not configured as write-only, then remove valueWO key from private state. Setting a key with an empty byte slice is interpreted by the framework as a request to remove the key from the ProviderData map.
+		diags := resp.Private.SetKey(ctx, "value_wo", []byte(""))
+		resp.Diagnostics.Append(diags...)
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
@@ -223,21 +311,35 @@ func (r *resourceTFEPolicySetParameter) Read(ctx context.Context, req resource.R
 		return
 	}
 
-	result := modelFromTFEPolicySetParameter(p, state.Value)
+	isWriteOnlyValue := isWriteOnlyValueInPrivateState(req, resp) // to avoid reading from written-only values
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// update state
+	result := modelFromTFEPolicySetParameter(p, state.Value, isWriteOnlyValue)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
 // Update implements resource.Resource
 func (r *resourceTFEPolicySetParameter) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	// Read the Terraform plan into the model
+	// Read the plan into the model
 	var plan modelTFEPolicySetParameter
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	// Read the Terraform state into the model
+
+	// Read the state into the model
 	var state modelTFEPolicySetParameter
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Read the config into the model
+	var config modelTFEPolicySetParameter
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -249,7 +351,7 @@ func (r *resourceTFEPolicySetParameter) Update(ctx context.Context, req resource
 	}
 
 	// Only set Value if our planned value would be a change from the prior state.
-	// This is so we don't accidentally reset the value of a sensitive variable on
+	// This is so we don't accidentally reset the value of a sensitive parameter on
 	// unrelated changes when `ignore_changes = [value]` is set.
 	if state.Value.ValueString() != plan.Value.ValueString() {
 		options.Value = plan.Value.ValueStringPointer()
@@ -262,8 +364,28 @@ func (r *resourceTFEPolicySetParameter) Update(ctx context.Context, req resource
 		resp.Diagnostics.AddError(fmt.Sprintf("Error updating parameter %s", plan.ID), err.Error())
 	}
 
-	result := modelFromTFEPolicySetParameter(p, plan.Value)
+	result := modelFromTFEPolicySetParameter(p, plan.Value, !config.ValueWO.IsNull())
+	r.updatePrivateState(ctx, resp, config.ValueWO)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+}
+
+func (r *resourceTFEPolicySetParameter) updatePrivateState(ctx context.Context, resp *resource.UpdateResponse, configValueWO types.String) {
+	if !configValueWO.IsNull() {
+		// Use the resource's private state to store secure hashes of write-only argument values, planModify will use the hash to determine if a write-only argument value has changed in later Terraform runs.
+		hashedValue := getSHA256Hash(configValueWO.ValueString())
+		diags := resp.Private.SetKey(ctx, "value_wo", fmt.Appendf(nil, `"%s"`, hashedValue))
+		resp.Diagnostics.Append(diags...)
+	} else {
+		// if value is not configured as write-only, remove valueWO key from private state
+		diags := resp.Private.SetKey(ctx, "value_wo", []byte(""))
+		resp.Diagnostics.Append(diags...)
+	}
+}
+
+func getSHA256Hash(data string) string {
+	hasher := sha256.New()
+	hasher.Write([]byte(data))
+	return hex.EncodeToString(hasher.Sum(nil))
 }
 
 // Delete implements resource.Resource
@@ -296,8 +418,8 @@ func (r *resourceTFEPolicySetParameter) ImportState(ctx context.Context, req res
 	s := strings.SplitN(req.ID, "/", 2)
 	if len(s) != 2 {
 		resp.Diagnostics.AddError(
-			"Error importing variable",
-			fmt.Sprintf("Invalid variable import format: %s (expected <POLICY SET ID>/<PARAMETER ID>)", req.ID),
+			"Error importing policy set parameter",
+			fmt.Sprintf("Invalid policy set parameter import format: %s (expected <POLICY SET ID>/<PARAMETER ID>)", req.ID),
 		)
 		return
 	}

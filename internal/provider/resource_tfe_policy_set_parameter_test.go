@@ -5,11 +5,16 @@ package provider
 
 import (
 	"fmt"
+	"math/rand"
+	"regexp"
 	"testing"
+	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/tfversion"
 )
 
 func TestAccTFEPolicySetParameter_basic(t *testing.T) {
@@ -129,6 +134,71 @@ func TestAccTFEPolicySetParameter_import(t *testing.T) {
 	})
 }
 
+func TestAccTFEPolicySetParameter_valueWO(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	parameter := &tfe.PolicySetParameter{}
+
+	paramValue1 := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	paramValue2 := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() { testAccPreCheck(t) },
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			tfversion.SkipBelow(version.Must(version.NewVersion("1.11.0"))),
+		},
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicySetParameterDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFEPolicySetParameter_valueAndValueWO(org.Name, paramValue1),
+				ExpectError: regexp.MustCompile(`Attribute "value" cannot be specified when "value_wo" is specified`),
+			},
+			{
+				Config: testAccTFEPolicySetParameter_valueWO(org.Name, paramValue1, true),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetParameterExists(
+						"tfe_policy_set_parameter.foobar", parameter),
+					resource.TestCheckNoResourceAttr(
+						"tfe_policy_set_parameter.foobar", "value_wo"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set_parameter.foobar", "sensitive", "true"),
+				),
+			},
+			{
+				Config: testAccTFEPolicySetParameter_valueWO(org.Name, paramValue2, false),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetParameterExists(
+						"tfe_policy_set_parameter.foobar", parameter),
+					resource.TestCheckNoResourceAttr(
+						"tfe_policy_set_parameter.foobar", "value_wo"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set_parameter.foobar", "sensitive", "false"),
+				),
+			},
+			{
+				Config: testAccTFEPolicySetParameter_basic(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetParameterExists(
+						"tfe_policy_set_parameter.foobar", parameter),
+					resource.TestCheckNoResourceAttr(
+						"tfe_policy_set_parameter.foobar", "value_wo"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set_parameter.foobar", "value", "value_test"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set_parameter.foobar", "sensitive", "false"),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckTFEPolicySetParameterExists(
 	n string, parameter *tfe.PolicySetParameter) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
@@ -240,4 +310,35 @@ resource "tfe_policy_set_parameter" "foobar" {
   sensitive    = true
   policy_set_id = tfe_policy_set.foobar.id
 }`, organization)
+}
+
+func testAccTFEPolicySetParameter_valueWO(organization string, value int, sensitive bool) string {
+	return fmt.Sprintf(`
+resource "tfe_policy_set" "foobar" {
+  name         = "policy-set-test"
+  organization = "%s"
+}
+
+resource "tfe_policy_set_parameter" "foobar" {
+  key          = "key_updated"
+  value_wo        = "%d"
+  sensitive    = %t
+  policy_set_id = tfe_policy_set.foobar.id
+}`, organization, value, sensitive)
+}
+
+func testAccTFEPolicySetParameter_valueAndValueWO(organization string, value int) string {
+	return fmt.Sprintf(`
+resource "tfe_policy_set" "foobar" {
+  name         = "policy-set-test"
+  organization = "%[1]s"
+}
+
+resource "tfe_policy_set_parameter" "foobar" {
+  key          = "key_updated"
+  value        = "%[2]d"
+  value_wo      = "%[2]d"
+  sensitive    = true
+  policy_set_id = tfe_policy_set.foobar.id
+}`, organization, value)
 }
