@@ -5,6 +5,8 @@ package provider
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -342,7 +344,8 @@ func (r *resourceTFEVariable) createWithWorkspace(ctx context.Context, req resou
 
 	if !config.ValueWO.IsNull() {
 		// Use the resource's private state to store secure hashes of write-only argument values, the provider during planmodify will use the hash to determine if a write-only argument value has changed in later Terraform runs.
-		diags := resp.Private.SetKey(ctx, "valueWO", fmt.Appendf(nil, `"%s"`, config.ValueWO.ValueString()))
+		hashedValue := generateSHA256Hash(config.ValueWO.ValueString())
+		diags := resp.Private.SetKey(ctx, "valueWO", fmt.Appendf(nil, `"%s"`, hashedValue))
 		resp.Diagnostics.Append(diags...)
 	} else {
 		// if the value is not configured as write-only, then remove valueWO key from private state. Setting a key with an empty byte slice is interpreted by the framework as a request to remove the key from the ProviderData map.
@@ -535,7 +538,7 @@ func (r *resourceTFEVariable) updateWithWorkspace(ctx context.Context, req resou
 	}
 	// Update state
 	result := modelFromTFEVariable(*variable, plan.Value, !config.ValueWO.IsNull())
-	updatePrivateState(ctx, resp, config.ValueWO)
+	r.updatePrivateState(ctx, resp, config.ValueWO)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -544,10 +547,17 @@ func (r *resourceTFEVariable) updateWithWorkspace(ctx context.Context, req resou
 	resp.Diagnostics.Append(diags...)
 }
 
-func updatePrivateState(ctx context.Context, resp *resource.UpdateResponse, configValueWO types.String) {
+func generateSHA256Hash(data string) string {
+	hasher := sha256.New()
+	hasher.Write([]byte(data))
+	return hex.EncodeToString(hasher.Sum(nil))
+}
+
+func (r *resourceTFEVariable) updatePrivateState(ctx context.Context, resp *resource.UpdateResponse, configValueWO types.String) {
 	if !configValueWO.IsNull() {
 		// Use the resource's private state to store secure hashes of write-only argument values, planModify will use the hash to determine if a write-only argument value has changed in later Terraform runs.
-		diags := resp.Private.SetKey(ctx, "valueWO", fmt.Appendf(nil, `"%s"`, configValueWO.ValueString()))
+		hashedValue := generateSHA256Hash(configValueWO.ValueString())
+		diags := resp.Private.SetKey(ctx, "valueWO", fmt.Appendf(nil, `"%s"`, hashedValue))
 		resp.Diagnostics.Append(diags...)
 	} else {
 		// if value is not configured as write-only, remove valueWO key from private state
