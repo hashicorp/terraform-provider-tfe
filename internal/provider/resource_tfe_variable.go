@@ -5,8 +5,6 @@ package provider
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -84,7 +82,7 @@ func modelFromTFEVariable(v tfe.Variable, lastValue types.String, isWriteOnlyVal
 }
 
 func isWriteOnlyValueInPrivateState(req resource.ReadRequest, resp *resource.ReadResponse) bool {
-	storedValueWO, diags := req.Private.GetKey(ctx, "valueWO")
+	storedValueWO, diags := req.Private.GetKey(ctx, "value_wo")
 	resp.Diagnostics.Append(diags...)
 	return len(storedValueWO) != 0
 }
@@ -345,11 +343,11 @@ func (r *resourceTFEVariable) createWithWorkspace(ctx context.Context, req resou
 	if !config.ValueWO.IsNull() {
 		// Use the resource's private state to store secure hashes of write-only argument values, the provider during planmodify will use the hash to determine if a write-only argument value has changed in later Terraform runs.
 		hashedValue := generateSHA256Hash(config.ValueWO.ValueString())
-		diags := resp.Private.SetKey(ctx, "valueWO", fmt.Appendf(nil, `"%s"`, hashedValue))
+		diags := resp.Private.SetKey(ctx, "value_wo", fmt.Appendf(nil, `"%s"`, hashedValue))
 		resp.Diagnostics.Append(diags...)
 	} else {
 		// if the value is not configured as write-only, then remove valueWO key from private state. Setting a key with an empty byte slice is interpreted by the framework as a request to remove the key from the ProviderData map.
-		diags := resp.Private.SetKey(ctx, "valueWO", []byte(""))
+		diags := resp.Private.SetKey(ctx, "value_wo", []byte(""))
 		resp.Diagnostics.Append(diags...)
 	}
 
@@ -547,21 +545,15 @@ func (r *resourceTFEVariable) updateWithWorkspace(ctx context.Context, req resou
 	resp.Diagnostics.Append(diags...)
 }
 
-func generateSHA256Hash(data string) string {
-	hasher := sha256.New()
-	hasher.Write([]byte(data))
-	return hex.EncodeToString(hasher.Sum(nil))
-}
-
 func (r *resourceTFEVariable) updatePrivateState(ctx context.Context, resp *resource.UpdateResponse, configValueWO types.String) {
 	if !configValueWO.IsNull() {
 		// Use the resource's private state to store secure hashes of write-only argument values, planModify will use the hash to determine if a write-only argument value has changed in later Terraform runs.
 		hashedValue := generateSHA256Hash(configValueWO.ValueString())
-		diags := resp.Private.SetKey(ctx, "valueWO", fmt.Appendf(nil, `"%s"`, hashedValue))
+		diags := resp.Private.SetKey(ctx, "value_wo", fmt.Appendf(nil, `"%s"`, hashedValue))
 		resp.Diagnostics.Append(diags...)
 	} else {
 		// if value is not configured as write-only, remove valueWO key from private state
-		diags := resp.Private.SetKey(ctx, "valueWO", []byte(""))
+		diags := resp.Private.SetKey(ctx, "value_wo", []byte(""))
 		resp.Diagnostics.Append(diags...)
 	}
 }
@@ -822,7 +814,7 @@ func (v *replaceValueWOPlanModifier) PlanModifyString(ctx context.Context, reque
 		return
 	}
 
-	storedValueWO, diags := request.Private.GetKey(ctx, "valueWO")
+	storedValueWO, diags := request.Private.GetKey(ctx, "value_wo")
 	response.Diagnostics.Append(diags...)
 	if response.Diagnostics.HasError() {
 		return
@@ -838,14 +830,15 @@ func (v *replaceValueWOPlanModifier) PlanModifyString(ctx context.Context, reque
 
 func handleConfigValueWO(valueWO types.String, storedValueWO []byte, response *planmodifier.StringResponse) {
 	if len(storedValueWO) != 0 {
-		var storedValueWOString string
-		err := json.Unmarshal(storedValueWO, &storedValueWOString)
+		var hashedStoredValueWO string
+		err := json.Unmarshal(storedValueWO, &hashedStoredValueWO)
 		if err != nil {
 			response.Diagnostics.AddError("Error unmarshalling stored value_wo", err.Error())
 			return
 		}
+		hashedConfigValueWO := generateSHA256Hash(valueWO.ValueString())
 		// when an ephemeral value is being used, they will generate a new token on every run. So the previous value_wo will not match the current one.
-		if storedValueWOString != valueWO.ValueString() {
+		if hashedStoredValueWO != hashedConfigValueWO {
 			log.Printf("[DEBUG] Replacing resource because the value of `value_wo` attribute has changed")
 			response.RequiresReplace = true
 		}

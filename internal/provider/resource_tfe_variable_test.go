@@ -206,20 +206,31 @@ func TestAccTFEVariable_valueWriteOnly(t *testing.T) {
 			tfversion.SkipBelow(version.Must(version.NewVersion("1.11.0"))),
 		},
 		ProtoV5ProviderFactories: testAccMuxedProviders,
-		CheckDestroy:             testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
 			{
+				Config:      testAccTFEVariable_valueAndValueWO(rInt, variableValue1, false),
+				ExpectError: regexp.MustCompile(`Attribute "value" cannot be specified when "value_wo" is specified`),
+			},
+			{
 				Config: testAccTFEVariable_valueWriteOnly(rInt, variableValue1, false),
-				Check: resource.ComposeAggregateTestCheckFunc(
+				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEVariableExists(
 						"tfe_variable.foobar", variable),
+					resource.TestCheckNoResourceAttr(
+						"tfe_variable.foobar", "value_wo"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "sensitive", "false"),
 				),
 			},
 			{
 				Config: testAccTFEVariable_valueWriteOnly(rInt, variableValue2, false),
-				Check: resource.ComposeAggregateTestCheckFunc(
+				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEVariableExists(
 						"tfe_variable.foobar", variable),
+					resource.TestCheckNoResourceAttr(
+						"tfe_variable.foobar", "value_wo"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "sensitive", "false"),
 				),
 			},
 		},
@@ -862,6 +873,30 @@ resource "tfe_variable" "foobar" {
   sensitive    = %s
 }
 `, rIntOrg, rIntVariableValue, strconv.FormatBool(sensitive))
+}
+
+func testAccTFEVariable_valueAndValueWO(rIntOrg int, rIntVariableValue int, sensitive bool) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+	name  = "tst-terraform-%d"
+	email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+	name         = "workspace-test"
+	organization = tfe_organization.foobar.id
+}
+
+resource "tfe_variable" "foobar" {
+  key          = "key_test"
+  value = "%d"
+  value_wo        = "%d"
+  description  = "my description"
+  category     = "env"
+  workspace_id = tfe_workspace.foobar.id
+  sensitive    = %s
+}
+`, rIntOrg, rIntVariableValue, rIntVariableValue, strconv.FormatBool(sensitive))
 }
 
 func testAccTFEVariable_readablevalue(rIntOrg int, rIntVariableValue int, sensitive bool) string {
