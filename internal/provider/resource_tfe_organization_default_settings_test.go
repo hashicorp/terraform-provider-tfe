@@ -6,6 +6,7 @@ package provider
 import (
 	"fmt"
 	"math/rand"
+	"regexp"
 	"testing"
 	"time"
 
@@ -21,9 +22,9 @@ func TestAccTFEOrganizationDefaultSettings_remote(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationDefaultSettings_remote(rInt),
@@ -42,9 +43,9 @@ func TestAccTFEOrganizationDefaultSettings_local(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationDefaultSettings_local(rInt),
@@ -63,9 +64,9 @@ func TestAccTFEOrganizationDefaultSettings_agent(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationDefaultSettings_agent(rInt),
@@ -85,9 +86,9 @@ func TestAccTFEOrganizationDefaultSettings_update(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationDefaultSettings_remote(rInt),
@@ -130,18 +131,36 @@ func TestAccTFEOrganizationDefaultSettings_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationDefaultSettings_remote(rInt),
 			},
 
 			{
-				ResourceName:      "tfe_organization_default_settings.foobar",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:                         "tfe_organization_default_settings.foobar",
+				ImportState:                          true,
+				ImportStateVerify:                    true,
+				ImportStateVerifyIdentifierAttribute: "organization",
+				ImportStateId:                        fmt.Sprintf("tst-terraform-%d", rInt),
+			},
+		},
+	})
+}
+
+func TestAccTFEOrganizationDefaultSettings_validateAgentExecutionMode(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFEOrganizationDefaultSettings_validateAgentExecutionMode(rInt),
+				ExpectError: regexp.MustCompile("Invalid default_execution_mode"),
 			},
 		},
 	})
@@ -208,6 +227,25 @@ resource "tfe_agent_pool" "foobar" {
 resource "tfe_organization_default_settings" "foobar" {
   organization = tfe_organization.foobar.name
   default_execution_mode = "agent"
+  default_agent_pool_id = tfe_agent_pool.foobar.id
+}`, rInt)
+}
+
+func testAccTFEOrganizationDefaultSettings_validateAgentExecutionMode(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_agent_pool" "foobar" {
+  name = "agent-pool-test"
+  organization = tfe_organization.foobar.name
+}
+
+resource "tfe_organization_default_settings" "foobar" {
+  organization = tfe_organization.foobar.name
+  default_execution_mode = "local"
   default_agent_pool_id = tfe_agent_pool.foobar.id
 }`, rInt)
 }
