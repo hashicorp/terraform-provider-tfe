@@ -81,12 +81,6 @@ func modelFromTFEVariable(v tfe.Variable, lastValue types.String, isWriteOnlyVal
 	return m
 }
 
-func isWriteOnlyValueInPrivateState(req resource.ReadRequest, resp *resource.ReadResponse) bool {
-	storedValueWO, diags := req.Private.GetKey(ctx, "value_wo")
-	resp.Diagnostics.Append(diags...)
-	return len(storedValueWO) != 0
-}
-
 // modelFromTFEVariableSetVariable builds a modelTFEVariable struct from a
 // tfe.VariableSetVariable value (plus the last known value of the variable's
 // `value` attribute).
@@ -846,6 +840,12 @@ func handleConfigValueWO(valueWO types.String, storedValueWO []byte, response *p
 		log.Printf("[DEBUG] Replacing resource because `value_wo` attribute has been added to a pre-existing variable resource")
 		response.RequiresReplace = true
 	}
+}
+
+func isWriteOnlyValueInPrivateState(req resource.ReadRequest, resp *resource.ReadResponse) bool {
+	storedValueWO, diags := req.Private.GetKey(ctx, "value_wo")
+	resp.Diagnostics.Append(diags...)
+	return len(storedValueWO) != 0
 }
 
 type updateReadableValuePlanModifier struct{}

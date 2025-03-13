@@ -37,6 +37,7 @@ type modelTFETestVariable struct {
 	ID             types.String `tfsdk:"id"`
 	Key            types.String `tfsdk:"key"`
 	Value          types.String `tfsdk:"value"`
+	ValueWO        types.String `tfsdk:"value_wo"`
 	ReadableValue  types.String `tfsdk:"readable_value"`
 	Category       types.String `tfsdk:"category"`
 	Description    types.String `tfsdk:"description"`
@@ -49,7 +50,7 @@ type modelTFETestVariable struct {
 
 // modelFromTFETestVariable builds a modelTFETestVariable struct from a tfe.TestVariable
 // value (plus the last known value of the variable's `value` attribute).
-func modelFromTFETestVariable(v tfe.Variable, lastValue types.String, moduleID tfe.RegistryModuleID) modelTFETestVariable {
+func modelFromTFETestVariable(v tfe.Variable, lastValue types.String, moduleID tfe.RegistryModuleID, isWriteOnlyValue bool) modelTFETestVariable {
 	// Initialize all fields from the provided API struct
 	m := modelTFETestVariable{
 		ID:             types.StringValue(v.ID),
@@ -70,6 +71,11 @@ func modelFromTFETestVariable(v tfe.Variable, lastValue types.String, moduleID t
 		m.ReadableValue = types.StringNull()
 	} else {
 		m.ReadableValue = m.Value
+	}
+	// Don't retrieve values if write-only is being used. Unset the value and readable_value fields before updating the state.
+	if isWriteOnlyValue {
+		m.Value = types.StringValue("")
+		m.ReadableValue = types.StringValue("")
 	}
 	return m
 }
@@ -133,6 +139,21 @@ func (r *resourceTFETestVariable) Schema(ctx context.Context, req resource.Schem
 				Default:     stringdefault.StaticString(""),
 				Sensitive:   true,
 				Description: "Value of the variable",
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRoot("value_wo")),
+				},
+			},
+			"value_wo": schema.StringAttribute{
+				Optional:    true,
+				WriteOnly:   true,
+				Sensitive:   true,
+				Description: "Value of the variable in write-only mode",
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRoot("value")),
+				},
+				PlanModifiers: []planmodifier.String{
+					&replaceValueWOPlanModifier{},
+				},
 			},
 			"category": schema.StringAttribute{
 				Required:    true,
@@ -205,6 +226,13 @@ func (r *resourceTFETestVariable) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
+	var config modelTFETestVariable
+	diags = req.Config.Get(ctx, &config)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	key := data.Key.ValueString()
 	category := data.Category.ValueString()
 	moduleID := tfe.RegistryModuleID{
@@ -217,11 +245,16 @@ func (r *resourceTFETestVariable) Create(ctx context.Context, req resource.Creat
 
 	options := tfe.VariableCreateOptions{
 		Key:         data.Key.ValueStringPointer(),
-		Value:       data.Value.ValueStringPointer(),
 		Category:    tfe.Category(tfe.CategoryType(category)),
 		HCL:         data.HCL.ValueBoolPointer(),
 		Sensitive:   data.Sensitive.ValueBoolPointer(),
 		Description: data.Description.ValueStringPointer(),
+	}
+
+	if !config.ValueWO.IsNull() {
+		options.Value = config.ValueWO.ValueStringPointer()
+	} else {
+		options.Value = data.Value.ValueStringPointer()
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("Create %s variable: %s", category, key))
@@ -235,7 +268,19 @@ func (r *resourceTFETestVariable) Create(ctx context.Context, req resource.Creat
 	}
 
 	// We got a variable, so set state to new values
-	result := modelFromTFETestVariable(*variable, data.Value, moduleID)
+	result := modelFromTFETestVariable(*variable, data.Value, moduleID, !config.ValueWO.IsNull())
+
+	if !config.ValueWO.IsNull() {
+		// Use the resource's private state to store secure hashes of write-only argument values, the provider during planmodify will use the hash to determine if a write-only argument value has changed in later Terraform runs.
+		hashedValue := generateSHA256Hash(config.ValueWO.ValueString())
+		diags := resp.Private.SetKey(ctx, "value_wo", fmt.Appendf(nil, `"%s"`, hashedValue))
+		resp.Diagnostics.Append(diags...)
+	} else {
+		// if the value is not configured as write-only, then remove valueWO key from private state. Setting a key with an empty byte slice is interpreted by the framework as a request to remove the key from the ProviderData map.
+		diags := resp.Private.SetKey(ctx, "value_wo", []byte(""))
+		resp.Diagnostics.Append(diags...)
+	}
+
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -273,21 +318,32 @@ func (r *resourceTFETestVariable) Read(ctx context.Context, req resource.ReadReq
 		return
 	}
 
+	isWriteOnlyValue := isWriteOnlyValueInPrivateState(req, resp) // to avoid reading from written-only values
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// We got a variable, so update state:
-	result := modelFromTFETestVariable(*variable, data.Value, moduleID)
+	result := modelFromTFETestVariable(*variable, data.Value, moduleID, isWriteOnlyValue)
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
 
 func (r *resourceTFETestVariable) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan modelTFETestVariable
-	var state modelTFETestVariable
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	var state modelTFETestVariable
 	diags = req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	var config modelTFETestVariable
+	diags = req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -324,7 +380,8 @@ func (r *resourceTFETestVariable) Update(ctx context.Context, req resource.Updat
 		return
 	}
 	// Update state
-	result := modelFromTFETestVariable(*variable, plan.Value, moduleID)
+	result := modelFromTFETestVariable(*variable, plan.Value, moduleID, !config.ValueWO.IsNull())
+	r.updatePrivateState(ctx, resp, config.ValueWO)
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -355,4 +412,17 @@ func (r *resourceTFETestVariable) Delete(ctx context.Context, req resource.Delet
 		)
 	}
 	// Resource is implicitly deleted from resp.State if diagnostics have no errors.
+}
+
+func (r *resourceTFETestVariable) updatePrivateState(ctx context.Context, resp *resource.UpdateResponse, configValueWO types.String) {
+	if !configValueWO.IsNull() {
+		// Use the resource's private state to store secure hashes of write-only argument values, planModify will use the hash to determine if a write-only argument value has changed in later Terraform runs.
+		hashedValue := generateSHA256Hash(configValueWO.ValueString())
+		diags := resp.Private.SetKey(ctx, "value_wo", fmt.Appendf(nil, `"%s"`, hashedValue))
+		resp.Diagnostics.Append(diags...)
+	} else {
+		// if value is not configured as write-only, remove valueWO key from private state
+		diags := resp.Private.SetKey(ctx, "value_wo", []byte(""))
+		resp.Diagnostics.Append(diags...)
+	}
 }
