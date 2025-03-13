@@ -27,6 +27,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+const (
+	ValueWOHashedPrivateKey = "value_wo_hashed"
+)
+
 var (
 	_ resource.Resource                = &resourceTFEPolicySetParameter{}
 	_ resource.ResourceWithConfigure   = &resourceTFEPolicySetParameter{}
@@ -75,7 +79,7 @@ func modelFromTFEPolicySetParameter(v *tfe.PolicySetParameter, lastValue types.S
 }
 
 func isWriteOnlyValueInPrivateState(req resource.ReadRequest, resp *resource.ReadResponse) bool {
-	storedValueWO, diags := req.Private.GetKey(ctx, "value_wo")
+	storedValueWO, diags := req.Private.GetKey(ctx, ValueWOHashedPrivateKey)
 	resp.Diagnostics.Append(diags...)
 	return len(storedValueWO) != 0
 }
@@ -104,7 +108,7 @@ func (r *resourceTFEPolicySetParameter) Metadata(_ context.Context, req resource
 func (r *resourceTFEPolicySetParameter) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Creates, updates and destroys policy set parameters.",
-		Version:     1,
+		Version:     0,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "Service-generated identifier for the parameter.",
@@ -145,7 +149,7 @@ func (r *resourceTFEPolicySetParameter) Schema(ctx context.Context, req resource
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplaceIf(func(ctx context.Context, req planmodifier.StringRequest, resp *stringplanmodifier.RequiresReplaceIfFuncResponse) {
-						storedValueWO, diags := req.Private.GetKey(ctx, "value_wo")
+						storedValueWO, diags := req.Private.GetKey(ctx, ValueWOHashedPrivateKey)
 						resp.Diagnostics.Append(diags...)
 						if resp.Diagnostics.HasError() {
 							return
@@ -208,7 +212,7 @@ func (r *resourceTFEPolicySetParameter) Schema(ctx context.Context, req resource
 }
 
 func (r *resourceTFEPolicySetParameter) requiresReplaceIfValueWOModifiedFunc(ctx context.Context, req planmodifier.StringRequest, resp *stringplanmodifier.RequiresReplaceIfFuncResponse) {
-	storedValueWO, diags := req.Private.GetKey(ctx, "value_wo")
+	storedValueWO, diags := req.Private.GetKey(ctx, ValueWOHashedPrivateKey)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -272,11 +276,11 @@ func (r *resourceTFEPolicySetParameter) Create(ctx context.Context, req resource
 
 	if !config.ValueWO.IsNull() {
 		// Use the resource's private state to store secure hashes of write-only argument values, the provider during planmodify will use the hash to determine if a write-only argument value has changed in later Terraform runs.
-		diags := resp.Private.SetKey(ctx, "value_wo", fmt.Appendf(nil, `"%s"`, config.ValueWO.ValueString()))
+		diags := resp.Private.SetKey(ctx, ValueWOHashedPrivateKey, fmt.Appendf(nil, `"%s"`, config.ValueWO.ValueString()))
 		resp.Diagnostics.Append(diags...)
 	} else {
 		// if the value is not configured as write-only, then remove valueWO key from private state. Setting a key with an empty byte slice is interpreted by the framework as a request to remove the key from the ProviderData map.
-		diags := resp.Private.SetKey(ctx, "value_wo", []byte(""))
+		diags := resp.Private.SetKey(ctx, ValueWOHashedPrivateKey, []byte(""))
 		resp.Diagnostics.Append(diags...)
 	}
 
@@ -373,11 +377,11 @@ func (r *resourceTFEPolicySetParameter) updatePrivateState(ctx context.Context, 
 	if !configValueWO.IsNull() {
 		// Use the resource's private state to store secure hashes of write-only argument values, planModify will use the hash to determine if a write-only argument value has changed in later Terraform runs.
 		hashedValue := getSHA256Hash(configValueWO.ValueString())
-		diags := resp.Private.SetKey(ctx, "value_wo", fmt.Appendf(nil, `"%s"`, hashedValue))
+		diags := resp.Private.SetKey(ctx, ValueWOHashedPrivateKey, fmt.Appendf(nil, `"%s"`, hashedValue))
 		resp.Diagnostics.Append(diags...)
 	} else {
 		// if value is not configured as write-only, remove valueWO key from private state
-		diags := resp.Private.SetKey(ctx, "value_wo", []byte(""))
+		diags := resp.Private.SetKey(ctx, ValueWOHashedPrivateKey, []byte(""))
 		resp.Diagnostics.Append(diags...)
 	}
 }

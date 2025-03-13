@@ -10,6 +10,10 @@ FEATURES:
   resource for creating and managing team tokens in an organization, by
   @shwetamurali and @ctrombley [#1628](https://github.com/hashicorp/terraform-provider-tfe/pull/1628)
 
+ENHANCEMENTS:
+
+  * resource/tfe_policy_set_parameter: Add `value_wo` write-only attribute ([#1639](https://github.com/hashicorp/terraform-provider-tfe/pull/1639))
+
 ## v.0.64.0
 
 FEATURES:
