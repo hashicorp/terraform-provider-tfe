@@ -9,6 +9,7 @@ FEATURES:
 * **New Ephemeral Resource:** `tfe_team_token` is a new ephemeral
   resource for creating and managing team tokens in an organization, by
   @shwetamurali and @ctrombley [#1628](https://github.com/hashicorp/terraform-provider-tfe/pull/1628)
+  
 
 ## v.0.64.0
 

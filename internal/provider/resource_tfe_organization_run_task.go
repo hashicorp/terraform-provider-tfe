@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -46,9 +48,10 @@ type modelTFEOrganizationRunTaskV0 struct {
 	Name         types.String `tfsdk:"name"`
 	Organization types.String `tfsdk:"organization"`
 	URL          types.String `tfsdk:"url"`
+	HMACKeyWo    types.String `tfsdk:"hmac_key_wo"`
 }
 
-func modelFromTFEOrganizationRunTask(v *tfe.RunTask, hmacKey types.String) modelTFEOrganizationRunTaskV0 {
+func modelFromTFEOrganizationRunTask(v *tfe.RunTask, hmacKey types.String, isWriteOnlyValue bool) modelTFEOrganizationRunTaskV0 {
 	result := modelTFEOrganizationRunTaskV0{
 		Category:     types.StringValue(v.Category),
 		Description:  types.StringValue(v.Description),
@@ -64,7 +67,18 @@ func modelFromTFEOrganizationRunTask(v *tfe.RunTask, hmacKey types.String) model
 		result.HMACKey = hmacKey
 	}
 
+	// Don't retrieve values if write-only is being used. Unset the hmac key field before updating the state.
+	if isWriteOnlyValue {
+		result.HMACKey = types.StringValue("")
+	}
+
 	return result
+}
+
+func isWriteOnlyHMACKeyInPrivateState(req resource.ReadRequest, resp *resource.ReadResponse) bool {
+	storedHMACKeyWO, diags := req.Private.GetKey(ctx, "hmac_key_wo")
+	resp.Diagnostics.Append(diags...)
+	return len(storedHMACKeyWO) != 0
 }
 
 func (r *resourceOrgRunTask) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -131,6 +145,21 @@ func (r *resourceOrgRunTask) Schema(ctx context.Context, req resource.SchemaRequ
 				Optional:  true,
 				Computed:  true,
 				Default:   stringdefault.StaticString(""),
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRoot("hmac_key_wo")),
+				},
+			},
+			"hmac_key_wo": schema.StringAttribute{
+				Optional:    true,
+				WriteOnly:   true,
+				Sensitive:   true,
+				Description: "HMAC key in write-only mode",
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRoot("hmac_key")),
+				},
+				PlanModifiers: []planmodifier.String{
+					&replaceHMACKeyWOPlanModifier{},
+				},
 			},
 			"enabled": schema.BoolAttribute{
 				Optional: true,
@@ -168,7 +197,12 @@ func (r *resourceOrgRunTask) Read(ctx context.Context, req resource.ReadRequest,
 		return
 	}
 
-	result := modelFromTFEOrganizationRunTask(task, state.HMACKey)
+	isWriteOnlyValue := isWriteOnlyValueInPrivateState(req, resp) // to avoid reading from written-only values
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	// update state
+	result := modelFromTFEVariable(*variable, data.Value, isWriteOnlyValue)
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
@@ -179,6 +213,13 @@ func (r *resourceOrgRunTask) Create(ctx context.Context, req resource.CreateRequ
 
 	// Read Terraform planned changes into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var config modelTFEOrganizationRunTaskV0
+	diags := req.Config.Get(ctx, &config)
+	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -194,9 +235,14 @@ func (r *resourceOrgRunTask) Create(ctx context.Context, req resource.CreateRequ
 		Name:        plan.Name.ValueString(),
 		URL:         plan.URL.ValueString(),
 		Category:    plan.Category.ValueString(),
-		HMACKey:     plan.HMACKey.ValueStringPointer(),
 		Enabled:     plan.Enabled.ValueBoolPointer(),
 		Description: plan.Description.ValueStringPointer(),
+	}
+
+	if !config.HMACKeyWO.IsNull() {
+		options.HMACKey = config.HMACKeyWO.ValueStringPointer()
+	} else {
+		options.HMACKey = data.HMACKey.ValueStringPointer()
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("Create task %s for organization: %s", options.Name, organization))
@@ -206,7 +252,18 @@ func (r *resourceOrgRunTask) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
-	result := modelFromTFEOrganizationRunTask(task, plan.HMACKey)
+	result := modelFromTFEOrganizationRunTask(task, plan.HMACKey, !config.HMACKeyWO.IsNull())
+
+	if !config.HMACKeyWO.IsNull() {
+		// Use the resource's private state to store secure hashes of write-only argument values, the provider during planmodify will use the hash to determine if a write-only argument value has changed in later Terraform runs.
+		hashedValue := generateSHA256Hash(config.HMACKeyWO.ValueString())
+		diags := resp.Private.SetKey(ctx, "hmac_key_wo", fmt.Appendf(nil, `"%s"`, hashedValue))
+		resp.Diagnostics.Append(diags...)
+	} else {
+		// if the key is not configured as write-only, then remove HMACKeyWO key from private state. Setting a key with an empty byte slice is interpreted by the framework as a request to remove the key from the ProviderData map.
+		diags := resp.Private.SetKey(ctx, "hmac_key_wo", []byte(""))
+		resp.Diagnostics.Append(diags...)
+	}
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
@@ -224,6 +281,13 @@ func (r *resourceOrgRunTask) Update(ctx context.Context, req resource.UpdateRequ
 	var state modelTFEOrganizationRunTaskV0
 	// Read Terraform state into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var config modelTFEOrganizationRunTaskV0
+	diags = req.Config.Get(ctx, &config)
+	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -251,7 +315,13 @@ func (r *resourceOrgRunTask) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 
-	result := modelFromTFEOrganizationRunTask(task, plan.HMACKey)
+	isWriteOnlyValue := isWriteOnlyValueInPrivateState(req, resp) // to avoid reading from written-only values
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	result := modelFromTFEOrganizationRunTask(task, plan.HMACKey, isWriteOnlyValue)
+	r.updatePrivateState(ctx, resp, config.HMACKeyWO)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
@@ -306,5 +376,18 @@ func (r *resourceOrgRunTask) ImportState(ctx context.Context, req resource.Impor
 		// We can never import the HMACkey (Write-only) so assume it's the default (empty)
 		result := modelFromTFEOrganizationRunTask(task, types.StringValue(""))
 		resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+	}
+}
+
+func (r *resourceTFETestVariable) updatePrivateState(ctx context.Context, resp *resource.UpdateResponse, configValueWO types.String) {
+	if !configValueWO.IsNull() {
+		// Use the resource's private state to store secure hashes of write-only argument values, planModify will use the hash to determine if a write-only argument value has changed in later Terraform runs.
+		hashedValue := generateSHA256Hash(configValueWO.ValueString())
+		diags := resp.Private.SetKey(ctx, "hmac_key_wo", fmt.Appendf(nil, `"%s"`, hashedValue))
+		resp.Diagnostics.Append(diags...)
+	} else {
+		// if key is not configured as write-only, remove hmacKeyWO key from private state
+		diags := resp.Private.SetKey(ctx, "hmac_key_wo", []byte(""))
+		resp.Diagnostics.Append(diags...)
 	}
 }
