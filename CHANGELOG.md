@@ -10,6 +10,8 @@ FEATURES:
   resource for creating and managing team tokens in an organization, by
   @shwetamurali and @ctrombley [#1628](https://github.com/hashicorp/terraform-provider-tfe/pull/1628)
 
+* `r/tfe_workspace_run`: Allow configuration without `apply` and `destroy` blocks, by @tmatilai [#1604](https://github.com/hashicorp/terraform-provider-tfe/pull/1604)
+
 ## v.0.64.0
 
 FEATURES:
