@@ -264,7 +264,7 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 		Description:         "",
 		MarkdownDescription: "",
 		DeprecationMessage:  "",
-		Version:             1,
+		Version:             0,
 	}
 }
 
