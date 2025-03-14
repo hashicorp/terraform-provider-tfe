@@ -214,7 +214,7 @@ func (r *resourceTFETestVariable) Schema(ctx context.Context, req resource.Schem
 		Description:         "",
 		MarkdownDescription: "",
 		DeprecationMessage:  "",
-		Version:             1,
+		Version:             0,
 	}
 }
 
