@@ -273,11 +273,11 @@ func (r *resourceTFETestVariable) Create(ctx context.Context, req resource.Creat
 	if !config.ValueWO.IsNull() {
 		// Use the resource's private state to store secure hashes of write-only argument values, the provider during planmodify will use the hash to determine if a write-only argument value has changed in later Terraform runs.
 		hashedValue := generateSHA256Hash(config.ValueWO.ValueString())
-		diags := resp.Private.SetKey(ctx, "value_wo", fmt.Appendf(nil, `"%s"`, hashedValue))
+		diags := resp.Private.SetKey(ctx, ValueWOHashedPrivateKey, fmt.Appendf(nil, `"%s"`, hashedValue))
 		resp.Diagnostics.Append(diags...)
 	} else {
 		// if the value is not configured as write-only, then remove valueWO key from private state. Setting a key with an empty byte slice is interpreted by the framework as a request to remove the key from the ProviderData map.
-		diags := resp.Private.SetKey(ctx, "value_wo", []byte(""))
+		diags := resp.Private.SetKey(ctx, ValueWOHashedPrivateKey, []byte(""))
 		resp.Diagnostics.Append(diags...)
 	}
 
@@ -418,11 +418,11 @@ func (r *resourceTFETestVariable) updatePrivateState(ctx context.Context, resp *
 	if !configValueWO.IsNull() {
 		// Use the resource's private state to store secure hashes of write-only argument values, planModify will use the hash to determine if a write-only argument value has changed in later Terraform runs.
 		hashedValue := generateSHA256Hash(configValueWO.ValueString())
-		diags := resp.Private.SetKey(ctx, "value_wo", fmt.Appendf(nil, `"%s"`, hashedValue))
+		diags := resp.Private.SetKey(ctx, ValueWOHashedPrivateKey, fmt.Appendf(nil, `"%s"`, hashedValue))
 		resp.Diagnostics.Append(diags...)
 	} else {
 		// if value is not configured as write-only, remove valueWO key from private state
-		diags := resp.Private.SetKey(ctx, "value_wo", []byte(""))
+		diags := resp.Private.SetKey(ctx, ValueWOHashedPrivateKey, []byte(""))
 		resp.Diagnostics.Append(diags...)
 	}
 }

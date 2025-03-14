@@ -25,10 +25,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-const (
-	ValueWOHashedPrivateKey = "value_wo_hashed"
-)
-
 // resourceTFEVariable implements the tfe_variable resource type. Note: Much of
 // the complexity of this type's Resource implementation is because the
 // tfe_variable resource is an abstraction over two parallel APIs, so each
