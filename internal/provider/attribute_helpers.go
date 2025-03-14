@@ -13,6 +13,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+const (
+	ValueWOHashedPrivateKey = "value_wo_hashed"
+)
+
 // AttrGettable is a small enabler for helper functions that need to read one
 // attribute of a Configuration, Plan, or State.
 type AttrGettable interface {
