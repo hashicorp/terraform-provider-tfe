@@ -12,9 +12,11 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/tfversion"
 )
 
 func TestAccTFEVariable_basic(t *testing.T) {
@@ -186,6 +188,49 @@ func TestAccTFEVariable_update_key_sensitive(t *testing.T) {
 						"tfe_variable.foobar", "hcl", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_variable.foobar", "sensitive", "true"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEVariable_valueWriteOnly(t *testing.T) {
+	variable := &tfe.Variable{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	variableValue1 := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	variableValue2 := variableValue1 + 42
+
+	resource.Test(t, resource.TestCase{
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			tfversion.SkipBelow(version.Must(version.NewVersion("1.11.0"))),
+		},
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFEVariable_valueAndValueWO(rInt, variableValue1, false),
+				ExpectError: regexp.MustCompile(`Attribute "value" cannot be specified when "value_wo" is specified`),
+			},
+			{
+				Config: testAccTFEVariable_valueWriteOnly(rInt, variableValue1, false),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEVariableExists(
+						"tfe_variable.foobar", variable),
+					resource.TestCheckNoResourceAttr(
+						"tfe_variable.foobar", "value_wo"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "sensitive", "false"),
+				),
+			},
+			{
+				Config: testAccTFEVariable_valueWriteOnly(rInt, variableValue2, false),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEVariableExists(
+						"tfe_variable.foobar", variable),
+					resource.TestCheckNoResourceAttr(
+						"tfe_variable.foobar", "value_wo"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "sensitive", "false"),
 				),
 			},
 		},
@@ -806,6 +851,54 @@ resource "tfe_variable" "vs_terraform" {
   variable_set_id = tfe_variable_set.foobar.id
 }`, rInt)
 }
+
+func testAccTFEVariable_valueWriteOnly(rIntOrg int, rIntVariableValue int, sensitive bool) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+	name  = "tst-terraform-%d"
+	email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+	name         = "workspace-test"
+	organization = tfe_organization.foobar.id
+}
+
+resource "tfe_variable" "foobar" {
+  key          = "key_test"
+  value_wo        = "%d"
+  description  = "my description"
+  category     = "env"
+  workspace_id = tfe_workspace.foobar.id
+  sensitive    = %s
+}
+`, rIntOrg, rIntVariableValue, strconv.FormatBool(sensitive))
+}
+
+func testAccTFEVariable_valueAndValueWO(rIntOrg int, rIntVariableValue int, sensitive bool) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+	name  = "tst-terraform-%d"
+	email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+	name         = "workspace-test"
+	organization = tfe_organization.foobar.id
+}
+
+resource "tfe_variable" "foobar" {
+  key          = "key_test"
+  value = "%d"
+  value_wo        = "%d"
+  description  = "my description"
+  category     = "env"
+  workspace_id = tfe_workspace.foobar.id
+  sensitive    = %s
+}
+`, rIntOrg, rIntVariableValue, rIntVariableValue, strconv.FormatBool(sensitive))
+}
+
 func testAccTFEVariable_readablevalue(rIntOrg int, rIntVariableValue int, sensitive bool) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
