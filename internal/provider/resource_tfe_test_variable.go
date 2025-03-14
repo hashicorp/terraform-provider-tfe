@@ -281,6 +281,10 @@ func (r *resourceTFETestVariable) Create(ctx context.Context, req resource.Creat
 		resp.Diagnostics.Append(diags...)
 	}
 
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -382,6 +386,9 @@ func (r *resourceTFETestVariable) Update(ctx context.Context, req resource.Updat
 	// Update state
 	result := modelFromTFETestVariable(*variable, plan.Value, moduleID, !config.ValueWO.IsNull())
 	r.updatePrivateState(ctx, resp, config.ValueWO)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
