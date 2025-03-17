@@ -40,7 +40,7 @@ func init() {
 			nextProvider := providerserver.NewProtocol5(NewFrameworkProvider())
 
 			mux, err := tf5muxserver.NewMuxServer(
-				ctx, nextProvider,
+				ctx, nextProvider, testAccProvider.GRPCProvider,
 			)
 			if err != nil {
 				return nil, err
