@@ -184,6 +184,47 @@ func TestAccTFEOrganizationRunTask_Read(t *testing.T) {
 	})
 }
 
+func TestAccTFEOrganizationRunTask_HMACWriteOnly(t *testing.T) {
+	skipUnlessRunTasksDefined(t)
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	runTask := &tfe.RunTask{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	// Note - We cannot easily test updating the HMAC Key as that would require coordination between this test suite
+	// and the external Run Task service to "magically" allow a different Key. Instead we "update" with the same key
+	// and manually test HMAC Key changes.
+	hmacKey := runTasksHMACKey()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationRunTaskDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFEOrganizationRunTask_hmacAndHMACWriteOnly(org.Name, rInt, runTasksURL()),
+				ExpectError: regexp.MustCompile(`Attribute "hmac_key_wo" cannot be specified when "hmac_key" is specified`),
+			},
+			{
+				Config: testAccTFEOrganizationRunTask_hmacWriteOnly(org.Name, rInt, runTasksURL(), hmacKey),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOrganizationRunTaskExists("tfe_organization_run_task.foobar", runTask),
+					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "hmac_key", ""),
+					resource.TestCheckNoResourceAttr("tfe_organization_run_task.foobar", "hmac_key_wo"),
+				),
+			},
+		},
+	})
+
+}
+
 func testAccCheckTFEOrganizationRunTaskExists(n string, runTask *tfe.RunTask) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		config := testAccProvider.Meta().(ConfiguredClient)
@@ -255,4 +296,29 @@ func testAccTFEOrganizationRunTask_update(orgName string, rInt int, runTaskURL, 
 		description  = "a description"
 	}
 `, orgName, runTaskURL, rInt, runTaskHMACKey)
+}
+
+func testAccTFEOrganizationRunTask_hmacWriteOnly(orgName string, rInt int, runTaskURL, runTaskHMACKey string) string {
+	return fmt.Sprintf(`
+	resource "tfe_organization_run_task" "foobar" {
+		organization = "%s"
+		url          = "%s"
+		name         = "foobar-task-%d"
+		enabled      = false
+		hmac_key_wo  = "%s"
+	}
+	`, orgName, runTaskURL, rInt, runTaskHMACKey)
+}
+
+func testAccTFEOrganizationRunTask_hmacAndHMACWriteOnly(orgName string, rInt int, runTaskURL string) string {
+	return fmt.Sprintf(`
+	resource "tfe_organization_run_task" "foobar" {
+		organization = "%s"
+		url          = "%s"
+		name         = "foobar-task-%d"
+		enabled      = false
+		hmac_key     = "foo"
+		hmac_key_wo  = "foo"
+	}
+	`, orgName, runTaskURL, rInt)
 }
