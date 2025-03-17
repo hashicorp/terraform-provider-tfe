@@ -65,12 +65,30 @@ resource "tfe_variable" "test-b" {
 }
 ```
 
+Basic usage for the write-only value of tfe_variable:
+
+```hcl
+variable "session_token" {
+  type      = string
+  ephemeral = true
+}
+
+resource "tfe_variable" "test" {
+  key          = "my_key_name"
+  value_wo        = var.session_token
+  category     = "terraform"
+  workspace_id = tfe_workspace.test.id
+  description  = "a useful description"
+}
+```
+
 ## Argument Reference
 
 The following arguments are supported:
 
 * `key` - (Required) Name of the variable.
 * `value` - (Required) Value of the variable.
+* `value_wo` - (Optional) Write-Only value of the variable. `write-only` values are never stored to state and do not display in the Terraform plan output. Set the `sensitive` argument to `true` to not display its value in the `Variables` UI for HCP. If the value passed to `value_wo` changes, it will force to recreate the resource. 
 * `category` - (Required) Whether this is a Terraform or environment variable.
   Valid values are `terraform` or `env`.
 * `description` - (Optional) Description of the variable.
@@ -87,6 +105,8 @@ drift if `value` is later changed out-of-band via the HCP Terraform UI.
 Terraform will only change the value for a sensitive variable if you change
 `value` in the configuration, so that it no longer matches the last known value
 in the state.
+
+-> **Note:** Write-Only argument `value_wo` is available to use in place of `value`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
 
 ## Attributes Reference
 
