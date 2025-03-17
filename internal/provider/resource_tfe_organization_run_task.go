@@ -7,6 +7,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -206,15 +207,30 @@ func (v *replaceHMACKeyWOPlanModifier) PlanModifyString(ctx context.Context, req
 		return
 	}
 
-	storedHMACWOStr := string(storedHMACWO)
-	fmt.Printf("--- storedHMACWOStr: %+v\n", storedHMACWOStr)
-
-	// if !configValueWO.IsNull() {
-	// 	handleConfigValueWO(configValueWO, storedValueWO, response)
-	// } else if len(storedValueWO) != 0 {
-	// 	// when `value_wo` was previously set in the config, but the config switched to either `value` or no value whatsoever
-	// 	response.RequiresReplace = true
-	// }
+	if !configValueWO.IsNull() {
+		if len(storedHMACWO) != 0 {
+			var hashedStoredHMACWO string
+			err := json.Unmarshal(storedHMACWO, &hashedStoredHMACWO)
+			if err != nil {
+				response.Diagnostics.AddError("Error unmarshalling stored hmac_key_wos", err.Error())
+				return
+			}
+			fmt.Printf("--- storedHMACWOStr: %+v\n", hashedStoredHMACWO)
+			hashedConfigValueWO := generateSHA256Hash(configValueWO.ValueString())
+			// when an ephemeral value is being used, they will generate a new token on every run. So the previous value_wo will not match the current one.
+			fmt.Printf("--- config value: %+v\n", hashedConfigValueWO)
+			if hashedStoredHMACWO != hashedConfigValueWO {
+				// log.Printf("[DEBUG] Replacing resource because the value of `value_wo` attribute has changed")
+				response.RequiresReplace = true
+			}
+		} else {
+			// log.Printf("[DEBUG] Replacing resource because `value_wo` attribute has been added to a pre-existing variable resource")
+			response.RequiresReplace = true
+		}
+	} else if len(storedHMACWO) != 0 {
+		// when `value_wo` was previously set in the config, but the config switched to either `value` or no value whatsoever
+		response.RequiresReplace = true
+	}
 }
 
 func isWriteOnlyValueInPrivateState(req resource.ReadRequest, resp *resource.ReadResponse) bool {
