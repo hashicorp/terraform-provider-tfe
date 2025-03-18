@@ -6,12 +6,15 @@ package provider
 import (
 	"fmt"
 	"math/rand"
+	"regexp"
 	"testing"
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/tfversion"
 )
 
 func TestAccTFETestVariable_basic(t *testing.T) {
@@ -42,6 +45,40 @@ func TestAccTFETestVariable_basic(t *testing.T) {
 						"tfe_test_variable.foobar", "category", "env"),
 					resource.TestCheckResourceAttr(
 						"tfe_test_variable.foobar", "hcl", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_test_variable.foobar", "sensitive", "false"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFETestVariable_valueWriteOnly(t *testing.T) {
+	variable := &tfe.Variable{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccGithubPreCheck(t)
+		},
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			tfversion.SkipBelow(version.Must(version.NewVersion("1.11.0"))),
+		},
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETestVariableDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFETestVariable_valueAndValueWO(rInt),
+				ExpectError: regexp.MustCompile(`Attribute "value" cannot be specified when "value_wo" is specified`),
+			},
+			{
+				Config: testAccTFETestVariable_valueWriteOnly(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFETestVariableExists(
+						"tfe_test_variable.foobar", variable),
+					resource.TestCheckNoResourceAttr(
+						"tfe_test_variable.foobar", "value_wo"),
 					resource.TestCheckResourceAttr(
 						"tfe_test_variable.foobar", "sensitive", "false"),
 				),
@@ -239,6 +276,95 @@ resource "tfe_test_variable" "foobar" {
 }
 `,
 		rInt,
+		envGithubToken,
+		envGithubRegistryModuleIdentifer,
+		envGithubRegistryModuleIdentifer)
+}
+
+func testAccTFETestVariable_valueWriteOnly(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_oauth_client" "foobar" {
+  organization     = tfe_organization.foobar.name
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "%s"
+  service_provider = "github"
+}
+
+resource "tfe_registry_module" "foobar" {
+  organization     = tfe_organization.foobar.name
+  vcs_repo {
+  display_identifier = "%s"
+  identifier         = "%s"
+  oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
+  branch             = "main"
+  tags				 = false
+}
+  test_config {
+	tests_enabled = true
+  }
+}
+
+resource "tfe_test_variable" "foobar" {
+  key          = "key_test"
+  value_wo        = "value_test"
+  description  = "some description"
+  category     = "env"
+  organization = tfe_organization.foobar.name
+  module_name = tfe_registry_module.foobar.name
+  module_provider = tfe_registry_module.foobar.module_provider
+}
+`, rInt,
+		envGithubToken,
+		envGithubRegistryModuleIdentifer,
+		envGithubRegistryModuleIdentifer)
+}
+
+func testAccTFETestVariable_valueAndValueWO(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_oauth_client" "foobar" {
+  organization     = tfe_organization.foobar.name
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "%s"
+  service_provider = "github"
+}
+
+resource "tfe_registry_module" "foobar" {
+  organization     = tfe_organization.foobar.name
+  vcs_repo {
+  display_identifier = "%s"
+  identifier         = "%s"
+  oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
+  branch             = "main"
+  tags				 = false
+}
+  test_config {
+	tests_enabled = true
+  }
+}
+
+resource "tfe_test_variable" "foobar" {
+  key          = "key_test"
+  value        = "value_test"
+  value_wo        = "value_test"
+  description  = "some description"
+  category     = "env"
+  organization = tfe_organization.foobar.name
+  module_name = tfe_registry_module.foobar.name
+  module_provider = tfe_registry_module.foobar.module_provider
+}
+`, rInt,
 		envGithubToken,
 		envGithubRegistryModuleIdentifer,
 		envGithubRegistryModuleIdentifer)
