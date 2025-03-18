@@ -16,6 +16,8 @@ FEATURES:
 
 ENHANCEMENTS:
 
+* resource/resource_tfe_organization_run_task: Add `hmac_key_wo` write-only attribute ([#1646](https://github.com/hashicorp/terraform-provider-tfe/pull/1646))
+
 * resource/tfe_variable: Add `value_wo` write-only attribute ([#1639](https://github.com/hashicorp/terraform-provider-tfe/pull/1639))
 
 * resource/tfe_test_variable: Add `value_wo` write-only attribute ([#1639](https://github.com/hashicorp/terraform-provider-tfe/pull/1639))
