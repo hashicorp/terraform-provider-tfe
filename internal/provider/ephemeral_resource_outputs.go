@@ -38,7 +38,8 @@ func (e *outputsEphemeralResource) Schema(ctx context.Context, req ephemeral.Sch
 			},
 			"organization": schema.StringAttribute{
 				Description: `Name of the organization.`,
-				Required:    true,
+				Optional:    true,
+				Computed:    true,
 			},
 			"workspace": schema.StringAttribute{
 				Description: `Name of the workspace.`,
@@ -98,7 +99,7 @@ func (e *outputsEphemeralResource) Open(ctx context.Context, req ephemeral.OpenR
 		Include: []tfe.WSIncludeOpt{tfe.WSOutputs},
 	}
 
-	ws, err := e.config.Client.Workspaces.ReadWithOptions(ctx, config.Organization.ValueString(), config.Workspace.ValueString(), opts)
+	ws, err := e.config.Client.Workspaces.ReadWithOptions(ctx, orgName, config.Workspace.ValueString(), opts)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read workspace", err.Error())
 		return

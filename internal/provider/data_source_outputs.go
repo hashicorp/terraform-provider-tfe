@@ -118,12 +118,12 @@ func (d *outputsDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		return
 	}
 
-	log.Printf("[DEBUG] Reading the workspace %s in organization %s", config.Workspace.ValueString(), config.Organization.ValueString())
+	log.Printf("[DEBUG] Reading the workspace %s in organization %s", config.Workspace.ValueString(), orgName)
 	opts := &tfe.WorkspaceReadOptions{
 		Include: []tfe.WSIncludeOpt{tfe.WSOutputs},
 	}
 
-	ws, err := d.config.Client.Workspaces.ReadWithOptions(ctx, config.Organization.ValueString(), config.Workspace.ValueString(), opts)
+	ws, err := d.config.Client.Workspaces.ReadWithOptions(ctx, orgName, config.Workspace.ValueString(), opts)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read workspace", err.Error())
 		return
