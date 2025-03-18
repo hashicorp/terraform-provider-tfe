@@ -217,18 +217,18 @@ func (v *replaceHMACKeyWOPlanModifier) PlanModifyString(ctx context.Context, req
 			}
 			fmt.Printf("--- storedHMACWOStr: %+v\n", hashedStoredHMACWO)
 			hashedConfigValueWO := generateSHA256Hash(configValueWO.ValueString())
-			// when an ephemeral value is being used, they will generate a new token on every run. So the previous value_wo will not match the current one.
+			// when an ephemeral value is being used, they will generate a new token on every run. So the previous hmac_key_wo will not match the current one.
 			fmt.Printf("--- config value: %+v\n", hashedConfigValueWO)
 			if hashedStoredHMACWO != hashedConfigValueWO {
-				// log.Printf("[DEBUG] Replacing resource because the value of `value_wo` attribute has changed")
+				// log.Printf("[DEBUG] Replacing resource because the value of `hmac_key_wo` attribute has changed")
 				response.RequiresReplace = true
 			}
 		} else {
-			// log.Printf("[DEBUG] Replacing resource because `value_wo` attribute has been added to a pre-existing variable resource")
+			// log.Printf("[DEBUG] Replacing resource because `hmac_key_wo` attribute has been added to a pre-existing variable resource")
 			response.RequiresReplace = true
 		}
 	} else if len(storedHMACWO) != 0 {
-		// when `value_wo` was previously set in the config, but the config switched to either `value` or no value whatsoever
+		// when `hmac_key_wo` was previously set in the config, but the config switched to either `value` or no value whatsoever
 		response.RequiresReplace = true
 	}
 }

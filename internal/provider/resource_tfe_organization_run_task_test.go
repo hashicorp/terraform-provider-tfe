@@ -11,8 +11,11 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-testing/compare"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
 )
 
 func TestAccTFEOrganizationRunTask_validateSchemaAttributeUrl(t *testing.T) {
@@ -198,10 +201,8 @@ func TestAccTFEOrganizationRunTask_HMACWriteOnly(t *testing.T) {
 	runTask := &tfe.RunTask{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
-	// Note - We cannot easily test updating the HMAC Key as that would require coordination between this test suite
-	// and the external Run Task service to "magically" allow a different Key. Instead we "update" with the same key
-	// and manually test HMAC Key changes.
-	hmacKey := runTasksHMACKey()
+	// Create the value comparer so we can add state values to it during the test steps
+	compareValuesDiffer := statecheck.CompareValue(compare.ValuesDiffer())
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -213,12 +214,33 @@ func TestAccTFEOrganizationRunTask_HMACWriteOnly(t *testing.T) {
 				ExpectError: regexp.MustCompile(`Attribute "hmac_key_wo" cannot be specified when "hmac_key" is specified`),
 			},
 			{
-				Config: testAccTFEOrganizationRunTask_hmacWriteOnly(org.Name, rInt, runTasksURL(), hmacKey),
+				Config: testAccTFEOrganizationRunTask_hmacWriteOnly(org.Name, rInt, runTasksURL(), "foo"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationRunTaskExists("tfe_organization_run_task.foobar", runTask),
 					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "hmac_key", ""),
 					resource.TestCheckNoResourceAttr("tfe_organization_run_task.foobar", "hmac_key_wo"),
 				),
+				// Register the id with the value comparer so we can assert that the
+				// resource has been replaced in the next step.
+				ConfigStateChecks: []statecheck.StateCheck{
+					compareValuesDiffer.AddStateValue(
+						"tfe_organization_run_task.foobar", tfjsonpath.New("id"),
+					),
+				},
+			},
+			{
+				Config: testAccTFEOrganizationRunTask_hmacWriteOnly(org.Name, rInt, runTasksURL(), "foo2"),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOrganizationRunTaskExists("tfe_organization_run_task.foobar", runTask),
+					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "hmac_key", ""),
+					resource.TestCheckNoResourceAttr("tfe_organization_run_task.foobar", "hmac_key_wo"),
+				),
+				// Ensure that the resource has been replaced
+				ConfigStateChecks: []statecheck.StateCheck{
+					compareValuesDiffer.AddStateValue(
+						"tfe_organization_run_task.foobar", tfjsonpath.New("id"),
+					),
+				},
 			},
 		},
 	})
