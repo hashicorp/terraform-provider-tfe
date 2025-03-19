@@ -24,8 +24,7 @@ func TestAccTFEWorkspaceRun_withApplyOnlyBlock(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	organization, orgCleanup := createBusinessOrganization(t, tfeClient)
-	t.Cleanup(orgCleanup)
+	organization, _ := createBusinessOrganization(t, tfeClient)
 
 	parentWorkspace, childWorkspace := setupWorkspacesWithConfig(t, tfeClient, rInt, organization.Name, "test-fixtures/basic-config")
 	runForParentWorkspace := &tfe.Run{}
