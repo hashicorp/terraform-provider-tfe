@@ -79,12 +79,6 @@ func modelFromTFEOrganizationRunTask(v *tfe.RunTask, hmacKey types.String, isWri
 	return result
 }
 
-func isWriteOnlyHMACKeyInPrivateState(req resource.ReadRequest, resp *resource.ReadResponse) bool {
-	storedHMACKeyWO, diags := req.Private.GetKey(ctx, "hmac_key_wo")
-	resp.Diagnostics.Append(diags...)
-	return len(storedHMACKeyWO) != 0
-}
-
 func (r *resourceOrgRunTask) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_organization_run_task"
 }
@@ -179,7 +173,7 @@ func (r *resourceOrgRunTask) Schema(ctx context.Context, req resource.SchemaRequ
 	}
 }
 
-func (r *resourceOrgRunTask) isWriteOnlyValueInPrivateState(req resource.ReadRequest, resp *resource.ReadResponse) bool {
+func (r *resourceOrgRunTask) isWriteOnlyHMACKeyInPrivateState(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) bool {
 	storedValueWO, diags := req.Private.GetKey(ctx, "hmac_key_wo")
 	resp.Diagnostics.Append(diags...)
 	return len(storedValueWO) != 0
@@ -255,7 +249,7 @@ func (r *resourceOrgRunTask) Read(ctx context.Context, req resource.ReadRequest,
 		return
 	}
 
-	isWriteOnlyValue := isWriteOnlyValueInPrivateState(req, resp) // to avoid reading from written-only values
+	isWriteOnlyValue := r.isWriteOnlyHMACKeyInPrivateState(ctx, req, resp) // to avoid reading from written-only values
 	if resp.Diagnostics.HasError() {
 		return
 	}
