@@ -258,7 +258,6 @@ func TestAccTFEOrganizationRunTask_HMACWriteOnly(t *testing.T) {
 			},
 		},
 	})
-
 }
 
 func testAccCheckTFEOrganizationRunTaskExists(n string, runTask *tfe.RunTask) resource.TestCheckFunc {

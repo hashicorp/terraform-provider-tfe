@@ -204,27 +204,35 @@ func (v *replaceHMACKeyWOPlanModifier) PlanModifyString(ctx context.Context, req
 		return
 	}
 
-	if !configHMACKeyWO.IsNull() {
+	if configHMACKeyWO.IsNull() {
 		if len(storedHMACWO) != 0 {
-			var hashedStoredHMACWO string
-			err := json.Unmarshal(storedHMACWO, &hashedStoredHMACWO)
-			if err != nil {
-				response.Diagnostics.AddError("Error unmarshalling stored hmac_key_wo", err.Error())
-				return
-			}
-			hashedConfigHMACKeyWO := generateSHA256Hash(configHMACKeyWO.ValueString())
-			// when an ephemeral value is being used, they will generate a new token on every run. So the previous hmac_key_wo will not match the current one.
-			if hashedStoredHMACWO != hashedConfigHMACKeyWO {
-				log.Printf("[DEBUG] Replacing resource because the value of `hmac_key_wo` attribute has changed")
-				response.RequiresReplace = true
-			}
-		} else {
-			log.Printf("[DEBUG] Replacing resource because `hmac_key_wo` attribute has been added to a pre-existing variable resource")
 			response.RequiresReplace = true
 		}
-	} else if len(storedHMACWO) != 0 {
+		return
+	}
+
+	if len(storedHMACWO) == 0 {
+		log.Printf("[DEBUG] Replacing resource because `hmac_key_wo` attribute has been added to a pre-existing variable resource")
+		response.RequiresReplace = true
+		return
+	}
+
+	var hashedStoredHMACWO string
+	err := json.Unmarshal(storedHMACWO, &hashedStoredHMACWO)
+	if err != nil {
+		response.Diagnostics.AddError("Error unmarshalling stored hmac_key_wo", err.Error())
+		return
+	}
+
+	hashedConfigHMACKeyWO := generateSHA256Hash(configHMACKeyWO.ValueString())
+
+	// when an ephemeral value is being used, they will generate a new token on every run.
+	// So the previous hmac_key_wo will not match the current one.
+	if hashedStoredHMACWO != hashedConfigHMACKeyWO {
+		log.Printf("[DEBUG] Replacing resource because the value of `hmac_key_wo` attribute has changed")
 		response.RequiresReplace = true
 	}
+
 }
 
 func (r *resourceOrgRunTask) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
