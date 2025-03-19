@@ -232,7 +232,6 @@ func (v *replaceHMACKeyWOPlanModifier) PlanModifyString(ctx context.Context, req
 		log.Printf("[DEBUG] Replacing resource because the value of `hmac_key_wo` attribute has changed")
 		response.RequiresReplace = true
 	}
-
 }
 
 func (r *resourceOrgRunTask) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
