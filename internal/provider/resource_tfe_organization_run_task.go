@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -181,7 +182,7 @@ func (r *resourceOrgRunTask) Schema(ctx context.Context, req resource.SchemaRequ
 type replaceHMACKeyWOPlanModifier struct{}
 
 func (v *replaceHMACKeyWOPlanModifier) Description(ctx context.Context) string {
-	return "The resource will be replaced when the value of value_wo has changed"
+	return "The resource will be replaced when the value of hmac_key_wo has changed"
 }
 
 func (v *replaceHMACKeyWOPlanModifier) MarkdownDescription(ctx context.Context) string {
@@ -190,16 +191,12 @@ func (v *replaceHMACKeyWOPlanModifier) MarkdownDescription(ctx context.Context) 
 
 func (v *replaceHMACKeyWOPlanModifier) PlanModifyString(ctx context.Context, request planmodifier.StringRequest, response *planmodifier.StringResponse) {
 	// Write-only argument values cannot produce a Terraform plan difference. The prior state value for a write-only argument will always be null and the planned state value will also be null, therefore, it cannot produce a diff on its own. The one exception to this case is if the write-only argument is added to requires_replace during Plan Modification, in that case, the write-only argument will always cause a diff/trigger a resource recreation.
-	var configValueWO types.String
-	diag := request.Config.GetAttribute(ctx, path.Root("hmac_key_wo"), &configValueWO)
+	var configHMACKeyWO types.String
+	diag := request.Config.GetAttribute(ctx, path.Root("hmac_key_wo"), &configHMACKeyWO)
 	response.Diagnostics.Append(diag...)
 	if response.Diagnostics.HasError() {
 		return
 	}
-
-	fmt.Printf("--- In PlanModifyString method")
-
-	fmt.Printf("--- request.Private: %+v\n", request.Private)
 
 	storedHMACWO, diags := request.Private.GetKey(ctx, "hmac_key_wo")
 	response.Diagnostics.Append(diags...)
@@ -207,34 +204,31 @@ func (v *replaceHMACKeyWOPlanModifier) PlanModifyString(ctx context.Context, req
 		return
 	}
 
-	if !configValueWO.IsNull() {
+	if !configHMACKeyWO.IsNull() {
 		if len(storedHMACWO) != 0 {
 			var hashedStoredHMACWO string
 			err := json.Unmarshal(storedHMACWO, &hashedStoredHMACWO)
 			if err != nil {
-				response.Diagnostics.AddError("Error unmarshalling stored hmac_key_wos", err.Error())
+				response.Diagnostics.AddError("Error unmarshalling stored hmac_key_wo", err.Error())
 				return
 			}
-			fmt.Printf("--- storedHMACWOStr: %+v\n", hashedStoredHMACWO)
-			hashedConfigValueWO := generateSHA256Hash(configValueWO.ValueString())
+			hashedConfigHMACKeyWO := generateSHA256Hash(configHMACKeyWO.ValueString())
 			// when an ephemeral value is being used, they will generate a new token on every run. So the previous hmac_key_wo will not match the current one.
-			fmt.Printf("--- config value: %+v\n", hashedConfigValueWO)
-			if hashedStoredHMACWO != hashedConfigValueWO {
-				// log.Printf("[DEBUG] Replacing resource because the value of `hmac_key_wo` attribute has changed")
+			if hashedStoredHMACWO != hashedConfigHMACKeyWO {
+				log.Printf("[DEBUG] Replacing resource because the value of `hmac_key_wo` attribute has changed")
 				response.RequiresReplace = true
 			}
 		} else {
-			// log.Printf("[DEBUG] Replacing resource because `hmac_key_wo` attribute has been added to a pre-existing variable resource")
+			log.Printf("[DEBUG] Replacing resource because `hmac_key_wo` attribute has been added to a pre-existing variable resource")
 			response.RequiresReplace = true
 		}
 	} else if len(storedHMACWO) != 0 {
-		// when `hmac_key_wo` was previously set in the config, but the config switched to either `value` or no value whatsoever
 		response.RequiresReplace = true
 	}
 }
 
 func isWriteOnlyValueInPrivateState(req resource.ReadRequest, resp *resource.ReadResponse) bool {
-	storedValueWO, diags := req.Private.GetKey(ctx, "value_wo")
+	storedValueWO, diags := req.Private.GetKey(ctx, "hmac_key_wo")
 	resp.Diagnostics.Append(diags...)
 	return len(storedValueWO) != 0
 }
@@ -252,8 +246,6 @@ func (r *resourceOrgRunTask) Read(ctx context.Context, req resource.ReadRequest,
 
 	tflog.Debug(ctx, "Reading organization run task")
 	task, err := r.config.Client.RunTasks.Read(ctx, taskID)
-	fmt.Printf("--- In Read method")
-	fmt.Printf("--- task: %+v\n", task)
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			resp.State.RemoveResource(ctx)
@@ -268,9 +260,7 @@ func (r *resourceOrgRunTask) Read(ctx context.Context, req resource.ReadRequest,
 		return
 	}
 	// update state
-	fmt.Printf("--- state: %+v\n", state)
 	result := modelFromTFEOrganizationRunTask(task, state.HMACKey, isWriteOnlyValue)
-	fmt.Printf("--- result: %+v\n", result)
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
@@ -312,7 +302,6 @@ func (r *resourceOrgRunTask) Create(ctx context.Context, req resource.CreateRequ
 		options.HMACKey = plan.HMACKey.ValueStringPointer()
 	}
 
-	tflog.Debug(ctx, fmt.Sprintf("Create task %s for organization: %s", options.Name, organization))
 	task, err := r.config.Client.RunTasks.Create(ctx, organization, options)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to create organization task", err.Error())
@@ -320,9 +309,6 @@ func (r *resourceOrgRunTask) Create(ctx context.Context, req resource.CreateRequ
 	}
 
 	result := modelFromTFEOrganizationRunTask(task, plan.HMACKey, !config.HMACKeyWO.IsNull())
-	fmt.Printf("In Create method")
-
-	fmt.Printf("--- config.HMACKeyWO: %+v\n", config.HMACKeyWO)
 	if !config.HMACKeyWO.IsNull() {
 		// Use the resource's private state to store secure hashes of write-only argument values, the provider during planmodify will use the hash to determine if a write-only argument value has changed in later Terraform runs.
 		hashedValue := generateSHA256Hash(config.HMACKeyWO.ValueString())
@@ -383,15 +369,9 @@ func (r *resourceOrgRunTask) Update(ctx context.Context, req resource.UpdateRequ
 
 	taskID := plan.ID.ValueString()
 
-	tflog.Debug(ctx, fmt.Sprintf("Update task %s", taskID))
 	task, err := r.config.Client.RunTasks.Update(ctx, taskID, options)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to update organization task", err.Error())
-		return
-	}
-
-	// isWriteOnlyValue := isWriteOnlyValueInPrivateState(req, resp) // to avoid reading from written-only values
-	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -412,7 +392,6 @@ func (r *resourceOrgRunTask) Delete(ctx context.Context, req resource.DeleteRequ
 
 	taskID := state.ID.ValueString()
 
-	tflog.Debug(ctx, fmt.Sprintf("Delete task %s", taskID))
 	err := r.config.Client.RunTasks.Delete(ctx, taskID)
 	// Ignore 404s for delete
 	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
@@ -454,10 +433,10 @@ func (r *resourceOrgRunTask) ImportState(ctx context.Context, req resource.Impor
 	}
 }
 
-func (r *resourceOrgRunTask) updatePrivateState(ctx context.Context, resp *resource.UpdateResponse, configValueWO types.String) {
-	if !configValueWO.IsNull() {
+func (r *resourceOrgRunTask) updatePrivateState(ctx context.Context, resp *resource.UpdateResponse, configHMACKeyWO types.String) {
+	if !configHMACKeyWO.IsNull() {
 		// Use the resource's private state to store secure hashes of write-only argument values, planModify will use the hash to determine if a write-only argument value has changed in later Terraform runs.
-		hashedValue := generateSHA256Hash(configValueWO.ValueString())
+		hashedValue := generateSHA256Hash(configHMACKeyWO.ValueString())
 		diags := resp.Private.SetKey(ctx, "hmac_key_wo", fmt.Appendf(nil, `"%s"`, hashedValue))
 		resp.Diagnostics.Append(diags...)
 	} else {

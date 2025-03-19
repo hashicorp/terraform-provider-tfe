@@ -5,8 +5,6 @@ package provider
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -44,10 +42,4 @@ func (c *ConfiguredClient) dataOrDefaultOrganization(ctx context.Context, data A
 	}
 
 	return diags
-}
-
-func generateSHA256Hash(data string) string {
-	hasher := sha256.New()
-	hasher.Write([]byte(data))
-	return hex.EncodeToString(hasher.Sum(nil))
 }
