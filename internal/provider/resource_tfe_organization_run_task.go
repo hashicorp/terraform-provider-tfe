@@ -5,8 +5,6 @@ package provider
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -303,6 +301,7 @@ func (r *resourceOrgRunTask) Create(ctx context.Context, req resource.CreateRequ
 		options.HMACKey = plan.HMACKey.ValueStringPointer()
 	}
 
+	tflog.Debug(ctx, fmt.Sprintf("Create task %s for organization: %s", options.Name, organization))
 	task, err := r.config.Client.RunTasks.Create(ctx, organization, options)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to create organization task", err.Error())
@@ -323,12 +322,6 @@ func (r *resourceOrgRunTask) Create(ctx context.Context, req resource.CreateRequ
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
-}
-
-func generateSHA256Hash(data string) string {
-	hasher := sha256.New()
-	hasher.Write([]byte(data))
-	return hex.EncodeToString(hasher.Sum(nil))
 }
 
 func (r *resourceOrgRunTask) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -370,6 +363,8 @@ func (r *resourceOrgRunTask) Update(ctx context.Context, req resource.UpdateRequ
 
 	taskID := plan.ID.ValueString()
 
+	tflog.Debug(ctx, fmt.Sprintf("Update task %s", taskID))
+
 	task, err := r.config.Client.RunTasks.Update(ctx, taskID, options)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to update organization task", err.Error())
@@ -393,6 +388,7 @@ func (r *resourceOrgRunTask) Delete(ctx context.Context, req resource.DeleteRequ
 
 	taskID := state.ID.ValueString()
 
+	tflog.Debug(ctx, fmt.Sprintf("Delete task %s", taskID))
 	err := r.config.Client.RunTasks.Delete(ctx, taskID)
 	// Ignore 404s for delete
 	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
