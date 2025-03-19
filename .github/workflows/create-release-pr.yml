@@ -89,7 +89,7 @@ jobs:
         run: npm install -g cdktf-registry-docs@1.10.1
 
       - name: Download artifacts
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.18.0
+        uses: actions/download-artifact@b14cf4c92620c250e1c074ab0a5800e37df86765 # v4.18.0
         with:
           name: terraform-provider-tfe
 
