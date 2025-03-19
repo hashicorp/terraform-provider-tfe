@@ -179,6 +179,12 @@ func (r *resourceOrgRunTask) Schema(ctx context.Context, req resource.SchemaRequ
 	}
 }
 
+func (r *resourceOrgRunTask) isWriteOnlyValueInPrivateState(req resource.ReadRequest, resp *resource.ReadResponse) bool {
+	storedValueWO, diags := req.Private.GetKey(ctx, "hmac_key_wo")
+	resp.Diagnostics.Append(diags...)
+	return len(storedValueWO) != 0
+}
+
 type replaceHMACKeyWOPlanModifier struct{}
 
 func (v *replaceHMACKeyWOPlanModifier) Description(ctx context.Context) string {
@@ -225,12 +231,6 @@ func (v *replaceHMACKeyWOPlanModifier) PlanModifyString(ctx context.Context, req
 	} else if len(storedHMACWO) != 0 {
 		response.RequiresReplace = true
 	}
-}
-
-func isWriteOnlyValueInPrivateState(req resource.ReadRequest, resp *resource.ReadResponse) bool {
-	storedValueWO, diags := req.Private.GetKey(ctx, "hmac_key_wo")
-	resp.Diagnostics.Append(diags...)
-	return len(storedValueWO) != 0
 }
 
 func (r *resourceOrgRunTask) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
