@@ -15,8 +15,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
+const (
+	workspaceRunRetryAttempts   = 5
+	workspaceRunRetryBackoffMax = 60
+)
+
 func TestAccTFEWorkspaceRun_withApplyOnlyBlock(t *testing.T) {
-	t.Skip("Skipping test as it is failing most CI runs. Will investigate next.")
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	tfeClient, err := getClientUsingEnv()
@@ -286,37 +290,41 @@ func testAccCheckTFEWorkspaceRunDestroy(workspaceID string, expectedDestroyCount
 func testAccTFEWorkspaceRun_withApplyOnlyBlock(parentWorkspaceID string, childWorkspaceID string) string {
 	return fmt.Sprintf(`
 	resource "tfe_workspace_run" "ws_run_parent" {
-		workspace_id    = "%s"
+		workspace_id    = "%[1]s"
 
 		apply {
+			retry_attempts = "%[3]d"
+			retry_backoff_max = "%[4]d"
 			manual_confirm = false
 		}
 	}
 
 	resource "tfe_workspace_run" "ws_run_child" {
-		workspace_id    = "%s"
+		workspace_id    = "%[2]s"
 		depends_on   = [tfe_workspace_run.ws_run_parent]
 
 		apply {
+			retry_attempts = "%[3]d"
+			retry_backoff_max = "%[4]d"
 			manual_confirm = false
 		}
 
 		destroy {
 			manual_confirm = false
 		}
-	}`, parentWorkspaceID, childWorkspaceID)
+	}`, parentWorkspaceID, childWorkspaceID, workspaceRunRetryAttempts, workspaceRunRetryBackoffMax)
 }
 
 func testAccTFEWorkspaceRun_withBothApplyAndDestroyBlocks(orgName string, rInt int) string {
 	return fmt.Sprintf(`
 	data "tfe_workspace" "parent" {
-		name                 = "tst-terraform-%d-parent"
-		organization         = "%s"
+		name                 = "tst-terraform-%[1]d-parent"
+		organization         = "%[2]s"
 	}
 
 	data "tfe_workspace" "child_depends_on_parent" {
-		name                 = "tst-terraform-%d-child"
-		organization         = "%s"
+		name                 = "tst-terraform-%[3]d-child"
+		organization         = "%[2]s"
 	}
 
 	resource "tfe_workspace_run" "ws_run_parent" {
@@ -325,6 +333,8 @@ func testAccTFEWorkspaceRun_withBothApplyAndDestroyBlocks(orgName string, rInt i
 		apply {
 			manual_confirm = false
 			retry = true
+			retry_attempts = "%[4]d"
+			retry_backoff_max = "%[5]d"
 		}
 
 		destroy {
@@ -339,6 +349,8 @@ func testAccTFEWorkspaceRun_withBothApplyAndDestroyBlocks(orgName string, rInt i
 
 		apply {
 			manual_confirm = false
+			retry_attempts = "%[4]d"
+			retry_backoff_max = "%[5]d"
 			retry = true
 		}
 
@@ -346,7 +358,7 @@ func testAccTFEWorkspaceRun_withBothApplyAndDestroyBlocks(orgName string, rInt i
 			manual_confirm = false
 			retry = true
 		}
-	}`, rInt, orgName, rInt, orgName)
+	}`, rInt, orgName, rInt, workspaceRunRetryAttempts, workspaceRunRetryBackoffMax)
 }
 
 func testAccTFEWorkspaceRun_noApplyOrDestroyBlockProvided(orgName string, rInt int) string {
