@@ -233,20 +233,6 @@ func TestAccTFEOrganizationRunTask_HMACWriteOnly(t *testing.T) {
 					),
 				},
 			},
-			// {
-			// 	Config: testAccTFEOrganizationRunTask_hmacWriteOnly(org.Name, rInt, runTasksURL(), "foo2"),
-			// 	Check: resource.ComposeTestCheckFunc(
-			// 		testAccCheckTFEOrganizationRunTaskExists("tfe_organization_run_task.foobar", runTask),
-			// 		resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "hmac_key", ""),
-			// 		resource.TestCheckNoResourceAttr("tfe_organization_run_task.foobar", "hmac_key_wo"),
-			// 	),
-			// 	// Ensure that the resource has been replaced
-			// 	ConfigStateChecks: []statecheck.StateCheck{
-			// 		compareValuesDiffer.AddStateValue(
-			// 			"tfe_organization_run_task.foobar", tfjsonpath.New("id"),
-			// 		),
-			// 	},
-			// },
 			{
 				Config: testAccTFEOrganizationRunTask_basic(org.Name, rInt, runTasksURL(), hmacKey),
 				Check: resource.ComposeTestCheckFunc(
