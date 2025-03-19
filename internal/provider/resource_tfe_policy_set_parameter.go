@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"regexp"
 	"strings"
 
@@ -23,6 +22,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/planmodifiers"
 )
 
 var (
@@ -43,11 +45,12 @@ type modelTFEPolicySetParameter struct {
 	ID          types.String `tfsdk:"id"`
 	Key         types.String `tfsdk:"key"`
 	Value       types.String `tfsdk:"value"`
+	ValueWO     types.String `tfsdk:"value_wo"`
 	Sensitive   types.Bool   `tfsdk:"sensitive"`
 	PolicySetID types.String `tfsdk:"policy_set_id"`
 }
 
-func modelFromTFEPolicySetParameter(v *tfe.PolicySetParameter, lastValue types.String) modelTFEPolicySetParameter {
+func modelFromTFEPolicySetParameter(v *tfe.PolicySetParameter, lastValue types.String, isWriteOnly bool) modelTFEPolicySetParameter {
 	p := modelTFEPolicySetParameter{
 		ID:          types.StringValue(v.ID),
 		Key:         types.StringValue(v.Key),
@@ -60,6 +63,11 @@ func modelFromTFEPolicySetParameter(v *tfe.PolicySetParameter, lastValue types.S
 	// instead, because the API never lets us read it again.
 	if v.Sensitive {
 		p.Value = lastValue
+	}
+
+	// If the variable is write-only, clear the value.
+	if isWriteOnly {
+		p.Value = types.StringValue("")
 	}
 
 	return p
@@ -126,6 +134,22 @@ func (r *resourceTFEPolicySetParameter) Schema(ctx context.Context, req resource
 				Computed:    true,
 				Default:     stringdefault.StaticString(""),
 				Sensitive:   true,
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRoot("value_wo")),
+				},
+			},
+
+			"value_wo": schema.StringAttribute{
+				Optional:    true,
+				WriteOnly:   true,
+				Sensitive:   true,
+				Description: "Value of the parameter in write-only mode",
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRoot("value")),
+				},
+				PlanModifiers: []planmodifier.String{
+					planmodifiers.NewReplaceForWriteOnlyStringValue("value_wo"),
+				},
 			},
 
 			"sensitive": schema.BoolAttribute{
@@ -168,9 +192,10 @@ func (r *resourceTFEPolicySetParameter) Schema(ctx context.Context, req resource
 }
 
 func (r *resourceTFEPolicySetParameter) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	// Read the Terraform plan into the model
-	var plan modelTFEPolicySetParameter
+	// Read the Terraform plan and config into the model
+	var plan, config modelTFEPolicySetParameter
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -178,20 +203,35 @@ func (r *resourceTFEPolicySetParameter) Create(ctx context.Context, req resource
 	// Create an options struct
 	options := tfe.PolicySetParameterCreateOptions{
 		Key:       plan.Key.ValueStringPointer(),
-		Value:     plan.Value.ValueStringPointer(),
 		Category:  tfe.Category(tfe.CategoryPolicySet),
 		Sensitive: plan.Sensitive.ValueBoolPointer(),
 	}
 
+	// Set Value from `value_wo` if set, otherwise use the normal value
+	isWriteOnly := !config.ValueWO.IsNull()
+	if isWriteOnly {
+		options.Value = config.ValueWO.ValueStringPointer()
+	} else {
+		options.Value = plan.Value.ValueStringPointer()
+	}
+
 	// Create the policy set parameter
-	log.Printf("[DEBUG] Create %s parameter: %s", tfe.CategoryPolicySet, plan.Key.ValueString())
+	tflog.Debug(ctx, fmt.Sprintf("Create %s parameter: %s", tfe.CategoryPolicySet, plan.Key.ValueString()))
 	p, err := r.config.Client.PolicySetParameters.Create(ctx, plan.PolicySetID.ValueString(), options)
 	if err != nil {
 		resp.Diagnostics.AddError(fmt.Sprintf("Error creating %s parameter %s", tfe.CategoryPolicySet, plan.Key), err.Error())
 		return
 	}
 
-	result := modelFromTFEPolicySetParameter(p, plan.Value)
+	// Store the hashed write-only value in the private state
+	store := r.writeOnlyValueStore(resp.Private)
+	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.ValueWO)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Update state
+	result := modelFromTFEPolicySetParameter(p, plan.Value, isWriteOnly)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
@@ -211,11 +251,11 @@ func (r *resourceTFEPolicySetParameter) Read(ctx context.Context, req resource.R
 	}
 
 	// Read the policy set parameter
-	log.Printf("[DEBUG] Read parameter: %s", state.ID)
+	tflog.Debug(ctx, fmt.Sprintf("Read parameter: %s", state.ID))
 	p, err := r.config.Client.PolicySetParameters.Read(ctx, state.PolicySetID.ValueString(), state.ID.ValueString())
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
-			log.Printf("[DEBUG] Parameter %s no longer exists", state.ID)
+			tflog.Debug(ctx, fmt.Sprintf("Parameter %s no longer exists", state.ID))
 			resp.State.RemoveResource(ctx)
 		}
 
@@ -223,21 +263,24 @@ func (r *resourceTFEPolicySetParameter) Read(ctx context.Context, req resource.R
 		return
 	}
 
-	result := modelFromTFEPolicySetParameter(p, state.Value)
+	// Check if the parameter is write-only
+	isWriteOnly, diags := r.writeOnlyValueStore(resp.Private).PriorValueExists(ctx)
+	resp.Diagnostics.Append(diags...)
+	if diags.HasError() {
+		return
+	}
+
+	result := modelFromTFEPolicySetParameter(p, state.Value, isWriteOnly)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
 // Update implements resource.Resource
 func (r *resourceTFEPolicySetParameter) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	// Read the Terraform plan into the model
-	var plan modelTFEPolicySetParameter
+	// Read the Terraform plan, state, and config into the model
+	var plan, state, config modelTFEPolicySetParameter
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	// Read the Terraform state into the model
-	var state modelTFEPolicySetParameter
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -256,13 +299,21 @@ func (r *resourceTFEPolicySetParameter) Update(ctx context.Context, req resource
 	}
 
 	// Update the policy set parameter
-	log.Printf("[DEBUG] Update parameter: %s", plan.ID.ValueString())
+	tflog.Debug(ctx, fmt.Sprintf("Update parameter: %s", plan.ID.ValueString()))
 	p, err := r.config.Client.PolicySetParameters.Update(ctx, plan.PolicySetID.ValueString(), plan.ID.ValueString(), options)
 	if err != nil {
 		resp.Diagnostics.AddError(fmt.Sprintf("Error updating parameter %s", plan.ID), err.Error())
 	}
 
-	result := modelFromTFEPolicySetParameter(p, plan.Value)
+	// Store the hashed write-only value in the private state
+	store := r.writeOnlyValueStore(resp.Private)
+	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.ValueWO)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Update state
+	result := modelFromTFEPolicySetParameter(p, plan.Value, !config.ValueWO.IsNull())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
@@ -283,7 +334,7 @@ func (r *resourceTFEPolicySetParameter) Delete(ctx context.Context, req resource
 	}
 
 	// Delete the policy set parameter
-	log.Printf("[DEBUG] Delete parameter: %s", state.ID)
+	tflog.Debug(ctx, fmt.Sprintf("Delete parameter: %s", state.ID))
 	err = r.config.Client.PolicySetParameters.Delete(ctx, state.PolicySetID.ValueString(), state.ID.ValueString())
 	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 		resp.Diagnostics.AddError(
@@ -312,4 +363,8 @@ func (r *resourceTFEPolicySetParameter) ImportState(ctx context.Context, req res
 
 	diags := resp.State.Set(ctx, &data)
 	resp.Diagnostics.Append(diags...)
+}
+
+func (r *resourceTFEPolicySetParameter) writeOnlyValueStore(private helpers.PrivateState) *helpers.WriteOnlyValueStore {
+	return helpers.NewWriteOnlyValueStore(private, "value_wo")
 }
