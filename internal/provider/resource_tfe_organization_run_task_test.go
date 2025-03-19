@@ -204,6 +204,11 @@ func TestAccTFEOrganizationRunTask_HMACWriteOnly(t *testing.T) {
 	// Create the value comparer so we can add state values to it during the test steps
 	compareValuesDiffer := statecheck.CompareValue(compare.ValuesDiffer())
 
+	// Note - We cannot easily test updating the HMAC Key as that would require coordination between this test suite
+	// and the external Run Task service to "magically" allow a different Key. Instead we "update" with the same key
+	// and manually test HMAC Key changes.
+	hmacKey := runTasksHMACKey()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: testAccMuxedProviders,
@@ -214,7 +219,7 @@ func TestAccTFEOrganizationRunTask_HMACWriteOnly(t *testing.T) {
 				ExpectError: regexp.MustCompile(`Attribute "hmac_key_wo" cannot be specified when "hmac_key" is specified`),
 			},
 			{
-				Config: testAccTFEOrganizationRunTask_hmacWriteOnly(org.Name, rInt, runTasksURL(), "foo"),
+				Config: testAccTFEOrganizationRunTask_hmacWriteOnly(org.Name, rInt, runTasksURL(), hmacKey),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationRunTaskExists("tfe_organization_run_task.foobar", runTask),
 					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "hmac_key", ""),
@@ -228,25 +233,25 @@ func TestAccTFEOrganizationRunTask_HMACWriteOnly(t *testing.T) {
 					),
 				},
 			},
+			// {
+			// 	Config: testAccTFEOrganizationRunTask_hmacWriteOnly(org.Name, rInt, runTasksURL(), "foo2"),
+			// 	Check: resource.ComposeTestCheckFunc(
+			// 		testAccCheckTFEOrganizationRunTaskExists("tfe_organization_run_task.foobar", runTask),
+			// 		resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "hmac_key", ""),
+			// 		resource.TestCheckNoResourceAttr("tfe_organization_run_task.foobar", "hmac_key_wo"),
+			// 	),
+			// 	// Ensure that the resource has been replaced
+			// 	ConfigStateChecks: []statecheck.StateCheck{
+			// 		compareValuesDiffer.AddStateValue(
+			// 			"tfe_organization_run_task.foobar", tfjsonpath.New("id"),
+			// 		),
+			// 	},
+			// },
 			{
-				Config: testAccTFEOrganizationRunTask_hmacWriteOnly(org.Name, rInt, runTasksURL(), "foo2"),
+				Config: testAccTFEOrganizationRunTask_basic(org.Name, rInt, runTasksURL(), hmacKey),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationRunTaskExists("tfe_organization_run_task.foobar", runTask),
-					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "hmac_key", ""),
-					resource.TestCheckNoResourceAttr("tfe_organization_run_task.foobar", "hmac_key_wo"),
-				),
-				// Ensure that the resource has been replaced
-				ConfigStateChecks: []statecheck.StateCheck{
-					compareValuesDiffer.AddStateValue(
-						"tfe_organization_run_task.foobar", tfjsonpath.New("id"),
-					),
-				},
-			},
-			{
-				Config: testAccTFEOrganizationRunTask_basic(org.Name, rInt, runTasksURL(), "foo2"),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEOrganizationRunTaskExists("tfe_organization_run_task.foobar", runTask),
-					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "hmac_key", "foo2"),
+					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "hmac_key", hmacKey),
 					resource.TestCheckNoResourceAttr("tfe_organization_run_task.foobar", "hmac_key_wo"),
 				),
 				// Ensure that the resource has been replaced
