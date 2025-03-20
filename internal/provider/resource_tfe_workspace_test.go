@@ -87,7 +87,7 @@ func TestAccTFEWorkspace_defaultOrg(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: providers,
-		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroyProvider(providers["tfe"]),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_defaultOrgExplicit(rInt),
@@ -129,8 +129,8 @@ func TestAccTFEWorkspaceProviderDefaultOrgChanged(t *testing.T) {
 	providersWithAnotherOrg := muxedProvidersWithDefaultOrganization(anotherOrg.Name)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				ProtoV5ProviderFactories: providers,
