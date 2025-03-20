@@ -22,6 +22,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/planmodifiers"
 )
 
 type resourceTFETestVariable struct {
@@ -152,7 +154,7 @@ func (r *resourceTFETestVariable) Schema(ctx context.Context, req resource.Schem
 					stringvalidator.ConflictsWith(path.MatchRoot("value")),
 				},
 				PlanModifiers: []planmodifier.String{
-					&replaceValueWOPlanModifier{},
+					planmodifiers.NewReplaceForWriteOnlyStringValue("value_wo"),
 				},
 			},
 			"category": schema.StringAttribute{
@@ -250,7 +252,7 @@ func (r *resourceTFETestVariable) Create(ctx context.Context, req resource.Creat
 		Sensitive:   data.Sensitive.ValueBoolPointer(),
 		Description: data.Description.ValueStringPointer(),
 	}
-
+	// Set Value from `value_wo` if set, otherwise use the normal value
 	if !config.ValueWO.IsNull() {
 		options.Value = config.ValueWO.ValueStringPointer()
 	} else {
@@ -270,17 +272,9 @@ func (r *resourceTFETestVariable) Create(ctx context.Context, req resource.Creat
 	// We got a variable, so set state to new values
 	result := modelFromTFETestVariable(*variable, data.Value, moduleID, !config.ValueWO.IsNull())
 
-	if !config.ValueWO.IsNull() {
-		// Use the resource's private state to store secure hashes of write-only argument values, the provider during planmodify will use the hash to determine if a write-only argument value has changed in later Terraform runs.
-		hashedValue := generateSHA256Hash(config.ValueWO.ValueString())
-		diags := resp.Private.SetKey(ctx, ValueWOHashedPrivateKey, fmt.Appendf(nil, `"%s"`, hashedValue))
-		resp.Diagnostics.Append(diags...)
-	} else {
-		// if the value is not configured as write-only, then remove valueWO key from private state. Setting a key with an empty byte slice is interpreted by the framework as a request to remove the key from the ProviderData map.
-		diags := resp.Private.SetKey(ctx, ValueWOHashedPrivateKey, []byte(""))
-		resp.Diagnostics.Append(diags...)
-	}
-
+	// Store the hashed write-only value in the private state
+	store := r.writeOnlyValueStore(resp.Private)
+	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.ValueWO)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -322,13 +316,14 @@ func (r *resourceTFETestVariable) Read(ctx context.Context, req resource.ReadReq
 		return
 	}
 
-	isWriteOnlyValue := isWriteOnlyValueInPrivateState(req, resp) // to avoid reading from written-only values
-	if resp.Diagnostics.HasError() {
+	isWriteOnly, diags := r.writeOnlyValueStore(resp.Private).PriorValueExists(ctx)
+	resp.Diagnostics.Append(diags...)
+	if diags.HasError() {
 		return
 	}
 
 	// We got a variable, so update state:
-	result := modelFromTFETestVariable(*variable, data.Value, moduleID, isWriteOnlyValue)
+	result := modelFromTFETestVariable(*variable, data.Value, moduleID, isWriteOnly)
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -383,12 +378,14 @@ func (r *resourceTFETestVariable) Update(ctx context.Context, req resource.Updat
 		)
 		return
 	}
-	// Update state
-	result := modelFromTFETestVariable(*variable, plan.Value, moduleID, !config.ValueWO.IsNull())
-	r.updatePrivateState(ctx, resp, config.ValueWO)
+	// Store the hashed write-only value in the private state
+	store := r.writeOnlyValueStore(resp.Private)
+	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.ValueWO)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	// Update state
+	result := modelFromTFETestVariable(*variable, plan.Value, moduleID, !config.ValueWO.IsNull())
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -421,15 +418,6 @@ func (r *resourceTFETestVariable) Delete(ctx context.Context, req resource.Delet
 	// Resource is implicitly deleted from resp.State if diagnostics have no errors.
 }
 
-func (r *resourceTFETestVariable) updatePrivateState(ctx context.Context, resp *resource.UpdateResponse, configValueWO types.String) {
-	if !configValueWO.IsNull() {
-		// Use the resource's private state to store secure hashes of write-only argument values, planModify will use the hash to determine if a write-only argument value has changed in later Terraform runs.
-		hashedValue := generateSHA256Hash(configValueWO.ValueString())
-		diags := resp.Private.SetKey(ctx, ValueWOHashedPrivateKey, fmt.Appendf(nil, `"%s"`, hashedValue))
-		resp.Diagnostics.Append(diags...)
-	} else {
-		// if value is not configured as write-only, remove valueWO key from private state
-		diags := resp.Private.SetKey(ctx, ValueWOHashedPrivateKey, []byte(""))
-		resp.Diagnostics.Append(diags...)
-	}
+func (r *resourceTFETestVariable) writeOnlyValueStore(private helpers.PrivateState) *helpers.WriteOnlyValueStore {
+	return helpers.NewWriteOnlyValueStore(private, "value_wo")
 }
