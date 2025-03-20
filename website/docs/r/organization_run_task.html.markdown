@@ -49,3 +49,4 @@ import ID. For example:
 ```shell
 terraform import tfe_organization_run_task.test my-org-name/task-name
 ```
+-> **Note:** Write-Only argument `hmac_key_wo` is available to use in place of `hmac_key`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
