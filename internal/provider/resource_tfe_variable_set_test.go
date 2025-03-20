@@ -149,9 +149,9 @@ func TestAccTFEVariableSet_project_owned(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEVariableSetDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEVariableSetDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testACCTFEVariableSet_ProjectOwned(rInt),

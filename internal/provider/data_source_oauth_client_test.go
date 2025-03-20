@@ -24,8 +24,8 @@ func TestAccTFEOAuthClientDataSource_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccTFEOAuthClientDataSourcePreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccTFEOAuthClientDataSourcePreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOAuthClientDataSourceConfig_basic(rInt),
