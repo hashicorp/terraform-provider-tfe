@@ -11,7 +11,7 @@ linters:
     - noctx #https://github.com/sonatard/noctx
     - nilerr #https://github.com/gostaticanalysis/nilerr
     - nestif #https://github.com/nakabonne/nestif
-    - exportloopref #https://github.com/kyoh86/exportloopref
+    - copyloopvar #https://github.com/karamaru-alpha/copyloopvar
     - bodyclose #https://github.com/timakin/bodyclose
     # - goconst #https://github.com/jgautheron/goconst
     - stylecheck #https://github.com/dominikh/go-tools/tree/master/stylecheck
@@ -31,6 +31,10 @@ issues:
     linters:
     - unused
     - deadcode
+  # This exclusion can be removed if desired
+  - linters:
+      - stylecheck
+    text: "error strings should not be capitalized"
   # Exclude stylecheck underscore warnings in test files since most test files already follow this pattern
   - linters:
       - stylecheck
