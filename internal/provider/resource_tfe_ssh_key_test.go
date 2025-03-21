@@ -19,9 +19,9 @@ func TestAccTFESSHKey_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFESSHKeyDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFESSHKeyDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFESSHKey_basic(rInt),
@@ -44,9 +44,9 @@ func TestAccTFESSHKey_update(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFESSHKeyDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFESSHKeyDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFESSHKey_basic(rInt),
@@ -172,5 +172,34 @@ resource "tfe_ssh_key" "foobar" {
   name         = "ssh-key-updated"
   organization = tfe_organization.foobar.id
   key          = "SSH-KEY-CONTENT"
+}`, rInt)
+}
+
+func testAccTFESSHKey_keyWO(rInt int, key string) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_ssh_key" "foobar" {
+  name         = "ssh-key-test"
+  organization = tfe_organization.foobar.id
+  key_wo       = "%s"
+}`, rInt, key)
+}
+
+func testAccTFESSHKey_keyAndKeyWO(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_ssh_key" "foobar" {
+  name         = "ssh-key-test"
+  organization = tfe_organization.foobar.id
+  key          = "SSH-KEY-CONTENT"
+  key_wo       = "SSH-KEY-CONTENT"
 }`, rInt)
 }
