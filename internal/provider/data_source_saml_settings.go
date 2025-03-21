@@ -50,6 +50,7 @@ type modelTFESAMLSettings struct {
 	MetadataURL               types.String `tfsdk:"metadata_url"`
 	Certificate               types.String `tfsdk:"certificate"`
 	PrivateKey                types.String `tfsdk:"private_key"`
+	PrivateKeyWO              types.String `tfsdk:"private_key_wo"`
 	SignatureSigningMethod    types.String `tfsdk:"signature_signing_method"`
 	SignatureDigestMethod     types.String `tfsdk:"signature_digest_method"`
 }
