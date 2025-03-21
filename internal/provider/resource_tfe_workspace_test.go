@@ -1790,9 +1790,9 @@ func TestAccTFEWorkspace_sshKey(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
