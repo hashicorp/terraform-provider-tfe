@@ -1,17 +1,12 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
-// NOTE: This is a legacy resource and should be migrated to the Plugin
-// Framework if substantial modifications are planned. See
-// docs/new-resources.md if planning to use this code as boilerplate for
-// a new resource.
-
 package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"log"
 	"regexp"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -25,6 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 var (
@@ -173,7 +169,7 @@ func (r *resourceTFEProject) Create(ctx context.Context, req resource.CreateRequ
 		options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(plan.AutoDestroyActivityDuration.ValueString())
 	}
 
-	log.Printf("[DEBUG] Create project %s", name)
+	tflog.Debug(ctx, fmt.Sprintf("Create project %s", name))
 	project, err := r.config.Client.Projects.Create(ctx, orgName, options)
 
 	if err != nil {
@@ -197,9 +193,16 @@ func (r *resourceTFEProject) Read(ctx context.Context, req resource.ReadRequest,
 		return
 	}
 
-	log.Printf("[DEBUG] Read project %s", state.ID.ValueString())
-	project, err := r.config.Client.Projects.Read(ctx, state.ID.ValueString())
+	id := state.ID.ValueString()
+
+	tflog.Debug(ctx, fmt.Sprintf("Read project %s", id))
+	project, err := r.config.Client.Projects.Read(ctx, id)
 	if err != nil {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			tflog.Debug(ctx, fmt.Sprintf("Project %s no longer exists", id))
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("Error reading project", err.Error())
 		return
 	}
@@ -241,7 +244,7 @@ func (r *resourceTFEProject) Update(ctx context.Context, req resource.UpdateRequ
 		options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(plan.AutoDestroyActivityDuration.ValueString())
 	}
 
-	log.Printf("[DEBUG] Update project %s", plan.ID.ValueString())
+	tflog.Debug(ctx, fmt.Sprintf("Update project %s", plan.ID.ValueString()))
 	project, err := r.config.Client.Projects.Update(ctx, plan.ID.ValueString(), options)
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating project", err.Error())
@@ -264,9 +267,16 @@ func (r *resourceTFEProject) Delete(ctx context.Context, req resource.DeleteRequ
 		return
 	}
 
-	log.Printf("[DEBUG] Delete project %s", state.ID.ValueString())
-	err := r.config.Client.Projects.Delete(ctx, state.ID.ValueString())
+	id := state.ID.ValueString()
+
+	tflog.Debug(ctx, fmt.Sprintf("Delete project %s", id))
+	err := r.config.Client.Projects.Delete(ctx, id)
 	if err != nil {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			tflog.Debug(ctx, fmt.Sprintf("Project %s no longer exists", id))
+			// The resource is implicitly deleted from state after returning
+			return
+		}
 		resp.Diagnostics.AddError("Error deleting project", err.Error())
 		return
 	}
