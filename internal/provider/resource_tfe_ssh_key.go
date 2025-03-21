@@ -5,6 +5,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -205,6 +206,12 @@ func (r *resourceTFESSHKey) Read(ctx context.Context, req resource.ReadRequest, 
 	tflog.Debug(ctx, fmt.Sprintf("Read SSH key %s for organization: %s", id, organization))
 	sshKey, err := r.config.Client.SSHKeys.Read(ctx, id)
 	if err != nil {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			tflog.Debug(ctx, fmt.Sprintf("SSH key %s no longer exists", id))
+			resp.State.RemoveResource(ctx)
+			return
+		}
+
 		resp.Diagnostics.AddError("Error reading SSH key", err.Error())
 		return
 	}
