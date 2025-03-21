@@ -15,9 +15,13 @@ FEATURES:
 
 ENHANCEMENTS:
 
-* resource/tfe_variable: Add `value_wo` write-only attribute ([#1639](https://github.com/hashicorp/terraform-provider-tfe/pull/1639))
+* resource/tfe_variable: Add `value_wo` write-only attribute, by @uturunku ([#1639](https://github.com/hashicorp/terraform-provider-tfe/pull/1639))
 
-* resource/tfe_test_variable: Add `value_wo` write-only attribute ([#1639](https://github.com/hashicorp/terraform-provider-tfe/pull/1639))
+* resource/tfe_test_variable: Add `value_wo` write-only attribute, by @uturunku ([#1639](https://github.com/hashicorp/terraform-provider-tfe/pull/1639))
+
+* resource/tfe_policy_set_parameter: Add `value_wo` write-only attribute, by @ctrombley ([#1641](https://github.com/hashicorp/terraform-provider-tfe/pull/1641))
+
+* resource/tfe_organization_run_task: Add `hmac_key_wo` write-only attribute, by @shwetamurali ([#1646](https://github.com/hashicorp/terraform-provider-tfe/pull/1646))
 
 * `r/tfe_workspace_run`: Allow configuration without `apply` and `destroy` blocks, by @tmatilai [#1604](https://github.com/hashicorp/terraform-provider-tfe/pull/1604)
 
