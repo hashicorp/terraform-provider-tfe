@@ -8,12 +8,17 @@ import (
 	"fmt"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/planmodifiers"
 )
 
 var (
@@ -34,14 +39,19 @@ type modelTFESSHKey struct {
 	Name         types.String `tfsdk:"name"`
 	Organization types.String `tfsdk:"organization"`
 	Key          types.String `tfsdk:"key"`
+	KeyWO        types.String `tfsdk:"key_wo"`
 }
 
-func modelFromTFESSHKey(organization string, sshKey *tfe.SSHKey, lastValue types.String) *modelTFESSHKey {
+func modelFromTFESSHKey(organization string, sshKey *tfe.SSHKey, lastValue types.String, isWriteOnly bool) *modelTFESSHKey {
 	m := &modelTFESSHKey{
 		ID:           types.StringValue(sshKey.ID),
 		Name:         types.StringValue(sshKey.Name),
 		Organization: types.StringValue(organization),
 		Key:          lastValue,
+	}
+
+	if isWriteOnly {
+		m.Key = types.StringNull()
 	}
 
 	return m
@@ -97,7 +107,25 @@ func (r *resourceTFESSHKey) Schema(_ context.Context, req resource.SchemaRequest
 			"key": schema.StringAttribute{
 				Description: "The text of the SSH private key",
 				Optional:    true,
-				Sensitive:   false,
+				Sensitive:   true,
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRoot("key_wo")),
+					stringvalidator.PreferWriteOnlyAttribute(path.MatchRoot("key_wo")),
+					stringvalidator.AtLeastOneOf(path.MatchRoot("key"), path.MatchRoot("key_wo")),
+				},
+			},
+
+			"key_wo": schema.StringAttribute{
+				Description: "The text of the SSH private key, guaranteed not to be written to state.",
+				Optional:    true,
+				WriteOnly:   true,
+				Sensitive:   true,
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRoot("key")),
+				},
+				PlanModifiers: []planmodifier.String{
+					planmodifiers.NewReplaceForWriteOnlyStringValue("key_wo"),
+				},
 			},
 		},
 	}
@@ -121,8 +149,15 @@ func (r *resourceTFESSHKey) Create(ctx context.Context, req resource.CreateReque
 	}
 
 	options := tfe.SSHKeyCreateOptions{
-		Name:  plan.Name.ValueStringPointer(),
-		Value: plan.Key.ValueStringPointer(),
+		Name: plan.Name.ValueStringPointer(),
+	}
+
+	// Set Value from `value_wo` if set, otherwise use the normal value
+	isWriteOnly := !config.KeyWO.IsNull()
+	if isWriteOnly {
+		options.Value = config.KeyWO.ValueStringPointer()
+	} else {
+		options.Value = plan.Key.ValueStringPointer()
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("Create new SSH key for organization: %s", organization))
@@ -133,7 +168,13 @@ func (r *resourceTFESSHKey) Create(ctx context.Context, req resource.CreateReque
 	}
 
 	// Load the response data into the model
-	result := modelFromTFESSHKey(organization, sshKey, plan.Key)
+	result := modelFromTFESSHKey(organization, sshKey, plan.Key, isWriteOnly)
+
+	// Write the hashed private key to the state if it was provided
+	if !config.KeyWO.IsNull() {
+		store := r.writeOnlyValueStore(resp.Private)
+		resp.Diagnostics.Append(store.SetPriorValue(ctx, config.KeyWO)...)
+	}
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -168,8 +209,15 @@ func (r *resourceTFESSHKey) Read(ctx context.Context, req resource.ReadRequest, 
 		return
 	}
 
+	// Check if the parameter is write-only
+	isWriteOnly, diags := r.writeOnlyValueStore(resp.Private).PriorValueExists(ctx)
+	resp.Diagnostics.Append(diags...)
+	if diags.HasError() {
+		return
+	}
+
 	// Load the response data into the model
-	result := modelFromTFESSHKey(organization, sshKey, state.Key)
+	result := modelFromTFESSHKey(organization, sshKey, state.Key, isWriteOnly)
 
 	// Update state
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
@@ -206,7 +254,7 @@ func (r *resourceTFESSHKey) Update(ctx context.Context, req resource.UpdateReque
 	}
 
 	// Load the response data into the model
-	result := modelFromTFESSHKey(organization, sshKey, plan.Key)
+	result := modelFromTFESSHKey(organization, sshKey, plan.Key, !config.KeyWO.IsNull())
 
 	// Update state
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
@@ -236,4 +284,8 @@ func (r *resourceTFESSHKey) Delete(ctx context.Context, req resource.DeleteReque
 		resp.Diagnostics.AddError("Error deleting SSH key", err.Error())
 		return
 	}
+}
+
+func (r *resourceTFESSHKey) writeOnlyValueStore(private helpers.PrivateState) *helpers.WriteOnlyValueStore {
+	return helpers.NewWriteOnlyValueStore(private, "key_wo")
 }
