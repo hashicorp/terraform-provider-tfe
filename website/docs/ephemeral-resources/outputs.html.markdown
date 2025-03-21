@@ -26,7 +26,7 @@ that are known to be non-sensitive.
 
 ## Example Usage
 
-Using the `tfe_outputs` ephemeral resource, the outputs `foo` and `bar` can be used as seen below:
+Using the `tfe_outputs` ephemeral resource, the outputs `vault_role_id` and `vault_secret_id` can be used to configure a vault provider instance as seen below:
 
 In the example below, assume we have outputs defined in a `my-org/my-workspace`:
 
@@ -36,13 +36,15 @@ ephemeral "tfe_outputs" "foo" {
   workspace = "my-workspace"
 }
 
-resource "random_id" "vpc_id" {
-  keepers = {
-    # Generate a new ID any time the value of 'bar' in workspace 'my-org/my-workspace' changes.
-    bar = ephemeral.tfe_outputs.foo.values.bar
-  }
+provider "vault" {
+  auth_login {
+    path = "auth/approle/login"
 
-  byte_length = 8
+    parameters = {
+      role_id   = ephemeral_tfe_outputs.foo.values.vault_role_id
+      secret_id = ephemeral_tfe_outputs.foo.values.vault_secret_id
+    }
+  }
 }
 ```
 
