@@ -34,6 +34,31 @@ const (
 	samlDefaultSSOAPITokenSessionTimeoutSeconds int64  = 1209600 // 14 days
 )
 
+type modelTFESAMLSettings struct {
+	ID                        types.String `tfsdk:"id"`
+	Enabled                   types.Bool   `tfsdk:"enabled"`
+	Debug                     types.Bool   `tfsdk:"debug"`
+	TeamManagementEnabled     types.Bool   `tfsdk:"team_management_enabled"`
+	AuthnRequestsSigned       types.Bool   `tfsdk:"authn_requests_signed"`
+	WantAssertionsSigned      types.Bool   `tfsdk:"want_assertions_signed"`
+	IDPCert                   types.String `tfsdk:"idp_cert"`
+	OldIDPCert                types.String `tfsdk:"old_idp_cert"`
+	SLOEndpointURL            types.String `tfsdk:"slo_endpoint_url"`
+	SSOEndpointURL            types.String `tfsdk:"sso_endpoint_url"`
+	AttrUsername              types.String `tfsdk:"attr_username"`
+	AttrGroups                types.String `tfsdk:"attr_groups"`
+	AttrSiteAdmin             types.String `tfsdk:"attr_site_admin"`
+	SiteAdminRole             types.String `tfsdk:"site_admin_role"`
+	SSOAPITokenSessionTimeout types.Int64  `tfsdk:"sso_api_token_session_timeout"`
+	ACSConsumerURL            types.String `tfsdk:"acs_consumer_url"`
+	MetadataURL               types.String `tfsdk:"metadata_url"`
+	Certificate               types.String `tfsdk:"certificate"`
+	PrivateKey                types.String `tfsdk:"private_key"`
+	PrivateKeyWO              types.String `tfsdk:"private_key_wo"`
+	SignatureSigningMethod    types.String `tfsdk:"signature_signing_method"`
+	SignatureDigestMethod     types.String `tfsdk:"signature_digest_method"`
+}
+
 // resourceTFESAMLSettings implements the tfe_saml_settings resource type
 type resourceTFESAMLSettings struct {
 	client *tfe.Client

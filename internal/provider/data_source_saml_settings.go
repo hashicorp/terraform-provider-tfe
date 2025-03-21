@@ -29,8 +29,8 @@ type dataSourceTFESAMLSettings struct {
 	client *tfe.Client
 }
 
-// modelTFESAMLSettings maps the data source schema data.
-type modelTFESAMLSettings struct {
+// modelDataTFESAMLSettings maps the data source schema data.
+type modelDataTFESAMLSettings struct {
 	ID                        types.String `tfsdk:"id"`
 	Enabled                   types.Bool   `tfsdk:"enabled"`
 	Debug                     types.Bool   `tfsdk:"debug"`
@@ -50,7 +50,6 @@ type modelTFESAMLSettings struct {
 	MetadataURL               types.String `tfsdk:"metadata_url"`
 	Certificate               types.String `tfsdk:"certificate"`
 	PrivateKey                types.String `tfsdk:"private_key"`
-	PrivateKeyWO              types.String `tfsdk:"private_key_wo"`
 	SignatureSigningMethod    types.String `tfsdk:"signature_signing_method"`
 	SignatureDigestMethod     types.String `tfsdk:"signature_digest_method"`
 }
@@ -159,7 +158,7 @@ func (d *dataSourceTFESAMLSettings) Read(ctx context.Context, _ datasource.ReadR
 	}
 
 	// Set state
-	diags := resp.State.Set(ctx, &modelTFESAMLSettings{
+	diags := resp.State.Set(ctx, &modelDataTFESAMLSettings{
 		ID:                        types.StringValue(s.ID),
 		Enabled:                   types.BoolValue(s.Enabled),
 		Debug:                     types.BoolValue(s.Debug),

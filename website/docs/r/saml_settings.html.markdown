@@ -44,8 +44,11 @@ The following arguments are supported:
 * `sso_api_token_session_timeout` - (Optional) Specifies the Single Sign On session timeout in seconds. Defaults to 14 days.
 * `certificate` - (Optional) The certificate used for request and assertion signing.
 * `private_key` - (Optional) The private key used for request and assertion signing.
+* `private_key_wo` - (Optional) The private key used for request and assertion signing, guaranteed not to be written to plan or state artifacts. One of `private_key` or `private_key_wo` must be provided.
 * `signature_signing_method` - (Optional) Signature Signing Method. Must be either `SHA1` or `SHA256`. Defaults to `SHA256`.
 * `signature_digest_method` - (Optional) Signature Digest Method. Must be either `SHA1` or `SHA256`. Defaults to `SHA256`.
+
+-> **Note:** Write-Only argument `private_key_wo` is available to use in place of `private_key`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
 
 ## Attributes Reference
 
