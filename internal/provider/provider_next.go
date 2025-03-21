@@ -142,6 +142,7 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewResourceVariable,
 		NewResourceWorkspaceSettings,
 		NewSAMLSettingsResource,
+		NewSSHKey,
 		NewStackResource,
 		NewTeamNotificationConfigurationResource,
 		NewTestVariableResource,
