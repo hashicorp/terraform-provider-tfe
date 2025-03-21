@@ -23,6 +23,8 @@ ENHANCEMENTS:
 
 * resource/tfe_organization_run_task: Add `hmac_key_wo` write-only attribute, by @shwetamurali ([#1646](https://github.com/hashicorp/terraform-provider-tfe/pull/1646))
 
+* resource/tfe_saml_settings: Add `private_key_wo` write-only attribute, by @uturunku1 ([#1660](https://github.com/hashicorp/terraform-provider-tfe/pull/1660))
+
 ## v.0.64.0
 
 FEATURES:

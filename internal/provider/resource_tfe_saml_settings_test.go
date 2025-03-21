@@ -10,8 +10,10 @@ import (
 	"testing"
 
 	"github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/tfversion"
 )
 
 const testResourceName = "tfe_saml_settings.foobar"
@@ -30,6 +32,46 @@ const testResourceName = "tfe_saml_settings.foobar"
 
 // TestAccTFESAMLSettings_omnibus test suite is skipped in the CI, and will only run in TFE Nightly workflow
 // Should this test name ever change, you will also need to update the regex in ci.yml
+func TestAccTFESAMLSettings_writeOnly(t *testing.T) {
+	s := tfe.AdminSAMLSetting{
+		IDPCert:        "testIDPCertBasic",
+		SLOEndpointURL: "https://foobar.com/slo_endpoint_url",
+		SSOEndpointURL: "https://foobar.com/sso_endpoint_url",
+		PrivateKey:     "TestPrivateKeyFull",
+	}
+	resource.Test(t, resource.TestCase{
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			tfversion.SkipBelow(version.Must(version.NewVersion("1.11.0"))),
+		},
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFESAMLSettings_writeOnly(s),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(testResourceName, "enabled", "true"),
+					resource.TestCheckResourceAttr(testResourceName, "debug", "false"),
+					resource.TestCheckResourceAttr(testResourceName, "authn_requests_signed", "false"),
+					resource.TestCheckResourceAttr(testResourceName, "want_assertions_signed", "false"),
+					resource.TestCheckResourceAttr(testResourceName, "team_management_enabled", "false"),
+					resource.TestCheckResourceAttr(testResourceName, "idp_cert", s.IDPCert),
+					resource.TestCheckResourceAttr(testResourceName, "slo_endpoint_url", s.SLOEndpointURL),
+					resource.TestCheckResourceAttr(testResourceName, "sso_endpoint_url", s.SSOEndpointURL),
+					resource.TestCheckResourceAttr(testResourceName, "attr_username", samlDefaultAttrUsername),
+					resource.TestCheckResourceAttr(testResourceName, "attr_site_admin", samlDefaultAttrSiteAdmin),
+					resource.TestCheckResourceAttr(testResourceName, "attr_groups", samlDefaultAttrGroups),
+					resource.TestCheckResourceAttr(testResourceName, "site_admin_role", samlDefaultSiteAdminRole),
+					resource.TestCheckResourceAttr(testResourceName, "sso_api_token_session_timeout", strconv.Itoa(int(samlDefaultSSOAPITokenSessionTimeoutSeconds))),
+					resource.TestCheckResourceAttrSet(testResourceName, "acs_consumer_url"),
+					resource.TestCheckResourceAttrSet(testResourceName, "metadata_url"),
+					resource.TestCheckResourceAttr(testResourceName, "signature_signing_method", samlSignatureMethodSHA256),
+					resource.TestCheckResourceAttr(testResourceName, "signature_digest_method", samlSignatureMethodSHA256),
+					resource.TestCheckNoResourceAttr(
+						testResourceName, "private_key_wo"),
+				),
+			},
+		},
+	})
+}
 func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 	t.Run("basic SAML settings resource", func(t *testing.T) {
 		s := tfe.AdminSAMLSetting{
@@ -329,4 +371,14 @@ resource "tfe_saml_settings" "foobar" {
   signature_signing_method 		= "%s"
   signature_digest_method 		= "%s"
 }`, s.IDPCert, s.SLOEndpointURL, s.SSOEndpointURL, s.Debug, s.AuthnRequestsSigned, s.WantAssertionsSigned, s.TeamManagementEnabled, s.AttrUsername, s.AttrSiteAdmin, s.AttrGroups, s.SiteAdminRole, s.SSOAPITokenSessionTimeout, s.Certificate, s.PrivateKey, s.SignatureSigningMethod, s.SignatureDigestMethod)
+}
+
+func testAccTFESAMLSettings_writeOnly(s tfe.AdminSAMLSetting) string {
+	return fmt.Sprintf(`
+resource "tfe_saml_settings" "foobar" {
+  idp_cert         = "%s"
+  slo_endpoint_url = "%s"
+  sso_endpoint_url = "%s"
+  private_key_wo 					= "%s"
+}`, s.IDPCert, s.SLOEndpointURL, s.SSOEndpointURL, s.PrivateKey)
 }
