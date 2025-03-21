@@ -288,6 +288,12 @@ func (r *resourceTFESSHKey) Delete(ctx context.Context, req resource.DeleteReque
 	tflog.Debug(ctx, fmt.Sprintf("Delete SSH key %s for organization: %s", id, organization))
 	err := r.config.Client.SSHKeys.Delete(ctx, id)
 	if err != nil {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			tflog.Debug(ctx, fmt.Sprintf("SSH key %s no longer exists", id))
+			// The resource is implicitly deleted from state on return
+			return
+		}
+
 		resp.Diagnostics.AddError("Error deleting SSH key", err.Error())
 		return
 	}
