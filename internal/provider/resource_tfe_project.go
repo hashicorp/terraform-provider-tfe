@@ -1,169 +1,295 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
-// NOTE: This is a legacy resource and should be migrated to the Plugin
-// Framework if substantial modifications are planned. See
-// docs/new-resources.md if planning to use this code as boilerplate for
-// a new resource.
-
 package provider
 
 import (
 	"context"
 	"errors"
-	"log"
-
+	"fmt"
 	"regexp"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/jsonapi"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-func resourceTFEProject() *schema.Resource {
-	return &schema.Resource{
-		CreateContext: resourceTFEProjectCreate,
-		ReadContext:   resourceTFEProjectRead,
-		UpdateContext: resourceTFEProjectUpdate,
-		DeleteContext: resourceTFEProjectDelete,
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
+var (
+	_ resource.Resource                = &resourceTFEProject{}
+	_ resource.ResourceWithConfigure   = &resourceTFEProject{}
+	_ resource.ResourceWithImportState = &resourceTFEProject{}
+	_ resource.ResourceWithModifyPlan  = &resourceTFEProject{}
+)
 
-		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
+func NewProjectResource() resource.Resource {
+	return &resourceTFEProject{}
+}
 
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Type:     schema.TypeString,
-				Required: true,
-				ValidateFunc: validation.All(
-					validation.StringLenBetween(3, 40),
-					validation.StringMatch(regexp.MustCompile(`\A[\w\-][\w\- ]+[\w\-]\z`),
-						"can only include letters, numbers, spaces, -, and _."),
-				),
+type resourceTFEProject struct {
+	config ConfiguredClient
+}
+
+// modelTFEProject maps the resource schema data to a struct.
+type modelTFEProject struct {
+	ID                          types.String `tfsdk:"id"`
+	Name                        types.String `tfsdk:"name"`
+	Description                 types.String `tfsdk:"description"`
+	Organization                types.String `tfsdk:"organization"`
+	AutoDestroyActivityDuration types.String `tfsdk:"auto_destroy_activity_duration"`
+}
+
+// modelFromTFEProject builds a modelTFEProject struct from a tfe.Project value.
+func modelFromTFEProject(p *tfe.Project) (modelTFEProject, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	model := modelTFEProject{
+		ID:           types.StringValue(p.ID),
+		Name:         types.StringValue(p.Name),
+		Description:  types.StringValue(p.Description),
+		Organization: types.StringValue(p.Organization.Name),
+	}
+
+	if p.AutoDestroyActivityDuration.IsSpecified() {
+		duration, err := p.AutoDestroyActivityDuration.Get()
+		if err != nil {
+			diags.AddAttributeError(path.Root("auto_destroy_activity_duration"), "Invalid duration", fmt.Sprintf("Error reading auto destroy activity duration: %v", err))
+		}
+
+		model.AutoDestroyActivityDuration = types.StringValue(duration)
+	}
+
+	return model, diags
+}
+
+// Configure implements resource.ResourceWithConfigure
+func (r *resourceTFEProject) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	// Early exit if provider is unconfigured (i.e. we're only validating config or something)
+	if req.ProviderData == nil {
+		return
+	}
+	client, ok := req.ProviderData.(ConfiguredClient)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected resource Configure type",
+			fmt.Sprintf("Expected tfe.ConfiguredClient, got %T. This is a bug in the tfe provider, so please report it on GitHub.", req.ProviderData),
+		)
+	}
+	r.config = client
+}
+
+// Metadata implements resource.Resource
+func (r *resourceTFEProject) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_project"
+}
+
+// Schema implements resource.Resource
+func (r *resourceTFEProject) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed:    true,
+				Description: "Service-generated identifier for the variable",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 
-			"description": {
-				Type:     schema.TypeString,
-				Optional: true,
+			"name": schema.StringAttribute{
+				Description: "Name of the project.",
+				Required:    true,
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(3, 40),
+					stringvalidator.RegexMatches(regexp.MustCompile(`\A[\w\-][\w\- ]+[\w\-]\z`),
+						"can only include letters, numbers, spaces, -, and _.",
+					),
+				},
 			},
 
-			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-				ForceNew: true,
+			"description": schema.StringAttribute{
+				Description: "Description of the project.",
+				Optional:    true,
+				Computed:    true,
 			},
 
-			"auto_destroy_activity_duration": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^\d{1,4}[dh]$`), "must be 1-4 digits followed by d or h"),
+			"organization": schema.StringAttribute{
+				Description: "Name of the organization to which the project belongs.",
+				Optional:    true,
+				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+
+			"auto_destroy_activity_duration": schema.StringAttribute{
+				Description: "Duration after which the project will be auto-destroyed.",
+				Optional:    true,
+				Validators: []validator.String{
+					stringvalidator.RegexMatches(
+						regexp.MustCompile(`^\d{1,4}[dh]$`),
+						"must be 1-4 digits followed by 'd' or 'h'.",
+					),
+				},
 			},
 		},
 	}
 }
 
-func resourceTFEProjectCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config := meta.(ConfiguredClient)
-
-	organization, err := config.schemaOrDefaultOrganization(d)
-	if err != nil {
-		return diag.FromErr(err)
+// Create implements resource.Resource
+func (r *resourceTFEProject) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan modelTFEProject
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
-	name := d.Get("name").(string)
+
+	// Get the organization name from resource or provider config
+	var orgName string
+	resp.Diagnostics.Append(r.config.dataOrDefaultOrganization(ctx, req.Config, &orgName)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	name := plan.Name.ValueString()
 
 	options := tfe.ProjectCreateOptions{
 		Name:        name,
-		Description: tfe.String(d.Get("description").(string)),
+		Description: plan.Description.ValueStringPointer(),
 	}
 
-	if v, ok := d.GetOk("auto_destroy_activity_duration"); ok {
-		options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(v.(string))
+	if !plan.AutoDestroyActivityDuration.IsNull() {
+		options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(plan.AutoDestroyActivityDuration.ValueString())
 	}
 
-	log.Printf("[DEBUG] Create new project: %s", name)
-	project, err := config.Client.Projects.Create(ctx, organization, options)
+	tflog.Debug(ctx, fmt.Sprintf("Create project %s", name))
+	project, err := r.config.Client.Projects.Create(ctx, orgName, options)
+
 	if err != nil {
-		return diag.Errorf("Error creating the new project %s: %v", name, err)
+		resp.Diagnostics.AddError("Error creating project", err.Error())
+		return
 	}
 
-	d.SetId(project.ID)
+	result, diags := modelFromTFEProject(project)
+	if diags.HasError() {
+		return
+	}
 
-	return resourceTFEProjectUpdate(ctx, d, meta)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
-func resourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config := meta.(ConfiguredClient)
+// Read implements resource.Resource
+func (r *resourceTFEProject) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state modelTFEProject
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
-	log.Printf("[DEBUG] Read configuration of project: %s", d.Id())
-	project, err := config.Client.Projects.Read(ctx, d.Id())
+	id := state.ID.ValueString()
+
+	tflog.Debug(ctx, fmt.Sprintf("Read project %s", id))
+	project, err := r.config.Client.Projects.Read(ctx, id)
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
-			log.Printf("[DEBUG] Project %s no longer exists", d.Id())
-			d.SetId("")
-			return nil
+			tflog.Debug(ctx, fmt.Sprintf("Project %s no longer exists", id))
+			resp.State.RemoveResource(ctx)
+			return
 		}
-		return diag.FromErr(err)
+		resp.Diagnostics.AddError("Error reading project", err.Error())
+		return
 	}
 
-	d.Set("name", project.Name)
-	d.Set("description", project.Description)
-	d.Set("organization", project.Organization.Name)
-
-	if project.AutoDestroyActivityDuration.IsSpecified() {
-		v, err := project.AutoDestroyActivityDuration.Get()
-		if err != nil {
-			return diag.Errorf("Error reading auto destroy activity duration: %v", err)
-		}
-
-		d.Set("auto_destroy_activity_duration", v)
+	result, diags := modelFromTFEProject(project)
+	if diags.HasError() {
+		return
 	}
 
-	return nil
+	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
-func resourceTFEProjectUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config := meta.(ConfiguredClient)
+// Update implements resource.Resource
+func (r *resourceTFEProject) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan modelTFEProject
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var state modelTFEProject
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	name := plan.Name.ValueString()
 
 	options := tfe.ProjectUpdateOptions{
-		Name:        tfe.String(d.Get("name").(string)),
-		Description: tfe.String(d.Get("description").(string)),
+		Name:        &name,
+		Description: plan.Description.ValueStringPointer(),
 	}
 
-	if d.HasChange("auto_destroy_activity_duration") {
-		duration, ok := d.GetOk("auto_destroy_activity_duration")
-		if !ok {
-			options.AutoDestroyActivityDuration = jsonapi.NewNullNullableAttr[string]()
-		} else {
-			options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(duration.(string))
-		}
+	// If auto_destroy_activity_duration was previously specified and is now being
+	// cleared out, set an explicit null in the update options struct.
+	if !state.AutoDestroyActivityDuration.IsNull() && plan.AutoDestroyActivityDuration.IsNull() {
+		options.AutoDestroyActivityDuration = jsonapi.NewNullNullableAttr[string]()
+	} else if !plan.AutoDestroyActivityDuration.IsNull() {
+		options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(plan.AutoDestroyActivityDuration.ValueString())
 	}
 
-	log.Printf("[DEBUG] Update configuration of project: %s", d.Id())
-	project, err := config.Client.Projects.Update(ctx, d.Id(), options)
+	tflog.Debug(ctx, fmt.Sprintf("Update project %s", plan.ID.ValueString()))
+	project, err := r.config.Client.Projects.Update(ctx, plan.ID.ValueString(), options)
 	if err != nil {
-		return diag.Errorf("Error updating project %s: %v", d.Id(), err)
+		resp.Diagnostics.AddError("Error updating project", err.Error())
+		return
 	}
 
-	d.SetId(project.ID)
+	result, diags := modelFromTFEProject(project)
+	if diags.HasError() {
+		return
+	}
 
-	return resourceTFEProjectRead(ctx, d, meta)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
-func resourceTFEProjectDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	config := meta.(ConfiguredClient)
-
-	log.Printf("[DEBUG] Delete project: %s", d.Id())
-	err := config.Client.Projects.Delete(ctx, d.Id())
-	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
-			return nil
-		}
-		return diag.Errorf("Error deleting project %s: %v", d.Id(), err)
+// Delete implements resource.Resource
+func (r *resourceTFEProject) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state modelTFEProject
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	return nil
+	id := state.ID.ValueString()
+
+	tflog.Debug(ctx, fmt.Sprintf("Delete project %s", id))
+	err := r.config.Client.Projects.Delete(ctx, id)
+	if err != nil {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			tflog.Debug(ctx, fmt.Sprintf("Project %s no longer exists", id))
+			// The resource is implicitly deleted from state after returning
+			return
+		}
+		resp.Diagnostics.AddError("Error deleting project", err.Error())
+		return
+	}
+}
+
+func (r *resourceTFEProject) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	if req.Plan.Raw.IsNull() {
+		return
+	}
+
+	modifyPlanForDefaultOrganizationChange(ctx, r.config.Organization, req.State, req.Config, req.Plan, resp)
+}
+
+func (r *resourceTFEProject) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
