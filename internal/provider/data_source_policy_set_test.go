@@ -191,7 +191,7 @@ func TestAccTFEPolicySetDataSource_vcs(t *testing.T) {
 				t.Skip("Please set GITHUB_POLIY_SET_PATH to run this test")
 			}
 		},
-		Providers: testAccProviders,
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEPolicySetDataSourceConfig_vcs(org.Name, rInt),

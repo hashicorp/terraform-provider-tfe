@@ -25,8 +25,8 @@ func TestAccTFEOAuthClient_basic(t *testing.T) {
 				t.Skip("Please set GITHUB_TOKEN to run this test")
 			}
 		},
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOAuthClientDestroy,
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOAuthClientDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOAuthClient_basic(rInt),
@@ -56,8 +56,8 @@ func TestAccTFEOAuthClientWithOrganizationScoped_basic(t *testing.T) {
 				t.Skip("Please set GITHUB_TOKEN to run this test")
 			}
 		},
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOAuthClientDestroy,
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOAuthClientDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOAuthClient_basic(rInt),
@@ -83,9 +83,9 @@ func TestAccTFEOAuthClient_rsaKeys(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOAuthClientDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOAuthClientDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOAuthClient_rsaKeys(rInt),
@@ -118,8 +118,8 @@ func TestAccTFEOAuthClient_agentPool(t *testing.T) {
 				t.Skip("Please set GITHUB_TOKEN to run this test")
 			}
 		},
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOAuthClientDestroy,
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOAuthClientDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOAuthClient_agentPool(),

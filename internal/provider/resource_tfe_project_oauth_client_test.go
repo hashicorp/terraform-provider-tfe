@@ -35,9 +35,9 @@ func TestAccTFEProjectOAuthClient_basic(t *testing.T) {
 	})
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEProjectOAuthClientDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEProjectOAuthClientDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEProjectOAuthClient_basic(org.Name, project.ID),
@@ -155,8 +155,8 @@ func testAccCheckTFEProjectOAuthClientDestroy(s *terraform.State) error {
 
 func testAccTFEProjectOAuthClient_base(orgName string) string {
 	return fmt.Sprintf(`
-		resource "tfe_oauth_client" "test" {			
-			name = "oauth_client_test"			
+		resource "tfe_oauth_client" "test" {
+			name = "oauth_client_test"
 			organization     = "%s"
 			api_url          = "https://api.github.com"
 			http_url         = "https://github.com"

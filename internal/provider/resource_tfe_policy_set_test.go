@@ -498,8 +498,8 @@ func TestAccTFEPolicySet_vcs(t *testing.T) {
 				t.Skip("Please set GITHUB_POLICY_SET_PATH to run this test")
 			}
 		},
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEPolicySetDestroy,
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEPolicySet_vcs(org.Name),
@@ -608,8 +608,8 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 				t.Skip("Please set GITHUB_POLICY_SET_PATH to run this test")
 			}
 		},
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEPolicySetDestroy,
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEPolicySet_vcs(org.Name),
