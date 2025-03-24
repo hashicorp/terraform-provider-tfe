@@ -94,7 +94,7 @@ func modelFromTFEAdminSAMLSettings(v tfe.AdminSAMLSetting, privateKey types.Stri
 		m.PrivateKey = privateKey
 	}
 
-	// Don't retrieve values if write-only is being used. Unset the hmac key field before updating the state.
+	// Don't retrieve values if write-only is being used. Unset the private key field before updating the state.
 	if isWriteOnly {
 		m.PrivateKey = types.StringValue("")
 	}
