@@ -9,15 +9,19 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/planmodifiers"
 )
 
 const (
@@ -30,13 +34,38 @@ const (
 	samlDefaultSSOAPITokenSessionTimeoutSeconds int64  = 1209600 // 14 days
 )
 
+type modelTFESAMLSettings struct {
+	ID                        types.String `tfsdk:"id"`
+	Enabled                   types.Bool   `tfsdk:"enabled"`
+	Debug                     types.Bool   `tfsdk:"debug"`
+	TeamManagementEnabled     types.Bool   `tfsdk:"team_management_enabled"`
+	AuthnRequestsSigned       types.Bool   `tfsdk:"authn_requests_signed"`
+	WantAssertionsSigned      types.Bool   `tfsdk:"want_assertions_signed"`
+	IDPCert                   types.String `tfsdk:"idp_cert"`
+	OldIDPCert                types.String `tfsdk:"old_idp_cert"`
+	SLOEndpointURL            types.String `tfsdk:"slo_endpoint_url"`
+	SSOEndpointURL            types.String `tfsdk:"sso_endpoint_url"`
+	AttrUsername              types.String `tfsdk:"attr_username"`
+	AttrGroups                types.String `tfsdk:"attr_groups"`
+	AttrSiteAdmin             types.String `tfsdk:"attr_site_admin"`
+	SiteAdminRole             types.String `tfsdk:"site_admin_role"`
+	SSOAPITokenSessionTimeout types.Int64  `tfsdk:"sso_api_token_session_timeout"`
+	ACSConsumerURL            types.String `tfsdk:"acs_consumer_url"`
+	MetadataURL               types.String `tfsdk:"metadata_url"`
+	Certificate               types.String `tfsdk:"certificate"`
+	PrivateKey                types.String `tfsdk:"private_key"`
+	PrivateKeyWO              types.String `tfsdk:"private_key_wo"`
+	SignatureSigningMethod    types.String `tfsdk:"signature_signing_method"`
+	SignatureDigestMethod     types.String `tfsdk:"signature_digest_method"`
+}
+
 // resourceTFESAMLSettings implements the tfe_saml_settings resource type
 type resourceTFESAMLSettings struct {
 	client *tfe.Client
 }
 
 // modelFromTFEAdminSAMLSettings builds a modelTFESAMLSettings struct from a tfe.AdminSAMLSetting value
-func modelFromTFEAdminSAMLSettings(v tfe.AdminSAMLSetting, privateKey types.String) modelTFESAMLSettings {
+func modelFromTFEAdminSAMLSettings(v tfe.AdminSAMLSetting, privateKey types.String, isWriteOnly bool) modelTFESAMLSettings {
 	m := modelTFESAMLSettings{
 		ID:                        types.StringValue(v.ID),
 		Enabled:                   types.BoolValue(v.Enabled),
@@ -60,9 +89,16 @@ func modelFromTFEAdminSAMLSettings(v tfe.AdminSAMLSetting, privateKey types.Stri
 		SignatureSigningMethod:    types.StringValue(v.SignatureSigningMethod),
 		SignatureDigestMethod:     types.StringValue(v.SignatureDigestMethod),
 	}
+
 	if len(privateKey.String()) > 0 {
 		m.PrivateKey = privateKey
 	}
+
+	// Don't retrieve values if write-only is being used. Unset the private key field before updating the state.
+	if isWriteOnly {
+		m.PrivateKey = types.StringValue("")
+	}
+
 	return m
 }
 
@@ -187,6 +223,21 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 				Optional:    true,
 				Computed:    true,
 				Sensitive:   true,
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRoot("private_key_wo")),
+				},
+			},
+			"private_key_wo": schema.StringAttribute{
+				Description: "The private key in write-only mode used for request and assertion signing",
+				Optional:    true,
+				Sensitive:   true,
+				WriteOnly:   true,
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRoot("private_key")),
+				},
+				PlanModifiers: []planmodifier.String{
+					planmodifiers.NewReplaceForWriteOnlyStringValue("private_key_wo"),
+				},
 			},
 			"signature_signing_method": schema.StringAttribute{
 				Description: fmt.Sprintf("Signature Signing Method. Must be either `%s` or `%s`. Defaults to `%s`", samlSignatureMethodSHA1, samlSignatureMethodSHA256, samlSignatureMethodSHA256),
@@ -225,13 +276,22 @@ func (r *resourceTFESAMLSettings) Read(ctx context.Context, req resource.ReadReq
 		return
 	}
 
+	tflog.Debug(ctx, "Reading SAML Settings")
+
 	samlSettings, err := r.client.Admin.Settings.SAML.Read(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading SAML Settings", "Could not read SAML Settings, unexpected error: "+err.Error())
 		return
 	}
 
-	result := modelFromTFEAdminSAMLSettings(*samlSettings, m.PrivateKey)
+	isWriteOnly, diags := r.writeOnlyValueStore(resp.Private).PriorValueExists(ctx)
+	resp.Diagnostics.Append(diags...)
+	if diags.HasError() {
+		return
+	}
+
+	// update state
+	result := modelFromTFEAdminSAMLSettings(*samlSettings, m.PrivateKey, isWriteOnly)
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -245,6 +305,17 @@ func (r *resourceTFESAMLSettings) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
+	var config modelTFESAMLSettings
+	diags = req.Config.Get(ctx, &config)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !config.PrivateKeyWO.IsNull() {
+		m.PrivateKey = config.PrivateKeyWO
+	}
+
 	tflog.Debug(ctx, "Create SAML Settings")
 	samlSettings, err := r.updateSAMLSettings(ctx, m)
 	if err != nil {
@@ -252,7 +323,10 @@ func (r *resourceTFESAMLSettings) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
-	result := modelFromTFEAdminSAMLSettings(*samlSettings, m.PrivateKey)
+	result := modelFromTFEAdminSAMLSettings(*samlSettings, m.PrivateKey, !config.PrivateKeyWO.IsNull())
+	// Store the hashed write-only value in the private state
+	store := r.writeOnlyValueStore(resp.Private)
+	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.PrivateKeyWO)...)
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -266,6 +340,17 @@ func (r *resourceTFESAMLSettings) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
+	var config modelTFESAMLSettings
+	diags = req.Config.Get(ctx, &config)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !config.PrivateKeyWO.IsNull() {
+		m.PrivateKey = config.PrivateKeyWO
+	}
+
 	tflog.Debug(ctx, "Update SAML Settings")
 	samlSettings, err := r.updateSAMLSettings(ctx, m)
 	if err != nil {
@@ -273,7 +358,15 @@ func (r *resourceTFESAMLSettings) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
-	result := modelFromTFEAdminSAMLSettings(*samlSettings, m.PrivateKey)
+	// Store the hashed write-only value in the private state
+	store := r.writeOnlyValueStore(resp.Private)
+	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.PrivateKeyWO)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	result := modelFromTFEAdminSAMLSettings(*samlSettings, m.PrivateKey, !config.PrivateKeyWO.IsNull())
+	// Save data into Terraform state
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -321,7 +414,7 @@ func (r *resourceTFESAMLSettings) ImportState(ctx context.Context, req resource.
 		return
 	}
 
-	result := modelFromTFEAdminSAMLSettings(*samlSettings, types.StringValue(""))
+	result := modelFromTFEAdminSAMLSettings(*samlSettings, types.StringValue(""), false)
 	diags := resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -362,4 +455,8 @@ func (r *resourceTFESAMLSettings) updateSAMLSettings(ctx context.Context, m mode
 		return s, fmt.Errorf("failed to update SAML Settings: %w", err)
 	}
 	return s, nil
+}
+
+func (r *resourceTFESAMLSettings) writeOnlyValueStore(private helpers.PrivateState) *helpers.WriteOnlyValueStore {
+	return helpers.NewWriteOnlyValueStore(private, "private_key_wo")
 }
