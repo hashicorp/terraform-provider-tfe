@@ -6,11 +6,7 @@ description: |-
   sensitive data to state.
 ---
 
-# Ephemeral: tfe_organization_token
-
-Terraform ephemeral resource for managing a TFE organization token. This
-resource is used to generate a new organization token that is guaranteed not to
-be written to state. Since organization tokens are singleton resources, using this ephemeral resource will replace any existing organization token, including those managed by `tfe_organization_token`.
+# Ephemeral: tfe_outputs
 
 This ephemeral resource is used to retrieve the state outputs for a given workspace.
 It enables output values in one Terraform configuration to be used in another.
@@ -20,9 +16,9 @@ The retrieved output values are guaranteed not to be written to state.
 
 ---
 
-
-~> **NOTE:** The `values` attribute is preemptively marked [sensitive](https://developer.hashicorp.com/terraform/language/values/outputs#sensitive-suppressing-values-in-cli-output) and is only populated after a run completes on the associated workspace. Use the `nonsensitive_values` attribute to access the subset of the outputs
-that are known to be non-sensitive.
+~> **NOTE:** Regardless of the sensitivity of the output values as set in HCP
+Terraform, the `values` and `nonsensitive_values` attributes in this ephemeral
+resource are both treated as sensitive.
 
 ## Example Usage
 
@@ -52,7 +48,8 @@ provider "vault" {
 
 The following arguments are supported:
 
-* `organization` - (Required) The name of the organization.
+* `organization` - (Optional) The name of the organization. If omitted, the
+  organization must be defined in the provider config.
 * `workspace` - (Required) The name of the workspace.
 
 ## Attributes Reference
