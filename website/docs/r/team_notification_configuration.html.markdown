@@ -126,6 +126,7 @@ The following arguments are supported:
   be used by the receiving server to verify request authenticity when configured for notification
   configurations with a destination type of `generic`. Defaults to `null`.
   This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.
+- `TokenWO` - (Optional) A write-only secure token for the notification configuration, guaranteed not to be written to plan or state artifacts. Only one of `token` or `token_wo` can be provided.
 - `triggers` - (Optional) The array of triggers for which this notification configuration will
   send notifications. Currently, the only valid value is `change_request:created`.
 
@@ -140,3 +141,4 @@ Team notification configurations can be imported; use `<NOTIFICATION CONFIGURATI
 ```shell
 terraform import tfe_team_notification_configuration.test nc-qV9JnKRkmtMa4zcA
 ```
+> **Note:** Write-Only argument `token_wo` is available to use in place of `token_wo`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
