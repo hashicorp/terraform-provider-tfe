@@ -27,7 +27,7 @@ ENHANCEMENTS:
 
 * resource/tfe_ssh_key: Add `key_wo` write-only attribute, by @ctrombley ([#1659](https://github.com/hashicorp/terraform-provider-tfe/pull/1659))
 
-* resource/tfe_team_notification_configuration: Add `token_wo` write-only attribute, by @shwetamurali ([#1659](https://github.com/hashicorp/terraform-provider-tfe/pull/))
+* resource/tfe_team_notification_configuration: Add `token_wo` write-only attribute, by @shwetamurali ([#1665](https://github.com/hashicorp/terraform-provider-tfe/pull/1665))
 ## v.0.64.0
 
 FEATURES:
