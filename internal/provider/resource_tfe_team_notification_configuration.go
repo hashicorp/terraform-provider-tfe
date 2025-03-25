@@ -208,7 +208,7 @@ func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, r
 					stringvalidator.ConflictsWith(path.MatchRoot("token")),
 				},
 				PlanModifiers: []planmodifier.String{
-					planmodifiers.NewReplaceForWriteOnlyStringValue("key_wo"),
+					planmodifiers.NewReplaceForWriteOnlyStringValue("token_wo"),
 				},
 			},
 
