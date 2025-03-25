@@ -60,7 +60,7 @@ type modelTFETeamNotificationConfiguration struct {
 
 // modelFromTFETeamNotificationConfiguration builds a modelTFETeamNotificationConfiguration
 // struct from a tfe.TeamNotificationConfiguration value.
-func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration, lastValue types.String, isWriteOnly bool) (*modelTFETeamNotificationConfiguration, *diag.Diagnostics) {
+func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration, isWriteOnly bool) (*modelTFETeamNotificationConfiguration, *diag.Diagnostics) {
 	result := modelTFETeamNotificationConfiguration{
 		ID:              types.StringValue(v.ID),
 		Name:            types.StringValue(v.Name),
@@ -103,8 +103,8 @@ func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration,
 
 	if isWriteOnly {
 		result.Token = types.StringNull()
-	} else if lastValue.ValueString() != "" {
-		result.Token = types.StringValue(lastValue.ValueString())
+	} else if v.Token != "" {
+		result.Token = types.StringValue(v.Token)
 	}
 
 	if v.URL != "" {
@@ -199,7 +199,7 @@ func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, r
 			"token_wo": schema.StringAttribute{
 				Description: "A write-only secure token for the notification configuration, guaranteed not to be written to plan or state artifacts.",
 				Optional:    true,
-				Sensitive:   false,
+				Sensitive:   true,
 				Validators: []validator.String{
 					validators.AttributeValueConflictValidator(
 						"destination_type",
@@ -349,7 +349,7 @@ func (r *resourceTFETeamNotificationConfiguration) Create(ctx context.Context, r
 		return
 	}
 
-	result, diags := modelFromTFETeamNotificationConfiguration(tnc, plan.Token, isWriteOnly)
+	result, diags := modelFromTFETeamNotificationConfiguration(tnc, isWriteOnly)
 	if diags != nil {
 		resp.Diagnostics.Append(*diags...)
 		return
@@ -394,7 +394,7 @@ func (r *resourceTFETeamNotificationConfiguration) Read(ctx context.Context, req
 		return
 	}
 
-	result, diagsPtr := modelFromTFETeamNotificationConfiguration(tnc, state.Token, isWriteOnly)
+	result, diagsPtr := modelFromTFETeamNotificationConfiguration(tnc, isWriteOnly)
 	if diagsPtr != nil && diagsPtr.HasError() {
 		resp.Diagnostics.Append(*diagsPtr...)
 		return
@@ -470,7 +470,7 @@ func (r *resourceTFETeamNotificationConfiguration) Update(ctx context.Context, r
 		return
 	}
 
-	result, diags := modelFromTFETeamNotificationConfiguration(tnc, plan.Token, !config.TokenWO.IsNull())
+	result, diags := modelFromTFETeamNotificationConfiguration(tnc, !config.TokenWO.IsNull())
 	if diags != nil && diags.HasError() {
 		resp.Diagnostics.Append((*diags)...)
 		return
