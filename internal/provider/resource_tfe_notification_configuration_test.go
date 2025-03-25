@@ -186,8 +186,8 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesEmail(t *testin
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { preCheckTFENotificationConfiguration(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_emailWithURL(rInt),
@@ -205,8 +205,8 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesGeneric(t *test
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { preCheckTFENotificationConfiguration(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithEmailAddresses(rInt),
@@ -228,8 +228,8 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesSlack(t *testin
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { preCheckTFENotificationConfiguration(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithEmailAddresses(rInt),
@@ -255,8 +255,8 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesMicrosoftTeams(
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { preCheckTFENotificationConfiguration(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithEmailAddresses(rInt),
