@@ -9,7 +9,6 @@
 package provider
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net/url"
@@ -246,7 +245,9 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	log.Printf("[DEBUG] Read configuration of workspace: %s", name)
-	workspace, err := config.Client.Workspaces.Read(ctx, organization, name)
+	workspace, err := config.Client.Workspaces.ReadWithOptions(ctx, organization, name, &tfe.WorkspaceReadOptions{
+		Include: []tfe.WSIncludeOpt{tfe.WSEffectiveTagBindings},
+	})
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			return fmt.Errorf("could not find workspace %s/%s", organization, name)
@@ -335,17 +336,7 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	effectiveTagBindings := make(map[string]interface{})
-	effectiveBindings, err := config.Client.Workspaces.ListEffectiveTagBindings(ctx, workspace.ID)
-	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
-		return fmt.Errorf("Error reading tag bindings for workspace %s: %w", workspace.ID, err)
-	}
-	if err != nil {
-		// This endpoint may not be supported by the configured TFE instance
-		// Initialize to empty slice to prevent range over nil error
-		effectiveBindings = []*tfe.EffectiveTagBinding{}
-	}
-
-	for _, binding := range effectiveBindings {
+	for _, binding := range workspace.EffectiveTagBindings {
 		effectiveTagBindings[binding.Key] = binding.Value
 	}
 	d.Set("effective_tags", effectiveTagBindings)

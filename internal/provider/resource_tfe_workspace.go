@@ -547,7 +547,9 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 
 	id := d.Id()
 	log.Printf("[DEBUG] Read configuration of workspace: %s", id)
-	workspace, err := config.Client.Workspaces.ReadByID(ctx, id)
+	workspace, err := config.Client.Workspaces.ReadByIDWithOptions(ctx, id, &tfe.WorkspaceReadOptions{
+		Include: []tfe.WSIncludeOpt{tfe.WSEffectiveTagBindings},
+	})
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			log.Printf("[DEBUG] Workspace %s no longer exists", id)
@@ -580,17 +582,8 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	effectiveTagBindings, err := config.Client.Workspaces.ListEffectiveTagBindings(ctx, workspace.ID)
-	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
-		return fmt.Errorf("Error reading effective tag bindings of workspace %s: %w", id, err)
-	}
-	if err != nil {
-		log.Printf("[DEBUG] Workspace %s no longer exists or tag bindings are not supported by this instance", id)
-		effectiveTagBindings = []*tfe.EffectiveTagBinding{}
-	}
-
 	effectiveBindings := make(map[string]interface{})
-	for _, binding := range effectiveTagBindings {
+	for _, binding := range workspace.EffectiveTagBindings {
 		effectiveBindings[binding.Key] = binding.Value
 	}
 

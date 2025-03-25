@@ -9,7 +9,6 @@
 package provider
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -175,6 +174,8 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 	if tf, ok := d.GetOk("tag_filters"); ok {
 		tagFilters := tf.([]interface{})[0].(map[string]interface{})
 
+		options.Include = []tfe.WSIncludeOpt{tfe.WSEffectiveTagBindings}
+
 		if include, ok := tagFilters["include"].(map[string]interface{}); ok {
 			for key, val := range include {
 				// Append the includes to the query to filter the response
@@ -212,15 +213,7 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 				}
 			}
 
-			// Bindings are not included in the response
-			bindings, err := config.Client.Workspaces.ListEffectiveTagBindings(ctx, w.ID)
-			if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
-				return fmt.Errorf("Error reading workspace tag bindings: %w", err)
-			} else if err != nil {
-				bindings = []*tfe.EffectiveTagBinding{}
-			}
-
-			for _, binding := range bindings {
+			for _, binding := range w.EffectiveTagBindings {
 				val, ok := excludeTagBindings[binding.Key]
 				if !ok {
 					continue
