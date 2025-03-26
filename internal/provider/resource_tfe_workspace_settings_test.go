@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
@@ -247,41 +246,35 @@ func TestAccTFEWorkspaceSettingsImport_ByName(t *testing.T) {
 }
 
 func testAccCheckTFEWorkspaceSettingsDestroy(s *terraform.State) error {
-	return testAccCheckTFEWorkspaceSettingsDestroyProvider(testAccProvider)(s)
-}
-
-func testAccCheckTFEWorkspaceSettingsDestroyProvider(_ *schema.Provider) func(s *terraform.State) error {
-	return func(s *terraform.State) error {
-		tfeClient, err := getClientUsingEnv()
-		if err != nil {
-			return err
-		}
-
-		for _, rs := range s.RootModule().Resources {
-			if rs.Type != "tfe_workspace_settings" {
-				continue
-			}
-
-			if rs.Primary.ID == "" {
-				return fmt.Errorf("No instance ID is set")
-			}
-
-			ws, err := tfeClient.Workspaces.ReadByID(ctx, rs.Primary.ID)
-			if err != nil {
-				return fmt.Errorf("Workspace %s does not exist", rs.Primary.ID)
-			}
-
-			if ws.ExecutionMode != "remote" {
-				return fmt.Errorf("expected execution mode to be remote after destroy, but was %s", ws.ExecutionMode)
-			}
-
-			if ws.AgentPool != nil {
-				return errors.New("expected agent pool to be nil after destroy, but wasn't")
-			}
-		}
-
-		return nil
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		return err
 	}
+
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != "tfe_workspace_settings" {
+			continue
+		}
+
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("No instance ID is set")
+		}
+
+		ws, err := tfeClient.Workspaces.ReadByID(ctx, rs.Primary.ID)
+		if err != nil {
+			return fmt.Errorf("Workspace %s does not exist", rs.Primary.ID)
+		}
+
+		if ws.ExecutionMode != "remote" {
+			return fmt.Errorf("expected execution mode to be remote after destroy, but was %s", ws.ExecutionMode)
+		}
+
+		if ws.AgentPool != nil {
+			return errors.New("expected agent pool to be nil after destroy, but wasn't")
+		}
+	}
+
+	return nil
 }
 
 func testAccTFEWorkspaceSettingsUnknownIDRemoteState(orgName string) string {
