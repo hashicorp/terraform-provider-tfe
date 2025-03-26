@@ -72,5 +72,6 @@ example:
 terraform import tfe_policy_set_parameter.test polset-wAs3zYmWAhYK7peR/var-5rTwnSaRPogw6apb
 ```
 
+-> **Note:** Write-Only argument `value_wo` is available to use in place of `value`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
 
-<!-- cache-key: cdktf-0.20.8 input-3d439f538435c91fac393d64ba8c1ac4db8481770f20e794bdb2cde671211a74 -->
+<!-- cache-key: cdktf-0.20.8 input-187122d94383c3f0a1bf8f37a537c91855fb7d3649f9b9c5384c4261bf4b184a -->

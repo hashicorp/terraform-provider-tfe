@@ -25,6 +25,8 @@ ENHANCEMENTS:
 
 * resource/tfe_saml_settings: Add `private_key_wo` write-only attribute, by @uturunku1 ([#1660](https://github.com/hashicorp/terraform-provider-tfe/pull/1660))
 
+* resource/tfe_ssh_key: Add `key_wo` write-only attribute, by @ctrombley ([#1659](https://github.com/hashicorp/terraform-provider-tfe/pull/1659))
+ 
 * resource/tfe_notification_configuration: Add `token_wo` write-only attribute, by @uturunku1 ([#1664](https://github.com/hashicorp/terraform-provider-tfe/pull/1664))
 
 ## v.0.64.0
@@ -39,6 +41,9 @@ BUG FIXES:
 * `r/tfe_stack`: Fix serialization issue when using github app installation within vcs_repo block, by @mjyocca [#1572](https://github.com/hashicorp/terraform-provider-tfe/pull/1572)
 
 * `r/tfe_workspace_settings`: Prevent fetching of all workspaces as the `remote_state_consumer_ids` when `global_remote_state` is set to true, by @uk1288 [#1606](https://github.com/hashicorp/terraform-provider-tfe/pull/1606)
+
+ENHANCEMENTS:
+* **New Ephemeral Resource:** `tfe_outputs` is a new ephemeral resource for retrieving the state version outputs of a workspace without writing sensitive data to the state file, by @ctrombley [#1640](https://github.com/hashicorp/terraform-provider-tfe/pull/1640)
 
 ## v.0.63.0
 

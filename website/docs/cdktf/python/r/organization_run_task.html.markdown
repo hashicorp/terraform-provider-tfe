@@ -62,5 +62,5 @@ import ID. For example:
 ```shell
 terraform import tfe_organization_run_task.test my-org-name/task-name
 ```
-
-<!-- cache-key: cdktf-0.20.8 input-707bd6c45e92501e9b281496a53813c5d762c2e3a9e6a153060c375f160019e6 -->
+-> **Note:** Write-Only argument `hmac_key_wo` is available to use in place of `hmac_key`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
+<!-- cache-key: cdktf-0.20.8 input-91c45f6554a40c95a02a693f26d13fec2e11f5cf24033d1f8864c9e8a25d43be -->
