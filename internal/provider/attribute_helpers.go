@@ -5,16 +5,10 @@ package provider
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-)
-
-const (
-	ValueWOHashedPrivateKey = "value_wo_hashed"
 )
 
 // AttrGettable is a small enabler for helper functions that need to read one
@@ -44,10 +38,4 @@ func (c *ConfiguredClient) dataOrDefaultOrganization(ctx context.Context, data A
 	}
 
 	return diags
-}
-
-func generateSHA256Hash(data string) string {
-	hasher := sha256.New()
-	hasher.Write([]byte(data))
-	return hex.EncodeToString(hasher.Sum(nil))
 }

@@ -119,6 +119,7 @@ func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource
 		NewNoCodeModuleDataSource,
 		NewOrganizationRunTaskDataSource,
 		NewOrganizationRunTaskGlobalSettingsDataSource,
+		NewOutputsDataSource,
 		NewProjectsDataSource,
 		NewRegistryGPGKeyDataSource,
 		NewRegistryGPGKeysDataSource,
@@ -142,6 +143,7 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewResourceVariable,
 		NewResourceWorkspaceSettings,
 		NewSAMLSettingsResource,
+		NewSSHKey,
 		NewStackResource,
 		NewTeamNotificationConfigurationResource,
 		NewTestVariableResource,
@@ -153,6 +155,7 @@ func (p *frameworkProvider) EphemeralResources(ctx context.Context) []func() eph
 	return []func() ephemeral.EphemeralResource{
 		NewAgentTokenEphemeralResource,
 		NewOrganizationTokenEphemeralResource,
+		NewOutputsEphemeralResource,
 		NewTeamTokenEphemeralResource,
 	}
 }
