@@ -403,8 +403,6 @@ func TestAccTFETeamProjectCustomAccess_partial_update_with_project_variable_sets
 func testAccCheckTFETeamProjectAccessExists(
 	n string, tmAccess *tfe.TeamProjectAccess) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("not found: %s", n)
@@ -414,7 +412,7 @@ func testAccCheckTFETeamProjectAccessExists(
 			return fmt.Errorf("no instance ID is set")
 		}
 
-		ta, err := config.Client.TeamProjectAccess.Read(ctx, rs.Primary.ID)
+		ta, err := testAccConfiguredClient.Client.TeamProjectAccess.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("error reading team project access %s: %w", rs.Primary.ID, err)
 		}
@@ -455,8 +453,6 @@ func testAccCheckTFETeamProjectAccessAttributesAccessIs(tmAccess *tfe.TeamProjec
 }
 
 func testAccCheckTFETeamProjectAccessDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_team_project_access" {
 			continue
@@ -466,7 +462,7 @@ func testAccCheckTFETeamProjectAccessDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.TeamProjectAccess.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.TeamProjectAccess.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Team project access %s still exists", rs.Primary.ID)
 		}

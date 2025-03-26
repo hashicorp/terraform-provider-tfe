@@ -115,8 +115,6 @@ func TestAccTFEOPAVersion_full(t *testing.T) {
 }
 
 func testAccCheckTFEOPAVersionDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_opa_version" {
 			continue
@@ -126,7 +124,7 @@ func testAccCheckTFEOPAVersionDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.Admin.OPAVersions.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.Admin.OPAVersions.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("OPA version %s still exists", rs.Primary.ID)
 		}
@@ -137,8 +135,6 @@ func testAccCheckTFEOPAVersionDestroy(s *terraform.State) error {
 
 func testAccCheckTFEOPAVersionExists(n string, opaVersion *tfe.AdminOPAVersion) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -148,7 +144,7 @@ func testAccCheckTFEOPAVersionExists(n string, opaVersion *tfe.AdminOPAVersion) 
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		v, err := config.Client.Admin.OPAVersions.Read(ctx, rs.Primary.ID)
+		v, err := testAccConfiguredClient.Client.Admin.OPAVersions.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}

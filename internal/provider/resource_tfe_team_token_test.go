@@ -175,8 +175,6 @@ func TestAccTFETeamToken_import(t *testing.T) {
 func testAccCheckTFETeamTokenExists(
 	n string, token *tfe.TeamToken) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -186,7 +184,7 @@ func testAccCheckTFETeamTokenExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		tt, err := config.Client.TeamTokens.Read(ctx, rs.Primary.ID)
+		tt, err := testAccConfiguredClient.Client.TeamTokens.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -202,8 +200,6 @@ func testAccCheckTFETeamTokenExists(
 }
 
 func testAccCheckTFETeamTokenDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_team_token" {
 			continue
@@ -213,7 +209,7 @@ func testAccCheckTFETeamTokenDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.TeamTokens.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.TeamTokens.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Team token %s still exists", rs.Primary.ID)
 		}

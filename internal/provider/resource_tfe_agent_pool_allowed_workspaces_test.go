@@ -54,7 +54,6 @@ func TestAccTFEAgentPoolAllowedWorkspaces_create_update(t *testing.T) {
 
 func testAccCheckTFEAgentPoolAllowedWorkspacesExists(resourceName string, allowedWorkspaces *[]string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
 		*allowedWorkspaces = []string{}
 
 		rs, ok := s.RootModule().Resources[resourceName]
@@ -67,7 +66,7 @@ func testAccCheckTFEAgentPoolAllowedWorkspacesExists(resourceName string, allowe
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		agentPool, err := config.Client.AgentPools.Read(ctx, rs.Primary.ID)
+		agentPool, err := testAccConfiguredClient.Client.AgentPools.Read(ctx, rs.Primary.ID)
 		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 			return fmt.Errorf("error while fetching agent pool: %w", err)
 		}
@@ -86,8 +85,6 @@ func testAccCheckTFEAgentPoolAllowedWorkspacesExists(resourceName string, allowe
 
 func testAccCheckTFEAgentPoolAllowedWorkspacesNotExists(resourceName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[resourceName]
 		if !ok {
 			return fmt.Errorf("Not found: %s", resourceName)
@@ -98,7 +95,7 @@ func testAccCheckTFEAgentPoolAllowedWorkspacesNotExists(resourceName string) res
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		agentPool, err := config.Client.AgentPools.Read(ctx, rs.Primary.ID)
+		agentPool, err := testAccConfiguredClient.Client.AgentPools.Read(ctx, rs.Primary.ID)
 		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 			return fmt.Errorf("error while fetching agent pool: %w", err)
 		}

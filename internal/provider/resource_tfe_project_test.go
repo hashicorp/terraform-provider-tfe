@@ -234,8 +234,6 @@ resource "tfe_project" "foobar" {
 }
 
 func testAccCheckTFEProjectDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_project" {
 			continue
@@ -245,7 +243,7 @@ func testAccCheckTFEProjectDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.Projects.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.Projects.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Project %s still exists", rs.Primary.ID)
 		}
@@ -256,8 +254,6 @@ func testAccCheckTFEProjectDestroy(s *terraform.State) error {
 
 func testAccCheckTFEProjectExists(n string, project *tfe.Project) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -267,7 +263,7 @@ func testAccCheckTFEProjectExists(n string, project *tfe.Project) resource.TestC
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		p, err := config.Client.Projects.Read(ctx, rs.Primary.ID)
+		p, err := testAccConfiguredClient.Client.Projects.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("unable to read project with ID %s", project.ID)
 		}

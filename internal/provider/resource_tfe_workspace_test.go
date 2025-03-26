@@ -2246,15 +2246,13 @@ func testAccCheckTFEWorkspaceExists(n string, workspace *tfe.Workspace) resource
 // resource_tfe_workspace.go:208 resourceTFEWorkspaceRead(...)
 func testAccCheckTFEWorkspacePanic(n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		// Grab the resource out of the state and delete it from HCP Terraform and Terraform Enterprise directly.
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
 		}
 
-		err := config.Client.Workspaces.DeleteByID(ctx, rs.Primary.ID)
+		err := testAccConfiguredClient.Client.Workspaces.DeleteByID(ctx, rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("Could not delete %s: %w", n, err)
 		}
@@ -2381,9 +2379,7 @@ func testAccCheckTFEWorkspaceMonorepoAttributes(
 
 func testAccCheckTFEWorkspaceRename(orgName string) func() {
 	return func() {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
-		w, err := config.Client.Workspaces.Update(
+		w, err := testAccConfiguredClient.Client.Workspaces.Update(
 			context.Background(),
 			orgName,
 			"workspace-test",

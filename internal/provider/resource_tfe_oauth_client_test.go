@@ -137,8 +137,6 @@ func TestAccTFEOAuthClient_agentPool(t *testing.T) {
 func testAccCheckTFEOAuthClientExists(
 	n string, oc *tfe.OAuthClient) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -148,7 +146,7 @@ func testAccCheckTFEOAuthClientExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		client, err := config.Client.OAuthClients.Read(ctx, rs.Primary.ID)
+		client, err := testAccConfiguredClient.Client.OAuthClients.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -179,8 +177,6 @@ func testAccCheckTFEOAuthClientAttributes(
 }
 
 func testAccCheckTFEOAuthClientDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_oauth_client" {
 			continue
@@ -190,7 +186,7 @@ func testAccCheckTFEOAuthClientDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.OAuthClients.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.OAuthClients.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("OAuth client %s still exists", rs.Primary.ID)
 		}

@@ -460,8 +460,6 @@ func TestAccTFEVariable_rewrite(t *testing.T) {
 func testAccCheckTFEVariableExists(
 	n string, variable *tfe.Variable) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -472,13 +470,13 @@ func testAccCheckTFEVariableExists(
 		}
 
 		wsID := rs.Primary.Attributes["workspace_id"]
-		ws, err := config.Client.Workspaces.ReadByID(ctx, wsID)
+		ws, err := testAccConfiguredClient.Client.Workspaces.ReadByID(ctx, wsID)
 		if err != nil {
 			return fmt.Errorf(
 				"Error retrieving workspace %s: %w", wsID, err)
 		}
 
-		v, err := config.Client.Variables.Read(ctx, ws.ID, rs.Primary.ID)
+		v, err := testAccConfiguredClient.Client.Variables.Read(ctx, ws.ID, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -492,8 +490,6 @@ func testAccCheckTFEVariableExists(
 func testAccCheckTFEVariableSetVariableExists(
 	n string, variable *tfe.VariableSetVariable) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -504,13 +500,13 @@ func testAccCheckTFEVariableSetVariableExists(
 		}
 
 		vsID := rs.Primary.Attributes["variable_set_id"]
-		vs, err := config.Client.VariableSets.Read(ctx, vsID, nil)
+		vs, err := testAccConfiguredClient.Client.VariableSets.Read(ctx, vsID, nil)
 		if err != nil {
 			return fmt.Errorf(
 				"Error retrieving variable set %s: %w", vsID, err)
 		}
 
-		v, err := config.Client.VariableSetVariables.Read(ctx, vs.ID, rs.Primary.ID)
+		v, err := testAccConfiguredClient.Client.VariableSetVariables.Read(ctx, vs.ID, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -657,8 +653,6 @@ func testAccCheckTFEVariableIDsNotEqual(
 }
 
 func testAccCheckTFEVariableDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_variable" {
 			continue
@@ -668,7 +662,7 @@ func testAccCheckTFEVariableDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.Variables.Read(ctx, rs.Primary.Attributes["workspace_id"], rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.Variables.Read(ctx, rs.Primary.Attributes["workspace_id"], rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Variable %s still exists", rs.Primary.ID)
 		}

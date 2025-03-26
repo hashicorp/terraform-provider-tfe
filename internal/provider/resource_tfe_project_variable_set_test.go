@@ -59,8 +59,6 @@ func TestAccTFEProjectVariableSet_basic(t *testing.T) {
 
 func testAccCheckTFEProjectVariableSetExists(n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -76,7 +74,7 @@ func testAccCheckTFEProjectVariableSetExists(n string) resource.TestCheckFunc {
 			return fmt.Errorf("error decoding ID (%s): %w", id, err)
 		}
 
-		vS, err := config.Client.VariableSets.Read(ctx, vSID, &tfe.VariableSetReadOptions{
+		vS, err := testAccConfiguredClient.Client.VariableSets.Read(ctx, vSID, &tfe.VariableSetReadOptions{
 			Include: &[]tfe.VariableSetIncludeOpt{tfe.VariableSetProjects},
 		})
 		if err != nil {
@@ -93,8 +91,6 @@ func testAccCheckTFEProjectVariableSetExists(n string) resource.TestCheckFunc {
 }
 
 func testAccCheckTFEProjectVariableSetDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_variable_set" {
 			continue
@@ -104,7 +100,7 @@ func testAccCheckTFEProjectVariableSetDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.VariableSets.Read(ctx, rs.Primary.ID, nil)
+		_, err := testAccConfiguredClient.Client.VariableSets.Read(ctx, rs.Primary.ID, nil)
 		if err == nil {
 			return fmt.Errorf("Variable Set %s still exists", rs.Primary.ID)
 		}

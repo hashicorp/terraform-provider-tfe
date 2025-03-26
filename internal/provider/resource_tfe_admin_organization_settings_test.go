@@ -121,7 +121,6 @@ resource "tfe_admin_organization_settings" "settings" {
 
 func deleteOrganization(name string) func() {
 	return func() {
-		client := testAccProvider.Meta().(ConfiguredClient).Client
-		client.Organizations.Delete(context.Background(), name)
+		testAccConfiguredClient.Client.Organizations.Delete(context.Background(), name)
 	}
 }

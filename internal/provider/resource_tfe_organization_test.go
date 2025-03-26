@@ -265,8 +265,6 @@ func TestAccTFEOrganization_import(t *testing.T) {
 func testAccCheckTFEOrganizationExists(
 	n string, org *tfe.Organization) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -276,7 +274,7 @@ func testAccCheckTFEOrganizationExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		o, err := config.Client.Organizations.Read(ctx, rs.Primary.ID)
+		o, err := testAccConfiguredClient.Client.Organizations.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -381,8 +379,6 @@ func testAccCheckTFEOrganizationAttributesUpdated(
 }
 
 func testAccCheckTFEOrganizationDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_organization" {
 			continue
@@ -392,7 +388,7 @@ func testAccCheckTFEOrganizationDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.Organizations.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.Organizations.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Organization %s still exists", rs.Primary.ID)
 		}
