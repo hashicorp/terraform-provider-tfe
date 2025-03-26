@@ -47,6 +47,40 @@ func TestAccTFENotificationConfiguration_basic(t *testing.T) {
 	})
 }
 
+func TestAccTFENotificationConfiguration_WriteOnly(t *testing.T) {
+	notificationConfiguration := &tfe.NotificationConfiguration{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFENotificationConfiguration_tokenAndTokenWriteOnly(rInt),
+				ExpectError: regexp.MustCompile(`Attribute "token_wo" cannot be specified when "token" is specified`),
+			},
+			{
+				Config: testAccTFENotificationConfiguration_tokenWriteOnly(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFENotificationConfigurationExists(
+						"tfe_notification_configuration.foobar", notificationConfiguration),
+					testAccCheckTFENotificationConfigurationAttributes(notificationConfiguration),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "destination_type", "generic"),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "name", "notification_basic"),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "triggers.#", "0"),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "url", runTasksURL()),
+					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "token_wo"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFENotificationConfiguration_emailUserIDs(t *testing.T) {
 	notificationConfiguration := &tfe.NotificationConfiguration{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -811,6 +845,49 @@ resource "tfe_workspace" "foobar" {
 resource "tfe_notification_configuration" "foobar" {
   name             = "notification_basic"
   destination_type = "generic"
+  url              = "%s"
+  workspace_id     = tfe_workspace.foobar.id
+}`, rInt, runTasksURL())
+}
+
+func testAccTFENotificationConfiguration_tokenWriteOnly(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name             = "notification_basic"
+  destination_type = "generic"
+  token			   = "some-token"
+  url              = "%s"
+  workspace_id     = tfe_workspace.foobar.id
+}`, rInt, runTasksURL())
+}
+
+func testAccTFENotificationConfiguration_tokenAndTokenWriteOnly(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name             = "notification_basic"
+  destination_type = "generic"
+  token 		   = "some-token"
+  token_wo		   = "some-token"
   url              = "%s"
   workspace_id     = tfe_workspace.foobar.id
 }`, rInt, runTasksURL())

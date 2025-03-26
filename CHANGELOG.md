@@ -25,6 +25,8 @@ ENHANCEMENTS:
 
 * resource/tfe_saml_settings: Add `private_key_wo` write-only attribute, by @uturunku1 ([#1660](https://github.com/hashicorp/terraform-provider-tfe/pull/1660))
 
+* resource/tfe_notification_configuration: Add `token_wo` write-only attribute, by @uturunku1 ([#1664](https://github.com/hashicorp/terraform-provider-tfe/pull/1664))
+
 ## v.0.64.0
 
 FEATURES:

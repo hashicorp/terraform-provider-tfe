@@ -21,6 +21,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/planmodifiers"
 	"github.com/hashicorp/terraform-provider-tfe/internal/provider/validators"
 )
 
@@ -48,13 +50,14 @@ type modelTFENotificationConfiguration struct {
 	EmailUserIDs    types.Set    `tfsdk:"email_user_ids"`
 	Enabled         types.Bool   `tfsdk:"enabled"`
 	Token           types.String `tfsdk:"token"`
+	TokenWO         types.String `tfsdk:"token_wo"`
 	Triggers        types.Set    `tfsdk:"triggers"`
 	URL             types.String `tfsdk:"url"`
 	WorkspaceID     types.String `tfsdk:"workspace_id"`
 }
 
 // modelFromTFENotificationConfiguration builds a modelTFENotificationConfiguration struct from a tfe.NotificationConfiguration value.
-func modelFromTFENotificationConfiguration(v *tfe.NotificationConfiguration) (modelTFENotificationConfiguration, diag.Diagnostics) {
+func modelFromTFENotificationConfiguration(v *tfe.NotificationConfiguration, isWriteOnlyValue bool) (modelTFENotificationConfiguration, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	result := modelTFENotificationConfiguration{
 		ID:              types.StringValue(v.ID),
@@ -98,6 +101,10 @@ func modelFromTFENotificationConfiguration(v *tfe.NotificationConfiguration) (mo
 
 	if v.Token != "" {
 		result.Token = types.StringValue(v.Token)
+	}
+	// Don't retrieve values if write-only is being used. Unset the value and readable_value fields before updating the state.
+	if isWriteOnlyValue {
+		result.Token = types.StringNull()
 	}
 
 	if v.URL != "" {
@@ -196,7 +203,6 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
 			},
-
 			"token": schema.StringAttribute{
 				Description: "A write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Defaults to `null`. This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.",
 				Optional:    true,
@@ -206,9 +212,21 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 						"destination_type",
 						[]string{"email", "microsoft-teams", "slack"},
 					),
+					stringvalidator.ConflictsWith(path.MatchRoot("token_wo")),
 				},
 			},
-
+			"token_wo": schema.StringAttribute{
+				Optional:    true,
+				WriteOnly:   true,
+				Sensitive:   true,
+				Description: "Value of the token in write-only mode",
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRoot("token")),
+				},
+				PlanModifiers: []planmodifier.String{
+					planmodifiers.NewReplaceForWriteOnlyStringValue("token_wo"),
+				},
+			},
 			"triggers": schema.SetAttribute{
 				Description: "The array of triggers for which this notification configuration will send notifications. If omitted, no notification triggers are configured.",
 				Optional:    true,
@@ -264,11 +282,15 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 
 // Create implements resource.Resource
 func (r *resourceTFENotificationConfiguration) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan modelTFENotificationConfiguration
-
+	var plan, config modelTFENotificationConfiguration
 	// Read Terraform plan data into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
+	diags := req.Config.Get(ctx, &config)
+	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -280,11 +302,17 @@ func (r *resourceTFENotificationConfiguration) Create(ctx context.Context, req r
 		DestinationType: tfe.NotificationDestination(tfe.NotificationDestinationType(plan.DestinationType.ValueString())),
 		Enabled:         plan.Enabled.ValueBoolPointer(),
 		Name:            plan.Name.ValueStringPointer(),
-		Token:           plan.Token.ValueStringPointer(),
 		URL:             plan.URL.ValueStringPointer(),
 		SubscribableChoice: &tfe.NotificationConfigurationSubscribableChoice{
 			Workspace: &tfe.Workspace{ID: workspaceID},
 		},
+	}
+
+	// Set Value from `token_wo` if set, otherwise use the normal value
+	if !config.TokenWO.IsNull() {
+		options.Token = config.TokenWO.ValueStringPointer()
+	} else {
+		options.Token = plan.Token.ValueStringPointer()
 	}
 
 	// Add triggers set to the options struct
@@ -336,9 +364,17 @@ func (r *resourceTFENotificationConfiguration) Create(ctx context.Context, req r
 		nc.Token = plan.Token.ValueString()
 	}
 
-	result, diags := modelFromTFENotificationConfiguration(nc)
+	// We got a notification, so set state to new values
+	result, diags := modelFromTFENotificationConfiguration(nc, !config.TokenWO.IsNull())
 	if diags != nil && diags.HasError() {
 		resp.Diagnostics.Append((diags)...)
+		return
+	}
+
+	// Store the hashed write-only value in the private state
+	store := r.writeOnlyValueStore(resp.Private)
+	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.TokenWO)...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -368,7 +404,13 @@ func (r *resourceTFENotificationConfiguration) Read(ctx context.Context, req res
 		nc.Token = state.Token.ValueString()
 	}
 
-	result, diags := modelFromTFENotificationConfiguration(nc)
+	isWriteOnly, diags := r.writeOnlyValueStore(resp.Private).PriorValueExists(ctx)
+	resp.Diagnostics.Append(diags...)
+	if diags.HasError() {
+		return
+	}
+
+	result, diags := modelFromTFENotificationConfiguration(nc, isWriteOnly)
 	if diags != nil && diags.HasError() {
 		resp.Diagnostics.Append((diags)...)
 		return
@@ -380,15 +422,19 @@ func (r *resourceTFENotificationConfiguration) Read(ctx context.Context, req res
 
 // Update implements resource.Resource
 func (r *resourceTFENotificationConfiguration) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan modelTFENotificationConfiguration
-	var state modelTFENotificationConfiguration
-
+	var plan, state, config modelTFENotificationConfiguration
 	// Read Terraform plan data into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	// Read Terraform prior state data into the model
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	// Read configuration data into the model
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -449,7 +495,14 @@ func (r *resourceTFENotificationConfiguration) Update(ctx context.Context, req r
 		nc.Token = plan.Token.ValueString()
 	}
 
-	result, diags := modelFromTFENotificationConfiguration(nc)
+	// Store the hashed write-only value in the private state
+	store := r.writeOnlyValueStore(resp.Private)
+	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.TokenWO)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	result, diags := modelFromTFENotificationConfiguration(nc, !config.TokenWO.IsNull())
 	if diags != nil && diags.HasError() {
 		resp.Diagnostics.Append((diags)...)
 		return
@@ -479,4 +532,8 @@ func (r *resourceTFENotificationConfiguration) Delete(ctx context.Context, req r
 
 func (r *resourceTFENotificationConfiguration) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
+}
+
+func (r *resourceTFENotificationConfiguration) writeOnlyValueStore(private helpers.PrivateState) *helpers.WriteOnlyValueStore {
+	return helpers.NewWriteOnlyValueStore(private, "token_wo")
 }
