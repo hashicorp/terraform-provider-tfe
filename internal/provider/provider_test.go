@@ -25,25 +25,19 @@ import (
 )
 
 var (
-	testAccProviders        map[string]*schema.Provider
-	testAccProvider         *schema.Provider
 	testAccMuxedProviders   map[string]func() (tfprotov5.ProviderServer, error)
 	testAccConfiguredClient *ConfiguredClient
 )
 
 func init() {
-	testAccProvider = Provider()
-
-	testAccProviders = map[string]*schema.Provider{
-		"tfe": testAccProvider,
-	}
 	testAccMuxedProviders = map[string]func() (tfprotov5.ProviderServer, error){
 		"tfe": func() (tfprotov5.ProviderServer, error) {
 			ctx := context.Background()
 			nextProvider := providerserver.NewProtocol5(NewFrameworkProvider())
 
+			sdkProvider := Provider()
 			mux, err := tf5muxserver.NewMuxServer(
-				ctx, nextProvider, testAccProvider.GRPCProvider,
+				ctx, nextProvider, sdkProvider.GRPCProvider,
 			)
 			if err != nil {
 				return nil, err
@@ -51,25 +45,6 @@ func init() {
 
 			return mux.ProviderServer(), nil
 		},
-	}
-}
-
-func providerWithDefaultOrganization(defaultOrgName string) map[string]*schema.Provider {
-	testAccProviderDefaultOrganization := Provider()
-	testAccProviderDefaultOrganization.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
-		client, err := getClientUsingEnv()
-		cc := ConfiguredClient{
-			Client:       client,
-			Organization: defaultOrgName,
-		}
-
-		// Save a reference to the configured client instance for use in tests.
-		testAccConfiguredClient = &cc
-
-		return cc, diag.FromErr(err)
-	}
-	return map[string]*schema.Provider{
-		"tfe": testAccProviderDefaultOrganization,
 	}
 }
 
@@ -95,8 +70,9 @@ func muxedProvidersWithDefaultOrganization(defaultOrgName string) map[string]fun
 				NewFrameworkProviderWithDefaultOrg(defaultOrgName),
 			)
 
+			sdkProvider := Provider()
 			mux, err := tf5muxserver.NewMuxServer(
-				ctx, nextProvider, testAccProvider.GRPCProvider,
+				ctx, nextProvider, sdkProvider.GRPCProvider,
 			)
 			if err != nil {
 				return nil, err
