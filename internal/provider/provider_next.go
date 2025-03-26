@@ -19,7 +19,9 @@ import (
 // frameworkProvider is a type that implements the terraform-plugin-framework
 // provider.Provider interface. Someday, this will probably encompass the entire
 // behavior of the tfe provider. Today, it is a small but growing subset.
-type frameworkProvider struct{}
+type frameworkProvider struct {
+	defaultOrgName *string
+}
 
 // Compile-time interface check
 var _ provider.Provider = &frameworkProvider{}
@@ -38,6 +40,12 @@ type FrameworkProviderConfig struct {
 // the tfe provider implemented via the terraform-plugin-framework.
 func NewFrameworkProvider() provider.Provider {
 	return &frameworkProvider{}
+}
+
+// NewFrameworkProviderWithDefaultOrg is a helper function for
+// initializing a framework provider with a default organization name.
+func NewFrameworkProviderWithDefaultOrg(defaultOrgName string) provider.Provider {
+	return &frameworkProvider{defaultOrgName: &defaultOrgName}
 }
 
 // Metadata (a Provider interface function) lets the provider identify itself.
@@ -95,6 +103,12 @@ func (p *frameworkProvider) Configure(ctx context.Context, req provider.Configur
 		// Falling back to Getenv will collapse the new type system's handling
 		// of null/unknown into a plain zero-value, but that's OK at this point.
 		data.Organization = types.StringValue(os.Getenv("TFE_ORGANIZATION"))
+
+		// Override if a default was passed to NewFrameworkProviderWithDefaultOrg.
+		// This is primarily for acceptance testing purposes.
+		if p.defaultOrgName != nil {
+			data.Organization = types.StringValue(*p.defaultOrgName)
+		}
 	}
 
 	tfeClient, err := client.GetClient(data.Hostname.ValueString(), data.Token.ValueString(), data.SSLSkipVerify.ValueBool())
