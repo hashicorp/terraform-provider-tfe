@@ -36,6 +36,18 @@ func init() {
 			nextProvider := providerserver.NewProtocol5(NewFrameworkProvider())
 
 			sdkProvider := Provider()
+			sdkProvider.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
+				client, err := getClientUsingEnv()
+				cc := ConfiguredClient{
+					Client: client,
+				}
+
+				// Save a reference to the configured client instance for use in tests.
+				testAccConfiguredClient = &cc
+
+				return cc, diag.FromErr(err)
+			}
+
 			mux, err := tf5muxserver.NewMuxServer(
 				ctx, nextProvider, sdkProvider.GRPCProvider,
 			)
