@@ -1,5 +1,8 @@
 ## Unreleased
 
+* **New Data Source:** `tfe_registry_module` is a new data source for finding
+  registry modules by @drewmullen and @danquack [#1667]https://github.com/hashicorp/terraform-provider-tfe/pull/1667
+
 FEATURES:
 
 * **New Ephemeral Resource:** `tfe_audit_trail_token` is a new ephemeral resource for creating and managing audit trail tokens, by @uturunku1 [#1675](https://github.com/hashicorp/terraform-provider-tfe/pull/1675)
