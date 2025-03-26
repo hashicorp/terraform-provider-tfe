@@ -38,8 +38,7 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", workspaceName),
@@ -102,8 +101,7 @@ func TestAccTFEWorkspace_defaultOrg(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_defaultOrg(),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", &workspace, providers["tfe"]),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &workspace),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "organization", defaultOrgName),
 				),
 			},
@@ -137,8 +135,7 @@ func TestAccTFEWorkspaceProviderDefaultOrgChanged(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_defaultOrg(),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, providers["tfe"]),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "organization", defaultOrgName),
 				),
 			},
@@ -174,8 +171,7 @@ func TestAccTFEWorkspace_basicReadProjectId(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttrPair("tfe_workspace.foobar", "project_id", "tfe_organization.foobar", "default_project_id"),
 				),
 			},
@@ -195,8 +191,7 @@ func TestAccTFEWorkspace_customProject(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_orgProjectWorkspace(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttrPair("tfe_workspace.foobar", "project_id", "tfe_project.foobar", "id"),
 				),
 			},
@@ -272,8 +267,7 @@ func TestAccTFEWorkspace_panic(t *testing.T) {
 				Config:             testAccTFEWorkspace_basic(rInt),
 				ExpectNonEmptyPlan: true,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
 					testAccCheckTFEWorkspacePanic("tfe_workspace.foobar"),
 				),
 			},
@@ -293,8 +287,7 @@ func TestAccTFEWorkspace_monorepo(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_monorepo(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceMonorepoAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-monorepo"),
@@ -329,8 +322,7 @@ func TestAccTFEWorkspace_renamed(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-test"),
@@ -357,8 +349,7 @@ func TestAccTFEWorkspace_renamed(t *testing.T) {
 					},
 				},
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "renamed-out-of-band"),
 					resource.TestCheckResourceAttr(
@@ -391,8 +382,7 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-test"),
@@ -412,8 +402,7 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_update(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributesUpdated(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-updated"),
@@ -456,8 +445,7 @@ func TestAccTFEWorkspace_updateWorkingDirectory(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-test"),
@@ -474,8 +462,7 @@ func TestAccTFEWorkspace_updateWorkingDirectory(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateAddWorkingDirectory(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributesUpdatedAddWorkingDirectory(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-updated"),
@@ -486,8 +473,7 @@ func TestAccTFEWorkspace_updateWorkingDirectory(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateRemoveWorkingDirectory(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributesUpdatedRemoveWorkingDirectory(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-updated"),
@@ -511,8 +497,7 @@ func TestAccTFEWorkspace_updateProject(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_orgProjectWorkspace(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttrPair("tfe_workspace.foobar", "project_id", "tfe_project.foobar", "id"),
 				),
 			},
@@ -536,8 +521,7 @@ func TestAccTFEWorkspace_updateFileTriggers(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "file_triggers_enabled", "true"),
 				),
@@ -546,8 +530,7 @@ func TestAccTFEWorkspace_updateFileTriggers(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basicFileTriggersOff(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "file_triggers_enabled", "false"),
 				),
@@ -568,8 +551,7 @@ func TestAccTFEWorkspace_updateTriggerPrefixes(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_triggerPrefixes(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "trigger_prefixes.#", "2"),
 					resource.TestCheckResourceAttr(
@@ -582,8 +564,7 @@ func TestAccTFEWorkspace_updateTriggerPrefixes(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateEmptyTriggerPrefixes(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
@@ -605,8 +586,7 @@ func TestAccTFEWorkspace_overwriteTriggerPatternsWithPrefixes(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_triggerPatterns(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "trigger_patterns.#", "2"),
 					resource.TestCheckResourceAttr(
@@ -616,8 +596,7 @@ func TestAccTFEWorkspace_overwriteTriggerPatternsWithPrefixes(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_triggerPrefixes(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "trigger_prefixes.#", "2"),
 					resource.TestCheckResourceAttr(
@@ -631,8 +610,7 @@ func TestAccTFEWorkspace_overwriteTriggerPatternsWithPrefixes(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateEmptyTriggerPrefixes(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
@@ -665,8 +643,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							true, `["/pattern1", "/pattern2"]`,
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_patterns.#", "2"),
 						),
@@ -679,8 +656,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							false, "",
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
 							resource.TestCheckResourceAttr(
@@ -706,8 +682,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							true, `["/pattern1", "/pattern2"]`,
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_patterns.#", "2"),
 						),
@@ -720,8 +695,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							false, "",
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_prefixes.#", "1"),
 							resource.TestCheckResourceAttr(
@@ -749,8 +723,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							false, "",
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_prefixes.#", "1"),
 							resource.TestCheckResourceAttr(
@@ -790,8 +763,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							false, "",
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_prefixes.#", "1"),
 							resource.TestCheckResourceAttr(
@@ -829,8 +801,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							true, `["/pattern1", "/pattern2"]`,
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_patterns.#", "2"),
 						),
@@ -843,8 +814,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							false, "",
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
 							resource.TestCheckResourceAttr(
@@ -870,8 +840,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							true, `["/pattern1", "/pattern2"]`,
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_patterns.#", "2"),
 						),
@@ -884,8 +853,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							false, "",
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_prefixes.#", "1"),
 							resource.TestCheckResourceAttr(
@@ -913,8 +881,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							false, "",
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_prefixes.#", "2"),
 						),
@@ -927,8 +894,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							true, `["/patterns1", "/patterns2", "/patterns3"]`,
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_patterns.#", "3"),
 							resource.TestCheckResourceAttr(
@@ -958,8 +924,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							false, "",
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_prefixes.#", "1"),
 							resource.TestCheckResourceAttr(
@@ -1044,8 +1009,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							false, "",
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_prefixes.#", "2"),
 							resource.TestCheckResourceAttr(
@@ -1074,8 +1038,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							true, `["/pattern1", "/pattern2"]`,
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
 							resource.TestCheckResourceAttr(
@@ -1090,8 +1053,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							false, "",
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_prefixes.#", "3"),
 							resource.TestCheckResourceAttr(
@@ -1106,8 +1068,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							false, "[]",
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_prefixes.#", "1"),
 							resource.TestCheckResourceAttr(
@@ -1122,8 +1083,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							false, "",
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
 							resource.TestCheckResourceAttr(
@@ -1196,8 +1156,7 @@ func TestAccTFEWorkspace_updateTriggerPatterns(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_triggerPatterns(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "trigger_patterns.#", "2"),
 					resource.TestCheckResourceAttr(
@@ -1212,8 +1171,7 @@ func TestAccTFEWorkspace_updateTriggerPatterns(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateTriggerPatterns(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "trigger_patterns.#", "3"),
 					resource.TestCheckResourceAttr(
@@ -1229,7 +1187,7 @@ func TestAccTFEWorkspace_updateTriggerPatterns(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateEmptyTriggerPatterns(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "trigger_patterns.#", "0"),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "trigger_prefixes.#", "0"),
@@ -1272,8 +1230,7 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 				// create with 2 tags
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "tag_names.#", "2"),
 					resource.TestCheckResourceAttr(
@@ -1286,8 +1243,7 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 				// remove 1
 				Config: testAccTFEWorkspace_basicRemoveTag(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "tag_names.#", "1"),
 					resource.TestCheckResourceAttr(
@@ -1298,8 +1254,7 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 				// add 1
 				Config: testAccTFEWorkspace_basicChangeTags(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "tag_names.#", "2"),
 					resource.TestCheckResourceAttr(
@@ -1312,8 +1267,7 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 				// remove 1 again
 				Config: testAccTFEWorkspace_basicRemoveTag(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "tag_names.#", "1"),
 					resource.TestCheckResourceAttr(
@@ -1324,8 +1278,7 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 				// change unrelated attr
 				Config: testAccTFEWorkspace_basicRemoveTagAlt(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "tag_names.#", "1"),
 					resource.TestCheckResourceAttr(
@@ -1336,8 +1289,7 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 				// remove 1, add 2
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "tag_names.#", "2"),
 					resource.TestCheckResourceAttr(
@@ -1350,8 +1302,7 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 				// remove all
 				Config: testAccTFEWorkspace_basicNoTags(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "tag_names.#", "0"),
 				),
@@ -1360,8 +1311,7 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 				// add 2
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "tag_names.#", "2"),
 					resource.TestCheckResourceAttr(
@@ -1388,8 +1338,7 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 				},
 				Config: testAccTFEWorkspace_ignoreAdditional(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "tag_names.#", "2"),
 					resource.TestCheckTypeSetElemAttr(
@@ -1429,8 +1378,7 @@ func TestAccTFEWorkspace_updateSpeculative(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "speculative_enabled", "true"),
 				),
@@ -1439,8 +1387,7 @@ func TestAccTFEWorkspace_updateSpeculative(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basicSpeculativeOff(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "speculative_enabled", "false"),
 				),
@@ -1461,8 +1408,7 @@ func TestAccTFEWorkspace_structuredRunOutputDisabled(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "structured_run_output_enabled", "true"),
 				),
@@ -1471,8 +1417,7 @@ func TestAccTFEWorkspace_structuredRunOutputDisabled(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateStructuredRunOutput(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "structured_run_output_enabled", "false"),
 				),
@@ -1496,8 +1441,7 @@ func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basicForceDeleteEnabled(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-test"),
@@ -1514,7 +1458,7 @@ func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateAddVCSRepo(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceUpdatedAddVCSRepoAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-add-vcs-repo"),
@@ -1531,7 +1475,7 @@ func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateUpdateVCSRepoBranch(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceUpdatedUpdateVCSRepoBranchAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-update-vcs-repo-branch"),
@@ -1546,7 +1490,7 @@ func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateRemoveVCSRepo(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceUpdatedRemoveVCSRepoAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-remove-vcs-repo"),
@@ -1573,8 +1517,7 @@ func TestAccTFEWorkspace_updateGitHubAppRepo(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basicForceDeleteEnabled(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-test"),
@@ -1591,7 +1534,7 @@ func TestAccTFEWorkspace_updateGitHubAppRepo(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateAddGitHubAppRepo(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceUpdatedAddVCSRepoAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-add-vcs-repo"),
@@ -1608,7 +1551,7 @@ func TestAccTFEWorkspace_updateGitHubAppRepo(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateUpdateGitHubAppRepoBranch(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceUpdatedUpdateVCSRepoBranchAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-update-vcs-repo-branch"),
@@ -1623,7 +1566,7 @@ func TestAccTFEWorkspace_updateGitHubAppRepo(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateRemoveVCSRepo(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceUpdatedRemoveVCSRepoAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-remove-vcs-repo"),
@@ -1650,7 +1593,7 @@ func TestAccTFEWorkspace_updateVCSRepoTagsRegex(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateUpdateVCSRepoTagsRegex(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-update-vcs-repo-tags-regex"),
 					resource.TestCheckResourceAttr(
@@ -1668,7 +1611,7 @@ func TestAccTFEWorkspace_updateVCSRepoTagsRegex(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateRemoveVCSRepoTagsRegex(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-update-vcs-repo-tags-regex"),
 					resource.TestCheckResourceAttr(
@@ -1702,7 +1645,7 @@ func TestAccTFEWorkspace_updateVCSRepoChangeTagRegexToTriggerPattern(t *testing.
 			{
 				Config: testAccTFEWorkspace_updateUpdateVCSRepoTagsRegex(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-update-vcs-repo-tags-regex"),
 					resource.TestCheckResourceAttr(
@@ -1720,7 +1663,7 @@ func TestAccTFEWorkspace_updateVCSRepoChangeTagRegexToTriggerPattern(t *testing.
 			{
 				Config: testAccTFEWorkspace_updateToTriggerPatternsFromTagsRegex(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-update-vcs-repo-tags-regex"),
 					resource.TestCheckResourceAttr(
@@ -1754,7 +1697,7 @@ func TestAccTFEWorkspace_updateRemoveVCSRepoWithTagsRegex(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateUpdateVCSRepoTagsRegex(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-update-vcs-repo-tags-regex"),
 					resource.TestCheckResourceAttr(
@@ -1772,7 +1715,7 @@ func TestAccTFEWorkspace_updateRemoveVCSRepoWithTagsRegex(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateRemoveVCSBlockFromTagsRegex(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-update-vcs-repo-tags-regex"),
 					resource.TestCheckResourceAttr(
@@ -1797,8 +1740,7 @@ func TestAccTFEWorkspace_sshKey(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 				),
 			},
@@ -1806,8 +1748,7 @@ func TestAccTFEWorkspace_sshKey(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_sshKey(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributesSSHKey(workspace),
 					resource.TestCheckResourceAttrSet(
 						"tfe_workspace.foobar", "ssh_key_id"),
@@ -1817,8 +1758,7 @@ func TestAccTFEWorkspace_sshKey(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_noSSHKey(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 				),
 			},
@@ -1870,7 +1810,7 @@ func TestAccTFEWorkspace_importVCSBranch(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateUpdateVCSRepoBranch(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceUpdatedUpdateVCSRepoBranchAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-update-vcs-repo-branch"),
@@ -1935,8 +1875,7 @@ func TestAccTFEWorkspace_operationsAndExecutionModeInteroperability(t *testing.T
 			{
 				Config: testAccTFEWorkspace_operationsTrue(org.Name),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "operations", "true"),
 					resource.TestCheckResourceAttr(
@@ -1948,8 +1887,7 @@ func TestAccTFEWorkspace_operationsAndExecutionModeInteroperability(t *testing.T
 			{
 				Config: testAccTFEWorkspace_executionModeLocal(org.Name),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "operations", "false"),
 					resource.TestCheckResourceAttr(
@@ -1961,8 +1899,7 @@ func TestAccTFEWorkspace_operationsAndExecutionModeInteroperability(t *testing.T
 			{
 				Config: testAccTFEWorkspace_operationsFalse(org.Name),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "operations", "false"),
 					resource.TestCheckResourceAttr(
@@ -1974,8 +1911,7 @@ func TestAccTFEWorkspace_operationsAndExecutionModeInteroperability(t *testing.T
 			{
 				Config: testAccTFEWorkspace_executionModeRemote(org.Name),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "operations", "true"),
 					resource.TestCheckResourceAttr(
@@ -1987,8 +1923,7 @@ func TestAccTFEWorkspace_operationsAndExecutionModeInteroperability(t *testing.T
 			{
 				Config: testAccTFEWorkspace_executionModeAgent(org.Name),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "operations", "true"),
 					resource.TestCheckResourceAttr(
@@ -2013,8 +1948,7 @@ func TestAccTFEWorkspace_globalRemoteState(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_globalRemoteStateFalse(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-test"),
@@ -2025,8 +1959,7 @@ func TestAccTFEWorkspace_globalRemoteState(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_globalRemoteStateTrue(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-test"),
@@ -2050,16 +1983,14 @@ func TestAccTFEWorkspace_alterRemoteStateConsumers(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "global_remote_state", "true"),
 				),
 			},
 			{
 				Config: testAccTFEWorkspace_OneRemoteStateConsumer(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "global_remote_state", "false"),
 					testAccCheckTFEWorkspaceHasRemoteConsumers("tfe_workspace.foobar", []string{"tfe_workspace.foobar_one"}),
 				),
@@ -2067,8 +1998,7 @@ func TestAccTFEWorkspace_alterRemoteStateConsumers(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_TwoRemoteStateConsumers(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "global_remote_state", "false"),
 					testAccCheckTFEWorkspaceHasRemoteConsumers("tfe_workspace.foobar", []string{"tfe_workspace.foobar_one", "tfe_workspace.foobar_two"}),
 				),
@@ -2076,8 +2006,7 @@ func TestAccTFEWorkspace_alterRemoteStateConsumers(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_OneRemoteStateConsumer(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "global_remote_state", "false"),
 					testAccCheckTFEWorkspaceHasRemoteConsumers("tfe_workspace.foobar", []string{"tfe_workspace.foobar_one"}),
 				),
@@ -2085,8 +2014,7 @@ func TestAccTFEWorkspace_alterRemoteStateConsumers(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_globalRemoteStateTrue(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "global_remote_state", "true"),
 					testAccCheckTFEWorkspaceHasRemoteConsumers("tfe_workspace.foobar", []string{}),
 				),
@@ -2107,8 +2035,7 @@ func TestAccTFEWorkspace_createWithRemoteStateConsumers(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_TwoRemoteStateConsumers(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "global_remote_state", "false"),
 					testAccCheckTFEWorkspaceHasRemoteConsumers("tfe_workspace.foobar", []string{"tfe_workspace.foobar_one", "tfe_workspace.foobar_two"}),
 				),
@@ -2151,8 +2078,7 @@ func TestAccTFEWorkspace_delete_forceDeleteSettingDisabled(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 				),
 			},
@@ -2166,8 +2092,7 @@ func TestAccTFEWorkspace_delete_forceDeleteSettingDisabled(t *testing.T) {
 				Config:      testAccTFEWorkspace_basicDeleted(rInt),
 				ExpectError: regexp.MustCompile(`.*Workspace is currently locked.`),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 				),
 			},
 			{
@@ -2201,8 +2126,7 @@ func TestAccTFEWorkspace_delete_forceDeleteSettingEnabled(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basicForceDeleteEnabled(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 				),
 			},
@@ -2297,11 +2221,8 @@ func testAccCheckTFEWorkspaceHTMLURLHasSuffix(resourceName, suffix string) resou
 	}
 }
 
-func testAccCheckTFEWorkspaceExists(
-	n string, workspace *tfe.Workspace, p *schema.Provider) resource.TestCheckFunc {
+func testAccCheckTFEWorkspaceExists(n string, workspace *tfe.Workspace) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := p.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -2312,7 +2233,7 @@ func testAccCheckTFEWorkspaceExists(
 		}
 
 		// Get the workspace
-		w, err := config.Client.Workspaces.ReadByID(ctx, rs.Primary.ID)
+		w, err := testAccConfiguredClient.Client.Workspaces.ReadByID(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -2672,8 +2593,7 @@ func TestAccTFEWorkspace_basicAssessmentsEnabled(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-test"),
@@ -2684,8 +2604,7 @@ func TestAccTFEWorkspace_basicAssessmentsEnabled(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateAssessmentsEnabled(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-updated"),
 					resource.TestCheckResourceAttr(
@@ -2707,7 +2626,7 @@ func TestAccTFEWorkspace_createWithAutoDestroyAt(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basicWithAutoDestroyAt(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_at", "2100-01-01T00:00:00Z"),
 				),
 			},
@@ -2726,7 +2645,7 @@ func TestAccTFEWorkspace_updateWithAutoDestroyAt(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_at", ""),
 				),
 			},
@@ -2753,7 +2672,7 @@ func TestAccTFEWorkspace_createWithAutoDestroyDuration(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basicWithAutoDestroyDuration(rInt, "1d"),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_activity_duration", "1d"),
 				),
 			},
@@ -2772,7 +2691,7 @@ func TestAccTFEWorkspace_updateWithAutoDestroyDuration(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basicWithAutoDestroyDuration(rInt, "1d"),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_activity_duration", "1d"),
 				),
 			},
@@ -2829,7 +2748,7 @@ func TestAccTFEWorkspace_createWithAutoDestroyDurationInProject(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basicWithAutoDestroyDurationInProject(rInt, "1d", "3d"),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_activity_duration", "3d"),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "inherits_project_auto_destroy", "false"),
 				),
@@ -2849,7 +2768,7 @@ func TestAccTFEWorkspace_updateWithAutoDestroyDurationInProject(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basicWithAutoDestroyDurationInProject(rInt, "1d", "3d"),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_activity_duration", "3d"),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "inherits_project_auto_destroy", "false"),
 				),
@@ -2857,7 +2776,7 @@ func TestAccTFEWorkspace_updateWithAutoDestroyDurationInProject(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basicWithAutoDestroyDurationInProject(rInt, "2d", "5d"),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_activity_duration", "5d"),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "inherits_project_auto_destroy", "false"),
 				),
@@ -2865,7 +2784,7 @@ func TestAccTFEWorkspace_updateWithAutoDestroyDurationInProject(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basicInProject(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_activity_duration", ""),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "inherits_project_auto_destroy", "true"),
 				),
@@ -2885,7 +2804,7 @@ func TestAccTFEWorkspace_createWithAutoDestroyAtInProject(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basicWithAutoDestroyAtInProject(rInt, "1d"),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_at", "2100-01-01T00:00:00Z"),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "inherits_project_auto_destroy", "false"),
 				),
@@ -2905,7 +2824,7 @@ func TestAccTFEWorkspace_updateWithAutoDestroyAtInProject(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basicWithAutoDestroyAtInProject(rInt, "1d"),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_at", "2100-01-01T00:00:00Z"),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "inherits_project_auto_destroy", "false"),
 				),
@@ -2913,7 +2832,7 @@ func TestAccTFEWorkspace_updateWithAutoDestroyAtInProject(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basicInProject(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_at", ""),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "inherits_project_auto_destroy", "true"),
 				),
@@ -2966,8 +2885,7 @@ func TestAccTFEWorkspace_createWithSourceURLAndName(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basicWithSourceURLAndName(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "source_url", "https://example.com"),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "source_name", "Example Source"),
 				),
