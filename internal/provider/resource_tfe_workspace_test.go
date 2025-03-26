@@ -88,7 +88,7 @@ func TestAccTFEWorkspace_defaultOrg(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    providers,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroyProvider(providers["tfe"]),
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_defaultOrgExplicit(rInt),
@@ -130,7 +130,7 @@ func TestAccTFEWorkspaceProviderDefaultOrgChanged(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    providers,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroyProvider(providers["tfe"]),
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_defaultOrg(),
@@ -2552,31 +2552,23 @@ func testAccCheckTFEWorkspaceUpdatedRemoveVCSRepoAttributes(
 	}
 }
 
-func testAccCheckTFEWorkspaceDestroyProvider(p *schema.Provider) func(s *terraform.State) error {
-	return func(s *terraform.State) error {
-		config := p.Meta().(ConfiguredClient)
-
-		for _, rs := range s.RootModule().Resources {
-			if rs.Type != "tfe_workspace" {
-				continue
-			}
-
-			if rs.Primary.ID == "" {
-				return fmt.Errorf("No instance ID is set")
-			}
-
-			_, err := config.Client.Workspaces.ReadByID(ctx, rs.Primary.ID)
-			if err == nil {
-				return fmt.Errorf("Workspace %s still exists", rs.Primary.ID)
-			}
+func testAccCheckTFEWorkspaceDestroy(s *terraform.State) error {
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != "tfe_workspace" {
+			continue
 		}
 
-		return nil
-	}
-}
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("No instance ID is set")
+		}
 
-func testAccCheckTFEWorkspaceDestroy(s *terraform.State) error {
-	return testAccCheckTFEWorkspaceDestroyProvider(testAccProvider)(s)
+		_, err := testAccConfiguredClient.Client.Workspaces.ReadByID(ctx, rs.Primary.ID)
+		if err == nil {
+			return fmt.Errorf("Workspace %s still exists", rs.Primary.ID)
+		}
+	}
+
+	return nil
 }
 
 func TestAccTFEWorkspace_basicAssessmentsEnabled(t *testing.T) {
