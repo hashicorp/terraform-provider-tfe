@@ -317,8 +317,8 @@ func (r *resourceTFENotificationConfiguration) Create(ctx context.Context, req r
 
 	// Add triggers set to the options struct
 	var triggers []types.String
-	if diags := plan.Triggers.ElementsAs(ctx, &triggers, true); diags != nil && diags.HasError() {
-		resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(plan.Triggers.ElementsAs(ctx, &triggers, true)...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 	options.Triggers = []tfe.NotificationTriggerType{}
