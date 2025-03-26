@@ -19,9 +19,9 @@ func TestAccTFESentinelPolicy_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFESentinelPolicyDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFESentinelPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFESentinelPolicy_basic(rInt),
@@ -48,9 +48,9 @@ func TestAccTFESentinelPolicy_update(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFESentinelPolicyDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFESentinelPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFESentinelPolicy_basic(rInt),
@@ -93,9 +93,9 @@ func TestAccTFESentinelPolicy_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFESentinelPolicyDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFESentinelPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFESentinelPolicy_basic(rInt),

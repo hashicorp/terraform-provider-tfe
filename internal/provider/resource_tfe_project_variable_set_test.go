@@ -36,9 +36,9 @@ func TestAccTFEProjectVariableSet_basic(t *testing.T) {
 	})
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEProjectVariableSetDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEProjectVariableSetDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEProjectVariableSet_basic(org.Name, prj.ID),

@@ -22,8 +22,8 @@ func TestAccTFENoCodeModule_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		CheckDestroy: func(s *terraform.State) error {
 			return testAccCheckTFENoCodeModuleDestroy(testAccProvider.Meta().(ConfiguredClient), s)
 		},
@@ -161,8 +161,8 @@ func TestAccTFENoCodeModule_update(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		CheckDestroy: func(s *terraform.State) error {
 			return testAccCheckTFENoCodeModuleDestroy(testAccProvider.Meta().(ConfiguredClient), s)
 		},
@@ -197,8 +197,8 @@ func TestAccTFENoCodeModule_update_variable_options(t *testing.T) {
 	updatedRegionOptions := `"eu-east-1", "eu-west-1", "us-west-2"`
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		CheckDestroy: func(s *terraform.State) error {
 			return testAccCheckTFENoCodeModuleDestroy(testAccProvider.Meta().(ConfiguredClient), s)
 		},
@@ -255,8 +255,8 @@ func TestAccTFENoCodeModule_delete(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		CheckDestroy: func(s *terraform.State) error {
 			return testAccCheckTFENoCodeModuleDestroy(testAccProvider.Meta().(ConfiguredClient), s)
 		},
@@ -288,8 +288,8 @@ func TestAccTFENoCodeModule_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	nocodeModule := &tfe.RegistryNoCodeModule{}
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		CheckDestroy: func(s *terraform.State) error {
 			return testAccCheckTFENoCodeModuleDestroy(testAccProvider.Meta().(ConfiguredClient), s)
 		},

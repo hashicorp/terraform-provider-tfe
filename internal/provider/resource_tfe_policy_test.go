@@ -24,9 +24,9 @@ func TestAccTFEPolicy_basic(t *testing.T) {
 	policy := &tfe.Policy{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEPolicyDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEPolicy_basic(org.Name),
@@ -62,9 +62,9 @@ func TestAccTFEPolicy_basicWithDefaults(t *testing.T) {
 	policy := &tfe.Policy{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEPolicyDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEPolicy_basicWithDefaults(org.Name),
@@ -100,9 +100,9 @@ func TestAccTFEPolicyOPA_basic(t *testing.T) {
 	policy := &tfe.Policy{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEPolicyDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEPolicyOPA_basic(org.Name),
@@ -140,9 +140,9 @@ func TestAccTFEPolicy_update(t *testing.T) {
 	policy := &tfe.Policy{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEPolicyDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEPolicy_basic(org.Name),
@@ -198,9 +198,9 @@ func TestAccTFEPolicy_unsetEnforce(t *testing.T) {
 	policy := &tfe.Policy{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEPolicyDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEPolicy_basic(org.Name),
@@ -253,9 +253,9 @@ func TestAccTFEPolicyOPA_update(t *testing.T) {
 	policy := &tfe.Policy{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEPolicyDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEPolicyOPA_basic(org.Name),
@@ -354,9 +354,9 @@ func TestAccTFEPolicy_import(t *testing.T) {
 	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEPolicyDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEPolicy_basic(org.Name),

@@ -80,9 +80,9 @@ func TestAccTFETeamOrganizationMember_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamOrganizationMemberDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamOrganizationMemberDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamOrganizationMember_basic(rInt),
@@ -100,9 +100,9 @@ func TestAccTFETeamOrganizationMember_import_byId(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamOrganizationMemberDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamOrganizationMemberDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamOrganizationMember_basic(rInt),
@@ -124,9 +124,9 @@ func TestAccTFETeamOrganizationMember_import_byTeamName(t *testing.T) {
 	userEmail := fmt.Sprintf("user-%d@company.com", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamOrganizationMemberDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamOrganizationMemberDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamOrganizationMember_byName(orgName, teamName, userEmail),
@@ -148,9 +148,9 @@ func TestAccTFETeamOrganizationMember_import_orgDoesNotExist(t *testing.T) {
 	userEmail := fmt.Sprintf("user-%d@company.com", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamOrganizationMemberDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamOrganizationMemberDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamOrganizationMember_byName(orgName, teamName, userEmail),
@@ -173,9 +173,9 @@ func TestAccTFETeamOrganizationMember_import_teamNameDoesNotExist(t *testing.T) 
 	userEmail := fmt.Sprintf("user-%d@company.com", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamOrganizationMemberDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamOrganizationMemberDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamOrganizationMember_byName(orgName, teamName, userEmail),
@@ -198,9 +198,9 @@ func TestAccTFETeamOrganizationMember_import_userEmailDoesNotExist(t *testing.T)
 	userEmail := fmt.Sprintf("user-%d@company.com", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamOrganizationMemberDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamOrganizationMemberDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamOrganizationMember_byName(orgName, teamName, userEmail),
@@ -223,9 +223,9 @@ func TestAccTFETeamOrganizationMember_import_incorrectFormat(t *testing.T) {
 	userEmail := fmt.Sprintf("user-%d@company.com", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamOrganizationMemberDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamOrganizationMemberDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamOrganizationMember_byName(orgName, teamName, userEmail),
@@ -247,9 +247,9 @@ func TestAccTFETeamOrganizationMember_import_slashesInTeamName(t *testing.T) {
 	userEmail := fmt.Sprintf("user-%d@company.com", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamOrganizationMemberDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamOrganizationMemberDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamOrganizationMember_byName(orgName, teamName, userEmail),

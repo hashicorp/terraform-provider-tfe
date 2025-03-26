@@ -21,9 +21,9 @@ func TestAccTFETeamOrganizationMembers_create_update(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamOrganizationMembersDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamOrganizationMembersDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamOrganizationMembers_basic(rInt),
@@ -48,9 +48,9 @@ func TestAccTFETeamOrganizationMembers_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamOrganizationMembersDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamOrganizationMembersDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamOrganizationMembers_basic(rInt),

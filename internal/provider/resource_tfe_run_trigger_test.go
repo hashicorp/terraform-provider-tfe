@@ -20,9 +20,9 @@ func TestAccTFERunTrigger_basic(t *testing.T) {
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFERunTriggerDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFERunTriggerDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERunTrigger_basic(rInt),
@@ -44,9 +44,9 @@ func TestAccTFERunTrigger_many(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFERunTriggerDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFERunTriggerDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERunTrigger_many(rInt),
@@ -60,9 +60,9 @@ func TestAccTFERunTriggerImport(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFERunTriggerDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFERunTriggerDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERunTrigger_basic(rInt),

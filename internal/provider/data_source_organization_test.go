@@ -20,8 +20,8 @@ func TestAccTFEOrganizationDataSource_basic(t *testing.T) {
 	orgName := fmt.Sprintf("tst-terraform-foo-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationDataSourceConfig_basic(rInt),
@@ -45,8 +45,8 @@ func TestAccTFEOrganizationDataSource_defaultProject(t *testing.T) {
 	org := &tfe.Organization{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationDataSourceConfig_basic(rInt),

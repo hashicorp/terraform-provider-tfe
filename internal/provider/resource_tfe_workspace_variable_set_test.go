@@ -19,9 +19,9 @@ func TestAccTFEWorkspaceVariableSet_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceVariableSetDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceVariableSetDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceVariableSet_basic(rInt),

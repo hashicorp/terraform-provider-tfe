@@ -21,9 +21,9 @@ func TestAccTFEOrganizationToken_basic(t *testing.T) {
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationToken_basic(rInt),
@@ -44,9 +44,9 @@ func TestAccTFEOrganizationToken_existsWithoutForce(t *testing.T) {
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationToken_basic(rInt),
@@ -72,9 +72,9 @@ func TestAccTFEOrganizationToken_existsWithForce(t *testing.T) {
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationToken_basic(rInt),
@@ -105,9 +105,9 @@ func TestAccTFEOrganizationToken_withBlankExpiry(t *testing.T) {
 	expiredAt := ""
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationToken_withBlankExpiry(rInt),
@@ -128,9 +128,9 @@ func TestAccTFEOrganizationToken_withValidExpiry(t *testing.T) {
 	expiredAt := "2051-04-11T23:15:59Z"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationToken_withValidExpiry(rInt),
@@ -149,9 +149,9 @@ func TestAccTFEOrganizationToken_withInvalidExpiry(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEOrganizationToken_withInvalidExpiry(rInt),
@@ -165,9 +165,9 @@ func TestAccTFEOrganizationToken_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationToken_basic(rInt),

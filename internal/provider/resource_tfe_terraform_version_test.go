@@ -25,9 +25,9 @@ func TestAccTFETerraformVersion_basic(t *testing.T) {
 	version := genSafeRandomTerraformVersion()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETerraformVersionDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETerraformVersionDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETerraformVersion_basic(version, sha),
@@ -53,9 +53,9 @@ func TestAccTFETerraformVersion_import(t *testing.T) {
 	version := genSafeRandomTerraformVersion()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETerraformVersionDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETerraformVersionDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETerraformVersion_basic(version, sha),
@@ -83,9 +83,9 @@ func TestAccTFETerraformVersion_full(t *testing.T) {
 	version := genSafeRandomTerraformVersion()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETerraformVersionDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETerraformVersionDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETerraformVersion_full(version, sha),

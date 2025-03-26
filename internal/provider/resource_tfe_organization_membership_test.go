@@ -21,9 +21,9 @@ func TestAccTFEOrganizationMembership_basic(t *testing.T) {
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationMembershipDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationMembershipDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationMembership_basic(rInt),
@@ -48,9 +48,9 @@ func TestAccTFEOrganizationMembershipImport_ByID(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationMembershipDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationMembershipDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationMembership_basic(rInt),
@@ -71,9 +71,9 @@ func TestAccTFEOrganizationMembershipImport_ByEmail(t *testing.T) {
 	email := "testuser@hashicorp.com"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationMembershipDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationMembershipDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationMembership_nameAndEmail(orgName, email),
@@ -95,9 +95,9 @@ func TestAccTFEOrganizationMembershipImport_invalidImportId(t *testing.T) {
 	email := "testuser@hashicorp.com"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationMembershipDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationMembershipDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationMembership_nameAndEmail(orgName, email),

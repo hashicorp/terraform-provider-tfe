@@ -25,8 +25,8 @@ func TestAccTFEAgentPoolAllowedWorkspaces_create_update(t *testing.T) {
 	allowedWorkspaceIDs := &[]string{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEAgentPoolAllowedWorkspaces_basic(org.Name),
@@ -132,8 +132,8 @@ func TestAccTFEAgentPoolAllowedWorkspaces_import(t *testing.T) {
 	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEAgentPoolAllowedWorkspaces_basic(org.Name),

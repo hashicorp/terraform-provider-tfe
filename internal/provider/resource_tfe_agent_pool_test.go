@@ -26,9 +26,9 @@ func TestAccTFEAgentPool_basic(t *testing.T) {
 	agentPool := &tfe.AgentPool{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEAgentPoolDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEAgentPoolDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEAgentPool_basic(org.Name),
@@ -60,9 +60,9 @@ func TestAccTFEAgentPool_custom_scope(t *testing.T) {
 	agentPool := &tfe.AgentPool{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEAgentPoolDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEAgentPoolDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEAgentPool_custom_scope(org.Name),
@@ -94,9 +94,9 @@ func TestAccTFEAgentPool_update(t *testing.T) {
 	agentPool := &tfe.AgentPool{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEAgentPoolDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEAgentPoolDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEAgentPool_basic(org.Name),
@@ -139,9 +139,9 @@ func TestAccTFEAgentPool_import(t *testing.T) {
 	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEAgentPoolDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEAgentPoolDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEAgentPool_basic(org.Name),

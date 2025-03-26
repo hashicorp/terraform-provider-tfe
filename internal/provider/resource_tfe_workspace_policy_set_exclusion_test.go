@@ -26,9 +26,9 @@ func TestAccTFEWorkspacePolicySetExclusion_basic(t *testing.T) {
 	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspacePolicySetExclusionDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspacePolicySetExclusionDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspacePolicySetExclusion_basic(org.Name, rInt),
@@ -59,8 +59,8 @@ func TestAccTFEWorkspacePolicySetExclusion_incorrectImportSyntax(t *testing.T) {
 	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspacePolicySetExclusion_basic(org.Name, rInt),

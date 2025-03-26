@@ -25,9 +25,9 @@ func TestAccTFEOPAVersion_basic(t *testing.T) {
 	version := genSafeRandomOPAVersion()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOPAVersionDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOPAVersionDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOPAVersion_basic(version, sha),
@@ -53,9 +53,9 @@ func TestAccTFEOPAVersion_import(t *testing.T) {
 	version := genSafeRandomOPAVersion()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOPAVersionDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOPAVersionDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOPAVersion_basic(version, sha),
@@ -83,9 +83,9 @@ func TestAccTFEOPAVersion_full(t *testing.T) {
 	version := genSafeRandomOPAVersion()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOPAVersionDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOPAVersionDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOPAVersion_full(version, sha),

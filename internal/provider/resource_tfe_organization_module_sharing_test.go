@@ -25,8 +25,8 @@ func TestAccTFEOrganizationModuleSharing_basic(t *testing.T) {
 	// has been deleted requires the organizations to exist (and they are destroyed
 	// prior to CheckDestroy being executed)
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationModuleSharing_basic(rInt1, rInt2, rInt3),
@@ -55,8 +55,8 @@ func TestAccTFEOrganizationModuleSharing_emptyOrg(t *testing.T) {
 	rInt2 := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationModuleSharing_emptyOrg(rInt1, rInt2),
@@ -89,8 +89,8 @@ func TestAccTFEOrganizationModuleSharing_stopSharing(t *testing.T) {
 	// setting a module_consumers to an empty array of
 	// "destroys" the resource
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationModuleSharing_stopSharing(rInt1),

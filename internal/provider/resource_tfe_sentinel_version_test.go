@@ -25,9 +25,9 @@ func TestAccTFESentinelVersion_basic(t *testing.T) {
 	version := genSafeRandomSentinelVersion()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFESentinelVersionDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFESentinelVersionDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFESentinelVersion_basic(version, sha),
@@ -53,9 +53,9 @@ func TestAccTFESentinelVersion_import(t *testing.T) {
 	version := genSafeRandomSentinelVersion()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFESentinelVersionDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFESentinelVersionDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFESentinelVersion_basic(version, sha),
@@ -83,9 +83,9 @@ func TestAccTFESentinelVersion_full(t *testing.T) {
 	version := genSafeRandomSentinelVersion()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFESentinelVersionDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFESentinelVersionDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFESentinelVersion_full(version, sha),

@@ -22,8 +22,8 @@ func TestAccTFEAdminOrganizationSettings_basic(t *testing.T) {
 	rInt3 := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testConfigTFEAdminOrganizationSettings_basic(rInt1, rInt2, rInt3),

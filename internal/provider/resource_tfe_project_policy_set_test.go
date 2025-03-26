@@ -35,9 +35,9 @@ func TestAccTFEProjectPolicySet_basic(t *testing.T) {
 	})
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEProjectPolicySetDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEProjectPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEProjectPolicySet_basic(org.Name, project.ID),
@@ -76,8 +76,8 @@ func TestAccTFEProjectPolicySet_incorrectImportSyntax(t *testing.T) {
 	})
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEProjectPolicySet_basic(org.Name, project.ID),
