@@ -17,7 +17,6 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
@@ -83,12 +82,12 @@ func TestAccTFEWorkspace_defaultOrg(t *testing.T) {
 	defaultOrgName, rInt := setupDefaultOrganization(t)
 	workspace := tfe.Workspace{}
 
-	providers := providerWithDefaultOrganization(defaultOrgName)
+	providers := muxedProvidersWithDefaultOrganization(defaultOrgName)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    providers,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: providers,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_defaultOrgExplicit(rInt),
@@ -114,7 +113,7 @@ func TestAccTFEWorkspaceProviderDefaultOrgChanged(t *testing.T) {
 	// config does not change.
 	workspace := &tfe.Workspace{}
 	defaultOrgName, rInt := setupDefaultOrganization(t)
-	providers := providerWithDefaultOrganization(defaultOrgName)
+	providers := muxedProvidersWithDefaultOrganization(defaultOrgName)
 
 	client, err := getClientUsingEnv()
 	if err != nil {
@@ -127,10 +126,12 @@ func TestAccTFEWorkspaceProviderDefaultOrgChanged(t *testing.T) {
 	})
 	t.Cleanup(cleanup)
 
+	providersWithAnotherOrg := muxedProvidersWithDefaultOrganization(anotherOrg.Name)
+
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    providers,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: providers,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_defaultOrg(),
@@ -140,17 +141,8 @@ func TestAccTFEWorkspaceProviderDefaultOrgChanged(t *testing.T) {
 				),
 			},
 			{
-				PreConfig: func() {
-					// Modify the provider to return a different default organization
-					providers["tfe"].ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
-						client, err := getClientUsingEnv()
-						return ConfiguredClient{
-							Client:       client,
-							Organization: anotherOrg.Name,
-						}, diag.FromErr(err)
-					}
-				},
-				Config: testAccTFEWorkspace_defaultOrg(),
+				ProtoV5ProviderFactories: providersWithAnotherOrg,
+				Config:                   testAccTFEWorkspace_defaultOrg(),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "organization", anotherOrg.Name),
 				),
