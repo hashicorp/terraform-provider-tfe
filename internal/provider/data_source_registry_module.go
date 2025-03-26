@@ -42,7 +42,7 @@ type modelRegistryModule struct {
 	Name                types.String                         `tfsdk:"name"`
 	RegistryName        types.String                         `tfsdk:"registry_name"`
 	ModuleProvider      types.String                         `tfsdk:"module_provider"`
-	NoCodeModuleId      types.String                         `tfsdk:"no_code_module_id"`
+	NoCodeModuleID      types.String                         `tfsdk:"no_code_module_id"`
 	NoCodeModuleSource  types.String                         `tfsdk:"no_code_module_source"`
 	NoCode              types.Bool                           `tfsdk:"no_code"`
 	Permissions         []modelRegistryModulePermissions     `tfsdk:"permissions"`
@@ -372,7 +372,6 @@ func (d *dataSourceTFERegistryModule) Read(ctx context.Context, req datasource.R
 		Provider:     data.ModuleProvider.ValueString(),
 		Namespace:    namespace.ValueString(),
 		RegistryName: tfe.RegistryName(registryName.ValueString()),
-		//tfe.RegistryName(data.RegistryName.ValueString()),
 	}
 
 	tflog.Debug(ctx, "Reading module")
@@ -416,7 +415,7 @@ func modelFromTFERegistryModule(v *tfe.RegistryModule) modelRegistryModule {
 	}
 	// Only valid options are no RegistryNoCodeModule or a single entry
 	if v.RegistryNoCodeModule != nil {
-		m.NoCodeModuleId = types.StringValue(v.RegistryNoCodeModule[0].ID)
+		m.NoCodeModuleID = types.StringValue(v.RegistryNoCodeModule[0].ID)
 		m.NoCodeModuleSource = types.StringValue(fmt.Sprintf("%s/%s/%s/%s", v.RegistryName, v.Namespace, v.Name, v.Provider))
 	}
 	return m
