@@ -361,7 +361,7 @@ func TestAccTFERegistryModule_noCodeModule(t *testing.T) {
 		RegistryName: tfe.PublicRegistry,
 		Namespace:    "terraform-aws-modules",
 		Organization: &tfe.Organization{Name: orgName},
-		NoCode:       true,
+		NoCode:       false, // changes to false on refresh
 	}
 
 	resource.Test(t, resource.TestCase{
@@ -1620,8 +1620,13 @@ resource "tfe_registry_module" "foobar" {
   module_provider = "aws"
   name            = "vpc"
   registry_name   = "public"
-  no_code         = true
- }`,
+ }
+ 
+ resource "tfe_no_code_module" "foobar" {
+  organization    = tfe_organization.foobar.id
+  registry_module = tfe_registry_module.foobar.id
+} 
+ `,
 		rInt)
 }
 
