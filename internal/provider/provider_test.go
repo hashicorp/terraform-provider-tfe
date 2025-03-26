@@ -61,8 +61,8 @@ func init() {
 }
 
 func muxedProvidersWithDefaultOrganization(defaultOrgName string) map[string]func() (tfprotov5.ProviderServer, error) {
-	testAccProviderDefaultOrganization := Provider()
-	testAccProviderDefaultOrganization.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
+	sdkProvider := Provider()
+	sdkProvider.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
 		client, err := getClientUsingEnv()
 		cc := ConfiguredClient{
 			Client:       client,
@@ -82,7 +82,6 @@ func muxedProvidersWithDefaultOrganization(defaultOrgName string) map[string]fun
 				NewFrameworkProviderWithDefaultOrg(defaultOrgName),
 			)
 
-			sdkProvider := Provider()
 			mux, err := tf5muxserver.NewMuxServer(
 				ctx, nextProvider, sdkProvider.GRPCProvider,
 			)

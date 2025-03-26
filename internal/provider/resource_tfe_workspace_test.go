@@ -129,12 +129,12 @@ func TestAccTFEWorkspaceProviderDefaultOrgChanged(t *testing.T) {
 	providersWithAnotherOrg := muxedProvidersWithDefaultOrganization(anotherOrg.Name)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: providers,
-		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
+		PreCheck:     func() { testAccPreCheck(t) },
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspace_defaultOrg(),
+				ProtoV5ProviderFactories: providers,
+				Config:                   testAccTFEWorkspace_defaultOrg(),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "organization", defaultOrgName),
