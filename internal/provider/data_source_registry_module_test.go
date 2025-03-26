@@ -14,8 +14,6 @@ import (
 )
 
 func TestAccTFERegistryModuleDataSource_basicPrivate(t *testing.T) {
-	// registryModule := &tfe.RegistryModule{}
-
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
@@ -38,7 +36,7 @@ func TestAccTFERegistryModuleDataSource_basicPrivate(t *testing.T) {
 					resource.TestCheckResourceAttr("data.tfe_registry_module.test", "namespace", orgName),
 					resource.TestCheckResourceAttr("data.tfe_registry_module.test", "name", expectedRegistryModuleAttributes.Name),
 					resource.TestCheckResourceAttr("data.tfe_registry_module.test", "registry_name", string(expectedRegistryModuleAttributes.RegistryName)),
-					resource.TestCheckResourceAttr("data.tfe_registry_module.test", "module_provider", string(expectedRegistryModuleAttributes.Provider)),
+					resource.TestCheckResourceAttr("data.tfe_registry_module.test", "module_provider", expectedRegistryModuleAttributes.Provider),
 					resource.TestCheckResourceAttr("data.tfe_registry_module.test", "no_code", "false"),
 					resource.TestCheckResourceAttr("data.tfe_registry_module.test", "permissions.0.can_delete", "true"),
 					resource.TestCheckResourceAttr("data.tfe_registry_module.test", "permissions.0.can_retry", "true"),
@@ -86,7 +84,7 @@ func TestAccTFERegistryModuleDataSource_basicNoCodePublic(t *testing.T) {
 					resource.TestCheckResourceAttr("data.tfe_registry_module.test", "namespace", expectedRegistryModuleAttributes.Namespace),
 					resource.TestCheckResourceAttr("data.tfe_registry_module.test", "name", expectedRegistryModuleAttributes.Name),
 					resource.TestCheckResourceAttr("data.tfe_registry_module.test", "registry_name", string(expectedRegistryModuleAttributes.RegistryName)),
-					resource.TestCheckResourceAttr("data.tfe_registry_module.test", "module_provider", string(expectedRegistryModuleAttributes.Provider)),
+					resource.TestCheckResourceAttr("data.tfe_registry_module.test", "module_provider", expectedRegistryModuleAttributes.Provider),
 					resource.TestCheckResourceAttr("data.tfe_registry_module.test", "no_code_module_source", ncms),
 				),
 			},
