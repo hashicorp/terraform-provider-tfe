@@ -21,9 +21,9 @@ func TestAccTFENotificationConfiguration_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { preCheckTFENotificationConfiguration(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
+		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENotificationConfiguration_basic(rInt),
@@ -52,9 +52,9 @@ func TestAccTFENotificationConfiguration_emailUserIDs(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { preCheckTFENotificationConfiguration(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
+		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENotificationConfiguration_emailUserIDs(rInt),
@@ -83,9 +83,9 @@ func TestAccTFENotificationConfiguration_update(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { preCheckTFENotificationConfiguration(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
+		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENotificationConfiguration_basic(rInt),
@@ -136,9 +136,9 @@ func TestAccTFENotificationConfiguration_updateEmailUserIDs(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { preCheckTFENotificationConfiguration(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
+		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENotificationConfiguration_emailUserIDs(rInt),
@@ -191,11 +191,11 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesEmail(t *testin
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_emailWithURL(rInt),
-				ExpectError: regexp.MustCompile(`URL cannot be set with destination type of email`),
+				ExpectError: regexp.MustCompile(`The attribute 'url' cannot be set when 'destination_type' is 'email'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_emailWithToken(rInt),
-				ExpectError: regexp.MustCompile(`token cannot be set with destination type of email`),
+				ExpectError: regexp.MustCompile(`The attribute 'token' cannot be set when 'destination_type' is 'email'`),
 			},
 		},
 	})
@@ -210,15 +210,15 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesGeneric(t *test
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`email addresses cannot be set with destination type of generic`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_addresses' cannot be set when 'destination_type' is.*'generic'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`email user IDs cannot be set with destination type of generic`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_user_ids' cannot be set when 'destination_type' is.*'generic'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithoutURL(rInt),
-				ExpectError: regexp.MustCompile(`URL is required with destination type of generic`),
+				ExpectError: regexp.MustCompile(`The attribute 'url' is required when 'destination_type' is 'generic'`),
 			},
 		},
 	})
@@ -233,19 +233,19 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesSlack(t *testin
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`email addresses cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_addresses' cannot be set when 'destination_type' is.*'slack'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`email user IDs cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_user_ids' cannot be set when 'destination_type' is.*'slack'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithToken(rInt),
-				ExpectError: regexp.MustCompile(`token cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`The attribute 'token' cannot be set when 'destination_type' is 'slack'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithoutURL(rInt),
-				ExpectError: regexp.MustCompile(`URL is required with destination type of slack`),
+				ExpectError: regexp.MustCompile(`The attribute 'url' is required when 'destination_type' is 'slack'`),
 			},
 		},
 	})
@@ -260,19 +260,19 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesMicrosoftTeams(
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`email addresses cannot be set with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_addresses' cannot be set when 'destination_type' is.*'microsoft-teams'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`email user IDs cannot be set with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_user_ids' cannot be set when 'destination_type' is.*'microsoft-teams'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithToken(rInt),
-				ExpectError: regexp.MustCompile(`token cannot be set with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'token' cannot be set when 'destination_type' is.*'microsoft-teams'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithoutURL(rInt),
-				ExpectError: regexp.MustCompile(`URL is required with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`The attribute 'url' is required when 'destination_type' is 'microsoft-teams'`),
 			},
 		},
 	})
@@ -283,9 +283,9 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesEmail(t *
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { preCheckTFENotificationConfiguration(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
+		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENotificationConfiguration_emailUserIDs(rInt),
@@ -307,11 +307,14 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesEmail(t *
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_emailWithURL(rInt),
-				ExpectError: regexp.MustCompile(`URL cannot be set with destination type of email`),
+				ExpectError: regexp.MustCompile(`The attribute 'url' cannot be set when 'destination_type' is 'email'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_emailWithToken(rInt),
-				ExpectError: regexp.MustCompile(`token cannot be set with destination type of email`),
+				ExpectError: regexp.MustCompile(`The attribute 'token' cannot be set when 'destination_type' is 'email'`),
+			},
+			{
+				Config: testAccTFENotificationConfiguration_emailUserIDs(rInt),
 			},
 		},
 	})
@@ -322,9 +325,9 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesGeneric(t
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { preCheckTFENotificationConfiguration(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
+		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENotificationConfiguration_basic(rInt),
@@ -346,15 +349,18 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesGeneric(t
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`email addresses cannot be set with destination type of generic`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_addresses' cannot be set when 'destination_type' is.*'generic'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`email user IDs cannot be set with destination type of generic`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_user_ids' cannot be set when 'destination_type' is.*'generic'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithoutURL(rInt),
-				ExpectError: regexp.MustCompile(`URL is required with destination type of generic`),
+				ExpectError: regexp.MustCompile(`The attribute 'url' is required when 'destination_type' is 'generic'`),
+			},
+			{
+				Config: testAccTFENotificationConfiguration_basic(rInt),
 			},
 		},
 	})
@@ -365,9 +371,9 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesSlack(t *
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { preCheckTFENotificationConfiguration(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
+		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENotificationConfiguration_slack(rInt),
@@ -389,19 +395,22 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesSlack(t *
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`email addresses cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_addresses' cannot be set when 'destination_type' is.*'slack'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`email user IDs cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_user_ids' cannot be set when 'destination_type' is.*'slack'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithToken(rInt),
-				ExpectError: regexp.MustCompile(`token cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`The attribute 'token' cannot be set when 'destination_type' is 'slack'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithoutURL(rInt),
-				ExpectError: regexp.MustCompile(`URL is required with destination type of slack`),
+				ExpectError: regexp.MustCompile(`The attribute 'url' is required when 'destination_type' is 'slack'`),
+			},
+			{
+				Config: testAccTFENotificationConfiguration_slack(rInt),
 			},
 		},
 	})
@@ -412,9 +421,9 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesMicrosoft
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { preCheckTFENotificationConfiguration(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
+		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENotificationConfiguration_microsoftTeams(rInt),
@@ -432,19 +441,22 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesMicrosoft
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`email addresses cannot be set with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_addresses' cannot be set when 'destination_type' is.*'microsoft-teams'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`email user IDs cannot be set with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_user_ids' cannot be set when 'destination_type' is.*'microsoft-teams'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithToken(rInt),
-				ExpectError: regexp.MustCompile(`token cannot be set with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'token' cannot be set when 'destination_type' is.*'microsoft-teams'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithoutURL(rInt),
-				ExpectError: regexp.MustCompile(`URL is required with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`The attribute 'url' is required when 'destination_type' is 'microsoft-teams'`),
+			},
+			{
+				Config: testAccTFENotificationConfiguration_microsoftTeams(rInt),
 			},
 		},
 	})
@@ -455,9 +467,9 @@ func TestAccTFENotificationConfiguration_duplicateTriggers(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { preCheckTFENotificationConfiguration(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
+		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENotificationConfiguration_duplicateTriggers(rInt),
@@ -487,9 +499,9 @@ func TestAccTFENotificationConfigurationImport_basic(t *testing.T) {
 	fmt.Printf("Config for testAccTFENotificationConfigurationImport_basic:\n %s\n", testAccTFENotificationConfiguration_basic(rInt))
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { preCheckTFENotificationConfiguration(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
+		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENotificationConfiguration_update(rInt),
@@ -509,9 +521,9 @@ func TestAccTFENotificationConfigurationImport_emailUserIDs(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { preCheckTFENotificationConfiguration(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
+		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENotificationConfiguration_updateEmailUserIDs(rInt),
@@ -531,9 +543,9 @@ func TestAccTFENotificationConfigurationImport_emptyEmailUserIDs(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { preCheckTFENotificationConfiguration(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFENotificationConfigurationDestroy,
+		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENotificationConfiguration_emailUserIDs(rInt),

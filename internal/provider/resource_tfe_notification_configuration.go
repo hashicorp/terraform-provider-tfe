@@ -30,7 +30,7 @@ var (
 	_ resource.ResourceWithImportState = &resourceTFENotificationConfiguration{}
 )
 
-// NewOrganizationRunTaskResource
+// NewNotificationConfigurationResource
 func NewNotificationConfigurationResource() resource.Resource {
 	return &resourceTFENotificationConfiguration{}
 }
@@ -216,7 +216,17 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 				Validators: []validator.Set{
 					setvalidator.ValueStringsAre(
 						stringvalidator.OneOf(
-							string(tfe.NotificationTriggerChangeRequestCreated),
+							string(tfe.NotificationTriggerCreated),
+							string(tfe.NotificationTriggerPlanning),
+							string(tfe.NotificationTriggerNeedsAttention),
+							string(tfe.NotificationTriggerApplying),
+							string(tfe.NotificationTriggerCompleted),
+							string(tfe.NotificationTriggerErrored),
+							string(tfe.NotificationTriggerAssessmentCheckFailed),
+							string(tfe.NotificationTriggerAssessmentDrifted),
+							string(tfe.NotificationTriggerAssessmentFailed),
+							string(tfe.NotificationTriggerWorkspaceAutoDestroyReminder),
+							string(tfe.NotificationTriggerWorkspaceAutoDestroyRunResults),
 						),
 					),
 				},
