@@ -24,9 +24,7 @@ func TestAccTFENoCodeModule_basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: testAccMuxedProviders,
-		CheckDestroy: func(s *terraform.State) error {
-			return testAccCheckTFENoCodeModuleDestroy(testAccProvider.Meta().(ConfiguredClient), s)
-		},
+		CheckDestroy:             testAccCheckTFENoCodeModuleDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENoCodeModule_basic(rInt),
@@ -56,9 +54,7 @@ func TestAccTFENoCodeModule_with_variable_options(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: providers,
-		CheckDestroy: func(s *terraform.State) error {
-			return testAccCheckTFENoCodeModuleDestroy(*testAccConfiguredClient, s)
-		},
+		CheckDestroy:             testAccCheckTFENoCodeModuleDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: cfg,
@@ -70,11 +66,10 @@ func TestAccTFENoCodeModule_with_variable_options(t *testing.T) {
 							return fmt.Errorf("Not found: %s", n)
 						}
 
-						config := providers["tfe"].Meta().(ConfiguredClient)
 						opts := &tfe.RegistryNoCodeModuleReadOptions{
 							Include: []tfe.RegistryNoCodeModuleIncludeOpt{tfe.RegistryNoCodeIncludeVariableOptions},
 						}
-						nocodeModule, err := config.Client.RegistryNoCodeModules.Read(ctx, rs.Primary.ID, opts)
+						nocodeModule, err := testAccConfiguredClient.Client.RegistryNoCodeModules.Read(ctx, rs.Primary.ID, opts)
 						if err != nil {
 							return fmt.Errorf("unable to read nocodeModule with ID %s", rs.Primary.ID)
 						}
@@ -116,9 +111,7 @@ func TestAccTFENoCodeModule_with_version_pin(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: providers,
-		CheckDestroy: func(s *terraform.State) error {
-			return testAccCheckTFENoCodeModuleDestroy(*testAccConfiguredClient, s)
-		},
+		CheckDestroy:             testAccCheckTFENoCodeModuleDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: cfg,
@@ -162,9 +155,7 @@ func TestAccTFENoCodeModule_update(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: testAccMuxedProviders,
-		CheckDestroy: func(s *terraform.State) error {
-			return testAccCheckTFENoCodeModuleDestroy(testAccProvider.Meta().(ConfiguredClient), s)
-		},
+		CheckDestroy:             testAccCheckTFENoCodeModuleDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENoCodeModule_basic(rInt),
@@ -198,9 +189,7 @@ func TestAccTFENoCodeModule_update_variable_options(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: testAccMuxedProviders,
-		CheckDestroy: func(s *terraform.State) error {
-			return testAccCheckTFENoCodeModuleDestroy(testAccProvider.Meta().(ConfiguredClient), s)
-		},
+		CheckDestroy:             testAccCheckTFENoCodeModuleDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENoCodeModule_with_options(rInt, regionOptions),
@@ -256,9 +245,7 @@ func TestAccTFENoCodeModule_delete(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: testAccMuxedProviders,
-		CheckDestroy: func(s *terraform.State) error {
-			return testAccCheckTFENoCodeModuleDestroy(testAccProvider.Meta().(ConfiguredClient), s)
-		},
+		CheckDestroy:             testAccCheckTFENoCodeModuleDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENoCodeModule_basic(rInt),
@@ -289,9 +276,7 @@ func TestAccTFENoCodeModule_import(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: testAccMuxedProviders,
-		CheckDestroy: func(s *terraform.State) error {
-			return testAccCheckTFENoCodeModuleDestroy(testAccProvider.Meta().(ConfiguredClient), s)
-		},
+		CheckDestroy:             testAccCheckTFENoCodeModuleDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFENoCodeModule_basic(rInt),
@@ -385,7 +370,7 @@ resource "tfe_no_code_module" "foobar" {
 `, rInt, regionOpts)
 }
 
-func testAccCheckTFENoCodeModuleDestroy(config ConfiguredClient, s *terraform.State) error {
+func testAccCheckTFENoCodeModuleDestroy(s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_no_code_module" {
 			continue
@@ -395,7 +380,7 @@ func testAccCheckTFENoCodeModuleDestroy(config ConfiguredClient, s *terraform.St
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.RegistryNoCodeModules.Read(ctx, rs.Primary.ID, nil)
+		_, err := testAccConfiguredClient.Client.RegistryNoCodeModules.Read(ctx, rs.Primary.ID, nil)
 		if err == nil {
 			return fmt.Errorf("Project %s still exists", rs.Primary.ID)
 		}
@@ -406,8 +391,6 @@ func testAccCheckTFENoCodeModuleDestroy(config ConfiguredClient, s *terraform.St
 
 func testAccCheckTFENoCodeModuleExists(n string, nocodeModule *tfe.RegistryNoCodeModule) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -420,7 +403,7 @@ func testAccCheckTFENoCodeModuleExists(n string, nocodeModule *tfe.RegistryNoCod
 		opts := &tfe.RegistryNoCodeModuleReadOptions{
 			Include: []tfe.RegistryNoCodeModuleIncludeOpt{tfe.RegistryNoCodeIncludeVariableOptions},
 		}
-		p, err := config.Client.RegistryNoCodeModules.Read(ctx, rs.Primary.ID, opts)
+		p, err := testAccConfiguredClient.Client.RegistryNoCodeModules.Read(ctx, rs.Primary.ID, opts)
 		if err != nil {
 			return fmt.Errorf("unable to read nocodeModule with ID %s", nocodeModule.ID)
 		}
