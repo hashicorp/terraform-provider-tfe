@@ -1443,9 +1443,10 @@ resource "tfe_team" "foobar" {
 resource "tfe_team_notification_configuration" "foobar" {
   name             = "notification_tokenWO_test"
   destination_type = "generic"
+  url 			   = "%s"
   token            = "1234567890"
   team_id          = tfe_team.foobar.id
-}`, orgName)
+}`, orgName, runTasksURL())
 }
 
 func testAccTFETeamNotificationConfiguration_tokenWO(orgName string, token string) string {

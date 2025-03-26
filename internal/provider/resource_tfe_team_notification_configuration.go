@@ -100,11 +100,12 @@ func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration,
 
 		result.EmailUserIDs = types.SetValueMust(types.StringType, emailUserIDs)
 	}
+	if v.Token != "" {
+		result.Token = types.StringValue(v.Token)
+	}
 
 	if isWriteOnly {
 		result.Token = types.StringNull()
-	} else if v.Token != "" {
-		result.Token = types.StringValue(v.Token)
 	}
 
 	if v.URL != "" {
@@ -199,6 +200,7 @@ func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, r
 			"token_wo": schema.StringAttribute{
 				Description: "A write-only secure token for the notification configuration, guaranteed not to be written to plan or state artifacts.",
 				Optional:    true,
+				WriteOnly:   true,
 				Sensitive:   true,
 				Validators: []validator.String{
 					validators.AttributeValueConflictValidator(
@@ -347,6 +349,11 @@ func (r *resourceTFETeamNotificationConfiguration) Create(ctx context.Context, r
 	} else if len(tnc.EmailUsers) != len(plan.EmailUserIDs.Elements()) {
 		resp.Diagnostics.AddError("Email user IDs produced an inconsistent result", "API returned a different number of email user IDs than were provided in the plan.")
 		return
+	}
+
+	// Restore token from plan because it is write only
+	if !plan.Token.IsNull() {
+		tnc.Token = plan.Token.ValueString()
 	}
 
 	result, diags := modelFromTFETeamNotificationConfiguration(tnc, isWriteOnly)
