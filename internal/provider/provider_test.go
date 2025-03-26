@@ -24,9 +24,12 @@ import (
 	"github.com/hashicorp/terraform-svchost/disco"
 )
 
-var testAccProviders map[string]*schema.Provider
-var testAccProvider *schema.Provider
-var testAccMuxedProviders map[string]func() (tfprotov5.ProviderServer, error)
+var (
+	testAccProviders        map[string]*schema.Provider
+	testAccProvider         *schema.Provider
+	testAccMuxedProviders   map[string]func() (tfprotov5.ProviderServer, error)
+	testAccConfiguredClient *ConfiguredClient
+)
 
 func init() {
 	testAccProvider = Provider()
@@ -55,13 +58,52 @@ func providerWithDefaultOrganization(defaultOrgName string) map[string]*schema.P
 	testAccProviderDefaultOrganization := Provider()
 	testAccProviderDefaultOrganization.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
 		client, err := getClientUsingEnv()
-		return ConfiguredClient{
+		cc := ConfiguredClient{
 			Client:       client,
 			Organization: defaultOrgName,
-		}, diag.FromErr(err)
+		}
+
+		// Save a reference to the configured client instance for use in tests.
+		testAccConfiguredClient = &cc
+
+		return cc, diag.FromErr(err)
 	}
 	return map[string]*schema.Provider{
 		"tfe": testAccProviderDefaultOrganization,
+	}
+}
+
+func muxedProvidersWithDefaultOrganization(defaultOrgName string) map[string]func() (tfprotov5.ProviderServer, error) {
+	testAccProviderDefaultOrganization := Provider()
+	testAccProviderDefaultOrganization.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
+		client, err := getClientUsingEnv()
+		cc := ConfiguredClient{
+			Client:       client,
+			Organization: defaultOrgName,
+		}
+
+		// Save a reference to the configured client instance for use in tests.
+		testAccConfiguredClient = &cc
+
+		return cc, diag.FromErr(err)
+	}
+	return map[string]func() (tfprotov5.ProviderServer, error){
+		"tfe": func() (tfprotov5.ProviderServer, error) {
+			ctx := context.Background()
+
+			nextProvider := providerserver.NewProtocol5(
+				NewFrameworkProviderWithDefaultOrg(defaultOrgName),
+			)
+
+			mux, err := tf5muxserver.NewMuxServer(
+				ctx, nextProvider, testAccProvider.GRPCProvider,
+			)
+			if err != nil {
+				return nil, err
+			}
+
+			return mux.ProviderServer(), nil
+		},
 	}
 }
 
