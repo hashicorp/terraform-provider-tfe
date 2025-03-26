@@ -138,6 +138,7 @@ func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource
 		NewProjectsDataSource,
 		NewRegistryGPGKeyDataSource,
 		NewRegistryGPGKeysDataSource,
+		NewRegistryModuleDataSource,
 		NewRegistryProviderDataSource,
 		NewRegistryProvidersDataSource,
 		NewSAMLSettingsDataSource,
