@@ -67,11 +67,11 @@ func TestAccTFEOrganizationDataSource_defaultProject(t *testing.T) {
 // The data source will use the default org name from provider config if omitted.
 func TestAccTFEOrganizationDataSource_defaultOrganization(t *testing.T) {
 	defaultOrgName, _ := setupDefaultOrganization(t)
-	providers := providerWithDefaultOrganization(defaultOrgName)
+	providers := muxedProvidersWithDefaultOrganization(defaultOrgName)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: providers,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: providers,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationDataSourceConfig_noName(),

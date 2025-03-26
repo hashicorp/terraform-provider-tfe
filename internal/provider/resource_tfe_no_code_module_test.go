@@ -50,14 +50,14 @@ func TestAccTFENoCodeModule_with_variable_options(t *testing.T) {
 	}
 	org, cleanup := createBusinessOrganization(t, tfeClient)
 	defer cleanup()
-	providers := providerWithDefaultOrganization(org.Name)
+	providers := muxedProvidersWithDefaultOrganization(org.Name)
 	cfg := testAccTFENoCodeModule_with_variable_options(org.Name)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: providers,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: providers,
 		CheckDestroy: func(s *terraform.State) error {
-			return testAccCheckTFENoCodeModuleDestroy(providers["tfe"].Meta().(ConfiguredClient), s)
+			return testAccCheckTFENoCodeModuleDestroy(*testAccConfiguredClient, s)
 		},
 		Steps: []resource.TestStep{
 			{
@@ -110,14 +110,14 @@ func TestAccTFENoCodeModule_with_version_pin(t *testing.T) {
 	}
 	org, cleanup := createBusinessOrganization(t, tfeClient)
 	defer cleanup()
-	providers := providerWithDefaultOrganization(org.Name)
+	providers := muxedProvidersWithDefaultOrganization(org.Name)
 	cfg := testAccTFENoCodeModule_with_version_pin(org.Name)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: providers,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: providers,
 		CheckDestroy: func(s *terraform.State) error {
-			return testAccCheckTFENoCodeModuleDestroy(providers["tfe"].Meta().(ConfiguredClient), s)
+			return testAccCheckTFENoCodeModuleDestroy(*testAccConfiguredClient, s)
 		},
 		Steps: []resource.TestStep{
 			{
@@ -130,11 +130,10 @@ func TestAccTFENoCodeModule_with_version_pin(t *testing.T) {
 							return fmt.Errorf("Not found: %s", n)
 						}
 
-						config := providers["tfe"].Meta().(ConfiguredClient)
 						opts := &tfe.RegistryNoCodeModuleReadOptions{
 							Include: []tfe.RegistryNoCodeModuleIncludeOpt{tfe.RegistryNoCodeIncludeVariableOptions},
 						}
-						nocodeModule, err := config.Client.RegistryNoCodeModules.Read(ctx, rs.Primary.ID, opts)
+						nocodeModule, err := testAccConfiguredClient.Client.RegistryNoCodeModules.Read(ctx, rs.Primary.ID, opts)
 						if err != nil {
 							return fmt.Errorf("unable to read nocodeModule with ID %s", rs.Primary.ID)
 						}
