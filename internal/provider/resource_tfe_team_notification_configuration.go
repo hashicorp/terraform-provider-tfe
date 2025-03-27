@@ -60,13 +60,14 @@ type modelTFETeamNotificationConfiguration struct {
 
 // modelFromTFETeamNotificationConfiguration builds a modelTFETeamNotificationConfiguration
 // struct from a tfe.TeamNotificationConfiguration value.
-func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration, isWriteOnly bool) (*modelTFETeamNotificationConfiguration, *diag.Diagnostics) {
+func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration, isWriteOnly bool, lastValue types.String) (*modelTFETeamNotificationConfiguration, *diag.Diagnostics) {
 	result := modelTFETeamNotificationConfiguration{
 		ID:              types.StringValue(v.ID),
 		Name:            types.StringValue(v.Name),
 		DestinationType: types.StringValue(string(v.DestinationType)),
 		Enabled:         types.BoolValue(v.Enabled),
 		TeamID:          types.StringValue(v.SubscribableChoice.Team.ID),
+		Token:           types.StringValue(""),
 	}
 
 	if len(v.EmailAddresses) == 0 {
@@ -100,8 +101,9 @@ func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration,
 
 		result.EmailUserIDs = types.SetValueMust(types.StringType, emailUserIDs)
 	}
-	if v.Token != "" {
-		result.Token = types.StringValue(v.Token)
+
+	if lastValue.String() != "" {
+		result.Token = lastValue
 	}
 
 	if isWriteOnly {
@@ -356,7 +358,7 @@ func (r *resourceTFETeamNotificationConfiguration) Create(ctx context.Context, r
 		tnc.Token = plan.Token.ValueString()
 	}
 
-	result, diags := modelFromTFETeamNotificationConfiguration(tnc, isWriteOnly)
+	result, diags := modelFromTFETeamNotificationConfiguration(tnc, isWriteOnly, plan.Token)
 	if diags != nil {
 		resp.Diagnostics.Append(*diags...)
 		return
@@ -401,7 +403,7 @@ func (r *resourceTFETeamNotificationConfiguration) Read(ctx context.Context, req
 		return
 	}
 
-	result, diagsPtr := modelFromTFETeamNotificationConfiguration(tnc, isWriteOnly)
+	result, diagsPtr := modelFromTFETeamNotificationConfiguration(tnc, isWriteOnly, state.Token)
 	if diagsPtr != nil && diagsPtr.HasError() {
 		resp.Diagnostics.Append(*diagsPtr...)
 		return
@@ -477,11 +479,15 @@ func (r *resourceTFETeamNotificationConfiguration) Update(ctx context.Context, r
 		return
 	}
 
-	result, diags := modelFromTFETeamNotificationConfiguration(tnc, !config.TokenWO.IsNull())
+	result, diags := modelFromTFETeamNotificationConfiguration(tnc, !config.TokenWO.IsNull(), plan.Token)
 	if diags != nil && diags.HasError() {
 		resp.Diagnostics.Append((*diags)...)
 		return
 	}
+
+	// Write the hashed private key to the state if it was provided
+	store := r.writeOnlyValueStore(resp.Private)
+	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.TokenWO)...)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
