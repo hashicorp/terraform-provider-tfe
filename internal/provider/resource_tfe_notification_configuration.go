@@ -5,6 +5,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -328,11 +329,10 @@ func (r *resourceTFENotificationConfiguration) Create(ctx context.Context, req r
 
 	// Add email_addresses set to the options struct
 	emailAddresses := make([]types.String, len(plan.EmailAddresses.Elements()))
-	if diags := plan.EmailAddresses.ElementsAs(ctx, &emailAddresses, true); diags != nil && diags.HasError() {
-		resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(plan.EmailAddresses.ElementsAs(ctx, &emailAddresses, true)...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
-
 	options.EmailAddresses = []string{}
 	for _, emailAddress := range emailAddresses {
 		options.EmailAddresses = append(options.EmailAddresses, emailAddress.ValueString())
@@ -340,16 +340,18 @@ func (r *resourceTFENotificationConfiguration) Create(ctx context.Context, req r
 
 	// Add email_user_ids set to the options struct
 	emailUserIDs := make([]types.String, len(plan.EmailUserIDs.Elements()))
-	if diags := plan.EmailUserIDs.ElementsAs(ctx, &emailUserIDs, true); diags != nil && diags.HasError() {
-		resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(plan.EmailUserIDs.ElementsAs(ctx, &emailUserIDs, true)...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	options.EmailUsers = []*tfe.User{}
 	for _, emailUserID := range emailUserIDs {
 		options.EmailUsers = append(options.EmailUsers, &tfe.User{ID: emailUserID.ValueString()})
 	}
 
 	tflog.Debug(ctx, "Creating notification configuration")
+
 	nc, err := r.config.Client.NotificationConfigurations.Create(ctx, workspaceID, options)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to create notification configuration", err.Error())
@@ -366,8 +368,8 @@ func (r *resourceTFENotificationConfiguration) Create(ctx context.Context, req r
 
 	// We got a notification, so set state to new values
 	result, diags := modelFromTFENotificationConfiguration(nc, !config.TokenWO.IsNull())
-	if diags != nil && diags.HasError() {
-		resp.Diagnostics.Append((diags)...)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -395,7 +397,12 @@ func (r *resourceTFENotificationConfiguration) Read(ctx context.Context, req res
 	tflog.Debug(ctx, fmt.Sprintf("Reading notification configuration %q", state.ID.ValueString()))
 	nc, err := r.config.Client.NotificationConfigurations.Read(ctx, state.ID.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to read notification configuration", err.Error())
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			tflog.Debug(ctx, fmt.Sprintf("`Notification configuration %s no longer exists", state.ID))
+			resp.State.RemoveResource(ctx)
+		} else {
+			resp.Diagnostics.AddError("Error reading notification configuration", "Could not read notification configuration, unexpected error: "+err.Error())
+		}
 		return
 	}
 
@@ -406,13 +413,13 @@ func (r *resourceTFENotificationConfiguration) Read(ctx context.Context, req res
 
 	isWriteOnly, diags := r.writeOnlyValueStore(resp.Private).PriorValueExists(ctx)
 	resp.Diagnostics.Append(diags...)
-	if diags.HasError() {
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	result, diags := modelFromTFENotificationConfiguration(nc, isWriteOnly)
-	if diags != nil && diags.HasError() {
-		resp.Diagnostics.Append((diags)...)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -449,10 +456,11 @@ func (r *resourceTFENotificationConfiguration) Update(ctx context.Context, req r
 
 	// Add triggers set to the options struct
 	triggers := make([]types.String, len(plan.Triggers.Elements()))
-	if diags := plan.Triggers.ElementsAs(ctx, &triggers, true); diags != nil && diags.HasError() {
-		resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(plan.Triggers.ElementsAs(ctx, &triggers, true)...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	options.Triggers = []tfe.NotificationTriggerType{}
 	for _, trigger := range triggers {
 		options.Triggers = append(options.Triggers, tfe.NotificationTriggerType(trigger.ValueString()))
@@ -460,10 +468,11 @@ func (r *resourceTFENotificationConfiguration) Update(ctx context.Context, req r
 
 	// Add email_addresses set to the options struct
 	emailAddresses := make([]types.String, len(plan.EmailAddresses.Elements()))
-	if diags := plan.EmailAddresses.ElementsAs(ctx, &emailAddresses, true); diags != nil && diags.HasError() {
-		resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(plan.EmailAddresses.ElementsAs(ctx, &emailAddresses, true)...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	options.EmailAddresses = []string{}
 	for _, emailAddress := range emailAddresses {
 		options.EmailAddresses = append(options.EmailAddresses, emailAddress.ValueString())
@@ -471,10 +480,11 @@ func (r *resourceTFENotificationConfiguration) Update(ctx context.Context, req r
 
 	// Add email_user_ids set to the options struct
 	emailUserIDs := make([]types.String, len(plan.EmailUserIDs.Elements()))
-	if diags := plan.EmailUserIDs.ElementsAs(ctx, &emailUserIDs, true); diags != nil && diags.HasError() {
-		resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(plan.EmailUserIDs.ElementsAs(ctx, &emailUserIDs, true)...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	options.EmailUsers = []*tfe.User{}
 	for _, emailUserID := range emailUserIDs {
 		options.EmailUsers = append(options.EmailUsers, &tfe.User{ID: emailUserID.ValueString()})
@@ -503,8 +513,8 @@ func (r *resourceTFENotificationConfiguration) Update(ctx context.Context, req r
 	}
 
 	result, diags := modelFromTFENotificationConfiguration(nc, !config.TokenWO.IsNull())
-	if diags != nil && diags.HasError() {
-		resp.Diagnostics.Append((diags)...)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 

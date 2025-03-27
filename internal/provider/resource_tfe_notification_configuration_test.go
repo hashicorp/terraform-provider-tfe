@@ -12,8 +12,11 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-testing/compare"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
 )
 
 func TestAccTFENotificationConfiguration_basic(t *testing.T) {
@@ -51,6 +54,8 @@ func TestAccTFENotificationConfiguration_WriteOnly(t *testing.T) {
 	notificationConfiguration := &tfe.NotificationConfiguration{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
+	compareValuesDiffer := statecheck.CompareValue(compare.ValuesDiffer())
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
 		ProtoV5ProviderFactories: testAccMuxedProviders,
@@ -61,7 +66,7 @@ func TestAccTFENotificationConfiguration_WriteOnly(t *testing.T) {
 				ExpectError: regexp.MustCompile(`Attribute "token_wo" cannot be specified when "token" is specified`),
 			},
 			{
-				Config: testAccTFENotificationConfiguration_tokenWriteOnly(rInt),
+				Config: testAccTFENotificationConfiguration_tokenWriteOnly(rInt, "1"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
 						"tfe_notification_configuration.foobar", notificationConfiguration),
@@ -76,6 +81,34 @@ func TestAccTFENotificationConfiguration_WriteOnly(t *testing.T) {
 						"tfe_notification_configuration.foobar", "url", runTasksURL()),
 					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "token_wo"),
 				),
+				ConfigStateChecks: []statecheck.StateCheck{
+					compareValuesDiffer.AddStateValue(
+						"tfe_notification_configuration.foobar", tfjsonpath.New("id"),
+					),
+				},
+			},
+			{
+				Config: testAccTFENotificationConfiguration_tokenWriteOnly(rInt, "2"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "token_wo"),
+				),
+				ConfigStateChecks: []statecheck.StateCheck{
+					compareValuesDiffer.AddStateValue(
+						"tfe_notification_configuration.foobar", tfjsonpath.New("id"),
+					),
+				},
+			},
+			{
+				Config: testAccTFENotificationConfiguration_basic(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "token_wo"),
+					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "token"),
+				),
+				ConfigStateChecks: []statecheck.StateCheck{
+					compareValuesDiffer.AddStateValue(
+						"tfe_notification_configuration.foobar", tfjsonpath.New("id"),
+					),
+				},
 			},
 		},
 	})
@@ -850,7 +883,7 @@ resource "tfe_notification_configuration" "foobar" {
 }`, rInt, runTasksURL())
 }
 
-func testAccTFENotificationConfiguration_tokenWriteOnly(rInt int) string {
+func testAccTFENotificationConfiguration_tokenWriteOnly(rInt int, wo string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
@@ -865,10 +898,10 @@ resource "tfe_workspace" "foobar" {
 resource "tfe_notification_configuration" "foobar" {
   name             = "notification_basic"
   destination_type = "generic"
-  token			   = "some-token"
+  token_wo			   = "%s"
   url              = "%s"
   workspace_id     = tfe_workspace.foobar.id
-}`, rInt, runTasksURL())
+}`, rInt, wo, runTasksURL())
 }
 
 func testAccTFENotificationConfiguration_tokenAndTokenWriteOnly(rInt int) string {
