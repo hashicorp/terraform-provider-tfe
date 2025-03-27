@@ -129,7 +129,6 @@ func TestAccTFEWorkspaceProviderDefaultOrgChanged(t *testing.T) {
 	providersWithAnotherOrg := muxedProvidersWithDefaultOrganization(anotherOrg.Name)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
