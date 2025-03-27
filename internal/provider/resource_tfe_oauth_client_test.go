@@ -150,8 +150,8 @@ func TestAccTFEOAuthClient_updateOAuthTokenID(t *testing.T) {
 				t.Skip("Please set GITHUB_TOKEN2 to run this test")
 			}
 		},
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOAuthClientDestroy,
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOAuthClientDestroy,
 		Steps: []resource.TestStep{
 			// Step 1: Create with the initial oauth_token_id.
 			{
