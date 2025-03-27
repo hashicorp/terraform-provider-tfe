@@ -359,7 +359,7 @@ func (r *resourceTFETeamNotificationConfiguration) Create(ctx context.Context, r
 	}
 
 	result, diags := modelFromTFETeamNotificationConfiguration(tnc, isWriteOnly, plan.Token)
-	if diags != nil {
+	if diags.HasError() {
 		resp.Diagnostics.Append(*diags...)
 		return
 	}
