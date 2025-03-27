@@ -56,7 +56,8 @@ In addition to all arguments above, the following attributes are exported:
 * `speculative_enabled` - Indicates whether this workspace allows speculative plans.
 * `ssh_key_id` - The ID of an SSH key assigned to the workspace.
 * `structured_run_output_enabled` - Indicates whether runs in this workspace use the enhanced apply UI.
-* `tag_names` - The names of tags added to this workspace.
+* `effective_tags` - A map of key-value tags associated with the workspace, including any inherited tags from the parent project.
+* `tag_names` - **Deprecated** The names of tags added to this workspace.
 * `terraform_version` - The version (or version constraint) of Terraform used for this workspace.
 * `trigger_prefixes` - List of trigger prefixes that describe the paths HCP Terraform monitors for changes, in addition to the working directory. Trigger prefixes are always appended to the root directory of the repository.
   HCP Terraform or Terraform Enterprise will start a run when files are changed in any directory path matching the provided set of prefixes.

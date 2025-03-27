@@ -62,6 +62,19 @@ func resourceTFEProject() *schema.Resource {
 				Optional:     true,
 				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^\d{1,4}[dh]$`), "must be 1-4 digits followed by d or h"),
 			},
+
+			"tags": {
+				Type:     schema.TypeMap,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
+
+			"ignore_additional_tags": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -109,9 +122,28 @@ func resourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.FromErr(err)
 	}
 
+	tagBindings, err := config.Client.Projects.ListTagBindings(ctx, project.ID)
+	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+		return diag.FromErr(err)
+	}
+	if err != nil {
+		log.Printf("[DEBUG] Project %s no longer exists or tag bindings are not supported by this instance", d.Id())
+		tagBindings = []*tfe.TagBinding{}
+	}
+
+	bindings := make(map[string]interface{})
+	configBindings := d.Get("tags").(map[string]interface{})
+	for _, binding := range tagBindings {
+		_, ok := configBindings[binding.Key]
+		if ok || !d.Get("ignore_additional_tags").(bool) {
+			bindings[binding.Key] = binding.Value
+		}
+	}
+
 	d.Set("name", project.Name)
 	d.Set("description", project.Description)
 	d.Set("organization", project.Organization.Name)
+	d.Set("tags", bindings)
 
 	if project.AutoDestroyActivityDuration.IsSpecified() {
 		v, err := project.AutoDestroyActivityDuration.Get()
@@ -139,6 +171,21 @@ func resourceTFEProjectUpdate(ctx context.Context, d *schema.ResourceData, meta 
 			options.AutoDestroyActivityDuration = jsonapi.NewNullNullableAttr[string]()
 		} else {
 			options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(duration.(string))
+		}
+	}
+	if tagBindings, ok := d.Get("tags").(map[string]interface{}); ok {
+		for key, val := range tagBindings {
+			options.TagBindings = append(options.TagBindings, &tfe.TagBinding{
+				Key:   key,
+				Value: val.(string),
+			})
+		}
+
+		if len(options.TagBindings) == 0 && !d.Get("ignore_additional_tags").(bool) {
+			err := config.Client.Projects.DeleteAllTagBindings(ctx, d.Id())
+			if err != nil {
+				return diag.Errorf("Error removing tag bindings from project %s: %v", d.Id(), err)
+			}
 		}
 	}
 

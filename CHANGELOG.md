@@ -1,5 +1,9 @@
 ## Unreleased
 
+DEPRECATIONS:
+* `r/tfe_workspace`: `tag_names` and `ignore_additional_tag_names` have been deprecated in favor of `tags` and `ignore_additional_tags` which manage key-value tags for a workspace.
+* `d/tfe_workspace_ids`: `tag_names` has been deprecated in favor of `tag_filters` to query for workspaces by key-value tags.
+
 FEATURES:
 
 * **New Ephemeral Resource:** `tfe_organization_token` is a new ephemeral
@@ -12,6 +16,12 @@ FEATURES:
 
 * **New Ephemeral Resource:** `agent_token` is a new ephemeral
   resource for creating and managing agent tokens, by @uturunku1 ([#1627](https://github.com/hashicorp/terraform-provider-tfe/pull/1627))
+* `r/tfe_project`: Adds `tags` and `ignore_additional_tags` attribute, by @sebasslash [#1543](https://github.com/hashicorp/terraform-provider-tfe/pull/1543)
+* `r/tfe_workspace`: Adds `tags`, `ignore_additional_tags` and `effective_tags` attribute, by @sebasslash [#1543](https://github.com/hashicorp/terraform-provider-tfe/pull/1543)
+* `d/tfe_project`: Adds the `effective_tags` attribute, by @sebasslash [#1543](https://github.com/hashicorp/terraform-provider-tfe/pull/1543)
+* `d/tfe_workspace`: Adds the `effective_tags` attribute which reflects all effective tags computed on the workspace, by @sebasslash [#1543](https://github.com/hashicorp/terraform-provider-tfe/pull/1543)
+* `d/tfe_workspace_ids`: Adds the `tag_filters` attribute which filters the list of workspace IDs specified by the `include` or `exclude` fields, by @sebasslash [#1543](https://github.com/hashicorp/terraform-provider-tfe/pull/1543)
+
 
 ENHANCEMENTS:
 
@@ -26,6 +36,8 @@ ENHANCEMENTS:
 * resource/tfe_saml_settings: Add `private_key_wo` write-only attribute, by @uturunku1 ([#1660](https://github.com/hashicorp/terraform-provider-tfe/pull/1660))
 
 * resource/tfe_ssh_key: Add `key_wo` write-only attribute, by @ctrombley ([#1659](https://github.com/hashicorp/terraform-provider-tfe/pull/1659))
+
+
 ## v.0.64.0
 
 FEATURES:
