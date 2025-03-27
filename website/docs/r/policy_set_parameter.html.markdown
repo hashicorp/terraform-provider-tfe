@@ -37,6 +37,7 @@ The following arguments are supported:
 
 * `key` - (Required) Name of the parameter.
 * `value` - (Required) Value of the parameter.
+* `value_wo` - (Required) Write-only value of the parameter.
 * `sensitive` - (Optional) Whether the value is sensitive. If true then the
   parameter is written once and not visible thereafter. Defaults to `false`.
 * `policy_set_id` - (Required) The ID of the policy set that owns the parameter.

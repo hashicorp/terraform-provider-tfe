@@ -115,6 +115,10 @@ The following arguments are supported:
   be used by the receiving server to verify request authenticity when configured for notification
   configurations with a destination type of `generic`. Defaults to `null`.
   This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.
+* `token_wo` - (Optional) Write-only secure token for the notification configuration, which can
+  be used by the receiving server to verify request authenticity when configured for notification
+  configurations with a destination type of `generic`. Defaults to `null`.
+  This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.
 * `triggers` - (Optional) The array of triggers for which this notification configuration will
   send notifications. Valid values are `run:created`, `run:planning`, `run:needs_attention`, `run:applying`
   `run:completed`, `run:errored`, `assessment:check_failure`, `assessment:drifted`, `assessment:failed`, `workspace:auto_destroy_reminder`, or `workspace:auto_destroy_run_results`.
