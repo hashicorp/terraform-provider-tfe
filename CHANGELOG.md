@@ -13,6 +13,9 @@ FEATURES:
 * **New Ephemeral Resource:** `agent_token` is a new ephemeral
   resource for creating and managing agent tokens, by @uturunku1 ([#1627](https://github.com/hashicorp/terraform-provider-tfe/pull/1627))
 
+BUG FIXES:
+* `r/tfe_oauth_client`: Ensure `oauth_token_id` updates register when performing a `terraform apply`, by @hashimoon[#1631](https://github.com/hashicorp/terraform-provider-tfe/pull/1631)
+
 ENHANCEMENTS:
 
 * resource/tfe_variable: Add `value_wo` write-only attribute, by @uturunku ([#1639](https://github.com/hashicorp/terraform-provider-tfe/pull/1639))
@@ -26,6 +29,7 @@ ENHANCEMENTS:
 * resource/tfe_saml_settings: Add `private_key_wo` write-only attribute, by @uturunku1 ([#1660](https://github.com/hashicorp/terraform-provider-tfe/pull/1660))
 
 * resource/tfe_ssh_key: Add `key_wo` write-only attribute, by @ctrombley ([#1659](https://github.com/hashicorp/terraform-provider-tfe/pull/1659))
+
 ## v.0.64.0
 
 FEATURES:
@@ -35,8 +39,6 @@ FEATURES:
 * `r/tfe_team_project_access`: Add `variable_sets` attribute to `project_access`, by @mkam [#1565](https://github.com/hashicorp/terraform-provider-tfe/pull/1565)
 
 BUG FIXES:
-* `r/tfe_oauth_client`: Ensure `oauth_token_id` updates register when performing a `terraform apply`, by @hashimoon[#1631](https://github.com/hashicorp/terraform-provider-tfe/pull/1631)
-
 * `r/tfe_stack`: Fix serialization issue when using github app installation within vcs_repo block, by @mjyocca [#1572](https://github.com/hashicorp/terraform-provider-tfe/pull/1572)
 
 * `r/tfe_workspace_settings`: Prevent fetching of all workspaces as the `remote_state_consumer_ids` when `global_remote_state` is set to true, by @uk1288 [#1606](https://github.com/hashicorp/terraform-provider-tfe/pull/1606)
