@@ -88,9 +88,9 @@ func TestAccTFETeamMember_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamMemberDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamMemberDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamMember_basic(rInt),
@@ -113,9 +113,9 @@ func TestAccTFETeamMember_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamMemberDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamMemberDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamMember_basic(rInt),
@@ -133,8 +133,6 @@ func TestAccTFETeamMember_import(t *testing.T) {
 func testAccCheckTFETeamMemberExists(
 	n string, user *tfe.User) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("not found: %s", n)
@@ -150,7 +148,7 @@ func testAccCheckTFETeamMemberExists(
 			return fmt.Errorf("error unpacking team member ID: %w", err)
 		}
 
-		users, err := config.Client.TeamMembers.List(ctx, teamID)
+		users, err := testAccConfiguredClient.Client.TeamMembers.List(ctx, teamID)
 		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 			return err
 		}
@@ -183,8 +181,6 @@ func testAccCheckTFETeamMemberAttributes(
 }
 
 func testAccCheckTFETeamMemberDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_team_member" {
 			continue
@@ -200,7 +196,7 @@ func testAccCheckTFETeamMemberDestroy(s *terraform.State) error {
 			return fmt.Errorf("error unpacking team member ID: %w", err)
 		}
 
-		users, err := config.Client.TeamMembers.List(ctx, teamID)
+		users, err := testAccConfiguredClient.Client.TeamMembers.List(ctx, teamID)
 		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 			return err
 		}

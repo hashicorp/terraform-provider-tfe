@@ -19,8 +19,8 @@ func TestAccTFEOrganizationMembershipDataSource_basic(t *testing.T) {
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationMembershipDataSourceConfig(rInt),
@@ -67,7 +67,7 @@ func TestAccTFEOrganizationMembershipDataSource_findByName(t *testing.T) {
 				t.Skip("Please set TFE_USER1 to run this test")
 			}
 		},
-		Providers: testAccProviders,
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationMembershipDataSourceSearchUsername(envTFEUser1),
@@ -89,8 +89,8 @@ func TestAccTFEOrganizationMembershipDataSource_missingParams(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEOrganizationMembershipDataSourceMissingParams(rInt),

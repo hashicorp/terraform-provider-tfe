@@ -147,8 +147,6 @@ func TestAccTFETestVariable_update(t *testing.T) {
 func testAccCheckTFETestVariableExists(
 	n string, variable *tfe.Variable) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -165,7 +163,7 @@ func testAccCheckTFETestVariableExists(
 			RegistryName: "private",
 		}
 
-		v, err := config.Client.TestVariables.Read(ctx, moduleID, rs.Primary.ID)
+		v, err := testAccConfiguredClient.Client.TestVariables.Read(ctx, moduleID, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -177,8 +175,6 @@ func testAccCheckTFETestVariableExists(
 }
 
 func testAccCheckTFETestVariableDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_test_variable" {
 			continue
@@ -196,7 +192,7 @@ func testAccCheckTFETestVariableDestroy(s *terraform.State) error {
 			RegistryName: "private",
 		}
 
-		_, err := config.Client.TestVariables.Read(ctx, moduleID, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.TestVariables.Read(ctx, moduleID, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Variable %s still exists", rs.Primary.ID)
 		}

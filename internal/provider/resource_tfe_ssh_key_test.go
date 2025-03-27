@@ -153,8 +153,6 @@ func TestAccTFESSHKey_keyWO(t *testing.T) {
 func testAccCheckTFESSHKeyExists(
 	n string, sshKey *tfe.SSHKey) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -164,7 +162,7 @@ func testAccCheckTFESSHKeyExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		sk, err := config.Client.SSHKeys.Read(ctx, rs.Primary.ID)
+		sk, err := testAccConfiguredClient.Client.SSHKeys.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -200,8 +198,6 @@ func testAccCheckTFESSHKeyAttributesUpdated(
 }
 
 func testAccCheckTFESSHKeyDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_ssh_key" {
 			continue
@@ -211,7 +207,7 @@ func testAccCheckTFESSHKeyDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.SSHKeys.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.SSHKeys.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("SSH key %s still exists", rs.Primary.ID)
 		}

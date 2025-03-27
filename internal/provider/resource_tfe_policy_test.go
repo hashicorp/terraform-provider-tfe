@@ -24,9 +24,9 @@ func TestAccTFEPolicy_basic(t *testing.T) {
 	policy := &tfe.Policy{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEPolicyDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEPolicy_basic(org.Name),
@@ -62,9 +62,9 @@ func TestAccTFEPolicy_basicWithDefaults(t *testing.T) {
 	policy := &tfe.Policy{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEPolicyDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEPolicy_basicWithDefaults(org.Name),
@@ -100,9 +100,9 @@ func TestAccTFEPolicyOPA_basic(t *testing.T) {
 	policy := &tfe.Policy{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEPolicyDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEPolicyOPA_basic(org.Name),
@@ -140,9 +140,9 @@ func TestAccTFEPolicy_update(t *testing.T) {
 	policy := &tfe.Policy{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEPolicyDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEPolicy_basic(org.Name),
@@ -198,9 +198,9 @@ func TestAccTFEPolicy_unsetEnforce(t *testing.T) {
 	policy := &tfe.Policy{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEPolicyDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEPolicy_basic(org.Name),
@@ -253,9 +253,9 @@ func TestAccTFEPolicyOPA_update(t *testing.T) {
 	policy := &tfe.Policy{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEPolicyDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEPolicyOPA_basic(org.Name),
@@ -354,9 +354,9 @@ func TestAccTFEPolicy_import(t *testing.T) {
 	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEPolicyDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEPolicy_basic(org.Name),
@@ -375,8 +375,6 @@ func TestAccTFEPolicy_import(t *testing.T) {
 func testAccCheckTFEPolicyExists(
 	n string, policy *tfe.Policy) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -386,7 +384,7 @@ func testAccCheckTFEPolicyExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		p, err := config.Client.Policies.Read(ctx, rs.Primary.ID)
+		p, err := testAccConfiguredClient.Client.Policies.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			// nolint: wrapcheck
 			return err
@@ -404,9 +402,7 @@ func testAccCheckTFEPolicyExists(
 
 func testAccCheckTFEPolicyContent(policy *tfe.Policy, content string) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
-		b, err := config.Client.Policies.Download(ctx, policy.ID)
+		b, err := testAccConfiguredClient.Client.Policies.Download(ctx, policy.ID)
 		if err != nil {
 			return fmt.Errorf("Problem downloading policy content: %w", err)
 		}
@@ -533,8 +529,6 @@ func testAccCheckTFEOPAPolicyAttributesUpdatedAll(
 }
 
 func testAccCheckTFEPolicyDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_policy" {
 			continue
@@ -544,7 +538,7 @@ func testAccCheckTFEPolicyDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.Policies.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.Policies.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf(" policy %s still exists", rs.Primary.ID)
 		}

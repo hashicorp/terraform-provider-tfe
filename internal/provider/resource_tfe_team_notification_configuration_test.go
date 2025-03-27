@@ -697,8 +697,6 @@ func TestAccTFETeamNotificationConfigurationImport_emptyEmailUserIDs(t *testing.
 
 func testAccCheckTFETeamNotificationConfigurationExists(n string, notificationConfiguration *tfe.NotificationConfiguration) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -708,7 +706,7 @@ func testAccCheckTFETeamNotificationConfigurationExists(n string, notificationCo
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		nc, err := config.Client.NotificationConfigurations.Read(ctx, rs.Primary.ID)
+		nc, err := testAccConfiguredClient.Client.NotificationConfigurations.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -910,8 +908,6 @@ func testAccCheckTFETeamNotificationConfigurationAttributesDuplicateTriggers(not
 }
 
 func testAccCheckTFETeamNotificationConfigurationDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_team_notification_configuration" {
 			continue
@@ -921,7 +917,7 @@ func testAccCheckTFETeamNotificationConfigurationDestroy(s *terraform.State) err
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.NotificationConfigurations.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.NotificationConfigurations.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Notification configuration %s still exists", rs.Primary.ID)
 		}

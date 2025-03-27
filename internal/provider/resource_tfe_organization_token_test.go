@@ -21,9 +21,9 @@ func TestAccTFEOrganizationToken_basic(t *testing.T) {
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationToken_basic(rInt),
@@ -44,9 +44,9 @@ func TestAccTFEOrganizationToken_existsWithoutForce(t *testing.T) {
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationToken_basic(rInt),
@@ -72,9 +72,9 @@ func TestAccTFEOrganizationToken_existsWithForce(t *testing.T) {
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationToken_basic(rInt),
@@ -105,9 +105,9 @@ func TestAccTFEOrganizationToken_withBlankExpiry(t *testing.T) {
 	expiredAt := ""
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationToken_withBlankExpiry(rInt),
@@ -128,9 +128,9 @@ func TestAccTFEOrganizationToken_withValidExpiry(t *testing.T) {
 	expiredAt := "2051-04-11T23:15:59Z"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationToken_withValidExpiry(rInt),
@@ -149,9 +149,9 @@ func TestAccTFEOrganizationToken_withInvalidExpiry(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEOrganizationToken_withInvalidExpiry(rInt),
@@ -165,9 +165,9 @@ func TestAccTFEOrganizationToken_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationToken_basic(rInt),
@@ -186,8 +186,6 @@ func TestAccTFEOrganizationToken_import(t *testing.T) {
 func testAccCheckTFEOrganizationTokenExists(
 	n string, token *tfe.OrganizationToken) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -197,7 +195,7 @@ func testAccCheckTFEOrganizationTokenExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		ot, err := config.Client.OrganizationTokens.Read(ctx, rs.Primary.ID)
+		ot, err := testAccConfiguredClient.Client.OrganizationTokens.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -213,8 +211,6 @@ func testAccCheckTFEOrganizationTokenExists(
 }
 
 func testAccCheckTFEOrganizationTokenDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_organization_token" {
 			continue
@@ -224,7 +220,7 @@ func testAccCheckTFEOrganizationTokenDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.OrganizationTokens.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.OrganizationTokens.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("OrganizationToken %s still exists", rs.Primary.ID)
 		}

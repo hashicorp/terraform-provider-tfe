@@ -219,8 +219,6 @@ func TestAccTFEOrganizationRunTaskGlobalSettings_Read(t *testing.T) {
 
 func testAccCheckTFEOrganizationRunTaskGlobalEnabled(resourceName string, expectedEnabled bool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[resourceName]
 		if !ok {
 			return fmt.Errorf("Not found: %s", resourceName)
@@ -229,7 +227,7 @@ func testAccCheckTFEOrganizationRunTaskGlobalEnabled(resourceName string, expect
 		if rs.Primary.ID == "" {
 			return fmt.Errorf("No instance ID is set")
 		}
-		rt, err := config.Client.RunTasks.Read(ctx, rs.Primary.ID)
+		rt, err := testAccConfiguredClient.Client.RunTasks.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("error reading Run Task: %w", err)
 		}

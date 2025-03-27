@@ -25,9 +25,9 @@ func TestAccTFESentinelVersion_basic(t *testing.T) {
 	version := genSafeRandomSentinelVersion()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFESentinelVersionDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFESentinelVersionDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFESentinelVersion_basic(version, sha),
@@ -53,9 +53,9 @@ func TestAccTFESentinelVersion_import(t *testing.T) {
 	version := genSafeRandomSentinelVersion()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFESentinelVersionDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFESentinelVersionDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFESentinelVersion_basic(version, sha),
@@ -83,9 +83,9 @@ func TestAccTFESentinelVersion_full(t *testing.T) {
 	version := genSafeRandomSentinelVersion()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFESentinelVersionDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFESentinelVersionDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFESentinelVersion_full(version, sha),
@@ -115,8 +115,6 @@ func TestAccTFESentinelVersion_full(t *testing.T) {
 }
 
 func testAccCheckTFESentinelVersionDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_sentinel_version" {
 			continue
@@ -126,7 +124,7 @@ func testAccCheckTFESentinelVersionDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.Admin.SentinelVersions.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.Admin.SentinelVersions.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Sentinel version %s still exists", rs.Primary.ID)
 		}
@@ -137,8 +135,6 @@ func testAccCheckTFESentinelVersionDestroy(s *terraform.State) error {
 
 func testAccCheckTFESentinelVersionExists(n string, sentinelVersion *tfe.AdminSentinelVersion) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -148,7 +144,7 @@ func testAccCheckTFESentinelVersionExists(n string, sentinelVersion *tfe.AdminSe
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		v, err := config.Client.Admin.SentinelVersions.Read(ctx, rs.Primary.ID)
+		v, err := testAccConfiguredClient.Client.Admin.SentinelVersions.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}

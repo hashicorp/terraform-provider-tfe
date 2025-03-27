@@ -28,9 +28,9 @@ func TestAccTFETeamAccess_admin(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamAccessDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamAccess_admin(rInt),
@@ -66,9 +66,9 @@ func TestAccTFETeamAccess_write(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamAccessDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamAccess_write(rInt),
@@ -95,9 +95,9 @@ func TestAccTFETeamAccess_custom(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamAccessDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamAccess_custom(rInt),
@@ -134,9 +134,9 @@ func TestAccTFETeamAccess_updateToCustom(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamAccessDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamAccess_write(rInt),
@@ -199,9 +199,9 @@ func TestAccTFETeamAccess_updateFromCustom(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamAccessDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamAccess_custom(rInt),
@@ -263,9 +263,9 @@ func TestAccTFETeamAccess_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamAccessDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamAccess_write(rInt),
@@ -284,8 +284,6 @@ func TestAccTFETeamAccess_import(t *testing.T) {
 func testAccCheckTFETeamAccessExists(
 	n string, tmAccess *tfe.TeamAccess) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("not found: %s", n)
@@ -295,7 +293,7 @@ func testAccCheckTFETeamAccessExists(
 			return fmt.Errorf("no instance ID is set")
 		}
 
-		ta, err := config.Client.TeamAccess.Read(ctx, rs.Primary.ID)
+		ta, err := testAccConfiguredClient.Client.TeamAccess.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -344,8 +342,6 @@ func testAccCheckTFETeamAccessAttributesPermissionsAre(tmAccess *tfe.TeamAccess,
 }
 
 func testAccCheckTFETeamAccessDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_team_access" {
 			continue
@@ -355,7 +351,7 @@ func testAccCheckTFETeamAccessDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.TeamAccess.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.TeamAccess.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Team access %s still exists", rs.Primary.ID)
 		}

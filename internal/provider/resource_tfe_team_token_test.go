@@ -20,9 +20,9 @@ func TestAccTFETeamToken_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamTokenDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamToken_basic(rInt),
@@ -40,9 +40,9 @@ func TestAccTFETeamToken_existsWithoutForce(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamTokenDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamToken_basic(rInt),
@@ -65,9 +65,9 @@ func TestAccTFETeamToken_existsWithForce(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamTokenDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamToken_basic(rInt),
@@ -94,9 +94,9 @@ func TestAccTFETeamToken_withBlankExpiry(t *testing.T) {
 	expiredAt := ""
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamTokenDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamToken_withBlankExpiry(rInt),
@@ -117,9 +117,9 @@ func TestAccTFETeamToken_withValidExpiry(t *testing.T) {
 	expiredAt := "2051-04-11T23:15:59Z"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamTokenDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamToken_withValidExpiry(rInt),
@@ -138,9 +138,9 @@ func TestAccTFETeamToken_withInvalidExpiry(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamTokenDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFETeamToken_withInvalidExpiry(rInt),
@@ -154,9 +154,9 @@ func TestAccTFETeamToken_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamTokenDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamToken_basic(rInt),
@@ -175,8 +175,6 @@ func TestAccTFETeamToken_import(t *testing.T) {
 func testAccCheckTFETeamTokenExists(
 	n string, token *tfe.TeamToken) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -186,7 +184,7 @@ func testAccCheckTFETeamTokenExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		tt, err := config.Client.TeamTokens.Read(ctx, rs.Primary.ID)
+		tt, err := testAccConfiguredClient.Client.TeamTokens.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -202,8 +200,6 @@ func testAccCheckTFETeamTokenExists(
 }
 
 func testAccCheckTFETeamTokenDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_team_token" {
 			continue
@@ -213,7 +209,7 @@ func testAccCheckTFETeamTokenDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.TeamTokens.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.TeamTokens.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Team token %s still exists", rs.Primary.ID)
 		}

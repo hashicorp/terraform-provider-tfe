@@ -20,9 +20,9 @@ func TestAccTFERunTrigger_basic(t *testing.T) {
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFERunTriggerDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFERunTriggerDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERunTrigger_basic(rInt),
@@ -44,9 +44,9 @@ func TestAccTFERunTrigger_many(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFERunTriggerDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFERunTriggerDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERunTrigger_many(rInt),
@@ -60,9 +60,9 @@ func TestAccTFERunTriggerImport(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFERunTriggerDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFERunTriggerDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERunTrigger_basic(rInt),
@@ -78,8 +78,6 @@ func TestAccTFERunTriggerImport(t *testing.T) {
 
 func testAccCheckTFERunTriggerExists(n string, runTrigger *tfe.RunTrigger) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -89,7 +87,7 @@ func testAccCheckTFERunTriggerExists(n string, runTrigger *tfe.RunTrigger) resou
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		rt, err := config.Client.RunTriggers.Read(ctx, rs.Primary.ID)
+		rt, err := testAccConfiguredClient.Client.RunTriggers.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -102,16 +100,14 @@ func testAccCheckTFERunTriggerExists(n string, runTrigger *tfe.RunTrigger) resou
 
 func testAccCheckTFERunTriggerAttributes(runTrigger *tfe.RunTrigger, orgName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		workspaceID := runTrigger.Workspace.ID
-		workspace, _ := config.Client.Workspaces.Read(ctx, orgName, "workspace-test")
+		workspace, _ := testAccConfiguredClient.Client.Workspaces.Read(ctx, orgName, "workspace-test")
 		if workspace.ID != workspaceID {
 			return fmt.Errorf("Wrong workspace: %v", workspace.ID)
 		}
 
 		sourceableID := runTrigger.Sourceable.ID
-		sourceable, _ := config.Client.Workspaces.Read(ctx, orgName, "sourceable-test")
+		sourceable, _ := testAccConfiguredClient.Client.Workspaces.Read(ctx, orgName, "sourceable-test")
 		if sourceable.ID != sourceableID {
 			return fmt.Errorf("Wrong sourceable: %v", sourceable.ID)
 		}
@@ -121,8 +117,6 @@ func testAccCheckTFERunTriggerAttributes(runTrigger *tfe.RunTrigger, orgName str
 }
 
 func testAccCheckTFERunTriggerDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_run_trigger" {
 			continue
@@ -132,7 +126,7 @@ func testAccCheckTFERunTriggerDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.RunTriggers.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.RunTriggers.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Run trigger %s still exists", rs.Primary.ID)
 		}

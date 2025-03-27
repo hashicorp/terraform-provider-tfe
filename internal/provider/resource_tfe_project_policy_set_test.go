@@ -35,9 +35,9 @@ func TestAccTFEProjectPolicySet_basic(t *testing.T) {
 	})
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEProjectPolicySetDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEProjectPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEProjectPolicySet_basic(org.Name, project.ID),
@@ -76,8 +76,8 @@ func TestAccTFEProjectPolicySet_incorrectImportSyntax(t *testing.T) {
 	})
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEProjectPolicySet_basic(org.Name, project.ID),
@@ -94,8 +94,6 @@ func TestAccTFEProjectPolicySet_incorrectImportSyntax(t *testing.T) {
 
 func testAccCheckTFEProjectPolicySetExists(n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("not found: %s", n)
@@ -116,7 +114,7 @@ func testAccCheckTFEProjectPolicySetExists(n string) resource.TestCheckFunc {
 			return fmt.Errorf("no project id set")
 		}
 
-		policySet, err := config.Client.PolicySets.ReadWithOptions(ctx, policySetID, &tfe.PolicySetReadOptions{
+		policySet, err := testAccConfiguredClient.Client.PolicySets.ReadWithOptions(ctx, policySetID, &tfe.PolicySetReadOptions{
 			Include: []tfe.PolicySetIncludeOpt{tfe.PolicySetProjects},
 		})
 		if err != nil {
@@ -133,8 +131,6 @@ func testAccCheckTFEProjectPolicySetExists(n string) resource.TestCheckFunc {
 }
 
 func testAccCheckTFEProjectPolicySetDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_policy_set" {
 			continue
@@ -144,7 +140,7 @@ func testAccCheckTFEProjectPolicySetDestroy(s *terraform.State) error {
 			return fmt.Errorf("no instance ID is set")
 		}
 
-		_, err := config.Client.PolicySets.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.PolicySets.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("policy set %s still exists", rs.Primary.ID)
 		}
