@@ -52,7 +52,7 @@ func TestAccTFEProjectDataSource_caseInsensitive(t *testing.T) {
 				Config: testAccTFEProjectDataSourceConfigCaseInsensitive(rInt),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
-						"data.tfe_project.foobar", "name", fmt.Sprintf("PROJECT-TEST-%d", rInt)),
+						"data.tfe_project.foobar", "name", fmt.Sprintf("project-test-%d", rInt)),
 					resource.TestCheckResourceAttr(
 						"data.tfe_project.foobar", "organization", orgName),
 					resource.TestCheckResourceAttrSet("data.tfe_project.foobar", "id"),
