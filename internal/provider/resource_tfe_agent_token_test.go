@@ -26,9 +26,9 @@ func TestAccTFEAgentToken_basic(t *testing.T) {
 	agentToken := &tfe.AgentToken{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEAgentTokenDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEAgentTokenDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEAgentToken_basic(org.Name),
@@ -47,8 +47,6 @@ func TestAccTFEAgentToken_basic(t *testing.T) {
 func testAccCheckTFEAgentTokenExists(
 	n string, agentToken *tfe.AgentToken) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("not found: %s", n)
@@ -58,7 +56,7 @@ func testAccCheckTFEAgentTokenExists(
 			return fmt.Errorf("no instance ID is set")
 		}
 
-		sk, err := config.Client.AgentTokens.Read(ctx, rs.Primary.ID)
+		sk, err := testAccConfiguredClient.Client.AgentTokens.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -84,8 +82,6 @@ func testAccCheckTFEAgentTokenAttributes(
 }
 
 func testAccCheckTFEAgentTokenDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_agent_token" {
 			continue
@@ -95,7 +91,7 @@ func testAccCheckTFEAgentTokenDestroy(s *terraform.State) error {
 			return fmt.Errorf("no instance ID is set")
 		}
 
-		_, err := config.Client.AgentTokens.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.AgentTokens.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("agent token %s still exists", rs.Primary.ID)
 		}

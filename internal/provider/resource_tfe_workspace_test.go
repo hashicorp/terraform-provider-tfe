@@ -17,7 +17,6 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
@@ -31,15 +30,14 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 	workspaceName := "workspace-test"
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", workspaceName),
@@ -84,12 +82,12 @@ func TestAccTFEWorkspace_defaultOrg(t *testing.T) {
 	defaultOrgName, rInt := setupDefaultOrganization(t)
 	workspace := tfe.Workspace{}
 
-	providers := providerWithDefaultOrganization(defaultOrgName)
+	providers := muxedProvidersWithDefaultOrganization(defaultOrgName)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    providers,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroyProvider(providers["tfe"]),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: providers,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_defaultOrgExplicit(rInt),
@@ -102,8 +100,7 @@ func TestAccTFEWorkspace_defaultOrg(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_defaultOrg(),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", &workspace, providers["tfe"]),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &workspace),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "organization", defaultOrgName),
 				),
 			},
@@ -116,7 +113,7 @@ func TestAccTFEWorkspaceProviderDefaultOrgChanged(t *testing.T) {
 	// config does not change.
 	workspace := &tfe.Workspace{}
 	defaultOrgName, rInt := setupDefaultOrganization(t)
-	providers := providerWithDefaultOrganization(defaultOrgName)
+	providers := muxedProvidersWithDefaultOrganization(defaultOrgName)
 
 	client, err := getClientUsingEnv()
 	if err != nil {
@@ -129,31 +126,23 @@ func TestAccTFEWorkspaceProviderDefaultOrgChanged(t *testing.T) {
 	})
 	t.Cleanup(cleanup)
 
+	providersWithAnotherOrg := muxedProvidersWithDefaultOrganization(anotherOrg.Name)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    providers,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroyProvider(providers["tfe"]),
+		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspace_defaultOrg(),
+				ProtoV5ProviderFactories: providers,
+				Config:                   testAccTFEWorkspace_defaultOrg(),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, providers["tfe"]),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "organization", defaultOrgName),
 				),
 			},
 			{
-				PreConfig: func() {
-					// Modify the provider to return a different default organization
-					providers["tfe"].ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
-						client, err := getClientUsingEnv()
-						return ConfiguredClient{
-							Client:       client,
-							Organization: anotherOrg.Name,
-						}, diag.FromErr(err)
-					}
-				},
-				Config: testAccTFEWorkspace_defaultOrg(),
+				ProtoV5ProviderFactories: providersWithAnotherOrg,
+				Config:                   testAccTFEWorkspace_defaultOrg(),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "organization", anotherOrg.Name),
 				),
@@ -167,15 +156,14 @@ func TestAccTFEWorkspace_basicReadProjectId(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttrPair("tfe_workspace.foobar", "project_id", "tfe_organization.foobar", "default_project_id"),
 				),
 			},
@@ -188,15 +176,14 @@ func TestAccTFEWorkspace_customProject(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_orgProjectWorkspace(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttrPair("tfe_workspace.foobar", "project_id", "tfe_project.foobar", "id"),
 				),
 			},
@@ -209,9 +196,9 @@ func TestAccTFEWorkspace_HTMLURL(t *testing.T) {
 
 	// When name is changed, the html_url should be updated as well
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_HTMLURL(rInt),
@@ -264,16 +251,15 @@ func TestAccTFEWorkspace_panic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config:             testAccTFEWorkspace_basic(rInt),
 				ExpectNonEmptyPlan: true,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
 					testAccCheckTFEWorkspacePanic("tfe_workspace.foobar"),
 				),
 			},
@@ -286,15 +272,14 @@ func TestAccTFEWorkspace_monorepo(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_monorepo(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceMonorepoAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-monorepo"),
@@ -322,15 +307,14 @@ func TestAccTFEWorkspace_renamed(t *testing.T) {
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-test"),
@@ -357,8 +341,7 @@ func TestAccTFEWorkspace_renamed(t *testing.T) {
 					},
 				},
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "renamed-out-of-band"),
 					resource.TestCheckResourceAttr(
@@ -384,15 +367,14 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-test"),
@@ -412,8 +394,7 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_update(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributesUpdated(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-updated"),
@@ -449,15 +430,14 @@ func TestAccTFEWorkspace_updateWorkingDirectory(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-test"),
@@ -474,8 +454,7 @@ func TestAccTFEWorkspace_updateWorkingDirectory(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateAddWorkingDirectory(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributesUpdatedAddWorkingDirectory(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-updated"),
@@ -486,8 +465,7 @@ func TestAccTFEWorkspace_updateWorkingDirectory(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateRemoveWorkingDirectory(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributesUpdatedRemoveWorkingDirectory(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-updated"),
@@ -504,15 +482,14 @@ func TestAccTFEWorkspace_updateProject(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_orgProjectWorkspace(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttrPair("tfe_workspace.foobar", "project_id", "tfe_project.foobar", "id"),
 				),
 			},
@@ -529,15 +506,14 @@ func TestAccTFEWorkspace_updateFileTriggers(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "file_triggers_enabled", "true"),
 				),
@@ -546,8 +522,7 @@ func TestAccTFEWorkspace_updateFileTriggers(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basicFileTriggersOff(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "file_triggers_enabled", "false"),
 				),
@@ -561,15 +536,14 @@ func TestAccTFEWorkspace_updateTriggerPrefixes(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_triggerPrefixes(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "trigger_prefixes.#", "2"),
 					resource.TestCheckResourceAttr(
@@ -582,8 +556,7 @@ func TestAccTFEWorkspace_updateTriggerPrefixes(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateEmptyTriggerPrefixes(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
@@ -598,15 +571,14 @@ func TestAccTFEWorkspace_overwriteTriggerPatternsWithPrefixes(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_triggerPatterns(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "trigger_patterns.#", "2"),
 					resource.TestCheckResourceAttr(
@@ -616,8 +588,7 @@ func TestAccTFEWorkspace_overwriteTriggerPatternsWithPrefixes(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_triggerPrefixes(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "trigger_prefixes.#", "2"),
 					resource.TestCheckResourceAttr(
@@ -631,8 +602,7 @@ func TestAccTFEWorkspace_overwriteTriggerPatternsWithPrefixes(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateEmptyTriggerPrefixes(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
@@ -653,9 +623,9 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 			workspace := &tfe.Workspace{}
 			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 			resource.Test(t, resource.TestCase{
-				PreCheck:     func() { testAccPreCheck(t) },
-				Providers:    testAccProviders,
-				CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+				PreCheck:                 func() { testAccPreCheck(t) },
+				ProtoV5ProviderFactories: testAccMuxedProviders,
+				CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 				Steps: []resource.TestStep{
 					{
 						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
@@ -665,8 +635,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							true, `["/pattern1", "/pattern2"]`,
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_patterns.#", "2"),
 						),
@@ -679,8 +648,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							false, "",
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
 							resource.TestCheckResourceAttr(
@@ -694,9 +662,9 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 			workspace := &tfe.Workspace{}
 			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 			resource.Test(t, resource.TestCase{
-				PreCheck:     func() { testAccPreCheck(t) },
-				Providers:    testAccProviders,
-				CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+				PreCheck:                 func() { testAccPreCheck(t) },
+				ProtoV5ProviderFactories: testAccMuxedProviders,
+				CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 				Steps: []resource.TestStep{
 					{
 						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
@@ -706,8 +674,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							true, `["/pattern1", "/pattern2"]`,
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_patterns.#", "2"),
 						),
@@ -720,8 +687,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							false, "",
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_prefixes.#", "1"),
 							resource.TestCheckResourceAttr(
@@ -737,9 +703,9 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 			workspace := &tfe.Workspace{}
 			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 			resource.Test(t, resource.TestCase{
-				PreCheck:     func() { testAccPreCheck(t) },
-				Providers:    testAccProviders,
-				CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+				PreCheck:                 func() { testAccPreCheck(t) },
+				ProtoV5ProviderFactories: testAccMuxedProviders,
+				CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 				Steps: []resource.TestStep{
 					{
 						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
@@ -749,8 +715,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							false, "",
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_prefixes.#", "1"),
 							resource.TestCheckResourceAttr(
@@ -778,9 +743,9 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 			workspace := &tfe.Workspace{}
 			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 			resource.Test(t, resource.TestCase{
-				PreCheck:     func() { testAccPreCheck(t) },
-				Providers:    testAccProviders,
-				CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+				PreCheck:                 func() { testAccPreCheck(t) },
+				ProtoV5ProviderFactories: testAccMuxedProviders,
+				CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 				Steps: []resource.TestStep{
 					{
 						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
@@ -790,8 +755,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							false, "",
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_prefixes.#", "1"),
 							resource.TestCheckResourceAttr(
@@ -817,9 +781,9 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 			workspace := &tfe.Workspace{}
 			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 			resource.Test(t, resource.TestCase{
-				PreCheck:     func() { testAccPreCheck(t) },
-				Providers:    testAccProviders,
-				CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+				PreCheck:                 func() { testAccPreCheck(t) },
+				ProtoV5ProviderFactories: testAccMuxedProviders,
+				CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 				Steps: []resource.TestStep{
 					{
 						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
@@ -829,8 +793,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							true, `["/pattern1", "/pattern2"]`,
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_patterns.#", "2"),
 						),
@@ -843,8 +806,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							false, "",
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
 							resource.TestCheckResourceAttr(
@@ -858,9 +820,9 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 			workspace := &tfe.Workspace{}
 			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 			resource.Test(t, resource.TestCase{
-				PreCheck:     func() { testAccPreCheck(t) },
-				Providers:    testAccProviders,
-				CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+				PreCheck:                 func() { testAccPreCheck(t) },
+				ProtoV5ProviderFactories: testAccMuxedProviders,
+				CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 				Steps: []resource.TestStep{
 					{
 						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
@@ -870,8 +832,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							true, `["/pattern1", "/pattern2"]`,
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_patterns.#", "2"),
 						),
@@ -884,8 +845,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							false, "",
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_prefixes.#", "1"),
 							resource.TestCheckResourceAttr(
@@ -901,9 +861,9 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 			workspace := &tfe.Workspace{}
 			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 			resource.Test(t, resource.TestCase{
-				PreCheck:     func() { testAccPreCheck(t) },
-				Providers:    testAccProviders,
-				CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+				PreCheck:                 func() { testAccPreCheck(t) },
+				ProtoV5ProviderFactories: testAccMuxedProviders,
+				CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 				Steps: []resource.TestStep{
 					{
 						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
@@ -913,8 +873,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							false, "",
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_prefixes.#", "2"),
 						),
@@ -927,8 +886,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							true, `["/patterns1", "/patterns2", "/patterns3"]`,
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_patterns.#", "3"),
 							resource.TestCheckResourceAttr(
@@ -946,9 +904,9 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 			workspace := &tfe.Workspace{}
 			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 			resource.Test(t, resource.TestCase{
-				PreCheck:     func() { testAccPreCheck(t) },
-				Providers:    testAccProviders,
-				CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+				PreCheck:                 func() { testAccPreCheck(t) },
+				ProtoV5ProviderFactories: testAccMuxedProviders,
+				CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 				Steps: []resource.TestStep{
 					{
 						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
@@ -958,8 +916,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							false, "",
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_prefixes.#", "1"),
 							resource.TestCheckResourceAttr(
@@ -992,9 +949,9 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 		t.Run("and both trigger prefixes and patterns are populated", func(t *testing.T) {
 			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 			resource.Test(t, resource.TestCase{
-				PreCheck:     func() { testAccPreCheck(t) },
-				Providers:    testAccProviders,
-				CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+				PreCheck:                 func() { testAccPreCheck(t) },
+				ProtoV5ProviderFactories: testAccMuxedProviders,
+				CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 				Steps: []resource.TestStep{
 					{
 						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
@@ -1011,9 +968,9 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 		t.Run("and both trigger prefixes and patterns are empty", func(t *testing.T) {
 			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 			resource.Test(t, resource.TestCase{
-				PreCheck:     func() { testAccPreCheck(t) },
-				Providers:    testAccProviders,
-				CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+				PreCheck:                 func() { testAccPreCheck(t) },
+				ProtoV5ProviderFactories: testAccMuxedProviders,
+				CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 				Steps: []resource.TestStep{
 					{
 						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
@@ -1032,9 +989,9 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 			workspace := &tfe.Workspace{}
 			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 			resource.Test(t, resource.TestCase{
-				PreCheck:     func() { testAccPreCheck(t) },
-				Providers:    testAccProviders,
-				CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+				PreCheck:                 func() { testAccPreCheck(t) },
+				ProtoV5ProviderFactories: testAccMuxedProviders,
+				CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 				Steps: []resource.TestStep{
 					{
 						Config: testAccTFEWorkspace_triggersConfigurationGenerator(
@@ -1044,8 +1001,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							false, "",
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_prefixes.#", "2"),
 							resource.TestCheckResourceAttr(
@@ -1074,8 +1030,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							true, `["/pattern1", "/pattern2"]`,
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
 							resource.TestCheckResourceAttr(
@@ -1090,8 +1045,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							false, "",
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_prefixes.#", "3"),
 							resource.TestCheckResourceAttr(
@@ -1106,8 +1060,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							false, "[]",
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_prefixes.#", "1"),
 							resource.TestCheckResourceAttr(
@@ -1122,8 +1075,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							false, "",
 						),
 						Check: resource.ComposeTestCheckFunc(
-							testAccCheckTFEWorkspaceExists(
-								"tfe_workspace.foobar", workspace, testAccProvider),
+							testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 							resource.TestCheckResourceAttr(
 								"tfe_workspace.foobar", "trigger_prefixes.#", "0"),
 							resource.TestCheckResourceAttr(
@@ -1180,9 +1132,9 @@ func TestAccTFEWorkspace_updateTriggerPatterns(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			// Create trigger prefixes first so we can verify they are being removed if we introduce trigger patterns
 			{
@@ -1196,8 +1148,7 @@ func TestAccTFEWorkspace_updateTriggerPatterns(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_triggerPatterns(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "trigger_patterns.#", "2"),
 					resource.TestCheckResourceAttr(
@@ -1212,8 +1163,7 @@ func TestAccTFEWorkspace_updateTriggerPatterns(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateTriggerPatterns(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "trigger_patterns.#", "3"),
 					resource.TestCheckResourceAttr(
@@ -1229,7 +1179,7 @@ func TestAccTFEWorkspace_updateTriggerPatterns(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateEmptyTriggerPatterns(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "trigger_patterns.#", "0"),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "trigger_prefixes.#", "0"),
@@ -1243,9 +1193,9 @@ func TestAccTFEWorkspace_patternsAndPrefixesConflicting(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEWorkspace_prefixesAndPatternsConflicting(rInt),
@@ -1264,16 +1214,15 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				// create with 2 tags
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "tag_names.#", "2"),
 					resource.TestCheckResourceAttr(
@@ -1286,8 +1235,7 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 				// remove 1
 				Config: testAccTFEWorkspace_basicRemoveTag(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "tag_names.#", "1"),
 					resource.TestCheckResourceAttr(
@@ -1298,8 +1246,7 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 				// add 1
 				Config: testAccTFEWorkspace_basicChangeTags(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "tag_names.#", "2"),
 					resource.TestCheckResourceAttr(
@@ -1312,8 +1259,7 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 				// remove 1 again
 				Config: testAccTFEWorkspace_basicRemoveTag(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "tag_names.#", "1"),
 					resource.TestCheckResourceAttr(
@@ -1324,8 +1270,7 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 				// change unrelated attr
 				Config: testAccTFEWorkspace_basicRemoveTagAlt(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "tag_names.#", "1"),
 					resource.TestCheckResourceAttr(
@@ -1336,8 +1281,7 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 				// remove 1, add 2
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "tag_names.#", "2"),
 					resource.TestCheckResourceAttr(
@@ -1350,8 +1294,7 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 				// remove all
 				Config: testAccTFEWorkspace_basicNoTags(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "tag_names.#", "0"),
 				),
@@ -1360,8 +1303,7 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 				// add 2
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "tag_names.#", "2"),
 					resource.TestCheckResourceAttr(
@@ -1388,8 +1330,7 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 				},
 				Config: testAccTFEWorkspace_ignoreAdditional(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "tag_names.#", "2"),
 					resource.TestCheckTypeSetElemAttr(
@@ -1422,15 +1363,14 @@ func TestAccTFEWorkspace_updateSpeculative(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "speculative_enabled", "true"),
 				),
@@ -1439,8 +1379,7 @@ func TestAccTFEWorkspace_updateSpeculative(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basicSpeculativeOff(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "speculative_enabled", "false"),
 				),
@@ -1454,15 +1393,14 @@ func TestAccTFEWorkspace_structuredRunOutputDisabled(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "structured_run_output_enabled", "true"),
 				),
@@ -1471,8 +1409,7 @@ func TestAccTFEWorkspace_structuredRunOutputDisabled(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateStructuredRunOutput(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "structured_run_output_enabled", "false"),
 				),
@@ -1490,14 +1427,13 @@ func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
 			testAccPreCheck(t)
 			testAccGithubPreCheck(t)
 		},
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_basicForceDeleteEnabled(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-test"),
@@ -1514,7 +1450,7 @@ func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateAddVCSRepo(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceUpdatedAddVCSRepoAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-add-vcs-repo"),
@@ -1531,7 +1467,7 @@ func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateUpdateVCSRepoBranch(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceUpdatedUpdateVCSRepoBranchAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-update-vcs-repo-branch"),
@@ -1546,7 +1482,7 @@ func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateRemoveVCSRepo(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceUpdatedRemoveVCSRepoAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-remove-vcs-repo"),
@@ -1567,14 +1503,13 @@ func TestAccTFEWorkspace_updateGitHubAppRepo(t *testing.T) {
 			testAccGithubPreCheck(t)
 			testAccGHAInstallationPreCheck(t)
 		},
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_basicForceDeleteEnabled(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-test"),
@@ -1591,7 +1526,7 @@ func TestAccTFEWorkspace_updateGitHubAppRepo(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateAddGitHubAppRepo(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceUpdatedAddVCSRepoAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-add-vcs-repo"),
@@ -1608,7 +1543,7 @@ func TestAccTFEWorkspace_updateGitHubAppRepo(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateUpdateGitHubAppRepoBranch(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceUpdatedUpdateVCSRepoBranchAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-update-vcs-repo-branch"),
@@ -1623,7 +1558,7 @@ func TestAccTFEWorkspace_updateGitHubAppRepo(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateRemoveVCSRepo(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceUpdatedRemoveVCSRepoAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-remove-vcs-repo"),
@@ -1644,13 +1579,13 @@ func TestAccTFEWorkspace_updateVCSRepoTagsRegex(t *testing.T) {
 			testAccPreCheck(t)
 			testAccGithubPreCheck(t)
 		},
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_updateUpdateVCSRepoTagsRegex(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-update-vcs-repo-tags-regex"),
 					resource.TestCheckResourceAttr(
@@ -1668,7 +1603,7 @@ func TestAccTFEWorkspace_updateVCSRepoTagsRegex(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateRemoveVCSRepoTagsRegex(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-update-vcs-repo-tags-regex"),
 					resource.TestCheckResourceAttr(
@@ -1696,13 +1631,13 @@ func TestAccTFEWorkspace_updateVCSRepoChangeTagRegexToTriggerPattern(t *testing.
 			testAccPreCheck(t)
 			testAccGithubPreCheck(t)
 		},
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_updateUpdateVCSRepoTagsRegex(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-update-vcs-repo-tags-regex"),
 					resource.TestCheckResourceAttr(
@@ -1720,7 +1655,7 @@ func TestAccTFEWorkspace_updateVCSRepoChangeTagRegexToTriggerPattern(t *testing.
 			{
 				Config: testAccTFEWorkspace_updateToTriggerPatternsFromTagsRegex(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-update-vcs-repo-tags-regex"),
 					resource.TestCheckResourceAttr(
@@ -1748,13 +1683,13 @@ func TestAccTFEWorkspace_updateRemoveVCSRepoWithTagsRegex(t *testing.T) {
 			testAccPreCheck(t)
 			testAccGithubPreCheck(t)
 		},
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_updateUpdateVCSRepoTagsRegex(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-update-vcs-repo-tags-regex"),
 					resource.TestCheckResourceAttr(
@@ -1772,7 +1707,7 @@ func TestAccTFEWorkspace_updateRemoveVCSRepoWithTagsRegex(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateRemoveVCSBlockFromTagsRegex(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-update-vcs-repo-tags-regex"),
 					resource.TestCheckResourceAttr(
@@ -1797,8 +1732,7 @@ func TestAccTFEWorkspace_sshKey(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 				),
 			},
@@ -1806,8 +1740,7 @@ func TestAccTFEWorkspace_sshKey(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_sshKey(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributesSSHKey(workspace),
 					resource.TestCheckResourceAttrSet(
 						"tfe_workspace.foobar", "ssh_key_id"),
@@ -1817,8 +1750,7 @@ func TestAccTFEWorkspace_sshKey(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_noSSHKey(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 				),
 			},
@@ -1830,9 +1762,9 @@ func TestAccTFEWorkspace_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
@@ -1864,13 +1796,13 @@ func TestAccTFEWorkspace_importVCSBranch(t *testing.T) {
 			testAccPreCheck(t)
 			testAccGithubPreCheck(t)
 		},
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_updateUpdateVCSRepoBranch(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceUpdatedUpdateVCSRepoBranchAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "description", "workspace-test-update-vcs-repo-branch"),
@@ -1897,9 +1829,9 @@ func TestAccTFEWorkspace_importProject(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_orgProjectWorkspace(rInt),
@@ -1928,15 +1860,14 @@ func TestAccTFEWorkspace_operationsAndExecutionModeInteroperability(t *testing.T
 	workspace := &tfe.Workspace{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_operationsTrue(org.Name),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "operations", "true"),
 					resource.TestCheckResourceAttr(
@@ -1948,8 +1879,7 @@ func TestAccTFEWorkspace_operationsAndExecutionModeInteroperability(t *testing.T
 			{
 				Config: testAccTFEWorkspace_executionModeLocal(org.Name),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "operations", "false"),
 					resource.TestCheckResourceAttr(
@@ -1961,8 +1891,7 @@ func TestAccTFEWorkspace_operationsAndExecutionModeInteroperability(t *testing.T
 			{
 				Config: testAccTFEWorkspace_operationsFalse(org.Name),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "operations", "false"),
 					resource.TestCheckResourceAttr(
@@ -1974,8 +1903,7 @@ func TestAccTFEWorkspace_operationsAndExecutionModeInteroperability(t *testing.T
 			{
 				Config: testAccTFEWorkspace_executionModeRemote(org.Name),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "operations", "true"),
 					resource.TestCheckResourceAttr(
@@ -1987,8 +1915,7 @@ func TestAccTFEWorkspace_operationsAndExecutionModeInteroperability(t *testing.T
 			{
 				Config: testAccTFEWorkspace_executionModeAgent(org.Name),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "operations", "true"),
 					resource.TestCheckResourceAttr(
@@ -2006,15 +1933,14 @@ func TestAccTFEWorkspace_globalRemoteState(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_globalRemoteStateFalse(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-test"),
@@ -2025,8 +1951,7 @@ func TestAccTFEWorkspace_globalRemoteState(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_globalRemoteStateTrue(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-test"),
@@ -2043,23 +1968,21 @@ func TestAccTFEWorkspace_alterRemoteStateConsumers(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "global_remote_state", "true"),
 				),
 			},
 			{
 				Config: testAccTFEWorkspace_OneRemoteStateConsumer(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "global_remote_state", "false"),
 					testAccCheckTFEWorkspaceHasRemoteConsumers("tfe_workspace.foobar", []string{"tfe_workspace.foobar_one"}),
 				),
@@ -2067,8 +1990,7 @@ func TestAccTFEWorkspace_alterRemoteStateConsumers(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_TwoRemoteStateConsumers(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "global_remote_state", "false"),
 					testAccCheckTFEWorkspaceHasRemoteConsumers("tfe_workspace.foobar", []string{"tfe_workspace.foobar_one", "tfe_workspace.foobar_two"}),
 				),
@@ -2076,8 +1998,7 @@ func TestAccTFEWorkspace_alterRemoteStateConsumers(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_OneRemoteStateConsumer(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "global_remote_state", "false"),
 					testAccCheckTFEWorkspaceHasRemoteConsumers("tfe_workspace.foobar", []string{"tfe_workspace.foobar_one"}),
 				),
@@ -2085,8 +2006,7 @@ func TestAccTFEWorkspace_alterRemoteStateConsumers(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_globalRemoteStateTrue(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "global_remote_state", "true"),
 					testAccCheckTFEWorkspaceHasRemoteConsumers("tfe_workspace.foobar", []string{}),
 				),
@@ -2100,15 +2020,14 @@ func TestAccTFEWorkspace_createWithRemoteStateConsumers(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_TwoRemoteStateConsumers(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "global_remote_state", "false"),
 					testAccCheckTFEWorkspaceHasRemoteConsumers("tfe_workspace.foobar", []string{"tfe_workspace.foobar_one", "tfe_workspace.foobar_two"}),
 				),
@@ -2124,9 +2043,9 @@ func TestAccTFEWorkspace_paginatedRemoteStateConsumers(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_OverAPageOfRemoteStateConsumers(rInt),
@@ -2144,15 +2063,14 @@ func TestAccTFEWorkspace_delete_forceDeleteSettingDisabled(t *testing.T) {
 		t.Fatal(err)
 	}
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 				),
 			},
@@ -2166,8 +2084,7 @@ func TestAccTFEWorkspace_delete_forceDeleteSettingDisabled(t *testing.T) {
 				Config:      testAccTFEWorkspace_basicDeleted(rInt),
 				ExpectError: regexp.MustCompile(`.*Workspace is currently locked.`),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 				),
 			},
 			{
@@ -2194,15 +2111,14 @@ func TestAccTFEWorkspace_delete_forceDeleteSettingEnabled(t *testing.T) {
 		t.Fatal(err)
 	}
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_basicForceDeleteEnabled(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 				),
 			},
@@ -2297,11 +2213,8 @@ func testAccCheckTFEWorkspaceHTMLURLHasSuffix(resourceName, suffix string) resou
 	}
 }
 
-func testAccCheckTFEWorkspaceExists(
-	n string, workspace *tfe.Workspace, p *schema.Provider) resource.TestCheckFunc {
+func testAccCheckTFEWorkspaceExists(n string, workspace *tfe.Workspace) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := p.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -2312,7 +2225,7 @@ func testAccCheckTFEWorkspaceExists(
 		}
 
 		// Get the workspace
-		w, err := config.Client.Workspaces.ReadByID(ctx, rs.Primary.ID)
+		w, err := testAccConfiguredClient.Client.Workspaces.ReadByID(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -2333,15 +2246,13 @@ func testAccCheckTFEWorkspaceExists(
 // resource_tfe_workspace.go:208 resourceTFEWorkspaceRead(...)
 func testAccCheckTFEWorkspacePanic(n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		// Grab the resource out of the state and delete it from HCP Terraform and Terraform Enterprise directly.
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
 		}
 
-		err := config.Client.Workspaces.DeleteByID(ctx, rs.Primary.ID)
+		err := testAccConfiguredClient.Client.Workspaces.DeleteByID(ctx, rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("Could not delete %s: %w", n, err)
 		}
@@ -2351,7 +2262,7 @@ func testAccCheckTFEWorkspacePanic(n string) resource.TestCheckFunc {
 		rd := &schema.ResourceData{}
 		rd.SetId(rs.Primary.ID)
 
-		err = resourceTFEWorkspaceRead(rd, testAccProvider.Meta())
+		err = resourceTFEWorkspaceRead(rd, *testAccConfiguredClient)
 		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 			return fmt.Errorf("Could not re-read resource directly: %w", err)
 		}
@@ -2468,9 +2379,7 @@ func testAccCheckTFEWorkspaceMonorepoAttributes(
 
 func testAccCheckTFEWorkspaceRename(orgName string) func() {
 	return func() {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
-		w, err := config.Client.Workspaces.Update(
+		w, err := testAccConfiguredClient.Client.Workspaces.Update(
 			context.Background(),
 			orgName,
 			"workspace-test",
@@ -2631,31 +2540,23 @@ func testAccCheckTFEWorkspaceUpdatedRemoveVCSRepoAttributes(
 	}
 }
 
-func testAccCheckTFEWorkspaceDestroyProvider(p *schema.Provider) func(s *terraform.State) error {
-	return func(s *terraform.State) error {
-		config := p.Meta().(ConfiguredClient)
-
-		for _, rs := range s.RootModule().Resources {
-			if rs.Type != "tfe_workspace" {
-				continue
-			}
-
-			if rs.Primary.ID == "" {
-				return fmt.Errorf("No instance ID is set")
-			}
-
-			_, err := config.Client.Workspaces.ReadByID(ctx, rs.Primary.ID)
-			if err == nil {
-				return fmt.Errorf("Workspace %s still exists", rs.Primary.ID)
-			}
+func testAccCheckTFEWorkspaceDestroy(s *terraform.State) error {
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != "tfe_workspace" {
+			continue
 		}
 
-		return nil
-	}
-}
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("No instance ID is set")
+		}
 
-func testAccCheckTFEWorkspaceDestroy(s *terraform.State) error {
-	return testAccCheckTFEWorkspaceDestroyProvider(testAccProvider)(s)
+		_, err := testAccConfiguredClient.Client.Workspaces.ReadByID(ctx, rs.Primary.ID)
+		if err == nil {
+			return fmt.Errorf("Workspace %s still exists", rs.Primary.ID)
+		}
+	}
+
+	return nil
 }
 
 func TestAccTFEWorkspace_basicAssessmentsEnabled(t *testing.T) {
@@ -2665,15 +2566,14 @@ func TestAccTFEWorkspace_basicAssessmentsEnabled(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					testAccCheckTFEWorkspaceAttributes(workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-test"),
@@ -2684,8 +2584,7 @@ func TestAccTFEWorkspace_basicAssessmentsEnabled(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_updateAssessmentsEnabled(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "name", "workspace-updated"),
 					resource.TestCheckResourceAttr(
@@ -2700,14 +2599,14 @@ func TestAccTFEWorkspace_createWithAutoDestroyAt(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_basicWithAutoDestroyAt(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_at", "2100-01-01T00:00:00Z"),
 				),
 			},
@@ -2719,14 +2618,14 @@ func TestAccTFEWorkspace_updateWithAutoDestroyAt(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_at", ""),
 				),
 			},
@@ -2746,14 +2645,14 @@ func TestAccTFEWorkspace_createWithAutoDestroyDuration(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_basicWithAutoDestroyDuration(rInt, "1d"),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_activity_duration", "1d"),
 				),
 			},
@@ -2765,14 +2664,14 @@ func TestAccTFEWorkspace_updateWithAutoDestroyDuration(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_basicWithAutoDestroyDuration(rInt, "1d"),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_activity_duration", "1d"),
 				),
 			},
@@ -2811,10 +2710,10 @@ func TestAccTFEWorkspace_validationAutoDestroyDuration(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
-		Steps:        steps,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
+		Steps:                    steps,
 	})
 }
 
@@ -2822,14 +2721,14 @@ func TestAccTFEWorkspace_createWithAutoDestroyDurationInProject(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_basicWithAutoDestroyDurationInProject(rInt, "1d", "3d"),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_activity_duration", "3d"),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "inherits_project_auto_destroy", "false"),
 				),
@@ -2842,14 +2741,14 @@ func TestAccTFEWorkspace_updateWithAutoDestroyDurationInProject(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_basicWithAutoDestroyDurationInProject(rInt, "1d", "3d"),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_activity_duration", "3d"),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "inherits_project_auto_destroy", "false"),
 				),
@@ -2857,7 +2756,7 @@ func TestAccTFEWorkspace_updateWithAutoDestroyDurationInProject(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basicWithAutoDestroyDurationInProject(rInt, "2d", "5d"),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_activity_duration", "5d"),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "inherits_project_auto_destroy", "false"),
 				),
@@ -2865,7 +2764,7 @@ func TestAccTFEWorkspace_updateWithAutoDestroyDurationInProject(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basicInProject(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_activity_duration", ""),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "inherits_project_auto_destroy", "true"),
 				),
@@ -2878,14 +2777,14 @@ func TestAccTFEWorkspace_createWithAutoDestroyAtInProject(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_basicWithAutoDestroyAtInProject(rInt, "1d"),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_at", "2100-01-01T00:00:00Z"),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "inherits_project_auto_destroy", "false"),
 				),
@@ -2898,14 +2797,14 @@ func TestAccTFEWorkspace_updateWithAutoDestroyAtInProject(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_basicWithAutoDestroyAtInProject(rInt, "1d"),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_at", "2100-01-01T00:00:00Z"),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "inherits_project_auto_destroy", "false"),
 				),
@@ -2913,7 +2812,7 @@ func TestAccTFEWorkspace_updateWithAutoDestroyAtInProject(t *testing.T) {
 			{
 				Config: testAccTFEWorkspace_basicInProject(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_at", ""),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "inherits_project_auto_destroy", "true"),
 				),
@@ -2926,9 +2825,9 @@ func TestAccTFEWorkspace_createWithSourceURL(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEWorkspace_basicWithSourceURL(rInt),
@@ -2942,9 +2841,9 @@ func TestAccTFEWorkspace_createWithSourceName(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEWorkspace_basicWithSourceName(rInt),
@@ -2959,15 +2858,14 @@ func TestAccTFEWorkspace_createWithSourceURLAndName(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspace_basicWithSourceURLAndName(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceExists(
-						"tfe_workspace.foobar", workspace, testAccProvider),
+					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "source_url", "https://example.com"),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "source_name", "Example Source"),
 				),

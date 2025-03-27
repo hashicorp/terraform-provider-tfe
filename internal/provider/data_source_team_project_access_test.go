@@ -20,8 +20,8 @@ func TestAccTFETeamProjectAccessDataSource_basic(t *testing.T) {
 	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamProjectAccessDataSourceConfig(org.Name),
@@ -47,8 +47,8 @@ func TestAccTFETeamProjectCustomAccessDataSource_basic(t *testing.T) {
 	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamProjectCustomAccessDataSourceConfig(org.Name),
@@ -96,8 +96,8 @@ func TestAccTFETeamProjectCustomAccessDataSource_basic_with_project_variable_set
 	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamProjectCustomAccessDataSourceConfig_with_project_variable_sets(org.Name),

@@ -15,8 +15,8 @@ func TestAccTFEIPRangesDataSource_basic(t *testing.T) {
 	ipRegex := regexp.MustCompile(`^([\d]{1,3}\.){3}[\d]{1,3}/[\d]{1,3}$`)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEIPRangesDataSourceConfig(),

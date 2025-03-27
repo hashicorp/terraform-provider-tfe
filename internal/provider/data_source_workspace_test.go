@@ -23,8 +23,8 @@ func TestAccTFEWorkspaceDataSource_remoteStateConsumers(t *testing.T) {
 	rInt2 := r.Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceDataSourceConfig_remoteStateConsumers(rInt1, rInt2),
@@ -64,8 +64,8 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 	workspaceName := fmt.Sprintf("workspace-test-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceDataSourceConfig(rInt),
@@ -146,8 +146,8 @@ func TestAccTFEWorkspaceDataSourceWithTriggerPatterns(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceDataSourceConfigWithTriggerPatterns(workspaceName, organization.Name),
@@ -175,8 +175,8 @@ func TestAccTFEWorkspaceDataSource_readAutoDestroyAt(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceDataSourceConfig_basic(rInt),
@@ -197,8 +197,8 @@ func TestAccTFEWorkspaceDataSource_readAutoDestroyDuration(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceDataSourceConfig_basic(rInt),
@@ -219,8 +219,8 @@ func TestAccTFEWorkspaceDataSource_readProjectIDDefault(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceDataSourceConfig(rInt),
@@ -234,8 +234,8 @@ func TestAccTFEWorkspaceDataSource_readProjectIDNonDefault(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceDataSourceConfig_project(rInt),

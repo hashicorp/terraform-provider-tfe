@@ -193,8 +193,6 @@ func TestAccTFEAuditTrailToken_import(t *testing.T) {
 func testAccCheckTFEAuditTrailTokenExists(
 	n string, token *tfe.OrganizationToken) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -207,7 +205,7 @@ func testAccCheckTFEAuditTrailTokenExists(
 		readOptions := tfe.OrganizationTokenReadOptions{
 			TokenType: &auditTrailTokenType,
 		}
-		ot, err := config.Client.OrganizationTokens.ReadWithOptions(ctx, rs.Primary.ID, readOptions)
+		ot, err := testAccConfiguredClient.Client.OrganizationTokens.ReadWithOptions(ctx, rs.Primary.ID, readOptions)
 		if err != nil {
 			return err
 		}
@@ -223,8 +221,6 @@ func testAccCheckTFEAuditTrailTokenExists(
 }
 
 func testAccCheckTFEAuditTrailTokenDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_audit_trail_token" {
 			continue
@@ -237,7 +233,7 @@ func testAccCheckTFEAuditTrailTokenDestroy(s *terraform.State) error {
 		readOptions := tfe.OrganizationTokenReadOptions{
 			TokenType: &auditTrailTokenType,
 		}
-		_, err := config.Client.OrganizationTokens.ReadWithOptions(ctx, rs.Primary.ID, readOptions)
+		_, err := testAccConfiguredClient.Client.OrganizationTokens.ReadWithOptions(ctx, rs.Primary.ID, readOptions)
 		if err == nil {
 			return fmt.Errorf("Audit trail token %s still exists", rs.Primary.ID)
 		}

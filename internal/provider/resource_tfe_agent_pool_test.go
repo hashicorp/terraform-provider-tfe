@@ -26,9 +26,9 @@ func TestAccTFEAgentPool_basic(t *testing.T) {
 	agentPool := &tfe.AgentPool{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEAgentPoolDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEAgentPoolDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEAgentPool_basic(org.Name),
@@ -60,9 +60,9 @@ func TestAccTFEAgentPool_custom_scope(t *testing.T) {
 	agentPool := &tfe.AgentPool{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEAgentPoolDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEAgentPoolDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEAgentPool_custom_scope(org.Name),
@@ -94,9 +94,9 @@ func TestAccTFEAgentPool_update(t *testing.T) {
 	agentPool := &tfe.AgentPool{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEAgentPoolDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEAgentPoolDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEAgentPool_basic(org.Name),
@@ -139,9 +139,9 @@ func TestAccTFEAgentPool_import(t *testing.T) {
 	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEAgentPoolDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEAgentPoolDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEAgentPool_basic(org.Name),
@@ -164,8 +164,6 @@ func TestAccTFEAgentPool_import(t *testing.T) {
 func testAccCheckTFEAgentPoolExists(
 	n string, agentPool *tfe.AgentPool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("not found: %s", n)
@@ -175,7 +173,7 @@ func testAccCheckTFEAgentPoolExists(
 			return fmt.Errorf("no instance ID is set")
 		}
 
-		sk, err := config.Client.AgentPools.Read(ctx, rs.Primary.ID)
+		sk, err := testAccConfiguredClient.Client.AgentPools.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -211,8 +209,6 @@ func testAccCheckTFEAgentPoolAttributesUpdated(
 }
 
 func testAccCheckTFEAgentPoolDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_agent_pool" {
 			continue
@@ -222,7 +218,7 @@ func testAccCheckTFEAgentPoolDestroy(s *terraform.State) error {
 			return fmt.Errorf("no instance ID is set")
 		}
 
-		_, err := config.Client.AgentPools.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.AgentPools.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("agent pool %s still exists", rs.Primary.ID)
 		}
