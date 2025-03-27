@@ -21,9 +21,9 @@ func TestAccTFEOrganizationMembership_basic(t *testing.T) {
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationMembershipDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationMembershipDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationMembership_basic(rInt),
@@ -48,9 +48,9 @@ func TestAccTFEOrganizationMembershipImport_ByID(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationMembershipDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationMembershipDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationMembership_basic(rInt),
@@ -71,9 +71,9 @@ func TestAccTFEOrganizationMembershipImport_ByEmail(t *testing.T) {
 	email := "testuser@hashicorp.com"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationMembershipDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationMembershipDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationMembership_nameAndEmail(orgName, email),
@@ -95,9 +95,9 @@ func TestAccTFEOrganizationMembershipImport_invalidImportId(t *testing.T) {
 	email := "testuser@hashicorp.com"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationMembershipDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationMembershipDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationMembership_nameAndEmail(orgName, email),
@@ -127,8 +127,6 @@ func TestAccTFEOrganizationMembershipImport_invalidImportId(t *testing.T) {
 func testAccCheckTFEOrganizationMembershipExists(
 	n string, membership *tfe.OrganizationMembership) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -142,7 +140,7 @@ func testAccCheckTFEOrganizationMembershipExists(
 			Include: []tfe.OrgMembershipIncludeOpt{tfe.OrgMembershipUser},
 		}
 
-		m, err := config.Client.OrganizationMemberships.ReadWithOptions(ctx, rs.Primary.ID, options)
+		m, err := testAccConfiguredClient.Client.OrganizationMemberships.ReadWithOptions(ctx, rs.Primary.ID, options)
 		if err != nil {
 			return err
 		}
@@ -175,8 +173,6 @@ func testAccCheckTFEOrganizationMembershipAttributes(
 }
 
 func testAccCheckTFEOrganizationMembershipDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_organization_membership" {
 			continue
@@ -186,7 +182,7 @@ func testAccCheckTFEOrganizationMembershipDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.OrganizationMemberships.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.OrganizationMemberships.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Membership %s still exists", rs.Primary.ID)
 		}

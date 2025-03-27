@@ -262,8 +262,6 @@ func TestAccTFEWorkspaceRunTask_Read(t *testing.T) {
 
 func testAccCheckTFEWorkspaceRunTaskExists(n string, runTask *tfe.WorkspaceRunTask) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -277,7 +275,7 @@ func testAccCheckTFEWorkspaceRunTaskExists(n string, runTask *tfe.WorkspaceRunTa
 			return fmt.Errorf("No Workspace ID is set")
 		}
 
-		rt, err := config.Client.WorkspaceRunTasks.Read(ctx, rs.Primary.Attributes["workspace_id"], rs.Primary.ID)
+		rt, err := testAccConfiguredClient.Client.WorkspaceRunTasks.Read(ctx, rs.Primary.Attributes["workspace_id"], rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("error reading Workspace Run Task: %w", err)
 		}
@@ -293,8 +291,6 @@ func testAccCheckTFEWorkspaceRunTaskExists(n string, runTask *tfe.WorkspaceRunTa
 }
 
 func testAccCheckTFEWorkspaceRunTaskDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_workspace_run_task" {
 			continue
@@ -307,7 +303,7 @@ func testAccCheckTFEWorkspaceRunTaskDestroy(s *terraform.State) error {
 			return fmt.Errorf("No Workspace ID is set")
 		}
 
-		_, err := config.Client.WorkspaceRunTasks.Read(ctx, rs.Primary.Attributes["workspace_id"], rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.WorkspaceRunTasks.Read(ctx, rs.Primary.Attributes["workspace_id"], rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Workspace Run Tasks %s still exists", rs.Primary.ID)
 		}

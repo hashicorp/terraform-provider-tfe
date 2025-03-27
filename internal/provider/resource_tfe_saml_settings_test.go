@@ -284,7 +284,7 @@ func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 }
 
 func testAccTFESAMLSettingsDestroy(_ *terraform.State) error {
-	s, err := testAccProvider.Meta().(ConfiguredClient).Client.Admin.Settings.SAML.Read(ctx)
+	s, err := testAccConfiguredClient.Client.Admin.Settings.SAML.Read(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to read SAML Settings: %w", err)
 	}

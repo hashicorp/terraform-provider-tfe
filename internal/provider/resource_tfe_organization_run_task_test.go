@@ -253,8 +253,6 @@ func TestAccTFEOrganizationRunTask_HMACWriteOnly(t *testing.T) {
 
 func testAccCheckTFEOrganizationRunTaskExists(n string, runTask *tfe.RunTask) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -263,7 +261,7 @@ func testAccCheckTFEOrganizationRunTaskExists(n string, runTask *tfe.RunTask) re
 		if rs.Primary.ID == "" {
 			return fmt.Errorf("No instance ID is set")
 		}
-		rt, err := config.Client.RunTasks.Read(ctx, rs.Primary.ID)
+		rt, err := testAccConfiguredClient.Client.RunTasks.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("error reading Run Task: %w", err)
 		}
@@ -279,8 +277,6 @@ func testAccCheckTFEOrganizationRunTaskExists(n string, runTask *tfe.RunTask) re
 }
 
 func testAccCheckTFEOrganizationRunTaskDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_organization_run_task" {
 			continue
@@ -290,7 +286,7 @@ func testAccCheckTFEOrganizationRunTaskDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.RunTasks.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.RunTasks.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Organization Run Task %s still exists", rs.Primary.ID)
 		}

@@ -35,7 +35,7 @@ func TestAccTFEWorkspaceRun_withApplyOnlyBlock(t *testing.T) {
 		PreCheck: func() {
 			testAccPreCheck(t)
 		},
-		Providers: testAccProviders,
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		CheckDestroy: resource.ComposeTestCheckFunc(
 			// only the workspace with destroy block should have a destroy run
 			testAccCheckTFEWorkspaceRunDestroy(parentWorkspace.ID, 0),
@@ -85,7 +85,7 @@ func TestAccTFEWorkspaceRun_withBothApplyAndDestroyBlocks(t *testing.T) {
 		PreCheck: func() {
 			testAccPreCheck(t)
 		},
-		Providers: testAccProviders,
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		CheckDestroy: resource.ComposeTestCheckFunc(
 			testAccCheckTFEWorkspaceRunDestroy(parentWorkspace.ID, 1),
 			testAccCheckTFEWorkspaceRunDestroy(childWorkspace.ID, 1),
@@ -162,7 +162,7 @@ func TestAccTFEWorkspaceRun_invalidParams(t *testing.T) {
 			PreCheck: func() {
 				testAccPreCheck(t)
 			},
-			Providers: testAccProviders,
+			ProtoV5ProviderFactories: testAccMuxedProviders,
 			Steps: []resource.TestStep{
 				{
 					Config:      invalidCase.Config,
@@ -190,7 +190,7 @@ func TestAccTFEWorkspaceRun_WhenRunErrors(t *testing.T) {
 		PreCheck: func() {
 			testAccPreCheck(t)
 		},
-		Providers: testAccProviders,
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEWorkspaceRun_WhenRunErrors(parentWorkspace.ID),
@@ -239,8 +239,6 @@ func setupWorkspacesWithConfig(t *testing.T, tfeClient *tfe.Client, rInt int, or
 
 func testAccCheckTFEWorkspaceRunExistWithExpectedStatus(n string, run *tfe.Run, expectedStatus tfe.RunStatus) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -250,7 +248,7 @@ func testAccCheckTFEWorkspaceRunExistWithExpectedStatus(n string, run *tfe.Run, 
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		runData, err := config.Client.Runs.Read(ctx, rs.Primary.ID)
+		runData, err := testAccConfiguredClient.Client.Runs.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("Unable to read run, %w", err)
 		}
@@ -275,8 +273,6 @@ func testAccCheckTFEWorkspaceRunExistWithExpectedStatus(n string, run *tfe.Run, 
 
 func testAccCheckTFEWorkspaceRunDoesNotExist(n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -288,7 +284,7 @@ func testAccCheckTFEWorkspaceRunDoesNotExist(n string) resource.TestCheckFunc {
 
 		// A workspace run resource without apply block has a random ID,
 		// and no run with that ID should exist.
-		_, err := config.Client.Runs.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.Runs.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Expected run to not exist")
 		}
@@ -299,10 +295,8 @@ func testAccCheckTFEWorkspaceRunDoesNotExist(n string) resource.TestCheckFunc {
 
 func testAccCheckTFEWorkspaceRunDestroy(workspaceID string, expectedDestroyCount int) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		mustBeNil, err := retryFn(10, 1, func() (any, error) {
-			runList, err := config.Client.Runs.List(ctx, workspaceID, &tfe.RunListOptions{
+			runList, err := testAccConfiguredClient.Client.Runs.List(ctx, workspaceID, &tfe.RunListOptions{
 				Operation: "destroy",
 			})
 			if err != nil {

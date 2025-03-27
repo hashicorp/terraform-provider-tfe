@@ -19,9 +19,9 @@ func TestAccTFESentinelPolicy_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFESentinelPolicyDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFESentinelPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFESentinelPolicy_basic(rInt),
@@ -48,9 +48,9 @@ func TestAccTFESentinelPolicy_update(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFESentinelPolicyDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFESentinelPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFESentinelPolicy_basic(rInt),
@@ -93,9 +93,9 @@ func TestAccTFESentinelPolicy_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFESentinelPolicyDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFESentinelPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFESentinelPolicy_basic(rInt),
@@ -114,8 +114,6 @@ func TestAccTFESentinelPolicy_import(t *testing.T) {
 func testAccCheckTFESentinelPolicyExists(
 	n string, policy *tfe.Policy) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -125,7 +123,7 @@ func testAccCheckTFESentinelPolicyExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		p, err := config.Client.Policies.Read(ctx, rs.Primary.ID)
+		p, err := testAccConfiguredClient.Client.Policies.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -173,8 +171,6 @@ func testAccCheckTFESentinelPolicyAttributesUpdated(
 }
 
 func testAccCheckTFESentinelPolicyDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_sentinel_policy" {
 			continue
@@ -184,7 +180,7 @@ func testAccCheckTFESentinelPolicyDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.Policies.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.Policies.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Sentinel policy %s still exists", rs.Primary.ID)
 		}

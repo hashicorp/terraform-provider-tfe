@@ -18,8 +18,8 @@ func TestAccTFEWorkspaceIDsDataSource_basic(t *testing.T) {
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceIDsDataSourceConfig_basic(rInt),
@@ -71,9 +71,9 @@ func TestAccTFEWorkspaceIDsDataSource_wildcard(t *testing.T) {
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceIDsDataSourceConfig_wildcard(rInt, "*"),
@@ -131,9 +131,9 @@ func TestAccTFEWorkspaceIDsDataSource_prefixWildcard(t *testing.T) {
 	fooWorkspaceName := fmt.Sprintf("*-foo-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceIDsDataSourceConfig_wildcard(rInt, fooWorkspaceName),
@@ -177,9 +177,9 @@ func TestAccTFEWorkspaceIDsDataSource_suffixWildcard(t *testing.T) {
 	fooWorkspaceName := "workspace-foo-*"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceIDsDataSourceConfig_wildcard(rInt, fooWorkspaceName),
@@ -223,9 +223,9 @@ func TestAccTFEWorkspaceIDsDataSource_noMatch(t *testing.T) {
 	fooWorkspaceName := "workspace-foo"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceIDsDataSourceConfig_wildcard(rInt, fooWorkspaceName),
@@ -260,9 +260,9 @@ func TestAccTFEWorkspaceIDsDataSource_substringWildcard(t *testing.T) {
 	fooWorkspaceName := "*-foo-*"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceIDsDataSourceConfig_wildcard(rInt, fooWorkspaceName),
@@ -305,8 +305,8 @@ func TestAccTFEWorkspaceIDsDataSource_tags(t *testing.T) {
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceIDsDataSourceConfig_tags(rInt),
@@ -350,9 +350,9 @@ func TestAccTFEWorkspaceIDsDataSource_searchByTagAndName(t *testing.T) {
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceIDsDataSourceConfig_searchByTagAndName(rInt),
@@ -388,9 +388,9 @@ func TestAccTFEWorkspaceIDsDataSource_empty(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEWorkspaceIDsDataSourceConfig_empty(rInt),
@@ -405,9 +405,9 @@ func TestAccTFEWorkspaceIDsDataSource_namesEmpty(t *testing.T) {
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceIDsDataSourceConfig_namesEmpty(rInt),
@@ -446,9 +446,9 @@ func TestAccTFEWorkspaceIDsDataSource_excludeTags(t *testing.T) {
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceIDsDataSourceConfig_excludeTags(rInt),
@@ -484,9 +484,9 @@ func TestAccTFEWorkspaceIDsDataSource_sameTagInTagNamesAndExcludeTags(t *testing
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceIDsDataSourceConfig_sameTagInTagNamesAndExcludeTags(rInt),

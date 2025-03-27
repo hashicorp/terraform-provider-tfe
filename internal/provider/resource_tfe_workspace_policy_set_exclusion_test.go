@@ -26,9 +26,9 @@ func TestAccTFEWorkspacePolicySetExclusion_basic(t *testing.T) {
 	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEWorkspacePolicySetExclusionDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspacePolicySetExclusionDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspacePolicySetExclusion_basic(org.Name, rInt),
@@ -59,8 +59,8 @@ func TestAccTFEWorkspacePolicySetExclusion_incorrectImportSyntax(t *testing.T) {
 	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspacePolicySetExclusion_basic(org.Name, rInt),
@@ -77,8 +77,6 @@ func TestAccTFEWorkspacePolicySetExclusion_incorrectImportSyntax(t *testing.T) {
 
 func testAccCheckTFEWorkspacePolicySetExclusionExists(n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("not found: %s", n)
@@ -99,7 +97,7 @@ func testAccCheckTFEWorkspacePolicySetExclusionExists(n string) resource.TestChe
 			return fmt.Errorf("no excluded workspace id set")
 		}
 
-		policySet, err := config.Client.PolicySets.Read(ctx, policySetID)
+		policySet, err := testAccConfiguredClient.Client.PolicySets.Read(ctx, policySetID)
 		if err != nil {
 			return fmt.Errorf("error reading polciy set %s: %w", policySetID, err)
 		}
@@ -114,8 +112,6 @@ func testAccCheckTFEWorkspacePolicySetExclusionExists(n string) resource.TestChe
 }
 
 func testAccCheckTFEWorkspacePolicySetExclusionDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_policy_set" {
 			continue
@@ -125,7 +121,7 @@ func testAccCheckTFEWorkspacePolicySetExclusionDestroy(s *terraform.State) error
 			return fmt.Errorf("no instance ID is set")
 		}
 
-		_, err := config.Client.PolicySets.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.PolicySets.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("policy Set %s still exists", rs.Primary.ID)
 		}

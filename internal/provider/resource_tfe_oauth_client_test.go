@@ -25,8 +25,8 @@ func TestAccTFEOAuthClient_basic(t *testing.T) {
 				t.Skip("Please set GITHUB_TOKEN to run this test")
 			}
 		},
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOAuthClientDestroy,
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOAuthClientDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOAuthClient_basic(rInt),
@@ -56,8 +56,8 @@ func TestAccTFEOAuthClientWithOrganizationScoped_basic(t *testing.T) {
 				t.Skip("Please set GITHUB_TOKEN to run this test")
 			}
 		},
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOAuthClientDestroy,
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOAuthClientDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOAuthClient_basic(rInt),
@@ -83,9 +83,9 @@ func TestAccTFEOAuthClient_rsaKeys(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOAuthClientDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOAuthClientDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOAuthClient_rsaKeys(rInt),
@@ -118,8 +118,8 @@ func TestAccTFEOAuthClient_agentPool(t *testing.T) {
 				t.Skip("Please set GITHUB_TOKEN to run this test")
 			}
 		},
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOAuthClientDestroy,
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOAuthClientDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOAuthClient_agentPool(),
@@ -137,8 +137,6 @@ func TestAccTFEOAuthClient_agentPool(t *testing.T) {
 func testAccCheckTFEOAuthClientExists(
 	n string, oc *tfe.OAuthClient) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -148,7 +146,7 @@ func testAccCheckTFEOAuthClientExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		client, err := config.Client.OAuthClients.Read(ctx, rs.Primary.ID)
+		client, err := testAccConfiguredClient.Client.OAuthClients.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -179,8 +177,6 @@ func testAccCheckTFEOAuthClientAttributes(
 }
 
 func testAccCheckTFEOAuthClientDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_oauth_client" {
 			continue
@@ -190,7 +186,7 @@ func testAccCheckTFEOAuthClientDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.OAuthClients.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.OAuthClients.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("OAuth client %s still exists", rs.Primary.ID)
 		}

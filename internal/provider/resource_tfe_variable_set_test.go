@@ -19,9 +19,9 @@ func TestAccTFEVariableSet_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEVariableSetDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEVariableSetDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEVariableSet_basic(rInt),
@@ -48,9 +48,9 @@ func TestAccTFEVariableSet_full(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEVariableSetDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEVariableSetDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEVariableSet_full(rInt),
@@ -80,9 +80,9 @@ func TestAccTFEVariableSet_update(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEVariableSetDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEVariableSetDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEVariableSet_basic(rInt),
@@ -126,9 +126,9 @@ func TestAccTFEVariableSet_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEVariableSetDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEVariableSetDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEVariableSet_basic(rInt),
@@ -149,9 +149,9 @@ func TestAccTFEVariableSet_project_owned(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEVariableSetDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEVariableSetDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testACCTFEVariableSet_ProjectOwned(rInt),
@@ -175,8 +175,6 @@ func TestAccTFEVariableSet_project_owned(t *testing.T) {
 func testAccCheckTFEVariableSetExists(
 	n string, variableSet *tfe.VariableSet) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -186,7 +184,7 @@ func testAccCheckTFEVariableSetExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		vs, err := config.Client.VariableSets.Read(
+		vs, err := testAccConfiguredClient.Client.VariableSets.Read(
 			ctx,
 			rs.Primary.ID,
 			&tfe.VariableSetReadOptions{Include: &[]tfe.VariableSetIncludeOpt{tfe.VariableSetWorkspaces}},
@@ -262,8 +260,6 @@ func testAccCheckTFEVariableSetApplicationUpdate(variableSet *tfe.VariableSet) r
 }
 
 func testAccCheckTFEVariableSetDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_variable_set" {
 			continue
@@ -273,7 +269,7 @@ func testAccCheckTFEVariableSetDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.VariableSets.Read(ctx, rs.Primary.ID, nil)
+		_, err := testAccConfiguredClient.Client.VariableSets.Read(ctx, rs.Primary.ID, nil)
 		if err == nil {
 			return fmt.Errorf("Variable Set %s still exists", rs.Primary.ID)
 		}

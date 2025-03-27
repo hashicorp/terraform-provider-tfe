@@ -35,9 +35,9 @@ func TestAccTFEProjectOAuthClient_basic(t *testing.T) {
 	})
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEProjectOAuthClientDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEProjectOAuthClientDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEProjectOAuthClient_basic(org.Name, project.ID),
@@ -76,8 +76,8 @@ func TestAccTFEProjectOAuthClient_incorrectImportSyntax(t *testing.T) {
 	})
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEProjectOAuthClient_basic(org.Name, project.ID),
@@ -94,8 +94,6 @@ func TestAccTFEProjectOAuthClient_incorrectImportSyntax(t *testing.T) {
 
 func testAccCheckTFEProjectOAuthClientExists(n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("not found: %s", n)
@@ -116,7 +114,7 @@ func testAccCheckTFEProjectOAuthClientExists(n string) resource.TestCheckFunc {
 			return fmt.Errorf("no project id set")
 		}
 
-		oauthClient, err := config.Client.OAuthClients.ReadWithOptions(ctx, oauthClientID, &tfe.OAuthClientReadOptions{
+		oauthClient, err := testAccConfiguredClient.Client.OAuthClients.ReadWithOptions(ctx, oauthClientID, &tfe.OAuthClientReadOptions{
 			Include: []tfe.OAuthClientIncludeOpt{tfe.OauthClientProjects},
 		})
 		if err != nil {
@@ -133,8 +131,6 @@ func testAccCheckTFEProjectOAuthClientExists(n string) resource.TestCheckFunc {
 }
 
 func testAccCheckTFEProjectOAuthClientDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_oauth_client" {
 			continue
@@ -144,7 +140,7 @@ func testAccCheckTFEProjectOAuthClientDestroy(s *terraform.State) error {
 			return fmt.Errorf("no instance ID is set")
 		}
 
-		_, err := config.Client.OAuthClients.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.OAuthClients.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("oauth client %s still exists", rs.Primary.ID)
 		}

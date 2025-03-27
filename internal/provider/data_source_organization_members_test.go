@@ -26,8 +26,8 @@ func TestAccTFEOrganizationMembersDataSource_basic(t *testing.T) {
 	membership := createOrganizationMembership(t, tfeClient, org.Name, options)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationMembersDataSourceConfig(org.Name),

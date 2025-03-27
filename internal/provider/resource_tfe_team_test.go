@@ -20,9 +20,9 @@ func TestAccTFETeam_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeam_basic(rInt),
@@ -43,9 +43,9 @@ func TestAccTFETeam_full(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeam_full(rInt),
@@ -100,9 +100,9 @@ func TestAccTFETeam_full_update(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeam_full(rInt),
@@ -245,9 +245,9 @@ func TestAccTFETeam_import_byId(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeam_basic(rInt),
@@ -267,9 +267,9 @@ func TestAccTFETeam_import_byId_doesNotExist(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeam_basic(rInt),
@@ -289,9 +289,9 @@ func TestAccTFETeam_import_byName(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeam_basic(rInt),
@@ -311,9 +311,9 @@ func TestAccTFETeam_import_missingOrg(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeam_basic(rInt),
@@ -333,9 +333,9 @@ func TestAccTFETeam_import_missingTeam(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeam_basic(rInt),
@@ -355,9 +355,9 @@ func TestAccTFETeam_import_teamNameWithSpaces(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeam_withSpaces(rInt),
@@ -377,9 +377,9 @@ func TestAccTFETeam_import_teamNameWithSlashes(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeam_withSlashes(rInt),
@@ -401,9 +401,9 @@ func TestAccTFETeam_import_teamNameWhichLooksLikeID(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeam_withIDLikeName(rInt),
@@ -422,8 +422,6 @@ func TestAccTFETeam_import_teamNameWhichLooksLikeID(t *testing.T) {
 func testAccCheckTFETeamExists(
 	n string, team *tfe.Team) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -433,7 +431,7 @@ func testAccCheckTFETeamExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		t, err := config.Client.Teams.Read(ctx, rs.Primary.ID)
+		t, err := testAccConfiguredClient.Client.Teams.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -567,8 +565,6 @@ func testAccCheckTFETeamAttributes_full_update(
 }
 
 func testAccCheckTFETeamDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_team" {
 			continue
@@ -578,7 +574,7 @@ func testAccCheckTFETeamDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.Teams.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.Teams.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Team %s still exists", rs.Primary.ID)
 		}

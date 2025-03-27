@@ -19,8 +19,8 @@ func testAccTFEGHAInstallationDataSourcePreCheck(t *testing.T) {
 
 func TestAccTFEGHAInstallationDataSource_findByName(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccTFEGHAInstallationDataSourcePreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccTFEGHAInstallationDataSourcePreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEGHAInstallationDataSourceConfig_findByName(envGithubAppInstallationName),
