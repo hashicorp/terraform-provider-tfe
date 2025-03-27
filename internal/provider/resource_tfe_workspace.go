@@ -206,14 +206,12 @@ func resourceTFEWorkspace() *schema.Resource {
 			"source_name": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				ForceNew:     true,
 				RequiredWith: []string{"source_url"},
 			},
 
 			"source_url": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				ForceNew:     true,
 				ValidateFunc: validation.IsURLWithHTTPorHTTPS,
 				RequiredWith: []string{"source_name"},
 			},
