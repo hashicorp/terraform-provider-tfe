@@ -49,6 +49,11 @@ BUG FIXES:
 
 * `r/tfe_workspace_settings`: Prevent fetching of all workspaces as the `remote_state_consumer_ids` when `global_remote_state` is set to true, by @uk1288 [#1606](https://github.com/hashicorp/terraform-provider-tfe/pull/1606)
 
+* `r/tfe_workspace`: Do not force recreation of workspace if users do not provide `source_name` or `source_url`. [#1671](https://github.com/hashicorp/terraform-provider-tfe/pull/1671)
+
+ENHANCEMENTS:
+* **New Ephemeral Resource:** `tfe_outputs` is a new ephemeral resource for retrieving the state version outputs of a workspace without writing sensitive data to the state file, by @ctrombley [#1640](https://github.com/hashicorp/terraform-provider-tfe/pull/1640)
+
 ## v.0.63.0
 
 BUG FIXES:
