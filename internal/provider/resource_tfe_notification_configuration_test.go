@@ -12,8 +12,11 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-testing/compare"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
 )
 
 func TestAccTFENotificationConfiguration_basic(t *testing.T) {
@@ -42,6 +45,70 @@ func TestAccTFENotificationConfiguration_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_notification_configuration.foobar", "url", runTasksURL()),
 				),
+			},
+		},
+	})
+}
+
+func TestAccTFENotificationConfiguration_WriteOnly(t *testing.T) {
+	notificationConfiguration := &tfe.NotificationConfiguration{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	compareValuesDiffer := statecheck.CompareValue(compare.ValuesDiffer())
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFENotificationConfiguration_tokenAndTokenWriteOnly(rInt),
+				ExpectError: regexp.MustCompile(`Attribute "token_wo" cannot be specified when "token" is specified`),
+			},
+			{
+				Config: testAccTFENotificationConfiguration_tokenWriteOnly(rInt, "1"),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFENotificationConfigurationExists(
+						"tfe_notification_configuration.foobar", notificationConfiguration),
+					testAccCheckTFENotificationConfigurationAttributes(notificationConfiguration),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "destination_type", "generic"),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "name", "notification_basic"),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "triggers.#", "0"),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "url", runTasksURL()),
+					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "token_wo"),
+				),
+				ConfigStateChecks: []statecheck.StateCheck{
+					compareValuesDiffer.AddStateValue(
+						"tfe_notification_configuration.foobar", tfjsonpath.New("id"),
+					),
+				},
+			},
+			{
+				Config: testAccTFENotificationConfiguration_tokenWriteOnly(rInt, "2"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "token_wo"),
+				),
+				ConfigStateChecks: []statecheck.StateCheck{
+					compareValuesDiffer.AddStateValue(
+						"tfe_notification_configuration.foobar", tfjsonpath.New("id"),
+					),
+				},
+			},
+			{
+				Config: testAccTFENotificationConfiguration_basic(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "token_wo"),
+					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "token"),
+				),
+				ConfigStateChecks: []statecheck.StateCheck{
+					compareValuesDiffer.AddStateValue(
+						"tfe_notification_configuration.foobar", tfjsonpath.New("id"),
+					),
+				},
 			},
 		},
 	})
@@ -191,11 +258,11 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesEmail(t *testin
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_emailWithURL(rInt),
-				ExpectError: regexp.MustCompile(`URL cannot be set with destination type of email`),
+				ExpectError: regexp.MustCompile(`The attribute 'url' cannot be set when 'destination_type' is 'email'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_emailWithToken(rInt),
-				ExpectError: regexp.MustCompile(`token cannot be set with destination type of email`),
+				ExpectError: regexp.MustCompile(`The attribute 'token' cannot be set when 'destination_type' is 'email'`),
 			},
 		},
 	})
@@ -210,15 +277,15 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesGeneric(t *test
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`email addresses cannot be set with destination type of generic`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_addresses' cannot be set when 'destination_type' is.*'generic'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`email user IDs cannot be set with destination type of generic`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_user_ids' cannot be set when 'destination_type' is.*'generic'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithoutURL(rInt),
-				ExpectError: regexp.MustCompile(`URL is required with destination type of generic`),
+				ExpectError: regexp.MustCompile(`The attribute 'url' is required when 'destination_type' is 'generic'`),
 			},
 		},
 	})
@@ -233,19 +300,19 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesSlack(t *testin
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`email addresses cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_addresses' cannot be set when 'destination_type' is.*'slack'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`email user IDs cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_user_ids' cannot be set when 'destination_type' is.*'slack'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithToken(rInt),
-				ExpectError: regexp.MustCompile(`token cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`The attribute 'token' cannot be set when 'destination_type' is 'slack'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithoutURL(rInt),
-				ExpectError: regexp.MustCompile(`URL is required with destination type of slack`),
+				ExpectError: regexp.MustCompile(`The attribute 'url' is required when 'destination_type' is 'slack'`),
 			},
 		},
 	})
@@ -260,19 +327,19 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesMicrosoftTeams(
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`email addresses cannot be set with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_addresses' cannot be set when 'destination_type' is.*'microsoft-teams'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`email user IDs cannot be set with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_user_ids' cannot be set when 'destination_type' is.*'microsoft-teams'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithToken(rInt),
-				ExpectError: regexp.MustCompile(`token cannot be set with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'token' cannot be set when 'destination_type' is.*'microsoft-teams'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithoutURL(rInt),
-				ExpectError: regexp.MustCompile(`URL is required with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`The attribute 'url' is required when 'destination_type' is 'microsoft-teams'`),
 			},
 		},
 	})
@@ -307,11 +374,14 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesEmail(t *
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_emailWithURL(rInt),
-				ExpectError: regexp.MustCompile(`URL cannot be set with destination type of email`),
+				ExpectError: regexp.MustCompile(`The attribute 'url' cannot be set when 'destination_type' is 'email'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_emailWithToken(rInt),
-				ExpectError: regexp.MustCompile(`token cannot be set with destination type of email`),
+				ExpectError: regexp.MustCompile(`The attribute 'token' cannot be set when 'destination_type' is 'email'`),
+			},
+			{
+				Config: testAccTFENotificationConfiguration_emailUserIDs(rInt),
 			},
 		},
 	})
@@ -346,15 +416,18 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesGeneric(t
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`email addresses cannot be set with destination type of generic`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_addresses' cannot be set when 'destination_type' is.*'generic'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`email user IDs cannot be set with destination type of generic`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_user_ids' cannot be set when 'destination_type' is.*'generic'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithoutURL(rInt),
-				ExpectError: regexp.MustCompile(`URL is required with destination type of generic`),
+				ExpectError: regexp.MustCompile(`The attribute 'url' is required when 'destination_type' is 'generic'`),
+			},
+			{
+				Config: testAccTFENotificationConfiguration_basic(rInt),
 			},
 		},
 	})
@@ -389,19 +462,22 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesSlack(t *
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`email addresses cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_addresses' cannot be set when 'destination_type' is.*'slack'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`email user IDs cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_user_ids' cannot be set when 'destination_type' is.*'slack'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithToken(rInt),
-				ExpectError: regexp.MustCompile(`token cannot be set with destination type of slack`),
+				ExpectError: regexp.MustCompile(`The attribute 'token' cannot be set when 'destination_type' is 'slack'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithoutURL(rInt),
-				ExpectError: regexp.MustCompile(`URL is required with destination type of slack`),
+				ExpectError: regexp.MustCompile(`The attribute 'url' is required when 'destination_type' is 'slack'`),
+			},
+			{
+				Config: testAccTFENotificationConfiguration_slack(rInt),
 			},
 		},
 	})
@@ -432,19 +508,22 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesMicrosoft
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithEmailAddresses(rInt),
-				ExpectError: regexp.MustCompile(`email addresses cannot be set with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_addresses' cannot be set when 'destination_type' is.*'microsoft-teams'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithEmailUserIDs(rInt),
-				ExpectError: regexp.MustCompile(`email user IDs cannot be set with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'email_user_ids' cannot be set when 'destination_type' is.*'microsoft-teams'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithToken(rInt),
-				ExpectError: regexp.MustCompile(`token cannot be set with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`(?s).*The attribute 'token' cannot be set when 'destination_type' is.*'microsoft-teams'`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithoutURL(rInt),
-				ExpectError: regexp.MustCompile(`URL is required with destination type of microsoft-teams`),
+				ExpectError: regexp.MustCompile(`The attribute 'url' is required when 'destination_type' is 'microsoft-teams'`),
+			},
+			{
+				Config: testAccTFENotificationConfiguration_microsoftTeams(rInt),
 			},
 		},
 	})
@@ -795,6 +874,49 @@ resource "tfe_workspace" "foobar" {
 resource "tfe_notification_configuration" "foobar" {
   name             = "notification_basic"
   destination_type = "generic"
+  url              = "%s"
+  workspace_id     = tfe_workspace.foobar.id
+}`, rInt, runTasksURL())
+}
+
+func testAccTFENotificationConfiguration_tokenWriteOnly(rInt int, wo string) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name             = "notification_basic"
+  destination_type = "generic"
+  token_wo			   = "%s"
+  url              = "%s"
+  workspace_id     = tfe_workspace.foobar.id
+}`, rInt, wo, runTasksURL())
+}
+
+func testAccTFENotificationConfiguration_tokenAndTokenWriteOnly(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name             = "notification_basic"
+  destination_type = "generic"
+  token 		   = "some-token"
+  token_wo		   = "some-token"
   url              = "%s"
   workspace_id     = tfe_workspace.foobar.id
 }`, rInt, runTasksURL())

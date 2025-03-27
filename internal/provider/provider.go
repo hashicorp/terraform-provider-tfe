@@ -110,7 +110,6 @@ func Provider() *schema.Provider {
 			"tfe_agent_pool":                     resourceTFEAgentPool(),
 			"tfe_agent_pool_allowed_workspaces":  resourceTFEAgentPoolAllowedWorkspaces(),
 			"tfe_agent_token":                    resourceTFEAgentToken(),
-			"tfe_notification_configuration":     resourceTFENotificationConfiguration(),
 			"tfe_oauth_client":                   resourceTFEOAuthClient(),
 			"tfe_opa_version":                    resourceTFEOPAVersion(),
 			"tfe_organization":                   resourceTFEOrganization(),
