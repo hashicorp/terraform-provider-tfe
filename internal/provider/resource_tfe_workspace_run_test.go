@@ -16,7 +16,6 @@ import (
 )
 
 func TestAccTFEWorkspaceRun_withApplyOnlyBlock(t *testing.T) {
-	t.Skip("Skipping test as it is failing most CI runs. Will investigate next.")
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	tfeClient, err := getClientUsingEnv()
