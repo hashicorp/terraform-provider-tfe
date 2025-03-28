@@ -1,88 +1,240 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
-// NOTE: This is a legacy resource and should be migrated to the Plugin
-// Framework if substantial modifications are planned. See
-// docs/new-resources.md if planning to use this code as boilerplate for
-// a new resource.
-
 package provider
 
 import (
+	"context"
+	"errors"
 	"fmt"
-	"log"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/planmodifiers"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/validators"
 )
 
-func resourceTFENotificationConfiguration() *schema.Resource {
-	return &schema.Resource{
-		Create: resourceTFENotificationConfigurationCreate,
-		Read:   resourceTFENotificationConfigurationRead,
-		Update: resourceTFENotificationConfigurationUpdate,
-		Delete: resourceTFENotificationConfigurationDelete,
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
+var (
+	_ resource.Resource                = &resourceTFENotificationConfiguration{}
+	_ resource.ResourceWithConfigure   = &resourceTFENotificationConfiguration{}
+	_ resource.ResourceWithImportState = &resourceTFENotificationConfiguration{}
+)
 
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+// NewNotificationConfigurationResource
+func NewNotificationConfigurationResource() resource.Resource {
+	return &resourceTFENotificationConfiguration{}
+}
+
+type resourceTFENotificationConfiguration struct {
+	config ConfiguredClient
+}
+
+// modelTFENotificationConfiguration maps the resource schema data to a struct.
+type modelTFENotificationConfiguration struct {
+	ID              types.String `tfsdk:"id"`
+	Name            types.String `tfsdk:"name"`
+	DestinationType types.String `tfsdk:"destination_type"`
+	EmailAddresses  types.Set    `tfsdk:"email_addresses"`
+	EmailUserIDs    types.Set    `tfsdk:"email_user_ids"`
+	Enabled         types.Bool   `tfsdk:"enabled"`
+	Token           types.String `tfsdk:"token"`
+	TokenWO         types.String `tfsdk:"token_wo"`
+	Triggers        types.Set    `tfsdk:"triggers"`
+	URL             types.String `tfsdk:"url"`
+	WorkspaceID     types.String `tfsdk:"workspace_id"`
+}
+
+// modelFromTFENotificationConfiguration builds a modelTFENotificationConfiguration struct from a tfe.NotificationConfiguration value.
+func modelFromTFENotificationConfiguration(v *tfe.NotificationConfiguration, isWriteOnlyValue bool) (modelTFENotificationConfiguration, diag.Diagnostics) {
+	var diags diag.Diagnostics
+	result := modelTFENotificationConfiguration{
+		ID:              types.StringValue(v.ID),
+		Name:            types.StringValue(v.Name),
+		DestinationType: types.StringValue(string(v.DestinationType)),
+		Enabled:         types.BoolValue(v.Enabled),
+		WorkspaceID:     types.StringValue(v.SubscribableChoice.Workspace.ID),
+	}
+
+	if len(v.EmailAddresses) == 0 {
+		result.EmailAddresses = types.SetNull(types.StringType)
+	} else {
+		emailAddresses, diags := types.SetValueFrom(ctx, types.StringType, v.EmailAddresses)
+		if diags != nil && diags.HasError() {
+			return result, diags
+		}
+		result.EmailAddresses = emailAddresses
+	}
+
+	if len(v.Triggers) == 0 {
+		result.Triggers = types.SetNull(types.StringType)
+	} else {
+		triggers, diags := types.SetValueFrom(ctx, types.StringType, v.Triggers)
+		if diags != nil && diags.HasError() {
+			return result, diags
+		}
+
+		result.Triggers = triggers
+	}
+
+	if len(v.EmailUsers) == 0 {
+		result.EmailUserIDs = types.SetNull(types.StringType)
+	} else {
+		emailUserIDs := make([]attr.Value, len(v.EmailUsers))
+		for i, emailUser := range v.EmailUsers {
+			emailUserIDs[i] = types.StringValue(emailUser.ID)
+		}
+
+		result.EmailUserIDs = types.SetValueMust(types.StringType, emailUserIDs)
+	}
+
+	if v.Token != "" {
+		result.Token = types.StringValue(v.Token)
+	}
+	// Don't retrieve values if write-only is being used. Unset the value and readable_value fields before updating the state.
+	if isWriteOnlyValue {
+		result.Token = types.StringNull()
+	}
+
+	if v.URL != "" {
+		result.URL = types.StringValue(v.URL)
+	}
+
+	return result, diags
+}
+
+// Configure implements resource.ResourceWithConfigure
+func (r *resourceTFENotificationConfiguration) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	// Early exit if provider is unconfigured (i.e. we're only validating config or something)
+	if req.ProviderData == nil {
+		return
+	}
+	client, ok := req.ProviderData.(ConfiguredClient)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected resource Configure type",
+			fmt.Sprintf("Expected tfe.ConfiguredClient, got %T. This is a bug in the tfe provider, so please report it on GitHub.", req.ProviderData),
+		)
+	}
+	r.config = client
+}
+
+// Metadata implements resource.Resource
+func (r *resourceTFENotificationConfiguration) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_notification_configuration"
+}
+
+// Schema implements resource.Resource
+func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: "Defines a notification configuration resource.",
+		Version:     0,
+
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Description: "ID of the notification configuration.",
+				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 
-			"destination_type": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
-				ValidateFunc: validation.StringInSlice(
-					[]string{
+			"name": schema.StringAttribute{
+				Description: "Name of the notification configuration.",
+				Required:    true,
+			},
+
+			"destination_type": schema.StringAttribute{
+				Description: "The type of notification configuration payload to send.",
+				Required:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.OneOf(
 						string(tfe.NotificationDestinationTypeEmail),
 						string(tfe.NotificationDestinationTypeGeneric),
 						string(tfe.NotificationDestinationTypeSlack),
 						string(tfe.NotificationDestinationTypeMicrosoftTeams),
-					},
-					false,
-				),
+					),
+				},
 			},
 
-			"email_addresses": {
-				Type:          schema.TypeSet,
-				Optional:      true,
-				Computed:      true,
-				Elem:          &schema.Schema{Type: schema.TypeString},
-				ConflictsWith: []string{"token", "url"},
+			"email_addresses": schema.SetAttribute{
+				Description: "A list of email addresses. This value must not be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
+				Optional:    true,
+				Computed:    true,
+				ElementType: types.StringType,
+				Validators: []validator.Set{
+					validators.AttributeValueConflictValidator(
+						"destination_type",
+						[]string{"generic", "microsoft-teams", "slack"},
+					),
+				},
 			},
 
-			"email_user_ids": {
-				Type:          schema.TypeSet,
-				Optional:      true,
-				Computed:      true,
-				Elem:          &schema.Schema{Type: schema.TypeString},
-				ConflictsWith: []string{"token", "url"},
+			"email_user_ids": schema.SetAttribute{
+				Description: "A list of user IDs. This value must not be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
+				Optional:    true,
+				Computed:    true,
+				ElementType: types.StringType,
+				Validators: []validator.Set{
+					validators.AttributeValueConflictValidator(
+						"destination_type",
+						[]string{"generic", "microsoft-teams", "slack"},
+					),
+				},
 			},
 
-			"enabled": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
+			"enabled": schema.BoolAttribute{
+				Description: "Whether the notification configuration should be enabled or not. Disabled configurations will not send any notifications. Defaults to `false`.",
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 			},
-
-			"token": {
-				Type:      schema.TypeString,
-				Optional:  true,
-				Sensitive: true,
+			"token": schema.StringAttribute{
+				Description: "A write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Defaults to `null`. This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.",
+				Optional:    true,
+				Sensitive:   true,
+				Validators: []validator.String{
+					validators.AttributeValueConflictValidator(
+						"destination_type",
+						[]string{"email", "microsoft-teams", "slack"},
+					),
+					stringvalidator.ConflictsWith(path.MatchRoot("token_wo")),
+				},
 			},
-
-			"triggers": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-					ValidateFunc: validation.StringInSlice(
-						[]string{
+			"token_wo": schema.StringAttribute{
+				Optional:    true,
+				WriteOnly:   true,
+				Sensitive:   true,
+				Description: "Value of the token in write-only mode",
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRoot("token")),
+				},
+				PlanModifiers: []planmodifier.String{
+					planmodifiers.NewReplaceForWriteOnlyStringValue("token_wo"),
+				},
+			},
+			"triggers": schema.SetAttribute{
+				Description: "The array of triggers for which this notification configuration will send notifications. If omitted, no notification triggers are configured.",
+				Optional:    true,
+				ElementType: types.StringType,
+				Validators: []validator.Set{
+					setvalidator.ValueStringsAre(
+						stringvalidator.OneOf(
 							string(tfe.NotificationTriggerCreated),
 							string(tfe.NotificationTriggerPlanning),
 							string(tfe.NotificationTriggerNeedsAttention),
@@ -94,333 +246,304 @@ func resourceTFENotificationConfiguration() *schema.Resource {
 							string(tfe.NotificationTriggerAssessmentFailed),
 							string(tfe.NotificationTriggerWorkspaceAutoDestroyReminder),
 							string(tfe.NotificationTriggerWorkspaceAutoDestroyRunResults),
-						},
-						false,
+						),
 					),
 				},
 			},
 
-			"url": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				ConflictsWith: []string{"email_addresses", "email_user_ids"},
+			"url": schema.StringAttribute{
+				Description: "The HTTP or HTTPS URL where notification requests will be made. This value must not be provided if `email_addresses` or `email_user_ids` is present, or if `destination_type` is `email`.",
+				Optional:    true,
+				Validators: []validator.String{
+					validators.AttributeRequiredIfValueString(
+						"destination_type",
+						[]string{"generic", "microsoft-teams", "slack"},
+					),
+					validators.AttributeValueConflictValidator(
+						"destination_type",
+						[]string{"email"},
+					),
+					stringvalidator.ConflictsWith(
+						path.MatchRelative().AtParent().AtName("email_addresses"),
+						path.MatchRelative().AtParent().AtName("email_user_ids"),
+					),
+				},
 			},
 
-			"workspace_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+			"workspace_id": schema.StringAttribute{
+				Description: "The ID of the workspace that owns the notification configuration.",
+				Required:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 		},
 	}
 }
 
-func resourceTFENotificationConfigurationCreate(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(ConfiguredClient)
-
-	// Get workspace
-	workspaceID := d.Get("workspace_id").(string)
-
-	// Get attributes
-	destinationType := tfe.NotificationDestinationType(d.Get("destination_type").(string))
-	enabled := d.Get("enabled").(bool)
-	name := d.Get("name").(string)
-	token := d.Get("token").(string)
-	url := d.Get("url").(string)
-
-	// Make sure only the correct schema attributes are set
-	if destinationType == tfe.NotificationDestinationTypeEmail {
-		// When destination_type is 'email':
-		// 1. url and token cannot be set
-		err := validateSchemaAttributesForDestinationTypeEmail(d)
-		if err != nil {
-			return err
-		}
-	} else if destinationType == tfe.NotificationDestinationTypeGeneric {
-		// When destination_type is 'generic':
-		// 1. email_addresses and email_user_ids cannot be set
-		// 2. url must be set
-		err := validateSchemaAttributesForDestinationTypeGeneric(d)
-		if err != nil {
-			return err
-		}
-	} else if destinationType == tfe.NotificationDestinationTypeSlack {
-		// When destination_type is 'slack':
-		// 1. email_addresses, email_user_ids, and token cannot be set
-		// 2. url must be set
-		err := validateSchemaAttributesForDestinationTypeSlack(d)
-		if err != nil {
-			return err
-		}
-	} else if destinationType == tfe.NotificationDestinationTypeMicrosoftTeams {
-		// When destination_type is 'microsoft-teams':
-		// 1. email_addresses, email_user_ids, and token cannot be set
-		// 2. url must be set
-		err := validateSchemaAttributesForDestinationTypeMicrosoftTeams(d)
-		if err != nil {
-			return err
-		}
+// Create implements resource.Resource
+func (r *resourceTFENotificationConfiguration) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan, config modelTFENotificationConfiguration
+	// Read Terraform plan data into the model
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
+
+	diags := req.Config.Get(ctx, &config)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	workspaceID := plan.WorkspaceID.ValueString()
 
 	// Create a new options struct
 	options := tfe.NotificationConfigurationCreateOptions{
-		DestinationType: tfe.NotificationDestination(destinationType),
-		Enabled:         tfe.Bool(enabled),
-		Name:            tfe.String(name),
-		Token:           tfe.String(token),
-		URL:             tfe.String(url),
+		DestinationType: tfe.NotificationDestination(tfe.NotificationDestinationType(plan.DestinationType.ValueString())),
+		Enabled:         plan.Enabled.ValueBoolPointer(),
+		Name:            plan.Name.ValueStringPointer(),
+		URL:             plan.URL.ValueStringPointer(),
+		SubscribableChoice: &tfe.NotificationConfigurationSubscribableChoice{
+			Workspace: &tfe.Workspace{ID: workspaceID},
+		},
+	}
+
+	// Set Value from `token_wo` if set, otherwise use the normal value
+	if !config.TokenWO.IsNull() {
+		options.Token = config.TokenWO.ValueStringPointer()
+	} else {
+		options.Token = plan.Token.ValueStringPointer()
 	}
 
 	// Add triggers set to the options struct
-	for _, trigger := range d.Get("triggers").(*schema.Set).List() {
-		options.Triggers = append(options.Triggers, tfe.NotificationTriggerType(trigger.(string)))
+	var triggers []types.String
+	resp.Diagnostics.Append(plan.Triggers.ElementsAs(ctx, &triggers, true)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	options.Triggers = []tfe.NotificationTriggerType{}
+	for _, trigger := range triggers {
+		options.Triggers = append(options.Triggers, tfe.NotificationTriggerType(trigger.ValueString()))
 	}
 
 	// Add email_addresses set to the options struct
-	if emailAddresses, ok := d.GetOk("email_addresses"); ok {
-		for _, emailAddress := range emailAddresses.(*schema.Set).List() {
-			options.EmailAddresses = append(options.EmailAddresses, emailAddress.(string))
-		}
+	emailAddresses := make([]types.String, len(plan.EmailAddresses.Elements()))
+	resp.Diagnostics.Append(plan.EmailAddresses.ElementsAs(ctx, &emailAddresses, true)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	options.EmailAddresses = []string{}
+	for _, emailAddress := range emailAddresses {
+		options.EmailAddresses = append(options.EmailAddresses, emailAddress.ValueString())
 	}
 
 	// Add email_user_ids set to the options struct
-	if emailUserIDs, ok := d.GetOk("email_user_ids"); ok {
-		for _, emailUserID := range emailUserIDs.(*schema.Set).List() {
-			options.EmailUsers = append(options.EmailUsers, &tfe.User{ID: emailUserID.(string)})
-		}
+	emailUserIDs := make([]types.String, len(plan.EmailUserIDs.Elements()))
+	resp.Diagnostics.Append(plan.EmailUserIDs.ElementsAs(ctx, &emailUserIDs, true)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	log.Printf("[DEBUG] Create notification configuration: %s", name)
-	notificationConfiguration, err := config.Client.NotificationConfigurations.Create(ctx, workspaceID, options)
+	options.EmailUsers = []*tfe.User{}
+	for _, emailUserID := range emailUserIDs {
+		options.EmailUsers = append(options.EmailUsers, &tfe.User{ID: emailUserID.ValueString()})
+	}
+
+	tflog.Debug(ctx, "Creating notification configuration")
+
+	nc, err := r.config.Client.NotificationConfigurations.Create(ctx, workspaceID, options)
 	if err != nil {
-		return fmt.Errorf("Error creating notification configuration %s: %w", name, err)
+		resp.Diagnostics.AddError("Unable to create notification configuration", err.Error())
+		return
+	} else if len(nc.EmailUsers) != len(plan.EmailUserIDs.Elements()) {
+		resp.Diagnostics.AddError("Email user IDs produced an inconsistent result", "API returned a different number of email user IDs than were provided in the plan.")
+		return
 	}
 
-	d.SetId(notificationConfiguration.ID)
+	// Restore token from plan because it is write only
+	if !plan.Token.IsNull() {
+		nc.Token = plan.Token.ValueString()
+	}
 
-	return resourceTFENotificationConfigurationRead(d, meta)
+	// We got a notification, so set state to new values
+	result, diags := modelFromTFENotificationConfiguration(nc, !config.TokenWO.IsNull())
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Store the hashed write-only value in the private state
+	store := r.writeOnlyValueStore(resp.Private)
+	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.TokenWO)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Save data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
-func resourceTFENotificationConfigurationRead(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(ConfiguredClient)
+// Read implements resource.Resource
+func (r *resourceTFENotificationConfiguration) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state modelTFENotificationConfiguration
+	// Read Terraform prior state data into the model
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
-	log.Printf("[DEBUG] Read notification configuration: %s", d.Id())
-	notificationConfiguration, err := config.Client.NotificationConfigurations.Read(ctx, d.Id())
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	tflog.Debug(ctx, fmt.Sprintf("Reading notification configuration %q", state.ID.ValueString()))
+	nc, err := r.config.Client.NotificationConfigurations.Read(ctx, state.ID.ValueString())
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
-			log.Printf("[DEBUG] Notification configuration %s no longer exists", d.Id())
-			d.SetId("")
-			return nil
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			tflog.Debug(ctx, fmt.Sprintf("`Notification configuration %s no longer exists", state.ID))
+			resp.State.RemoveResource(ctx)
+		} else {
+			resp.Diagnostics.AddError("Error reading notification configuration", "Could not read notification configuration, unexpected error: "+err.Error())
 		}
-		return fmt.Errorf("Error reading notification configuration %s: %w", d.Id(), err)
+		return
 	}
 
-	// Update config
-	d.Set("destination_type", notificationConfiguration.DestinationType)
-	d.Set("enabled", notificationConfiguration.Enabled)
-
-	// Update the email addresses
-	var emailAddresses []interface{}
-	for _, emailAddress := range notificationConfiguration.EmailAddresses {
-		emailAddresses = append(emailAddresses, emailAddress)
-	}
-	d.Set("email_addresses", emailAddresses)
-
-	// Update the email user ids
-	var emailUserIDs []interface{}
-	for _, emailUser := range notificationConfiguration.EmailUsers {
-		emailUserIDs = append(emailUserIDs, emailUser.ID)
-	}
-	d.Set("email_user_ids", emailUserIDs)
-
-	d.Set("name", notificationConfiguration.Name)
-	// Don't set token here, as it is write only
-	// and setting it here would make it blank
-	d.Set("triggers", notificationConfiguration.Triggers)
-
-	if notificationConfiguration.URL != "" {
-		d.Set("url", notificationConfiguration.URL)
+	// Restore token from state because it is write only
+	if !state.Token.IsNull() {
+		nc.Token = state.Token.ValueString()
 	}
 
-	d.Set("workspace_id", notificationConfiguration.Subscribable.ID)
+	isWriteOnly, diags := r.writeOnlyValueStore(resp.Private).PriorValueExists(ctx)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
-	return nil
+	result, diags := modelFromTFENotificationConfiguration(nc, isWriteOnly)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Save updated data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
-func resourceTFENotificationConfigurationUpdate(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(ConfiguredClient)
-
-	// Get attributes
-	enabled := d.Get("enabled").(bool)
-	name := d.Get("name").(string)
-	token := d.Get("token").(string)
-	url := d.Get("url").(string)
-
-	// Make sure only the correct schema attributes are set
-	destinationType := tfe.NotificationDestinationType(d.Get("destination_type").(string))
-	if destinationType == tfe.NotificationDestinationTypeEmail {
-		// When destination_type is 'email':
-		// 1. url and token cannot be set
-		err := validateSchemaAttributesForDestinationTypeEmail(d)
-		if err != nil {
-			return err
-		}
-	} else if destinationType == tfe.NotificationDestinationTypeGeneric {
-		// When destination_type is 'generic':
-		// 1. email_addresses and email_user_ids cannot be set
-		// 2. url must be set
-		err := validateSchemaAttributesForDestinationTypeGeneric(d)
-		if err != nil {
-			return err
-		}
-	} else if destinationType == tfe.NotificationDestinationTypeSlack {
-		// When destination_type is 'slack':
-		// 1. email_addresses, email_user_ids, and token cannot be set
-		// 2. url must be set
-		err := validateSchemaAttributesForDestinationTypeSlack(d)
-		if err != nil {
-			return err
-		}
-	} else if destinationType == tfe.NotificationDestinationTypeMicrosoftTeams {
-		// When destination_type is 'microsoft-teams':
-		// 1. email_addresses, email_user_ids, and token cannot be set
-		// 2. url must be set
-		err := validateSchemaAttributesForDestinationTypeMicrosoftTeams(d)
-		if err != nil {
-			return err
-		}
+// Update implements resource.Resource
+func (r *resourceTFENotificationConfiguration) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan, state, config modelTFENotificationConfiguration
+	// Read Terraform plan data into the model
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	// Read Terraform prior state data into the model
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	// Read configuration data into the model
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	// Create a new options struct
 	options := tfe.NotificationConfigurationUpdateOptions{
-		Enabled: tfe.Bool(enabled),
-		Name:    tfe.String(name),
-		Token:   tfe.String(token),
-		URL:     tfe.String(url),
+		Enabled: plan.Enabled.ValueBoolPointer(),
+		Name:    plan.Name.ValueStringPointer(),
+		Token:   plan.Token.ValueStringPointer(),
+		URL:     plan.URL.ValueStringPointer(),
 	}
 
 	// Add triggers set to the options struct
-	for _, trigger := range d.Get("triggers").(*schema.Set).List() {
-		options.Triggers = append(options.Triggers, tfe.NotificationTriggerType(trigger.(string)))
+	triggers := make([]types.String, len(plan.Triggers.Elements()))
+	resp.Diagnostics.Append(plan.Triggers.ElementsAs(ctx, &triggers, true)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	options.Triggers = []tfe.NotificationTriggerType{}
+	for _, trigger := range triggers {
+		options.Triggers = append(options.Triggers, tfe.NotificationTriggerType(trigger.ValueString()))
 	}
 
 	// Add email_addresses set to the options struct
-	if emailAddresses, ok := d.GetOk("email_addresses"); ok {
-		for _, emailAddress := range emailAddresses.(*schema.Set).List() {
-			options.EmailAddresses = append(options.EmailAddresses, emailAddress.(string))
-		}
+	emailAddresses := make([]types.String, len(plan.EmailAddresses.Elements()))
+	resp.Diagnostics.Append(plan.EmailAddresses.ElementsAs(ctx, &emailAddresses, true)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	options.EmailAddresses = []string{}
+	for _, emailAddress := range emailAddresses {
+		options.EmailAddresses = append(options.EmailAddresses, emailAddress.ValueString())
 	}
 
 	// Add email_user_ids set to the options struct
-	if emailUserIDs, ok := d.GetOk("email_user_ids"); ok {
-		for _, emailUserID := range emailUserIDs.(*schema.Set).List() {
-			options.EmailUsers = append(options.EmailUsers, &tfe.User{ID: emailUserID.(string)})
-		}
+	emailUserIDs := make([]types.String, len(plan.EmailUserIDs.Elements()))
+	resp.Diagnostics.Append(plan.EmailUserIDs.ElementsAs(ctx, &emailUserIDs, true)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	log.Printf("[DEBUG] Update notification configuration: %s", d.Id())
-	_, err := config.Client.NotificationConfigurations.Update(ctx, d.Id(), options)
+	options.EmailUsers = []*tfe.User{}
+	for _, emailUserID := range emailUserIDs {
+		options.EmailUsers = append(options.EmailUsers, &tfe.User{ID: emailUserID.ValueString()})
+	}
+
+	tflog.Debug(ctx, "Updating notification configuration")
+	nc, err := r.config.Client.NotificationConfigurations.Update(ctx, state.ID.ValueString(), options)
 	if err != nil {
-		return fmt.Errorf("Error updating notification configuration %s: %w", d.Id(), err)
+		resp.Diagnostics.AddError("Unable to update notification configuration", err.Error())
+		return
+	} else if len(nc.EmailUsers) != len(plan.EmailUserIDs.Elements()) {
+		resp.Diagnostics.AddError("Email user IDs produced an inconsistent result", "API returned a different number of email user IDs than were provided in the plan.")
+		return
 	}
 
-	return resourceTFENotificationConfigurationRead(d, meta)
+	// Restore token from plan because it is write only
+	if !plan.Token.IsNull() {
+		nc.Token = plan.Token.ValueString()
+	}
+
+	// Store the hashed write-only value in the private state
+	store := r.writeOnlyValueStore(resp.Private)
+	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.TokenWO)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	result, diags := modelFromTFENotificationConfiguration(nc, !config.TokenWO.IsNull())
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Save data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
-func resourceTFENotificationConfigurationDelete(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(ConfiguredClient)
+// Delete implements resource.Resource
+func (r *resourceTFENotificationConfiguration) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state modelTFENotificationConfiguration
+	// Read Terraform prior state data into the model
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
-	log.Printf("[DEBUG] Delete notification configuration: %s", d.Id())
-	err := config.Client.NotificationConfigurations.Delete(ctx, d.Id())
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	tflog.Debug(ctx, "Deleting notification configuration")
+	err := r.config.Client.NotificationConfigurations.Delete(ctx, state.ID.ValueString())
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
-			return nil
-		}
-		return fmt.Errorf("Error deleting notification configuration %s: %w", d.Id(), err)
+		resp.Diagnostics.AddError("Unable to delete notification configuration", err.Error())
+		return
 	}
-
-	return nil
 }
 
-// Custom CustomizeDiff functions and helpers
-func validateSchemaAttributesForDestinationTypeEmail(d *schema.ResourceData) error {
-	// Make sure url and token are not set when destination_type is 'email'
-	_, urlIsSet := d.GetOk("url")
-	if urlIsSet {
-		return fmt.Errorf("URL cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeEmail))
-	}
-	token, tokenIsSet := d.GetOk("token")
-	if tokenIsSet && token != "" {
-		return fmt.Errorf("token cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeEmail))
-	}
-
-	return nil
+func (r *resourceTFENotificationConfiguration) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
 }
 
-func validateSchemaAttributesForDestinationTypeGeneric(d *schema.ResourceData) error {
-	// Make sure email_addresses and email_user_ids are not set when destination_type is 'generic'
-	_, emailAddressesIsSet := d.GetOk("email_addresses")
-	if emailAddressesIsSet {
-		return fmt.Errorf("email addresses cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeGeneric))
-	}
-	_, emailUserIDsIsSet := d.GetOk("email_user_ids")
-	if emailUserIDsIsSet {
-		return fmt.Errorf("email user IDs cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeGeneric))
-	}
-
-	// Make sure url is set when destination_type is 'generic'
-	_, urlIsSet := d.GetOk("url")
-	if !urlIsSet {
-		return fmt.Errorf("URL is required with destination type of %s", string(tfe.NotificationDestinationTypeGeneric))
-	}
-
-	return nil
-}
-
-func validateSchemaAttributesForDestinationTypeSlack(d *schema.ResourceData) error {
-	// Make sure email_addresses, email_user_ids, and token are not set when destination_type is 'slack'
-	_, emailAddressesIsSet := d.GetOk("email_addresses")
-	if emailAddressesIsSet {
-		return fmt.Errorf("email addresses cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeSlack))
-	}
-	_, emailUserIDsIsSet := d.GetOk("email_user_ids")
-	if emailUserIDsIsSet {
-		return fmt.Errorf("email user IDs cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeSlack))
-	}
-	token, tokenIsSet := d.GetOk("token")
-	if tokenIsSet && token != "" {
-		return fmt.Errorf("token cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeSlack))
-	}
-
-	// Make sure url is set when destination_type is 'slack'
-	_, urlIsSet := d.GetOk("url")
-	if !urlIsSet {
-		return fmt.Errorf("URL is required with destination type of %s", string(tfe.NotificationDestinationTypeSlack))
-	}
-
-	return nil
-}
-
-func validateSchemaAttributesForDestinationTypeMicrosoftTeams(d *schema.ResourceData) error {
-	// Make sure email_addresses, email_user_ids, and token are not set when destination_type is 'microsoft-teams'
-	_, emailAddressesIsSet := d.GetOk("email_addresses")
-	if emailAddressesIsSet {
-		return fmt.Errorf("email addresses cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeMicrosoftTeams))
-	}
-	_, emailUserIDsIsSet := d.GetOk("email_user_ids")
-	if emailUserIDsIsSet {
-		return fmt.Errorf("email user IDs cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeMicrosoftTeams))
-	}
-	token, tokenIsSet := d.GetOk("token")
-	if tokenIsSet && token != "" {
-		return fmt.Errorf("token cannot be set with destination type of %s", string(tfe.NotificationDestinationTypeMicrosoftTeams))
-	}
-
-	// Make sure url is set when destination_type is 'microsoft-teams'
-	_, urlIsSet := d.GetOk("url")
-	if !urlIsSet {
-		return fmt.Errorf("URL is required with destination type of %s", string(tfe.NotificationDestinationTypeMicrosoftTeams))
-	}
-
-	return nil
+func (r *resourceTFENotificationConfiguration) writeOnlyValueStore(private helpers.PrivateState) *helpers.WriteOnlyValueStore {
+	return helpers.NewWriteOnlyValueStore(private, "token_wo")
 }

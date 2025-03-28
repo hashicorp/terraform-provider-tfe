@@ -33,6 +33,7 @@ The following arguments are supported:
 * `enabled` - (Optional) Whether the task will be run.
 * `description` - (Optional) A short description of the the task.
 * `hmac_key` - (Optional) HMAC key to verify run task.
+* `hmac_key_wo` - (Optional) Write-only HMAC key to verify run task.
 * `name` - (Required) Name of the task.
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `url` - (Required) URL to send a run task payload.
