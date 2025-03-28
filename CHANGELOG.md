@@ -2,20 +2,15 @@
 
 FEATURES:
 
-* **New Ephemeral Resource:** `tfe_audit_trail_token` is a new ephemeral
-  resource for creating and managing audit trail tokens, by
-  @uturunku1 [#1675](https://github.com/hashicorp/terraform-provider-tfe/pull/1675)
+* **New Ephemeral Resource:** `tfe_audit_trail_token` is a new ephemeral resource for creating and managing audit trail tokens, by @uturunku1 [#1675](https://github.com/hashicorp/terraform-provider-tfe/pull/1675)
 
-* **New Ephemeral Resource:** `tfe_organization_token` is a new ephemeral
-  resource for creating and managing organization tokens, by
-  @ctrombley [#1616](https://github.com/hashicorp/terraform-provider-tfe/pull/1616)
+* **New Ephemeral Resource:** `tfe_organization_token` is a new ephemeral resource for creating and managing organization tokens, by @ctrombley [#1616](https://github.com/hashicorp/terraform-provider-tfe/pull/1616)
 
-* **New Ephemeral Resource:** `tfe_team_token` is a new ephemeral
-  resource for creating and managing team tokens in an organization, by
-  @shwetamurali and @ctrombley [#1628](https://github.com/hashicorp/terraform-provider-tfe/pull/1628)
+* **New Ephemeral Resource:** `tfe_team_token` is a new ephemeral resource for creating and managing team tokens in an organization, by @shwetamurali and @ctrombley [#1628](https://github.com/hashicorp/terraform-provider-tfe/pull/1628)
 
-* **New Ephemeral Resource:** `tfe_agent_token` is a new ephemeral
-  resource for creating and managing agent tokens, by @uturunku1 ([#1627](https://github.com/hashicorp/terraform-provider-tfe/pull/1627))
+* **New Ephemeral Resource:** `tfe_agent_token` is a new ephemeral resource for creating and managing agent tokens, by @uturunku1 ([#1627](https://github.com/hashicorp/terraform-provider-tfe/pull/1627))
+
+* **New Ephemeral Resource:** `tfe_outputs` is a new ephemeral resource for retrieving the state version outputs of a workspace without writing sensitive data to the state file, by @ctrombley [#1640](https://github.com/hashicorp/terraform-provider-tfe/pull/1640)
 
 BUG FIXES:
 * `r/tfe_oauth_client`: Ensure `oauth_token_id` updates register when performing a `terraform apply`, by @hashimoon [#1631](https://github.com/hashicorp/terraform-provider-tfe/pull/1631)
@@ -50,9 +45,6 @@ BUG FIXES:
 * `r/tfe_stack`: Fix serialization issue when using github app installation within vcs_repo block, by @mjyocca [#1572](https://github.com/hashicorp/terraform-provider-tfe/pull/1572)
 
 * `r/tfe_workspace_settings`: Prevent fetching of all workspaces as the `remote_state_consumer_ids` when `global_remote_state` is set to true, by @uk1288 [#1606](https://github.com/hashicorp/terraform-provider-tfe/pull/1606)
-
-ENHANCEMENTS:
-* **New Ephemeral Resource:** `tfe_outputs` is a new ephemeral resource for retrieving the state version outputs of a workspace without writing sensitive data to the state file, by @ctrombley [#1640](https://github.com/hashicorp/terraform-provider-tfe/pull/1640)
 
 ## v.0.63.0
 
