@@ -33,6 +33,8 @@ ENHANCEMENTS:
 * resource/tfe_saml_settings: Add `private_key_wo` write-only attribute, by @uturunku1 ([#1660](https://github.com/hashicorp/terraform-provider-tfe/pull/1660))
 
 * resource/tfe_ssh_key: Add `key_wo` write-only attribute, by @ctrombley ([#1659](https://github.com/hashicorp/terraform-provider-tfe/pull/1659))
+
+* resource/tfe_team_notification_configuration: Add `token_wo` write-only attribute, by @shwetamurali ([#1665](https://github.com/hashicorp/terraform-provider-tfe/pull/1665))
  
 * resource/tfe_notification_configuration: Add `token_wo` write-only attribute, by @uturunku1 ([#1664](https://github.com/hashicorp/terraform-provider-tfe/pull/1664))
 
