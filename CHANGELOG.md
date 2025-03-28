@@ -1,5 +1,8 @@
 ## Unreleased
 
+* **New Data Source:** `tfe_registry_module` is a new data source for finding
+  registry modules by @drewmullen and @danquack [#1667]https://github.com/hashicorp/terraform-provider-tfe/pull/1667
+
 FEATURES:
 
 * **New Ephemeral Resource:** `tfe_organization_token` is a new ephemeral
