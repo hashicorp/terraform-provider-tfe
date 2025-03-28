@@ -126,7 +126,7 @@ The following arguments are supported:
   be used by the receiving server to verify request authenticity when configured for notification
   configurations with a destination type of `generic`. Defaults to `null`.
   This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.
-- `TokenWO` - (Optional) A write-only secure token for the notification configuration, guaranteed not to be written to plan or state artifacts. Only one of `token` or `token_wo` can be provided.
+- `token_wo` - (Optional) A write-only secure token for the notification configuration, guaranteed not to be written to plan or state artifacts. Only one of `token` or `token_wo` can be provided.
 - `triggers` - (Optional) The array of triggers for which this notification configuration will
   send notifications. Currently, the only valid value is `change_request:created`.
 
