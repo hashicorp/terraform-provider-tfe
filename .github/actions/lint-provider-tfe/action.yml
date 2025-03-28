@@ -10,7 +10,7 @@ runs:
       uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5.3.0
       with:
         go-version-file: "go.mod"
-        cache: false
+        cache: true
 
     - name: fmt check
       run: make fmtcheck
@@ -24,7 +24,7 @@ runs:
       run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/c1149695535fda62f6b574bc55dfbc333693647e/install.sh | sh -s -- -b $(go env GOPATH)/bin $GOLANGCILINT_VERSION
       shell: bash
       env:
-        GOLANGCILINT_VERSION: v1.63.4
+        GOLANGCILINT_VERSION: v1.64.8
 
     - run: make lint
       shell: bash
