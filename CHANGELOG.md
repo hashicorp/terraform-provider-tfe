@@ -14,7 +14,7 @@ FEATURES:
   resource for creating and managing team tokens in an organization, by
   @shwetamurali and @ctrombley [#1628](https://github.com/hashicorp/terraform-provider-tfe/pull/1628)
 
-* **New Ephemeral Resource:** `agent_token` is a new ephemeral
+* **New Ephemeral Resource:** `tfe_agent_token` is a new ephemeral
   resource for creating and managing agent tokens, by @uturunku1 ([#1627](https://github.com/hashicorp/terraform-provider-tfe/pull/1627))
 
 BUG FIXES:
@@ -22,21 +22,21 @@ BUG FIXES:
 
 ENHANCEMENTS:
 
-* resource/tfe_variable: Add `value_wo` write-only attribute, by @uturunku ([#1639](https://github.com/hashicorp/terraform-provider-tfe/pull/1639))
+* `r/tfe_variable`: Add `value_wo` write-only attribute, by @uturunku ([#1639](https://github.com/hashicorp/terraform-provider-tfe/pull/1639))
 
-* resource/tfe_test_variable: Add `value_wo` write-only attribute, by @uturunku ([#1639](https://github.com/hashicorp/terraform-provider-tfe/pull/1639))
+* `r/tfe_test_variable`: Add `value_wo` write-only attribute, by @uturunku ([#1639](https://github.com/hashicorp/terraform-provider-tfe/pull/1639))
 
-* resource/tfe_policy_set_parameter: Add `value_wo` write-only attribute, by @ctrombley ([#1641](https://github.com/hashicorp/terraform-provider-tfe/pull/1641))
+* `r/tfe_policy_set_parameter`: Add `value_wo` write-only attribute, by @ctrombley ([#1641](https://github.com/hashicorp/terraform-provider-tfe/pull/1641))
 
-* resource/tfe_organization_run_task: Add `hmac_key_wo` write-only attribute, by @shwetamurali ([#1646](https://github.com/hashicorp/terraform-provider-tfe/pull/1646))
+* `r/tfe_organization_run_task`: Add `hmac_key_wo` write-only attribute, by @shwetamurali ([#1646](https://github.com/hashicorp/terraform-provider-tfe/pull/1646))
 
-* resource/tfe_saml_settings: Add `private_key_wo` write-only attribute, by @uturunku1 ([#1660](https://github.com/hashicorp/terraform-provider-tfe/pull/1660))
+* `r/tfe_saml_settings`: Add `private_key_wo` write-only attribute, by @uturunku1 ([#1660](https://github.com/hashicorp/terraform-provider-tfe/pull/1660))
 
-* resource/tfe_ssh_key: Add `key_wo` write-only attribute, by @ctrombley ([#1659](https://github.com/hashicorp/terraform-provider-tfe/pull/1659))
+* `r/tfe_ssh_key`: Add `key_wo` write-only attribute, by @ctrombley ([#1659](https://github.com/hashicorp/terraform-provider-tfe/pull/1659))
 
-* resource/tfe_team_notification_configuration: Add `token_wo` write-only attribute, by @shwetamurali ([#1665](https://github.com/hashicorp/terraform-provider-tfe/pull/1665))
- 
-* resource/tfe_notification_configuration: Add `token_wo` write-only attribute, by @uturunku1 ([#1664](https://github.com/hashicorp/terraform-provider-tfe/pull/1664))
+* `r/tfe_team_notification_configuration`: Add `token_wo` write-only attribute, by @shwetamurali ([#1665](https://github.com/hashicorp/terraform-provider-tfe/pull/1665))
+
+* `r/tfe_notification_configuration`: Add `token_wo` write-only attribute, by @uturunku1 ([#1664](https://github.com/hashicorp/terraform-provider-tfe/pull/1664))
 
 ## v.0.64.0
 
