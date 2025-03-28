@@ -5,6 +5,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -60,7 +61,8 @@ type modelTFETeamNotificationConfiguration struct {
 
 // modelFromTFETeamNotificationConfiguration builds a modelTFETeamNotificationConfiguration
 // struct from a tfe.TeamNotificationConfiguration value.
-func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration, isWriteOnly bool, lastValue types.String) (*modelTFETeamNotificationConfiguration, *diag.Diagnostics) {
+func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration, isWriteOnly bool, lastValue types.String) (*modelTFETeamNotificationConfiguration, diag.Diagnostics) {
+	var diags diag.Diagnostics
 	result := modelTFETeamNotificationConfiguration{
 		ID:              types.StringValue(v.ID),
 		Name:            types.StringValue(v.Name),
@@ -75,7 +77,7 @@ func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration,
 	} else {
 		emailAddresses, diags := types.SetValueFrom(ctx, types.StringType, v.EmailAddresses)
 		if diags != nil && diags.HasError() {
-			return nil, &diags
+			return nil, diags
 		}
 		result.EmailAddresses = emailAddresses
 	}
@@ -85,7 +87,7 @@ func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration,
 	} else {
 		triggers, diags := types.SetValueFrom(ctx, types.StringType, v.Triggers)
 		if diags != nil && diags.HasError() {
-			return nil, &diags
+			return nil, diags
 		}
 
 		result.Triggers = triggers
@@ -114,7 +116,7 @@ func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration,
 		result.URL = types.StringValue(v.URL)
 	}
 
-	return &result, nil
+	return &result, diags
 }
 
 func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -360,18 +362,16 @@ func (r *resourceTFETeamNotificationConfiguration) Create(ctx context.Context, r
 
 	result, diags := modelFromTFETeamNotificationConfiguration(tnc, isWriteOnly, plan.Token)
 	if diags.HasError() {
-		resp.Diagnostics.Append(*diags...)
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 
 	// Write the hashed private token to the state if it was provided
-	if !config.TokenWO.IsNull() {
-		store := r.writeOnlyValueStore(resp.Private)
-		resp.Diagnostics.Append(store.SetPriorValue(ctx, config.TokenWO)...)
-	}
+	store := r.writeOnlyValueStore(resp.Private)
+	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.TokenWO)...)
 
-	if diags != nil && diags.HasError() {
-		resp.Diagnostics.Append((*diags)...)
+	if diags.HasError() {
+		resp.Diagnostics.Append((diags)...)
 		return
 	}
 
@@ -392,7 +392,12 @@ func (r *resourceTFETeamNotificationConfiguration) Read(ctx context.Context, req
 	tflog.Debug(ctx, fmt.Sprintf("Reading team notification configuration %q", state.ID.ValueString()))
 	tnc, err := r.config.Client.NotificationConfigurations.Read(ctx, state.ID.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to read team notification configuration", err.Error())
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			tflog.Debug(ctx, fmt.Sprintf("`Notification configuration %s no longer exists", state.ID))
+			resp.State.RemoveResource(ctx)
+		} else {
+			resp.Diagnostics.AddError("Error reading notification configuration", "Could not read notification configuration, unexpected error: "+err.Error())
+		}
 		return
 	}
 
@@ -403,9 +408,9 @@ func (r *resourceTFETeamNotificationConfiguration) Read(ctx context.Context, req
 		return
 	}
 
-	result, diagsPtr := modelFromTFETeamNotificationConfiguration(tnc, isWriteOnly, state.Token)
-	if diagsPtr != nil && diagsPtr.HasError() {
-		resp.Diagnostics.Append(*diagsPtr...)
+	result, diags := modelFromTFETeamNotificationConfiguration(tnc, isWriteOnly, state.Token)
+	if diags.HasError() {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 
@@ -480,8 +485,8 @@ func (r *resourceTFETeamNotificationConfiguration) Update(ctx context.Context, r
 	}
 
 	result, diags := modelFromTFETeamNotificationConfiguration(tnc, !config.TokenWO.IsNull(), plan.Token)
-	if diags != nil && diags.HasError() {
-		resp.Diagnostics.Append((*diags)...)
+	if diags.HasError() {
+		resp.Diagnostics.Append((diags)...)
 		return
 	}
 
