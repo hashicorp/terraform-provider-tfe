@@ -174,5 +174,6 @@ func (p *frameworkProvider) EphemeralResources(ctx context.Context) []func() eph
 		NewOrganizationTokenEphemeralResource,
 		NewOutputsEphemeralResource,
 		NewTeamTokenEphemeralResource,
+		NewAuditTrailTokenEphemeralResource,
 	}
 }
