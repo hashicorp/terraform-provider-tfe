@@ -2,6 +2,10 @@
 
 FEATURES:
 
+* **New Ephemeral Resource:** `tfe_audit_trail_token` is a new ephemeral
+  resource for creating and managing audit trail tokens, by
+  @uturunku1 [#1675](https://github.com/hashicorp/terraform-provider-tfe/pull/1675)
+
 * **New Ephemeral Resource:** `tfe_organization_token` is a new ephemeral
   resource for creating and managing organization tokens, by
   @ctrombley [#1616](https://github.com/hashicorp/terraform-provider-tfe/pull/1616)
