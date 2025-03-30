@@ -361,7 +361,7 @@ func TestAccTFERegistryModule_noCodeModule(t *testing.T) {
 		RegistryName: tfe.PublicRegistry,
 		Namespace:    "terraform-aws-modules",
 		Organization: &tfe.Organization{Name: orgName},
-		NoCode:       false, // changes to false on refresh
+		NoCode:       false,
 	}
 
 	resource.Test(t, resource.TestCase{
