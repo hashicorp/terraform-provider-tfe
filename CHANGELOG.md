@@ -1,8 +1,5 @@
 ## Unreleased
 
-* **New Data Source:** `tfe_registry_module` is a new data source for finding
-  registry modules by @drewmullen and @danquack [#1667]https://github.com/hashicorp/terraform-provider-tfe/pull/1667
-
 FEATURES:
 
 * **New Ephemeral Resource:** `tfe_audit_trail_token` is a new ephemeral resource for creating and managing audit trail tokens, by @uturunku1 [#1675](https://github.com/hashicorp/terraform-provider-tfe/pull/1675)
@@ -14,6 +11,9 @@ FEATURES:
 * **New Ephemeral Resource:** `tfe_agent_token` is a new ephemeral resource for creating and managing agent tokens, by @uturunku1 ([#1627](https://github.com/hashicorp/terraform-provider-tfe/pull/1627))
 
 * **New Ephemeral Resource:** `tfe_outputs` is a new ephemeral resource for retrieving the state version outputs of a workspace without writing sensitive data to the state file, by @ctrombley [#1640](https://github.com/hashicorp/terraform-provider-tfe/pull/1640)
+
+* **New Data Source:** `tfe_registry_module` is a new data source for finding
+  registry modules by @drewmullen and @danquack [#1667](https://github.com/hashicorp/terraform-provider-tfe/pull/1667)
 
 BUG FIXES:
 * `r/tfe_oauth_client`: Ensure `oauth_token_id` updates register when performing a `terraform apply`, by @hashimoon [#1631](https://github.com/hashicorp/terraform-provider-tfe/pull/1631)
