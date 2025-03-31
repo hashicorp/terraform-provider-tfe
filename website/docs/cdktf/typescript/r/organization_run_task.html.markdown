@@ -49,6 +49,7 @@ The following arguments are supported:
 * `enabled` - (Optional) Whether the task will be run.
 * `description` - (Optional) A short description of the the task.
 * `hmacKey` - (Optional) HMAC key to verify run task.
+* `hmac_key_wo` - (Optional) Write-only HMAC key to verify run task.
 * `name` - (Required) Name of the task.
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `url` - (Required) URL to send a run task payload.
@@ -66,4 +67,4 @@ import ID. For example:
 terraform import tfe_organization_run_task.test my-org-name/task-name
 ```
 -> **Note:** Write-Only argument `hmac_key_wo` is available to use in place of `hmacKey`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
-<!-- cache-key: cdktf-0.20.8 input-91c45f6554a40c95a02a693f26d13fec2e11f5cf24033d1f8864c9e8a25d43be -->
+<!-- cache-key: cdktf-0.20.8 input-afc530d14013df0095835e1f25d6d21eb46d0fa97edd04013a3cc98fb8fd84b2 -->

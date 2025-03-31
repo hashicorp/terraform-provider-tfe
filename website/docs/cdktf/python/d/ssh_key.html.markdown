@@ -36,7 +36,8 @@ class MyConvertedCode(TerraformStack):
 The following arguments are supported:
 
 * `name` - (Required) Name of the SSH key.
-* `organization` - (Required) Name of the organization.
+* `organization` - (Optional) Name of the organization. If omitted, organization
+  must be defined in the provider config.
 
 ## Attributes Reference
 
@@ -44,4 +45,4 @@ In addition to all arguments above, the following attributes are exported:
 
 * `id` - The ID of the SSH key.
 
-<!-- cache-key: cdktf-0.20.8 input-806b3725b385ea145f9913c0e0d9cd7b045ae9faf7bb22bbddfa40eda1fb10e3 -->
+<!-- cache-key: cdktf-0.20.8 input-eb29ed64f702678fe5f4e16b19cee416f189775eb585e2b64df226614d29f489 -->
