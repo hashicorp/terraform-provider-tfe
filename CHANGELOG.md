@@ -2,41 +2,36 @@
 
 FEATURES:
 
-* **New Ephemeral Resource:** `tfe_audit_trail_token` is a new ephemeral
-  resource for creating and managing audit trail tokens, by
-  @uturunku1 [#1675](https://github.com/hashicorp/terraform-provider-tfe/pull/1675)
+* **New Ephemeral Resource:** `tfe_audit_trail_token` is a new ephemeral resource for creating and managing audit trail tokens, by @uturunku1 [#1675](https://github.com/hashicorp/terraform-provider-tfe/pull/1675)
 
-* **New Ephemeral Resource:** `tfe_organization_token` is a new ephemeral
-  resource for creating and managing organization tokens, by
-  @ctrombley [#1616](https://github.com/hashicorp/terraform-provider-tfe/pull/1616)
+* **New Ephemeral Resource:** `tfe_organization_token` is a new ephemeral resource for creating and managing organization tokens, by @ctrombley [#1616](https://github.com/hashicorp/terraform-provider-tfe/pull/1616)
 
-* **New Ephemeral Resource:** `tfe_team_token` is a new ephemeral
-  resource for creating and managing team tokens in an organization, by
-  @shwetamurali and @ctrombley [#1628](https://github.com/hashicorp/terraform-provider-tfe/pull/1628)
+* **New Ephemeral Resource:** `tfe_team_token` is a new ephemeral resource for creating and managing team tokens in an organization, by @shwetamurali and @ctrombley [#1628](https://github.com/hashicorp/terraform-provider-tfe/pull/1628)
 
-* **New Ephemeral Resource:** `agent_token` is a new ephemeral
-  resource for creating and managing agent tokens, by @uturunku1 ([#1627](https://github.com/hashicorp/terraform-provider-tfe/pull/1627))
+* **New Ephemeral Resource:** `tfe_agent_token` is a new ephemeral resource for creating and managing agent tokens, by @uturunku1 ([#1627](https://github.com/hashicorp/terraform-provider-tfe/pull/1627))
+
+* **New Ephemeral Resource:** `tfe_outputs` is a new ephemeral resource for retrieving the state version outputs of a workspace without writing sensitive data to the state file, by @ctrombley [#1640](https://github.com/hashicorp/terraform-provider-tfe/pull/1640)
 
 BUG FIXES:
 * `r/tfe_oauth_client`: Ensure `oauth_token_id` updates register when performing a `terraform apply`, by @hashimoon [#1631](https://github.com/hashicorp/terraform-provider-tfe/pull/1631)
 
 ENHANCEMENTS:
 
-* resource/tfe_variable: Add `value_wo` write-only attribute, by @uturunku ([#1639](https://github.com/hashicorp/terraform-provider-tfe/pull/1639))
+* `r/tfe_variable`: Add `value_wo` write-only attribute, by @uturunku ([#1639](https://github.com/hashicorp/terraform-provider-tfe/pull/1639))
 
-* resource/tfe_test_variable: Add `value_wo` write-only attribute, by @uturunku ([#1639](https://github.com/hashicorp/terraform-provider-tfe/pull/1639))
+* `r/tfe_test_variable`: Add `value_wo` write-only attribute, by @uturunku ([#1639](https://github.com/hashicorp/terraform-provider-tfe/pull/1639))
 
-* resource/tfe_policy_set_parameter: Add `value_wo` write-only attribute, by @ctrombley ([#1641](https://github.com/hashicorp/terraform-provider-tfe/pull/1641))
+* `r/tfe_policy_set_parameter`: Add `value_wo` write-only attribute, by @ctrombley ([#1641](https://github.com/hashicorp/terraform-provider-tfe/pull/1641))
 
-* resource/tfe_organization_run_task: Add `hmac_key_wo` write-only attribute, by @shwetamurali ([#1646](https://github.com/hashicorp/terraform-provider-tfe/pull/1646))
+* `r/tfe_organization_run_task`: Add `hmac_key_wo` write-only attribute, by @shwetamurali ([#1646](https://github.com/hashicorp/terraform-provider-tfe/pull/1646))
 
-* resource/tfe_saml_settings: Add `private_key_wo` write-only attribute, by @uturunku1 ([#1660](https://github.com/hashicorp/terraform-provider-tfe/pull/1660))
+* `r/tfe_saml_settings`: Add `private_key_wo` write-only attribute, by @uturunku1 ([#1660](https://github.com/hashicorp/terraform-provider-tfe/pull/1660))
 
-* resource/tfe_ssh_key: Add `key_wo` write-only attribute, by @ctrombley ([#1659](https://github.com/hashicorp/terraform-provider-tfe/pull/1659))
+* `r/tfe_ssh_key`: Add `key_wo` write-only attribute, by @ctrombley ([#1659](https://github.com/hashicorp/terraform-provider-tfe/pull/1659))
 
-* resource/tfe_team_notification_configuration: Add `token_wo` write-only attribute, by @shwetamurali ([#1665](https://github.com/hashicorp/terraform-provider-tfe/pull/1665))
- 
-* resource/tfe_notification_configuration: Add `token_wo` write-only attribute, by @uturunku1 ([#1664](https://github.com/hashicorp/terraform-provider-tfe/pull/1664))
+* `r/tfe_team_notification_configuration`: Add `token_wo` write-only attribute, by @shwetamurali ([#1665](https://github.com/hashicorp/terraform-provider-tfe/pull/1665))
+
+* `r/tfe_notification_configuration`: Add `token_wo` write-only attribute, by @uturunku1 ([#1664](https://github.com/hashicorp/terraform-provider-tfe/pull/1664))
 
 ## v.0.64.0
 
@@ -50,9 +45,6 @@ BUG FIXES:
 * `r/tfe_stack`: Fix serialization issue when using github app installation within vcs_repo block, by @mjyocca [#1572](https://github.com/hashicorp/terraform-provider-tfe/pull/1572)
 
 * `r/tfe_workspace_settings`: Prevent fetching of all workspaces as the `remote_state_consumer_ids` when `global_remote_state` is set to true, by @uk1288 [#1606](https://github.com/hashicorp/terraform-provider-tfe/pull/1606)
-
-ENHANCEMENTS:
-* **New Ephemeral Resource:** `tfe_outputs` is a new ephemeral resource for retrieving the state version outputs of a workspace without writing sensitive data to the state file, by @ctrombley [#1640](https://github.com/hashicorp/terraform-provider-tfe/pull/1640)
 
 ## v.0.63.0
 
