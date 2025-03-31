@@ -134,6 +134,7 @@ func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource
 		NewOrganizationRunTaskDataSource,
 		NewOrganizationRunTaskGlobalSettingsDataSource,
 		NewOutputsDataSource,
+		NewProjectDataSource,
 		NewProjectsDataSource,
 		NewRegistryGPGKeyDataSource,
 		NewRegistryGPGKeysDataSource,
@@ -152,6 +153,7 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewOrganizationRunTaskGlobalSettingsResource,
 		NewOrganizationRunTaskResource,
 		NewPolicySetParameterResource,
+		NewProjectResource,
 		NewRegistryGPGKeyResource,
 		NewRegistryProviderResource,
 		NewResourceVariable,
@@ -162,6 +164,7 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewTeamNotificationConfigurationResource,
 		NewTestVariableResource,
 		NewWorkspaceRunTaskResource,
+		NewNotificationConfigurationResource,
 	}
 }
 
@@ -171,5 +174,6 @@ func (p *frameworkProvider) EphemeralResources(ctx context.Context) []func() eph
 		NewOrganizationTokenEphemeralResource,
 		NewOutputsEphemeralResource,
 		NewTeamTokenEphemeralResource,
+		NewAuditTrailTokenEphemeralResource,
 	}
 }

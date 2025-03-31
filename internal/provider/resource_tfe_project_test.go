@@ -57,7 +57,7 @@ func TestAccTFEProject_invalidName(t *testing.T) {
 			},
 			{
 				Config:      testAccTFEProject_invalidNameLen(rInt),
-				ExpectError: regexp.MustCompile(`expected length of name to be in the range \(3 - 40\),`),
+				ExpectError: regexp.MustCompile(`string length must be between 3 and 40`),
 			},
 		},
 	})
@@ -150,7 +150,7 @@ func TestAccTFEProject_withAutoDestroy(t *testing.T) {
 			},
 			{
 				Config:      testAccTFEProject_basicWithAutoDestroy(rInt, "10m"),
-				ExpectError: regexp.MustCompile(`must be 1-4 digits followed by d or h`),
+				ExpectError: regexp.MustCompile("must be 1-4 digits followed by"),
 			},
 			{
 				Config: testAccTFEProject_basic(rInt),
@@ -158,8 +158,7 @@ func TestAccTFEProject_withAutoDestroy(t *testing.T) {
 					testAccCheckTFEProjectExists(
 						"tfe_project.foobar", project),
 					testAccCheckTFEProjectAttributes(project),
-					resource.TestCheckResourceAttr(
-						"tfe_project.foobar", "auto_destroy_activity_duration", ""),
+					resource.TestCheckNoResourceAttr("tfe_project.foobar", "auto_destroy_activity_duration"),
 				),
 			},
 		},

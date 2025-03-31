@@ -10,8 +10,11 @@ import (
 	"testing"
 
 	"github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-testing/compare"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
 )
 
 func TestAccTFETeamNotificationConfiguration_basic(t *testing.T) {
@@ -926,6 +929,72 @@ func testAccCheckTFETeamNotificationConfigurationDestroy(s *terraform.State) err
 	return nil
 }
 
+func TestAccTFETeamNotificationConfiguration_tokenWO(t *testing.T) {
+	skipUnlessBeta(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createPlusOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
+	// Create the value comparer so we can add state values to it during the test steps
+	compareValuesDiffer := statecheck.CompareValue(compare.ValuesDiffer())
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFETeamNotificationConfiguration_tokenAndTokenWO(org.Name),
+				ExpectError: regexp.MustCompile(`Attribute "token_wo" cannot be specified when "token" is specified`),
+			},
+			{
+				Config: testAccTFETeamNotificationConfiguration_tokenWO(org.Name, "1234567890"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "token"),
+					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "token_wo"),
+				),
+				// Register the id with the value comparer so we can assert that the
+				// resource has been replaced in the next step.
+				ConfigStateChecks: []statecheck.StateCheck{
+					compareValuesDiffer.AddStateValue(
+						"tfe_team_notification_configuration.foobar", tfjsonpath.New("id"),
+					),
+				},
+			},
+			{
+				Config: testAccTFETeamNotificationConfiguration_tokenWO(org.Name, "12345678901"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "token"),
+					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "token_wo"),
+				),
+				// Register the id with the value comparer so we can assert that the
+				// resource has been replaced in the next step.
+				ConfigStateChecks: []statecheck.StateCheck{
+					compareValuesDiffer.AddStateValue(
+						"tfe_team_notification_configuration.foobar", tfjsonpath.New("id"),
+					),
+				},
+			},
+			{
+				Config: testAccTFETeamNotificationConfiguration_token(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_team_notification_configuration.foobar", "token", "1234567890"),
+				),
+				// Ensure that the resource has been replaced
+				ConfigStateChecks: []statecheck.StateCheck{
+					compareValuesDiffer.AddStateValue(
+						"tfe_team_notification_configuration.foobar", tfjsonpath.New("id"),
+					),
+				},
+			},
+		},
+	})
+}
+
 func testAccTFETeamNotificationConfiguration_basic(orgName string) string {
 	return fmt.Sprintf(`
 data "tfe_organization" "foobar" {
@@ -1356,6 +1425,67 @@ resource "tfe_team_notification_configuration" "foobar" {
   destination_type = "generic"
   triggers         = ["change_request:created", "change_request:created", "change_request:created"]
   url              = "%s"
+  team_id          = tfe_team.foobar.id
+}`, orgName, runTasksURL())
+}
+
+func testAccTFETeamNotificationConfiguration_token(orgName string) string {
+	return fmt.Sprintf(`
+data "tfe_organization" "foobar" {
+  name = "%s"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-test"
+  organization = data.tfe_organization.foobar.name
+}
+
+resource "tfe_team_notification_configuration" "foobar" {
+  name             = "notification_tokenWO_test"
+  destination_type = "generic"
+  url 			   = "%s"
+  token            = "1234567890"
+  team_id          = tfe_team.foobar.id
+}`, orgName, runTasksURL())
+}
+
+func testAccTFETeamNotificationConfiguration_tokenWO(orgName string, token string) string {
+	return fmt.Sprintf(`
+data "tfe_organization" "foobar" {
+  name = "%s"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-test"
+  organization = data.tfe_organization.foobar.name
+}
+
+resource "tfe_team_notification_configuration" "foobar" {
+  name             = "notification_tokenWO_test"
+  destination_type = "generic"
+  url 			   = "%s"
+  token_wo         = "%s"
+  team_id          = tfe_team.foobar.id
+}`, orgName, runTasksURL(), token)
+}
+
+func testAccTFETeamNotificationConfiguration_tokenAndTokenWO(orgName string) string {
+	return fmt.Sprintf(`
+data "tfe_organization" "foobar" {
+  name = "%s"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-test"
+  organization = data.tfe_organization.foobar.name
+}
+
+resource "tfe_team_notification_configuration" "foobar" {
+  name             = "notification_tokenWO_test"
+  destination_type = "generic"
+  url 			   = "%s"
+  token            = "1234567890"
+  token_wo         = "1234567890"
   team_id          = tfe_team.foobar.id
 }`, orgName, runTasksURL())
 }
