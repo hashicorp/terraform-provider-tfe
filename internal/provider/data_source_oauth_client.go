@@ -5,7 +5,6 @@ package provider
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -234,12 +233,6 @@ func (d *dataSourceTFEOAuthClient) Read(ctx context.Context, req datasource.Read
 	if !config.OAuthClientID.IsNull() {
 		// Read the OAuth client using its ID
 		oc, err = d.config.Client.OAuthClients.Read(ctx, id)
-		if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
-			tflog.Debug(ctx, fmt.Sprintf("OAuth client %s no longer exists", id))
-			resp.State.RemoveResource(ctx)
-			return
-		}
-
 		if err != nil {
 			resp.Diagnostics.AddError("Error reading OAuth client", err.Error())
 			return
