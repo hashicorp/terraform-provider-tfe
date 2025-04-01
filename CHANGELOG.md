@@ -36,6 +36,8 @@ ENHANCEMENTS:
 
 * `r/tfe_notification_configuration`: Add `token_wo` write-only attribute, by @uturunku1 ([#1664](https://github.com/hashicorp/terraform-provider-tfe/pull/1664))
 
+* `r/tfe_workspace`: Do not force recreation of workspace if users do not provide `source_name` or `source_url`. [#1674](https://github.com/hashicorp/terraform-provider-tfe/pull/1674)
+
 ## v.0.64.0
 
 FEATURES:
