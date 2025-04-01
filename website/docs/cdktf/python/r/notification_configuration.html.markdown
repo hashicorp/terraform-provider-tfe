@@ -163,7 +163,11 @@ The following arguments are supported:
   if `destination_type` is `generic`, `microsoft-teams`, or `slack`.
 * `enabled` - (Optional) Whether the notification configuration should be enabled or not.
   Disabled configurations will not send any notifications. Defaults to `false`.
-* `token` - (Optional) A write-only secure token for the notification configuration, which can
+* `token` - (Optional) A token for the notification configuration, which can
+  be used by the receiving server to verify request authenticity when configured for notification
+  configurations with a destination type of `generic`. Defaults to `null`.
+  This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.
+* `token_wo` - (Optional) Write-only secure token for the notification configuration, which can
   be used by the receiving server to verify request authenticity when configured for notification
   configurations with a destination type of `generic`. Defaults to `null`.
   This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.
@@ -175,6 +179,8 @@ The following arguments are supported:
   configuration where notification requests will be made. This value _must not_ be provided if `destination_type`
   is `email`.
 * `workspace_id` - (Required) The id of the workspace that owns the notification configuration.
+
+-> **Note:** Write-Only argument `token_wo` is available to use in place of `token`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
 
 ## Attributes Reference
 
@@ -188,4 +194,4 @@ Notification configurations can be imported; use `<NOTIFICATION CONFIGURATION ID
 terraform import tfe_notification_configuration.test nc-qV9JnKRkmtMa4zcA
 ```
 
-<!-- cache-key: cdktf-0.20.8 input-710b7782960f76dfa6c0cc90313ce4411ea1070e9620f03dafea7305849d1d27 -->
+<!-- cache-key: cdktf-0.20.8 input-602abbb3e61f8ee1ab3e37f93f617a0ee9bd51107cba5e96e1c93dcbcc40147c -->
