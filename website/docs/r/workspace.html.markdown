@@ -96,12 +96,13 @@ The following arguments are supported:
 * `remote_state_consumer_ids` - (Optional) **Deprecated** The set of workspace IDs set as explicit remote state consumers for the given workspace. Use [tfe_workspace_settings](workspace_settings) instead.
 * `source_name` - (Optional) A friendly name for the application or client
    creating this workspace. If set, this will be displayed on the workspace as
-   "Created via <SOURCE NAME>".
-   Requires `source_url` to also be set.
+   "Created via <SOURCE NAME>". This value cannot be updated after
+   initial creation. Use `terraform apply -replace` to update this value.   Requires `source_url` to also be set.
 * `source_url` - (Optional) A URL for the application or client creating this
    workspace. This can be the URL of a related resource in another app, or a
    link to documentation or other info about the client.
-   Requires `source_name` to also be set.
+   Requires `source_name` to also be set. This value cannot be updated after
+   initial creation. Use `terraform apply -replace` to update this value.
    **Note:** The API does not (currently) allow this to be updated after a
    workspace has been created, so modifying this value will result in the
    workspace being replaced. To disable this, use an [ignore changes](https://developer.hashicorp.com/terraform/language/meta-arguments/lifecycle#ignore_changes) lifecycle meta-argument
