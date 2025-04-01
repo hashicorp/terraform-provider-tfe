@@ -36,13 +36,10 @@ ENHANCEMENTS:
 
 * `r/tfe_notification_configuration`: Add `token_wo` write-only attribute, by @uturunku1 ([#1664](https://github.com/hashicorp/terraform-provider-tfe/pull/1664))
 
-<<<<<<< HEAD
-=======
 * resource/tfe_ssh_key: Add `key_wo` write-only attribute, by @ctrombley ([#1659](https://github.com/hashicorp/terraform-provider-tfe/pull/1659))
 
 * `r/tfe_workspace`: Do not force recreation of workspace if users do not provide `source_name` or `source_url`. [#1671](https://github.com/hashicorp/terraform-provider-tfe/pull/1671)
 
->>>>>>> ebb90faf (move changelog entry)
 ## v.0.64.0
 
 FEATURES:
@@ -56,11 +53,6 @@ BUG FIXES:
 
 * `r/tfe_workspace_settings`: Prevent fetching of all workspaces as the `remote_state_consumer_ids` when `global_remote_state` is set to true, by @uk1288 [#1606](https://github.com/hashicorp/terraform-provider-tfe/pull/1606)
 
-<<<<<<< HEAD
-* `r/tfe_workspace`: Do not force recreation of workspace if users do not provide `source_name` or `source_url`. [#1671](https://github.com/hashicorp/terraform-provider-tfe/pull/1671)
-
-=======
->>>>>>> ebb90faf (move changelog entry)
 ENHANCEMENTS:
 * **New Ephemeral Resource:** `tfe_outputs` is a new ephemeral resource for retrieving the state version outputs of a workspace without writing sensitive data to the state file, by @ctrombley [#1640](https://github.com/hashicorp/terraform-provider-tfe/pull/1640)
 
