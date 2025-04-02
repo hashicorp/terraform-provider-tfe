@@ -131,6 +131,7 @@ func (p *frameworkProvider) Configure(ctx context.Context, req provider.Configur
 func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewNoCodeModuleDataSource,
+		NewOAuthClientDataSource,
 		NewOrganizationRunTaskDataSource,
 		NewOrganizationRunTaskGlobalSettingsDataSource,
 		NewOutputsDataSource,
@@ -150,6 +151,7 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 	return []func() resource.Resource{
 		NewAuditTrailTokenResource,
 		NewDataRetentionPolicyResource,
+		NewOAuthClient,
 		NewOrganizationDefaultSettings,
 		NewOrganizationRunTaskGlobalSettingsResource,
 		NewOrganizationRunTaskResource,

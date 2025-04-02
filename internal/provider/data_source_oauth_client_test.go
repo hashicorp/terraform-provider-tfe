@@ -46,7 +46,7 @@ func TestAccTFEOAuthClientDataSource_findByID(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccTFEOAuthClientDataSourcePreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV5ProviderFactories: muxedProvidersWithDefaultOrganization("foobar"),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOAuthClientDataSourceConfig_findByID(rInt),
@@ -137,35 +137,7 @@ func TestAccTFEOAuthClientDataSource_missingParameters(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEOAuthClientDataSourceConfig_missingParameters(rInt),
-				ExpectError: regexp.MustCompile("one of `name,oauth_client_id,service_provider` must"),
-			},
-		},
-	})
-}
-
-func TestAccTFEOAuthClientDataSource_missingOrgWithName(t *testing.T) {
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccTFEOAuthClientDataSourcePreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
-		Steps: []resource.TestStep{
-			{
-				Config:      testAccTFEOAuthClientDataSourceConfig_missingOrgWithName(rInt),
-				ExpectError: regexp.MustCompile("all of `name,organization` must"),
-			},
-		},
-	})
-}
-
-func TestAccTFEOAuthClientDataSource_missingOrgWithServiceProvider(t *testing.T) {
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccTFEOAuthClientDataSourcePreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
-		Steps: []resource.TestStep{
-			{
-				Config:      testAccTFEOAuthClientDataSourceConfig_missingOrgWithServiceProvider(rInt),
-				ExpectError: regexp.MustCompile("all of `organization,service_provider` must be"),
+				ExpectError: regexp.MustCompile("Invalid Attribute Combination"),
 			},
 		},
 	})
@@ -330,46 +302,6 @@ data "tfe_oauth_client" "client" {
 	depends_on = [tfe_oauth_client.test]
 }
 `, rInt, envGithubToken, rInt)
-}
-
-func testAccTFEOAuthClientDataSourceConfig_missingOrgWithName(rInt int) string {
-	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-	name  = "tst-terraform-%d"
-	email = "admin@company.com"
-}
-resource "tfe_oauth_client" "test" {
-	organization     = tfe_organization.foobar.name
-	api_url          = "https://api.github.com"
-	http_url         = "https://github.com"
-	oauth_token      = "%s"
-	service_provider = "github"
-}
-data "tfe_oauth_client" "client" {
-	name = "github"
-	depends_on = [tfe_oauth_client.test]
-}
-`, rInt, envGithubToken)
-}
-
-func testAccTFEOAuthClientDataSourceConfig_missingOrgWithServiceProvider(rInt int) string {
-	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-	name  = "tst-terraform-%d"
-	email = "admin@company.com"
-}
-resource "tfe_oauth_client" "test" {
-	organization     = tfe_organization.foobar.name
-	api_url          = "https://api.github.com"
-	http_url         = "https://github.com"
-	oauth_token      = "%s"
-	service_provider = "github"
-}
-data "tfe_oauth_client" "client" {
-	service_provider = "github"
-	depends_on = [tfe_oauth_client.test]
-}
-`, rInt, envGithubToken)
 }
 
 func testAccTFEOAuthClientDataSourceConfig_sameName(rInt int) string {
