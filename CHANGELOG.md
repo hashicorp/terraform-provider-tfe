@@ -12,6 +12,9 @@ FEATURES:
 
 * **New Ephemeral Resource:** `tfe_outputs` is a new ephemeral resource for retrieving the state version outputs of a workspace without writing sensitive data to the state file, by @ctrombley [#1640](https://github.com/hashicorp/terraform-provider-tfe/pull/1640)
 
+* **New Data Source:** `tfe_registry_module` is a new data source for finding
+  registry modules by @drewmullen and @danquack [#1667](https://github.com/hashicorp/terraform-provider-tfe/pull/1667)
+
 BUG FIXES:
 * `r/tfe_oauth_client`: Ensure `oauth_token_id` updates register when performing a `terraform apply`, by @hashimoon [#1631](https://github.com/hashicorp/terraform-provider-tfe/pull/1631)
 
@@ -32,6 +35,8 @@ ENHANCEMENTS:
 * `r/tfe_team_notification_configuration`: Add `token_wo` write-only attribute, by @shwetamurali ([#1665](https://github.com/hashicorp/terraform-provider-tfe/pull/1665))
 
 * `r/tfe_notification_configuration`: Add `token_wo` write-only attribute, by @uturunku1 ([#1664](https://github.com/hashicorp/terraform-provider-tfe/pull/1664))
+
+* `r/tfe_workspace`: Do not force recreation of workspace if users do not provide `source_name` or `source_url`. [#1674](https://github.com/hashicorp/terraform-provider-tfe/pull/1674)
 
 * `r/tfe_workspace_run`: Allow configuration without `apply` and `destroy` blocks, by @tmatilai ([#1604](https://github.com/hashicorp/terraform-provider-tfe/pull/1604))
 
