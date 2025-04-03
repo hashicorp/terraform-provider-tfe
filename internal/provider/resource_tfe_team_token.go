@@ -45,6 +45,7 @@ type resourceTFETeamToken struct {
 }
 
 type modelTFETeamToken struct {
+	ID              types.String `tfsdk:"id"`
 	TeamID          types.String `tfsdk:"team_id"`
 	ForceRegenerate types.Bool   `tfsdk:"force_regenerate"`
 	Token           types.String `tfsdk:"token"`
@@ -75,6 +76,13 @@ func (r *resourceTFETeamToken) Metadata(_ context.Context, req resource.Metadata
 func (r *resourceTFETeamToken) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Description: "", //TODO ADD DESCRIPTIONS
+				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
 			"team_id": schema.StringAttribute{
 				Description: "", //TODO ADD DESCRIPTIONS
 				Required:    true,
@@ -120,7 +128,7 @@ func (r *resourceTFETeamToken) Create(ctx context.Context, req resource.CreateRe
 	_, err := r.config.Client.TeamTokens.Read(ctx, teamID)
 	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("Error checking if a token exists for team %s: %s", teamID),
+			fmt.Sprintf("Error checking if a token exists for team %s", teamID),
 			err.Error(),
 		)
 		return
@@ -138,7 +146,7 @@ func (r *resourceTFETeamToken) Create(ctx context.Context, req resource.CreateRe
 	//TODO: use timetypes
 	expiredAt := plan.ExpiredAt.ValueString()
 	options := tfe.TeamTokenCreateOptions{}
-	if !plan.ExpiredAt.IsNull() {
+	if !plan.ExpiredAt.IsNull() && expiredAt != "" {
 		expiry, err := time.Parse(time.RFC3339, expiredAt)
 		if err != nil {
 			resp.Diagnostics.AddError(
@@ -159,15 +167,23 @@ func (r *resourceTFETeamToken) Create(ctx context.Context, req resource.CreateRe
 		return
 	}
 
-	result := modelFromTFEToken(token, plan.TeamID)
+	result := modelFromTFEToken(token, plan.TeamID, plan.ForceRegenerate, plan.ExpiredAt)
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
 }
 
-func modelFromTFEToken(token *tfe.TeamToken, teamID types.String) modelTFETeamToken {
-	return modelTFETeamToken{
-		TeamID: teamID,
-		Token:  types.StringValue(token.Token),
+func modelFromTFEToken(token *tfe.TeamToken, teamID types.String, forceRegenerate types.Bool, expiredAt types.String) modelTFETeamToken {
+	m := modelTFETeamToken{
+		ID:              teamID,
+		TeamID:          teamID,
+		ForceRegenerate: forceRegenerate,
+		ExpiredAt:       types.StringNull(),
+		Token:           types.StringValue(token.Token),
 	}
+	if !expiredAt.IsNull() {
+		m.ExpiredAt = expiredAt
+	}
+
+	return m
 }
 
 func (r *resourceTFETeamToken) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -187,8 +203,13 @@ func (r *resourceTFETeamToken) Read(ctx context.Context, req resource.ReadReques
 			resp.State.RemoveResource(ctx)
 			return
 		}
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Error reading token from team %s", teamID),
+			err.Error(),
+		)
+		return
 	}
-	result := modelFromTFEToken(token, state.TeamID)
+	result := modelFromTFEToken(token, state.TeamID, state.ForceRegenerate, state.ExpiredAt)
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
 }
 
@@ -220,5 +241,5 @@ func (r *resourceTFETeamToken) Delete(ctx context.Context, req resource.DeleteRe
 }
 
 func (r *resourceTFETeamToken) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+	resource.ImportStatePassthroughID(ctx, path.Root("team_id"), req, resp)
 }
