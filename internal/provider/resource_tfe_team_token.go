@@ -20,17 +20,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-// import (
-// 	"context"
-// 	"errors"
-// 	"fmt"
-// 	"log"
-// 	"time"
-
-//	tfe "github.com/hashicorp/go-tfe"
-//	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-//
-// )
 var (
 	_ resource.ResourceWithConfigure   = &resourceTFETeamToken{}
 	_ resource.ResourceWithImportState = &resourceTFETeamToken{}
@@ -67,54 +56,51 @@ func (r *resourceTFETeamToken) Configure(_ context.Context, req resource.Configu
 	r.config = client
 }
 
-// Metadata implements resource.Resource.
 func (r *resourceTFETeamToken) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_team_token"
 }
 
-// Schema implements resource.Resource.
 func (r *resourceTFETeamToken) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "", //TODO ADD DESCRIPTIONS
+				Description: "The ID of the token",
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"team_id": schema.StringAttribute{
-				Description: "", //TODO ADD DESCRIPTIONS
+				Description: "ID of the team.",
 				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"force_regenerate": schema.BoolAttribute{
-				Description: "",
+				Description: "When set to true will force the audit trail token to be recreated.",
 				Optional:    true,
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.RequiresReplace(),
 				},
 			},
 			"token": schema.StringAttribute{
-				Description: "",
+				Description: "The generated token.",
 				Computed:    true,
 				Sensitive:   true,
 			},
 			"expired_at": schema.StringAttribute{
-				Description: "",
+				Description: "The token's expiration date.",
 				Optional:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 		},
-		Description: "",
+		Description: "Generates a new team token and overrides existing token if one exists.",
 	}
 }
 
-// Create implements resource.Resource.
 func (r *resourceTFETeamToken) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan modelTFETeamToken
 	diags := req.Plan.Get(ctx, &plan)
@@ -143,7 +129,7 @@ func (r *resourceTFETeamToken) Create(ctx context.Context, req resource.CreateRe
 		}
 		tflog.Debug(ctx, fmt.Sprintf("Regenerating existing token for team: %s", teamID))
 	}
-	//TODO: use timetypes
+
 	expiredAt := plan.ExpiredAt.ValueString()
 	options := tfe.TeamTokenCreateOptions{}
 	if !plan.ExpiredAt.IsNull() && expiredAt != "" {
