@@ -95,7 +95,6 @@ func Provider() *schema.Provider {
 			"tfe_team_project_access":     dataSourceTFETeamProjectAccess(),
 			"tfe_workspace":               dataSourceTFEWorkspace(),
 			"tfe_workspace_ids":           dataSourceTFEWorkspaceIDs(),
-			"tfe_variables":               dataSourceTFEWorkspaceVariables(),
 			"tfe_variable_set":            dataSourceTFEVariableSet(),
 			"tfe_policy_set":              dataSourceTFEPolicySet(),
 			"tfe_organization_members":    dataSourceTFEOrganizationMembers(),
