@@ -12,7 +12,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -32,7 +31,7 @@ var (
 		"value":     types.StringType,
 	}
 
-	variableType = types.ObjectType{variableAttrTypes}
+	variableType = types.ObjectType{AttrTypes: variableAttrTypes}
 )
 
 // NewVariablesDataSource is a helper function to simplify the provider
@@ -53,8 +52,7 @@ func modelFromVariables(
 	env []any,
 	terraform []any,
 	variables []any,
-) (modelVariables, diag.Diagnostics) {
-	var diags diag.Diagnostics
+) modelVariables {
 	var model modelVariables
 
 	// Set workspace or variable set ID
@@ -66,22 +64,11 @@ func modelFromVariables(
 		model.VariableSetID = variableSetID
 	}
 
-	// Set the environment variables
-	envList, diags := varListFromVariables(env)
-	diags.Append(diags...)
-	model.Env = envList
+	model.Env = varListFromVariables(env)
+	model.Terraform = varListFromVariables(terraform)
+	model.Variables = varListFromVariables(variables)
 
-	// Set the terraform variables
-	terraformList, diags := varListFromVariables(terraform)
-	diags.Append(diags...)
-	model.Terraform = terraformList
-
-	// Set the variables
-	variablesList, diags := varListFromVariables(variables)
-	diags.Append(diags...)
-	model.Variables = variablesList
-
-	return model, diags
+	return model
 }
 
 func objectValueFromVariable(v tfe.Variable) types.Object {
@@ -112,8 +99,7 @@ func objectValueFromVariableSetVariable(v tfe.VariableSetVariable) types.Object 
 	)
 }
 
-func varListFromVariables(variables []any) (types.List, diag.Diagnostics) {
-	var diags diag.Diagnostics
+func varListFromVariables(variables []any) types.List {
 	varSlice := make([]attr.Value, 0, len(variables))
 
 	var objVar types.Object
@@ -134,7 +120,7 @@ func varListFromVariables(variables []any) (types.List, diag.Diagnostics) {
 
 	varList := types.ListValueMust(variableType, varSlice)
 
-	return varList, diags
+	return varList
 }
 
 // modelVariables maps the overall data source schema data.
@@ -263,11 +249,7 @@ func (d *dataSourceTFEVariables) readFromWorkspace(ctx context.Context, config m
 		options.PageNumber = variableList.NextPage
 	}
 
-	model, diags := modelFromVariables(config.WorkspaceID, config.VariableSetID, env, terraform, variables)
-	if diags.HasError() {
-		resp.Diagnostics.Append(diags...)
-		return
-	}
+	model := modelFromVariables(config.WorkspaceID, config.VariableSetID, env, terraform, variables)
 
 	// Update state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &model)...)
@@ -313,11 +295,7 @@ func (d *dataSourceTFEVariables) readFromVariableSet(ctx context.Context, config
 		options.PageNumber = variableList.NextPage
 	}
 
-	model, diags := modelFromVariables(config.WorkspaceID, config.VariableSetID, env, terraform, variables)
-	if diags.HasError() {
-		resp.Diagnostics.Append(diags...)
-		return
-	}
+	model := modelFromVariables(config.WorkspaceID, config.VariableSetID, env, terraform, variables)
 
 	// Update state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &model)...)
