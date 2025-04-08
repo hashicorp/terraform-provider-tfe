@@ -2,8 +2,6 @@ module github.com/hashicorp/terraform-provider-tfe
 
 go 1.24
 
-toolchain go1.24.1
-
 require (
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/fatih/color v1.18.0 // indirect
@@ -44,7 +42,7 @@ require (
 	github.com/hashicorp/go-cty v1.5.0 // indirect
 	github.com/hashicorp/go-plugin v1.6.3 // indirect
 	github.com/hashicorp/go-uuid v1.0.3
-	github.com/hashicorp/jsonapi v1.3.2
+	github.com/hashicorp/jsonapi v1.5.0
 	github.com/hashicorp/logutils v1.0.0 // indirect
 	github.com/hashicorp/terraform-exec v0.22.0 // indirect
 	github.com/hashicorp/terraform-json v0.24.0 // indirect
