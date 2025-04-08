@@ -6,10 +6,10 @@ package provider
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -22,6 +22,17 @@ import (
 var (
 	_ datasource.DataSource              = &dataSourceTFEVariables{}
 	_ datasource.DataSourceWithConfigure = &dataSourceTFEVariables{}
+
+	variableAttrTypes = map[string]attr.Type{
+		"category":  types.StringType,
+		"hcl":       types.BoolType,
+		"id":        types.StringType,
+		"name":      types.StringType,
+		"sensitive": types.BoolType,
+		"value":     types.StringType,
+	}
+
+	variableType = types.ObjectType{variableAttrTypes}
 )
 
 // NewVariablesDataSource is a helper function to simplify the provider
@@ -56,69 +67,72 @@ func modelFromVariables(
 	}
 
 	// Set the environment variables
-	envList, diags := varListFromVariables(ctx, env)
+	envList, diags := varListFromVariables(env)
 	diags.Append(diags...)
 	model.Env = envList
 
 	// Set the terraform variables
-	terraformList, diags := varListFromVariables(ctx, terraform)
+	terraformList, diags := varListFromVariables(terraform)
 	diags.Append(diags...)
 	model.Terraform = terraformList
 
 	// Set the variables
-	variablesList, diags := varListFromVariables(ctx, variables)
+	variablesList, diags := varListFromVariables(variables)
 	diags.Append(diags...)
 	model.Variables = variablesList
 
 	return model, diags
 }
 
-func varListFromVariables(ctx context.Context, variables []any) (types.List, diag.Diagnostics) {
+func objectValueFromVariable(v tfe.Variable) types.Object {
+	return types.ObjectValueMust(
+		variableAttrTypes,
+		map[string]attr.Value{
+			"category":  types.StringValue(string(v.Category)),
+			"hcl":       types.BoolValue(v.HCL),
+			"id":        types.StringValue(v.ID),
+			"name":      types.StringValue(v.Key),
+			"sensitive": types.BoolValue(v.Sensitive),
+			"value":     types.StringValue(v.Value),
+		},
+	)
+}
+
+func objectValueFromVariableSetVariable(v tfe.VariableSetVariable) types.Object {
+	return types.ObjectValueMust(
+		variableAttrTypes,
+		map[string]attr.Value{
+			"category":  types.StringValue(string(v.Category)),
+			"hcl":       types.BoolValue(v.HCL),
+			"id":        types.StringValue(v.ID),
+			"name":      types.StringValue(v.Key),
+			"sensitive": types.BoolValue(v.Sensitive),
+			"value":     types.StringValue(v.Value),
+		},
+	)
+}
+
+func varListFromVariables(variables []any) (types.List, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	var varSlice []any
+	varSlice := make([]attr.Value, 0, len(variables))
 
-	variableFieldCount := 6
-	mapType := types.MapType{ElemType: types.StringType}
-	varList := types.ListNull(mapType)
-
+	var objVar types.Object
 	for _, variable := range variables {
-		rawMap := make(map[string]string, variableFieldCount)
 		switch v := variable.(type) {
 		case *tfe.Variable:
-			rawMap["id"] = v.ID
-			rawMap["name"] = v.Key
-			rawMap["value"] = v.Value
-			rawMap["category"] = string(v.Category)
-			rawMap["sensitive"] = strconv.FormatBool(v.Sensitive)
-			rawMap["hcl"] = strconv.FormatBool(v.HCL)
+			objVar = objectValueFromVariable(*v)
 
 		case *tfe.VariableSetVariable:
-			rawMap["id"] = v.ID
-			rawMap["name"] = v.Key
-			rawMap["value"] = v.Value
-			rawMap["category"] = string(v.Category)
-			rawMap["sensitive"] = strconv.FormatBool(v.Sensitive)
-			rawMap["hcl"] = strconv.FormatBool(v.HCL)
+			objVar = objectValueFromVariableSetVariable(*v)
 
 		default: // should not happen
-			diags.AddError("Error reading variable", fmt.Sprintf("unexpected type %T", variable))
-			return varList, diags
+			panic(fmt.Sprintf("unexpected type %T reading variable", variable))
 		}
 
-		varMap, d := types.MapValueFrom(ctx, types.StringType, rawMap)
-		if d.HasError() {
-			diags.Append(d...)
-			return varList, diags
-		}
-
-		varSlice = append(varSlice, varMap)
+		varSlice = append(varSlice, objVar)
 	}
 
-	varList, d := types.ListValueFrom(ctx, mapType, varSlice)
-	if d.HasError() {
-		diags.Append(d...)
-		return varList, diags
-	}
+	varList := types.ListValueMust(variableType, varSlice)
 
 	return varList, diags
 }
@@ -175,28 +189,19 @@ func (d *dataSourceTFEVariables) Schema(_ context.Context, _ datasource.SchemaRe
 				Optional: true,
 			},
 
-			// TODO(v2): Update the attribute type for the three following attributes
-			// to be ListNestedAttribute.
-			//
-			// This will change the usage pattern from:
-			//   data.tfe_variables.workspace_foobar.env[0]["key"]
-			//
-			// to:
-			//   data.tfe_variables.workspace_foobar.env[0].key
-
 			"env": schema.ListAttribute{
 				Computed:    true,
-				ElementType: types.MapType{ElemType: types.StringType},
+				ElementType: variableType,
 			},
 
 			"terraform": schema.ListAttribute{
 				Computed:    true,
-				ElementType: types.MapType{ElemType: types.StringType},
+				ElementType: variableType,
 			},
 
 			"variables": schema.ListAttribute{
 				Computed:    true,
-				ElementType: types.MapType{ElemType: types.StringType},
+				ElementType: variableType,
 			},
 		},
 	}
