@@ -25,6 +25,24 @@ resource "tfe_project" "test" {
 }
 ```
 
+With tags:
+
+```hcl
+resource "tfe_organization" "test-organization" {
+  name  = "my-org-name"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "test" {
+  organization = tfe_organization.test-organization.name
+  name         = "projectname"
+  tags         = {
+      cost_center = "infrastructure"
+      team        = "platform"
+  }
+}
+```
+
 ## Argument Reference
 
 The following arguments are supported:
@@ -35,6 +53,12 @@ The following arguments are supported:
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `description` - (Optional) A description for the project.
 * `auto_destroy_activity_duration` - A duration string for all workspaces in the project, representing time after each workspace's activity when an auto-destroy run will be triggered.
+* `tags` - (Optional) A map of key-value tags to add to the project.
+* `ignore_additional_tags` - (Optional) Explicitly ignores `tags`
+_not_ defined by config so they will not be overwritten by the configured
+tags. This creates exceptional behavior in Terraform with respect
+to `tags` and is not recommended. This value must be applied before it
+will be used.
 
 ## Attributes Reference
 
