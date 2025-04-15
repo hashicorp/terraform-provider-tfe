@@ -22,6 +22,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/planmodifiers"
 )
 
 // resourceTFEVariable implements the tfe_variable resource type. Note: Much of
@@ -39,6 +41,7 @@ type modelTFEVariable struct {
 	ID            types.String `tfsdk:"id"`
 	Key           types.String `tfsdk:"key"`
 	Value         types.String `tfsdk:"value"`
+	ValueWO       types.String `tfsdk:"value_wo"`
 	ReadableValue types.String `tfsdk:"readable_value"`
 	Category      types.String `tfsdk:"category"`
 	Description   types.String `tfsdk:"description"`
@@ -50,7 +53,7 @@ type modelTFEVariable struct {
 
 // modelFromTFEVariable builds a modelTFEVariable struct from a tfe.Variable
 // value (plus the last known value of the variable's `value` attribute).
-func modelFromTFEVariable(v tfe.Variable, lastValue types.String) modelTFEVariable {
+func modelFromTFEVariable(v tfe.Variable, lastValue types.String, isWriteOnlyValue bool) modelTFEVariable {
 	// Initialize all fields from the provided API struct
 	m := modelTFEVariable{
 		ID:            types.StringValue(v.ID),
@@ -70,6 +73,11 @@ func modelFromTFEVariable(v tfe.Variable, lastValue types.String) modelTFEVariab
 		m.ReadableValue = types.StringNull()
 	} else {
 		m.ReadableValue = m.Value
+	}
+	// Don't retrieve values if write-only is being used. Unset the value and readable_value fields before updating the state.
+	if isWriteOnlyValue {
+		m.Value = types.StringValue("")
+		m.ReadableValue = types.StringValue("")
 	}
 	return m
 }
@@ -160,6 +168,21 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 				Default:     stringdefault.StaticString(""),
 				Sensitive:   true,
 				Description: "Value of the variable",
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRoot("value_wo")),
+				},
+			},
+			"value_wo": schema.StringAttribute{
+				Optional:    true,
+				WriteOnly:   true,
+				Sensitive:   true,
+				Description: "Value of the variable in write-only mode",
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRoot("value")),
+				},
+				PlanModifiers: []planmodifier.String{
+					planmodifiers.NewReplaceForWriteOnlyStringValue("value_wo"),
+				},
 			},
 			"category": schema.StringAttribute{
 				Required:    true,
@@ -275,17 +298,30 @@ func (r *resourceTFEVariable) createWithWorkspace(ctx context.Context, req resou
 		return
 	}
 
+	var config modelTFEVariable
+	diags = req.Config.Get(ctx, &config)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	key := data.Key.ValueString()
 	category := data.Category.ValueString()
 	workspaceID := data.WorkspaceID.ValueString()
 
 	options := tfe.VariableCreateOptions{
 		Key:         data.Key.ValueStringPointer(),
-		Value:       data.Value.ValueStringPointer(),
 		Category:    tfe.Category(tfe.CategoryType(category)),
 		HCL:         data.HCL.ValueBoolPointer(),
 		Sensitive:   data.Sensitive.ValueBoolPointer(),
 		Description: data.Description.ValueStringPointer(),
+	}
+
+	// Set Value from `value_wo` if set, otherwise use the normal value
+	if !config.ValueWO.IsNull() {
+		options.Value = config.ValueWO.ValueStringPointer()
+	} else {
+		options.Value = data.Value.ValueStringPointer()
 	}
 
 	log.Printf("[DEBUG] Create %s variable: %s", category, key)
@@ -297,9 +333,16 @@ func (r *resourceTFEVariable) createWithWorkspace(ctx context.Context, req resou
 		)
 		return
 	}
-
 	// Got a variable back, so set state to new values
-	result := modelFromTFEVariable(*variable, data.Value)
+	result := modelFromTFEVariable(*variable, data.Value, !config.ValueWO.IsNull())
+
+	// Store the hashed write-only value in the private state
+	store := r.writeOnlyValueStore(resp.Private)
+	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.ValueWO)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -377,8 +420,14 @@ func (r *resourceTFEVariable) readWithWorkspace(ctx context.Context, req resourc
 		return
 	}
 
-	// We got a variable, so update state:
-	result := modelFromTFEVariable(*variable, data.Value)
+	// Check if the parameter is write-only
+	isWriteOnly, diags := r.writeOnlyValueStore(resp.Private).PriorValueExists(ctx)
+	resp.Diagnostics.Append(diags...)
+	if diags.HasError() {
+		return
+	}
+	// update state
+	result := modelFromTFEVariable(*variable, data.Value, isWriteOnly)
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -428,13 +477,19 @@ func (r *resourceTFEVariable) Update(ctx context.Context, req resource.UpdateReq
 func (r *resourceTFEVariable) updateWithWorkspace(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get both plan and state; must compare them to handle sensitive values safely.
 	var plan modelTFEVariable
-	var state modelTFEVariable
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	var state modelTFEVariable
 	diags = req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	var config modelTFEVariable
+	diags = req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -464,7 +519,6 @@ func (r *resourceTFEVariable) updateWithWorkspace(ctx context.Context, req resou
 	if state.Value.ValueString() != plan.Value.ValueString() {
 		options.Value = plan.Value.ValueStringPointer()
 	}
-
 	log.Printf("[DEBUG] Update variable: %s", variableID)
 	variable, err := r.config.Client.Variables.Update(ctx, workspaceID, variableID, options)
 	if err != nil {
@@ -474,8 +528,14 @@ func (r *resourceTFEVariable) updateWithWorkspace(ctx context.Context, req resou
 		)
 		return
 	}
+	// Store the hashed write-only value in the private state
+	store := r.writeOnlyValueStore(resp.Private)
+	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.ValueWO)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	// Update state
-	result := modelFromTFEVariable(*variable, plan.Value)
+	result := modelFromTFEVariable(*variable, plan.Value, !config.ValueWO.IsNull())
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -728,27 +788,34 @@ func (u *updateReadableValuePlanModifier) MarkdownDescription(ctx context.Contex
 }
 
 func (u *updateReadableValuePlanModifier) PlanModifyString(ctx context.Context, request planmodifier.StringRequest, response *planmodifier.StringResponse) {
-	var sensitive types.Bool
-	diags := request.Plan.GetAttribute(ctx, path.Root("sensitive"), &sensitive)
+	var valueWO types.String
+	diags := request.Config.GetAttribute(ctx, path.Root("value_wo"), &valueWO)
 	response.Diagnostics.Append(diags...)
 	if response.Diagnostics.HasError() {
 		return
 	}
+	if valueWO.IsNull() {
+		var sensitive types.Bool
+		diags := request.Plan.GetAttribute(ctx, path.Root("sensitive"), &sensitive)
+		response.Diagnostics.Append(diags...)
+		if response.Diagnostics.HasError() {
+			return
+		}
 
-	// If the variable is sensitive, unset the readable_value
-	if sensitive.ValueBool() {
-		response.PlanValue = types.StringNull()
-		return
-	}
+		// If the variable is sensitive, unset the readable_value
+		if sensitive.ValueBool() {
+			response.PlanValue = types.StringNull()
+			return
+		}
 
-	// Otherwise, it should equal the actual value
-	var actualValue types.String
-	diags = request.Plan.GetAttribute(ctx, path.Root("value"), &actualValue)
-	response.Diagnostics.Append(diags...)
-	if response.Diagnostics.HasError() {
-		return
+		var actualValue types.String
+		diags = request.Plan.GetAttribute(ctx, path.Root("value"), &actualValue)
+		response.Diagnostics.Append(diags...)
+		if response.Diagnostics.HasError() {
+			return
+		}
+		response.PlanValue = actualValue
 	}
-	response.PlanValue = actualValue
 }
 
 // Compile-time interface check
@@ -761,4 +828,8 @@ var _ planmodifier.String = &updateReadableValuePlanModifier{}
 // NewResourceVariable is a resource function for the framework provider.
 func NewResourceVariable() resource.Resource {
 	return &resourceTFEVariable{}
+}
+
+func (r *resourceTFEVariable) writeOnlyValueStore(private helpers.PrivateState) *helpers.WriteOnlyValueStore {
+	return helpers.NewWriteOnlyValueStore(private, "value_wo")
 }

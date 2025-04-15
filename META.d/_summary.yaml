@@ -8,6 +8,6 @@ partition: tfc
 category: library
 
 summary:
-  owner: team-tf-cli
+  owner: team-tf-core-cloud
   description: Official HCP Terraform and Terraform Enterprise provider, maintained by HashiCorp. Provision HCP Terraform or Terraform Enterprise - with Terraform!
   visibility: external

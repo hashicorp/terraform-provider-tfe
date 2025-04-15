@@ -11,7 +11,7 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccTFEOrganizationDataSource_basic(t *testing.T) {
@@ -20,8 +20,8 @@ func TestAccTFEOrganizationDataSource_basic(t *testing.T) {
 	orgName := fmt.Sprintf("tst-terraform-foo-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationDataSourceConfig_basic(rInt),
@@ -45,8 +45,8 @@ func TestAccTFEOrganizationDataSource_defaultProject(t *testing.T) {
 	org := &tfe.Organization{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationDataSourceConfig_basic(rInt),
@@ -67,11 +67,11 @@ func TestAccTFEOrganizationDataSource_defaultProject(t *testing.T) {
 // The data source will use the default org name from provider config if omitted.
 func TestAccTFEOrganizationDataSource_defaultOrganization(t *testing.T) {
 	defaultOrgName, _ := setupDefaultOrganization(t)
-	providers := providerWithDefaultOrganization(defaultOrgName)
+	providers := muxedProvidersWithDefaultOrganization(defaultOrgName)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: providers,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: providers,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationDataSourceConfig_noName(),

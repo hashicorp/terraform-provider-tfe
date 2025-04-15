@@ -2,7 +2,7 @@
 
 As we work to migrate older resources from the provider SDK v2 to the [Plugin Framework](https://developer.hashicorp.com/terraform/plugin/framework), the hashicorp/tfe provider uses plugin protocol v5 along with three separate provider servers [muxed together](https://github.com/hashicorp/terraform-provider-tfe/blob/20448c7293b2e116b633eef4bc73881b060aa32e/main.go#L51).
 
-For all new resources, we ask that you add them to the [provider_next](https://github.com/hashicorp/terraform-provider-tfe/blob/20448c7293b2e116b633eef4bc73881b060aa32e/internal/provider/provider_next.go) Framework Provider to ensure that they don't need to be migrated in the future. For Hashicorp employees: It can be helpful to include a section in a relevant RFC defining your proposed new resource schema. Be sure to notify #team-tf-cli.
+For all new resources, we ask that you add them to the [provider_next](https://github.com/hashicorp/terraform-provider-tfe/blob/20448c7293b2e116b633eef4bc73881b060aa32e/internal/provider/provider_next.go) Framework Provider to ensure that they don't need to be migrated in the future. For Hashicorp employees: It can be helpful to include a section in a relevant RFC defining your proposed new resource schema. Be sure to notify #team-tf-core-cloud.
 
 There are a few conventions to observe when authoring new resources:
 

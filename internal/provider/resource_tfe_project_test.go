@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccTFEProject_basic(t *testing.T) {
@@ -21,9 +21,9 @@ func TestAccTFEProject_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEProjectDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEProjectDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEProject_basic(rInt),
@@ -47,9 +47,9 @@ func TestAccTFEProject_invalidName(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEProjectDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEProjectDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEProject_invalidNameChar(rInt),
@@ -57,7 +57,7 @@ func TestAccTFEProject_invalidName(t *testing.T) {
 			},
 			{
 				Config:      testAccTFEProject_invalidNameLen(rInt),
-				ExpectError: regexp.MustCompile(`expected length of name to be in the range \(3 - 40\),`),
+				ExpectError: regexp.MustCompile(`string length must be between 3 and 40`),
 			},
 		},
 	})
@@ -68,9 +68,9 @@ func TestAccTFEProject_update(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEProjectDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEProjectDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEProject_basic(rInt),
@@ -104,9 +104,9 @@ func TestAccTFEProject_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	project := &tfe.Project{}
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEProjectDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEProjectDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEProject_basic(rInt),
@@ -124,6 +124,42 @@ func TestAccTFEProject_import(t *testing.T) {
 				ImportState:       true,
 				ImportStateId:     project.ID,
 				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccTFEProject_withAutoDestroy(t *testing.T) {
+	project := &tfe.Project{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEProjectDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEProject_basicWithAutoDestroy(rInt, "3d"),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEProjectExists(
+						"tfe_project.foobar", project),
+					testAccCheckTFEProjectAttributes(project),
+					resource.TestCheckResourceAttr(
+						"tfe_project.foobar", "auto_destroy_activity_duration", "3d"),
+				),
+			},
+			{
+				Config:      testAccTFEProject_basicWithAutoDestroy(rInt, "10m"),
+				ExpectError: regexp.MustCompile("must be 1-4 digits followed by"),
+			},
+			{
+				Config: testAccTFEProject_basic(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEProjectExists(
+						"tfe_project.foobar", project),
+					testAccCheckTFEProjectAttributes(project),
+					resource.TestCheckNoResourceAttr("tfe_project.foobar", "auto_destroy_activity_duration"),
+				),
 			},
 		},
 	})
@@ -182,9 +218,21 @@ resource "tfe_project" "foobar" {
 }`, rInt)
 }
 
-func testAccCheckTFEProjectDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
+func testAccTFEProject_basicWithAutoDestroy(rInt int, duration string) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
 
+resource "tfe_project" "foobar" {
+  organization = tfe_organization.foobar.name
+  name = "projecttest"
+  auto_destroy_activity_duration = "%s"
+}`, rInt, duration)
+}
+
+func testAccCheckTFEProjectDestroy(s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_project" {
 			continue
@@ -194,7 +242,7 @@ func testAccCheckTFEProjectDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.Projects.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.Projects.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Project %s still exists", rs.Primary.ID)
 		}
@@ -205,8 +253,6 @@ func testAccCheckTFEProjectDestroy(s *terraform.State) error {
 
 func testAccCheckTFEProjectExists(n string, project *tfe.Project) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -216,7 +262,7 @@ func testAccCheckTFEProjectExists(n string, project *tfe.Project) resource.TestC
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		p, err := config.Client.Projects.Read(ctx, rs.Primary.ID)
+		p, err := testAccConfiguredClient.Client.Projects.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("unable to read project with ID %s", project.ID)
 		}

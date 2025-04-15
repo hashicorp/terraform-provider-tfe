@@ -5,11 +5,10 @@ package provider
 
 import (
 	"context"
-	"fmt"
 	"os"
-	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -20,18 +19,13 @@ import (
 // frameworkProvider is a type that implements the terraform-plugin-framework
 // provider.Provider interface. Someday, this will probably encompass the entire
 // behavior of the tfe provider. Today, it is a small but growing subset.
-type frameworkProvider struct{}
+type frameworkProvider struct {
+	defaultOrgName *string
+}
 
 // Compile-time interface check
 var _ provider.Provider = &frameworkProvider{}
-
-// Can be used to construct ID regexp patterns
-var base58Alphabet = "[1-9A-HJ-NP-Za-km-z]"
-
-// IDPattern constructs a regexp pattern for HCP Terraform with the given prefix
-func IDPattern(prefix string) *regexp.Regexp {
-	return regexp.MustCompile(fmt.Sprintf("^%s-%s{16}$", prefix, base58Alphabet))
-}
+var _ provider.ProviderWithEphemeralResources = &frameworkProvider{}
 
 // FrameworkProviderConfig is a helper type for extracting the provider
 // configuration from the provider block.
@@ -46,6 +40,12 @@ type FrameworkProviderConfig struct {
 // the tfe provider implemented via the terraform-plugin-framework.
 func NewFrameworkProvider() provider.Provider {
 	return &frameworkProvider{}
+}
+
+// NewFrameworkProviderWithDefaultOrg is a helper function for
+// initializing a framework provider with a default organization name.
+func NewFrameworkProviderWithDefaultOrg(defaultOrgName string) provider.Provider {
+	return &frameworkProvider{defaultOrgName: &defaultOrgName}
 }
 
 // Metadata (a Provider interface function) lets the provider identify itself.
@@ -103,6 +103,12 @@ func (p *frameworkProvider) Configure(ctx context.Context, req provider.Configur
 		// Falling back to Getenv will collapse the new type system's handling
 		// of null/unknown into a plain zero-value, but that's OK at this point.
 		data.Organization = types.StringValue(os.Getenv("TFE_ORGANIZATION"))
+
+		// Override if a default was passed to NewFrameworkProviderWithDefaultOrg.
+		// This is primarily for acceptance testing purposes.
+		if p.defaultOrgName != nil {
+			data.Organization = types.StringValue(*p.defaultOrgName)
+		}
 	}
 
 	tfeClient, err := client.GetClient(data.Hostname.ValueString(), data.Token.ValueString(), data.SSLSkipVerify.ValueBool())
@@ -119,6 +125,7 @@ func (p *frameworkProvider) Configure(ctx context.Context, req provider.Configur
 
 	res.DataSourceData = configuredClient
 	res.ResourceData = configuredClient
+	res.EphemeralResourceData = configuredClient
 }
 
 func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
@@ -126,8 +133,12 @@ func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource
 		NewNoCodeModuleDataSource,
 		NewOrganizationRunTaskDataSource,
 		NewOrganizationRunTaskGlobalSettingsDataSource,
+		NewOutputsDataSource,
+		NewProjectDataSource,
+		NewProjectsDataSource,
 		NewRegistryGPGKeyDataSource,
 		NewRegistryGPGKeysDataSource,
+		NewRegistryModuleDataSource,
 		NewRegistryProviderDataSource,
 		NewRegistryProvidersDataSource,
 		NewSAMLSettingsDataSource,
@@ -137,15 +148,34 @@ func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource
 
 func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
+		NewAuditTrailTokenResource,
+		NewDataRetentionPolicyResource,
+		NewOrganizationDefaultSettings,
 		NewOrganizationRunTaskGlobalSettingsResource,
 		NewOrganizationRunTaskResource,
+		NewPolicySetParameterResource,
+		NewProjectResource,
 		NewRegistryGPGKeyResource,
 		NewRegistryProviderResource,
 		NewResourceVariable,
-		NewDataRetentionPolicyResource,
 		NewResourceWorkspaceSettings,
 		NewSAMLSettingsResource,
+		NewSSHKey,
+		NewStackResource,
+		NewTeamNotificationConfigurationResource,
 		NewTestVariableResource,
 		NewWorkspaceRunTaskResource,
+		NewNotificationConfigurationResource,
+		NewTeamTokenResource,
+	}
+}
+
+func (p *frameworkProvider) EphemeralResources(ctx context.Context) []func() ephemeral.EphemeralResource {
+	return []func() ephemeral.EphemeralResource{
+		NewAgentTokenEphemeralResource,
+		NewOrganizationTokenEphemeralResource,
+		NewOutputsEphemeralResource,
+		NewTeamTokenEphemeralResource,
+		NewAuditTrailTokenEphemeralResource,
 	}
 }

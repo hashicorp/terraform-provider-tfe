@@ -30,8 +30,11 @@ resource "tfe_project" "test" {
 The following arguments are supported:
 
 * `name` - (Required) Name of the project.
+    *  TFE versions v202404-2 and earlier support between 3-36 characters
+    *  TFE versions v202405-1 and later support between 3-40 characters
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `description` - (Optional) A description for the project.
+* `auto_destroy_activity_duration` - A duration string for all workspaces in the project, representing time after each workspace's activity when an auto-destroy run will be triggered.
 
 ## Attributes Reference
 

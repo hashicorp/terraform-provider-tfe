@@ -9,6 +9,7 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"regexp"
@@ -29,7 +30,16 @@ func resourceTFEVariableSet() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 
-		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
+		CustomizeDiff: func(c context.Context, d *schema.ResourceDiff, meta interface{}) error {
+			if err := customizeDiffIfProviderDefaultOrganizationChanged(c, d, meta); err != nil {
+				return err
+			}
+
+			if err := validateParentProjectID(d); err != nil {
+				return err
+			}
+			return nil
+		},
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -68,6 +78,13 @@ func resourceTFEVariableSet() *schema.Resource {
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
+
+			"parent_project_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+				ForceNew: true,
+			},
 		},
 	}
 }
@@ -87,6 +104,14 @@ func resourceTFEVariableSetCreate(d *schema.ResourceData, meta interface{}) erro
 		Name:     tfe.String(name),
 		Global:   tfe.Bool(d.Get("global").(bool)),
 		Priority: tfe.Bool(d.Get("priority").(bool)),
+	}
+
+	if parentProject, ok := d.GetOk("parent_project_id"); ok {
+		options.Parent = &tfe.Parent{
+			Project: &tfe.Project{
+				ID: parentProject.(string),
+			},
+		}
 	}
 
 	if description, descriptionSet := d.GetOk("description"); descriptionSet {
@@ -151,6 +176,10 @@ func resourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) error 
 	}
 	d.Set("workspace_ids", wids)
 
+	if variableSet.Parent != nil && variableSet.Parent.Project != nil {
+		d.Set("parent_project_id", variableSet.Parent.Project.ID)
+	}
+
 	return nil
 }
 
@@ -168,7 +197,7 @@ func resourceTFEVariableSetUpdate(d *schema.ResourceData, meta interface{}) erro
 		log.Printf("[DEBUG] Update variable set: %s", d.Id())
 		_, err := config.Client.VariableSets.Update(ctx, d.Id(), &options)
 		if err != nil {
-			return fmt.Errorf("Error updateing variable %s: %w", d.Id(), err)
+			return fmt.Errorf("Error updating variable %s: %w", d.Id(), err)
 		}
 	}
 
@@ -211,4 +240,20 @@ func resourceTFEVariableSetDelete(d *schema.ResourceData, meta interface{}) erro
 
 func warnWorkspaceIdsDeprecation() {
 	log.Printf("[WARN] The workspace_ids field of tfe_variable_set is deprecated as of release 0.33.0 and may be removed in a future version. The preferred method of associating a variable set to a workspace is by using the tfe_workspace_variable_set resource.")
+}
+
+func validateParentProjectID(d *schema.ResourceDiff) error {
+	_, ok := d.GetOk("parent_project_id")
+	if !ok {
+		return nil
+	}
+
+	// If parent_project_id is set, global must be false
+	if global, ok := d.GetOk("global"); ok {
+		if global.(bool) {
+			return fmt.Errorf("global must be 'false' when setting parent_project_id")
+		}
+	}
+
+	return nil
 }

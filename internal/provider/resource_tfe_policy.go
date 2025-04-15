@@ -271,6 +271,11 @@ func resourceTFEPolicyRead(d *schema.ResourceData, meta interface{}) error {
 func resourceTFEPolicyUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
+	var kind string
+	if v, ok := d.GetOk("kind"); ok {
+		kind = v.(string)
+	}
+
 	// nolint:nestif
 	if d.HasChange("description") || d.HasChange("enforce_mode") || d.HasChange("query") {
 		// Create a new options struct.
@@ -281,11 +286,8 @@ func resourceTFEPolicyUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		path := d.Get("name").(string) + ".sentinel"
-		vKind, ok := d.GetOk("kind")
-		if ok {
-			if vKind == tfe.OPA {
-				path = d.Get("name").(string) + ".rego"
-			}
+		if kind == string(tfe.OPA) {
+			path = d.Get("name").(string) + ".rego"
 		}
 		if d.HasChange("enforce_mode") {
 			//nolint:staticcheck // this is still used by TFE versions older than 202306-1
@@ -301,11 +303,11 @@ func resourceTFEPolicyUpdate(d *schema.ResourceData, meta interface{}) error {
 			options.Query = tfe.String(query.(string))
 		}
 
-		log.Printf("[DEBUG] Update configuration for %s policy: %s", vKind, d.Id())
+		log.Printf("[DEBUG] Update configuration for %s policy: %s", kind, d.Id())
 		_, err := config.Client.Policies.Update(ctx, d.Id(), options)
 		if err != nil {
 			return fmt.Errorf(
-				"Error updating configuration for %s policy %s: %w", vKind, d.Id(), err)
+				"Error updating configuration for %s policy %s: %w", kind, d.Id(), err)
 		}
 	}
 

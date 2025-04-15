@@ -11,8 +11,8 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccTFEOrganizationRunTaskGlobalSettings_validateSchemaAttributeUrl(t *testing.T) {
@@ -145,10 +145,80 @@ func TestAccTFEOrganizationRunTaskGlobalSettings_import(t *testing.T) {
 	})
 }
 
+func TestAccTFEOrganizationRunTaskGlobalSettings_Read(t *testing.T) {
+	skipUnlessRunTasksDefined(t)
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+	key := runTasksHMACKey()
+	task := createRunTask(t, tfeClient, org.Name, tfe.RunTaskCreateOptions{
+		Name:    fmt.Sprintf("tst-task-%s", randomString(t)),
+		URL:     runTasksURL(),
+		HMACKey: &key,
+	})
+
+	org_tf := fmt.Sprintf(`data "tfe_organization" "orgtask" { name = %q }`, org.Name)
+
+	create_settings_tf := fmt.Sprintf(`
+		%s
+		resource "tfe_organization_run_task_global_settings" "sut" {
+			task_id = %q
+
+			enabled           = true
+			enforcement_level = "mandatory"
+			stages            = ["post_plan"]
+		}
+		`, org_tf, task.ID)
+
+	delete_task_settings := func() {
+		_, err := tfeClient.RunTasks.Update(ctx, task.ID, tfe.RunTaskUpdateOptions{
+			Global: &tfe.GlobalRunTaskOptions{
+				Enabled: tfe.Bool(false),
+			},
+		})
+		if err != nil {
+			t.Fatalf("Error updating task: %s", err)
+		}
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationRunTaskDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: create_settings_tf,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_organization_run_task_global_settings.sut", "enabled", "true"),
+				),
+			},
+			{
+				// Delete the created run task settings and ensure we can re-create it
+				PreConfig: delete_task_settings,
+				Config:    create_settings_tf,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_organization_run_task_global_settings.sut", "enabled", "true"),
+				),
+			},
+			{
+				// Delete the created run task settings and ensure we can ignore it if we no longer need to manage it
+				PreConfig: delete_task_settings,
+				Config:    org_tf,
+				Check: resource.ComposeTestCheckFunc(
+					testCheckResourceNotExist("tfe_organization_run_task_global_settings.sut"),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckTFEOrganizationRunTaskGlobalEnabled(resourceName string, expectedEnabled bool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[resourceName]
 		if !ok {
 			return fmt.Errorf("Not found: %s", resourceName)
@@ -157,7 +227,7 @@ func testAccCheckTFEOrganizationRunTaskGlobalEnabled(resourceName string, expect
 		if rs.Primary.ID == "" {
 			return fmt.Errorf("No instance ID is set")
 		}
-		rt, err := config.Client.RunTasks.Read(ctx, rs.Primary.ID)
+		rt, err := testAccConfiguredClient.Client.RunTasks.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("error reading Run Task: %w", err)
 		}

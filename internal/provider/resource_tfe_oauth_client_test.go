@@ -10,8 +10,8 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccTFEOAuthClient_basic(t *testing.T) {
@@ -25,8 +25,8 @@ func TestAccTFEOAuthClient_basic(t *testing.T) {
 				t.Skip("Please set GITHUB_TOKEN to run this test")
 			}
 		},
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOAuthClientDestroy,
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOAuthClientDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOAuthClient_basic(rInt),
@@ -56,8 +56,8 @@ func TestAccTFEOAuthClientWithOrganizationScoped_basic(t *testing.T) {
 				t.Skip("Please set GITHUB_TOKEN to run this test")
 			}
 		},
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOAuthClientDestroy,
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOAuthClientDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOAuthClient_basic(rInt),
@@ -83,9 +83,9 @@ func TestAccTFEOAuthClient_rsaKeys(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOAuthClientDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOAuthClientDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOAuthClient_rsaKeys(rInt),
@@ -118,8 +118,8 @@ func TestAccTFEOAuthClient_agentPool(t *testing.T) {
 				t.Skip("Please set GITHUB_TOKEN to run this test")
 			}
 		},
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOAuthClientDestroy,
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOAuthClientDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOAuthClient_agentPool(),
@@ -134,11 +134,63 @@ func TestAccTFEOAuthClient_agentPool(t *testing.T) {
 	})
 }
 
+func TestAccTFEOAuthClient_updateOAuthTokenID(t *testing.T) {
+	oc := &tfe.OAuthClient{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	var initialOAuthTokenID string
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			if envGithubToken == "" {
+				t.Skip("Please set GITHUB_TOKEN to run this test")
+			}
+
+			if envGithubToken2 == "" {
+				t.Skip("Please set GITHUB_TOKEN2 to run this test")
+			}
+		},
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOAuthClientDestroy,
+		Steps: []resource.TestStep{
+			// Step 1: Create with the initial oauth_token_id.
+			{
+				Config: testAccTFEOAuthClient_updateOAuthTokenID(rInt, envGithubToken),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOAuthClientExists("tfe_oauth_client.foobar", oc),
+					resource.TestCheckResourceAttrSet("tfe_oauth_client.foobar", "oauth_token_id"),
+					func(s *terraform.State) error {
+						initialOAuthTokenID = oc.OAuthTokens[0].ID
+						return nil
+					},
+				),
+			},
+			// Step 2: Update the oauth_token_id value.
+			{
+				Config: testAccTFEOAuthClient_updateOAuthTokenID(rInt, envGithubToken2),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOAuthClientExists("tfe_oauth_client.foobar", oc),
+					resource.TestCheckResourceAttrSet("tfe_oauth_client.foobar", "oauth_token_id"),
+					func(s *terraform.State) error {
+						if initialOAuthTokenID == oc.OAuthTokens[0].ID {
+							return fmt.Errorf("oauth_token_id did not change")
+						}
+						return nil
+					},
+				),
+			},
+			// Step 3: Run a plan-only step to ensure no changes.
+			{
+				Config:   testAccTFEOAuthClient_updateOAuthTokenID(rInt, envGithubToken2),
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
 func testAccCheckTFEOAuthClientExists(
 	n string, oc *tfe.OAuthClient) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -148,7 +200,7 @@ func testAccCheckTFEOAuthClientExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		client, err := config.Client.OAuthClients.Read(ctx, rs.Primary.ID)
+		client, err := testAccConfiguredClient.Client.OAuthClients.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -179,8 +231,6 @@ func testAccCheckTFEOAuthClientAttributes(
 }
 
 func testAccCheckTFEOAuthClientDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_oauth_client" {
 			continue
@@ -190,7 +240,7 @@ func testAccCheckTFEOAuthClientDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.OAuthClients.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.OAuthClients.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("OAuth client %s still exists", rs.Primary.ID)
 		}
@@ -263,4 +313,20 @@ resource "tfe_oauth_client" "foobar" {
   service_provider = "github_enterprise"
   agent_pool_id    = data.tfe_agent_pool.foobar.id
 }`, envGithubToken)
+}
+
+func testAccTFEOAuthClient_updateOAuthTokenID(rInt int, oAuthToken string) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+resource "tfe_oauth_client" "foobar" {
+  organization     = tfe_organization.foobar.id
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "%s"
+  service_provider = "github"
+  organization_scoped = true
+}`, rInt, oAuthToken)
 }

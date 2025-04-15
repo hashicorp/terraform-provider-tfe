@@ -22,6 +22,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/planmodifiers"
 )
 
 type resourceTFETestVariable struct {
@@ -37,6 +39,7 @@ type modelTFETestVariable struct {
 	ID             types.String `tfsdk:"id"`
 	Key            types.String `tfsdk:"key"`
 	Value          types.String `tfsdk:"value"`
+	ValueWO        types.String `tfsdk:"value_wo"`
 	ReadableValue  types.String `tfsdk:"readable_value"`
 	Category       types.String `tfsdk:"category"`
 	Description    types.String `tfsdk:"description"`
@@ -49,7 +52,7 @@ type modelTFETestVariable struct {
 
 // modelFromTFETestVariable builds a modelTFETestVariable struct from a tfe.TestVariable
 // value (plus the last known value of the variable's `value` attribute).
-func modelFromTFETestVariable(v tfe.Variable, lastValue types.String, moduleID tfe.RegistryModuleID) modelTFETestVariable {
+func modelFromTFETestVariable(v tfe.Variable, lastValue types.String, moduleID tfe.RegistryModuleID, isWriteOnlyValue bool) modelTFETestVariable {
 	// Initialize all fields from the provided API struct
 	m := modelTFETestVariable{
 		ID:             types.StringValue(v.ID),
@@ -70,6 +73,11 @@ func modelFromTFETestVariable(v tfe.Variable, lastValue types.String, moduleID t
 		m.ReadableValue = types.StringNull()
 	} else {
 		m.ReadableValue = m.Value
+	}
+	// Don't retrieve values if write-only is being used. Unset the value and readable_value fields before updating the state.
+	if isWriteOnlyValue {
+		m.Value = types.StringValue("")
+		m.ReadableValue = types.StringValue("")
 	}
 	return m
 }
@@ -133,6 +141,21 @@ func (r *resourceTFETestVariable) Schema(ctx context.Context, req resource.Schem
 				Default:     stringdefault.StaticString(""),
 				Sensitive:   true,
 				Description: "Value of the variable",
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRoot("value_wo")),
+				},
+			},
+			"value_wo": schema.StringAttribute{
+				Optional:    true,
+				WriteOnly:   true,
+				Sensitive:   true,
+				Description: "Value of the variable in write-only mode",
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRoot("value")),
+				},
+				PlanModifiers: []planmodifier.String{
+					planmodifiers.NewReplaceForWriteOnlyStringValue("value_wo"),
+				},
 			},
 			"category": schema.StringAttribute{
 				Required:    true,
@@ -205,6 +228,13 @@ func (r *resourceTFETestVariable) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
+	var config modelTFETestVariable
+	diags = req.Config.Get(ctx, &config)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	key := data.Key.ValueString()
 	category := data.Category.ValueString()
 	moduleID := tfe.RegistryModuleID{
@@ -217,11 +247,16 @@ func (r *resourceTFETestVariable) Create(ctx context.Context, req resource.Creat
 
 	options := tfe.VariableCreateOptions{
 		Key:         data.Key.ValueStringPointer(),
-		Value:       data.Value.ValueStringPointer(),
 		Category:    tfe.Category(tfe.CategoryType(category)),
 		HCL:         data.HCL.ValueBoolPointer(),
 		Sensitive:   data.Sensitive.ValueBoolPointer(),
 		Description: data.Description.ValueStringPointer(),
+	}
+	// Set Value from `value_wo` if set, otherwise use the normal value
+	if !config.ValueWO.IsNull() {
+		options.Value = config.ValueWO.ValueStringPointer()
+	} else {
+		options.Value = data.Value.ValueStringPointer()
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("Create %s variable: %s", category, key))
@@ -235,7 +270,15 @@ func (r *resourceTFETestVariable) Create(ctx context.Context, req resource.Creat
 	}
 
 	// We got a variable, so set state to new values
-	result := modelFromTFETestVariable(*variable, data.Value, moduleID)
+	result := modelFromTFETestVariable(*variable, data.Value, moduleID, !config.ValueWO.IsNull())
+
+	// Store the hashed write-only value in the private state
+	store := r.writeOnlyValueStore(resp.Private)
+	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.ValueWO)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -273,21 +316,33 @@ func (r *resourceTFETestVariable) Read(ctx context.Context, req resource.ReadReq
 		return
 	}
 
+	isWriteOnly, diags := r.writeOnlyValueStore(resp.Private).PriorValueExists(ctx)
+	resp.Diagnostics.Append(diags...)
+	if diags.HasError() {
+		return
+	}
+
 	// We got a variable, so update state:
-	result := modelFromTFETestVariable(*variable, data.Value, moduleID)
+	result := modelFromTFETestVariable(*variable, data.Value, moduleID, isWriteOnly)
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
 
 func (r *resourceTFETestVariable) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan modelTFETestVariable
-	var state modelTFETestVariable
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	var state modelTFETestVariable
 	diags = req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	var config modelTFETestVariable
+	diags = req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -323,8 +378,14 @@ func (r *resourceTFETestVariable) Update(ctx context.Context, req resource.Updat
 		)
 		return
 	}
+	// Store the hashed write-only value in the private state
+	store := r.writeOnlyValueStore(resp.Private)
+	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.ValueWO)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	// Update state
-	result := modelFromTFETestVariable(*variable, plan.Value, moduleID)
+	result := modelFromTFETestVariable(*variable, plan.Value, moduleID, !config.ValueWO.IsNull())
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -355,4 +416,8 @@ func (r *resourceTFETestVariable) Delete(ctx context.Context, req resource.Delet
 		)
 	}
 	// Resource is implicitly deleted from resp.State if diagnostics have no errors.
+}
+
+func (r *resourceTFETestVariable) writeOnlyValueStore(private helpers.PrivateState) *helpers.WriteOnlyValueStore {
+	return helpers.NewWriteOnlyValueStore(private, "value_wo")
 }

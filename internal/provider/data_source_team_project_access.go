@@ -51,6 +51,11 @@ func dataSourceTFETeamProjectAccess() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
+
+						"variable_sets": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 					},
 				},
 			},

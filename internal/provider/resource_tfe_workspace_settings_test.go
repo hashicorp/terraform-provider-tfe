@@ -6,12 +6,12 @@ package provider
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccTFEWorkspaceSettings(t *testing.T) {
@@ -94,6 +94,86 @@ func TestAccTFEWorkspaceSettings(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspaceWithSettings(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			// Start with local execution
+			{
+				Config: testAccTFEWorkspaceSettingsUnknownIDRemoteState(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(
+						"tfe_workspace_settings.foobar", "id"),
+					resource.TestCheckResourceAttrSet(
+						"tfe_workspace_settings.foobar", "workspace_id",
+					),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspaceSettingsRemoteState(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
+	ws := createTempWorkspace(t, tfeClient, org.Name)
+	ws2 := createTempWorkspace(t, tfeClient, org.Name)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceSettingsDestroy,
+		Steps: []resource.TestStep{
+			// Have remote state consumer ids
+			{
+				Config: testAccTFEWorkspaceSettingsRemoteState(ws.ID, ws2.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(
+						"tfe_workspace_settings.foobar", "id"),
+					resource.TestCheckResourceAttrSet(
+						"tfe_workspace_settings.foobar", "workspace_id"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.foobar", "global_remote_state", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.foobar", "remote_state_consumer_ids.0", ws2.ID),
+				),
+			},
+			// Unset remote state consumer ids and set global remote state
+			{
+				Config: testAccTFEWorkspaceSettingsRemoteState_Global(ws.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(
+						"tfe_workspace_settings.foobar", "id"),
+					resource.TestCheckResourceAttrSet(
+						"tfe_workspace_settings.foobar", "workspace_id"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.foobar", "global_remote_state", "true"),
+				),
+			},
+			// Unset execution mode
+			{
+				Config:      testAccTFEWorkspaceSettingsRemoteState_GlobalConflict(ws.ID, ws2.ID),
+				ExpectError: regexp.MustCompile("If global_remote_state is true, remote_state_consumer_ids must not be set"),
+			},
+		},
+	})
+}
+
 func TestAccTFEWorkspaceSettingsImport(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
@@ -166,41 +246,84 @@ func TestAccTFEWorkspaceSettingsImport_ByName(t *testing.T) {
 }
 
 func testAccCheckTFEWorkspaceSettingsDestroy(s *terraform.State) error {
-	return testAccCheckTFEWorkspaceSettingsDestroyProvider(testAccProvider)(s)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		return err
+	}
+
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != "tfe_workspace_settings" {
+			continue
+		}
+
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("No instance ID is set")
+		}
+
+		ws, err := tfeClient.Workspaces.ReadByID(ctx, rs.Primary.ID)
+		if err != nil {
+			return fmt.Errorf("Workspace %s does not exist", rs.Primary.ID)
+		}
+
+		if ws.ExecutionMode != "remote" {
+			return fmt.Errorf("expected execution mode to be remote after destroy, but was %s", ws.ExecutionMode)
+		}
+
+		if ws.AgentPool != nil {
+			return errors.New("expected agent pool to be nil after destroy, but wasn't")
+		}
+	}
+
+	return nil
 }
 
-func testAccCheckTFEWorkspaceSettingsDestroyProvider(p *schema.Provider) func(s *terraform.State) error {
-	return func(s *terraform.State) error {
-		tfeClient, err := getClientUsingEnv()
-		if err != nil {
-			return err
-		}
+func testAccTFEWorkspaceSettingsUnknownIDRemoteState(orgName string) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace" "foobar1" {
+	name = "foobar1"
+	organization = "%s"
+}
 
-		for _, rs := range s.RootModule().Resources {
-			if rs.Type != "tfe_workspace_settings" {
-				continue
-			}
+resource "tfe_workspace" "foobar2" {
+	name = "foobar2"
+	organization = "%s"
+}
 
-			if rs.Primary.ID == "" {
-				return fmt.Errorf("No instance ID is set")
-			}
+resource "tfe_workspace_settings" "foobar" {
+	workspace_id              = tfe_workspace.foobar1.id
+	global_remote_state       = false
+	remote_state_consumer_ids = [tfe_workspace.foobar2.id]
+}
+`, orgName, orgName)
+}
 
-			ws, err := tfeClient.Workspaces.ReadByID(ctx, rs.Primary.ID)
-			if err != nil {
-				return fmt.Errorf("Workspace %s does not exist", rs.Primary.ID)
-			}
+func testAccTFEWorkspaceSettingsRemoteState(workspaceID, workspaceID2 string) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace_settings" "foobar" {
+	workspace_id              = "%s"
+	global_remote_state       = false
+	remote_state_consumer_ids = ["%s"]
+}
+`, workspaceID, workspaceID2)
+}
 
-			if ws.ExecutionMode != "remote" {
-				return fmt.Errorf("expected execution mode to be remote after destroy, but was %s", ws.ExecutionMode)
-			}
+func testAccTFEWorkspaceSettingsRemoteState_Global(workspaceID string) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace_settings" "foobar" {
+	workspace_id              = "%s"
+	global_remote_state       = true
+}
+`, workspaceID)
+}
 
-			if ws.AgentPool != nil {
-				return errors.New("expected agent pool to be nil after destroy, but wasn't")
-			}
-		}
-
-		return nil
-	}
+func testAccTFEWorkspaceSettingsRemoteState_GlobalConflict(workspaceID, workspaceID2 string) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace_settings" "foobar" {
+	workspace_id              = "%s"
+	global_remote_state       = true
+	remote_state_consumer_ids = ["%s"]
+}
+`, workspaceID, workspaceID2)
 }
 
 func testAccTFEWorkspaceSettings_basic(workspaceID string) string {

@@ -134,7 +134,6 @@ var resourceWorkspaceRunTaskSchemaV1 = schema.Schema{
 			)),
 			Optional: true,
 			Computed: true,
-			Default:  stringdefault.StaticString(string(tfe.PostPlan)),
 			Validators: []validator.String{
 				stringvalidator.OneOf(workspaceRunTaskStages()...),
 			},

@@ -17,7 +17,7 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -256,7 +256,7 @@ func resourceTFERegistryModuleCreate(d *schema.ResourceData, meta interface{}) e
 		return err
 	}
 
-	err = resource.Retry(time.Duration(5)*time.Minute, func() *resource.RetryError {
+	err = retry.Retry(time.Duration(5)*time.Minute, func() *retry.RetryError {
 		rmID := tfe.RegistryModuleID{
 			Organization: registryModule.Organization.Name,
 			Name:         registryModule.Name,
@@ -267,9 +267,9 @@ func resourceTFERegistryModuleCreate(d *schema.ResourceData, meta interface{}) e
 		_, err := config.Client.RegistryModules.Read(ctx, rmID)
 		if err != nil {
 			if strings.Contains(strings.ToLower(err.Error()), "not found") {
-				return resource.RetryableError(err)
+				return retry.RetryableError(err)
 			}
-			return resource.NonRetryableError(err)
+			return retry.NonRetryableError(err)
 		}
 		return nil
 	})
@@ -340,10 +340,10 @@ func resourceTFERegistryModuleUpdate(d *schema.ResourceData, meta interface{}) e
 		}
 	}
 
-	err = resource.Retry(time.Duration(5)*time.Minute, func() *resource.RetryError {
+	err = retry.Retry(time.Duration(5)*time.Minute, func() *retry.RetryError {
 		registryModule, err = config.Client.RegistryModules.Update(ctx, rmID, options)
 		if err != nil {
-			return resource.RetryableError(err)
+			return retry.RetryableError(err)
 		}
 		return nil
 	})

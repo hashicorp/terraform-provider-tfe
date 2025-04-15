@@ -18,7 +18,7 @@ resource "tfe_organization" "test_org" {
 }
   
 resource "tfe_oauth_client" "test_client" {
-  organization     = tfe_organization.test.name
+  organization     = tfe_organization.test_org.name
   api_url          = "https://api.github.com"
   http_url         = "https://github.com"
   oauth_token      = "my-token-123"
@@ -30,7 +30,7 @@ resource "tfe_registry_module" "test_module" {
   vcs_repo {
   display_identifier = "GH_NAME/REPO_NAME"
   identifier         = "GH_NAME/REPO_NAME"
-  oauth_token_id     = tfe_oauth_client.test.oauth_token_id
+  oauth_token_id     = tfe_oauth_client.test_client.oauth_token_id
   branch             = "main"
   tags				 = false
 }
@@ -44,8 +44,10 @@ resource "tfe_test_variable" "tf_test_test_variable" {
   value        = "value_test"
   description  = "some description"
   category     = "env"
-  organization = tfe_organization.test.name
-  module_name = tfe_registry_module.test.name
-  module_provider = tfe_registry_module.test.module_provider
+  organization = tfe_organization.test_org.name
+  module_name = tfe_registry_module.test_module.name
+  module_provider = tfe_registry_module.test_module.module_provider
 }
 ```
+
+-> **Note:** Write-Only argument `value_wo` is available to use in place of `value`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).

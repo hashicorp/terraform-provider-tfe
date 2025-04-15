@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package provider
 
 import (
@@ -6,10 +9,11 @@ import (
 	"time"
 
 	"fmt"
-	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"os"
+
+	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccTFEDataRetentionPolicy_basic(t *testing.T) {
@@ -312,8 +316,6 @@ resource "tfe_data_retention_policy" "foobar" {
 func testAccCheckTFEDataRetentionPolicyExists(
 	n string, policy *tfe.DataRetentionPolicyChoice) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -326,13 +328,13 @@ func testAccCheckTFEDataRetentionPolicyExists(
 		wsID := rs.Primary.Attributes["workspace_id"]
 
 		if wsID != "" {
-			ws, err := config.Client.Workspaces.ReadByID(ctx, wsID)
+			ws, err := testAccConfiguredClient.Client.Workspaces.ReadByID(ctx, wsID)
 			if err != nil {
 				return fmt.Errorf(
 					"Error retrieving workspace %s: %w", wsID, err)
 			}
 
-			drp, err := config.Client.Workspaces.ReadDataRetentionPolicyChoice(ctx, ws.ID)
+			drp, err := testAccConfiguredClient.Client.Workspaces.ReadDataRetentionPolicyChoice(ctx, ws.ID)
 			if err != nil {
 				return fmt.Errorf(
 					"Error retrieving data retention policy for workspace %s: %w", ws.ID, err)
@@ -342,7 +344,7 @@ func testAccCheckTFEDataRetentionPolicyExists(
 		} else {
 			orgName := rs.Primary.Attributes["organization"]
 
-			drp, err := config.Client.Organizations.ReadDataRetentionPolicyChoice(ctx, orgName)
+			drp, err := testAccConfiguredClient.Client.Organizations.ReadDataRetentionPolicyChoice(ctx, orgName)
 			if err != nil {
 				return fmt.Errorf(
 					"Error retrieving data retention policy for organization %s: %w", orgName, err)
@@ -356,8 +358,6 @@ func testAccCheckTFEDataRetentionPolicyExists(
 }
 
 func testAccCheckTFEDataRetentionPolicyDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_data_retention_policy" {
 			continue
@@ -367,7 +367,7 @@ func testAccCheckTFEDataRetentionPolicyDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		dataRetentionPolicy, err := config.Client.Workspaces.ReadDataRetentionPolicyChoice(ctx, rs.Primary.Attributes["workspace_id"])
+		dataRetentionPolicy, err := testAccConfiguredClient.Client.Workspaces.ReadDataRetentionPolicyChoice(ctx, rs.Primary.Attributes["workspace_id"])
 		if err == nil {
 			if dataRetentionPolicy.DataRetentionPolicyDeleteOlder != nil {
 				return fmt.Errorf("data retention policy %s still exists", dataRetentionPolicy.DataRetentionPolicyDeleteOlder.ID)

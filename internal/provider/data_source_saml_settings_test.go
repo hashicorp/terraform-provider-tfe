@@ -6,7 +6,7 @@ package provider
 import (
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 // FLAKE ALERT: SAML settings are a singleton resource shared by the entire TFE

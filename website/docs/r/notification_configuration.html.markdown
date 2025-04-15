@@ -111,18 +111,24 @@ The following arguments are supported:
   if `destination_type` is `generic`, `microsoft-teams`, or `slack`.
 * `enabled` - (Optional) Whether the notification configuration should be enabled or not.
   Disabled configurations will not send any notifications. Defaults to `false`.
-* `token` - (Optional) A write-only secure token for the notification configuration, which can
+* `token` - (Optional) A token for the notification configuration, which can
+  be used by the receiving server to verify request authenticity when configured for notification
+  configurations with a destination type of `generic`. Defaults to `null`.
+  This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.
+* `token_wo` - (Optional) Write-only secure token for the notification configuration, which can
   be used by the receiving server to verify request authenticity when configured for notification
   configurations with a destination type of `generic`. Defaults to `null`.
   This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.
 * `triggers` - (Optional) The array of triggers for which this notification configuration will
   send notifications. Valid values are `run:created`, `run:planning`, `run:needs_attention`, `run:applying`
-  `run:completed`, `run:errored`, `assessment:check_failure`, `assessment:drifted`, or `assessment:failed`.
+  `run:completed`, `run:errored`, `assessment:check_failure`, `assessment:drifted`, `assessment:failed`, `workspace:auto_destroy_reminder`, or `workspace:auto_destroy_run_results`.
   If omitted, no notification triggers are configured.
 * `url` - (Required if `destination_type` is `generic`, `microsoft-teams`, or `slack`) The HTTP or HTTPS URL of the notification
   configuration where notification requests will be made. This value _must not_ be provided if `destination_type`
   is `email`.
 * `workspace_id` - (Required) The id of the workspace that owns the notification configuration.
+
+-> **Note:** Write-Only argument `token_wo` is available to use in place of `token`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
 
 ## Attributes Reference
 

@@ -27,11 +27,12 @@ type featureSetListOptions struct {
 }
 
 type updateFeatureSetOptions struct {
-	Type               string     `jsonapi:"primary,subscription"`
-	RunsCeiling        *int       `jsonapi:"attr,runs-ceiling,omitempty"`
-	ContractStartAt    *time.Time `jsonapi:"attr,contract-start-at,iso8601,omitempty"`
-	ContractUserLimit  *int       `jsonapi:"attr,contract-user-limit,omitempty"`
-	ContractApplyLimit *int       `jsonapi:"attr,contract-apply-limit,omitempty"`
+	Type                          string     `jsonapi:"primary,subscription"`
+	RunsCeiling                   *int       `jsonapi:"attr,runs-ceiling,omitempty"`
+	ContractStartAt               *time.Time `jsonapi:"attr,contract-start-at,iso8601,omitempty"`
+	ContractUserLimit             *int       `jsonapi:"attr,contract-user-limit,omitempty"`
+	ContractApplyLimit            *int       `jsonapi:"attr,contract-apply-limit,omitempty"`
+	ContractManagedResourcesLimit *int       `jsonapi:"attr,contract-managed-resources-limit,omitempty"`
 
 	FeatureSet *featureSet `jsonapi:"relation,feature-set"`
 }
@@ -47,6 +48,19 @@ func newSubscriptionUpdater(organization *tfe.Organization) *organizationSubscri
 		organization: organization,
 		updateOpts:   updateFeatureSetOptions{},
 	}
+}
+
+func (b *organizationSubscriptionUpdater) WithPlusEntitlementPlan() *organizationSubscriptionUpdater {
+	b.planName = "Plus (entitlement)"
+
+	start := time.Now()
+	ceiling := 1
+	managedResourcesLimit := 1000
+
+	b.updateOpts.ContractStartAt = &start
+	b.updateOpts.RunsCeiling = &ceiling
+	b.updateOpts.ContractManagedResourcesLimit = &managedResourcesLimit
+	return b
 }
 
 func (b *organizationSubscriptionUpdater) WithBusinessPlan() *organizationSubscriptionUpdater {

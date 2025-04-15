@@ -37,6 +37,7 @@ The following arguments are supported:
 
 * `key` - (Required) Name of the parameter.
 * `value` - (Required) Value of the parameter.
+* `value_wo` - (Required) Write-only value of the parameter.
 * `sensitive` - (Optional) Whether the value is sensitive. If true then the
   parameter is written once and not visible thereafter. Defaults to `false`.
 * `policy_set_id` - (Required) The ID of the policy set that owns the parameter.
@@ -55,3 +56,4 @@ example:
 terraform import tfe_policy_set_parameter.test polset-wAs3zYmWAhYK7peR/var-5rTwnSaRPogw6apb
 ```
 
+-> **Note:** Write-Only argument `value_wo` is available to use in place of `value`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).

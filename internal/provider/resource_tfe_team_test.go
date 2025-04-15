@@ -11,8 +11,8 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccTFETeam_basic(t *testing.T) {
@@ -20,9 +20,9 @@ func TestAccTFETeam_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeam_basic(rInt),
@@ -43,9 +43,9 @@ func TestAccTFETeam_full(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeam_full(rInt),
@@ -57,6 +57,8 @@ func TestAccTFETeam_full(t *testing.T) {
 						"tfe_team.foobar", "name", "team-test"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "visibility", "organization"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "allow_member_token_management", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_policies", "true"),
 					resource.TestCheckResourceAttr(
@@ -98,9 +100,9 @@ func TestAccTFETeam_full_update(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeam_full(rInt),
@@ -112,6 +114,8 @@ func TestAccTFETeam_full_update(t *testing.T) {
 						"tfe_team.foobar", "name", "team-test"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "visibility", "organization"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "allow_member_token_management", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_policies", "true"),
 					resource.TestCheckResourceAttr(
@@ -155,6 +159,8 @@ func TestAccTFETeam_full_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "visibility", "secret"),
 					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "allow_member_token_management", "false"),
+					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_policies", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_policy_overrides", "false"),
@@ -195,6 +201,8 @@ func TestAccTFETeam_full_update(t *testing.T) {
 						"tfe_team.foobar", "name", "team-test-1"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "visibility", "secret"),
+					resource.TestCheckResourceAttr(
+						"tfe_team.foobar", "allow_member_token_management", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_policies", "false"),
 					resource.TestCheckResourceAttr(
@@ -237,9 +245,9 @@ func TestAccTFETeam_import_byId(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeam_basic(rInt),
@@ -259,9 +267,9 @@ func TestAccTFETeam_import_byId_doesNotExist(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeam_basic(rInt),
@@ -281,9 +289,9 @@ func TestAccTFETeam_import_byName(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeam_basic(rInt),
@@ -303,9 +311,9 @@ func TestAccTFETeam_import_missingOrg(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeam_basic(rInt),
@@ -325,9 +333,9 @@ func TestAccTFETeam_import_missingTeam(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeam_basic(rInt),
@@ -347,9 +355,9 @@ func TestAccTFETeam_import_teamNameWithSpaces(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeam_withSpaces(rInt),
@@ -369,9 +377,9 @@ func TestAccTFETeam_import_teamNameWithSlashes(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeam_withSlashes(rInt),
@@ -393,9 +401,9 @@ func TestAccTFETeam_import_teamNameWhichLooksLikeID(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFETeamDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeam_withIDLikeName(rInt),
@@ -414,8 +422,6 @@ func TestAccTFETeam_import_teamNameWhichLooksLikeID(t *testing.T) {
 func testAccCheckTFETeamExists(
 	n string, team *tfe.Team) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -425,7 +431,7 @@ func testAccCheckTFETeamExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		t, err := config.Client.Teams.Read(ctx, rs.Primary.ID)
+		t, err := testAccConfiguredClient.Client.Teams.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -459,6 +465,10 @@ func testAccCheckTFETeamAttributes_full(
 
 		if team.Visibility != "organization" {
 			return fmt.Errorf("Bad visibility: %s", team.Visibility)
+		}
+
+		if !team.AllowMemberTokenManagement {
+			return fmt.Errorf("team.AllowMemberTokenManagement should be true")
 		}
 
 		if !team.OrganizationAccess.ManagePolicies {
@@ -511,6 +521,10 @@ func testAccCheckTFETeamAttributes_full_update(
 			return fmt.Errorf("Bad visibility: %s", team.Visibility)
 		}
 
+		if team.AllowMemberTokenManagement {
+			return fmt.Errorf("team.AllowMemberTokenManagement should be false")
+		}
+
 		if team.OrganizationAccess.ManagePolicies {
 			return fmt.Errorf("OrganizationAccess.ManagePolicies should be false")
 		}
@@ -551,8 +565,6 @@ func testAccCheckTFETeamAttributes_full_update(
 }
 
 func testAccCheckTFETeamDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_team" {
 			continue
@@ -562,7 +574,7 @@ func testAccCheckTFETeamDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.Teams.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.Teams.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Team %s still exists", rs.Primary.ID)
 		}
@@ -596,6 +608,7 @@ resource "tfe_team" "foobar" {
   organization = tfe_organization.foobar.id
 
   visibility = "organization"
+  allow_member_token_management = true
 
   organization_access {
     manage_policies = true
@@ -630,6 +643,7 @@ resource "tfe_team" "foobar" {
   organization = tfe_organization.foobar.id
 
   visibility = "secret"
+  allow_member_token_management = false
 
   organization_access {
     manage_policies = false

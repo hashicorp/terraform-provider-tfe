@@ -23,7 +23,8 @@ data "tfe_ssh_key" "test" {
 The following arguments are supported:
 
 * `name` - (Required) Name of the SSH key.
-* `organization` - (Required) Name of the organization.
+* `organization` - (Optional) Name of the organization. If omitted, organization
+  must be defined in the provider config.
 
 ## Attributes Reference
 

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccTFETeamAccessDataSource_basic(t *testing.T) {
@@ -20,8 +20,8 @@ func TestAccTFETeamAccessDataSource_basic(t *testing.T) {
 	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamAccessDataSourceConfig(org.Name),

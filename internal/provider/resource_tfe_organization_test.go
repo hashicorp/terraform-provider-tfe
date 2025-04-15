@@ -12,8 +12,9 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccTFEOrganization_basic(t *testing.T) {
@@ -22,9 +23,9 @@ func TestAccTFEOrganization_basic(t *testing.T) {
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganization_basic(rInt),
@@ -50,9 +51,9 @@ func TestAccTFEOrganization_full(t *testing.T) {
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganization_full(rInt),
@@ -82,6 +83,8 @@ func TestAccTFEOrganization_full(t *testing.T) {
 						"tfe_organization.foobar", "assessments_enforced", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "allow_force_delete_workspaces", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "speculative_plan_management_enabled", "true"),
 				),
 			},
 		},
@@ -93,9 +96,9 @@ func TestAccTFEOrganization_defaultProject(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganization_full(rInt),
@@ -137,9 +140,9 @@ func TestAccTFEOrganization_update_costEstimation(t *testing.T) {
 	updatedName := org.Name + "_foobar"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganization_update(org.Name, org.Email, costEstimationEnabled1, assessmentsEnforced1, allowForceDeleteWorkspaces1),
@@ -208,9 +211,9 @@ func TestAccTFEOrganization_case(t *testing.T) {
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganization_basic(rInt),
@@ -227,8 +230,12 @@ func TestAccTFEOrganization_case(t *testing.T) {
 				),
 			},
 			{
-				Config:   testAccTFEOrganization_title_case(rInt),
-				PlanOnly: true,
+				Config: testAccTFEOrganization_title_case(rInt),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
 			},
 		},
 	})
@@ -238,9 +245,9 @@ func TestAccTFEOrganization_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEOrganizationDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganization_basic(rInt),
@@ -258,8 +265,6 @@ func TestAccTFEOrganization_import(t *testing.T) {
 func testAccCheckTFEOrganizationExists(
 	n string, org *tfe.Organization) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -269,7 +274,7 @@ func testAccCheckTFEOrganizationExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		o, err := config.Client.Organizations.Read(ctx, rs.Primary.ID)
+		o, err := testAccConfiguredClient.Client.Organizations.Read(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -374,8 +379,6 @@ func testAccCheckTFEOrganizationAttributesUpdated(
 }
 
 func testAccCheckTFEOrganizationDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_organization" {
 			continue
@@ -385,7 +388,7 @@ func testAccCheckTFEOrganizationDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.Organizations.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.Organizations.Read(ctx, rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("Organization %s still exists", rs.Primary.ID)
 		}

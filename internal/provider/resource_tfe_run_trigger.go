@@ -15,7 +15,7 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -58,7 +58,7 @@ func resourceTFERunTriggerCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	log.Printf("[DEBUG] Create run trigger on workspace %s with sourceable %s", workspaceID, sourceableID)
-	err := resource.Retry(1*time.Minute, func() *resource.RetryError {
+	err := retry.Retry(1*time.Minute, func() *retry.RetryError {
 		runTrigger, err := config.Client.RunTriggers.Create(ctx, workspaceID, options)
 		if err == nil {
 			d.SetId(runTrigger.ID)
@@ -67,10 +67,10 @@ func resourceTFERunTriggerCreate(d *schema.ResourceData, meta interface{}) error
 
 		if strings.Contains(err.Error(), "Run Trigger creation locked") {
 			log.Printf("[DEBUG] Run triggers are locked for workspace %s, will retry", workspaceID)
-			return resource.RetryableError(err)
+			return retry.RetryableError(err)
 		}
 
-		return resource.NonRetryableError(err)
+		return retry.NonRetryableError(err)
 	})
 
 	if err != nil {

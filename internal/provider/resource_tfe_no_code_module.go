@@ -11,6 +11,7 @@ package provider
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
@@ -60,6 +61,8 @@ func resourceTFENoCodeModule() *schema.Resource {
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: false,
+				// The version_pin needs to be set when variable_options are set
+				RequiredWith: []string{"version_pin"},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"name": {
@@ -98,16 +101,31 @@ func resourceTFENoCodeModuleCreate(ctx context.Context, d *schema.ResourceData, 
 	if enabled, ok := d.GetOk("enabled"); ok {
 		options.Enabled = tfe.Bool(enabled.(bool))
 	}
-	if variableOptions, ok := d.GetOk("variable_options"); ok {
-		options.VariableOptions = variableOptionsMaptoStruct(variableOptions.([]interface{}))
-	}
-	if versionPin, ok := d.GetOk("version_pin"); ok {
-		options.VersionPin = versionPin.(string)
-	}
 
 	orgName, err := config.schemaOrDefaultOrganization(d)
 	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	// If version_pin is set, ensure the version is available before creating the no-code module.
+	if versionPin, ok := d.GetOk("version_pin"); ok {
+		options.VersionPin = versionPin.(string)
+		moduleID, err := getFullModuleID(ctx, config.Client, orgName, options.RegistryModule.ID)
+		if err != nil {
+			return diag.Errorf("Error getting full module ID for registry module %s: %s", options.RegistryModule.ID, err)
+		}
+		if err := waitForModuleVersion(ctx, config.Client, moduleID, options.VersionPin); err != nil {
+			return diag.Errorf("Error reading registry module version %s: %s", options.VersionPin, err)
+		}
+	}
+
+	// If variable_options are set, the version_pin must be also set,
+	// because the variable options are tied to a specific version of the module.
+	if variableOptions, ok := d.GetOk("variable_options"); ok {
+		if options.VersionPin == "" {
+			return diag.Errorf("version_pin must be set when variable_options are set")
+		}
+		options.VariableOptions = variableOptionsMaptoStruct(variableOptions.([]interface{}))
 	}
 
 	log.Printf("[DEBUG] Create no-code module for registry module %s", options.RegistryModule.ID)
@@ -137,6 +155,34 @@ func variableOptionsMaptoStruct(variableOptions []interface{}) []*tfe.NoCodeVari
 		variableOptionsRes = append(variableOptionsRes, option)
 	}
 	return variableOptionsRes
+}
+
+func getFullModuleID(ctx context.Context, client *tfe.Client, orgName, id string) (tfe.RegistryModuleID, error) {
+	module, err := client.RegistryModules.Read(ctx, tfe.RegistryModuleID{ID: id})
+	if err != nil {
+		return tfe.RegistryModuleID{}, err
+	}
+	return tfe.RegistryModuleID{
+		Organization: orgName,
+		Namespace:    module.Namespace,
+		Name:         module.Name,
+		Provider:     module.Provider,
+		RegistryName: module.RegistryName,
+	}, nil
+}
+
+func waitForModuleVersion(ctx context.Context, client *tfe.Client, moduleID tfe.RegistryModuleID, versionPin string) error {
+	timeout := time.Duration(5) * time.Minute
+	return retry.RetryContext(ctx, timeout, func() *retry.RetryError {
+		_, err := client.RegistryModules.ReadVersion(ctx, moduleID, versionPin)
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			return retry.RetryableError(fmt.Errorf("version %s not found for module %s", versionPin, moduleID))
+		}
+		if err != nil {
+			return retry.NonRetryableError(err)
+		}
+		return nil
+	})
 }
 
 func resourceTFENoCodeModuleUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

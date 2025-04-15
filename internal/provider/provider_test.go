@@ -18,29 +18,38 @@ import (
 	"github.com/hashicorp/terraform-plugin-mux/tf5muxserver"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	sdkTerraform "github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/hashicorp/terraform-provider-tfe/internal/client"
 	"github.com/hashicorp/terraform-provider-tfe/version"
 	"github.com/hashicorp/terraform-svchost/disco"
 )
 
-var testAccProviders map[string]*schema.Provider
-var testAccProvider *schema.Provider
-var testAccMuxedProviders map[string]func() (tfprotov5.ProviderServer, error)
+var (
+	testAccMuxedProviders   map[string]func() (tfprotov5.ProviderServer, error)
+	testAccConfiguredClient *ConfiguredClient
+)
 
 func init() {
-	testAccProvider = Provider()
-
-	testAccProviders = map[string]*schema.Provider{
-		"tfe": testAccProvider,
-	}
 	testAccMuxedProviders = map[string]func() (tfprotov5.ProviderServer, error){
 		"tfe": func() (tfprotov5.ProviderServer, error) {
 			ctx := context.Background()
 			nextProvider := providerserver.NewProtocol5(NewFrameworkProvider())
 
+			sdkProvider := Provider()
+			sdkProvider.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
+				client, err := getClientUsingEnv()
+				cc := ConfiguredClient{
+					Client: client,
+				}
+
+				// Save a reference to the configured client instance for use in tests.
+				testAccConfiguredClient = &cc
+
+				return cc, diag.FromErr(err)
+			}
+
 			mux, err := tf5muxserver.NewMuxServer(
-				ctx, nextProvider, PluginProviderServer, testAccProvider.GRPCProvider,
+				ctx, nextProvider, sdkProvider.GRPCProvider,
 			)
 			if err != nil {
 				return nil, err
@@ -51,17 +60,37 @@ func init() {
 	}
 }
 
-func providerWithDefaultOrganization(defaultOrgName string) map[string]*schema.Provider {
-	testAccProviderDefaultOrganization := Provider()
-	testAccProviderDefaultOrganization.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
+func muxedProvidersWithDefaultOrganization(defaultOrgName string) map[string]func() (tfprotov5.ProviderServer, error) {
+	sdkProvider := Provider()
+	sdkProvider.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
 		client, err := getClientUsingEnv()
-		return ConfiguredClient{
+		cc := ConfiguredClient{
 			Client:       client,
 			Organization: defaultOrgName,
-		}, diag.FromErr(err)
+		}
+
+		// Save a reference to the configured client instance for use in tests.
+		testAccConfiguredClient = &cc
+
+		return cc, diag.FromErr(err)
 	}
-	return map[string]*schema.Provider{
-		"tfe": testAccProviderDefaultOrganization,
+	return map[string]func() (tfprotov5.ProviderServer, error){
+		"tfe": func() (tfprotov5.ProviderServer, error) {
+			ctx := context.Background()
+
+			nextProvider := providerserver.NewProtocol5(
+				NewFrameworkProviderWithDefaultOrg(defaultOrgName),
+			)
+
+			mux, err := tf5muxserver.NewMuxServer(
+				ctx, nextProvider, sdkProvider.GRPCProvider,
+			)
+			if err != nil {
+				return nil, err
+			}
+
+			return mux.ProviderServer(), nil
+		},
 	}
 }
 
@@ -168,14 +197,12 @@ func TestProvider_versionConstraints(t *testing.T) {
 }
 
 func testAccPreCheck(t *testing.T) {
-	// The credentials must be provided by the CLI config file for testing.
-	if diags := Provider().Configure(context.Background(), &terraform.ResourceConfig{}); diags.HasError() {
-		for _, d := range diags {
-			if d.Severity == diag.Error {
-				t.Fatalf("err: %s", d.Summary)
-			}
-		}
-	}
+	// This is currently a no-op.
+}
+
+func TestSkipUnlessAfterDate(t *testing.T) {
+	skipUnlessAfterDate(t, time.Date(2199, 1, 1, 0, 0, 0, 0, time.UTC))
+	t.Fatal("This test should have been skipped (Unless it's 2199!)")
 }
 
 func TestConfigureEnvOrganization(t *testing.T) {
@@ -196,7 +223,7 @@ func TestConfigureEnvOrganization(t *testing.T) {
 	provider := Provider()
 
 	// The credentials must be provided by the CLI config file for testing.
-	if diags := provider.Configure(context.Background(), &terraform.ResourceConfig{}); diags.HasError() {
+	if diags := provider.Configure(context.Background(), &sdkTerraform.ResourceConfig{}); diags.HasError() {
 		for _, d := range diags {
 			if d.Severity == diag.Error {
 				t.Fatalf("err: %s", d.Summary)
@@ -213,8 +240,6 @@ func TestConfigureEnvOrganization(t *testing.T) {
 // The TFE Provider tests use these environment variables, which are set in the
 // GitHub Action workflow file .github/workflows/ci.yml.
 func testAccGithubPreCheck(t *testing.T) {
-	skipUnlessAfterDate(t, time.Date(2024, 7, 1, 0, 0, 0, 0, time.UTC))
-
 	if envGithubToken == "" {
 		t.Skip("Please set GITHUB_TOKEN to run this test")
 	}
@@ -239,6 +264,7 @@ func init() {
 	envGithubPolicySetPath = os.Getenv("GITHUB_POLICY_SET_PATH")
 	envGithubRegistryModuleIdentifer = os.Getenv("GITHUB_REGISTRY_MODULE_IDENTIFIER")
 	envGithubToken = os.Getenv("GITHUB_TOKEN")
+	envGithubToken2 = os.Getenv("GITHUB_TOKEN2")
 	envGithubAppInstallationID = os.Getenv("GITHUB_APP_INSTALLATION_ID")
 	envGithubAppInstallationName = os.Getenv("GITHUB_APP_INSTALLATION_NAME")
 	envGithubWorkspaceIdentifier = os.Getenv("GITHUB_WORKSPACE_IDENTIFIER")
@@ -252,6 +278,7 @@ var envGithubPolicySetBranch string
 var envGithubPolicySetPath string
 var envGithubRegistryModuleIdentifer string
 var envGithubToken string
+var envGithubToken2 string
 var envGithubAppInstallationID string
 var envGithubAppInstallationName string
 var envGithubWorkspaceIdentifier string

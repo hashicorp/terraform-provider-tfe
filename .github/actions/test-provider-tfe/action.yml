@@ -47,12 +47,16 @@ inputs:
     description: Accepts regex rules to either include or exclude specific tests from running in either CI or nightly workflows.
     required: false
     default: "."
+  run_tasks_url:
+    description: The mock run tasks URL to use for testing.
+    required: false
+    default: "http://testing-mocks.tfe:22180/runtasks/pass"
 
 runs:
   using: composite
   steps:
     - name: Set up Go
-      uses: actions/setup-go@cdcb36043654635271a94b9a6d1392de5bb323a7 # v5.0.1
+      uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5.3.0
       with:
         go-version-file: go.mod
         cache: true
@@ -102,7 +106,7 @@ runs:
         TFE_USER2: tfe-provider-user2
         TF_ACC: "1"
         ENABLE_TFE: "${{ inputs.enterprise }}"
-        RUN_TASKS_URL: "http://testing-mocks.tfe:22180/runtasks/pass"
+        RUN_TASKS_URL: "${{ inputs.run_tasks_url }}"
         GITHUB_POLICY_SET_IDENTIFIER: "hashicorp/test-policy-set"
         GITHUB_REGISTRY_MODULE_IDENTIFIER: "hashicorp/terraform-random-module"
         GITHUB_WORKSPACE_IDENTIFIER: "hashicorp/terraform-random-module"
@@ -112,10 +116,10 @@ runs:
         MOD_TFE: github.com/hashicorp/terraform-provider-tfe/internal/provider
         MOD_VERSION: github.com/hashicorp/terraform-provider-tfe/version
       run: |
-        gotestsum --junitfile summary.xml --format short-verbose -- $MOD_PROVIDER $MOD_TFE $MOD_VERSION -v -timeout=30m -run "${{ steps.test_split.outputs.run }}"
+        gotestsum --junitfile summary.xml --format short-verbose -- $MOD_PROVIDER $MOD_TFE $MOD_VERSION -v -timeout=60m -run "${{ steps.test_split.outputs.run }}"
 
     - name: Upload test artifacts
-      uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+      uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
       with:
         name: junit-test-summary-${{ matrix.index }}
         path: summary.xml

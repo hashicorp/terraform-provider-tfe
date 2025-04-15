@@ -47,6 +47,7 @@ In addition to all arguments above, the following attributes are exported:
 * `OwnersTeamSamlRoleId` - The name of the "owners" team.
 * `SendPassingStatusesForUntriggeredSpeculativePlans` - Whether or not to send VCS status updates for untriggered speculative plans. This can be useful if large numbers of untriggered workspaces are exhausting request limits for connected version control service providers like GitHub. Defaults to true. In Terraform Enterprise, this setting has no effect and cannot be changed but is also available in Site Administration.
 * `AggregatedCommitStatusEnabled` - Whether or not to enable Aggregated Status Checks. This can be useful for monorepo repositories with multiple workspaces receiving status checks for events such as a pull request.
+* `SpeculativePlanManagementEnabled` - Whether or not to enable Speculative Plan Management. If true, pending VCS-triggered speculative plans from outdated commits will be cancelled if a newer commit is pushed to the same branch.
 * `DefaultProjectId` - ID of the organization's default project. All workspaces created without specifying a project ID are created in this project.
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-ef8f010996544db238976f7a2b7dfb50d77204d9275aeacc742c10b942f7c3e6 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-9b73f546422e0ab13be41c89f26de4669725b44bfaf8e4720bbd31f838e37f2f -->

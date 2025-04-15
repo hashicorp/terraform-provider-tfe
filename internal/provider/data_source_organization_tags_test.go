@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccTFEOrganizationTagsDataSource_basic(t *testing.T) {
@@ -17,8 +17,8 @@ func TestAccTFEOrganizationTagsDataSource_basic(t *testing.T) {
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationTagsDataSourceConfig(rInt),

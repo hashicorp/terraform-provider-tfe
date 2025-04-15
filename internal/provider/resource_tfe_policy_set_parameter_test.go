@@ -5,11 +5,17 @@ package provider
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/go-version"
+	"github.com/hashicorp/terraform-plugin-testing/compare"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/statecheck"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
+	"github.com/hashicorp/terraform-plugin-testing/tfversion"
 )
 
 func TestAccTFEPolicySetParameter_basic(t *testing.T) {
@@ -24,9 +30,9 @@ func TestAccTFEPolicySetParameter_basic(t *testing.T) {
 	parameter := &tfe.PolicySetParameter{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEPolicySetParameterDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicySetParameterDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEPolicySetParameter_basic(org.Name),
@@ -58,9 +64,9 @@ func TestAccTFEPolicySetParameter_update(t *testing.T) {
 	parameter := &tfe.PolicySetParameter{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEPolicySetParameterDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicySetParameterDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEPolicySetParameter_basic(org.Name),
@@ -105,9 +111,9 @@ func TestAccTFEPolicySetParameter_import(t *testing.T) {
 	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckTFEPolicySetParameterDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicySetParameterDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEPolicySetParameter_basic(org.Name),
@@ -129,11 +135,73 @@ func TestAccTFEPolicySetParameter_import(t *testing.T) {
 	})
 }
 
+func TestAccTFEPolicySetParameter_valueWriteOnly(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	param := &tfe.PolicySetParameter{}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	compareValuesDiffer := statecheck.CompareValue(compare.ValuesDiffer())
+
+	resource.Test(t, resource.TestCase{
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			tfversion.SkipBelow(version.Must(version.NewVersion("1.11.0"))),
+		},
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFEPolicySetParameter_valueAndValueWriteOnly(org.Name),
+				ExpectError: regexp.MustCompile(`Attribute "value" cannot be specified when "value_wo" is specified`),
+			},
+			{
+				Config: testAccTFEPolicySetParameter_valueWriteOnly(org.Name, "test_value"),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetParameterExists("tfe_policy_set_parameter.foobar", param),
+					resource.TestCheckNoResourceAttr("tfe_policy_set_parameter.foobar", "value_wo"),
+					resource.TestCheckResourceAttr("tfe_policy_set_parameter.foobar", "value", ""),
+				),
+				ConfigStateChecks: []statecheck.StateCheck{
+					// Initialize the value comparer so we can assert that the resource
+					// was replaced in the next step
+					compareValuesDiffer.AddStateValue("tfe_policy_set_parameter.foobar", tfjsonpath.New("id")),
+				},
+			},
+			{
+				Config: testAccTFEPolicySetParameter_valueWriteOnly(org.Name, "test_updated"),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetParameterExists("tfe_policy_set_parameter.foobar", param),
+					resource.TestCheckNoResourceAttr("tfe_policy_set_parameter.foobar", "value_wo"),
+					resource.TestCheckResourceAttr("tfe_policy_set_parameter.foobar", "value", ""),
+				),
+				ConfigStateChecks: []statecheck.StateCheck{
+					// Assert that the resource was replaced
+					compareValuesDiffer.AddStateValue("tfe_policy_set_parameter.foobar", tfjsonpath.New("id")),
+				},
+			},
+			{
+				Config: testAccTFEPolicySetParameter_basic(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetParameterExists("tfe_policy_set_parameter.foobar", param),
+					resource.TestCheckNoResourceAttr("tfe_policy_set_parameter.foobar", "value_wo"),
+					resource.TestCheckResourceAttr("tfe_policy_set_parameter.foobar", "value", "value_test"),
+				),
+				ConfigStateChecks: []statecheck.StateCheck{
+					// Assert that the resource was replaced
+					compareValuesDiffer.AddStateValue("tfe_policy_set_parameter.foobar", tfjsonpath.New("id")),
+				},
+			},
+		},
+	})
+}
+
 func testAccCheckTFEPolicySetParameterExists(
 	n string, parameter *tfe.PolicySetParameter) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		config := testAccProvider.Meta().(ConfiguredClient)
-
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -143,7 +211,7 @@ func testAccCheckTFEPolicySetParameterExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		v, err := config.Client.PolicySetParameters.Read(ctx, rs.Primary.Attributes["policy_set_id"], rs.Primary.ID)
+		v, err := testAccConfiguredClient.Client.PolicySetParameters.Read(ctx, rs.Primary.Attributes["policy_set_id"], rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -193,8 +261,6 @@ func testAccCheckTFEPolicySetParameterAttributesUpdate(
 }
 
 func testAccCheckTFEPolicySetParameterDestroy(s *terraform.State) error {
-	config := testAccProvider.Meta().(ConfiguredClient)
-
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_policy_set_parameter" {
 			continue
@@ -204,7 +270,7 @@ func testAccCheckTFEPolicySetParameterDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := config.Client.PolicySetParameters.Read(ctx, rs.Primary.Attributes["policy_set_id"], rs.Primary.ID)
+		_, err := testAccConfiguredClient.Client.PolicySetParameters.Read(ctx, rs.Primary.Attributes["policy_set_id"], rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("PolicySetParameter %s still exists", rs.Primary.ID)
 		}
@@ -238,6 +304,35 @@ resource "tfe_policy_set_parameter" "foobar" {
   key          = "key_updated"
   value        = "value_updated"
   sensitive    = true
+  policy_set_id = tfe_policy_set.foobar.id
+}`, organization)
+}
+
+func testAccTFEPolicySetParameter_valueWriteOnly(organization string, value string) string {
+	return fmt.Sprintf(`
+resource "tfe_policy_set" "foobar" {
+  name         = "policy-set-test"
+  organization = "%s"
+}
+
+resource "tfe_policy_set_parameter" "foobar" {
+  key          = "key_test"
+	value_wo      = "%s"
+  policy_set_id = tfe_policy_set.foobar.id
+}`, organization, value)
+}
+
+func testAccTFEPolicySetParameter_valueAndValueWriteOnly(organization string) string {
+	return fmt.Sprintf(`
+resource "tfe_policy_set" "foobar" {
+  name         = "policy-set-test"
+  organization = "%s"
+}
+
+resource "tfe_policy_set_parameter" "foobar" {
+  key          = "key_test"
+  value        = "value_test"
+  value_wo     = "value_test"
   policy_set_id = tfe_policy_set.foobar.id
 }`, organization)
 }
