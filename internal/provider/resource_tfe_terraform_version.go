@@ -35,11 +35,13 @@ func resourceTFETerraformVersion() *schema.Resource {
 			},
 			"url": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Default:  nil,
 			},
 			"sha": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Default: nil,
 			},
 			"official": {
 				Type:     schema.TypeBool,
@@ -66,6 +68,30 @@ func resourceTFETerraformVersion() *schema.Resource {
 				Optional: true,
 				Default:  nil,
 			},
+			"archs": {
+				Type: schema.TypeList,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"url": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"sha": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"os": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"arch": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -82,6 +108,10 @@ func resourceTFETerraformVersionCreate(d *schema.ResourceData, meta interface{})
 		Beta:             tfe.Bool(d.Get("beta").(bool)),
 		Deprecated:       tfe.Bool(d.Get("deprecated").(bool)),
 		DeprecatedReason: tfe.String(d.Get("deprecated_reason").(string)),
+	}
+
+	if archs, ok := d.GetOk("archs"); ok {
+		opts.Archs = buildArchOptions(archs.([]interface{}))
 	}
 
 	log.Printf("[DEBUG] Create new Terraform version: %s", *opts.Version)
@@ -177,4 +207,18 @@ func resourceTFETerraformVersionImporter(ctx context.Context, d *schema.Resource
 	}
 
 	return []*schema.ResourceData{d}, nil
+}
+
+func buildArchOptions(archs []interface{}) []*tfe.ToolVersionArchitecture {
+    var archList []*tfe.ToolVersionArchitecture
+    for _, arch := range archs {
+        archMap := arch.(map[string]interface{})
+        archList = append(archList, &tfe.ToolVersionArchitecture{
+            OS:   archMap["os"].(string),
+            Arch: archMap["arch"].(string),
+            URL:  archMap["url"].(string),
+            Sha:  archMap["sha"].(string),
+        })
+    }
+    return archList
 }
