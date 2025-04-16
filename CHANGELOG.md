@@ -38,6 +38,8 @@ ENHANCEMENTS:
 
 * `r/tfe_workspace`: Do not force recreation of workspace if users do not provide `source_name` or `source_url`. [#1674](https://github.com/hashicorp/terraform-provider-tfe/pull/1674)
 
+* `r/tfe_workspace_run`: Allow configuration without `apply` and `destroy` blocks, by @tmatilai ([#1604](https://github.com/hashicorp/terraform-provider-tfe/pull/1604))
+
 ## v.0.64.0
 
 FEATURES:
