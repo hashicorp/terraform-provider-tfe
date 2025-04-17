@@ -1,0 +1,119 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 6e50bffa..39e1c614 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -1,9 +1,5 @@
+ ## Unreleased
+ 
+-DEPRECATIONS:
+-* `r/tfe_workspace`: `tag_names` and `ignore_additional_tag_names` have been deprecated in favor of `tags` and `ignore_additional_tags` which manage key-value tags for a workspace.
+-* `d/tfe_workspace_ids`: `tag_names` has been deprecated in favor of `tag_filters` to query for workspaces by key-value tags.
+-
+ FEATURES:
+ 
+ **Note**: New tag attributes are only available in HCP Terraform and Terraform Enterprise releases `v202504-1` or later
+diff --git a/internal/provider/data_source_workspace.go b/internal/provider/data_source_workspace.go
+index 888f5465..47b1b455 100644
+--- a/internal/provider/data_source_workspace.go
++++ b/internal/provider/data_source_workspace.go
+@@ -157,11 +157,10 @@ func dataSourceTFEWorkspace() *schema.Resource {
+ 			},
+ 
+ 			"tag_names": {
+-				Type:       schema.TypeSet,
+-				Optional:   true,
+-				Computed:   true,
+-				Deprecated: "Use the tags attribute instead. This attribute will be removed in a future provider release.",
+-				Elem:       &schema.Schema{Type: schema.TypeString},
++				Type:     schema.TypeSet,
++				Optional: true,
++				Computed: true,
++				Elem:     &schema.Schema{Type: schema.TypeString},
+ 			},
+ 
+ 			"terraform_version": {
+diff --git a/internal/provider/data_source_workspace_ids.go b/internal/provider/data_source_workspace_ids.go
+index 65847be3..aba0787a 100644
+--- a/internal/provider/data_source_workspace_ids.go
++++ b/internal/provider/data_source_workspace_ids.go
+@@ -30,10 +30,9 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
+ 			},
+ 
+ 			"tag_names": {
+-				Type:       schema.TypeList,
+-				Elem:       &schema.Schema{Type: schema.TypeString},
+-				Deprecated: "Use the tag_filters attribute to search by tags. This attribute will be removed in a future provider release.",
+-				Optional:   true,
++				Type:     schema.TypeList,
++				Elem:     &schema.Schema{Type: schema.TypeString},
++				Optional: true,
+ 			},
+ 
+ 			"exclude_tags": {
+diff --git a/internal/provider/resource_tfe_workspace.go b/internal/provider/resource_tfe_workspace.go
+index 48c722b3..11ba8786 100644
+--- a/internal/provider/resource_tfe_workspace.go
++++ b/internal/provider/resource_tfe_workspace.go
+@@ -236,17 +236,15 @@ func resourceTFEWorkspace() *schema.Resource {
+ 			},
+ 
+ 			"tag_names": {
+-				Type:       schema.TypeSet,
+-				Optional:   true,
+-				Computed:   true,
+-				Elem:       &schema.Schema{Type: schema.TypeString},
+-				Deprecated: "Use the tags attribute to manage tags. This attribute will be removed in a future release of the provider.",
++				Type:     schema.TypeSet,
++				Optional: true,
++				Computed: true,
++				Elem:     &schema.Schema{Type: schema.TypeString},
+ 			},
+ 
+ 			"ignore_additional_tag_names": {
+-				Type:       schema.TypeBool,
+-				Optional:   true,
+-				Deprecated: "Use the ignore_additional_tags attribute to ignore tags added outside of configuration. This attribute will be removed in a future release of the provider.",
++				Type:     schema.TypeBool,
++				Optional: true,
+ 			},
+ 
+ 			"tags": {
+diff --git a/website/docs/cdktf/csharp/r/workspace.html.markdown b/website/docs/cdktf/csharp/r/workspace.html.markdown
+index 23ed9a75..47ddc38d 100644
+--- a/website/docs/cdktf/csharp/r/workspace.html.markdown
++++ b/website/docs/cdktf/csharp/r/workspace.html.markdown
+@@ -182,4 +182,4 @@ terraform import tfe_workspace.test ws-CH5in3chf8RJjrVd
+ terraform import tfe_workspace.test my-org-name/my-wkspace-name
+ ```
+ 
+-<!-- cache-key: cdktf-0.17.0-pre.15 input-4b1344d6931127aac5b21f2c92904baad7e55cce5d725e27e7c534c19ba0af5f -->
+\ No newline at end of file
++<!-- cache-key: cdktf-0.17.0-pre.15 input-4b1344d6931127aac5b21f2c92904baad7e55cce5d725e27e7c534c19ba0af5f -->
+diff --git a/website/docs/d/workspace.html.markdown b/website/docs/d/workspace.html.markdown
+index 9e60e76a..2ededbc8 100644
+--- a/website/docs/d/workspace.html.markdown
++++ b/website/docs/d/workspace.html.markdown
+@@ -57,7 +57,7 @@ In addition to all arguments above, the following attributes are exported:
+ * `ssh_key_id` - The ID of an SSH key assigned to the workspace.
+ * `structured_run_output_enabled` - Indicates whether runs in this workspace use the enhanced apply UI.
+ * `effective_tags` - A map of key-value tags associated with the workspace, including any inherited tags from the parent project.
+-* `tag_names` - **Deprecated** The names of tags added to this workspace.
++* `tag_names` - The names of tags added to this workspace.
+ * `terraform_version` - The version (or version constraint) of Terraform used for this workspace.
+ * `trigger_prefixes` - List of trigger prefixes that describe the paths HCP Terraform monitors for changes, in addition to the working directory. Trigger prefixes are always appended to the root directory of the repository.
+   HCP Terraform or Terraform Enterprise will start a run when files are changed in any directory path matching the provided set of prefixes.
+diff --git a/website/docs/r/workspace.html.markdown b/website/docs/r/workspace.html.markdown
+index fa45e979..76c62998 100644
+--- a/website/docs/r/workspace.html.markdown
++++ b/website/docs/r/workspace.html.markdown
+@@ -119,8 +119,8 @@ The following arguments are supported:
+   Defaults to `true`. Setting this to `false` ensures that all runs in this
+   workspace will display their output as text logs.
+ * `ssh_key_id` - (Optional) The ID of an SSH key to assign to the workspace.
+-* `tag_names` - (Optional) **Deprecated** A list of tag names for this workspace. Note that tags must only contain lowercase letters, numbers, colons, or hyphens.
+-* `ignore_additional_tag_names` - (Optional) **Deprecated** Explicitly ignores `tag_names`
++* `tag_names` - (Optional) A list of tag names for this workspace. Note that tags must only contain lowercase letters, numbers, colons, or hyphens.
++* `ignore_additional_tag_names` - (Optional) Explicitly ignores `tag_names`
+ _not_ defined by config so they will not be overwritten by the configured
+ tags. This creates exceptional behavior in terraform with respect
+ to `tag_names` and is not recommended. This value must be applied before it

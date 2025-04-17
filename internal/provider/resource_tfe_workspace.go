@@ -236,17 +236,15 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"tag_names": {
-				Type:       schema.TypeSet,
-				Optional:   true,
-				Computed:   true,
-				Elem:       &schema.Schema{Type: schema.TypeString},
-				Deprecated: "Use the tags attribute to manage tags. This attribute will be removed in a future release of the provider.",
+				Type:     schema.TypeSet,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
 			"ignore_additional_tag_names": {
-				Type:       schema.TypeBool,
-				Optional:   true,
-				Deprecated: "Use the ignore_additional_tags attribute to ignore tags added outside of configuration. This attribute will be removed in a future release of the provider.",
+				Type:     schema.TypeBool,
+				Optional: true,
 			},
 
 			"tags": {

@@ -157,11 +157,10 @@ func dataSourceTFEWorkspace() *schema.Resource {
 			},
 
 			"tag_names": {
-				Type:       schema.TypeSet,
-				Optional:   true,
-				Computed:   true,
-				Deprecated: "Use the tags attribute instead. This attribute will be removed in a future provider release.",
-				Elem:       &schema.Schema{Type: schema.TypeString},
+				Type:     schema.TypeSet,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
 			"terraform_version": {

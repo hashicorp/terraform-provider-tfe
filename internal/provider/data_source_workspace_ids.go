@@ -30,10 +30,9 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 			},
 
 			"tag_names": {
-				Type:       schema.TypeList,
-				Elem:       &schema.Schema{Type: schema.TypeString},
-				Deprecated: "Use the tag_filters attribute to search by tags. This attribute will be removed in a future provider release.",
-				Optional:   true,
+				Type:     schema.TypeList,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Optional: true,
 			},
 
 			"exclude_tags": {

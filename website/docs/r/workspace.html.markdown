@@ -119,8 +119,8 @@ The following arguments are supported:
   Defaults to `true`. Setting this to `false` ensures that all runs in this
   workspace will display their output as text logs.
 * `ssh_key_id` - (Optional) The ID of an SSH key to assign to the workspace.
-* `tag_names` - (Optional) **Deprecated** A list of tag names for this workspace. Note that tags must only contain lowercase letters, numbers, colons, or hyphens.
-* `ignore_additional_tag_names` - (Optional) **Deprecated** Explicitly ignores `tag_names`
+* `tag_names` - (Optional) A list of tag names for this workspace. Note that tags must only contain lowercase letters, numbers, colons, or hyphens.
+* `ignore_additional_tag_names` - (Optional) Explicitly ignores `tag_names`
 _not_ defined by config so they will not be overwritten by the configured
 tags. This creates exceptional behavior in terraform with respect
 to `tag_names` and is not recommended. This value must be applied before it

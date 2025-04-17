@@ -1,9 +1,5 @@
 ## Unreleased
 
-DEPRECATIONS:
-* `r/tfe_workspace`: `tag_names` and `ignore_additional_tag_names` have been deprecated in favor of `tags` and `ignore_additional_tags` which manage key-value tags for a workspace.
-* `d/tfe_workspace_ids`: `tag_names` has been deprecated in favor of `tag_filters` to query for workspaces by key-value tags.
-
 FEATURES:
 
 **Note**: New tag attributes are only available in HCP Terraform and Terraform Enterprise releases `v202504-1` or later
