@@ -23,6 +23,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
 )
 
 var workspaceIDRegexp = regexp.MustCompile("^ws-[a-zA-Z0-9]{16}$")
@@ -575,25 +576,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	// changes on this attribute.
 	d.Set("effective_tags", map[string]interface{}{})
 
-	tagBindings := []*tfe.EffectiveTagBinding{}
-	effectiveBindings := make(map[string]interface{})
-	for _, binding := range workspace.EffectiveTagBindings {
-		effectiveBindings[binding.Key] = binding.Value
-		// We can deduce if this effective tag binding is a direct tag binding
-		// on the workspace if it does not have the inherited-from link
-		if binding.Links == nil {
-			tagBindings = append(tagBindings, binding)
-		}
-	}
-
-	tags := make(map[string]interface{})
-	configBindings := d.Get("tags").(map[string]interface{})
-	for _, binding := range tagBindings {
-		_, ok := configBindings[binding.Key]
-		if ok || !d.Get("ignore_additional_tags").(bool) {
-			tags[binding.Key] = binding.Value
-		}
-	}
+	tagInfo := helpers.NewTagInfo(d.Get("tags").(map[string]interface{}), workspace.EffectiveTagBindings, d.Get("ignore_additional_tags").(bool))
 
 	// Update the config.
 	d.Set("name", workspace.Name)
@@ -609,13 +592,13 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
 	d.Set("operations", workspace.Operations)
 	d.Set("execution_mode", workspace.ExecutionMode)
-	d.Set("effective_tags", effectiveBindings)
+	d.Set("effective_tags", tagInfo.EffectiveTags)
 	d.Set("queue_all_runs", workspace.QueueAllRuns)
 	d.Set("source_name", workspace.SourceName)
 	d.Set("source_url", workspace.SourceURL)
 	d.Set("speculative_enabled", workspace.SpeculativeEnabled)
 	d.Set("structured_run_output_enabled", workspace.StructuredRunOutputEnabled)
-	d.Set("tags", tags)
+	d.Set("tags", tagInfo.SelfTags)
 	d.Set("terraform_version", workspace.TerraformVersion)
 	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
 	d.Set("trigger_patterns", workspace.TriggerPatterns)

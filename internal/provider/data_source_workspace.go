@@ -16,6 +16,7 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
 )
 
 func dataSourceTFEWorkspace() *schema.Resource {
@@ -347,11 +348,8 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 		d.Set("ssh_key_id", workspace.SSHKey.ID)
 	}
 
-	effectiveTagBindings := make(map[string]interface{})
-	for _, binding := range workspace.EffectiveTagBindings {
-		effectiveTagBindings[binding.Key] = binding.Value
-	}
-	d.Set("effective_tags", effectiveTagBindings)
+	tagInfo := helpers.NewTagInfo(nil, workspace.EffectiveTagBindings, false)
+	d.Set("effective_tags", tagInfo.EffectiveTags)
 
 	// Update the tag names
 	var tagNames []interface{}
