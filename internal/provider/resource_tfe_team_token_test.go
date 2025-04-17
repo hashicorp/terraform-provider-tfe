@@ -214,6 +214,40 @@ func TestAccTFETeamToken_import(t *testing.T) {
 	})
 }
 
+func TestAccTFETeamToken_importByTokenID(t *testing.T) {
+	skipUnlessBeta(t)
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamTokenDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeamToken_withMultipleTokens(rInt),
+			},
+			{
+				ResourceName:            "tfe_team_token.multi_token_1",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"token"},
+			},
+			{
+				ResourceName:            "tfe_team_token.multi_token_2",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"token"},
+			},
+			{
+				ResourceName:            "tfe_team_token.legacy",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"token"},
+			},
+		},
+	})
+}
+
 func testAccCheckTFETeamTokenExists(
 	n string, token *tfe.TeamToken) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
