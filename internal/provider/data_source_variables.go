@@ -1,131 +1,244 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
-// NOTE: This is a legacy resource and should be migrated to the Plugin
-// Framework if substantial modifications are planned. See
-// docs/new-resources.md if planning to use this code as boilerplate for
-// a new resource.
-
 package provider
 
 import (
+	"context"
 	"fmt"
-	"log"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-func dataSourceTFEWorkspaceVariables() *schema.Resource {
-	varSchema := map[string]*schema.Schema{
-		"category": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-		"hcl": {
-			Type:     schema.TypeBool,
-			Computed: true,
-		},
-		"id": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-		"name": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-		"sensitive": {
-			Type:     schema.TypeBool,
-			Computed: true,
-		},
-		"value": {
-			Type:      schema.TypeString,
-			Computed:  true,
-			Sensitive: true,
-		},
-	}
-	return &schema.Resource{
-		Read: dataSourceVariableRead,
+var (
+	_ datasource.DataSource              = &dataSourceTFEVariables{}
+	_ datasource.DataSourceWithConfigure = &dataSourceTFEVariables{}
 
-		Schema: map[string]*schema.Schema{
-			"env": {
-				Type:     schema.TypeList,
+	variableAttrTypes = map[string]attr.Type{
+		"category":  types.StringType,
+		"hcl":       types.BoolType,
+		"id":        types.StringType,
+		"name":      types.StringType,
+		"sensitive": types.BoolType,
+		"value":     types.StringType,
+	}
+
+	variableType = types.ObjectType{AttrTypes: variableAttrTypes}
+)
+
+// NewVariablesDataSource is a helper function to simplify the provider
+// implementation.
+func NewVariablesDataSource() datasource.DataSource {
+	return &dataSourceTFEVariables{}
+}
+
+// dataSourceTFEVariables is the data source implementation.
+type dataSourceTFEVariables struct {
+	config ConfiguredClient
+}
+
+// modelFromVariables builds a modelVariables struct from a tfe.Variable value.
+func modelFromVariables(
+	workspaceID types.String,
+	variableSetID types.String,
+	env []any,
+	terraform []any,
+	variables []any,
+) modelVariables {
+	var model modelVariables
+
+	// Set workspace or variable set ID
+	if !workspaceID.IsNull() {
+		model.ID = types.StringValue(fmt.Sprintf("variables/%s", workspaceID.ValueString()))
+		model.WorkspaceID = workspaceID
+	} else if !variableSetID.IsNull() {
+		model.ID = types.StringValue(fmt.Sprintf("variables/%s", variableSetID.ValueString()))
+		model.VariableSetID = variableSetID
+	}
+
+	model.Env = varListFromVariables(env)
+	model.Terraform = varListFromVariables(terraform)
+	model.Variables = varListFromVariables(variables)
+
+	return model
+}
+
+func objectValueFromVariable(v tfe.Variable) types.Object {
+	return types.ObjectValueMust(
+		variableAttrTypes,
+		map[string]attr.Value{
+			"category":  types.StringValue(string(v.Category)),
+			"hcl":       types.BoolValue(v.HCL),
+			"id":        types.StringValue(v.ID),
+			"name":      types.StringValue(v.Key),
+			"sensitive": types.BoolValue(v.Sensitive),
+			"value":     types.StringValue(v.Value),
+		},
+	)
+}
+
+func objectValueFromVariableSetVariable(v tfe.VariableSetVariable) types.Object {
+	return types.ObjectValueMust(
+		variableAttrTypes,
+		map[string]attr.Value{
+			"category":  types.StringValue(string(v.Category)),
+			"hcl":       types.BoolValue(v.HCL),
+			"id":        types.StringValue(v.ID),
+			"name":      types.StringValue(v.Key),
+			"sensitive": types.BoolValue(v.Sensitive),
+			"value":     types.StringValue(v.Value),
+		},
+	)
+}
+
+func varListFromVariables(variables []any) types.List {
+	varSlice := make([]attr.Value, 0, len(variables))
+
+	var objVar types.Object
+	for _, variable := range variables {
+		switch v := variable.(type) {
+		case *tfe.Variable:
+			objVar = objectValueFromVariable(*v)
+
+		case *tfe.VariableSetVariable:
+			objVar = objectValueFromVariableSetVariable(*v)
+
+		default: // should not happen
+			panic(fmt.Sprintf("unexpected type %T reading variable", variable))
+		}
+
+		varSlice = append(varSlice, objVar)
+	}
+
+	varList := types.ListValueMust(variableType, varSlice)
+
+	return varList
+}
+
+// modelVariables maps the overall data source schema data.
+type modelVariables struct {
+	ID            types.String `tfsdk:"id"`
+	WorkspaceID   types.String `tfsdk:"workspace_id"`
+	VariableSetID types.String `tfsdk:"variable_set_id"`
+	Env           types.List   `tfsdk:"env"`
+	Terraform     types.List   `tfsdk:"terraform"`
+	Variables     types.List   `tfsdk:"variables"`
+}
+
+// Configure implements datasource.DataSourceWithConfigure
+func (d *dataSourceTFEVariables) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
+
+	client, ok := req.ProviderData.(ConfiguredClient)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Data Source Configure Type",
+			fmt.Sprintf("Expected tfe.ConfiguredClient, got %T. This is a bug in the tfe provider, so please report it on GitHub.", req.ProviderData),
+		)
+
+		return
+	}
+	d.config = client
+}
+
+// Metadata implements datasource.DataSourceWithMetadata.
+func (d *dataSourceTFEVariables) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_variables"
+}
+
+func (d *dataSourceTFEVariables) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: "This data source can be used to retrieve all variables in a workspace or variable set.",
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed: true,
-				Elem: &schema.Resource{
-					Schema: varSchema,
+			},
+
+			"workspace_id": schema.StringAttribute{
+				Optional: true,
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRoot("variable_set_id")),
 				},
 			},
-			"terraform": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem: &schema.Resource{
-					Schema: varSchema,
-				},
+
+			"variable_set_id": schema.StringAttribute{
+				Optional: true,
 			},
-			"variables": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem: &schema.Resource{
-					Schema: varSchema,
-				},
+
+			"env": schema.ListAttribute{
+				Computed:    true,
+				ElementType: variableType,
 			},
-			"workspace_id": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				ExactlyOneOf: []string{"workspace_id", "variable_set_id"},
+
+			"terraform": schema.ListAttribute{
+				Computed:    true,
+				ElementType: variableType,
 			},
-			"variable_set_id": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				ExactlyOneOf: []string{"workspace_id", "variable_set_id"},
+
+			"variables": schema.ListAttribute{
+				Computed:    true,
+				ElementType: variableType,
 			},
 		},
 	}
 }
 
-func dataSourceVariableRead(d *schema.ResourceData, meta interface{}) error {
-	// Switch to variable set variable logic
-	_, variableSetIDProvided := d.GetOk("variable_set_id")
-	if variableSetIDProvided {
-		return dataSourceVariableSetVariableRead(d, meta)
+// Read implements datasource.DataSource.
+func (d *dataSourceTFEVariables) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	// Load the config into the model.
+	var config modelVariables
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	config := meta.(ConfiguredClient)
+	if !config.WorkspaceID.IsNull() {
+		d.readFromWorkspace(ctx, config, resp)
+	} else if !config.VariableSetID.IsNull() {
+		d.readFromVariableSet(ctx, config, resp)
+	}
+}
 
-	// Get the name and organization.
-	workspaceID := d.Get("workspace_id").(string)
+func (d *dataSourceTFEVariables) readFromWorkspace(ctx context.Context, config modelVariables, resp *datasource.ReadResponse) {
+	var (
+		options *tfe.VariableListOptions
 
-	log.Printf("[DEBUG] Read configuration of workspace: %s", workspaceID)
+		env       []any
+		terraform []any
+		variables []any
+	)
 
-	totalEnvVariables := make([]interface{}, 0)
-	totalTerraformVariables := make([]interface{}, 0)
+	workspaceID := config.WorkspaceID.ValueString()
 
-	options := &tfe.VariableListOptions{}
+	tflog.Debug(ctx, fmt.Sprintf("Reading workspace: %s", workspaceID))
 
 	for {
-		variableList, err := config.Client.Variables.List(ctx, workspaceID, options)
+		variableList, err := d.config.Client.Variables.List(ctx, workspaceID, options)
 		if err != nil {
-			return fmt.Errorf("Error retrieving variable list: %w", err)
-		}
-		terraformVars := make([]interface{}, 0)
-		envVars := make([]interface{}, 0)
-		for _, variable := range variableList.Items {
-			result := make(map[string]interface{})
-			result["id"] = variable.ID
-			result["category"] = variable.Category
-			result["hcl"] = variable.HCL
-			result["name"] = variable.Key
-			result["sensitive"] = variable.Sensitive
-			result["value"] = variable.Value
-			if variable.Category == "terraform" {
-				terraformVars = append(terraformVars, result)
-			} else if variable.Category == "env" {
-				envVars = append(envVars, result)
-			}
+			resp.Diagnostics.AddError(fmt.Sprintf("Error retrieving variables for workspace %s:", workspaceID), err.Error())
+			return
 		}
 
-		totalEnvVariables = append(totalEnvVariables, envVars...)
-		totalTerraformVariables = append(totalTerraformVariables, terraformVars...)
+		for _, variable := range variableList.Items {
+			variables = append(variables, variable)
+
+			switch variable.Category {
+			case "env":
+				env = append(env, variable)
+			case "terraform":
+				terraform = append(terraform, variable)
+			}
+		}
 
 		// Exit the loop when we've seen all pages.
 		if variableList.CurrentPage >= variableList.TotalPages {
@@ -136,50 +249,42 @@ func dataSourceVariableRead(d *schema.ResourceData, meta interface{}) error {
 		options.PageNumber = variableList.NextPage
 	}
 
-	d.SetId(fmt.Sprintf("variables/%v", workspaceID))
-	d.Set("variables", append(totalTerraformVariables, totalEnvVariables...))
-	d.Set("terraform", totalTerraformVariables)
-	d.Set("env", totalEnvVariables)
-	return nil
+	model := modelFromVariables(config.WorkspaceID, config.VariableSetID, env, terraform, variables)
+
+	// Update state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &model)...)
 }
 
-func dataSourceVariableSetVariableRead(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(ConfiguredClient)
+func (d *dataSourceTFEVariables) readFromVariableSet(ctx context.Context, config modelVariables, resp *datasource.ReadResponse) {
+	var (
+		options *tfe.VariableSetVariableListOptions
 
-	// Get the id.
-	variableSetID := d.Get("variable_set_id").(string)
+		env       []any
+		terraform []any
+		variables []any
+	)
 
-	log.Printf("[DEBUG] Read configuration of variable set: %s", variableSetID)
+	variableSetID := config.VariableSetID.ValueString()
 
-	totalEnvVariables := make([]interface{}, 0)
-	totalTerraformVariables := make([]interface{}, 0)
-
-	options := tfe.VariableSetVariableListOptions{}
+	tflog.Debug(ctx, fmt.Sprintf("Reading variable set: %s", variableSetID))
 
 	for {
-		variableList, err := config.Client.VariableSetVariables.List(ctx, variableSetID, &options)
-		if err != nil {
-			return fmt.Errorf("Error retrieving variable list: %w", err)
-		}
-		terraformVars := make([]interface{}, 0)
-		envVars := make([]interface{}, 0)
-		for _, variable := range variableList.Items {
-			result := make(map[string]interface{})
-			result["id"] = variable.ID
-			result["category"] = variable.Category
-			result["hcl"] = variable.HCL
-			result["name"] = variable.Key
-			result["sensitive"] = variable.Sensitive
-			result["value"] = variable.Value
-			if variable.Category == "terraform" {
-				terraformVars = append(terraformVars, result)
-			} else if variable.Category == "env" {
-				envVars = append(envVars, result)
-			}
+		variableList, err := d.config.Client.VariableSetVariables.List(ctx, variableSetID, options)
+		if err != nil || variableList == nil {
+			resp.Diagnostics.AddError(fmt.Sprintf("Error retrieving variables for variable set %s:", variableSetID), err.Error())
+			return
 		}
 
-		totalEnvVariables = append(totalEnvVariables, envVars...)
-		totalTerraformVariables = append(totalTerraformVariables, terraformVars...)
+		for _, variable := range variableList.Items {
+			variables = append(variables, variable)
+
+			switch variable.Category {
+			case "env":
+				env = append(env, variable)
+			case "terraform":
+				terraform = append(terraform, variable)
+			}
+		}
 
 		// Exit the loop when we've seen all pages.
 		if variableList.CurrentPage >= variableList.TotalPages {
@@ -190,9 +295,8 @@ func dataSourceVariableSetVariableRead(d *schema.ResourceData, meta interface{})
 		options.PageNumber = variableList.NextPage
 	}
 
-	d.SetId(fmt.Sprintf("variables/%v", variableSetID))
-	d.Set("variables", append(totalTerraformVariables, totalEnvVariables...))
-	d.Set("terraform", totalTerraformVariables)
-	d.Set("env", totalEnvVariables)
-	return nil
+	model := modelFromVariables(config.WorkspaceID, config.VariableSetID, env, terraform, variables)
+
+	// Update state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &model)...)
 }
