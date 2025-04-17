@@ -34,13 +34,13 @@ data "tfe_workspace_ids" "dev_env_tags_only" {
 data "tfe_workspace_ids" "include_and_exclude" {
   organization = "my-org-name"
   tag_filters {
-      include = {
-          region = "us-east-1"
-      }
+    include = {
+      region = "us-east-1"
+    }
 
-      exclude = {
-        team = "prodsec"
-      }
+    exclude = {
+      team = "prodsec"
+    }
   }
 }
 
