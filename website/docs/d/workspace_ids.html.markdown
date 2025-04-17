@@ -25,9 +25,9 @@ data "tfe_workspace_ids" "all" {
 data "tfe_workspace_ids" "dev_env_tags_only" {
   organization = "my-org-name"
   tag_filters {
-      include = {
-        environment = "dev"
-      }
+    include = {
+      environment = "dev"
+    }
   }
 }
 
