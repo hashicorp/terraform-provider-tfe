@@ -47,9 +47,9 @@ data "tfe_workspace_ids" "include_and_exclude" {
 data "tfe_workspace_ids" "exclude_all_matching_key" {
   organization = "my-org-name"
   tag_filters {
-      exclude = {
-        bad_key = "*"
-      }
+    exclude = {
+      bad_key = "*"
+    }
   }
 }
 
