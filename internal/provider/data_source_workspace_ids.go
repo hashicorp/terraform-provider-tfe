@@ -9,6 +9,7 @@
 package provider
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -25,7 +26,7 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 				Type:         schema.TypeList,
 				Elem:         &schema.Schema{Type: schema.TypeString},
 				Optional:     true,
-				AtLeastOneOf: []string{"names", "tag_names"},
+				AtLeastOneOf: []string{"tag_filters", "names", "tag_names"},
 			},
 
 			"tag_names": {
@@ -38,6 +39,27 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 				Type:     schema.TypeSet,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Optional: true,
+			},
+
+			"tag_filters": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MinItems: 1,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"include": {
+							Type:     schema.TypeMap,
+							Optional: true,
+							Elem:     &schema.Schema{Type: schema.TypeString},
+						},
+						"exclude": {
+							Type:     schema.TypeMap,
+							Optional: true,
+							Elem:     &schema.Schema{Type: schema.TypeString},
+						},
+					},
+				},
 			},
 
 			"organization": {
@@ -148,10 +170,42 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 		options.Tags = tagSearch
 	}
 
-	hasOnlyTags := len(tagSearchParts) > 0 && len(names) == 0
+	excludeTagBindings := make(map[string]string)
+	if tf, ok := d.GetOk("tag_filters"); ok {
+		tagFilters := tf.([]interface{})[0].(map[string]interface{})
+
+		options.Include = []tfe.WSIncludeOpt{tfe.WSEffectiveTagBindings}
+
+		if include, ok := tagFilters["include"].(map[string]interface{}); ok {
+			for key, val := range include {
+				// Append the includes to the query to filter the response
+				options.TagBindings = append(options.TagBindings, &tfe.TagBinding{
+					Key:   key,
+					Value: val.(string),
+				})
+			}
+		}
+
+		if exclude, ok := tagFilters["exclude"].(map[string]interface{}); ok {
+			for key, val := range exclude {
+				excludeTagBindings[key] = val.(string)
+			}
+		}
+	}
+
+	hasLegacyTags := len(tagSearchParts) > 0
+	hasTagBindings := len(options.TagBindings) > 0 || len(excludeTagBindings) > 0
+	hasOnlyTags := (hasLegacyTags || hasTagBindings) && len(names) == 0
 
 	for {
 		wl, err := config.Client.Workspaces.List(ctx, organization, options)
+		if err != nil && errors.Is(err, tfe.ErrInvalidIncludeValue) {
+			options.Include = []tfe.WSIncludeOpt{}
+			wl, err = config.Client.Workspaces.List(ctx, organization, options)
+			if err != nil {
+				return fmt.Errorf("Error retrieving workspaces: %w", err)
+			}
+		}
 		if err != nil {
 			return fmt.Errorf("Error retrieving workspaces: %w", err)
 		}
@@ -165,6 +219,18 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 					break
 				}
 			}
+
+			for _, binding := range w.EffectiveTagBindings {
+				val, ok := excludeTagBindings[binding.Key]
+				if !ok {
+					continue
+				}
+
+				// We exclude the tag binding if the values match exactly or if the
+				// excluded value is set to "*"
+				hasExcludedTag = val == binding.Value || val == "*"
+			}
+
 			if (hasOnlyTags || includedByName(names, w.Name)) && !hasExcludedTag {
 				fullNames[w.Name] = organization + "/" + w.Name
 				ids[w.Name] = w.ID

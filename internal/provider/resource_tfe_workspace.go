@@ -23,6 +23,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
 )
 
 var workspaceIDRegexp = regexp.MustCompile("^ws-[a-zA-Z0-9]{16}$")
@@ -246,6 +247,27 @@ func resourceTFEWorkspace() *schema.Resource {
 				Optional: true,
 			},
 
+			"tags": {
+				Type:     schema.TypeMap,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
+
+			"ignore_additional_tags": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+
+			"effective_tags": {
+				Type:     schema.TypeMap,
+				Computed: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
+
 			"terraform_version": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -415,6 +437,15 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		options.SourceName = tfe.String(v.(string))
 	}
 
+	if tagBindings, ok := d.Get("tags").(map[string]interface{}); ok {
+		for key, val := range tagBindings {
+			options.TagBindings = append(options.TagBindings, &tfe.TagBinding{
+				Key:   key,
+				Value: val.(string),
+			})
+		}
+	}
+
 	// Process all configured options.
 	if tfVersion, ok := d.GetOk("terraform_version"); ok {
 		options.TerraformVersion = tfe.String(tfVersion.(string))
@@ -513,15 +544,35 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 
 	id := d.Id()
 	log.Printf("[DEBUG] Read configuration of workspace: %s", id)
-	workspace, err := config.Client.Workspaces.ReadByID(ctx, id)
-	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+	workspace, err := config.Client.Workspaces.ReadByIDWithOptions(ctx, id, &tfe.WorkspaceReadOptions{
+		Include: []tfe.WSIncludeOpt{tfe.WSEffectiveTagBindings},
+	})
+	if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
+		log.Printf("[DEBUG] Workspace %s no longer exists", id)
+		d.SetId("")
+		return nil
+	}
+	if err != nil && errors.Is(err, tfe.ErrInvalidIncludeValue) {
+		log.Printf("[DEBUG] Workspace %s read failed due to unsupported Include; retrying without it", id)
+		workspace, err = config.Client.Workspaces.ReadByID(ctx, id)
+		if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
 			log.Printf("[DEBUG] Workspace %s no longer exists", id)
 			d.SetId("")
 			return nil
+		} else if err != nil {
+			return fmt.Errorf("Error reading workspace %s without include: %w", id, err)
 		}
+	}
+	if err != nil {
 		return fmt.Errorf("Error reading configuration of workspace %s: %w", id, err)
 	}
+
+	// Given this computed attribute will be null when tag bindings are not
+	// supported, directly set to an empty map to avoid continuous planned
+	// changes on this attribute.
+	d.Set("effective_tags", map[string]interface{}{})
+
+	tagInfo := helpers.NewTagInfo(d.Get("tags").(map[string]interface{}), workspace.EffectiveTagBindings, d.Get("ignore_additional_tags").(bool))
 
 	// Update the config.
 	d.Set("name", workspace.Name)
@@ -537,11 +588,13 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
 	d.Set("operations", workspace.Operations)
 	d.Set("execution_mode", workspace.ExecutionMode)
+	d.Set("effective_tags", tagInfo.EffectiveTags)
 	d.Set("queue_all_runs", workspace.QueueAllRuns)
 	d.Set("source_name", workspace.SourceName)
 	d.Set("source_url", workspace.SourceURL)
 	d.Set("speculative_enabled", workspace.SpeculativeEnabled)
 	d.Set("structured_run_output_enabled", workspace.StructuredRunOutputEnabled)
+	d.Set("tags", tagInfo.SelfTags)
 	d.Set("terraform_version", workspace.TerraformVersion)
 	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
 	d.Set("trigger_patterns", workspace.TriggerPatterns)
@@ -731,6 +784,24 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		if d.HasChange("operations") {
 			if v, ok := d.GetOkExists("operations"); ok {
 				options.Operations = tfe.Bool(v.(bool))
+			}
+		}
+
+		if tagBindings, ok := d.Get("tags").(map[string]interface{}); ok {
+			for key, val := range tagBindings {
+				options.TagBindings = append(options.TagBindings, &tfe.TagBinding{
+					Key:   key,
+					Value: val.(string),
+				})
+			}
+
+			// If we have no tag bindings and this a deliberate change in config
+			// directly delete the existing bindings.
+			if len(options.TagBindings) == 0 && !d.Get("ignore_additional_tags").(bool) {
+				err := config.Client.Workspaces.DeleteAllTagBindings(ctx, id)
+				if err != nil {
+					return fmt.Errorf("Error removing tag bindings from workspace %s: %w", id, err)
+				}
 			}
 		}
 
