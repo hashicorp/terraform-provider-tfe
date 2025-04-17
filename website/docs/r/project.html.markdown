@@ -37,8 +37,8 @@ resource "tfe_project" "test" {
   organization = tfe_organization.test-organization.name
   name         = "projectname"
   tags         = {
-      cost_center = "infrastructure"
-      team        = "platform"
+    cost_center = "infrastructure"
+    team        = "platform"
   }
 }
 ```
