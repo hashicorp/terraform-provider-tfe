@@ -41,6 +41,8 @@ func TestAccTFEProjectDataSource_basic(t *testing.T) {
 }
 
 func TestAccTFEProjectDataSource_tagBindings(t *testing.T) {
+	skipUnlessBeta(t)
+
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 

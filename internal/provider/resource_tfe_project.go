@@ -231,28 +231,26 @@ func (r *resourceTFEProject) Read(ctx context.Context, req resource.ReadRequest,
 	project, err := r.config.Client.Projects.ReadWithOptions(ctx, id, tfe.ProjectReadOptions{
 		Include: []tfe.ProjectIncludeOpt{tfe.ProjectEffectiveTagBindings},
 	})
-	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+	if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
+		tflog.Debug(ctx, fmt.Sprintf("Project %s no longer exists", id))
+		resp.State.RemoveResource(ctx)
+		return
+	}
+	if err != nil && errors.Is(err, tfe.ErrInvalidIncludeValue) {
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Project %s read failed due to unsupported Include; retrying without it", id))
+		project, err = r.config.Client.Projects.Read(ctx, id)
+		if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("Project %s no longer exists", id))
 			resp.State.RemoveResource(ctx)
 			return
-		}
-
-		if errors.Is(err, tfe.ErrInvalidIncludeValue) {
-			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Project %s read failed due to unsupported Include; retrying without it", id))
-			project, err = r.config.Client.Projects.Read(ctx, id)
-			if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
-				tflog.Debug(ctx, fmt.Sprintf("Project %s no longer exists", id))
-				resp.State.RemoveResource(ctx)
-				return
-			} else if err != nil {
-				resp.Diagnostics.AddError("Error reading project", err.Error())
-				return
-			}
-		} else {
+		} else if err != nil {
 			resp.Diagnostics.AddError("Error reading project", err.Error())
 			return
 		}
+	}
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading project", err.Error())
+		return
 	}
 
 	tagBindings := []*tfe.TagBinding{}

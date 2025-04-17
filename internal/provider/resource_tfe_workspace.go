@@ -549,26 +549,24 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	workspace, err := config.Client.Workspaces.ReadByIDWithOptions(ctx, id, &tfe.WorkspaceReadOptions{
 		Include: []tfe.WSIncludeOpt{tfe.WSEffectiveTagBindings},
 	})
-	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+	if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
+		log.Printf("[DEBUG] Workspace %s no longer exists", id)
+		d.SetId("")
+		return nil
+	}
+	if err != nil && errors.Is(err, tfe.ErrInvalidIncludeValue) {
+		log.Printf("[DEBUG] Workspace %s read failed due to unsupported Include; retrying without it", id)
+		workspace, err = config.Client.Workspaces.ReadByID(ctx, id)
+		if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
 			log.Printf("[DEBUG] Workspace %s no longer exists", id)
 			d.SetId("")
 			return nil
+		} else if err != nil {
+			return fmt.Errorf("Error reading workspace %s without include: %w", id, err)
 		}
-
-		if errors.Is(err, tfe.ErrInvalidIncludeValue) {
-			log.Printf("[DEBUG] Workspace %s read failed due to unsupported Include; retrying without it", id)
-			workspace, err = config.Client.Workspaces.ReadByID(ctx, id)
-			if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
-				log.Printf("[DEBUG] Workspace %s no longer exists", id)
-				d.SetId("")
-				return nil
-			} else if err != nil {
-				return fmt.Errorf("Error reading workspace %s without include: %w", id, err)
-			}
-		} else {
-			return fmt.Errorf("Error reading configuration of workspace %s: %w", id, err)
-		}
+	}
+	if err != nil {
+		return fmt.Errorf("Error reading configuration of workspace %s: %w", id, err)
 	}
 
 	// Given this computed attribute will be null when tag bindings are not

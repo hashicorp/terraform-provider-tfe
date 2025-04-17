@@ -236,6 +236,18 @@ func dataSourceTFEWorkspace() *schema.Resource {
 	}
 }
 
+func fallbackWorkspaceRead(config ConfiguredClient, organization, name string) (*tfe.Workspace, error) {
+	log.Printf("[DEBUG] Workspace %s read failed due to unsupported Include; retrying without it", name)
+	workspace, err := config.Client.Workspaces.Read(ctx, organization, name)
+	if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
+		return nil, fmt.Errorf("could not find workspace %s/%s", organization, name)
+	} else if err != nil {
+		return nil, fmt.Errorf("error reading workspace %s without include: %w", name, err)
+	}
+
+	return workspace, err
+}
+
 func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
@@ -250,22 +262,17 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	workspace, err := config.Client.Workspaces.ReadWithOptions(ctx, organization, name, &tfe.WorkspaceReadOptions{
 		Include: []tfe.WSIncludeOpt{tfe.WSEffectiveTagBindings},
 	})
+	if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
+		return fmt.Errorf("could not find workspace %s/%s", organization, name)
+	}
+	if err != nil && errors.Is(err, tfe.ErrInvalidIncludeValue) {
+		workspace, err = fallbackWorkspaceRead(config, organization, name)
+		if err != nil {
+			return err
+		}
+	}
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
-			return fmt.Errorf("could not find workspace %s/%s", organization, name)
-		}
-
-		if errors.Is(err, tfe.ErrInvalidIncludeValue) {
-			log.Printf("[DEBUG] Workspace %s read failed due to unsupported Include; retrying without it", name)
-			workspace, err = config.Client.Workspaces.Read(ctx, organization, name)
-			if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
-				return fmt.Errorf("could not find workspace %s/%s", organization, name)
-			} else if err != nil {
-				return fmt.Errorf("error reading workspace %s without include: %w", name, err)
-			}
-		} else {
-			return fmt.Errorf("Error retrieving workspace: %w", err)
-		}
+		return fmt.Errorf("Error retrieving workspace: %w", err)
 	}
 	// Update the config.
 	d.Set("allow_destroy_plan", workspace.AllowDestroyPlan)

@@ -203,7 +203,11 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 		if err != nil && errors.Is(err, tfe.ErrInvalidIncludeValue) {
 			options.Include = []tfe.WSIncludeOpt{}
 			wl, err = config.Client.Workspaces.List(ctx, organization, options)
-		} else if err != nil {
+			if err != nil {
+				return fmt.Errorf("Error retrieving workspaces: %w", err)
+			}
+		}
+		if err != nil {
 			return fmt.Errorf("Error retrieving workspaces: %w", err)
 		}
 
