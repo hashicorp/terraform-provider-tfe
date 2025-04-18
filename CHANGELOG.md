@@ -1,5 +1,7 @@
 ## Unreleased
 
+## v0.65.0
+
 FEATURES:
 
 **Note**: New tag attributes are only available in HCP Terraform and Terraform Enterprise releases `v202504-1` or later
