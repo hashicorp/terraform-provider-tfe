@@ -1,5 +1,9 @@
 ## Unreleased
 
+FEATURES:
+
+* `r/tfe_team_token`: Adds support for creating multiple team tokens for a single team by adding the `description` attribute, which must be unique per team, by @mkam [#1698](https://github.com/hashicorp/terraform-provider-tfe/pull/1698)
+
 ## v0.65.0
 
 FEATURES:
