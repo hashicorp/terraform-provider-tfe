@@ -1,5 +1,10 @@
 ## Unreleased
 
+## v0.65.1
+
+BUG FIXES:
+* `d/tfe_outputs`: fix regression after framework upgrade (#1697), by @ctrombley [#1699](https://github.com/hashicorp/terraform-provider-tfe/pull/1699)
+
 ## v0.65.0
 
 FEATURES:
