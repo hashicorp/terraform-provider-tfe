@@ -1,5 +1,12 @@
 ## Unreleased
 
+## v0.65.2
+
+BUG FIXES:
+* `r/tfe_notification_configuration`: update attribute validator to allow variable refs (#1696), by @uturunku [#1705](https://github.com/hashicorp/terraform-provider-tfe/pull/1705)
+* `r/tfe_team_token`: do not clear token from state after upgrade (#1700), by @ctrombley [#1706](https://github.com/hashicorp/terraform-provider-tfe/pull/1706)
+* `r/tfe_policy_set_parameter`: fix schema errors, by @ctrombley [#1706](https://github.com/hashicorp/terraform-provider-tfe/pull/1706)
+
 ## v0.65.1
 
 BUG FIXES:
