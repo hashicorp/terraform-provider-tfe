@@ -1401,6 +1401,7 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 }
 
 func TestAccTFEWorkspace_effectiveTags(t *testing.T) {
+	skipUnlessBeta(t)
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
