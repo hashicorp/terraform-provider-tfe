@@ -871,10 +871,14 @@ resource "tfe_workspace" "foobar" {
   organization = tfe_organization.foobar.id
 }
 
+variable "url" {
+  default = "%s"
+}
+
 resource "tfe_notification_configuration" "foobar" {
   name             = "notification_basic"
   destination_type = "generic"
-  url              = "%s"
+  url              = var.url
   workspace_id     = tfe_workspace.foobar.id
 }`, rInt, runTasksURL())
 }
