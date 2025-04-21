@@ -97,7 +97,7 @@ func (r *resourceTFEPolicySetParameter) Metadata(_ context.Context, req resource
 func (r *resourceTFEPolicySetParameter) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Creates, updates and destroys policy set parameters.",
-		Version:     1,
+		Version:     0,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "Service-generated identifier for the parameter.",
