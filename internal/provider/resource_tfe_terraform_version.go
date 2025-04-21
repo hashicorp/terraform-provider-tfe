@@ -167,14 +167,7 @@ func resourceTFETerraformVersionUpdate(d *schema.ResourceData, meta interface{})
 	}
 
 	if archs, ok := d.GetOk("archs"); ok {
-		archsSet := archs.(*schema.Set)
-		archsList := archsSet.List()
-
-		// Convert the list of interfaces to the desired type
-		for _, arch := range archsList {
-			archMap := arch.(map[string]interface{})
-			fmt.Printf("Processing arch: URL=%s, SHA=%s\n", archMap["url"].(string), archMap["sha"].(string))
-		}
+		opts.Archs = convertArchOptions(archs).([]*tfe.ToolVersionArchitecture)
 	}
 
 	log.Printf("[DEBUG] Update configuration of Terraform version: %s", d.Id())
