@@ -34,7 +34,7 @@ func (v attributeRequiredIfValueStringValidator) ValidateString(ctx context.Cont
 	}
 
 	for _, requiredValue := range v.requiredValues {
-		if attributeValue.ValueString() == requiredValue && (req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown()) {
+		if attributeValue.ValueString() == requiredValue && req.ConfigValue.IsNull() {
 			resp.Diagnostics.AddAttributeError(
 				req.Path,
 				"Missing Required Attribute",
