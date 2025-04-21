@@ -153,17 +153,17 @@ func (r *resourceTFETeamToken) Create(ctx context.Context, req resource.CreateRe
 		return
 	}
 
-	result := modelFromTFEToken(token, plan.TeamID, plan.ForceRegenerate, plan.ExpiredAt)
+	result := modelFromTFEToken(plan.TeamID, types.StringValue(token.Token), plan.ForceRegenerate, plan.ExpiredAt)
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
 }
 
-func modelFromTFEToken(token *tfe.TeamToken, teamID types.String, forceRegenerate types.Bool, expiredAt types.String) modelTFETeamToken {
+func modelFromTFEToken(teamID types.String, stateValue types.String, forceRegenerate types.Bool, expiredAt types.String) modelTFETeamToken {
 	m := modelTFETeamToken{
 		ID:              teamID,
 		TeamID:          teamID,
 		ForceRegenerate: forceRegenerate,
 		ExpiredAt:       types.StringNull(),
-		Token:           types.StringValue(token.Token),
+		Token:           stateValue,
 	}
 	if !expiredAt.IsNull() {
 		m.ExpiredAt = expiredAt
@@ -182,7 +182,7 @@ func (r *resourceTFETeamToken) Read(ctx context.Context, req resource.ReadReques
 
 	teamID := state.TeamID.ValueString()
 	tflog.Debug(ctx, fmt.Sprintf("Read the token from team: %s", teamID))
-	token, err := r.config.Client.TeamTokens.Read(ctx, teamID)
+	_, err := r.config.Client.TeamTokens.Read(ctx, teamID)
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("Token for team %s no longer exists", teamID))
@@ -195,7 +195,7 @@ func (r *resourceTFETeamToken) Read(ctx context.Context, req resource.ReadReques
 		)
 		return
 	}
-	result := modelFromTFEToken(token, state.TeamID, state.ForceRegenerate, state.ExpiredAt)
+	result := modelFromTFEToken(state.TeamID, state.Token, state.ForceRegenerate, state.ExpiredAt)
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
 }
 
