@@ -41,7 +41,7 @@ func resourceTFETerraformVersion() *schema.Resource {
 			"sha": {
 				Type:     schema.TypeString,
 				Optional: true,
-				Default: nil,
+				Default:  nil,
 			},
 			"official": {
 				Type:     schema.TypeBool,
@@ -69,7 +69,7 @@ func resourceTFETerraformVersion() *schema.Resource {
 				Default:  nil,
 			},
 			"archs": {
-				Type: schema.TypeList,
+				Type:     schema.TypeList,
 				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -111,7 +111,7 @@ func resourceTFETerraformVersionCreate(d *schema.ResourceData, meta interface{})
 	}
 
 	if archs, ok := d.GetOk("archs"); ok {
-		opts.Archs = buildArchOptions(archs.([]interface{}))
+		opts.Archs = convertArchOptions(archs).([]*tfe.ToolVersionArchitecture)
 	}
 
 	log.Printf("[DEBUG] Create new Terraform version: %s", *opts.Version)
@@ -147,6 +147,7 @@ func resourceTFETerraformVersionRead(d *schema.ResourceData, meta interface{}) e
 	d.Set("beta", v.Beta)
 	d.Set("deprecated", v.Deprecated)
 	d.Set("deprecated_reason", v.DeprecatedReason)
+	d.Set("archs", convertArchOptions(v.Archs))
 
 	return nil
 }
@@ -163,6 +164,17 @@ func resourceTFETerraformVersionUpdate(d *schema.ResourceData, meta interface{})
 		Beta:             tfe.Bool(d.Get("beta").(bool)),
 		Deprecated:       tfe.Bool(d.Get("deprecated").(bool)),
 		DeprecatedReason: tfe.String(d.Get("deprecated_reason").(string)),
+	}
+
+	if archs, ok := d.GetOk("archs"); ok {
+		archsSet := archs.(*schema.Set)
+		archsList := archsSet.List()
+
+		// Convert the list of interfaces to the desired type
+		for _, arch := range archsList {
+			archMap := arch.(map[string]interface{})
+			fmt.Printf("Processing arch: URL=%s, SHA=%s\n", archMap["url"].(string), archMap["sha"].(string))
+		}
 	}
 
 	log.Printf("[DEBUG] Update configuration of Terraform version: %s", d.Id())
@@ -209,16 +221,43 @@ func resourceTFETerraformVersionImporter(ctx context.Context, d *schema.Resource
 	return []*schema.ResourceData{d}, nil
 }
 
-func buildArchOptions(archs []interface{}) []*tfe.ToolVersionArchitecture {
-    var archList []*tfe.ToolVersionArchitecture
-    for _, arch := range archs {
-        archMap := arch.(map[string]interface{})
-        archList = append(archList, &tfe.ToolVersionArchitecture{
-            OS:   archMap["os"].(string),
-            Arch: archMap["arch"].(string),
-            URL:  archMap["url"].(string),
-            Sha:  archMap["sha"].(string),
-        })
-    }
-    return archList
+// Terraform defines archs as a interface{}
+// but the tfe client defines it as []*tfe.ToolVersionArchitecture
+func convertArchOptions(input interface{}) interface{} {
+	if input == nil {
+		return nil
+	}
+
+	switch v := input.(type) {
+	case []*tfe.ToolVersionArchitecture:
+		// Convert from []*tfe.ToolVersionArchitecture to []interface{}
+		var archList []interface{}
+		for _, arch := range v {
+			archList = append(archList, map[string]interface{}{
+				"url":  arch.URL,
+				"sha":  arch.Sha,
+				"os":   arch.OS,
+				"arch": arch.Arch,
+			})
+		}
+		return archList
+
+	case []interface{}:
+		// Convert from []interface{} to []*tfe.ToolVersionArchitecture
+		var archList []*tfe.ToolVersionArchitecture
+		for _, arch := range v {
+			archMap := arch.(map[string]interface{})
+			archList = append(archList, &tfe.ToolVersionArchitecture{
+				URL:  archMap["url"].(string),
+				Sha:  archMap["sha"].(string),
+				OS:   archMap["os"].(string),
+				Arch: archMap["arch"].(string),
+			})
+		}
+		return archList
+
+	default:
+		// Handle unexpected types
+		return fmt.Errorf("unexpected type for convertArchOptions: %T", input)
+	}
 }
