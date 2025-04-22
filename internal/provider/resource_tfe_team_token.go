@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -175,20 +176,27 @@ func (r *resourceTFETeamToken) Create(ctx context.Context, req resource.CreateRe
 		return
 	}
 
-	result := modelFromTFEToken(plan.TeamID, types.StringValue(token.Token), plan.ForceRegenerate, plan.ExpiredAt)
+	result := modelFromTFEToken(plan.TeamID, types.StringValue(token.ID), types.StringValue(token.Token), plan.ForceRegenerate, plan.ExpiredAt, plan.Description)
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
 }
 
-func modelFromTFEToken(teamID types.String, stateValue types.String, forceRegenerate types.Bool, expiredAt types.String) modelTFETeamToken {
+func modelFromTFEToken(teamID types.String, tokenID types.String, stateValue types.String, forceRegenerate types.Bool, expiredAt types.String, description types.String) modelTFETeamToken {
 	m := modelTFETeamToken{
-		ID:              teamID,
 		TeamID:          teamID,
 		ForceRegenerate: forceRegenerate,
 		ExpiredAt:       types.StringNull(),
 		Token:           stateValue,
+		Description:     types.StringNull(),
 	}
 	if !expiredAt.IsNull() {
 		m.ExpiredAt = expiredAt
+	}
+
+	if !description.IsNull() {
+		m.Description = description
+		m.ID = tokenID
+	} else {
+		m.ID = teamID
 	}
 
 	return m
@@ -204,7 +212,12 @@ func (r *resourceTFETeamToken) Read(ctx context.Context, req resource.ReadReques
 
 	teamID := state.TeamID.ValueString()
 	tflog.Debug(ctx, fmt.Sprintf("Read the token from team: %s", teamID))
-	_, err := r.config.Client.TeamTokens.Read(ctx, teamID)
+	var err error
+	if isTokenID(state.ID.ValueString()) {
+		_, err = r.config.Client.TeamTokens.ReadByID(ctx, state.ID.ValueString())
+	} else {
+		_, err = r.config.Client.TeamTokens.Read(ctx, teamID)
+	}
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("Token for team %s no longer exists", teamID))
@@ -217,7 +230,7 @@ func (r *resourceTFETeamToken) Read(ctx context.Context, req resource.ReadReques
 		)
 		return
 	}
-	result := modelFromTFEToken(state.TeamID, state.Token, state.ForceRegenerate, state.ExpiredAt)
+	result := modelFromTFEToken(state.TeamID, state.ID, state.Token, state.ForceRegenerate, state.ExpiredAt, state.Description)
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
 }
 
@@ -236,7 +249,13 @@ func (r *resourceTFETeamToken) Delete(ctx context.Context, req resource.DeleteRe
 
 	teamID := state.TeamID.ValueString()
 	tflog.Debug(ctx, fmt.Sprintf("Delete the token from team: %s", teamID))
-	if err := r.config.Client.TeamTokens.Delete(ctx, teamID); err != nil {
+	var err error
+	if isTokenID(state.ID.ValueString()) {
+		err = r.config.Client.TeamTokens.DeleteByID(ctx, state.ID.ValueString())
+	} else {
+		err = r.config.Client.TeamTokens.Delete(ctx, teamID)
+	}
+	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("Token for team %s no longer exists", teamID))
 			return
@@ -250,4 +269,10 @@ func (r *resourceTFETeamToken) Delete(ctx context.Context, req resource.DeleteRe
 
 func (r *resourceTFETeamToken) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("team_id"), req, resp)
+}
+
+// Determines whether the ID of the resource is the ID of the authentication token
+// or the ID of the team the token belongs to.
+func isTokenID(id string) bool {
+	return strings.HasPrefix(id, "at-")
 }

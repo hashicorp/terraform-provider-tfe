@@ -35,6 +35,31 @@ func TestAccTFETeamToken_basic(t *testing.T) {
 	})
 }
 
+func TestAccTFETeamToken_multiple_team_tokens(t *testing.T) {
+	skipUnlessBeta(t)
+	token := &tfe.TeamToken{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamTokenDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeamToken_withMultipleTokens(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFETeamTokenExists(
+						"tfe_team_token.multi_token_1", token),
+					testAccCheckTFETeamTokenExists(
+						"tfe_team_token.multi_token_2", token),
+					testAccCheckTFETeamTokenExists(
+						"tfe_team_token.legacy", token),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFETeamToken_existsWithoutForce(t *testing.T) {
 	token := &tfe.TeamToken{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -83,6 +108,23 @@ func TestAccTFETeamToken_existsWithForce(t *testing.T) {
 					testAccCheckTFETeamTokenExists(
 						"tfe_team_token.regenerated", token),
 				),
+			},
+		},
+	})
+}
+
+func TestAccTFETeamToken_invalidWithForceGenerateAndDescription(t *testing.T) {
+	skipUnlessBeta(t)
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamTokenDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFETeamToken_WithForceGenerateAndDescription(rInt),
+				ExpectError: regexp.MustCompile(`"force_regenerate" cannot be specified when "description"`),
 			},
 		},
 	})
@@ -184,7 +226,14 @@ func testAccCheckTFETeamTokenExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		tt, err := testAccConfiguredClient.Client.TeamTokens.Read(ctx, rs.Primary.ID)
+		var tt *tfe.TeamToken
+		var err error
+		if isTokenID(rs.Primary.ID) {
+			tt, err = testAccConfiguredClient.Client.TeamTokens.ReadByID(ctx, rs.Primary.ID)
+		} else {
+			tt, err = testAccConfiguredClient.Client.TeamTokens.Read(ctx, rs.Primary.ID)
+		}
+
 		if err != nil {
 			return err
 		}
@@ -209,7 +258,12 @@ func testAccCheckTFETeamTokenDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := testAccConfiguredClient.Client.TeamTokens.Read(ctx, rs.Primary.ID)
+		var err error
+		if isTokenID(rs.Primary.ID) {
+			_, err = testAccConfiguredClient.Client.TeamTokens.ReadByID(ctx, rs.Primary.ID)
+		} else {
+			_, err = testAccConfiguredClient.Client.TeamTokens.Read(ctx, rs.Primary.ID)
+		}
 		if err == nil {
 			return fmt.Errorf("Team token %s still exists", rs.Primary.ID)
 		}
@@ -335,4 +389,53 @@ resource "tfe_team_token" "expiry" {
   team_id    = tfe_team.foobar.id
   expired_at = "2000-04-11"
 }`, rInt)
+}
+
+func testAccTFETeamToken_withMultipleTokens(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-test"
+  organization = tfe_organization.foobar.id
+}
+
+
+resource "tfe_team_token" "multi_token_1" {
+  team_id     = tfe_team.foobar.id
+  description = "tst-terraform-%d-token-1"
+  expired_at  = "2051-04-11T23:15:59Z"
+}
+
+resource "tfe_team_token" "multi_token_2" {
+  team_id    = tfe_team.foobar.id
+  description = "tst-terraform-%d-token-2"
+}
+
+resource "tfe_team_token" "legacy" {
+  team_id    = tfe_team.foobar.id
+}`, rInt, rInt, rInt)
+}
+
+func testAccTFETeamToken_WithForceGenerateAndDescription(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-test"
+  organization = tfe_organization.foobar.id
+}
+
+
+resource "tfe_team_token" "invalid" {
+  team_id     = tfe_team.foobar.id
+  description = "tst-terraform-%d-token"
+  force_regenerate = true
+}`, rInt, rInt)
 }
