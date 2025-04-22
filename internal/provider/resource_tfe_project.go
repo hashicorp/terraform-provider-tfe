@@ -12,6 +12,7 @@ import (
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/jsonapi"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -45,17 +46,20 @@ type modelTFEProject struct {
 	Description                 types.String `tfsdk:"description"`
 	Organization                types.String `tfsdk:"organization"`
 	AutoDestroyActivityDuration types.String `tfsdk:"auto_destroy_activity_duration"`
+	Tags                        types.Map    `tfsdk:"tags"`
+	IgnoreAdditionalTags        types.Bool   `tfsdk:"ignore_additional_tags"`
 }
 
 // modelFromTFEProject builds a modelTFEProject struct from a tfe.Project value.
-func modelFromTFEProject(p *tfe.Project) (modelTFEProject, diag.Diagnostics) {
+func modelFromTFEProject(p *tfe.Project, tags []*tfe.TagBinding, ignoreAdditionalTags types.Bool) (modelTFEProject, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	model := modelTFEProject{
-		ID:           types.StringValue(p.ID),
-		Name:         types.StringValue(p.Name),
-		Description:  types.StringValue(p.Description),
-		Organization: types.StringValue(p.Organization.Name),
+		ID:                   types.StringValue(p.ID),
+		Name:                 types.StringValue(p.Name),
+		Description:          types.StringValue(p.Description),
+		Organization:         types.StringValue(p.Organization.Name),
+		IgnoreAdditionalTags: ignoreAdditionalTags,
 	}
 
 	if p.AutoDestroyActivityDuration.IsSpecified() {
@@ -66,6 +70,12 @@ func modelFromTFEProject(p *tfe.Project) (modelTFEProject, diag.Diagnostics) {
 
 		model.AutoDestroyActivityDuration = types.StringValue(duration)
 	}
+
+	tagElems := make(map[string]attr.Value)
+	for _, binding := range tags {
+		tagElems[binding.Key] = types.StringValue(binding.Value)
+	}
+	model.Tags = types.MapValueMust(types.StringType, tagElems)
 
 	return model, diags
 }
@@ -139,6 +149,18 @@ func (r *resourceTFEProject) Schema(ctx context.Context, req resource.SchemaRequ
 					),
 				},
 			},
+
+			"tags": schema.MapAttribute{
+				Description: "A map of key-value tags to add to the project.",
+				Optional:    true,
+				Computed:    true,
+				ElementType: types.StringType,
+			},
+
+			"ignore_additional_tags": schema.BoolAttribute{
+				Description: "Explicitly ignores tags created outside of Terraform so they will not be overwritten by tags defined in configuration.",
+				Optional:    true,
+			},
 		},
 	}
 }
@@ -169,6 +191,16 @@ func (r *resourceTFEProject) Create(ctx context.Context, req resource.CreateRequ
 		options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(plan.AutoDestroyActivityDuration.ValueString())
 	}
 
+	tags := plan.Tags.Elements()
+	for key, val := range tags {
+		if strVal, ok := val.(types.String); ok && !strVal.IsNull() {
+			options.TagBindings = append(options.TagBindings, &tfe.TagBinding{
+				Key:   key,
+				Value: strVal.ValueString(),
+			})
+		}
+	}
+
 	tflog.Debug(ctx, fmt.Sprintf("Create project %s", name))
 	project, err := r.config.Client.Projects.Create(ctx, orgName, options)
 
@@ -177,7 +209,7 @@ func (r *resourceTFEProject) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
-	result, diags := modelFromTFEProject(project)
+	result, diags := modelFromTFEProject(project, options.TagBindings, plan.IgnoreAdditionalTags)
 	if diags.HasError() {
 		return
 	}
@@ -196,18 +228,55 @@ func (r *resourceTFEProject) Read(ctx context.Context, req resource.ReadRequest,
 	id := state.ID.ValueString()
 
 	tflog.Debug(ctx, fmt.Sprintf("Read project %s", id))
-	project, err := r.config.Client.Projects.Read(ctx, id)
-	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+	project, err := r.config.Client.Projects.ReadWithOptions(ctx, id, tfe.ProjectReadOptions{
+		Include: []tfe.ProjectIncludeOpt{tfe.ProjectEffectiveTagBindings},
+	})
+	if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
+		tflog.Debug(ctx, fmt.Sprintf("Project %s no longer exists", id))
+		resp.State.RemoveResource(ctx)
+		return
+	}
+	if err != nil && errors.Is(err, tfe.ErrInvalidIncludeValue) {
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Project %s read failed due to unsupported Include; retrying without it", id))
+		project, err = r.config.Client.Projects.Read(ctx, id)
+		if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("Project %s no longer exists", id))
 			resp.State.RemoveResource(ctx)
 			return
+		} else if err != nil {
+			resp.Diagnostics.AddError("Error reading project", err.Error())
+			return
 		}
+	}
+	if err != nil {
 		resp.Diagnostics.AddError("Error reading project", err.Error())
 		return
 	}
 
-	result, diags := modelFromTFEProject(project)
+	tagBindings := []*tfe.TagBinding{}
+	for _, binding := range project.EffectiveTagBindings {
+		tagBindings = append(tagBindings, &tfe.TagBinding{
+			Key:   binding.Key,
+			Value: binding.Value,
+		})
+	}
+
+	var result modelTFEProject
+	var diags diag.Diagnostics
+	if state.IgnoreAdditionalTags.ValueBool() {
+		allowedTags := []*tfe.TagBinding{}
+
+		currentTags := state.Tags.Elements()
+		for _, binding := range tagBindings {
+			if _, ok := currentTags[binding.Key]; ok {
+				allowedTags = append(allowedTags, binding)
+			}
+		}
+		result, diags = modelFromTFEProject(project, allowedTags, state.IgnoreAdditionalTags)
+	} else {
+		result, diags = modelFromTFEProject(project, tagBindings, state.IgnoreAdditionalTags)
+	}
+
 	if diags.HasError() {
 		return
 	}
@@ -229,6 +298,7 @@ func (r *resourceTFEProject) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 
+	id := state.ID.ValueString()
 	name := plan.Name.ValueString()
 
 	options := tfe.ProjectUpdateOptions{
@@ -244,14 +314,31 @@ func (r *resourceTFEProject) Update(ctx context.Context, req resource.UpdateRequ
 		options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(plan.AutoDestroyActivityDuration.ValueString())
 	}
 
-	tflog.Debug(ctx, fmt.Sprintf("Update project %s", plan.ID.ValueString()))
-	project, err := r.config.Client.Projects.Update(ctx, plan.ID.ValueString(), options)
+	for key, val := range plan.Tags.Elements() {
+		if strVal, ok := val.(types.String); ok && !strVal.IsNull() {
+			options.TagBindings = append(options.TagBindings, &tfe.TagBinding{
+				Key:   key,
+				Value: strVal.ValueString(),
+			})
+		}
+	}
+
+	if len(options.TagBindings) == 0 && !plan.IgnoreAdditionalTags.ValueBool() {
+		err := r.config.Client.Projects.DeleteAllTagBindings(ctx, id)
+		if err != nil {
+			resp.Diagnostics.AddError("Error removing tag bindings from project", err.Error())
+			return
+		}
+	}
+
+	tflog.Debug(ctx, fmt.Sprintf("Update project %s", id))
+	project, err := r.config.Client.Projects.Update(ctx, id, options)
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating project", err.Error())
 		return
 	}
 
-	result, diags := modelFromTFEProject(project)
+	result, diags := modelFromTFEProject(project, options.TagBindings, plan.IgnoreAdditionalTags)
 	if diags.HasError() {
 		return
 	}

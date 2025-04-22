@@ -22,6 +22,37 @@ data "tfe_workspace_ids" "all" {
   organization = "my-org-name"
 }
 
+data "tfe_workspace_ids" "dev_env_tags_only" {
+  organization = "my-org-name"
+  tag_filters {
+    include = {
+      environment = "dev"
+    }
+  }
+}
+
+data "tfe_workspace_ids" "include_and_exclude" {
+  organization = "my-org-name"
+  tag_filters {
+    include = {
+      region = "us-east-1"
+    }
+
+    exclude = {
+      team = "prodsec"
+    }
+  }
+}
+
+data "tfe_workspace_ids" "exclude_all_matching_key" {
+  organization = "my-org-name"
+  tag_filters {
+    exclude = {
+      bad_key = "*"
+    }
+  }
+}
+
 data "tfe_workspace_ids" "prod-apps" {
   tag_names    = ["prod", "app", "aws"]
   organization = "my-org-name"
@@ -43,9 +74,15 @@ The following arguments are supported. At least one of `names` or `tag_names` mu
 
     To select _all_ workspaces for an organization, provide a list with a single
     asterisk, like `["*"]`. The asterisk also supports partial matching on prefix and/or suffix, like `[*-prod]`, `[test-*]`, `[*dev*]`.
-* `tag_names` - (Optional) A list of tag names to search for.
-* `exclude_tags` - (Optional) A list of tag names to exclude when searching.
+* `tag_filters` - (Optional) A set of key-value tag filters to search for workspaces.
+* `tag_names` - (Optional) **Deprecated** A list of tag names to search for.
+* `exclude_tags` - (Optional) **Deprecated** A list of tag names to exclude when searching.
 * `organization` - (Required) Name of the organization.
+
+The `tag_filters` block supports:
+
+* `include`: (Optional) A map of key-value tags the workspaces must contain. Each tag included here will be combined using a logical AND when filtering results.
+* `exclude`: (Optional) A map of key-value tags to exclude workspaces from the returned list. To exclude all workspaces containing a specific key, use `"*"` as the value.
 
 ## Attributes Reference
 

@@ -52,7 +52,8 @@ type ClientConfiguration struct {
 
 // Key returns a string that is comparable to other ClientConfiguration values
 func (c ClientConfiguration) Key() string {
-	return fmt.Sprintf("%x %s/%v", sha256.New().Sum([]byte(c.Token)), c.TFEHost, c.Insecure)
+	h := sha256.Sum256([]byte(c.Token))
+	return fmt.Sprintf("%x %s/%v", h[:], c.TFEHost, c.Insecure)
 }
 
 // cliConfig tries to find and parse the configuration of the Terraform CLI.

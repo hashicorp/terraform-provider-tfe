@@ -16,6 +16,7 @@ import (
 )
 
 func TestAccTFEWorkspaceRun_withApplyOnlyBlock(t *testing.T) {
+	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	tfeClient, err := getClientUsingEnv()
@@ -65,6 +66,7 @@ func TestAccTFEWorkspaceRun_withApplyOnlyBlock(t *testing.T) {
 }
 
 func TestAccTFEWorkspaceRun_withBothApplyAndDestroyBlocks(t *testing.T) {
+	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	tfeClient, err := getClientUsingEnv()

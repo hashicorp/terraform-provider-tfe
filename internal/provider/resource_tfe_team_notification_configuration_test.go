@@ -1006,10 +1006,14 @@ resource "tfe_team" "foobar" {
   organization = data.tfe_organization.foobar.name
 }
 
+variable "url" {
+  default = "%s"
+}
+
 resource "tfe_team_notification_configuration" "foobar" {
   name             = "notification_basic"
   destination_type = "generic"
-	url              = "%s"
+	url              = var.url
   team_id          = tfe_team.foobar.id
 }`, orgName, runTasksURL())
 }

@@ -47,8 +47,9 @@ func main() {
 	//   not proven that out yet.
 	nextProvider := providerserver.NewProtocol5(provider.NewFrameworkProvider())
 	classicProvider := provider.Provider().GRPCProvider
+	lowLevelProvider := provider.PluginProviderServer
 	mux, err := tf5muxserver.NewMuxServer(
-		ctx, nextProvider, classicProvider,
+		ctx, nextProvider, classicProvider, lowLevelProvider,
 	)
 	if err != nil {
 		log.Printf("[ERROR] Could not setup a mux server using the internal providers: %v", err)

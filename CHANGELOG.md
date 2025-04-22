@@ -1,6 +1,26 @@
 ## Unreleased
 
+ENHANCEMENTS:
+
+* `r/tfe_workspace_run`: Allow configuration without `apply` and `destroy` blocks, by @tmatilai ([#1604](https://github.com/hashicorp/terraform-provider-tfe/pull/1604))
+
+## v0.65.2
+
+BUG FIXES:
+* `r/tfe_notification_configuration`: update attribute validator to allow variable refs (#1696), by @uturunku [#1705](https://github.com/hashicorp/terraform-provider-tfe/pull/1705)
+* `r/tfe_team_token`: do not clear token from state after upgrade (#1700), by @ctrombley [#1706](https://github.com/hashicorp/terraform-provider-tfe/pull/1706)
+* `r/tfe_policy_set_parameter`: fix schema errors, by @ctrombley [#1706](https://github.com/hashicorp/terraform-provider-tfe/pull/1706)
+
+## v0.65.1
+
+BUG FIXES:
+* `d/tfe_outputs`: fix regression after framework upgrade (#1697), by @ctrombley [#1699](https://github.com/hashicorp/terraform-provider-tfe/pull/1699)
+
+## v0.65.0
+
 FEATURES:
+
+**Note**: New tag attributes are only available in HCP Terraform and Terraform Enterprise releases `v202504-1` or later
 
 * **New Ephemeral Resource:** `tfe_audit_trail_token` is a new ephemeral resource for creating and managing audit trail tokens, by @uturunku1 [#1675](https://github.com/hashicorp/terraform-provider-tfe/pull/1675)
 
@@ -15,8 +35,18 @@ FEATURES:
 * **New Data Source:** `tfe_registry_module` is a new data source for finding
   registry modules by @drewmullen and @danquack [#1667](https://github.com/hashicorp/terraform-provider-tfe/pull/1667)
 
-BUG FIXES:
-* `r/tfe_oauth_client`: Ensure `oauth_token_id` updates register when performing a `terraform apply`, by @hashimoon [#1631](https://github.com/hashicorp/terraform-provider-tfe/pull/1631)
+* **New Ephemeral Resource:** `agent_token` is a new ephemeral
+  resource for creating and managing agent tokens, by @uturunku1 ([#1627](https://github.com/hashicorp/terraform-provider-tfe/pull/1627))
+
+* `r/tfe_project`: Adds `tags` and `ignore_additional_tags` attribute, by @sebasslash [#1543](https://github.com/hashicorp/terraform-provider-tfe/pull/1543)
+
+* `r/tfe_workspace`: Adds `tags`, `ignore_additional_tags` and `effective_tags` attribute, by @sebasslash [#1543](https://github.com/hashicorp/terraform-provider-tfe/pull/1543)
+
+* `d/tfe_project`: Adds the `effective_tags` attribute, by @sebasslash [#1543](https://github.com/hashicorp/terraform-provider-tfe/pull/1543)
+
+* `d/tfe_workspace`: Adds the `effective_tags` attribute which reflects all effective tags computed on the workspace, by @sebasslash [#1543](https://github.com/hashicorp/terraform-provider-tfe/pull/1543)
+
+* `d/tfe_workspace_ids`: Adds the `tag_filters` attribute which filters the list of workspace IDs specified by the `include` or `exclude` fields, by @sebasslash [#1543](https://github.com/hashicorp/terraform-provider-tfe/pull/1543)
 
 ENHANCEMENTS:
 
@@ -38,7 +68,8 @@ ENHANCEMENTS:
 
 * `r/tfe_workspace`: Do not force recreation of workspace if users do not provide `source_name` or `source_url`. [#1674](https://github.com/hashicorp/terraform-provider-tfe/pull/1674)
 
-* `r/tfe_workspace_run`: Allow configuration without `apply` and `destroy` blocks, by @tmatilai ([#1604](https://github.com/hashicorp/terraform-provider-tfe/pull/1604))
+BUG FIXES:
+* `r/tfe_oauth_client`: Ensure `oauth_token_id` updates register when performing a `terraform apply`, by @hashimoon [#1631](https://github.com/hashicorp/terraform-provider-tfe/pull/1631)
 
 ## v.0.64.0
 
