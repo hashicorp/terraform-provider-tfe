@@ -21,6 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
@@ -268,7 +269,39 @@ func (r *resourceTFETeamToken) Delete(ctx context.Context, req resource.DeleteRe
 }
 
 func (r *resourceTFETeamToken) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	resource.ImportStatePassthroughID(ctx, path.Root("team_id"), req, resp)
+	if !isTokenID(req.ID) {
+		// Set the team ID field
+		resource.ImportStatePassthroughID(ctx, path.Root("team_id"), req, resp)
+		return
+	}
+
+	// Fetch token by ID to set attributes
+	token, err := r.config.Client.TeamTokens.ReadByID(ctx, req.ID)
+	if err != nil {
+		resp.Diagnostics.AddError("Error importing team token", err.Error())
+		return
+	}
+	if token.Team == nil {
+		resp.Diagnostics.AddError("Error importing team token", "token did not return associated team")
+		return
+	}
+
+	var expiredAt types.String
+	if !token.ExpiredAt.IsZero() {
+		expiredAt = types.StringValue(token.ExpiredAt.Format(time.RFC3339))
+	} else {
+		expiredAt = types.StringNull()
+	}
+
+	var description types.String
+	if token.Description != nil {
+		description = types.StringValue(*token.Description)
+	} else {
+		description = types.StringNull()
+	}
+
+	result := modelFromTFEToken(types.StringValue(token.Team.ID), types.StringValue(token.ID), types.StringValue(token.Token), basetypes.NewBoolNull(), expiredAt, description)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
 // Determines whether the ID of the resource is the ID of the authentication token
