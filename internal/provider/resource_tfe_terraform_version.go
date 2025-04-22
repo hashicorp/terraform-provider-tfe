@@ -108,10 +108,7 @@ func resourceTFETerraformVersionCreate(d *schema.ResourceData, meta interface{})
 		Beta:             tfe.Bool(d.Get("beta").(bool)),
 		Deprecated:       tfe.Bool(d.Get("deprecated").(bool)),
 		DeprecatedReason: tfe.String(d.Get("deprecated_reason").(string)),
-	}
-
-	if archs, ok := d.GetOk("archs"); ok {
-		opts.Archs = convertArchOptions(archs).([]*tfe.ToolVersionArchitecture)
+		Archs:            d.Get("archs").([]*tfe.ToolVersionArchitecture),
 	}
 
 	log.Printf("[DEBUG] Create new Terraform version: %s", *opts.Version)
@@ -147,7 +144,7 @@ func resourceTFETerraformVersionRead(d *schema.ResourceData, meta interface{}) e
 	d.Set("beta", v.Beta)
 	d.Set("deprecated", v.Deprecated)
 	d.Set("deprecated_reason", v.DeprecatedReason)
-	d.Set("archs", convertArchOptions(v.Archs))
+	setArchitectureSchema(v, d)
 
 	return nil
 }
@@ -164,13 +161,9 @@ func resourceTFETerraformVersionUpdate(d *schema.ResourceData, meta interface{})
 		Beta:             tfe.Bool(d.Get("beta").(bool)),
 		Deprecated:       tfe.Bool(d.Get("deprecated").(bool)),
 		DeprecatedReason: tfe.String(d.Get("deprecated_reason").(string)),
+		Archs:            d.Get("archs").([]*tfe.ToolVersionArchitecture),
 	}
 
-	if archs, ok := d.GetOk("archs"); ok {
-		opts.Archs = convertArchOptions(archs).([]*tfe.ToolVersionArchitecture)
-	}
-
-	log.Printf("[DEBUG] Update configuration of Terraform version: %s", d.Id())
 	v, err := config.Client.Admin.TerraformVersions.Update(ctx, d.Id(), opts)
 	if err != nil {
 		return fmt.Errorf("Error updating Terraform version %s: %w", d.Id(), err)
@@ -212,45 +205,4 @@ func resourceTFETerraformVersionImporter(ctx context.Context, d *schema.Resource
 	}
 
 	return []*schema.ResourceData{d}, nil
-}
-
-// Terraform defines archs as a interface{}
-// but the tfe client defines it as []*tfe.ToolVersionArchitecture
-func convertArchOptions(input interface{}) interface{} {
-	if input == nil {
-		return nil
-	}
-
-	switch v := input.(type) {
-	case []*tfe.ToolVersionArchitecture:
-		// Convert from []*tfe.ToolVersionArchitecture to []interface{}
-		var archList []interface{}
-		for _, arch := range v {
-			archList = append(archList, map[string]interface{}{
-				"url":  arch.URL,
-				"sha":  arch.Sha,
-				"os":   arch.OS,
-				"arch": arch.Arch,
-			})
-		}
-		return archList
-
-	case []interface{}:
-		// Convert from []interface{} to []*tfe.ToolVersionArchitecture
-		var archList []*tfe.ToolVersionArchitecture
-		for _, arch := range v {
-			archMap := arch.(map[string]interface{})
-			archList = append(archList, &tfe.ToolVersionArchitecture{
-				URL:  archMap["url"].(string),
-				Sha:  archMap["sha"].(string),
-				OS:   archMap["os"].(string),
-				Arch: archMap["arch"].(string),
-			})
-		}
-		return archList
-
-	default:
-		// Handle unexpected types
-		return fmt.Errorf("unexpected type for convertArchOptions: %T", input)
-	}
 }
