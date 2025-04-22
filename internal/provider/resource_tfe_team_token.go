@@ -10,12 +10,15 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-framework-validators/boolvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
@@ -39,6 +42,7 @@ type modelTFETeamToken struct {
 	ForceRegenerate types.Bool   `tfsdk:"force_regenerate"`
 	Token           types.String `tfsdk:"token"`
 	ExpiredAt       types.String `tfsdk:"expired_at"`
+	Description     types.String `tfsdk:"description"`
 }
 
 func (r *resourceTFETeamToken) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -83,6 +87,9 @@ func (r *resourceTFETeamToken) Schema(_ context.Context, _ resource.SchemaReques
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.Bool{
+					boolvalidator.ConflictsWith(path.MatchRoot("description")),
+				},
 			},
 			"token": schema.StringAttribute{
 				Description: "The generated token.",
@@ -96,8 +103,18 @@ func (r *resourceTFETeamToken) Schema(_ context.Context, _ resource.SchemaReques
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
+			"description": schema.StringAttribute{
+				Description: "The description of the token, which must be unique per team.",
+				Optional:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRoot("force_regenerate")),
+				},
+			},
 		},
-		Description: "Generates a new team token and overrides existing token if one exists.",
+		Description: "Generates a new team token. If no description is provided, it follows the legacy behavior to override the existing, descriptionless token if one exists.",
 	}
 }
 
@@ -110,28 +127,33 @@ func (r *resourceTFETeamToken) Create(ctx context.Context, req resource.CreateRe
 	}
 
 	teamID := plan.TeamID.ValueString()
-	tflog.Debug(ctx, fmt.Sprintf("Check if a token already exists for team: %s", teamID))
-	_, err := r.config.Client.TeamTokens.Read(ctx, teamID)
-	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("Error checking if a token exists for team %s", teamID),
-			err.Error(),
-		)
-		return
-	}
-	if err == nil {
-		if !plan.ForceRegenerate.ValueBool() {
+	if plan.Description.IsNull() {
+		// No description indicates legacy behavior where token will be regenerated if it does not exist
+		tflog.Debug(ctx, fmt.Sprintf("Check if a token already exists for team: %s", teamID))
+		_, err := r.config.Client.TeamTokens.Read(ctx, teamID)
+		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 			resp.Diagnostics.AddError(
-				fmt.Sprintf("A token already exists for team: %s", teamID),
-				"Set force_regenerate to true to regenerate the token.",
+				fmt.Sprintf("Error checking if a token exists for team %s", teamID),
+				err.Error(),
 			)
 			return
 		}
-		tflog.Debug(ctx, fmt.Sprintf("Regenerating existing token for team: %s", teamID))
+		if err == nil {
+			if !plan.ForceRegenerate.ValueBool() {
+				resp.Diagnostics.AddError(
+					fmt.Sprintf("A token already exists for team: %s", teamID),
+					"Set force_regenerate to true to regenerate the token.",
+				)
+				return
+			}
+			tflog.Debug(ctx, fmt.Sprintf("Regenerating existing token for team: %s", teamID))
+		}
 	}
 
 	expiredAt := plan.ExpiredAt.ValueString()
-	options := tfe.TeamTokenCreateOptions{}
+	options := tfe.TeamTokenCreateOptions{
+		Description: plan.Description.ValueStringPointer(),
+	}
 	if !plan.ExpiredAt.IsNull() && expiredAt != "" {
 		expiry, err := time.Parse(time.RFC3339, expiredAt)
 		if err != nil {
