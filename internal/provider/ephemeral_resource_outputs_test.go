@@ -78,7 +78,8 @@ func TestAccOutputsEphemeralResource_basic(t *testing.T) {
 					statecheck.ExpectKnownValue("echo.this",
 						assertPathValues.AtMapKey("test_output_object"),
 						knownvalue.ObjectExact(map[string]knownvalue.Check{
-							"foo": knownvalue.StringExact("bar"),
+							"foo":         knownvalue.StringExact("bar"),
+							"environment": knownvalue.Null(),
 						})),
 
 					statecheck.ExpectKnownValue("echo.this",
@@ -156,7 +157,8 @@ func TestAccOutputsEphemeralResource_readAllNonSensitiveValues(t *testing.T) {
 					statecheck.ExpectKnownValue("echo.this",
 						assertPathNonsensitiveValues.AtMapKey("test_output_object"),
 						knownvalue.ObjectExact(map[string]knownvalue.Check{
-							"foo": knownvalue.StringExact("bar"),
+							"foo":         knownvalue.StringExact("bar"),
+							"environment": knownvalue.Null(),
 						})),
 
 					statecheck.ExpectKnownValue("echo.this",
