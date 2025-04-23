@@ -1,9 +1,12 @@
 ## Unreleased
 
+BUG FIXES:
+* `d/tfe_outputs`: fixes 'error inferring type for key' for output objects that had a key with null value.  (#1709), by @uturunku1 [#1699](https://github.com/hashicorp/terraform-provider-tfe/pull/1709)
+
 ## v0.65.2
 
 BUG FIXES:
-* `r/tfe_notification_configuration`: update attribute validator to allow variable refs (#1696), by @uturunku [#1705](https://github.com/hashicorp/terraform-provider-tfe/pull/1705)
+* `r/tfe_notification_configuration`: update attribute validator to allow variable refs (#1696), by @uturunku1 [#1705](https://github.com/hashicorp/terraform-provider-tfe/pull/1705)
 * `r/tfe_team_token`: do not clear token from state after upgrade (#1700), by @ctrombley [#1706](https://github.com/hashicorp/terraform-provider-tfe/pull/1706)
 * `r/tfe_policy_set_parameter`: fix schema errors, by @ctrombley [#1706](https://github.com/hashicorp/terraform-provider-tfe/pull/1706)
 
@@ -46,9 +49,9 @@ FEATURES:
 
 ENHANCEMENTS:
 
-* `r/tfe_variable`: Add `value_wo` write-only attribute, by @uturunku ([#1639](https://github.com/hashicorp/terraform-provider-tfe/pull/1639))
+* `r/tfe_variable`: Add `value_wo` write-only attribute, by @uturunku1 ([#1639](https://github.com/hashicorp/terraform-provider-tfe/pull/1639))
 
-* `r/tfe_test_variable`: Add `value_wo` write-only attribute, by @uturunku ([#1639](https://github.com/hashicorp/terraform-provider-tfe/pull/1639))
+* `r/tfe_test_variable`: Add `value_wo` write-only attribute, by @uturunku1 ([#1639](https://github.com/hashicorp/terraform-provider-tfe/pull/1639))
 
 * `r/tfe_policy_set_parameter`: Add `value_wo` write-only attribute, by @ctrombley ([#1641](https://github.com/hashicorp/terraform-provider-tfe/pull/1641))
 
