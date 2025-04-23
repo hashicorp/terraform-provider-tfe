@@ -35,11 +35,13 @@ func resourceTFETerraformVersion() *schema.Resource {
 			},
 			"url": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Default:  nil,
 			},
 			"sha": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Default:  nil,
 			},
 			"official": {
 				Type:     schema.TypeBool,
@@ -66,6 +68,30 @@ func resourceTFETerraformVersion() *schema.Resource {
 				Optional: true,
 				Default:  nil,
 			},
+			"archs": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"url": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"sha": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"os": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"arch": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -82,6 +108,7 @@ func resourceTFETerraformVersionCreate(d *schema.ResourceData, meta interface{})
 		Beta:             tfe.Bool(d.Get("beta").(bool)),
 		Deprecated:       tfe.Bool(d.Get("deprecated").(bool)),
 		DeprecatedReason: tfe.String(d.Get("deprecated_reason").(string)),
+		Archs:            d.Get("archs").([]*tfe.ToolVersionArchitecture),
 	}
 
 	log.Printf("[DEBUG] Create new Terraform version: %s", *opts.Version)
@@ -117,6 +144,7 @@ func resourceTFETerraformVersionRead(d *schema.ResourceData, meta interface{}) e
 	d.Set("beta", v.Beta)
 	d.Set("deprecated", v.Deprecated)
 	d.Set("deprecated_reason", v.DeprecatedReason)
+	setArchitectureSchema(v, d)
 
 	return nil
 }
@@ -133,9 +161,9 @@ func resourceTFETerraformVersionUpdate(d *schema.ResourceData, meta interface{})
 		Beta:             tfe.Bool(d.Get("beta").(bool)),
 		Deprecated:       tfe.Bool(d.Get("deprecated").(bool)),
 		DeprecatedReason: tfe.String(d.Get("deprecated_reason").(string)),
+		Archs:            d.Get("archs").([]*tfe.ToolVersionArchitecture),
 	}
 
-	log.Printf("[DEBUG] Update configuration of Terraform version: %s", d.Id())
 	v, err := config.Client.Admin.TerraformVersions.Update(ctx, d.Id(), opts)
 	if err != nil {
 		return fmt.Errorf("Error updating Terraform version %s: %w", d.Id(), err)
