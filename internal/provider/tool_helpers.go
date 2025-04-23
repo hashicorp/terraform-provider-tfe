@@ -139,17 +139,10 @@ func fetchOPAVersionID(version string, client *tfe.Client) (string, error) {
 	return "", fmt.Errorf("OPA version not found")
 }
 
-type ToolVersion struct {
-	URL   string
-	Sha   string
-	Archs []*tfe.ToolVersionArchitecture
-}
-
-
 // if archs is present/valid, set archs in resource
 // if url & sha are present, set url & sha in resource
 // if both are present, set archs in resource and a warning
-func setArchitectureSchema(toolVersion ToolVersion, d *schema.ResourceData) error {
+func setArchitectureSchema(toolVersion *tfe.AdminTerraformVersion, d *schema.ResourceData) error {
 	archs := toolVersion.Archs
 	url := toolVersion.URL
 	sha := toolVersion.Sha
@@ -158,11 +151,11 @@ func setArchitectureSchema(toolVersion ToolVersion, d *schema.ResourceData) erro
 		// if url and sha are set, warn that it will be ignored and archs will be used
 		if url != "" && sha != "" {
 			// "[WARN] URL and SHA are set, but architecture information is present. URL and SHA will be ignored."
-			d.Set("url", nil)
-			d.Set("sha", nil)
 		}
 
 		d.Set("archs", archs)
+		d.Set("url", archs[0].URL)
+		d.Set("sha", archs[0].Sha)
 	} else if url != "" && sha != "" {
 		d.Set("url", url)
 		d.Set("sha", sha)
@@ -172,4 +165,40 @@ func setArchitectureSchema(toolVersion ToolVersion, d *schema.ResourceData) erro
 	}
 
 	return nil
+}
+
+func convertToToolVersionArchitectures(archs interface{}) []*tfe.ToolVersionArchitecture {
+	fmt.Printf("[DEBUG] convertToToolVersionArchitectures: %v\n", archs)
+	if archs == nil {
+		return nil
+	}
+
+	archsList, ok := archs.([]interface{})
+	if !ok {
+		return nil
+	}
+
+	var convertedArchs []*tfe.ToolVersionArchitecture
+	for _, arch := range archsList {
+		if archMap, ok := arch.(map[string]interface{}); ok {
+
+			convertedArchs = append(convertedArchs, &tfe.ToolVersionArchitecture{
+				URL:  archMap["url"].(string),
+				Sha:  archMap["sha"].(string),
+				OS:   archMap["os"].(string),
+				Arch: archMap["arch"].(string),
+			})
+		}
+	}
+
+	fmt.Printf("[DEBUG] convertedArchs: %v\n", convertedArchs[0])
+	// converted archs type
+	fmt.Printf("[DEBUG] convertedArchs type: %T\n", convertedArchs)
+	return convertedArchs
+}
+
+type TerraformVersionOptions struct {
+	Archs []*tfe.ToolVersionArchitecture
+	URL   *string
+	Sha   *string
 }

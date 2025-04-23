@@ -101,14 +101,23 @@ func resourceTFETerraformVersionCreate(d *schema.ResourceData, meta interface{})
 
 	opts := tfe.AdminTerraformVersionCreateOptions{
 		Version:          tfe.String(d.Get("version").(string)),
-		URL:              tfe.String(d.Get("url").(string)),
-		Sha:              tfe.String(d.Get("sha").(string)),
 		Official:         tfe.Bool(d.Get("official").(bool)),
 		Enabled:          tfe.Bool(d.Get("enabled").(bool)),
 		Beta:             tfe.Bool(d.Get("beta").(bool)),
 		Deprecated:       tfe.Bool(d.Get("deprecated").(bool)),
 		DeprecatedReason: tfe.String(d.Get("deprecated_reason").(string)),
-		Archs:            d.Get("archs").([]*tfe.ToolVersionArchitecture),
+	}
+
+	archs, ok := d.GetOk("archs")
+	if ok {
+		opts.Archs = convertToToolVersionArchitectures(archs)
+	} else {
+		url, urlOk := d.GetOk("url")
+		sha, shaOk := d.GetOk("sha")
+		if urlOk && shaOk {
+			opts.URL = tfe.String(url.(string))
+			opts.Sha = tfe.String(sha.(string))
+		}
 	}
 
 	log.Printf("[DEBUG] Create new Terraform version: %s", *opts.Version)
@@ -145,6 +154,9 @@ func resourceTFETerraformVersionRead(d *schema.ResourceData, meta interface{}) e
 	d.Set("deprecated", v.Deprecated)
 	d.Set("deprecated_reason", v.DeprecatedReason)
 	setArchitectureSchema(v, d)
+	for _, arch := range v.Archs {
+		log.Printf("[DEBUG] Terraform version %s architecture URL: %s", d.Id(), arch.URL)
+	}
 
 	return nil
 }
@@ -154,18 +166,28 @@ func resourceTFETerraformVersionUpdate(d *schema.ResourceData, meta interface{})
 
 	opts := tfe.AdminTerraformVersionUpdateOptions{
 		Version:          tfe.String(d.Get("version").(string)),
-		URL:              tfe.String(d.Get("url").(string)),
-		Sha:              tfe.String(d.Get("sha").(string)),
 		Official:         tfe.Bool(d.Get("official").(bool)),
 		Enabled:          tfe.Bool(d.Get("enabled").(bool)),
 		Beta:             tfe.Bool(d.Get("beta").(bool)),
 		Deprecated:       tfe.Bool(d.Get("deprecated").(bool)),
 		DeprecatedReason: tfe.String(d.Get("deprecated_reason").(string)),
-		Archs:            d.Get("archs").([]*tfe.ToolVersionArchitecture),
+	}
+
+	archs, ok := d.GetOk("archs")
+	if ok {
+		opts.Archs = convertToToolVersionArchitectures(archs)
+	} else {
+		url, urlOk := d.GetOk("url")
+		sha, shaOk := d.GetOk("sha")
+		if urlOk && shaOk {
+			opts.URL = tfe.String(url.(string))
+			opts.Sha = tfe.String(sha.(string))
+		}
 	}
 
 	v, err := config.Client.Admin.TerraformVersions.Update(ctx, d.Id(), opts)
 	if err != nil {
+		fmt.Printf("[DEBUG] Oh nose! Error: %s\n", err)
 		return fmt.Errorf("Error updating Terraform version %s: %w", d.Id(), err)
 	}
 
