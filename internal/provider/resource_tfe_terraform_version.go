@@ -34,14 +34,16 @@ func resourceTFETerraformVersion() *schema.Resource {
 				Required: true,
 			},
 			"url": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  nil,
+				Type:          schema.TypeString,
+				Optional:      true,
+				ConflictsWith: []string{"archs"},
+				RequiredWith:  []string{"sha"},
 			},
 			"sha": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  nil,
+				Type:          schema.TypeString,
+				Optional:      true,
+				ConflictsWith: []string{"archs"},
+				RequiredWith:  []string{"url"},
 			},
 			"official": {
 				Type:     schema.TypeBool,
@@ -69,8 +71,10 @@ func resourceTFETerraformVersion() *schema.Resource {
 				Default:  nil,
 			},
 			"archs": {
-				Type:     schema.TypeList,
-				Optional: true,
+				Type:          schema.TypeList,
+				Optional:      true,
+				ConflictsWith: []string{"url", "sha"},
+				AtLeastOneOf:  []string{"archs", "url", "sha"},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"url": {
