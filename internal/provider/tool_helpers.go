@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // fetchTerraformVersionID returns a Terraform Version ID for the given Terraform version number
@@ -137,28 +136,6 @@ func fetchOPAVersionID(version string, client *tfe.Client) (string, error) {
 	}
 
 	return "", fmt.Errorf("OPA version not found")
-}
-
-func setArchitectureSchema(toolVersion *tfe.AdminTerraformVersion, d *schema.ResourceData) error {
-	archs := toolVersion.Archs
-	url := toolVersion.URL
-	sha := toolVersion.Sha
-
-	if len(archs) > 0 {
-		if url != "" && sha != "" {
-			fmt.Printf("[WARN] URL and SHA are set, but architecture information is present. URL and SHA will be ignored.")
-		}
-
-		d.Set("archs", archs)
-	} else if url != "" && sha != "" {
-		d.Set("url", url)
-		d.Set("sha", sha)
-	} else {
-		// error if neither archs nor url/sha are set
-		return fmt.Errorf("either archs or url/sha must be set on version resource")
-	}
-
-	return nil
 }
 
 func convertToToolVersionArchitectures(archs interface{}) []*tfe.ToolVersionArchitecture {

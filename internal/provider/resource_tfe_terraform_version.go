@@ -36,12 +36,14 @@ func resourceTFETerraformVersion() *schema.Resource {
 			"url": {
 				Type:          schema.TypeString,
 				Optional:      true,
+				Default:       nil,
 				ConflictsWith: []string{"archs"},
 				RequiredWith:  []string{"sha"},
 			},
 			"sha": {
 				Type:          schema.TypeString,
 				Optional:      true,
+				Default:       nil,
 				ConflictsWith: []string{"archs"},
 				RequiredWith:  []string{"url"},
 			},
@@ -73,6 +75,7 @@ func resourceTFETerraformVersion() *schema.Resource {
 			"archs": {
 				Type:          schema.TypeList,
 				Optional:      true,
+				Default:       nil,
 				ConflictsWith: []string{"url", "sha"},
 				AtLeastOneOf:  []string{"archs", "url", "sha"},
 				Elem: &schema.Resource{
@@ -150,14 +153,30 @@ func resourceTFETerraformVersionRead(d *schema.ResourceData, meta interface{}) e
 	}
 
 	d.Set("version", v.Version)
-	d.Set("url", v.URL)
-	d.Set("sha", v.Sha)
 	d.Set("official", v.Official)
 	d.Set("enabled", v.Enabled)
 	d.Set("beta", v.Beta)
 	d.Set("deprecated", v.Deprecated)
 	d.Set("deprecated_reason", v.DeprecatedReason)
-	setArchitectureSchema(v, d)
+
+	if len(v.Archs) > 0 {
+		archs := make([]map[string]interface{}, len(v.Archs))
+		for i, arch := range v.Archs {
+			archs[i] = map[string]interface{}{
+				"url":  arch.URL,
+				"sha":  arch.Sha,
+				"os":   arch.OS,
+				"arch": arch.Arch,
+			}
+		}
+		d.Set("archs", archs)
+		d.Set("url", nil)
+		d.Set("sha", nil)
+	} else {
+		d.Set("archs", nil)
+		d.Set("url", v.URL)
+		d.Set("sha", v.Sha)
+	}
 
 	return nil
 }
@@ -178,12 +197,8 @@ func resourceTFETerraformVersionUpdate(d *schema.ResourceData, meta interface{})
 	if ok {
 		opts.Archs = convertToToolVersionArchitectures(archs)
 	} else {
-		url, urlOk := d.GetOk("url")
-		sha, shaOk := d.GetOk("sha")
-		if urlOk && shaOk {
-			opts.URL = tfe.String(url.(string))
-			opts.Sha = tfe.String(sha.(string))
-		}
+		opts.URL = tfe.String(d.Get("url").(string))
+		opts.Sha = tfe.String(d.Get("sha").(string))
 	}
 
 	log.Printf("[DEBUG] Update configuration of Terraform version: %s", d.Id())

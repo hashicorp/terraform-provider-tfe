@@ -212,7 +212,17 @@ func testAccCheckTFETerraformVersionAttributesBasic(tfVersion *tfe.AdminTerrafor
 
 func testAccCheckTFETerraformVersionAttributesArchs(tfVersion *tfe.AdminTerraformVersion, version string, sha string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		if tfVersion.Archs[0].URL != "https://example.com/linux" {
+		// Check the version
+		if tfVersion.Version != version {
+			return fmt.Errorf("Bad version: %s", tfVersion.Version)
+		}
+
+		// Check the archs attributes
+		if len(tfVersion.Archs) == 0 {
+			return fmt.Errorf("Archs is empty")
+		}
+
+		if tfVersion.Archs[0].URL != "https://www.hashicorp.com" {
 			return fmt.Errorf("Bad URL: %s", tfVersion.Archs[0].URL)
 		}
 
@@ -228,8 +238,25 @@ func testAccCheckTFETerraformVersionAttributesArchs(tfVersion *tfe.AdminTerrafor
 			return fmt.Errorf("Bad value for Arch: %s", tfVersion.Archs[0].Arch)
 		}
 
-		if tfVersion.Version != version {
-			return fmt.Errorf("Bad version: %s", tfVersion.Version)
+		// Check other attributes
+		if tfVersion.Official != false {
+			return fmt.Errorf("Bad value for official: %t", tfVersion.Official)
+		}
+
+		if tfVersion.Enabled != true {
+			return fmt.Errorf("Bad value for enabled: %t", tfVersion.Enabled)
+		}
+
+		if tfVersion.Beta != true {
+			return fmt.Errorf("Bad value for beta: %t", tfVersion.Beta)
+		}
+
+		if tfVersion.Deprecated != true {
+			return fmt.Errorf("Bad value for deprecated: %t", tfVersion.Deprecated)
+		}
+
+		if *tfVersion.DeprecatedReason != "foobar" {
+			return fmt.Errorf("Bad value for deprecated_reason: %s", *tfVersion.DeprecatedReason)
 		}
 
 		return nil
@@ -287,6 +314,11 @@ func testAccTFETerraformVersion_archs(version string, sha string) string {
 	return fmt.Sprintf(`
 resource "tfe_terraform_version" "foobar" {
   version = "%s"
+  official = false
+  enabled = true
+  beta = true
+  deprecated = true
+  deprecated_reason = "foobar"
   archs = {
     url = "https://www.hashicorp.com"
 	sha = "%s"
