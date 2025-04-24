@@ -31,13 +31,11 @@ func resourceTFEOPAVersion() *schema.Resource {
 			},
 			"url": {
 				Type:     schema.TypeString,
-				Optional: true,
-				Default:  nil,
+				Required: true,
 			},
 			"sha": {
 				Type:     schema.TypeString,
-				Optional: true,
-				Default:  nil,
+				Required: true,
 			},
 			"official": {
 				Type:     schema.TypeBool,
@@ -63,30 +61,6 @@ func resourceTFEOPAVersion() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				Default:  nil,
-			},
-			"archs": {
-				Type:     schema.TypeList,
-				Optional: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"url": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
-						"sha": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
-						"os": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
-						"arch": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
-					},
-				},
 			},
 		},
 	}

@@ -154,9 +154,6 @@ func resourceTFETerraformVersionRead(d *schema.ResourceData, meta interface{}) e
 	d.Set("deprecated", v.Deprecated)
 	d.Set("deprecated_reason", v.DeprecatedReason)
 	setArchitectureSchema(v, d)
-	for _, arch := range v.Archs {
-		log.Printf("[DEBUG] Terraform version %s architecture URL: %s", d.Id(), arch.URL)
-	}
 
 	return nil
 }
@@ -185,9 +182,10 @@ func resourceTFETerraformVersionUpdate(d *schema.ResourceData, meta interface{})
 		}
 	}
 
+	log.Printf("[DEBUG] Update configuration of Terraform version: %s", d.Id())
+
 	v, err := config.Client.Admin.TerraformVersions.Update(ctx, d.Id(), opts)
 	if err != nil {
-		fmt.Printf("[DEBUG] Oh nose! Error: %s\n", err)
 		return fmt.Errorf("Error updating Terraform version %s: %w", d.Id(), err)
 	}
 

@@ -139,23 +139,17 @@ func fetchOPAVersionID(version string, client *tfe.Client) (string, error) {
 	return "", fmt.Errorf("OPA version not found")
 }
 
-// if archs is present/valid, set archs in resource
-// if url & sha are present, set url & sha in resource
-// if both are present, set archs in resource and a warning
 func setArchitectureSchema(toolVersion *tfe.AdminTerraformVersion, d *schema.ResourceData) error {
 	archs := toolVersion.Archs
 	url := toolVersion.URL
 	sha := toolVersion.Sha
 
 	if len(archs) > 0 {
-		// if url and sha are set, warn that it will be ignored and archs will be used
 		if url != "" && sha != "" {
-			// "[WARN] URL and SHA are set, but architecture information is present. URL and SHA will be ignored."
+			fmt.Printf("[WARN] URL and SHA are set, but architecture information is present. URL and SHA will be ignored.")
 		}
 
 		d.Set("archs", archs)
-		d.Set("url", archs[0].URL)
-		d.Set("sha", archs[0].Sha)
 	} else if url != "" && sha != "" {
 		d.Set("url", url)
 		d.Set("sha", sha)
@@ -168,7 +162,6 @@ func setArchitectureSchema(toolVersion *tfe.AdminTerraformVersion, d *schema.Res
 }
 
 func convertToToolVersionArchitectures(archs interface{}) []*tfe.ToolVersionArchitecture {
-	fmt.Printf("[DEBUG] convertToToolVersionArchitectures: %v\n", archs)
 	if archs == nil {
 		return nil
 	}
@@ -191,14 +184,5 @@ func convertToToolVersionArchitectures(archs interface{}) []*tfe.ToolVersionArch
 		}
 	}
 
-	fmt.Printf("[DEBUG] convertedArchs: %v\n", convertedArchs[0])
-	// converted archs type
-	fmt.Printf("[DEBUG] convertedArchs type: %T\n", convertedArchs)
 	return convertedArchs
-}
-
-type TerraformVersionOptions struct {
-	Archs []*tfe.ToolVersionArchitecture
-	URL   *string
-	Sha   *string
 }
