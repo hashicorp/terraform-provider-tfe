@@ -1,9 +1,12 @@
 name: Provider Release
 
+# This workflow has been retired after the release process was moved to Common
+# Release Tooling (CRT). It remains here for reference as the CRT workflow is
+# rolled out.
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+*'
+      - 'NEVER'
 
 permissions:
   contents: write
