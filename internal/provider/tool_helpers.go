@@ -151,7 +151,6 @@ func convertToToolVersionArchitectures(archs interface{}) []*tfe.ToolVersionArch
 	var convertedArchs []*tfe.ToolVersionArchitecture
 	for _, arch := range archsList {
 		if archMap, ok := arch.(map[string]interface{}); ok {
-
 			convertedArchs = append(convertedArchs, &tfe.ToolVersionArchitecture{
 				URL:  archMap["url"].(string),
 				Sha:  archMap["sha"].(string),
