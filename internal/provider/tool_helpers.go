@@ -137,3 +137,28 @@ func fetchOPAVersionID(version string, client *tfe.Client) (string, error) {
 
 	return "", fmt.Errorf("OPA version not found")
 }
+
+func convertToToolVersionArchitectures(archs interface{}) []*tfe.ToolVersionArchitecture {
+	if archs == nil {
+		return nil
+	}
+
+	archsList, ok := archs.([]interface{})
+	if !ok {
+		return nil
+	}
+
+	var convertedArchs []*tfe.ToolVersionArchitecture
+	for _, arch := range archsList {
+		if archMap, ok := arch.(map[string]interface{}); ok {
+			convertedArchs = append(convertedArchs, &tfe.ToolVersionArchitecture{
+				URL:  archMap["url"].(string),
+				Sha:  archMap["sha"].(string),
+				OS:   archMap["os"].(string),
+				Arch: archMap["arch"].(string),
+			})
+		}
+	}
+
+	return convertedArchs
+}
