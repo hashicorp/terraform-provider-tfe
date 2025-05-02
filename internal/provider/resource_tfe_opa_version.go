@@ -31,11 +31,13 @@ func resourceTFEOPAVersion() *schema.Resource {
 			},
 			"url": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Default:  nil,
 			},
 			"sha": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Default:  nil,
 			},
 			"official": {
 				Type:     schema.TypeBool,
@@ -62,6 +64,31 @@ func resourceTFEOPAVersion() *schema.Resource {
 				Optional: true,
 				Default:  nil,
 			},
+			"archs": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Default:  nil,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"url": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"sha": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"os": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"arch": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -78,6 +105,7 @@ func resourceTFEOPAVersionCreate(d *schema.ResourceData, meta interface{}) error
 		Beta:             tfe.Bool(d.Get("beta").(bool)),
 		Deprecated:       tfe.Bool(d.Get("deprecated").(bool)),
 		DeprecatedReason: tfe.String(d.Get("deprecated_reason").(string)),
+		Archs:            convertToToolVersionArchitectures(d.Get("archs").([]interface{})),
 	}
 
 	log.Printf("[DEBUG] Create new OPA version: %s", opts.Version)
@@ -113,6 +141,7 @@ func resourceTFEOPAVersionRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("beta", v.Beta)
 	d.Set("deprecated", v.Deprecated)
 	d.Set("deprecated_reason", v.DeprecatedReason)
+	d.Set("archs", flattenToolVersionArchitectures(v.Archs))
 
 	return nil
 }
@@ -129,6 +158,7 @@ func resourceTFEOPAVersionUpdate(d *schema.ResourceData, meta interface{}) error
 		Beta:             tfe.Bool(d.Get("beta").(bool)),
 		Deprecated:       tfe.Bool(d.Get("deprecated").(bool)),
 		DeprecatedReason: tfe.String(d.Get("deprecated_reason").(string)),
+		Archs:            convertToToolVersionArchitectures(d.Get("archs").([]interface{})),
 	}
 
 	log.Printf("[DEBUG] Update configuration of OPA version: %s", d.Id())

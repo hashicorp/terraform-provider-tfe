@@ -162,3 +162,21 @@ func convertToToolVersionArchitectures(archs interface{}) []*tfe.ToolVersionArch
 
 	return convertedArchs
 }
+
+func flattenToolVersionArchitectures(archs []*tfe.ToolVersionArchitecture) []map[string]interface{} {
+	if archs == nil {
+		return nil
+	}
+
+	var flattenedArchs []map[string]interface{}
+	for _, arch := range archs {
+		flattenedArchs = append(flattenedArchs, map[string]interface{}{
+			"url":  arch.URL,
+			"sha":  arch.Sha,
+			"os":   arch.OS,
+			"arch": arch.Arch,
+		})
+	}
+
+	return flattenedArchs
+}
