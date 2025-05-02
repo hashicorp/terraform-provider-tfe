@@ -34,18 +34,14 @@ func resourceTFETerraformVersion() *schema.Resource {
 				Required: true,
 			},
 			"url": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Default:       nil,
-				ConflictsWith: []string{"archs"},
-				RequiredWith:  []string{"sha"},
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  nil,
 			},
 			"sha": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Default:       nil,
-				ConflictsWith: []string{"archs"},
-				RequiredWith:  []string{"url"},
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  nil,
 			},
 			"official": {
 				Type:     schema.TypeBool,
@@ -73,11 +69,9 @@ func resourceTFETerraformVersion() *schema.Resource {
 				Default:  nil,
 			},
 			"archs": {
-				Type:          schema.TypeList,
-				Optional:      true,
-				Default:       nil,
-				ConflictsWith: []string{"url", "sha"},
-				AtLeastOneOf:  []string{"archs", "url", "sha"},
+				Type:     schema.TypeList,
+				Optional: true,
+				Default:  nil,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"url": {
@@ -108,23 +102,14 @@ func resourceTFETerraformVersionCreate(d *schema.ResourceData, meta interface{})
 
 	opts := tfe.AdminTerraformVersionCreateOptions{
 		Version:          tfe.String(d.Get("version").(string)),
+		URL:              tfe.String(d.Get("url").(string)),
+		Sha:              tfe.String(d.Get("sha").(string)),
 		Official:         tfe.Bool(d.Get("official").(bool)),
 		Enabled:          tfe.Bool(d.Get("enabled").(bool)),
 		Beta:             tfe.Bool(d.Get("beta").(bool)),
 		Deprecated:       tfe.Bool(d.Get("deprecated").(bool)),
 		DeprecatedReason: tfe.String(d.Get("deprecated_reason").(string)),
-	}
-
-	archs, ok := d.GetOk("archs")
-	if ok {
-		opts.Archs = convertToToolVersionArchitectures(archs)
-	} else {
-		url, urlOk := d.GetOk("url")
-		sha, shaOk := d.GetOk("sha")
-		if urlOk && shaOk {
-			opts.URL = tfe.String(url.(string))
-			opts.Sha = tfe.String(sha.(string))
-		}
+		Archs:            convertToToolVersionArchitectures(d.Get("archs").([]interface{})),
 	}
 
 	log.Printf("[DEBUG] Create new Terraform version: %s", *opts.Version)
@@ -153,6 +138,8 @@ func resourceTFETerraformVersionRead(d *schema.ResourceData, meta interface{}) e
 	}
 
 	d.Set("version", v.Version)
+	d.Set("url", v.URL)
+	d.Set("sha", v.Sha)
 	d.Set("official", v.Official)
 	d.Set("enabled", v.Enabled)
 	d.Set("beta", v.Beta)
@@ -170,12 +157,6 @@ func resourceTFETerraformVersionRead(d *schema.ResourceData, meta interface{}) e
 			}
 		}
 		d.Set("archs", archs)
-		d.Set("url", nil)
-		d.Set("sha", nil)
-	} else {
-		d.Set("archs", nil)
-		d.Set("url", v.URL)
-		d.Set("sha", v.Sha)
 	}
 
 	return nil
@@ -186,19 +167,14 @@ func resourceTFETerraformVersionUpdate(d *schema.ResourceData, meta interface{})
 
 	opts := tfe.AdminTerraformVersionUpdateOptions{
 		Version:          tfe.String(d.Get("version").(string)),
+		URL:              tfe.String(d.Get("url").(string)),
+		Sha:              tfe.String(d.Get("sha").(string)),
 		Official:         tfe.Bool(d.Get("official").(bool)),
 		Enabled:          tfe.Bool(d.Get("enabled").(bool)),
 		Beta:             tfe.Bool(d.Get("beta").(bool)),
 		Deprecated:       tfe.Bool(d.Get("deprecated").(bool)),
 		DeprecatedReason: tfe.String(d.Get("deprecated_reason").(string)),
-	}
-
-	archs, ok := d.GetOk("archs")
-	if ok {
-		opts.Archs = convertToToolVersionArchitectures(archs)
-	} else {
-		opts.URL = tfe.String(d.Get("url").(string))
-		opts.Sha = tfe.String(d.Get("sha").(string))
+		Archs:            convertToToolVersionArchitectures(d.Get("archs").([]interface{})),
 	}
 
 	log.Printf("[DEBUG] Update configuration of Terraform version: %s", d.Id())
