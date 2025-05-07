@@ -1,3 +1,6 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 schema = 1
 artifacts {
   # This should match the `matrix` in .github/workflows/build.yml
