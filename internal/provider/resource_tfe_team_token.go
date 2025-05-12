@@ -170,9 +170,14 @@ func (r *resourceTFETeamToken) Create(ctx context.Context, req resource.CreateRe
 
 	token, err := r.config.Client.TeamTokens.CreateWithOptions(ctx, teamID, options)
 	if err != nil {
+		errDetails := err.Error()
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			errDetails = fmt.Sprintf("%s, team does not exist or version of Terraform Enterprise "+
+				"does not support multiple team tokens with descriptions", errDetails)
+		}
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("Error creating new token for team %s", teamID),
-			err.Error(),
+			errDetails,
 		)
 		return
 	}

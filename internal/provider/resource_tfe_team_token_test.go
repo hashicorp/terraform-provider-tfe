@@ -248,6 +248,24 @@ func TestAccTFETeamToken_importByTokenID(t *testing.T) {
 	})
 }
 
+func TestAccTFETeamToken_withNonexistentTeam(t *testing.T) {
+	conf := `
+resource "tfe_team_token" "invalid" {
+  team_id    = "invalid"
+}`
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamTokenDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      conf,
+				ExpectError: regexp.MustCompile("resource not found, team does not exist or version of Terraform Enterprise\ndoes not support multiple team tokens with descriptions"),
+			},
+		},
+	})
+}
+
 func testAccCheckTFETeamTokenExists(
 	n string, token *tfe.TeamToken) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
