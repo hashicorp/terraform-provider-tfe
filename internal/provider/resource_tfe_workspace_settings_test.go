@@ -151,6 +151,8 @@ func TestAccTFEWorkspaceSettingsRemoteState(t *testing.T) {
 						"tfe_workspace_settings.foobar", "global_remote_state", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace_settings.foobar", "remote_state_consumer_ids.0", ws2.ID),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.foobar", "remote_state_consumer_ids.#", "1"),
 				),
 			},
 			// Unset remote state consumer ids and set global remote state
@@ -163,6 +165,8 @@ func TestAccTFEWorkspaceSettingsRemoteState(t *testing.T) {
 						"tfe_workspace_settings.foobar", "workspace_id"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace_settings.foobar", "global_remote_state", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.foobar", "remote_state_consumer_ids.#", "0"),
 				),
 			},
 			// Unset execution mode
