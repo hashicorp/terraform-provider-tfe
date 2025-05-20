@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/tfversion"
 )
 
-func TestAccagentTokenEphemeralResource_basic(t *testing.T) {
+func TestAccAgentTokenEphemeralResource_basic(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
