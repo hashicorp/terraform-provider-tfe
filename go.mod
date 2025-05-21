@@ -18,10 +18,10 @@ require (
 	github.com/hashicorp/go-version v1.7.0
 	github.com/hashicorp/hcl v1.0.0
 	github.com/hashicorp/hcl/v2 v2.23.0 // indirect
-	github.com/hashicorp/terraform-plugin-framework v1.14.1
+	github.com/hashicorp/terraform-plugin-framework v1.15.0
 	github.com/hashicorp/terraform-plugin-framework-validators v0.17.0
-	github.com/hashicorp/terraform-plugin-go v0.27.0
-	github.com/hashicorp/terraform-plugin-mux v0.19.0
+	github.com/hashicorp/terraform-plugin-go v0.28.0
+	github.com/hashicorp/terraform-plugin-mux v0.20.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.37.0
 	github.com/hashicorp/terraform-svchost v0.1.1
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -63,7 +63,7 @@ require (
 require (
 	github.com/hashicorp/terraform-plugin-framework-timetypes v0.5.0
 	github.com/hashicorp/terraform-plugin-log v0.9.0
-	github.com/hashicorp/terraform-plugin-testing v1.12.0
+	github.com/hashicorp/terraform-plugin-testing v1.13.1
 	github.com/stretchr/testify v1.10.0
 	go.uber.org/mock v0.5.2
 )
