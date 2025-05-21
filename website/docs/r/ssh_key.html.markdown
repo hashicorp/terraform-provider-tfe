@@ -30,7 +30,7 @@ The following arguments are supported:
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `key` - (Optional) The text of the SSH private key. One of `key` or `key_wo`
   must be provided.
-* `key_wo` - (Optional) The text of the SSH private key, guaranteed not to be
+* `key_wo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) The text of the SSH private key, guaranteed not to be
   written to plan or state artifacts. One of `key` or `key_wo` must be provided.
 
 ## Attributes Reference
