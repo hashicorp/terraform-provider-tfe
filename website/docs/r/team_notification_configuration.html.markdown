@@ -122,11 +122,8 @@ The following arguments are supported:
   if `destination_type` is `generic`, `microsoft-teams`, or `slack`.
 - `enabled` - (Optional) Whether the notification configuration should be enabled or not.
   Disabled configurations will not send any notifications. Defaults to `false`.
-- `token` - (Optional) A write-only secure token for the notification configuration, which can
-  be used by the receiving server to verify request authenticity when configured for notification
-  configurations with a destination type of `generic`. Defaults to `null`.
-  This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.
-- `token_wo` - (Optional) A write-only secure token for the notification configuration, guaranteed not to be written to plan or state artifacts. Only one of `token` or `token_wo` can be provided.
+- `token` - (Optional) A write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Defaults to `null`. This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.
+- `token_wo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) A write-only secure token for the notification configuration, guaranteed not to be written to plan or state artifacts. Either `token` or `token_wo` can be provided, but not both. This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.
 - `triggers` - (Optional) The array of triggers for which this notification configuration will
   send notifications. Currently, the only valid value is `change_request:created`.
 

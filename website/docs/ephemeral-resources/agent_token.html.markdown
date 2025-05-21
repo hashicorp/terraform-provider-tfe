@@ -7,13 +7,18 @@ description: |-
 
 # tfe_agent_token
 
-Generates a new agent token as an ephemeral value. 
+Generates an ephemeral agent token for use during a Terraform run.
 
-Each agent pool can have multiple tokens and they can be long-lived. For that reason, this ephemeral resource does not implement the Close method, which would tear the token down after the configuration is complete. 
+Ephemeral agent pool tokens are only valid within the context of a single run, and
+are not stored in Terraform state.
 
-Agent token strings are sensitive and only returned on creation, so making those strings ephemeral values is beneficial to avoid state exposure.
+Ephemeral resources are provisioned during the plan phase of a run as well as
+the apply phase.
 
-If you need to use this value in the future, make sure to capture the token and save it in a secure location. Any resource with write-only values can accept ephemeral resource attributes.
+If you need the agent token to remain valid for long-lived use, consider using the
+`tfe_agent_token` managed resource instead.
+
+~> **NOTE:** Ephemeral resources are a new feature and may evolve as we continue to explore their most effective uses. [Learn more](https://developer.hashicorp.com/terraform/language/v1.10.x/resources/ephemeral).
 
 ## Example Usage
 

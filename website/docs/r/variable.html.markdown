@@ -88,7 +88,11 @@ The following arguments are supported:
 
 * `key` - (Required) Name of the variable.
 * `value` - (Required) Value of the variable.
+<<<<<<< HEAD
 * `value_wo` - (Optional) Write-Only value of the variable. `write-only` values are never stored to state and do not display in the Terraform plan output. Set the `sensitive` argument to `true` to not display its value in the `Variables` UI for HCP. If the value passed to `value_wo` changes, it will force to recreate the resource. 
+=======
+* `value_wo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) Value of the variable. `Write-only` attributes function similarly to their non-write-only counterparts, but are never stored to state and do not display in the Terraform plan output. Either `value` or `value_wo` can be provided, but not both.
+>>>>>>> 762b2acb (docs: update docs for tfe_team_token and tfe_agent_token ephemeral resources)
 * `category` - (Required) Whether this is a Terraform or environment variable.
   Valid values are `terraform` or `env`.
 * `description` - (Optional) Description of the variable.
