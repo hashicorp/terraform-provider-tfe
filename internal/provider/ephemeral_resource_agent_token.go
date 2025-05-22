@@ -9,7 +9,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral/schema"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var (
@@ -24,27 +23,11 @@ type AgentTokenEphemeralResource struct {
 	config ConfiguredClient
 }
 
-type AgentTokenEphemeralResourceModel struct {
-	ID          types.String `tfsdk:"id"`
-	AgentPoolID types.String `tfsdk:"agent_pool_id"`
-	Description types.String `tfsdk:"description"`
-	Token       types.String `tfsdk:"token"`
-}
-
-type AgentTokenPrivateData struct {
-	ID          string `json:"id"`
-	AgentPoolID string `json:"agent_pool_id"`
-}
-
 // defines a schema describing what data is available in the ephemeral resource's configuration and result data.
 func (e *AgentTokenEphemeralResource) Schema(ctx context.Context, req ephemeral.SchemaRequest, resp *ephemeral.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "This ephemeral resource can be used to retrieve an agent token without saving its value in state.",
 		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				Description: `System generated ID of the agent token.`,
-				Computed:    true,
-			},
 			"agent_pool_id": schema.StringAttribute{
 				Description: `ID of the agent. If omitted, agent must be defined in the provider config.`,
 				Required:    true,

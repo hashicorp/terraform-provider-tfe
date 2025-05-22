@@ -10,7 +10,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timetypes/timetypes"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral/schema"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var (
@@ -24,12 +23,6 @@ func NewOrganizationTokenEphemeralResource() ephemeral.EphemeralResource {
 
 type OrganizationTokenEphemeralResource struct {
 	config ConfiguredClient
-}
-
-type OrganizationTokenEphemeralResourceModel struct {
-	Organization types.String      `tfsdk:"organization"`
-	Token        types.String      `tfsdk:"token"`
-	ExpiredAt    timetypes.RFC3339 `tfsdk:"expired_at"`
 }
 
 func (e *OrganizationTokenEphemeralResource) Schema(ctx context.Context, req ephemeral.SchemaRequest, resp *ephemeral.SchemaResponse) {
