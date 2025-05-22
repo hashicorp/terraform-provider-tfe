@@ -47,5 +47,6 @@ In addition to all arguments above, the following attributes are exported:
 * `id` - The project ID.
 * `workspace_ids` - IDs of the workspaces that are associated with the project.
 * `workspace_names` - Names of the workspaces that are associated with the project.
+* `effective_tags` - A map of key-value tags associated with the project.
 
-<!-- cache-key: cdktf-0.20.8 input-c0fb226c1ac838d85660d99cb036d77ac141264beb3f94ffd4b3e2369f67b971 -->
+<!-- cache-key: cdktf-0.20.8 input-d6ced138e71a16de8ba95b284a41c0a5b1ee88185ba1da147742ea5af9e97163 -->

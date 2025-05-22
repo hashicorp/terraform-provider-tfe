@@ -39,7 +39,7 @@ func TestAccTFEOrganizationRunTask_validateSchemaAttributeUrl(t *testing.T) {
 	})
 }
 
-func TestAccTFEOrganizationRunTask_create(t *testing.T) {
+func TestAccTFEOrganizationRunTask_basic(t *testing.T) {
 	skipUnlessRunTasksDefined(t)
 
 	tfeClient, err := getClientUsingEnv()
