@@ -18,6 +18,10 @@ import (
 )
 
 func TestAccTeamTokenEphemeralResource_basic(t *testing.T) {
+	// The multiple-team-tokens flag is rolled out to prod but still needs to
+	// evaluate true before these tests will pass in CI.
+	skipUnlessBeta(t)
+
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -47,6 +51,10 @@ func TestAccTeamTokenEphemeralResource_basic(t *testing.T) {
 }
 
 func TestAccTeamTokenEphemeralResource_expiredAt(t *testing.T) {
+	// The multiple-team-tokens flag is rolled out to prod but still needs to
+	// evaluate true before these tests will pass in CI.
+	skipUnlessBeta(t)
+
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
