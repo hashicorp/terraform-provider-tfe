@@ -1,5 +1,7 @@
 ## Unreleased
 
+## v0.66.0
+
 BUG FIXES:
 * `d/tfe_outputs`: fixes 'error inferring type for key' for output objects that had a key with null value.  (#1709), by @uturunku1 [#1699](https://github.com/hashicorp/terraform-provider-tfe/pull/1709)
 * `r/tfe_workspace_settings`: fixes `Provider produced inconsistent result after apply` error when setting `remote_state_consumer_ids` to an empty set in config. [#1728](https://github.com/hashicorp/terraform-provider-tfe/pull/1728)
