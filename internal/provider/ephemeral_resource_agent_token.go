@@ -6,12 +6,9 @@ package provider
 import (
 	"context"
 	"fmt"
-	"log"
 
-	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral/schema"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var (
@@ -24,12 +21,6 @@ func NewAgentTokenEphemeralResource() ephemeral.EphemeralResource {
 
 type AgentTokenEphemeralResource struct {
 	config ConfiguredClient
-}
-
-type AgentTokenEphemeralResourceModel struct {
-	AgentPoolID types.String `tfsdk:"agent_pool_id"`
-	Description types.String `tfsdk:"description"`
-	Token       types.String `tfsdk:"token"`
 }
 
 // defines a schema describing what data is available in the ephemeral resource's configuration and result data.
@@ -51,6 +42,7 @@ func (e *AgentTokenEphemeralResource) Schema(ctx context.Context, req ephemeral.
 				Sensitive:   true,
 			},
 		},
+		DeprecationMessage: "Use of this ephemeral resource is deprecated. Please use the `tfe_agent_token` managed resource instead.",
 	}
 }
 
@@ -78,43 +70,5 @@ func (e *AgentTokenEphemeralResource) Metadata(ctx context.Context, req ephemera
 
 // The request contains the configuration supplied to Terraform for the ephemeral resource. The response contains the ephemeral result data. The data is defined by the schema of the ephemeral resource.
 func (e *AgentTokenEphemeralResource) Open(ctx context.Context, req ephemeral.OpenRequest, resp *ephemeral.OpenResponse) {
-	var data AgentTokenEphemeralResourceModel
-
-	// Read Terraform config data into the model
-	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	agentPoolID := data.AgentPoolID.ValueString()
-	description := data.Description.ValueString()
-
-	options := tfe.AgentTokenCreateOptions{
-		Description: tfe.String(description),
-	}
-
-	log.Printf("[DEBUG] Create new agent token for agent pool ID: %s", agentPoolID)
-	log.Printf("[DEBUG] Create new agent token with description: %s", description)
-
-	result, err := e.config.Client.AgentTokens.Create(ctx, agentPoolID, options)
-
-	if err != nil {
-		resp.Diagnostics.AddError("Unable to create agent token", err.Error())
-		return
-	}
-
-	data = ephemeralResourceModelFromTFEagentToken(agentPoolID, result)
-
-	// Save to ephemeral result data
-	resp.Diagnostics.Append(resp.Result.Set(ctx, &data)...)
-}
-
-// ephemeralResourceModelFromTFEagentToken builds a agentTokenEphemeralResourceModel struct from a
-// tfe.agentToken value.
-func ephemeralResourceModelFromTFEagentToken(id string, v *tfe.AgentToken) AgentTokenEphemeralResourceModel {
-	return AgentTokenEphemeralResourceModel{
-		AgentPoolID: types.StringValue(id),
-		Description: types.StringValue(v.Description),
-		Token:       types.StringValue(v.Token),
-	}
+	// No-op
 }
