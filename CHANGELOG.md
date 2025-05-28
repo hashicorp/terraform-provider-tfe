@@ -1,5 +1,8 @@
 ## Unreleased
 
+FEATURES:
+* `r/tfe_oauth_client`: This change adds the `agent_pool_id` field to the read and update functions, which is used to associate a VCS Provider with an AgentPool for PrivateVCS support [1636](https://github.com/hashicorp/terraform-provider-tfe/pull/1636)
+
 ## v0.66.0
 
 BUG FIXES:
