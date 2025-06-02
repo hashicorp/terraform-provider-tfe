@@ -2,15 +2,21 @@
 layout: "tfe"
 page_title: "Terraform Enterprise: Ephemeral: tfe_team_token"
 description: |-
-  Generates a new team token that is guaranteed not to be written to
-  state.
+  Generates an ephemeral team token.
 ---
 
 # Ephemeral: tfe_team_token
 
-Terraform ephemeral resource for managing a TFE team token. This
-resource is used to generate a new team token that is guaranteed not to
-be written to state. Since team tokens are singleton resources, using this ephemeral resource will replace any existing team token for a given team.
+Generates an ephemeral team token for use during a Terraform run.
+
+Ephemeral team tokens are only valid within the context of a single run, and
+are not stored in Terraform state.
+
+Ephemeral resources are provisioned during the plan phase of a run as well as
+the apply phase.
+
+If you need the team token to remain valid for long-lived use, consider using the
+`tfe_team_token` managed resource instead.
 
 ~> **NOTE:** Ephemeral resources are a new feature and may evolve as we continue to explore their most effective uses. [Learn more](https://developer.hashicorp.com/terraform/language/v1.10.x/resources/ephemeral).
 
