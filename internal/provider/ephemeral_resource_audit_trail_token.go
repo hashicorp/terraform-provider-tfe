@@ -7,12 +7,9 @@ import (
 	"context"
 	"fmt"
 
-	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework-timetypes/timetypes"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral/schema"
-	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 var (
@@ -26,12 +23,6 @@ func NewAuditTrailTokenEphemeralResource() ephemeral.EphemeralResource {
 
 type AuditTrailTokenEphemeralResource struct {
 	config ConfiguredClient
-}
-
-type AuditTrailTokenEphemeralResourceModel struct {
-	Organization types.String      `tfsdk:"organization"`
-	Token        types.String      `tfsdk:"token"`
-	ExpiredAt    timetypes.RFC3339 `tfsdk:"expired_at"`
 }
 
 func (e *AuditTrailTokenEphemeralResource) Schema(ctx context.Context, req ephemeral.SchemaRequest, resp *ephemeral.SchemaResponse) {
@@ -54,6 +45,7 @@ func (e *AuditTrailTokenEphemeralResource) Schema(ctx context.Context, req ephem
 				CustomType:  timetypes.RFC3339Type{},
 			},
 		},
+		DeprecationMessage: "Use of this ephemeral resource is deprecated. Please use the `tfe_audit_trail_token` managed resource instead.",
 	}
 }
 
@@ -81,46 +73,5 @@ func (e *AuditTrailTokenEphemeralResource) Metadata(ctx context.Context, req eph
 }
 
 func (e *AuditTrailTokenEphemeralResource) Open(ctx context.Context, req ephemeral.OpenRequest, resp *ephemeral.OpenResponse) {
-	// Read Terraform config
-	var config AuditTrailTokenEphemeralResourceModel
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Get org name or default
-	var orgName string
-	resp.Diagnostics.Append(e.config.dataOrDefaultOrganization(ctx, req.Config, &orgName)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Create options struct
-	tokenType := tfe.AuditTrailToken // "audit_trail"
-	opts := tfe.OrganizationTokenCreateOptions{
-		TokenType: &tokenType,
-	}
-
-	if !config.ExpiredAt.IsNull() {
-		expiredAt, diags := config.ExpiredAt.ValueRFC3339Time()
-		if diags.HasError() {
-			resp.Diagnostics.Append(diags...)
-			return
-		}
-
-		opts.ExpiredAt = &expiredAt
-	}
-
-	tflog.Debug(ctx, fmt.Sprintf("Creating audit trail token for organization %s", orgName))
-	result, err := e.config.Client.OrganizationTokens.CreateWithOptions(ctx, orgName, opts)
-	if err != nil {
-		resp.Diagnostics.AddError("Unable to create organization audit trail token", err.Error())
-		return
-	}
-
-	// Set the token in the model
-	config.Token = types.StringValue(result.Token)
-
-	// Write the data back to the ephemeral resource
-	resp.Diagnostics.Append(resp.Result.Set(ctx, &config)...)
+	// No-op
 }

@@ -268,7 +268,7 @@ func (r *resourceOrgRunTask) Update(ctx context.Context, req resource.UpdateRequ
 
 	var state modelTFEOrganizationRunTaskV0
 	// Read Terraform state into the model
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &state)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}

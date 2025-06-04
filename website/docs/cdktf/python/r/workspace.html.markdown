@@ -37,7 +37,10 @@ class MyConvertedCode(TerraformStack):
         Workspace(self, "test",
             name="my-workspace-name",
             organization=test_organization.name,
-            tag_names=["test", "app"]
+            tags={
+                "environment": "prod",
+                "team_owner": "my-team"
+            }
         )
 ```
 
@@ -146,6 +149,12 @@ _not_ defined by config so they will not be overwritten by the configured
 tags. This creates exceptional behavior in terraform with respect
 to `tag_names` and is not recommended. This value must be applied before it
 will be used.
+* `tags` - (Optional) A map of key value tags for this workspace.
+* `ignore_additional_tags` - (Optional) Explicitly ignores `tags`
+_not_ defined by config so they will not be overwritten by the configured
+tags. This creates exceptional behavior in terraform with respect
+to `tags` and is not recommended. This value must be applied before it
+will be used.
 * `terraform_version` - (Optional) The version of Terraform to use for this
   workspace. This can be either an exact version or a
   [version constraint](https://developer.hashicorp.com/terraform/language/expressions/version-constraints)
@@ -182,6 +191,7 @@ In addition to all arguments above, the following attributes are exported:
 * `resource_count` - The number of resources managed by the workspace.
 * `html_url` - The URL to the browsable HTML overview of the workspace.
 * `inherits_project_auto_destroy` - Indicates whether this workspace inherits project auto destroy settings.
+* `effective_tags` - A map of key value tags for this workspace, including any tags inherited from the parent project.
 
 ## Import
 
@@ -196,4 +206,4 @@ terraform import tfe_workspace.test ws-CH5in3chf8RJjrVd
 terraform import tfe_workspace.test my-org-name/my-wkspace-name
 ```
 
-<!-- cache-key: cdktf-0.20.8 input-5638210febe6520d81406237cd38230e777adb32c23eb7c50374a9033a12be9f -->
+<!-- cache-key: cdktf-0.20.8 input-8659fe12b1411c17a28ed5fc2f813f99433e585a19e67e9d9b8e72936be75dac -->

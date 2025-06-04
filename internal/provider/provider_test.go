@@ -49,7 +49,7 @@ func init() {
 			}
 
 			mux, err := tf5muxserver.NewMuxServer(
-				ctx, nextProvider, PluginProviderServer, sdkProvider.GRPCProvider,
+				ctx, nextProvider, sdkProvider.GRPCProvider,
 			)
 			if err != nil {
 				return nil, err

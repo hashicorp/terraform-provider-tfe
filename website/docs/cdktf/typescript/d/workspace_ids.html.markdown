@@ -33,6 +33,33 @@ class MyConvertedCode extends TerraformStack {
       names: ["app-frontend-prod", "app-frontend-dev1", "app-frontend-staging"],
       organization: "my-org-name",
     });
+    new DataTfeWorkspaceIds(this, "dev_env_tags_only", {
+      organization: "my-org-name",
+      tagFilters: {
+        include: {
+          environment: "dev",
+        },
+      },
+    });
+    new DataTfeWorkspaceIds(this, "exclude_all_matching_key", {
+      organization: "my-org-name",
+      tagFilters: {
+        exclude: {
+          bad_key: "*",
+        },
+      },
+    });
+    new DataTfeWorkspaceIds(this, "include_and_exclude", {
+      organization: "my-org-name",
+      tagFilters: {
+        exclude: {
+          team: "prodsec",
+        },
+        include: {
+          region: "us-east-1",
+        },
+      },
+    });
     new DataTfeWorkspaceIds(this, "prod-apps", {
       organization: "my-org-name",
       tagNames: ["prod", "app", "aws"],
@@ -56,9 +83,15 @@ The following arguments are supported. At least one of `names` or `tagNames` mus
 
     To select _all_ workspaces for an organization, provide a list with a single
     asterisk, like `["*"]`. The asterisk also supports partial matching on prefix and/or suffix, like `[*-prod]`, `[test-*]`, `[*dev*]`.
-* `tagNames` - (Optional) A list of tag names to search for.
-* `excludeTags` - (Optional) A list of tag names to exclude when searching.
+* `tagFilters` - (Optional) A set of key-value tag filters to search for workspaces.
+* `tagNames` - (Optional) **Deprecated** A list of tag names to search for.
+* `excludeTags` - (Optional) **Deprecated** A list of tag names to exclude when searching.
 * `organization` - (Required) Name of the organization.
+
+The `tagFilters` block supports:
+
+* `include`: (Optional) A map of key-value tags the workspaces must contain. Each tag included here will be combined using a logical AND when filtering results.
+* `exclude`: (Optional) A map of key-value tags to exclude workspaces from the returned list. To exclude all workspaces containing a specific key, use `"*"` as the value.
 
 ## Attributes Reference
 
@@ -67,4 +100,4 @@ In addition to all arguments above, the following attributes are exported:
 * `fullNames` - A map of workspace names and their full names, which look like `<ORGANIZATION>/<WORKSPACE>`.
 * `ids` - A map of workspace names and their opaque, immutable IDs, which look like `ws-<RANDOM STRING>`.
 
-<!-- cache-key: cdktf-0.20.8 input-a50ddfd1d990de8d1cbdba1a7182f9b5d086fbc397439bdd1d0bd057263938e3 -->
+<!-- cache-key: cdktf-0.20.8 input-59fc5c7e05bb6177bb75c0977a805249523a5ecc467f69e0c8d67905a2b343a2 -->

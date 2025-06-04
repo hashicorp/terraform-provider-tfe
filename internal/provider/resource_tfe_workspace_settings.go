@@ -355,7 +355,7 @@ func (r *workspaceSettings) workspaceSettingsModelFromTFEWorkspace(ws *tfe.Works
 		result.AgentPoolID = types.StringValue(ws.AgentPool.ID)
 	}
 
-	result.RemoteStateConsumerIDs = types.SetNull(types.StringType)
+	result.RemoteStateConsumerIDs = types.SetValueMust(types.StringType, []attr.Value{})
 
 	if !ws.GlobalRemoteState {
 		_, remoteStateConsumerIDs, err := readWorkspaceStateConsumers(ws.ID, r.config.Client)

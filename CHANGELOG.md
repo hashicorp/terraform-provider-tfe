@@ -1,9 +1,26 @@
 ## Unreleased
 
+## v0.66.0
+
+BUG FIXES:
+* `d/tfe_outputs`: fixes 'error inferring type for key' for output objects that had a key with null value.  (#1709), by @uturunku1 [#1699](https://github.com/hashicorp/terraform-provider-tfe/pull/1709)
+* `r/tfe_workspace_settings`: fixes `Provider produced inconsistent result after apply` error when setting `remote_state_consumer_ids` to an empty set in config. [#1728](https://github.com/hashicorp/terraform-provider-tfe/pull/1728)
+* `ephemeral-resources/tfe_team_token`: Ephemeral team tokens are now only valid within the context of a Terraform run, by @ctrombley [#1736](https://github.com/hashicorp/terraform-provider-tfe/pull/1736)
+
+FEATURES:
+
+* `r/tfe_team_token`: Adds support for creating multiple team tokens for a single team by adding the `description` attribute, which must be unique per team, by @mkam [#1698](https://github.com/hashicorp/terraform-provider-tfe/pull/1698)
+
+DEPRECATIONS:
+
+* `ephemeral-resources/tfe_organization_token`: Ephemeral organization tokens have been removed, by @ctrombley [#1736](https://github.com/hashicorp/terraform-provider-tfe/pull/1736)
+* `ephemeral-resources/tfe_agent_token`: Ephemeral agent tokens have been removed, by @ctrombley [#1736](https://github.com/hashicorp/terraform-provider-tfe/pull/1736)
+* `ephemeral-resources/tfe_audit_trail_token`: Ephemeral audit trail tokens have been removed, by @ctrombley [#1736](https://github.com/hashicorp/terraform-provider-tfe/pull/1736)
+
 ## v0.65.2
 
 BUG FIXES:
-* `r/tfe_notification_configuration`: update attribute validator to allow variable refs (#1696), by @uturunku [#1705](https://github.com/hashicorp/terraform-provider-tfe/pull/1705)
+* `r/tfe_notification_configuration`: update attribute validator to allow variable refs (#1696), by @uturunku1 [#1705](https://github.com/hashicorp/terraform-provider-tfe/pull/1705)
 * `r/tfe_team_token`: do not clear token from state after upgrade (#1700), by @ctrombley [#1706](https://github.com/hashicorp/terraform-provider-tfe/pull/1706)
 * `r/tfe_policy_set_parameter`: fix schema errors, by @ctrombley [#1706](https://github.com/hashicorp/terraform-provider-tfe/pull/1706)
 
@@ -46,9 +63,9 @@ FEATURES:
 
 ENHANCEMENTS:
 
-* `r/tfe_variable`: Add `value_wo` write-only attribute, by @uturunku ([#1639](https://github.com/hashicorp/terraform-provider-tfe/pull/1639))
+* `r/tfe_variable`: Add `value_wo` write-only attribute, by @uturunku1 ([#1639](https://github.com/hashicorp/terraform-provider-tfe/pull/1639))
 
-* `r/tfe_test_variable`: Add `value_wo` write-only attribute, by @uturunku ([#1639](https://github.com/hashicorp/terraform-provider-tfe/pull/1639))
+* `r/tfe_test_variable`: Add `value_wo` write-only attribute, by @uturunku1 ([#1639](https://github.com/hashicorp/terraform-provider-tfe/pull/1639))
 
 * `r/tfe_policy_set_parameter`: Add `value_wo` write-only attribute, by @ctrombley ([#1641](https://github.com/hashicorp/terraform-provider-tfe/pull/1641))
 

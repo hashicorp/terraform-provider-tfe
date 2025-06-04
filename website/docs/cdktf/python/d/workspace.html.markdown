@@ -69,6 +69,7 @@ In addition to all arguments above, the following attributes are exported:
 * `speculative_enabled` - Indicates whether this workspace allows speculative plans.
 * `ssh_key_id` - The ID of an SSH key assigned to the workspace.
 * `structured_run_output_enabled` - Indicates whether runs in this workspace use the enhanced apply UI.
+* `effective_tags` - A map of key-value tags associated with the workspace, including any inherited tags from the parent project.
 * `tag_names` - The names of tags added to this workspace.
 * `terraform_version` - The version (or version constraint) of Terraform used for this workspace.
 * `trigger_prefixes` - List of trigger prefixes that describe the paths HCP Terraform monitors for changes, in addition to the working directory. Trigger prefixes are always appended to the root directory of the repository.
@@ -91,4 +92,4 @@ The `vcs_repo` block contains:
 * `oauth_token_id` - OAuth token ID of the configured VCS connection.
 * `tags_regex` - A regular expression used to trigger a Workspace run for matching Git tags.
 
-<!-- cache-key: cdktf-0.20.8 input-d80e2cf72aa52f98270a38620225ac1ef8a4810885e13dedc294ad2c1d21c880 -->
+<!-- cache-key: cdktf-0.20.8 input-00e997c6f8d35b250c70aa4e4630b8d9ed6e2e553f58e34786b6567776e4a1ef -->
