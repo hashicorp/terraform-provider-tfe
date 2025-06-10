@@ -91,8 +91,10 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"description": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:       schema.TypeString,
+				Computed:   true,
+				Optional:   true,
+				Deprecated: "Use resource tfe_workspace_settings to modify the workspace description. This attribute will be removed in a future release of the provider.",
 			},
 
 			"agent_pool_id": {
@@ -110,9 +112,10 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"auto_apply": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
+				Type:       schema.TypeBool,
+				Optional:   true,
+				Computed:   true,
+				Deprecated: "Use resource tfe_workspace_settings to modify the workspace execution settings. This attribute will be removed in a future release of the provider.",
 			},
 
 			"auto_apply_run_trigger": {
@@ -180,8 +183,10 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"assessments_enabled": {
-				Type:     schema.TypeBool,
-				Optional: true,
+				Type:       schema.TypeBool,
+				Optional:   true,
+				Computed:   true,
+				Deprecated: "Use resource tfe_workspace_settings to modify the workspace assessments settings. This attribute will be removed in a future release of the provider.",
 			},
 
 			"operations": {
@@ -220,7 +225,6 @@ func resourceTFEWorkspace() *schema.Resource {
 			"speculative_enabled": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				Default:  true,
 			},
 
 			"ssh_key_id": {
@@ -706,9 +710,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		options := tfe.WorkspaceUpdateOptions{
 			Name:                       tfe.String(d.Get("name").(string)),
 			AllowDestroyPlan:           tfe.Bool(d.Get("allow_destroy_plan").(bool)),
-			AutoApply:                  tfe.Bool(d.Get("auto_apply").(bool)),
 			AutoApplyRunTrigger:        tfe.Bool(d.Get("auto_apply_run_trigger").(bool)),
-			Description:                tfe.String(d.Get("description").(string)),
 			FileTriggersEnabled:        tfe.Bool(d.Get("file_triggers_enabled").(bool)),
 			GlobalRemoteState:          tfe.Bool(d.Get("global_remote_state").(bool)),
 			QueueAllRuns:               tfe.Bool(d.Get("queue_all_runs").(bool)),
@@ -724,8 +726,20 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		}
 
 		if d.HasChange("assessments_enabled") {
-			if v, ok := d.GetOkExists("assessments_enabled"); ok {
+			if v, ok := d.GetOk("assessments_enabled"); ok {
 				options.AssessmentsEnabled = tfe.Bool(v.(bool))
+			}
+		}
+
+		if d.HasChange("auto_apply") {
+			if v, ok := d.GetOk("auto_apply"); ok {
+				options.AutoApply = tfe.Bool(v.(bool))
+			}
+		}
+
+		if d.HasChange("description") {
+			if v, ok := d.GetOk("description"); ok {
+				options.Description = tfe.String(v.(string))
 			}
 		}
 

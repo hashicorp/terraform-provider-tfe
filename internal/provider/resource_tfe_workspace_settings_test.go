@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-func TestAccTFEWorkspaceSettings(t *testing.T) {
+func TestAccTFEWorkspaceSettings_basic(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -48,6 +48,8 @@ func TestAccTFEWorkspaceSettings(t *testing.T) {
 						"tfe_workspace_settings.foobar", "overwrites.0.agent_pool", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace_settings.foobar", "overwrites.#", "1"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.foobar", "auto_apply", "false"),
 				),
 			},
 			// Change to agent pool
@@ -94,7 +96,7 @@ func TestAccTFEWorkspaceSettings(t *testing.T) {
 	})
 }
 
-func TestAccTFEWorkspaceWithSettings(t *testing.T) {
+func TestAccTFEWorkspaceWithSettings_basicOptions(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -109,13 +111,35 @@ func TestAccTFEWorkspaceWithSettings(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Start with local execution
 			{
-				Config: testAccTFEWorkspaceSettingsUnknownIDRemoteState(org.Name),
+				Config: testAccTFEWorkspaceSettings_options(org.Name, "initial", true),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet(
 						"tfe_workspace_settings.foobar", "id"),
 					resource.TestCheckResourceAttrSet(
 						"tfe_workspace_settings.foobar", "workspace_id",
 					),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.foobar", "description", "initial"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.foobar", "auto_apply", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.foobar", "assessments_enabled", "true"),
+				),
+			},
+			{
+				Config: testAccTFEWorkspaceSettings_options(org.Name, "updated", false),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(
+						"tfe_workspace_settings.foobar", "id"),
+					resource.TestCheckResourceAttrSet(
+						"tfe_workspace_settings.foobar", "workspace_id",
+					),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.foobar", "description", "updated"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.foobar", "auto_apply", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.foobar", "assessments_enabled", "false"),
 				),
 			},
 		},
@@ -281,7 +305,7 @@ func testAccCheckTFEWorkspaceSettingsDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccTFEWorkspaceSettingsUnknownIDRemoteState(orgName string) string {
+func testAccTFEWorkspaceSettingsUnknownIDRemoteState(orgName string, description string, boolOptions bool) string {
 	return fmt.Sprintf(`
 resource "tfe_workspace" "foobar1" {
 	name = "foobar1"
@@ -297,8 +321,11 @@ resource "tfe_workspace_settings" "foobar" {
 	workspace_id              = tfe_workspace.foobar1.id
 	global_remote_state       = false
 	remote_state_consumer_ids = [tfe_workspace.foobar2.id]
+	description               = "%s"
+	auto_apply                = %t
+	assessments_enabled       = %t
 }
-`, orgName, orgName)
+`, orgName, orgName, description, boolOptions, boolOptions)
 }
 
 func testAccTFEWorkspaceSettingsRemoteState(workspaceID, workspaceID2 string) string {
@@ -365,4 +392,20 @@ resource "tfe_workspace_settings" "foobar" {
 	workspace_id   = "%s"
 }
 `, orgName, workspaceID)
+}
+
+func testAccTFEWorkspaceSettings_options(orgName string, description string, boolOptions bool) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace" "foobar1" {
+	name = "foobar1"
+	organization = "%s"
+}
+
+resource "tfe_workspace_settings" "foobar" {
+	workspace_id              = tfe_workspace.foobar1.id
+	description               = "%s"
+	auto_apply                = %t
+	assessments_enabled       = %t
+}
+`, orgName, description, boolOptions, boolOptions)
 }
