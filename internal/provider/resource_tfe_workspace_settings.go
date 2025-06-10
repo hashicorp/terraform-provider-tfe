@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -49,6 +50,9 @@ type modelWorkspaceSettings struct {
 	Overwrites             types.List   `tfsdk:"overwrites"`
 	GlobalRemoteState      types.Bool   `tfsdk:"global_remote_state"`
 	RemoteStateConsumerIDs types.Set    `tfsdk:"remote_state_consumer_ids"`
+	Description            types.String `tfsdk:"description"`
+	AutoApply              types.Bool   `tfsdk:"auto_apply"`
+	AssessmentsEnabled     types.Bool   `tfsdk:"assessments_enabled"`
 }
 
 type modelOverwrites struct {
@@ -338,6 +342,24 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 					validateSelfReference{},
 				},
 			},
+
+			"description": schema.StringAttribute{
+				Optional:    true,
+				Description: "A description of the workspace.",
+			},
+
+			"auto_apply": schema.BoolAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "If set to false a human will have to manually confirm a plan in HCP Terraform's UI to start an apply. If set to true, this resource will be automatically applied.",
+				Default:     booldefault.StaticBool(false),
+			},
+
+			"assessments_enabled": schema.BoolAttribute{
+				Description: "If set to true, assessments will be enabled for the workspace. This includes drift and continuous validation checks.",
+				Optional:    true,
+				Computed:    true,
+			},
 		},
 	}
 }
@@ -345,10 +367,13 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 // workspaceSettingsModelFromTFEWorkspace builds a resource model from the TFE model
 func (r *workspaceSettings) workspaceSettingsModelFromTFEWorkspace(ws *tfe.Workspace) *modelWorkspaceSettings {
 	result := modelWorkspaceSettings{
-		ID:                types.StringValue(ws.ID),
-		WorkspaceID:       types.StringValue(ws.ID),
-		ExecutionMode:     types.StringValue(ws.ExecutionMode),
-		GlobalRemoteState: types.BoolValue(ws.GlobalRemoteState),
+		ID:                 types.StringValue(ws.ID),
+		WorkspaceID:        types.StringValue(ws.ID),
+		ExecutionMode:      types.StringValue(ws.ExecutionMode),
+		GlobalRemoteState:  types.BoolValue(ws.GlobalRemoteState),
+		Description:        types.StringValue(ws.Description),
+		AutoApply:          types.BoolValue(ws.AutoApply),
+		AssessmentsEnabled: types.BoolValue(ws.AssessmentsEnabled),
 	}
 
 	if ws.AgentPool != nil && ws.ExecutionMode == "agent" {
@@ -428,6 +453,9 @@ func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorks
 			ExecutionMode: tfe.Bool(false),
 			AgentPool:     tfe.Bool(false),
 		},
+		Description:        tfe.String(data.Description.ValueString()),
+		AutoApply:          tfe.Bool(data.AutoApply.ValueBool()),
+		AssessmentsEnabled: tfe.Bool(data.AssessmentsEnabled.ValueBool()),
 	}
 
 	executionMode := data.ExecutionMode.ValueString()
