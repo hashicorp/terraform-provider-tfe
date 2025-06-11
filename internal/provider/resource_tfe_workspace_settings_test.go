@@ -6,8 +6,10 @@ package provider
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -273,6 +275,56 @@ func TestAccTFEWorkspaceSettingsImport_ByName(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspaceWithSettings_basicTags(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	// tfeClient, err := getClientUsingEnv()
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+
+	// org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	// t.Cleanup(cleanupOrg)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			// Start with local execution
+			{
+				Config: testAccTFEWorkspaceSettings_basicTagOne(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.test", "tags.%", "1"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.test", "tags.keyA", "valueA"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.test", "effective_tags.%", "2"),
+				),
+			},
+			// {
+			// 	Config: testAccTFEWorkspaceSettings_basicTagTwo(rInt),
+			// 	Check: resource.ComposeTestCheckFunc(
+			// 		resource.TestCheckResourceAttr(
+			// 			"tfe_workspace_settings.test", "tags.%", "2"),
+			// 		resource.TestCheckResourceAttr(
+			// 			"tfe_workspace_settings.test", "tags.keyA", "valueA"),
+			// 		resource.TestCheckResourceAttr(
+			// 			"tfe_workspace_settings.test", "tags.keyB", "valueB"),
+			// 	),
+			// },
+			// {
+			// 	Config: testAccTFEWorkspaceSettings_basicTagZero(rInt),
+			// 	Check: resource.ComposeTestCheckFunc(
+			// 		resource.TestCheckResourceAttr(
+			// 			"tfe_workspace_settings.test", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
+			// 		resource.TestCheckResourceAttr(
+			// 			"tfe_workspace_settings.test", "tags.%", "0"),
+			// 	),
+			// },
+		},
+	})
+}
+
 func testAccCheckTFEWorkspaceSettingsDestroy(s *terraform.State) error {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
@@ -408,4 +460,77 @@ resource "tfe_workspace_settings" "foobar" {
 	assessments_enabled       = %t
 }
 `, orgName, description, boolOptions, boolOptions)
+}
+
+func tagBase(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "test" {
+  name  = "tst-tfeprovider-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "test" {
+  organization = tfe_organization.test.name
+  name = "tfe-provider-test-%d"
+	tags = {
+	  projectTag = "valueA"
+	}
+}
+
+resource "tfe_workspace" "test" {
+	name         = "tfe-provider-test-workspace-%d"
+	organization = tfe_organization.test.name
+    project_id   = tfe_project.test.id 
+}
+`, rInt, rInt, rInt)
+}
+
+func testAccTFEWorkspaceSettings_basicTagOne(rInt int) string {
+	return tagBase(rInt) + `
+resource "tfe_workspace_settings" "test" {
+	workspace_id = tfe_workspace.test.id
+	tags = {
+	  keyA = "valueA"
+	}
+}
+`
+}
+
+func testAccTFEWorkspaceSettings_basicTagTwo(rInt int) string {
+	return tagBase(rInt) + `
+resource "tfe_workspace_settings" "test" {
+	workspace_id = tfe_workspace.test.id
+	tags = {
+	  keyA = "valueA"
+	  keyB = "valueB"	
+	}
+}
+`
+}
+
+func testAccTFEWorkspaceSettings_basicTagZero(rInt int) string {
+	return tagBase(rInt) + `
+resource "tfe_workspace_settings" "test" {
+	workspace_id = tfe_workspace.test.id
+	tags = {}
+}
+`
+}
+
+func testAccTFEWorkspaceSettings_basicEffectiveTagBindings(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "foobar" {
+  organization = tfe_organization.foobar.name
+  name = "projecttest"
+  description = "project description"
+  tags = {
+	  keyA = "valueA"
+	  keyB = "valueB"
+  }
+}`, rInt)
 }

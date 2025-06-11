@@ -53,6 +53,8 @@ type modelWorkspaceSettings struct {
 	Description            types.String `tfsdk:"description"`
 	AutoApply              types.Bool   `tfsdk:"auto_apply"`
 	AssessmentsEnabled     types.Bool   `tfsdk:"assessments_enabled"`
+	Tags                   types.Map    `tfsdk:"tags"`
+	EffectiveTags          types.Map    `tfsdk:"effective_tags"`
 }
 
 type modelOverwrites struct {
@@ -345,6 +347,7 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 
 			"description": schema.StringAttribute{
 				Optional:    true,
+				Computed:    true,
 				Description: "A description of the workspace.",
 			},
 
@@ -360,6 +363,20 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 				Optional:    true,
 				Computed:    true,
 			},
+
+			"tags": schema.MapAttribute{
+				Description: "A map of key-value tags to add to the workspace.",
+				Optional:    true,
+				Computed:    true,
+				ElementType: types.StringType,
+			},
+
+			"effective_tags": schema.MapAttribute{
+				Description: "A map of all key-value tags set on the workspace (includes inheritted tags).",
+				Optional:    true,
+				Computed:    true,
+				ElementType: types.StringType,
+			},
 		},
 	}
 }
@@ -371,9 +388,12 @@ func (r *workspaceSettings) workspaceSettingsModelFromTFEWorkspace(ws *tfe.Works
 		WorkspaceID:        types.StringValue(ws.ID),
 		ExecutionMode:      types.StringValue(ws.ExecutionMode),
 		GlobalRemoteState:  types.BoolValue(ws.GlobalRemoteState),
-		Description:        types.StringValue(ws.Description),
 		AutoApply:          types.BoolValue(ws.AutoApply),
 		AssessmentsEnabled: types.BoolValue(ws.AssessmentsEnabled),
+	}
+
+	if ws.Description != "" {
+		result.Description = types.StringValue(ws.Description)
 	}
 
 	if ws.AgentPool != nil && ws.ExecutionMode == "agent" {
@@ -412,6 +432,18 @@ func (r *workspaceSettings) workspaceSettingsModelFromTFEWorkspace(ws *tfe.Works
 		result.Overwrites = listOverwrites
 	}
 
+	// if EffectiveTagBindings entry includes non-nil Links, its inheritted
+	tagElems := make(map[string]attr.Value)
+	effectiveTagElems := make(map[string]attr.Value)
+	for _, binding := range ws.EffectiveTagBindings {
+		if binding.Links == nil {
+			tagElems[binding.Key] = types.StringValue(binding.Value)
+		}
+		effectiveTagElems[binding.Key] = types.StringValue(binding.Value)
+	}
+	result.Tags = types.MapValueMust(types.StringType, tagElems)
+	result.EffectiveTags = types.MapValueMust(types.StringType, effectiveTagElems)
+
 	return &result
 }
 
@@ -431,7 +463,10 @@ func (r *workspaceSettings) Read(ctx context.Context, req resource.ReadRequest, 
 }
 
 func (r *workspaceSettings) readSettings(ctx context.Context, workspaceID string) (*modelWorkspaceSettings, error) {
-	ws, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID)
+	ws, err := r.config.Client.Workspaces.ReadByIDWithOptions(ctx, workspaceID, &tfe.WorkspaceReadOptions{
+		Include: []tfe.WSIncludeOpt{tfe.WSEffectiveTagBindings},
+	})
+
 	if err != nil {
 		// If it's gone: that's not an error, but we are done.
 		if errors.Is(err, tfe.ErrResourceNotFound) {
@@ -469,6 +504,16 @@ func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorks
 	} else if executionMode == "" && data.Overwrites.IsNull() {
 		// Not supported by TFE
 		updateOptions.ExecutionMode = tfe.String("remote")
+	}
+
+	tags := data.Tags.Elements()
+	for key, val := range tags {
+		if strVal, ok := val.(types.String); ok && !strVal.IsNull() {
+			updateOptions.TagBindings = append(updateOptions.TagBindings, &tfe.TagBinding{
+				Key:   key,
+				Value: strVal.ValueString(),
+			})
+		}
 	}
 
 	ws, err := r.config.Client.Workspaces.UpdateByID(ctx, workspaceID, updateOptions)
@@ -593,6 +638,10 @@ func (r *workspaceSettings) Delete(ctx context.Context, req resource.DeleteReque
 func (r *workspaceSettings) Metadata(_ context.Context, _ resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "tfe_workspace_settings"
 }
+
+// func (r *workspaceSettings) getWSTags(_ context.Context, tags tfe.EffectiveTagBinding) tfe.TagBinding, error {
+
+// }
 
 func (r *workspaceSettings) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	// Early exit if provider is unconfigured (i.e. we're only validating config or something)
