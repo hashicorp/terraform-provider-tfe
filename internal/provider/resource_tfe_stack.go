@@ -157,15 +157,18 @@ func (r *resourceTFEStack) Create(ctx context.Context, req resource.CreateReques
 
 	options := tfe.StackCreateOptions{
 		Name: plan.Name.ValueString(),
-		VCSRepo: &tfe.StackVCSRepoOptions{
+		Project: &tfe.Project{
+			ID: plan.ProjectID.ValueString(),
+		},
+	}
+
+	if plan.VCSRepo != nil {
+		options.VCSRepo = &tfe.StackVCSRepoOptions{
 			Identifier:        plan.VCSRepo.Identifier.ValueString(),
 			Branch:            plan.VCSRepo.Branch.ValueString(),
 			GHAInstallationID: plan.VCSRepo.GHAInstallationID.ValueString(),
 			OAuthTokenID:      plan.VCSRepo.OAuthTokenID.ValueString(),
-		},
-		Project: &tfe.Project{
-			ID: plan.ProjectID.ValueString(),
-		},
+		}
 	}
 
 	if !plan.Description.IsNull() {
@@ -225,12 +228,15 @@ func (r *resourceTFEStack) Update(ctx context.Context, req resource.UpdateReques
 	options := tfe.StackUpdateOptions{
 		Name:        tfe.String(plan.Name.ValueString()),
 		Description: tfe.String(plan.Description.ValueString()),
-		VCSRepo: &tfe.StackVCSRepoOptions{
+	}
+
+	if plan.VCSRepo != nil {
+		options.VCSRepo = &tfe.StackVCSRepoOptions{
 			Identifier:        plan.VCSRepo.Identifier.ValueString(),
 			Branch:            plan.VCSRepo.Branch.ValueString(),
 			GHAInstallationID: plan.VCSRepo.GHAInstallationID.ValueString(),
 			OAuthTokenID:      plan.VCSRepo.OAuthTokenID.ValueString(),
-		},
+		}
 	}
 
 	tflog.Debug(ctx, "Updating stack")
