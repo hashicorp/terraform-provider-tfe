@@ -802,15 +802,6 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			}
 		}
 
-		// if t, ok := d.GetOk("tags"); ok && len(t.(map[string]interface{})) > 0 {
-		// 	tagBindings := d.Get("tags").(map[string]interface{})
-		// 	for key, val := range tagBindings {
-		// 		options.TagBindings = append(options.TagBindings, &tfe.TagBinding{
-		// 			Key:   key,
-		// 			Value: val.(string),
-		// 		})
-		// 	}
-
 		if tagBindings, ok := d.Get("tags").(map[string]interface{}); ok {
 			for key, val := range tagBindings {
 				options.TagBindings = append(options.TagBindings, &tfe.TagBinding{
