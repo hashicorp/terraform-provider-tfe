@@ -56,7 +56,6 @@ func upgradeOrganizationSubscription(t *testing.T, _ *tfe.Client, organization *
 }
 
 func createBusinessOrganization(t *testing.T, client *tfe.Client) (*tfe.Organization, func()) {
-
 	if os.Getenv("PREEXISTING_TFE_ORGANIZATION") != "" {
 		org := tfe.Organization{
 			Name: os.Getenv("PREEXISTING_TFE_ORGANIZATION"),
