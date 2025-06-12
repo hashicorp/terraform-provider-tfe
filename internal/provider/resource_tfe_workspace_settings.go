@@ -516,6 +516,13 @@ func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorks
 		}
 	}
 
+	if len(tags) == 0 {
+		err := r.config.Client.Workspaces.DeleteAllTagBindings(ctx, workspaceID)
+		if err != nil {
+			return fmt.Errorf("error removing tag bindings from workspace %s: %w", workspaceID, err)
+		}
+	}
+
 	ws, err := r.config.Client.Workspaces.UpdateByID(ctx, workspaceID, updateOptions)
 	if err != nil {
 		return fmt.Errorf("couldn't update workspace %s: %w", workspaceID, err)
