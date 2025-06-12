@@ -98,7 +98,35 @@ func TestAccTFEWorkspaceSettings_basic(t *testing.T) {
 	})
 }
 
-func TestAccTFEWorkspaceWithSettings_basicOptions(t *testing.T) {
+func TestAccTFEWorkspaceSettings_stateSharing(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			// Start with local execution
+			{
+				Config: testAccTFEWorkspaceSettingsUnknownIDRemoteState(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(
+						"tfe_workspace_settings.foobar", "id"),
+					resource.TestCheckResourceAttrSet(
+						"tfe_workspace_settings.foobar", "workspace_id",
+					),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspaceSettings_basicOptions(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -204,7 +232,7 @@ func TestAccTFEWorkspaceSettingsRemoteState(t *testing.T) {
 	})
 }
 
-func TestAccTFEWorkspaceSettingsImport(t *testing.T) {
+func TestAccTFEWorkspaceSettings_import(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -239,7 +267,7 @@ func TestAccTFEWorkspaceSettingsImport(t *testing.T) {
 	})
 }
 
-func TestAccTFEWorkspaceSettingsImport_ByName(t *testing.T) {
+func TestAccTFEWorkspaceSettings_importByName(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -275,15 +303,8 @@ func TestAccTFEWorkspaceSettingsImport_ByName(t *testing.T) {
 	})
 }
 
-func TestAccTFEWorkspaceWithSettings_basicTags(t *testing.T) {
+func TestAccTFEWorkspaceSettings_basicTags(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	// tfeClient, err := getClientUsingEnv()
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
-
-	// org, cleanupOrg := createBusinessOrganization(t, tfeClient)
-	// t.Cleanup(cleanupOrg)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -301,26 +322,39 @@ func TestAccTFEWorkspaceWithSettings_basicTags(t *testing.T) {
 						"tfe_workspace_settings.test", "effective_tags.%", "2"),
 				),
 			},
-			// {
-			// 	Config: testAccTFEWorkspaceSettings_basicTagTwo(rInt),
-			// 	Check: resource.ComposeTestCheckFunc(
-			// 		resource.TestCheckResourceAttr(
-			// 			"tfe_workspace_settings.test", "tags.%", "2"),
-			// 		resource.TestCheckResourceAttr(
-			// 			"tfe_workspace_settings.test", "tags.keyA", "valueA"),
-			// 		resource.TestCheckResourceAttr(
-			// 			"tfe_workspace_settings.test", "tags.keyB", "valueB"),
-			// 	),
-			// },
-			// {
-			// 	Config: testAccTFEWorkspaceSettings_basicTagZero(rInt),
-			// 	Check: resource.ComposeTestCheckFunc(
-			// 		resource.TestCheckResourceAttr(
-			// 			"tfe_workspace_settings.test", "organization", fmt.Sprintf("tst-terraform-%d", rInt)),
-			// 		resource.TestCheckResourceAttr(
-			// 			"tfe_workspace_settings.test", "tags.%", "0"),
-			// 	),
-			// },
+			{
+				Config: testAccTFEWorkspaceSettings_basicTagTwo(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.test", "tags.%", "2"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.test", "tags.keyA", "valueA"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.test", "tags.keyB", "valueB"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.test", "effective_tags.%", "3"),
+				),
+			},
+			{
+				Config: testAccTFEWorkspaceSettings_basicTagOne(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.test", "tags.%", "1"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.test", "tags.keyA", "valueA"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.test", "effective_tags.%", "2"),
+				),
+			},
+			{
+				Config: testAccTFEWorkspaceSettings_basicTagZero(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.test", "tags.%", "0"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.test", "effective_tags.%", "1"),
+				),
+			},
 		},
 	})
 }
@@ -357,7 +391,7 @@ func testAccCheckTFEWorkspaceSettingsDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccTFEWorkspaceSettingsUnknownIDRemoteState(orgName string, description string, boolOptions bool) string {
+func testAccTFEWorkspaceSettingsUnknownIDRemoteState(orgName string) string {
 	return fmt.Sprintf(`
 resource "tfe_workspace" "foobar1" {
 	name = "foobar1"
@@ -373,11 +407,8 @@ resource "tfe_workspace_settings" "foobar" {
 	workspace_id              = tfe_workspace.foobar1.id
 	global_remote_state       = false
 	remote_state_consumer_ids = [tfe_workspace.foobar2.id]
-	description               = "%s"
-	auto_apply                = %t
-	assessments_enabled       = %t
 }
-`, orgName, orgName, description, boolOptions, boolOptions)
+`, orgName, orgName)
 }
 
 func testAccTFEWorkspaceSettingsRemoteState(workspaceID, workspaceID2 string) string {
@@ -515,22 +546,4 @@ resource "tfe_workspace_settings" "test" {
 	tags = {}
 }
 `
-}
-
-func testAccTFEWorkspaceSettings_basicEffectiveTagBindings(rInt int) string {
-	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
-  email = "admin@company.com"
-}
-
-resource "tfe_project" "foobar" {
-  organization = tfe_organization.foobar.name
-  name = "projecttest"
-  description = "project description"
-  tags = {
-	  keyA = "valueA"
-	  keyB = "valueB"
-  }
-}`, rInt)
 }
