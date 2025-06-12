@@ -107,6 +107,11 @@ The following arguments are supported:
   to use. Using HCP Terraform, valid values are `remote`, `local` or `agent`. When set to `local`, the workspace will be used for state storage only. **Important:** If you omit this attribute, the resource configures the workspace to use your organization's default execution mode (which in turn defaults to `remote`), removing any explicit value that might have previously been set for the workspace.
 * `global_remote_state` - (Optional) Whether the workspace allows all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (`remote_state_consumer_ids`). By default, HashiCorp recommends you do not allow other workspaces to access their state. We recommend that you follow the principle of least privilege and only enable state access between workspaces that specifically need information from each other.
 * `remote_state_consumer_ids` - (Optional) The set of workspace IDs set as explicit remote state consumers for the given workspace. To set this attribute, global_remote_state must be false.
+* `auto_apply` - (Optional) Whether to automatically apply changes when a Terraform plan is successful. Defaults to `false`.
+* `assessments_enabled` - (Optional) Whether to regularly run health assessments such as drift detection on the workspace. Defaults to `false`.
+* `description` - (Optional) A description for the workspace.
+* `tags` - (Optional) A map of key value tags for this workspace.
+
 
 ## Attributes Reference
 
@@ -116,6 +121,7 @@ In addition to all arguments above, the following attributes are exported:
 * `overwrites` - Can be used to check whether a setting is currently inheriting its value from another resource.
   - `execution_mode` - Set to `true` if the execution mode of the workspace is being determined by the setting on the workspace itself. It will be `false` if the execution mode is inherited from another resource (e.g. the organization's default execution mode)
   - `agent_pool` - Set to `true` if the agent pool of the workspace is being determined by the setting on the workspace itself. It will be `false` if the agent pool is inherited from another resource (e.g. the organization's default agent pool)
+* `effective_tags` - A map of key value tags for this workspace, including any tags inherited from the parent project.
 
 ## Import
 
