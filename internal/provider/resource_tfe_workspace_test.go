@@ -55,7 +55,7 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "queue_all_runs", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_workspace.foobar", "speculative_enabled", "true"),
+						"tfe_workspace.foobar", "speculative_enabled", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace.foobar", "assessments_enabled", "false"),
 					resource.TestCheckResourceAttr(
