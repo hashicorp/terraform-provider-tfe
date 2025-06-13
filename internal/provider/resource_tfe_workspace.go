@@ -225,6 +225,7 @@ func resourceTFEWorkspace() *schema.Resource {
 			"speculative_enabled": {
 				Type:     schema.TypeBool,
 				Optional: true,
+				Default:  true,
 			},
 
 			"ssh_key_id": {
