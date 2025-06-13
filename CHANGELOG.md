@@ -1,5 +1,11 @@
 ## Unreleased
 
+ENHANCEMENTS:
+* `r/tfe_stack` Adds support for creating a Terraform Enterprise stack without specifying a VCS repo.
+  - Refactors `modelFromTFEStack` to omit the `vcs_repo` field when it’s nil and conditionally populate it.
+  - Updates create/update logic in `resource_tfe_stack.go` to only include `VCSRepo` when provided.
+  - Adds an acceptance test for the no–VCS‐repo scenario and bumps the `go-tfe` dependency.
+
 ## v0.66.0
 
 BUG FIXES:
