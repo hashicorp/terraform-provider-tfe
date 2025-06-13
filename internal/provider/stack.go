@@ -18,8 +18,7 @@ type modelTFEStackVCSRepo struct {
 	OAuthTokenID      types.String `tfsdk:"oauth_token_id"`
 }
 
-// modelTFEStack maps the resource or data source schema data to a
-// struct.
+// modelTFEStack maps the resource or data source schema data to a struct.
 type modelTFEStack struct {
 	ID              types.String          `tfsdk:"id"`
 	ProjectID       types.String          `tfsdk:"project_id"`
@@ -31,8 +30,7 @@ type modelTFEStack struct {
 	UpdatedAt       types.String          `tfsdk:"updated_at"`
 }
 
-// modelFromTFEStack builds a modelTFEStack struct from a
-// tfe.Stack value.“
+// modelFromTFEStack builds a modelTFEStack struct from a tfe.Stack value.
 func modelFromTFEStack(v *tfe.Stack) modelTFEStack {
 	names := make([]attr.Value, len(v.DeploymentNames))
 	for i, name := range v.DeploymentNames {
@@ -49,30 +47,31 @@ func modelFromTFEStack(v *tfe.Stack) modelTFEStack {
 		UpdatedAt:       types.StringValue(v.UpdatedAt.Format(time.RFC3339)),
 	}
 
-	if v.VCSRepo != nil {
-		result.VCSRepo = &modelTFEStackVCSRepo{
-			Identifier:        types.StringValue(v.VCSRepo.Identifier),
-			Branch:            types.StringNull(),
-			GHAInstallationID: types.StringNull(),
-			OAuthTokenID:      types.StringNull(),
-		}
-	}
-
 	if v.Description != "" {
 		result.Description = types.StringValue(v.Description)
 	}
 
 	if v.VCSRepo != nil {
+		result.VCSRepo = &modelTFEStackVCSRepo{
+			Identifier: types.StringValue(v.VCSRepo.Identifier),
+		}
+
 		if v.VCSRepo.GHAInstallationID != "" {
 			result.VCSRepo.GHAInstallationID = types.StringValue(v.VCSRepo.GHAInstallationID)
+		} else {
+			result.VCSRepo.GHAInstallationID = types.StringNull()
 		}
 
 		if v.VCSRepo.OAuthTokenID != "" {
 			result.VCSRepo.OAuthTokenID = types.StringValue(v.VCSRepo.OAuthTokenID)
+		} else {
+			result.VCSRepo.OAuthTokenID = types.StringNull()
 		}
 
 		if v.VCSRepo.Branch != "" {
 			result.VCSRepo.Branch = types.StringValue(v.VCSRepo.Branch)
+		} else {
+			result.VCSRepo.Branch = types.StringNull()
 		}
 	}
 
