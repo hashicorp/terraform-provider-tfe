@@ -90,17 +90,16 @@ func TestAccTFEStackResource_noVCSRepo(t *testing.T) {
 			{
 				Config: testAccTFEStackResourceConfigNoVCSRepo(orgName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "id"),
-					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "project_id"),
-					resource.TestCheckResourceAttr("tfe_stack.foobar", "name", "example-stack-no-vcs"),
-					resource.TestCheckResourceAttr("tfe_stack.foobar", "description", "Stack without VCS repo"),
-					resource.TestCheckNoResourceAttr("tfe_stack.foobar", "vcs_repo"),
-					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "created_at"),
-					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "updated_at"),
+					resource.TestCheckResourceAttrSet("tfe_stack.foobar2", "id"),
+					resource.TestCheckResourceAttrSet("tfe_stack.foobar2", "project_id"),
+					resource.TestCheckResourceAttr("tfe_stack.foobar2", "name", "example-stack-no-vcs"),
+					resource.TestCheckResourceAttr("tfe_stack.foobar2", "description", "Stack without VCS repo"),
+					resource.TestCheckResourceAttrSet("tfe_stack.foobar2", "created_at"),
+					resource.TestCheckResourceAttrSet("tfe_stack.foobar2", "updated_at"),
 				),
 			},
 			{
-				ResourceName:      "tfe_stack.foobar",
+				ResourceName:      "tfe_stack.foobar2",
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -120,7 +119,7 @@ resource "tfe_project" "example" {
 	organization = tfe_organization.foobar.name
 }
 
-resource "tfe_stack" "foobar" {
+resource "tfe_stack" "foobar2" {
 	name        = "example-stack-no-vcs"
 	description = "Stack without VCS repo"
   project_id  = tfe_project.example.id

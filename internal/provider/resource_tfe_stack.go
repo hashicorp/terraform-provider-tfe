@@ -8,13 +8,11 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
@@ -23,6 +21,7 @@ import (
 var _ resource.Resource = &resourceTFEStack{}
 var _ resource.ResourceWithConfigure = &resourceTFEStack{}
 var _ resource.ResourceWithImportState = &resourceTFEStack{}
+var _ resource.ResourceWithValidateConfig = &resourceTFEStack{}
 
 func NewStackResource() resource.Resource {
 	return &resourceTFEStack{}
@@ -38,12 +37,6 @@ func (r *resourceTFEStack) Metadata(ctx context.Context, req resource.MetadataRe
 }
 
 func (r *resourceTFEStack) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-	pathVCSRepoOAuthTokenID := path.Expressions{
-		path.MatchRelative().AtParent().AtName("oauth_token_id"),
-	}
-	pathGHAInstallationID := path.Expressions{
-		path.MatchRelative().AtParent().AtName("github_app_installation_id"),
-	}
 
 	resp.Schema = schema.Schema{
 		Description: "Defines a Stack resource. Note that a Stack cannot be destroyed if it contains deployments that have underlying managed resources.",
@@ -55,7 +48,7 @@ func (r *resourceTFEStack) Schema(ctx context.Context, req resource.SchemaReques
 				Attributes: map[string]schema.Attribute{
 					"identifier": schema.StringAttribute{
 						Description: "Identifier of the VCS repository.",
-						Required:    true,
+						Optional:    true,
 					},
 					"branch": schema.StringAttribute{
 						Description: "The repository branch that Terraform should use. This defaults to the respository's default branch (e.g. main).",
@@ -64,18 +57,10 @@ func (r *resourceTFEStack) Schema(ctx context.Context, req resource.SchemaReques
 					"github_app_installation_id": schema.StringAttribute{
 						Description: "The installation ID of the GitHub App. This conflicts with `oauth_token_id` and can only be used if `oauth_token_id` is not used.",
 						Optional:    true,
-						Validators: []validator.String{
-							stringvalidator.AtLeastOneOf(pathVCSRepoOAuthTokenID...),
-							stringvalidator.ConflictsWith(pathVCSRepoOAuthTokenID...),
-						},
 					},
 					"oauth_token_id": schema.StringAttribute{
 						Description: "The VCS Connection to use. This ID can be obtained from a `tfe_oauth_client` resource. This conflicts with `github_app_installation_id` and can only be used if `github_app_installation_id` is not used.",
 						Optional:    true,
-						Validators: []validator.String{
-							stringvalidator.AtLeastOneOf(pathGHAInstallationID...),
-							stringvalidator.ConflictsWith(pathGHAInstallationID...),
-						},
 					},
 				},
 			},
@@ -178,6 +163,7 @@ func (r *resourceTFEStack) Create(ctx context.Context, req resource.CreateReques
 	tflog.Debug(ctx, "Creating stack")
 	stack, err := r.config.Client.Stacks.Create(ctx, options)
 	if err != nil {
+		tflog.Error(ctx, "Error creating stack", map[string]interface{}{"error": err.Error()})
 		resp.Diagnostics.AddError("Unable to create stack", err.Error())
 		return
 	}
@@ -272,4 +258,41 @@ func (r *resourceTFEStack) Delete(ctx context.Context, req resource.DeleteReques
 
 func (r *resourceTFEStack) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
+}
+
+func (r *resourceTFEStack) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	// Read Terraform plan data
+	var stack modelTFEStack
+	resp.Diagnostics.Append(req.Config.Get(ctx, &stack)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if stack.VCSRepo != nil {
+
+		if stack.VCSRepo.Identifier.IsNull() {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("identifier"),
+				"VCS Repository Identifier Required",
+				"The `vcs_repo.identifier` attribute is required when configuring a Stack with a VCS repository. Please provide a valid identifier.",
+			)
+			return
+		}
+
+		if stack.VCSRepo.GHAInstallationID.IsNull() && stack.VCSRepo.OAuthTokenID.IsNull() {
+			resp.Diagnostics.AddError(
+				"VCS Repository Authentication Required",
+				"The `vcs_repo.github_app_installation_id` or `vcs_repo.oauth_token_id` attribute is required when configuring a Stack with a VCS repository. Please provide one of these attributes.",
+			)
+			return
+		}
+
+		if !stack.VCSRepo.GHAInstallationID.IsNull() && !stack.VCSRepo.OAuthTokenID.IsNull() {
+			resp.Diagnostics.AddError(
+				"VCS Repository Authentication Conflict",
+				"The `vcs_repo.github_app_installation_id` and `vcs_repo.oauth_token_id` attributes are mutually exclusive. Please provide only one of these attributes.",
+			)
+			return
+		}
+	}
 }
