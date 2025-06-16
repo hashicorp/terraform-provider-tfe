@@ -37,7 +37,6 @@ func (r *resourceTFEStack) Metadata(ctx context.Context, req resource.MetadataRe
 }
 
 func (r *resourceTFEStack) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-
 	resp.Schema = schema.Schema{
 		Description: "Defines a Stack resource. Note that a Stack cannot be destroyed if it contains deployments that have underlying managed resources.",
 		Version:     1,
@@ -269,7 +268,6 @@ func (r *resourceTFEStack) ValidateConfig(ctx context.Context, req resource.Vali
 	}
 
 	if stack.VCSRepo != nil {
-
 		if stack.VCSRepo.Identifier.IsNull() {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("identifier"),
