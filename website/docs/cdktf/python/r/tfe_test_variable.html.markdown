@@ -66,4 +66,4 @@ class MyConvertedCode(TerraformStack):
 
 -> **Note:** Write-Only argument `value_wo` is available to use in place of `value`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
 
-<!-- cache-key: cdktf-0.20.8 input-4264417bf24f9d477b2ff4c6d7f38f5800d38eaa9e1b0c6199091d7366758841 -->
+<!-- cache-key: cdktf-0.20.8 input-669d4b0a5555bd00e568fb40b3e8707f98f61b832f790667a6afb1a07970cdbc -->
