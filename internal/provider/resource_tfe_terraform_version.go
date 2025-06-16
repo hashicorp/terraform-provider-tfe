@@ -36,12 +36,10 @@ func resourceTFETerraformVersion() *schema.Resource {
 			"url": {
 				Type:     schema.TypeString,
 				Optional: true,
-				Default:  nil,
 			},
 			"sha": {
 				Type:     schema.TypeString,
 				Optional: true,
-				Default:  nil,
 			},
 			"official": {
 				Type:     schema.TypeBool,
@@ -145,19 +143,7 @@ func resourceTFETerraformVersionRead(d *schema.ResourceData, meta interface{}) e
 	d.Set("beta", v.Beta)
 	d.Set("deprecated", v.Deprecated)
 	d.Set("deprecated_reason", v.DeprecatedReason)
-
-	if len(v.Archs) > 0 {
-		archs := make([]map[string]interface{}, len(v.Archs))
-		for i, arch := range v.Archs {
-			archs[i] = map[string]interface{}{
-				"url":  arch.URL,
-				"sha":  arch.Sha,
-				"os":   arch.OS,
-				"arch": arch.Arch,
-			}
-		}
-		d.Set("archs", archs)
-	}
+	d.Set("archs", convertToToolVersionArchitecturesMap(v.Archs))
 
 	return nil
 }

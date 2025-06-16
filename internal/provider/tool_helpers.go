@@ -162,3 +162,21 @@ func convertToToolVersionArchitectures(archs interface{}) []*tfe.ToolVersionArch
 
 	return convertedArchs
 }
+
+func convertToToolVersionArchitecturesMap(archs []*tfe.ToolVersionArchitecture) []map[string]interface{} {
+	if len(archs) == 0 {
+		return nil
+	}
+
+	archsList := make([]map[string]interface{}, len(archs))
+	for i, arch := range archs {
+		archsList[i] = map[string]interface{}{
+			"url":  arch.URL,
+			"sha":  arch.Sha,
+			"os":   arch.OS,
+			"arch": arch.Arch,
+		}
+	}
+
+	return archsList
+}
