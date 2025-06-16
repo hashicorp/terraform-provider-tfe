@@ -202,11 +202,34 @@ func (r *resourceTFEStack) Update(ctx context.Context, req resource.UpdateReques
 
 	// Read Terraform plan data into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// Read Terraform prior state data into the model
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// NOTE: if there are existing deployments, and you plan to move a stack from vcs to non-vcs or vice versa,
+	//       we should prevent the update and return an error because the API does not allow this.
+	// TODO: When the go-tfe package would allow such operation we should revisit this logic.
+	//       This is also inspired by similar behavior of the destroy / delete operation for this resource.
+	var deploymentNames []string
+	if !state.DeploymentNames.IsNull() {
+		if diags := state.DeploymentNames.ElementsAs(ctx, &deploymentNames, false); diags.HasError() {
+			resp.Diagnostics.AddError("Invalid deployment names", "Expected a set of strings for deployment names.")
+			return
+		}
+	}
+	tflog.Debug(ctx, fmt.Sprintf("Current deployments: %v", deploymentNames))
+
+	if (len(deploymentNames) > 0) && ((state.VCSRepo != nil && plan.VCSRepo == nil) || (state.VCSRepo == nil && plan.VCSRepo != nil)) {
+		resp.Diagnostics.AddError(
+			"Cannot update Stack VCS configuration with existing deployments",
+			"Please remove all deployments associated with this Stack before updating the VCS configuration.",
+		)
 		return
 	}
 
@@ -216,12 +239,16 @@ func (r *resourceTFEStack) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	if plan.VCSRepo != nil {
+		tflog.Debug(ctx, "Updating VCS repository for stack")
 		options.VCSRepo = &tfe.StackVCSRepoOptions{
 			Identifier:        plan.VCSRepo.Identifier.ValueString(),
 			Branch:            plan.VCSRepo.Branch.ValueString(),
 			GHAInstallationID: plan.VCSRepo.GHAInstallationID.ValueString(),
 			OAuthTokenID:      plan.VCSRepo.OAuthTokenID.ValueString(),
 		}
+	} else {
+		tflog.Debug(ctx, "Removing VCS repository from stack update")
+		options.VCSRepo = nil
 	}
 
 	tflog.Debug(ctx, "Updating stack")

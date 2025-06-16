@@ -14,7 +14,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.7 // indirect
 	github.com/hashicorp/go-slug v0.16.7
-	github.com/hashicorp/go-tfe v1.82.0
+	github.com/hashicorp/go-tfe v1.82.0 // Fixme: Update this to the latest version when available
 	github.com/hashicorp/go-version v1.7.0
 	github.com/hashicorp/hcl v1.0.0
 	github.com/hashicorp/hcl/v2 v2.23.0 // indirect
@@ -35,7 +35,7 @@ require (
 	golang.org/x/time v0.11.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 )
-
+replace github.com/hashicorp/go-tfe => ./go-tfe // Fixme: Need to remove this as soon as a new version is released
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
