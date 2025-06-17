@@ -246,6 +246,18 @@ func testAccCheckTFESentinelVersionAttributesFull(sentinelVersion *tfe.AdminSent
 
 func testAccCheckTFESentinelVersionAttributeArchs(sentinelVersion *tfe.AdminSentinelVersion, version string, sha string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
+		if sentinelVersion.Version != version {
+			return fmt.Errorf("Bad version: %s", sentinelVersion.Version)
+		}
+
+		if sentinelVersion.Official != false {
+			return fmt.Errorf("Bad value for official: %t", sentinelVersion.official)
+		}
+
+		if sentinelVersion.Enabled != true {
+			return fmt.Errorf("Bad value for enabled: %t", sentinelVersion.Enabled)
+		}
+
 		if len(sentinelVersion.Archs) != 1 {
 			return fmt.Errorf("Expected 1 arch, got %d", len(sentinelVersion.Archs))
 		}
@@ -298,7 +310,6 @@ func testAccTFESentinelVersion_archs(version string, sha string) string {
 	return fmt.Sprintf(`
 resource "tfe_sentinel_version" "foobar" {
   version = "%s"
-  url = "https://www.hashicorp.com"
   official = false
   enabled = true
   archs {
