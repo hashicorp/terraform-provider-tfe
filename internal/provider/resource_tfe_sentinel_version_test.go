@@ -46,6 +46,35 @@ func TestAccTFESentinelVersion_basic(t *testing.T) {
 	})
 }
 
+func TestAccTFESentinelVersion_archs(t *testing.T) {
+	skipIfCloud(t)
+
+	sentinelVersion := &tfe.AdminSentinelVersion{}
+	sha := genSentinelSha(t, "secret", "data")
+	version := genSafeRandomSentinelVersion()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFESentinelVersionDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFESentinelVersion_archs(version, sha),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFESentinelVersionExists("tfe_sentinel_version.foobar", sentinelVersion),
+					testAccCheckTFESentinelVersionAttributeArchs(sentinelVersion, version, sha),
+					resource.TestCheckResourceAttr(
+						"tfe_sentinel_version.foobar", "version", version),
+					resource.TestCheckResourceAttr(
+						"tfe_sentinel_version.foobar", "url", "https://www.hashicorp.com"),
+					resource.TestCheckResourceAttr(
+						"tfe_sentinel_version.foobar", "sha", sha),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFESentinelVersion_import(t *testing.T) {
 	skipIfCloud(t)
 
@@ -215,6 +244,33 @@ func testAccCheckTFESentinelVersionAttributesFull(sentinelVersion *tfe.AdminSent
 	}
 }
 
+func testAccCheckTFESentinelVersionAttributeArchs(sentinelVersion *tfe.AdminSentinelVersion, version string, sha string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if len(sentinelVersion.Archs) != 1 {
+			return fmt.Errorf("Expected 1 arch, got %d", len(sentinelVersion.Archs))
+		}
+
+		arch := sentinelVersion.Archs[0]
+		if arch.URL != "https://www.hashicorp.com" {
+			return fmt.Errorf("Bad URL: %s", arch.URL)
+		}
+
+		if arch.Sha != sha {
+			return fmt.Errorf("Bad value for Sha: %v", arch.Sha)
+		}
+
+		if arch.OS != "linux" {
+			return fmt.Errorf("Bad value for OS: %s", arch.OS)
+		}
+
+		if arch.Arch != "amd64" {
+			return fmt.Errorf("Bad value for Arch: %s", arch.Arch)
+		}
+
+		return nil
+	}
+}
+
 func testAccTFESentinelVersion_basic(version string, sha string) string {
 	return fmt.Sprintf(`
 resource "tfe_sentinel_version" "foobar" {
@@ -235,6 +291,22 @@ resource "tfe_sentinel_version" "foobar" {
   beta = true
   deprecated = true
   deprecated_reason = "foobar"
+}`, version, sha)
+}
+
+func testAccTFESentinelVersion_archs(version string, sha string) string {
+	return fmt.Sprintf(`
+resource "tfe_sentinel_version" "foobar" {
+  version = "%s"
+  url = "https://www.hashicorp.com"
+  official = false
+  enabled = true
+  archs {
+      url = "https://www.hashicorp.com"
+ 	  sha = "%s"
+	  os = "linux"
+	  arch = "amd64"
+	    }
 }`, version, sha)
 }
 

@@ -103,6 +103,7 @@ func resourceTFESentinelVersionCreate(d *schema.ResourceData, meta interface{}) 
 		Beta:             tfe.Bool(d.Get("beta").(bool)),
 		Deprecated:       tfe.Bool(d.Get("deprecated").(bool)),
 		DeprecatedReason: tfe.String(d.Get("deprecated_reason").(string)),
+		Archs:            convertToToolVersionArchitectures(d.Get("archs").([]interface{})),
 	}
 
 	log.Printf("[DEBUG] Create new Sentinel version: %s", opts.Version)
@@ -138,6 +139,7 @@ func resourceTFESentinelVersionRead(d *schema.ResourceData, meta interface{}) er
 	d.Set("beta", v.Beta)
 	d.Set("deprecated", v.Deprecated)
 	d.Set("deprecated_reason", v.DeprecatedReason)
+	d.Set("archs", convertToToolVersionArchitecturesMap(v.Archs))
 
 	return nil
 }
@@ -154,6 +156,7 @@ func resourceTFESentinelVersionUpdate(d *schema.ResourceData, meta interface{}) 
 		Beta:             tfe.Bool(d.Get("beta").(bool)),
 		Deprecated:       tfe.Bool(d.Get("deprecated").(bool)),
 		DeprecatedReason: tfe.String(d.Get("deprecated_reason").(string)),
+		Archs:            convertToToolVersionArchitectures(d.Get("archs").([]interface{})),
 	}
 
 	log.Printf("[DEBUG] Update configuration of Sentinel version: %s", d.Id())
