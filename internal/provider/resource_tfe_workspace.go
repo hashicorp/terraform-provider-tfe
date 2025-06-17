@@ -115,7 +115,7 @@ func resourceTFEWorkspace() *schema.Resource {
 				Type:       schema.TypeBool,
 				Optional:   true,
 				Computed:   true,
-				Deprecated: "Use resource tfe_workspace_settings to modify the workspace execution settings. This attribute will be removed in a future release of the provider.",
+				Deprecated: "Use resource tfe_workspace_settings to modify the workspace auto_apply settings. This attribute will be removed in a future release of the provider.",
 			},
 
 			"auto_apply_run_trigger": {
