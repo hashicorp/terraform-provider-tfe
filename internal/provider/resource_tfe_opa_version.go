@@ -139,6 +139,7 @@ func resourceTFEOPAVersionRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("beta", v.Beta)
 	d.Set("deprecated", v.Deprecated)
 	d.Set("deprecated_reason", v.DeprecatedReason)
+	d.Set("archs", convertToToolVersionArchitecturesMap(v.Archs))
 
 	return nil
 }

@@ -114,6 +114,39 @@ func TestAccTFEOPAVersion_full(t *testing.T) {
 	})
 }
 
+func TestAccTFEOPAVersion_archs(t *testing.T) {
+	skipIfCloud(t)
+
+	opaVersion := &tfe.AdminOPAVersion{}
+	sha := genOPASha(t, "secret", "data")
+	version := genSafeRandomOPAVersion()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOPAVersionDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOPAVersion_archs(version, sha),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOPAVersionExists("tfe_opa_version.foobar", opaVersion),
+					testAccCheckTFEOPAVersionAttributesArchs(opaVersion, version, sha),
+					resource.TestCheckResourceAttr(
+						"tfe_terraform_version.foobar", "version", version),
+					resource.TestCheckResourceAttr(
+						"tfe_terraform_version.foobar", "archs.0.url", "https://www.hashicorp.com"),
+					resource.TestCheckResourceAttr(
+						"tfe_terraform_version.foobar", "archs.0.sha", sha),
+					resource.TestCheckResourceAttr(
+						"tfe_terraform_version.foobar", "archs.0.os", "linux"),
+					resource.TestCheckResourceAttr(
+						"tfe_terraform_version.foobar", "archs.0.arch", "arm64"),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckTFEOPAVersionDestroy(s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_opa_version" {
@@ -215,6 +248,30 @@ func testAccCheckTFEOPAVersionAttributesFull(opaVersion *tfe.AdminOPAVersion, ve
 	}
 }
 
+func testAccCheckTFEOPAVersionAttributesArchs(opaVersion *tfe.AdminOPAVersion, version string, sha string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if opaVersion.Version != version {
+			return fmt.Errorf("Bad version: %s", opaVersion.Version)
+		}
+		if len(opaVersion.Archs) != 1 {
+			return fmt.Errorf("Expected 1 arch, got %d", len(opaVersion.Archs))
+		}
+		if opaVersion.Archs[0].OS != "linux" {
+			return fmt.Errorf("Bad OS: %s", opaVersion.Archs[0].OS)
+		}
+		if opaVersion.Archs[0].Arch != "amd64" {
+			return fmt.Errorf("Bad Arch: %s", opaVersion.Archs[0].Arch)
+		}
+		if opaVersion.Archs[0].URL != "https://www.hashicorp.com" {
+			return fmt.Errorf("Bad URL: %s", opaVersion.Archs[0].URL)
+		}
+		if opaVersion.Archs[0].Sha != sha {
+			return fmt.Errorf("Bad value for Sha: %v", opaVersion.Archs[0].Sha)
+		}
+		return nil
+	}
+}
+
 func testAccTFEOPAVersion_basic(version string, sha string) string {
 	return fmt.Sprintf(`
 resource "tfe_opa_version" "foobar" {
@@ -235,6 +292,22 @@ resource "tfe_opa_version" "foobar" {
   beta = true
   deprecated = true
   deprecated_reason = "foobar"
+}`, version, sha)
+}
+
+func testAccTFEOPAVersion_archs(version string, sha string) string {
+	return fmt.Sprintf(`
+resource "tfe_opa_version" "foobar" {
+  version = "%s"
+  official = false
+  enabled = true
+
+  archs {
+    os = "linux"
+	arch = "amd64"
+	url = "https://www.hashicorp.com"
+	sha = "%s"
+	}
 }`, version, sha)
 }
 
