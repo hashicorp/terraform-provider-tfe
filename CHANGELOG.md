@@ -10,9 +10,9 @@ BUG FIXES:
 FEATURES:
 
 * `r/tfe_team_token`: Adds support for creating multiple team tokens for a single team by adding the `description` attribute, which must be unique per team, by @mkam [#1698](https://github.com/hashicorp/terraform-provider-tfe/pull/1698)
-* `r/tfe_terraform_version`: Adds support for specifying architecture-specific binaries using the `archs` attribute, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762).
-* `r/tfe_opa_version`: Adds support for specifying architecture-specific binaries using the `archs` attribute, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762).
-* `r/tfe_sentinel_version`: Adds support for specifying architecture-specific binaries using the `archs` attribute, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762).
+* `r/tfe_terraform_version`: Adds support for specifying architecture-specific binaries using the `archs` attribute, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762)
+* `r/tfe_opa_version`: Adds support for specifying architecture-specific binaries using the `archs` attribute, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762)
+* `r/tfe_sentinel_version`: Adds support for specifying architecture-specific binaries using the `archs` attribute, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762)
 
 DEPRECATIONS:
 
