@@ -251,7 +251,7 @@ func testAccCheckTFESentinelVersionAttributeArchs(sentinelVersion *tfe.AdminSent
 		}
 
 		if sentinelVersion.Official != false {
-			return fmt.Errorf("Bad value for official: %t", sentinelVersion.Ogfficial)
+			return fmt.Errorf("Bad value for official: %t", sentinelVersion.Official)
 		}
 
 		if sentinelVersion.Enabled != true {
