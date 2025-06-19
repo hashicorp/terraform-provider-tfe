@@ -59,7 +59,7 @@ func TestAccTFETerraformVersion_archs(t *testing.T) {
 		CheckDestroy:             testAccCheckTFETerraformVersionDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETerraformVersion_archs(version, sha),
+				Config: resourceTFETerraformVersion_archs(version, sha),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETerraformVersionExists("tfe_terraform_version.foobar", tfVersion),
 					testAccCheckTFETerraformVersionAttributesArchs(tfVersion, version, sha),
@@ -214,7 +214,7 @@ func testAccCheckTFETerraformVersionAttributesArchs(tfVersion *tfe.AdminTerrafor
 	return func(s *terraform.State) error {
 		// Check the version
 		if tfVersion.Version != version {
-			return fmt.Errorf("Bad version: %s", tfVersion.Version)
+			return fmt.Errorf("bad version: %s", tfVersion.Version)
 		}
 
 		// Check the archs attributes
@@ -223,40 +223,40 @@ func testAccCheckTFETerraformVersionAttributesArchs(tfVersion *tfe.AdminTerrafor
 		}
 
 		if tfVersion.Archs[0].URL != "https://www.hashicorp.com" {
-			return fmt.Errorf("Bad URL: %s", tfVersion.Archs[0].URL)
+			return fmt.Errorf("bad value for  URL: %s", tfVersion.Archs[0].URL)
 		}
 
 		if tfVersion.Archs[0].Sha != sha {
-			return fmt.Errorf("Bad value for Sha: %v", tfVersion.Archs[0].Sha)
+			return fmt.Errorf("bad value for Sha: %v", tfVersion.Archs[0].Sha)
 		}
 
 		if tfVersion.Archs[0].OS != "linux" {
-			return fmt.Errorf("Bad value for OS: %s", tfVersion.Archs[0].OS)
+			return fmt.Errorf("bad value for OS: %s", tfVersion.Archs[0].OS)
 		}
 
 		if tfVersion.Archs[0].Arch != "amd64" {
-			return fmt.Errorf("Bad value for Arch: %s", tfVersion.Archs[0].Arch)
+			return fmt.Errorf("bad value for Arch: %s", tfVersion.Archs[0].Arch)
 		}
 
 		// Check other attributes
 		if tfVersion.Official != false {
-			return fmt.Errorf("Bad value for official: %t", tfVersion.Official)
+			return fmt.Errorf("bad value for official: %t", tfVersion.Official)
 		}
 
 		if tfVersion.Enabled != true {
-			return fmt.Errorf("Bad value for enabled: %t", tfVersion.Enabled)
+			return fmt.Errorf("bad value for enabled: %t", tfVersion.Enabled)
 		}
 
 		if tfVersion.Beta != true {
-			return fmt.Errorf("Bad value for beta: %t", tfVersion.Beta)
+			return fmt.Errorf("bad value for beta: %t", tfVersion.Beta)
 		}
 
 		if tfVersion.Deprecated != true {
-			return fmt.Errorf("Bad value for deprecated: %t", tfVersion.Deprecated)
+			return fmt.Errorf("bad value for deprecated: %t", tfVersion.Deprecated)
 		}
 
 		if *tfVersion.DeprecatedReason != "foobar" {
-			return fmt.Errorf("Bad value for deprecated_reason: %s", *tfVersion.DeprecatedReason)
+			return fmt.Errorf("bad value for deprecated_reason: %s", *tfVersion.DeprecatedReason)
 		}
 
 		return nil
@@ -310,7 +310,7 @@ resource "tfe_terraform_version" "foobar" {
 }`, version, sha)
 }
 
-func testAccTFETerraformVersion_archs(version string, sha string) string {
+func resourceTFETerraformVersion_archs(version string, sha string) string {
 	return fmt.Sprintf(`
 resource "tfe_terraform_version" "foobar" {
   version = "%s"

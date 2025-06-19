@@ -127,7 +127,7 @@ func TestAccTFEOPAVersion_archs(t *testing.T) {
 		CheckDestroy:             testAccCheckTFEOPAVersionDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOPAVersion_archs(version, sha),
+				Config: resourceTFEOPAVersion_archs(version, sha),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOPAVersionExists("tfe_opa_version.foobar", opaVersion),
 					testAccCheckTFEOPAVersionAttributesArchs(opaVersion, version, sha),
@@ -251,22 +251,22 @@ func testAccCheckTFEOPAVersionAttributesFull(opaVersion *tfe.AdminOPAVersion, ve
 func testAccCheckTFEOPAVersionAttributesArchs(opaVersion *tfe.AdminOPAVersion, version string, sha string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if opaVersion.Version != version {
-			return fmt.Errorf("Bad version: %s", opaVersion.Version)
+			return fmt.Errorf("bad version: %s", opaVersion.Version)
 		}
 		if len(opaVersion.Archs) != 1 {
-			return fmt.Errorf("Expected 1 arch, got %d", len(opaVersion.Archs))
+			return fmt.Errorf("expected 1 arch, got %d", len(opaVersion.Archs))
 		}
 		if opaVersion.Archs[0].OS != "linux" {
-			return fmt.Errorf("Bad OS: %s", opaVersion.Archs[0].OS)
+			return fmt.Errorf("bad value for OS: %s", opaVersion.Archs[0].OS)
 		}
 		if opaVersion.Archs[0].Arch != "amd64" {
-			return fmt.Errorf("Bad Arch: %s", opaVersion.Archs[0].Arch)
+			return fmt.Errorf("bad value for Arch: %s", opaVersion.Archs[0].Arch)
 		}
 		if opaVersion.Archs[0].URL != "https://www.hashicorp.com" {
-			return fmt.Errorf("Bad URL: %s", opaVersion.Archs[0].URL)
+			return fmt.Errorf("bad value for URL: %s", opaVersion.Archs[0].URL)
 		}
 		if opaVersion.Archs[0].Sha != sha {
-			return fmt.Errorf("Bad value for Sha: %v", opaVersion.Archs[0].Sha)
+			return fmt.Errorf("bad value for Sha: %v", opaVersion.Archs[0].Sha)
 		}
 		return nil
 	}
@@ -295,7 +295,7 @@ resource "tfe_opa_version" "foobar" {
 }`, version, sha)
 }
 
-func testAccTFEOPAVersion_archs(version string, sha string) string {
+func resourceTFEOPAVersion_archs(version string, sha string) string {
 	return fmt.Sprintf(`
 resource "tfe_opa_version" "foobar" {
   version = "%s"

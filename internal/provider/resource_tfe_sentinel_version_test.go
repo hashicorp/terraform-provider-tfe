@@ -59,7 +59,7 @@ func TestAccTFESentinelVersion_archs(t *testing.T) {
 		CheckDestroy:             testAccCheckTFESentinelVersionDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFESentinelVersion_archs(version, sha),
+				Config: resourceTFESentinelVersion_archs(version, sha),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFESentinelVersionExists("tfe_sentinel_version.foobar", sentinelVersion),
 					testAccCheckTFESentinelVersionAttributeArchs(sentinelVersion, version, sha),
@@ -247,36 +247,36 @@ func testAccCheckTFESentinelVersionAttributesFull(sentinelVersion *tfe.AdminSent
 func testAccCheckTFESentinelVersionAttributeArchs(sentinelVersion *tfe.AdminSentinelVersion, version string, sha string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if sentinelVersion.Version != version {
-			return fmt.Errorf("Bad version: %s", sentinelVersion.Version)
+			return fmt.Errorf("bad version: %s", sentinelVersion.Version)
 		}
 
 		if sentinelVersion.Official != false {
-			return fmt.Errorf("Bad value for official: %t", sentinelVersion.Official)
+			return fmt.Errorf("bad value for official: %t", sentinelVersion.Official)
 		}
 
 		if sentinelVersion.Enabled != true {
-			return fmt.Errorf("Bad value for enabled: %t", sentinelVersion.Enabled)
+			return fmt.Errorf("bad value for enabled: %t", sentinelVersion.Enabled)
 		}
 
 		if len(sentinelVersion.Archs) != 1 {
-			return fmt.Errorf("Expected 1 arch, got %d", len(sentinelVersion.Archs))
+			return fmt.Errorf("Eexpected 1 arch, got %d", len(sentinelVersion.Archs))
 		}
 
 		arch := sentinelVersion.Archs[0]
 		if arch.URL != "https://www.hashicorp.com" {
-			return fmt.Errorf("Bad URL: %s", arch.URL)
+			return fmt.Errorf("bad value for URL: %s", arch.URL)
 		}
 
 		if arch.Sha != sha {
-			return fmt.Errorf("Bad value for Sha: %v", arch.Sha)
+			return fmt.Errorf("bad value for Sha: %v", arch.Sha)
 		}
 
 		if arch.OS != "linux" {
-			return fmt.Errorf("Bad value for OS: %s", arch.OS)
+			return fmt.Errorf("bad value for OS: %s", arch.OS)
 		}
 
 		if arch.Arch != "amd64" {
-			return fmt.Errorf("Bad value for Arch: %s", arch.Arch)
+			return fmt.Errorf("bad value for Arch: %s", arch.Arch)
 		}
 
 		return nil
@@ -306,7 +306,7 @@ resource "tfe_sentinel_version" "foobar" {
 }`, version, sha)
 }
 
-func testAccTFESentinelVersion_archs(version string, sha string) string {
+func resourceTFESentinelVersion_archs(version string, sha string) string {
 	return fmt.Sprintf(`
 resource "tfe_sentinel_version" "foobar" {
   version = "%s"
