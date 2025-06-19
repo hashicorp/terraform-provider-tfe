@@ -6,7 +6,7 @@ package provider
 import (
 	"time"
 
-	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -45,31 +45,35 @@ func modelFromTFEStack(v *tfe.Stack) modelTFEStack {
 		Name:            types.StringValue(v.Name),
 		Description:     types.StringNull(),
 		DeploymentNames: types.SetValueMust(types.StringType, names),
-		VCSRepo: &modelTFEStackVCSRepo{
+		CreatedAt:       types.StringValue(v.CreatedAt.Format(time.RFC3339)),
+		UpdatedAt:       types.StringValue(v.UpdatedAt.Format(time.RFC3339)),
+	}
+
+	if v.VCSRepo != nil {
+		result.VCSRepo = &modelTFEStackVCSRepo{
 			Identifier:        types.StringValue(v.VCSRepo.Identifier),
 			Branch:            types.StringNull(),
 			GHAInstallationID: types.StringNull(),
 			OAuthTokenID:      types.StringNull(),
-		},
-
-		CreatedAt: types.StringValue(v.CreatedAt.Format(time.RFC3339)),
-		UpdatedAt: types.StringValue(v.UpdatedAt.Format(time.RFC3339)),
+		}
 	}
 
 	if v.Description != "" {
 		result.Description = types.StringValue(v.Description)
 	}
 
-	if v.VCSRepo.GHAInstallationID != "" {
-		result.VCSRepo.GHAInstallationID = types.StringValue(v.VCSRepo.GHAInstallationID)
-	}
+	if v.VCSRepo != nil {
+		if v.VCSRepo.GHAInstallationID != "" {
+			result.VCSRepo.GHAInstallationID = types.StringValue(v.VCSRepo.GHAInstallationID)
+		}
 
-	if v.VCSRepo.OAuthTokenID != "" {
-		result.VCSRepo.OAuthTokenID = types.StringValue(v.VCSRepo.OAuthTokenID)
-	}
+		if v.VCSRepo.OAuthTokenID != "" {
+			result.VCSRepo.OAuthTokenID = types.StringValue(v.VCSRepo.OAuthTokenID)
+		}
 
-	if v.VCSRepo.Branch != "" {
-		result.VCSRepo.Branch = types.StringValue(v.VCSRepo.Branch)
+		if v.VCSRepo.Branch != "" {
+			result.VCSRepo.Branch = types.StringValue(v.VCSRepo.Branch)
+		}
 	}
 
 	return result

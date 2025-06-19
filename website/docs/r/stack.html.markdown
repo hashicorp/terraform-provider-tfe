@@ -13,7 +13,7 @@ Defines a Stack resource.
 
 ## Example Usage
 
-Basic usage:
+### Create a stack with a VCS repository:
 
 ```hcl
 resource "tfe_oauth_client" "test" {
@@ -41,13 +41,36 @@ resource "tfe_stack" "test-stack" {
 }
 ```
 
+### Create a stack without a VCS repository:
+
+```hcl
+resource "tfe_oauth_client" "test" {
+  organization     = "my-example-org"
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = var.github_token
+  service_provider = "github"
+}
+
+data "tfe_organization" "organization" {
+  name = "my-example-org"
+}
+
+resource "tfe_stack" "test-stack" {
+  name         = "my-stack"
+  description  = "A Terraform Stack using two components with two environments"
+  project_id   = data.tfe_organization.organization.default_project_id
+}
+```
+
+
 ## Argument Reference
 
 The following arguments are supported:
 
 * `name` - (Required) Name of the stack.
 * `project_id` - (Required) ID of the project where the stack should be created.
-* `vcs_repo` - (Required) Settings for the stack's VCS repository.
+* `vcs_repo` - (Optional) Settings for the stack's VCS repository.
 * `description` - (Optional) Description of the stack
 <!--
 NOTE: This is a proposed schema for allowing force-delete actions on a stack. Force delete is not implemented yet so I've commented it out for now.
