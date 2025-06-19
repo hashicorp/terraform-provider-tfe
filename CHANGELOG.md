@@ -1,5 +1,7 @@
 ## Unreleased
 
+## v0.67.0
+
 ENHANCEMENTS:
 * `r/tfe_stack` Adds support for creating a Stack without specifying a VCS repo, by @sujaysamanta [#1760](https://github.com/hashicorp/terraform-provider-tfe/pull/1760)
 
