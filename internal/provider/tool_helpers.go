@@ -180,3 +180,10 @@ func convertToToolVersionArchitecturesMap(archs []*tfe.ToolVersionArchitecture) 
 
 	return archsList
 }
+
+func stringOrNil(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}

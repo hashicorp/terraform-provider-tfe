@@ -32,10 +32,12 @@ func resourceTFESentinelVersion() *schema.Resource {
 			"url": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Default:  nil,
 			},
 			"sha": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Default:  nil,
 			},
 			"official": {
 				Type:     schema.TypeBool,
@@ -149,8 +151,8 @@ func resourceTFESentinelVersionUpdate(d *schema.ResourceData, meta interface{}) 
 
 	opts := tfe.AdminSentinelVersionUpdateOptions{
 		Version:          tfe.String(d.Get("version").(string)),
-		URL:              tfe.String(d.Get("url").(string)),
-		SHA:              tfe.String(d.Get("sha").(string)),
+		URL:              stringOrNil(d.Get("url").(string)),
+		SHA:              stringOrNil(d.Get("sha").(string)),
 		Official:         tfe.Bool(d.Get("official").(bool)),
 		Enabled:          tfe.Bool(d.Get("enabled").(bool)),
 		Beta:             tfe.Bool(d.Get("beta").(bool)),
