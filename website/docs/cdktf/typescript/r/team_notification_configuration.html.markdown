@@ -213,11 +213,8 @@ The following arguments are supported:
   if `destinationType` is `generic`, `microsoft-teams`, or `slack`.
 - `enabled` - (Optional) Whether the notification configuration should be enabled or not.
   Disabled configurations will not send any notifications. Defaults to `false`.
-- `token` - (Optional) A write-only secure token for the notification configuration, which can
-  be used by the receiving server to verify request authenticity when configured for notification
-  configurations with a destination type of `generic`. Defaults to `null`.
-  This value _must not_ be provided if `destinationType` is `email`, `microsoft-teams`, or `slack`.
-- `token_wo` - (Optional) A write-only secure token for the notification configuration, guaranteed not to be written to plan or state artifacts. Only one of `token` or `token_wo` can be provided.
+- `token` - (Optional) A write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Defaults to `null`. This value _must not_ be provided if `destinationType` is `email`, `microsoft-teams`, or `slack`.
+- `tokenWo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) A write-only secure token for the notification configuration, guaranteed not to be written to plan or state artifacts. Either `token` or `tokenWo` can be provided, but not both. This value _must not_ be provided if `destinationType` is `email`, `microsoft-teams`, or `slack`.
 - `triggers` - (Optional) The array of triggers for which this notification configuration will
   send notifications. Currently, the only valid value is `change_request:created`.
 
@@ -232,5 +229,6 @@ Team notification configurations can be imported; use `<NOTIFICATION CONFIGURATI
 ```shell
 terraform import tfe_team_notification_configuration.test nc-qV9JnKRkmtMa4zcA
 ```
-> **Note:** Write-Only argument `token_wo` is available to use in place of `token_wo`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
-<!-- cache-key: cdktf-0.20.8 input-b2a07a1fcbfa0a13f76e1177f498fa32de3fbd78dafdb389af241667cee464bb -->
+> **Note:** Write-Only argument `tokenWo` is available to use in place of `tokenWo`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
+
+<!-- cache-key: cdktf-0.20.8 input-7fba13f400a07acdbcb49ea8aa42298d53429f96ca00c2dbe68dfb3a55dfdfd6 -->
