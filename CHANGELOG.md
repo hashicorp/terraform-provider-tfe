@@ -1,5 +1,8 @@
 ## Unreleased
 
+ENHANCEMENTS:
+* `r/tfe_workspace` update `tags` to be a computed attribute, by @Maed223 [#1767](https://github.com/hashicorp/terraform-provider-tfe/pull/1767)
+
 ## v0.67.0
 
 ENHANCEMENTS:
