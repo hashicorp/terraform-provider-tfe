@@ -22,6 +22,10 @@ DEPRECATIONS:
 * `ephemeral-resources/tfe_organization_token`: Ephemeral organization tokens have been removed, by @ctrombley [#1736](https://github.com/hashicorp/terraform-provider-tfe/pull/1736)
 * `ephemeral-resources/tfe_agent_token`: Ephemeral agent tokens have been removed, by @ctrombley [#1736](https://github.com/hashicorp/terraform-provider-tfe/pull/1736)
 * `ephemeral-resources/tfe_audit_trail_token`: Ephemeral audit trail tokens have been removed, by @ctrombley [#1736](https://github.com/hashicorp/terraform-provider-tfe/pull/1736)
+* `r/tfe_terraform_version`: The `url` and `sha` attributes are deprecated and will be removed in a future version. Use the `archs` attribute to specify architecture-specific binaries going forward, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762)
+* `r/tfe_opa_version`: The `url` and `sha` attributes are deprecated and will be removed in a future version. Use the `archs` attribute to specify architecture-specific binaries going forward, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762)
+* `r/tfe_sentinel_version`: The `url` and `sha` attributes are deprecated and will be removed in a future version. Use the `archs` attribute to specify architecture-specific binaries going forward, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762)
+
 
 ## v0.65.2
 
