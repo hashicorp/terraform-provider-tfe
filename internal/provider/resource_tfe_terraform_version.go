@@ -102,8 +102,8 @@ func resourceTFETerraformVersionCreate(d *schema.ResourceData, meta interface{})
 
 	opts := tfe.AdminTerraformVersionCreateOptions{
 		Version:          tfe.String(d.Get("version").(string)),
-		URL:              tfe.String(d.Get("url").(string)),
-		Sha:              tfe.String(d.Get("sha").(string)),
+		URL:              stringOrNil(d.Get("url").(string)),
+		Sha:              stringOrNil(d.Get("sha").(string)),
 		Official:         tfe.Bool(d.Get("official").(bool)),
 		Enabled:          tfe.Bool(d.Get("enabled").(bool)),
 		Beta:             tfe.Bool(d.Get("beta").(bool)),

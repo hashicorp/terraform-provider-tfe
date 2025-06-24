@@ -132,15 +132,19 @@ func TestAccTFEOPAVersion_archs(t *testing.T) {
 					testAccCheckTFEOPAVersionExists("tfe_opa_version.foobar", opaVersion),
 					testAccCheckTFEOPAVersionAttributesArchs(opaVersion, version, sha),
 					resource.TestCheckResourceAttr(
-						"tfe_terraform_version.foobar", "version", version),
+						"tfe_opa_version.foobar", "version", version),
 					resource.TestCheckResourceAttr(
-						"tfe_terraform_version.foobar", "archs.0.url", "https://www.hashicorp.com"),
+						"tfe_opa_version.foobar", "url", ""),
 					resource.TestCheckResourceAttr(
-						"tfe_terraform_version.foobar", "archs.0.sha", sha),
+						"tfe_opa_version.foobar", "sha", ""),
 					resource.TestCheckResourceAttr(
-						"tfe_terraform_version.foobar", "archs.0.os", "linux"),
+						"tfe_opa_version.foobar", "archs.0.url", "https://www.hashicorp.com"),
 					resource.TestCheckResourceAttr(
-						"tfe_terraform_version.foobar", "archs.0.arch", "arm64"),
+						"tfe_opa_version.foobar", "archs.0.sha", sha),
+					resource.TestCheckResourceAttr(
+						"tfe_opa_version.foobar", "archs.0.os", "linux"),
+					resource.TestCheckResourceAttr(
+						"tfe_opa_version.foobar", "archs.0.arch", "arm64"),
 				),
 			},
 		},
@@ -259,7 +263,7 @@ func testAccCheckTFEOPAVersionAttributesArchs(opaVersion *tfe.AdminOPAVersion, v
 		if opaVersion.Archs[0].OS != "linux" {
 			return fmt.Errorf("bad value for OS: %s", opaVersion.Archs[0].OS)
 		}
-		if opaVersion.Archs[0].Arch != "amd64" {
+		if opaVersion.Archs[0].Arch != "arm64" {
 			return fmt.Errorf("bad value for Arch: %s", opaVersion.Archs[0].Arch)
 		}
 		if opaVersion.Archs[0].URL != "https://www.hashicorp.com" {
@@ -304,7 +308,7 @@ resource "tfe_opa_version" "foobar" {
 
   archs {
     os = "linux"
-	arch = "amd64"
+	arch = "arm64"
 	url = "https://www.hashicorp.com"
 	sha = "%s"
 	}

@@ -66,9 +66,9 @@ func TestAccTFESentinelVersion_archs(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_sentinel_version.foobar", "version", version),
 					resource.TestCheckResourceAttr(
-						"tfe_sentinel_version.foobar", "url", "https://www.hashicorp.com"),
+						"tfe_sentinel_version.foobar", "url", ""),
 					resource.TestCheckResourceAttr(
-						"tfe_sentinel_version.foobar", "sha", sha),
+						"tfe_sentinel_version.foobar", "sha", ""),
 				),
 			},
 		},
@@ -275,7 +275,7 @@ func testAccCheckTFESentinelVersionAttributeArchs(sentinelVersion *tfe.AdminSent
 			return fmt.Errorf("bad value for OS: %s", arch.OS)
 		}
 
-		if arch.Arch != "amd64" {
+		if arch.Arch != "arm64" {
 			return fmt.Errorf("bad value for Arch: %s", arch.Arch)
 		}
 
@@ -316,7 +316,7 @@ resource "tfe_sentinel_version" "foobar" {
       url = "https://www.hashicorp.com"
  	  sha = "%s"
 	  os = "linux"
-	  arch = "amd64"
+	  arch = "arm64"
 	    }
 }`, version, sha)
 }

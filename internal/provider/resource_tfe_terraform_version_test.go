@@ -217,6 +217,10 @@ func testAccCheckTFETerraformVersionAttributesArchs(tfVersion *tfe.AdminTerrafor
 			return fmt.Errorf("bad version: %s", tfVersion.Version)
 		}
 
+		if tfVersion.URL != "" {
+			return fmt.Errorf("URL should be empty, got: %s", tfVersion.URL)
+		}
+
 		// Check the archs attributes
 		if len(tfVersion.Archs) == 0 {
 			return fmt.Errorf("Archs is empty")
@@ -234,7 +238,7 @@ func testAccCheckTFETerraformVersionAttributesArchs(tfVersion *tfe.AdminTerrafor
 			return fmt.Errorf("bad value for OS: %s", tfVersion.Archs[0].OS)
 		}
 
-		if tfVersion.Archs[0].Arch != "amd64" {
+		if tfVersion.Archs[0].Arch != "arm64" {
 			return fmt.Errorf("bad value for Arch: %s", tfVersion.Archs[0].Arch)
 		}
 
@@ -319,11 +323,12 @@ resource "tfe_terraform_version" "foobar" {
   beta = true
   deprecated = true
   deprecated_reason = "foobar"
-  archs = {
+
+  archs {
     url = "https://www.hashicorp.com"
 	sha = "%s"
 	os = "linux"
-	arch = "amd64"
+	arch = "arm64"
 	  }
 	}`, version, sha)
 }
