@@ -35,11 +35,13 @@ func resourceTFETerraformVersion() *schema.Resource {
 			},
 			"url": {
 				Type:     schema.TypeString,
+				Computed: true,
 				Optional: true,
 				Default:  nil,
 			},
 			"sha": {
 				Type:     schema.TypeString,
+				Computed: true,
 				Optional: true,
 				Default:  nil,
 			},
@@ -70,6 +72,7 @@ func resourceTFETerraformVersion() *schema.Resource {
 			},
 			"archs": {
 				Type:     schema.TypeList,
+				Computed: true,
 				Optional: true,
 				Default:  nil,
 				Elem: &schema.Resource{
