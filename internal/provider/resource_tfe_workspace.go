@@ -91,10 +91,9 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"description": {
-				Type:       schema.TypeString,
-				Computed:   true,
-				Optional:   true,
-				Deprecated: "Use resource tfe_workspace_settings to modify the workspace description. This attribute will be removed in a future release of the provider.",
+				Type:     schema.TypeString,
+				Computed: true,
+				Optional: true,
 			},
 
 			"agent_pool_id": {
@@ -112,10 +111,9 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"auto_apply": {
-				Type:       schema.TypeBool,
-				Optional:   true,
-				Computed:   true,
-				Deprecated: "Use resource tfe_workspace_settings to modify the workspace auto_apply settings. This attribute will be removed in a future release of the provider.",
+				Type:     schema.TypeBool,
+				Optional: true,
+				Computed: true,
 			},
 
 			"auto_apply_run_trigger": {
@@ -183,10 +181,9 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 
 			"assessments_enabled": {
-				Type:       schema.TypeBool,
-				Optional:   true,
-				Computed:   true,
-				Deprecated: "Use resource tfe_workspace_settings to modify the workspace assessments settings. This attribute will be removed in a future release of the provider.",
+				Type:     schema.TypeBool,
+				Optional: true,
+				Computed: true,
 			},
 
 			"operations": {
