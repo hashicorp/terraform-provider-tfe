@@ -646,10 +646,6 @@ func (r *workspaceSettings) Metadata(_ context.Context, _ resource.MetadataReque
 	resp.TypeName = "tfe_workspace_settings"
 }
 
-// func (r *workspaceSettings) getWSTags(_ context.Context, tags tfe.EffectiveTagBinding) tfe.TagBinding, error {
-
-// }
-
 func (r *workspaceSettings) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	// Early exit if provider is unconfigured (i.e. we're only validating config or something)
 	if req.ProviderData == nil {
