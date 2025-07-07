@@ -1,5 +1,12 @@
 ## Unreleased
 
+## v0.67.1
+
+BUG FIXES:
+* `r/tfe_workspace` update `tags` to be a computed attribute, by @Maed223 [#1767](https://github.com/hashicorp/terraform-provider-tfe/pull/1767)
+
+## v0.67.0
+
 ENHANCEMENTS:
 * `r/tfe_stack` Adds support for creating a Stack without specifying a VCS repo, by @sujaysamanta [#1760](https://github.com/hashicorp/terraform-provider-tfe/pull/1760)
 
