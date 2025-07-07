@@ -199,10 +199,7 @@ The following arguments are supported:
   be used by the receiving server to verify request authenticity when configured for notification
   configurations with a destination type of `generic`. Defaults to `null`.
   This value _must not_ be provided if `destinationType` is `email`, `microsoft-teams`, or `slack`.
-* `token_wo` - (Optional) Write-only secure token for the notification configuration, which can
-  be used by the receiving server to verify request authenticity when configured for notification
-  configurations with a destination type of `generic`. Defaults to `null`.
-  This value _must not_ be provided if `destinationType` is `email`, `microsoft-teams`, or `slack`.
+* `tokenWo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) Write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Either `token` or `tokenWo` can be provided, but not both. This value _must not_ be provided if `destinationType` is `email`, `microsoft-teams`, or `slack`.
 * `triggers` - (Optional) The array of triggers for which this notification configuration will
   send notifications. Valid values are `run:created`, `run:planning`, `run:needs_attention`, `run:applying`
   `run:completed`, `run:errored`, `assessment:check_failure`, `assessment:drifted`, `assessment:failed`, `workspace:auto_destroy_reminder`, or `workspace:auto_destroy_run_results`.
@@ -212,7 +209,7 @@ The following arguments are supported:
   is `email`.
 * `workspaceId` - (Required) The id of the workspace that owns the notification configuration.
 
--> **Note:** Write-Only argument `token_wo` is available to use in place of `token`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
+-> **Note:** Write-Only argument `tokenWo` is available to use in place of `token`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
 
 ## Attributes Reference
 
@@ -226,4 +223,4 @@ Notification configurations can be imported; use `<NOTIFICATION CONFIGURATION ID
 terraform import tfe_notification_configuration.test nc-qV9JnKRkmtMa4zcA
 ```
 
-<!-- cache-key: cdktf-0.20.8 input-602abbb3e61f8ee1ab3e37f93f617a0ee9bd51107cba5e96e1c93dcbcc40147c -->
+<!-- cache-key: cdktf-0.20.8 input-dd61ff105262594a5f42b23b50aeca147747e8946666c3d76f526b8351b6cfb6 -->
