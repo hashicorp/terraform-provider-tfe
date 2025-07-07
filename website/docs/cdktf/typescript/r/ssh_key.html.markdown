@@ -44,10 +44,10 @@ The following arguments are supported:
 
 * `name` - (Required) Name to identify the SSH key.
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
-* `key` - (Optional) The text of the SSH private key. One of `key` or `key_wo`
+* `key` - (Optional) The text of the SSH private key. One of `key` or `keyWo`
   must be provided.
-* `key_wo` - (Optional) The text of the SSH private key, guaranteed not to be
-  written to plan or state artifacts. One of `key` or `key_wo` must be provided.
+* `keyWo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) The text of the SSH private key, guaranteed not to be
+  written to plan or state artifacts. One of `key` or `keyWo` must be provided.
 
 ## Attributes Reference
 
@@ -58,6 +58,6 @@ The following arguments are supported:
 Because the Terraform Enterprise API does not return the private SSH key
 content, this resource cannot be imported.
 
--> **Note:** Write-Only argument `key_wo` is available to use in place of `key`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
+-> **Note:** Write-Only argument `keyWo` is available to use in place of `key`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
 
-<!-- cache-key: cdktf-0.20.8 input-8fd63e504edbedc2b128309474372aca9db27ddff986cf877d21ca65edf3fe4b -->
+<!-- cache-key: cdktf-0.20.8 input-4145429fa09f70dcbd1e53bbbe9cacef09123cd081cf03a8b4a30f26615f87e5 -->

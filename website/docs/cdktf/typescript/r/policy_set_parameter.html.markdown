@@ -57,7 +57,8 @@ The following arguments are supported:
 
 * `key` - (Required) Name of the parameter.
 * `value` - (Required) Value of the parameter.
-* `value_wo` - (Required) Write-only value of the parameter.
+* `valueWo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) Write-only value of the parameter. Either `value` or `valueWo` can be provided, but not both.
+
 * `sensitive` - (Optional) Whether the value is sensitive. If true then the
   parameter is written once and not visible thereafter. Defaults to `false`.
 * `policySetId` - (Required) The ID of the policy set that owns the parameter.
@@ -76,6 +77,6 @@ example:
 terraform import tfe_policy_set_parameter.test polset-wAs3zYmWAhYK7peR/var-5rTwnSaRPogw6apb
 ```
 
--> **Note:** Write-Only argument `value_wo` is available to use in place of `value`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
+-> **Note:** Write-Only argument `valueWo` is available to use in place of `value`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
 
-<!-- cache-key: cdktf-0.20.8 input-9407d3e4f2059d5e47f2ca6b48d9903b45579e73fff781c0b7d5871a0378b553 -->
+<!-- cache-key: cdktf-0.20.8 input-42fcb606484d85e415494f572d486c767045f2bc11f03fe7b36dccb6b4ea0564 -->

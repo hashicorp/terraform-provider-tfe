@@ -123,7 +123,7 @@ class MyConvertedCode extends TerraformStack {
       category: "terraform",
       description: "a useful description",
       key: "my_key_name",
-      value_wo: sessionToken.value,
+      valueWo: sessionToken.stringValue,
       workspaceId: Token.asString(tfeWorkspaceTest.id),
     });
   }
@@ -137,7 +137,7 @@ The following arguments are supported:
 
 * `key` - (Required) Name of the variable.
 * `value` - (Required) Value of the variable.
-* `value_wo` - (Optional) Write-Only value of the variable. `write-only` values are never stored to state and do not display in the Terraform plan output. Set the `sensitive` argument to `true` to not display its value in the `Variables` UI for HCP. If the value passed to `value_wo` changes, it will force to recreate the resource. 
+* `valueWo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) Value of the variable. `Write-only` attributes function similarly to their non-write-only counterparts, but are never stored to state and do not display in the Terraform plan output. Either `value` or `valueWo` can be provided, but not both.
 * `category` - (Required) Whether this is a Terraform or environment variable.
   Valid values are `terraform` or `env`.
 * `description` - (Optional) Description of the variable.
@@ -155,7 +155,7 @@ Terraform will only change the value for a sensitive variable if you change
 `value` in the configuration, so that it no longer matches the last known value
 in the state.
 
--> **Note:** Write-Only argument `value_wo` is available to use in place of `value`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
+-> **Note:** Write-Only argument `valueWo` is available to use in place of `value`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
 
 ## Attributes Reference
 
@@ -232,4 +232,4 @@ example:
 terraform import tfe_variable.test my-org-name/varset-47qC3LmA47piVan7/var-5rTwnSaRPogw6apb
 ```
 
-<!-- cache-key: cdktf-0.20.8 input-19607c5a22ab7e0c64d183fd70bb467e8afa7b5badcb319081a8626aa732f9e4 -->
+<!-- cache-key: cdktf-0.20.8 input-dd5facfddf4b5fe6779a69237f3aa763521b7592fed6e368aea8dfc6c6e366c8 -->
