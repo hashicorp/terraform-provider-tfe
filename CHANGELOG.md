@@ -1,5 +1,19 @@
 ## Unreleased
 
+FEATURES:
+
+* `r/tfe_terraform_version`: Adds support for specifying architecture-specific binaries using the `archs` attribute, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762)
+* `r/tfe_opa_version`: Adds support for specifying architecture-specific binaries using the `archs` attribute, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762)
+* `r/tfe_sentinel_version`: Adds support for specifying architecture-specific binaries using the `archs` attribute, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762)
+
+
+DEPRECATIONS:
+
+* `r/tfe_terraform_version`: The `url` and `sha` attributes are deprecated and will be removed in a future version. Use the `archs` attribute to specify architecture-specific binaries going forward, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762)
+* `r/tfe_opa_version`: The `url` and `sha` attributes are deprecated and will be removed in a future version. Use the `archs` attribute to specify architecture-specific binaries going forward, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762)
+* `r/tfe_sentinel_version`: The `url` and `sha` attributes are deprecated and will be removed in a future version. Use the `archs` attribute to specify architecture-specific binaries going forward, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762)
+
+
 ## v0.67.1
 
 BUG FIXES:
