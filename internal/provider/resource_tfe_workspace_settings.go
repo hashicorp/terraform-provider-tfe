@@ -432,7 +432,7 @@ func (r *workspaceSettings) workspaceSettingsModelFromTFEWorkspace(ws *tfe.Works
 		result.Overwrites = listOverwrites
 	}
 
-	// if EffectiveTagBindings entry includes non-nil Links, its inheritted
+	// if EffectiveTagBindings entry includes non-nil Links, its inherited
 	tagElems := make(map[string]attr.Value)
 	effectiveTagElems := make(map[string]attr.Value)
 	for _, binding := range ws.EffectiveTagBindings {
