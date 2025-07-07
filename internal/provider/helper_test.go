@@ -56,14 +56,6 @@ func upgradeOrganizationSubscription(t *testing.T, _ *tfe.Client, organization *
 }
 
 func createBusinessOrganization(t *testing.T, client *tfe.Client) (*tfe.Organization, func()) {
-	if os.Getenv("PREEXISTING_TFE_ORGANIZATION") != "" {
-		org := tfe.Organization{
-			Name: os.Getenv("PREEXISTING_TFE_ORGANIZATION"),
-		}
-
-		return &org, func() {}
-	}
-
 	org, orgCleanup := createOrganization(t, client, tfe.OrganizationCreateOptions{
 		Name:  tfe.String("tst-" + randomString(t)),
 		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
