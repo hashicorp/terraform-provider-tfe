@@ -7,7 +7,9 @@ description: |-
 
 # tfe_workspace_settings
 
-Manages or reads execution mode and agent pool settings for a workspace. This also interacts with the organization's default values for several settings, which can be managed with [tfe_organization_default_settings](organization_default_settings.html). If other resources need to identify whether a setting is a default or an explicit value set for the workspace, you can refer to the read-only `overwrites` argument.
+~> **NOTE:** Manages or reads execution mode and agent pool settings for a workspace. This also interacts with the organization's default values for several settings, which can be managed with [tfe_organization_default_settings](organization_default_settings.html). If other resources need to identify whether a setting is a default or an explicit value set for the workspace, you can refer to the read-only `overwrites` argument.
+
+~> **NOTE:** This resource manages values that can alternatively be managed by the  `tfe_workspace` resource. You should not attempt to manage the same property on both resources which could cause a permanent drift. Example properties available on both resources: `description`, `tags`, `auto_apply`, etc.
 
 ## Example Usage
 
@@ -93,6 +95,34 @@ output "workspace-explicit-local-execution" {
     tfe_workspace_settings.test.execution_mode == "local",
     tfe_workspace_settings.test.overwrites[0]["execution_mode"]
   ])
+}
+```
+
+This resource can be used to self manage a workspace created from `terraform init` and a cloud block:
+
+```hcl
+terraform {
+  cloud {
+    organization = "foo"
+    workspaces {
+      name = "self-managed"
+    }
+  }
+}
+
+# workspace is created in CI during `init`
+data "tfe_workspace" "self" {
+  name         = split("/", var.TFC_WORKSPACE_SLUG)[1]
+  organization = split("/", var.TFC_WORKSPACE_SLUG)[0]
+}
+
+# settings and notification for workspace are applied 
+resource "tfe_workspace_settings" "self" {
+  workspace_id        = data.tfe_workspace.self.id
+  assessments_enabled = true
+  tags = {
+    prod = "true"
+  }
 }
 ```
 
