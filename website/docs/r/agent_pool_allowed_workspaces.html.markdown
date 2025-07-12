@@ -38,7 +38,7 @@ resource "tfe_agent_pool" "test-agent-pool" {
 // Ensure permissions are assigned second
 resource "tfe_agent_pool_allowed_workspaces" "allowed" {
   agent_pool_id         = tfe_agent_pool.test-agent-pool.id
-  allowed_workspace_ids = [for key, value in tfe_workspace.test.*.id : value]
+  allowed_workspace_ids = [tfe_workspace.test-workspace.id]
 }
 
 // Lastly, ensure the workspace agent execution is assigned last by
