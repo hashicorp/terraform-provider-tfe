@@ -110,13 +110,11 @@ terraform {
   }
 }
 
-# workspace is created in CI during `init`
 data "tfe_workspace" "self" {
-  name         = split("/", var.TFC_WORKSPACE_SLUG)[1]
-  organization = split("/", var.TFC_WORKSPACE_SLUG)[0]
+  name         = "self-managed"
+  organization = "foo"
 }
 
-# settings and notification for workspace are applied 
 resource "tfe_workspace_settings" "self" {
   workspace_id        = data.tfe_workspace.self.id
   assessments_enabled = true
