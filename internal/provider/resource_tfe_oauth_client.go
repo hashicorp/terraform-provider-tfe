@@ -63,7 +63,7 @@ func resourceTFEOAuthClient() *schema.Resource {
 				Type:      schema.TypeString,
 				Optional:  true,
 				Sensitive: true,
-				ForceNew:  true,
+				//ForceNew:  true,
 			},
 
 			"private_key": {
