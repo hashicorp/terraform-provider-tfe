@@ -1,8 +1,10 @@
 ## Unreleased
 
-Features:
+## v0.68.0
 
-* `r/tfe_workspace_settings`: offers more arguments for managing the workspace configuration, by @drewmullen [#1757](https://github.com/hashicorp/terraform-provider-tfe/pull/1757)
+FEATURES:
+
+* `r/tfe_workspace_settings`: offers more arguments for managing the workspace configuration, by @drewmullen [#1781](https://github.com/hashicorp/terraform-provider-tfe/pull/1781)
 
 ## v0.67.1
 
