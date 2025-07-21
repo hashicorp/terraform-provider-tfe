@@ -465,15 +465,19 @@ func (r *workspaceSettings) readSettings(ctx context.Context, workspaceID string
 	ws, err := r.config.Client.Workspaces.ReadByIDWithOptions(ctx, workspaceID, &tfe.WorkspaceReadOptions{
 		Include: []tfe.WSIncludeOpt{tfe.WSEffectiveTagBindings},
 	})
-	if err != nil && errors.Is(err, tfe.ErrInvalidIncludeValue) {
+	if errors.Is(err, tfe.ErrResourceNotFound) {
+		log.Printf("[DEBUG] Workspace %s no longer exists", workspaceID)
+		return nil, errWorkspaceNoLongerExists
+	} else if errors.Is(err, tfe.ErrInvalidIncludeValue) {
 		log.Printf("[DEBUG] Workspace %s read failed due to unsupported Include; retrying without it", workspaceID)
 		ws, err = r.config.Client.Workspaces.ReadByID(ctx, workspaceID)
-		if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
-			return nil, err
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			return nil, errWorkspaceNoLongerExists
 		} else if err != nil {
 			return nil, fmt.Errorf("Error reading workspace %s without include: %w", workspaceID, err)
 		}
 	}
+
 	if err != nil {
 		return nil, fmt.Errorf("Error reading configuration of workspace %s: %w", workspaceID, err)
 	}
