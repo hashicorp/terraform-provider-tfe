@@ -1,5 +1,10 @@
 ## Unreleased
 
+## v0.68.1
+
+BUG FIXES:
+* `r/tfe_workspace_settings`: remove the schema default for auto_apply in case it is managed by `r/tfe_workspace` [#1787](https://github.com/hashicorp/terraform-provider-tfe/pull/1787)
+
 ## v0.68.0
 
 FEATURES:
