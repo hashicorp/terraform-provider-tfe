@@ -4,6 +4,7 @@
 
 BUG FIXES:
 * `r/tfe_workspace_settings`: remove the schema default for auto_apply in case it is managed by `r/tfe_workspace` [#1787](https://github.com/hashicorp/terraform-provider-tfe/pull/1787)
+* `r/tfe_workspace_settings`: fixes an error when reading the workspace about an invalid include value when used with some versions of Terraform Enterprise [#1788](https://github.com/hashicorp/terraform-provider-tfe/pull/1788)
 
 ## v0.68.0
 
