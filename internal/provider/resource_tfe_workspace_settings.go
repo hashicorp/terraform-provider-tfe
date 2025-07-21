@@ -461,17 +461,21 @@ func (r *workspaceSettings) Read(ctx context.Context, req resource.ReadRequest, 
 }
 
 func (r *workspaceSettings) readSettings(ctx context.Context, workspaceID string) (*modelWorkspaceSettings, error) {
+	log.Printf("[DEBUG] Read configuration of workspace: %s", workspaceID)
 	ws, err := r.config.Client.Workspaces.ReadByIDWithOptions(ctx, workspaceID, &tfe.WorkspaceReadOptions{
 		Include: []tfe.WSIncludeOpt{tfe.WSEffectiveTagBindings},
 	})
-
-	if err != nil {
-		// If it's gone: that's not an error, but we are done.
-		if errors.Is(err, tfe.ErrResourceNotFound) {
-			log.Printf("[DEBUG] Workspace %s no longer exists", workspaceID)
-			return nil, errWorkspaceNoLongerExists
+	if err != nil && errors.Is(err, tfe.ErrInvalidIncludeValue) {
+		log.Printf("[DEBUG] Workspace %s read failed due to unsupported Include; retrying without it", workspaceID)
+		ws, err = r.config.Client.Workspaces.ReadByID(ctx, workspaceID)
+		if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
+			return nil, err
+		} else if err != nil {
+			return nil, fmt.Errorf("Error reading workspace %s without include: %w", workspaceID, err)
 		}
-		return nil, fmt.Errorf("couldn't read workspace %s: %s", workspaceID, err.Error())
+	}
+	if err != nil {
+		return nil, fmt.Errorf("Error reading configuration of workspace %s: %w", workspaceID, err)
 	}
 
 	return r.workspaceSettingsModelFromTFEWorkspace(ws), nil
@@ -531,11 +535,15 @@ func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorks
 	}
 
 	model, err := r.readSettings(ctx, ws.ID)
-	if err != nil {
-		return fmt.Errorf("couldn't read workspace %s after update: %w", workspaceID, err)
+	if errors.Is(err, errWorkspaceNoLongerExists) {
+		state.RemoveResource(ctx)
 	}
-	state.Set(ctx, model)
-	return nil
+
+	if err == nil {
+		state.Set(ctx, model)
+	}
+
+	return err
 }
 
 func (r *workspaceSettings) addAndRemoveRemoteStateConsumers(workspaceID string, newWorkspaceIDsSet types.Set, state *tfsdk.State) error {
