@@ -637,28 +637,28 @@ func (r *workspaceSettings) Create(ctx context.Context, req resource.CreateReque
 	planned := modelWorkspaceSettings{}
 	resp.Diagnostics.Append(req.Config.Get(ctx, &planned)...)
 
-	var auto_apply types.Bool
-	var assessments_enabled types.Bool
-	var global_remote_state types.Bool
+	var autoApply types.Bool
+	var assessmentsEnabled types.Bool
+	var globalRemoteState types.Bool
 
-	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("auto_apply"), &auto_apply)...)
-	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("assessments_enabled"), &assessments_enabled)...)
-	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("global_remote_state"), &global_remote_state)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("auto_apply"), &autoApply)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("assessments_enabled"), &assessmentsEnabled)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("global_remote_state"), &globalRemoteState)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Prefer the read value if there is no config value
-	if auto_apply.IsNull() {
+	if autoApply.IsNull() {
 		tflog.Debug(ctx, fmt.Sprintf("auto_apply is not set in config, overwrite with the read value %v", model.AutoApply.ValueBool()))
 		planned.AutoApply = model.AutoApply
 	}
-	if assessments_enabled.IsNull() {
+	if assessmentsEnabled.IsNull() {
 		tflog.Debug(ctx, fmt.Sprintf("assessments_enabled is not set in config, overwrite with the read value %v", model.AssessmentsEnabled.ValueBool()))
 		planned.AssessmentsEnabled = model.AssessmentsEnabled
 	}
-	if global_remote_state.IsNull() {
+	if globalRemoteState.IsNull() {
 		tflog.Debug(ctx, fmt.Sprintf("global_remote_state is not set in config, overwrite with the read value %v", model.GlobalRemoteState.ValueBool()))
 		planned.GlobalRemoteState = model.GlobalRemoteState
 	}
