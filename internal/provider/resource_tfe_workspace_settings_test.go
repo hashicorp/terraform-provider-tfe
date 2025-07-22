@@ -126,6 +126,39 @@ func TestAccTFEWorkspaceSettings_stateSharing(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspaceSettings_overlappingBooleans(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			// Start with local execution
+			{
+				Config: testAccTFEWorkspaceSettingsOverlappingBooleans(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(
+						"tfe_workspace.name", "id"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.name", "auto_apply", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace.name", "assessments_enabled", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.self", "auto_apply", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.self", "assessments_enabled", "false"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEWorkspaceSettings_basicOptions(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
@@ -389,6 +422,20 @@ func testAccCheckTFEWorkspaceSettingsDestroy(s *terraform.State) error {
 	}
 
 	return nil
+}
+
+func testAccTFEWorkspaceSettingsOverlappingBooleans(orgName string) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace_settings" "self" {
+  workspace_id        = tfe_workspace.name.id
+}
+
+resource "tfe_workspace" "name" {
+	organization = "%s"
+	name="permanent_auto_apply_drift"
+	auto_apply = true
+}
+`, orgName)
 }
 
 func testAccTFEWorkspaceSettingsUnknownIDRemoteState(orgName string) string {

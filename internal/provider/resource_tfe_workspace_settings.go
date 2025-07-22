@@ -22,6 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 // tfe_workspace_settings resource
@@ -621,10 +622,52 @@ func (r *workspaceSettings) addAndRemoveRemoteStateConsumers(workspaceID string,
 }
 
 func (r *workspaceSettings) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var data modelWorkspaceSettings
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	var workspaceID string
+	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, path.Root("workspace_id"), &workspaceID)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
-	if err := r.updateSettings(ctx, &data, &resp.State); err != nil {
+	// Start by reading the current settings of the workspace so we don't overwrite them with defaults
+	model, err := r.readSettings(ctx, workspaceID)
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading workspace", fmt.Sprintf("Could not read workspace %s: %s", workspaceID, err.Error()))
+	}
+
+	planned := modelWorkspaceSettings{}
+	resp.Diagnostics.Append(req.Config.Get(ctx, &planned)...)
+
+	var autoApply types.Bool
+	var assessmentsEnabled types.Bool
+	var globalRemoteState types.Bool
+
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("auto_apply"), &autoApply)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("assessments_enabled"), &assessmentsEnabled)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("global_remote_state"), &globalRemoteState)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Prefer the read value if there is no config value
+	if autoApply.IsNull() {
+		tflog.Debug(ctx, fmt.Sprintf("auto_apply is not set in config, overwrite with the read value %v", model.AutoApply.ValueBool()))
+		planned.AutoApply = model.AutoApply
+	}
+	if assessmentsEnabled.IsNull() {
+		tflog.Debug(ctx, fmt.Sprintf("assessments_enabled is not set in config, overwrite with the read value %v", model.AssessmentsEnabled.ValueBool()))
+		planned.AssessmentsEnabled = model.AssessmentsEnabled
+	}
+	if globalRemoteState.IsNull() {
+		tflog.Debug(ctx, fmt.Sprintf("global_remote_state is not set in config, overwrite with the read value %v", model.GlobalRemoteState.ValueBool()))
+		planned.GlobalRemoteState = model.GlobalRemoteState
+	}
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if err := r.updateSettings(ctx, &planned, &resp.State); err != nil {
 		resp.Diagnostics.AddError("Error updating workspace", err.Error())
 	}
 }
