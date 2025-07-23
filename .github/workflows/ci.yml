@@ -92,6 +92,45 @@ jobs:
           # which runs against all tests using the list arg
           # lists_tests regex is used to skip the TestAccTFESAMLSettings_omnibus test suite for CI tests only
           list_tests: "TestAcc.*_RunDependent"
+  vcs-dependent-tests:
+    name: vcs-dependent-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        total: [1]
+        index: [0]
+    steps:
+      - name: Fetch Outputs
+        id: tflocal
+        uses: hashicorp-forge/terraform-cloud-action/outputs@5583d5f554d268ac91b3c37fd0a5e9da2c78c017 # v1.1.0
+        with:
+          token: "${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}"
+          organization: hashicorp-v2
+          workspace: tflocal-terraform-provider-tfe
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: ./.github/actions/test-provider-tfe
+        with:
+          matrix_index: ${{ matrix.index }}
+          matrix_total: ${{ matrix.total }}
+          hostname: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).ngrok_domain }}
+          token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_token }}
+          testing-github-token: ${{ secrets.TESTING_GITHUB_TOKEN }}
+          admin_configuration_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.configuration }}
+          admin_provision_licenses_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.provision-licenses }}
+          admin_security_maintenance_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.security-maintenance }}
+          admin_site_admin_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.site-admin }}
+          admin_subscription_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.subscription }}
+          admin_support_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.support }}
+          admin_version_maintenance_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.version-maintenance }}
+          # Run terminal cmd 'go help testflag' to learn more about -list flag
+          # action.yml uses https://github.com/hashicorp-forge/go-test-split-action/blob/main/action.yml to split acceptance tests
+          # which runs against all tests using the list arg
+          # lists_tests regex is used to skip the TestAccTFESAMLSettings_omnibus test suite for CI tests only
+          list_tests: "TestAcc.*_VCSDependent"
 
   tests-combine-summaries:
     name: Combine Test Reports

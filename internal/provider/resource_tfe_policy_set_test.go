@@ -471,7 +471,7 @@ func TestAccTFEPolicySet_updateToWorkspace(t *testing.T) {
 	})
 }
 
-func TestAccTFEPolicySet_vcs(t *testing.T) {
+func TestAccTFEPolicySet_vcs_VCSDependent(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -526,7 +526,7 @@ func TestAccTFEPolicySet_vcs(t *testing.T) {
 	})
 }
 
-func TestAccTFEPolicySet_GithubApp(t *testing.T) {
+func TestAccTFEPolicySet_GithubApp_VCSDependent(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -581,7 +581,7 @@ func TestAccTFEPolicySet_GithubApp(t *testing.T) {
 	})
 }
 
-func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
+func TestAccTFEPolicySet_updateVCSBranch_VCSDependent_VCSDependent(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -767,7 +767,7 @@ func TestAccTFEPolicySet_versionedSlugUpdate(t *testing.T) {
 	})
 }
 
-func TestAccTFEPolicySet_versionedNoConflicts(t *testing.T) {
+func TestAccTFEPolicySet_versionedNoConflicts_VCSDependent(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)

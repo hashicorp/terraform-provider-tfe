@@ -163,7 +163,7 @@ func TestAccTFEPolicySetDataSourceOPA_basic(t *testing.T) {
 	)
 }
 
-func TestAccTFEPolicySetDataSource_vcs(t *testing.T) {
+func TestAccTFEPolicySetDataSource_vcs_VCSDependent(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)

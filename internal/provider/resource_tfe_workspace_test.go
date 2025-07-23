@@ -1491,7 +1491,7 @@ func TestAccTFEWorkspace_structuredRunOutputDisabled(t *testing.T) {
 	})
 }
 
-func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
+func TestAccTFEWorkspace_updateVCSRepo_VCSDependent(t *testing.T) {
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -1567,7 +1567,7 @@ func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
 	})
 }
 
-func TestAccTFEWorkspace_updateGitHubAppRepo(t *testing.T) {
+func TestAccTFEWorkspace_updateGitHubAppRepo_VCSDependent(t *testing.T) {
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -1643,7 +1643,7 @@ func TestAccTFEWorkspace_updateGitHubAppRepo(t *testing.T) {
 	})
 }
 
-func TestAccTFEWorkspace_updateVCSRepoTagsRegex(t *testing.T) {
+func TestAccTFEWorkspace_updateVCSRepoTagsRegex_VCSDependent(t *testing.T) {
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -1695,7 +1695,7 @@ func TestAccTFEWorkspace_updateVCSRepoTagsRegex(t *testing.T) {
 	})
 }
 
-func TestAccTFEWorkspace_updateVCSRepoChangeTagRegexToTriggerPattern(t *testing.T) {
+func TestAccTFEWorkspace_updateVCSRepoChangeTagRegexToTriggerPattern_VCSDependent(t *testing.T) {
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -1747,7 +1747,7 @@ func TestAccTFEWorkspace_updateVCSRepoChangeTagRegexToTriggerPattern(t *testing.
 	})
 }
 
-func TestAccTFEWorkspace_updateRemoveVCSRepoWithTagsRegex(t *testing.T) {
+func TestAccTFEWorkspace_updateRemoveVCSRepoWithTagsRegex_VCSDependent(t *testing.T) {
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -1860,7 +1860,7 @@ func TestAccTFEWorkspace_import(t *testing.T) {
 	})
 }
 
-func TestAccTFEWorkspace_importVCSBranch(t *testing.T) {
+func TestAccTFEWorkspace_importVCSBranch_VCSDependent(t *testing.T) {
 	workspace := &tfe.Workspace{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
