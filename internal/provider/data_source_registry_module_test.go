@@ -92,7 +92,7 @@ func TestAccTFERegistryModuleDataSource_basicNoCodePublic(t *testing.T) {
 	})
 }
 
-func TestAccTFERegistryModuleDataSource_basicNoCodePrivate(t *testing.T) {
+func TestAccTFERegistryModuleDataSource_basicNoCodePrivate_VCSDependent(t *testing.T) {
 	skipIfEnterprise(t)
 
 	dsName := "data.tfe_registry_module.test"

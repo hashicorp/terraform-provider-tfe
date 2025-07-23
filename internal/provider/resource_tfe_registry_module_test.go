@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-func TestAccTFERegistryModule_vcsBasic(t *testing.T) {
+func TestAccTFERegistryModule_vcsBasic_VCSDependent(t *testing.T) {
 	registryModule := &tfe.RegistryModule{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
@@ -77,7 +77,7 @@ func TestAccTFERegistryModule_vcsBasic(t *testing.T) {
 	})
 }
 
-func TestAccTFERegistryModule_GitHubApp(t *testing.T) {
+func TestAccTFERegistryModule_GitHubApp_VCSDependent(t *testing.T) {
 	registryModule := &tfe.RegistryModule{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
@@ -134,7 +134,7 @@ func TestAccTFERegistryModule_GitHubApp(t *testing.T) {
 	})
 }
 
-func TestAccTFERegistryModule_emptyVCSRepo(t *testing.T) {
+func TestAccTFERegistryModule_emptyVCSRepo_VCSDependent(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -153,7 +153,7 @@ func TestAccTFERegistryModule_emptyVCSRepo(t *testing.T) {
 	})
 }
 
-func TestAccTFERegistryModule_nonVCSPrivateRegistryModuleWithoutRegistryName(t *testing.T) {
+func TestAccTFERegistryModule_nonVCSPrivateRegistryModuleWithoutRegistryName_VCSDependent(t *testing.T) {
 	registryModule := &tfe.RegistryModule{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
@@ -202,7 +202,7 @@ func TestAccTFERegistryModule_nonVCSPrivateRegistryModuleWithoutRegistryName(t *
 	})
 }
 
-func TestAccTFERegistryModule_nonVCSPrivateRegistryModuleWithRegistryName(t *testing.T) {
+func TestAccTFERegistryModule_nonVCSPrivateRegistryModuleWithRegistryName_VCSDependent(t *testing.T) {
 	registryModule := &tfe.RegistryModule{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
@@ -251,7 +251,7 @@ func TestAccTFERegistryModule_nonVCSPrivateRegistryModuleWithRegistryName(t *tes
 	})
 }
 
-func TestAccTFERegistryModule_publicRegistryModule(t *testing.T) {
+func TestAccTFERegistryModule_publicRegistryModule_VCSDependent(t *testing.T) {
 	registryModule := &tfe.RegistryModule{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
@@ -300,7 +300,7 @@ func TestAccTFERegistryModule_publicRegistryModule(t *testing.T) {
 	})
 }
 
-func TestAccTFERegistryModule_branchOnly(t *testing.T) {
+func TestAccTFERegistryModule_branchOnly_VCSDependent(t *testing.T) {
 	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -324,7 +324,7 @@ func TestAccTFERegistryModule_branchOnly(t *testing.T) {
 	})
 }
 
-func TestAccTFERegistryModule_vcsRepoWithTags(t *testing.T) {
+func TestAccTFERegistryModule_vcsRepoWithTags_VCSDependent(t *testing.T) {
 	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -348,7 +348,7 @@ func TestAccTFERegistryModule_vcsRepoWithTags(t *testing.T) {
 	})
 }
 
-func TestAccTFERegistryModule_noCodeModule(t *testing.T) {
+func TestAccTFERegistryModule_noCodeModule_VCSDependent(t *testing.T) {
 	skipIfEnterprise(t)
 
 	registryModule := &tfe.RegistryModule{}
@@ -402,7 +402,7 @@ func TestAccTFERegistryModule_noCodeModule(t *testing.T) {
 	})
 }
 
-func TestAccTFERegistryModuleImport_vcsPrivateRMDeprecatedFormat(t *testing.T) {
+func TestAccTFERegistryModuleImport_vcsPrivateRMDeprecatedFormat_VCSDependent(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -426,7 +426,7 @@ func TestAccTFERegistryModuleImport_vcsPrivateRMDeprecatedFormat(t *testing.T) {
 	})
 }
 
-func TestAccTFERegistryModuleImport_vcsPrivateRMRecommendedFormat(t *testing.T) {
+func TestAccTFERegistryModuleImport_vcsPrivateRMRecommendedFormat_VCSDependent(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -450,7 +450,7 @@ func TestAccTFERegistryModuleImport_vcsPrivateRMRecommendedFormat(t *testing.T) 
 	})
 }
 
-func TestAccTFERegistryModuleImport_vcsPublishingMechanismBranchToTagsToBranch(t *testing.T) {
+func TestAccTFERegistryModuleImport_vcsPublishingMechanismBranchToTagsToBranch_VCSDependent(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -509,7 +509,7 @@ func TestAccTFERegistryModuleImport_vcsPublishingMechanismBranchToTagsToBranch(t
 	})
 }
 
-func TestAccTFERegistryModule_branchOnlyEmpty(t *testing.T) {
+func TestAccTFERegistryModule_branchOnlyEmpty_VCSDependent(t *testing.T) {
 	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -533,7 +533,7 @@ func TestAccTFERegistryModule_branchOnlyEmpty(t *testing.T) {
 	})
 }
 
-func TestAccTFERegistryModuleImport_vcsPublishingMechanismBranchToTagsToBranchWithTests(t *testing.T) {
+func TestAccTFERegistryModuleImport_vcsPublishingMechanismBranchToTagsToBranchWithTests_VCSDependent(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -574,7 +574,7 @@ func TestAccTFERegistryModuleImport_vcsPublishingMechanismBranchToTagsToBranchWi
 	})
 }
 
-func TestAccTFERegistryModuleImport_vcsPublishingMechanismTagsToBranchToTags(t *testing.T) {
+func TestAccTFERegistryModuleImport_vcsPublishingMechanismTagsToBranchToTags_VCSDependent(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -624,7 +624,7 @@ func TestAccTFERegistryModuleImport_vcsPublishingMechanismTagsToBranchToTags(t *
 	})
 }
 
-func TestAccTFERegistryModule_invalidTestConfigOnCreate(t *testing.T) {
+func TestAccTFERegistryModule_invalidTestConfigOnCreate_VCSDependent(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -642,7 +642,7 @@ func TestAccTFERegistryModule_invalidTestConfigOnCreate(t *testing.T) {
 	})
 }
 
-func TestAccTFERegistryModule_invalidTestConfigOnUpdate(t *testing.T) {
+func TestAccTFERegistryModule_invalidTestConfigOnUpdate_VCSDependent(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -669,7 +669,7 @@ func TestAccTFERegistryModule_invalidTestConfigOnUpdate(t *testing.T) {
 	})
 }
 
-func TestAccTFERegistryModule_vcsTagsOnlyFalse(t *testing.T) {
+func TestAccTFERegistryModule_vcsTagsOnlyFalse_VCSDependent(t *testing.T) {
 	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -688,7 +688,7 @@ func TestAccTFERegistryModule_vcsTagsOnlyFalse(t *testing.T) {
 	})
 }
 
-func TestAccTFERegistryModule_branchAndInvalidTagsOnCreate(t *testing.T) {
+func TestAccTFERegistryModule_branchAndInvalidTagsOnCreate_VCSDependent(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -706,7 +706,7 @@ func TestAccTFERegistryModule_branchAndInvalidTagsOnCreate(t *testing.T) {
 	})
 }
 
-func TestAccTFERegistryModule_branchAndTagsEnabledOnCreate(t *testing.T) {
+func TestAccTFERegistryModule_branchAndTagsEnabledOnCreate_VCSDependent(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -724,7 +724,7 @@ func TestAccTFERegistryModule_branchAndTagsEnabledOnCreate(t *testing.T) {
 	})
 }
 
-func TestAccTFERegistryModule_branchAndTagsDisabledOnCreate(t *testing.T) {
+func TestAccTFERegistryModule_branchAndTagsDisabledOnCreate_VCSDependent(t *testing.T) {
 	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -743,7 +743,7 @@ func TestAccTFERegistryModule_branchAndTagsDisabledOnCreate(t *testing.T) {
 	})
 }
 
-func TestAccTFERegistryModule_branchAndTagsEnabledOnUpdate(t *testing.T) {
+func TestAccTFERegistryModule_branchAndTagsEnabledOnUpdate_VCSDependent(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -770,7 +770,7 @@ func TestAccTFERegistryModule_branchAndTagsEnabledOnUpdate(t *testing.T) {
 	})
 }
 
-func TestAccTFERegistryModule_branchAndTagsDisabledOnUpdate(t *testing.T) {
+func TestAccTFERegistryModule_branchAndTagsDisabledOnUpdate_VCSDependent(t *testing.T) {
 	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -798,7 +798,7 @@ func TestAccTFERegistryModule_branchAndTagsDisabledOnUpdate(t *testing.T) {
 	})
 }
 
-func TestAccTFERegistryModuleImport_nonVCSPrivateRM(t *testing.T) {
+func TestAccTFERegistryModuleImport_nonVCSPrivateRM_VCSDependent(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -821,7 +821,7 @@ func TestAccTFERegistryModuleImport_nonVCSPrivateRM(t *testing.T) {
 	})
 }
 
-func TestAccTFERegistryModuleImport_publicRM(t *testing.T) {
+func TestAccTFERegistryModuleImport_publicRM_VCSDependent(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -844,7 +844,7 @@ func TestAccTFERegistryModuleImport_publicRM(t *testing.T) {
 	})
 }
 
-func TestAccTFERegistryModule_invalidWithBothVCSRepoAndModuleProvider(t *testing.T) {
+func TestAccTFERegistryModule_invalidWithBothVCSRepoAndModuleProvider_VCSDependent(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
@@ -859,7 +859,7 @@ func TestAccTFERegistryModule_invalidWithBothVCSRepoAndModuleProvider(t *testing
 	})
 }
 
-func TestAccTFERegistryModule_invalidRegistryName(t *testing.T) {
+func TestAccTFERegistryModule_invalidRegistryName_VCSDependent(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
@@ -874,7 +874,7 @@ func TestAccTFERegistryModule_invalidRegistryName(t *testing.T) {
 	})
 }
 
-func TestAccTFERegistryModule_invalidWithModuleProviderAndNoName(t *testing.T) {
+func TestAccTFERegistryModule_invalidWithModuleProviderAndNoName_VCSDependent(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
@@ -889,7 +889,7 @@ func TestAccTFERegistryModule_invalidWithModuleProviderAndNoName(t *testing.T) {
 	})
 }
 
-func TestAccTFERegistryModule_invalidWithModuleProviderAndNoOrganization(t *testing.T) {
+func TestAccTFERegistryModule_invalidWithModuleProviderAndNoOrganization_VCSDependent(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
@@ -904,7 +904,7 @@ func TestAccTFERegistryModule_invalidWithModuleProviderAndNoOrganization(t *test
 	})
 }
 
-func TestAccTFERegistryModule_invalidWithNamespaceAndNoRegistryName(t *testing.T) {
+func TestAccTFERegistryModule_invalidWithNamespaceAndNoRegistryName_VCSDependent(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
@@ -919,7 +919,7 @@ func TestAccTFERegistryModule_invalidWithNamespaceAndNoRegistryName(t *testing.T
 	})
 }
 
-func TestAccTFERegistryModule_invalidWithRegistryNameAndNoModuleProvider(t *testing.T) {
+func TestAccTFERegistryModule_invalidWithRegistryNameAndNoModuleProvider_VCSDependent(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
