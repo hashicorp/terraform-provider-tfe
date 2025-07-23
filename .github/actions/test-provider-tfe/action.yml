@@ -76,7 +76,7 @@ runs:
       uses: dawidd6/action-download-artifact@09f2f74827fd3a8607589e5ad7f9398816f540fe # v3.1.4
       with:
         workflow_conclusion: success
-        name: junit-test-summary
+        name: junit-${{ inputs.test_name }}-summary
         if_no_artifact_found: warn
         branch: main
 
