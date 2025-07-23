@@ -581,7 +581,7 @@ func TestAccTFEPolicySet_GithubApp_VCSDependent(t *testing.T) {
 	})
 }
 
-func TestAccTFEPolicySet_updateVCSBranch_VCSDependent_VCSDependent(t *testing.T) {
+func TestAccTFEPolicySet_updateVCSBranch_VCSDependent(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
