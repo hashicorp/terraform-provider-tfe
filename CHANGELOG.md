@@ -1,5 +1,11 @@
 ## Unreleased
 
+## v0.68.2
+
+BUG FIXES:
+
+* `r/tfe_workspace_settings`: during create, true boolean values set on tfe_workspace can be overwritten if omitted from tfe_workspace_settings config. [#1795](https://github.com/hashicorp/terraform-provider-tfe/pull/1795)
+
 ## v0.68.1
 
 BUG FIXES:
