@@ -1,5 +1,9 @@
 ## Unreleased
 
+FEATURES:
+
+* `d/tfe_organization_audit_configuration`: is a new resource for reading the auditing configuration for an organizations, by @glennsarti-hashi [#1778](https://github.com/hashicorp/terraform-provider-tfe/pull/1778)
+
 ## v0.68.2
 
 BUG FIXES:
