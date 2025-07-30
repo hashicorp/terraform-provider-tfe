@@ -6,6 +6,7 @@ FEATURES:
 * **New resource**: `r/tfe_stack_variable_set` for managing associations between variable sets and stacks.
 * `r/tfe_variable_set`: Adds `stack_ids` attribute for managing which stacks a variable set is applied to.
 * `d/tfe_variable_set`: Adds `stack_ids` computed attribute to retrieve which stacks a variable set is applied to.
+* `d/tfe_organization_audit_configuration`: is a new resource for reading the auditing configuration for an organizations, by @glennsarti-hashi [#1778](https://github.com/hashicorp/terraform-provider-tfe/pull/1778)
 
 ## v0.71.0
 
@@ -13,7 +14,7 @@ FEATURES:
 * **New resource**: `r/tfe_vault_oidc_configuration` for managing Vault OIDC configurations. by @helenjw [#1835](https://github.com/hashicorp/terraform-provider-tfe/pull/1835)
 * **New resource**: `r/tfe_aws_oidc_configuration` for managing AWS OIDC configurations. by @helenjw [#1835](https://github.com/hashicorp/terraform-provider-tfe/pull/1835)
 * **New resource**: `r/tfe_gcp_oidc_configuration` for managing GCP OIDC configurations. by @helenjw [#1835](https://github.com/hashicorp/terraform-provider-tfe/pull/1835)
-* **New resource**: `r/tfe_azure_oidc_configuration` for managing Azure OIDC configurations. by @helenjw. [#1835](https://github.com/hashicorp/terraform-provider-tfe/pull/1835) 
+* **New resource**: `r/tfe_azure_oidc_configuration` for managing Azure OIDC configurations. by @helenjw. [#1835](https://github.com/hashicorp/terraform-provider-tfe/pull/1835)
 * **New resource**: `r/tfe_hyok_configuration` for managing HYOK configurations. by @helenjw [#1835](https://github.com/hashicorp/terraform-provider-tfe/pull/1841)
 * **New Data Source:** `d/hyok_customer_key_version` is a new data source for finding HYOK customer key versions. by @dominicretli [#1842](https://github.com/hashicorp/terraform-provider-tfe/pull/1842)
 * **New Data Source:** `d/hyok_encrypted_data_key` is a new data source for finding HYOK encrypted data keys. by @dominicretli [#1842](https://github.com/hashicorp/terraform-provider-tfe/pull/1842)
