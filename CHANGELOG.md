@@ -13,6 +13,24 @@ DEPRECATIONS:
 * `r/tfe_opa_version`: The `url` and `sha` attributes are deprecated and will be removed in a future version. Use the `archs` attribute to specify architecture-specific binaries going forward, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762)
 * `r/tfe_sentinel_version`: The `url` and `sha` attributes are deprecated and will be removed in a future version. Use the `archs` attribute to specify architecture-specific binaries going forward, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762)
 
+## v0.68.2
+
+BUG FIXES:
+
+* `r/tfe_workspace_settings`: during create, true boolean values set on tfe_workspace can be overwritten if omitted from tfe_workspace_settings config. [#1795](https://github.com/hashicorp/terraform-provider-tfe/pull/1795)
+
+## v0.68.1
+
+BUG FIXES:
+* `r/tfe_workspace_settings`: remove the schema default for auto_apply in case it is managed by `r/tfe_workspace` [#1787](https://github.com/hashicorp/terraform-provider-tfe/pull/1787)
+* `r/tfe_workspace_settings`: fixes an error when reading the workspace about an invalid include value when used with some versions of Terraform Enterprise [#1788](https://github.com/hashicorp/terraform-provider-tfe/pull/1788)
+
+## v0.68.0
+
+FEATURES:
+
+* `r/tfe_workspace_settings`: offers more arguments for managing the workspace configuration, by @drewmullen [#1781](https://github.com/hashicorp/terraform-provider-tfe/pull/1781)
+
 
 ## v0.67.1
 

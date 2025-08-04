@@ -22,3 +22,4 @@ provider_tfe_override.tfrc
 # mkdocs build output
 site/
 .envrc
+.vscode

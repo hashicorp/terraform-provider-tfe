@@ -7,7 +7,9 @@ description: |-
 
 # tfe_workspace_settings
 
-Manages or reads execution mode and agent pool settings for a workspace. This also interacts with the organization's default values for several settings, which can be managed with [tfe_organization_default_settings](organization_default_settings.html). If other resources need to identify whether a setting is a default or an explicit value set for the workspace, you can refer to the read-only `overwrites` argument.
+~> **NOTE:** Manages or reads execution mode and agent pool settings for a workspace. This also interacts with the organization's default values for several settings, which can be managed with [tfe_organization_default_settings](organization_default_settings.html). If other resources need to identify whether a setting is a default or an explicit value set for the workspace, you can refer to the read-only `overwrites` argument.
+
+~> **NOTE:** This resource manages values that can alternatively be managed by the  `tfe_workspace` resource. You should not attempt to manage the same property on both resources which could cause a permanent drift. Example properties available on both resources: `description`, `tags`, `auto_apply`, etc.
 
 ## Example Usage
 
@@ -96,6 +98,32 @@ output "workspace-explicit-local-execution" {
 }
 ```
 
+This resource can be used to self manage a workspace created from `terraform init` and a cloud block:
+
+```hcl
+terraform {
+  cloud {
+    organization = "foo"
+    workspaces {
+      name = "self-managed"
+    }
+  }
+}
+
+data "tfe_workspace" "self" {
+  name         = "self-managed"
+  organization = "foo"
+}
+
+resource "tfe_workspace_settings" "self" {
+  workspace_id        = data.tfe_workspace.self.id
+  assessments_enabled = true
+  tags = {
+    prod = "true"
+  }
+}
+```
+
 ## Argument Reference
 
 The following arguments are supported:
@@ -107,6 +135,11 @@ The following arguments are supported:
   to use. Using HCP Terraform, valid values are `remote`, `local` or `agent`. When set to `local`, the workspace will be used for state storage only. **Important:** If you omit this attribute, the resource configures the workspace to use your organization's default execution mode (which in turn defaults to `remote`), removing any explicit value that might have previously been set for the workspace.
 * `global_remote_state` - (Optional) Whether the workspace allows all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (`remote_state_consumer_ids`). By default, HashiCorp recommends you do not allow other workspaces to access their state. We recommend that you follow the principle of least privilege and only enable state access between workspaces that specifically need information from each other.
 * `remote_state_consumer_ids` - (Optional) The set of workspace IDs set as explicit remote state consumers for the given workspace. To set this attribute, global_remote_state must be false.
+* `auto_apply` - (Optional) Whether to automatically apply changes when a Terraform plan is successful. Defaults to `false`.
+* `assessments_enabled` - (Optional) Whether to regularly run health assessments such as drift detection on the workspace. Defaults to `false`.
+* `description` - (Optional) A description for the workspace.
+* `tags` - (Optional) A map of key value tags for this workspace.
+
 
 ## Attributes Reference
 
@@ -116,6 +149,7 @@ In addition to all arguments above, the following attributes are exported:
 * `overwrites` - Can be used to check whether a setting is currently inheriting its value from another resource.
   - `execution_mode` - Set to `true` if the execution mode of the workspace is being determined by the setting on the workspace itself. It will be `false` if the execution mode is inherited from another resource (e.g. the organization's default execution mode)
   - `agent_pool` - Set to `true` if the agent pool of the workspace is being determined by the setting on the workspace itself. It will be `false` if the agent pool is inherited from another resource (e.g. the organization's default agent pool)
+* `effective_tags` - A map of key value tags for this workspace, including any tags inherited from the parent project.
 
 ## Import
 

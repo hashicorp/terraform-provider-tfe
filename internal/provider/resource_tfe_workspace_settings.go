@@ -22,6 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 // tfe_workspace_settings resource
@@ -49,6 +50,11 @@ type modelWorkspaceSettings struct {
 	Overwrites             types.List   `tfsdk:"overwrites"`
 	GlobalRemoteState      types.Bool   `tfsdk:"global_remote_state"`
 	RemoteStateConsumerIDs types.Set    `tfsdk:"remote_state_consumer_ids"`
+	Description            types.String `tfsdk:"description"`
+	AutoApply              types.Bool   `tfsdk:"auto_apply"`
+	AssessmentsEnabled     types.Bool   `tfsdk:"assessments_enabled"`
+	Tags                   types.Map    `tfsdk:"tags"`
+	EffectiveTags          types.Map    `tfsdk:"effective_tags"`
 }
 
 type modelOverwrites struct {
@@ -338,6 +344,38 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 					validateSelfReference{},
 				},
 			},
+
+			"description": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "A description of the workspace.",
+			},
+
+			"auto_apply": schema.BoolAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "If set to false a human will have to manually confirm a plan in HCP Terraform's UI to start an apply. If set to true, this resource will be automatically applied.",
+			},
+
+			"assessments_enabled": schema.BoolAttribute{
+				Description: "If set to true, assessments will be enabled for the workspace. This includes drift and continuous validation checks.",
+				Optional:    true,
+				Computed:    true,
+			},
+
+			"tags": schema.MapAttribute{
+				Description: "A map of key-value tags to add to the workspace.",
+				Optional:    true,
+				Computed:    true,
+				ElementType: types.StringType,
+			},
+
+			"effective_tags": schema.MapAttribute{
+				Description: "A map of all key-value tags set on the workspace (includes inheritted tags).",
+				Optional:    true,
+				Computed:    true,
+				ElementType: types.StringType,
+			},
 		},
 	}
 }
@@ -345,10 +383,16 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 // workspaceSettingsModelFromTFEWorkspace builds a resource model from the TFE model
 func (r *workspaceSettings) workspaceSettingsModelFromTFEWorkspace(ws *tfe.Workspace) *modelWorkspaceSettings {
 	result := modelWorkspaceSettings{
-		ID:                types.StringValue(ws.ID),
-		WorkspaceID:       types.StringValue(ws.ID),
-		ExecutionMode:     types.StringValue(ws.ExecutionMode),
-		GlobalRemoteState: types.BoolValue(ws.GlobalRemoteState),
+		ID:                 types.StringValue(ws.ID),
+		WorkspaceID:        types.StringValue(ws.ID),
+		ExecutionMode:      types.StringValue(ws.ExecutionMode),
+		GlobalRemoteState:  types.BoolValue(ws.GlobalRemoteState),
+		AutoApply:          types.BoolValue(ws.AutoApply),
+		AssessmentsEnabled: types.BoolValue(ws.AssessmentsEnabled),
+	}
+
+	if ws.Description != "" {
+		result.Description = types.StringValue(ws.Description)
 	}
 
 	if ws.AgentPool != nil && ws.ExecutionMode == "agent" {
@@ -387,6 +431,18 @@ func (r *workspaceSettings) workspaceSettingsModelFromTFEWorkspace(ws *tfe.Works
 		result.Overwrites = listOverwrites
 	}
 
+	// if EffectiveTagBindings entry includes non-nil Links, its inherited
+	tagElems := make(map[string]attr.Value)
+	effectiveTagElems := make(map[string]attr.Value)
+	for _, binding := range ws.EffectiveTagBindings {
+		if binding.Links == nil {
+			tagElems[binding.Key] = types.StringValue(binding.Value)
+		}
+		effectiveTagElems[binding.Key] = types.StringValue(binding.Value)
+	}
+	result.Tags = types.MapValueMust(types.StringType, tagElems)
+	result.EffectiveTags = types.MapValueMust(types.StringType, effectiveTagElems)
+
 	return &result
 }
 
@@ -406,14 +462,25 @@ func (r *workspaceSettings) Read(ctx context.Context, req resource.ReadRequest, 
 }
 
 func (r *workspaceSettings) readSettings(ctx context.Context, workspaceID string) (*modelWorkspaceSettings, error) {
-	ws, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID)
-	if err != nil {
-		// If it's gone: that's not an error, but we are done.
+	log.Printf("[DEBUG] Read configuration of workspace: %s", workspaceID)
+	ws, err := r.config.Client.Workspaces.ReadByIDWithOptions(ctx, workspaceID, &tfe.WorkspaceReadOptions{
+		Include: []tfe.WSIncludeOpt{tfe.WSEffectiveTagBindings},
+	})
+	if errors.Is(err, tfe.ErrResourceNotFound) {
+		log.Printf("[DEBUG] Workspace %s no longer exists", workspaceID)
+		return nil, errWorkspaceNoLongerExists
+	} else if errors.Is(err, tfe.ErrInvalidIncludeValue) {
+		log.Printf("[DEBUG] Workspace %s read failed due to unsupported Include; retrying without it", workspaceID)
+		ws, err = r.config.Client.Workspaces.ReadByID(ctx, workspaceID)
 		if errors.Is(err, tfe.ErrResourceNotFound) {
-			log.Printf("[DEBUG] Workspace %s no longer exists", workspaceID)
 			return nil, errWorkspaceNoLongerExists
+		} else if err != nil {
+			return nil, fmt.Errorf("Error reading workspace %s without include: %w", workspaceID, err)
 		}
-		return nil, fmt.Errorf("couldn't read workspace %s: %s", workspaceID, err.Error())
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("Error reading configuration of workspace %s: %w", workspaceID, err)
 	}
 
 	return r.workspaceSettingsModelFromTFEWorkspace(ws), nil
@@ -428,6 +495,9 @@ func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorks
 			ExecutionMode: tfe.Bool(false),
 			AgentPool:     tfe.Bool(false),
 		},
+		Description:        tfe.String(data.Description.ValueString()),
+		AutoApply:          tfe.Bool(data.AutoApply.ValueBool()),
+		AssessmentsEnabled: tfe.Bool(data.AssessmentsEnabled.ValueBool()),
 	}
 
 	executionMode := data.ExecutionMode.ValueString()
@@ -443,6 +513,23 @@ func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorks
 		updateOptions.ExecutionMode = tfe.String("remote")
 	}
 
+	tags := data.Tags.Elements()
+	for key, val := range tags {
+		if strVal, ok := val.(types.String); ok && !strVal.IsNull() {
+			updateOptions.TagBindings = append(updateOptions.TagBindings, &tfe.TagBinding{
+				Key:   key,
+				Value: strVal.ValueString(),
+			})
+		}
+	}
+
+	if len(tags) == 0 {
+		err := r.config.Client.Workspaces.DeleteAllTagBindings(ctx, workspaceID)
+		if err != nil {
+			return fmt.Errorf("error removing tag bindings from workspace %s: %w", workspaceID, err)
+		}
+	}
+
 	ws, err := r.config.Client.Workspaces.UpdateByID(ctx, workspaceID, updateOptions)
 	if err != nil {
 		return fmt.Errorf("couldn't update workspace %s: %w", workspaceID, err)
@@ -453,11 +540,15 @@ func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorks
 	}
 
 	model, err := r.readSettings(ctx, ws.ID)
-	if err != nil {
-		return fmt.Errorf("couldn't read workspace %s after update: %w", workspaceID, err)
+	if errors.Is(err, errWorkspaceNoLongerExists) {
+		state.RemoveResource(ctx)
 	}
-	state.Set(ctx, model)
-	return nil
+
+	if err == nil {
+		state.Set(ctx, model)
+	}
+
+	return err
 }
 
 func (r *workspaceSettings) addAndRemoveRemoteStateConsumers(workspaceID string, newWorkspaceIDsSet types.Set, state *tfsdk.State) error {
@@ -531,10 +622,52 @@ func (r *workspaceSettings) addAndRemoveRemoteStateConsumers(workspaceID string,
 }
 
 func (r *workspaceSettings) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var data modelWorkspaceSettings
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	var workspaceID string
+	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, path.Root("workspace_id"), &workspaceID)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
-	if err := r.updateSettings(ctx, &data, &resp.State); err != nil {
+	// Start by reading the current settings of the workspace so we don't overwrite them with defaults
+	model, err := r.readSettings(ctx, workspaceID)
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading workspace", fmt.Sprintf("Could not read workspace %s: %s", workspaceID, err.Error()))
+	}
+
+	planned := modelWorkspaceSettings{}
+	resp.Diagnostics.Append(req.Config.Get(ctx, &planned)...)
+
+	var autoApply types.Bool
+	var assessmentsEnabled types.Bool
+	var globalRemoteState types.Bool
+
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("auto_apply"), &autoApply)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("assessments_enabled"), &assessmentsEnabled)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("global_remote_state"), &globalRemoteState)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Prefer the read value if there is no config value
+	if autoApply.IsNull() {
+		tflog.Debug(ctx, fmt.Sprintf("auto_apply is not set in config, overwrite with the read value %v", model.AutoApply.ValueBool()))
+		planned.AutoApply = model.AutoApply
+	}
+	if assessmentsEnabled.IsNull() {
+		tflog.Debug(ctx, fmt.Sprintf("assessments_enabled is not set in config, overwrite with the read value %v", model.AssessmentsEnabled.ValueBool()))
+		planned.AssessmentsEnabled = model.AssessmentsEnabled
+	}
+	if globalRemoteState.IsNull() {
+		tflog.Debug(ctx, fmt.Sprintf("global_remote_state is not set in config, overwrite with the read value %v", model.GlobalRemoteState.ValueBool()))
+		planned.GlobalRemoteState = model.GlobalRemoteState
+	}
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if err := r.updateSettings(ctx, &planned, &resp.State); err != nil {
 		resp.Diagnostics.AddError("Error updating workspace", err.Error())
 	}
 }
