@@ -1,5 +1,10 @@
 ## Unreleased
 
+FEATURES:
+* Add source_directory and tag_prefix registry module support for private registry monorepositor, by @jillirami ([#1799](https://github.com/hashicorp/terraform-provider-tfe/pull/1799)):
+  * `r/tfe_registry_module`: Add attribute `source_directory` and `tag_prefix`
+  * `r/tfe_workspace`: Add attribute `source_directory` and `tag_prefix`
+
 ## v0.68.2
 
 BUG FIXES:
