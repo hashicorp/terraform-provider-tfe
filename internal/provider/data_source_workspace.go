@@ -373,6 +373,8 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 			"oauth_token_id":             workspace.VCSRepo.OAuthTokenID,
 			"tags_regex":                 workspace.VCSRepo.TagsRegex,
 			"github_app_installation_id": workspace.VCSRepo.GHAInstallationID,
+			"source_directory":           workspace.VCSRepo.SourceDirectory,
+			"tag_prefix":                 workspace.VCSRepo.TagPrefix,
 		}
 		vcsRepo = append(vcsRepo, vcsConfig)
 	}
