@@ -511,6 +511,16 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		if branch, ok := vcsRepo["branch"].(string); ok && branch != "" {
 			options.VCSRepo.Branch = tfe.String(branch)
 		}
+
+		// Only set the source_directory if it is configured.
+		if sourceDirectory, ok := vcsRepo["source_directory"].(string); ok && sourceDirectory != "" {
+			options.VCSRepo.SourceDirectory = tfe.String(sourceDirectory)
+		}
+		
+		// Only set the tag_prefix if it is configured.
+		if tagPrefix, ok := vcsRepo["tag_prefix"].(string); ok && tagPrefix != "" {
+			options.VCSRepo.TagPrefix = tfe.String(tagPrefix)
+		}
 	}
 
 	for _, tagName := range d.Get("tag_names").(*schema.Set).List() {
@@ -677,6 +687,8 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 			"oauth_token_id":             workspace.VCSRepo.OAuthTokenID,
 			"github_app_installation_id": workspace.VCSRepo.GHAInstallationID,
 			"tags_regex":                 workspace.VCSRepo.TagsRegex,
+			"source_directory":           workspace.VCSRepo.SourceDirectory,
+			"tag_prefix":                 workspace.VCSRepo.TagPrefix,
 		}
 		vcsRepo = append(vcsRepo, vcsConfig)
 	}
@@ -873,6 +885,8 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 				OAuthTokenID:      tfe.String(vcsRepo["oauth_token_id"].(string)),
 				GHAInstallationID: tfe.String(vcsRepo["github_app_installation_id"].(string)),
 				TagsRegex:         tfe.String(vcsRepo["tags_regex"].(string)),
+				SourceDirectory:   tfe.String(vcsRepo["source_directory"].(string)),
+				TagPrefix:         tfe.String(vcsRepo["tag_prefix"].(string)),
 			}
 		}
 
