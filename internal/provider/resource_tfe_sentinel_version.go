@@ -31,11 +31,15 @@ func resourceTFESentinelVersion() *schema.Resource {
 			},
 			"url": {
 				Type:     schema.TypeString,
-				Required: true,
+				Computed: true,
+				Optional: true,
+				Default:  nil,
 			},
 			"sha": {
 				Type:     schema.TypeString,
-				Required: true,
+				Computed: true,
+				Optional: true,
+				Default:  nil,
 			},
 			"official": {
 				Type:     schema.TypeBool,
@@ -62,6 +66,32 @@ func resourceTFESentinelVersion() *schema.Resource {
 				Optional: true,
 				Default:  nil,
 			},
+			"archs": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Optional: true,
+				Default:  nil,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"url": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"sha": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"os": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"arch": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -78,6 +108,7 @@ func resourceTFESentinelVersionCreate(d *schema.ResourceData, meta interface{}) 
 		Beta:             tfe.Bool(d.Get("beta").(bool)),
 		Deprecated:       tfe.Bool(d.Get("deprecated").(bool)),
 		DeprecatedReason: tfe.String(d.Get("deprecated_reason").(string)),
+		Archs:            convertToToolVersionArchitectures(d.Get("archs").([]interface{})),
 	}
 
 	log.Printf("[DEBUG] Create new Sentinel version: %s", opts.Version)
@@ -113,6 +144,7 @@ func resourceTFESentinelVersionRead(d *schema.ResourceData, meta interface{}) er
 	d.Set("beta", v.Beta)
 	d.Set("deprecated", v.Deprecated)
 	d.Set("deprecated_reason", v.DeprecatedReason)
+	d.Set("archs", convertToToolVersionArchitecturesMap(v.Archs))
 
 	return nil
 }
@@ -122,13 +154,14 @@ func resourceTFESentinelVersionUpdate(d *schema.ResourceData, meta interface{}) 
 
 	opts := tfe.AdminSentinelVersionUpdateOptions{
 		Version:          tfe.String(d.Get("version").(string)),
-		URL:              tfe.String(d.Get("url").(string)),
-		SHA:              tfe.String(d.Get("sha").(string)),
+		URL:              stringOrNil(d.Get("url").(string)),
+		SHA:              stringOrNil(d.Get("sha").(string)),
 		Official:         tfe.Bool(d.Get("official").(bool)),
 		Enabled:          tfe.Bool(d.Get("enabled").(bool)),
 		Beta:             tfe.Bool(d.Get("beta").(bool)),
 		Deprecated:       tfe.Bool(d.Get("deprecated").(bool)),
 		DeprecatedReason: tfe.String(d.Get("deprecated_reason").(string)),
+		Archs:            convertToToolVersionArchitectures(d.Get("archs").([]interface{})),
 	}
 
 	log.Printf("[DEBUG] Update configuration of Sentinel version: %s", d.Id())
