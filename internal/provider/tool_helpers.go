@@ -4,7 +4,10 @@
 package provider
 
 import (
+	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	tfe "github.com/hashicorp/go-tfe"
 )
@@ -186,4 +189,29 @@ func stringOrNil(s string) *string {
 		return nil
 	}
 	return &s
+}
+
+func newConvertToToolVersionArchitectures(ctx context.Context, archs types.Set) ([]*tfe.ToolVersionArchitecture, diag.Diagnostics) {
+	if archs.IsNull() || archs.IsUnknown() {
+		return nil, nil
+	}
+
+	var diags diag.Diagnostics
+	var archModels []modelArch
+	diags.Append(archs.ElementsAs(ctx, &archModels, false)...)
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	result := make([]*tfe.ToolVersionArchitecture, 0, len(archModels))
+	for _, model := range archModels {
+		result = append(result, &tfe.ToolVersionArchitecture{
+			URL:  model.URL.ValueString(),
+			Sha:  model.Sha.ValueString(),
+			OS:   model.OS.ValueString(),
+			Arch: model.Arch.ValueString(),
+		})
+	}
+
+	return result, nil
 }
