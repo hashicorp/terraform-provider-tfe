@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -62,6 +63,9 @@ type modelArch struct {
 func (r *terraformVersionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed: true,
+			},
 			"version": schema.StringAttribute{
 				Required: true,
 			},
@@ -169,7 +173,24 @@ func (d *terraformVersionResource) Create(ctx context.Context, req resource.Crea
 		return
 	}
 
-	resp.State.SetAttribute(ctx, path.Root("id"), v.ID)
+	// Set ID and other attributes
+	tfVersion.ID = types.StringValue(v.ID)
+
+	// IMPORTANT: Set explicit values for URL and SHA, not leaving them as unknown
+	if v.URL != "" {
+		tfVersion.URL = types.StringValue(v.URL)
+	} else {
+		tfVersion.URL = types.StringNull() // Use StringNull instead of leaving unknown
+	}
+
+	if v.Sha != "" {
+		tfVersion.Sha = types.StringValue(v.Sha)
+	} else {
+		tfVersion.Sha = types.StringNull() // Use StringNull instead of leaving unknown
+	}
+
+	// Set state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &tfVersion)...)
 }
 
 func (r *terraformVersionResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -194,8 +215,16 @@ func (r *terraformVersionResource) Read(ctx context.Context, req resource.ReadRe
 
 	// Update state with values from the API
 	tfVersion.Version = types.StringValue(v.Version)
-	tfVersion.URL = types.StringValue(v.URL)
-	tfVersion.Sha = types.StringValue(v.Sha)
+	if v.URL != "" {
+		tfVersion.URL = types.StringValue(v.URL)
+	} else {
+		tfVersion.URL = types.StringNull()
+	}
+	if v.Sha != "" {
+		tfVersion.Sha = types.StringValue(v.Sha)
+	} else {
+		tfVersion.Sha = types.StringNull()
+	}
 	tfVersion.Official = types.BoolValue(v.Official)
 	tfVersion.Enabled = types.BoolValue(v.Enabled)
 	tfVersion.Beta = types.BoolValue(v.Beta)
@@ -208,10 +237,56 @@ func (r *terraformVersionResource) Read(ctx context.Context, req resource.ReadRe
 
 	// Convert archs
 	if v.Archs != nil && len(v.Archs) > 0 {
-		// Logic to convert API archs to framework type
-		// This depends on your model definitions
+		archs := make([]modelArch, len(v.Archs))
+		for i, arch := range v.Archs {
+			archs[i] = modelArch{
+				URL:  types.StringValue(arch.URL),
+				Sha:  types.StringValue(arch.Sha),
+				OS:   types.StringValue(arch.OS),
+				Arch: types.StringValue(arch.Arch),
+			}
+		}
+		archValues := make([]attr.Value, len(archs))
+		for i, arch := range archs {
+			archValues[i] = types.ObjectValueMust(
+				map[string]attr.Type{
+					"url":  types.StringType,
+					"sha":  types.StringType,
+					"os":   types.StringType,
+					"arch": types.StringType,
+				},
+				map[string]attr.Value{
+					"url":  arch.URL,
+					"sha":  arch.Sha,
+					"os":   arch.OS,
+					"arch": arch.Arch,
+				},
+			)
+		}
+		tfVersion.Archs = types.SetValueMust(types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"url":  types.StringType,
+				"sha":  types.StringType,
+				"os":   types.StringType,
+				"arch": types.StringType,
+			},
+		}, archValues)
 	}
 
+	// Make sure URL and SHA are always explicitly set
+	if v.URL != "" {
+		tfVersion.URL = types.StringValue(v.URL)
+	} else {
+		tfVersion.URL = types.StringNull()
+	}
+
+	if v.Sha != "" {
+		tfVersion.Sha = types.StringValue(v.Sha)
+	} else {
+		tfVersion.Sha = types.StringNull()
+	}
+
+	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &tfVersion)...)
 }
 
@@ -252,7 +327,8 @@ func (d *terraformVersionResource) Update(ctx context.Context, req resource.Upda
 		return
 	}
 
-	resp.State.SetAttribute(ctx, path.Root("id"), v.ID)
+	tfVersion.ID = types.StringValue(v.ID)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &tfVersion)...)
 }
 
 func (d *terraformVersionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
