@@ -236,7 +236,7 @@ func (r *terraformVersionResource) Read(ctx context.Context, req resource.ReadRe
 	}
 
 	// Convert archs
-	if v.Archs != nil && len(v.Archs) > 0 {
+	if len(v.Archs) > 0 {
 		archs := make([]modelArch, len(v.Archs))
 		for i, arch := range v.Archs {
 			archs[i] = modelArch{
@@ -294,9 +294,17 @@ func (d *terraformVersionResource) Update(ctx context.Context, req resource.Upda
 	var tfVersion modelAdminTerraformVersion
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &tfVersion)...)
 
+	// Get the ID from the prior state since it might not be in the plan
+	var state modelAdminTerraformVersion
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	// Use the ID from the state
+	tfVersion.ID = state.ID
+
+	log.Printf("[DEBUG] Update Terraform version configuration for ID: %s", tfVersion.ID.ValueString())
 
 	opts := tfe.AdminTerraformVersionUpdateOptions{
 		Version:          tfe.String(tfVersion.Version.ValueString()),
@@ -327,7 +335,72 @@ func (d *terraformVersionResource) Update(ctx context.Context, req resource.Upda
 		return
 	}
 
+	// Set ID and other attributes
 	tfVersion.ID = types.StringValue(v.ID)
+	tfVersion.Version = types.StringValue(v.Version)
+
+	// IMPORTANT: Set explicit values for URL and SHA
+	if v.URL != "" {
+		tfVersion.URL = types.StringValue(v.URL)
+	} else {
+		tfVersion.URL = types.StringNull()
+	}
+
+	if v.Sha != "" {
+		tfVersion.Sha = types.StringValue(v.Sha)
+	} else {
+		tfVersion.Sha = types.StringNull()
+	}
+
+	// Set remaining attributes
+	tfVersion.Official = types.BoolValue(v.Official)
+	tfVersion.Enabled = types.BoolValue(v.Enabled)
+	tfVersion.Beta = types.BoolValue(v.Beta)
+	tfVersion.Deprecated = types.BoolValue(v.Deprecated)
+	if v.DeprecatedReason != nil {
+		tfVersion.DeprecatedReason = types.StringValue(*v.DeprecatedReason)
+	} else {
+		tfVersion.DeprecatedReason = types.StringNull()
+	}
+
+	// Handle archs just like in Read method
+	if len(v.Archs) > 0 {
+		archs := make([]modelArch, len(v.Archs))
+		for i, arch := range v.Archs {
+			archs[i] = modelArch{
+				URL:  types.StringValue(arch.URL),
+				Sha:  types.StringValue(arch.Sha),
+				OS:   types.StringValue(arch.OS),
+				Arch: types.StringValue(arch.Arch),
+			}
+		}
+		archValues := make([]attr.Value, len(archs))
+		for i, arch := range archs {
+			archValues[i] = types.ObjectValueMust(
+				map[string]attr.Type{
+					"url":  types.StringType,
+					"sha":  types.StringType,
+					"os":   types.StringType,
+					"arch": types.StringType,
+				},
+				map[string]attr.Value{
+					"url":  arch.URL,
+					"sha":  arch.Sha,
+					"os":   arch.OS,
+					"arch": arch.Arch,
+				},
+			)
+		}
+		tfVersion.Archs = types.SetValueMust(types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"url":  types.StringType,
+				"sha":  types.StringType,
+				"os":   types.StringType,
+				"arch": types.StringType,
+			},
+		}, archValues)
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &tfVersion)...)
 }
 
@@ -355,11 +428,18 @@ func (d *terraformVersionResource) Delete(ctx context.Context, req resource.Dele
 }
 
 func (d *terraformVersionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// The ID is expected to be the version ID, so we can directly set it
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
-	if resp.Diagnostics.HasError() {
+	log.Printf("[DEBUG] Importing Terraform version with ID: %s", req.ID)
+
+	// First, verify the ID exists
+	_, err := d.config.Client.Admin.TerraformVersions.Read(ctx, req.ID)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error importing Terraform version",
+			fmt.Sprintf("Could not find Terraform version with ID %s: %v", req.ID, err),
+		)
 		return
 	}
 
-	log.Printf("[DEBUG] Importing Terraform version with ID: %s", req.ID)
+	// Set the ID in state
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
 }
