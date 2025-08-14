@@ -10,8 +10,11 @@ import (
 	"os"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
-	"github.com/hashicorp/terraform-plugin-go/tfprotov5/tf5server"
-	"github.com/hashicorp/terraform-plugin-mux/tf5muxserver"
+
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6/tf6server"
+	"github.com/hashicorp/terraform-plugin-mux/tf5to6server"
+	"github.com/hashicorp/terraform-plugin-mux/tf6muxserver"
 	"github.com/hashicorp/terraform-provider-tfe/internal/provider"
 )
 
@@ -29,10 +32,10 @@ func main() {
 	debugFlag := flag.Bool("debug", false, "Start provider in debug mode.")
 	flag.Parse()
 
-	var serveOpts []tf5server.ServeOpt
+	var serveOpts []tf6server.ServeOpt
 
 	if *debugFlag {
-		serveOpts = append(serveOpts, tf5server.WithManagedDebug())
+		serveOpts = append(serveOpts, tf6server.WithManagedDebug())
 	}
 	// terraform-plugin-mux here is used to combine multiple Terraform providers
 	// built using different SDK and frameworks in order to combine them into a
@@ -45,17 +48,34 @@ func main() {
 	//   complex behavior, and should only be used for functionality that is not
 	//   available otherwise. We suspect the framework can supplant it, but have
 	//   not proven that out yet.
-	nextProvider := providerserver.NewProtocol5(provider.NewFrameworkProvider())
+
 	classicProvider := provider.Provider().GRPCProvider
-	mux, err := tf5muxserver.NewMuxServer(
-		ctx, nextProvider, classicProvider,
+	upgradedClassicProvider, err := tf5to6server.UpgradeServer(
+		ctx,
+		classicProvider,
 	)
+	nextProvider := providerserver.NewProtocol6(provider.NewFrameworkProvider())
+
+	providers := []func() tfprotov6.ProviderServer{
+		func() tfprotov6.ProviderServer {
+			return upgradedClassicProvider
+		},
+		nextProvider,
+	}
+
+	mux, err := tf6muxserver.NewMuxServer(ctx, providers...)
+
 	if err != nil {
 		log.Printf("[ERROR] Could not setup a mux server using the internal providers: %v", err)
 		os.Exit(1)
 	}
 
-	err = tf5server.Serve(tfeProviderName, mux.ProviderServer, serveOpts...)
+	err = tf6server.Serve(
+		tfeProviderName,
+		mux.ProviderServer,
+		serveOpts...,
+	)
+
 	if err != nil {
 		log.Printf("[ERROR] Could not start serving the ProviderServer: %v", err)
 		os.Exit(1)
