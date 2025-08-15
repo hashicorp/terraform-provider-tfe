@@ -430,16 +430,20 @@ func (d *terraformVersionResource) Delete(ctx context.Context, req resource.Dele
 func (d *terraformVersionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	log.Printf("[DEBUG] Importing Terraform version with ID: %s", req.ID)
 
-	// First, verify the ID exists
-	_, err := d.config.Client.Admin.TerraformVersions.Read(ctx, req.ID)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error importing Terraform version",
-			fmt.Sprintf("Could not find Terraform version with ID %s: %v", req.ID, err),
-		)
-		return
-	}
+	// Splitting by '-' and checking if the first elem is equal to tool
+	// determines if the string is a tool version ID
+	s := strings.Split(req.ID, "-")
+	if s[0] != "tool" {
+		versionID, err := fetchTerraformVersionID(req.ID, d.config.Client)
+		log.Printf("[DEBUG] Importing Terraform version with ID: %s", versionID)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error Importing Terraform Version",
+				fmt.Sprintf("error retrieving terraform version %s: %w", req.ID, err),
+			)
+			return
+		}
 
-	// Set the ID in state
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), versionID)...)
+	}
 }
