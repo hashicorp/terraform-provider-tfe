@@ -123,7 +123,6 @@ func Provider() *schema.Provider {
 			"tfe_no_code_module":                 resourceTFENoCodeModule(),
 			"tfe_run_trigger":                    resourceTFERunTrigger(),
 			"tfe_sentinel_policy":                resourceTFESentinelPolicy(),
-			"tfe_sentinel_version":               resourceTFESentinelVersion(),
 			"tfe_team":                           resourceTFETeam(),
 			"tfe_team_access":                    resourceTFETeamAccess(),
 			"tfe_team_organization_member":       resourceTFETeamOrganizationMember(),
