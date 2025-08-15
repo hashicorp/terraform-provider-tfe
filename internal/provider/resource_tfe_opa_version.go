@@ -1,210 +1,460 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
+// NOTE: This is a legacy resource and should be migrated to the Plugin
+// Framework if substantial modifications are planned. See
+// docs/new-resources.md if planning to use this code as boilerplate for
+// a new resource.
+
 package provider
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"log"
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-func resourceTFEOPAVersion() *schema.Resource {
-	return &schema.Resource{
-		Create: resourceTFEOPAVersionCreate,
-		Read:   resourceTFEOPAVersionRead,
-		Update: resourceTFEOPAVersionUpdate,
-		Delete: resourceTFEOPAVersionDelete,
-		Importer: &schema.ResourceImporter{
-			StateContext: resourceTFEOPAVersionImporter,
-		},
+var (
+	_ resource.Resource                = &OPAVersionResource{}
+	_ resource.ResourceWithConfigure   = &OPAVersionResource{}
+	_ resource.ResourceWithImportState = &OPAVersionResource{}
+)
 
-		Schema: map[string]*schema.Schema{
-			"version": {
-				Type:     schema.TypeString,
+type OPAVersionResource struct {
+	config ConfiguredClient
+}
+
+func NewOPAVersionResource() resource.Resource {
+	return &OPAVersionResource{}
+}
+
+func (r *OPAVersionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = "tfe_opa_version"
+}
+
+type modelAdminOPAVersion struct {
+	ID               types.String `tfsdk:"id"`
+	Version          types.String `tfsdk:"version"`
+	URL              types.String `tfsdk:"url"`
+	SHA              types.String `tfsdk:"sha"`
+	Official         types.Bool   `tfsdk:"official"`
+	Enabled          types.Bool   `tfsdk:"enabled"`
+	Beta             types.Bool   `tfsdk:"beta"`
+	Deprecated       types.Bool   `tfsdk:"deprecated"`
+	DeprecatedReason types.String `tfsdk:"deprecated_reason"`
+	Archs            types.Set    `tfsdk:"archs"`
+}
+
+type modelOPAArch struct {
+	URL  types.String `tfsdk:"url"`
+	SHA  types.String `tfsdk:"sha"`
+	OS   types.String `tfsdk:"os"`
+	Arch types.String `tfsdk:"arch"`
+}
+
+func (r *OPAVersionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed: true,
+			},
+			"version": schema.StringAttribute{
 				Required: true,
 			},
-			"url": {
-				Type:     schema.TypeString,
+			"url": schema.StringAttribute{
+				Optional: true,
 				Computed: true,
-				Optional: true,
-				Default:  nil,
 			},
-			"sha": {
-				Type:     schema.TypeString,
+			"sha": schema.StringAttribute{
+				Optional: true,
 				Computed: true,
-				Optional: true,
-				Default:  nil,
 			},
-			"official": {
-				Type:     schema.TypeBool,
+			"official": schema.BoolAttribute{
 				Optional: true,
-				Default:  false,
 			},
-			"enabled": {
-				Type:     schema.TypeBool,
+			"enabled": schema.BoolAttribute{
 				Optional: true,
-				Default:  true,
 			},
-			"beta": {
-				Type:     schema.TypeBool,
+			"beta": schema.BoolAttribute{
 				Optional: true,
-				Default:  false,
 			},
-			"deprecated": {
-				Type:     schema.TypeBool,
+			"deprecated": schema.BoolAttribute{
 				Optional: true,
-				Default:  false,
 			},
-			"deprecated_reason": {
-				Type:     schema.TypeString,
+			"deprecated_reason": schema.StringAttribute{
 				Optional: true,
-				Default:  nil,
 			},
-			"archs": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Optional: true,
-				Default:  nil,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"url": {
-							Type:     schema.TypeString,
+			"archs": schema.SetNestedAttribute{
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"url": schema.StringAttribute{
 							Required: true,
 						},
-						"sha": {
-							Type:     schema.TypeString,
+						"sha": schema.StringAttribute{
 							Required: true,
 						},
-						"os": {
-							Type:     schema.TypeString,
+						"os": schema.StringAttribute{
 							Required: true,
 						},
-						"arch": {
-							Type:     schema.TypeString,
+						"arch": schema.StringAttribute{
 							Required: true,
 						},
 					},
 				},
+				Computed: true,
+				Optional: true,
 			},
 		},
 	}
 }
 
-func resourceTFEOPAVersionCreate(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(ConfiguredClient)
+func (r *OPAVersionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	tflog.Debug(ctx, "Configuring OPA Version Resource")
+
+	if req.ProviderData == nil {
+		return
+	}
+
+	client, ok := req.ProviderData.(ConfiguredClient)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Provider Data Type",
+			fmt.Sprintf("Expected ConfiguredClient, got: %T", req.ProviderData),
+		)
+		return
+	}
+
+	r.config = client
+}
+
+func (d *OPAVersionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var opaVersion modelAdminOPAVersion
+	tflog.Debug(ctx, "Creating OPA version resource")
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &opaVersion)...)
+
+	tflog.Debug(ctx, "Creating OPA version resource", map[string]interface{}{
+		"version":  opaVersion.Version.ValueString(),
+		"url":      opaVersion.URL.ValueString(),
+		"SHA":      opaVersion.SHA.ValueString(),
+		"official": opaVersion.Official.ValueBool(),
+		"enabled":  opaVersion.Enabled.ValueBool(),
+		"beta":     opaVersion.Beta.ValueBool(),
+
+		"deprecated":        opaVersion.Deprecated.ValueBool(),
+		"deprecated_reason": opaVersion.DeprecatedReason.ValueString(),
+		"archs":             opaVersion.Archs.ElementsAs(ctx, nil, false),
+	})
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	opts := tfe.AdminOPAVersionCreateOptions{
-		Version:          d.Get("version").(string),
-		URL:              d.Get("url").(string),
-		SHA:              d.Get("sha").(string),
-		Official:         tfe.Bool(d.Get("official").(bool)),
-		Enabled:          tfe.Bool(d.Get("enabled").(bool)),
-		Beta:             tfe.Bool(d.Get("beta").(bool)),
-		Deprecated:       tfe.Bool(d.Get("deprecated").(bool)),
-		DeprecatedReason: tfe.String(d.Get("deprecated_reason").(string)),
-		Archs:            convertToToolVersionArchitectures(d.Get("archs").([]interface{})),
+		Version:          opaVersion.Version.ValueString(),
+		URL:              opaVersion.URL.ValueString(),
+		SHA:              opaVersion.SHA.ValueString(),
+		Official:         tfe.Bool(opaVersion.Official.ValueBool()),
+		Enabled:          tfe.Bool(opaVersion.Enabled.ValueBool()),
+		Beta:             tfe.Bool(opaVersion.Beta.ValueBool()),
+		Deprecated:       tfe.Bool(opaVersion.Deprecated.ValueBool()),
+		DeprecatedReason: tfe.String(opaVersion.DeprecatedReason.ValueString()),
+		Archs: func() []*tfe.ToolVersionArchitecture {
+			archs, diags := newConvertToToolVersionArchitectures(ctx, opaVersion.Archs)
+			resp.Diagnostics.Append(diags...)
+			if resp.Diagnostics.HasError() {
+				return nil
+			}
+			return archs
+		}(),
 	}
+	tflog.Debug(ctx, "Creating OPA version", map[string]interface{}{
+		"version": opaVersion.Version.ValueString(),
+	})
 
-	log.Printf("[DEBUG] Create new OPA version: %s", opts.Version)
-	v, err := config.Client.Admin.OPAVersions.Create(ctx, opts)
+	v, err := d.config.Client.Admin.OPAVersions.Create(ctx, opts)
 	if err != nil {
-		return fmt.Errorf("error creating the new OPA version %s: %w", opts.Version, err)
+		tflog.Debug(ctx, "Error creating OPA version", map[string]interface{}{
+			"error": err.Error(),
+		})
+		resp.Diagnostics.AddError(
+			"Error creating OPA version",
+			fmt.Sprintf("Could not create OPA version %s: %v", opts.Version, err),
+		)
+		return
 	}
 
-	d.SetId(v.ID)
+	opaVersion.ID = types.StringValue(v.ID)
 
-	return resourceTFEOPAVersionRead(d, meta)
+	// ensure there are no unknown values
+	if v.URL == "" {
+		opaVersion.URL = types.StringNull()
+	} else {
+		opaVersion.URL = types.StringValue(v.URL)
+	}
+	if v.SHA == "" {
+		opaVersion.SHA = types.StringNull()
+	} else {
+		opaVersion.SHA = types.StringValue(v.SHA)
+	}
+
+	// Set state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &opaVersion)...)
 }
 
-func resourceTFEOPAVersionRead(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(ConfiguredClient)
+func (r *OPAVersionResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var opaVersion modelAdminOPAVersion
+	resp.Diagnostics.Append(req.State.Get(ctx, &opaVersion)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
-	log.Printf("[DEBUG] Read configuration of OPA version: %s", d.Id())
-	v, err := config.Client.Admin.OPAVersions.Read(ctx, d.Id())
+	tflog.Debug(ctx, "Read configuration of OPA version", map[string]interface{}{
+		"id": opaVersion.ID.ValueString()})
+
+	v, err := r.config.Client.Admin.OPAVersions.Read(ctx, opaVersion.ID.ValueString())
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
-			log.Printf("[DEBUG] OPA version %s no longer exists", d.Id())
-			d.SetId("")
-			return nil
+		if strings.Contains(err.Error(), "not found") {
+			resp.State.RemoveResource(ctx)
+			return
 		}
-		return err
+		resp.Diagnostics.AddError(
+			"Error reading OPA version",
+			fmt.Sprintf("Could not read OPA version %s: %v", opaVersion.ID.ValueString(), err),
+		)
+		return
 	}
 
-	d.Set("version", v.Version)
-	d.Set("url", v.URL)
-	d.Set("sha", v.SHA)
-	d.Set("official", v.Official)
-	d.Set("enabled", v.Enabled)
-	d.Set("beta", v.Beta)
-	d.Set("deprecated", v.Deprecated)
-	d.Set("deprecated_reason", v.DeprecatedReason)
-	d.Set("archs", convertToToolVersionArchitecturesMap(v.Archs))
+	opaVersion.ID = types.StringValue(v.ID)
+	opaVersion.Official = types.BoolValue(v.Official)
+	opaVersion.Enabled = types.BoolValue(v.Enabled)
+	opaVersion.Beta = types.BoolValue(v.Beta)
+	opaVersion.Deprecated = types.BoolValue(v.Deprecated)
+	if v.DeprecatedReason != nil {
+		opaVersion.DeprecatedReason = types.StringValue(*v.DeprecatedReason)
+	} else {
+		opaVersion.DeprecatedReason = types.StringNull()
+	}
+	if v.URL == "" {
+		opaVersion.URL = types.StringNull()
+	} else {
+		opaVersion.URL = types.StringValue(v.URL)
+	}
+	if v.SHA == "" {
+		opaVersion.SHA = types.StringNull()
+	} else {
+		opaVersion.SHA = types.StringValue(v.SHA)
+	}
 
-	return nil
+	// Convert archs
+	if len(v.Archs) > 0 {
+		archs := make([]modelOPAArch, len(v.Archs))
+		for i, arch := range v.Archs {
+			archs[i] = modelOPAArch{
+				URL:  types.StringValue(arch.URL),
+				SHA:  types.StringValue(arch.Sha),
+				OS:   types.StringValue(arch.OS),
+				Arch: types.StringValue(arch.Arch),
+			}
+		}
+		archValues := make([]attr.Value, len(archs))
+		for i, arch := range archs {
+			archValues[i] = types.ObjectValueMust(
+				map[string]attr.Type{
+					"url":  types.StringType,
+					"sha":  types.StringType,
+					"os":   types.StringType,
+					"arch": types.StringType,
+				},
+				map[string]attr.Value{
+					"url":  arch.URL,
+					"sha":  arch.SHA,
+					"os":   arch.OS,
+					"arch": arch.Arch,
+				},
+			)
+		}
+		opaVersion.Archs = types.SetValueMust(types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"url":  types.StringType,
+				"sha":  types.StringType,
+				"os":   types.StringType,
+				"arch": types.StringType,
+			},
+		}, archValues)
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &opaVersion)...)
 }
 
-func resourceTFEOPAVersionUpdate(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(ConfiguredClient)
+func (d *OPAVersionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var opaVersion modelAdminOPAVersion
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &opaVersion)...)
+
+	var state modelAdminOPAVersion
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Use the ID from the state
+	opaVersion.ID = state.ID
+
+	tflog.Debug(ctx, "Updating OPA version resource", map[string]interface{}{
+		"id": opaVersion.ID.ValueString(),
+	})
 
 	opts := tfe.AdminOPAVersionUpdateOptions{
-		Version:          tfe.String(d.Get("version").(string)),
-		URL:              stringOrNil(d.Get("url").(string)),
-		SHA:              stringOrNil(d.Get("sha").(string)),
-		Official:         tfe.Bool(d.Get("official").(bool)),
-		Enabled:          tfe.Bool(d.Get("enabled").(bool)),
-		Beta:             tfe.Bool(d.Get("beta").(bool)),
-		Deprecated:       tfe.Bool(d.Get("deprecated").(bool)),
-		DeprecatedReason: tfe.String(d.Get("deprecated_reason").(string)),
-		Archs:            convertToToolVersionArchitectures(d.Get("archs").([]interface{})),
+		Version:          tfe.String(opaVersion.Version.ValueString()),
+		URL:              stringOrNil(opaVersion.URL.ValueString()),
+		SHA:              tfe.String(opaVersion.SHA.ValueString()),
+		Official:         tfe.Bool(opaVersion.Official.ValueBool()),
+		Enabled:          tfe.Bool(opaVersion.Enabled.ValueBool()),
+		Beta:             tfe.Bool(opaVersion.Beta.ValueBool()),
+		Deprecated:       tfe.Bool(opaVersion.Deprecated.ValueBool()),
+		DeprecatedReason: tfe.String(opaVersion.DeprecatedReason.ValueString()),
+		Archs: func() []*tfe.ToolVersionArchitecture {
+			archs, diags := newConvertToToolVersionArchitectures(ctx, opaVersion.Archs)
+			resp.Diagnostics.Append(diags...)
+			if resp.Diagnostics.HasError() {
+				return nil
+			}
+			return archs
+		}(),
 	}
 
-	log.Printf("[DEBUG] Update configuration of OPA version: %s", d.Id())
-	v, err := config.Client.Admin.OPAVersions.Update(ctx, d.Id(), opts)
+	tflog.Debug(ctx, "Updating OPA version", map[string]interface{}{
+		"id": opaVersion.ID.ValueString()})
+	v, err := d.config.Client.Admin.OPAVersions.Update(ctx, opaVersion.ID.ValueString(), opts)
 	if err != nil {
-		return fmt.Errorf("error updating OPA version %s: %w", d.Id(), err)
+		resp.Diagnostics.AddError(
+			"Error updating OPA version",
+			fmt.Sprintf("Could not update OPA version %s: %v", opaVersion.ID.ValueString(), err),
+		)
+		return
 	}
 
-	d.SetId(v.ID)
+	// Set ID and other attributes
+	opaVersion.ID = types.StringValue(v.ID)
+	opaVersion.Version = types.StringValue(v.Version)
 
-	return resourceTFEOPAVersionRead(d, meta)
-}
+	// IMPORTANT: Set explicit values for URL and SHA
+	if v.URL != "" {
+		opaVersion.URL = types.StringValue(v.URL)
+	} else {
+		opaVersion.URL = types.StringNull()
+	}
 
-func resourceTFEOPAVersionDelete(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(ConfiguredClient)
+	if v.SHA != "" {
+		opaVersion.SHA = types.StringValue(v.SHA)
+	} else {
+		opaVersion.SHA = types.StringNull()
+	}
 
-	log.Printf("[DEBUG] Delete OPA version: %s", d.Id())
-	err := config.Client.Admin.OPAVersions.Delete(ctx, d.Id())
-	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
-			log.Printf("[DEBUG] OPA version: %s not found", d.Id())
-			return nil
+	// Set remaining attributes
+	opaVersion.Official = types.BoolValue(v.Official)
+	opaVersion.Enabled = types.BoolValue(v.Enabled)
+	opaVersion.Beta = types.BoolValue(v.Beta)
+	opaVersion.Deprecated = types.BoolValue(v.Deprecated)
+	if v.DeprecatedReason != nil {
+		opaVersion.DeprecatedReason = types.StringValue(*v.DeprecatedReason)
+	} else {
+		opaVersion.DeprecatedReason = types.StringNull()
+	}
+
+	// Handle archs just like in Read method
+	if len(v.Archs) > 0 {
+		archs := make([]modelOPAArch, len(v.Archs))
+		for i, arch := range v.Archs {
+			archs[i] = modelOPAArch{
+				URL:  types.StringValue(arch.URL),
+				SHA:  types.StringValue(arch.Sha),
+				OS:   types.StringValue(arch.OS),
+				Arch: types.StringValue(arch.Arch),
+			}
 		}
-		return fmt.Errorf("error deleting OPA version %s: %w", d.Id(), err)
+		archValues := make([]attr.Value, len(archs))
+		for i, arch := range archs {
+			archValues[i] = types.ObjectValueMust(
+				map[string]attr.Type{
+					"url":  types.StringType,
+					"sha":  types.StringType,
+					"os":   types.StringType,
+					"arch": types.StringType,
+				},
+				map[string]attr.Value{
+					"url":  arch.URL,
+					"sha":  arch.SHA,
+					"os":   arch.OS,
+					"arch": arch.Arch,
+				},
+			)
+		}
+		opaVersion.Archs = types.SetValueMust(types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"url":  types.StringType,
+				"sha":  types.StringType,
+				"os":   types.StringType,
+				"arch": types.StringType,
+			},
+		}, archValues)
 	}
 
-	return nil
+	resp.Diagnostics.Append(resp.State.Set(ctx, &opaVersion)...)
 }
 
-func resourceTFEOPAVersionImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	config := meta.(ConfiguredClient)
+func (d *OPAVersionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var opaVersion modelAdminOPAVersion
+	resp.Diagnostics.Append(req.State.Get(ctx, &opaVersion)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	tflog.Debug(ctx, "Deleting OPA version", map[string]interface{}{
+		"id": opaVersion.ID.ValueString(),
+	})
 
+	err := d.config.Client.Admin.OPAVersions.Delete(ctx, opaVersion.ID.ValueString())
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			tflog.Debug(ctx, "OPA version not found, skipping deletion", map[string]interface{}{
+				"id": opaVersion.ID.ValueString(),
+			})
+			return
+		}
+		resp.Diagnostics.AddError(
+			"Error deleting OPA version",
+			fmt.Sprintf("Could not delete OPA version %s: %v", opaVersion.ID.ValueString(), err),
+		)
+		return
+	}
+
+	resp.State.RemoveResource(ctx)
+}
+
+func (d *OPAVersionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	// Splitting by '-' and checking if the first elem is equal to tool
 	// determines if the string is a tool version ID
-	s := strings.Split(d.Id(), "-")
+	s := strings.Split(req.ID, "-")
 	if s[0] != "tool" {
-		versionID, err := fetchOPAVersionID(d.Id(), config.Client)
+		versionID, err := fetchOPAVersionID(req.ID, d.config.Client)
+		tflog.Debug(ctx, "Importing OPA version", map[string]interface{}{
+			"version_id": versionID,
+		})
 		if err != nil {
-			return nil, fmt.Errorf("error retrieving OPA version %s: %w", d.Id(), err)
+			resp.Diagnostics.AddError(
+				"Error Importing OPA Version",
+				fmt.Sprintf("error retrieving OPA version %s: %w", req.ID, err),
+			)
+			return
 		}
 
-		d.SetId(versionID)
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), versionID)...)
 	}
-
-	return []*schema.ResourceData{d}, nil
 }
