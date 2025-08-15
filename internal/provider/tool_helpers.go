@@ -141,6 +141,22 @@ func fetchOPAVersionID(version string, client *tfe.Client) (string, error) {
 	return "", fmt.Errorf("OPA version not found")
 }
 
+func setUnknownTfAttrs(tfVersion modelAdminTerraformVersion, v *tfe.AdminTerraformVersion) modelAdminTerraformVersion {
+	tfVersion.ID = types.StringValue(v.ID)
+	if v.URL == "" {
+		tfVersion.URL = types.StringNull()
+	} else {
+		tfVersion.URL = types.StringValue(v.URL)
+	}
+	if v.Sha == "" {
+		tfVersion.Sha = types.StringNull()
+	} else {
+		tfVersion.Sha = types.StringValue(v.Sha)
+	}
+
+	return tfVersion
+}
+
 func convertToToolVersionArchitectures(archs interface{}) []*tfe.ToolVersionArchitecture {
 	if archs == nil {
 		return nil

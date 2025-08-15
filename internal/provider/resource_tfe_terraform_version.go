@@ -20,6 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 var (
@@ -117,7 +118,7 @@ func (r *terraformVersionResource) Schema(ctx context.Context, req resource.Sche
 }
 
 func (r *terraformVersionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	fmt.Print("[DEBUG] Configuring terraformVersionResource\n")
+	tflog.Debug(ctx, "Configuring Terraform Version Resource")
 
 	if req.ProviderData == nil {
 		return
@@ -137,8 +138,21 @@ func (r *terraformVersionResource) Configure(ctx context.Context, req resource.C
 
 func (d *terraformVersionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var tfVersion modelAdminTerraformVersion
-	fmt.Print("[DEBUG] Creating new Terraform version resource\n")
+	tflog.Debug(ctx, "Creating Terraform version resource")
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &tfVersion)...)
+
+	tflog.Debug(ctx, "Creating Terraform version resource", map[string]interface{}{
+		"version":  tfVersion.Version.ValueString(),
+		"url":      tfVersion.URL.ValueString(),
+		"sha":      tfVersion.Sha.ValueString(),
+		"official": tfVersion.Official.ValueBool(),
+		"enabled":  tfVersion.Enabled.ValueBool(),
+		"beta":     tfVersion.Beta.ValueBool(),
+
+		"deprecated":        tfVersion.Deprecated.ValueBool(),
+		"deprecated_reason": tfVersion.DeprecatedReason.ValueString(),
+		"archs":             tfVersion.Archs.ElementsAs(ctx, nil, false),
+	})
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -162,10 +176,15 @@ func (d *terraformVersionResource) Create(ctx context.Context, req resource.Crea
 			return archs
 		}(),
 	}
+	tflog.Debug(ctx, "Creating Terraform version", map[string]interface{}{
+		"version": tfVersion.Version.ValueString(),
+	})
 
-	log.Printf("[DEBUG] Create new Terraform version: %s", *opts.Version)
 	v, err := d.config.Client.Admin.TerraformVersions.Create(ctx, opts)
 	if err != nil {
+		tflog.Debug(ctx, "Error creating Terraform version", map[string]interface{}{
+			"error": err.Error(),
+		})
 		resp.Diagnostics.AddError(
 			"Error creating Terraform version",
 			fmt.Sprintf("Could not create Terraform version %s: %v", *opts.Version, err),
@@ -173,27 +192,14 @@ func (d *terraformVersionResource) Create(ctx context.Context, req resource.Crea
 		return
 	}
 
-	// Set ID and other attributes
-	tfVersion.ID = types.StringValue(v.ID)
-
-	// IMPORTANT: Set explicit values for URL and SHA, not leaving them as unknown
-	if v.URL != "" {
-		tfVersion.URL = types.StringValue(v.URL)
-	} else {
-		tfVersion.URL = types.StringNull() // Use StringNull instead of leaving unknown
-	}
-
-	if v.Sha != "" {
-		tfVersion.Sha = types.StringValue(v.Sha)
-	} else {
-		tfVersion.Sha = types.StringNull() // Use StringNull instead of leaving unknown
-	}
+	tfVersion = setUnknownTfAttrs(tfVersion, v)
 
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &tfVersion)...)
 }
 
 func (r *terraformVersionResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	tflog.Debug(ctx, "Reading Terraform version resource")
 	var tfVersion modelAdminTerraformVersion
 	resp.Diagnostics.Append(req.State.Get(ctx, &tfVersion)...)
 	if resp.Diagnostics.HasError() {
