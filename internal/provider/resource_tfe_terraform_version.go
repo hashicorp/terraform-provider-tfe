@@ -11,7 +11,6 @@ package provider
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -192,7 +191,19 @@ func (d *terraformVersionResource) Create(ctx context.Context, req resource.Crea
 		return
 	}
 
-	tfVersion = setUnknownTfAttrs(tfVersion, v)
+	tfVersion.ID = types.StringValue(v.ID)
+
+	// ensure there are no unknown values
+	if v.URL == "" {
+		tfVersion.URL = types.StringNull()
+	} else {
+		tfVersion.URL = types.StringValue(v.URL)
+	}
+	if v.Sha == "" {
+		tfVersion.Sha = types.StringNull()
+	} else {
+		tfVersion.Sha = types.StringValue(v.Sha)
+	}
 
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &tfVersion)...)
@@ -221,7 +232,7 @@ func (r *terraformVersionResource) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
-	tfVersion = setUnknownTfAttrs(tfVersion, v)
+	tfVersion.ID = types.StringValue(v.ID)
 	tfVersion.Official = types.BoolValue(v.Official)
 	tfVersion.Enabled = types.BoolValue(v.Enabled)
 	tfVersion.Beta = types.BoolValue(v.Beta)
@@ -230,6 +241,16 @@ func (r *terraformVersionResource) Read(ctx context.Context, req resource.ReadRe
 		tfVersion.DeprecatedReason = types.StringValue(*v.DeprecatedReason)
 	} else {
 		tfVersion.DeprecatedReason = types.StringNull()
+	}
+	if v.URL == "" {
+		tfVersion.URL = types.StringNull()
+	} else {
+		tfVersion.URL = types.StringValue(v.URL)
+	}
+	if v.Sha == "" {
+		tfVersion.Sha = types.StringNull()
+	} else {
+		tfVersion.Sha = types.StringValue(v.Sha)
 	}
 
 	// Convert archs
@@ -286,7 +307,9 @@ func (d *terraformVersionResource) Update(ctx context.Context, req resource.Upda
 	// Use the ID from the state
 	tfVersion.ID = state.ID
 
-	log.Printf("[DEBUG] Update Terraform version configuration for ID: %s", tfVersion.ID.ValueString())
+	tflog.Debug(ctx, "Updating Terraform version resource", map[string]interface{}{
+		"id": tfVersion.ID.ValueString(),
+	})
 
 	opts := tfe.AdminTerraformVersionUpdateOptions{
 		Version:          tfe.String(tfVersion.Version.ValueString()),
@@ -400,7 +423,9 @@ func (d *terraformVersionResource) Delete(ctx context.Context, req resource.Dele
 	err := d.config.Client.Admin.TerraformVersions.Delete(ctx, tfVersion.ID.ValueString())
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
-			log.Printf("[DEBUG] Terraform version %s not found, skipping deletion", tfVersion.ID.ValueString())
+			tflog.Debug(ctx, "Terraform version not found, skipping deletion", map[string]interface{}{
+				"id": tfVersion.ID.ValueString(),
+			})
 			return
 		}
 		resp.Diagnostics.AddError(
@@ -419,7 +444,9 @@ func (d *terraformVersionResource) ImportState(ctx context.Context, req resource
 	s := strings.Split(req.ID, "-")
 	if s[0] != "tool" {
 		versionID, err := fetchTerraformVersionID(req.ID, d.config.Client)
-		log.Printf("[DEBUG] Importing Terraform version with ID: %s", versionID)
+		tflog.Debug(ctx, "Importing Terraform version", map[string]interface{}{
+			"version_id": versionID,
+		})
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Error Importing Terraform Version",
