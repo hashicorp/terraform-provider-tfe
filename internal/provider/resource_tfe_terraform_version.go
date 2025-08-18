@@ -116,7 +116,7 @@ func (r *terraformVersionResource) Schema(ctx context.Context, req resource.Sche
 	}
 }
 
-func (d *terraformVersionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *terraformVersionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	tflog.Debug(ctx, "Configuring Terraform Version Resource")
 
 	if req.ProviderData == nil {
@@ -132,10 +132,10 @@ func (d *terraformVersionResource) Configure(ctx context.Context, req resource.C
 		return
 	}
 
-	d.config = client
+	r.config = client
 }
 
-func (d *terraformVersionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r *terraformVersionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var tfVersion modelAdminTerraformVersion
 	tflog.Debug(ctx, "Creating Terraform version resource")
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &tfVersion)...)
@@ -179,7 +179,7 @@ func (d *terraformVersionResource) Create(ctx context.Context, req resource.Crea
 		"version": tfVersion.Version.ValueString(),
 	})
 
-	v, err := d.config.Client.Admin.TerraformVersions.Create(ctx, opts)
+	v, err := r.config.Client.Admin.TerraformVersions.Create(ctx, opts)
 	if err != nil {
 		tflog.Debug(ctx, "Error creating Terraform version", map[string]interface{}{
 			"error": err.Error(),
@@ -294,7 +294,7 @@ func (r *terraformVersionResource) Read(ctx context.Context, req resource.ReadRe
 	resp.Diagnostics.Append(resp.State.Set(ctx, &tfVersion)...)
 }
 
-func (d *terraformVersionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *terraformVersionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var tfVersion modelAdminTerraformVersion
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &tfVersion)...)
 
@@ -332,7 +332,7 @@ func (d *terraformVersionResource) Update(ctx context.Context, req resource.Upda
 
 	tflog.Debug(ctx, "Updating Terraform version", map[string]interface{}{
 		"id": tfVersion.ID.ValueString()})
-	v, err := d.config.Client.Admin.TerraformVersions.Update(ctx, tfVersion.ID.ValueString(), opts)
+	v, err := r.config.Client.Admin.TerraformVersions.Update(ctx, tfVersion.ID.ValueString(), opts)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error updating Terraform version",
@@ -410,7 +410,7 @@ func (d *terraformVersionResource) Update(ctx context.Context, req resource.Upda
 	resp.Diagnostics.Append(resp.State.Set(ctx, &tfVersion)...)
 }
 
-func (d *terraformVersionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *terraformVersionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var tfVersion modelAdminTerraformVersion
 	resp.Diagnostics.Append(req.State.Get(ctx, &tfVersion)...)
 	if resp.Diagnostics.HasError() {
@@ -420,7 +420,7 @@ func (d *terraformVersionResource) Delete(ctx context.Context, req resource.Dele
 		"id": tfVersion.ID.ValueString(),
 	})
 
-	err := d.config.Client.Admin.TerraformVersions.Delete(ctx, tfVersion.ID.ValueString())
+	err := r.config.Client.Admin.TerraformVersions.Delete(ctx, tfVersion.ID.ValueString())
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			tflog.Debug(ctx, "Terraform version not found, skipping deletion", map[string]interface{}{
@@ -438,12 +438,12 @@ func (d *terraformVersionResource) Delete(ctx context.Context, req resource.Dele
 	resp.State.RemoveResource(ctx)
 }
 
-func (d *terraformVersionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *terraformVersionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	// Splitting by '-' and checking if the first elem is equal to tool
 	// determines if the string is a tool version ID
 	s := strings.Split(req.ID, "-")
 	if s[0] != "tool" {
-		versionID, err := fetchTerraformVersionID(req.ID, d.config.Client)
+		versionID, err := fetchTerraformVersionID(req.ID, r.config.Client)
 		tflog.Debug(ctx, "Importing Terraform version", map[string]interface{}{
 			"version_id": versionID,
 		})

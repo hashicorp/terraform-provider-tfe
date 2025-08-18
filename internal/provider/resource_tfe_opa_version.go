@@ -116,7 +116,7 @@ func (r *OPAVersionResource) Schema(ctx context.Context, req resource.SchemaRequ
 	}
 }
 
-func (d *OPAVersionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *OPAVersionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	tflog.Debug(ctx, "Configuring OPA Version Resource")
 
 	if req.ProviderData == nil {
@@ -132,10 +132,10 @@ func (d *OPAVersionResource) Configure(ctx context.Context, req resource.Configu
 		return
 	}
 
-	d.config = client
+	r.config = client
 }
 
-func (d *OPAVersionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r *OPAVersionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var opaVersion modelAdminOPAVersion
 	tflog.Debug(ctx, "Creating OPA version resource")
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &opaVersion)...)
@@ -179,7 +179,7 @@ func (d *OPAVersionResource) Create(ctx context.Context, req resource.CreateRequ
 		"version": opaVersion.Version.ValueString(),
 	})
 
-	v, err := d.config.Client.Admin.OPAVersions.Create(ctx, opts)
+	v, err := r.config.Client.Admin.OPAVersions.Create(ctx, opts)
 	if err != nil {
 		tflog.Debug(ctx, "Error creating OPA version", map[string]interface{}{
 			"error": err.Error(),
@@ -294,7 +294,7 @@ func (r *OPAVersionResource) Read(ctx context.Context, req resource.ReadRequest,
 	resp.Diagnostics.Append(resp.State.Set(ctx, &opaVersion)...)
 }
 
-func (d *OPAVersionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *OPAVersionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var opaVersion modelAdminOPAVersion
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &opaVersion)...)
 
@@ -332,7 +332,7 @@ func (d *OPAVersionResource) Update(ctx context.Context, req resource.UpdateRequ
 
 	tflog.Debug(ctx, "Updating OPA version", map[string]interface{}{
 		"id": opaVersion.ID.ValueString()})
-	v, err := d.config.Client.Admin.OPAVersions.Update(ctx, opaVersion.ID.ValueString(), opts)
+	v, err := r.config.Client.Admin.OPAVersions.Update(ctx, opaVersion.ID.ValueString(), opts)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error updating OPA version",
@@ -410,7 +410,7 @@ func (d *OPAVersionResource) Update(ctx context.Context, req resource.UpdateRequ
 	resp.Diagnostics.Append(resp.State.Set(ctx, &opaVersion)...)
 }
 
-func (d *OPAVersionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *OPAVersionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var opaVersion modelAdminOPAVersion
 	resp.Diagnostics.Append(req.State.Get(ctx, &opaVersion)...)
 	if resp.Diagnostics.HasError() {
@@ -420,7 +420,7 @@ func (d *OPAVersionResource) Delete(ctx context.Context, req resource.DeleteRequ
 		"id": opaVersion.ID.ValueString(),
 	})
 
-	err := d.config.Client.Admin.OPAVersions.Delete(ctx, opaVersion.ID.ValueString())
+	err := r.config.Client.Admin.OPAVersions.Delete(ctx, opaVersion.ID.ValueString())
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			tflog.Debug(ctx, "OPA version not found, skipping deletion", map[string]interface{}{
@@ -438,12 +438,12 @@ func (d *OPAVersionResource) Delete(ctx context.Context, req resource.DeleteRequ
 	resp.State.RemoveResource(ctx)
 }
 
-func (d *OPAVersionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *OPAVersionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	// Splitting by '-' and checking if the first elem is equal to tool
 	// determines if the string is a tool version ID
 	s := strings.Split(req.ID, "-")
 	if s[0] != "tool" {
-		versionID, err := fetchOPAVersionID(req.ID, d.config.Client)
+		versionID, err := fetchOPAVersionID(req.ID, r.config.Client)
 		tflog.Debug(ctx, "Importing OPA version", map[string]interface{}{
 			"version_id": versionID,
 		})

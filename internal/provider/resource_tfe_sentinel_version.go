@@ -111,7 +111,7 @@ func (r *sentinelVersionResource) Schema(ctx context.Context, req resource.Schem
 	}
 }
 
-func (d *sentinelVersionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *sentinelVersionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	tflog.Debug(ctx, "Configuring sentinel Version Resource")
 
 	if req.ProviderData == nil {
@@ -127,10 +127,10 @@ func (d *sentinelVersionResource) Configure(ctx context.Context, req resource.Co
 		return
 	}
 
-	d.config = client
+	r.config = client
 }
 
-func (d *sentinelVersionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r *sentinelVersionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var opaVersion modelAdminSentinelVersion
 	tflog.Debug(ctx, "Creating sentinel version resource")
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &opaVersion)...)
@@ -174,7 +174,7 @@ func (d *sentinelVersionResource) Create(ctx context.Context, req resource.Creat
 		"version": opaVersion.Version.ValueString(),
 	})
 
-	v, err := d.config.Client.Admin.SentinelVersions.Create(ctx, opts)
+	v, err := r.config.Client.Admin.SentinelVersions.Create(ctx, opts)
 	if err != nil {
 		tflog.Debug(ctx, "Error creating sentinel version", map[string]interface{}{
 			"error": err.Error(),
@@ -289,7 +289,7 @@ func (r *sentinelVersionResource) Read(ctx context.Context, req resource.ReadReq
 	resp.Diagnostics.Append(resp.State.Set(ctx, &opaVersion)...)
 }
 
-func (d *sentinelVersionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *sentinelVersionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var opaVersion modelAdminSentinelVersion
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &opaVersion)...)
 
@@ -327,7 +327,7 @@ func (d *sentinelVersionResource) Update(ctx context.Context, req resource.Updat
 
 	tflog.Debug(ctx, "Updating sentinel version", map[string]interface{}{
 		"id": opaVersion.ID.ValueString()})
-	v, err := d.config.Client.Admin.SentinelVersions.Update(ctx, opaVersion.ID.ValueString(), opts)
+	v, err := r.config.Client.Admin.SentinelVersions.Update(ctx, opaVersion.ID.ValueString(), opts)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error updating sentinel version",
@@ -433,12 +433,12 @@ func (d *sentinelVersionResource) Delete(ctx context.Context, req resource.Delet
 	resp.State.RemoveResource(ctx)
 }
 
-func (d *sentinelVersionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *sentinelVersionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	// Splitting by '-' and checking if the first elem is equal to tool
 	// determines if the string is a tool version ID
 	s := strings.Split(req.ID, "-")
 	if s[0] != "tool" {
-		versionID, err := fetchSentinelVersionID(req.ID, d.config.Client)
+		versionID, err := fetchSentinelVersionID(req.ID, r.config.Client)
 		tflog.Debug(ctx, "Importing sentinel version", map[string]interface{}{
 			"version_id": versionID,
 		})
