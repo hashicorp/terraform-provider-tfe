@@ -14,8 +14,9 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
-	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
-	"github.com/hashicorp/terraform-plugin-mux/tf5muxserver"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
+	"github.com/hashicorp/terraform-plugin-mux/tf5to6server"
+	"github.com/hashicorp/terraform-plugin-mux/tf6muxserver"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	sdkTerraform "github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -25,15 +26,15 @@ import (
 )
 
 var (
-	testAccMuxedProviders   map[string]func() (tfprotov5.ProviderServer, error)
+	testAccMuxedProviders   map[string]func() (tfprotov6.ProviderServer, error)
 	testAccConfiguredClient *ConfiguredClient
 )
 
 func init() {
-	testAccMuxedProviders = map[string]func() (tfprotov5.ProviderServer, error){
-		"tfe": func() (tfprotov5.ProviderServer, error) {
+	testAccMuxedProviders = map[string]func() (tfprotov6.ProviderServer, error){
+		"tfe": func() (tfprotov6.ProviderServer, error) {
 			ctx := context.Background()
-			nextProvider := providerserver.NewProtocol5(NewFrameworkProvider())
+			nextProvider := providerserver.NewProtocol6(NewFrameworkProvider())
 
 			sdkProvider := Provider()
 			sdkProvider.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
@@ -48,8 +49,24 @@ func init() {
 				return cc, diag.FromErr(err)
 			}
 
-			mux, err := tf5muxserver.NewMuxServer(
-				ctx, nextProvider, sdkProvider.GRPCProvider,
+			upgradedSDKProvider, err := tf5to6server.UpgradeServer(
+				ctx,
+				sdkProvider.GRPCProvider,
+			)
+			if err != nil {
+				return nil, err
+			}
+
+			mux, err := tf6muxserver.NewMuxServer(
+				ctx,
+				[]func() tfprotov6.ProviderServer{
+					func() tfprotov6.ProviderServer {
+						return nextProvider()
+					},
+					func() tfprotov6.ProviderServer {
+						return upgradedSDKProvider
+					},
+				}...,
 			)
 			if err != nil {
 				return nil, err
@@ -60,30 +77,46 @@ func init() {
 	}
 }
 
-func muxedProvidersWithDefaultOrganization(defaultOrgName string) map[string]func() (tfprotov5.ProviderServer, error) {
-	sdkProvider := Provider()
-	sdkProvider.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
-		client, err := getClientUsingEnv()
-		cc := ConfiguredClient{
-			Client:       client,
-			Organization: defaultOrgName,
-		}
-
-		// Save a reference to the configured client instance for use in tests.
-		testAccConfiguredClient = &cc
-
-		return cc, diag.FromErr(err)
-	}
-	return map[string]func() (tfprotov5.ProviderServer, error){
-		"tfe": func() (tfprotov5.ProviderServer, error) {
+func muxedProvidersWithDefaultOrganization(defaultOrgName string) map[string]func() (tfprotov6.ProviderServer, error) {
+	return map[string]func() (tfprotov6.ProviderServer, error){
+		"tfe": func() (tfprotov6.ProviderServer, error) {
 			ctx := context.Background()
 
-			nextProvider := providerserver.NewProtocol5(
-				NewFrameworkProviderWithDefaultOrg(defaultOrgName),
-			)
+			// Framework provider with Protocol 6
+			nextProvider := providerserver.NewProtocol6(NewFrameworkProviderWithDefaultOrg(defaultOrgName))
 
-			mux, err := tf5muxserver.NewMuxServer(
-				ctx, nextProvider, sdkProvider.GRPCProvider,
+			// SDK provider upgraded to Protocol 6
+			sdkProvider := Provider()
+			sdkProvider.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
+				client, err := getClientUsingEnv()
+				cc := ConfiguredClient{
+					Client:       client,
+					Organization: defaultOrgName,
+				}
+				testAccConfiguredClient = &cc
+				return cc, diag.FromErr(err)
+			}
+
+			// Explicitly upgrade the SDK provider to Protocol 6
+			upgradedSDKProvider, err := tf5to6server.UpgradeServer(
+				ctx,
+				sdkProvider.GRPCProvider,
+			)
+			if err != nil {
+				return nil, err
+			}
+
+			// Create mux with both providers using Protocol 6
+			mux, err := tf6muxserver.NewMuxServer(
+				ctx,
+				[]func() tfprotov6.ProviderServer{
+					func() tfprotov6.ProviderServer {
+						return nextProvider()
+					},
+					func() tfprotov6.ProviderServer {
+						return upgradedSDKProvider
+					},
+				}...,
 			)
 			if err != nil {
 				return nil, err
