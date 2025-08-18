@@ -111,7 +111,7 @@ func (r *sentinelVersionResource) Schema(ctx context.Context, req resource.Schem
 	}
 }
 
-func (r *sentinelVersionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (d *sentinelVersionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	tflog.Debug(ctx, "Configuring sentinel Version Resource")
 
 	if req.ProviderData == nil {
@@ -127,7 +127,7 @@ func (r *sentinelVersionResource) Configure(ctx context.Context, req resource.Co
 		return
 	}
 
-	r.config = client
+	d.config = client
 }
 
 func (d *sentinelVersionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -162,7 +162,7 @@ func (d *sentinelVersionResource) Create(ctx context.Context, req resource.Creat
 		Deprecated:       tfe.Bool(opaVersion.Deprecated.ValueBool()),
 		DeprecatedReason: tfe.String(opaVersion.DeprecatedReason.ValueString()),
 		Archs: func() []*tfe.ToolVersionArchitecture {
-			archs, diags := newConvertToToolVersionArchitectures(ctx, opaVersion.Archs)
+			archs, diags := convertToToolVersionArchitectures(ctx, opaVersion.Archs)
 			resp.Diagnostics.Append(diags...)
 			if resp.Diagnostics.HasError() {
 				return nil
@@ -316,7 +316,7 @@ func (d *sentinelVersionResource) Update(ctx context.Context, req resource.Updat
 		Deprecated:       tfe.Bool(opaVersion.Deprecated.ValueBool()),
 		DeprecatedReason: tfe.String(opaVersion.DeprecatedReason.ValueString()),
 		Archs: func() []*tfe.ToolVersionArchitecture {
-			archs, diags := newConvertToToolVersionArchitectures(ctx, opaVersion.Archs)
+			archs, diags := convertToToolVersionArchitectures(ctx, opaVersion.Archs)
 			resp.Diagnostics.Append(diags...)
 			if resp.Diagnostics.HasError() {
 				return nil

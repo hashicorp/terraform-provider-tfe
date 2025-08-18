@@ -116,7 +116,7 @@ func (r *terraformVersionResource) Schema(ctx context.Context, req resource.Sche
 	}
 }
 
-func (r *terraformVersionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (d *terraformVersionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	tflog.Debug(ctx, "Configuring Terraform Version Resource")
 
 	if req.ProviderData == nil {
@@ -132,7 +132,7 @@ func (r *terraformVersionResource) Configure(ctx context.Context, req resource.C
 		return
 	}
 
-	r.config = client
+	d.config = client
 }
 
 func (d *terraformVersionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -167,7 +167,7 @@ func (d *terraformVersionResource) Create(ctx context.Context, req resource.Crea
 		Deprecated:       tfe.Bool(tfVersion.Deprecated.ValueBool()),
 		DeprecatedReason: tfe.String(tfVersion.DeprecatedReason.ValueString()),
 		Archs: func() []*tfe.ToolVersionArchitecture {
-			archs, diags := newConvertToToolVersionArchitectures(ctx, tfVersion.Archs)
+			archs, diags := convertToToolVersionArchitectures(ctx, tfVersion.Archs)
 			resp.Diagnostics.Append(diags...)
 			if resp.Diagnostics.HasError() {
 				return nil
@@ -321,7 +321,7 @@ func (d *terraformVersionResource) Update(ctx context.Context, req resource.Upda
 		Deprecated:       tfe.Bool(tfVersion.Deprecated.ValueBool()),
 		DeprecatedReason: tfe.String(tfVersion.DeprecatedReason.ValueString()),
 		Archs: func() []*tfe.ToolVersionArchitecture {
-			archs, diags := newConvertToToolVersionArchitectures(ctx, tfVersion.Archs)
+			archs, diags := convertToToolVersionArchitectures(ctx, tfVersion.Archs)
 			resp.Diagnostics.Append(diags...)
 			if resp.Diagnostics.HasError() {
 				return nil

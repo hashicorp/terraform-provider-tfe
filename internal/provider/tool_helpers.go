@@ -141,49 +141,6 @@ func fetchOPAVersionID(version string, client *tfe.Client) (string, error) {
 	return "", fmt.Errorf("OPA version not found")
 }
 
-func convertToToolVersionArchitectures(archs interface{}) []*tfe.ToolVersionArchitecture {
-	if archs == nil {
-		return nil
-	}
-
-	archsList, ok := archs.([]interface{})
-	if !ok {
-		return nil
-	}
-
-	var convertedArchs []*tfe.ToolVersionArchitecture
-	for _, arch := range archsList {
-		if archMap, ok := arch.(map[string]interface{}); ok {
-			convertedArchs = append(convertedArchs, &tfe.ToolVersionArchitecture{
-				URL:  archMap["url"].(string),
-				Sha:  archMap["sha"].(string),
-				OS:   archMap["os"].(string),
-				Arch: archMap["arch"].(string),
-			})
-		}
-	}
-
-	return convertedArchs
-}
-
-func convertToToolVersionArchitecturesMap(archs []*tfe.ToolVersionArchitecture) []map[string]interface{} {
-	if len(archs) == 0 {
-		return nil
-	}
-
-	archsList := make([]map[string]interface{}, len(archs))
-	for i, arch := range archs {
-		archsList[i] = map[string]interface{}{
-			"url":  arch.URL,
-			"sha":  arch.Sha,
-			"os":   arch.OS,
-			"arch": arch.Arch,
-		}
-	}
-
-	return archsList
-}
-
 func stringOrNil(s string) *string {
 	if s == "" {
 		return nil
@@ -191,7 +148,7 @@ func stringOrNil(s string) *string {
 	return &s
 }
 
-func newConvertToToolVersionArchitectures(ctx context.Context, archs types.Set) ([]*tfe.ToolVersionArchitecture, diag.Diagnostics) {
+func convertToToolVersionArchitectures(ctx context.Context, archs types.Set) ([]*tfe.ToolVersionArchitecture, diag.Diagnostics) {
 	if archs.IsNull() || archs.IsUnknown() {
 		return nil, nil
 	}

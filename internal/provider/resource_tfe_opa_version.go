@@ -116,7 +116,7 @@ func (r *OPAVersionResource) Schema(ctx context.Context, req resource.SchemaRequ
 	}
 }
 
-func (r *OPAVersionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (d *OPAVersionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	tflog.Debug(ctx, "Configuring OPA Version Resource")
 
 	if req.ProviderData == nil {
@@ -132,7 +132,7 @@ func (r *OPAVersionResource) Configure(ctx context.Context, req resource.Configu
 		return
 	}
 
-	r.config = client
+	d.config = client
 }
 
 func (d *OPAVersionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -167,7 +167,7 @@ func (d *OPAVersionResource) Create(ctx context.Context, req resource.CreateRequ
 		Deprecated:       tfe.Bool(opaVersion.Deprecated.ValueBool()),
 		DeprecatedReason: tfe.String(opaVersion.DeprecatedReason.ValueString()),
 		Archs: func() []*tfe.ToolVersionArchitecture {
-			archs, diags := newConvertToToolVersionArchitectures(ctx, opaVersion.Archs)
+			archs, diags := convertToToolVersionArchitectures(ctx, opaVersion.Archs)
 			resp.Diagnostics.Append(diags...)
 			if resp.Diagnostics.HasError() {
 				return nil
@@ -321,7 +321,7 @@ func (d *OPAVersionResource) Update(ctx context.Context, req resource.UpdateRequ
 		Deprecated:       tfe.Bool(opaVersion.Deprecated.ValueBool()),
 		DeprecatedReason: tfe.String(opaVersion.DeprecatedReason.ValueString()),
 		Archs: func() []*tfe.ToolVersionArchitecture {
-			archs, diags := newConvertToToolVersionArchitectures(ctx, opaVersion.Archs)
+			archs, diags := convertToToolVersionArchitectures(ctx, opaVersion.Archs)
 			resp.Diagnostics.Append(diags...)
 			if resp.Diagnostics.HasError() {
 				return nil

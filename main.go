@@ -50,7 +50,7 @@ func main() {
 	//   not proven that out yet.
 
 	classicProvider := provider.Provider().GRPCProvider
-	upgradedClassicProvider, err := tf5to6server.UpgradeServer(
+	upgradedClassicProvider, _ := tf5to6server.UpgradeServer(
 		ctx,
 		classicProvider,
 	)
