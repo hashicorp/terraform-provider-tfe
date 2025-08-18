@@ -36,7 +36,6 @@ func TestAccOutputsEphemeralResource_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccMuxedProviders,
 		ProtoV6ProviderFactories: map[string]func() (tfprotov6.ProviderServer, error){
 			"echo": echoprovider.NewProviderServer(),
 		},
@@ -115,7 +114,6 @@ func TestAccOutputsEphemeralResource_readAllNonSensitiveValues(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccMuxedProviders,
 		ProtoV6ProviderFactories: map[string]func() (tfprotov6.ProviderServer, error){
 			"echo": echoprovider.NewProviderServer(),
 		},
@@ -192,7 +190,6 @@ func TestAccOutputsEphemeralResource_emptyOutputs(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccMuxedProviders,
 		ProtoV6ProviderFactories: map[string]func() (tfprotov6.ProviderServer, error){
 			"echo": echoprovider.NewProviderServer(),
 		},
