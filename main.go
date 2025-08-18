@@ -60,7 +60,9 @@ func main() {
 		func() tfprotov6.ProviderServer {
 			return upgradedClassicProvider
 		},
-		nextProvider,
+		func() tfprotov6.ProviderServer {
+			return nextProvider()
+        },
 	}
 
 	mux, err := tf6muxserver.NewMuxServer(ctx, providers...)
