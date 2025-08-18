@@ -450,7 +450,7 @@ func (d *OPAVersionResource) ImportState(ctx context.Context, req resource.Impor
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Error Importing OPA Version",
-				fmt.Sprintf("error retrieving OPA version %s: %w", req.ID, err),
+				fmt.Sprintf("error retrieving OPA version %s: %v", req.ID, err),
 			)
 			return
 		}

@@ -450,7 +450,7 @@ func (d *terraformVersionResource) ImportState(ctx context.Context, req resource
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Error Importing Terraform Version",
-				fmt.Sprintf("error retrieving terraform version %s: %w", req.ID, err),
+				fmt.Sprintf("error retrieving terraform version %s: %v", req.ID, err),
 			)
 			return
 		}
