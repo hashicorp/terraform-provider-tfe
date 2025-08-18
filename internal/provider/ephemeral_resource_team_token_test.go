@@ -35,7 +35,7 @@ func TestAccTeamTokenEphemeralResource_basic(t *testing.T) {
 			tfversion.SkipBelow(tfversion.Version1_10_0),
 		},
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		ProtoV6ProviderFactories: map[string]func() (tfprotov6.ProviderServer, error){
 			"echo": echoprovider.NewProviderServer(),
 		},
@@ -68,7 +68,7 @@ func TestAccTeamTokenEphemeralResource_expiredAt(t *testing.T) {
 			tfversion.SkipBelow(tfversion.Version1_10_0),
 		},
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		ProtoV6ProviderFactories: map[string]func() (tfprotov6.ProviderServer, error){
 			"echo": echoprovider.NewProviderServer(),
 		},

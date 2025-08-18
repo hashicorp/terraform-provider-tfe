@@ -18,7 +18,7 @@ func TestAccTFERegistryGPGKeysDataSource_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERegistryGPGKeysDataSourceConfig(orgName),
@@ -45,7 +45,7 @@ func TestAccTFERegistryGPGKeysDataSource_basicNoKeys(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERegistryGPGKeysDataSourceConfig_noKeys(orgName),
