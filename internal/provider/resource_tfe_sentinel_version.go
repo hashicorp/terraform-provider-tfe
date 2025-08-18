@@ -405,7 +405,7 @@ func (r *sentinelVersionResource) Update(ctx context.Context, req resource.Updat
 	resp.Diagnostics.Append(resp.State.Set(ctx, &opaVersion)...)
 }
 
-func (d *sentinelVersionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *sentinelVersionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var opaVersion modelAdminSentinelVersion
 	resp.Diagnostics.Append(req.State.Get(ctx, &opaVersion)...)
 	if resp.Diagnostics.HasError() {
@@ -415,7 +415,7 @@ func (d *sentinelVersionResource) Delete(ctx context.Context, req resource.Delet
 		"id": opaVersion.ID.ValueString(),
 	})
 
-	err := d.config.Client.Admin.SentinelVersions.Delete(ctx, opaVersion.ID.ValueString())
+	err := r.config.Client.Admin.SentinelVersions.Delete(ctx, opaVersion.ID.ValueString())
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			tflog.Debug(ctx, "sentinel version not found, skipping deletion", map[string]interface{}{
