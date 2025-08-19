@@ -71,15 +71,19 @@ func (r *OPAVersionResource) Schema(ctx context.Context, req resource.SchemaRequ
 			},
 			"official": schema.BoolAttribute{
 				Optional: true,
+				Computed: true,
 			},
 			"enabled": schema.BoolAttribute{
 				Optional: true,
+				Computed: true,
 			},
 			"beta": schema.BoolAttribute{
 				Optional: true,
+				Computed: true,
 			},
 			"deprecated": schema.BoolAttribute{
 				Optional: true,
+				Computed: true,
 			},
 			"deprecated_reason": schema.StringAttribute{
 				Optional: true,
