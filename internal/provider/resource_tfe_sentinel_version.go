@@ -47,13 +47,6 @@ type modelAdminSentinelVersion struct {
 	Archs            types.Set    `tfsdk:"archs"`
 }
 
-type modelsentinelArch struct {
-	URL  types.String `tfsdk:"url"`
-	SHA  types.String `tfsdk:"sha"`
-	OS   types.String `tfsdk:"os"`
-	Arch types.String `tfsdk:"arch"`
-}
-
 func (r *sentinelVersionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{

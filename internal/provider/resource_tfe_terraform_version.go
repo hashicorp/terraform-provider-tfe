@@ -53,13 +53,6 @@ type modelAdminTerraformVersion struct {
 	Archs            types.Set    `tfsdk:"archs"`
 }
 
-type modelArch struct {
-	URL  types.String `tfsdk:"url"`
-	Sha  types.String `tfsdk:"sha"`
-	OS   types.String `tfsdk:"os"`
-	Arch types.String `tfsdk:"arch"`
-}
-
 func (r *terraformVersionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
