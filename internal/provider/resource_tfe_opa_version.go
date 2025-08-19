@@ -92,8 +92,6 @@ func (r *OPAVersionResource) Schema(ctx context.Context, req resource.SchemaRequ
 			},
 			"deprecated_reason": schema.StringAttribute{
 				Optional: true,
-				Computed: true,
-				Default:  nil,
 			},
 			"archs": schema.SetNestedAttribute{
 				NestedObject: schema.NestedAttributeObject{

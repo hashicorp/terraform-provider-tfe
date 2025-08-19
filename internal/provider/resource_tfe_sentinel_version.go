@@ -87,8 +87,6 @@ func (r *sentinelVersionResource) Schema(ctx context.Context, req resource.Schem
 			},
 			"deprecated_reason": schema.StringAttribute{
 				Optional: true,
-				Computed: true,
-				Default:  nil,
 			},
 			"archs": schema.SetNestedAttribute{
 				NestedObject: schema.NestedAttributeObject{

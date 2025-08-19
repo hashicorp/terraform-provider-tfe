@@ -93,8 +93,6 @@ func (r *terraformVersionResource) Schema(ctx context.Context, req resource.Sche
 			},
 			"deprecated_reason": schema.StringAttribute{
 				Optional: true,
-				Computed: true,
-				Default:  nil,
 			},
 			"archs": schema.SetNestedAttribute{
 				NestedObject: schema.NestedAttributeObject{
