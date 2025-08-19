@@ -14,7 +14,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -51,13 +50,6 @@ type modelAdminOPAVersion struct {
 	Deprecated       types.Bool   `tfsdk:"deprecated"`
 	DeprecatedReason types.String `tfsdk:"deprecated_reason"`
 	Archs            types.Set    `tfsdk:"archs"`
-}
-
-type modelOPAArch struct {
-	URL  types.String `tfsdk:"url"`
-	SHA  types.String `tfsdk:"sha"`
-	OS   types.String `tfsdk:"os"`
-	Arch types.String `tfsdk:"arch"`
 }
 
 func (r *OPAVersionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -98,7 +90,7 @@ func (r *OPAVersionResource) Schema(ctx context.Context, req resource.SchemaRequ
 						"url": schema.StringAttribute{
 							Required: true,
 						},
-						"sha": schema.StringAttribute{
+						"sha": schema.StringAttribute{ // Ensure lowercase
 							Required: true,
 						},
 						"os": schema.StringAttribute{
@@ -141,13 +133,12 @@ func (r *OPAVersionResource) Create(ctx context.Context, req resource.CreateRequ
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &opaVersion)...)
 
 	tflog.Debug(ctx, "Creating OPA version resource", map[string]interface{}{
-		"version":  opaVersion.Version.ValueString(),
-		"url":      opaVersion.URL.ValueString(),
-		"SHA":      opaVersion.SHA.ValueString(),
-		"official": opaVersion.Official.ValueBool(),
-		"enabled":  opaVersion.Enabled.ValueBool(),
-		"beta":     opaVersion.Beta.ValueBool(),
-
+		"version":           opaVersion.Version.ValueString(),
+		"url":               opaVersion.URL.ValueString(),
+		"SHA":               opaVersion.SHA.ValueString(),
+		"official":          opaVersion.Official.ValueBool(),
+		"enabled":           opaVersion.Enabled.ValueBool(),
+		"beta":              opaVersion.Beta.ValueBool(),
 		"deprecated":        opaVersion.Deprecated.ValueBool(),
 		"deprecated_reason": opaVersion.DeprecatedReason.ValueString(),
 		"archs":             opaVersion.Archs.ElementsAs(ctx, nil, false),
@@ -205,7 +196,8 @@ func (r *OPAVersionResource) Create(ctx context.Context, req resource.CreateRequ
 		opaVersion.SHA = types.StringValue(v.SHA)
 	}
 
-	// Set state
+	opaVersion.Archs = convertAPIArchsToFrameworkSet(v.Archs)
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &opaVersion)...)
 }
 
@@ -253,43 +245,7 @@ func (r *OPAVersionResource) Read(ctx context.Context, req resource.ReadRequest,
 		opaVersion.SHA = types.StringValue(v.SHA)
 	}
 
-	// Convert archs
-	if len(v.Archs) > 0 {
-		archs := make([]modelOPAArch, len(v.Archs))
-		for i, arch := range v.Archs {
-			archs[i] = modelOPAArch{
-				URL:  types.StringValue(arch.URL),
-				SHA:  types.StringValue(arch.Sha),
-				OS:   types.StringValue(arch.OS),
-				Arch: types.StringValue(arch.Arch),
-			}
-		}
-		archValues := make([]attr.Value, len(archs))
-		for i, arch := range archs {
-			archValues[i] = types.ObjectValueMust(
-				map[string]attr.Type{
-					"url":  types.StringType,
-					"sha":  types.StringType,
-					"os":   types.StringType,
-					"arch": types.StringType,
-				},
-				map[string]attr.Value{
-					"url":  arch.URL,
-					"sha":  arch.SHA,
-					"os":   arch.OS,
-					"arch": arch.Arch,
-				},
-			)
-		}
-		opaVersion.Archs = types.SetValueMust(types.ObjectType{
-			AttrTypes: map[string]attr.Type{
-				"url":  types.StringType,
-				"sha":  types.StringType,
-				"os":   types.StringType,
-				"arch": types.StringType,
-			},
-		}, archValues)
-	}
+	opaVersion.Archs = convertAPIArchsToFrameworkSet(v.Archs)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &opaVersion)...)
 }
@@ -358,7 +314,6 @@ func (r *OPAVersionResource) Update(ctx context.Context, req resource.UpdateRequ
 		opaVersion.SHA = types.StringNull()
 	}
 
-	// Set remaining attributes
 	opaVersion.Official = types.BoolValue(v.Official)
 	opaVersion.Enabled = types.BoolValue(v.Enabled)
 	opaVersion.Beta = types.BoolValue(v.Beta)
@@ -369,43 +324,7 @@ func (r *OPAVersionResource) Update(ctx context.Context, req resource.UpdateRequ
 		opaVersion.DeprecatedReason = types.StringNull()
 	}
 
-	// Handle archs just like in Read method
-	if len(v.Archs) > 0 {
-		archs := make([]modelOPAArch, len(v.Archs))
-		for i, arch := range v.Archs {
-			archs[i] = modelOPAArch{
-				URL:  types.StringValue(arch.URL),
-				SHA:  types.StringValue(arch.Sha),
-				OS:   types.StringValue(arch.OS),
-				Arch: types.StringValue(arch.Arch),
-			}
-		}
-		archValues := make([]attr.Value, len(archs))
-		for i, arch := range archs {
-			archValues[i] = types.ObjectValueMust(
-				map[string]attr.Type{
-					"url":  types.StringType,
-					"sha":  types.StringType,
-					"os":   types.StringType,
-					"arch": types.StringType,
-				},
-				map[string]attr.Value{
-					"url":  arch.URL,
-					"sha":  arch.SHA,
-					"os":   arch.OS,
-					"arch": arch.Arch,
-				},
-			)
-		}
-		opaVersion.Archs = types.SetValueMust(types.ObjectType{
-			AttrTypes: map[string]attr.Type{
-				"url":  types.StringType,
-				"sha":  types.StringType,
-				"os":   types.StringType,
-				"arch": types.StringType,
-			},
-		}, archValues)
-	}
+	opaVersion.Archs = convertAPIArchsToFrameworkSet(v.Archs)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &opaVersion)...)
 }

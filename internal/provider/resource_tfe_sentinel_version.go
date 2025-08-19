@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -131,21 +130,21 @@ func (r *sentinelVersionResource) Configure(ctx context.Context, req resource.Co
 }
 
 func (r *sentinelVersionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var opaVersion modelAdminSentinelVersion
+	var sentinelVersion modelAdminSentinelVersion
 	tflog.Debug(ctx, "Creating sentinel version resource")
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &opaVersion)...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &sentinelVersion)...)
 
 	tflog.Debug(ctx, "Creating sentinel version resource", map[string]interface{}{
-		"version":  opaVersion.Version.ValueString(),
-		"url":      opaVersion.URL.ValueString(),
-		"SHA":      opaVersion.SHA.ValueString(),
-		"official": opaVersion.Official.ValueBool(),
-		"enabled":  opaVersion.Enabled.ValueBool(),
-		"beta":     opaVersion.Beta.ValueBool(),
+		"version":  sentinelVersion.Version.ValueString(),
+		"url":      sentinelVersion.URL.ValueString(),
+		"SHA":      sentinelVersion.SHA.ValueString(),
+		"official": sentinelVersion.Official.ValueBool(),
+		"enabled":  sentinelVersion.Enabled.ValueBool(),
+		"beta":     sentinelVersion.Beta.ValueBool(),
 
-		"deprecated":        opaVersion.Deprecated.ValueBool(),
-		"deprecated_reason": opaVersion.DeprecatedReason.ValueString(),
-		"archs":             opaVersion.Archs.ElementsAs(ctx, nil, false),
+		"deprecated":        sentinelVersion.Deprecated.ValueBool(),
+		"deprecated_reason": sentinelVersion.DeprecatedReason.ValueString(),
+		"archs":             sentinelVersion.Archs.ElementsAs(ctx, nil, false),
 	})
 
 	if resp.Diagnostics.HasError() {
@@ -153,16 +152,16 @@ func (r *sentinelVersionResource) Create(ctx context.Context, req resource.Creat
 	}
 
 	opts := tfe.AdminSentinelVersionCreateOptions{
-		Version:          opaVersion.Version.ValueString(),
-		URL:              opaVersion.URL.ValueString(),
-		SHA:              opaVersion.SHA.ValueString(),
-		Official:         tfe.Bool(opaVersion.Official.ValueBool()),
-		Enabled:          tfe.Bool(opaVersion.Enabled.ValueBool()),
-		Beta:             tfe.Bool(opaVersion.Beta.ValueBool()),
-		Deprecated:       tfe.Bool(opaVersion.Deprecated.ValueBool()),
-		DeprecatedReason: tfe.String(opaVersion.DeprecatedReason.ValueString()),
+		Version:          sentinelVersion.Version.ValueString(),
+		URL:              sentinelVersion.URL.ValueString(),
+		SHA:              sentinelVersion.SHA.ValueString(),
+		Official:         tfe.Bool(sentinelVersion.Official.ValueBool()),
+		Enabled:          tfe.Bool(sentinelVersion.Enabled.ValueBool()),
+		Beta:             tfe.Bool(sentinelVersion.Beta.ValueBool()),
+		Deprecated:       tfe.Bool(sentinelVersion.Deprecated.ValueBool()),
+		DeprecatedReason: tfe.String(sentinelVersion.DeprecatedReason.ValueString()),
 		Archs: func() []*tfe.ToolVersionArchitecture {
-			archs, diags := convertToToolVersionArchitectures(ctx, opaVersion.Archs)
+			archs, diags := convertToToolVersionArchitectures(ctx, sentinelVersion.Archs)
 			resp.Diagnostics.Append(diags...)
 			if resp.Diagnostics.HasError() {
 				return nil
@@ -171,7 +170,7 @@ func (r *sentinelVersionResource) Create(ctx context.Context, req resource.Creat
 		}(),
 	}
 	tflog.Debug(ctx, "Creating sentinel version", map[string]interface{}{
-		"version": opaVersion.Version.ValueString(),
+		"version": sentinelVersion.Version.ValueString(),
 	})
 
 	v, err := r.config.Client.Admin.SentinelVersions.Create(ctx, opts)
@@ -186,35 +185,36 @@ func (r *sentinelVersionResource) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
-	opaVersion.ID = types.StringValue(v.ID)
+	sentinelVersion.ID = types.StringValue(v.ID)
 
 	// ensure there are no unknown values
 	if v.URL == "" {
-		opaVersion.URL = types.StringNull()
+		sentinelVersion.URL = types.StringNull()
 	} else {
-		opaVersion.URL = types.StringValue(v.URL)
+		sentinelVersion.URL = types.StringValue(v.URL)
 	}
 	if v.SHA == "" {
-		opaVersion.SHA = types.StringNull()
+		sentinelVersion.SHA = types.StringNull()
 	} else {
-		opaVersion.SHA = types.StringValue(v.SHA)
+		sentinelVersion.SHA = types.StringValue(v.SHA)
 	}
+	sentinelVersion.Archs = convertAPIArchsToFrameworkSet(v.Archs)
 
 	// Set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &opaVersion)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &sentinelVersion)...)
 }
 
 func (r *sentinelVersionResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var opaVersion modelAdminSentinelVersion
-	resp.Diagnostics.Append(req.State.Get(ctx, &opaVersion)...)
+	var sentinelVersion modelAdminSentinelVersion
+	resp.Diagnostics.Append(req.State.Get(ctx, &sentinelVersion)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	tflog.Debug(ctx, "Read configuration of sentinel version", map[string]interface{}{
-		"id": opaVersion.ID.ValueString()})
+		"id": sentinelVersion.ID.ValueString()})
 
-	v, err := r.config.Client.Admin.SentinelVersions.Read(ctx, opaVersion.ID.ValueString())
+	v, err := r.config.Client.Admin.SentinelVersions.Read(ctx, sentinelVersion.ID.ValueString())
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			resp.State.RemoveResource(ctx)
@@ -222,76 +222,39 @@ func (r *sentinelVersionResource) Read(ctx context.Context, req resource.ReadReq
 		}
 		resp.Diagnostics.AddError(
 			"Error reading sentinel version",
-			fmt.Sprintf("Could not read sentinel version %s: %v", opaVersion.ID.ValueString(), err),
+			fmt.Sprintf("Could not read sentinel version %s: %v", sentinelVersion.ID.ValueString(), err),
 		)
 		return
 	}
 
-	opaVersion.ID = types.StringValue(v.ID)
-	opaVersion.Official = types.BoolValue(v.Official)
-	opaVersion.Enabled = types.BoolValue(v.Enabled)
-	opaVersion.Beta = types.BoolValue(v.Beta)
-	opaVersion.Deprecated = types.BoolValue(v.Deprecated)
+	sentinelVersion.ID = types.StringValue(v.ID)
+	sentinelVersion.Official = types.BoolValue(v.Official)
+	sentinelVersion.Enabled = types.BoolValue(v.Enabled)
+	sentinelVersion.Beta = types.BoolValue(v.Beta)
+	sentinelVersion.Deprecated = types.BoolValue(v.Deprecated)
 	if v.DeprecatedReason != nil {
-		opaVersion.DeprecatedReason = types.StringValue(*v.DeprecatedReason)
+		sentinelVersion.DeprecatedReason = types.StringValue(*v.DeprecatedReason)
 	} else {
-		opaVersion.DeprecatedReason = types.StringNull()
+		sentinelVersion.DeprecatedReason = types.StringNull()
 	}
 	if v.URL == "" {
-		opaVersion.URL = types.StringNull()
+		sentinelVersion.URL = types.StringNull()
 	} else {
-		opaVersion.URL = types.StringValue(v.URL)
+		sentinelVersion.URL = types.StringValue(v.URL)
 	}
 	if v.SHA == "" {
-		opaVersion.SHA = types.StringNull()
+		sentinelVersion.SHA = types.StringNull()
 	} else {
-		opaVersion.SHA = types.StringValue(v.SHA)
+		sentinelVersion.SHA = types.StringValue(v.SHA)
 	}
+	sentinelVersion.Archs = convertAPIArchsToFrameworkSet(v.Archs)
 
-	// Convert archs
-	if len(v.Archs) > 0 {
-		archs := make([]modelsentinelArch, len(v.Archs))
-		for i, arch := range v.Archs {
-			archs[i] = modelsentinelArch{
-				URL:  types.StringValue(arch.URL),
-				SHA:  types.StringValue(arch.Sha),
-				OS:   types.StringValue(arch.OS),
-				Arch: types.StringValue(arch.Arch),
-			}
-		}
-		archValues := make([]attr.Value, len(archs))
-		for i, arch := range archs {
-			archValues[i] = types.ObjectValueMust(
-				map[string]attr.Type{
-					"url":  types.StringType,
-					"sha":  types.StringType,
-					"os":   types.StringType,
-					"arch": types.StringType,
-				},
-				map[string]attr.Value{
-					"url":  arch.URL,
-					"sha":  arch.SHA,
-					"os":   arch.OS,
-					"arch": arch.Arch,
-				},
-			)
-		}
-		opaVersion.Archs = types.SetValueMust(types.ObjectType{
-			AttrTypes: map[string]attr.Type{
-				"url":  types.StringType,
-				"sha":  types.StringType,
-				"os":   types.StringType,
-				"arch": types.StringType,
-			},
-		}, archValues)
-	}
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &opaVersion)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &sentinelVersion)...)
 }
 
 func (r *sentinelVersionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var opaVersion modelAdminSentinelVersion
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &opaVersion)...)
+	var sentinelVersion modelAdminSentinelVersion
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &sentinelVersion)...)
 
 	var state modelAdminSentinelVersion
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -300,23 +263,23 @@ func (r *sentinelVersionResource) Update(ctx context.Context, req resource.Updat
 	}
 
 	// Use the ID from the state
-	opaVersion.ID = state.ID
+	sentinelVersion.ID = state.ID
 
 	tflog.Debug(ctx, "Updating sentinel version resource", map[string]interface{}{
-		"id": opaVersion.ID.ValueString(),
+		"id": sentinelVersion.ID.ValueString(),
 	})
 
 	opts := tfe.AdminSentinelVersionUpdateOptions{
-		Version:          tfe.String(opaVersion.Version.ValueString()),
-		URL:              stringOrNil(opaVersion.URL.ValueString()),
-		SHA:              tfe.String(opaVersion.SHA.ValueString()),
-		Official:         tfe.Bool(opaVersion.Official.ValueBool()),
-		Enabled:          tfe.Bool(opaVersion.Enabled.ValueBool()),
-		Beta:             tfe.Bool(opaVersion.Beta.ValueBool()),
-		Deprecated:       tfe.Bool(opaVersion.Deprecated.ValueBool()),
-		DeprecatedReason: tfe.String(opaVersion.DeprecatedReason.ValueString()),
+		Version:          tfe.String(sentinelVersion.Version.ValueString()),
+		URL:              stringOrNil(sentinelVersion.URL.ValueString()),
+		SHA:              tfe.String(sentinelVersion.SHA.ValueString()),
+		Official:         tfe.Bool(sentinelVersion.Official.ValueBool()),
+		Enabled:          tfe.Bool(sentinelVersion.Enabled.ValueBool()),
+		Beta:             tfe.Bool(sentinelVersion.Beta.ValueBool()),
+		Deprecated:       tfe.Bool(sentinelVersion.Deprecated.ValueBool()),
+		DeprecatedReason: tfe.String(sentinelVersion.DeprecatedReason.ValueString()),
 		Archs: func() []*tfe.ToolVersionArchitecture {
-			archs, diags := convertToToolVersionArchitectures(ctx, opaVersion.Archs)
+			archs, diags := convertToToolVersionArchitectures(ctx, sentinelVersion.Archs)
 			resp.Diagnostics.Append(diags...)
 			if resp.Diagnostics.HasError() {
 				return nil
@@ -326,106 +289,67 @@ func (r *sentinelVersionResource) Update(ctx context.Context, req resource.Updat
 	}
 
 	tflog.Debug(ctx, "Updating sentinel version", map[string]interface{}{
-		"id": opaVersion.ID.ValueString()})
-	v, err := r.config.Client.Admin.SentinelVersions.Update(ctx, opaVersion.ID.ValueString(), opts)
+		"id": sentinelVersion.ID.ValueString()})
+	v, err := r.config.Client.Admin.SentinelVersions.Update(ctx, sentinelVersion.ID.ValueString(), opts)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error updating sentinel version",
-			fmt.Sprintf("Could not update sentinel version %s: %v", opaVersion.ID.ValueString(), err),
+			fmt.Sprintf("Could not update sentinel version %s: %v", sentinelVersion.ID.ValueString(), err),
 		)
 		return
 	}
 
-	// Set ID and other attributes
-	opaVersion.ID = types.StringValue(v.ID)
-	opaVersion.Version = types.StringValue(v.Version)
+	sentinelVersion.ID = types.StringValue(v.ID)
+	sentinelVersion.Version = types.StringValue(v.Version)
 
-	// IMPORTANT: Set explicit values for URL and SHA
 	if v.URL != "" {
-		opaVersion.URL = types.StringValue(v.URL)
+		sentinelVersion.URL = types.StringValue(v.URL)
 	} else {
-		opaVersion.URL = types.StringNull()
+		sentinelVersion.URL = types.StringNull()
 	}
 
 	if v.SHA != "" {
-		opaVersion.SHA = types.StringValue(v.SHA)
+		sentinelVersion.SHA = types.StringValue(v.SHA)
 	} else {
-		opaVersion.SHA = types.StringNull()
+		sentinelVersion.SHA = types.StringNull()
 	}
 
 	// Set remaining attributes
-	opaVersion.Official = types.BoolValue(v.Official)
-	opaVersion.Enabled = types.BoolValue(v.Enabled)
-	opaVersion.Beta = types.BoolValue(v.Beta)
-	opaVersion.Deprecated = types.BoolValue(v.Deprecated)
+	sentinelVersion.Official = types.BoolValue(v.Official)
+	sentinelVersion.Enabled = types.BoolValue(v.Enabled)
+	sentinelVersion.Beta = types.BoolValue(v.Beta)
+	sentinelVersion.Deprecated = types.BoolValue(v.Deprecated)
 	if v.DeprecatedReason != nil {
-		opaVersion.DeprecatedReason = types.StringValue(*v.DeprecatedReason)
+		sentinelVersion.DeprecatedReason = types.StringValue(*v.DeprecatedReason)
 	} else {
-		opaVersion.DeprecatedReason = types.StringNull()
+		sentinelVersion.DeprecatedReason = types.StringNull()
 	}
+	sentinelVersion.Archs = convertAPIArchsToFrameworkSet(v.Archs)
 
-	// Handle archs just like in Read method
-	if len(v.Archs) > 0 {
-		archs := make([]modelsentinelArch, len(v.Archs))
-		for i, arch := range v.Archs {
-			archs[i] = modelsentinelArch{
-				URL:  types.StringValue(arch.URL),
-				SHA:  types.StringValue(arch.Sha),
-				OS:   types.StringValue(arch.OS),
-				Arch: types.StringValue(arch.Arch),
-			}
-		}
-		archValues := make([]attr.Value, len(archs))
-		for i, arch := range archs {
-			archValues[i] = types.ObjectValueMust(
-				map[string]attr.Type{
-					"url":  types.StringType,
-					"sha":  types.StringType,
-					"os":   types.StringType,
-					"arch": types.StringType,
-				},
-				map[string]attr.Value{
-					"url":  arch.URL,
-					"sha":  arch.SHA,
-					"os":   arch.OS,
-					"arch": arch.Arch,
-				},
-			)
-		}
-		opaVersion.Archs = types.SetValueMust(types.ObjectType{
-			AttrTypes: map[string]attr.Type{
-				"url":  types.StringType,
-				"sha":  types.StringType,
-				"os":   types.StringType,
-				"arch": types.StringType,
-			},
-		}, archValues)
-	}
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &opaVersion)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &sentinelVersion)...)
 }
 
 func (r *sentinelVersionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var opaVersion modelAdminSentinelVersion
-	resp.Diagnostics.Append(req.State.Get(ctx, &opaVersion)...)
+	var sentinelVersion modelAdminSentinelVersion
+	resp.Diagnostics.Append(req.State.Get(ctx, &sentinelVersion)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 	tflog.Debug(ctx, "Deleting sentinel version", map[string]interface{}{
-		"id": opaVersion.ID.ValueString(),
+		"id": sentinelVersion.ID.ValueString(),
 	})
 
-	err := r.config.Client.Admin.SentinelVersions.Delete(ctx, opaVersion.ID.ValueString())
+	err := r.config.Client.Admin.SentinelVersions.Delete(ctx, sentinelVersion.ID.ValueString())
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			tflog.Debug(ctx, "sentinel version not found, skipping deletion", map[string]interface{}{
-				"id": opaVersion.ID.ValueString(),
+				"id": sentinelVersion.ID.ValueString(),
 			})
 			return
 		}
 		resp.Diagnostics.AddError(
 			"Error deleting sentinel version",
-			fmt.Sprintf("Could not delete sentinel version %s: %v", opaVersion.ID.ValueString(), err),
+			fmt.Sprintf("Could not delete sentinel version %s: %v", sentinelVersion.ID.ValueString(), err),
 		)
 		return
 	}

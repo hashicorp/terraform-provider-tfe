@@ -204,6 +204,7 @@ func (r *terraformVersionResource) Create(ctx context.Context, req resource.Crea
 	} else {
 		tfVersion.Sha = types.StringValue(v.Sha)
 	}
+	tfVersion.Archs = convertAPIArchsToFrameworkSet(v.Archs)
 
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &tfVersion)...)
@@ -252,43 +253,23 @@ func (r *terraformVersionResource) Read(ctx context.Context, req resource.ReadRe
 	} else {
 		tfVersion.Sha = types.StringValue(v.Sha)
 	}
+	if v.Archs != nil {
+		tfVersion.Archs = convertAPIArchsToFrameworkSet(v.Archs)
 
-	// Convert archs
-	if len(v.Archs) > 0 {
-		archs := make([]modelArch, len(v.Archs))
-		for i, arch := range v.Archs {
-			archs[i] = modelArch{
-				URL:  types.StringValue(arch.URL),
-				Sha:  types.StringValue(arch.Sha),
-				OS:   types.StringValue(arch.OS),
-				Arch: types.StringValue(arch.Arch),
-			}
-		}
-		archValues := make([]attr.Value, len(archs))
-		for i, arch := range archs {
-			archValues[i] = types.ObjectValueMust(
-				map[string]attr.Type{
-					"url":  types.StringType,
-					"sha":  types.StringType,
-					"os":   types.StringType,
-					"arch": types.StringType,
-				},
-				map[string]attr.Value{
-					"url":  arch.URL,
-					"sha":  arch.Sha,
-					"os":   arch.OS,
-					"arch": arch.Arch,
-				},
-			)
-		}
-		tfVersion.Archs = types.SetValueMust(types.ObjectType{
-			AttrTypes: map[string]attr.Type{
-				"url":  types.StringType,
-				"sha":  types.StringType,
-				"os":   types.StringType,
-				"arch": types.StringType,
-			},
-		}, archValues)
+		// Debug the converted value
+		tflog.Debug(ctx, "archs after conversion", map[string]interface{}{
+			"isNull":    tfVersion.Archs.IsNull(),
+			"isUnknown": tfVersion.Archs.IsUnknown(),
+			"length":    fmt.Sprintf("%d", len(v.Archs)),
+		})
+	} else {
+		// Make sure to explicitly set an empty set rather than null or unknown
+		tfVersion.Archs = types.SetValueMust(
+			ObjectTypeForArchitectures(),
+			[]attr.Value{},
+		)
+
+		tflog.Debug(ctx, "archs set to empty", map[string]interface{}{})
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &tfVersion)...)
@@ -369,43 +350,10 @@ func (r *terraformVersionResource) Update(ctx context.Context, req resource.Upda
 		tfVersion.DeprecatedReason = types.StringNull()
 	}
 
-	// Handle archs just like in Read method
-	if len(v.Archs) > 0 {
-		archs := make([]modelArch, len(v.Archs))
-		for i, arch := range v.Archs {
-			archs[i] = modelArch{
-				URL:  types.StringValue(arch.URL),
-				Sha:  types.StringValue(arch.Sha),
-				OS:   types.StringValue(arch.OS),
-				Arch: types.StringValue(arch.Arch),
-			}
-		}
-		archValues := make([]attr.Value, len(archs))
-		for i, arch := range archs {
-			archValues[i] = types.ObjectValueMust(
-				map[string]attr.Type{
-					"url":  types.StringType,
-					"sha":  types.StringType,
-					"os":   types.StringType,
-					"arch": types.StringType,
-				},
-				map[string]attr.Value{
-					"url":  arch.URL,
-					"sha":  arch.Sha,
-					"os":   arch.OS,
-					"arch": arch.Arch,
-				},
-			)
-		}
-		tfVersion.Archs = types.SetValueMust(types.ObjectType{
-			AttrTypes: map[string]attr.Type{
-				"url":  types.StringType,
-				"sha":  types.StringType,
-				"os":   types.StringType,
-				"arch": types.StringType,
-			},
-		}, archValues)
-	}
+	tflog.Debug(ctx, "archs", map[string]interface{}{
+		"archs": tfVersion.Archs.ElementsAs(ctx, nil, false),
+	})
+	tfVersion.Archs = convertAPIArchsToFrameworkSet(v.Archs)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &tfVersion)...)
 }

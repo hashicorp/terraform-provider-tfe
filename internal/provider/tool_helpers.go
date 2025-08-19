@@ -6,6 +6,8 @@ package provider
 import (
 	"context"
 	"fmt"
+
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
@@ -148,13 +150,61 @@ func stringOrNil(s string) *string {
 	return &s
 }
 
+// ToolArchitecture represents the common architecture structure for all tool versions
+type ToolArchitecture struct {
+	URL  types.String `tfsdk:"url"`
+	Sha  types.String `tfsdk:"sha"` // Standardized to lowercase field name
+	OS   types.String `tfsdk:"os"`
+	Arch types.String `tfsdk:"arch"`
+}
+
+// ObjectTypeForArchitectures returns the standard object type definition for architecture objects
+func ObjectTypeForArchitectures() types.ObjectType {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"url":  types.StringType,
+			"sha":  types.StringType,
+			"os":   types.StringType,
+			"arch": types.StringType,
+		},
+	}
+}
+
+// convertAPIArchsToFrameworkSet converts API architecture objects to a Framework Set value
+func convertAPIArchsToFrameworkSet(apiArchs []*tfe.ToolVersionArchitecture) types.Set {
+	archObjectType := ObjectTypeForArchitectures()
+
+	// Return empty set rather than null set
+	if len(apiArchs) == 0 {
+		return types.SetValueMust(archObjectType, []attr.Value{})
+	}
+
+	// Rest of function remains the same
+	archValues := make([]attr.Value, len(apiArchs))
+	for i, arch := range apiArchs {
+		archValues[i] = types.ObjectValueMust(
+			archObjectType.AttrTypes,
+			map[string]attr.Value{
+				"url":  types.StringValue(arch.URL),
+				"sha":  types.StringValue(arch.Sha),
+				"os":   types.StringValue(arch.OS),
+				"arch": types.StringValue(arch.Arch),
+			},
+		)
+	}
+
+	return types.SetValueMust(archObjectType, archValues)
+}
+
+// convertToToolVersionArchitectures converts Framework types.Set to API architecture objects
 func convertToToolVersionArchitectures(ctx context.Context, archs types.Set) ([]*tfe.ToolVersionArchitecture, diag.Diagnostics) {
 	if archs.IsNull() || archs.IsUnknown() {
 		return nil, nil
 	}
 
 	var diags diag.Diagnostics
-	var archModels []modelArch
+	var archModels []ToolArchitecture
+
 	diags.Append(archs.ElementsAs(ctx, &archModels, false)...)
 	if diags.HasError() {
 		return nil, diags
@@ -164,7 +214,7 @@ func convertToToolVersionArchitectures(ctx context.Context, archs types.Set) ([]
 	for _, model := range archModels {
 		result = append(result, &tfe.ToolVersionArchitecture{
 			URL:  model.URL.ValueString(),
-			Sha:  model.Sha.ValueString(),
+			Sha:  model.Sha.ValueString(), // Consistent lowercase field name
 			OS:   model.OS.ValueString(),
 			Arch: model.Arch.ValueString(),
 		})
