@@ -116,7 +116,7 @@ func (r *OPAVersionResource) Schema(ctx context.Context, req resource.SchemaRequ
 				},
 				Computed:      true,
 				Optional:      true,
-				PlanModifiers: []planmodifier.Set{setplanmodifier.UseStateForUnknown()},
+				// PlanModifiers: []planmodifier.Set{setplanmodifier.UseStateForUnknown()},
 			},
 		},
 	}
