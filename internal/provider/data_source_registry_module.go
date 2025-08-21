@@ -113,6 +113,8 @@ func (m modelTFEVCSRepo) AttributeTypes() map[string]attr.Type {
 		"github_app_installation_id": types.StringType,
 		"repository_http_url":        types.StringType,
 		"service_provider":           types.StringType,
+		"source_directory":           types.StringType,
+		"tag_prefix":                 types.StringType,
 		"tags":                       types.BoolType,
 		"tags_regex":                 types.StringType,
 		"webhook_url":                types.StringType,
@@ -307,6 +309,12 @@ func (d *dataSourceTFERegistryModule) Schema(_ context.Context, _ datasource.Sch
 							Computed: true,
 						},
 						"service_provider": schema.StringAttribute{
+							Computed: true,
+						},
+						"source_directory": schema.StringAttribute{
+							Computed: true,
+						},
+						"tag_prefix": schema.StringAttribute{
 							Computed: true,
 						},
 						"tags": schema.BoolAttribute{

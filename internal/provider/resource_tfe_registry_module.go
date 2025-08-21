@@ -100,6 +100,14 @@ func resourceTFERegistryModule() *schema.Resource {
 							Optional: true,
 							Computed: true,
 						},
+						"source_directory": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"tag_prefix": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
 					},
 				},
 			},
@@ -410,6 +418,8 @@ func resourceTFERegistryModuleRead(d *schema.ResourceData, meta interface{}) err
 			"display_identifier":         registryModule.VCSRepo.DisplayIdentifier,
 			"branch":                     registryModule.VCSRepo.Branch,
 			"tags":                       registryModule.VCSRepo.Tags,
+			"source_directory":           registryModule.VCSRepo.SourceDirectory,
+			"tag_prefix":                 registryModule.VCSRepo.TagPrefix,
 		}
 		vcsRepo = append(vcsRepo, vcsConfig)
 
