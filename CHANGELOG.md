@@ -1,5 +1,7 @@
 ## Unreleased
 
+## v0.68.3
+
 BUG FIXES:
 * `r/tfe_notification_configuration`: update url attribute to be sensitive, by @jillirami [#1799](https://github.com/hashicorp/terraform-provider-tfe/pull/1799)
 
