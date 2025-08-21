@@ -1,5 +1,8 @@
 ## Unreleased
 
+FEATURES:
+* `r/tfe_registry_module`: Add `source_directory` and `tag_prefix` registry module support for private registry monorepository, by @jillirami ([#1800](https://github.com/hashicorp/terraform-provider-tfe/pull/1800))
+
 BUG FIXES:
 * `r/tfe_notification_configuration`: update url attribute to be sensitive, by @jillirami [#1799](https://github.com/hashicorp/terraform-provider-tfe/pull/1799)
 
