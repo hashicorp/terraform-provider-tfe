@@ -226,9 +226,9 @@ func convertToToolVersionArchitectures(ctx context.Context, archs types.Set) ([]
 	return result, nil
 }
 
-// PreserveAMD64ArchsOnURLChange creates a plan modifier that preserves AMD64 architecture entries
+// PreserveAMD64ArchsOnChange creates a plan modifier that preserves AMD64 architecture entries
 // when top-level URL or SHA changes, to be used across all tool version resources
-func PreserveAMD64ArchsOnURLChange() planmodifier.Set {
+func PreserveAMD64ArchsOnChange() planmodifier.Set {
 	return &preserveAMD64ArchsModifier{}
 }
 
@@ -248,7 +248,7 @@ func (m *preserveAMD64ArchsModifier) MarkdownDescription(ctx context.Context) st
 // PlanModifySet modifies the plan to ensure AMD64 architecture entries are preserved
 func (m *preserveAMD64ArchsModifier) PlanModifySet(ctx context.Context, req planmodifier.SetRequest, resp *planmodifier.SetResponse) {
 	// Skip if we're destroying the resource or no state
-	if req.Plan.Raw.IsNull() || req.State.Raw.IsNull() {
+	if req.Plan.Raw.IsNull() || req.State.Raw.IsNull() || req.StateValue.IsNull() {
 		return
 	}
 
@@ -272,52 +272,6 @@ func (m *preserveAMD64ArchsModifier) PlanModifySet(ctx context.Context, req plan
 	stateArchs := req.StateValue
 	planArchs := req.PlanValue
 
-	// If no state archs, nothing to preserve
-	if stateArchs.IsNull() {
-		return
-	}
-
-	var configArchsList []ToolArchitecture
-	configArchs := req.ConfigValue
-	configHasArchs := !configArchs.IsNull() && !configArchs.IsUnknown()
-	if configHasArchs {
-		diags := configArchs.ElementsAs(ctx, &configArchsList, false)
-		if diags.HasError() {
-			tflog.Debug(ctx, "Error extracting config architectures", map[string]interface{}{
-				"diagnostics": diags,
-			})
-			return
-		}
-	}
-
-	// IMPORTANT: Check if AMD64 was intentionally removed in config
-	if configHasArchs {
-		var configArchsList []ToolArchitecture
-		diags := configArchs.ElementsAs(ctx, &configArchsList, false)
-		if diags.HasError() {
-			tflog.Debug(ctx, "Error extracting config architectures", map[string]interface{}{
-				"diagnostics": diags,
-			})
-			return
-		}
-
-		// Check each arch in config to see if AMD64 is there
-		foundAMD64 := false
-		for _, arch := range configArchsList {
-			if arch.Arch.ValueString() == "amd64" {
-				foundAMD64 = true
-				break
-			}
-		}
-
-		// If AMD64 is explicitly NOT in config, don't add it back
-		if !foundAMD64 {
-			tflog.Debug(ctx, "AMD64 arch explicitly removed in config, not preserving")
-			return
-		}
-	}
-	
-
 	// Extract archs from state
 	var stateArchsList []ToolArchitecture
 	diags := stateArchs.ElementsAs(ctx, &stateArchsList, false)
@@ -325,23 +279,7 @@ func (m *preserveAMD64ArchsModifier) PlanModifySet(ctx context.Context, req plan
 		return
 	}
 
-	// Extract AMD64 arch from state
-	var amd64Arch *ToolArchitecture
-	for _, arch := range stateArchsList {
-		if arch.Arch.ValueString() == "amd64" {
-			tmpArch := arch
-			amd64Arch = &tmpArch
-			break
-		}
-	}
-
-	// If no AMD64 in state, nothing to preserve
-	if amd64Arch == nil {
-		return
-	}
-	
-	// If we got here, we need to preserve AMD64
-	// Add the AMD64 architecture from the state to the plan if it's not already present
+	// we need to update the plan amd url and sha to match the top level values
 	var planArchsList []ToolArchitecture
 	diags = planArchs.ElementsAs(ctx, &planArchsList, false)
 	if diags.HasError() {
@@ -352,39 +290,38 @@ func (m *preserveAMD64ArchsModifier) PlanModifySet(ctx context.Context, req plan
 	}
 
 	// Check if AMD64 is already in the plan
-	foundAMD64 := false
-	for _, arch := range planArchsList {
+	for i, arch := range planArchsList {
 		if arch.Arch.ValueString() == "amd64" {
-			foundAMD64 = true
-			break
+			// If URL or SHA is changing, update the AMD64 arch to match
+			if urlChanged {
+				arch.URL = planURL
+			}
+			if shaChanged {
+				arch.Sha = planSHA
+			}
+			// Update the plan architecture list with the modified AMD64 arch
+			planArchsList[i] = arch
+
+			// Update the plan with the modified AMD64 arch
+			archObjectType := ObjectTypeForArchitectures()
+			attrValues := make([]attr.Value, len(planArchsList))
+
+			for i, arch := range planArchsList {
+				attrValues[i] = types.ObjectValueMust(
+					archObjectType.AttrTypes,
+					map[string]attr.Value{
+						"url":  arch.URL,
+						"sha":  arch.Sha,
+						"os":   arch.OS,
+						"arch": arch.Arch,
+					},
+				)
+			}
+
+			resp.PlanValue = types.SetValueMust(archObjectType, attrValues)
+			return
 		}
 	}
-
-	// If AMD64 is not in the plan, add it
-	if !foundAMD64 {
-		planArchsList = append(planArchsList, *amd64Arch)
-		newPlanArchs := ToolArchitecturesToSet(planArchsList)
-		resp.PlanValue = newPlanArchs
-	}
-}
-
-func ToolArchitecturesToSet(archs []ToolArchitecture) types.Set {
-	archObjectType := ObjectTypeForArchitectures()
-	attrValues := make([]attr.Value, len(archs))
-
-	for i, arch := range archs {
-		attrValues[i] = types.ObjectValueMust(
-			archObjectType.AttrTypes,
-			map[string]attr.Value{
-				"url":  arch.URL,
-				"sha":  arch.Sha,
-				"os":   arch.OS,
-				"arch": arch.Arch,
-			},
-		)
-	}
-
-	return types.SetValueMust(archObjectType, attrValues)
 }
 
 // ValidateToolVersion provides common validation for tool version resources

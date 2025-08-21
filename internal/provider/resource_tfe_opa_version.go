@@ -99,7 +99,7 @@ func (r *OPAVersionResource) Schema(ctx context.Context, req resource.SchemaRequ
 						"url": schema.StringAttribute{
 							Required: true,
 						},
-						"sha": schema.StringAttribute{ // Ensure lowercase
+						"sha": schema.StringAttribute{
 							Required: true,
 						},
 						"os": schema.StringAttribute{
@@ -113,8 +113,8 @@ func (r *OPAVersionResource) Schema(ctx context.Context, req resource.SchemaRequ
 				Computed: true,
 				Optional: true,
 				PlanModifiers: []planmodifier.Set{
-					PreserveAMD64ArchsOnURLChange(), 
 					setplanmodifier.UseStateForUnknown(), // This ensures that we don't show a warning for invisible changes in updates when using refresh-only mode
+					PreserveAMD64ArchsOnChange(),         // This ensures that we don't remove AMD64 archs when the URL/SHA changes
 				},
 			},
 		},
