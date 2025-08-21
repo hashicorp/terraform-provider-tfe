@@ -2,7 +2,10 @@
 
 BUG FIXES:
 * `r/tfe_notification_configuration`: update url attribute to be sensitive, by @jillirami [#1799](https://github.com/hashicorp/terraform-provider-tfe/pull/1799)
+* `r/tfe_workspace`: fixed documentation Example Usages to use the `tfe_organization.test-organization.name` as organization name 
+* `r/tfe_workspace_run`: fixed documentation Example Usages to use the `tfe_organization.test-organization.name` as organization name 
 
+  
 ## v0.68.2
 
 BUG FIXES:
