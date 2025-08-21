@@ -189,6 +189,15 @@ func resourceTFERegistryModuleCreateWithVCS(v interface{}, meta interface{}, d *
 		}
 	}
 
+	tagPrefix, tagPrefixOk := vcsRepo["tag_prefix"].(string)
+	sourceDirectory, sourceDirectoryOk := vcsRepo["source_directory"].(string)
+	if tagPrefixOk && tagPrefix != "" {
+		options.VCSRepo.TagPrefix = tfe.String(tagPrefix)
+	}
+	if sourceDirectoryOk && sourceDirectory != "" {
+		options.VCSRepo.SourceDirectory = tfe.String(sourceDirectory)
+	}
+
 	if vcsRepo["oauth_token_id"] != nil && vcsRepo["oauth_token_id"].(string) != "" {
 		options.VCSRepo.OAuthTokenID = tfe.String(vcsRepo["oauth_token_id"].(string))
 	}
