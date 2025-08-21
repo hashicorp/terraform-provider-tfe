@@ -1,11 +1,6 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
-// NOTE: This is a legacy resource and should be migrated to the Plugin
-// Framework if substantial modifications are planned. See
-// docs/new-resources.md if planning to use this code as boilerplate for
-// a new resource.
-
 package provider
 
 import (
@@ -19,16 +14,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	// "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 var (
-	_ resource.Resource                = &OPAVersionResource{}
-	_ resource.ResourceWithConfigure   = &OPAVersionResource{}
-	_ resource.ResourceWithImportState = &OPAVersionResource{}
+	_ resource.Resource                   = &OPAVersionResource{}
+	_ resource.ResourceWithConfigure      = &OPAVersionResource{}
+	_ resource.ResourceWithImportState    = &OPAVersionResource{}
+	_ resource.ResourceWithValidateConfig = &OPAVersionResource{} // Add this line
 )
 
 type OPAVersionResource struct {
@@ -103,7 +99,7 @@ func (r *OPAVersionResource) Schema(ctx context.Context, req resource.SchemaRequ
 						"url": schema.StringAttribute{
 							Required: true,
 						},
-						"sha": schema.StringAttribute{ // Ensure lowercase
+						"sha": schema.StringAttribute{
 							Required: true,
 						},
 						"os": schema.StringAttribute{
@@ -116,7 +112,10 @@ func (r *OPAVersionResource) Schema(ctx context.Context, req resource.SchemaRequ
 				},
 				Computed: true,
 				Optional: true,
-				// PlanModifiers: []planmodifier.Set{setplanmodifier.UseStateForUnknown()},
+				PlanModifiers: []planmodifier.Set{
+					setplanmodifier.UseStateForUnknown(), // This ensures that we don't show a warning for invisible changes in updates when using refresh-only mode
+					PreserveAMD64ArchsOnChange(),         // This ensures that we don't remove AMD64 archs when the URL/SHA changes
+				},
 			},
 		},
 	}
@@ -284,7 +283,7 @@ func (r *OPAVersionResource) Update(ctx context.Context, req resource.UpdateRequ
 	opts := tfe.AdminOPAVersionUpdateOptions{
 		Version:          tfe.String(opaVersion.Version.ValueString()),
 		URL:              stringOrNil(opaVersion.URL.ValueString()),
-		SHA:              tfe.String(opaVersion.SHA.ValueString()),
+		SHA:              stringOrNil(opaVersion.SHA.ValueString()),
 		Official:         tfe.Bool(opaVersion.Official.ValueBool()),
 		Enabled:          tfe.Bool(opaVersion.Enabled.ValueBool()),
 		Beta:             tfe.Bool(opaVersion.Beta.ValueBool()),
@@ -390,4 +389,16 @@ func (r *OPAVersionResource) ImportState(ctx context.Context, req resource.Impor
 
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), versionID)...)
 	}
+}
+
+// Make OPAVersionResource implement the ToolVersionValidator interface
+func (r *OPAVersionResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var config modelAdminOPAVersion
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Use the simplified validation function
+	resp.Diagnostics.Append(ValidateToolVersion(ctx, config.URL, config.SHA, config.Archs, "OPA Version")...)
 }
