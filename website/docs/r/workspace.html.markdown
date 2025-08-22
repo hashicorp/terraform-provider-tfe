@@ -40,7 +40,7 @@ resource "tfe_organization" "test-organization" {
 }
 
 resource "tfe_oauth_client" "test" {
-  organization     = tfe_organization.test-organization
+  organization     = tfe_organization.test-organization.name
   api_url          = "https://api.github.com"
   http_url         = "https://github.com"
   oauth_token      = "oauth_token_id"
@@ -49,7 +49,7 @@ resource "tfe_oauth_client" "test" {
 
 resource "tfe_workspace" "parent" {
   name                 = "parent-ws"
-  organization         = tfe_organization.test-organization
+  organization         = tfe_organization.test-organization.name
   queue_all_runs       = false
   vcs_repo {
     branch             = "main"
