@@ -1,7 +1,9 @@
 ## Unreleased
 
 BUG FIXES:
+
 * `r/tfe_notification_configuration`: update url attribute to be sensitive, by @jillirami [#1799](https://github.com/hashicorp/terraform-provider-tfe/pull/1799)
+* `d/tfe_project`: fixes: 'duplicate set element' error, as workspaces can appear multiple times in get /workspaces, by @lewis-catley [#1817](https://github.com/hashicorp/terraform-provider-tfe/pull/1817)
 
 ## v0.68.2
 
