@@ -21,10 +21,10 @@ import (
 )
 
 var (
-	_ resource.Resource                   = &OPAVersionResource{}
-	_ resource.ResourceWithConfigure      = &OPAVersionResource{}
-	_ resource.ResourceWithImportState    = &OPAVersionResource{}
-	_ resource.ResourceWithValidateConfig = &OPAVersionResource{} // Add this line
+	_ resource.Resource                = &OPAVersionResource{}
+	_ resource.ResourceWithConfigure   = &OPAVersionResource{}
+	_ resource.ResourceWithImportState = &OPAVersionResource{}
+	// _ resource.ResourceWithValidateConfig = &OPAVersionResource{}
 )
 
 type OPAVersionResource struct {
@@ -391,14 +391,14 @@ func (r *OPAVersionResource) ImportState(ctx context.Context, req resource.Impor
 	}
 }
 
-// Make OPAVersionResource implement the ToolVersionValidator interface
-func (r *OPAVersionResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	var config modelAdminOPAVersion
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+// // Make OPAVersionResource implement the ToolVersionValidator interface
+// func (r *OPAVersionResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+// 	var config modelAdminOPAVersion
+// 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+// 	if resp.Diagnostics.HasError() {
+// 		return
+// 	}
 
-	// Use the simplified validation function
-	resp.Diagnostics.Append(ValidateToolVersion(ctx, config.URL, config.SHA, config.Archs, "OPA Version")...)
-}
+// 	// Use the simplified validation function
+// 	resp.Diagnostics.Append(ValidateToolVersion(ctx, config.URL, config.SHA, config.Archs, "OPA Version")...)
+// }
