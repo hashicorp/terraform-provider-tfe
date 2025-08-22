@@ -65,10 +65,18 @@ func (r *OPAVersionResource) Schema(ctx context.Context, req resource.SchemaRequ
 			"url": schema.StringAttribute{
 				Optional: true,
 				Computed: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+					SyncTopLevelURLSHAWithAMD64(),
+				},
 			},
 			"sha": schema.StringAttribute{
 				Optional: true,
 				Computed: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+					SyncTopLevelURLSHAWithAMD64(),
+				},
 			},
 			"official": schema.BoolAttribute{
 				Optional: true,
@@ -114,7 +122,7 @@ func (r *OPAVersionResource) Schema(ctx context.Context, req resource.SchemaRequ
 				Optional: true,
 				PlanModifiers: []planmodifier.Set{
 					setplanmodifier.UseStateForUnknown(), // This ensures that we don't show a warning for invisible changes in updates when using refresh-only mode
-					PreserveAMD64ArchsOnChange(),         // This ensures that we don't remove AMD64 archs when the URL/SHA changes
+					PreserveAMD64ArchsOnChange(),         // This ensures that we update the amd64 archs when top level url/sha are updated
 				},
 			},
 		},

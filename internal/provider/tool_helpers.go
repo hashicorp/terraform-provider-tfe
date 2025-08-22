@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
 )
@@ -257,17 +258,17 @@ func (m *preserveAMD64ArchsModifier) PlanModifySet(ctx context.Context, req plan
 		return
 	}
 
-	var stateURL, planURL, stateSHA, planSHA types.String
+	var configURL, planURL, configSHA, planSHA types.String
 
 	// Get values from state and plan
-	req.State.GetAttribute(ctx, path.Root("url"), &stateURL)
+	req.Config.GetAttribute(ctx, path.Root("url"), &configURL)
 	req.Plan.GetAttribute(ctx, path.Root("url"), &planURL)
-	req.State.GetAttribute(ctx, path.Root("sha"), &stateSHA)
+	req.State.GetAttribute(ctx, path.Root("sha"), &configSHA)
 	req.Plan.GetAttribute(ctx, path.Root("sha"), &planSHA)
 
 	// Check if values are changing
-	urlChanged := !stateURL.Equal(planURL)
-	shaChanged := !stateSHA.Equal(planSHA)
+	urlChanged := !configURL.Equal(planURL)
+	shaChanged := !configSHA.Equal(planSHA)
 
 	// If neither URL nor SHA is changing, do nothing
 	if !urlChanged && !shaChanged {
@@ -300,9 +301,9 @@ func (m *preserveAMD64ArchsModifier) PlanModifySet(ctx context.Context, req plan
 		"stateArchsList": stateArchsList,
 		"urlChanged":     urlChanged,
 		"shaChanged":     shaChanged,
-		"stateURL":       stateURL,
+		"stateURL":       configURL,
 		"planURL":        planURL,
-		"stateSHA":       stateSHA,
+		"stateSHA":       configSHA,
 		"planSHA":        planSHA,
 	})
 	// Check if AMD64 is already in the plan
@@ -317,10 +318,10 @@ func (m *preserveAMD64ArchsModifier) PlanModifySet(ctx context.Context, req plan
 			// If we found AMD64, update its URL and SHA if they are changing
 			// If URL or SHA is changing, update the AMD64 arch to match
 			if urlChanged {
-				arch.URL = planURL
+				arch.URL = configURL
 			}
 			if shaChanged {
-				arch.Sha = planSHA
+				arch.Sha = configURL
 			}
 
 			// Update the plan with the modified AMD64 arch
@@ -339,6 +340,100 @@ func (m *preserveAMD64ArchsModifier) PlanModifySet(ctx context.Context, req plan
 			return
 		}
 	}
+}
+
+// SyncTopLevelURLSHAWithAMD64 creates a plan modifier that synchronizes the top-level URL/SHA with the AMD64 architecture on updates where URL or SHA is not set in the config,
+func SyncTopLevelURLSHAWithAMD64() planmodifier.String {
+	return &SyncTopLevelURLSHAWithAMD64Modifier{}
+}
+
+// Implement the plan modifier interface
+type SyncTopLevelURLSHAWithAMD64Modifier struct{}
+
+// Description provides a plain text description of the plan modifier
+func (m *SyncTopLevelURLSHAWithAMD64Modifier) Description(ctx context.Context) string {
+	return "Combines top-level URL/SHA with AMD64 architecture"
+}
+
+// MarkdownDescription provides markdown documentation
+func (m *SyncTopLevelURLSHAWithAMD64Modifier) MarkdownDescription(ctx context.Context) string {
+	return "Combines top-level URL/SHA with AMD64 architecture"
+}
+
+// PlanModifySet modifies the plan to combine URL/SHA with AMD64 architecture
+func (m *SyncTopLevelURLSHAWithAMD64Modifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
+	// Skip if we're destroying the resource or no state
+	if req.Plan.Raw.IsNull() || req.State.Raw.IsNull() || req.StateValue.IsNull() {
+		tflog.Debug(ctx, "Skipping AMD64 URL/SHA combination because state or plan is null")
+		return
+	}
+
+	if !req.ConfigValue.IsUnknown() && !req.ConfigValue.IsNull() {
+		tflog.Debug(ctx, "Skipping because value is set in config")
+		return
+	}
+
+	// if config archs is not set we will not modify the plan
+	// get the config archs
+
+	var configArchs types.Set
+	diags := req.Config.GetAttribute(ctx, path.Root("archs"), &configArchs)
+	if diags.HasError() {
+		tflog.Debug(ctx, "Error extracting config architectures", map[string]interface{}{
+			"diagnostics": diags,
+		})
+		return
+	}
+
+	if configArchs.IsNull() && configArchs.IsUnknown() {
+		tflog.Debug(ctx, "Skipping top level arch modifying because archs are NOT set in config")
+		return
+	}
+
+	// we do not know the name of the attibute
+	// we are modifying, so we will use the path to get the attribute name
+	segments := req.Path.String()
+	attributeName := segments[strings.LastIndex(segments, ".")+1:]
+
+	// get the archs from the plan
+	// get the amd arch from the configArchs
+	var amd64Arch ToolArchitecture
+	var configArchsList []ToolArchitecture
+	diags = configArchs.ElementsAs(ctx, &configArchsList, false)
+	if diags.HasError() {
+		tflog.Debug(ctx, "Error extracting config architectures", map[string]interface{}{
+			"diagnostics": diags,
+		})
+		return
+	}
+
+	for _, arch := range configArchsList {
+		if arch.Arch.ValueString() == "amd64" {
+			amd64Arch = arch
+			break
+		}
+	}
+
+	if amd64Arch.Arch.IsNull() || amd64Arch.Arch.IsUnknown() {
+		tflog.Debug(ctx, "No AMD64 architecture found in config archs, skipping modification")
+		return
+	}
+
+	// Get the value of the attributeName from the amd64 arch
+	switch attributeName {
+	case "url":
+		// set the plan value to the URL of the AMD64 arch
+		resp.PlanValue = types.StringValue(amd64Arch.URL.ValueString())
+	case "sha":
+		// set the plan value to the SHA of the AMD64 arch
+		resp.PlanValue = types.StringValue(amd64Arch.Sha.ValueString())
+	default:
+		tflog.Debug(ctx, "Unsupported attribute for AMD64 combination", map[string]interface{}{
+			"attribute": attributeName,
+		})
+		return
+	}
+
 }
 
 //
