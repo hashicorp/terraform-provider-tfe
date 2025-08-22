@@ -41,7 +41,7 @@ func TestAccTFENoCodeModule_basic(t *testing.T) {
 	})
 }
 
-func TestAccTFENoCodeModule_with_variable_options(t *testing.T) {
+func TestAccTFENoCodeModule_with_variable_options_VCSDependent(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatalf("error getting client %v", err)
@@ -98,7 +98,7 @@ func TestAccTFENoCodeModule_with_variable_options(t *testing.T) {
 	})
 }
 
-func TestAccTFENoCodeModule_with_version_pin(t *testing.T) {
+func TestAccTFENoCodeModule_with_version_pin_VCSDependent(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatalf("error getting client %v", err)
