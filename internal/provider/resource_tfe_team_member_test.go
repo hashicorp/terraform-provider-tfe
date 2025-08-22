@@ -89,7 +89,7 @@ func TestAccTFETeamMember_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamMemberDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -114,7 +114,7 @@ func TestAccTFETeamMember_import(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamMemberDestroy,
 		Steps: []resource.TestStep{
 			{

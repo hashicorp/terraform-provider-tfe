@@ -21,7 +21,7 @@ func TestAccTFETeamProjectAccess(t *testing.T) {
 	for _, access := range []tfe.TeamProjectAccessType{tfe.TeamProjectAccessAdmin, tfe.TeamProjectAccessMaintain, tfe.TeamProjectAccessWrite, tfe.TeamProjectAccessRead} {
 		resource.Test(t, resource.TestCase{
 			PreCheck:                 func() { testAccPreCheck(t) },
-			ProtoV5ProviderFactories: testAccMuxedProviders,
+			ProtoV6ProviderFactories: testAccMuxedProviders,
 			CheckDestroy:             testAccCheckTFETeamProjectAccessDestroy,
 			Steps: []resource.TestStep{
 				{
@@ -45,7 +45,7 @@ func TestAccTFETeamProjectCustomAccess(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamProjectAccessDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -79,7 +79,7 @@ func TestAccTFETeamProjectCustomAccess_with_project_variable_sets(t *testing.T) 
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamProjectAccessDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -101,7 +101,7 @@ func TestAccTFETeamProjectAccess_import(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamProjectAccessDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -123,7 +123,7 @@ func TestAccTFETeamProjectCustomAccess_import(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamProjectAccessDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -162,7 +162,7 @@ func TestAccTFETeamProjectCustomAccess_import_with_project_variable_set(t *testi
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamProjectAccessDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -191,7 +191,7 @@ func TestAccTFETeamProjectCustomAccess_full_update(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamProjectCustomAccess(rInt, access),
@@ -243,7 +243,7 @@ func TestAccTFETeamProjectCustomAccess_full_update_with_project_variable_sets(t 
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamProjectCustomAccess_with_project_variable_sets(rInt, access),
@@ -297,7 +297,7 @@ func TestAccTFETeamProjectCustomAccess_partial_update(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamProjectCustomAccess(rInt, access),
@@ -351,7 +351,7 @@ func TestAccTFETeamProjectCustomAccess_partial_update_with_project_variable_sets
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamProjectCustomAccess_with_project_variable_sets(rInt, access),
@@ -432,7 +432,7 @@ func TestAccTFETeamProjectCustomAccess_invalid_custom_access(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamProjectAccessDestroy,
 		Steps: []resource.TestStep{
 			{

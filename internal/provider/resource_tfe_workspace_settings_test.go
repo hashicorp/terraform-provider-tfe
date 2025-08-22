@@ -29,7 +29,7 @@ func TestAccTFEWorkspaceSettings_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceSettingsDestroy,
 		Steps: []resource.TestStep{
 			// Start with local execution
@@ -109,7 +109,7 @@ func TestAccTFEWorkspaceSettings_stateSharing(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			// Start with local execution
 			{
@@ -137,7 +137,7 @@ func TestAccTFEWorkspaceSettings_overlappingBooleans(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			// Start with local execution
 			{
@@ -170,7 +170,7 @@ func TestAccTFEWorkspaceSettings_basicOptions(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			// Start with local execution
 			{
@@ -223,7 +223,7 @@ func TestAccTFEWorkspaceSettingsRemoteState(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceSettingsDestroy,
 		Steps: []resource.TestStep{
 			// Have remote state consumer ids
@@ -285,7 +285,7 @@ func TestAccTFEWorkspaceSettings_import(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceSettingsDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -320,7 +320,7 @@ func TestAccTFEWorkspaceSettings_importByName(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEOrganizationMembershipDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -341,7 +341,7 @@ func TestAccTFEWorkspaceSettings_basicTags(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			// Start with local execution
 			{

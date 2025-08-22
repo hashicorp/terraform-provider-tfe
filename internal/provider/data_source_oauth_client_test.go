@@ -25,7 +25,7 @@ func TestAccTFEOAuthClientDataSource_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccTFEOAuthClientDataSourcePreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOAuthClientDataSourceConfig_basic(rInt),
@@ -46,7 +46,7 @@ func TestAccTFEOAuthClientDataSource_findByID(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccTFEOAuthClientDataSourcePreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOAuthClientDataSourceConfig_findByID(rInt),
@@ -76,7 +76,7 @@ func TestAccTFEOAuthClientDataSource_findByName(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccTFEOAuthClientDataSourcePreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOAuthClientDataSourceConfig_findByName(rInt),
@@ -106,7 +106,7 @@ func TestAccTFEOAuthClientDataSource_findByServiceProvider(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccTFEOAuthClientDataSourcePreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOAuthClientDataSourceConfig_findByServiceProvider(rInt),
@@ -133,7 +133,7 @@ func TestAccTFEOAuthClientDataSource_missingParameters(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccTFEOAuthClientDataSourcePreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEOAuthClientDataSourceConfig_missingParameters(rInt),
@@ -147,7 +147,7 @@ func TestAccTFEOAuthClientDataSource_missingOrgWithName(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccTFEOAuthClientDataSourcePreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEOAuthClientDataSourceConfig_missingOrgWithName(rInt),
@@ -161,7 +161,7 @@ func TestAccTFEOAuthClientDataSource_missingOrgWithServiceProvider(t *testing.T)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccTFEOAuthClientDataSourcePreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEOAuthClientDataSourceConfig_missingOrgWithServiceProvider(rInt),
@@ -175,7 +175,7 @@ func TestAccTFEOAuthClientDataSource_sameName(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccTFEOAuthClientDataSourcePreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEOAuthClientDataSourceConfig_sameName(rInt),
@@ -189,7 +189,7 @@ func TestAccTFEOAuthClientDataSource_noName(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccTFEOAuthClientDataSourcePreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEOAuthClientDataSourceConfig_noName(rInt),
@@ -203,7 +203,7 @@ func TestAccTFEOAuthClientDataSource_sameServiceProvider(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccTFEOAuthClientDataSourcePreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEOAuthClientDataSourceConfig_sameServiceProvider(rInt),

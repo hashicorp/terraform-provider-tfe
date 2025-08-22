@@ -25,7 +25,7 @@ func TestAccTFEVariable_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -58,7 +58,7 @@ func TestAccTFEVariable_basic_variable_set(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -91,7 +91,7 @@ func TestAccTFEVariable_update(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -146,7 +146,7 @@ func TestAccTFEVariable_update_key_sensitive(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -205,7 +205,7 @@ func TestAccTFEVariable_valueWriteOnly(t *testing.T) {
 		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
 			tfversion.SkipBelow(version.Must(version.NewVersion("1.11.0"))),
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEVariable_valueAndValueWO(rInt, variableValue1, false),
@@ -247,7 +247,7 @@ func TestAccTFEVariable_readable_value(t *testing.T) {
 	// Test that downstream resources may depend on both the value and readableValue of a non-sensitive variable
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -295,7 +295,7 @@ func TestAccTFEVariable_readable_value_becomes_sensitive(t *testing.T) {
 	// may no longer access it, but that the value may still be used directly
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -331,7 +331,7 @@ func TestAccTFEVariable_varset_readable_value(t *testing.T) {
 	// Test that downstream resources may depend on both the value and readableValue of a non-sensitive variable
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -379,7 +379,7 @@ func TestAccTFEVariable_varset_readable_value_becomes_sensitive(t *testing.T) {
 	// may no longer access it, but that the value may still be used directly
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -410,7 +410,7 @@ func TestAccTFEVariable_import(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEVariableDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -445,7 +445,7 @@ func TestAccTFEVariable_rewrite(t *testing.T) {
 				// leaving Check empty, we just care that they're the same
 			},
 			{
-				ProtoV5ProviderFactories: testAccMuxedProviders,
+				ProtoV6ProviderFactories: testAccMuxedProviders,
 				Config:                   testAccTFEVariable_everything(rInt),
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{

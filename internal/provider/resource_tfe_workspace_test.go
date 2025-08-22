@@ -31,7 +31,7 @@ func TestAccTFEWorkspace_basic(t *testing.T) {
 	workspaceName := "workspace-test"
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -86,7 +86,7 @@ func TestAccTFEWorkspace_defaultOrg(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: providers,
+		ProtoV6ProviderFactories: providers,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -132,7 +132,7 @@ func TestAccTFEWorkspaceProviderDefaultOrgChanged(t *testing.T) {
 		CheckDestroy: testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
-				ProtoV5ProviderFactories: providers,
+				ProtoV6ProviderFactories: providers,
 				Config:                   testAccTFEWorkspace_defaultOrg(),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", workspace),
@@ -140,7 +140,7 @@ func TestAccTFEWorkspaceProviderDefaultOrgChanged(t *testing.T) {
 				),
 			},
 			{
-				ProtoV5ProviderFactories: providersWithAnotherOrg,
+				ProtoV6ProviderFactories: providersWithAnotherOrg,
 				Config:                   testAccTFEWorkspace_defaultOrg(),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "organization", anotherOrg.Name),
@@ -156,7 +156,7 @@ func TestAccTFEWorkspace_basicReadProjectId(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -176,7 +176,7 @@ func TestAccTFEWorkspace_customProject(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -196,7 +196,7 @@ func TestAccTFEWorkspace_HTMLURL(t *testing.T) {
 	// When name is changed, the html_url should be updated as well
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -251,7 +251,7 @@ func TestAccTFEWorkspace_panic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -272,7 +272,7 @@ func TestAccTFEWorkspace_monorepo(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -307,7 +307,7 @@ func TestAccTFEWorkspace_renamed(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -367,7 +367,7 @@ func TestAccTFEWorkspace_update(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -430,7 +430,7 @@ func TestAccTFEWorkspace_updateWorkingDirectory(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -482,7 +482,7 @@ func TestAccTFEWorkspace_updateProject(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -506,7 +506,7 @@ func TestAccTFEWorkspace_updateFileTriggers(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -536,7 +536,7 @@ func TestAccTFEWorkspace_updateTriggerPrefixes(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -571,7 +571,7 @@ func TestAccTFEWorkspace_overwriteTriggerPatternsWithPrefixes(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -623,7 +623,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 			resource.Test(t, resource.TestCase{
 				PreCheck:                 func() { testAccPreCheck(t) },
-				ProtoV5ProviderFactories: testAccMuxedProviders,
+				ProtoV6ProviderFactories: testAccMuxedProviders,
 				CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 				Steps: []resource.TestStep{
 					{
@@ -662,7 +662,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 			resource.Test(t, resource.TestCase{
 				PreCheck:                 func() { testAccPreCheck(t) },
-				ProtoV5ProviderFactories: testAccMuxedProviders,
+				ProtoV6ProviderFactories: testAccMuxedProviders,
 				CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 				Steps: []resource.TestStep{
 					{
@@ -703,7 +703,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 			resource.Test(t, resource.TestCase{
 				PreCheck:                 func() { testAccPreCheck(t) },
-				ProtoV5ProviderFactories: testAccMuxedProviders,
+				ProtoV6ProviderFactories: testAccMuxedProviders,
 				CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 				Steps: []resource.TestStep{
 					{
@@ -743,7 +743,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 			resource.Test(t, resource.TestCase{
 				PreCheck:                 func() { testAccPreCheck(t) },
-				ProtoV5ProviderFactories: testAccMuxedProviders,
+				ProtoV6ProviderFactories: testAccMuxedProviders,
 				CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 				Steps: []resource.TestStep{
 					{
@@ -781,7 +781,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 			resource.Test(t, resource.TestCase{
 				PreCheck:                 func() { testAccPreCheck(t) },
-				ProtoV5ProviderFactories: testAccMuxedProviders,
+				ProtoV6ProviderFactories: testAccMuxedProviders,
 				CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 				Steps: []resource.TestStep{
 					{
@@ -820,7 +820,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 			resource.Test(t, resource.TestCase{
 				PreCheck:                 func() { testAccPreCheck(t) },
-				ProtoV5ProviderFactories: testAccMuxedProviders,
+				ProtoV6ProviderFactories: testAccMuxedProviders,
 				CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 				Steps: []resource.TestStep{
 					{
@@ -861,7 +861,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 			resource.Test(t, resource.TestCase{
 				PreCheck:                 func() { testAccPreCheck(t) },
-				ProtoV5ProviderFactories: testAccMuxedProviders,
+				ProtoV6ProviderFactories: testAccMuxedProviders,
 				CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 				Steps: []resource.TestStep{
 					{
@@ -904,7 +904,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 			resource.Test(t, resource.TestCase{
 				PreCheck:                 func() { testAccPreCheck(t) },
-				ProtoV5ProviderFactories: testAccMuxedProviders,
+				ProtoV6ProviderFactories: testAccMuxedProviders,
 				CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 				Steps: []resource.TestStep{
 					{
@@ -949,7 +949,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 			resource.Test(t, resource.TestCase{
 				PreCheck:                 func() { testAccPreCheck(t) },
-				ProtoV5ProviderFactories: testAccMuxedProviders,
+				ProtoV6ProviderFactories: testAccMuxedProviders,
 				CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 				Steps: []resource.TestStep{
 					{
@@ -968,7 +968,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 			resource.Test(t, resource.TestCase{
 				PreCheck:                 func() { testAccPreCheck(t) },
-				ProtoV5ProviderFactories: testAccMuxedProviders,
+				ProtoV6ProviderFactories: testAccMuxedProviders,
 				CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 				Steps: []resource.TestStep{
 					{
@@ -989,7 +989,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 			resource.Test(t, resource.TestCase{
 				PreCheck:                 func() { testAccPreCheck(t) },
-				ProtoV5ProviderFactories: testAccMuxedProviders,
+				ProtoV6ProviderFactories: testAccMuxedProviders,
 				CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 				Steps: []resource.TestStep{
 					{
@@ -1132,7 +1132,7 @@ func TestAccTFEWorkspace_updateTriggerPatterns(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			// Create trigger prefixes first so we can verify they are being removed if we introduce trigger patterns
@@ -1193,7 +1193,7 @@ func TestAccTFEWorkspace_patternsAndPrefixesConflicting(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -1209,7 +1209,7 @@ func TestAccTFEWorkspace_tagBindings(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -1257,7 +1257,7 @@ func TestAccTFEWorkspace_changeTags(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -1407,7 +1407,7 @@ func TestAccTFEWorkspace_effectiveTags(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -1437,7 +1437,7 @@ func TestAccTFEWorkspace_updateSpeculative(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -1467,7 +1467,7 @@ func TestAccTFEWorkspace_structuredRunOutputDisabled(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -1500,7 +1500,7 @@ func TestAccTFEWorkspace_updateVCSRepo(t *testing.T) {
 			testAccPreCheck(t)
 			testAccGithubPreCheck(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -1576,7 +1576,7 @@ func TestAccTFEWorkspace_updateGitHubAppRepo(t *testing.T) {
 			testAccGithubPreCheck(t)
 			testAccGHAInstallationPreCheck(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -1652,7 +1652,7 @@ func TestAccTFEWorkspace_updateVCSRepoTagsRegex(t *testing.T) {
 			testAccPreCheck(t)
 			testAccGithubPreCheck(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -1704,7 +1704,7 @@ func TestAccTFEWorkspace_updateVCSRepoChangeTagRegexToTriggerPattern(t *testing.
 			testAccPreCheck(t)
 			testAccGithubPreCheck(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -1756,7 +1756,7 @@ func TestAccTFEWorkspace_updateRemoveVCSRepoWithTagsRegex(t *testing.T) {
 			testAccPreCheck(t)
 			testAccGithubPreCheck(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -1799,7 +1799,7 @@ func TestAccTFEWorkspace_sshKey(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -1836,7 +1836,7 @@ func TestAccTFEWorkspace_import(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -1869,7 +1869,7 @@ func TestAccTFEWorkspace_importVCSBranch(t *testing.T) {
 			testAccPreCheck(t)
 			testAccGithubPreCheck(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -1903,7 +1903,7 @@ func TestAccTFEWorkspace_importProject(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -1934,7 +1934,7 @@ func TestAccTFEWorkspace_operationsAndExecutionModeInteroperability(t *testing.T
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -2007,7 +2007,7 @@ func TestAccTFEWorkspace_globalRemoteState(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -2042,7 +2042,7 @@ func TestAccTFEWorkspace_alterRemoteStateConsumers(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -2094,7 +2094,7 @@ func TestAccTFEWorkspace_createWithRemoteStateConsumers(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -2117,7 +2117,7 @@ func TestAccTFEWorkspace_paginatedRemoteStateConsumers(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -2137,7 +2137,7 @@ func TestAccTFEWorkspace_delete_forceDeleteSettingDisabled(t *testing.T) {
 	}
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -2185,7 +2185,7 @@ func TestAccTFEWorkspace_delete_forceDeleteSettingEnabled(t *testing.T) {
 	}
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -2640,7 +2640,7 @@ func TestAccTFEWorkspace_basicAssessmentsEnabled(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -2673,7 +2673,7 @@ func TestAccTFEWorkspace_createWithAutoDestroyAt(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -2692,7 +2692,7 @@ func TestAccTFEWorkspace_updateWithAutoDestroyAt(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -2719,7 +2719,7 @@ func TestAccTFEWorkspace_createWithAutoDestroyDuration(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -2738,7 +2738,7 @@ func TestAccTFEWorkspace_updateWithAutoDestroyDuration(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -2784,7 +2784,7 @@ func TestAccTFEWorkspace_validationAutoDestroyDuration(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps:                    steps,
 	})
@@ -2795,7 +2795,7 @@ func TestAccTFEWorkspace_createWithAutoDestroyDurationInProject(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -2815,7 +2815,7 @@ func TestAccTFEWorkspace_updateWithAutoDestroyDurationInProject(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -2851,7 +2851,7 @@ func TestAccTFEWorkspace_createWithAutoDestroyAtInProject(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -2871,7 +2871,7 @@ func TestAccTFEWorkspace_updateWithAutoDestroyAtInProject(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -2899,7 +2899,7 @@ func TestAccTFEWorkspace_createWithSourceURL(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -2915,7 +2915,7 @@ func TestAccTFEWorkspace_createWithSourceName(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -2932,7 +2932,7 @@ func TestAccTFEWorkspace_createWithSourceURLAndName(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{

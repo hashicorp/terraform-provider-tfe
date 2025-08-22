@@ -29,7 +29,7 @@ func TestAccTFETeamAccess_admin(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -67,7 +67,7 @@ func TestAccTFETeamAccess_write(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -96,7 +96,7 @@ func TestAccTFETeamAccess_custom(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -135,7 +135,7 @@ func TestAccTFETeamAccess_updateToCustom(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -200,7 +200,7 @@ func TestAccTFETeamAccess_updateFromCustom(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -264,7 +264,7 @@ func TestAccTFETeamAccess_import(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{

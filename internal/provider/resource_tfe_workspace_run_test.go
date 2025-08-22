@@ -35,7 +35,7 @@ func TestAccTFEWorkspaceRun_withApplyOnlyBlock(t *testing.T) {
 		PreCheck: func() {
 			testAccPreCheck(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy: resource.ComposeTestCheckFunc(
 			// only the workspace with destroy block should have a destroy run
 			testAccCheckTFEWorkspaceRunDestroy(parentWorkspace.ID, 0),
@@ -86,7 +86,7 @@ func TestAccTFEWorkspaceRun_withBothApplyAndDestroyBlocks(t *testing.T) {
 		PreCheck: func() {
 			testAccPreCheck(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy: resource.ComposeTestCheckFunc(
 			testAccCheckTFEWorkspaceRunDestroy(parentWorkspace.ID, 1),
 			testAccCheckTFEWorkspaceRunDestroy(childWorkspace.ID, 1),
@@ -145,7 +145,7 @@ func TestAccTFEWorkspaceRun_invalidParams(t *testing.T) {
 			PreCheck: func() {
 				testAccPreCheck(t)
 			},
-			ProtoV5ProviderFactories: testAccMuxedProviders,
+			ProtoV6ProviderFactories: testAccMuxedProviders,
 			Steps: []resource.TestStep{
 				{
 					Config:      invalidCase.Config,
@@ -173,7 +173,7 @@ func TestAccTFEWorkspaceRun_WhenRunErrors(t *testing.T) {
 		PreCheck: func() {
 			testAccPreCheck(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEWorkspaceRun_WhenRunErrors(parentWorkspace.ID),

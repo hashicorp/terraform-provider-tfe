@@ -28,7 +28,7 @@ func TestAccTFEPolicySet_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -84,7 +84,7 @@ func TestAccTFEPolicySet_pinnedPolicyRuntimeVersion(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -126,7 +126,7 @@ func TestAccTFEPolicySetOPA_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -169,7 +169,7 @@ func TestAccTFEPolicySet_updateOverridable(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -227,7 +227,7 @@ func TestAccTFEPolicySet_update(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -280,7 +280,7 @@ func TestAccTFEPolicySet_updateEmpty(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -331,7 +331,7 @@ func TestAccTFEPolicySet_updatePopulated(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -384,7 +384,7 @@ func TestAccTFEPolicySet_updateToGlobal(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -435,7 +435,7 @@ func TestAccTFEPolicySet_updateToWorkspace(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -498,7 +498,7 @@ func TestAccTFEPolicySet_vcs(t *testing.T) {
 				t.Skip("Please set GITHUB_POLICY_SET_PATH to run this test")
 			}
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -553,7 +553,7 @@ func TestAccTFEPolicySet_GithubApp(t *testing.T) {
 				t.Skip("Please set GITHUB_POLICY_SET_PATH to run this test")
 			}
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -608,7 +608,7 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 				t.Skip("Please set GITHUB_POLICY_SET_PATH to run this test")
 			}
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -677,7 +677,7 @@ func TestAccTFEPolicySet_versionedSlug(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -727,7 +727,7 @@ func TestAccTFEPolicySet_versionedSlugUpdate(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -778,7 +778,7 @@ func TestAccTFEPolicySet_versionedNoConflicts(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -824,7 +824,7 @@ func TestAccTFEPolicySet_invalidName(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -846,7 +846,7 @@ func TestAccTFEPolicySetImport(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{

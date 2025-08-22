@@ -21,7 +21,7 @@ func TestAccTFEOrganizationDataSource_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationDataSourceConfig_basic(rInt),
@@ -46,7 +46,7 @@ func TestAccTFEOrganizationDataSource_defaultProject(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationDataSourceConfig_basic(rInt),
@@ -71,7 +71,7 @@ func TestAccTFEOrganizationDataSource_defaultOrganization(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: providers,
+		ProtoV6ProviderFactories: providers,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationDataSourceConfig_noName(),

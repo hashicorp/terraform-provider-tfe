@@ -35,10 +35,12 @@ func TestAccOutputsEphemeralResource_basic(t *testing.T) {
 	waitForOutputs(t, tfeClient, orgName, wsName)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		PreCheck: func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: map[string]func() (tfprotov6.ProviderServer, error){
 			"echo": echoprovider.NewProviderServer(),
+			"tfe": func() (tfprotov6.ProviderServer, error) {
+				return testAccMuxedProviders["tfe"]()
+			},
 		},
 		Steps: []resource.TestStep{
 			{
@@ -114,10 +116,12 @@ func TestAccOutputsEphemeralResource_readAllNonSensitiveValues(t *testing.T) {
 	waitForOutputs(t, tfeClient, orgName, wsName)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		PreCheck: func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: map[string]func() (tfprotov6.ProviderServer, error){
 			"echo": echoprovider.NewProviderServer(),
+			"tfe": func() (tfprotov6.ProviderServer, error) {
+				return testAccMuxedProviders["tfe"]()
+			},
 		},
 		Steps: []resource.TestStep{
 			{
@@ -191,10 +195,12 @@ func TestAccOutputsEphemeralResource_emptyOutputs(t *testing.T) {
 	assertPathNonsensitiveValues := tfjsonpath.New("data").AtMapKey("nonsensitive_values")
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		PreCheck: func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: map[string]func() (tfprotov6.ProviderServer, error){
 			"echo": echoprovider.NewProviderServer(),
+			"tfe": func() (tfprotov6.ProviderServer, error) {
+				return testAccMuxedProviders["tfe"]()
+			},
 		},
 		Steps: []resource.TestStep{
 			{

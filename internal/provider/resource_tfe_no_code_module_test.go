@@ -23,7 +23,7 @@ func TestAccTFENoCodeModule_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFENoCodeModuleDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -53,7 +53,7 @@ func TestAccTFENoCodeModule_with_variable_options(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: providers,
+		ProtoV6ProviderFactories: providers,
 		CheckDestroy:             testAccCheckTFENoCodeModuleDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -110,7 +110,7 @@ func TestAccTFENoCodeModule_with_version_pin(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: providers,
+		ProtoV6ProviderFactories: providers,
 		CheckDestroy:             testAccCheckTFENoCodeModuleDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -154,7 +154,7 @@ func TestAccTFENoCodeModule_update(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFENoCodeModuleDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -188,7 +188,7 @@ func TestAccTFENoCodeModule_update_variable_options(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFENoCodeModuleDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -244,7 +244,7 @@ func TestAccTFENoCodeModule_delete(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFENoCodeModuleDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -275,7 +275,7 @@ func TestAccTFENoCodeModule_import(t *testing.T) {
 	nocodeModule := &tfe.RegistryNoCodeModule{}
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFENoCodeModuleDestroy,
 		Steps: []resource.TestStep{
 			{

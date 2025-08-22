@@ -24,7 +24,7 @@ func TestAccTFEDataRetentionPolicy_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEDataRetentionPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -61,7 +61,7 @@ func TestAccTFEDataRetentionPolicy_dontdelete_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEDataRetentionPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -89,7 +89,7 @@ func TestAccTFEDataRetentionPolicy_explicit_organization(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEDataRetentionPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -130,7 +130,7 @@ func TestAccTFEDataRetentionPolicy_update_type(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEDataRetentionPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -171,7 +171,7 @@ func TestAccTFEDataRetentionPolicy_implicit_organization(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEDataRetentionPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -210,7 +210,7 @@ func TestAccTFEDataRetentionPolicy_dontdelete_organization_level(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEDataRetentionPolicyDestroy,
 		Steps: []resource.TestStep{
 			{

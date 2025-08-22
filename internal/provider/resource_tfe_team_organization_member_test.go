@@ -81,7 +81,7 @@ func TestAccTFETeamOrganizationMember_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamOrganizationMemberDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -101,7 +101,7 @@ func TestAccTFETeamOrganizationMember_import_byId(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamOrganizationMemberDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -125,7 +125,7 @@ func TestAccTFETeamOrganizationMember_import_byTeamName(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamOrganizationMemberDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -149,7 +149,7 @@ func TestAccTFETeamOrganizationMember_import_orgDoesNotExist(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamOrganizationMemberDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -174,7 +174,7 @@ func TestAccTFETeamOrganizationMember_import_teamNameDoesNotExist(t *testing.T) 
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamOrganizationMemberDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -199,7 +199,7 @@ func TestAccTFETeamOrganizationMember_import_userEmailDoesNotExist(t *testing.T)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamOrganizationMemberDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -224,7 +224,7 @@ func TestAccTFETeamOrganizationMember_import_incorrectFormat(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamOrganizationMemberDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -248,7 +248,7 @@ func TestAccTFETeamOrganizationMember_import_slashesInTeamName(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamOrganizationMemberDestroy,
 		Steps: []resource.TestStep{
 			{

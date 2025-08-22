@@ -19,7 +19,7 @@ func TestAccTFESAMLSettingsDataSource_basic(t *testing.T) {
 	resourceAddress := "data.tfe_saml_settings.foobar"
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFESAMLSettingsDataSourceConfig_basic(),

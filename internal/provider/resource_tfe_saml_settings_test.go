@@ -43,7 +43,7 @@ func TestAccTFESAMLSettings_writeOnly(t *testing.T) {
 		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
 			tfversion.SkipBelow(version.Must(version.NewVersion("1.11.0"))),
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFESAMLSettings_writeOnly(s),
@@ -81,7 +81,7 @@ func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 		}
 		resource.Test(t, resource.TestCase{
 			PreCheck:                 func() { testAccPreCheck(t) },
-			ProtoV5ProviderFactories: testAccMuxedProviders,
+			ProtoV6ProviderFactories: testAccMuxedProviders,
 			CheckDestroy:             testAccTFESAMLSettingsDestroy,
 			Steps: []resource.TestStep{
 				{
@@ -131,7 +131,7 @@ func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 		}
 		resource.Test(t, resource.TestCase{
 			PreCheck:                 func() { testAccPreCheck(t) },
-			ProtoV5ProviderFactories: testAccMuxedProviders,
+			ProtoV6ProviderFactories: testAccMuxedProviders,
 			CheckDestroy:             testAccTFESAMLSettingsDestroy,
 			Steps: []resource.TestStep{
 				{
@@ -187,7 +187,7 @@ func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 
 		resource.Test(t, resource.TestCase{
 			PreCheck:                 func() { testAccPreCheck(t) },
-			ProtoV5ProviderFactories: testAccMuxedProviders,
+			ProtoV6ProviderFactories: testAccMuxedProviders,
 			CheckDestroy:             testAccTFESAMLSettingsDestroy,
 			Steps: []resource.TestStep{
 				{
@@ -249,7 +249,7 @@ func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 		}
 		resource.Test(t, resource.TestCase{
 			PreCheck:                 func() { testAccPreCheck(t) },
-			ProtoV5ProviderFactories: testAccMuxedProviders,
+			ProtoV6ProviderFactories: testAccMuxedProviders,
 			CheckDestroy:             testAccTFESAMLSettingsDestroy,
 			Steps: []resource.TestStep{
 				{

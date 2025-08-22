@@ -36,7 +36,7 @@ func TestAccTFEProjectOAuthClient_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEProjectOAuthClientDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -77,7 +77,7 @@ func TestAccTFEProjectOAuthClient_incorrectImportSyntax(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEProjectOAuthClient_basic(org.Name, project.ID),

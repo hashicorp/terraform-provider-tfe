@@ -30,7 +30,7 @@ func TestAccTFETeamMembers_basic(t *testing.T) {
 				t.Skip("Please set TFE_USER1 to run this test")
 			}
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamMembersDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -68,7 +68,7 @@ func TestAccTFETeamMembers_update(t *testing.T) {
 				t.Skip("Please set TFE_USER2 to run this test")
 			}
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamMembersDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -114,7 +114,7 @@ func TestAccTFETeamMembers_import(t *testing.T) {
 				t.Skip("Please set TFE_USER1 to run this test")
 			}
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamMembersDestroy,
 		Steps: []resource.TestStep{
 			{
