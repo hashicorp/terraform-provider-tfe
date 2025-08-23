@@ -7,7 +7,7 @@ description: |-
 
 # tfe_terraform_version
 
-Manage Terraform versions available on HCP Terraform and Terraform Enterprise.
+Manage Terraform versions available on Terraform Enterprise.
 
 ## Example Usage
 
