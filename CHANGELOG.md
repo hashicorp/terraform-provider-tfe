@@ -13,8 +13,13 @@ DEPRECATIONS:
 * `r/tfe_opa_version`: The `url` and `sha` attributes are deprecated and will be removed in a future version. Use the `archs` attribute to specify architecture-specific binaries going forward, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762)
 * `r/tfe_sentinel_version`: The `url` and `sha` attributes are deprecated and will be removed in a future version. Use the `archs` attribute to specify architecture-specific binaries going forward, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762)
 
+## v0.68.3
+
 BUG FIXES:
 * `r/tfe_notification_configuration`: update url attribute to be sensitive, by @jillirami [#1799](https://github.com/hashicorp/terraform-provider-tfe/pull/1799)
+* `r/tfe_workspace`: fixed documentation Example Usages to use the `tfe_organization.test-organization.name` as organization name 
+* `r/tfe_workspace_run`: fixed documentation Example Usages to use the `tfe_organization.test-organization.name` as organization name 
+
 
 ## v0.68.2
 
