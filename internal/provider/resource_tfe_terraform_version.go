@@ -65,10 +65,18 @@ func (r *terraformVersionResource) Schema(ctx context.Context, req resource.Sche
 			"url": schema.StringAttribute{
 				Optional: true,
 				Computed: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+					SyncTopLevelURLSHAWithAMD64(),
+				},
 			},
 			"sha": schema.StringAttribute{
 				Optional: true,
 				Computed: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+					SyncTopLevelURLSHAWithAMD64(),
+				},
 			},
 			"official": schema.BoolAttribute{
 				Optional: true,
@@ -110,9 +118,12 @@ func (r *terraformVersionResource) Schema(ctx context.Context, req resource.Sche
 						},
 					},
 				},
-				Computed:      true,
-				Optional:      true,
-				PlanModifiers: []planmodifier.Set{setplanmodifier.UseStateForUnknown()},
+				Computed: true,
+				Optional: true,
+				PlanModifiers: []planmodifier.Set{
+					setplanmodifier.UseStateForUnknown(),
+					PreserveAMD64ArchsOnChange(),
+				},
 			},
 		},
 	}
@@ -315,6 +326,7 @@ func (r *terraformVersionResource) Update(ctx context.Context, req resource.Upda
 
 	tflog.Debug(ctx, "Updating Terraform version", map[string]interface{}{
 		"id": tfVersion.ID.ValueString()})
+
 	v, err := r.config.Client.Admin.TerraformVersions.Update(ctx, tfVersion.ID.ValueString(), opts)
 	if err != nil {
 		resp.Diagnostics.AddError(

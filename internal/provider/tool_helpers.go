@@ -258,20 +258,21 @@ func (m *preserveAMD64ArchsModifier) PlanModifySet(ctx context.Context, req plan
 		return
 	}
 
-	var configURL, planURL, configSHA, planSHA types.String
+	var configURL, stateURL, configSHA, stateSHA types.String
 
 	// Get values from state and plan
 	req.Config.GetAttribute(ctx, path.Root("url"), &configURL)
-	req.Plan.GetAttribute(ctx, path.Root("url"), &planURL)
-	req.State.GetAttribute(ctx, path.Root("sha"), &configSHA)
-	req.Plan.GetAttribute(ctx, path.Root("sha"), &planSHA)
+	req.State.GetAttribute(ctx, path.Root("url"), &stateURL)
+	req.Config.GetAttribute(ctx, path.Root("sha"), &configSHA)
+	req.State.GetAttribute(ctx, path.Root("sha"), &stateSHA)
 
 	// Check if values are changing
-	urlChanged := !configURL.Equal(planURL)
-	shaChanged := !configSHA.Equal(planSHA)
+	urlChanged := !configURL.Equal(stateURL)
+	shaChanged := !configSHA.Equal(stateSHA)
 
 	// If neither URL nor SHA is changing, do nothing
 	if !urlChanged && !shaChanged {
+		tflog.Debug(ctx, "No changes to URL or SHA, skipping AMD64 architecture preservation")
 		return
 	}
 
@@ -302,9 +303,9 @@ func (m *preserveAMD64ArchsModifier) PlanModifySet(ctx context.Context, req plan
 		"urlChanged":     urlChanged,
 		"shaChanged":     shaChanged,
 		"stateURL":       configURL,
-		"planURL":        planURL,
+		"planURL":        stateURL,
 		"stateSHA":       configSHA,
-		"planSHA":        planSHA,
+		"planSHA":        stateSHA,
 	})
 	// Check if AMD64 is already in the plan
 	for _, arch := range planArchsList {
@@ -321,7 +322,7 @@ func (m *preserveAMD64ArchsModifier) PlanModifySet(ctx context.Context, req plan
 				arch.URL = configURL
 			}
 			if shaChanged {
-				arch.Sha = configURL
+				arch.Sha = configSHA
 			}
 
 			// Update the plan with the modified AMD64 arch
@@ -335,6 +336,12 @@ func (m *preserveAMD64ArchsModifier) PlanModifySet(ctx context.Context, req plan
 					"arch": arch.Arch,
 				},
 			)
+			tflog.Debug(ctx, "Updating AMD64 architecture in plan", map[string]interface{}{
+				"url":  arch.URL.ValueString(),
+				"sha":  arch.Sha.ValueString(),
+				"os":   arch.OS.ValueString(),
+				"arch": arch.Arch.ValueString(),
+			})
 
 			resp.PlanValue = types.SetValueMust(archObjectType, []attr.Value{attrValue})
 			return
@@ -415,7 +422,8 @@ func (m *SyncTopLevelURLSHAWithAMD64Modifier) PlanModifyString(ctx context.Conte
 	}
 
 	if amd64Arch.Arch.IsNull() || amd64Arch.Arch.IsUnknown() {
-		tflog.Debug(ctx, "No AMD64 architecture found in config archs, skipping modification")
+		// set the plan's top level URL/SHA to null
+		resp.PlanValue = types.StringNull()
 		return
 	}
 
@@ -435,70 +443,3 @@ func (m *SyncTopLevelURLSHAWithAMD64Modifier) PlanModifyString(ctx context.Conte
 	}
 
 }
-
-//
-// // ValidateToolVersion provides common validation for tool version resources
-// func ValidateToolVersion(ctx context.Context, url, sha types.String, archs types.Set, resourceType string) diag.Diagnostics {
-//     var diags diag.Diagnostics
-
-//     urlPresent := !url.IsNull() && !url.IsUnknown()
-//     shaPresent := !sha.IsNull() && !sha.IsUnknown()
-
-//     // If URL or SHA is not set, we will rely on the archs attribute
-//     if !urlPresent || !shaPresent {
-//         return diags
-//     }
-
-//     // If archs aren't present, we can't validate against them
-//     if archs.IsNull() || archs.IsUnknown() {
-//         return diags
-//     }
-
-//     // Extract archs
-//     var archsList []ToolArchitecture
-//     archDiags := archs.ElementsAs(ctx, &archsList, false)
-//     if archDiags.HasError() {
-//         diags.Append(archDiags...)
-//         return diags
-//     }
-
-//     // Check for AMD64 architecture
-//     hasAMD64 := false
-//     var amd64Arch ToolArchitecture
-//     for _, arch := range archsList {
-//         if arch.Arch.ValueString() == "amd64" {
-//             hasAMD64 = true
-//             amd64Arch = arch
-//             break
-//         }
-//     }
-
-//     // If top-level URL/SHA are set and no AMD64 arch found, add error
-//     if !hasAMD64 {
-//         diags.AddError(
-//             fmt.Sprintf("Missing AMD64 architecture in %s", resourceType),
-//             "When specifying both top-level URL/SHA and archs, an AMD64 architecture entry must be included",
-//         )
-//         return diags
-//     }
-
-//     // If URL and SHA are set at top level, check they match AMD64 arch
-//     if url.ValueString() != amd64Arch.URL.ValueString() {
-//         diags.AddError(
-//             fmt.Sprintf("Inconsistent %s URL values", resourceType),
-//             fmt.Sprintf("Top-level URL (%s) doesn't match AMD64 architecture URL (%s)",
-//                 url.ValueString(), amd64Arch.URL.ValueString()),
-//         )
-//     }
-
-//     // Check SHA matches
-//     if sha.ValueString() != amd64Arch.Sha.ValueString() {
-//         diags.AddError(
-//             fmt.Sprintf("Inconsistent %s SHA values", resourceType),
-//             fmt.Sprintf("Top-level SHA (%s) doesn't match AMD64 architecture SHA (%s)",
-//                 sha.ValueString(), amd64Arch.Sha.ValueString()),
-//         )
-//     }
-
-//     return diags
-// }

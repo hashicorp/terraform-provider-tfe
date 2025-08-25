@@ -64,10 +64,18 @@ func (r *sentinelVersionResource) Schema(ctx context.Context, req resource.Schem
 			"url": schema.StringAttribute{
 				Optional: true,
 				Computed: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+					SyncTopLevelURLSHAWithAMD64(),
+				},
 			},
 			"sha": schema.StringAttribute{
 				Optional: true,
 				Computed: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+					SyncTopLevelURLSHAWithAMD64(),
+				},
 			},
 			"official": schema.BoolAttribute{
 				Optional: true,
@@ -109,9 +117,12 @@ func (r *sentinelVersionResource) Schema(ctx context.Context, req resource.Schem
 						},
 					},
 				},
-				Computed:      true,
-				Optional:      true,
-				PlanModifiers: []planmodifier.Set{setplanmodifier.UseStateForUnknown()},
+				Computed: true,
+				Optional: true,
+				PlanModifiers: []planmodifier.Set{
+					setplanmodifier.UseStateForUnknown(),
+					PreserveAMD64ArchsOnChange(),
+				},
 			},
 		},
 	}
@@ -279,7 +290,7 @@ func (r *sentinelVersionResource) Update(ctx context.Context, req resource.Updat
 	opts := tfe.AdminSentinelVersionUpdateOptions{
 		Version:          tfe.String(sentinelVersion.Version.ValueString()),
 		URL:              stringOrNil(sentinelVersion.URL.ValueString()),
-		SHA:              tfe.String(sentinelVersion.SHA.ValueString()),
+		SHA:              stringOrNil(sentinelVersion.SHA.ValueString()),
 		Official:         tfe.Bool(sentinelVersion.Official.ValueBool()),
 		Enabled:          tfe.Bool(sentinelVersion.Enabled.ValueBool()),
 		Beta:             tfe.Bool(sentinelVersion.Beta.ValueBool()),
@@ -295,8 +306,6 @@ func (r *sentinelVersionResource) Update(ctx context.Context, req resource.Updat
 		}(),
 	}
 
-	tflog.Debug(ctx, "Updating sentinel version", map[string]interface{}{
-		"id": sentinelVersion.ID.ValueString()})
 	v, err := r.config.Client.Admin.SentinelVersions.Update(ctx, sentinelVersion.ID.ValueString(), opts)
 	if err != nil {
 		resp.Diagnostics.AddError(
