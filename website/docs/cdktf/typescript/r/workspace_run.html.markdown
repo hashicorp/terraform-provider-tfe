@@ -48,12 +48,12 @@ class MyConvertedCode extends TerraformStack {
       apiUrl: "https://api.github.com",
       httpUrl: "https://github.com",
       oauthToken: "oauth_token_id",
-      organization: testOrganization,
+      organization: testOrganization.name,
       serviceProvider: "github",
     });
     const child = new Workspace(this, "child", {
       name: "child-ws",
-      organization: testOrganization,
+      organization: testOrganization.name,
       queueAllRuns: false,
       vcsRepo: {
         branch: "main",
@@ -63,7 +63,7 @@ class MyConvertedCode extends TerraformStack {
     });
     const parent = new Workspace(this, "parent", {
       name: "parent-ws",
-      organization: testOrganization,
+      organization: testOrganization.name,
       queueAllRuns: false,
       vcsRepo: {
         branch: "main",
@@ -131,12 +131,12 @@ class MyConvertedCode extends TerraformStack {
       apiUrl: "https://api.github.com",
       httpUrl: "https://github.com",
       oauthToken: "oauth_token_id",
-      organization: testOrganization,
+      organization: testOrganization.name,
       serviceProvider: "github",
     });
     const parent = new Workspace(this, "parent", {
       name: "parent-ws",
-      organization: testOrganization,
+      organization: testOrganization.name,
       queueAllRuns: false,
       vcsRepo: {
         branch: "main",
@@ -184,12 +184,12 @@ class MyConvertedCode extends TerraformStack {
       apiUrl: "https://api.github.com",
       httpUrl: "https://github.com",
       oauthToken: "oauth_token_id",
-      organization: testOrganization,
+      organization: testOrganization.name,
       serviceProvider: "github",
     });
     const parent = new Workspace(this, "parent", {
       name: "parent-ws",
-      organization: testOrganization,
+      organization: testOrganization.name,
       queueAllRuns: false,
       vcsRepo: {
         branch: "main",
@@ -240,4 +240,4 @@ In addition to all arguments above, the following attributes are exported:
 
 * `id` - The ID of the run created by this resource. Note, if the resource was created without an `apply{}` configuration block, then this ID will not refer to a real run in HCP Terraform.
 
-<!-- cache-key: cdktf-0.20.8 input-326dcde8ef59895f6cb1224693fc7aa8de53e6795010027c9279e6a1d68b85c8 -->
+<!-- cache-key: cdktf-0.20.8 input-dabc2fa04a9cee391a5b6193b417eeb4a1debdd321a4cf5b1a13e6c857ed36ac -->
