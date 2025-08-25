@@ -71,12 +71,12 @@ class MyConvertedCode extends TerraformStack {
       apiUrl: "https://api.github.com",
       httpUrl: "https://github.com",
       oauthToken: "oauth_token_id",
-      organization: testOrganization,
+      organization: testOrganization.name,
       serviceProvider: "github",
     });
     new Workspace(this, "parent", {
       name: "parent-ws",
-      organization: testOrganization,
+      organization: testOrganization.name,
       queueAllRuns: false,
       vcsRepo: {
         branch: "main",
@@ -212,4 +212,4 @@ terraform import tfe_workspace.test ws-CH5in3chf8RJjrVd
 terraform import tfe_workspace.test my-org-name/my-wkspace-name
 ```
 
-<!-- cache-key: cdktf-0.20.8 input-8659fe12b1411c17a28ed5fc2f813f99433e585a19e67e9d9b8e72936be75dac -->
+<!-- cache-key: cdktf-0.20.8 input-9172299860816457fdb3b3fe1ca94efcefcfcf20d4b35727c48cb9ae3ed85745 -->

@@ -48,12 +48,12 @@ class MyConvertedCode(TerraformStack):
             api_url="https://api.github.com",
             http_url="https://github.com",
             oauth_token="oauth_token_id",
-            organization=test_organization,
+            organization=test_organization.name,
             service_provider="github"
         )
         child = Workspace(self, "child",
             name="child-ws",
-            organization=test_organization,
+            organization=test_organization.name,
             queue_all_runs=False,
             vcs_repo=WorkspaceVcsRepo(
                 branch="main",
@@ -63,7 +63,7 @@ class MyConvertedCode(TerraformStack):
         )
         parent = Workspace(self, "parent",
             name="parent-ws",
-            organization=test_organization,
+            organization=test_organization.name,
             queue_all_runs=False,
             vcs_repo=WorkspaceVcsRepo(
                 branch="main",
@@ -128,12 +128,12 @@ class MyConvertedCode(TerraformStack):
             api_url="https://api.github.com",
             http_url="https://github.com",
             oauth_token="oauth_token_id",
-            organization=test_organization,
+            organization=test_organization.name,
             service_provider="github"
         )
         parent = Workspace(self, "parent",
             name="parent-ws",
-            organization=test_organization,
+            organization=test_organization.name,
             queue_all_runs=False,
             vcs_repo=WorkspaceVcsRepo(
                 branch="main",
@@ -178,12 +178,12 @@ class MyConvertedCode(TerraformStack):
             api_url="https://api.github.com",
             http_url="https://github.com",
             oauth_token="oauth_token_id",
-            organization=test_organization,
+            organization=test_organization.name,
             service_provider="github"
         )
         parent = Workspace(self, "parent",
             name="parent-ws",
-            organization=test_organization,
+            organization=test_organization.name,
             queue_all_runs=False,
             vcs_repo=WorkspaceVcsRepo(
                 branch="main",
@@ -231,4 +231,4 @@ In addition to all arguments above, the following attributes are exported:
 
 * `id` - The ID of the run created by this resource. Note, if the resource was created without an `apply{}` configuration block, then this ID will not refer to a real run in HCP Terraform.
 
-<!-- cache-key: cdktf-0.20.8 input-326dcde8ef59895f6cb1224693fc7aa8de53e6795010027c9279e6a1d68b85c8 -->
+<!-- cache-key: cdktf-0.20.8 input-dabc2fa04a9cee391a5b6193b417eeb4a1debdd321a4cf5b1a13e6c857ed36ac -->
