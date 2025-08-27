@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -205,8 +204,16 @@ func (r *terraformVersionResource) Create(ctx context.Context, req resource.Crea
 	}
 
 	tfVersion.ID = types.StringValue(v.ID)
-
-	// ensure there are no unknown values
+	tfVersion.Version = types.StringValue(v.Version)
+	tfVersion.Official = types.BoolValue(v.Official)
+	tfVersion.Enabled = types.BoolValue(v.Enabled)
+	tfVersion.Beta = types.BoolValue(v.Beta)
+	tfVersion.Deprecated = types.BoolValue(v.Deprecated)
+	if v.DeprecatedReason != nil {
+		tfVersion.DeprecatedReason = types.StringValue(*v.DeprecatedReason)
+	} else {
+		tfVersion.DeprecatedReason = types.StringNull()
+	}
 	if v.URL == "" {
 		tfVersion.URL = types.StringNull()
 	} else {
@@ -247,6 +254,7 @@ func (r *terraformVersionResource) Read(ctx context.Context, req resource.ReadRe
 	}
 
 	tfVersion.ID = types.StringValue(v.ID)
+	tfVersion.Version = types.StringValue(v.Version)
 	tfVersion.Official = types.BoolValue(v.Official)
 	tfVersion.Enabled = types.BoolValue(v.Enabled)
 	tfVersion.Beta = types.BoolValue(v.Beta)
@@ -266,24 +274,7 @@ func (r *terraformVersionResource) Read(ctx context.Context, req resource.ReadRe
 	} else {
 		tfVersion.Sha = types.StringValue(v.Sha)
 	}
-	if v.Archs != nil {
-		tfVersion.Archs = convertAPIArchsToFrameworkSet(v.Archs)
-
-		// Debug the converted value
-		tflog.Debug(ctx, "archs after conversion", map[string]interface{}{
-			"isNull":    tfVersion.Archs.IsNull(),
-			"isUnknown": tfVersion.Archs.IsUnknown(),
-			"length":    fmt.Sprintf("%d", len(v.Archs)),
-		})
-	} else {
-		// Make sure to explicitly set an empty set rather than null or unknown
-		tfVersion.Archs = types.SetValueMust(
-			ObjectTypeForArchitectures(),
-			[]attr.Value{},
-		)
-
-		tflog.Debug(ctx, "archs set to empty", map[string]interface{}{})
-	}
+	tfVersion.Archs = convertAPIArchsToFrameworkSet(v.Archs)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &tfVersion)...)
 }
@@ -336,24 +327,8 @@ func (r *terraformVersionResource) Update(ctx context.Context, req resource.Upda
 		return
 	}
 
-	// Set ID and other attributes
 	tfVersion.ID = types.StringValue(v.ID)
 	tfVersion.Version = types.StringValue(v.Version)
-
-	// IMPORTANT: Set explicit values for URL and SHA
-	if v.URL != "" {
-		tfVersion.URL = types.StringValue(v.URL)
-	} else {
-		tfVersion.URL = types.StringNull()
-	}
-
-	if v.Sha != "" {
-		tfVersion.Sha = types.StringValue(v.Sha)
-	} else {
-		tfVersion.Sha = types.StringNull()
-	}
-
-	// Set remaining attributes
 	tfVersion.Official = types.BoolValue(v.Official)
 	tfVersion.Enabled = types.BoolValue(v.Enabled)
 	tfVersion.Beta = types.BoolValue(v.Beta)
@@ -363,10 +338,16 @@ func (r *terraformVersionResource) Update(ctx context.Context, req resource.Upda
 	} else {
 		tfVersion.DeprecatedReason = types.StringNull()
 	}
-
-	tflog.Debug(ctx, "archs", map[string]interface{}{
-		"archs": tfVersion.Archs.ElementsAs(ctx, nil, false),
-	})
+	if v.URL == "" {
+		tfVersion.URL = types.StringNull()
+	} else {
+		tfVersion.URL = types.StringValue(v.URL)
+	}
+	if v.Sha == "" {
+		tfVersion.Sha = types.StringNull()
+	} else {
+		tfVersion.Sha = types.StringValue(v.Sha)
+	}
 	tfVersion.Archs = convertAPIArchsToFrameworkSet(v.Archs)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &tfVersion)...)
@@ -401,6 +382,7 @@ func (r *terraformVersionResource) Delete(ctx context.Context, req resource.Dele
 }
 
 func (r *terraformVersionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	var id string
 	// Splitting by '-' and checking if the first elem is equal to tool
 	// determines if the string is a tool version ID
 	s := strings.Split(req.ID, "-")
@@ -417,6 +399,10 @@ func (r *terraformVersionResource) ImportState(ctx context.Context, req resource
 			return
 		}
 
-		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), versionID)...)
+		id = versionID
+	} else {
+		id = req.ID
 	}
+
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
 }

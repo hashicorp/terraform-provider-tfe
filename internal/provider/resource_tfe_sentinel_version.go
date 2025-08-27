@@ -204,8 +204,16 @@ func (r *sentinelVersionResource) Create(ctx context.Context, req resource.Creat
 	}
 
 	sentinelVersion.ID = types.StringValue(v.ID)
-
-	// ensure there are no unknown values
+	sentinelVersion.Version = types.StringValue(v.Version)
+	sentinelVersion.Official = types.BoolValue(v.Official)
+	sentinelVersion.Enabled = types.BoolValue(v.Enabled)
+	sentinelVersion.Beta = types.BoolValue(v.Beta)
+	sentinelVersion.Deprecated = types.BoolValue(v.Deprecated)
+	if v.DeprecatedReason != nil {
+		sentinelVersion.DeprecatedReason = types.StringValue(*v.DeprecatedReason)
+	} else {
+		sentinelVersion.DeprecatedReason = types.StringNull()
+	}
 	if v.URL == "" {
 		sentinelVersion.URL = types.StringNull()
 	} else {
@@ -246,6 +254,7 @@ func (r *sentinelVersionResource) Read(ctx context.Context, req resource.ReadReq
 	}
 
 	sentinelVersion.ID = types.StringValue(v.ID)
+	sentinelVersion.Version = types.StringValue(v.Version)
 	sentinelVersion.Official = types.BoolValue(v.Official)
 	sentinelVersion.Enabled = types.BoolValue(v.Enabled)
 	sentinelVersion.Beta = types.BoolValue(v.Beta)
@@ -280,7 +289,6 @@ func (r *sentinelVersionResource) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
-	// Use the ID from the state
 	sentinelVersion.ID = state.ID
 
 	tflog.Debug(ctx, "Updating sentinel version resource", map[string]interface{}{
@@ -317,20 +325,6 @@ func (r *sentinelVersionResource) Update(ctx context.Context, req resource.Updat
 
 	sentinelVersion.ID = types.StringValue(v.ID)
 	sentinelVersion.Version = types.StringValue(v.Version)
-
-	if v.URL != "" {
-		sentinelVersion.URL = types.StringValue(v.URL)
-	} else {
-		sentinelVersion.URL = types.StringNull()
-	}
-
-	if v.SHA != "" {
-		sentinelVersion.SHA = types.StringValue(v.SHA)
-	} else {
-		sentinelVersion.SHA = types.StringNull()
-	}
-
-	// Set remaining attributes
 	sentinelVersion.Official = types.BoolValue(v.Official)
 	sentinelVersion.Enabled = types.BoolValue(v.Enabled)
 	sentinelVersion.Beta = types.BoolValue(v.Beta)
@@ -339,6 +333,16 @@ func (r *sentinelVersionResource) Update(ctx context.Context, req resource.Updat
 		sentinelVersion.DeprecatedReason = types.StringValue(*v.DeprecatedReason)
 	} else {
 		sentinelVersion.DeprecatedReason = types.StringNull()
+	}
+	if v.URL == "" {
+		sentinelVersion.URL = types.StringNull()
+	} else {
+		sentinelVersion.URL = types.StringValue(v.URL)
+	}
+	if v.SHA == "" {
+		sentinelVersion.SHA = types.StringNull()
+	} else {
+		sentinelVersion.SHA = types.StringValue(v.SHA)
 	}
 	sentinelVersion.Archs = convertAPIArchsToFrameworkSet(v.Archs)
 
@@ -374,6 +378,7 @@ func (r *sentinelVersionResource) Delete(ctx context.Context, req resource.Delet
 }
 
 func (r *sentinelVersionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	var id string
 	// Splitting by '-' and checking if the first elem is equal to tool
 	// determines if the string is a tool version ID
 	s := strings.Split(req.ID, "-")
@@ -390,6 +395,10 @@ func (r *sentinelVersionResource) ImportState(ctx context.Context, req resource.
 			return
 		}
 
-		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), versionID)...)
+		id = versionID
+	} else {
+		id = req.ID
 	}
+
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
 }

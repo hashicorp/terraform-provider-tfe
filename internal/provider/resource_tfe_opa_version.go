@@ -204,19 +204,26 @@ func (r *OPAVersionResource) Create(ctx context.Context, req resource.CreateRequ
 	}
 
 	opaVersion.ID = types.StringValue(v.ID)
-
-	// ensure there are no unknown values
-	if v.URL == "" {
-		opaVersion.URL = types.StringNull()
+	opaVersion.Version = types.StringValue(v.Version)
+	opaVersion.Official = types.BoolValue(v.Official)
+	opaVersion.Enabled = types.BoolValue(v.Enabled)
+	opaVersion.Beta = types.BoolValue(v.Beta)
+	opaVersion.Deprecated = types.BoolValue(v.Deprecated)
+	if v.DeprecatedReason != nil {
+		opaVersion.DeprecatedReason = types.StringValue(*v.DeprecatedReason)
 	} else {
+		opaVersion.DeprecatedReason = types.StringNull()
+	}
+	if v.URL != "" {
 		opaVersion.URL = types.StringValue(v.URL)
-	}
-	if v.SHA == "" {
-		opaVersion.SHA = types.StringNull()
 	} else {
-		opaVersion.SHA = types.StringValue(v.SHA)
+		opaVersion.URL = types.StringNull()
 	}
-
+	if v.SHA != "" {
+		opaVersion.SHA = types.StringValue(v.SHA)
+	} else {
+		opaVersion.SHA = types.StringNull()
+	}
 	opaVersion.Archs = convertAPIArchsToFrameworkSet(v.Archs)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &opaVersion)...)
@@ -230,7 +237,8 @@ func (r *OPAVersionResource) Read(ctx context.Context, req resource.ReadRequest,
 	}
 
 	tflog.Debug(ctx, "Read configuration of OPA version", map[string]interface{}{
-		"id": opaVersion.ID.ValueString()})
+		"id": opaVersion.ID.ValueString(),
+	})
 
 	v, err := r.config.Client.Admin.OPAVersions.Read(ctx, opaVersion.ID.ValueString())
 	if err != nil {
@@ -246,11 +254,12 @@ func (r *OPAVersionResource) Read(ctx context.Context, req resource.ReadRequest,
 	}
 
 	opaVersion.ID = types.StringValue(v.ID)
+	opaVersion.Version = types.StringValue(v.Version)
 	opaVersion.Official = types.BoolValue(v.Official)
 	opaVersion.Enabled = types.BoolValue(v.Enabled)
 	opaVersion.Beta = types.BoolValue(v.Beta)
 	opaVersion.Deprecated = types.BoolValue(v.Deprecated)
-	if v.DeprecatedReason != nil {
+	if v.DeprecatedReason != nil && *v.DeprecatedReason != "" {
 		opaVersion.DeprecatedReason = types.StringValue(*v.DeprecatedReason)
 	} else {
 		opaVersion.DeprecatedReason = types.StringNull()
@@ -260,12 +269,11 @@ func (r *OPAVersionResource) Read(ctx context.Context, req resource.ReadRequest,
 	} else {
 		opaVersion.URL = types.StringValue(v.URL)
 	}
-	if v.SHA == "" {
-		opaVersion.SHA = types.StringNull()
-	} else {
+	if v.SHA != "" {
 		opaVersion.SHA = types.StringValue(v.SHA)
+	} else {
+		opaVersion.SHA = types.StringNull()
 	}
-
 	opaVersion.Archs = convertAPIArchsToFrameworkSet(v.Archs)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &opaVersion)...)
@@ -281,7 +289,6 @@ func (r *OPAVersionResource) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 
-	// Use the ID from the state
 	opaVersion.ID = state.ID
 
 	tflog.Debug(ctx, "Updating OPA version resource", map[string]interface{}{
@@ -318,23 +325,8 @@ func (r *OPAVersionResource) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 
-	// Set ID and other attributes
 	opaVersion.ID = types.StringValue(v.ID)
 	opaVersion.Version = types.StringValue(v.Version)
-
-	// IMPORTANT: Set explicit values for URL and SHA
-	if v.URL != "" {
-		opaVersion.URL = types.StringValue(v.URL)
-	} else {
-		opaVersion.URL = types.StringNull()
-	}
-
-	if v.SHA != "" {
-		opaVersion.SHA = types.StringValue(v.SHA)
-	} else {
-		opaVersion.SHA = types.StringNull()
-	}
-
 	opaVersion.Official = types.BoolValue(v.Official)
 	opaVersion.Enabled = types.BoolValue(v.Enabled)
 	opaVersion.Beta = types.BoolValue(v.Beta)
@@ -344,7 +336,16 @@ func (r *OPAVersionResource) Update(ctx context.Context, req resource.UpdateRequ
 	} else {
 		opaVersion.DeprecatedReason = types.StringNull()
 	}
-
+	if v.URL != "" {
+		opaVersion.URL = types.StringValue(v.URL)
+	} else {
+		opaVersion.URL = types.StringNull()
+	}
+	if v.SHA != "" {
+		opaVersion.SHA = types.StringValue(v.SHA)
+	} else {
+		opaVersion.SHA = types.StringNull()
+	}
 	opaVersion.Archs = convertAPIArchsToFrameworkSet(v.Archs)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &opaVersion)...)
@@ -379,6 +380,7 @@ func (r *OPAVersionResource) Delete(ctx context.Context, req resource.DeleteRequ
 }
 
 func (r *OPAVersionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	var id string
 	// Splitting by '-' and checking if the first elem is equal to tool
 	// determines if the string is a tool version ID
 	s := strings.Split(req.ID, "-")
@@ -394,19 +396,9 @@ func (r *OPAVersionResource) ImportState(ctx context.Context, req resource.Impor
 			)
 			return
 		}
-
-		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), versionID)...)
+		id = versionID
+	} else {
+		id = req.ID
 	}
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
 }
-
-// // Make OPAVersionResource implement the ToolVersionValidator interface
-// func (r *OPAVersionResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-// 	var config modelAdminOPAVersion
-// 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-// 	if resp.Diagnostics.HasError() {
-// 		return
-// 	}
-
-// 	// Use the simplified validation function
-// 	resp.Diagnostics.Append(ValidateToolVersion(ctx, config.URL, config.SHA, config.Archs, "OPA Version")...)
-// }

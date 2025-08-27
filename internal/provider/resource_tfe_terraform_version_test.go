@@ -50,7 +50,8 @@ func TestAccTFETerraformVersion_archs(t *testing.T) {
 	skipIfCloud(t)
 
 	tfVersion := &tfe.AdminTerraformVersion{}
-	sha := genSha(t, "secret", "data")
+	amd64Sha := genSha(t, "secret", "data")
+	arm64Sha := genSha(t, "another-secret", "data")
 	version := genSafeRandomTerraformVersion()
 
 	resource.Test(t, resource.TestCase{
@@ -59,20 +60,20 @@ func TestAccTFETerraformVersion_archs(t *testing.T) {
 		CheckDestroy:             testAccCheckTFETerraformVersionDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: resourceTFETerraformVersion_archs(version, sha),
+				Config: resourceTFETerraformVersion_archs(version, amd64Sha, arm64Sha),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETerraformVersionExists("tfe_terraform_version.foobar", tfVersion),
-					testAccCheckTFETerraformVersionAttributesArchs(tfVersion, version, sha),
+					testAccCheckTFETerraformVersionAttributesArchs(tfVersion, version, amd64Sha, arm64Sha),
 					resource.TestCheckResourceAttr(
 						"tfe_terraform_version.foobar", "version", version),
 					resource.TestCheckResourceAttr(
 						"tfe_terraform_version.foobar", "archs.0.url", "https://www.hashicorp.com"),
 					resource.TestCheckResourceAttr(
-						"tfe_terraform_version.foobar", "archs.0.sha", sha),
+						"tfe_terraform_version.foobar", "archs.0.sha", amd64Sha),
 					resource.TestCheckResourceAttr(
 						"tfe_terraform_version.foobar", "archs.0.os", "linux"),
 					resource.TestCheckResourceAttr(
-						"tfe_terraform_version.foobar", "archs.0.arch", "arm64"),
+						"tfe_terraform_version.foobar", "archs.0.arch", "amd64"),
 				),
 			},
 		},
@@ -210,27 +211,30 @@ func testAccCheckTFETerraformVersionAttributesBasic(tfVersion *tfe.AdminTerrafor
 	}
 }
 
-func testAccCheckTFETerraformVersionAttributesArchs(tfVersion *tfe.AdminTerraformVersion, version string, sha string) resource.TestCheckFunc {
+func testAccCheckTFETerraformVersionAttributesArchs(tfVersion *tfe.AdminTerraformVersion, version string, amd64Sha string, arm64Sha string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		// Check the version
 		if tfVersion.Version != version {
 			return fmt.Errorf("bad version: %s", tfVersion.Version)
 		}
 
-		if tfVersion.URL != "" {
-			return fmt.Errorf("URL should be empty, got: %s", tfVersion.URL)
+		if tfVersion.URL != "https://www.hashicorp.com" {
+			return fmt.Errorf("bad URL: %s", tfVersion.URL)
 		}
 
-		// Check the archs attributes
-		if len(tfVersion.Archs) == 0 {
-			return fmt.Errorf("Archs is empty")
+		if tfVersion.Sha != amd64Sha {
+			return fmt.Errorf("bad value for Sha: %v", tfVersion.Sha)
+		}
+
+		if len(tfVersion.Archs) != 2 {
+			return fmt.Errorf("bad number of archs: %d", len(tfVersion.Archs))
 		}
 
 		if tfVersion.Archs[0].URL != "https://www.hashicorp.com" {
 			return fmt.Errorf("bad value for  URL: %s", tfVersion.Archs[0].URL)
 		}
 
-		if tfVersion.Archs[0].Sha != sha {
+		if tfVersion.Archs[0].Sha != amd64Sha {
 			return fmt.Errorf("bad value for Sha: %v", tfVersion.Archs[0].Sha)
 		}
 
@@ -238,8 +242,21 @@ func testAccCheckTFETerraformVersionAttributesArchs(tfVersion *tfe.AdminTerrafor
 			return fmt.Errorf("bad value for OS: %s", tfVersion.Archs[0].OS)
 		}
 
-		if tfVersion.Archs[0].Arch != "arm64" {
+		if tfVersion.Archs[0].Arch != "amd64" {
 			return fmt.Errorf("bad value for Arch: %s", tfVersion.Archs[0].Arch)
+		}
+
+		if tfVersion.Archs[1].URL != "https://www.hashicorp.com" {
+			return fmt.Errorf("bad value for  URL: %s", tfVersion.Archs[1].URL)
+		}
+		if tfVersion.Archs[1].Sha != arm64Sha {
+			return fmt.Errorf("bad value for Sha: %v", tfVersion.Archs[1].Sha)
+		}
+		if tfVersion.Archs[1].OS != "linux" {
+			return fmt.Errorf("bad value for OS: %s", tfVersion.Archs[1].OS)
+		}
+		if tfVersion.Archs[1].Arch != "arm64" {
+			return fmt.Errorf("bad value for Arch: %s", tfVersion.Archs[1].Arch)
 		}
 
 		// Check other attributes
@@ -314,7 +331,7 @@ resource "tfe_terraform_version" "foobar" {
 }`, version, sha)
 }
 
-func resourceTFETerraformVersion_archs(version string, sha string) string {
+func resourceTFETerraformVersion_archs(version string, amd64Sha string, arm64Sha string) string {
 	return fmt.Sprintf(`
 resource "tfe_terraform_version" "foobar" {
   version = "%s"
@@ -324,13 +341,19 @@ resource "tfe_terraform_version" "foobar" {
   deprecated = true
   deprecated_reason = "foobar"
 
-  archs {
+  archs = [{
     url = "https://www.hashicorp.com"
 	sha = "%s"
 	os = "linux"
-	arch = "arm64"
-	  }
-	}`, version, sha)
+	arch = "amd64"
+	  },
+	  {
+		url = "https://www.hashicorp.com"
+		sha = "%s"
+		os = "linux"
+		arch = "arm64"}
+	]
+	  }`, version, amd64Sha, arm64Sha)
 }
 
 func testAccTFETerraformVersion_full(version string, sha string) string {
