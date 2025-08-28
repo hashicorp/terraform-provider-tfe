@@ -1,5 +1,8 @@
 ## Unreleased
 
+ENHANCEMENTS:
+* `r/tfe_oauth_client`: The `oauth_token` attribute no longer triggers resource replacement unless combined with other replacement-triggering attributes. Use `terraform apply -replace` to force replacement.
+
 ## v0.68.3
 
 BUG FIXES:
