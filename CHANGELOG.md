@@ -20,7 +20,6 @@ BUG FIXES:
 * `r/tfe_workspace`: fixed documentation Example Usages to use the `tfe_organization.test-organization.name` as organization name 
 * `r/tfe_workspace_run`: fixed documentation Example Usages to use the `tfe_organization.test-organization.name` as organization name 
 
-
 ## v0.68.2
 
 BUG FIXES:
@@ -38,7 +37,6 @@ BUG FIXES:
 FEATURES:
 
 * `r/tfe_workspace_settings`: offers more arguments for managing the workspace configuration, by @drewmullen [#1781](https://github.com/hashicorp/terraform-provider-tfe/pull/1781)
-
 
 ## v0.67.1
 
