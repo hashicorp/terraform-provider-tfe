@@ -103,10 +103,12 @@ func resourceTFERegistryModule() *schema.Resource {
 						"source_directory": {
 							Type:     schema.TypeString,
 							Optional: true,
+							Computed: true,
 						},
 						"tag_prefix": {
 							Type:     schema.TypeString,
 							Optional: true,
+							Computed: true,
 						},
 					},
 				},
