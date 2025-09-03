@@ -51,7 +51,7 @@ func newSubscriptionUpdater(organization *tfe.Organization) *organizationSubscri
 }
 
 func (b *organizationSubscriptionUpdater) WithPlusEntitlementPlan() *organizationSubscriptionUpdater {
-	b.planName = "Plus (entitlement)"
+	b.planName = "Standard (entitlement)"
 
 	start := time.Now()
 	ceiling := 1
