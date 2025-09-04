@@ -49,6 +49,7 @@ these values with the environment variables specified below:
 1. `RUN_TASKS_HMAC` - The optional HMAC Key that should be used for Run Task operations. The default is no key.
 1. `GITHUB_APP_INSTALLATION_ID` - GitHub App installation internal id in the format `ghain-xxxxxxx`. Required for running any tests that use GitHub App VCS (workspace, policy sets, registry module).
 1. `GITHUB_APP_INSTALLATION_NAME` - GitHub App installation name. Required for running tfe_github_app_installation data source test.
+1. `HYOK_ORGANIZATION_NAME` - Name of an organization entitled to use HYOK. Required to run tests for HYOK resources and data sources.
 
 **Note:** In order to run integration tests for **Paid** features you will need a token `TFE_TOKEN` with HCP Terraform or Terraform Enterprise administrator privileges, otherwise the attempt to upgrade an organization's feature set will fail.
 
