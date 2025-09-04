@@ -82,10 +82,8 @@ func muxedProvidersWithDefaultOrganization(defaultOrgName string) map[string]fun
 		"tfe": func() (tfprotov6.ProviderServer, error) {
 			ctx := context.Background()
 
-			// Framework provider with Protocol 6
 			nextProvider := providerserver.NewProtocol6(NewFrameworkProviderWithDefaultOrg(defaultOrgName))
 
-			// SDK provider upgraded to Protocol 6
 			sdkProvider := Provider()
 			sdkProvider.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
 				client, err := getClientUsingEnv()
@@ -93,11 +91,12 @@ func muxedProvidersWithDefaultOrganization(defaultOrgName string) map[string]fun
 					Client:       client,
 					Organization: defaultOrgName,
 				}
+
+				// Save a reference to the configured client instance for use in tests.
 				testAccConfiguredClient = &cc
 				return cc, diag.FromErr(err)
 			}
 
-			// Explicitly upgrade the SDK provider to Protocol 6
 			upgradedSDKProvider, err := tf5to6server.UpgradeServer(
 				ctx,
 				sdkProvider.GRPCProvider,
@@ -106,7 +105,6 @@ func muxedProvidersWithDefaultOrganization(defaultOrgName string) map[string]fun
 				return nil, err
 			}
 
-			// Create mux with both providers using Protocol 6
 			mux, err := tf6muxserver.NewMuxServer(
 				ctx,
 				[]func() tfprotov6.ProviderServer{

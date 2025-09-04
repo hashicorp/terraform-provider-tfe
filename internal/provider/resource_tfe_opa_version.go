@@ -24,7 +24,6 @@ var (
 	_ resource.Resource                = &OPAVersionResource{}
 	_ resource.ResourceWithConfigure   = &OPAVersionResource{}
 	_ resource.ResourceWithImportState = &OPAVersionResource{}
-	// _ resource.ResourceWithValidateConfig = &OPAVersionResource{}
 )
 
 type OPAVersionResource struct {
@@ -121,8 +120,8 @@ func (r *OPAVersionResource) Schema(ctx context.Context, req resource.SchemaRequ
 				Computed: true,
 				Optional: true,
 				PlanModifiers: []planmodifier.Set{
-					setplanmodifier.UseStateForUnknown(), // This ensures that we don't show a warning for invisible changes in updates when using refresh-only mode
-					PreserveAMD64ArchsOnChange(),         // This ensures that we update the amd64 archs when top level url/sha are updated
+					setplanmodifier.UseStateForUnknown(),
+					PreserveAMD64ArchsOnChange(),
 				},
 			},
 		},

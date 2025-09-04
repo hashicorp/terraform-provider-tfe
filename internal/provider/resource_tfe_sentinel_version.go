@@ -226,7 +226,6 @@ func (r *sentinelVersionResource) Create(ctx context.Context, req resource.Creat
 	}
 	sentinelVersion.Archs = convertAPIArchsToFrameworkSet(v.Archs)
 
-	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &sentinelVersion)...)
 }
 

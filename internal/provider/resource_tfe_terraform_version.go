@@ -191,6 +191,10 @@ func (r *terraformVersionResource) Create(ctx context.Context, req resource.Crea
 		"version": tfVersion.Version.ValueString(),
 	})
 
+	tflog.Debug(ctx, "Terraform version create options", map[string]interface{}{
+		"options": opts,
+	})
+
 	v, err := r.config.Client.Admin.TerraformVersions.Create(ctx, opts)
 	if err != nil {
 		tflog.Debug(ctx, "Error creating Terraform version", map[string]interface{}{
@@ -226,7 +230,6 @@ func (r *terraformVersionResource) Create(ctx context.Context, req resource.Crea
 	}
 	tfVersion.Archs = convertAPIArchsToFrameworkSet(v.Archs)
 
-	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &tfVersion)...)
 }
 
@@ -289,7 +292,6 @@ func (r *terraformVersionResource) Update(ctx context.Context, req resource.Upda
 		return
 	}
 
-	// Use the ID from the state
 	tfVersion.ID = state.ID
 
 	tflog.Debug(ctx, "Updating Terraform version resource", map[string]interface{}{
