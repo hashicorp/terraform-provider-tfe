@@ -189,7 +189,7 @@ func (d *dataSourceTFEProject) Read(ctx context.Context, req datasource.ReadRequ
 
 		// Store GET /workspaces response in a map to ensure uniqueness
 		// key: workspaceID, value: workspaceName
-		var workspaces map[string]string
+		workspaces := make(map[string]string)
 		for {
 			wl, err := d.config.Client.Workspaces.List(ctx, organization, readOptions)
 			if err != nil {
