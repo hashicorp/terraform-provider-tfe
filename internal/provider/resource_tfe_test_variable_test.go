@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/tfversion"
 )
 
-func TestAccTFETestVariable_basic(t *testing.T) {
+func TestAccTFETestVariable_basic_VCSDependent(t *testing.T) {
 	variable := &tfe.Variable{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -53,7 +53,7 @@ func TestAccTFETestVariable_basic(t *testing.T) {
 	})
 }
 
-func TestAccTFETestVariable_valueWriteOnly(t *testing.T) {
+func TestAccTFETestVariable_valueWriteOnly_VCSDependent(t *testing.T) {
 	variable := &tfe.Variable{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -87,7 +87,7 @@ func TestAccTFETestVariable_valueWriteOnly(t *testing.T) {
 	})
 }
 
-func TestAccTFETestVariable_update(t *testing.T) {
+func TestAccTFETestVariable_update_VCSDependent(t *testing.T) {
 	variable := &tfe.Variable{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 

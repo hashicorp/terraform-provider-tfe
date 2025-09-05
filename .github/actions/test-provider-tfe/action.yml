@@ -87,7 +87,6 @@ runs:
         index: ${{ inputs.matrix_index }}
         total: ${{ inputs.matrix_total }}
         junit-summary: ./ci-summary-provider.xml
-        # When tests are split and run concurrently, lists_tests arg in ci.yml will skip the TestAccTFESAMLSettings_omnibus test suite
         list: ${{ inputs.list_tests }}
 
     - name: Run Tests
@@ -121,6 +120,6 @@ runs:
     - name: Upload test artifacts
       uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
       with:
-        name: junit-test-summary-${{ matrix.index }}
+        name: junit-${{ matrix.test_name }}-summary-${{ matrix.index }}
         path: summary.xml
         retention-days: 1

@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-func TestAccTFEWorkspaceRun_withApplyOnlyBlock(t *testing.T) {
+func TestAccTFEWorkspaceRun_withApplyOnlyBlock_RunDependent(t *testing.T) {
 	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -65,7 +65,7 @@ func TestAccTFEWorkspaceRun_withApplyOnlyBlock(t *testing.T) {
 	})
 }
 
-func TestAccTFEWorkspaceRun_withBothApplyAndDestroyBlocks(t *testing.T) {
+func TestAccTFEWorkspaceRun_withBothApplyAndDestroyBlocks_RunDependent(t *testing.T) {
 	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -115,7 +115,7 @@ func TestAccTFEWorkspaceRun_withBothApplyAndDestroyBlocks(t *testing.T) {
 	})
 }
 
-func TestAccTFEWorkspaceRun_invalidParams(t *testing.T) {
+func TestAccTFEWorkspaceRun_invalidParams_RunDependent(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	tfeClient, err := getClientUsingEnv()
@@ -156,7 +156,7 @@ func TestAccTFEWorkspaceRun_invalidParams(t *testing.T) {
 	}
 }
 
-func TestAccTFEWorkspaceRun_WhenRunErrors(t *testing.T) {
+func TestAccTFEWorkspaceRun_WhenRunErrors_RunDependent(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	tfeClient, err := getClientUsingEnv()
