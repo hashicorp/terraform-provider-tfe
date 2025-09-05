@@ -39,7 +39,7 @@ type modelDataSourceTFEProject struct {
 	EffectiveTags               types.Map    `tfsdk:"effective_tags"`
 }
 
-func modelDataSourceFromTFEProject(p *tfe.Project, workspaceIDs, workspaceNames []string, effectiveTags []*tfe.EffectiveTagBinding) (modelDataSourceTFEProject, diag.Diagnostics) {
+func modelDataSourceFromTFEProject(p *tfe.Project, workspaces map[string]string, effectiveTags []*tfe.EffectiveTagBinding) (modelDataSourceTFEProject, diag.Diagnostics) {
 	m := modelDataSourceTFEProject{
 		ID:           types.StringValue(p.ID),
 		Name:         types.StringValue(p.Name),
@@ -48,9 +48,9 @@ func modelDataSourceFromTFEProject(p *tfe.Project, workspaceIDs, workspaceNames 
 	}
 
 	var wids, wnames []attr.Value
-	for w := range workspaceIDs {
-		wids = append(wids, types.StringValue(workspaceIDs[w]))
-		wnames = append(wnames, types.StringValue(workspaceNames[w]))
+	for workspaceID, workspaceName := range workspaces {
+		wids = append(wids, types.StringValue(workspaceID))
+		wnames = append(wnames, types.StringValue(workspaceName))
 	}
 	m.WorkspaceIDs = types.SetValueMust(types.StringType, wids)
 	m.WorkspaceNames = types.SetValueMust(types.StringType, wnames)
@@ -187,8 +187,9 @@ func (d *dataSourceTFEProject) Read(ctx context.Context, req datasource.ReadRequ
 			ProjectID: proj.ID,
 		}
 
-		var workspaceIDs []string
-		var workspaceNames []string
+		// Store GET /workspaces response in a map to ensure uniqueness
+		// key: workspaceID, value: workspaceName
+		workspaces := make(map[string]string)
 		for {
 			wl, err := d.config.Client.Workspaces.List(ctx, organization, readOptions)
 			if err != nil {
@@ -197,8 +198,7 @@ func (d *dataSourceTFEProject) Read(ctx context.Context, req datasource.ReadRequ
 			}
 
 			for _, workspace := range wl.Items {
-				workspaceIDs = append(workspaceIDs, workspace.ID)
-				workspaceNames = append(workspaceNames, workspace.Name)
+				workspaces[workspace.ID] = workspace.Name
 			}
 
 			// Exit the loop when we've seen all pages.
@@ -221,7 +221,7 @@ func (d *dataSourceTFEProject) Read(ctx context.Context, req datasource.ReadRequ
 			effectiveBindings = []*tfe.EffectiveTagBinding{}
 		}
 
-		m, diags := modelDataSourceFromTFEProject(proj, workspaceIDs, workspaceNames, effectiveBindings)
+		m, diags := modelDataSourceFromTFEProject(proj, workspaces, effectiveBindings)
 		if diags.HasError() {
 			resp.Diagnostics.Append(diags...)
 			return
