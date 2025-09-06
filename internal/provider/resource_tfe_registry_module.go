@@ -33,7 +33,10 @@ func resourceTFERegistryModule() *schema.Resource {
 		},
 
 		CustomizeDiff: func(c context.Context, d *schema.ResourceDiff, meta interface{}) error {
-			return validateVcsRepo(d)
+			if err := validateVcsRepo(d); err != nil {
+				return err
+			}
+			return validateTestConfig(d)
 		},
 		Schema: map[string]*schema.Schema{
 			"organization": {
@@ -146,6 +149,19 @@ func resourceTFERegistryModule() *schema.Resource {
 							Type:     schema.TypeBool,
 							Optional: true,
 						},
+						"agent_execution_mode": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+							ValidateFunc: validation.StringInSlice(
+								[]string{"agent", "remote"},
+								false,
+							),
+						},
+						"agent_pool_id": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
 					},
 				},
 			},
@@ -212,9 +228,21 @@ func resourceTFERegistryModuleCreateWithVCS(v interface{}, meta interface{}, d *
 		options.VCSRepo.OAuthTokenID = tfe.String(vcsRepo["oauth_token_id"].(string))
 	}
 
-	if testsEnabled, ok := testConfig["tests_enabled"].(bool); ok {
-		options.TestConfig = &tfe.RegistryModuleTestConfigOptions{
-			TestsEnabled: tfe.Bool(testsEnabled),
+	if testConfig != nil {
+		options.TestConfig = &tfe.RegistryModuleTestConfigOptions{}
+
+		if testsEnabled, ok := testConfig["tests_enabled"].(bool); ok {
+			options.TestConfig.TestsEnabled = tfe.Bool(testsEnabled)
+		}
+
+		if agentExecutionMode, ok := testConfig["agent_execution_mode"].(string); ok && agentExecutionMode != "" {
+			mode := tfe.AgentExecutionMode(agentExecutionMode)
+			options.TestConfig.AgentExecutionMode = &mode
+		}
+
+		// Handle agent pool ID - only set if explicitly provided and not empty
+		if agentPoolID, ok := testConfig["agent_pool_id"].(string); ok && agentPoolID != "" {
+			options.TestConfig.AgentPoolID = tfe.String(agentPoolID)
 		}
 	}
 
@@ -224,6 +252,7 @@ func resourceTFERegistryModuleCreateWithVCS(v interface{}, meta interface{}, d *
 		return nil, fmt.Errorf(
 			"Error creating registry module from repository %s: %w", *options.VCSRepo.Identifier, err)
 	}
+
 	return registryModule, nil
 }
 
@@ -357,6 +386,13 @@ func resourceTFERegistryModuleUpdate(d *schema.ResourceData, meta interface{}) e
 		if testsEnabled, ok := testConfig["tests_enabled"].(bool); ok {
 			options.TestConfig.TestsEnabled = tfe.Bool(testsEnabled)
 		}
+
+		if agentExecutionMode, ok := testConfig["agent_execution_mode"].(string); ok && agentExecutionMode != "" {
+			mode := tfe.AgentExecutionMode(agentExecutionMode)
+			options.TestConfig.AgentExecutionMode = &mode
+		}
+
+		handleAgentPoolID(testConfig, d, options.TestConfig)
 	}
 
 	err = retry.Retry(time.Duration(5)*time.Minute, func() *retry.RetryError {
@@ -434,6 +470,15 @@ func resourceTFERegistryModuleRead(d *schema.ResourceData, meta interface{}) err
 			"tests_enabled": registryModule.TestConfig.TestsEnabled,
 		}
 
+		if registryModule.TestConfig.AgentExecutionMode != nil {
+			testConfigValues["agent_execution_mode"] = *registryModule.TestConfig.AgentExecutionMode
+		}
+
+		if registryModule.TestConfig.AgentPoolID != nil {
+			testConfigValues["agent_pool_id"] = *registryModule.TestConfig.AgentPoolID
+		} else {
+			testConfigValues["agent_pool_id"] = ""
+		}
 		testConfig = append(testConfig, testConfigValues)
 	}
 
@@ -529,4 +574,50 @@ func validateVcsRepo(d *schema.ResourceDiff) error {
 	}
 
 	return nil
+}
+
+func validateTestConfig(d *schema.ResourceDiff) error {
+	testConfig, ok := d.GetRawConfig().AsValueMap()["test_config"]
+	if !ok || testConfig.LengthInt() == 0 {
+		return nil
+	}
+
+	testConfigValue := testConfig.AsValueSlice()[0]
+
+	// Check if test_config block is empty (no tests_enabled field)
+	testsEnabledValue := testConfigValue.GetAttr("tests_enabled")
+	if testsEnabledValue.IsNull() {
+		return fmt.Errorf("tests_enabled must be provided when configuring a test_config")
+	}
+
+	agentExecutionModeValue := testConfigValue.GetAttr("agent_execution_mode")
+	agentPoolIDValue := testConfigValue.GetAttr("agent_pool_id")
+
+	// Skip validation if values are unknown (during plan phase)
+	if !agentExecutionModeValue.IsKnown() || !agentPoolIDValue.IsKnown() {
+		return nil
+	}
+
+	if !agentExecutionModeValue.IsNull() && !agentPoolIDValue.IsNull() {
+		executionMode := agentExecutionModeValue.AsString()
+		agentPoolID := agentPoolIDValue.AsString()
+
+		if executionMode == "remote" && agentPoolID != "" {
+			return fmt.Errorf("agent_pool_id cannot be set when agent_execution_mode is 'remote'")
+		}
+	}
+
+	return nil
+}
+
+func handleAgentPoolID(testConfig map[string]interface{}, d *schema.ResourceData, options *tfe.RegistryModuleTestConfigOptions) {
+	if agentPoolID, ok := testConfig["agent_pool_id"].(string); ok {
+		if agentPoolID != "" {
+			options.AgentPoolID = tfe.String(agentPoolID)
+		} else if d.HasChange("test_config.0.agent_pool_id") {
+			options.AgentPoolID = tfe.String("")
+		}
+	} else if d.HasChange("test_config.0.agent_pool_id") {
+		options.AgentPoolID = tfe.String("")
+	}
 }
