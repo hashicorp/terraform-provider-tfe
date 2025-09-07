@@ -2,6 +2,7 @@
 
 ENHANCEMENTS:
 * `r/tfe_oauth_client`: The `oauth_token` attribute no longer triggers resource replacement unless combined with other replacement-triggering attributes. Use `terraform apply -replace` to force replacement. By @lilincmu [#1825](https://github.com/hashicorp/terraform-provider-tfe/pull/1825)
+* `r/tfe_test_variable`: Add missing argument reference and attributes documentation ([#1625](https://github.com/hashicorp/terraform-provider-tfe/issues/1625))
 
 ## v0.68.3
 
