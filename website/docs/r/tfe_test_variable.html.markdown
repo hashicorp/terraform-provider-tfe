@@ -51,3 +51,25 @@ resource "tfe_test_variable" "tf_test_test_variable" {
 ```
 
 -> **Note:** Write-Only argument `value_wo` is available to use in place of `value`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
+
+## Argument Reference
+
+The following arguments are supported:
+
+* `key` - (Required) Name of the variable.
+* `value` - (Optional) Value of the variable. Defaults to `""`. Cannot be used with `value_wo`.
+* `value_wo` - (Optional) Value of the variable in write-only mode. Cannot be used with `value`.
+* `category` - (Required) Whether this is a Terraform or environment variable. Valid values are `"env"`.
+* `description` - (Optional) Description of the variable. Defaults to `""`.
+* `hcl` - (Optional) Whether to evaluate the value of the variable as a string of HCL code. Defaults to `false`.
+* `sensitive` - (Optional) Whether the value is sensitive. Defaults to `false`.
+* `organization` - (Required) Name of the organization.
+* `module_name` - (Required) Name of the registry module.
+* `module_provider` - (Required) The provider of the registry module.
+
+## Attributes Reference
+
+In addition to all arguments above, the following attributes are exported:
+
+* `id` - The ID of the variable.
+* `readable_value` - A non-sensitive read-only copy of the variable value, which can be viewed or referenced in plan outputs without being redacted. Will only be present if the variable is not sensitive.

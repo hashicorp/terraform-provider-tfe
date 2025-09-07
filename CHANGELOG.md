@@ -2,6 +2,7 @@
 
 ENHANCEMENTS:
 * `r/tfe_oauth_client`: The `oauth_token` attribute no longer triggers resource replacement unless combined with other replacement-triggering attributes. Use `terraform apply -replace` to force replacement. By @lilincmu [#1825](https://github.com/hashicorp/terraform-provider-tfe/pull/1825)
+* `r/tfe_test_variable`: Add missing argument reference and attributes documentation ([#1625](https://github.com/hashicorp/terraform-provider-tfe/issues/1625))
 
 FEATURES:
 * `r/tfe_registry_module`: Add `source_directory` and `tag_prefix` registry module support for private registry monorepository, which is a beta feature and not available to all users, by @jillirami ([#1800](https://github.com/hashicorp/terraform-provider-tfe/pull/1800))
