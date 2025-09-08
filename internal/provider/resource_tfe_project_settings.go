@@ -193,7 +193,6 @@ func (m overwriteExecutionModeIfSpecified) PlanModifyList(ctx context.Context, r
 	state.Overwrites.ElementsAs(ctx, &overwritesState, true)
 
 	if !state.Overwrites.IsNull() {
-
 		// if an execution mode is configured, ensure that the overwrites are set to true
 		if !configured.DefaultExecutionMode.IsNull() {
 			overwritesState[0].DefaultAgentPoolID = types.BoolValue(true)
