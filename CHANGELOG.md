@@ -2,9 +2,12 @@
 
 ENHANCEMENTS:
 * `r/tfe_oauth_client`: The `oauth_token` attribute no longer triggers resource replacement unless combined with other replacement-triggering attributes. Use `terraform apply -replace` to force replacement. By @lilincmu [#1825](https://github.com/hashicorp/terraform-provider-tfe/pull/1825)
+* `d/tfe_agent_pool`: Adds the `allowed_project_ids` and `excluded_workspace_ids` attributes, by @tylerworlf [#1822](https://github.com/hashicorp/terraform-provider-tfe/pull/1822)
+* `r/tfe_agent_pool_allowed_projects`: Adds support for scoping agent pools to projects, by @tylerworlf [#1822](https://github.com/hashicorp/terraform-provider-tfe/pull/1822)
+* `r/tfe_agent_pool_excluded_workspaces`: Adds support for excluding workspaces from the scope of agent pools, by @tylerworlf [#1822](https://github.com/hashicorp/terraform-provider-tfe/pull/1822)
+* `r/tfe_project_settings`: Adds support for managing project settings. This initially supports setting a `default_execution_mode` and `default_agent_pool_id` which override the organization defaults. When not specified in the configuration, the organization defaults will be used and can be read from the resource. by @JarrettSpiker [#1822](Thttps://github.com/hashicorp/terraform-provider-tfe/pull/1822)
 
 ## v0.68.3
-
 BUG FIXES:
 * `r/tfe_notification_configuration`: update url attribute to be sensitive, by @jillirami [#1799](https://github.com/hashicorp/terraform-provider-tfe/pull/1799)
 * `r/tfe_workspace`: fixed documentation Example Usages to use the `tfe_organization.test-organization.name` as organization name 
