@@ -1,12 +1,12 @@
 ## Unreleased
 
+## v0.69.0
+
 ENHANCEMENTS:
 * `r/tfe_oauth_client`: The `oauth_token` attribute no longer triggers resource replacement unless combined with other replacement-triggering attributes. Use `terraform apply -replace` to force replacement. By @lilincmu [#1825](https://github.com/hashicorp/terraform-provider-tfe/pull/1825)
 
 FEATURES:
 * `r/tfe_registry_module`: Add `source_directory` and `tag_prefix` registry module support for private registry monorepository, which is a beta feature and not available to all users, by @jillirami ([#1800](https://github.com/hashicorp/terraform-provider-tfe/pull/1800))
-
-## v0.68.3
 
 BUG FIXES:
 * `r/tfe_notification_configuration`: update url attribute to be sensitive, by @jillirami [#1799](https://github.com/hashicorp/terraform-provider-tfe/pull/1799)
