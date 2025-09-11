@@ -357,7 +357,7 @@ func TestAccTFERegistryModule_branchOnlyMonorepo(t *testing.T) {
 			testAccPreCheck(t)
 			testAccPreCheckTFERegistryModule(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERegistryModule_branchOnlyMonorepo(rInt),
@@ -382,7 +382,7 @@ func TestAccTFERegistryModule_vcsRepoWithTagPrefixMonorepo(t *testing.T) {
 			testAccPreCheck(t)
 			testAccPreCheckTFERegistryModule(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERegistryModule_vcsRepoWithTagPrefixMonorepo(rInt),
