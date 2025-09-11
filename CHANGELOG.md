@@ -1,11 +1,19 @@
 ## Unreleased
 
-ENHANCEMENTS:
+FEATURES:
+
+* `r/tfe_registry_module`: Add `source_directory` and `tag_prefix` registry module support for private registry monorepository, which is a beta feature and not available to all users, by @jillirami ([#1800](https://github.com/hashicorp/terraform-provider-tfe/pull/1800))
+* `r/tfe_terraform_version`: Adds support for specifying architecture-specific binaries using the `archs` attribute, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762)
+* `r/tfe_opa_version`: Adds support for specifying architecture-specific binaries using the `archs` attribute, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762)
+* `r/tfe_sentinel_version`: Adds support for specifying architecture-specific binaries using the `archs` attribute, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762)
+
+DEPRECATIONS:
+
+* `r/tfe_terraform_version`: The `url` and `sha` attributes are deprecated and will be removed in a future version. Use the `archs` attribute to specify architecture-specific binaries going forward, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762)
+* `r/tfe_opa_version`: The `url` and `sha` attributes are deprecated and will be removed in a future version. Use the `archs` attribute to specify architecture-specific binaries going forward, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762)
+* `r/tfe_sentinel_version`: The `url` and `sha` attributes are deprecated and will be removed in a future version. Use the `archs` attribute to specify architecture-specific binaries going forward, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762)
 * `r/tfe_oauth_client`: The `oauth_token` attribute no longer triggers resource replacement unless combined with other replacement-triggering attributes. Use `terraform apply -replace` to force replacement. By @lilincmu [#1825](https://github.com/hashicorp/terraform-provider-tfe/pull/1825)
 * `r/tfe_test_variable`: Add missing argument reference and attributes documentation ([#1625](https://github.com/hashicorp/terraform-provider-tfe/issues/1625))
-
-FEATURES:
-* `r/tfe_registry_module`: Add `source_directory` and `tag_prefix` registry module support for private registry monorepository, which is a beta feature and not available to all users, by @jillirami ([#1800](https://github.com/hashicorp/terraform-provider-tfe/pull/1800))
 
 ## v0.68.3
 
@@ -16,7 +24,6 @@ BUG FIXES:
 * `r/tfe_workspace`: fixed documentation Example Usages to use the `tfe_organization.test-organization.name` as organization name 
 * `r/tfe_workspace_run`: fixed documentation Example Usages to use the `tfe_organization.test-organization.name` as organization name 
 
-  
 ## v0.68.2
 
 BUG FIXES:

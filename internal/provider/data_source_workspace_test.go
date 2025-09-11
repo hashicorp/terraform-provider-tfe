@@ -24,7 +24,7 @@ func TestAccTFEWorkspaceDataSource_remoteStateConsumers(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceDataSourceConfig_remoteStateConsumers(rInt1, rInt2),
@@ -65,7 +65,7 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceDataSourceConfig(rInt),
@@ -133,7 +133,7 @@ func TestAccTFEWorkspaceDataSource_tagBindings(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceDataSourceConfig_tagBindings(rInt),
@@ -176,7 +176,7 @@ func TestAccTFEWorkspaceDataSourceWithTriggerPatterns(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceDataSourceConfigWithTriggerPatterns(workspaceName, organization.Name),
@@ -205,7 +205,7 @@ func TestAccTFEWorkspaceDataSource_readAutoDestroyAt(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceDataSourceConfig_basic(rInt),
@@ -227,7 +227,7 @@ func TestAccTFEWorkspaceDataSource_readAutoDestroyDuration(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceDataSourceConfig_basic(rInt),
@@ -249,7 +249,7 @@ func TestAccTFEWorkspaceDataSource_readProjectIDDefault(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceDataSourceConfig(rInt),
@@ -264,7 +264,7 @@ func TestAccTFEWorkspaceDataSource_readProjectIDNonDefault(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspaceDataSourceConfig_project(rInt),

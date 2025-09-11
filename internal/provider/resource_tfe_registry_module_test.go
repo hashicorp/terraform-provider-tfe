@@ -34,7 +34,7 @@ func TestAccTFERegistryModule_vcsBasic(t *testing.T) {
 		PreCheck: func() {
 			testAccPreCheckTFERegistryModule(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFERegistryModuleDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -95,7 +95,7 @@ func TestAccTFERegistryModule_GitHubApp(t *testing.T) {
 			testAccPreCheckTFERegistryModule(t)
 			testAccGHAInstallationPreCheck(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFERegistryModuleDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -142,7 +142,7 @@ func TestAccTFERegistryModule_emptyVCSRepo(t *testing.T) {
 			testAccPreCheck(t)
 			testAccPreCheckTFERegistryModule(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFERegistryModuleDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -170,7 +170,7 @@ func TestAccTFERegistryModule_nonVCSPrivateRegistryModuleWithoutRegistryName(t *
 		PreCheck: func() {
 			testAccPreCheck(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFERegistryModuleDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -219,7 +219,7 @@ func TestAccTFERegistryModule_nonVCSPrivateRegistryModuleWithRegistryName(t *tes
 		PreCheck: func() {
 			testAccPreCheck(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFERegistryModuleDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -268,7 +268,7 @@ func TestAccTFERegistryModule_publicRegistryModule(t *testing.T) {
 		PreCheck: func() {
 			testAccPreCheck(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFERegistryModuleDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -309,7 +309,7 @@ func TestAccTFERegistryModule_branchOnly(t *testing.T) {
 			testAccPreCheck(t)
 			testAccPreCheckTFERegistryModule(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERegistryModule_branchOnly(rInt),
@@ -333,7 +333,7 @@ func TestAccTFERegistryModule_vcsRepoWithTags(t *testing.T) {
 			testAccPreCheck(t)
 			testAccPreCheckTFERegistryModule(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERegistryModule_vcsRepoWithFalseTags(rInt),
@@ -357,7 +357,7 @@ func TestAccTFERegistryModule_branchOnlyMonorepo(t *testing.T) {
 			testAccPreCheck(t)
 			testAccPreCheckTFERegistryModule(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERegistryModule_branchOnlyMonorepo(rInt),
@@ -382,7 +382,7 @@ func TestAccTFERegistryModule_vcsRepoWithTagPrefixMonorepo(t *testing.T) {
 			testAccPreCheck(t)
 			testAccPreCheckTFERegistryModule(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERegistryModule_vcsRepoWithTagPrefixMonorepo(rInt),
@@ -419,7 +419,7 @@ func TestAccTFERegistryModule_noCodeModule(t *testing.T) {
 		PreCheck: func() {
 			testAccPreCheck(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFERegistryModuleDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -461,7 +461,7 @@ func TestAccTFERegistryModuleImport_vcsPrivateRMDeprecatedFormat(t *testing.T) {
 			testAccPreCheck(t)
 			testAccPreCheckTFERegistryModule(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFERegistryModuleDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -485,7 +485,7 @@ func TestAccTFERegistryModuleImport_vcsPrivateRMRecommendedFormat(t *testing.T) 
 			testAccPreCheck(t)
 			testAccPreCheckTFERegistryModule(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFERegistryModuleDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -509,7 +509,7 @@ func TestAccTFERegistryModuleImport_vcsPublishingMechanismBranchToTagsToBranch(t
 			testAccPreCheck(t)
 			testAccPreCheckTFERegistryModule(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERegistryModule_vcsBranch(rInt),
@@ -569,7 +569,7 @@ func TestAccTFERegistryModule_branchOnlyEmpty(t *testing.T) {
 			testAccPreCheck(t)
 			testAccPreCheckTFERegistryModule(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERegistryModule_branchOnlyEmpty(rInt),
@@ -592,7 +592,7 @@ func TestAccTFERegistryModuleImport_vcsPublishingMechanismBranchToTagsToBranchWi
 			testAccPreCheck(t)
 			testAccPreCheckTFERegistryModule(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERegistryModule_vcsBranchWithTests(rInt),
@@ -633,7 +633,7 @@ func TestAccTFERegistryModuleImport_vcsPublishingMechanismTagsToBranchToTags(t *
 			testAccPreCheck(t)
 			testAccPreCheckTFERegistryModule(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERegistryModule_vcsTags(rInt),
@@ -683,7 +683,7 @@ func TestAccTFERegistryModule_invalidTestConfigOnCreate(t *testing.T) {
 			testAccPreCheck(t)
 			testAccPreCheckTFERegistryModule(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFERegistryModule_vcsInvalidBranch(rInt),
@@ -701,7 +701,7 @@ func TestAccTFERegistryModule_invalidTestConfigOnUpdate(t *testing.T) {
 			testAccPreCheck(t)
 			testAccPreCheckTFERegistryModule(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERegistryModule_vcsTags(rInt),
@@ -729,7 +729,7 @@ func TestAccTFERegistryModule_vcsTagsOnlyFalse(t *testing.T) {
 			testAccPreCheck(t)
 			testAccPreCheckTFERegistryModule(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFERegistryModule_vcsTagsOnlyFalse(rInt),
@@ -747,7 +747,7 @@ func TestAccTFERegistryModule_branchAndInvalidTagsOnCreate(t *testing.T) {
 			testAccPreCheck(t)
 			testAccPreCheckTFERegistryModule(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFERegistryModule_vcsBranchWithInvalidTests(rInt),
@@ -765,7 +765,7 @@ func TestAccTFERegistryModule_branchAndTagsEnabledOnCreate(t *testing.T) {
 			testAccPreCheck(t)
 			testAccPreCheckTFERegistryModule(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFERegistryModule_vcsBranchWithTestsAndTagsEnabled(rInt),
@@ -784,7 +784,7 @@ func TestAccTFERegistryModule_branchAndTagsDisabledOnCreate(t *testing.T) {
 			testAccPreCheck(t)
 			testAccPreCheckTFERegistryModule(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFERegistryModule_vcsWithBranchAndTagsDisabled(rInt),
@@ -802,7 +802,7 @@ func TestAccTFERegistryModule_branchAndTagsEnabledOnUpdate(t *testing.T) {
 			testAccPreCheck(t)
 			testAccPreCheckTFERegistryModule(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERegistryModule_vcsTags(rInt),
@@ -830,7 +830,7 @@ func TestAccTFERegistryModule_branchAndTagsDisabledOnUpdate(t *testing.T) {
 			testAccPreCheck(t)
 			testAccPreCheckTFERegistryModule(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERegistryModule_vcsTags(rInt),
@@ -856,7 +856,7 @@ func TestAccTFERegistryModuleImport_nonVCSPrivateRM(t *testing.T) {
 		PreCheck: func() {
 			testAccPreCheck(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFERegistryModuleDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -879,7 +879,7 @@ func TestAccTFERegistryModuleImport_publicRM(t *testing.T) {
 		PreCheck: func() {
 			testAccPreCheck(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFERegistryModuleDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -900,7 +900,7 @@ func TestAccTFERegistryModule_invalidWithBothVCSRepoAndModuleProvider(t *testing
 		PreCheck: func() {
 			testAccPreCheck(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFERegistryModule_invalidWithBothVCSRepoAndModuleProvider(),
@@ -915,7 +915,7 @@ func TestAccTFERegistryModule_invalidRegistryName(t *testing.T) {
 		PreCheck: func() {
 			testAccPreCheck(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFERegistryModule_invalidRegistryName(),
@@ -930,7 +930,7 @@ func TestAccTFERegistryModule_invalidWithModuleProviderAndNoName(t *testing.T) {
 		PreCheck: func() {
 			testAccPreCheck(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFERegistryModule_invalidWithModuleProviderAndNoName(),
@@ -945,7 +945,7 @@ func TestAccTFERegistryModule_invalidWithModuleProviderAndNoOrganization(t *test
 		PreCheck: func() {
 			testAccPreCheck(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFERegistryModule_invalidWithModuleProviderAndNoOrganization(),
@@ -960,7 +960,7 @@ func TestAccTFERegistryModule_invalidWithNamespaceAndNoRegistryName(t *testing.T
 		PreCheck: func() {
 			testAccPreCheck(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFERegistryModule_invalidWithNamespaceAndNoRegistryName(),
@@ -975,7 +975,7 @@ func TestAccTFERegistryModule_invalidWithRegistryNameAndNoModuleProvider(t *test
 		PreCheck: func() {
 			testAccPreCheck(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFERegistryModule_invalidWithRegistryNameAndNoModuleProvider(),
