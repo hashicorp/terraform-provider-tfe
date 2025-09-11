@@ -80,6 +80,10 @@ func (r *resourceTFEStack) Schema(ctx context.Context, req resource.SchemaReques
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
+			"agent_pool_id": schema.StringAttribute{
+				Description: "The time when the stack was last updated.",
+				Optional:    true,
+			},
 			"name": schema.StringAttribute{
 				Description: "Name of the Stack",
 				Required:    true,
@@ -152,6 +156,12 @@ func (r *resourceTFEStack) Create(ctx context.Context, req resource.CreateReques
 			Branch:            plan.VCSRepo.Branch.ValueString(),
 			GHAInstallationID: plan.VCSRepo.GHAInstallationID.ValueString(),
 			OAuthTokenID:      plan.VCSRepo.OAuthTokenID.ValueString(),
+		}
+	}
+
+	if !plan.AgentPoolID.IsNull() {
+		options.AgentPool = &tfe.AgentPool{
+			ID: plan.AgentPoolID.ValueString(),
 		}
 	}
 
@@ -249,6 +259,12 @@ func (r *resourceTFEStack) Update(ctx context.Context, req resource.UpdateReques
 	} else {
 		tflog.Debug(ctx, "Removing VCS repository from stack update")
 		options.VCSRepo = nil
+	}
+
+	if !plan.AgentPoolID.IsNull() {
+		options.AgentPool = &tfe.AgentPool{
+			ID: plan.AgentPoolID.ValueString(),
+		}
 	}
 
 	tflog.Debug(ctx, "Updating stack")
