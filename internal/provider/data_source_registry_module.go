@@ -96,6 +96,8 @@ type modelTFEVCSRepo struct {
 	GHAInstallationID types.String `tfsdk:"github_app_installation_id"`
 	RepositoryHTTPURL types.String `tfsdk:"repository_http_url"`
 	ServiceProvider   types.String `tfsdk:"service_provider"`
+	SourceDirectory   types.String `tfsdk:"source_directory"`
+	TagPrefix         types.String `tfsdk:"tag_prefix"`
 	Tags              types.Bool   `tfsdk:"tags"`
 	TagsRegex         types.String `tfsdk:"tags_regex"`
 	WebhookURL        types.String `tfsdk:"webhook_url"`
@@ -111,6 +113,8 @@ func (m modelTFEVCSRepo) AttributeTypes() map[string]attr.Type {
 		"github_app_installation_id": types.StringType,
 		"repository_http_url":        types.StringType,
 		"service_provider":           types.StringType,
+		"source_directory":           types.StringType,
+		"tag_prefix":                 types.StringType,
 		"tags":                       types.BoolType,
 		"tags_regex":                 types.StringType,
 		"webhook_url":                types.StringType,
@@ -127,6 +131,8 @@ func modelFromTFEVCSRepo(v *tfe.VCSRepo) modelTFEVCSRepo {
 		GHAInstallationID: types.StringValue(v.GHAInstallationID),
 		RepositoryHTTPURL: types.StringValue(v.RepositoryHTTPURL),
 		ServiceProvider:   types.StringValue(v.ServiceProvider),
+		SourceDirectory:   types.StringValue(v.SourceDirectory),
+		TagPrefix:         types.StringValue(v.TagPrefix),
 		Tags:              types.BoolValue(v.Tags),
 		TagsRegex:         types.StringValue(v.TagsRegex),
 		WebhookURL:        types.StringValue(v.WebhookURL),
@@ -303,6 +309,12 @@ func (d *dataSourceTFERegistryModule) Schema(_ context.Context, _ datasource.Sch
 							Computed: true,
 						},
 						"service_provider": schema.StringAttribute{
+							Computed: true,
+						},
+						"source_directory": schema.StringAttribute{
+							Computed: true,
+						},
+						"tag_prefix": schema.StringAttribute{
 							Computed: true,
 						},
 						"tags": schema.BoolAttribute{
