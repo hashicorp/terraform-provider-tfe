@@ -9,11 +9,6 @@ import (
 )
 
 func TestAccTFEHYOKCustomerKeyVersionDataSource_basic(t *testing.T) {
-	//tfeClient, err := getClientUsingEnv()
-	//if err != nil {
-	//	t.Fatal(err)
-	//}
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: testAccMuxedProviders,
@@ -26,7 +21,7 @@ func TestAccTFEHYOKCustomerKeyVersionDataSource_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.tfe_hyok_customer_key_version.test", "id", "keyv-BWZTzt2J75DsdwH8"),
 					resource.TestCheckResourceAttr("data.tfe_hyok_customer_key_version.test", "status", "available"),
-					resource.TestCheckResourceAttr("data.tfe_hyok_customer_key_version.test", "key_version", "1"),
+					resource.TestCheckResourceAttr("data.tfe_hyok_customer_key_version.test", "key_version", "10"),
 					resource.TestCheckResourceAttrSet("data.tfe_hyok_customer_key_version.test", "created_at"),
 					resource.TestCheckResourceAttrSet("data.tfe_hyok_customer_key_version.test", "updated_at"),
 				),

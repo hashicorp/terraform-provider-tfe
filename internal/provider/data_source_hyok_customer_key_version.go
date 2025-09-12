@@ -119,16 +119,6 @@ func (d *dataSourceHYOKCustomerKeyVersion) Read(ctx context.Context, req datasou
 	data.RevokedAt = types.StringValue(keyVersion.RevokedAt.Format(time.RFC3339)) // TODO DOM: Check this format
 	data.Error = types.StringValue(keyVersion.Error)
 
-	//if keyVersion.Error != "" {
-	//} else {
-	//	data.Error = types.StringNull()
-	//}
-	//
-	//if keyVersion.RevokedAt != nil {
-	//} else {
-	//	data.RevokedAt = types.StringNull()
-	//}
-
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
