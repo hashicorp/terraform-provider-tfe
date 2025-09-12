@@ -58,9 +58,9 @@ func TestAccTFEProjectSettings_DefaultExecutionMode(t *testing.T) {
 					resource.TestCheckNoResourceAttr(
 						"tfe_project_settings.foobar_settings", "default_agent_pool_id"),
 					resource.TestCheckResourceAttr(
-						"tfe_project_settings.foobar_settings", "overwrites.0.default_execution_mode", "false"),
+						"tfe_project_settings.foobar_settings", "overwrites.default_execution_mode", "false"),
 					resource.TestCheckResourceAttr(
-						"tfe_project_settings.foobar_settings", "overwrites.0.default_agent_pool_id", "false"),
+						"tfe_project_settings.foobar_settings", "overwrites.default_agent_pool_id", "false"),
 				),
 			},
 			{
@@ -74,10 +74,10 @@ func TestAccTFEProjectSettings_DefaultExecutionMode(t *testing.T) {
 							tfjsonpath.New("default_agent_pool_id"),
 							knownvalue.Null()),
 						plancheck.ExpectKnownValue("tfe_project_settings.foobar_settings",
-							tfjsonpath.New("overwrites").AtSliceIndex(0).AtMapKey("default_execution_mode"),
+							tfjsonpath.New("overwrites").AtMapKey("default_execution_mode"),
 							knownvalue.Bool(true)),
 						plancheck.ExpectKnownValue("tfe_project_settings.foobar_settings",
-							tfjsonpath.New("overwrites").AtSliceIndex(0).AtMapKey("default_agent_pool_id"),
+							tfjsonpath.New("overwrites").AtMapKey("default_agent_pool_id"),
 							knownvalue.Bool(true)),
 					},
 				},
@@ -87,9 +87,9 @@ func TestAccTFEProjectSettings_DefaultExecutionMode(t *testing.T) {
 					resource.TestCheckNoResourceAttr(
 						"tfe_project_settings.foobar_settings", "default_agent_pool_id"),
 					resource.TestCheckResourceAttr(
-						"tfe_project_settings.foobar_settings", "overwrites.0.default_execution_mode", "true"),
+						"tfe_project_settings.foobar_settings", "overwrites.default_execution_mode", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_project_settings.foobar_settings", "overwrites.0.default_agent_pool_id", "true"),
+						"tfe_project_settings.foobar_settings", "overwrites.default_agent_pool_id", "true"),
 				),
 			},
 			{
@@ -100,10 +100,10 @@ func TestAccTFEProjectSettings_DefaultExecutionMode(t *testing.T) {
 							tfjsonpath.New("default_execution_mode"),
 							knownvalue.StringExact("local")),
 						plancheck.ExpectKnownValue("tfe_project_settings.foobar_settings",
-							tfjsonpath.New("overwrites").AtSliceIndex(0).AtMapKey("default_execution_mode"),
+							tfjsonpath.New("overwrites").AtMapKey("default_execution_mode"),
 							knownvalue.Bool(true)),
 						plancheck.ExpectKnownValue("tfe_project_settings.foobar_settings",
-							tfjsonpath.New("overwrites").AtSliceIndex(0).AtMapKey("default_agent_pool_id"),
+							tfjsonpath.New("overwrites").AtMapKey("default_agent_pool_id"),
 							knownvalue.Bool(true)),
 					},
 				},
@@ -113,9 +113,9 @@ func TestAccTFEProjectSettings_DefaultExecutionMode(t *testing.T) {
 					resource.TestCheckNoResourceAttr(
 						"tfe_project_settings.foobar_settings", "default_agent_pool_id"),
 					resource.TestCheckResourceAttr(
-						"tfe_project_settings.foobar_settings", "overwrites.0.default_execution_mode", "true"),
+						"tfe_project_settings.foobar_settings", "overwrites.default_execution_mode", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_project_settings.foobar_settings", "overwrites.0.default_agent_pool_id", "true"),
+						"tfe_project_settings.foobar_settings", "overwrites.default_agent_pool_id", "true"),
 				),
 			},
 			{
@@ -134,10 +134,10 @@ func TestAccTFEProjectSettings_DefaultExecutionMode(t *testing.T) {
 								return fmt.Errorf("expected an agent pool id, got %s", v)
 							})),
 						plancheck.ExpectKnownValue("tfe_project_settings.foobar_settings",
-							tfjsonpath.New("overwrites").AtSliceIndex(0).AtMapKey("default_execution_mode"),
+							tfjsonpath.New("overwrites").AtMapKey("default_execution_mode"),
 							knownvalue.Bool(true)),
 						plancheck.ExpectKnownValue("tfe_project_settings.foobar_settings",
-							tfjsonpath.New("overwrites").AtSliceIndex(0).AtMapKey("default_agent_pool_id"),
+							tfjsonpath.New("overwrites").AtMapKey("default_agent_pool_id"),
 							knownvalue.Bool(true)),
 					},
 				},
@@ -147,9 +147,9 @@ func TestAccTFEProjectSettings_DefaultExecutionMode(t *testing.T) {
 					resource.TestCheckResourceAttrSet(
 						"tfe_project_settings.foobar_settings", "default_agent_pool_id"),
 					resource.TestCheckResourceAttr(
-						"tfe_project_settings.foobar_settings", "overwrites.0.default_execution_mode", "true"),
+						"tfe_project_settings.foobar_settings", "overwrites.default_execution_mode", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_project_settings.foobar_settings", "overwrites.0.default_agent_pool_id", "true"),
+						"tfe_project_settings.foobar_settings", "overwrites.default_agent_pool_id", "true"),
 				),
 			},
 			{
@@ -159,10 +159,10 @@ func TestAccTFEProjectSettings_DefaultExecutionMode(t *testing.T) {
 						plancheck.ExpectUnknownValue("tfe_project_settings.foobar_settings", tfjsonpath.New("default_execution_mode")),
 						plancheck.ExpectUnknownValue("tfe_project_settings.foobar_settings", tfjsonpath.New("default_agent_pool_id")),
 						plancheck.ExpectKnownValue("tfe_project_settings.foobar_settings",
-							tfjsonpath.New("overwrites").AtSliceIndex(0).AtMapKey("default_execution_mode"),
+							tfjsonpath.New("overwrites").AtMapKey("default_execution_mode"),
 							knownvalue.Bool(false)),
 						plancheck.ExpectKnownValue("tfe_project_settings.foobar_settings",
-							tfjsonpath.New("overwrites").AtSliceIndex(0).AtMapKey("default_agent_pool_id"),
+							tfjsonpath.New("overwrites").AtMapKey("default_agent_pool_id"),
 							knownvalue.Bool(false)),
 					},
 				},
@@ -172,9 +172,9 @@ func TestAccTFEProjectSettings_DefaultExecutionMode(t *testing.T) {
 					resource.TestCheckNoResourceAttr(
 						"tfe_project_settings.foobar_settings", "default_agent_pool_id"),
 					resource.TestCheckResourceAttr(
-						"tfe_project_settings.foobar_settings", "overwrites.0.default_execution_mode", "false"),
+						"tfe_project_settings.foobar_settings", "overwrites.default_execution_mode", "false"),
 					resource.TestCheckResourceAttr(
-						"tfe_project_settings.foobar_settings", "overwrites.0.default_agent_pool_id", "false"),
+						"tfe_project_settings.foobar_settings", "overwrites.default_agent_pool_id", "false"),
 				),
 			},
 		},

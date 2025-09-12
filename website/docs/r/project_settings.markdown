@@ -7,6 +7,8 @@ description: |-
 
 # tfe_project_settings
 
+**Requires Terraform CLI version 1.0 and later**
+
 Use this resource to manage Project Settings.
 
 Primarily, this resource allows setting default execution mode and agent pool for all workspaces within a project. When not specified, the organization defaults will be used.

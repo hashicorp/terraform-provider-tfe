@@ -19,6 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 // tfe_project_settings resource
@@ -26,11 +27,9 @@ var _ resource.Resource = &projectSettings{}
 
 // projectOverwritesElementType is the object type definition for the
 // overwrites field schema.
-var projectOverwritesElementType = types.ObjectType{
-	AttrTypes: map[string]attr.Type{
-		"default_execution_mode": types.BoolType,
-		"default_agent_pool_id":  types.BoolType,
-	},
+var projectOverwritesElementType = map[string]attr.Type{
+	"default_execution_mode": types.BoolType,
+	"default_agent_pool_id":  types.BoolType,
 }
 
 type projectSettings struct {
@@ -42,7 +41,7 @@ type modelProjectSettings struct {
 	ProjectID            types.String `tfsdk:"project_id"`
 	DefaultExecutionMode types.String `tfsdk:"default_execution_mode"`
 	DefaultAgentPoolID   types.String `tfsdk:"default_agent_pool_id"`
-	Overwrites           types.List   `tfsdk:"overwrites"`
+	Overwrites           types.Object `tfsdk:"overwrites"`
 }
 
 type projectOverwrites struct {
@@ -79,9 +78,9 @@ type unknownIfDefaultExecutionModeUnset struct{}
 type overwriteExecutionModeIfSpecified struct{}
 
 var _ planmodifier.String = (*validateProjectDefaultAgentExecutionMode)(nil)
-var _ planmodifier.List = (*revertOverwritesIfDefaultExecutionModeUnset)(nil)
+var _ planmodifier.Object = (*revertOverwritesIfDefaultExecutionModeUnset)(nil)
 var _ planmodifier.String = (*unknownIfDefaultExecutionModeUnset)(nil)
-var _ planmodifier.List = (*overwriteExecutionModeIfSpecified)(nil)
+var _ planmodifier.Object = (*overwriteExecutionModeIfSpecified)(nil)
 
 func (m validateProjectDefaultAgentExecutionMode) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
 	configured := modelProjectSettings{}
@@ -104,7 +103,7 @@ func (m validateProjectDefaultAgentExecutionMode) MarkdownDescription(_ context.
 	return "Validates that configuration values for \"default_agent_pool_id\" and \"default_execution_mode\" are compatible"
 }
 
-func (m revertOverwritesIfDefaultExecutionModeUnset) PlanModifyList(ctx context.Context, req planmodifier.ListRequest, resp *planmodifier.ListResponse) {
+func (m revertOverwritesIfDefaultExecutionModeUnset) PlanModifyObject(ctx context.Context, req planmodifier.ObjectRequest, resp *planmodifier.ObjectResponse) {
 	// Check if the resource is being created.
 	if req.State.Raw.IsNull() {
 		return
@@ -122,18 +121,19 @@ func (m revertOverwritesIfDefaultExecutionModeUnset) PlanModifyList(ctx context.
 		return
 	}
 
-	overwritesState := make([]projectOverwrites, 1)
-	state.Overwrites.ElementsAs(ctx, &overwritesState, true)
+	overwritesState := projectOverwrites{}
+
+	state.Overwrites.As(ctx, &overwritesState, basetypes.ObjectAsOptions{})
 
 	// if there is a default execution mode set in state, but not one configured, then set the overwrites to false
-	if configured.DefaultExecutionMode.IsNull() && overwritesState[0].DefaultExecutionMode.ValueBool() {
-		overwritesState[0].DefaultAgentPoolID = types.BoolValue(false)
-		overwritesState[0].DefaultExecutionMode = types.BoolValue(false)
+	if configured.DefaultExecutionMode.IsNull() && overwritesState.DefaultExecutionMode.ValueBool() {
+		overwritesState.DefaultAgentPoolID = types.BoolValue(false)
+		overwritesState.DefaultExecutionMode = types.BoolValue(false)
 
-		newList, diags := types.ListValueFrom(ctx, projectOverwritesElementType, overwritesState)
+		newProjOverwrites, diags := types.ObjectValueFrom(ctx, projectOverwritesElementType, overwritesState)
 		resp.Diagnostics.Append(diags...)
 
-		resp.PlanValue = newList
+		resp.PlanValue = newProjOverwrites
 	}
 }
 
@@ -159,11 +159,11 @@ func (m unknownIfDefaultExecutionModeUnset) PlanModifyString(ctx context.Context
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
 	if !state.Overwrites.IsNull() {
-		overwritesState := make([]projectOverwrites, 1)
-		state.Overwrites.ElementsAs(ctx, &overwritesState, true)
+		overwritesState := projectOverwrites{}
+		state.Overwrites.As(ctx, &overwritesState, basetypes.ObjectAsOptions{})
 
 		// if there is a default execution mode set in state, but not one configured, then set the planned value for the default execution mode and agent pool to unknown
-		if configured.DefaultExecutionMode.IsNull() && overwritesState[0].DefaultExecutionMode.ValueBool() {
+		if configured.DefaultExecutionMode.IsNull() && overwritesState.DefaultExecutionMode.ValueBool() {
 			resp.PlanValue = types.StringUnknown()
 		}
 	}
@@ -177,7 +177,7 @@ func (m unknownIfDefaultExecutionModeUnset) MarkdownDescription(_ context.Contex
 	return "Resets default_execution_mode to an unknown value if it is unset"
 }
 
-func (m overwriteExecutionModeIfSpecified) PlanModifyList(ctx context.Context, req planmodifier.ListRequest, resp *planmodifier.ListResponse) {
+func (m overwriteExecutionModeIfSpecified) PlanModifyObject(ctx context.Context, req planmodifier.ObjectRequest, resp *planmodifier.ObjectResponse) {
 	// Check if the resource is being created.
 	if req.State.Raw.IsNull() {
 		return
@@ -189,16 +189,16 @@ func (m overwriteExecutionModeIfSpecified) PlanModifyList(ctx context.Context, r
 	resp.Diagnostics.Append(req.Config.Get(ctx, &configured)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
-	overwritesState := make([]projectOverwrites, 1)
-	state.Overwrites.ElementsAs(ctx, &overwritesState, true)
+	overwritesState := projectOverwrites{}
+	state.Overwrites.As(ctx, &overwritesState, basetypes.ObjectAsOptions{})
 
 	if !state.Overwrites.IsNull() {
 		// if an execution mode is configured, ensure that the overwrites are set to true
 		if !configured.DefaultExecutionMode.IsNull() {
-			overwritesState[0].DefaultAgentPoolID = types.BoolValue(true)
-			overwritesState[0].DefaultExecutionMode = types.BoolValue(true)
+			overwritesState.DefaultAgentPoolID = types.BoolValue(true)
+			overwritesState.DefaultExecutionMode = types.BoolValue(true)
 
-			newList, diags := types.ListValueFrom(ctx, projectOverwritesElementType, overwritesState)
+			newList, diags := types.ObjectValueFrom(ctx, projectOverwritesElementType, overwritesState)
 			resp.Diagnostics.Append(diags...)
 
 			resp.PlanValue = newList
@@ -255,13 +255,20 @@ func (r *projectSettings) Schema(ctx context.Context, req resource.SchemaRequest
 					validateProjectDefaultAgentExecutionMode{},
 				},
 			},
-			// ListAttribute was required here because we are still using plugin protocol v5.
-			// Once compatibility is broken for v1, and we convert all
-			// providers to protocol v6, this can become a single nested object.
-			"overwrites": schema.ListAttribute{
+			"overwrites": schema.SingleNestedAttribute{
 				Computed:    true,
-				ElementType: projectOverwritesElementType,
-				PlanModifiers: []planmodifier.List{
+				Description: "Describes which settings are being overwritten from the organization defaults",
+				Attributes: map[string]schema.Attribute{
+					"default_execution_mode": schema.BoolAttribute{
+						Computed:    true,
+						Description: "Whether the default_execution_mode is being overwritten from the organization default",
+					},
+					"default_agent_pool_id": schema.BoolAttribute{
+						Computed:    true,
+						Description: "Whether the default_agent_pool_id is being overwritten from the organization default",
+					},
+				},
+				PlanModifiers: []planmodifier.Object{
 					revertOverwritesIfDefaultExecutionModeUnset{},
 					overwriteExecutionModeIfSpecified{},
 				},
@@ -282,19 +289,19 @@ func (r *projectSettings) projectSettingsModelFromTFEProject(proj *tfe.Project) 
 		result.DefaultAgentPoolID = types.StringValue(proj.DefaultAgentPool.ID)
 	}
 
-	result.Overwrites = types.ListNull(projectOverwritesElementType)
+	result.Overwrites = types.ObjectNull(projectOverwritesElementType)
 	if proj.SettingOverwrites != nil {
 		settingsModel := projectOverwrites{
 			DefaultExecutionMode: types.BoolValue(*proj.SettingOverwrites.ExecutionMode),
 			DefaultAgentPoolID:   types.BoolValue(*proj.SettingOverwrites.AgentPool),
 		}
 
-		listOverwrites, diags := types.ListValueFrom(ctx, projectOverwritesElementType, []projectOverwrites{settingsModel})
+		objectOverwrites, diags := types.ObjectValueFrom(ctx, projectOverwritesElementType, settingsModel)
 		if diags.HasError() {
-			panic("Could not build list value from slice of models. This should not be possible unless the model breaks reflection rules.")
+			panic("Could not build object value from model. This should not be possible unless the model breaks reflection rules.")
 		}
 
-		result.Overwrites = listOverwrites
+		result.Overwrites = objectOverwrites
 	}
 
 	return &result
