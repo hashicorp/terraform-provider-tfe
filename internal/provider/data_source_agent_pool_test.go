@@ -111,7 +111,7 @@ func TestAccTFEAgentPoolDataSource_allowed_projects(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEAgentPoolDataSourceAllowedProjectsConfig(org.Name, rInt, ws.ID),
@@ -153,7 +153,7 @@ func TestAccTFEAgentPoolDataSource_excluded_workspaces(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEAgentPoolDataSourceExcludedWorkspacesConfig(org.Name, rInt, ws.ID),
