@@ -20,7 +20,7 @@ func TestAccTFEStackResource_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "brandonc/pet-nulls-stack"),
@@ -85,7 +85,7 @@ func TestAccTFEStackResource_noVCSRepo(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEStackResourceConfigNoVCSRepo(orgName),

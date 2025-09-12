@@ -25,7 +25,7 @@ func TestAccTFETeamDataSource_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamDataSourceConfig_basic(rInt, org.Name),
@@ -55,7 +55,7 @@ func TestAccTFETeamDataSource_ssoTeamId(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFETeamDataSourceConfig_ssoTeamId(rInt, org.Name, testSsoTeamID),

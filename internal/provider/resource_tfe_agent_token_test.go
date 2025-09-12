@@ -27,7 +27,7 @@ func TestAccTFEAgentToken_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEAgentTokenDestroy,
 		Steps: []resource.TestStep{
 			{

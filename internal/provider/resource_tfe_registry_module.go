@@ -100,6 +100,16 @@ func resourceTFERegistryModule() *schema.Resource {
 							Optional: true,
 							Computed: true,
 						},
+						"source_directory": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
+						"tag_prefix": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
 					},
 				},
 			},
@@ -187,6 +197,15 @@ func resourceTFERegistryModuleCreateWithVCS(v interface{}, meta interface{}, d *
 		if initialVersionOk && initialVersion.(string) != "" {
 			options.InitialVersion = tfe.String(initialVersion.(string))
 		}
+	}
+
+	tagPrefix, tagPrefixOk := vcsRepo["tag_prefix"].(string)
+	sourceDirectory, sourceDirectoryOk := vcsRepo["source_directory"].(string)
+	if tagPrefixOk && tagPrefix != "" {
+		options.VCSRepo.TagPrefix = tfe.String(tagPrefix)
+	}
+	if sourceDirectoryOk && sourceDirectory != "" {
+		options.VCSRepo.SourceDirectory = tfe.String(sourceDirectory)
 	}
 
 	if vcsRepo["oauth_token_id"] != nil && vcsRepo["oauth_token_id"].(string) != "" {
@@ -401,6 +420,8 @@ func resourceTFERegistryModuleRead(d *schema.ResourceData, meta interface{}) err
 			"display_identifier":         registryModule.VCSRepo.DisplayIdentifier,
 			"branch":                     registryModule.VCSRepo.Branch,
 			"tags":                       registryModule.VCSRepo.Tags,
+			"source_directory":           registryModule.VCSRepo.SourceDirectory,
+			"tag_prefix":                 registryModule.VCSRepo.TagPrefix,
 		}
 		vcsRepo = append(vcsRepo, vcsConfig)
 

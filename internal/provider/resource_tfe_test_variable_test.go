@@ -26,7 +26,7 @@ func TestAccTFETestVariable_basic(t *testing.T) {
 			testAccPreCheck(t)
 			testAccGithubPreCheck(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETestVariableDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -65,7 +65,7 @@ func TestAccTFETestVariable_valueWriteOnly(t *testing.T) {
 		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
 			tfversion.SkipBelow(version.Must(version.NewVersion("1.11.0"))),
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETestVariableDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -96,7 +96,7 @@ func TestAccTFETestVariable_update(t *testing.T) {
 			testAccPreCheck(t)
 			testAccGithubPreCheck(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETestVariableDestroy,
 		Steps: []resource.TestStep{
 			{

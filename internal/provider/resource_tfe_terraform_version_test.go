@@ -26,7 +26,7 @@ func TestAccTFETerraformVersion_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETerraformVersionDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -46,6 +46,40 @@ func TestAccTFETerraformVersion_basic(t *testing.T) {
 	})
 }
 
+func TestAccTFETerraformVersion_archs(t *testing.T) {
+	skipIfCloud(t)
+
+	tfVersion := &tfe.AdminTerraformVersion{}
+	amd64Sha := genSha(t, "secret", "data")
+	arm64Sha := genSha(t, "another-secret", "data")
+	version := genSafeRandomTerraformVersion()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETerraformVersionDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: resourceTFETerraformVersion_archs(version, amd64Sha, arm64Sha),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFETerraformVersionExists("tfe_terraform_version.foobar", tfVersion),
+					testAccCheckTFETerraformVersionAttributesArchs(tfVersion, version, amd64Sha, arm64Sha),
+					resource.TestCheckResourceAttr(
+						"tfe_terraform_version.foobar", "version", version),
+					resource.TestCheckResourceAttr(
+						"tfe_terraform_version.foobar", "archs.0.url", "https://www.hashicorp.com"),
+					resource.TestCheckResourceAttr(
+						"tfe_terraform_version.foobar", "archs.0.sha", amd64Sha),
+					resource.TestCheckResourceAttr(
+						"tfe_terraform_version.foobar", "archs.0.os", "linux"),
+					resource.TestCheckResourceAttr(
+						"tfe_terraform_version.foobar", "archs.0.arch", "amd64"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFETerraformVersion_import(t *testing.T) {
 	skipIfCloud(t)
 
@@ -54,7 +88,7 @@ func TestAccTFETerraformVersion_import(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETerraformVersionDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -84,7 +118,7 @@ func TestAccTFETerraformVersion_full(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETerraformVersionDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -177,6 +211,79 @@ func testAccCheckTFETerraformVersionAttributesBasic(tfVersion *tfe.AdminTerrafor
 	}
 }
 
+func testAccCheckTFETerraformVersionAttributesArchs(tfVersion *tfe.AdminTerraformVersion, version string, amd64Sha string, arm64Sha string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		// Check the version
+		if tfVersion.Version != version {
+			return fmt.Errorf("bad version: %s", tfVersion.Version)
+		}
+
+		if tfVersion.URL != "https://www.hashicorp.com" {
+			return fmt.Errorf("bad URL: %s", tfVersion.URL)
+		}
+
+		if tfVersion.Sha != amd64Sha {
+			return fmt.Errorf("bad value for Sha: %v", tfVersion.Sha)
+		}
+
+		if len(tfVersion.Archs) != 2 {
+			return fmt.Errorf("bad number of archs: %d", len(tfVersion.Archs))
+		}
+
+		if tfVersion.Archs[0].URL != "https://www.hashicorp.com" {
+			return fmt.Errorf("bad value for  URL: %s", tfVersion.Archs[0].URL)
+		}
+
+		if tfVersion.Archs[0].Sha != amd64Sha {
+			return fmt.Errorf("bad value for Sha: %v", tfVersion.Archs[0].Sha)
+		}
+
+		if tfVersion.Archs[0].OS != "linux" {
+			return fmt.Errorf("bad value for OS: %s", tfVersion.Archs[0].OS)
+		}
+
+		if tfVersion.Archs[0].Arch != "amd64" {
+			return fmt.Errorf("bad value for Arch: %s", tfVersion.Archs[0].Arch)
+		}
+
+		if tfVersion.Archs[1].URL != "https://www.hashicorp.com" {
+			return fmt.Errorf("bad value for  URL: %s", tfVersion.Archs[1].URL)
+		}
+		if tfVersion.Archs[1].Sha != arm64Sha {
+			return fmt.Errorf("bad value for Sha: %v", tfVersion.Archs[1].Sha)
+		}
+		if tfVersion.Archs[1].OS != "linux" {
+			return fmt.Errorf("bad value for OS: %s", tfVersion.Archs[1].OS)
+		}
+		if tfVersion.Archs[1].Arch != "arm64" {
+			return fmt.Errorf("bad value for Arch: %s", tfVersion.Archs[1].Arch)
+		}
+
+		// Check other attributes
+		if tfVersion.Official != false {
+			return fmt.Errorf("bad value for official: %t", tfVersion.Official)
+		}
+
+		if tfVersion.Enabled != true {
+			return fmt.Errorf("bad value for enabled: %t", tfVersion.Enabled)
+		}
+
+		if tfVersion.Beta != true {
+			return fmt.Errorf("bad value for beta: %t", tfVersion.Beta)
+		}
+
+		if tfVersion.Deprecated != true {
+			return fmt.Errorf("bad value for deprecated: %t", tfVersion.Deprecated)
+		}
+
+		if *tfVersion.DeprecatedReason != "foobar" {
+			return fmt.Errorf("bad value for deprecated_reason: %s", *tfVersion.DeprecatedReason)
+		}
+
+		return nil
+	}
+}
+
 func testAccCheckTFETerraformVersionAttributesFull(tfVersion *tfe.AdminTerraformVersion, version string, sha string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if tfVersion.URL != "https://www.hashicorp.com" {
@@ -222,6 +329,31 @@ resource "tfe_terraform_version" "foobar" {
   url = "https://www.hashicorp.com"
   sha = "%s"
 }`, version, sha)
+}
+
+func resourceTFETerraformVersion_archs(version string, amd64Sha string, arm64Sha string) string {
+	return fmt.Sprintf(`
+resource "tfe_terraform_version" "foobar" {
+  version = "%s"
+  official = false
+  enabled = true
+  beta = true
+  deprecated = true
+  deprecated_reason = "foobar"
+
+  archs = [{
+    url = "https://www.hashicorp.com"
+	sha = "%s"
+	os = "linux"
+	arch = "amd64"
+	  },
+	  {
+		url = "https://www.hashicorp.com"
+		sha = "%s"
+		os = "linux"
+		arch = "arm64"}
+	]
+	  }`, version, amd64Sha, arm64Sha)
 }
 
 func testAccTFETerraformVersion_full(version string, sha string) string {

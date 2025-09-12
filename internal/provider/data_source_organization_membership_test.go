@@ -20,7 +20,7 @@ func TestAccTFEOrganizationMembershipDataSource_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationMembershipDataSourceConfig(rInt),
@@ -67,7 +67,7 @@ func TestAccTFEOrganizationMembershipDataSource_findByName(t *testing.T) {
 				t.Skip("Please set TFE_USER1 to run this test")
 			}
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationMembershipDataSourceSearchUsername(envTFEUser1),
@@ -90,7 +90,7 @@ func TestAccTFEOrganizationMembershipDataSource_missingParams(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEOrganizationMembershipDataSourceMissingParams(rInt),

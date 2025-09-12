@@ -22,7 +22,7 @@ func TestAccTFEOrganizationToken_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -45,7 +45,7 @@ func TestAccTFEOrganizationToken_existsWithoutForce(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -73,7 +73,7 @@ func TestAccTFEOrganizationToken_existsWithForce(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -106,7 +106,7 @@ func TestAccTFEOrganizationToken_withBlankExpiry(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -129,7 +129,7 @@ func TestAccTFEOrganizationToken_withValidExpiry(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -150,7 +150,7 @@ func TestAccTFEOrganizationToken_withInvalidExpiry(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -166,7 +166,7 @@ func TestAccTFEOrganizationToken_import(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEOrganizationTokenDestroy,
 		Steps: []resource.TestStep{
 			{

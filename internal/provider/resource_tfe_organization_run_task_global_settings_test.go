@@ -18,7 +18,7 @@ import (
 func TestAccTFEOrganizationRunTaskGlobalSettings_validateSchemaAttributeUrl(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			// enforcement_level
 			{
@@ -60,7 +60,7 @@ func TestAccTFEOrganizationRunTaskGlobalSettings_create(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEOrganizationRunTaskDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -103,7 +103,7 @@ func TestAccTFEOrganizationRunTaskGlobalSettings_createUnsupported(t *testing.T)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEOrganizationRunTaskDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -129,7 +129,7 @@ func TestAccTFEOrganizationRunTaskGlobalSettings_import(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -188,7 +188,7 @@ func TestAccTFEOrganizationRunTaskGlobalSettings_Read(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEOrganizationRunTaskDestroy,
 		Steps: []resource.TestStep{
 			{

@@ -27,7 +27,7 @@ func TestAccTFEWorkspacePolicySet_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspacePolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -60,7 +60,7 @@ func TestAccTFEWorkspacePolicySet_incorrectImportSyntax(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEWorkspacePolicySet_basic(org.Name, rInt),

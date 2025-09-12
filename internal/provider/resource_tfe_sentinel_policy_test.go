@@ -20,7 +20,7 @@ func TestAccTFESentinelPolicy_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFESentinelPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -49,7 +49,7 @@ func TestAccTFESentinelPolicy_update(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFESentinelPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -94,7 +94,7 @@ func TestAccTFESentinelPolicy_import(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFESentinelPolicyDestroy,
 		Steps: []resource.TestStep{
 			{

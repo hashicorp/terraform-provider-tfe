@@ -4,7 +4,16 @@
 package provider
 
 import (
+	"context"
 	"fmt"
+
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
 )
@@ -136,4 +145,277 @@ func fetchOPAVersionID(version string, client *tfe.Client) (string, error) {
 	}
 
 	return "", fmt.Errorf("OPA version not found")
+}
+
+func stringOrNil(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+// ToolArchitecture represents the common architecture structure for all tool versions
+type ToolArchitecture struct {
+	URL  types.String `tfsdk:"url"`
+	Sha  types.String `tfsdk:"sha"`
+	OS   types.String `tfsdk:"os"`
+	Arch types.String `tfsdk:"arch"`
+}
+
+// ObjectTypeForArchitectures returns the standard object type definition for architecture objects
+func ObjectTypeForArchitectures() types.ObjectType {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"url":  types.StringType,
+			"sha":  types.StringType,
+			"os":   types.StringType,
+			"arch": types.StringType,
+		},
+	}
+}
+
+// convertAPIArchsToFrameworkSet converts API architecture objects to a Framework Set value
+func convertAPIArchsToFrameworkSet(apiArchs []*tfe.ToolVersionArchitecture) types.Set {
+	archObjectType := ObjectTypeForArchitectures()
+
+	// Return empty set rather than null set
+	if len(apiArchs) == 0 {
+		return types.SetValueMust(archObjectType, []attr.Value{})
+	}
+
+	// Rest of function remains the same
+	archValues := make([]attr.Value, len(apiArchs))
+	for i, arch := range apiArchs {
+		archValues[i] = types.ObjectValueMust(
+			archObjectType.AttrTypes,
+			map[string]attr.Value{
+				"url":  types.StringValue(arch.URL),
+				"sha":  types.StringValue(arch.Sha),
+				"os":   types.StringValue(arch.OS),
+				"arch": types.StringValue(arch.Arch),
+			},
+		)
+	}
+
+	return types.SetValueMust(archObjectType, archValues)
+}
+
+// convertToToolVersionArchitectures converts Framework types.Set to API architecture objects
+func convertToToolVersionArchitectures(ctx context.Context, archs types.Set) ([]*tfe.ToolVersionArchitecture, diag.Diagnostics) {
+	if archs.IsNull() || archs.IsUnknown() {
+		return nil, nil
+	}
+
+	var diags diag.Diagnostics
+	var archModels []ToolArchitecture
+
+	diags.Append(archs.ElementsAs(ctx, &archModels, false)...)
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	result := make([]*tfe.ToolVersionArchitecture, 0, len(archModels))
+	for _, model := range archModels {
+		result = append(result, &tfe.ToolVersionArchitecture{
+			URL:  model.URL.ValueString(),
+			Sha:  model.Sha.ValueString(),
+			OS:   model.OS.ValueString(),
+			Arch: model.Arch.ValueString(),
+		})
+	}
+
+	return result, nil
+}
+
+// PreserveAMD64ArchsOnChange creates a plan modifier that preserves AMD64 architecture entries
+// when top-level URL or SHA changes, to be used across all tool version resources
+func PreserveAMD64ArchsOnChange() planmodifier.Set {
+	return &preserveAMD64ArchsModifier{}
+}
+
+type preserveAMD64ArchsModifier struct{}
+
+func (m *preserveAMD64ArchsModifier) Description(ctx context.Context) string {
+	return "Preserves AMD64 architecture entries when top-level URL or SHA changes"
+}
+
+func (m *preserveAMD64ArchsModifier) MarkdownDescription(ctx context.Context) string {
+	return "Preserves AMD64 architecture entries when top-level URL or SHA changes"
+}
+
+// PlanModifySet modifies the plan to ensure AMD64 architecture entries are preserved
+func (m *preserveAMD64ArchsModifier) PlanModifySet(ctx context.Context, req planmodifier.SetRequest, resp *planmodifier.SetResponse) {
+	// Skip if we're destroying the resource or no state
+	if req.Plan.Raw.IsNull() || req.State.Raw.IsNull() || req.StateValue.IsNull() {
+		return
+	}
+
+	// skip if archs is set in the config
+	if !req.ConfigValue.IsUnknown() && !req.ConfigValue.IsNull() {
+		return
+	}
+
+	var configURL, stateURL, configSHA, stateSHA types.String
+
+	req.Config.GetAttribute(ctx, path.Root("url"), &configURL)
+	req.State.GetAttribute(ctx, path.Root("url"), &stateURL)
+	req.Config.GetAttribute(ctx, path.Root("sha"), &configSHA)
+	req.State.GetAttribute(ctx, path.Root("sha"), &stateSHA)
+
+	urlChanged := !configURL.Equal(stateURL)
+	shaChanged := !configSHA.Equal(stateSHA)
+
+	// If neither URL nor SHA is changing, do nothing
+	if !urlChanged && !shaChanged {
+		tflog.Debug(ctx, "No changes to URL or SHA, skipping AMD64 architecture preservation")
+		return
+	}
+
+	stateArchs := req.StateValue
+	planArchs := req.PlanValue
+
+	var stateArchsList []ToolArchitecture
+	diags := stateArchs.ElementsAs(ctx, &stateArchsList, false)
+	if diags.HasError() {
+		return
+	}
+
+	var planArchsList []ToolArchitecture
+	diags = planArchs.ElementsAs(ctx, &planArchsList, false)
+	if diags.HasError() {
+		tflog.Debug(ctx, "Error extracting plan architectures", map[string]interface{}{
+			"diagnostics": diags,
+		})
+		return
+	}
+
+	tflog.Debug(ctx, "plan architectures", map[string]interface{}{
+		"planArchsList":  planArchsList,
+		"stateArchsList": stateArchsList,
+		"urlChanged":     urlChanged,
+		"shaChanged":     shaChanged,
+		"stateURL":       configURL,
+		"planURL":        stateURL,
+		"stateSHA":       configSHA,
+		"planSHA":        stateSHA,
+	})
+
+	for _, arch := range planArchsList {
+		if arch.Arch.ValueString() == "amd64" {
+			tflog.Debug(ctx, "Found AMD64 architecture in plan", map[string]interface{}{
+				"url":  arch.URL.ValueString(),
+				"sha":  arch.Sha.ValueString(),
+				"os":   arch.OS.ValueString(),
+				"arch": arch.Arch.ValueString(),
+			})
+
+			if urlChanged {
+				arch.URL = configURL
+			}
+			if shaChanged {
+				arch.Sha = configSHA
+			}
+
+			// Update the plan with the modified AMD64 arch
+			archObjectType := ObjectTypeForArchitectures()
+			attrValue := types.ObjectValueMust(
+				archObjectType.AttrTypes,
+				map[string]attr.Value{
+					"url":  arch.URL,
+					"sha":  arch.Sha,
+					"os":   arch.OS,
+					"arch": arch.Arch,
+				},
+			)
+			tflog.Debug(ctx, "Updating AMD64 architecture in plan", map[string]interface{}{
+				"url":  arch.URL.ValueString(),
+				"sha":  arch.Sha.ValueString(),
+				"os":   arch.OS.ValueString(),
+				"arch": arch.Arch.ValueString(),
+			})
+
+			resp.PlanValue = types.SetValueMust(archObjectType, []attr.Value{attrValue})
+			return
+		}
+	}
+}
+
+// SyncTopLevelURLSHAWithAMD64 creates a plan modifier that synchronizes the top-level URL/SHA with the AMD64 architecture on updates where URL or SHA is not set in the config,
+func SyncTopLevelURLSHAWithAMD64() planmodifier.String {
+	return &SyncTopLevelURLSHAWithAMD64Modifier{}
+}
+
+type SyncTopLevelURLSHAWithAMD64Modifier struct{}
+
+func (m *SyncTopLevelURLSHAWithAMD64Modifier) Description(ctx context.Context) string {
+	return "Combines top-level URL/SHA with AMD64 architecture"
+}
+
+func (m *SyncTopLevelURLSHAWithAMD64Modifier) MarkdownDescription(ctx context.Context) string {
+	return "Combines top-level URL/SHA with AMD64 architecture"
+}
+
+// PlanModifySet modifies the plan to combine URL/SHA with AMD64 architecture
+func (m *SyncTopLevelURLSHAWithAMD64Modifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
+	// Skip if we're destroying the resource or no state
+	if req.Plan.Raw.IsNull() || req.State.Raw.IsNull() || req.StateValue.IsNull() {
+		tflog.Debug(ctx, "Skipping AMD64 URL/SHA combination because state or plan is null")
+		return
+	}
+
+	if !req.ConfigValue.IsUnknown() && !req.ConfigValue.IsNull() {
+		tflog.Debug(ctx, "Skipping because value is set in config")
+		return
+	}
+
+	var configArchs types.Set
+	diags := req.Config.GetAttribute(ctx, path.Root("archs"), &configArchs)
+	if diags.HasError() {
+		tflog.Debug(ctx, "Error extracting config architectures", map[string]interface{}{
+			"diagnostics": diags,
+		})
+		return
+	}
+
+	if configArchs.IsNull() && configArchs.IsUnknown() {
+		tflog.Debug(ctx, "Skipping top level arch modifying because archs are NOT set in config")
+		return
+	}
+
+	segments := req.Path.String()
+	attributeName := segments[strings.LastIndex(segments, ".")+1:]
+
+	var amd64Arch ToolArchitecture
+	var configArchsList []ToolArchitecture
+	diags = configArchs.ElementsAs(ctx, &configArchsList, false)
+	if diags.HasError() {
+		tflog.Debug(ctx, "Error extracting config architectures", map[string]interface{}{
+			"diagnostics": diags,
+		})
+		return
+	}
+
+	for _, arch := range configArchsList {
+		if arch.Arch.ValueString() == "amd64" {
+			amd64Arch = arch
+			break
+		}
+	}
+
+	if amd64Arch.Arch.IsNull() || amd64Arch.Arch.IsUnknown() {
+		resp.PlanValue = types.StringNull()
+		return
+	}
+
+	switch attributeName {
+	case "url":
+		resp.PlanValue = types.StringValue(amd64Arch.URL.ValueString())
+	case "sha":
+		resp.PlanValue = types.StringValue(amd64Arch.Sha.ValueString())
+	default:
+		tflog.Debug(ctx, "Unsupported attribute for AMD64 combination", map[string]interface{}{
+			"attribute": attributeName,
+		})
+		return
+	}
 }

@@ -49,7 +49,7 @@ func TestTFEWorkspaceRunTask_stagesSupport(t *testing.T) {
 func TestAccTFEWorkspaceRunTask_validateSchemaAttributes(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEWorkspaceRunTask_attributes("bad_level", string(tfe.PostPlan), fmt.Sprintf("[%q]", tfe.PostPlan)),
@@ -86,7 +86,7 @@ func TestAccTFEWorkspaceRunTask_create_stages_attr(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceRunTaskDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -127,7 +127,7 @@ func TestAccTFEWorkspaceRunTask_create_stage_attr(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceRunTaskDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -166,7 +166,7 @@ func TestAccTFEWorkspaceRunTask_import(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -231,7 +231,7 @@ func TestAccTFEWorkspaceRunTask_Read(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamAccessDestroy,
 		Steps: []resource.TestStep{
 			{

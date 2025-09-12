@@ -32,7 +32,7 @@ func TestAccTFEPolicySetDataSource_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEPolicySetDataSourceConfig_basic(org.Name, rInt),
@@ -79,7 +79,7 @@ func TestAccTFEPolicySetDataSource_pinnedPolicyRuntimeVersion(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		CheckDestroy:             testAccCheckTFESentinelVersionDestroy,
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEPolicySetDataSourceConfig_pinnedPolicyRuntimeVersion(org.Name, rInt, KnownSentinelToolVersion),
@@ -128,7 +128,7 @@ func TestAccTFEPolicySetDataSourceOPA_basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		CheckDestroy:             testAccCheckTFEOPAVersionDestroy,
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEPolicySetDataSourceConfigOPA_basic(org.Name, rInt, KnownOPAToolVersion),
@@ -191,7 +191,7 @@ func TestAccTFEPolicySetDataSource_vcs(t *testing.T) {
 				t.Skip("Please set GITHUB_POLIY_SET_PATH to run this test")
 			}
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEPolicySetDataSourceConfig_vcs(org.Name, rInt),
@@ -231,7 +231,7 @@ func TestAccTFEPolicySetDataSource_notFound(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFEPolicySetDataSourceConfig_notFound(rInt),

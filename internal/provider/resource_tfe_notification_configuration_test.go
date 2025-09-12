@@ -25,7 +25,7 @@ func TestAccTFENotificationConfiguration_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -58,7 +58,7 @@ func TestAccTFENotificationConfiguration_WriteOnly(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -120,7 +120,7 @@ func TestAccTFENotificationConfiguration_emailUserIDs(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -151,7 +151,7 @@ func TestAccTFENotificationConfiguration_update(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -204,7 +204,7 @@ func TestAccTFENotificationConfiguration_updateEmailUserIDs(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -254,7 +254,7 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesEmail(t *testin
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_emailWithURL(rInt),
@@ -273,7 +273,7 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesGeneric(t *test
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_genericWithEmailAddresses(rInt),
@@ -296,7 +296,7 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesSlack(t *testin
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_slackWithEmailAddresses(rInt),
@@ -323,7 +323,7 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesMicrosoftTeams(
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_microsoftTeamsWithEmailAddresses(rInt),
@@ -351,7 +351,7 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesEmail(t *
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -393,7 +393,7 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesGeneric(t
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -439,7 +439,7 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesSlack(t *
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -489,7 +489,7 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesMicrosoft
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -535,7 +535,7 @@ func TestAccTFENotificationConfiguration_duplicateTriggers(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -567,7 +567,7 @@ func TestAccTFENotificationConfigurationImport_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -589,7 +589,7 @@ func TestAccTFENotificationConfigurationImport_emailUserIDs(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -611,7 +611,7 @@ func TestAccTFENotificationConfigurationImport_emptyEmailUserIDs(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{

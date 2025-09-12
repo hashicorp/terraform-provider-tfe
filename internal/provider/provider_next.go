@@ -169,6 +169,9 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewNotificationConfigurationResource,
 		NewTeamTokenResource,
 		NewProjectSettingsResource,
+		NewTerraformVersionResource,
+		NewOPAVersionResource,
+		NewsentinelVersionResource,
 	}
 }
 
