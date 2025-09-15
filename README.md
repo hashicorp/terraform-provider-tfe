@@ -51,6 +51,8 @@ provider "tfe" {
 
 Since v0.24.0, this provider requires [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 0.12
 
+Since v0.69.0, this provider requires [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.0
+
 For more information on provider installation and constraining provider versions, see the [Provider Requirements documentation](https://developer.hashicorp.com/terraform/language/providers/requirements).
 
 ## Usage
