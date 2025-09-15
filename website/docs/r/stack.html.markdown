@@ -41,7 +41,7 @@ resource "tfe_stack" "test-stack" {
 
   vcs_repo {
     branch         = "main"
-    identifier      = "my-github-org/stack-repo"
+    identifier     = "my-github-org/stack-repo"
     oauth_token_id = tfe_oauth_client.test.oauth_token_id
   }
 }
