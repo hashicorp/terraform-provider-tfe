@@ -18,6 +18,8 @@ Use the navigation to the left to read about the available resources.
 
 Since v0.24.0, this provider requires Terraform >= 0.12.
 
+~> **Important:** Since v0.69.0, this provider requires Terraform >= 1.0.
+
 ~> **Important:** For production use, you should constrain the acceptable provider versions via configuration,
 to ensure that new versions with breaking changes will not be automatically installed.
 For more information, see [Versions](#versions).

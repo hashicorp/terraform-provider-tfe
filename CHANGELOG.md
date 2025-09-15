@@ -2,6 +2,10 @@
 
 ## v0.69.0
 
+BREAKING CHANGES:
+
+All resources have been upgraded to use the [latest Terraform plugin protocol](https://developer.hashicorp.com/terraform/plugin/terraform-plugin-protocol). This provider now requires a Terraform version of v1.0.0 or later.
+
 ENHANCEMENTS:
 * `r/tfe_oauth_client`: The `oauth_token` attribute no longer triggers resource replacement unless combined with other replacement-triggering attributes. Use `terraform apply -replace` to force replacement. By @lilincmu [#1825](https://github.com/hashicorp/terraform-provider-tfe/pull/1825)
 
