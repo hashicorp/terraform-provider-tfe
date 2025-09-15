@@ -103,7 +103,7 @@ For more information on provider installation and constraining provider versions
 provider "tfe" {
   hostname = var.hostname # Optional, defaults to HCP Terraform `AppTerraformIo`
   token    = var.token
-  version  = "~> 0.64.0"
+  version  = "~> 0.69.0"
 }
 
 # Create an organization
