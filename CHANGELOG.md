@@ -3,6 +3,7 @@
 FEATURES:
 
 * `r/tfe_registry_module`: Add `source_directory` and `tag_prefix` registry module support for private registry monorepository, which is a beta feature and not available to all users, by @jillirami ([#1800](https://github.com/hashicorp/terraform-provider-tfe/pull/1800))
+* `r/tfe_stack` Adds support for managing agent pools on a Stack, by @maed223 [#1836](https://github.com/hashicorp/terraform-provider-tfe/pull/1836)
 * `r/tfe_terraform_version`: Adds support for specifying architecture-specific binaries using the `archs` attribute, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762)
 * `r/tfe_opa_version`: Adds support for specifying architecture-specific binaries using the `archs` attribute, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762)
 * `r/tfe_sentinel_version`: Adds support for specifying architecture-specific binaries using the `archs` attribute, by @kelsi-hoyle [1762](https://github.com/hashicorp/terraform-provider-tfe/pull/1762)

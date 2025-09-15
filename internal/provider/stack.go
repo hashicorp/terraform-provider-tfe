@@ -23,6 +23,7 @@ type modelTFEStackVCSRepo struct {
 type modelTFEStack struct {
 	ID              types.String          `tfsdk:"id"`
 	ProjectID       types.String          `tfsdk:"project_id"`
+	AgentPoolID     types.String          `tfsdk:"agent_pool_id"`
 	Name            types.String          `tfsdk:"name"`
 	Description     types.String          `tfsdk:"description"`
 	DeploymentNames types.Set             `tfsdk:"deployment_names"`
@@ -42,6 +43,7 @@ func modelFromTFEStack(v *tfe.Stack) modelTFEStack {
 	result := modelTFEStack{
 		ID:              types.StringValue(v.ID),
 		ProjectID:       types.StringValue(v.Project.ID),
+		AgentPoolID:     types.StringNull(),
 		Name:            types.StringValue(v.Name),
 		Description:     types.StringNull(),
 		DeploymentNames: types.SetValueMust(types.StringType, names),
@@ -56,6 +58,10 @@ func modelFromTFEStack(v *tfe.Stack) modelTFEStack {
 			GHAInstallationID: types.StringNull(),
 			OAuthTokenID:      types.StringNull(),
 		}
+	}
+
+	if v.AgentPool != nil {
+		result.AgentPoolID = types.StringValue(v.AgentPool.ID)
 	}
 
 	if v.Description != "" {

@@ -28,10 +28,16 @@ data "tfe_organization" "organization" {
   name = "my-example-org"
 }
 
+data "tfe_agent_pool" "agent-pool" {
+  name                  = "my-example-agent-pool"
+  organization          = tfe_organization.organization.name
+}
+
 resource "tfe_stack" "test-stack" {
-  name         = "my-stack"
-  description  = "A Terraform Stack using two components with two environments"
-  project_id   = data.tfe_organization.organization.default_project_id
+  name          = "my-stack"
+  description   = "A Terraform Stack using two components with two environments"
+  project_id    = data.tfe_organization.organization.default_project_id
+  agent_pool_id = data.tfe_agent_pool.agent-pool.id
 
   vcs_repo {
     branch         = "main"
@@ -70,6 +76,7 @@ The following arguments are supported:
 
 * `name` - (Required) Name of the stack.
 * `project_id` - (Required) ID of the project where the stack should be created.
+* `agent_pool_id` - (Optional) The ID of an agent pool to assign to the stack.
 * `vcs_repo` - (Optional) Settings for the stack's VCS repository.
 * `description` - (Optional) Description of the stack
 <!--
