@@ -81,7 +81,7 @@ func (r *resourceTFEStack) Schema(ctx context.Context, req resource.SchemaReques
 				},
 			},
 			"agent_pool_id": schema.StringAttribute{
-				Description: "The time when the stack was last updated.",
+				Description: "The ID of an agent pool to assign to the stack",
 				Optional:    true,
 			},
 			"name": schema.StringAttribute{
