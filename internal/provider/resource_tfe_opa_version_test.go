@@ -26,7 +26,7 @@ func TestAccTFEOPAVersion_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEOPAVersionDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -54,7 +54,7 @@ func TestAccTFEOPAVersion_import(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEOPAVersionDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -74,7 +74,6 @@ func TestAccTFEOPAVersion_import(t *testing.T) {
 		},
 	})
 }
-
 func TestAccTFEOPAVersion_full(t *testing.T) {
 	skipIfCloud(t)
 
@@ -84,7 +83,7 @@ func TestAccTFEOPAVersion_full(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEOPAVersionDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -108,6 +107,52 @@ func TestAccTFEOPAVersion_full(t *testing.T) {
 						"tfe_opa_version.foobar", "deprecated", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_opa_version.foobar", "deprecated_reason", "foobar"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEOPAVersion_archs(t *testing.T) {
+	skipIfCloud(t)
+
+	opaVersion := &tfe.AdminOPAVersion{}
+	amd64Sha := genOPASha(t, "secret", "data")
+	arm64Sha := genOPASha(t, "another-secret", "data")
+	version := genSafeRandomOPAVersion()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOPAVersionDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: resourceTFEOPAVersion_archs(version, amd64Sha, arm64Sha),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOPAVersionExists("tfe_opa_version.foobar", opaVersion),
+					testAccCheckTFEOPAVersionAttributesArchs(opaVersion, version, amd64Sha, arm64Sha),
+					resource.TestCheckResourceAttr(
+						"tfe_opa_version.foobar", "version", version),
+					resource.TestCheckResourceAttr(
+						"tfe_opa_version.foobar", "url", "https://www.hashicorp.com"),
+					resource.TestCheckResourceAttr(
+						"tfe_opa_version.foobar", "sha", amd64Sha),
+					resource.TestCheckResourceAttr(
+						"tfe_opa_version.foobar", "archs.0.url", "https://www.hashicorp.com"),
+					resource.TestCheckResourceAttr(
+						"tfe_opa_version.foobar", "archs.0.sha", amd64Sha),
+					resource.TestCheckResourceAttr(
+						"tfe_opa_version.foobar", "archs.0.os", "linux"),
+					resource.TestCheckResourceAttr(
+						"tfe_opa_version.foobar", "archs.0.arch", "amd64"),
+					resource.TestCheckResourceAttr(
+						"tfe_opa_version.foobar", "archs.1.url", "https://www.hashicorp.com"),
+					resource.TestCheckResourceAttr(
+						"tfe_opa_version.foobar", "archs.1.sha", arm64Sha),
+					resource.TestCheckResourceAttr(
+						"tfe_opa_version.foobar", "archs.1.os", "linux"),
+					resource.TestCheckResourceAttr(
+						"tfe_opa_version.foobar", "archs.1.arch", "arm64"),
 				),
 			},
 		},
@@ -215,6 +260,44 @@ func testAccCheckTFEOPAVersionAttributesFull(opaVersion *tfe.AdminOPAVersion, ve
 	}
 }
 
+func testAccCheckTFEOPAVersionAttributesArchs(opaVersion *tfe.AdminOPAVersion, version string, amd64Sha string, arm64Sha string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if opaVersion.Version != version {
+			return fmt.Errorf("bad version: %s", opaVersion.Version)
+		}
+		if len(opaVersion.Archs) != 2 {
+			return fmt.Errorf("expected 1 arch, got %d", len(opaVersion.Archs))
+		}
+		if opaVersion.Archs[0].OS != "linux" {
+			return fmt.Errorf("bad value for OS: %s", opaVersion.Archs[0].OS)
+		}
+		if opaVersion.Archs[0].Arch != "amd64" {
+			return fmt.Errorf("bad value for Arch: %s", opaVersion.Archs[0].Arch)
+		}
+		if opaVersion.Archs[0].URL != "https://www.hashicorp.com" {
+			return fmt.Errorf("bad value for URL: %s", opaVersion.Archs[0].URL)
+		}
+		if opaVersion.Archs[0].Sha != amd64Sha {
+			return fmt.Errorf("bad value for Sha: %v", opaVersion.Archs[0].Sha)
+		}
+
+		if opaVersion.Archs[1].OS != "linux" {
+			return fmt.Errorf("bad value for OS: %s", opaVersion.Archs[1].OS)
+		}
+		if opaVersion.Archs[1].Arch != "arm64" {
+			return fmt.Errorf("bad value for Arch: %s", opaVersion.Archs[1].Arch)
+		}
+		if opaVersion.Archs[1].URL != "https://www.hashicorp.com" {
+			return fmt.Errorf("bad value for URL: %s", opaVersion.Archs[1].URL)
+		}
+		if opaVersion.Archs[1].Sha != arm64Sha {
+			return fmt.Errorf("bad value for Sha: %v", opaVersion.Archs[1].Sha)
+		}
+
+		return nil
+	}
+}
+
 func testAccTFEOPAVersion_basic(version string, sha string) string {
 	return fmt.Sprintf(`
 resource "tfe_opa_version" "foobar" {
@@ -236,6 +319,28 @@ resource "tfe_opa_version" "foobar" {
   deprecated = true
   deprecated_reason = "foobar"
 }`, version, sha)
+}
+
+func resourceTFEOPAVersion_archs(version string, amd64Sha string, arm64Sha string) string {
+	return fmt.Sprintf(`
+resource "tfe_opa_version" "foobar" {
+  version = "%s"
+  official = false
+  enabled = true
+
+  archs = [{
+    os = "linux"
+    arch = "amd64"
+    url = "https://www.hashicorp.com"
+    sha = "%s"
+  },
+  {
+    os = "linux"
+	arch = "arm64"
+	url = "https://www.hashicorp.com"
+	sha = "%s"}]
+}
+`, version, amd64Sha, arm64Sha)
 }
 
 // Helper functions

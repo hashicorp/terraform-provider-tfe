@@ -18,6 +18,8 @@ Use the navigation to the left to read about the available resources.
 
 Since v0.24.0, this provider requires Terraform >= 0.12.
 
+~> **Important:** Since v0.69.0, this provider requires Terraform >= 1.0.
+
 ~> **Important:** For production use, you should constrain the acceptable provider versions via configuration,
 to ensure that new versions with breaking changes will not be automatically installed.
 For more information, see [Versions](#versions).
@@ -77,7 +79,7 @@ automatically installed by `terraform init` in the future:
 terraform {
   required_providers {
     tfe = {
-      version = "~> 0.64.0"
+      version = "~> 0.69.0"
     }
   }
 }
@@ -90,7 +92,7 @@ The above snippet using `RequiredProviders` is for Terraform 0.13+; if you are u
 
 ```hcl
 provider "tfe" {
-  version = "~> 0.64.0"
+  version = "~> 0.69.0"
   ...
 }
 ```
@@ -103,7 +105,7 @@ For more information on provider installation and constraining provider versions
 provider "tfe" {
   hostname = var.hostname # Optional, defaults to HCP Terraform `AppTerraformIo`
   token    = var.token
-  version  = "~> 0.64.0"
+  version  = "~> 0.69.0"
 }
 
 # Create an organization

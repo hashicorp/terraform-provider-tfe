@@ -23,7 +23,7 @@ func TestAccTFEAdminOrganizationSettings_basic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testConfigTFEAdminOrganizationSettings_basic(rInt1, rInt2, rInt3),

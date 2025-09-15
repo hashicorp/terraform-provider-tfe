@@ -25,7 +25,7 @@ func TestAccTFEOAuthClient_basic(t *testing.T) {
 				t.Skip("Please set GITHUB_TOKEN to run this test")
 			}
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEOAuthClientDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -56,7 +56,7 @@ func TestAccTFEOAuthClientWithOrganizationScoped_basic(t *testing.T) {
 				t.Skip("Please set GITHUB_TOKEN to run this test")
 			}
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEOAuthClientDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -84,7 +84,7 @@ func TestAccTFEOAuthClient_rsaKeys(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEOAuthClientDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -118,7 +118,7 @@ func TestAccTFEOAuthClient_agentPool(t *testing.T) {
 				t.Skip("Please set GITHUB_TOKEN to run this test")
 			}
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEOAuthClientDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -150,7 +150,7 @@ func TestAccTFEOAuthClient_updateOAuthTokenID(t *testing.T) {
 				t.Skip("Please set GITHUB_TOKEN2 to run this test")
 			}
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEOAuthClientDestroy,
 		Steps: []resource.TestStep{
 			// Step 1: Create with the initial oauth_token_id.
@@ -172,8 +172,8 @@ func TestAccTFEOAuthClient_updateOAuthTokenID(t *testing.T) {
 					testAccCheckTFEOAuthClientExists("tfe_oauth_client.foobar", oc),
 					resource.TestCheckResourceAttrSet("tfe_oauth_client.foobar", "oauth_token_id"),
 					func(s *terraform.State) error {
-						if initialOAuthTokenID == oc.OAuthTokens[0].ID {
-							return fmt.Errorf("oauth_token_id did not change")
+						if initialOAuthTokenID != oc.OAuthTokens[0].ID {
+							return fmt.Errorf("oauth_token_id changed")
 						}
 						return nil
 					},

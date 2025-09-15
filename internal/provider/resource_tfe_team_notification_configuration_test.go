@@ -24,14 +24,14 @@ func TestAccTFETeamNotificationConfiguration_basic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createPlusOrganization(t, tfeClient)
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	notificationConfiguration := &tfe.NotificationConfiguration{}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -63,14 +63,14 @@ func TestAccTFETeamNotificationConfiguration_emailUserIDs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createPlusOrganization(t, tfeClient)
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	notificationConfiguration := &tfe.NotificationConfiguration{}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -102,14 +102,14 @@ func TestAccTFETeamNotificationConfiguration_update(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createPlusOrganization(t, tfeClient)
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	notificationConfiguration := &tfe.NotificationConfiguration{}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -163,14 +163,14 @@ func TestAccTFETeamNotificationConfiguration_updateEmailUserIDs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createPlusOrganization(t, tfeClient)
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	notificationConfiguration := &tfe.NotificationConfiguration{}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -221,12 +221,12 @@ func TestAccTFETeamNotificationConfiguration_validateSchemaAttributesEmail(t *te
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createPlusOrganization(t, tfeClient)
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFETeamNotificationConfiguration_emailWithURL(org.Name),
@@ -246,12 +246,12 @@ func TestAccTFETeamNotificationConfiguration_validateSchemaAttributesGeneric(t *
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createPlusOrganization(t, tfeClient)
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFETeamNotificationConfiguration_genericWithEmailAddresses(org.Name),
@@ -275,12 +275,12 @@ func TestAccTFETeamNotificationConfiguration_validateSchemaAttributesSlack(t *te
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createPlusOrganization(t, tfeClient)
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFETeamNotificationConfiguration_slackWithEmailAddresses(org.Name),
@@ -308,12 +308,12 @@ func TestAccTFETeamNotificationConfiguration_validateSchemaAttributesMicrosoftTe
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createPlusOrganization(t, tfeClient)
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFETeamNotificationConfiguration_microsoftTeamsWithEmailAddresses(org.Name),
@@ -341,12 +341,12 @@ func TestAccTFETeamNotificationConfiguration_validateSchemaAttributesBadDestinat
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createPlusOrganization(t, tfeClient)
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFETeamNotificationConfiguration_badDestinationType(org.Name),
@@ -363,14 +363,14 @@ func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesEmail
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createPlusOrganization(t, tfeClient)
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	notificationConfiguration := &tfe.NotificationConfiguration{}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -413,14 +413,14 @@ func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesGener
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createPlusOrganization(t, tfeClient)
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	notificationConfiguration := &tfe.NotificationConfiguration{}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -467,14 +467,14 @@ func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesSlack
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createPlusOrganization(t, tfeClient)
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	notificationConfiguration := &tfe.NotificationConfiguration{}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -525,14 +525,14 @@ func TestAccTFETeamNotificationConfiguration_updateValidateSchemaAttributesMicro
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createPlusOrganization(t, tfeClient)
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	notificationConfiguration := &tfe.NotificationConfiguration{}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -579,14 +579,14 @@ func TestAccTFETeamNotificationConfiguration_duplicateTriggers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createPlusOrganization(t, tfeClient)
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	notificationConfiguration := &tfe.NotificationConfiguration{}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -618,12 +618,12 @@ func TestAccTFETeamNotificationConfigurationImport_basic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createPlusOrganization(t, tfeClient)
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -647,12 +647,12 @@ func TestAccTFETeamNotificationConfigurationImport_emailUserIDs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createPlusOrganization(t, tfeClient)
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -676,12 +676,12 @@ func TestAccTFETeamNotificationConfigurationImport_emptyEmailUserIDs(t *testing.
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createPlusOrganization(t, tfeClient)
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -936,7 +936,7 @@ func TestAccTFETeamNotificationConfiguration_tokenWO(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createPlusOrganization(t, tfeClient)
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
 	// Create the value comparer so we can add state values to it during the test steps
@@ -944,7 +944,7 @@ func TestAccTFETeamNotificationConfiguration_tokenWO(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{

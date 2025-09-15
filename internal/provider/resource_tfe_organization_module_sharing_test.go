@@ -26,7 +26,7 @@ func TestAccTFEOrganizationModuleSharing_basic(t *testing.T) {
 	// prior to CheckDestroy being executed)
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationModuleSharing_basic(rInt1, rInt2, rInt3),
@@ -56,7 +56,7 @@ func TestAccTFEOrganizationModuleSharing_emptyOrg(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationModuleSharing_emptyOrg(rInt1, rInt2),
@@ -90,7 +90,7 @@ func TestAccTFEOrganizationModuleSharing_stopSharing(t *testing.T) {
 	// "destroys" the resource
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganizationModuleSharing_stopSharing(rInt1),

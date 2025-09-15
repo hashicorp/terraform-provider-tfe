@@ -27,7 +27,7 @@ func TestAccTFERegistryModuleDataSource_basicPrivate(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERegistryModuleDataSourceBasic(rInt),
@@ -74,7 +74,7 @@ func TestAccTFERegistryModuleDataSource_basicNoCodePublic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERegistryModuleDataSourceBasic_noCodePublic(rInt),
@@ -111,7 +111,7 @@ func TestAccTFERegistryModuleDataSource_basicNoCodePrivate(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERegistryModuleDataSourceBasic_noCodePrivate(rInt),

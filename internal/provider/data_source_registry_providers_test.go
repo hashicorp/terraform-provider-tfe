@@ -20,7 +20,7 @@ func TestAccTFERegistryProvidersDataSource_all(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERegistryProvidersDataSourceConfig_all(orgName),
@@ -43,7 +43,7 @@ func TestAccTFERegistryProvidersDataSource_public(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERegistryProvidersDataSourceConfig_public(orgName),
@@ -65,7 +65,7 @@ func TestAccTFERegistryProvidersDataSource_private(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERegistryProvidersDataSourceConfig_private(orgName),
@@ -87,7 +87,7 @@ func TestAccTFERegistryProvidersDataSource_filtered(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFERegistryProvidersDataSourceConfig_filtered(orgName),
