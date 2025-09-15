@@ -46,8 +46,11 @@ The following arguments are supported:
 * `SsoApiTokenSessionTimeout` - (Optional) Specifies the Single Sign On session timeout in seconds. Defaults to 14 days.
 * `Certificate` - (Optional) The certificate used for request and assertion signing.
 * `PrivateKey` - (Optional) The private key used for request and assertion signing.
+* `PrivateKeyWo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) The private key used for request and assertion signing, guaranteed not to be written to plan or state artifacts. Either `PrivateKey` or `PrivateKeyWo` can be provided, but not both.
 * `SignatureSigningMethod` - (Optional) Signature Signing Method. Must be either `Sha1` or `Sha256`. Defaults to `Sha256`.
 * `SignatureDigestMethod` - (Optional) Signature Digest Method. Must be either `Sha1` or `Sha256`. Defaults to `Sha256`.
+
+-> **Note:** Write-Only argument `PrivateKeyWo` is available to use in place of `PrivateKey`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
 
 ## Attributes Reference
 
@@ -64,4 +67,4 @@ SAML Settings can be imported.
 terraform import tfe_saml_settings.this saml
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-638ff2b3454a9c98199c9259ef06e339ead03786f80128a77130cb8fde31700e -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-6e71321b8aa7612361601347f5216bf83460d5273c1f8d934c06f7a6925258da -->

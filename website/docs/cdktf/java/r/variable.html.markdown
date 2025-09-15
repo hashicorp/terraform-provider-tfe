@@ -92,12 +92,30 @@ public class MyConvertedCode extends TerraformStack {
 }
 ```
 
+Basic usage for the write-only value of tfe_variable:
+
+```hcl
+variable "session_token" {
+  type      = string
+  ephemeral = true
+}
+
+resource "tfe_variable" "test" {
+  key          = "my_key_name"
+  value_wo     = var.session_token
+  category     = "terraform"
+  workspace_id = tfe_workspace.test.id
+  description  = "a useful description"
+}
+```
+
 ## Argument Reference
 
 The following arguments are supported:
 
 * `key` - (Required) Name of the variable.
 * `value` - (Required) Value of the variable.
+* `valueWo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) Value of the variable. `writeOnly` attributes function similarly to their non-write-only counterparts, but are never stored to state and do not display in the Terraform plan output. Either `value` or `valueWo` can be provided, but not both.
 * `category` - (Required) Whether this is a Terraform or environment variable.
   Valid values are `terraform` or `env`.
 * `description` - (Optional) Description of the variable.
@@ -114,6 +132,8 @@ drift if `value` is later changed out-of-band via the HCP Terraform UI.
 Terraform will only change the value for a sensitive variable if you change
 `value` in the configuration, so that it no longer matches the last known value
 in the state.
+
+-> **Note:** Write-Only argument `valueWo` is available to use in place of `value`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
 
 ## Attributes Reference
 
@@ -179,4 +199,4 @@ example:
 terraform import tfe_variable.test my-org-name/varset-47qC3LmA47piVan7/var-5rTwnSaRPogw6apb
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-820a46294ad3c295e8c8e473e6b35e04caffa032e0ef22d9cdce3378630f170e -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-dd5facfddf4b5fe6779a69237f3aa763521b7592fed6e368aea8dfc6c6e366c8 -->

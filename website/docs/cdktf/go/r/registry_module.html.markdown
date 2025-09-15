@@ -260,6 +260,8 @@ The `VcsRepo` block supports:
 * `GithubAppInstallationId` - (Optional) The installation id of the Github App. This conflicts with `OauthTokenId` and can only be used if `OauthTokenId` is not used.
 * `Branch` - (Optional) The git branch used for publishing when using branch-based publishing for the registry module. When a `Branch` is set, `Tags` will be returned as `False`.
 * `Tags` - (Optional) Specifies whether tag based publishing is enabled for the registry module. When `Tags` is set to `True`, the `Branch` must be set to an empty value.
+* `SourceDirectory` - (Optional) The path to the module configuration files within the VCS repository. This feature is currently in beta and is not available to all users.
+* `TagPrefix` - (Optional) The prefix to filter repository Git tags when using the tag-based publishing type in a repository that contains code for multiple modules. Without a prefix, HCP Terraform and Terraform Enterprise publish new versions for all modules with valid Git tags that use semantic versioning. This feature is currently in beta and is not available to all users.
 
 ## Attributes Reference
 
@@ -287,4 +289,4 @@ terraform import tfe_registry_module.test my-org-name/public/namespace/name/prov
 terraform import tfe_registry_module.test my-org-name/name/provider/mod-qV9JnKRkmtMa4zcA
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-83bb5f1b9e18171b736eafaa3cee5546bbb042f6dcf960e215905b4b8a26ffac -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-16565cd2602cf10f4cd2198c303f6fbc3cf35c0a00862e1840b30c0ac17bae5d -->
