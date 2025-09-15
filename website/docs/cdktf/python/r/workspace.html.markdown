@@ -68,12 +68,12 @@ class MyConvertedCode(TerraformStack):
             api_url="https://api.github.com",
             http_url="https://github.com",
             oauth_token="oauth_token_id",
-            organization=test_organization,
+            organization=test_organization.name,
             service_provider="github"
         )
         Workspace(self, "parent",
             name="parent-ws",
-            organization=test_organization,
+            organization=test_organization.name,
             queue_all_runs=False,
             vcs_repo=WorkspaceVcsRepo(
                 branch="main",
@@ -206,4 +206,4 @@ terraform import tfe_workspace.test ws-CH5in3chf8RJjrVd
 terraform import tfe_workspace.test my-org-name/my-wkspace-name
 ```
 
-<!-- cache-key: cdktf-0.20.8 input-8659fe12b1411c17a28ed5fc2f813f99433e585a19e67e9d9b8e72936be75dac -->
+<!-- cache-key: cdktf-0.20.8 input-9172299860816457fdb3b3fe1ca94efcefcfcf20d4b35727c48cb9ae3ed85745 -->

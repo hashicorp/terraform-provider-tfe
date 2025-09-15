@@ -70,4 +70,26 @@ class MyConvertedCode extends TerraformStack {
 
 -> **Note:** Write-Only argument `valueWo` is available to use in place of `value`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
 
-<!-- cache-key: cdktf-0.20.8 input-669d4b0a5555bd00e568fb40b3e8707f98f61b832f790667a6afb1a07970cdbc -->
+## Argument Reference
+
+The following arguments are supported:
+
+* `key` - (Required) Name of the variable.
+* `value` - (Optional) Value of the variable. Defaults to `""`. Cannot be used with `valueWo`.
+* `valueWo` - (Optional) Value of the variable in write-only mode. Cannot be used with `value`.
+* `category` - (Required) Whether this is a Terraform or environment variable. Valid values are `"env"`.
+* `description` - (Optional) Description of the variable. Defaults to `""`.
+* `hcl` - (Optional) Whether to evaluate the value of the variable as a string of HCL code. Defaults to `false`.
+* `sensitive` - (Optional) Whether the value is sensitive. Defaults to `false`.
+* `organization` - (Required) Name of the organization.
+* `moduleName` - (Required) Name of the registry module.
+* `moduleProvider` - (Required) The provider of the registry module.
+
+## Attributes Reference
+
+In addition to all arguments above, the following attributes are exported:
+
+* `id` - The ID of the variable.
+* `readableValue` - A non-sensitive read-only copy of the variable value, which can be viewed or referenced in plan outputs without being redacted. Will only be present if the variable is not sensitive.
+
+<!-- cache-key: cdktf-0.20.8 input-b6fc54853e81b059c6fdc4ac99e31d89dcbe93d02a6f08d086a76704ca60094c -->

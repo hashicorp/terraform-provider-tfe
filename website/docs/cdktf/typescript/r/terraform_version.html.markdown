@@ -42,13 +42,20 @@ class MyConvertedCode extends TerraformStack {
 The following arguments are supported:
 
 * `version` - (Required) A semantic version string in N.N.N or N.N.N-bundleName format.
-* `url` - (Required) The URL where a ZIP-compressed 64-bit Linux binary of this version can be downloaded.
-* `sha` - (Required) The SHA-256 checksum of the compressed Terraform binary.
+* `url` - (Soon to be deprecated) The URL where a ZIP-compressed 64-bit Linux binary of this version can be downloaded.
+* `sha` - (Soon to be deprecated) The SHA-256 checksum of the compressed Terraform binary.
 * `official` - (Optional) Whether or not this is an official release of Terraform. Defaults to "false".
 * `enabled` - (Optional) Whether or not this version of Terraform is enabled for use in HCP Terraform and Terraform Enterprise. Defaults to "true".
 * `beta` - (Optional) Whether or not this version of Terraform is beta pre-release. Defaults to "false".
 * `deprecated` - (Optional) Whether or not this version of Terraform is deprecated. Defaults to "false".
 * `deprecatedReason` - (Optional) Additional context about why a version of Terraform is deprecated. Defaults to "null" unless `deprecated` is true.
+* `archs` - (Optional) A list of architecture-specific binaries for this Terraform version. Each entry in the list is a map containing the following attributes:
+    * `url` - (Required) The URL where a ZIP-compressed binary of this version can be downloaded.
+    * `sha` - (Required) The SHA-256 checksum of the compressed binary.
+    * `os` - (Required) The operating system for which this binary is intended.
+    * `arch` - (Required) The architecture for which this binary is intended.
+
+    When specifying architecture-specific binaries, the top-level `url` and `sha` attributes are deprecated and should not be used. If both top-level `url` and `sha` are specified, an `archs` entry for the `amd64` architecture must also be included, and its `url` and `sha` values must match the top-level values.
 
 ## Attributes Reference
 
@@ -68,4 +75,4 @@ terraform import tfe_terraform_version.test 1.1.2
 
 -> **Note:** You can fetch a Terraform version ID from the URL of an existing version in the HCP Terraform UI. The ID is in the format `tool-<RANDOM STRING>`
 
-<!-- cache-key: cdktf-0.20.8 input-93d1722805fa12757f839282cbc6353a9d0aafa4f011bf5b15cbde86e59a32ef -->
+<!-- cache-key: cdktf-0.20.8 input-9f6e1c4f44ecffd8fdbccc54645b7dfb93c6aa7cc2dedb29a9155435d4f58313 -->
