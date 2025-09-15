@@ -39,13 +39,20 @@ class MyConvertedCode : TerraformStack
 The following arguments are supported:
 
 * `Version` - (Required) A semantic version string in N.N.N or N.N.N-bundleName format.
-* `Url` - (Required) The URL where a ZIP-compressed 64-bit Linux binary of this version can be downloaded.
-* `Sha` - (Required) The SHA-256 checksum of the compressed Sentinel binary.
+* `Url` - (Soon to be deprecated) The URL where a ZIP-compressed 64-bit Linux binary of this version can be downloaded.
+* `Sha` - (Soon to be deprecated) The SHA-256 checksum of the compressed Sentinel binary.
 * `Official` - (Optional) Whether or not this is an official release of Sentinel. Defaults to "false".
 * `Enabled` - (Optional) Whether or not this version of Sentinel is enabled for use in HCP Terraform and Terraform Enterprise. Defaults to "true".
 * `Beta` - (Optional) Whether or not this version of Sentinel is beta pre-release. Defaults to "false".
 * `Deprecated` - (Optional) Whether or not this version of Sentinel is deprecated. Defaults to "false".
 * `DeprecatedReason` - (Optional) Additional context about why a version of Sentinel is deprecated. Defaults to "null" unless `Deprecated` is true.
+* `Archs` - (Optional) A list of architecture-specific binaries for this Terraform version. Each entry in the list is a map containing the following attributes:
+    * `Url` - (Required) The URL where a ZIP-compressed binary of this version can be downloaded.
+    * `Sha` - (Required) The SHA-256 checksum of the compressed binary.
+    * `Os` - (Required) The operating system for which this binary is intended.
+    * `Arch` - (Required) The architecture for which this binary is intended.
+
+    When specifying architecture-specific binaries, the top-level `Url` and `Sha` attributes are deprecated and should not be used. If both top-level `Url` and `Sha` are specified, an `Archs` entry for the `Amd64` architecture must also be included, and its `Url` and `Sha` values must match the top-level values.
 
 ## Attributes Reference
 
@@ -65,4 +72,4 @@ terraform import tfe_sentinel_version.test 0.24.0
 
 -> **Note:** You can fetch a Sentinel version ID from the URL of an existing version in the HCP Terraform UI. The ID is in the format `tool-<RANDOM STRING>`
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-2d03905f979cc324a008eb878c5b24d28af4146f33c95e4a2e865b4d88b32c0c -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-b2cd24bcc7175e65a7e6816e8ff93db75da490f1010e4d9f8f31807ec6028e4a -->

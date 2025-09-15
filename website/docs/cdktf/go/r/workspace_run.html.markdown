@@ -49,22 +49,22 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 		apiUrl: jsii.String("https://api.github.com"),
 		httpUrl: jsii.String("https://github.com"),
 		oauthToken: jsii.String("oauth_token_id"),
-		organization: tfeOrganizationTestOrganization,
+		organization: cdktf.Token_AsString(tfeOrganizationTestOrganization.name),
 		serviceProvider: jsii.String("github"),
 	})
 	tfeWorkspaceChild := workspace.NewWorkspace(this, jsii.String("child"), &workspaceConfig{
 		name: jsii.String("child-ws"),
-		organization: tfeOrganizationTestOrganization,
+		organization: cdktf.Token_*AsString(tfeOrganizationTestOrganization.name),
 		queueAllRuns: jsii.Boolean(false),
 		vcsRepo: &workspaceVcsRepo{
 			branch: jsii.String("main"),
 			identifier: jsii.String("my-org-name/vcs-repository"),
-			oauthTokenId: cdktf.Token_AsString(tfeOauthClientTest.oauthTokenId),
+			oauthTokenId: cdktf.Token_*AsString(tfeOauthClientTest.oauthTokenId),
 		},
 	})
 	tfeWorkspaceParent := workspace.NewWorkspace(this, jsii.String("parent"), &workspaceConfig{
 		name: jsii.String("parent-ws"),
-		organization: tfeOrganizationTestOrganization,
+		organization: cdktf.Token_*AsString(tfeOrganizationTestOrganization.name),
 		queueAllRuns: jsii.Boolean(false),
 		vcsRepo: &workspaceVcsRepo{
 			branch: jsii.String("main"),
@@ -134,17 +134,17 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 		apiUrl: jsii.String("https://api.github.com"),
 		httpUrl: jsii.String("https://github.com"),
 		oauthToken: jsii.String("oauth_token_id"),
-		organization: tfeOrganizationTestOrganization,
+		organization: cdktf.Token_AsString(tfeOrganizationTestOrganization.name),
 		serviceProvider: jsii.String("github"),
 	})
 	tfeWorkspaceParent := workspace.NewWorkspace(this, jsii.String("parent"), &workspaceConfig{
 		name: jsii.String("parent-ws"),
-		organization: tfeOrganizationTestOrganization,
+		organization: cdktf.Token_*AsString(tfeOrganizationTestOrganization.name),
 		queueAllRuns: jsii.Boolean(false),
 		vcsRepo: &workspaceVcsRepo{
 			branch: jsii.String("main"),
 			identifier: jsii.String("my-org-name/vcs-repository"),
-			oauthTokenId: cdktf.Token_AsString(tfeOauthClientTest.oauthTokenId),
+			oauthTokenId: cdktf.Token_*AsString(tfeOauthClientTest.oauthTokenId),
 		},
 	})
 	workspaceRun.NewWorkspaceRun(this, jsii.String("ws_run_parent"), &workspaceRunConfig{
@@ -187,17 +187,17 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 		apiUrl: jsii.String("https://api.github.com"),
 		httpUrl: jsii.String("https://github.com"),
 		oauthToken: jsii.String("oauth_token_id"),
-		organization: tfeOrganizationTestOrganization,
+		organization: cdktf.Token_AsString(tfeOrganizationTestOrganization.name),
 		serviceProvider: jsii.String("github"),
 	})
 	tfeWorkspaceParent := workspace.NewWorkspace(this, jsii.String("parent"), &workspaceConfig{
 		name: jsii.String("parent-ws"),
-		organization: tfeOrganizationTestOrganization,
+		organization: cdktf.Token_*AsString(tfeOrganizationTestOrganization.name),
 		queueAllRuns: jsii.Boolean(false),
 		vcsRepo: &workspaceVcsRepo{
 			branch: jsii.String("main"),
 			identifier: jsii.String("my-org-name/vcs-repository"),
-			oauthTokenId: cdktf.Token_AsString(tfeOauthClientTest.oauthTokenId),
+			oauthTokenId: cdktf.Token_*AsString(tfeOauthClientTest.oauthTokenId),
 		},
 	})
 	workspaceRun.NewWorkspaceRun(this, jsii.String("ws_run_parent"), &workspaceRunConfig{
@@ -242,4 +242,4 @@ In addition to all arguments above, the following attributes are exported:
 
 * `Id` - The ID of the run created by this resource. Note, if the resource was created without an `Apply{}` configuration block, then this ID will not refer to a real run in HCP Terraform.
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-326dcde8ef59895f6cb1224693fc7aa8de53e6795010027c9279e6a1d68b85c8 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-dabc2fa04a9cee391a5b6193b417eeb4a1debdd321a4cf5b1a13e6c857ed36ac -->

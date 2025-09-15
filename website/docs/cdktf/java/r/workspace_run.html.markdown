@@ -45,12 +45,12 @@ public class MyConvertedCode extends TerraformStack {
                 .apiUrl("https://api.github.com")
                 .httpUrl("https://github.com")
                 .oauthToken("oauth_token_id")
-                .organization(tfeOrganizationTestOrganization)
+                .organization(Token.asString(tfeOrganizationTestOrganization.getName()))
                 .serviceProvider("github")
                 );
         Workspace tfeWorkspaceChild = new Workspace(this, "child", new WorkspaceConfig()
                 .name("child-ws")
-                .organization(tfeOrganizationTestOrganization)
+                .organization(Token.asString(tfeOrganizationTestOrganization.getName()))
                 .queueAllRuns(false)
                 .vcsRepo(new WorkspaceVcsRepo()
                         .branch("main")
@@ -60,7 +60,7 @@ public class MyConvertedCode extends TerraformStack {
                 );
         Workspace tfeWorkspaceParent = new Workspace(this, "parent", new WorkspaceConfig()
                 .name("parent-ws")
-                .organization(tfeOrganizationTestOrganization)
+                .organization(Token.asString(tfeOrganizationTestOrganization.getName()))
                 .queueAllRuns(false)
                 .vcsRepo(new WorkspaceVcsRepo()
                         .branch("main")
@@ -124,12 +124,12 @@ public class MyConvertedCode extends TerraformStack {
                 .apiUrl("https://api.github.com")
                 .httpUrl("https://github.com")
                 .oauthToken("oauth_token_id")
-                .organization(tfeOrganizationTestOrganization)
+                .organization(Token.asString(tfeOrganizationTestOrganization.getName()))
                 .serviceProvider("github")
                 );
         Workspace tfeWorkspaceParent = new Workspace(this, "parent", new WorkspaceConfig()
                 .name("parent-ws")
-                .organization(tfeOrganizationTestOrganization)
+                .organization(Token.asString(tfeOrganizationTestOrganization.getName()))
                 .queueAllRuns(false)
                 .vcsRepo(new WorkspaceVcsRepo()
                         .branch("main")
@@ -173,12 +173,12 @@ public class MyConvertedCode extends TerraformStack {
                 .apiUrl("https://api.github.com")
                 .httpUrl("https://github.com")
                 .oauthToken("oauth_token_id")
-                .organization(tfeOrganizationTestOrganization)
+                .organization(Token.asString(tfeOrganizationTestOrganization.getName()))
                 .serviceProvider("github")
                 );
         Workspace tfeWorkspaceParent = new Workspace(this, "parent", new WorkspaceConfig()
                 .name("parent-ws")
-                .organization(tfeOrganizationTestOrganization)
+                .organization(Token.asString(tfeOrganizationTestOrganization.getName()))
                 .queueAllRuns(false)
                 .vcsRepo(new WorkspaceVcsRepo()
                         .branch("main")
@@ -228,4 +228,4 @@ In addition to all arguments above, the following attributes are exported:
 
 * `id` - The ID of the run created by this resource. Note, if the resource was created without an `apply{}` configuration block, then this ID will not refer to a real run in HCP Terraform.
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-326dcde8ef59895f6cb1224693fc7aa8de53e6795010027c9279e6a1d68b85c8 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-dabc2fa04a9cee391a5b6193b417eeb4a1debdd321a4cf5b1a13e6c857ed36ac -->

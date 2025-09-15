@@ -34,7 +34,9 @@ public class MyConvertedCode extends TerraformStack {
         new Workspace(this, "test", new WorkspaceConfig()
                 .name("my-workspace-name")
                 .organization(Token.asString(tfeOrganizationTestOrganization.getName()))
-                .tagNames(List.of("test", "app"))
+                .tags(Map.of(
+                        "environment", "prod",
+                        "team_owner", "my-team"))
                 );
     }
 }
@@ -61,12 +63,12 @@ public class MyConvertedCode extends TerraformStack {
                 .apiUrl("https://api.github.com")
                 .httpUrl("https://github.com")
                 .oauthToken("oauth_token_id")
-                .organization(tfeOrganizationTestOrganization)
+                .organization(Token.asString(tfeOrganizationTestOrganization.getName()))
                 .serviceProvider("github")
                 );
         new Workspace(this, "parent", new WorkspaceConfig()
                 .name("parent-ws")
-                .organization(tfeOrganizationTestOrganization)
+                .organization(Token.asString(tfeOrganizationTestOrganization.getName()))
                 .queueAllRuns(false)
                 .vcsRepo(new WorkspaceVcsRepo()
                         .branch("main")
@@ -118,12 +120,13 @@ The following arguments are supported:
 * `remoteStateConsumerIds` - (Optional) **Deprecated** The set of workspace IDs set as explicit remote state consumers for the given workspace. Use [tfe_workspace_settings](workspace_settings) instead.
 * `sourceName` - (Optional) A friendly name for the application or client
    creating this workspace. If set, this will be displayed on the workspace as
-   "Created via <SOURCE NAME>".
-   Requires `sourceUrl` to also be set.
+   "Created via <SOURCE NAME>". This value cannot be updated after
+   initial creation. Use `terraform apply -replace` to update this value.   Requires `sourceUrl` to also be set.
 * `sourceUrl` - (Optional) A URL for the application or client creating this
    workspace. This can be the URL of a related resource in another app, or a
    link to documentation or other info about the client.
-   Requires `sourceName` to also be set.
+   Requires `sourceName` to also be set. This value cannot be updated after
+   initial creation. Use `terraform apply -replace` to update this value.
    **Note:** The API does not (currently) allow this to be updated after a
    workspace has been created, so modifying this value will result in the
    workspace being replaced. To disable this, use an [ignore changes](https://developer.hashicorp.com/terraform/language/meta-arguments/lifecycle#ignore_changes) lifecycle meta-argument
@@ -142,6 +145,12 @@ The following arguments are supported:
 _not_ defined by config so they will not be overwritten by the configured
 tags. This creates exceptional behavior in terraform with respect
 to `tagNames` and is not recommended. This value must be applied before it
+will be used.
+* `tags` - (Optional) A map of key value tags for this workspace.
+* `ignoreAdditionalTags` - (Optional) Explicitly ignores `tags`
+_not_ defined by config so they will not be overwritten by the configured
+tags. This creates exceptional behavior in terraform with respect
+to `tags` and is not recommended. This value must be applied before it
 will be used.
 * `terraformVersion` - (Optional) The version of Terraform to use for this
   workspace. This can be either an exact version or a
@@ -179,6 +188,7 @@ In addition to all arguments above, the following attributes are exported:
 * `resourceCount` - The number of resources managed by the workspace.
 * `htmlUrl` - The URL to the browsable HTML overview of the workspace.
 * `inheritsProjectAutoDestroy` - Indicates whether this workspace inherits project auto destroy settings.
+* `effectiveTags` - A map of key value tags for this workspace, including any tags inherited from the parent project.
 
 ## Import
 
@@ -193,4 +203,4 @@ terraform import tfe_workspace.test ws-CH5in3chf8RJjrVd
 terraform import tfe_workspace.test my-org-name/my-wkspace-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-4b1344d6931127aac5b21f2c92904baad7e55cce5d725e27e7c534c19ba0af5f -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-9172299860816457fdb3b3fe1ca94efcefcfcf20d4b35727c48cb9ae3ed85745 -->
