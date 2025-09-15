@@ -1,14 +1,20 @@
 package provider
 
 import (
-	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
-	"github.com/hashicorp/terraform-plugin-testing/echoprovider"
+	"os"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
+	"github.com/hashicorp/terraform-plugin-testing/echoprovider"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccTFEHYOKCustomerKeyVersionDataSource_basic(t *testing.T) {
+	hyokCustomerKeyVersionId := os.Getenv("HYOK_CUSTOMER_KEY_VERSION_ID")
+	if hyokCustomerKeyVersionId == "" {
+		t.Skip("HYOK_CUSTOMER_KEY_VERSION_ID environment variable must be set to run this test")
+	}
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV5ProviderFactories: testAccMuxedProviders,
@@ -17,11 +23,11 @@ func TestAccTFEHYOKCustomerKeyVersionDataSource_basic(t *testing.T) {
 		},
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEHYOKCustomerKeyVersionDataSourceConfig,
+				Config: testAccTFEHYOKCustomerKeyVersionDataSourceConfig(hyokCustomerKeyVersionId),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.tfe_hyok_customer_key_version.test", "id", "keyv-BWZTzt2J75DsdwH8"),
-					resource.TestCheckResourceAttr("data.tfe_hyok_customer_key_version.test", "status", "available"),
-					resource.TestCheckResourceAttr("data.tfe_hyok_customer_key_version.test", "key_version", "10"),
+					resource.TestCheckResourceAttr("data.tfe_hyok_customer_key_version.test", "id", hyokCustomerKeyVersionId),
+					resource.TestCheckResourceAttrSet("data.tfe_hyok_customer_key_version.test", "status"),
+					resource.TestCheckResourceAttrSet("data.tfe_hyok_customer_key_version.test", "key_version"),
 					resource.TestCheckResourceAttrSet("data.tfe_hyok_customer_key_version.test", "created_at"),
 					resource.TestCheckResourceAttrSet("data.tfe_hyok_customer_key_version.test", "updated_at"),
 				),
@@ -30,12 +36,10 @@ func TestAccTFEHYOKCustomerKeyVersionDataSource_basic(t *testing.T) {
 	})
 }
 
-const testAccTFEHYOKCustomerKeyVersionDataSourceConfig = `
-data "tfe_organization" "org" {
-  name = "dretli-hyok-org"
-}
-
+func testAccTFEHYOKCustomerKeyVersionDataSourceConfig(id string) string {
+	return `
 data "tfe_hyok_customer_key_version" "test" {
-  id = "keyv-BWZTzt2J75DsdwH8"
+  id = "` + id + `"
 }
 `
+}
