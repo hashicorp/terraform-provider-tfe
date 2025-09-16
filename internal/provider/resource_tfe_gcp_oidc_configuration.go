@@ -141,7 +141,7 @@ func (r *resourceTFEGCPOIDCConfiguration) Read(ctx context.Context, req resource
 
 	oidcID := state.ID.ValueString()
 	tflog.Debug(ctx, fmt.Sprintf("Read GCP OIDC configuration: %s", oidcID))
-	oidc, err := r.config.Client.GCPOIDCConfigurations.Read(ctx, state.ID.ValueString())
+	oidc, err := r.config.Client.GCPOIDCConfigurations.Read(ctx, oidcID)
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("GCP OIDC configuration %s no longer exists", oidcID))

@@ -129,7 +129,7 @@ func (r *resourceTFEAWSOIDCConfiguration) Read(ctx context.Context, req resource
 
 	oidcID := state.ID.ValueString()
 	tflog.Debug(ctx, fmt.Sprintf("Read AWS OIDC configuration: %s", oidcID))
-	oidc, err := r.config.Client.AWSOIDCConfigurations.Read(ctx, state.ID.ValueString())
+	oidc, err := r.config.Client.AWSOIDCConfigurations.Read(ctx, oidcID)
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("AWS OIDC configuration %s no longer exists", oidcID))
