@@ -220,6 +220,7 @@ func (r *resourceTFEVaultOIDCConfiguration) Delete(ctx context.Context, req reso
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("TFE Vault OIDC configuration %s no longer exists", oidcID))
+			return
 		}
 
 		resp.Diagnostics.AddError("Error deleting TFE Vault OIDC Configuration", err.Error())

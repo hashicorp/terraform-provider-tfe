@@ -201,6 +201,7 @@ func (r *resourceTFEGCPOIDCConfiguration) Delete(ctx context.Context, req resour
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("TFE GCP OIDC configuration %s no longer exists", oidcID))
+			return
 		}
 
 		resp.Diagnostics.AddError("Error deleting TFE GCP OIDC Configuration", err.Error())

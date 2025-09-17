@@ -201,6 +201,7 @@ func (r *resourceTFEAzureOIDCConfiguration) Delete(ctx context.Context, req reso
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("TFE Azure OIDC configuration %s no longer exists", oidcID))
+			return
 		}
 
 		resp.Diagnostics.AddError("Error deleting TFE Azure OIDC Configuration", err.Error())

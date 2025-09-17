@@ -187,6 +187,7 @@ func (r *resourceTFEAWSOIDCConfiguration) Delete(ctx context.Context, req resour
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("TFE AWS OIDC configuration %s no longer exists", oidcID))
+			return
 		}
 
 		resp.Diagnostics.AddError("Error deleting TFE AWS OIDC Configuration", err.Error())
