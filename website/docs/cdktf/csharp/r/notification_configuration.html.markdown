@@ -159,10 +159,11 @@ The following arguments are supported:
   if `DestinationType` is `Generic`, `MicrosoftTeams`, or `Slack`.
 * `Enabled` - (Optional) Whether the notification configuration should be enabled or not.
   Disabled configurations will not send any notifications. Defaults to `False`.
-* `Token` - (Optional) A write-only secure token for the notification configuration, which can
+* `Token` - (Optional) A token for the notification configuration, which can
   be used by the receiving server to verify request authenticity when configured for notification
   configurations with a destination type of `Generic`. Defaults to `Null`.
   This value _must not_ be provided if `DestinationType` is `Email`, `MicrosoftTeams`, or `Slack`.
+* `TokenWo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) Write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `Generic`. Either `Token` or `TokenWo` can be provided, but not both. This value _must not_ be provided if `DestinationType` is `Email`, `MicrosoftTeams`, or `Slack`.
 * `Triggers` - (Optional) The array of triggers for which this notification configuration will
   send notifications. Valid values are `Run:created`, `Run:planning`, `Run:needsAttention`, `Run:applying`
   `Run:completed`, `Run:errored`, `Assessment:checkFailure`, `Assessment:drifted`, `Assessment:failed`, `Workspace:autoDestroyReminder`, or `Workspace:autoDestroyRunResults`.
@@ -171,6 +172,8 @@ The following arguments are supported:
   configuration where notification requests will be made. This value _must not_ be provided if `DestinationType`
   is `Email`.
 * `WorkspaceId` - (Required) The id of the workspace that owns the notification configuration.
+
+-> **Note:** Write-Only argument `TokenWo` is available to use in place of `Token`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
 
 ## Attributes Reference
 
@@ -184,4 +187,4 @@ Notification configurations can be imported; use `<NOTIFICATION CONFIGURATION ID
 terraform import tfe_notification_configuration.test nc-qV9JnKRkmtMa4zcA
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-710b7782960f76dfa6c0cc90313ce4411ea1070e9620f03dafea7305849d1d27 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-dd61ff105262594a5f42b23b50aeca147747e8946666c3d76f526b8351b6cfb6 -->
