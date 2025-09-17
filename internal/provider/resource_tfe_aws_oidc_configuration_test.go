@@ -13,6 +13,9 @@ func TestAccTFEAWSOIDCConfiguration_basic(t *testing.T) {
 	skipUnlessHYOKEnabled(t)
 
 	orgName := os.Getenv("HYOK_ORGANIZATION_NAME")
+	if orgName == "" {
+		t.Skip("Skipping test. Set HYOK_ORGANIZATION_NAME environment to enable test.")
+	}
 
 	originalRoleARN := "arn:aws:iam::123456789012:role/terraform-provider-tfe-example-1"
 	newRoleARN := "arn:aws:iam::123456789012:role/terraform-provider-tfe-example-2"

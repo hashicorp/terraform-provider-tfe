@@ -18,7 +18,7 @@ import (
 
 const RunTasksURLEnvName = "RUN_TASKS_URL"
 const RunTasksHMACKeyEnvName = "RUN_TASKS_HMAC"
-const HYOKOrganizationNameEnvName = "HYOK_ORGANIZATION_NAME"
+const EnableHYOKEnvName = "ENABLE_HYOK"
 
 type testClientOptions struct {
 	defaultOrganization          string
@@ -242,8 +242,8 @@ func skipUnlessBeta(t *testing.T) {
 func skipUnlessHYOKEnabled(t *testing.T) {
 	skipIfEnterprise(t)
 
-	if value, ok := os.LookupEnv(HYOKOrganizationNameEnvName); !ok || value == "" {
-		t.Skipf("Skipping tests for HYOK. Set '%s' to enable tests.", HYOKOrganizationNameEnvName)
+	if value, ok := os.LookupEnv(EnableHYOKEnvName); !ok || value == "" {
+		t.Skipf("Skipping tests for HYOK. Set '%s' to enable tests.", EnableHYOKEnvName)
 	}
 }
 
