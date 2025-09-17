@@ -23,7 +23,7 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 	// With AWS OIDC configuration
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEAWSHYOKConfigurationConfig(orgName, "apple", "arn:aws:kms:us-east-1:123456789012:key/key1", "us-east-1"),
@@ -64,7 +64,7 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 	// With Vault OIDC configuration
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEVaultHYOKConfigurationConfig(orgName, "peach", "key1"),
@@ -103,7 +103,7 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 	// With GCP OIDC configuration
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEGCPHYOKConfigurationConfig(orgName, "cucumber", "key1", "global", "key-ring-1"),
@@ -147,7 +147,7 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 	// With Azure OIDC configuration
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEAzureHYOKConfigurationConfig(orgName, "banana", "https://random.vault.azure.net/keys/key1"),
