@@ -16,8 +16,7 @@ func TestAccTFEHYOKCustomerKeyVersionDataSource_basic(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		PreCheck: func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: map[string]func() (tfprotov6.ProviderServer, error){
 			"echo": echoprovider.NewProviderServer(),
 		},
@@ -29,7 +28,7 @@ func TestAccTFEHYOKCustomerKeyVersionDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet("data.tfe_hyok_customer_key_version.test", "status"),
 					resource.TestCheckResourceAttrSet("data.tfe_hyok_customer_key_version.test", "key_version"),
 					resource.TestCheckResourceAttrSet("data.tfe_hyok_customer_key_version.test", "created_at"),
-					resource.TestCheckResourceAttrSet("data.tfe_hyok_customer_key_version.test", "updated_at"),
+					resource.TestCheckResourceAttrSet("data.tfe_hyok_customer_key_version.test", "workspaces_secured"),
 				),
 			},
 		},

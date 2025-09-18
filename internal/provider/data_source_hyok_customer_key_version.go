@@ -9,7 +9,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"log"
 	"time"
 )
 
@@ -27,13 +26,12 @@ type dataSourceHYOKCustomerKeyVersion struct {
 }
 
 type HYOKCustomerKeyVersionDataSourceModel struct {
-	ID         types.String `tfsdk:"id"`
-	Status     types.String `tfsdk:"status"`
-	Error      types.String `tfsdk:"error"`
-	KeyVersion types.String `tfsdk:"key_version"`
-	CreatedAt  types.String `tfsdk:"created_at"`
-	UpdatedAt  types.String `tfsdk:"updated_at"`
-	RevokedAt  types.String `tfsdk:"revoked_at"`
+	ID                types.String `tfsdk:"id"`
+	Status            types.String `tfsdk:"status"`
+	Error             types.String `tfsdk:"error"`
+	KeyVersion        types.String `tfsdk:"key_version"`
+	CreatedAt         types.String `tfsdk:"created_at"`
+	WorkspacesSecured types.Int64  `tfsdk:"workspaces_secured"`
 }
 
 func (d *dataSourceHYOKCustomerKeyVersion) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
@@ -74,19 +72,15 @@ func (d *dataSourceHYOKCustomerKeyVersion) Schema(ctx context.Context, req datas
 				Computed:    true,
 			},
 			"key_version": schema.StringAttribute{
-				Description: "The version number of the customer key.",
+				Description: "The version number of the customer key version.",
+				Computed:    true,
+			},
+			"workspaces_secured": schema.Int64Attribute{
+				Description: "The number workspaces secured by this customer key version.",
 				Computed:    true,
 			},
 			"created_at": schema.StringAttribute{
 				Description: "The timestamp when the key version was created.",
-				Computed:    true,
-			},
-			"updated_at": schema.StringAttribute{
-				Description: "The timestamp when the key version was last updated.",
-				Computed:    true,
-			},
-			"revoked_at": schema.StringAttribute{
-				Description: "The timestamp when the key version was revoked, if applicable.",
 				Computed:    true,
 			},
 		},
@@ -102,8 +96,6 @@ func (d *dataSourceHYOKCustomerKeyVersion) Read(ctx context.Context, req datasou
 		return
 	}
 
-	log.Printf("[DEBUG] Reading HYOK customer key version: %s", data.ID.ValueString())
-
 	// Make API call to fetch the HYOK customer key version
 	keyVersion, err := d.config.Client.HYOKCustomerKeyVersions.Read(ctx, data.ID.ValueString())
 	if err != nil {
@@ -114,9 +106,8 @@ func (d *dataSourceHYOKCustomerKeyVersion) Read(ctx context.Context, req datasou
 	// Set the computed attributes from the API response
 	data.Status = types.StringValue(string(keyVersion.Status))
 	data.KeyVersion = types.StringValue(keyVersion.KeyVersion)
-	data.CreatedAt = types.StringValue(keyVersion.CreatedAt.Format(time.RFC3339)) // TODO DOM: Check this format
-	data.UpdatedAt = types.StringValue(keyVersion.UpdatedAt.Format(time.RFC3339)) // TODO DOM: Check this format
-	data.RevokedAt = types.StringValue(keyVersion.RevokedAt.Format(time.RFC3339)) // TODO DOM: Check this format
+	data.CreatedAt = types.StringValue(keyVersion.CreatedAt.Format(time.RFC3339))
+	data.WorkspacesSecured = types.Int64Value(int64(keyVersion.WorkspacesSecured))
 	data.Error = types.StringValue(keyVersion.Error)
 
 	// Save data into Terraform state

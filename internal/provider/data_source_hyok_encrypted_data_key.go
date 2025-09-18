@@ -94,7 +94,7 @@ func (d *dataSourceHYOKEncryptedDataKey) Read(ctx context.Context, req datasourc
 	}
 
 	// Set the computed attributes from the API response
-	data.EncryptedDEK = types.StringValue(string(keyVersion.EncryptedDEK))
+	data.EncryptedDEK = types.StringValue(keyVersion.EncryptedDEK)
 	data.CustomerKeyName = types.StringValue(keyVersion.CustomerKeyName)
 	data.CreatedAt = types.StringValue(keyVersion.CreatedAt.Format(time.RFC3339)) // TODO DOM: Check this format
 
