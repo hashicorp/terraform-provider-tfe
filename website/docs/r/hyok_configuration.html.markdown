@@ -16,12 +16,13 @@ Defines a HYOK configuration resource.
 Basic usage:
 
 ```hcl
-resource "tfe_hyok_configuration" "gcp_example" {
+resource "tfe_hyok_configuration" "example" {
   organization              = "my-hyok-org"
   name                      = "my-key-name"
   kek_id                    = "key1"
   agent_pool_id             = "apool-MFtsuFxHkC9pCRgB"
-  gcp_oidc_configuration_id = "gcpoidc-PuXEeRoSaK3ENGj9"
+  oidc_configuration_id     = "gcpoidc-PuXEeRoSaK3ENGj9"
+  oidc_configuration_type   = "gcp"
 
   kms_options {
     key_location  = "global"
@@ -37,10 +38,8 @@ The following arguments are supported:
 * `name` - (Required) Label for the HYOK configuration to be used within HCP Terraform.
 * `kek_id` - (Required) Refers to the name of your key encryption key stored in your key management service.
 * `agent_pool_id` - (Required) The ID of the agent-pool to associate with the HYOK configuration.
-* `vault_oidc_configuration_id` - (Optional) The ID of the TFE Vault OIDC configuration. If this is set, no other OIDC configuration IDs should be set.
-* `aws_oidc_configuration_id` - (Optional) The ID of the TFE AWS OIDC configuration. If this is set, no other OIDC configuration IDs should be set.
-* `gcp_oidc_configuration_id` - (Optional) The ID of the TFE GCP OIDC configuration. If this is set, no other OIDC configuration IDs should be set.
-* `azure_oidc_configuration_id` - (Optional) The ID of the TFE Azure OIDC configuration. If this is set, no other OIDC configuration IDs should be set.
+* `oidc_configuration_id` - (Required) The ID of the TFE OIDC configuration.
+* `oidc_configuration_type` - (Required) The type of OIDC configuration. Valid values are `vault`, `aws`, `gcp`, and `azure`.
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 
 The `kms_options` block is optional, and is used to specify additional fields for some key management services. Supported arguments are:

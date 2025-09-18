@@ -30,8 +30,9 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckTFEHYOKConfigurationExists("tfe_hyok_configuration.hyok", state),
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "id"),
-					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "aws_oidc_configuration_id"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "name", "apple"),
+					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "oidc_configuration_id"),
+					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "oidc_configuration_type", "aws"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "kek_id", "arn:aws:kms:us-east-1:123456789012:key/key1"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "kms_options.key_region", "us-east-1"),
 				),
@@ -47,8 +48,9 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 				Config: testAccTFEAWSHYOKConfigurationConfig(orgName, "orange", "arn:aws:kms:us-east-1:123456789012:key/key2", "us-east-2"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "id"),
-					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "aws_oidc_configuration_id"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "name", "orange"),
+					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "oidc_configuration_id"),
+					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "oidc_configuration_type", "aws"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "kek_id", "arn:aws:kms:us-east-1:123456789012:key/key2"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "kms_options.key_region", "us-east-2"),
 				),
@@ -71,8 +73,9 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckTFEHYOKConfigurationExists("tfe_hyok_configuration.hyok", state),
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "id"),
-					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "vault_oidc_configuration_id"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "name", "peach"),
+					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "oidc_configuration_id"),
+					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "oidc_configuration_type", "vault"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "kek_id", "key1"),
 				),
 			},
@@ -87,8 +90,9 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 				Config: testAccTFEVaultHYOKConfigurationConfig(orgName, "strawberry", "key2"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "id"),
-					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "vault_oidc_configuration_id"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "name", "strawberry"),
+					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "oidc_configuration_id"),
+					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "oidc_configuration_type", "vault"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "kek_id", "key2"),
 				),
 			},
@@ -110,8 +114,9 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckTFEHYOKConfigurationExists("tfe_hyok_configuration.hyok", state),
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "id"),
-					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "gcp_oidc_configuration_id"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "name", "cucumber"),
+					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "oidc_configuration_id"),
+					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "oidc_configuration_type", "gcp"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "kek_id", "key1"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "kms_options.key_location", "global"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "kms_options.key_ring_id", "key-ring-1"),
@@ -129,8 +134,9 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckTFEHYOKConfigurationExists("tfe_hyok_configuration.hyok", state),
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "id"),
-					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "gcp_oidc_configuration_id"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "name", "tomato"),
+					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "oidc_configuration_id"),
+					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "oidc_configuration_type", "gcp"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "kek_id", "key2"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "kms_options.key_location", "global"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "kms_options.key_ring_id", "key-ring-2"),
@@ -154,8 +160,9 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckTFEHYOKConfigurationExists("tfe_hyok_configuration.hyok", state),
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "id"),
-					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "azure_oidc_configuration_id"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "name", "banana"),
+					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "oidc_configuration_id"),
+					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "oidc_configuration_type", "azure"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "kek_id", "https://random.vault.azure.net/keys/key1"),
 				),
 			},
@@ -170,8 +177,10 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 				Config: testAccTFEAzureHYOKConfigurationConfig(orgName, "blueberry", "https://random.vault.azure.net/keys/key2"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "id"),
-					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "azure_oidc_configuration_id"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "name", "blueberry"),
+					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "oidc_configuration_id"),
+					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "oidc_configuration_type", "azure"),
+					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "oidc_configuration_id"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "kek_id", "https://random.vault.azure.net/keys/key2"),
 				),
 			},
@@ -243,7 +252,8 @@ resource "tfe_hyok_configuration" "hyok" {
 	name                        = "%s"
 	kek_id                      = "%s"
 	agent_pool_id               = resource.tfe_agent_pool.pool.id
-	aws_oidc_configuration_id   = resource.tfe_aws_oidc_configuration.aws_oidc_config.id
+	oidc_configuration_id       = resource.tfe_aws_oidc_configuration.aws_oidc_config.id
+	oidc_configuration_type     = "aws"
 	kms_options {
 		key_region = "%s"
 	}
@@ -270,7 +280,8 @@ resource "tfe_hyok_configuration" "hyok" {
 	name                            = "%s"
 	kek_id                          = "%s"
 	agent_pool_id                   = resource.tfe_agent_pool.pool.id
-	vault_oidc_configuration_id     = resource.tfe_vault_oidc_configuration.vault_oidc_config.id
+	oidc_configuration_id           = resource.tfe_vault_oidc_configuration.vault_oidc_config.id
+	oidc_configuration_type         = "vault"
 }
 `, orgName, orgName, orgName, name, kekID)
 }
@@ -294,7 +305,8 @@ resource "tfe_hyok_configuration" "hyok" {
 	name                        = "%s"
 	kek_id                      = "%s"
 	agent_pool_id               = resource.tfe_agent_pool.pool.id
-	gcp_oidc_configuration_id   = resource.tfe_gcp_oidc_configuration.gcp_oidc_config.id
+	oidc_configuration_id       = resource.tfe_gcp_oidc_configuration.gcp_oidc_config.id
+	oidc_configuration_type     = "gcp"
 	kms_options {
 		key_location    = "%s"
 		key_ring_id     = "%s"
@@ -322,7 +334,8 @@ resource "tfe_hyok_configuration" "hyok" {
 	name                            = "%s"
 	kek_id                          = "%s"
 	agent_pool_id                   = resource.tfe_agent_pool.pool.id
-	azure_oidc_configuration_id     = resource.tfe_azure_oidc_configuration.azure_oidc_config.id
+	oidc_configuration_id           = resource.tfe_azure_oidc_configuration.azure_oidc_config.id
+	oidc_configuration_type         = "azure"
 }
 `, orgName, orgName, orgName, name, kekID)
 }

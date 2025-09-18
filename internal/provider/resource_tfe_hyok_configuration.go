@@ -35,18 +35,32 @@ type resourceTFEHYOKConfiguration struct {
 }
 
 type modelTFEHYOKConfiguration struct {
-	ID         types.String        `tfsdk:"id"`
-	Name       types.String        `tfsdk:"name"`
-	KEKID      types.String        `tfsdk:"kek_id"`
-	KMSOptions *modelTFEKMSOptions `tfsdk:"kms_options"`
+	ID                    types.String        `tfsdk:"id"`
+	Name                  types.String        `tfsdk:"name"`
+	KEKID                 types.String        `tfsdk:"kek_id"`
+	KMSOptions            *modelTFEKMSOptions `tfsdk:"kms_options"`
+	OIDCConfigurationID   types.String        `tfsdk:"oidc_configuration_id"`
+	OIDCConfigurationType types.String        `tfsdk:"oidc_configuration_type"`
+	AgentPoolID           types.String        `tfsdk:"agent_pool_id"`
+	Organization          types.String        `tfsdk:"organization"`
+}
 
-	AWSOIDCConfigurationID   types.String `tfsdk:"aws_oidc_configuration_id"`
-	GCPOIDCConfigurationID   types.String `tfsdk:"gcp_oidc_configuration_id"`
-	VaultOIDCConfigurationID types.String `tfsdk:"vault_oidc_configuration_id"`
-	AzureOIDCConfigurationID types.String `tfsdk:"azure_oidc_configuration_id"`
+func (m *modelTFEHYOKConfiguration) TFEOIDCConfigurationTypeChoice() *tfe.OIDCConfigurationTypeChoice {
+	var typeChoice *tfe.OIDCConfigurationTypeChoice
+	id := m.OIDCConfigurationID.ValueString()
 
-	AgentPoolID  types.String `tfsdk:"agent_pool_id"`
-	Organization types.String `tfsdk:"organization"`
+	switch m.OIDCConfigurationType.ValueString() {
+	case OIDCConfigurationTypeAWS:
+		typeChoice = &tfe.OIDCConfigurationTypeChoice{AWSOIDCConfiguration: &tfe.AWSOIDCConfiguration{ID: id}}
+	case OIDCConfigurationTypeGCP:
+		typeChoice = &tfe.OIDCConfigurationTypeChoice{GCPOIDCConfiguration: &tfe.GCPOIDCConfiguration{ID: id}}
+	case OIDCConfigurationTypeVault:
+		typeChoice = &tfe.OIDCConfigurationTypeChoice{VaultOIDCConfiguration: &tfe.VaultOIDCConfiguration{ID: id}}
+	case OIDCConfigurationTypeAzure:
+		typeChoice = &tfe.OIDCConfigurationTypeChoice{AzureOIDCConfiguration: &tfe.AzureOIDCConfiguration{ID: id}}
+	}
+
+	return typeChoice
 }
 
 type modelTFEKMSOptions struct {
@@ -54,6 +68,26 @@ type modelTFEKMSOptions struct {
 	KeyLocation types.String `tfsdk:"key_location"`
 	KeyRingID   types.String `tfsdk:"key_ring_id"`
 }
+
+func (m *modelTFEKMSOptions) TFEKMSOptions() *tfe.KMSOptions {
+	var kmsOptions *tfe.KMSOptions
+	if m != nil {
+		kmsOptions = &tfe.KMSOptions{
+			KeyRegion:   m.KeyRegion.ValueString(),
+			KeyLocation: m.KeyLocation.ValueString(),
+			KeyRingID:   m.KeyRingID.ValueString(),
+		}
+	}
+	return kmsOptions
+}
+
+// List all available OIDC configuration types.
+const (
+	OIDCConfigurationTypeAWS   string = "aws"
+	OIDCConfigurationTypeGCP   string = "gcp"
+	OIDCConfigurationTypeVault string = "vault"
+	OIDCConfigurationTypeAzure string = "azure"
+)
 
 func (r *resourceTFEHYOKConfiguration) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	// Prevent panic if the provider has not been configured.
@@ -93,44 +127,23 @@ func (r *resourceTFEHYOKConfiguration) Schema(_ context.Context, _ resource.Sche
 				Description: "Refers to the name of your key encryption key stored in your key management service.",
 				Required:    true,
 			},
-			"aws_oidc_configuration_id": schema.StringAttribute{
-				Description: "The ID of the TFE AWS OIDC configuration.",
-				Optional:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-				Validators: []validator.String{
-					validateSingleOIDCConfigurationChoice(),
-				},
+			"oidc_configuration_id": schema.StringAttribute{
+				Description: "The ID of the TFE OIDC configuration.",
+				Required:    true,
 			},
-			"gcp_oidc_configuration_id": schema.StringAttribute{
-				Description: "The ID of the TFE HYOK configuration.",
-				Optional:    true,
+			"oidc_configuration_type": schema.StringAttribute{
+				Description: "The type of the TFE OIDC configuration.",
+				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validateSingleOIDCConfigurationChoice(),
-				},
-			},
-			"vault_oidc_configuration_id": schema.StringAttribute{
-				Description: "The ID of the TFE Vault OIDC configuration.",
-				Optional:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-				Validators: []validator.String{
-					validateSingleOIDCConfigurationChoice(),
-				},
-			},
-			"azure_oidc_configuration_id": schema.StringAttribute{
-				Description: "The ID of the TFE Azure OIDC configuration.",
-				Optional:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-				Validators: []validator.String{
-					validateSingleOIDCConfigurationChoice(),
+					stringvalidator.OneOf(
+						string(OIDCConfigurationTypeAWS),
+						string(OIDCConfigurationTypeGCP),
+						string(OIDCConfigurationTypeVault),
+						string(OIDCConfigurationTypeAzure),
+					),
 				},
 			},
 			"agent_pool_id": schema.StringAttribute{
@@ -175,15 +188,6 @@ func (r *resourceTFEHYOKConfiguration) Schema(_ context.Context, _ resource.Sche
 	}
 }
 
-func validateSingleOIDCConfigurationChoice() validator.String {
-	return stringvalidator.ExactlyOneOf(
-		path.MatchRoot("aws_oidc_configuration_id"),
-		path.MatchRoot("gcp_oidc_configuration_id"),
-		path.MatchRoot("azure_oidc_configuration_id"),
-		path.MatchRoot("vault_oidc_configuration_id"),
-	)
-}
-
 func (r *resourceTFEHYOKConfiguration) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
@@ -204,46 +208,12 @@ func (r *resourceTFEHYOKConfiguration) Create(ctx context.Context, req resource.
 		return
 	}
 
-	var awsOIDCConfig *tfe.AWSOIDCConfiguration
-	if plan.AWSOIDCConfigurationID.ValueString() != "" {
-		awsOIDCConfig = &tfe.AWSOIDCConfiguration{ID: plan.AWSOIDCConfigurationID.ValueString()}
-	}
-
-	var gcpOIDCConfig *tfe.GCPOIDCConfiguration
-	if plan.GCPOIDCConfigurationID.ValueString() != "" {
-		gcpOIDCConfig = &tfe.GCPOIDCConfiguration{ID: plan.GCPOIDCConfigurationID.ValueString()}
-	}
-
-	var vaultOIDCConfig *tfe.VaultOIDCConfiguration
-	if plan.VaultOIDCConfigurationID.ValueString() != "" {
-		vaultOIDCConfig = &tfe.VaultOIDCConfiguration{ID: plan.VaultOIDCConfigurationID.ValueString()}
-	}
-
-	var azureOIDCConfig *tfe.AzureOIDCConfiguration
-	if plan.AzureOIDCConfigurationID.ValueString() != "" {
-		azureOIDCConfig = &tfe.AzureOIDCConfiguration{ID: plan.AzureOIDCConfigurationID.ValueString()}
-	}
-
-	var kmsOptions *tfe.KMSOptions
-	if plan.KMSOptions != nil {
-		kmsOptions = &tfe.KMSOptions{
-			KeyRegion:   plan.KMSOptions.KeyRegion.ValueString(),
-			KeyLocation: plan.KMSOptions.KeyLocation.ValueString(),
-			KeyRingID:   plan.KMSOptions.KeyRingID.ValueString(),
-		}
-	}
-
 	options := tfe.HYOKConfigurationsCreateOptions{
-		KEKID:      plan.KEKID.ValueString(),
-		Name:       plan.Name.ValueString(),
-		KMSOptions: kmsOptions,
-		OIDCConfiguration: &tfe.OIDCConfigurationTypeChoice{
-			AWSOIDCConfiguration:   awsOIDCConfig,
-			GCPOIDCConfiguration:   gcpOIDCConfig,
-			VaultOIDCConfiguration: vaultOIDCConfig,
-			AzureOIDCConfiguration: azureOIDCConfig,
-		},
-		AgentPool: &tfe.AgentPool{ID: plan.AgentPoolID.ValueString()},
+		KEKID:             plan.KEKID.ValueString(),
+		Name:              plan.Name.ValueString(),
+		KMSOptions:        plan.KMSOptions.TFEKMSOptions(),
+		OIDCConfiguration: plan.TFEOIDCConfigurationTypeChoice(),
+		AgentPool:         &tfe.AgentPool{ID: plan.AgentPoolID.ValueString()},
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("Create TFE HYOK Configuration for organization %s", orgName))
@@ -300,19 +270,10 @@ func (r *resourceTFEHYOKConfiguration) Update(ctx context.Context, req resource.
 		return
 	}
 
-	var kmsOptions *tfe.KMSOptions
-	if plan.KMSOptions != nil {
-		kmsOptions = &tfe.KMSOptions{
-			KeyRegion:   plan.KMSOptions.KeyRegion.ValueString(),
-			KeyLocation: plan.KMSOptions.KeyLocation.ValueString(),
-			KeyRingID:   plan.KMSOptions.KeyRingID.ValueString(),
-		}
-	}
-
 	options := tfe.HYOKConfigurationsUpdateOptions{
 		Name:       plan.Name.ValueStringPointer(),
 		KEKID:      plan.KEKID.ValueStringPointer(),
-		KMSOptions: kmsOptions,
+		KMSOptions: plan.KMSOptions.TFEKMSOptions(),
 		AgentPool:  &tfe.AgentPool{ID: plan.AgentPoolID.ValueString()},
 	}
 
@@ -342,6 +303,7 @@ func (r *resourceTFEHYOKConfiguration) Delete(ctx context.Context, req resource.
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("TFE HYOK configuration %s no longer exists", hyokID))
+			return
 		}
 
 		resp.Diagnostics.AddError("Error deleting TFE HYOK Configuration", err.Error())
@@ -369,13 +331,17 @@ func modelFromTFEHYOKConfiguration(p *tfe.HYOKConfiguration) modelTFEHYOKConfigu
 	}
 
 	if p.OIDCConfiguration.AWSOIDCConfiguration != nil {
-		model.AWSOIDCConfigurationID = types.StringValue(p.OIDCConfiguration.AWSOIDCConfiguration.ID)
+		model.OIDCConfigurationID = types.StringValue(p.OIDCConfiguration.AWSOIDCConfiguration.ID)
+		model.OIDCConfigurationType = types.StringValue(OIDCConfigurationTypeAWS)
 	} else if p.OIDCConfiguration.GCPOIDCConfiguration != nil {
-		model.GCPOIDCConfigurationID = types.StringValue(p.OIDCConfiguration.GCPOIDCConfiguration.ID)
+		model.OIDCConfigurationID = types.StringValue(p.OIDCConfiguration.GCPOIDCConfiguration.ID)
+		model.OIDCConfigurationType = types.StringValue(OIDCConfigurationTypeGCP)
 	} else if p.OIDCConfiguration.AzureOIDCConfiguration != nil {
-		model.AzureOIDCConfigurationID = types.StringValue(p.OIDCConfiguration.AzureOIDCConfiguration.ID)
+		model.OIDCConfigurationID = types.StringValue(p.OIDCConfiguration.AzureOIDCConfiguration.ID)
+		model.OIDCConfigurationType = types.StringValue(OIDCConfigurationTypeAzure)
 	} else if p.OIDCConfiguration.VaultOIDCConfiguration != nil {
-		model.VaultOIDCConfigurationID = types.StringValue(p.OIDCConfiguration.VaultOIDCConfiguration.ID)
+		model.OIDCConfigurationID = types.StringValue(p.OIDCConfiguration.VaultOIDCConfiguration.ID)
+		model.OIDCConfigurationType = types.StringValue(OIDCConfigurationTypeVault)
 	}
 
 	return model
