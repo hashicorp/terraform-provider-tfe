@@ -31,6 +31,5 @@ In addition to all arguments above, the following attributes are exported:
 * `error` - Any error message associated with the customer key version.
 * `id` - The ID of the customer key version.
 * `key_version` - The version number of the customer key.
-* `revoked_at` - The time when the customer key version was revoked.
 * `status` - The status of the customer key version.
-* `updated_at` - The time when the customer key version was last updated.
+* `workspaces_secured` - The number of workspaces securefd by this customer key version.
