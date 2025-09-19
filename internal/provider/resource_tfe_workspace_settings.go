@@ -515,13 +515,16 @@ func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorks
 
 	if !data.Tags.IsNull() && !data.Tags.IsUnknown() {
 		tags := data.Tags.Elements()
-		if len(tags) == 0 {
+
+		switch {
+		case len(tags) == 0:
 			if err := r.config.Client.Workspaces.DeleteAllTagBindings(ctx, workspaceID); err != nil {
 				return fmt.Errorf("error removing tag bindings from workspace %s: %w", workspaceID, err)
 			}
-		} else {
+		default:
 			for key, val := range tags {
-				if strVal, ok := val.(types.String); ok && !strVal.IsNull() && !strVal.IsUnknown() {
+				strVal, ok := val.(types.String)
+				if ok && !strVal.IsNull() && !strVal.IsUnknown() {
 					updateOptions.TagBindings = append(updateOptions.TagBindings, &tfe.TagBinding{
 						Key:   key,
 						Value: strVal.ValueString(),
