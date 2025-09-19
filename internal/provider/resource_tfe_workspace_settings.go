@@ -513,20 +513,21 @@ func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorks
 		updateOptions.ExecutionMode = tfe.String("remote")
 	}
 
-	tags := data.Tags.Elements()
-	for key, val := range tags {
-		if strVal, ok := val.(types.String); ok && !strVal.IsNull() {
-			updateOptions.TagBindings = append(updateOptions.TagBindings, &tfe.TagBinding{
-				Key:   key,
-				Value: strVal.ValueString(),
-			})
-		}
-	}
-
-	if len(tags) == 0 {
-		err := r.config.Client.Workspaces.DeleteAllTagBindings(ctx, workspaceID)
-		if err != nil {
-			return fmt.Errorf("error removing tag bindings from workspace %s: %w", workspaceID, err)
+	if !data.Tags.IsNull() && !data.Tags.IsUnknown() {
+		tags := data.Tags.Elements()
+		if len(tags) == 0 {
+			if err := r.config.Client.Workspaces.DeleteAllTagBindings(ctx, workspaceID); err != nil {
+				return fmt.Errorf("error removing tag bindings from workspace %s: %w", workspaceID, err)
+			}
+		} else {
+			for key, val := range tags {
+				if strVal, ok := val.(types.String); ok && !strVal.IsNull() && !strVal.IsUnknown() {
+					updateOptions.TagBindings = append(updateOptions.TagBindings, &tfe.TagBinding{
+						Key:   key,
+						Value: strVal.ValueString(),
+					})
+				}
+			}
 		}
 	}
 
