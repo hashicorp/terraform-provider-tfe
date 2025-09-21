@@ -54,6 +54,21 @@ resource "tfe_policy_set" "test" {
 }
 ```
 
+Using projects and workspace exclusions:
+
+```hcl
+resource "tfe_policy_set" "test" {
+  name                    = "my-policy-set"
+  description             = "A brand new policy set"
+  organization            = "my-org-name"
+  kind                    = "sentinel"
+  policy_tool_version     = "0.24.1"
+  policy_ids              = [tfe_sentinel_policy.test.id]
+  project_ids             = [tfe_project.test.id]
+  workspace_exclusion_ids = [tfe_workspace.excluded.id]
+}
+```
+
 Manually uploaded policy set, in lieu of VCS:
 
 ```hcl
@@ -101,6 +116,8 @@ The following arguments are supported:
   new resource if changed. This value _must not_ be provided if `policy_ids` are provided.
 * `workspace_ids` - (Optional) A list of workspace IDs. This value _must not_ be provided
   if `global` is provided.
+* `workspace_exclusion_ids` - (Optional) A list of workspace IDs to exclude from this policy set.
+* `project_ids` - (Optional) A list of project IDs that this policy set should be enforced on.
 * `slug` - (Optional) A reference to the `tfe_slug` data source that contains
   the `source_path` to where the local policies are located. This is used when
 policies are located locally, and can only be used when there is no VCS repo or

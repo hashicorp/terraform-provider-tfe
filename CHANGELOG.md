@@ -1,5 +1,8 @@
 ## Unreleased
 
+ENHANCEMENTS:
+* `r/tfe_policy_set`: Add support for `workspace_exclusion_ids` and `project_ids` attributes ([#1684](https://github.com/hashicorp/terraform-provider-tfe/issues/1684))
+
 ## v0.69.0
 
 BREAKING CHANGES:

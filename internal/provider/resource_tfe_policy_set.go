@@ -157,6 +157,21 @@ func resourceTFEPolicySet() *schema.Resource {
 				Elem:          &schema.Schema{Type: schema.TypeString},
 				ConflictsWith: []string{"global"},
 			},
+
+			"workspace_exclusion_ids": {
+				Type:     schema.TypeSet,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+
+			"project_ids": {
+				Type:          schema.TypeSet,
+				Optional:      true,
+				Computed:      true,
+				Elem:          &schema.Schema{Type: schema.TypeString},
+				ConflictsWith: []string{"global"},
+			},
 		},
 	}
 }
@@ -224,6 +239,14 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 
 	for _, workspaceID := range d.Get("workspace_ids").(*schema.Set).List() {
 		options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: workspaceID.(string)})
+	}
+
+	for _, workspaceExclusionID := range d.Get("workspace_exclusion_ids").(*schema.Set).List() {
+		options.WorkspaceExclusions = append(options.WorkspaceExclusions, &tfe.Workspace{ID: workspaceExclusionID.(string)})
+	}
+
+	for _, projectID := range d.Get("project_ids").(*schema.Set).List() {
+		options.Projects = append(options.Projects, &tfe.Project{ID: projectID.(string)})
 	}
 
 	log.Printf("[DEBUG] Create policy set %s for organization: %s", name, organization)
@@ -324,6 +347,20 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 	d.Set("workspace_ids", workspaceIDs)
+
+	// Update the workspace exclusions.
+	var workspaceExclusionIDs []interface{}
+	for _, workspaceExclusion := range policySet.WorkspaceExclusions {
+		workspaceExclusionIDs = append(workspaceExclusionIDs, workspaceExclusion.ID)
+	}
+	d.Set("workspace_exclusion_ids", workspaceExclusionIDs)
+
+	// Update the projects.
+	var projectIDs []interface{}
+	for _, project := range policySet.Projects {
+		projectIDs = append(projectIDs, project.ID)
+	}
+	d.Set("project_ids", projectIDs)
 
 	return nil
 }
@@ -481,6 +518,84 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 			err := config.Client.PolicySets.RemoveWorkspaces(ctx, d.Id(), options)
 			if err != nil {
 				return fmt.Errorf("Error detaching policy set %s from workspaces: %w", d.Id(), err)
+			}
+		}
+	}
+
+	if d.HasChange("workspace_exclusion_ids") {
+		oldWorkspaceExclusionIDValues, newWorkspaceExclusionIDValues := d.GetChange("workspace_exclusion_ids")
+		newWorkspaceExclusionIDsSet := newWorkspaceExclusionIDValues.(*schema.Set)
+		oldWorkspaceExclusionIDsSet := oldWorkspaceExclusionIDValues.(*schema.Set)
+
+		newWorkspaceExclusionIDs := newWorkspaceExclusionIDsSet.Difference(oldWorkspaceExclusionIDsSet)
+		oldWorkspaceExclusionIDs := oldWorkspaceExclusionIDsSet.Difference(newWorkspaceExclusionIDsSet)
+
+		// First add the new workspace exclusions.
+		if newWorkspaceExclusionIDs.Len() > 0 {
+			options := tfe.PolicySetAddWorkspaceExclusionsOptions{}
+
+			for _, workspaceExclusionID := range newWorkspaceExclusionIDs.List() {
+				options.WorkspaceExclusions = append(options.WorkspaceExclusions, &tfe.Workspace{ID: workspaceExclusionID.(string)})
+			}
+
+			log.Printf("[DEBUG] Add workspace exclusions to policy set: %s", d.Id())
+			err := config.Client.PolicySets.AddWorkspaceExclusions(ctx, d.Id(), options)
+			if err != nil {
+				return fmt.Errorf("Error adding workspace exclusions to policy set %s: %w", d.Id(), err)
+			}
+		}
+
+		// Then remove all the old workspace exclusions.
+		if oldWorkspaceExclusionIDs.Len() > 0 {
+			options := tfe.PolicySetRemoveWorkspaceExclusionsOptions{}
+
+			for _, workspaceExclusionID := range oldWorkspaceExclusionIDs.List() {
+				options.WorkspaceExclusions = append(options.WorkspaceExclusions, &tfe.Workspace{ID: workspaceExclusionID.(string)})
+			}
+
+			log.Printf("[DEBUG] Remove workspace exclusions from policy set: %s", d.Id())
+			err := config.Client.PolicySets.RemoveWorkspaceExclusions(ctx, d.Id(), options)
+			if err != nil {
+				return fmt.Errorf("Error removing workspace exclusions from policy set %s: %w", d.Id(), err)
+			}
+		}
+	}
+
+	if d.HasChange("project_ids") {
+		oldProjectIDValues, newProjectIDValues := d.GetChange("project_ids")
+		newProjectIDsSet := newProjectIDValues.(*schema.Set)
+		oldProjectIDsSet := oldProjectIDValues.(*schema.Set)
+
+		newProjectIDs := newProjectIDsSet.Difference(oldProjectIDsSet)
+		oldProjectIDs := oldProjectIDsSet.Difference(newProjectIDsSet)
+
+		// First add the new projects.
+		if newProjectIDs.Len() > 0 {
+			options := tfe.PolicySetAddProjectsOptions{}
+
+			for _, projectID := range newProjectIDs.List() {
+				options.Projects = append(options.Projects, &tfe.Project{ID: projectID.(string)})
+			}
+
+			log.Printf("[DEBUG] Add projects to policy set: %s", d.Id())
+			err := config.Client.PolicySets.AddProjects(ctx, d.Id(), options)
+			if err != nil {
+				return fmt.Errorf("Error adding projects to policy set %s: %w", d.Id(), err)
+			}
+		}
+
+		// Then remove all the old projects.
+		if oldProjectIDs.Len() > 0 {
+			options := tfe.PolicySetRemoveProjectsOptions{}
+
+			for _, projectID := range oldProjectIDs.List() {
+				options.Projects = append(options.Projects, &tfe.Project{ID: projectID.(string)})
+			}
+
+			log.Printf("[DEBUG] Remove projects from policy set: %s", d.Id())
+			err := config.Client.PolicySets.RemoveProjects(ctx, d.Id(), options)
+			if err != nil {
+				return fmt.Errorf("Error removing projects from policy set %s: %w", d.Id(), err)
 			}
 		}
 	}

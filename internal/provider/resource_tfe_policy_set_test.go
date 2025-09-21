@@ -1331,6 +1331,70 @@ resource "tfe_policy_set" "foobar" {
 }`, sourcePath, organization)
 }
 
+func TestAccTFEPolicySet_projectsAndWorkspaceExclusions(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	policySet := &tfe.PolicySet{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicySet_projectsAndWorkspaceExclusions(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "tst-terraform"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "project_ids.#", "1"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "workspace_exclusion_ids.#", "1"),
+				),
+			},
+		},
+	})
+}
+
+func testAccTFEPolicySet_projectsAndWorkspaceExclusions(organization string) string {
+	return fmt.Sprintf(`
+locals {
+    organization_name = "%s"
+}
+
+resource "tfe_sentinel_policy" "foo" {
+  name         = "policy-foo"
+  organization = local.organization_name
+  policy       = "main = rule { true }"
+  enforce_mode = "hard-mandatory"
+}
+
+resource "tfe_project" "foo" {
+  name         = "project-foo"
+  organization = local.organization_name
+}
+
+resource "tfe_workspace" "foo" {
+  name         = "workspace-foo"
+  organization = local.organization_name
+}
+
+resource "tfe_policy_set" "foobar" {
+  name                    = "tst-terraform"
+  organization           = local.organization_name
+  policy_ids             = [tfe_sentinel_policy.foo.id]
+  project_ids            = [tfe_project.foo.id]
+  workspace_exclusion_ids = [tfe_workspace.foo.id]
+}`, organization)
+}
+
 func testAccTFEPolicySet_versionsConflict(organization string, sourcePath string) string {
 	return fmt.Sprintf(`
 data "tfe_slug" "policy" {
