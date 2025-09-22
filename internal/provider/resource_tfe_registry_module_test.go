@@ -1785,7 +1785,7 @@ func TestAccTFERegistryModule_agentExecutionModeWithAgentPool(t *testing.T) {
 		PreCheck: func() {
 			testAccPreCheckTFERegistryModule(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFERegistryModuleDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -1820,7 +1820,7 @@ func TestAccTFERegistryModule_remoteExecutionModeWithoutAgentPool(t *testing.T) 
 		PreCheck: func() {
 			testAccPreCheckTFERegistryModule(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFERegistryModuleDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -1855,7 +1855,7 @@ func TestAccTFERegistryModule_agentPoolFieldClearing(t *testing.T) {
 		PreCheck: func() {
 			testAccPreCheckTFERegistryModule(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFERegistryModuleDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -1888,7 +1888,7 @@ func TestAccTFERegistryModule_remoteExecutionModeWithAgentPoolError(t *testing.T
 		PreCheck: func() {
 			testAccPreCheckTFERegistryModule(t)
 		},
-		ProtoV5ProviderFactories: testAccMuxedProviders,
+		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFERegistryModule_remoteExecutionModeWithAgentPoolErrorSimple(rInt),
