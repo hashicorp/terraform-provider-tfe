@@ -15,7 +15,41 @@ Defines a Stack resource.
 
 ## Example Usage
 
-Basic usage:
+### Create a stack with a VCS repository:
+
+```hcl
+resource "tfe_oauth_client" "test" {
+  organization     = "my-example-org"
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = var.github_token
+  service_provider = "github"
+}
+
+data "tfe_organization" "organization" {
+  name = "my-example-org"
+}
+
+data "tfe_agent_pool" "agent-pool" {
+  name                  = "my-example-agent-pool"
+  organization          = tfe_organization.organization.name
+}
+
+resource "tfe_stack" "test-stack" {
+  name          = "my-stack"
+  description   = "A Terraform Stack using two components with two environments"
+  project_id    = data.tfe_organization.organization.default_project_id
+  agent_pool_id = data.tfe_agent_pool.agent-pool.id
+
+  vcs_repo {
+    branch         = "main"
+    identifier     = "my-github-org/stack-repo"
+    oauth_token_id = tfe_oauth_client.test.oauth_token_id
+  }
+}
+```
+
+### Create a stack without a VCS repository:
 
 ```hcl
 resource "tfe_oauth_client" "test" {
@@ -34,14 +68,9 @@ resource "tfe_stack" "test-stack" {
   name         = "my-stack"
   description  = "A Terraform Stack using two components with two environments"
   project_id   = data.tfe_organization.organization.default_project_id
-
-  vcs_repo {
-    branch         = "main"
-    identifier     = "my-github-org/stack-repo"
-    oauth_token_id = tfe_oauth_client.test.oauth_token_id
-  }
 }
 ```
+
 
 ## Argument Reference
 
@@ -49,7 +78,8 @@ The following arguments are supported:
 
 * `Name` - (Required) Name of the stack.
 * `ProjectId` - (Required) ID of the project where the stack should be created.
-* `VcsRepo` - (Required) Settings for the stack's VCS repository.
+* `AgentPoolId` - (Optional) The ID of an agent pool to assign to the stack.
+* `VcsRepo` - (Optional) Settings for the stack's VCS repository.
 * `Description` - (Optional) Description of the stack
 <!--
 NOTE: This is a proposed schema for allowing force-delete actions on a stack. Force delete is not implemented yet so I've commented it out for now.
@@ -78,4 +108,4 @@ Example:
 terraform import tfe_stack.test-stack st-9cs9Vf6Z49Zzrk1t
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-647b86834df95c1c357e66862aa1ce8a7f6e71374728ea1ad8fd13f979f2709f -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-2b2bb309b6efaa099d7b361bc32ece1557b0e8d6fcf6cc0f0b796dadd83ce93b -->

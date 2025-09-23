@@ -45,8 +45,7 @@ The following attributes are exported:
 
 * `Api` - The list of IP ranges in CIDR notation used for connections from user site to HCP Terraform APIs.
 * `Notifications` - The list of IP ranges in CIDR notation used for notifications.
-* `Sentinel` - The list of IP ranges in CIDR notation used for outbound requests from Sentinel policies.
+* `Sentinel` - The list of IP ranges in CIDR notation used for outbound requests from Sentinel policies. Applicable for [Policy Checks](https://developer.hashicorp.com/terraform/cloud-docs/policy-enforcement/manage-policy-sets#policy-checks) mode only (also known as Legacy mode). 
 * `Vcs` - The list of IP ranges in CIDR notation used for connecting to VCS providers.
 
-
-<!-- cache-key: cdktf-0.17.0-pre.15 input-987ff1291f7652480885c8426decd8b28172ee0aede7d6f52322a9845caec7e4 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-c9c4fa079084ce6fc5f646edebfeaf7e0fb8b889f834f6f8469103fcbdb27d3e -->

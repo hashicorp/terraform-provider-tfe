@@ -13,7 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
@@ -80,6 +79,10 @@ func (r *resourceTFEStack) Schema(ctx context.Context, req resource.SchemaReques
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
+			"agent_pool_id": schema.StringAttribute{
+				Description: "The ID of an agent pool to assign to the stack",
+				Optional:    true,
+			},
 			"name": schema.StringAttribute{
 				Description: "Name of the Stack",
 				Required:    true,
@@ -87,11 +90,6 @@ func (r *resourceTFEStack) Schema(ctx context.Context, req resource.SchemaReques
 			"description": schema.StringAttribute{
 				Description: "Description of the Stack",
 				Optional:    true,
-			},
-			"deployment_names": schema.SetAttribute{
-				Description: "The time when the Stack was created.",
-				Computed:    true,
-				ElementType: types.StringType,
 			},
 			"created_at": schema.StringAttribute{
 				Description: "The time when the stack was created.",
@@ -155,6 +153,12 @@ func (r *resourceTFEStack) Create(ctx context.Context, req resource.CreateReques
 		}
 	}
 
+	if !plan.AgentPoolID.IsNull() {
+		options.AgentPool = &tfe.AgentPool{
+			ID: plan.AgentPoolID.ValueString(),
+		}
+	}
+
 	if !plan.Description.IsNull() {
 		options.Description = tfe.String(plan.Description.ValueString())
 	}
@@ -184,7 +188,7 @@ func (r *resourceTFEStack) Read(ctx context.Context, req resource.ReadRequest, r
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("Reading stack %q", state.ID.ValueString()))
-	stack, err := r.config.Client.Stacks.Read(ctx, state.ID.ValueString(), nil)
+	stack, err := r.config.Client.Stacks.Read(ctx, state.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read stack", err.Error())
 		return
@@ -212,27 +216,6 @@ func (r *resourceTFEStack) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
-	// NOTE: if there are existing deployments, and you plan to move a stack from vcs to non-vcs or vice versa,
-	//       we should prevent the update and return an error because the API does not allow this.
-	// TODO: When the go-tfe package would allow such operation we should revisit this logic.
-	//       This is also inspired by similar behavior of the destroy / delete operation for this resource.
-	var deploymentNames []string
-	if !state.DeploymentNames.IsNull() {
-		if diags := state.DeploymentNames.ElementsAs(ctx, &deploymentNames, false); diags.HasError() {
-			resp.Diagnostics.AddError("Invalid deployment names", "Expected a set of strings for deployment names.")
-			return
-		}
-	}
-	tflog.Debug(ctx, fmt.Sprintf("Current deployments: %v", deploymentNames))
-
-	if (len(deploymentNames) > 0) && ((state.VCSRepo != nil && plan.VCSRepo == nil) || (state.VCSRepo == nil && plan.VCSRepo != nil)) {
-		resp.Diagnostics.AddError(
-			"Cannot update Stack VCS configuration with existing deployments",
-			"Please remove all deployments associated with this Stack before updating the VCS configuration.",
-		)
-		return
-	}
-
 	options := tfe.StackUpdateOptions{
 		Name:        tfe.String(plan.Name.ValueString()),
 		Description: tfe.String(plan.Description.ValueString()),
@@ -249,6 +232,12 @@ func (r *resourceTFEStack) Update(ctx context.Context, req resource.UpdateReques
 	} else {
 		tflog.Debug(ctx, "Removing VCS repository from stack update")
 		options.VCSRepo = nil
+	}
+
+	if !plan.AgentPoolID.IsNull() {
+		options.AgentPool = &tfe.AgentPool{
+			ID: plan.AgentPoolID.ValueString(),
+		}
 	}
 
 	tflog.Debug(ctx, "Updating stack")

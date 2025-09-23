@@ -43,12 +43,12 @@ class MyConvertedCode : TerraformStack
             ApiUrl = "https://api.github.com",
             HttpUrl = "https://github.com",
             OauthToken = "oauth_token_id",
-            Organization = tfeOrganizationTestOrganization,
+            Organization = Token.AsString(tfeOrganizationTestOrganization.Name),
             ServiceProvider = "github"
         });
         var tfeWorkspaceChild = new Workspace.Workspace(this, "child", new WorkspaceConfig {
             Name = "child-ws",
-            Organization = tfeOrganizationTestOrganization,
+            Organization = Token.AsString(tfeOrganizationTestOrganization.Name),
             QueueAllRuns = false,
             VcsRepo = new WorkspaceVcsRepo {
                 Branch = "main",
@@ -58,7 +58,7 @@ class MyConvertedCode : TerraformStack
         });
         var tfeWorkspaceParent = new Workspace.Workspace(this, "parent", new WorkspaceConfig {
             Name = "parent-ws",
-            Organization = tfeOrganizationTestOrganization,
+            Organization = Token.AsString(tfeOrganizationTestOrganization.Name),
             QueueAllRuns = false,
             VcsRepo = new WorkspaceVcsRepo {
                 Branch = "main",
@@ -120,12 +120,12 @@ class MyConvertedCode : TerraformStack
             ApiUrl = "https://api.github.com",
             HttpUrl = "https://github.com",
             OauthToken = "oauth_token_id",
-            Organization = tfeOrganizationTestOrganization,
+            Organization = Token.AsString(tfeOrganizationTestOrganization.Name),
             ServiceProvider = "github"
         });
         var tfeWorkspaceParent = new Workspace.Workspace(this, "parent", new WorkspaceConfig {
             Name = "parent-ws",
-            Organization = tfeOrganizationTestOrganization,
+            Organization = Token.AsString(tfeOrganizationTestOrganization.Name),
             QueueAllRuns = false,
             VcsRepo = new WorkspaceVcsRepo {
                 Branch = "main",
@@ -167,12 +167,12 @@ class MyConvertedCode : TerraformStack
             ApiUrl = "https://api.github.com",
             HttpUrl = "https://github.com",
             OauthToken = "oauth_token_id",
-            Organization = tfeOrganizationTestOrganization,
+            Organization = Token.AsString(tfeOrganizationTestOrganization.Name),
             ServiceProvider = "github"
         });
         var tfeWorkspaceParent = new Workspace.Workspace(this, "parent", new WorkspaceConfig {
             Name = "parent-ws",
-            Organization = tfeOrganizationTestOrganization,
+            Organization = Token.AsString(tfeOrganizationTestOrganization.Name),
             QueueAllRuns = false,
             VcsRepo = new WorkspaceVcsRepo {
                 Branch = "main",
@@ -222,4 +222,4 @@ In addition to all arguments above, the following attributes are exported:
 
 * `Id` - The ID of the run created by this resource. Note, if the resource was created without an `Apply{}` configuration block, then this ID will not refer to a real run in HCP Terraform.
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-326dcde8ef59895f6cb1224693fc7aa8de53e6795010027c9279e6a1d68b85c8 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-dabc2fa04a9cee391a5b6193b417eeb4a1debdd321a4cf5b1a13e6c857ed36ac -->

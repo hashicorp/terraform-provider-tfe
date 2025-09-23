@@ -27,6 +27,7 @@ func TestAccTFEStackResource_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "id"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "project_id"),
+					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "agent_pool_id"),
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "name", "example-stack"),
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "description", "Just an ordinary stack"),
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "vcs_repo.identifier", "brandonc/pet-nulls-stack"),
@@ -51,6 +52,11 @@ resource "tfe_organization" "foobar" {
   email = "admin@tfe.local"
 }
 
+resource "tfe_agent_pool" "foobar" {
+  name                  = "agent-pool-test-example"
+  organization          = tfe_organization.foobar.name
+}
+
 resource "tfe_project" "example" {
 	name         = "example"
 	organization = tfe_organization.foobar.name
@@ -68,6 +74,7 @@ resource "tfe_stack" "foobar" {
 	name        = "example-stack"
 	description = "Just an ordinary stack"
   project_id  = tfe_project.example.id
+  agent_pool_id = tfe_agent_pool.foobar.id
 
 	vcs_repo {
     identifier         = "%s"
@@ -75,6 +82,63 @@ resource "tfe_stack" "foobar" {
   }
 }
 `, orgName, ghToken, ghRepoIdentifier)
+}
+
+func TestAccTFEStackResource_withAgentPool(t *testing.T) {
+	skipUnlessBeta(t)
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEStackResourceConfigWithAgentPool(orgName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "id"),
+					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "project_id"),
+					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "agent_pool_id"),
+					resource.TestCheckResourceAttr("tfe_stack.foobar", "name", "example-stack"),
+					resource.TestCheckResourceAttr("tfe_stack.foobar", "description", "Just an ordinary stack"),
+					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "created_at"),
+					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "updated_at"),
+				),
+			},
+			{
+				ResourceName:      "tfe_stack.foobar",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func testAccTFEStackResourceConfigWithAgentPool(orgName string) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "%s"
+  email = "admin@tfe.local"
+}
+
+resource "tfe_agent_pool" "foobar" {
+  name                  = "agent-pool-test-example"
+  organization          = tfe_organization.foobar.name
+}
+
+resource "tfe_project" "example" {
+	name         = "example"
+	organization = tfe_organization.foobar.name
+}
+
+resource "tfe_stack" "foobar" {
+	name        = "example-stack"
+	description = "Just an ordinary stack"
+    project_id  = tfe_project.example.id
+    agent_pool_id = tfe_agent_pool.foobar.id
+}
+`, orgName)
 }
 
 func TestAccTFEStackResource_noVCSRepo(t *testing.T) {

@@ -594,3 +594,121 @@ resource "tfe_workspace_settings" "test" {
 }
 `
 }
+
+func TestAccTFEWorkspaceSettings_preservesWorkspaceTagsOnFirstApply(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	configStep := fmt.Sprintf(`
+resource "tfe_organization" "test" {
+  name  = "tst-tfeprovider-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "test" {
+  organization = tfe_organization.test.name
+  name = "tfe-provider-test-%d"
+  tags = { projectTag = "valueA" }
+}
+
+resource "tfe_workspace" "test" {
+  name         = "tfe-provider-test-workspace-%d"
+  organization = tfe_organization.test.name
+  project_id   = tfe_project.test.id
+  tags         = { app = "web" }    # workspace-level tag
+}
+
+resource "tfe_workspace_settings" "test" {
+  workspace_id = tfe_workspace.test.id
+}
+`, rInt, rInt, rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: configStep,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_workspace_settings.test", "effective_tags.%", "2"),
+					resource.TestCheckResourceAttr("tfe_workspace_settings.test", "effective_tags.projectTag", "valueA"),
+					resource.TestCheckResourceAttr("tfe_workspace_settings.test", "effective_tags.app", "web"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspaceSettings_explicitEmptyClearsWorkspaceTags(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	configStep1 := fmt.Sprintf(`
+resource "tfe_organization" "test" {
+  name  = "tst-tfeprovider-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "test" {
+  organization = tfe_organization.test.name
+  name = "tfe-provider-test-%d"
+  tags = { projectTag = "valueA" }
+}
+
+resource "tfe_workspace" "test" {
+  name         = "tfe-provider-test-workspace-%d"
+  organization = tfe_organization.test.name
+  project_id   = tfe_project.test.id
+  tags         = { app = "web" }    # workspace-level tag
+}
+
+resource "tfe_workspace_settings" "test" {
+  workspace_id = tfe_workspace.test.id
+}
+`, rInt, rInt, rInt)
+
+	configStep2 := fmt.Sprintf(`
+resource "tfe_organization" "test" {
+  name  = "tst-tfeprovider-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "test" {
+  organization = tfe_organization.test.name
+  name = "tfe-provider-test-%d"
+  tags = { projectTag = "valueA" }
+}
+
+resource "tfe_workspace" "test" {
+  name         = "tfe-provider-test-workspace-%d"
+  organization = tfe_organization.test.name
+  project_id   = tfe_project.test.id
+}
+
+resource "tfe_workspace_settings" "test" {
+  workspace_id = tfe_workspace.test.id
+  tags         = {}
+}
+`, rInt, rInt, rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: configStep1,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_workspace_settings.test", "effective_tags.%", "2"),
+					resource.TestCheckResourceAttr("tfe_workspace_settings.test", "effective_tags.projectTag", "valueA"),
+					resource.TestCheckResourceAttr("tfe_workspace_settings.test", "effective_tags.app", "web"),
+				),
+			},
+			{
+				Config: configStep2,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_workspace_settings.test", "effective_tags.%", "1"),
+					resource.TestCheckResourceAttr("tfe_workspace_settings.test", "effective_tags.projectTag", "valueA"),
+					resource.TestCheckNoResourceAttr("tfe_workspace_settings.test", "effective_tags.app"),
+				),
+			},
+		},
+	})
+}

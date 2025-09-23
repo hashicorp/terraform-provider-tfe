@@ -42,13 +42,20 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 The following arguments are supported:
 
 * `Version` - (Required) A semantic version string in N.N.N or N.N.N-bundleName format.
-* `Url` - (Required) The URL where a 64-bit Linux binary of this version can be downloaded.
-* `Sha` - (Required) The SHA-256 checksum of the compressed OPA binary.
+* `Url` - (Soon to be deprecated) The URL where a 64-bit Linux binary of this version can be downloaded.
+* `Sha` - (Soon to be deprecated) The SHA-256 checksum of the compressed OPA binary.
 * `Official` - (Optional) Whether or not this is an official release of OPA. Defaults to "false".
 * `Enabled` - (Optional) Whether or not this version of OPA is enabled for use in HCP Terraform and Terraform Enterprise. Defaults to "true".
 * `Beta` - (Optional) Whether or not this version of OPA is beta pre-release. Defaults to "false".
 * `Deprecated` - (Optional) Whether or not this version of OPA is deprecated. Defaults to "false".
 * `DeprecatedReason` - (Optional) Additional context about why a version of OPA is deprecated. Defaults to "null" unless `Deprecated` is true.
+* `Archs` - (Optional) A list of architecture-specific binaries for this Terraform version. Each entry in the list is a map containing the following attributes:
+    * `Url` - (Required) The URL where a ZIP-compressed binary of this version can be downloaded.
+    * `Sha` - (Required) The SHA-256 checksum of the compressed binary.
+    * `Os` - (Required) The operating system for which this binary is intended.
+    * `Arch` - (Required) The architecture for which this binary is intended.
+
+    When specifying architecture-specific binaries, the top-level `Url` and `Sha` attributes are deprecated and should not be used. If both top-level `Url` and `Sha` are specified, an `Archs` entry for the `Amd64` architecture must also be included, and its `Url` and `Sha` values must match the top-level values.
 
 ## Attributes Reference
 
@@ -68,4 +75,4 @@ terraform import tfe_opa_version.test 0.58.0
 
 -> **Note:** You can fetch a OPA version ID from the URL of an existing version in the HCP Terraform UI. The ID is in the format `tool-<RANDOM STRING>`
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-85ffde68fbb6c7a9dffa29020e669cfcd70100de64e45be334cefb8837e2b8ca -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-a89ee2713b4136edce4c4fb1ac8acd4a5a384b90eb2ed98a9d65ebd397157d3b -->
