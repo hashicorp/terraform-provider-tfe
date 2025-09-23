@@ -1,5 +1,8 @@
 ## Unreleased
 
+BUG FIXES:
+* `r/tfe_workspace_settings`: Prevent unintended clearing of workspace-level tags on the first apply when tags is unset by making tag updates sparse. By @shwetamurali [#1851](https://github.com/hashicorp/terraform-provider-tfe/pull/1851)
+
 ## v0.69.0
 
 BREAKING CHANGES:
