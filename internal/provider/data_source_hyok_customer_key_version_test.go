@@ -8,8 +8,8 @@ import (
 )
 
 func TestAccTFEHYOKCustomerKeyVersionDataSource_basic(t *testing.T) {
-	hyokCustomerKeyVersionId := os.Getenv("HYOK_CUSTOMER_KEY_VERSION_ID")
-	if hyokCustomerKeyVersionId == "" {
+	hyokCustomerKeyVersionID := os.Getenv("HYOK_CUSTOMER_KEY_VERSION_ID")
+	if hyokCustomerKeyVersionID == "" {
 		t.Skip("HYOK_CUSTOMER_KEY_VERSION_ID environment variable must be set to run this test")
 	}
 
@@ -18,9 +18,9 @@ func TestAccTFEHYOKCustomerKeyVersionDataSource_basic(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEHYOKCustomerKeyVersionDataSourceConfig(hyokCustomerKeyVersionId),
+				Config: testAccTFEHYOKCustomerKeyVersionDataSourceConfig(hyokCustomerKeyVersionID),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.tfe_hyok_customer_key_version.test", "id", hyokCustomerKeyVersionId),
+					resource.TestCheckResourceAttr("data.tfe_hyok_customer_key_version.test", "id", hyokCustomerKeyVersionID),
 					resource.TestCheckResourceAttrSet("data.tfe_hyok_customer_key_version.test", "status"),
 					resource.TestCheckResourceAttrSet("data.tfe_hyok_customer_key_version.test", "key_version"),
 					resource.TestCheckResourceAttrSet("data.tfe_hyok_customer_key_version.test", "created_at"),
