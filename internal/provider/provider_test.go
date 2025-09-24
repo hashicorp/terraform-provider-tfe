@@ -157,6 +157,19 @@ func getClientUsingEnv() (*tfe.Client, error) {
 	return providerClient.TfeClient, nil
 }
 
+func getClientWithToken(token string) (*tfe.Client, error) {
+	hostname := client.DefaultHostname
+	if os.Getenv("TFE_HOSTNAME") != "" {
+		hostname = os.Getenv("TFE_HOSTNAME")
+	}
+
+	tfeClient, err := client.GetClient(hostname, token, defaultSSLSkipVerify)
+	if err != nil {
+		return nil, fmt.Errorf("Error getting client: %w", err)
+	}
+	return tfeClient, nil
+}
+
 func TestProvider(t *testing.T) {
 	if err := Provider().InternalValidate(); err != nil {
 		t.Fatalf("err: %s", err)
