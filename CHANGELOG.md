@@ -5,6 +5,20 @@ FEATURES:
 * **New Data Source:** `d/hyok_encrypted_data_key` is a new data source for finding
   HYOK encrypted data keys by @dominicretli [#1842](https://github.com/hashicorp/terraform-provider-tfe/pull/1842)
 
+## v0.70.0
+
+FEATURES:
+* `d/tfe_agent_pool`: Adds the `allowed_project_ids` and `excluded_workspace_ids` attributes, by @tylerworlf [#1822](https://github.com/hashicorp/terraform-provider-tfe/pull/1822)
+* `r/tfe_agent_pool_allowed_projects`: Adds support for scoping agent pools to projects, by @tylerworlf [#1822](https://github.com/hashicorp/terraform-provider-tfe/pull/1822)
+* `r/tfe_agent_pool_excluded_workspaces`: Adds support for excluding workspaces from the scope of agent pools, by @tylerworlf [#1822](https://github.com/hashicorp/terraform-provider-tfe/pull/1822)
+* `r/tfe_project_settings`: Adds support for managing project settings. This initially supports setting a `default_execution_mode` and `default_agent_pool_id` which override the organization defaults. When not specified in the configuration, the organization defaults will be used and can be read from the resource. by @JarrettSpiker [#1822](Thttps://github.com/hashicorp/terraform-provider-tfe/pull/1822)
+
+BUG FIXES:
+* `r/tfe_workspace_settings`: Prevent unintended clearing of workspace-level tags on the first apply when tags is unset by making tag updates sparse. By @shwetamurali [#1851](https://github.com/hashicorp/terraform-provider-tfe/pull/1851)
+
+DEPRECATIONS:
+* `r/tfe_stack` The `deployment_names` has been removed, by @maed223 [#1855](https://github.com/hashicorp/terraform-provider-tfe/pull/1855)
+
 ## v0.69.0
 
 BREAKING CHANGES:

@@ -30,4 +30,7 @@ The following arguments are supported:
 In addition to all arguments above, the following attributes are exported:
 
 * `id` - The agent pool ID.
+* `allowed_project_ids` - The set of project IDs that have permission to use the agent pool.
+* `allowed_workspace_ids` - The set of workspace IDs that have permission to use the agent pool.
+* `excluded_workspace_ids` - The set of workspace IDs that are excluded from the scope of the agent pool.
 * `organization_scoped` - Whether or not the agent pool can be used by all workspaces in the organization.
