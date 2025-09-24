@@ -108,6 +108,11 @@ func resourceTFEOrganization() *schema.Resource {
 				Optional: true,
 				Default:  true,
 			},
+			"user_tokens_enabled": {
+				Type:     schema.TypeBool,
+				Default:  true,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -164,6 +169,9 @@ func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error
 	d.Set("assessments_enforced", org.AssessmentsEnforced)
 	d.Set("allow_force_delete_workspaces", org.AllowForceDeleteWorkspaces)
 	d.Set("speculative_plan_management_enabled", org.SpeculativePlanManagementEnabled)
+	if org.UserTokensEnabled != nil {
+		d.Set("user_tokens_enabled", org.UserTokensEnabled)
+	}
 
 	if org.DefaultProject != nil {
 		d.Set("default_project_id", org.DefaultProject.ID)
@@ -231,6 +239,11 @@ func resourceTFEOrganizationUpdate(d *schema.ResourceData, meta interface{}) err
 	// If speculative_plan_management_enabled is supplied, set it using the options struct.
 	if speculativePlanManagementEnabled, ok := d.GetOkExists("speculative_plan_management_enabled"); ok {
 		options.SpeculativePlanManagementEnabled = tfe.Bool(speculativePlanManagementEnabled.(bool))
+	}
+
+	// If user_tokens_enabled is supplied, set it using the options struct.
+	if userTokensEnabled, ok := d.GetOkExists("user_tokens_enabled"); ok {
+		options.UserTokensEnabled = tfe.Bool(userTokensEnabled.(bool))
 	}
 
 	log.Printf("[DEBUG] Update configuration of organization: %s", d.Id())
