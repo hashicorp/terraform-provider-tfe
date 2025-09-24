@@ -1,8 +1,8 @@
 ---
 layout: "tfe"
-page_title: "Terraform Enterprise: tfe_agent_pool"
+page_title: "Terraform Enterprise: tfe_hyok_encrypted_data_key"
 description: |-
-  Get information on an agent pool.
+  Get information on a HYOK encrypted data key.
 ---
 
 # Data Source: tfe_hyok_encrypted_data_key
@@ -13,7 +13,7 @@ Use this data source to get information about a Hold Your Own Keys (HYOK) encryp
 
 ```hcl
 data "tfe_hyok_encrypted_data_key" "tfe_hyok_encrypted_data_key1" {
-  id = "dek-<your-id>"
+  id = "dek-123"
 }
 ```
 

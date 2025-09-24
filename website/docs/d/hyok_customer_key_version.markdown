@@ -1,8 +1,8 @@
 ---
 layout: "tfe"
-page_title: "Terraform Enterprise: tfe_agent_pool"
+page_title: "Terraform Enterprise: tfe_hyok_customer_key_version"
 description: |-
-  Get information on an agent pool.
+  Get information on a HYOK customer key version.
 ---
 
 # Data Source: tfe_hyok_customer_key_version
@@ -13,7 +13,7 @@ Use this data source to get information about a Hold Your Own Keys (HYOK) custom
 
 ```hcl
 data "tfe_hyok_customer_key_version" "tfe_hyok_customer_key_version1" {
-  id = "keyv-<your-id>"
+  id = "keyv-123"
 }
 ```
 

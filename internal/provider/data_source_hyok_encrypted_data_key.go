@@ -96,7 +96,7 @@ func (d *dataSourceHYOKEncryptedDataKey) Read(ctx context.Context, req datasourc
 	// Set the computed attributes from the API response
 	data.EncryptedDEK = types.StringValue(keyVersion.EncryptedDEK)
 	data.CustomerKeyName = types.StringValue(keyVersion.CustomerKeyName)
-	data.CreatedAt = types.StringValue(keyVersion.CreatedAt.Format(time.RFC3339)) // TODO DOM: Check this format
+	data.CreatedAt = types.StringValue(keyVersion.CreatedAt.Format(time.RFC3339))
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
