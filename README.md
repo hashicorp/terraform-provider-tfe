@@ -28,7 +28,7 @@ Declare the provider in your configuration and `terraform init` will automatical
 terraform {
   required_providers {
     tfe = {
-      version = "~> 0.69.0"
+      version = "~> 0.70.0"
     }
   }
 }
@@ -44,14 +44,14 @@ The above snippet using `required_providers` is for Terraform 0.13+; if you are 
 
 ```hcl
 provider "tfe" {
-  version = "~> 0.69.0"
+  version = "~> 0.70.0"
   ...
 }
 ```
 
 Since v0.24.0, this provider requires [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 0.12
 
-Since v0.69.0, this provider requires [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.0
+Since v0.70.0, this provider requires [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.0
 
 For more information on provider installation and constraining provider versions, see the [Provider Requirements documentation](https://developer.hashicorp.com/terraform/language/providers/requirements).
 
