@@ -13,9 +13,6 @@ func TestAccTFEAzureOIDCConfiguration_basic(t *testing.T) {
 	skipUnlessHYOKEnabled(t)
 
 	orgName := os.Getenv("HYOK_ORGANIZATION_NAME")
-	if orgName == "" {
-		t.Skip("Skipping test. Set HYOK_ORGANIZATION_NAME environment to enable test.")
-	}
 
 	originalClientID := "client-id-1"
 	updatedClientID := "client-id-2"
