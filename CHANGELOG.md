@@ -1,5 +1,7 @@
 ## Unreleased
 
+## v0.70.0
+
 FEATURES:
 * `d/tfe_agent_pool`: Adds the `allowed_project_ids` and `excluded_workspace_ids` attributes, by @tylerworlf [#1822](https://github.com/hashicorp/terraform-provider-tfe/pull/1822)
 * `r/tfe_agent_pool_allowed_projects`: Adds support for scoping agent pools to projects, by @tylerworlf [#1822](https://github.com/hashicorp/terraform-provider-tfe/pull/1822)
@@ -8,6 +10,9 @@ FEATURES:
 
 BUG FIXES:
 * `r/tfe_workspace_settings`: Prevent unintended clearing of workspace-level tags on the first apply when tags is unset by making tag updates sparse. By @shwetamurali [#1851](https://github.com/hashicorp/terraform-provider-tfe/pull/1851)
+
+DEPRECATIONS:
+* `r/tfe_stack` The `deployment_names` has been removed, by @maed223 [#1855](https://github.com/hashicorp/terraform-provider-tfe/pull/1855)
 
 ## v0.69.0
 
