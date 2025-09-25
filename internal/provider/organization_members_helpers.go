@@ -103,3 +103,15 @@ func fetchOrganizationMemberByNameOrEmail(ctx context.Context, client *tfe.Clien
 
 	return nil, tfe.ErrResourceNotFound
 }
+
+func fetchOrganizationMemberById(ctx context.Context, client *tfe.Client, orgMemberId string) (*tfe.OrganizationMembership, error) {
+	orgMember, err := client.OrganizationMemberships.Read(ctx, orgMemberId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read organization membership %s: %w", orgMemberId, err)
+	}
+	if orgMember != nil {
+		return orgMember, nil
+	}
+
+	return nil, tfe.ErrResourceNotFound
+}

@@ -72,6 +72,14 @@ func dataSourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interf
 
 		d.SetId(orgMember.ID)
 	} else {
+		orgMember, err := fetchOrganizationMemberById(context.Background(), config.Client, orgMemberID)
+		if err != nil {
+			return fmt.Errorf(
+				"could not find organization membership (%s) for organization %s: %w", orgMemberID, organization, err,
+			)
+		}
+
+		d.Set("email", orgMember.Email)
 		d.SetId(orgMemberID)
 	}
 
