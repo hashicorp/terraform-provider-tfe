@@ -211,6 +211,10 @@ func revokeHYOKConfiguration(t *testing.T, id string) {
 		}
 		return nil, nil
 	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func testAccCheckTFEHYOKConfigurationExists(n string, hyokConfig *tfe.HYOKConfiguration) resource.TestCheckFunc {

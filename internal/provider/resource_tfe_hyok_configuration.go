@@ -139,10 +139,10 @@ func (r *resourceTFEHYOKConfiguration) Schema(_ context.Context, _ resource.Sche
 				},
 				Validators: []validator.String{
 					stringvalidator.OneOf(
-						string(OIDCConfigurationTypeAWS),
-						string(OIDCConfigurationTypeGCP),
-						string(OIDCConfigurationTypeVault),
-						string(OIDCConfigurationTypeAzure),
+						OIDCConfigurationTypeAWS,
+						OIDCConfigurationTypeGCP,
+						OIDCConfigurationTypeVault,
+						OIDCConfigurationTypeAzure,
 					),
 				},
 			},
