@@ -330,16 +330,17 @@ func modelFromTFEHYOKConfiguration(p *tfe.HYOKConfiguration) modelTFEHYOKConfigu
 		KMSOptions:   kmsOptions,
 	}
 
-	if p.OIDCConfiguration.AWSOIDCConfiguration != nil {
+	switch {
+	case p.OIDCConfiguration.AWSOIDCConfiguration != nil:
 		model.OIDCConfigurationID = types.StringValue(p.OIDCConfiguration.AWSOIDCConfiguration.ID)
 		model.OIDCConfigurationType = types.StringValue(OIDCConfigurationTypeAWS)
-	} else if p.OIDCConfiguration.GCPOIDCConfiguration != nil {
+	case p.OIDCConfiguration.GCPOIDCConfiguration != nil:
 		model.OIDCConfigurationID = types.StringValue(p.OIDCConfiguration.GCPOIDCConfiguration.ID)
 		model.OIDCConfigurationType = types.StringValue(OIDCConfigurationTypeGCP)
-	} else if p.OIDCConfiguration.AzureOIDCConfiguration != nil {
+	case p.OIDCConfiguration.AzureOIDCConfiguration != nil:
 		model.OIDCConfigurationID = types.StringValue(p.OIDCConfiguration.AzureOIDCConfiguration.ID)
 		model.OIDCConfigurationType = types.StringValue(OIDCConfigurationTypeAzure)
-	} else if p.OIDCConfiguration.VaultOIDCConfiguration != nil {
+	case p.OIDCConfiguration.VaultOIDCConfiguration != nil:
 		model.OIDCConfigurationID = types.StringValue(p.OIDCConfiguration.VaultOIDCConfiguration.ID)
 		model.OIDCConfigurationType = types.StringValue(OIDCConfigurationTypeVault)
 	}
