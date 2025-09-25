@@ -37,6 +37,18 @@ func dataSourceTFEAgentPool() *schema.Resource {
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
+
+			"allowed_project_ids": {
+				Type:     schema.TypeSet,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+
+			"excluded_workspace_ids": {
+				Type:     schema.TypeSet,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
 		},
 	}
 }
@@ -59,11 +71,23 @@ func dataSourceTFEAgentPoolRead(d *schema.ResourceData, meta interface{}) error 
 	d.SetId(pool.ID)
 	d.Set("organization_scoped", pool.OrganizationScoped)
 
+	var allowedProjectIDs []string
+	for _, allowedProjectID := range pool.AllowedProjects {
+		allowedProjectIDs = append(allowedProjectIDs, allowedProjectID.ID)
+	}
+	d.Set("allowed_project_ids", allowedProjectIDs)
+
 	var allowedWorkspaceIDs []string
 	for _, allowedWorkspaceID := range pool.AllowedWorkspaces {
 		allowedWorkspaceIDs = append(allowedWorkspaceIDs, allowedWorkspaceID.ID)
 	}
 	d.Set("allowed_workspace_ids", allowedWorkspaceIDs)
+
+	var excludedWorkspaceIDs []string
+	for _, excludedWorkspaceID := range pool.ExcludedWorkspaces {
+		excludedWorkspaceIDs = append(excludedWorkspaceIDs, excludedWorkspaceID.ID)
+	}
+	d.Set("excluded_workspace_ids", excludedWorkspaceIDs)
 
 	return nil
 }

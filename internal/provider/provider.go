@@ -107,7 +107,9 @@ func Provider() *schema.Provider {
 		ResourcesMap: map[string]*schema.Resource{
 			"tfe_admin_organization_settings":    resourceTFEAdminOrganizationSettings(),
 			"tfe_agent_pool":                     resourceTFEAgentPool(),
+			"tfe_agent_pool_allowed_projects":    resourceTFEAgentPoolAllowedProjects(),
 			"tfe_agent_pool_allowed_workspaces":  resourceTFEAgentPoolAllowedWorkspaces(),
+			"tfe_agent_pool_excluded_workspaces": resourceTFEAgentPoolExcludedWorkspaces(),
 			"tfe_agent_token":                    resourceTFEAgentToken(),
 			"tfe_oauth_client":                   resourceTFEOAuthClient(),
 			"tfe_organization":                   resourceTFEOrganization(),
