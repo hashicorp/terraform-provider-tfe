@@ -9,6 +9,8 @@ description: |-
 
 HCP Terraform's private module registry helps you share Terraform modules across your organization.
 
+~> **NOTE:** The `agent_execution_mode` and `agent_pool_id` fields in the `test_config` block are currently in beta and are not available to all users. These features are subject to change or be removed.
+
 ## Example Usage
 
 Basic usage with VCS:
@@ -55,6 +57,43 @@ resource "tfe_oauth_client" "test-oauth-client" {
 resource "tfe_registry_module" "test-registry-module" {
   test_config {
     tests_enabled = true
+  }
+
+  vcs_repo {
+    display_identifier = "my-org-name/terraform-provider-name"
+    identifier         = "my-org-name/terraform-provider-name"
+    oauth_token_id     = tfe_oauth_client.test-oauth-client.oauth_token_id
+    branch             = "main"
+  }
+}
+```
+
+Create private registry module with agent pool (BETA):
+
+```hcl
+resource "tfe_organization" "test-organization" {
+  name  = "my-org-name"
+  email = "admin@company.com"
+}
+
+resource "tfe_agent_pool" "test-agent-pool" {
+  name         = "my-agent-pool-name"
+  organization = tfe_organization.test-organization.name
+}
+
+resource "tfe_oauth_client" "test-oauth-client" {
+  organization     = tfe_organization.test-organization.name
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "my-vcs-provider-token"
+  service_provider = "github"
+}
+
+resource "tfe_registry_module" "test-registry-module" {
+  test_config {
+    tests_enabled         = true
+    agent_execution_mode  = "agent"
+    agent_pool_id         = tfe_agent_pool.test-agent-pool.id
   }
 
   vcs_repo {
@@ -156,8 +195,10 @@ The following arguments are supported:
 * `registry_name` - (Optional) Whether the registry module is private or public. It can be used if `module_provider` is set.
 * `initial_version` - (Optional) This specifies the initial version for a branch based module. It can be used if `vcs_repo.branch` is set. If it is omitted, the initial modules version will default to `0.0.0`.
 
-The `test_config` block supports
+The `test_config` block supports:
 * `tests_enabled` - (Optional) Specifies whether tests run for the registry module. Tests are only supported for branch-based publishing.
+* `agent_execution_mode` - (Optional) Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode) to use for registry module tests. Valid values are `agent` and `remote`. Defaults to `remote`. This feature is currently in beta and is not available to all users.
+* `agent_pool_id` - (Optional) The ID of an agent pool to assign to the registry module for testing. Requires `agent_execution_mode` to be set to `agent`. This value _must not_ be provided if `agent_execution_mode` is set to `remote`. This feature is currently in beta and is not available to all users.
 
 The `vcs_repo` block supports:
 
@@ -183,6 +224,10 @@ The `vcs_repo` block supports:
 * `namespace` - The namespace of the module. For private modules this is the name of the organization that owns the module.
 * `publishing_mechanism` - The publishing mechanism used when releasing new versions of the module.
 * `registry_name` - The registry name of the registry module depicting whether the registry module is private or public.
+* `test_config` - The test configuration for the registry module.
+  * `tests_enabled` - Whether tests are enabled for the registry module.
+  * `agent_execution_mode` - The execution mode used for registry module tests.
+  * `agent_pool_id` - The ID of the agent pool used for registry module tests.
 * `no_code` - **Deprecated** The property that will enable or disable a module as no-code provisioning ready.
 Use the tfe_no_code_module resource instead.
 
