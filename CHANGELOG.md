@@ -1,4 +1,9 @@
 ## Unreleased
+FEATURES:
+* **New resource**: `r/tfe_vault_oidc_configuration` for managing Vault OIDC configurations. [#1835](https://github.com/hashicorp/terraform-provider-tfe/pull/1835)
+* **New resource**: `r/tfe_aws_oidc_configuration` for managing AWS OIDC configurations. [#1835](https://github.com/hashicorp/terraform-provider-tfe/pull/1835)
+* **New resource**: `r/tfe_gcp_oidc_configuration` for managing GCP OIDC configurations. [#1835](https://github.com/hashicorp/terraform-provider-tfe/pull/1835)
+* **New resource**: `r/tfe_azure_oidc_configuration` for managing Azure OIDC configurations. [#1835](https://github.com/hashicorp/terraform-provider-tfe/pull/1835) 
 
 ## v0.70.0
 
