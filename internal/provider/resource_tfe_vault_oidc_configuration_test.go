@@ -13,6 +13,9 @@ func TestAccTFEVaultOIDCConfiguration_basic(t *testing.T) {
 	skipUnlessHYOKEnabled(t)
 
 	orgName := os.Getenv("HYOK_ORGANIZATION_NAME")
+	if orgName == "" {
+		t.Skip("Skipping test. Set HYOK_ORGANIZATION_NAME environment to enable test.")
+	}
 
 	originalAddress := "https://vault.example.com"
 	updatedAddress := "https://vault.example2.com"
