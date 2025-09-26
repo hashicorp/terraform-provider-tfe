@@ -130,6 +130,8 @@ func (p *frameworkProvider) Configure(ctx context.Context, req provider.Configur
 
 func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
+		NewHYOKCustomerKeyVersionDataSource,
+		NewHYOKEncryptedDataKeyDataSource,
 		NewNoCodeModuleDataSource,
 		NewOrganizationRunTaskDataSource,
 		NewOrganizationRunTaskGlobalSettingsDataSource,

@@ -5,6 +5,8 @@ FEATURES:
 * **New resource**: `r/tfe_gcp_oidc_configuration` for managing GCP OIDC configurations. [#1835](https://github.com/hashicorp/terraform-provider-tfe/pull/1835)
 * **New resource**: `r/tfe_azure_oidc_configuration` for managing Azure OIDC configurations. [#1835](https://github.com/hashicorp/terraform-provider-tfe/pull/1835) 
 * **New resource**: `r/tfe_hyok_configuration` for managing HYOK configurations. [#1835](https://github.com/hashicorp/terraform-provider-tfe/pull/1841)
+* **New Data Source:** `d/hyok_customer_key_version` is a new data source for finding HYOK customer key versions by @dominicretli [#1842](https://github.com/hashicorp/terraform-provider-tfe/pull/1842)
+* **New Data Source:** `d/hyok_encrypted_data_key` is a new data source for finding HYOK encrypted data keys by @dominicretli [#1842](https://github.com/hashicorp/terraform-provider-tfe/pull/1842)
 
 ## v0.70.0
 
