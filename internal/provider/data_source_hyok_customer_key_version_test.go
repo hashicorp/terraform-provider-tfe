@@ -1,0 +1,40 @@
+package provider
+
+import (
+	"os"
+	"testing"
+
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+)
+
+func TestAccTFEHYOKCustomerKeyVersionDataSource_basic(t *testing.T) {
+	hyokCustomerKeyVersionID := os.Getenv("HYOK_CUSTOMER_KEY_VERSION_ID")
+	if hyokCustomerKeyVersionID == "" {
+		t.Skip("HYOK_CUSTOMER_KEY_VERSION_ID environment variable must be set to run this test")
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEHYOKCustomerKeyVersionDataSourceConfig(hyokCustomerKeyVersionID),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.tfe_hyok_customer_key_version.test", "id", hyokCustomerKeyVersionID),
+					resource.TestCheckResourceAttrSet("data.tfe_hyok_customer_key_version.test", "status"),
+					resource.TestCheckResourceAttrSet("data.tfe_hyok_customer_key_version.test", "key_version"),
+					resource.TestCheckResourceAttrSet("data.tfe_hyok_customer_key_version.test", "created_at"),
+					resource.TestCheckResourceAttrSet("data.tfe_hyok_customer_key_version.test", "workspaces_secured"),
+				),
+			},
+		},
+	})
+}
+
+func testAccTFEHYOKCustomerKeyVersionDataSourceConfig(id string) string {
+	return `
+data "tfe_hyok_customer_key_version" "test" {
+  id = "` + id + `"
+}
+`
+}
