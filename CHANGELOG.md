@@ -7,6 +7,8 @@ FEATURES:
 * **New resource**: `r/tfe_hyok_configuration` for managing HYOK configurations. [#1835](https://github.com/hashicorp/terraform-provider-tfe/pull/1841)
 * **New Data Source:** `d/hyok_customer_key_version` is a new data source for finding HYOK customer key versions by @dominicretli [#1842](https://github.com/hashicorp/terraform-provider-tfe/pull/1842)
 * **New Data Source:** `d/hyok_encrypted_data_key` is a new data source for finding HYOK encrypted data keys by @dominicretli [#1842](https://github.com/hashicorp/terraform-provider-tfe/pull/1842)
+* `r/tfe_organization`, `d/organization`: Added enforce_hyok boolean attribute.
+* `r/tfe_workspace`, `d/workspace`: Added hyok_enabled boolean attribute.
 
 ## v0.70.0
 

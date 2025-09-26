@@ -354,6 +354,11 @@ func resourceTFEWorkspace() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"hyok_enabled": {
+				Type:     schema.TypeBool,
+				Default:  false,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -518,6 +523,10 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		options.Tags = append(options.Tags, &tfe.Tag{Name: name})
 	}
 
+	if v, ok := d.GetOkExists("hyok_enabled"); ok {
+		options.HYOKEnabled = tfe.Bool(v.(bool))
+	}
+
 	log.Printf("[DEBUG] Create workspace %s for organization: %s", name, organization)
 	workspace, err := config.Client.Workspaces.Create(ctx, organization, options)
 	if err != nil {
@@ -614,6 +623,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("organization", workspace.Organization.Name)
 	d.Set("resource_count", workspace.ResourceCount)
 	d.Set("inherits_project_auto_destroy", workspace.InheritsProjectAutoDestroy)
+	d.Set("hyok_enabled", workspace.HYOKEnabled)
 
 	if workspace.Links["self-html"] != nil {
 		baseAPI := config.Client.BaseURL()
@@ -747,6 +757,12 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		if d.HasChange("description") {
 			if v, ok := d.GetOk("description"); ok {
 				options.Description = tfe.String(v.(string))
+			}
+		}
+
+		if d.HasChange("hyok_enabled") {
+			if v, ok := d.GetOkExists("enforce_hyok"); ok {
+				options.HYOKEnabled = tfe.Bool(v.(bool))
 			}
 		}
 
