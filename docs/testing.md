@@ -49,6 +49,8 @@ these values with the environment variables specified below:
 1. `RUN_TASKS_HMAC` - The optional HMAC Key that should be used for Run Task operations. The default is no key.
 1. `GITHUB_APP_INSTALLATION_ID` - GitHub App installation internal id in the format `ghain-xxxxxxx`. Required for running any tests that use GitHub App VCS (workspace, policy sets, registry module).
 1. `GITHUB_APP_INSTALLATION_NAME` - GitHub App installation name. Required for running tfe_github_app_installation data source test.
+1. `ENABLE_HYOK` - Set `ENABLE_HYOK=1` to enable HYOK-related tests.
+1. `HYOK_ORGANIZATION_NAME` - Name of an organization entitled to use HYOK. Required to run tests for HYOK resources and data sources.
 1. `HYOK_ENCRYPTED_DATA_KEY_ID` - HYOK encrypted data key id. Required for running hyok_encrypted_data_key data source test.
 1. `HYOK_CUSTOMER_KEY_VERSION_ID` - HYOK customer key version id. Required for running hyok_customer_key_version data source test.
 

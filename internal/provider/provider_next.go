@@ -174,6 +174,11 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewTerraformVersionResource,
 		NewOPAVersionResource,
 		NewsentinelVersionResource,
+		NewAWSOIDCConfigurationResource,
+		NewGCPOIDCConfigurationResource,
+		NewAzureOIDCConfigurationResource,
+		NewVaultOIDCConfigurationResource,
+		NewHYOKConfigurationResource,
 	}
 }
 
