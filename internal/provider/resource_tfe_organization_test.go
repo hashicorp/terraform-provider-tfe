@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"os"
 	"strconv"
 	"testing"
 	"time"
@@ -199,6 +200,41 @@ func TestAccTFEOrganization_update_costEstimation(t *testing.T) {
 						"tfe_organization.foobar", "assessments_enforced", strconv.FormatBool(assessmentsEnforced2)),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "allow_force_delete_workspaces", strconv.FormatBool(allowForceDeleteWorkspaces2)),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEOrganization_EnforceHYOK(t *testing.T) {
+	skipUnlessHYOKEnabled(t)
+
+	orgName := os.Getenv("HYOK_ORGANIZATION_NAME")
+	if orgName == "" {
+		t.Skip("HYOK_ORGANIZATION_NAME environment variable must be set to run this test")
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOrganization_updateEnforceHYOK(orgName, "admin@company.com", true),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOrganizationExists(
+						"tfe_organization.foobar", &tfe.Organization{}),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "enforce_hyok", "true"),
+				),
+			},
+			{
+				Config: testAccTFEOrganization_updateEnforceHYOK(orgName, "admin@company.com", false),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOrganizationExists(
+						"tfe_organization.foobar", &tfe.Organization{}),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "enforce_hyok", "false"),
 				),
 			},
 		},
@@ -440,4 +476,13 @@ resource "tfe_organization" "foobar" {
   assessments_enforced              = %t
   allow_force_delete_workspaces     = %t
 }`, orgName, orgEmail, costEstimationEnabled, assessmentsEnforced, allowForceDeleteWorkspaces)
+}
+
+func testAccTFEOrganization_updateEnforceHYOK(orgName string, orgEmail string, enforceHYOK bool) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name         = "%s"
+  email        = "%s"
+  enforce_hyok = %t
+}`, orgName, orgEmail, enforceHYOK)
 }

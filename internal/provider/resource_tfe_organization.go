@@ -108,6 +108,12 @@ func resourceTFEOrganization() *schema.Resource {
 				Optional: true,
 				Default:  true,
 			},
+
+			"enforce_hyok": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
 		},
 	}
 }
@@ -164,6 +170,7 @@ func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error
 	d.Set("assessments_enforced", org.AssessmentsEnforced)
 	d.Set("allow_force_delete_workspaces", org.AllowForceDeleteWorkspaces)
 	d.Set("speculative_plan_management_enabled", org.SpeculativePlanManagementEnabled)
+	d.Set("enforce_hyok", org.EnforceHYOK)
 
 	if org.DefaultProject != nil {
 		d.Set("default_project_id", org.DefaultProject.ID)
@@ -231,6 +238,11 @@ func resourceTFEOrganizationUpdate(d *schema.ResourceData, meta interface{}) err
 	// If speculative_plan_management_enabled is supplied, set it using the options struct.
 	if speculativePlanManagementEnabled, ok := d.GetOkExists("speculative_plan_management_enabled"); ok {
 		options.SpeculativePlanManagementEnabled = tfe.Bool(speculativePlanManagementEnabled.(bool))
+	}
+
+	// If enforce_hyok is supplied, set it using the options struct.
+	if enforceHYOK, ok := d.GetOkExists("enforce_hyok"); ok {
+		options.EnforceHYOK = tfe.Bool(enforceHYOK.(bool))
 	}
 
 	log.Printf("[DEBUG] Update configuration of organization: %s", d.Id())
