@@ -300,7 +300,6 @@ func TestAccTFEWorkspaceDataSource_readHYOKEnabled(t *testing.T) {
 					resource.TestCheckResourceAttr("data.tfe_workspace.test", "organization", orgName),
 					resource.TestCheckResourceAttr("data.tfe_workspace.test", "name", workspaceName),
 					resource.TestCheckResourceAttrSet("data.tfe_workspace.test", "hyok_enabled"),
-					resource.TestCheckResourceAttr("data.tfe_workspace.test", "hyok_enabled", "true"),
 				),
 			},
 		},

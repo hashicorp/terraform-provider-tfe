@@ -523,10 +523,6 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		options.Tags = append(options.Tags, &tfe.Tag{Name: name})
 	}
 
-	if v, ok := d.GetOkExists("hyok_enabled"); ok {
-		options.HYOKEnabled = tfe.Bool(v.(bool))
-	}
-
 	log.Printf("[DEBUG] Create workspace %s for organization: %s", name, organization)
 	workspace, err := config.Client.Workspaces.Create(ctx, organization, options)
 	if err != nil {
@@ -757,12 +753,6 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		if d.HasChange("description") {
 			if v, ok := d.GetOk("description"); ok {
 				options.Description = tfe.String(v.(string))
-			}
-		}
-
-		if d.HasChange("hyok_enabled") {
-			if v, ok := d.GetOkExists("enforce_hyok"); ok {
-				options.HYOKEnabled = tfe.Bool(v.(bool))
 			}
 		}
 

@@ -103,7 +103,6 @@ func TestAccTFEOrganizationDataSource_readEnforceHYOK(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.tfe_organization.test", "name", orgName),
 					resource.TestCheckResourceAttrSet("data.tfe_organization.test", "enforce_hyok"),
-					resource.TestCheckResourceAttr("data.tfe_organization.test", "enforce_hyok", "true"),
 				),
 			},
 		},

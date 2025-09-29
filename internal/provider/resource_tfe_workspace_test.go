@@ -2955,63 +2955,17 @@ func TestAccTFEWorkspace_HYOKEnabled(t *testing.T) {
 		t.Skip("HYOK_ORGANIZATION_NAME environment variable must be set to run this test")
 	}
 
-	// Testing workspace hyok enabled going from false to true.
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
-			// Create workspace with hyok_enabled set to false
 			{
-				Config: testAccTFEWorkspaceHYOKEnabledConfig(orgName, false),
+				Config: testAccTFEWorkspaceConfig(orgName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "organization", orgName),
+					resource.TestCheckResourceAttrSet("tfe_workspace.foobar", "hyok_enabled"),
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "hyok_enabled", "false"),
-				),
-			},
-			// Import
-			{
-				ResourceName:      "tfe_workspace.foobar",
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-			// Update hyok_enabled to true
-			{
-				Config: testAccTFEWorkspaceHYOKEnabledConfig(orgName, true),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("tfe_workspace.foobar", "organization", orgName),
-					resource.TestCheckResourceAttr("tfe_workspace.foobar", "hyok_enabled", "true"),
-				),
-			},
-		},
-	})
-
-	// Testing workspace hyok enabled going from true to false.
-	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccMuxedProviders,
-		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
-		Steps: []resource.TestStep{
-			// Create workspace with hyok_enabled set to true
-			{
-				Config: testAccTFEWorkspaceHYOKEnabledConfig(orgName, true),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("tfe_workspace.foobar", "organization", orgName),
-					resource.TestCheckResourceAttr("tfe_workspace.foobar", "hyok_enabled", "true"),
-				),
-			},
-			// Import
-			{
-				ResourceName:      "tfe_workspace.foobar",
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-			// Update hyok_enabled to false, however hyok_enabled cannot be disabled once enabled.
-			{
-				Config: testAccTFEWorkspaceHYOKEnabledConfig(orgName, false),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("tfe_workspace.foobar", "organization", orgName),
-					resource.TestCheckResourceAttr("tfe_workspace.foobar", "hyok_enabled", "true"),
 				),
 			},
 		},
@@ -4228,12 +4182,11 @@ resource "tfe_workspace" "foobar" {
 }`, rInt)
 }
 
-func testAccTFEWorkspaceHYOKEnabledConfig(orgName string, hyokEnabled bool) string {
+func testAccTFEWorkspaceConfig(orgName string) string {
 	return fmt.Sprintf(`
 resource "tfe_workspace" "foobar" {
   organization = "%s"
   name         = "tfe-provider-test-workspace-hyok-enabled"
-  hyok_enabled = %t
 }
-`, orgName, hyokEnabled)
+`, orgName)
 }
