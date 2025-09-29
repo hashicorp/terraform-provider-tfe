@@ -82,7 +82,7 @@ The following arguments are supported:
   VCS push to trigger a run. If disabled, any push will trigger a run.
 * `force_delete` - (Optional) If this attribute is present on a workspace that is being deleted through the provider, it will use the existing force delete API. If this attribute is not present or false it will safe delete the workspace.
 * `global_remote_state` - (Optional) **Deprecated** Whether the workspace allows all workspaces in the organization to access its state data during runs. Use [tfe_workspace_settings](workspace_settings) instead.
-* `hyok_enabled` - (Optional) Whether or not to enable HYOK for the workspace.
+* `hyok_enabled` - (Optional) Whether HYOK is enabled for the workspace.
 * `operations` - **Deprecated** Whether to use remote execution mode.
   Defaults to `true`. When set to `false`, the workspace will be used for
   state storage only. This value _must not_ be provided if `execution_mode` is
