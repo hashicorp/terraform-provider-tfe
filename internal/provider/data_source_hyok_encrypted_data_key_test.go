@@ -8,6 +8,8 @@ import (
 )
 
 func TestAccTFEHYOKEncryptedDataKeyDataSource_basic(t *testing.T) {
+	skipUnlessHYOKEnabled(t)
+
 	hyokEncryptedDataKeyID := os.Getenv("HYOK_ENCRYPTED_DATA_KEY_ID")
 	if hyokEncryptedDataKeyID == "" {
 		t.Skip("HYOK_ENCRYPTED_DATA_KEY_ID environment variable must be set to run this test")

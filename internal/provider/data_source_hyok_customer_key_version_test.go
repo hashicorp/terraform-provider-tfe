@@ -8,6 +8,8 @@ import (
 )
 
 func TestAccTFEHYOKCustomerKeyVersionDataSource_basic(t *testing.T) {
+	skipUnlessHYOKEnabled(t)
+
 	hyokCustomerKeyVersionID := os.Getenv("HYOK_CUSTOMER_KEY_VERSION_ID")
 	if hyokCustomerKeyVersionID == "" {
 		t.Skip("HYOK_CUSTOMER_KEY_VERSION_ID environment variable must be set to run this test")

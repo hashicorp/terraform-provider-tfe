@@ -10,7 +10,7 @@ import (
 )
 
 func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
-	skipIfEnterprise(t)
+	skipUnlessHYOKEnabled(t)
 
 	orgName := os.Getenv("HYOK_ORGANIZATION_NAME")
 
