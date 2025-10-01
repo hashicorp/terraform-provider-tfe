@@ -220,7 +220,7 @@ func TestAccTFEOrganization_EnforceHYOK(t *testing.T) {
 		CheckDestroy:             testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOrganization_updateEnforceHYOK(orgName, "admin@company.com", true),
+				Config: testAccTFEOrganization_updateEnforceHYOK(orgName, true),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
 						"tfe_organization.foobar", &tfe.Organization{}),
@@ -229,7 +229,7 @@ func TestAccTFEOrganization_EnforceHYOK(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFEOrganization_updateEnforceHYOK(orgName, "admin@company.com", false),
+				Config: testAccTFEOrganization_updateEnforceHYOK(orgName, false),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
 						"tfe_organization.foobar", &tfe.Organization{}),
@@ -478,11 +478,11 @@ resource "tfe_organization" "foobar" {
 }`, orgName, orgEmail, costEstimationEnabled, assessmentsEnforced, allowForceDeleteWorkspaces)
 }
 
-func testAccTFEOrganization_updateEnforceHYOK(orgName string, orgEmail string, enforceHYOK bool) string {
+func testAccTFEOrganization_updateEnforceHYOK(orgName string, enforceHYOK bool) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name         = "%s"
-  email        = "%s"
+  email        = admin@company.com
   enforce_hyok = %t
-}`, orgName, orgEmail, enforceHYOK)
+}`, orgName, enforceHYOK)
 }
