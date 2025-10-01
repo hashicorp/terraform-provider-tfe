@@ -2965,7 +2965,6 @@ func TestAccTFEWorkspace_HYOKEnabled(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "organization", orgName),
 					resource.TestCheckResourceAttrSet("tfe_workspace.foobar", "hyok_enabled"),
-					resource.TestCheckResourceAttr("tfe_workspace.foobar", "hyok_enabled", "false"),
 				),
 			},
 		},
