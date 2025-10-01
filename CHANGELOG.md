@@ -10,7 +10,7 @@ FEATURES:
 * `r/tfe_organization`: Adds the `enforce_hyok` boolean attribute, by @iuri-slywitch-hashicorp.
 * `d/tfe_organization`: Adds the `enforce_hyok` boolean attribute, by @iuri-slywitch-hashicorp.
 * `r/tfe_workspace`: Adds the `hyok_enabled` read-only boolean attribute, by @iuri-slywitch-hashicorp.
-* `d/workspace`: Adds the `hyok_enabled` read-only boolean attribute, by @iuri-slywitch-hashicorp.
+* `d/tfe_workspace`: Adds the `hyok_enabled` read-only boolean attribute, by @iuri-slywitch-hashicorp.
 
 ## v0.70.0
 
