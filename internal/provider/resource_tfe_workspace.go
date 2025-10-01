@@ -356,7 +356,6 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 			"hyok_enabled": {
 				Type:     schema.TypeBool,
-				Default:  false,
 				Optional: true,
 			},
 		},
