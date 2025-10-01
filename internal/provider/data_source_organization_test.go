@@ -99,7 +99,7 @@ func TestAccTFEOrganizationDataSource_readEnforceHYOK(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEHYOKOrganizationDataSourceConfig(orgName),
+				Config: testAccTFEOrganizationDataSourceConfig_withName(orgName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.tfe_organization.test", "name", orgName),
 					resource.TestCheckResourceAttrSet("data.tfe_organization.test", "enforce_hyok"),
@@ -128,7 +128,7 @@ data "tfe_organization" "foo" {
 }`
 }
 
-func testAccTFEHYOKOrganizationDataSourceConfig(orgName string) string {
+func testAccTFEOrganizationDataSourceConfig_withName(orgName string) string {
 	return `
 data "tfe_organization" "test" {
   name = "` + orgName + `"
