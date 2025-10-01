@@ -482,7 +482,7 @@ func testAccTFEOrganization_updateEnforceHYOK(orgName string, enforceHYOK bool) 
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name         = "%s"
-  email        = admin@company.com
+  email        = "admin@company.com"
   enforce_hyok = %t
 }`, orgName, enforceHYOK)
 }

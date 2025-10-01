@@ -285,21 +285,16 @@ func TestAccTFEWorkspaceDataSource_readHYOKEnabled(t *testing.T) {
 		t.Skip("HYOK_ORGANIZATION_NAME environment variable must be set to run this test")
 	}
 
-	workspaceName := os.Getenv("HYOK_WORKSPACE_NAME")
-	if workspaceName == "" {
-		t.Skip("HYOK_WORKSPACE_NAME environment variable must be set to run this test")
-	}
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEHYOKWorkspaceDataSourceConfig(orgName, workspaceName),
+				Config: testAccTFEHYOKWorkspaceDataSourceConfig(orgName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.tfe_workspace.test", "organization", orgName),
-					resource.TestCheckResourceAttr("data.tfe_workspace.test", "name", workspaceName),
-					resource.TestCheckResourceAttrSet("data.tfe_workspace.test", "hyok_enabled"),
+					resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "organization", orgName),
+					resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "name", "tf-provider-tfe-hyok-enabled-workspace-test"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "hyok_enabled"),
 				),
 			},
 		},
@@ -488,11 +483,16 @@ data "tfe_workspace" "foobar" {
 `, rInt, rInt)
 }
 
-func testAccTFEHYOKWorkspaceDataSourceConfig(orgName string, workspaceName string) string {
+func testAccTFEHYOKWorkspaceDataSourceConfig(orgName string) string {
 	return `
-data "tfe_workspace" "test" {
+resource "tfe_workspace" "foobar" {
   organization = "` + orgName + `"
-  name         = "` + workspaceName + `"
+  name         = "tf-provider-tfe-hyok-enabled-workspace-test"
+}
+
+data "tfe_workspace" "foobar" {
+  organization = "` + orgName + `"
+  name         = tfe_workspace.foobar.name
 }
 `
 }
