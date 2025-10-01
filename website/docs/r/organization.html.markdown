@@ -32,7 +32,7 @@ The following arguments are supported:
   `20160`.
 * `collaborator_auth_policy` - (Optional) Authentication policy (`password`
   or `two_factor_mandatory`). Defaults to `password`.
-* `enforce_hyok` - (Optional) Whether or not to enable HYOK Enforcement for the organization.
+* `enforce_hyok` - (Optional) (Available only in HCP Terraform) Whether HYOK is enabled for all new workspaces in the organization. Defaults to false.
 * `owners_team_saml_role_id` - (Optional) The name of the "owners" team.
 * `cost_estimation_enabled` - (Optional) Whether or not the cost estimation feature is enabled for all workspaces in the organization. Defaults to true. In a HCP Terraform organization which does not have Teams & Governance features, this value is always false and cannot be changed. In Terraform Enterprise, Cost Estimation must also be enabled in Site Administration.
 * `send_passing_statuses_for_untriggered_speculative_plans` - (Optional) Whether or not to send VCS status updates for untriggered speculative plans. This can be useful if large numbers of untriggered workspaces are exhausting request limits for connected version control service providers like GitHub. Defaults to false. In Terraform Enterprise, this setting has no effect and cannot be changed but is also available in Site Administration.
