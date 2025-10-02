@@ -6,7 +6,6 @@ package provider
 import (
 	"fmt"
 	"math/rand"
-	"os"
 	"regexp"
 	"testing"
 	"time"
@@ -89,20 +88,23 @@ func TestAccTFEOrganizationDataSource_defaultOrganization(t *testing.T) {
 func TestAccTFEOrganizationDataSource_readEnforceHYOK(t *testing.T) {
 	skipUnlessHYOKEnabled(t)
 
-	orgName := os.Getenv("HYOK_ORGANIZATION_NAME")
-	if orgName == "" {
-		t.Skip("HYOK_ORGANIZATION_NAME environment variable must be set to run this test")
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
 	}
+
+	org, orgCleanup := createPremiumOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOrganizationDataSourceConfig_withName(orgName),
+				Config: testAccTFEOrganizationDataSourceConfig_withName(org.Name),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.tfe_organization.test", "name", orgName),
-					resource.TestCheckResourceAttrSet("data.tfe_organization.test", "enforce_hyok"),
+					resource.TestCheckResourceAttr("data.tfe_organization.test", "name", org.Name),
+					resource.TestCheckResourceAttr("data.tfe_organization.test", "enforce_hyok", "false"),
 				),
 			},
 		},

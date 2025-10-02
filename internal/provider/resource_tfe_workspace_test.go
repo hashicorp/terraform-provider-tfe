@@ -2950,10 +2950,13 @@ func TestAccTFEWorkspace_createWithSourceURLAndName(t *testing.T) {
 func TestAccTFEWorkspace_HYOKEnabled(t *testing.T) {
 	skipUnlessHYOKEnabled(t)
 
-	orgName := os.Getenv("HYOK_ORGANIZATION_NAME")
-	if orgName == "" {
-		t.Skip("HYOK_ORGANIZATION_NAME environment variable must be set to run this test")
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
 	}
+
+	org, orgCleanup := createPremiumOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -2961,9 +2964,9 @@ func TestAccTFEWorkspace_HYOKEnabled(t *testing.T) {
 		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspaceConfig(orgName),
+				Config: testAccTFEWorkspaceConfig(org.Name),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("tfe_workspace.foobar", "organization", orgName),
+					resource.TestCheckResourceAttr("tfe_workspace.foobar", "organization", org.Name),
 					resource.TestCheckResourceAttrSet("tfe_workspace.foobar", "hyok_enabled"),
 				),
 			},

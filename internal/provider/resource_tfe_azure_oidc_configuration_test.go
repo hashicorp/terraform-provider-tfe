@@ -2,7 +2,6 @@ package provider
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -12,10 +11,13 @@ import (
 func TestAccTFEAzureOIDCConfiguration_basic(t *testing.T) {
 	skipUnlessHYOKEnabled(t)
 
-	orgName := os.Getenv("HYOK_ORGANIZATION_NAME")
-	if orgName == "" {
-		t.Skip("Skipping test. Set HYOK_ORGANIZATION_NAME environment to enable test.")
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
 	}
+
+	org, orgCleanup := createPremiumOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	originalClientID := "client-id-1"
 	updatedClientID := "client-id-2"
@@ -30,7 +32,7 @@ func TestAccTFEAzureOIDCConfiguration_basic(t *testing.T) {
 		CheckDestroy:             testAccCheckTFEAzureOIDCConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEAzureOIDCConfigurationConfig(orgName, originalClientID, originalSubscriptionID, originalTenantID),
+				Config: testAccTFEAzureOIDCConfigurationConfig(org.Name, originalClientID, originalSubscriptionID, originalTenantID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("tfe_azure_oidc_configuration.test", "id"),
 					resource.TestCheckResourceAttr("tfe_azure_oidc_configuration.test", "client_id", originalClientID),
@@ -46,7 +48,7 @@ func TestAccTFEAzureOIDCConfiguration_basic(t *testing.T) {
 			},
 			// Update
 			{
-				Config: testAccTFEAzureOIDCConfigurationConfig(orgName, updatedClientID, updatedSubscriptionID, updatedTenantID),
+				Config: testAccTFEAzureOIDCConfigurationConfig(org.Name, updatedClientID, updatedSubscriptionID, updatedTenantID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("tfe_azure_oidc_configuration.test", "id"),
 					resource.TestCheckResourceAttr("tfe_azure_oidc_configuration.test", "client_id", updatedClientID),

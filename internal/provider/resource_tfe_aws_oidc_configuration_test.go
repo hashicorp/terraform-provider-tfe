@@ -2,7 +2,6 @@ package provider
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -12,10 +11,13 @@ import (
 func TestAccTFEAWSOIDCConfiguration_basic(t *testing.T) {
 	skipUnlessHYOKEnabled(t)
 
-	orgName := os.Getenv("HYOK_ORGANIZATION_NAME")
-	if orgName == "" {
-		t.Skip("Skipping test. Set HYOK_ORGANIZATION_NAME environment to enable test.")
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
 	}
+
+	org, orgCleanup := createPremiumOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	originalRoleARN := "arn:aws:iam::123456789012:role/terraform-provider-tfe-example-1"
 	newRoleARN := "arn:aws:iam::123456789012:role/terraform-provider-tfe-example-2"
@@ -26,7 +28,7 @@ func TestAccTFEAWSOIDCConfiguration_basic(t *testing.T) {
 		CheckDestroy:             testAccCheckTFEAWSOIDCConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEAWSOIDCConfigurationConfig(orgName, originalRoleARN),
+				Config: testAccTFEAWSOIDCConfigurationConfig(org.Name, originalRoleARN),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("tfe_aws_oidc_configuration.test", "id"),
 					resource.TestCheckResourceAttr("tfe_aws_oidc_configuration.test", "role_arn", originalRoleARN),
@@ -40,7 +42,7 @@ func TestAccTFEAWSOIDCConfiguration_basic(t *testing.T) {
 			},
 			// Update role ARN
 			{
-				Config: testAccTFEAWSOIDCConfigurationConfig(orgName, newRoleARN),
+				Config: testAccTFEAWSOIDCConfigurationConfig(org.Name, newRoleARN),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("tfe_aws_oidc_configuration.test", "id"),
 					resource.TestCheckResourceAttr("tfe_aws_oidc_configuration.test", "role_arn", newRoleARN),

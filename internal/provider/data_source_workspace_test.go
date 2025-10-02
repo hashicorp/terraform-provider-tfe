@@ -280,19 +280,22 @@ func TestAccTFEWorkspaceDataSource_readProjectIDNonDefault(t *testing.T) {
 func TestAccTFEWorkspaceDataSource_readHYOKEnabled(t *testing.T) {
 	skipUnlessHYOKEnabled(t)
 
-	orgName := os.Getenv("HYOK_ORGANIZATION_NAME")
-	if orgName == "" {
-		t.Skip("HYOK_ORGANIZATION_NAME environment variable must be set to run this test")
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
 	}
+
+	org, orgCleanup := createPremiumOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEHYOKWorkspaceDataSourceConfig(orgName),
+				Config: testAccTFEHYOKWorkspaceDataSourceConfig(org.Name),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "organization", orgName),
+					resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "organization", org.Name),
 					resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "name", "tf-provider-tfe-hyok-enabled-workspace-test"),
 					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "hyok_enabled"),
 				),

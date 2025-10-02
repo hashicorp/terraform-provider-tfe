@@ -2,7 +2,6 @@ package provider
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -12,10 +11,13 @@ import (
 func TestAccTFEVaultOIDCConfiguration_basic(t *testing.T) {
 	skipUnlessHYOKEnabled(t)
 
-	orgName := os.Getenv("HYOK_ORGANIZATION_NAME")
-	if orgName == "" {
-		t.Skip("Skipping test. Set HYOK_ORGANIZATION_NAME environment to enable test.")
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
 	}
+
+	org, orgCleanup := createPremiumOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	originalAddress := "https://vault.example.com"
 	updatedAddress := "https://vault.example2.com"
@@ -34,7 +36,7 @@ func TestAccTFEVaultOIDCConfiguration_basic(t *testing.T) {
 		CheckDestroy:             testAccCheckTFEVaultOIDCConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEVaultOIDCConfigurationConfig(orgName, originalAddress, originalRoleName, originalNamespace, originalAuthPath, originalCACert),
+				Config: testAccTFEVaultOIDCConfigurationConfig(org.Name, originalAddress, originalRoleName, originalNamespace, originalAuthPath, originalCACert),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("tfe_vault_oidc_configuration.test", "id"),
 					resource.TestCheckResourceAttr("tfe_vault_oidc_configuration.test", "address", originalAddress),
@@ -52,7 +54,7 @@ func TestAccTFEVaultOIDCConfiguration_basic(t *testing.T) {
 			},
 			// Update
 			{
-				Config: testAccTFEVaultOIDCConfigurationConfig(orgName, updatedAddress, updatedRoleName, updatedNamespace, updatedAuthPath, updatedCACert),
+				Config: testAccTFEVaultOIDCConfigurationConfig(org.Name, updatedAddress, updatedRoleName, updatedNamespace, updatedAuthPath, updatedCACert),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("tfe_vault_oidc_configuration.test", "id"),
 					resource.TestCheckResourceAttr("tfe_vault_oidc_configuration.test", "address", updatedAddress),

@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
-	"os"
 	"strconv"
 	"testing"
 	"time"
@@ -209,10 +208,12 @@ func TestAccTFEOrganization_update_costEstimation(t *testing.T) {
 func TestAccTFEOrganization_EnforceHYOK(t *testing.T) {
 	skipUnlessHYOKEnabled(t)
 
-	orgName := os.Getenv("HYOK_ORGANIZATION_NAME")
-	if orgName == "" {
-		t.Skip("HYOK_ORGANIZATION_NAME environment variable must be set to run this test")
-	}
+	t.Skip("Skipping test until HYOK configurations can be promoted to primary through the provider. Currently," +
+		"even if promotion is possible, primary configurations cannot be deleted and leaves dangling resources.")
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+	org := &tfe.Organization{}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -220,21 +221,22 @@ func TestAccTFEOrganization_EnforceHYOK(t *testing.T) {
 		CheckDestroy:             testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOrganization_updateEnforceHYOK(orgName, true),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEOrganizationExists(
-						"tfe_organization.foobar", &tfe.Organization{}),
-					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "enforce_hyok", "true"),
-				),
-			},
-			{
 				Config: testAccTFEOrganization_updateEnforceHYOK(orgName, false),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
-						"tfe_organization.foobar", &tfe.Organization{}),
+						"tfe_organization.foobar", org),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "enforce_hyok", "false"),
+				),
+			},
+			{
+				PreConfig: func() {
+					newSubscriptionUpdater(org).WithPremiumPlan().Update(t)
+				},
+				Config: testAccTFEOrganization_updateEnforceHYOK(orgName, true),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "enforce_hyok", "true"),
 				),
 			},
 		},
