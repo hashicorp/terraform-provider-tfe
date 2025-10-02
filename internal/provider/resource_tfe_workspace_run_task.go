@@ -12,6 +12,7 @@ import (
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"golang.org/x/mod/semver"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -332,7 +333,10 @@ func (r *resourceWorkspaceRunTask) supportsStagesProperty() bool {
 	// The version comparison here can use plain string comparisons due to the nature of the naming scheme. If
 	// TFE every changes its scheme, the comparison will be problematic.
 	if r.supportsStages == nil {
-		value := r.capabilities.IsCloud() || r.capabilities.RemoteTFEVersion() > "v202404"
+		value := r.capabilities.IsCloud() ||
+			semver.IsValid("v"+r.capabilities.RemoteTFEVersion()) ||
+			r.capabilities.RemoteTFEVersion() > "v202404"
+
 		r.supportsStages = &value
 	}
 	return *r.supportsStages
