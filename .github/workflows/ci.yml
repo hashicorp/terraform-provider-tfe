@@ -25,8 +25,8 @@ jobs:
       fail-fast: false
       matrix:
         # If you adjust these parameters, also adjust the jrm input files on the "Merge reports" step below
-        total: [ 1 ]
-        index: [ 0 ]
+        total: [ 8 ]
+        index: [ 0, 1, 2, 3, 4, 5, 6, 7 ]
     steps:
       - name: Fetch Outputs
         id: tflocal
@@ -75,7 +75,7 @@ jobs:
         run: npm install -g junit-report-merger
 
       - name: Merge reports
-        run: jrm ./ci-summary-provider.xml "junit-test-summary-0/*.xml" "junit-test-summary-1/*.xml" "junit-test-summary-2/*.xml" "junit-test-summary-3/*.xml" "junit-test-summary-4/*.xml"
+        run: jrm ./ci-summary-provider.xml "junit-test-summary-0/*.xml" "junit-test-summary-1/*.xml" "junit-test-summary-2/*.xml" "junit-test-summary-3/*.xml" "junit-test-summary-4/*.xml" "junit-test-summary-5/*.xml" "junit-test-summary-6/*.xml" "junit-test-summary-7/*.xml"
 
       - name: Upload test artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
