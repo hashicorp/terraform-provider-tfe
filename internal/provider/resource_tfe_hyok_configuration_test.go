@@ -194,25 +194,37 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 	})
 }
 
-func revokeHYOKConfiguration(t *testing.T, id string) {
-	err := testAccConfiguredClient.Client.HYOKConfigurations.Revoke(ctx, id)
-	if err != nil {
-		t.Fatalf("failed to revoke HYOK configuration: %v", err)
-	}
-
+func waitForHYOKConfigurationStatus(t *testing.T, id string, status tfe.HYOKConfigurationStatus) error {
 	// Wait for configuration to be in the revoked status
-	_, err = retryFn(10, 1, func() (any, error) {
+	_, err := retryFn(10, 1, func() (any, error) {
 		hyok, err := testAccConfiguredClient.Client.HYOKConfigurations.Read(ctx, id, nil)
 		if err != nil {
 			t.Fatalf("failed to read HYOK configuration: %v", err)
 		}
 
-		if hyok.Status != tfe.HYOKConfigurationRevoked {
-			return nil, fmt.Errorf("expected HYOK configuration to be revoked, got %s", hyok.Status)
+		if hyok.Status != status {
+			return nil, fmt.Errorf("expected HYOK configuration to be %s, got %s", status, hyok.Status)
 		}
 		return nil, nil
 	})
 
+	return err
+}
+
+func revokeHYOKConfiguration(t *testing.T, id string) {
+	// Wait for configuration to be in the test_failed status before revoking
+	err := waitForHYOKConfigurationStatus(t, id, tfe.HYOKConfigurationTestFailed)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = testAccConfiguredClient.Client.HYOKConfigurations.Revoke(ctx, id)
+	if err != nil {
+		t.Fatalf("failed to revoke HYOK configuration: %v", err)
+	}
+
+	// Wait for configuration to be in the revoked status
+	err = waitForHYOKConfigurationStatus(t, id, tfe.HYOKConfigurationRevoked)
 	if err != nil {
 		t.Fatal(err)
 	}
