@@ -61,11 +61,11 @@ runs:
         go-version-file: go.mod
         cache: true
         cache-dependency-path: go.sum
-
     - name: Sync dependencies
       shell: bash
       run: |
         go mod download
+        go mod tidy
 
     - name: Install gotestsum
       shell: bash
