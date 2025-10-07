@@ -231,6 +231,10 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"hyok_enabled": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -317,6 +321,7 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("trigger_patterns", workspace.TriggerPatterns)
 	d.Set("working_directory", workspace.WorkingDirectory)
 	d.Set("execution_mode", workspace.ExecutionMode)
+	d.Set("hyok_enabled", workspace.HYOKEnabled)
 
 	if workspace.Links["self-html"] != nil {
 		baseAPI := config.Client.BaseURL()

@@ -354,6 +354,10 @@ func resourceTFEWorkspace() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"hyok_enabled": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -614,6 +618,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("organization", workspace.Organization.Name)
 	d.Set("resource_count", workspace.ResourceCount)
 	d.Set("inherits_project_auto_destroy", workspace.InheritsProjectAutoDestroy)
+	d.Set("hyok_enabled", workspace.HYOKEnabled)
 
 	if workspace.Links["self-html"] != nil {
 		baseAPI := config.Client.BaseURL()

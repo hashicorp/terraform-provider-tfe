@@ -5,18 +5,19 @@ import (
 	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"os"
 	"testing"
 )
 
 func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 	skipUnlessHYOKEnabled(t)
 
-	orgName := os.Getenv("HYOK_ORGANIZATION_NAME")
-
-	if orgName == "" {
-		t.Skip("Test skipped: HYOK_ORGANIZATION_NAME environment variable is not set")
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
 	}
+
+	org, orgCleanup := createPremiumOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	state := &tfe.HYOKConfiguration{}
 
@@ -26,7 +27,7 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEAWSHYOKConfigurationConfig(orgName, "apple", "arn:aws:kms:us-east-1:123456789012:key/key1", "us-east-1"),
+				Config: testAccTFEAWSHYOKConfigurationConfig(org.Name, "apple", "arn:aws:kms:us-east-1:123456789012:key/key1", "us-east-1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckTFEHYOKConfigurationExists("tfe_hyok_configuration.hyok", state),
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "id"),
@@ -45,7 +46,7 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 			},
 			// Update
 			{
-				Config: testAccTFEAWSHYOKConfigurationConfig(orgName, "orange", "arn:aws:kms:us-east-1:123456789012:key/key2", "us-east-2"),
+				Config: testAccTFEAWSHYOKConfigurationConfig(org.Name, "orange", "arn:aws:kms:us-east-1:123456789012:key/key2", "us-east-2"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "id"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "name", "orange"),
@@ -58,7 +59,7 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 			// Delete - must first revoke configuration to avoid dangling resources
 			{
 				PreConfig: func() { revokeHYOKConfiguration(t, state.ID) },
-				Config:    testAccTFEHYOKConfigurationDestroyConfig(orgName),
+				Config:    testAccTFEHYOKConfigurationDestroyConfig(org.Name),
 			},
 		},
 	})
@@ -69,7 +70,7 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEVaultHYOKConfigurationConfig(orgName, "peach", "key1"),
+				Config: testAccTFEVaultHYOKConfigurationConfig(org.Name, "peach", "key1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckTFEHYOKConfigurationExists("tfe_hyok_configuration.hyok", state),
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "id"),
@@ -87,7 +88,7 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 			},
 			// Update
 			{
-				Config: testAccTFEVaultHYOKConfigurationConfig(orgName, "strawberry", "key2"),
+				Config: testAccTFEVaultHYOKConfigurationConfig(org.Name, "strawberry", "key2"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "id"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "name", "strawberry"),
@@ -99,7 +100,7 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 			// Delete - must first revoke configuration to avoid dangling resources
 			{
 				PreConfig: func() { revokeHYOKConfiguration(t, state.ID) },
-				Config:    testAccTFEHYOKConfigurationDestroyConfig(orgName),
+				Config:    testAccTFEHYOKConfigurationDestroyConfig(org.Name),
 			},
 		},
 	})
@@ -110,7 +111,7 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEGCPHYOKConfigurationConfig(orgName, "cucumber", "key1", "global", "key-ring-1"),
+				Config: testAccTFEGCPHYOKConfigurationConfig(org.Name, "cucumber", "key1", "global", "key-ring-1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckTFEHYOKConfigurationExists("tfe_hyok_configuration.hyok", state),
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "id"),
@@ -130,7 +131,7 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 			},
 			// Update
 			{
-				Config: testAccTFEGCPHYOKConfigurationConfig(orgName, "tomato", "key2", "global", "key-ring-2"),
+				Config: testAccTFEGCPHYOKConfigurationConfig(org.Name, "tomato", "key2", "global", "key-ring-2"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckTFEHYOKConfigurationExists("tfe_hyok_configuration.hyok", state),
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "id"),
@@ -145,7 +146,7 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 			// Delete - must first revoke configuration to avoid dangling resources
 			{
 				PreConfig: func() { revokeHYOKConfiguration(t, state.ID) },
-				Config:    testAccTFEHYOKConfigurationDestroyConfig(orgName),
+				Config:    testAccTFEHYOKConfigurationDestroyConfig(org.Name),
 			},
 		},
 	})
@@ -156,7 +157,7 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEAzureHYOKConfigurationConfig(orgName, "banana", "https://random.vault.azure.net/keys/key1"),
+				Config: testAccTFEAzureHYOKConfigurationConfig(org.Name, "banana", "https://random.vault.azure.net/keys/key1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckTFEHYOKConfigurationExists("tfe_hyok_configuration.hyok", state),
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "id"),
@@ -174,7 +175,7 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 			},
 			// Update
 			{
-				Config: testAccTFEAzureHYOKConfigurationConfig(orgName, "blueberry", "https://random.vault.azure.net/keys/key2"),
+				Config: testAccTFEAzureHYOKConfigurationConfig(org.Name, "blueberry", "https://random.vault.azure.net/keys/key2"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "id"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "name", "blueberry"),
@@ -187,31 +188,43 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 			// Delete - must first revoke configuration to avoid dangling resources
 			{
 				PreConfig: func() { revokeHYOKConfiguration(t, state.ID) },
-				Config:    testAccTFEHYOKConfigurationDestroyConfig(orgName),
+				Config:    testAccTFEHYOKConfigurationDestroyConfig(org.Name),
 			},
 		},
 	})
 }
 
-func revokeHYOKConfiguration(t *testing.T, id string) {
-	err := testAccConfiguredClient.Client.HYOKConfigurations.Revoke(ctx, id)
-	if err != nil {
-		t.Fatalf("failed to revoke HYOK configuration: %v", err)
-	}
-
+func waitForHYOKConfigurationStatus(t *testing.T, id string, status tfe.HYOKConfigurationStatus) error {
 	// Wait for configuration to be in the revoked status
-	_, err = retryFn(10, 1, func() (any, error) {
+	_, err := retryFn(10, 1, func() (any, error) {
 		hyok, err := testAccConfiguredClient.Client.HYOKConfigurations.Read(ctx, id, nil)
 		if err != nil {
 			t.Fatalf("failed to read HYOK configuration: %v", err)
 		}
 
-		if hyok.Status != tfe.HYOKConfigurationRevoked {
-			return nil, fmt.Errorf("expected HYOK configuration to be revoked, got %s", hyok.Status)
+		if hyok.Status != status {
+			return nil, fmt.Errorf("expected HYOK configuration to be %s, got %s", status, hyok.Status)
 		}
 		return nil, nil
 	})
 
+	return err
+}
+
+func revokeHYOKConfiguration(t *testing.T, id string) {
+	// Wait for configuration to be in the test_failed status before revoking
+	err := waitForHYOKConfigurationStatus(t, id, tfe.HYOKConfigurationTestFailed)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = testAccConfiguredClient.Client.HYOKConfigurations.Revoke(ctx, id)
+	if err != nil {
+		t.Fatalf("failed to revoke HYOK configuration: %v", err)
+	}
+
+	// Wait for configuration to be in the revoked status
+	err = waitForHYOKConfigurationStatus(t, id, tfe.HYOKConfigurationRevoked)
 	if err != nil {
 		t.Fatal(err)
 	}

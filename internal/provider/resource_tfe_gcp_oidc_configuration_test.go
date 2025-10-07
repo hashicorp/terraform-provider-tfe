@@ -2,7 +2,6 @@ package provider
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -12,10 +11,13 @@ import (
 func TestAccTFEGCPOIDCConfiguration_basic(t *testing.T) {
 	skipUnlessHYOKEnabled(t)
 
-	orgName := os.Getenv("HYOK_ORGANIZATION_NAME")
-	if orgName == "" {
-		t.Skip("Skipping test. Set HYOK_ORGANIZATION_NAME environment to enable test.")
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
 	}
+
+	org, orgCleanup := createPremiumOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	originalServiceAccountEmail := "service-account@example.iam.gserviceaccount.com"
 	updatedServiceAccountEmail := "updated-service-account@example.iam.gserviceaccount.com"
@@ -30,7 +32,7 @@ func TestAccTFEGCPOIDCConfiguration_basic(t *testing.T) {
 		CheckDestroy:             testAccCheckTFEGCPOIDCConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEGCPOIDCConfigurationConfig(orgName, originalServiceAccountEmail, originalProjectNumber, originalWorkloadProviderName),
+				Config: testAccTFEGCPOIDCConfigurationConfig(org.Name, originalServiceAccountEmail, originalProjectNumber, originalWorkloadProviderName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("tfe_gcp_oidc_configuration.test", "id"),
 					resource.TestCheckResourceAttr("tfe_gcp_oidc_configuration.test", "workload_provider_name", originalWorkloadProviderName),
@@ -46,7 +48,7 @@ func TestAccTFEGCPOIDCConfiguration_basic(t *testing.T) {
 			},
 			// Update
 			{
-				Config: testAccTFEGCPOIDCConfigurationConfig(orgName, updatedServiceAccountEmail, updatedProjectNumber, updatedWorkloadProviderName),
+				Config: testAccTFEGCPOIDCConfigurationConfig(org.Name, updatedServiceAccountEmail, updatedProjectNumber, updatedWorkloadProviderName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("tfe_gcp_oidc_configuration.test", "id"),
 					resource.TestCheckResourceAttr("tfe_gcp_oidc_configuration.test", "workload_provider_name", updatedWorkloadProviderName),
