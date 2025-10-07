@@ -55,13 +55,81 @@ jobs:
           # Run terminal cmd 'go help testflag' to learn more about -list flag
           # action.yml uses https://github.com/hashicorp-forge/go-test-split-action/blob/main/action.yml to split acceptance tests
           # which runs against all tests using the list arg
-          # lists_tests regex is used to skip the TestAccTFESAMLSettings_omnibus test suite for CI tests only
-          list_tests: "[^(TestAccTFESAMLSettings_omnibus)]"
+          # lists_tests regex is used to skip the TestAccTFESAMLSettings_omnibus test suite and TestAccTFEWorkspaceRun tests for CI tests only
+          # TestAccTFEWorkspaceRun tests are run sequentially in a separate job
+          list_tests: "[^(TestAccTFESAMLSettings_omnibus|TestAccTFEWorkspaceRun)]"
+
+  tests-workspace-run-sequential:
+    name: workspace-run-sequential
+    if: "!startsWith(github.head_ref, 'changelog/')"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Fetch Outputs
+        id: tflocal
+        uses: hashicorp-forge/terraform-cloud-action/outputs@5583d5f554d268ac91b3c37fd0a5e9da2c78c017 # v1.1.0
+        with:
+          token: "${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}"
+          organization: hashicorp-v2
+          workspace: tflocal-terraform-provider-tfe
+
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Set up Go
+        uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5.3.0
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Sync dependencies
+        run: |
+          go mod download
+          go mod tidy
+
+      - name: Install gotestsum
+        run: go install gotest.tools/gotestsum@latest
+
+      - name: Run TestAccTFEWorkspaceRun Tests Sequentially
+        env:
+          TFE_HOSTNAME: "${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).ngrok_domain }}"
+          TFE_TOKEN: "${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_token }}"
+          TFE_ADMIN_CONFIGURATION_TOKEN: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.configuration }}
+          TFE_ADMIN_PROVISION_LICENSES_TOKEN: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.provision-licenses }}
+          TFE_ADMIN_SECURITY_MAINTENANCE_TOKEN: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.security-maintenance }}
+          TFE_ADMIN_SITE_ADMIN_TOKEN: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.site-admin }}
+          TFE_ADMIN_SUBSCRIPTION_TOKEN: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.subscription }}
+          TFE_ADMIN_SUPPORT_TOKEN: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.support }}
+          TFE_ADMIN_VERSION_MAINTENANCE_TOKEN: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.version-maintenance }}
+          TFE_USER1: tfe-provider-user1
+          TFE_USER2: tfe-provider-user2
+          TF_ACC: "1"
+          RUN_TASKS_URL: "http://testing-mocks.tfe:22180/runtasks/pass"
+          GITHUB_POLICY_SET_IDENTIFIER: "hashicorp/test-policy-set"
+          GITHUB_REGISTRY_MODULE_IDENTIFIER: "hashicorp/terraform-random-module"
+          GITHUB_WORKSPACE_IDENTIFIER: "hashicorp/terraform-random-module"
+          GITHUB_WORKSPACE_BRANCH: "main"
+          GITHUB_TOKEN: "${{ secrets.TESTING_GITHUB_TOKEN }}"
+          MOD_PROVIDER: github.com/hashicorp/terraform-provider-tfe
+          MOD_TFE: github.com/hashicorp/terraform-provider-tfe/internal/provider
+          MOD_VERSION: github.com/hashicorp/terraform-provider-tfe/version
+        run: |
+          # Run TestAccTFEWorkspaceRun tests sequentially with -parallel=1
+          gotestsum --junitfile workspace-run-summary.xml --format short-verbose -- \
+            $MOD_PROVIDER $MOD_TFE $MOD_VERSION \
+            -v -timeout=30m -parallel=1 -run "TestAccTFEWorkspaceRun"
+
+      - name: Upload test artifacts
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
+        with:
+          name: junit-test-summary-workspace-run
+          path: workspace-run-summary.xml
+          retention-days: 1
 
   tests-combine-summaries:
     name: Combine Test Reports
     if: "!startsWith(github.head_ref, 'changelog/')"
-    needs: [ tests ]
+    needs: [ tests, tests-workspace-run-sequential ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
@@ -75,7 +143,7 @@ jobs:
         run: npm install -g junit-report-merger
 
       - name: Merge reports
-        run: jrm ./ci-summary-provider.xml "junit-test-summary-0/*.xml" "junit-test-summary-1/*.xml" "junit-test-summary-2/*.xml" "junit-test-summary-3/*.xml" "junit-test-summary-4/*.xml" "junit-test-summary-5/*.xml" "junit-test-summary-6/*.xml" "junit-test-summary-7/*.xml"
+        run: jrm ./ci-summary-provider.xml "junit-test-summary-0/*.xml" "junit-test-summary-1/*.xml" "junit-test-summary-2/*.xml" "junit-test-summary-3/*.xml" "junit-test-summary-4/*.xml" "junit-test-summary-5/*.xml" "junit-test-summary-6/*.xml" "junit-test-summary-7/*.xml" "junit-test-summary-workspace-run/*.xml"
 
       - name: Upload test artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -86,12 +154,12 @@ jobs:
   tests-summarize:
     name: Summarize Tests
     if: "!startsWith(github.head_ref, 'changelog/')  && always()"
-    needs: [ tests ]
+    needs: [ tests, tests-workspace-run-sequential ]
     runs-on: ubuntu-latest
     steps:
       - name: Check tests Status
         run: |
-          if [ "${{ needs.tests.result }}" = "success" ]; then
+          if [ "${{ needs.tests.result }}" = "success" ] && [ "${{ needs.tests-workspace-run-sequential.result }}" = "success" ]; then
             exit 0
           fi
           exit 1
