@@ -11,6 +11,7 @@ runs:
       with:
         go-version-file: "go.mod"
         cache: true
+        cache-dependency-path: go.sum
 
     - name: fmt check
       run: make fmtcheck
@@ -26,5 +27,6 @@ runs:
       env:
         GOLANGCILINT_VERSION: v1.64.8
 
-    - run: make lint
+    - name: Run golangci-lint
+      run: make lint
       shell: bash
