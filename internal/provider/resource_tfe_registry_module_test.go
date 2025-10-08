@@ -686,7 +686,7 @@ func TestAccTFERegistryModule_invalidTestConfigOnCreate(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccTFERegistryModule_vcsInvalidBranch(rInt),
+				Config:      testAccTFERegistryModule_invalidTestConfig(rInt),
 				ExpectError: regexp.MustCompile(`tests_enabled must be provided when configuring a test_config`),
 			},
 		},
@@ -713,7 +713,7 @@ func TestAccTFERegistryModule_invalidTestConfigOnUpdate(t *testing.T) {
 				),
 			},
 			{
-				Config:      testAccTFERegistryModule_vcsInvalidBranch(rInt),
+				Config:      testAccTFERegistryModule_invalidTestConfig(rInt),
 				ExpectError: regexp.MustCompile(`tests_enabled must be provided when configuring a test_config`),
 			},
 		},
@@ -1213,7 +1213,7 @@ resource "tfe_registry_module" "foobar" {
 		envGithubRegistryModuleIdentifer,
 		envGithubRegistryModuleIdentifer)
 }
-func testAccTFERegistryModule_vcsInvalidBranch(rInt int) string {
+func testAccTFERegistryModule_invalidTestConfig(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
  name  = "tst-terraform-%d"
@@ -1767,6 +1767,137 @@ resource "tfe_registry_module" "foobar" {
  }`
 }
 
+func TestAccTFERegistryModule_agentExecutionModeWithAgentPool(t *testing.T) {
+	skipUnlessBeta(t)
+
+	registryModule := &tfe.RegistryModule{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheckTFERegistryModule(t)
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFERegistryModuleDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFERegistryModule_agentExecutionModeWithAgentPool(orgName, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFERegistryModuleExists(
+						"tfe_registry_module.foobar",
+						tfe.RegistryModuleID{
+							Organization: orgName,
+							Name:         getRegistryModuleName(),
+							Provider:     getRegistryModuleProvider(),
+							RegistryName: tfe.PrivateRegistry,
+							Namespace:    orgName,
+						},
+						registryModule,
+					),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "test_config.0.tests_enabled", strconv.FormatBool(true)),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "test_config.0.agent_execution_mode", "agent"),
+					resource.TestCheckResourceAttrSet("tfe_registry_module.foobar", "test_config.0.agent_pool_id"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFERegistryModule_remoteExecutionModeWithoutAgentPool(t *testing.T) {
+	skipUnlessBeta(t)
+
+	registryModule := &tfe.RegistryModule{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheckTFERegistryModule(t)
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFERegistryModuleDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFERegistryModule_remoteExecutionModeWithoutAgentPool(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFERegistryModuleExists(
+						"tfe_registry_module.foobar",
+						tfe.RegistryModuleID{
+							Organization: orgName,
+							Name:         getRegistryModuleName(),
+							Provider:     getRegistryModuleProvider(),
+							RegistryName: tfe.PrivateRegistry,
+							Namespace:    orgName,
+						},
+						registryModule,
+					),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "test_config.0.tests_enabled", strconv.FormatBool(true)),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "test_config.0.agent_execution_mode", "remote"),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "test_config.0.agent_pool_id", ""),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFERegistryModule_agentPoolFieldClearing(t *testing.T) {
+	skipUnlessBeta(t)
+
+	registryModule := &tfe.RegistryModule{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheckTFERegistryModule(t)
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFERegistryModuleDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFERegistryModule_remoteExecutionModeWithoutAgentPool(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFERegistryModuleExists(
+						"tfe_registry_module.foobar",
+						tfe.RegistryModuleID{
+							Organization: orgName,
+							Name:         getRegistryModuleName(),
+							Provider:     getRegistryModuleProvider(),
+							RegistryName: tfe.PrivateRegistry,
+							Namespace:    orgName,
+						},
+						registryModule,
+					),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "test_config.0.tests_enabled", strconv.FormatBool(true)),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "test_config.0.agent_execution_mode", "remote"),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "test_config.0.agent_pool_id", ""),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFERegistryModule_remoteExecutionModeWithAgentPoolError(t *testing.T) {
+	skipUnlessBeta(t)
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheckTFERegistryModule(t)
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFERegistryModule_remoteExecutionModeWithAgentPoolErrorSimple(rInt),
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`agent_pool_id cannot be set when agent_execution_mode is 'remote'`),
+			},
+		},
+	})
+}
+
 func testAccTFERegistryModule_invalidWithModuleProviderAndNoName() string {
 	return `
 resource "tfe_registry_module" "foobar" {
@@ -1803,4 +1934,180 @@ resource "tfe_registry_module" "foobar" {
   namespace       = "terraform-aws-modules"
 	registry_name   = "private"
  }`
+}
+
+func testAccTFERegistryModule_agentExecutionModeWithAgentPool(organization string, rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "%s"
+  email = "admin@company.com"
+}
+
+resource "tfe_oauth_client" "foobar" {
+  organization     = tfe_organization.foobar.name
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "%s"
+  service_provider = "github"
+}
+
+resource "tfe_agent_pool" "foobar" {
+  name         = "agent-pool-test-%d"
+  organization = tfe_organization.foobar.name
+}
+
+resource "tfe_registry_module" "foobar" {
+  organization = tfe_organization.foobar.name
+
+  vcs_repo {
+    display_identifier         = "%s"
+    identifier                 = "%s"
+    oauth_token_id             = tfe_oauth_client.foobar.oauth_token_id
+    branch                     = "main"
+    tags                       = false
+  }
+
+  initial_version = "1.0.0"
+
+  test_config {
+    tests_enabled         = true
+    agent_execution_mode  = "agent"
+    agent_pool_id         = tfe_agent_pool.foobar.id
+  }
+}`, organization, envGithubToken, rInt, envGithubRegistryModuleIdentifer, envGithubRegistryModuleIdentifer)
+}
+
+func testAccTFERegistryModule_remoteExecutionModeWithoutAgentPool(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_oauth_client" "foobar" {
+  organization     = tfe_organization.foobar.name
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "%s"
+  service_provider = "github"
+}
+
+resource "tfe_registry_module" "foobar" {
+  organization = tfe_organization.foobar.name
+
+  vcs_repo {
+    display_identifier         = "%s"
+    identifier                 = "%s"
+    oauth_token_id             = tfe_oauth_client.foobar.oauth_token_id
+    branch                     = "main"
+    tags                       = false
+  }
+
+  initial_version = "1.0.0"
+
+  test_config {
+    tests_enabled         = true
+    agent_execution_mode  = "remote"
+  }
+}`, rInt, envGithubToken, envGithubRegistryModuleIdentifer, envGithubRegistryModuleIdentifer)
+}
+
+func testAccTFERegistryModule_remoteExecutionModeWithAgentPoolError(organization string, rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_agent_pool" "foobar" {
+  name         = "agent-pool-test-%d"
+  organization = "%s"
+}
+
+resource "tfe_registry_module" "foobar" {
+  organization = "%s"
+
+  vcs_repo {
+    display_identifier         = "%s"
+    identifier                 = "%s"
+    oauth_token_id             = "%s"
+    branch                     = "main"
+    tags                       = false
+  }
+
+  initial_version = "1.0.0"
+
+  test_config {
+    tests_enabled         = true
+    agent_execution_mode  = "remote"
+    agent_pool_id         = tfe_agent_pool.foobar.id
+  }
+}`, rInt, organization, organization, envGithubRegistryModuleIdentifer, envGithubRegistryModuleIdentifer, envGithubToken)
+}
+
+func testAccTFERegistryModule_remoteExecutionModeWithAgentPoolErrorSimple(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_oauth_client" "foobar" {
+  organization     = tfe_organization.foobar.name
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "%s"
+  service_provider = "github"
+}
+
+resource "tfe_registry_module" "foobar" {
+  organization = tfe_organization.foobar.name
+
+  vcs_repo {
+    display_identifier         = "%s"
+    identifier                 = "%s"
+    oauth_token_id             = tfe_oauth_client.foobar.oauth_token_id
+    branch                     = "main"
+    tags                       = false
+  }
+
+  initial_version = "1.0.0"
+
+  test_config {
+    tests_enabled         = true
+    agent_execution_mode  = "remote"
+    agent_pool_id         = "apool-fake-id"  
+  }
+}`, rInt, envGithubToken, envGithubRegistryModuleIdentifer, envGithubRegistryModuleIdentifer)
+}
+
+func testAccTFERegistryModule_agentExecutionModeWithFakeAgentPool(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_oauth_client" "foobar" {
+  organization     = tfe_organization.foobar.name
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "%s"
+  service_provider = "github"
+}
+
+resource "tfe_registry_module" "foobar" {
+  organization = tfe_organization.foobar.name
+
+  vcs_repo {
+    display_identifier         = "%s"
+    identifier                 = "%s"
+    oauth_token_id             = tfe_oauth_client.foobar.oauth_token_id
+    branch                     = "main"
+    tags                       = false
+  }
+
+  initial_version = "1.0.0"
+
+  test_config {
+    tests_enabled         = true
+    agent_execution_mode  = "agent"
+    agent_pool_id         = "apool-fake-id"
+  }
+}`, rInt, envGithubToken, envGithubRegistryModuleIdentifer, envGithubRegistryModuleIdentifer)
 }
