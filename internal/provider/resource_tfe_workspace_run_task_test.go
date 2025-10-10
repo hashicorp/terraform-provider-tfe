@@ -25,6 +25,8 @@ func TestTFEWorkspaceRunTask_stagesSupport(t *testing.T) {
 		"when Enterprise v202402":            {false, "v202402-2", false},
 		"when Enterprise v202404-1":          {false, "v202404-1", true},
 		"when Enterprise v202408-1":          {false, "v202408-1", true},
+		"when Enterprise v1.0.0":             {false, "1.0.0", true},
+		"when Enterprise < 1.0.0":            {false, "1.1.0", true},
 	}
 
 	for name, testCase := range testCases {
