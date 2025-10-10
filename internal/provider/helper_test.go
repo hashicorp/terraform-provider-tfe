@@ -18,6 +18,7 @@ import (
 
 const RunTasksURLEnvName = "RUN_TASKS_URL"
 const RunTasksHMACKeyEnvName = "RUN_TASKS_HMAC"
+const EnableHYOKEnvName = "ENABLE_HYOK"
 
 type testClientOptions struct {
 	defaultOrganization          string
@@ -62,6 +63,17 @@ func createBusinessOrganization(t *testing.T, client *tfe.Client) (*tfe.Organiza
 	})
 
 	newSubscriptionUpdater(org).WithBusinessPlan().Update(t)
+
+	return org, orgCleanup
+}
+
+func createPremiumOrganization(t *testing.T, client *tfe.Client) (*tfe.Organization, func()) {
+	org, orgCleanup := createOrganization(t, client, tfe.OrganizationCreateOptions{
+		Name:  tfe.String("tst-" + randomString(t)),
+		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
+	})
+
+	newSubscriptionUpdater(org).WithPremiumPlan().Update(t)
 
 	return org, orgCleanup
 }
@@ -235,6 +247,14 @@ func skipUnlessRunTasksDefined(t *testing.T) {
 func skipUnlessBeta(t *testing.T) {
 	if !betaFeaturesEnabled() {
 		t.Skip("Skipping test related to a HCP Terraform and Terraform Enterprise beta feature. Set ENABLE_BETA=1 to run.")
+	}
+}
+
+func skipUnlessHYOKEnabled(t *testing.T) {
+	skipIfEnterprise(t)
+
+	if value, ok := os.LookupEnv(EnableHYOKEnvName); !ok || value == "" {
+		t.Skipf("Skipping tests for HYOK. Set '%s' to enable tests.", EnableHYOKEnvName)
 	}
 }
 

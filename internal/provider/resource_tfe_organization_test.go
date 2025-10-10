@@ -205,6 +205,44 @@ func TestAccTFEOrganization_update_costEstimation(t *testing.T) {
 	})
 }
 
+func TestAccTFEOrganization_EnforceHYOK(t *testing.T) {
+	skipUnlessHYOKEnabled(t)
+
+	t.Skip("Skipping test until HYOK configurations can be promoted to primary through the provider. Currently," +
+		"even if promotion is possible, primary configurations cannot be deleted and leaves dangling resources.")
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+	org := &tfe.Organization{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOrganization_updateEnforceHYOK(orgName, false),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOrganizationExists(
+						"tfe_organization.foobar", org),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "enforce_hyok", "false"),
+				),
+			},
+			{
+				PreConfig: func() {
+					newSubscriptionUpdater(org).WithPremiumPlan().Update(t)
+				},
+				Config: testAccTFEOrganization_updateEnforceHYOK(orgName, true),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "enforce_hyok", "true"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEOrganization_case(t *testing.T) {
 	org := &tfe.Organization{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -440,4 +478,13 @@ resource "tfe_organization" "foobar" {
   assessments_enforced              = %t
   allow_force_delete_workspaces     = %t
 }`, orgName, orgEmail, costEstimationEnabled, assessmentsEnforced, allowForceDeleteWorkspaces)
+}
+
+func testAccTFEOrganization_updateEnforceHYOK(orgName string, enforceHYOK bool) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name         = "%s"
+  email        = "admin@company.com"
+  enforce_hyok = %t
+}`, orgName, enforceHYOK)
 }

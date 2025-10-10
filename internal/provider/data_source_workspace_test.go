@@ -277,6 +277,33 @@ func TestAccTFEWorkspaceDataSource_readProjectIDNonDefault(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspaceDataSource_readHYOKEnabled(t *testing.T) {
+	skipUnlessHYOKEnabled(t)
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createPremiumOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEHYOKWorkspaceDataSourceConfig(org.Name),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "organization", org.Name),
+					resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "name", "tf-provider-tfe-hyok-enabled-workspace-test"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "hyok_enabled"),
+				),
+			},
+		},
+	})
+}
+
 func testAccTFEWorkspaceDataSourceConfig(rInt int) string {
 	// Only test auto-apply-run-trigger outside enterprise... once the feature
 	// flag is removed, just put it in the normal config.
@@ -457,6 +484,20 @@ data "tfe_workspace" "foobar" {
   depends_on   = [tfe_workspace.foobar]
 }
 `, rInt, rInt)
+}
+
+func testAccTFEHYOKWorkspaceDataSourceConfig(orgName string) string {
+	return `
+resource "tfe_workspace" "foobar" {
+  organization = "` + orgName + `"
+  name         = "tf-provider-tfe-hyok-enabled-workspace-test"
+}
+
+data "tfe_workspace" "foobar" {
+  organization = "` + orgName + `"
+  name         = tfe_workspace.foobar.name
+}
+`
 }
 
 func givenOrganization(t *testing.T, tfeClient *tfe.Client, organizationName string) (*tfe.Organization, func()) {

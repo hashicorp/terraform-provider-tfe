@@ -2947,6 +2947,33 @@ func TestAccTFEWorkspace_createWithSourceURLAndName(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspace_HYOKEnabled(t *testing.T) {
+	skipUnlessHYOKEnabled(t)
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createPremiumOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspaceConfig(org.Name),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_workspace.foobar", "organization", org.Name),
+					resource.TestCheckResourceAttrSet("tfe_workspace.foobar", "hyok_enabled"),
+				),
+			},
+		},
+	})
+}
+
 func testAccTFEWorkspace_basic(rInt int) string {
 	// Only test auto-apply-run-trigger outside enterprise... once the feature
 	// flag is removed, just put it in the normal config.
@@ -4155,4 +4182,13 @@ resource "tfe_workspace" "foobar" {
 	  keyB = "override"
   }
 }`, rInt)
+}
+
+func testAccTFEWorkspaceConfig(orgName string) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace" "foobar" {
+  organization = "%s"
+  name         = "tfe-provider-test-workspace-hyok-enabled"
+}
+`, orgName)
 }

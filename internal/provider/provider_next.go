@@ -130,6 +130,8 @@ func (p *frameworkProvider) Configure(ctx context.Context, req provider.Configur
 
 func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
+		NewHYOKCustomerKeyVersionDataSource,
+		NewHYOKEncryptedDataKeyDataSource,
 		NewNoCodeModuleDataSource,
 		NewOrganizationRunTaskDataSource,
 		NewOrganizationRunTaskGlobalSettingsDataSource,
@@ -172,6 +174,11 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewTerraformVersionResource,
 		NewOPAVersionResource,
 		NewsentinelVersionResource,
+		NewAWSOIDCConfigurationResource,
+		NewGCPOIDCConfigurationResource,
+		NewAzureOIDCConfigurationResource,
+		NewVaultOIDCConfigurationResource,
+		NewHYOKConfigurationResource,
 	}
 }
 

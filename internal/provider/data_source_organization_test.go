@@ -85,6 +85,32 @@ func TestAccTFEOrganizationDataSource_defaultOrganization(t *testing.T) {
 	})
 }
 
+func TestAccTFEOrganizationDataSource_readEnforceHYOK(t *testing.T) {
+	skipUnlessHYOKEnabled(t)
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createPremiumOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOrganizationDataSourceConfig_withName(org.Name),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.tfe_organization.test", "name", org.Name),
+					resource.TestCheckResourceAttr("data.tfe_organization.test", "enforce_hyok", "false"),
+				),
+			},
+		},
+	})
+}
+
 func testAccTFEOrganizationDataSourceConfig_basic(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foo" {
@@ -102,4 +128,12 @@ func testAccTFEOrganizationDataSourceConfig_noName() string {
 	return `
 data "tfe_organization" "foo" {
 }`
+}
+
+func testAccTFEOrganizationDataSourceConfig_withName(orgName string) string {
+	return `
+data "tfe_organization" "test" {
+  name = "` + orgName + `"
+}
+`
 }
