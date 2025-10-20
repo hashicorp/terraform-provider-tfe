@@ -45,6 +45,7 @@ jobs:
           hostname: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).ngrok_domain }}
           token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_token }}
           testing-github-token: ${{ secrets.TESTING_GITHUB_TOKEN }}
+          datadog-workflow-token: ${{ secrets.TF_WORKFLOW_DATADOG_API_KEY }}
           admin_configuration_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.configuration }}
           admin_provision_licenses_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.provision-licenses }}
           admin_security_maintenance_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.security-maintenance }}
@@ -89,6 +90,13 @@ jobs:
 
       - name: Install gotestsum
         run: go install gotest.tools/gotestsum@latest
+
+      - name: Configure Datadog Test Optimization
+        uses: datadog/test-visibility-github-action@v2
+        with:
+          languages: go
+          api_key: ${{ secrets.TF_WORKFLOW_DATADOG_API_KEY }}
+          site: datadoghq.com 
 
       - name: Run TestAccTFEWorkspaceRun Tests Sequentially
         env:
