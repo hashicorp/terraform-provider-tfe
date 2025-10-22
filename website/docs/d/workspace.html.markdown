@@ -42,6 +42,7 @@ In addition to all arguments above, the following attributes are exported:
 * `global_remote_state` - (Optional) Whether the workspace should allow all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (determined by the `remote_state_consumer_ids` argument).
 * `hyok_enabled` - (Optional) Whether HYOK is enabled for the workspace.
 * `inherits_project_auto_destroy` - Indicates whether this workspace inherits project auto destroy settings.
+* `locked` - Indicates whether the workspace is locked.
 * `remote_state_consumer_ids` - (Optional) A set of workspace IDs that will be set as the remote state consumers for the given workspace. Cannot be used if `global_remote_state` is set to `true`.
 * `operations` - Indicates whether the workspace is using remote execution mode. Set to `false` to switch execution mode to local. `true` by default.
 * `policy_check_failures` - The number of policy check failures from the latest run.

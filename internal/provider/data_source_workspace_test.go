@@ -119,6 +119,8 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "execution_mode", "remote"),
 					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "locked", "false"),
+					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "html_url", fmt.Sprintf("https://%s/app/%s/workspaces/%s", os.Getenv("TFE_HOSTNAME"), orgName, workspaceName)),
 				),
 			},
