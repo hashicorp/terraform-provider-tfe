@@ -51,5 +51,5 @@ terraform import tfe_agent_pool.test apool-rW0KoLSlnuNb5adB
 ```
 
 ```shell
-terraform import tfe_workspace.test my-org-name/my-agent-pool-name
+terraform import tfe_agent_pool.test my-org-name/my-agent-pool-name
 ```
