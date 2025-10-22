@@ -235,6 +235,10 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
+			"locked": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -322,6 +326,7 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("working_directory", workspace.WorkingDirectory)
 	d.Set("execution_mode", workspace.ExecutionMode)
 	d.Set("hyok_enabled", workspace.HYOKEnabled)
+	d.Set("locked", workspace.Locked)
 
 	if workspace.Links["self-html"] != nil {
 		baseAPI := config.Client.BaseURL()
