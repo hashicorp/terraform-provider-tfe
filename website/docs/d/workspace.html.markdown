@@ -33,14 +33,14 @@ In addition to all arguments above, the following attributes are exported:
 
 * `id` - The workspace ID.
 * `allow_destroy_plan` - Indicates whether destroy plans can be queued on the workspace.
-* `apply_duration_average` - The average duration of applies for this workspace, in milliseconds.
+* `apply_duration_average` - The average duration of applies for this workspace.
 * `assessments_enabled` - (Available only in HCP Terraform) Indicates whether health assessments such as drift detection are enabled for the workspace.
 * `auto_apply` - Indicates whether to automatically apply changes when a Terraform plan is successful.
 * `auto_apply_run_trigger` - Whether the workspace will automatically apply changes for runs that were created by run triggers from another workspace.
 * `auto_destroy_activity_duration` - A duration string representing time after workspace activity when an auto-destroy run will be triggered.
 * `auto_destroy_at` - Future date/time string at which point all resources in a workspace will be scheduled to be deleted.
 * `created_at` - The time when the workspace was created.
-* `environment` - The environment of the workspace (e.g., "default").
+* `environment` - The environment of the workspace.
 * `file_triggers_enabled` - Indicates whether runs are triggered based on the changed files in a VCS push (if `true`) or always triggered on every push (if `false`).
 * `global_remote_state` - (Optional) Whether the workspace should allow all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (determined by the `remote_state_consumer_ids` argument).
 * `hyok_enabled` - (Optional) Whether HYOK is enabled for the workspace.
@@ -57,7 +57,7 @@ In addition to all arguments above, the following attributes are exported:
 * `resource_count` - The number of resources managed by the workspace.
 * `run_failures` - The number of run failures on the workspace.
 * `runs_count` - The number of runs on the workspace.
-* `source` - The source of the workspace (e.g., "tfe-api", "tfe-ui", "terraform").
+* `source` - The source of the workspace.
 * `source_name` - The name of the workspace creation source, if set.
 * `source_url` - The URL of the workspace creation source, if set.
 * `speculative_enabled` - Indicates whether this workspace allows speculative plans.

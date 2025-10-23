@@ -11,10 +11,7 @@ FEATURES:
 * `d/tfe_organization`: Adds the `enforce_hyok` boolean attribute, by @iuri-slywitch-hashicorp.
 * `r/tfe_workspace`: Adds the `hyok_enabled` read-only boolean attribute, by @iuri-slywitch-hashicorp.
 * `d/tfe_workspace`: Adds the `hyok_enabled` read-only boolean attribute, by @iuri-slywitch-hashicorp.
-* `d/tfe_workspace`: Adds the `locked` read-only boolean attribute, by @rageshganeshkumar.
-
-ENHANCEMENTS:
-* `d/tfe_workspace`: Adds support for additional read-only attributes: `created_at`, `updated_at`, `environment`, `apply_duration_average`, `plan_duration_average`, `source`, `setting_overwrites`, `permissions`, and `actions`. By @rageshganeshkumar.
+* `d/tfe_workspace`: Adds support for additional read-only attributes: `locked`, `created_at`, `updated_at`, `environment`, `apply_duration_average`, `plan_duration_average`, `source`, `setting_overwrites`, `permissions`, and `actions`. By @rageshganeshkumar.
 
 ## v0.70.0
 

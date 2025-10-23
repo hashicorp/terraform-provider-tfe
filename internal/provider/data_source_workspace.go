@@ -410,7 +410,6 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 			"can-update-variable":  workspace.Permissions.CanUpdateVariable,
 			"can-manage-run-tasks": workspace.Permissions.CanManageRunTasks,
 		}
-		// CanForceDelete is a pointer in go-tfe to detect if the field exists (for backward compatibility)
 		if workspace.Permissions.CanForceDelete != nil {
 			permissions["can-force-delete"] = *workspace.Permissions.CanForceDelete
 		}
