@@ -122,6 +122,19 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 						"data.tfe_workspace.foobar", "locked", "false"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "html_url", fmt.Sprintf("https://%s/app/%s/workspaces/%s", os.Getenv("TFE_HOSTNAME"), orgName, workspaceName)),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "created_at"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "updated_at"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "environment", "default"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "source", "tfe-api"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "apply_duration_average"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "plan_duration_average"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "permissions.can-update"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "permissions.can-destroy"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "permissions.can-queue-run"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "permissions.can-lock"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "actions.is-destroyable"),
 				),
 			},
 		},
