@@ -128,7 +128,7 @@ jobs:
             -v -timeout=30m -parallel=1 -run "TestAccTFEWorkspaceRun"
 
       - name: Upload test artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: junit-test-summary-workspace-run
           path: workspace-run-summary.xml
@@ -154,7 +154,7 @@ jobs:
         run: jrm ./ci-summary-provider.xml "junit-test-summary-0/*.xml" "junit-test-summary-1/*.xml" "junit-test-summary-2/*.xml" "junit-test-summary-3/*.xml" "junit-test-summary-4/*.xml" "junit-test-summary-5/*.xml" "junit-test-summary-6/*.xml" "junit-test-summary-7/*.xml" "junit-test-summary-workspace-run/*.xml"
 
       - name: Upload test artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: junit-test-summary
           path: ./ci-summary-provider.xml
