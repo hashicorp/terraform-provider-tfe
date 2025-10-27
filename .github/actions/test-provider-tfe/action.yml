@@ -93,14 +93,14 @@ runs:
         junit-summary: ./ci-summary-provider.xml
         # When tests are split and run concurrently, lists_tests arg in ci.yml will skip the TestAccTFESAMLSettings_omnibus test suite
         list: ${{ inputs.list_tests }}
-    
+
     - name: Configure Datadog Test Optimization
-      uses: datadog/test-visibility-github-action@v2
+      uses: datadog/test-visibility-github-action@4d09028b08a1f4431663b1de1550249cd4764051 # v2.4.1
       with:
         languages: go
         api_key: ${{ inputs.datadog-workflow-token }}
-        site: datadoghq.com 
-        go-tracer-version: v1.5.0
+        site: datadoghq.com
+        go-tracer-version: 1.5.0
 
     - name: Run Tests
       shell: bash
