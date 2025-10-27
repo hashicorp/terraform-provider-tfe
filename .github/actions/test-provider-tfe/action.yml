@@ -100,6 +100,7 @@ runs:
         languages: go
         api_key: ${{ inputs.datadog-workflow-token }}
         site: datadoghq.com 
+        go-tracer-version: v1.5.0
 
     - name: Run Tests
       shell: bash
