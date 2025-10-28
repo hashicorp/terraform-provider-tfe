@@ -81,10 +81,10 @@ func getTokenFromCreds(services *disco.Disco, hostname svchost.Hostname) string 
 //
 // Internally, this function caches configured clients using the specified
 // parameters
-func GetClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
-	config, err := configure(tfeHost, token, insecure)
+func GetClient(tfeHost, token string, insecure bool) (*tfe.Client, bool, error) {
+	config, sendCredentialDeprecationWarning, err := configure(tfeHost, token, insecure)
 	if err != nil {
-		return nil, err
+		return nil, sendCredentialDeprecationWarning, err
 	}
 
 	clientCache.Lock()
@@ -93,13 +93,13 @@ func GetClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
 	// Try to retrieve the client from cache
 	cached := clientCache.GetByConfig(config)
 	if cached != nil {
-		return cached, nil
+		return cached, sendCredentialDeprecationWarning, nil
 	}
 
 	// Discover the Terraform Enterprise address.
 	host, err := config.Services.Discover(config.TFEHost)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create client: %w", err)
+		return nil, sendCredentialDeprecationWarning, fmt.Errorf("failed to create client: %w", err)
 	}
 
 	// Get the full Terraform Enterprise service address.
@@ -109,7 +109,7 @@ func GetClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
 		service, err := host.ServiceURL(tfeServiceID)
 		target := &disco.ErrVersionNotSupported{}
 		if err != nil && !errors.As(err, &target) {
-			return nil, fmt.Errorf("failed to create client: %w", err)
+			return nil, sendCredentialDeprecationWarning, fmt.Errorf("failed to create client: %w", err)
 		}
 
 		// If discoErr is nil we save the first error. When multiple services
@@ -133,7 +133,7 @@ func GetClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
 		// First check any constraints we might have received.
 		if constraints != nil {
 			if err := CheckConstraints(constraints); err != nil {
-				return nil, err
+				return nil, sendCredentialDeprecationWarning, err
 			}
 		}
 	}
@@ -141,7 +141,7 @@ func GetClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
 	// When we don't have any constraints errors, also check for discovery
 	// errors before we continue.
 	if discoErr != nil {
-		return nil, discoErr
+		return nil, sendCredentialDeprecationWarning, discoErr
 	}
 
 	// Create a new TFE client.
@@ -151,13 +151,13 @@ func GetClient(tfeHost, token string, insecure bool) (*tfe.Client, error) {
 		HTTPClient: config.HTTPClient,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create client: %w", err)
+		return nil, sendCredentialDeprecationWarning, fmt.Errorf("failed to create client: %w", err)
 	}
 
 	client.RetryServerErrors(true)
 	clientCache.Set(client, config)
 
-	return client, nil
+	return client, sendCredentialDeprecationWarning, nil
 }
 
 // CheckConstraints checks service version constrains against our own
