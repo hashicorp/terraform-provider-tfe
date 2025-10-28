@@ -36,7 +36,9 @@ The following arguments are supported:
 * `global` - Whether or not the policy set applies to all workspaces in the organization.
 * `kind` - The policy-as-code framework for the policy. Valid values are "sentinel" and "opa".
 * `agent_enabled` - Whether or not the policy set is run as a policy evaluation within the agent. True by default for all "opa" policy sets.
-* `policy_tool_version` - The policy tool version to run the evaluation against.
+* `policy_tool_version` - The policy tool version to run the evaluation against. For both Sentinel and OPA,
+  leaving this argument unspecified results in selecting the latest available version at the time of creation.
+  For "opa" policy sets, 'latest' will not be a valid input.
 * `overridable` - Whether users can override this policy when it fails during a run. Only valid for OPA policies.
 * `workspace_ids` - IDs of the workspaces that use the policy set.
 * `excluded_workspace_ids` - IDs of the workspaces that do not use the policy set.

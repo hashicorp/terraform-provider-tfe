@@ -120,7 +120,9 @@ The following arguments are supported:
    A policy set can only have policies that have the same underlying kind.
 * `agent_enabled` - (Optional) Whether or not the policy set is run as a policy evaluation within the agent. 
    True by default for all "opa" policy sets.
-* `policy_tool_version` - (Optional) The policy tool version to run the evaluation against.
+* `policy_tool_version` - (Optional) The policy tool version to run the evaluation against. For both Sentinel and OPA,
+  leaving this argument unspecified results in selecting the latest available version at the time of creation.
+  For "opa" policy sets, 'latest' will not be a valid input.
 * `overridable` - (Optional) Whether or not users can override this policy when
    it fails during a run. Defaults to `false`. Only valid for OPA policies.
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
