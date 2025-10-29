@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -235,6 +236,58 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
+			"locked": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
+
+			"created_at": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+
+			"updated_at": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+
+			"environment": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+
+			"apply_duration_average": {
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
+
+			"plan_duration_average": {
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
+
+			"source": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+
+			"setting_overwrites": {
+				Type:     schema.TypeMap,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeBool},
+			},
+
+			"permissions": {
+				Type:     schema.TypeMap,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeBool},
+			},
+
+			"actions": {
+				Type:     schema.TypeMap,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeBool},
+			},
 		},
 	}
 }
@@ -322,6 +375,54 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("working_directory", workspace.WorkingDirectory)
 	d.Set("execution_mode", workspace.ExecutionMode)
 	d.Set("hyok_enabled", workspace.HYOKEnabled)
+	d.Set("locked", workspace.Locked)
+	d.Set("created_at", workspace.CreatedAt.Format(time.RFC3339))
+	d.Set("updated_at", workspace.UpdatedAt.Format(time.RFC3339))
+	d.Set("environment", workspace.Environment)
+	d.Set("source", string(workspace.Source))
+	d.Set("apply_duration_average", int(workspace.ApplyDurationAverage.Milliseconds()))
+	d.Set("plan_duration_average", int(workspace.PlanDurationAverage.Milliseconds()))
+
+	// Set setting overwrites
+	if workspace.SettingOverwrites != nil {
+		settingOverwrites := make(map[string]interface{})
+		if workspace.SettingOverwrites.ExecutionMode != nil {
+			settingOverwrites["execution-mode"] = *workspace.SettingOverwrites.ExecutionMode
+		}
+		if workspace.SettingOverwrites.AgentPool != nil {
+			settingOverwrites["agent-pool"] = *workspace.SettingOverwrites.AgentPool
+		}
+		d.Set("setting_overwrites", settingOverwrites)
+	}
+
+	// Set permissions
+	if workspace.Permissions != nil {
+		permissions := map[string]interface{}{
+			"can-update":           workspace.Permissions.CanUpdate,
+			"can-destroy":          workspace.Permissions.CanDestroy,
+			"can-queue-run":        workspace.Permissions.CanQueueRun,
+			"can-queue-apply":      workspace.Permissions.CanQueueApply,
+			"can-queue-destroy":    workspace.Permissions.CanQueueDestroy,
+			"can-lock":             workspace.Permissions.CanLock,
+			"can-unlock":           workspace.Permissions.CanUnlock,
+			"can-force-unlock":     workspace.Permissions.CanForceUnlock,
+			"can-read-settings":    workspace.Permissions.CanReadSettings,
+			"can-update-variable":  workspace.Permissions.CanUpdateVariable,
+			"can-manage-run-tasks": workspace.Permissions.CanManageRunTasks,
+		}
+		if workspace.Permissions.CanForceDelete != nil {
+			permissions["can-force-delete"] = *workspace.Permissions.CanForceDelete
+		}
+		d.Set("permissions", permissions)
+	}
+
+	// Set actions
+	if workspace.Actions != nil {
+		actions := map[string]interface{}{
+			"is-destroyable": workspace.Actions.IsDestroyable,
+		}
+		d.Set("actions", actions)
+	}
 
 	if workspace.Links["self-html"] != nil {
 		baseAPI := config.Client.BaseURL()
