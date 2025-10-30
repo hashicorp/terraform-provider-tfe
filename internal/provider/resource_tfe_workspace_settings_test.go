@@ -98,6 +98,27 @@ func TestAccTFEWorkspaceSettings_basic(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspaceSettings_noArguments(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspaceSettings_noArgs(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(
+						"tfe_workspace_settings.test", "id"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.test", "description", "A workspace description",
+					),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEWorkspaceSettings_stateSharing(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
@@ -558,7 +579,7 @@ resource "tfe_project" "test" {
 resource "tfe_workspace" "test" {
 	name         = "tfe-provider-test-workspace-%d"
 	organization = tfe_organization.test.name
-    project_id   = tfe_project.test.id 
+	project_id   = tfe_project.test.id
 }
 `, rInt, rInt, rInt)
 }
@@ -593,6 +614,26 @@ resource "tfe_workspace_settings" "test" {
 	tags = {}
 }
 `
+}
+
+func testAccTFEWorkspaceSettings_noArgs(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "test" {
+  name  = "tst-tfeprovider-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "test" {
+	name         = "tfe-provider-test-workspace-%d"
+	organization = tfe_organization.test.name
+	description  = "A workspace description"
+}
+
+resource "tfe_workspace_settings" "test" {
+	workspace_id = tfe_workspace.test.id
+	# Description defined on tfe_workspace
+}
+`, rInt, rInt)
 }
 
 func TestAccTFEWorkspaceSettings_preservesWorkspaceTagsOnFirstApply(t *testing.T) {
