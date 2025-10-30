@@ -164,7 +164,7 @@ func configure() schema.ConfigureContextFunc {
 			diagnosticWarnings = diag.Diagnostics{
 				diag.Diagnostic{
 					Severity: diag.Warning,
-					Summary:  "Authentication with configuration file is invalid for TFE Provider running on HCP Terraform or Terraform Enterprise",
+					Summary:  "Authentication with configuration files is invalid for TFE Provider running on HCP Terraform or Terraform Enterprise",
 					Detail:   "Use a TFE_TOKEN variable in the workspace or the token argument for the provider. This authentication method will be deprecated in a future version.",
 				},
 			}
