@@ -495,9 +495,21 @@ func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorks
 			ExecutionMode: tfe.Bool(false),
 			AgentPool:     tfe.Bool(false),
 		},
-		Description:        tfe.String(data.Description.ValueString()),
-		AutoApply:          tfe.Bool(data.AutoApply.ValueBool()),
-		AssessmentsEnabled: tfe.Bool(data.AssessmentsEnabled.ValueBool()),
+	}
+
+	description := tfe.String(data.Description.ValueString())
+	if description != nil && *description != "" {
+		updateOptions.Description = description
+	}
+
+	assessmentsEnabled := tfe.Bool(data.AssessmentsEnabled.ValueBool())
+	if assessmentsEnabled != nil {
+		updateOptions.AssessmentsEnabled = assessmentsEnabled
+	}
+
+	autoApply := tfe.Bool(data.AutoApply.ValueBool())
+	if autoApply != nil {
+		updateOptions.AutoApply = autoApply
 	}
 
 	executionMode := data.ExecutionMode.ValueString()
