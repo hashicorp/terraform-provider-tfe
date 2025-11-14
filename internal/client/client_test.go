@@ -138,7 +138,8 @@ credentials "%s" {
 			t.Setenv(k, v)
 		}
 		// Must always skip SSL verification for this test server
-		client, err := GetClient(c.hostname, c.token, true)
+		providerClient, err := GetClient(c.hostname, c.token, true)
+		client := providerClient.TfeClient
 		if c.expectMissingAuth {
 			if !errors.Is(err, ErrMissingAuthToken) {
 				t.Errorf("Expected ErrMissingAuthToken, got %v", err)
