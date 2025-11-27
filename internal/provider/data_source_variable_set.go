@@ -66,10 +66,19 @@ func dataSourceTFEVariableSet() *schema.Resource {
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
+			"stack_ids": {
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Description: "IDs of the stacks this variable set is applied to.",
+			},
+
 			"parent_project_id": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The ID of the parent project for project-owned variable sets.",
 			},
 		},
 	}
@@ -112,7 +121,7 @@ func dataSourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) erro
 
 				// Only now include vars and workspaces to cut down on request load.
 				readOptions := tfe.VariableSetReadOptions{
-					Include: &[]tfe.VariableSetIncludeOpt{tfe.VariableSetWorkspaces, tfe.VariableSetVars},
+					Include: &[]tfe.VariableSetIncludeOpt{tfe.VariableSetWorkspaces, tfe.VariableSetVars, tfe.VariableSetStacks},
 				}
 
 				vs, err = config.Client.VariableSets.Read(ctx, vs.ID, &readOptions)
@@ -137,6 +146,12 @@ func dataSourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) erro
 					projects = append(projects, project.ID)
 				}
 				d.Set("project_ids", projects)
+
+				var stacks []interface{}
+				for _, stack := range vs.Stacks {
+					stacks = append(stacks, stack.ID)
+				}
+				d.Set("stack_ids", stacks)
 
 				d.SetId(vs.ID)
 				return nil
