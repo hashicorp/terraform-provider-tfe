@@ -132,13 +132,17 @@ func (m *mockWorkspaces) UnassignSSHKey(ctx context.Context, workspaceID string)
 }
 
 func (m *mockWorkspaces) ListRemoteStateConsumers(ctx context.Context, workspaceID string, options *tfe.RemoteStateConsumersListOptions) (*tfe.WorkspaceList, error) {
-	if m.options.remoteStateConsumersResponse == "404" {
+	switch m.options.remoteStateConsumersResponse {
+	case "404":
 		return nil, tfe.ErrResourceNotFound
-	} else if m.options.remoteStateConsumersResponse == "500" {
+	case "500":
 		return nil, errors.New("something is broken")
+	default:
+		return &tfe.WorkspaceList{
+			Items:      []*tfe.Workspace{{ID: "ws-456"}},
+			Pagination: &tfe.Pagination{CurrentPage: 1, TotalPages: 1},
+		}, nil
 	}
-
-	return &tfe.WorkspaceList{Items: []*tfe.Workspace{{ID: "ws-456"}}, Pagination: &tfe.Pagination{CurrentPage: 1, TotalPages: 1}}, nil
 }
 
 func (m *mockWorkspaces) AddRemoteStateConsumers(ctx context.Context, workspaceID string, options tfe.WorkspaceAddRemoteStateConsumersOptions) error {

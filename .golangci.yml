@@ -28,6 +28,7 @@ linters:
         - singleCaseSwitch
         - ifElseChain
         - nestingReduce
+        - dupOption
       enabled-tags:
         - diagnostic
         - opinionated
