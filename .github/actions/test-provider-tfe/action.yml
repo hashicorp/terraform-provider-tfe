@@ -127,7 +127,7 @@ runs:
         MOD_TFE: github.com/hashicorp/terraform-provider-tfe/internal/provider
         MOD_VERSION: github.com/hashicorp/terraform-provider-tfe/version
       run: |
-        gotestsum --junitfile summary.xml --format short-verbose -- $MOD_PROVIDER $MOD_TFE $MOD_VERSION -v -timeout=60m -parallel=2 -run "${{ steps.test_split.outputs.run }}"
+        gotestsum --junitfile summary.xml --format testname -- $MOD_PROVIDER $MOD_TFE $MOD_VERSION -v -timeout=60m -parallel=2 -run "${{ steps.test_split.outputs.run }}"
 
     - name: Upload test artifacts
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
