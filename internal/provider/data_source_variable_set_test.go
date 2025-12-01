@@ -60,6 +60,8 @@ func TestAccTFEVariableSetsDataSource_full(t *testing.T) {
 						"data.tfe_variable_set.foobar", "variable_ids.#", "1"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_variable_set.foobar", "project_ids.#", "1"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_variable_set.foobar", "stack_ids.#", "1"),
 				),
 			},
 		},
