@@ -135,7 +135,7 @@ func TestAccTFENoCodeModule_with_version_pin(t *testing.T) {
 							return fmt.Errorf("Bad 'enabled' attribute: %t", nocodeModule.Enabled)
 						}
 
-						if nocodeModule.VersionPin != "1.1.0" {
+						if nocodeModule.VersionPin != "1.0.0" {
 							return fmt.Errorf("Bad 'version_pin' attribute: %s", nocodeModule.VersionPin)
 						}
 
@@ -463,7 +463,7 @@ func testAccTFENoCodeModule_with_variable_options(org string) string {
 	resource "tfe_no_code_module" "sensitive" {
 	organization    = local.organization_name
 	registry_module = tfe_registry_module.sensitive.id
-	version_pin     = "1.1.0"
+	version_pin     = "1.0.0"
 
 	variable_options {
 			name    = "min_lower"
@@ -500,7 +500,7 @@ func testAccTFENoCodeModule_with_version_pin(org string) string {
 	resource "tfe_no_code_module" "sensitive" {
 	organization    = local.organization_name
 	registry_module = tfe_registry_module.sensitive.id
-	version_pin     = "1.1.0"
+	version_pin     = "1.0.0"
 }
 `, org, envGithubRegistryModuleIdentifer, envGithubToken)
 }
