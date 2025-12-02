@@ -68,7 +68,6 @@ func testAccCheckStackVariableSetExists(n string) resource.TestCheckFunc {
 			return fmt.Errorf("No stack variable set ID is set")
 		}
 
-		// Verify the ID format is stack_id_variable_set_id
 		stackID := rs.Primary.Attributes["stack_id"]
 		variableSetID := rs.Primary.Attributes["variable_set_id"]
 
@@ -76,7 +75,6 @@ func testAccCheckStackVariableSetExists(n string) resource.TestCheckFunc {
 			return fmt.Errorf("stack_id or variable_set_id is not set")
 		}
 
-		// Verify we can read the variable set to ensure the association exists
 		vs, err := testAccConfiguredClient.Client.VariableSets.Read(ctx, variableSetID, nil)
 		if err != nil {
 			return fmt.Errorf("Error reading variable set %s: %w", variableSetID, err)
@@ -123,18 +121,16 @@ func testAccCheckStackVariableSetDestroy(s *terraform.State) error {
 
 func testAccStackVariableSet_basic(rInt int) string {
 	return fmt.Sprintf(`
-resource "tfe_organization" "test" {
-  name  = "tst-terraform-%[1]d"
-  email = "admin@company.com"
+data "tfe_organization" "test" {
+  name  = "tst-default-org-%[1]d"
 }
 
 resource "tfe_project" "test" {
-  organization = tfe_organization.test.id
+  organization = data.tfe_organization.test.name
   name         = "tst-project-%[1]d"
 }
 
 resource "tfe_stack" "test" {
-  organization  = tfe_organization.test.id
   project_id    = tfe_project.test.id
   name          = "tst-stack-%[1]d"
   description   = "Test stack for variable set association"
@@ -143,7 +139,7 @@ resource "tfe_stack" "test" {
 resource "tfe_variable_set" "test" {
   name         = "tst-variable-set-%[1]d"
   description  = "Test variable set"
-  organization = tfe_organization.test.id
+  organization = data.tfe_organization.test.name
 }
 
 resource "tfe_stack_variable_set" "test" {
