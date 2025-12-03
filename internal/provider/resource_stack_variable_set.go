@@ -98,29 +98,22 @@ func (r *resourceStackVariableSet) Create(ctx context.Context, req resource.Crea
 		return
 	}
 
-	vSID := plan.VariableSetID.ValueString()
-	stkID := plan.StackID.ValueString()
+	variableSetID := plan.VariableSetID.ValueString()
+	stackID := plan.StackID.ValueString()
 
 	applyOptions := tfe.VariableSetApplyToStacksOptions{}
-	applyOptions.Stacks = append(applyOptions.Stacks, &tfe.Stack{ID: stkID})
+	applyOptions.Stacks = append(applyOptions.Stacks, &tfe.Stack{ID: stackID})
 
-	err := r.config.Client.VariableSets.ApplyToStacks(ctx, vSID, &applyOptions)
-	if err != nil {
+	if err := r.config.Client.VariableSets.ApplyToStacks(ctx, variableSetID, &applyOptions); err != nil {
 		resp.Diagnostics.AddError(
 			"Error applying variable set to stack",
-			fmt.Sprintf("Error applying variable set id %s to stack %s: %s", vSID, stkID, err),
+			fmt.Sprintf("Error applying variable set id %s to stack %s: %s", variableSetID, stackID, err),
 		)
 		return
 	}
 
 	// Set the ID using stack/varset format
-	plan.ID = types.StringValue(fmt.Sprintf("%s/%s", stkID, vSID))
-
-	tflog.Trace(ctx, "Created stack variable set attachment", map[string]interface{}{
-		"stack_id":        stkID,
-		"variable_set_id": vSID,
-	})
-
+	plan.ID = types.StringValue(fmt.Sprintf("%s/%s", stackID, variableSetID))
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
 
@@ -132,28 +125,28 @@ func (r *resourceStackVariableSet) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
-	stkID := state.StackID.ValueString()
-	vSID := state.VariableSetID.ValueString()
+	stackID := state.StackID.ValueString()
+	variableSetID := state.VariableSetID.ValueString()
 
 	tflog.Debug(ctx, "Reading stack variable set attachment", map[string]interface{}{
-		"stack_id":        stkID,
-		"variable_set_id": vSID,
+		"stack_id":        stackID,
+		"variable_set_id": variableSetID,
 	})
 
-	vS, err := r.config.Client.VariableSets.Read(ctx, vSID, &tfe.VariableSetReadOptions{
+	vS, err := r.config.Client.VariableSets.Read(ctx, variableSetID, &tfe.VariableSetReadOptions{
 		Include: &[]tfe.VariableSetIncludeOpt{tfe.VariableSetStacks},
 	})
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			tflog.Debug(ctx, "Variable set not found, removing from state", map[string]interface{}{
-				"variable_set_id": vSID,
+				"variable_set_id": variableSetID,
 			})
 			resp.State.RemoveResource(ctx)
 			return
 		}
 		resp.Diagnostics.AddError(
 			"Error reading variable set",
-			fmt.Sprintf("Error reading variable set %s: %s", vSID, err),
+			fmt.Sprintf("Error reading variable set %s: %s", variableSetID, err),
 		)
 		return
 	}
@@ -161,7 +154,7 @@ func (r *resourceStackVariableSet) Read(ctx context.Context, req resource.ReadRe
 	// Verify stack is still attached
 	found := false
 	for _, stack := range vS.Stacks {
-		if stack.ID == stkID {
+		if stack.ID == stackID {
 			found = true
 			break
 		}
@@ -169,8 +162,8 @@ func (r *resourceStackVariableSet) Read(ctx context.Context, req resource.ReadRe
 
 	if !found {
 		tflog.Debug(ctx, "Stack not attached to variable set, removing from state", map[string]interface{}{
-			"stack_id":        stkID,
-			"variable_set_id": vSID,
+			"stack_id":        stackID,
+			"variable_set_id": variableSetID,
 		})
 		resp.State.RemoveResource(ctx)
 		return
@@ -187,27 +180,25 @@ func (r *resourceStackVariableSet) Delete(ctx context.Context, req resource.Dele
 		return
 	}
 
-	stkID := state.StackID.ValueString()
-	vSID := state.VariableSetID.ValueString()
+	stackID := state.StackID.ValueString()
+	variableSetID := state.VariableSetID.ValueString()
 
 	tflog.Debug(ctx, "Deleting stack variable set attachment", map[string]interface{}{
-		"stack_id":        stkID,
-		"variable_set_id": vSID,
+		"stack_id":        stackID,
+		"variable_set_id": variableSetID,
 	})
 
 	removeOptions := tfe.VariableSetRemoveFromStacksOptions{}
-	removeOptions.Stacks = append(removeOptions.Stacks, &tfe.Stack{ID: stkID})
+	removeOptions.Stacks = append(removeOptions.Stacks, &tfe.Stack{ID: stackID})
 
-	err := r.config.Client.VariableSets.RemoveFromStacks(ctx, vSID, &removeOptions)
+	err := r.config.Client.VariableSets.RemoveFromStacks(ctx, variableSetID, &removeOptions)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error removing stack from variable set",
-			fmt.Sprintf("Error removing stack %s from variable set %s: %s", stkID, vSID, err),
+			fmt.Sprintf("Error removing stack %s from variable set %s: %s", stackID, variableSetID, err),
 		)
 		return
 	}
-
-	tflog.Trace(ctx, "Deleted stack variable set attachment")
 }
 
 func (r *resourceStackVariableSet) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -224,19 +215,27 @@ func (r *resourceStackVariableSet) Update(ctx context.Context, req resource.Upda
 
 func (r *resourceStackVariableSet) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	// Parse the import ID in format: stack_id_variable_set_id
-	// Example: stk-xxx_varset-yyy
+	// Example: st-xxx/varset-yyy
 	id := req.ID
 	parts := strings.Split(id, "/")
 	if len(parts) != 2 {
 		resp.Diagnostics.AddError(
 			"Invalid import ID format",
-			fmt.Sprintf("Expected format: stack/varset (e.g., stk-xxx/varset-yyy), got: %s", id),
+			fmt.Sprintf("Expected format: stack/varset (e.g., st-xxx/varset-yyy), got: %s", id),
 		)
 		return
 	}
 
 	stackID := parts[0]
 	variableSetID := parts[1]
+
+	if !isResourceIDFormat("st", stackID) || !isResourceIDFormat("varset", variableSetID) {
+		resp.Diagnostics.AddError(
+			"Invalid import ID format",
+			fmt.Sprintf("Import ID must be in format: stack/varset (e.g., st-xxx/varset-yyy), got: %s", id),
+		)
+		return
+	}
 
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("stack_id"), stackID)...)
