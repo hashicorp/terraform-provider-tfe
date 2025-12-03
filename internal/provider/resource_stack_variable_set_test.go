@@ -121,12 +121,13 @@ func testAccCheckStackVariableSetDestroy(s *terraform.State) error {
 
 func testAccStackVariableSet_basic(rInt int) string {
 	return fmt.Sprintf(`
-data "tfe_organization" "test" {
-  name  = "tst-default-org-%[1]d"
+resource "tfe_organization" "test" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
 }
 
 resource "tfe_project" "test" {
-  organization = data.tfe_organization.test.name
+  organization = tfe_organization.test.name
   name         = "tst-project-%[1]d"
 }
 
@@ -139,7 +140,7 @@ resource "tfe_stack" "test" {
 resource "tfe_variable_set" "test" {
   name         = "tst-variable-set-%[1]d"
   description  = "Test variable set"
-  organization = data.tfe_organization.test.name
+  organization = tfe_organization.test.name
 }
 
 resource "tfe_stack_variable_set" "test" {
