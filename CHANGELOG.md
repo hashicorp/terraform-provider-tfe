@@ -1,5 +1,10 @@
 ## Unreleased
 
+FEATURES:
+* **New resource**: `r/tfe_stack_variable_set` for managing associations between variable sets and stacks.
+* `r/tfe_variable_set`: Adds `stack_ids` attribute for managing which stacks a variable set is applied to.
+* `d/tfe_variable_set`: Adds `stack_ids` computed attribute to retrieve which stacks a variable set is applied to.
+
 ## v0.71.0
 
 FEATURES:

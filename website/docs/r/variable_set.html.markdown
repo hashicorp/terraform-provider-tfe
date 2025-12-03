@@ -45,6 +45,11 @@ resource "tfe_project_variable_set" "test" {
   variable_set_id = tfe_variable_set.test.id
 }
 
+resource "tfe_stack_variable_set" "test" {
+  stack_id        = tfe_stack.test.id
+  variable_set_id = tfe_variable_set.test.id
+}
+
 resource "tfe_variable" "test-a" {
   key             = "seperate_variable"
   value           = "my_value_name"

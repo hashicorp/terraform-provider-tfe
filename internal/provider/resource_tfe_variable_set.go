@@ -79,6 +79,13 @@ func resourceTFEVariableSet() *schema.Resource {
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
+			"stack_ids": {
+				Type:     schema.TypeSet,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+
 			"parent_project_id": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -144,6 +151,23 @@ func resourceTFEVariableSetCreate(d *schema.ResourceData, meta interface{}) erro
 		}
 	}
 
+	if stackIDs, stacksSet := d.GetOk("stack_ids"); !*options.Global && stacksSet {
+		log.Printf("[DEBUG] Apply variable set %s to stacks %v", name, stackIDs)
+
+		applyOptions := tfe.VariableSetUpdateStacksOptions{}
+		for _, stackID := range stackIDs.(*schema.Set).List() {
+			if val, ok := stackID.(string); ok {
+				applyOptions.Stacks = append(applyOptions.Stacks, &tfe.Stack{ID: val})
+			}
+		}
+
+		_, err := config.Client.VariableSets.UpdateStacks(ctx, variableSet.ID, &applyOptions)
+		if err != nil {
+			return fmt.Errorf(
+				"Error applying variable set %s (%s) to given stacks: %w", name, variableSet.ID, err)
+		}
+	}
+
 	return resourceTFEVariableSetRead(d, meta)
 }
 
@@ -152,7 +176,7 @@ func resourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) error 
 
 	log.Printf("[DEBUG] Read configuration of variable set: %s", d.Id())
 	variableSet, err := config.Client.VariableSets.Read(ctx, d.Id(), &tfe.VariableSetReadOptions{
-		Include: &[]tfe.VariableSetIncludeOpt{tfe.VariableSetWorkspaces},
+		Include: &[]tfe.VariableSetIncludeOpt{tfe.VariableSetWorkspaces, tfe.VariableSetStacks},
 	})
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
@@ -175,6 +199,12 @@ func resourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) error 
 		wids = append(wids, workspace.ID)
 	}
 	d.Set("workspace_ids", wids)
+
+	var sids []interface{}
+	for _, stack := range variableSet.Stacks {
+		sids = append(sids, stack.ID)
+	}
+	d.Set("stack_ids", sids)
 
 	if variableSet.Parent != nil && variableSet.Parent.Project != nil {
 		d.Set("parent_project_id", variableSet.Parent.Project.ID)
@@ -217,6 +247,24 @@ func resourceTFEVariableSetUpdate(d *schema.ResourceData, meta interface{}) erro
 		if err != nil {
 			return fmt.Errorf(
 				"Error applying variable set %s to given workspaces: %w", d.Id(), err)
+		}
+	}
+
+	if d.HasChanges("stack_ids") {
+		stackIDs := d.Get("stack_ids")
+		applyOptions := tfe.VariableSetUpdateStacksOptions{}
+		applyOptions.Stacks = []*tfe.Stack{}
+		for _, stackID := range stackIDs.(*schema.Set).List() {
+			if val, ok := stackID.(string); ok {
+				applyOptions.Stacks = append(applyOptions.Stacks, &tfe.Stack{ID: val})
+			}
+		}
+
+		log.Printf("[DEBUG] Apply variable set %s to stacks %v", d.Id(), stackIDs)
+		_, err := config.Client.VariableSets.UpdateStacks(ctx, d.Id(), &applyOptions)
+		if err != nil {
+			return fmt.Errorf(
+				"Error applying variable set %s to given stacks: %w", d.Id(), err)
 		}
 	}
 
