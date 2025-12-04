@@ -111,15 +111,19 @@ func (p *frameworkProvider) Configure(ctx context.Context, req provider.Configur
 		}
 	}
 
-	tfeClient, err := client.GetClient(data.Hostname.ValueString(), data.Token.ValueString(), data.SSLSkipVerify.ValueBool())
+	providerClient, err := client.GetClient(data.Hostname.ValueString(), data.Token.ValueString(), data.SSLSkipVerify.ValueBool())
 
 	if err != nil {
 		res.Diagnostics.AddError("Failed to initialize HTTP client", err.Error())
 		return
 	}
 
+	if providerClient.SendAuthenticationWarning() {
+		res.Diagnostics.AddWarning("Authentication with configuration files is invalid for TFE Provider running on HCP Terraform or Terraform Enterprise", "Use a TFE_TOKEN variable in the workspace or the token argument for the provider. This authentication method will be deprecated in a future version.")
+	}
+
 	configuredClient := ConfiguredClient{
-		Client:       tfeClient,
+		Client:       providerClient.TfeClient,
 		Organization: data.Organization.ValueString(),
 	}
 
