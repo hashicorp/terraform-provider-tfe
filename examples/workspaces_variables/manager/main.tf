@@ -1,4 +1,4 @@
-# Copyright (c) HashiCorp, Inc.
+# Copyright IBM Corp. 2018, 2025
 # SPDX-License-Identifier: MPL-2.0
 
 # This configuration creates and manages workspaces in HCP Terraform /
