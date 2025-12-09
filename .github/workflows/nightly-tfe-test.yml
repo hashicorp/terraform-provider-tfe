@@ -11,7 +11,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Build nightly tflocal instance
-        uses: hashicorp-forge/terraform-cloud-action/apply@5583d5f554d268ac91b3c37fd0a5e9da2c78c017 # v1.1.0
+        uses: hashicorp-forge/terraform-cloud-action/apply@ceddc497db955594f0b0d5f0bee29c41f60d6d33 # v1.1.1
         with:
           token: ${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}
           organization: "hashicorp-v2"
@@ -30,7 +30,7 @@ jobs:
     steps:
       - name: Fetch Outputs
         id: tflocal
-        uses: hashicorp-forge/terraform-cloud-action/outputs@5583d5f554d268ac91b3c37fd0a5e9da2c78c017 # v1.1.0
+        uses: hashicorp-forge/terraform-cloud-action/outputs@ceddc497db955594f0b0d5f0bee29c41f60d6d33 # v1.1.1
         with:
           token: "${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}"
           organization: hashicorp-v2
@@ -106,7 +106,7 @@ jobs:
           cache: true
 
       - name: Destroy nightly tflocal instance
-        uses: hashicorp-forge/terraform-cloud-action/destroy@5583d5f554d268ac91b3c37fd0a5e9da2c78c017 # v1.1.0
+        uses: hashicorp-forge/terraform-cloud-action/destroy@ceddc497db955594f0b0d5f0bee29c41f60d6d33 # v1.1.1
         with:
           token: ${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}
           organization: "hashicorp-v2"
