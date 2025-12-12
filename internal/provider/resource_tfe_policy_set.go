@@ -89,6 +89,14 @@ func resourceTFEPolicySet() *schema.Resource {
 				Computed:    true,
 			},
 
+			"policy_update_pattern": {
+				Description: "A pattern to match policy set file names",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+
 			"policies_path": {
 				Type:          schema.TypeString,
 				Optional:      true,
@@ -193,6 +201,12 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 		options.PolicyToolVersion = tfe.String(vPolicyToolVersion.(string))
 	}
 
+	if policyUpdatePattern, ok := d.GetOk("policy_update_pattern"); ok {
+		for _, pattern := range policyUpdatePattern.([]interface{}) {
+			options.PolicyUpdatePattern = append(options.PolicyUpdatePattern, tfe.String(pattern.(string)))
+		}
+	}
+
 	if desc, ok := d.GetOk("description"); ok {
 		options.Description = tfe.String(desc.(string))
 	}
@@ -284,6 +298,10 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 		d.Set("policy_tool_version", policySet.PolicyToolVersion)
 	}
 
+	if len(policySet.PolicyUpdatePattern) > 0 {
+		d.Set("policy_update_pattern", policySet.PolicyUpdatePattern)
+	}
+
 	// Set VCS policy set options.
 	var vcsRepo []interface{}
 	if policySet.VCSRepo != nil {
@@ -357,7 +375,7 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	// Don't bother updating the policy set's attributes if they haven't changed
-	if d.HasChange("name") || d.HasChange("description") || d.HasChange("global") || d.HasChange("vcs_repo") || d.HasChange("overridable") || d.HasChange("agent_enabled") || d.HasChange("policy_tool_version") {
+	if d.HasChange("name") || d.HasChange("description") || d.HasChange("global") || d.HasChange("vcs_repo") || d.HasChange("overridable") || d.HasChange("agent_enabled") || d.HasChange("policy_tool_version") || d.HasChange("policy_update_pattern") {
 		// Create a new options struct.
 		options := tfe.PolicySetUpdateOptions{
 			Name:   tfe.String(name),
@@ -380,6 +398,12 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 
 		if policyToolVersion, ok := d.GetOk("policy_tool_version"); ok {
 			options.PolicyToolVersion = tfe.String(policyToolVersion.(string))
+		}
+
+		if policyUpdatePattern, ok := d.GetOk("policy_update_pattern"); ok {
+			for _, pattern := range policyUpdatePattern.([]interface{}) {
+				options.PolicyUpdatePattern = append(options.PolicyUpdatePattern, tfe.String(pattern.(string)))
+			}
 		}
 
 		if v, ok := d.GetOk("vcs_repo"); ok {
