@@ -65,7 +65,7 @@ func testServer(t *testing.T) *httptest.Server {
 	return httptest.NewTLSServer(mux)
 }
 
-func Test_GetClient(t *testing.T) {
+func Test_GetClientt(t *testing.T) {
 	srv := testServer(t)
 	t.Cleanup(func() {
 		srv.Close()
