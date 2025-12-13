@@ -66,7 +66,7 @@ func getTokenFromCreds(services *disco.Disco, hostname svchost.Hostname) (string
 	log.Printf("[DEBUG] Attempting to fetch token from Terraform CLI configuration for hostname %q...", hostname)
 	creds, err := services.CredentialsForHost(hostname)
 
-	extraInfo := ""
+	extraInfo := fmt.Sprintf("Calling getTokenFromCreds with hostname %s", hostname)
 	if err != nil {
 		log.Printf("[DEBUG] Failed to get credentials for %s: %s (ignoring)", hostname, err)
 		extraInfo += fmt.Sprintf("\n[DEBUG] Failed to get credentials for %s: %s (ignoring)", hostname, err)
