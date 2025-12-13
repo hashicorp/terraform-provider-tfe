@@ -5,6 +5,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -145,7 +146,7 @@ credentials "%s" {
 		providerClient, err := GetClient(c.hostname, c.token, true)
 
 		if c.expectMissingAuth {
-			if err == nil {
+			if !errors.Is(err, ErrMissingAuthToken) {
 				t.Errorf("Expected ErrMissingAuthToken, got %v", err)
 			}
 			continue
