@@ -88,7 +88,6 @@ func providerRunningInCloud() bool {
 
 func (pc *ProviderClient) SendAuthenticationWarning() bool {
 	return pc.tokenSource == credentialFiles && providerRunningInCloud()
-
 }
 
 // GetClient encapsulates the logic for configuring a go-tfe client instance for
