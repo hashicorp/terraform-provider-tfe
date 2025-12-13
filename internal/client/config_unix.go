@@ -21,7 +21,7 @@ func configFile() (string, error) {
 	return filepath.Join(dir, ".terraformrc"), nil
 }
 
-func CredentialsFile() (string, error) {
+func credentialsFile() (string, error) {
 	dir, err := configDir()
 	if err != nil {
 		return "", err

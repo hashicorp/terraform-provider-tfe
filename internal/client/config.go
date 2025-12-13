@@ -75,18 +75,18 @@ func cliConfig() CLIHostConfig {
 	// Main CLI config file; might contain manually-entered credentials, and/or
 	// some host service discovery objects. Location is configurable via
 	// environment variables.
-	configFilePath := LocateConfigFile()
+	configFilePath := locateConfigFile()
 	if configFilePath != "" {
-		mainConfig = ReadCliConfigFile(configFilePath)
+		mainConfig = readCliConfigFile(configFilePath)
 	}
 
 	// Credentials file; might contain credentials auto-configured by terraform
 	// login. Location isn't configurable.
-	credentialsFilePath, err := CredentialsFile()
+	credentialsFilePath, err := credentialsFile()
 	if err != nil {
 		log.Printf("[ERROR] Error detecting default credentials file path: %s", err)
 	} else {
-		credentialsConfig = ReadCliConfigFile(credentialsFilePath)
+		credentialsConfig = readCliConfigFile(credentialsFilePath)
 	}
 
 	// Use host service discovery configs from main config file.
@@ -106,7 +106,7 @@ func cliConfig() CLIHostConfig {
 	return combinedConfig
 }
 
-func LocateConfigFile() string {
+func locateConfigFile() string {
 	// To find the main CLI config file, follow Terraform's own logic: try
 	// TF_CLI_CONFIG_FILE, then try TERRAFORM_CONFIG, then try the default
 	// location.
@@ -128,7 +128,7 @@ func LocateConfigFile() string {
 }
 
 // All the errors returned by the helper methods called in this function get ignored (down the road we throw an error when all auth methods have failed.) We only use these errors to log warnings to the user.
-func ReadCliConfigFile(configFilePath string) CLIHostConfig {
+func readCliConfigFile(configFilePath string) CLIHostConfig {
 	config := CLIHostConfig{}
 
 	// Read the CLI config file content.

@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestConfig_LocateConfigFile(t *testing.T) {
+func TestConfig_locateConfigFile(t *testing.T) {
 	originalHome := os.Getenv("HOME")
 	originalTfCliConfigFile := os.Getenv("TF_CLI_CONFIG_FILE")
 	originalTerraformConfig := os.Getenv("TERRAFORM_CONFIG")
@@ -65,7 +65,7 @@ func TestConfig_LocateConfigFile(t *testing.T) {
 	for name, tc := range cases {
 		setup(tc.tfCliConfigFile, tc.terraformConfig)
 
-		fileResult := LocateConfigFile()
+		fileResult := locateConfigFile()
 		if tc.result != fileResult {
 			t.Fatalf("%s: expected config file at %s, got %s", name, tc.result, fileResult)
 		}
