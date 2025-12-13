@@ -165,9 +165,17 @@ func credentialsSource(credentials CredentialsMap) auth.CredentialsSource {
 	return creds
 }
 
+// Using presence of TFC_AGENT_VERSION to determine if this provider is running on HCP Terraform / enterprise
+func providerRunningInCloud() bool {
+	_, present := os.LookupEnv("TFC_AGENT_VERSION")
+	return present
+}
+
 // configure accepts the provider-level configuration values and creates a
 // clientConfiguration using fallback values from the environment or CLI configuration.
-func configure(tfeHost, token string, insecure bool) (*ClientConfiguration, error) {
+func configure(tfeHost, token string, insecure bool) (*ClientConfiguration, bool, error) {
+	sendCredentialDeprecationWarning := false
+
 	if tfeHost == "" {
 		if os.Getenv("TFE_HOSTNAME") != "" {
 			tfeHost = os.Getenv("TFE_HOSTNAME")
@@ -186,7 +194,7 @@ func configure(tfeHost, token string, insecure bool) (*ClientConfiguration, erro
 		v := os.Getenv("TFE_SSL_SKIP_VERIFY")
 		insecure, err = strconv.ParseBool(v)
 		if err != nil {
-			return nil, fmt.Errorf("TFE_SSL_SKIP_VERIFY has unrecognized value %q", v)
+			return nil, sendCredentialDeprecationWarning, fmt.Errorf("TFE_SSL_SKIP_VERIFY has unrecognized value %q", v)
 		}
 	}
 
@@ -198,7 +206,7 @@ func configure(tfeHost, token string, insecure bool) (*ClientConfiguration, erro
 	// Parse the hostname for comparison,
 	hostname, err := svchost.ForComparison(tfeHost)
 	if err != nil {
-		return nil, fmt.Errorf("invalid hostname %q: %w", tfeHost, err)
+		return nil, sendCredentialDeprecationWarning, fmt.Errorf("invalid hostname %q: %w", tfeHost, err)
 	}
 
 	httpClient := tfe.DefaultConfig().HTTPClient
@@ -232,17 +240,19 @@ func configure(tfeHost, token string, insecure bool) (*ClientConfiguration, erro
 
 	// If a token wasn't set in the provider configuration block, try and fetch it
 	// from the environment or from Terraform's CLI configuration or configured credential helper.
+
 	if token == "" {
 		if os.Getenv("TFE_TOKEN") != "" {
 			token = getTokenFromEnv()
 		} else {
+			sendCredentialDeprecationWarning = providerRunningInCloud()
 			token = getTokenFromCreds(services, hostname)
 		}
 	}
 
 	// If we still don't have a token at this point, we return an error.
 	if token == "" {
-		return nil, ErrMissingAuthToken
+		return nil, sendCredentialDeprecationWarning, ErrMissingAuthToken
 	}
 
 	return &ClientConfiguration{
@@ -251,5 +261,5 @@ func configure(tfeHost, token string, insecure bool) (*ClientConfiguration, erro
 		TFEHost:    hostname,
 		Token:      token,
 		Insecure:   insecure,
-	}, nil
+	}, sendCredentialDeprecationWarning, nil
 }
