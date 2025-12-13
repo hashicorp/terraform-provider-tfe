@@ -273,15 +273,15 @@ func TestConfigureEnvOnCloudUsingConfigFiles(t *testing.T) {
 	// and using a token from configuration files
 	envToken := os.Getenv("TFE_TOKEN")
 	envHostname := os.Getenv("TFE_HOSTNAME")
-	origTFCAgentVersion := os.Getenv("TFC_AGENT_VERSION")
+	origTfcAgentVersion := os.Getenv("TFC_AGENT_VERSION")
 	origTfCliConfigFile := os.Getenv("TF_CLI_CONFIG_FILE")
 
 	reset := func() {
 		os.Setenv("TFE_TOKEN", envToken)
 		os.Setenv("TFE_HOSTNAME", envHostname)
 
-		if origTFCAgentVersion != "" {
-			os.Setenv("TFC_AGENT_VERSION", origTFCAgentVersion)
+		if origTfcAgentVersion != "" {
+			os.Setenv("TFC_AGENT_VERSION", origTfcAgentVersion)
 		} else {
 			os.Unsetenv("TFC_AGENT_VERSION")
 		}

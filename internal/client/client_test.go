@@ -176,8 +176,13 @@ credentials "%s" {
 func TestClient_sendAuthenticationWarning(t *testing.T) {
 	// This tests that the SendAuthenticationWarning function returns true when the
 	// token source is credentialFiles and the TFE_AGENT_VERSION env var is set
+	origTfcAgentVersion := os.Getenv("TFC_AGENT_VERSION")
 	reset := func() {
-		os.Unsetenv("TFC_AGENT_VERSION")
+		if origTfcAgentVersion != "" {
+			os.Setenv("TFC_AGENT_VERSION", origTfcAgentVersion)
+		} else {
+			os.Unsetenv("TFC_AGENT_VERSION")
+		}
 	}
 	defer reset()
 
@@ -206,6 +211,8 @@ func TestClient_sendAuthenticationWarning(t *testing.T) {
 	for name, tc := range cases {
 		if tc.tfcAgentVersionEnvVariableSet {
 			os.Setenv("TFC_AGENT_VERSION", "1.0")
+		} else {
+			os.Unsetenv("TFC_AGENT_VERSION")
 		}
 
 		providerClient := ProviderClient{
@@ -217,6 +224,5 @@ func TestClient_sendAuthenticationWarning(t *testing.T) {
 		if result != tc.expectResult {
 			t.Fatalf("%s: SendAuthenticationWarning() expected result: %t, got %t", name, tc.expectResult, result)
 		}
-		reset()
 	}
 }
