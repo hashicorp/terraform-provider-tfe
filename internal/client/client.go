@@ -62,16 +62,19 @@ func getTokenFromEnv() string {
 	return os.Getenv("TFE_TOKEN")
 }
 
-func getTokenFromCreds(services *disco.Disco, hostname svchost.Hostname) string {
+func getTokenFromCreds(services *disco.Disco, hostname svchost.Hostname) (string, string) {
 	log.Printf("[DEBUG] Attempting to fetch token from Terraform CLI configuration for hostname %q...", hostname)
 	creds, err := services.CredentialsForHost(hostname)
+
+	extraInfo := ""
 	if err != nil {
 		log.Printf("[DEBUG] Failed to get credentials for %s: %s (ignoring)", hostname, err)
+		extraInfo += fmt.Sprintf("\n[DEBUG] Failed to get credentials for %s: %s (ignoring)", hostname, err)
 	}
 	if creds != nil {
-		return creds.Token()
+		return creds.Token(), extraInfo
 	}
-	return ""
+	return "", extraInfo
 }
 
 // TFE Client along with other necessary information for the provider to run it

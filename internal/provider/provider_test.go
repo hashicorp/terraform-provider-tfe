@@ -293,8 +293,10 @@ func TestConfigureEnvOnCloudUsingConfigFiles(t *testing.T) {
 	expectedDetail := "Use a TFE_TOKEN variable in the workspace or the token argument for the provider. This authentication method will be deprecated in a future version."
 
 	onlyDiag := diags[0]
+	t.Logf("Want to see if this shows up in Datadog flaky test")
+
 	if onlyDiag.Severity != expectedSeverity {
-		t.Fatalf("Expected Diagnostic to have Severity %d, got %d. Also got summary: %s. And detail: %s.", expectedSeverity, onlyDiag.Severity, onlyDiag.Summary, onlyDiag.Detail)
+		t.Fatalf("Expected Diagnostic to have Severity %d, got %d. Also got summary: %s. And detail: %s", expectedSeverity, onlyDiag.Severity, onlyDiag.Summary, onlyDiag.Detail)
 	}
 	if onlyDiag.Summary != expectedSummary {
 		t.Fatalf("Expected Diagnostic to have Summary %s, got %s. Also got detail %s", expectedSummary, onlyDiag.Summary, onlyDiag.Detail)
