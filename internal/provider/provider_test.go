@@ -272,35 +272,55 @@ func TestConfigureEnvOnCloudUsingConfigFiles(t *testing.T) {
 	// tests that the provider sends a warning when running on cloud (checked using TFE_AGENT_VERSION)
 	// and using a token from configuration files
 	envToken := os.Getenv("TFE_TOKEN")
+	envHostname := os.Getenv("TFE_HOSTNAME")
+	origTFCAgentVersion := os.Getenv("TFC_AGENT_VERSION")
+	origTfCliConfigFile := os.Getenv("TF_CLI_CONFIG_FILE")
+
 	reset := func() {
 		os.Setenv("TFE_TOKEN", envToken)
-		os.Unsetenv("TFC_AGENT_VERSION")
+		os.Setenv("TFE_HOSTNAME", envHostname)
+
+		if origTFCAgentVersion != "" {
+			os.Setenv("TFC_AGENT_VERSION", origTFCAgentVersion)
+		} else {
+			os.Unsetenv("TFC_AGENT_VERSION")
+		}
+
+		if origTfCliConfigFile != "" {
+			os.Setenv("TF_CLI_CONFIG_FILE", origTfCliConfigFile)
+		} else {
+			os.Unsetenv("TF_CLI_CONFIG_FILE")
+		}
 	}
 	defer reset()
 
 	// temporarily removes TFE_TOKEN so token will be from configuration files
 	os.Unsetenv("TFE_TOKEN")
 	os.Setenv("TFC_AGENT_VERSION", "1.0")
+	os.Setenv("TFE_HOSTNAME", "app.terraform.io")
+	os.Setenv("TF_CLI_CONFIG_FILE", "test-fixtures/cli-config-files/terraformrc")
 
 	provider := Provider()
 	diags := provider.Configure(context.Background(), &sdkTerraform.ResourceConfig{})
 
 	if len(diags) != 1 {
-		t.Fatalf("Expecting 1 diagnostic, received %d", len(diags))
+		t.Fatalf("Expected 1 diagnostic, received %d", len(diags))
 	}
 	expectedSeverity := diag.Warning
 	expectedSummary := "Authentication with configuration files is invalid for TFE Provider running on HCP Terraform or Terraform Enterprise"
 	expectedDetail := "Use a TFE_TOKEN variable in the workspace or the token argument for the provider. This authentication method will be deprecated in a future version."
 
 	onlyDiag := diags[0]
+	t.Logf("Want to see if this shows up in Datadog flaky test")
+
 	if onlyDiag.Severity != expectedSeverity {
-		t.Fatalf("Expected Diagnostic to have Severity %d, got %d", onlyDiag.Severity, expectedSeverity)
+		t.Fatalf("Expected Diagnostic to have Severity %d, got %d. Also got summary: %s. And detail: %s", expectedSeverity, onlyDiag.Severity, onlyDiag.Summary, onlyDiag.Detail)
 	}
 	if onlyDiag.Summary != expectedSummary {
-		t.Fatalf("Expected Diagnostic to have Summary %s, got %s", onlyDiag.Summary, expectedSummary)
+		t.Fatalf("Expected Diagnostic to have Summary %s, got %s. Also got detail %s", expectedSummary, onlyDiag.Summary, onlyDiag.Detail)
 	}
 	if onlyDiag.Detail != expectedDetail {
-		t.Fatalf("Expected Diagnostic to have Detail %s, got %s", onlyDiag.Detail, expectedDetail)
+		t.Fatalf("Expected Diagnostic to have Detail %s, got %s. Also got summary %s.", expectedDetail, onlyDiag.Detail, onlyDiag.Summary)
 	}
 }
 
