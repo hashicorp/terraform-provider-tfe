@@ -271,8 +271,6 @@ func configure(tfeHost, token string, insecure bool) (*ClientConfiguration, erro
 	// If we still don't have a token at this point, we return an error.
 	if token == "" {
 		return nil, fmt.Errorf("Didnt get required token. Debug info: %s", infoBuffer)
-	} else {
-		return nil, fmt.Errorf("Did get required token. Erroring anyway so I can check logs in CI. Debug info: %s", infoBuffer)
 	}
 
 	return &ClientConfiguration{
