@@ -292,9 +292,17 @@ func TestConfigureEnvOnCloudUsingConfigFiles(t *testing.T) {
 	expectedSummary := "Authentication with configuration files is invalid for TFE Provider running on HCP Terraform or Terraform Enterprise"
 	expectedDetail := "Use a TFE_TOKEN variable in the workspace or the token argument for the provider. This authentication method will be deprecated in a future version."
 
+	credentialsFilePath, _ := client.CredentialsFile()
+	credentialsConfig := client.ReadCliConfigFile(credentialsFilePath)
+
+	configFilePath := client.LocateConfigFile()
+	mainConfig := client.ReadCliConfigFile(configFilePath)
+
+	debugInfo := fmt.Sprintf("Main config file is at %s and contains\n: %v\n. Credentials file is at %s and contains\n: %v\n. Thanks thats all", configFilePath, mainConfig.Credentials, credentialsFilePath, credentialsConfig.Credentials)
+
 	onlyDiag := diags[0]
 	if onlyDiag.Severity != expectedSeverity {
-		t.Fatalf("Expected Diagnostic to have Severity %d, got %d", onlyDiag.Severity, expectedSeverity)
+		t.Fatalf("Expected Diagnostic to have Severity %d, got %d. Debug info: %s", onlyDiag.Severity, expectedSeverity, debugInfo)
 	}
 	if onlyDiag.Summary != expectedSummary {
 		t.Fatalf("Expected Diagnostic to have Summary %s, got %s", onlyDiag.Summary, expectedSummary)
@@ -302,6 +310,8 @@ func TestConfigureEnvOnCloudUsingConfigFiles(t *testing.T) {
 	if onlyDiag.Detail != expectedDetail {
 		t.Fatalf("Expected Diagnostic to have Detail %s, got %s", onlyDiag.Detail, expectedDetail)
 	}
+
+	t.Fatalf("Did pass the test but I still want debug info: %s", debugInfo)
 }
 
 // The TFE Provider tests use these environment variables, which are set in the
