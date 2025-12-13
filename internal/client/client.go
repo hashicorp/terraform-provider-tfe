@@ -77,7 +77,7 @@ func getTokenFromCreds(services *disco.Disco, hostname svchost.Hostname) string 
 // TFE Client along with other necessary information for the provider to run it
 type ProviderClient struct {
 	TfeClient   *tfe.Client
-	tokenSource TokenSource
+	tokenSource tokenSource
 }
 
 // Using presence of TFC_AGENT_VERSION to determine if this provider is running on HCP Terraform / enterprise
@@ -87,7 +87,7 @@ func providerRunningInCloud() bool {
 }
 
 func (pc *ProviderClient) SendAuthenticationWarning() bool {
-	return pc.tokenSource == CredentialFiles && providerRunningInCloud()
+	return pc.tokenSource == credentialFiles && providerRunningInCloud()
 
 }
 
@@ -100,7 +100,6 @@ func (pc *ProviderClient) SendAuthenticationWarning() bool {
 // parameters
 func GetClient(tfeHost, token string, insecure bool) (*ProviderClient, error) {
 	config, err := configure(tfeHost, token, insecure)
-
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +110,7 @@ func GetClient(tfeHost, token string, insecure bool) (*ProviderClient, error) {
 	// Try to retrieve the client from cache
 	cached := clientCache.GetByConfig(config)
 	if cached != nil {
-		return &ProviderClient{cached, config.TokenSource}, nil
+		return &ProviderClient{cached, config.tokenSource}, nil
 	}
 
 	// Discover the Terraform Enterprise address.
@@ -175,7 +174,7 @@ func GetClient(tfeHost, token string, insecure bool) (*ProviderClient, error) {
 	client.RetryServerErrors(true)
 	clientCache.Set(client, config)
 
-	return &ProviderClient{client, config.TokenSource}, nil
+	return &ProviderClient{client, config.tokenSource}, nil
 }
 
 // CheckConstraints checks service version constrains against our own

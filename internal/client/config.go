@@ -41,12 +41,12 @@ type ConfigHost struct {
 	Services map[string]interface{} `hcl:"services"`
 }
 
-type TokenSource int
+type tokenSource int
 
 const (
-	ProviderArgument TokenSource = iota
-	EnvironmentVariable
-	CredentialFiles
+	providerArgument tokenSource = iota
+	environmentVariable
+	credentialFiles
 )
 
 // ClientConfiguration is the refined information needed to configureClient a tfe.Client
@@ -55,7 +55,7 @@ type ClientConfiguration struct {
 	HTTPClient  *http.Client
 	TFEHost     svchost.Hostname
 	Token       string
-	TokenSource TokenSource
+	tokenSource tokenSource
 	Insecure    bool
 }
 
@@ -242,14 +242,14 @@ func configure(tfeHost, token string, insecure bool) (*ClientConfiguration, erro
 	// If a token wasn't set in the provider configuration block, try and fetch it
 	// from the environment or from Terraform's CLI configuration or configured credential helper.
 
-	tokenSource := ProviderArgument
+	tokenSource := providerArgument
 	if token == "" {
 		if os.Getenv("TFE_TOKEN") != "" {
 			token = getTokenFromEnv()
-			tokenSource = EnvironmentVariable
+			tokenSource = environmentVariable
 		} else {
 			token = getTokenFromCreds(services, hostname)
-			tokenSource = CredentialFiles
+			tokenSource = credentialFiles
 		}
 	}
 
@@ -263,7 +263,7 @@ func configure(tfeHost, token string, insecure bool) (*ClientConfiguration, erro
 		HTTPClient:  httpClient,
 		TFEHost:     hostname,
 		Token:       token,
-		TokenSource: tokenSource,
+		tokenSource: tokenSource,
 		Insecure:    insecure,
 	}, nil
 }
