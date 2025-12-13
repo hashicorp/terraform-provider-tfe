@@ -72,8 +72,10 @@ func getTokenFromCreds(services *disco.Disco, hostname svchost.Hostname) (string
 		extraInfo += fmt.Sprintf("\n[DEBUG] Failed to get credentials for %s: %s (ignoring)", hostname, err)
 	}
 	if creds != nil {
+		extraInfo += fmt.Sprintf("Creds not nil. token: %s", creds.Token())
 		return creds.Token(), extraInfo
 	}
+	extraInfo += fmt.Sprintf("Returning blank token bc creds are nil")
 	return "", extraInfo
 }
 
