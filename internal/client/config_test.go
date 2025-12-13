@@ -138,7 +138,7 @@ func TestConfig_cliConfig(t *testing.T) {
 	for name, tc := range cases {
 		os.Setenv("HOME", tc.home)
 		os.Setenv("TF_CLI_CONFIG_FILE", tc.rcfile)
-		config := cliConfig()
+		config, _ := cliConfig()
 		credentialsCount := len(config.Credentials)
 		if credentialsCount != tc.expectCount {
 			t.Fatalf("%s: expected %d credentials, got %d", name, tc.expectCount, credentialsCount)
