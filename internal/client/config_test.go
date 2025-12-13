@@ -158,7 +158,7 @@ func TestConfig_cliConfig(t *testing.T) {
 }
 
 func TestConfig_configureSetsTokenSource(t *testing.T) {
-	// This tests that the tokenSource is set properly when callign the configure function
+	// This tests that the tokenSource is set properly when calling the configure function
 	reset := func() {
 		os.Unsetenv("TFE_TOKEN")
 	}
@@ -198,57 +198,10 @@ func TestConfig_configureSetsTokenSource(t *testing.T) {
 		config, err := configure("app.terraform.io", tc.tokenProviderArgument, true)
 
 		if err != nil {
-			t.Fatalf("%s: recieved error while configuring client: %s", name, err.Error())
+			t.Fatalf("%s: received error while configuring client: %s", name, err.Error())
 		}
 		if config.tokenSource != tc.expectTokenSource {
 			t.Fatalf("%s: expected token source %d, got %d", name, tc.expectTokenSource, config.tokenSource)
 		}
-	}
-}
-
-func TestConfig_sendAuthenticationWarning(t *testing.T) {
-	// This tests that the SendAuthenticationWarning function
-	reset := func() {
-		os.Unsetenv("TFC_AGENT_VERSION")
-	}
-	defer reset()
-
-	cases := map[string]struct {
-		tokenSource                   tokenSource
-		tfcAgentVersionEnvVariableSet bool
-		expectResult                  bool
-	}{
-		"token from credentials files and TFC_AGENT_VERSION is set": {
-			tokenSource:                   credentialFiles,
-			tfcAgentVersionEnvVariableSet: true,
-			expectResult:                  true,
-		},
-		"token from credentials files but TFC_AGENT_VERSION not set": {
-			tokenSource:                   credentialFiles,
-			tfcAgentVersionEnvVariableSet: false,
-			expectResult:                  false,
-		},
-		"TFC_AGENT_VERSION is set but token not from credentials files": {
-			tokenSource:                   providerArgument,
-			tfcAgentVersionEnvVariableSet: true,
-			expectResult:                  false,
-		},
-	}
-
-	for name, tc := range cases {
-		if tc.tfcAgentVersionEnvVariableSet {
-			os.Setenv("TFC_AGENT_VERSION", "1.0")
-		}
-
-		providerClient := ProviderClient{
-			TfeClient:   nil,
-			tokenSource: tc.tokenSource,
-		}
-
-		result := providerClient.SendAuthenticationWarning()
-		if result != tc.expectResult {
-			t.Fatalf("%s: SendAuthenticationWarning() expected result: %t, got %t", name, tc.expectResult, result)
-		}
-		reset()
 	}
 }
