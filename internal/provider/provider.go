@@ -153,19 +153,30 @@ func configure() schema.ConfigureContextFunc {
 			providerOrganization = os.Getenv("TFE_ORGANIZATION")
 		}
 
-		tfeClient, err := configureClient(rd)
+		tfeClient, sendCredentialDeprecationWarning, err := configureClient(rd)
 		if err != nil {
 			return nil, diag.FromErr(err)
+		}
+
+		var diagnosticWarnings diag.Diagnostics = nil
+		if sendCredentialDeprecationWarning {
+			diagnosticWarnings = diag.Diagnostics{
+				diag.Diagnostic{
+					Severity: diag.Warning,
+					Summary:  "Authentication method invalid for TFE Provider with HCP Terraform and Terraform Enterprise",
+					Detail:   "Use a TFE_TOKEN variable in the workspace or the token argument for the provider. This authentication method will be deprecated in a future version.",
+				},
+			}
 		}
 
 		return ConfiguredClient{
 			tfeClient,
 			providerOrganization,
-		}, nil
+		}, diagnosticWarnings
 	}
 }
 
-func configureClient(d *schema.ResourceData) (*tfe.Client, error) {
+func configureClient(d *schema.ResourceData) (*tfe.Client, bool, error) {
 	hostname := d.Get("hostname").(string)
 	token := d.Get("token").(string)
 	insecure := d.Get("ssl_skip_verify").(bool)
