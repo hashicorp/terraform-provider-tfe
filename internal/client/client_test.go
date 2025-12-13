@@ -139,7 +139,7 @@ credentials "%s" {
 		}
 		// Must always skip SSL verification for this test server
 		providerClient, err := GetClient(c.hostname, c.token, true)
-		client := providerClient.TfeClient
+
 		if c.expectMissingAuth {
 			if !errors.Is(err, ErrMissingAuthToken) {
 				t.Errorf("Expected ErrMissingAuthToken, got %v", err)
@@ -151,6 +151,7 @@ credentials "%s" {
 			t.Errorf("Unexpected error when getting client: %q", err)
 		}
 
+		client := providerClient.TfeClient
 		if client == nil {
 			t.Fatal("Unexpected client was nil")
 		}
