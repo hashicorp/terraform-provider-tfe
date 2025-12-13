@@ -75,7 +75,7 @@ func getTokenFromCreds(services *disco.Disco, hostname svchost.Hostname) (string
 		extraInfo += fmt.Sprintf("Creds not nil. token: %s", creds.Token())
 		return creds.Token(), extraInfo
 	}
-	extraInfo += fmt.Sprintf("Returning blank token bc creds are nil")
+	extraInfo += "Returning blank token bc creds are nil"
 	return "", extraInfo
 }
 
