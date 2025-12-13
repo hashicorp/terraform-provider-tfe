@@ -67,8 +67,7 @@ func (c ClientConfiguration) Key() string {
 
 // cliConfig tries to find and parse the configuration of the Terraform CLI.
 // This is an optional step, so any errors are ignored.
-func cliConfig() (CLIHostConfig, string) {
-	extraInfo := ""
+func cliConfig() CLIHostConfig {
 	mainConfig := CLIHostConfig{}
 	credentialsConfig := CLIHostConfig{}
 	combinedConfig := CLIHostConfig{}
@@ -77,10 +76,8 @@ func cliConfig() (CLIHostConfig, string) {
 	// some host service discovery objects. Location is configurable via
 	// environment variables.
 	configFilePath := locateConfigFile()
-	log.Printf("[DEBUG] Found config file at %s", configFilePath)
 	if configFilePath != "" {
 		mainConfig = readCliConfigFile(configFilePath)
-		extraInfo += fmt.Sprintf("\nMain config credentials: %v\n", mainConfig.Credentials)
 	}
 
 	// Credentials file; might contain credentials auto-configured by terraform
@@ -88,12 +85,8 @@ func cliConfig() (CLIHostConfig, string) {
 	credentialsFilePath, err := credentialsFile()
 	if err != nil {
 		log.Printf("[ERROR] Error detecting default credentials file path: %s", err)
-		extraInfo += fmt.Sprintf("(error detecting default creds filepath: %s)\n", err)
 	} else {
-		log.Printf("[DEBUG] Found credentials file at %s", credentialsFilePath)
-
 		credentialsConfig = readCliConfigFile(credentialsFilePath)
-		extraInfo += fmt.Sprintf("\nCredentials config credentials: %v\n", credentialsConfig.Credentials)
 	}
 
 	// Use host service discovery configs from main config file.
@@ -110,8 +103,7 @@ func cliConfig() (CLIHostConfig, string) {
 		combinedConfig.Credentials[host] = creds
 	}
 
-	extraInfo += fmt.Sprintf("\nCombined config credentials: %v\n", combinedConfig.Credentials)
-	return combinedConfig, fmt.Sprintf("\nConfig filepath: %s, Credentials filepath: %s\nExtra Info: %s", configFilePath, credentialsFilePath, extraInfo)
+	return combinedConfig
 }
 
 func locateConfigFile() string {
@@ -185,8 +177,6 @@ func credentialsSource(credentials CredentialsMap) auth.CredentialsSource {
 // configure accepts the provider-level configuration values and creates a
 // clientConfiguration using fallback values from the environment or CLI configuration.
 func configure(tfeHost, token string, insecure bool) (*ClientConfiguration, error) {
-	infoBuffer := ""
-
 	if tfeHost == "" {
 		if os.Getenv("TFE_HOSTNAME") != "" {
 			tfeHost = os.Getenv("TFE_HOSTNAME")
@@ -231,8 +221,7 @@ func configure(tfeHost, token string, insecure bool) (*ClientConfiguration, erro
 	transport.TLSClientConfig.InsecureSkipVerify = insecure
 
 	// Get the Terraform CLI configuration.
-	config, extraInfo := cliConfig()
-	infoBuffer += extraInfo
+	config := cliConfig()
 
 	// Create a new credential source and service discovery object.
 	credsSrc := credentialsSource(config.Credentials)
@@ -252,25 +241,21 @@ func configure(tfeHost, token string, insecure bool) (*ClientConfiguration, erro
 
 	// If a token wasn't set in the provider configuration block, try and fetch it
 	// from the environment or from Terraform's CLI configuration or configured credential helper.
+
 	tokenSource := providerArgument
 	if token == "" {
 		if os.Getenv("TFE_TOKEN") != "" {
-			infoBuffer += "\nUsing token from env variable"
-
 			token = getTokenFromEnv()
 			tokenSource = environmentVariable
 		} else {
-			infoBuffer += "\nUsing token from config files"
-			extraInfo2 := ""
-			token, extraInfo2 = getTokenFromCreds(services, hostname)
+			token = getTokenFromCreds(services, hostname)
 			tokenSource = credentialFiles
-			infoBuffer += extraInfo2
 		}
 	}
 
 	// If we still don't have a token at this point, we return an error.
 	if token == "" {
-		return nil, fmt.Errorf("Didnt get required token. Debug info: %s", infoBuffer)
+		return nil, ErrMissingAuthToken
 	}
 
 	return &ClientConfiguration{
