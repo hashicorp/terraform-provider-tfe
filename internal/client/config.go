@@ -68,6 +68,7 @@ func (c ClientConfiguration) Key() string {
 // cliConfig tries to find and parse the configuration of the Terraform CLI.
 // This is an optional step, so any errors are ignored.
 func cliConfig() (CLIHostConfig, string) {
+	extraInfo := ""
 	mainConfig := CLIHostConfig{}
 	credentialsConfig := CLIHostConfig{}
 	combinedConfig := CLIHostConfig{}
@@ -79,6 +80,7 @@ func cliConfig() (CLIHostConfig, string) {
 	log.Printf("[DEBUG] Found config file at %s", configFilePath)
 	if configFilePath != "" {
 		mainConfig = readCliConfigFile(configFilePath)
+		extraInfo += fmt.Sprintf("\nMain config credentials: %v\n", mainConfig.Credentials)
 	}
 
 	// Credentials file; might contain credentials auto-configured by terraform
@@ -86,11 +88,12 @@ func cliConfig() (CLIHostConfig, string) {
 	credentialsFilePath, err := credentialsFile()
 	if err != nil {
 		log.Printf("[ERROR] Error detecting default credentials file path: %s", err)
-		credentialsFilePath += fmt.Sprintf("(error detecting default creds filepath: %s)\n", err)
+		extraInfo += fmt.Sprintf("(error detecting default creds filepath: %s)\n", err)
 	} else {
 		log.Printf("[DEBUG] Found credentials file at %s", credentialsFilePath)
 
 		credentialsConfig = readCliConfigFile(credentialsFilePath)
+		extraInfo += fmt.Sprintf("\nCredentials config credentials: %v\n", credentialsConfig.Credentials)
 	}
 
 	// Use host service discovery configs from main config file.
@@ -107,7 +110,8 @@ func cliConfig() (CLIHostConfig, string) {
 		combinedConfig.Credentials[host] = creds
 	}
 
-	return combinedConfig, fmt.Sprintf("\nConfig filepath: %s, Credentials filepath: %s\n", configFilePath, credentialsFilePath)
+	extraInfo += fmt.Sprintf("\nCombined config credentials: %v\n", combinedConfig.Credentials)
+	return combinedConfig, fmt.Sprintf("\nConfig filepath: %s, Credentials filepath: %s\nExtra Info: %s", configFilePath, credentialsFilePath, extraInfo)
 }
 
 func locateConfigFile() string {
