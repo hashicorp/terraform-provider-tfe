@@ -268,6 +268,42 @@ func TestConfigureEnvOrganization(t *testing.T) {
 	}
 }
 
+func TestConfigureEnvOnCloudUsingConfigFiles(t *testing.T) {
+	// tests that the provider sends a warning when running on cloud (checked using TFE_AGENT_VERSION)
+	// and using a token from configuration files
+	envToken := os.Getenv("TFE_TOKEN")
+	reset := func() {
+		os.Setenv("TFE_TOKEN", envToken)
+		os.Unsetenv("TFC_AGENT_VERSION")
+	}
+	defer reset()
+
+	// temporarily removes TFE_TOKEN so token will be from configuration files
+	os.Unsetenv("TFE_TOKEN")
+	os.Setenv("TFC_AGENT_VERSION", "1.0")
+
+	provider := Provider()
+	diags := provider.Configure(context.Background(), &sdkTerraform.ResourceConfig{})
+
+	if len(diags) != 1 {
+		t.Fatalf("Expecting 1 diagnostic, received %d", len(diags))
+	}
+	expectedSeverity := diag.Warning
+	expectedSummary := "Authentication with configuration files is invalid for TFE Provider running on HCP Terraform or Terraform Enterprise"
+	expectedDetail := "Use a TFE_TOKEN variable in the workspace or the token argument for the provider. This authentication method will be deprecated in a future version."
+
+	onlyDiag := diags[0]
+	if onlyDiag.Severity != expectedSeverity {
+		t.Fatalf("Expected Diagnostic to have Severity %d, got %d", onlyDiag.Severity, expectedSeverity)
+	}
+	if onlyDiag.Summary != expectedSummary {
+		t.Fatalf("Expected Diagnostic to have Summary %s, got %s", onlyDiag.Summary, expectedSummary)
+	}
+	if onlyDiag.Detail != expectedDetail {
+		t.Fatalf("Expected Diagnostic to have Detail %s, got %s", onlyDiag.Detail, expectedDetail)
+	}
+}
+
 // The TFE Provider tests use these environment variables, which are set in the
 // GitHub Action workflow file .github/workflows/ci.yml.
 func testAccGithubPreCheck(t *testing.T) {
