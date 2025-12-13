@@ -74,6 +74,23 @@ func getTokenFromCreds(services *disco.Disco, hostname svchost.Hostname) string 
 	return ""
 }
 
+// TFE Client along with other necessary information for the provider to run it
+type ProviderClient struct {
+	TfeClient   *tfe.Client
+	tokenSource TokenSource
+}
+
+// Using presence of TFC_AGENT_VERSION to determine if this provider is running on HCP Terraform / enterprise
+func providerRunningInCloud() bool {
+	_, envVariablePresent := os.LookupEnv("TFC_AGENT_VERSION")
+	return envVariablePresent
+}
+
+func (pc *ProviderClient) SendAuthenticationWarning() bool {
+	return pc.tokenSource == CredentialFiles && providerRunningInCloud()
+
+}
+
 // GetClient encapsulates the logic for configuring a go-tfe client instance for
 // the provider, including fallback to values from environment variables. This
 // is useful because we're muxing multiple provider servers together and each
@@ -81,10 +98,11 @@ func getTokenFromCreds(services *disco.Disco, hostname svchost.Hostname) string 
 //
 // Internally, this function caches configured clients using the specified
 // parameters
-func GetClient(tfeHost, token string, insecure bool) (*tfe.Client, bool, error) {
-	config, sendCredentialDeprecationWarning, err := configure(tfeHost, token, insecure)
+func GetClient(tfeHost, token string, insecure bool) (*ProviderClient, error) {
+	config, err := configure(tfeHost, token, insecure)
+
 	if err != nil {
-		return nil, sendCredentialDeprecationWarning, err
+		return nil, err
 	}
 
 	clientCache.Lock()
@@ -93,13 +111,13 @@ func GetClient(tfeHost, token string, insecure bool) (*tfe.Client, bool, error) 
 	// Try to retrieve the client from cache
 	cached := clientCache.GetByConfig(config)
 	if cached != nil {
-		return cached, sendCredentialDeprecationWarning, nil
+		return &ProviderClient{cached, config.TokenSource}, nil
 	}
 
 	// Discover the Terraform Enterprise address.
 	host, err := config.Services.Discover(config.TFEHost)
 	if err != nil {
-		return nil, sendCredentialDeprecationWarning, fmt.Errorf("failed to create client: %w", err)
+		return nil, fmt.Errorf("failed to create client: %w", err)
 	}
 
 	// Get the full Terraform Enterprise service address.
@@ -109,7 +127,7 @@ func GetClient(tfeHost, token string, insecure bool) (*tfe.Client, bool, error) 
 		service, err := host.ServiceURL(tfeServiceID)
 		target := &disco.ErrVersionNotSupported{}
 		if err != nil && !errors.As(err, &target) {
-			return nil, sendCredentialDeprecationWarning, fmt.Errorf("failed to create client: %w", err)
+			return nil, fmt.Errorf("failed to create client: %w", err)
 		}
 
 		// If discoErr is nil we save the first error. When multiple services
@@ -133,7 +151,7 @@ func GetClient(tfeHost, token string, insecure bool) (*tfe.Client, bool, error) 
 		// First check any constraints we might have received.
 		if constraints != nil {
 			if err := CheckConstraints(constraints); err != nil {
-				return nil, sendCredentialDeprecationWarning, err
+				return nil, err
 			}
 		}
 	}
@@ -141,7 +159,7 @@ func GetClient(tfeHost, token string, insecure bool) (*tfe.Client, bool, error) 
 	// When we don't have any constraints errors, also check for discovery
 	// errors before we continue.
 	if discoErr != nil {
-		return nil, sendCredentialDeprecationWarning, discoErr
+		return nil, discoErr
 	}
 
 	// Create a new TFE client.
@@ -151,13 +169,13 @@ func GetClient(tfeHost, token string, insecure bool) (*tfe.Client, bool, error) 
 		HTTPClient: config.HTTPClient,
 	})
 	if err != nil {
-		return nil, sendCredentialDeprecationWarning, fmt.Errorf("failed to create client: %w", err)
+		return nil, fmt.Errorf("failed to create client: %w", err)
 	}
 
 	client.RetryServerErrors(true)
 	clientCache.Set(client, config)
 
-	return client, sendCredentialDeprecationWarning, nil
+	return &ProviderClient{client, config.TokenSource}, nil
 }
 
 // CheckConstraints checks service version constrains against our own
