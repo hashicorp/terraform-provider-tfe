@@ -25,17 +25,17 @@ See https://cdk.tf/provider-generation for more details.*/
 import "github.com/aws-samples/dummy/gen/providers/tfe/organization"
 import "github.com/aws-samples/dummy/gen/providers/tfe/workspace"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &organizationConfig{
+	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &OrganizationConfig{
 		email: jsii.String("admin@company.com"),
 		name: jsii.String("my-org-name"),
 	})
-	workspace.NewWorkspace(this, jsii.String("test"), &workspaceConfig{
+	workspace.NewWorkspace(this, jsii.String("test"), &WorkspaceConfig{
 		name: jsii.String("my-workspace-name"),
 		organization: cdktf.Token_AsString(tfeOrganizationTestOrganization.name),
 		tags: map[string]*string{
@@ -58,28 +58,28 @@ import "github.com/aws-samples/dummy/gen/providers/tfe/organization"
 import "github.com/aws-samples/dummy/gen/providers/tfe/oauthClient"
 import "github.com/aws-samples/dummy/gen/providers/tfe/workspace"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &organizationConfig{
+	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &OrganizationConfig{
 		email: jsii.String("admin@company.com"),
 		name: jsii.String("my-org-name"),
 	})
-	tfeOauthClientTest := oauthClient.NewOauthClient(this, jsii.String("test"), &oauthClientConfig{
+	tfeOauthClientTest := oauthClient.NewOauthClient(this, jsii.String("test"), &OauthClientConfig{
 		apiUrl: jsii.String("https://api.github.com"),
 		httpUrl: jsii.String("https://github.com"),
 		oauthToken: jsii.String("oauth_token_id"),
 		organization: cdktf.Token_AsString(tfeOrganizationTestOrganization.name),
 		serviceProvider: jsii.String("github"),
 	})
-	workspace.NewWorkspace(this, jsii.String("parent"), &workspaceConfig{
+	workspace.NewWorkspace(this, jsii.String("parent"), &WorkspaceConfig{
 		name: jsii.String("parent-ws"),
 		organization: cdktf.Token_*AsString(tfeOrganizationTestOrganization.name),
 		queueAllRuns: jsii.Boolean(false),
-		vcsRepo: &workspaceVcsRepo{
+		vcsRepo: &WorkspaceVcsRepo{
 			branch: jsii.String("main"),
 			identifier: jsii.String("my-org-name/vcs-repository"),
 			oauthTokenId: cdktf.Token_*AsString(tfeOauthClientTest.oauthTokenId),
@@ -198,6 +198,7 @@ In addition to all arguments above, the following attributes are exported:
 * `HtmlUrl` - The URL to the browsable HTML overview of the workspace.
 * `InheritsProjectAutoDestroy` - Indicates whether this workspace inherits project auto destroy settings.
 * `EffectiveTags` - A map of key value tags for this workspace, including any tags inherited from the parent project.
+* `HyokEnabled` - (Available only in HCP Terraform) Whether HYOK is enabled for the workspace.
 
 ## Import
 
@@ -212,4 +213,4 @@ terraform import tfe_workspace.test ws-CH5in3chf8RJjrVd
 terraform import tfe_workspace.test my-org-name/my-wkspace-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-9172299860816457fdb3b3fe1ca94efcefcfcf20d4b35727c48cb9ae3ed85745 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-de1b8b86d842b3d2bcd307d6f9e0c70168c742063a6e2845b7992e4782c4c598 -->

@@ -63,7 +63,7 @@ terraform import tfe_agent_pool.test apool-rW0KoLSlnuNb5adB
 ```
 
 ```shell
-terraform import tfe_workspace.test my-org-name/my-agent-pool-name
+terraform import tfe_agent_pool.test my-org-name/my-agent-pool-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-34df65a2eaec9900096b8c5dafac6d4d71de1bb94a65e6a1dc1e75cba2f439a2 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-543964a3c9fa78564c9ef46b255f42e9df576bad7b63223330d53d48253865b8 -->

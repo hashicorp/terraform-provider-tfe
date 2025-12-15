@@ -189,6 +189,7 @@ In addition to all arguments above, the following attributes are exported:
 * `htmlUrl` - The URL to the browsable HTML overview of the workspace.
 * `inheritsProjectAutoDestroy` - Indicates whether this workspace inherits project auto destroy settings.
 * `effectiveTags` - A map of key value tags for this workspace, including any tags inherited from the parent project.
+* `hyokEnabled` - (Available only in HCP Terraform) Whether HYOK is enabled for the workspace.
 
 ## Import
 
@@ -203,4 +204,4 @@ terraform import tfe_workspace.test ws-CH5in3chf8RJjrVd
 terraform import tfe_workspace.test my-org-name/my-wkspace-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-9172299860816457fdb3b3fe1ca94efcefcfcf20d4b35727c48cb9ae3ed85745 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-de1b8b86d842b3d2bcd307d6f9e0c70168c742063a6e2845b7992e4782c4c598 -->

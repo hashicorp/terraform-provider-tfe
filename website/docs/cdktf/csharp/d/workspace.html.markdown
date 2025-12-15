@@ -46,16 +46,22 @@ In addition to all arguments above, the following attributes are exported:
 
 * `Id` - The workspace ID.
 * `AllowDestroyPlan` - Indicates whether destroy plans can be queued on the workspace.
+* `ApplyDurationAverage` - The average duration of applies for this workspace.
+* `AssessmentsEnabled` - (Available only in HCP Terraform) Indicates whether health assessments such as drift detection are enabled for the workspace.
 * `AutoApply` - Indicates whether to automatically apply changes when a Terraform plan is successful.
 * `AutoApplyRunTrigger` - Whether the workspace will automatically apply changes for runs that were created by run triggers from another workspace.
 * `AutoDestroyActivityDuration` - A duration string representing time after workspace activity when an auto-destroy run will be triggered.
 * `AutoDestroyAt` - Future date/time string at which point all resources in a workspace will be scheduled to be deleted.
-* `AssessmentsEnabled` - (Available only in HCP Terraform) Indicates whether health assessments such as drift detection are enabled for the workspace.
+* `CreatedAt` - The time when the workspace was created.
+* `Environment` - The environment of the workspace.
 * `FileTriggersEnabled` - Indicates whether runs are triggered based on the changed files in a VCS push (if `True`) or always triggered on every push (if `False`).
 * `GlobalRemoteState` - (Optional) Whether the workspace should allow all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (determined by the `RemoteStateConsumerIds` argument).
+* `HyokEnabled` - (Optional) Whether HYOK is enabled for the workspace.
 * `InheritsProjectAutoDestroy` - Indicates whether this workspace inherits project auto destroy settings.
+* `Locked` - Indicates whether the workspace is locked.
 * `RemoteStateConsumerIds` - (Optional) A set of workspace IDs that will be set as the remote state consumers for the given workspace. Cannot be used if `GlobalRemoteState` is set to `True`.
 * `Operations` - Indicates whether the workspace is using remote execution mode. Set to `False` to switch execution mode to local. `True` by default.
+* `PlanDurationAverage` - The average duration of plans for this workspace.
 * `PolicyCheckFailures` - The number of policy check failures from the latest run.
 * `ProjectId` - ID of the workspace's project
 * `QueueAllRuns` - Indicates whether the workspace will automatically perform runs
@@ -64,6 +70,7 @@ In addition to all arguments above, the following attributes are exported:
 * `ResourceCount` - The number of resources managed by the workspace.
 * `RunFailures` - The number of run failures on the workspace.
 * `RunsCount` - The number of runs on the workspace.
+* `Source` - The source of the workspace.
 * `SourceName` - The name of the workspace creation source, if set.
 * `SourceUrl` - The URL of the workspace creation source, if set.
 * `SpeculativeEnabled` - Indicates whether this workspace allows speculative plans.
@@ -75,11 +82,38 @@ In addition to all arguments above, the following attributes are exported:
 * `TriggerPrefixes` - List of trigger prefixes that describe the paths HCP Terraform monitors for changes, in addition to the working directory. Trigger prefixes are always appended to the root directory of the repository.
   HCP Terraform or Terraform Enterprise will start a run when files are changed in any directory path matching the provided set of prefixes.
 * `TriggerPatterns` - List of [glob patterns](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/vcs#glob-patterns-for-automatic-run-triggering) that describe the files HCP Terraform monitors for changes. Trigger patterns are always appended to the root directory of the repository.
+* `UpdatedAt` - The time when the workspace was last updated.
 * `VcsRepo` - Settings for the workspace's VCS repository.
 * `WorkingDirectory` - A relative path that Terraform will execute within.
 * `ExecutionMode` - Indicates the [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode) of the workspace. **Note:** This value might be derived from an organization-level default or set on the workspace itself; see the [`TfeWorkspaceSettings` resource](tfe_workspace_settings) for details.
 * `HtmlUrl` - The URL to the browsable HTML overview of the workspace
+* `SettingOverwrites` - Settings that are overwritten for this workspace.
+* `Permissions` - The permissions for the current user on this workspace.
+* `Actions` - Actions that can be performed on this workspace.
 
+The `SettingOverwrites` block contains:
+
+* `ExecutionMode` - Whether execution mode is overwritten at the workspace level.
+* `AgentPool` - Whether agent pool is overwritten at the workspace level.
+
+The `Permissions` block contains:
+
+* `CanUpdate` - Can update the workspace.
+* `CanDestroy` - Can destroy the workspace.
+* `CanQueueRun` - Can queue runs.
+* `CanQueueApply` - Can queue apply.
+* `CanQueueDestroy` - Can queue destroy.
+* `CanLock` - Can lock the workspace.
+* `CanUnlock` - Can unlock the workspace.
+* `CanForceUnlock` - Can force unlock the workspace.
+* `CanReadSettings` - Can read workspace settings.
+* `CanUpdateVariable` - Can update variables.
+* `CanManageRunTasks` - Can manage run tasks.
+* `CanForceDelete` - Can force delete the workspace.
+
+The `Actions` block contains:
+
+* `IsDestroyable` - Whether the workspace can be destroyed.
 
 The `VcsRepo` block contains:
 
@@ -92,4 +126,4 @@ The `VcsRepo` block contains:
 * `OauthTokenId` - OAuth token ID of the configured VCS connection.
 * `TagsRegex` - A regular expression used to trigger a Workspace run for matching Git tags.
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-00e997c6f8d35b250c70aa4e4630b8d9ed6e2e553f58e34786b6567776e4a1ef -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-c7f6af78a2d4a5d7e504291d6e49b0dc0283581145b2ecde16e10e60d6b9974d -->

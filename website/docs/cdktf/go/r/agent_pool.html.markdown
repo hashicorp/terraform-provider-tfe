@@ -25,17 +25,17 @@ See https://cdk.tf/provider-generation for more details.*/
 import "github.com/aws-samples/dummy/gen/providers/tfe/organization"
 import "github.com/aws-samples/dummy/gen/providers/tfe/agentPool"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &organizationConfig{
+	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &OrganizationConfig{
 		email: jsii.String("admin@company.com"),
 		name: jsii.String("my-org-name"),
 	})
-	agentPool.NewAgentPool(this, jsii.String("test-agent-pool"), &agentPoolConfig{
+	agentPool.NewAgentPool(this, jsii.String("test-agent-pool"), &AgentPoolConfig{
 		name: jsii.String("my-agent-pool-name"),
 		organization: cdktf.Token_AsString(tfeOrganizationTestOrganization.name),
 		organizationScoped: jsii.Boolean(true),
@@ -67,7 +67,7 @@ terraform import tfe_agent_pool.test apool-rW0KoLSlnuNb5adB
 ```
 
 ```shell
-terraform import tfe_workspace.test my-org-name/my-agent-pool-name
+terraform import tfe_agent_pool.test my-org-name/my-agent-pool-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-34df65a2eaec9900096b8c5dafac6d4d71de1bb94a65e6a1dc1e75cba2f439a2 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-543964a3c9fa78564c9ef46b255f42e9df576bad7b63223330d53d48253865b8 -->

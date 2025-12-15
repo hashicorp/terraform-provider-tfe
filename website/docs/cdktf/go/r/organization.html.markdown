@@ -22,13 +22,13 @@ import cdktf "github.com/hashicorp/terraform-cdk-go/cdktf"
 See https://cdk.tf/provider-generation for more details.*/
 import "github.com/aws-samples/dummy/gen/providers/tfe/organization"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	organization.NewOrganization(this, jsii.String("test"), &organizationConfig{
+	organization.NewOrganization(this, jsii.String("test"), &OrganizationConfig{
 		email: jsii.String("admin@company.com"),
 		name: jsii.String("my-org-name"),
 	})
@@ -48,6 +48,7 @@ The following arguments are supported:
   `20160`.
 * `CollaboratorAuthPolicy` - (Optional) Authentication policy (`Password`
   or `TwoFactorMandatory`). Defaults to `Password`.
+* `EnforceHyok` - (Optional) (Available only in HCP Terraform) Whether HYOK is enabled for all new workspaces in the organization. Defaults to false.
 * `OwnersTeamSamlRoleId` - (Optional) The name of the "owners" team.
 * `CostEstimationEnabled` - (Optional) Whether or not the cost estimation feature is enabled for all workspaces in the organization. Defaults to true. In a HCP Terraform organization which does not have Teams & Governance features, this value is always false and cannot be changed. In Terraform Enterprise, Cost Estimation must also be enabled in Site Administration.
 * `SendPassingStatusesForUntriggeredSpeculativePlans` - (Optional) Whether or not to send VCS status updates for untriggered speculative plans. This can be useful if large numbers of untriggered workspaces are exhausting request limits for connected version control service providers like GitHub. Defaults to false. In Terraform Enterprise, this setting has no effect and cannot be changed but is also available in Site Administration.
@@ -69,4 +70,4 @@ example:
 terraform import tfe_organization.test my-org-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-ea4761ba0fba70e5174be00cb7bdd57f234347fce87b9f58fdbf78d7ff5a2d5c -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-b53d0f10dbd7766656d02137968583114d83d1e932519c071549a24ae313eeb8 -->

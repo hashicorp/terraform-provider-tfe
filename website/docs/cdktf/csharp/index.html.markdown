@@ -78,7 +78,7 @@ automatically installed by `terraform init` in the future:
 terraform {
   required_providers {
     tfe = {
-      version = "~> 0.70.0"
+      version = "~> 0.72.0"
     }
   }
 }
@@ -91,7 +91,7 @@ The above snippet using `RequiredProviders` is for Terraform 0.13+; if you are u
 
 ```hcl
 provider "tfe" {
-  version = "~> 0.70.0"
+  version = "~> 0.72.0"
   ...
 }
 ```
@@ -104,7 +104,7 @@ For more information on provider installation and constraining provider versions
 provider "tfe" {
   hostname = var.hostname # Optional, defaults to HCP Terraform `AppTerraformIo`
   token    = var.token
-  version  = "~> 0.70.0"
+  version  = "~> 0.72.0"
 }
 
 # Create an organization
@@ -130,4 +130,4 @@ The following arguments are supported:
   arguments. Ensure that the organization already exists prior to using this argument.
   This can also be specified using the `TfeOrganization` environment variable.
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-4578ed85d6e8b2ad03d25c5995c701a3fccb751ce4c28be1ec5ad091b757d5f7 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-43b7a83661e58468304d2fdd26fac76701d42711ab88a4b7cb278b97c82da982 -->
