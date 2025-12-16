@@ -65,6 +65,13 @@ func dataSourceTFEPolicySet() *schema.Resource {
 				Computed:    true,
 			},
 
+			"policy_update_pattern": {
+				Description: "A pattern to match policy set file names",
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+
 			"policies_path": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -170,6 +177,10 @@ func dataSourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error 
 
 				if policySet.PolicyToolVersion != "" {
 					d.Set("policy_tool_version", policySet.PolicyToolVersion)
+				}
+
+				if len(policySet.PolicyUpdatePattern) > 0 {
+					d.Set("policy_update_pattern", policySet.PolicyUpdatePattern)
 				}
 
 				var vcsRepo []interface{}
