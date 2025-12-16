@@ -41,6 +41,10 @@ func resourceTFEAdminOrganizationSettings() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 			},
+			"global_provider_sharing": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
 			"sso_enabled": {
 				Computed: true,
 				Type:     schema.TypeBool,
@@ -87,6 +91,7 @@ func resourceTFEAdminOrganizationSettingsRead(d *schema.ResourceData, meta inter
 	d.Set("organization", org.Name)
 	d.Set("access_beta_tools", org.AccessBetaTools)
 	d.Set("global_module_sharing", org.GlobalModuleSharing)
+	d.Set("global_provider_sharing", org.GlobalProviderSharing)
 	d.Set("sso_enabled", org.SsoEnabled)
 	d.Set("workspace_limit", org.WorkspaceLimit)
 	d.SetId(org.Name)
@@ -140,11 +145,13 @@ func resourceTFEAdminOrganizationSettingsUpdate(d *schema.ResourceData, meta int
 		return err
 	}
 	globalModuleSharing := d.Get("global_module_sharing").(bool)
+	globalProviderSharing := d.Get("global_provider_sharing").(bool)
 
 	_, err = config.Client.Admin.Organizations.Update(ctx, name, tfe.AdminOrganizationUpdateOptions{
-		AccessBetaTools:     tfe.Bool(d.Get("access_beta_tools").(bool)),
-		GlobalModuleSharing: tfe.Bool(globalModuleSharing),
-		WorkspaceLimit:      tfe.Int(d.Get("workspace_limit").(int)),
+		AccessBetaTools:       tfe.Bool(d.Get("access_beta_tools").(bool)),
+		GlobalModuleSharing:   tfe.Bool(globalModuleSharing),
+		GlobalProviderSharing: tfe.Bool(globalProviderSharing),
+		WorkspaceLimit:        tfe.Int(d.Get("workspace_limit").(int)),
 	})
 
 	if err != nil {
