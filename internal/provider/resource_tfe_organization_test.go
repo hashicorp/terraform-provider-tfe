@@ -85,6 +85,8 @@ func TestAccTFEOrganization_full(t *testing.T) {
 						"tfe_organization.foobar", "allow_force_delete_workspaces", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "speculative_plan_management_enabled", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "user_tokens_enabled", "true"),
 				),
 			},
 		},
@@ -199,6 +201,80 @@ func TestAccTFEOrganization_update_costEstimation(t *testing.T) {
 						"tfe_organization.foobar", "assessments_enforced", strconv.FormatBool(assessmentsEnforced2)),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "allow_force_delete_workspaces", strconv.FormatBool(allowForceDeleteWorkspaces2)),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEOrganization_user_tokens_enabled(t *testing.T) {
+	// this test is a bit tricky because once user tokens are disabled, we cannot use a user token to re-enable them
+	// through the API.
+	// Therefore, we need to create an org, generate an owners team token for that org, and then use that token
+	// in the go-tfe client to test the user_tokens_enabled setting.
+
+	org := &tfe.Organization{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOrganization_basic(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOrganizationExists(
+						"tfe_organization.foobar", org),
+					testAccCheckTFEOrganizationAttributesBasic(org, orgName),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "user_tokens_enabled", "true"),
+				),
+			},
+			{
+				PreConfig: func() {
+					// create a team token for the owners team in the org,
+					// then set the provider token to that value
+					ownersTeams, err := testAccConfiguredClient.Client.Teams.List(ctx, org.Name, &tfe.TeamListOptions{
+						Names: []string{"owners"},
+					})
+					if err != nil {
+						t.Fatal(err)
+					}
+					if len(ownersTeams.Items) != 1 {
+						t.Fatalf("expected to find 1 owners team, found %d", len(ownersTeams.Items))
+					}
+					ownersTeam := ownersTeams.Items[0]
+
+					teamToken, err := testAccConfiguredClient.Client.TeamTokens.Create(ctx, ownersTeam.ID)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					tfeClient, err := getClientWithToken(teamToken.ID)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					testAccConfiguredClient = &ConfiguredClient{
+						Client:       tfeClient,
+						Organization: org.Name,
+					}
+				},
+				Config: testAccTFEOrganization_userTokensEnabled(rInt, false),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "user_tokens_enabled", "false"),
+					testAccCheckTFEOrganizationUserTokensEnabled(org, orgName, false),
+				),
+			},
+			{
+				Config: testAccTFEOrganization_userTokensEnabled(rInt, true),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "user_tokens_enabled", "true"),
+					testAccCheckTFEOrganizationUserTokensEnabled(org, orgName, true),
 				),
 			},
 		},
@@ -381,6 +457,20 @@ func testAccCheckTFEOrganizationAttributesFull(
 	}
 }
 
+func testAccCheckTFEOrganizationUserTokensEnabled(
+	org *tfe.Organization, expectedOrgName string, expectedUserTokensEnabled bool) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if org.Name != expectedOrgName {
+			return fmt.Errorf("Bad name: %s", org.Name)
+		}
+
+		if org.UserTokensEnabled != nil && *org.UserTokensEnabled != expectedUserTokensEnabled {
+			return fmt.Errorf("Bad user tokens enabled: %v", org.UserTokensEnabled)
+		}
+		return nil
+	}
+}
+
 func testAccCheckTFEOrganizationAttributesUpdated(
 	org *tfe.Organization, expectedOrgName string, expectedCostEstimationEnabled bool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
@@ -478,6 +568,15 @@ resource "tfe_organization" "foobar" {
   assessments_enforced              = %t
   allow_force_delete_workspaces     = %t
 }`, orgName, orgEmail, costEstimationEnabled, assessmentsEnforced, allowForceDeleteWorkspaces)
+}
+
+func testAccTFEOrganization_userTokensEnabled(rInt int, userTokensEnabled bool) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+  user_tokens_enabled = %t
+}`, rInt, userTokensEnabled)
 }
 
 func testAccTFEOrganization_updateEnforceHYOK(orgName string, enforceHYOK bool) string {
