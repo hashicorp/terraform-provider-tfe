@@ -2,7 +2,6 @@
 ENHANCEMENTS:
 * Adds warning when using credentials/config file for authentication and running on cloud
 
-
 ## v0.72.0
 
 FEATURES:
