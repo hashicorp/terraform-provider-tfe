@@ -77,6 +77,21 @@ func resourceTFEWorkspace() *schema.Resource {
 			return nil
 		},
 
+		Identity: &schema.ResourceIdentity{
+			SchemaFunc: func() map[string]*schema.Schema {
+				return map[string]*schema.Schema{
+					"id": {
+						Type:              schema.TypeString,
+						RequiredForImport: true,
+					},
+					"hostname": {
+						Type:              schema.TypeString,
+						OptionalForImport: true,
+					},
+				}
+			},
+		},
+
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
@@ -531,6 +546,11 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 
 	d.SetId(workspace.ID)
 
+	err = helpers.WriteTFEIdentity(d, workspace.ID, config.Client.BaseURL().Host)
+	if err != nil {
+		return err
+	}
+
 	if sshKeyID, ok := d.GetOk("ssh_key_id"); ok {
 		_, err = config.Client.Workspaces.AssignSSHKey(ctx, workspace.ID, tfe.WorkspaceAssignSSHKeyOptions{
 			SSHKeyID: tfe.String(sshKeyID.(string)),
@@ -581,6 +601,11 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	if err != nil {
 		return fmt.Errorf("Error reading configuration of workspace %s: %w", id, err)
+	}
+
+	err = helpers.WriteTFEIdentity(d, workspace.ID, config.Client.BaseURL().Host)
+	if err != nil {
+		return err
 	}
 
 	// Given this computed attribute will be null when tag bindings are not
@@ -1157,6 +1182,19 @@ func resourceTFEWorkspaceImporter(ctx context.Context, d *schema.ResourceData, m
 		}
 
 		d.SetId(workspaceID)
+	}
+
+	identity, err := d.Identity()
+	if err != nil {
+		return nil, fmt.Errorf("error reading workspace identity: %w", err)
+	}
+
+	if externalID := identity.Get("id").(string); externalID != "" {
+		// We are importing by identity
+		// This only supported when using an import block, since import blocks
+		// are the only way to specify an identity. Importing via TF CLI does
+		// not support specifying an identity.
+		d.SetId(externalID)
 	}
 
 	return []*schema.ResourceData{d}, nil
