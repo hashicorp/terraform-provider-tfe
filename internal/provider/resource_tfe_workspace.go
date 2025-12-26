@@ -77,6 +77,17 @@ func resourceTFEWorkspace() *schema.Resource {
 			return nil
 		},
 
+		Identity: &schema.ResourceIdentity{
+			SchemaFunc: func() map[string]*schema.Schema {
+				return map[string]*schema.Schema{
+					"external_id": {
+						Type:              schema.TypeString,
+						RequiredForImport: true,
+					},
+				}
+			},
+		},
+
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
@@ -531,6 +542,16 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 
 	d.SetId(workspace.ID)
 
+	identity, err := d.Identity()
+	if err != nil {
+		return err
+	}
+
+	err = identity.Set("external_id", workspace.ID)
+	if err != nil {
+		return fmt.Errorf("Error writing workspace %s identity: %w", name, err)
+	}
+
 	if sshKeyID, ok := d.GetOk("ssh_key_id"); ok {
 		_, err = config.Client.Workspaces.AssignSSHKey(ctx, workspace.ID, tfe.WorkspaceAssignSSHKeyOptions{
 			SSHKeyID: tfe.String(sshKeyID.(string)),
@@ -581,6 +602,19 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	if err != nil {
 		return fmt.Errorf("Error reading configuration of workspace %s: %w", id, err)
+	}
+
+	identity, err := d.Identity()
+	if err != nil {
+		return err
+	}
+	if externalID := identity.Get("external_id"); externalID == "" {
+		// This would only occur when an existing tfe_workspace resource does
+		// not have an identity set by the time it's read
+		err = identity.Set("external_id", workspace.ID)
+		if err != nil {
+			return fmt.Errorf("Failed writing workspace %s identity: %w", workspace.Name, err)
+		}
 	}
 
 	// Given this computed attribute will be null when tag bindings are not
@@ -1157,6 +1191,19 @@ func resourceTFEWorkspaceImporter(ctx context.Context, d *schema.ResourceData, m
 		}
 
 		d.SetId(workspaceID)
+	}
+
+	identity, err := d.Identity()
+	if err != nil {
+		return nil, fmt.Errorf("error reading workspace identity: %w", err)
+	}
+
+	if externalID := identity.Get("external_id").(string); externalID != "" {
+		// We are importing by identity
+		// This only supported when using an import block, since import blocks
+		// are the only way to specify an identity. Importing via TF CLI does
+		// not support specifying an identity.
+		d.SetId(externalID)
 	}
 
 	return []*schema.ResourceData{d}, nil
