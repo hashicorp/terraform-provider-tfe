@@ -77,6 +77,52 @@ func init() {
 	}
 }
 
+func muxedProvidersWithCustomClient(clientFn func() *tfe.Client) map[string]func() (tfprotov6.ProviderServer, error) {
+	return map[string]func() (tfprotov6.ProviderServer, error){
+		"tfe": func() (tfprotov6.ProviderServer, error) {
+			ctx := context.Background()
+			nextProvider := providerserver.NewProtocol6(NewFrameworkProvider())
+
+			sdkProvider := Provider()
+			sdkProvider.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
+				// Save a reference to the configured client instance for use in tests.
+				client := clientFn()
+				cc := ConfiguredClient{
+					Client: client,
+				}
+				testAccConfiguredClient = &cc
+
+				return cc, nil
+			}
+
+			upgradedSDKProvider, err := tf5to6server.UpgradeServer(
+				ctx,
+				sdkProvider.GRPCProvider,
+			)
+			if err != nil {
+				return nil, err
+			}
+
+			mux, err := tf6muxserver.NewMuxServer(
+				ctx,
+				[]func() tfprotov6.ProviderServer{
+					func() tfprotov6.ProviderServer {
+						return nextProvider()
+					},
+					func() tfprotov6.ProviderServer {
+						return upgradedSDKProvider
+					},
+				}...,
+			)
+			if err != nil {
+				return nil, err
+			}
+
+			return mux.ProviderServer(), nil
+		},
+	}
+}
+
 func muxedProvidersWithDefaultOrganization(defaultOrgName string) map[string]func() (tfprotov6.ProviderServer, error) {
 	return map[string]func() (tfprotov6.ProviderServer, error){
 		"tfe": func() (tfprotov6.ProviderServer, error) {

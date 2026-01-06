@@ -217,12 +217,19 @@ func TestAccTFEOrganization_user_tokens_enabled(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
+	customClient, err := getClientUsingEnv()
+
+	if err != nil {
+		t.Error(err)
+	}
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEOrganizationDestroy,
+		ProtoV6ProviderFactories: muxedProvidersWithCustomClient(func() *tfe.Client { return customClient }),
 		Steps: []resource.TestStep{
 			{
+
 				Config: testAccTFEOrganization_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
@@ -230,6 +237,7 @@ func TestAccTFEOrganization_user_tokens_enabled(t *testing.T) {
 					testAccCheckTFEOrganizationAttributesBasic(org, orgName),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "user_tokens_enabled", "true"),
+					testAccCheckTFEOrganizationUserTokensEnabled(org, orgName, true),
 				),
 			},
 			{
@@ -252,18 +260,17 @@ func TestAccTFEOrganization_user_tokens_enabled(t *testing.T) {
 						t.Fatal(err)
 					}
 
-					tfeClient, err := getClientWithToken(teamToken.ID)
+					// update the custom client pointer, so it is picked up when the provider is reinitialized
+					// during Config steps
+					customClient, err = getClientWithToken(teamToken.Token)
 					if err != nil {
 						t.Fatal(err)
-					}
-
-					testAccConfiguredClient = &ConfiguredClient{
-						Client:       tfeClient,
-						Organization: org.Name,
 					}
 				},
 				Config: testAccTFEOrganization_userTokensEnabled(rInt, false),
 				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOrganizationExists(
+						"tfe_organization.foobar", org),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "user_tokens_enabled", "false"),
 					testAccCheckTFEOrganizationUserTokensEnabled(org, orgName, false),
@@ -272,6 +279,8 @@ func TestAccTFEOrganization_user_tokens_enabled(t *testing.T) {
 			{
 				Config: testAccTFEOrganization_userTokensEnabled(rInt, true),
 				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOrganizationExists(
+						"tfe_organization.foobar", org),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "user_tokens_enabled", "true"),
 					testAccCheckTFEOrganizationUserTokensEnabled(org, orgName, true),
@@ -465,7 +474,7 @@ func testAccCheckTFEOrganizationUserTokensEnabled(
 		}
 
 		if org.UserTokensEnabled != nil && *org.UserTokensEnabled != expectedUserTokensEnabled {
-			return fmt.Errorf("Bad user tokens enabled: %v", org.UserTokensEnabled)
+			return fmt.Errorf("Bad user tokens enabled: %v", *org.UserTokensEnabled)
 		}
 		return nil
 	}
