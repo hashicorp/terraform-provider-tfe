@@ -15,6 +15,7 @@ FEATURES:
 * **New resource**: `r/tfe_stack_variable_set` for managing associations between variable sets and stacks.
 * `r/tfe_variable_set`: Adds `stack_ids` attribute for managing which stacks a variable set is applied to.
 * `d/tfe_variable_set`: Adds `stack_ids` computed attribute to retrieve which stacks a variable set is applied to.
+* `r/tfe_organization`: Adds `user_tokens_enabled` attribute to control whether user tokens can be used to read or update the organization.
 
 ## v0.71.0
 
