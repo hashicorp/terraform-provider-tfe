@@ -214,5 +214,5 @@ func TestClient_sendAuthenticationWarning(t *testing.T) {
 				t.Fatalf("%s: SendAuthenticationWarning() expected result: %t, got %t", name, tc.expectResult, result)
 			}
 		})
-	}	
+	}
 }
