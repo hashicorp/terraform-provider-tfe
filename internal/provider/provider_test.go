@@ -272,33 +272,17 @@ func TestConfigureEnvOnCloudUsingConfigFiles(t *testing.T) {
 	// tests that the provider sends a warning when running on cloud (checked using TFE_AGENT_VERSION)
 	// and using a token from configuration files
 	envToken := os.Getenv("TFE_TOKEN")
-	envHostname := os.Getenv("TFE_HOSTNAME")
-	origTfcAgentVersion := os.Getenv("TFC_AGENT_VERSION")
-	origTfCliConfigFile := os.Getenv("TF_CLI_CONFIG_FILE")
 
 	reset := func() {
 		os.Setenv("TFE_TOKEN", envToken)
-		os.Setenv("TFE_HOSTNAME", envHostname)
-
-		if origTfcAgentVersion != "" {
-			os.Setenv("TFC_AGENT_VERSION", origTfcAgentVersion)
-		} else {
-			os.Unsetenv("TFC_AGENT_VERSION")
-		}
-
-		if origTfCliConfigFile != "" {
-			os.Setenv("TF_CLI_CONFIG_FILE", origTfCliConfigFile)
-		} else {
-			os.Unsetenv("TF_CLI_CONFIG_FILE")
-		}
 	}
 	defer reset()
 
 	// temporarily removes TFE_TOKEN so token will be from configuration files
 	os.Unsetenv("TFE_TOKEN")
-	os.Setenv("TFC_AGENT_VERSION", "1.0")
-	os.Setenv("TFE_HOSTNAME", "app.terraform.io")
-	os.Setenv("TF_CLI_CONFIG_FILE", "test-fixtures/cli-config-files/terraformrc")
+	t.Setenv("TFC_AGENT_VERSION", "1.0")
+	t.Setenv("TFE_HOSTNAME", "app.terraform.io")
+	t.Setenv("TF_CLI_CONFIG_FILE", "test-fixtures/cli-config-files/terraformrc")
 
 	provider := Provider()
 	diags := provider.Configure(context.Background(), &sdkTerraform.ResourceConfig{})

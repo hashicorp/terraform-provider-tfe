@@ -159,11 +159,6 @@ func TestConfig_cliConfig(t *testing.T) {
 
 func TestConfig_configureSetsTokenSource(t *testing.T) {
 	// This tests that the tokenSource is set properly when calling the configure function
-	reset := func() {
-		os.Unsetenv("TFE_TOKEN")
-	}
-	defer reset()
-
 	cases := map[string]struct {
 		tokenProviderArgument string
 		tokenEnvVariable      string
@@ -193,15 +188,19 @@ func TestConfig_configureSetsTokenSource(t *testing.T) {
 	}
 
 	for name, tc := range cases {
-		os.Setenv("TFE_TOKEN", tc.tokenEnvVariable)
+		t.Run(name, func(t *testing.T) {
+			if tc.tokenEnvVariable != "" {
+				t.Setenv("TFE_TOKEN", tc.tokenEnvVariable)
+			}
 
-		config, err := configure("app.terraform.io", tc.tokenProviderArgument, true)
+			config, err := configure("app.terraform.io", tc.tokenProviderArgument, true)
 
-		if err != nil {
-			t.Fatalf("%s: received error while configuring client: %s", name, err.Error())
-		}
-		if config.tokenSource != tc.expectTokenSource {
-			t.Fatalf("%s: expected token source %d, got %d", name, tc.expectTokenSource, config.tokenSource)
-		}
+			if err != nil {
+				t.Fatalf("%s: received error while configuring client: %s", name, err.Error())
+			}
+			if config.tokenSource != tc.expectTokenSource {
+				t.Fatalf("%s: expected token source %d, got %d", name, tc.expectTokenSource, config.tokenSource)
+			}
+		})
 	}
 }
