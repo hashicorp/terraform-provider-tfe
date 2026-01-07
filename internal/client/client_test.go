@@ -94,27 +94,31 @@ credentials "%s" {
 		hostname          string
 		token             string
 		expectMissingAuth bool
+		expectTokenSource tokenSource
 	}{
 		"everything from env": {
 			env: map[string]string{
 				"TFE_HOSTNAME": serverURL.Host,
 				"TFE_TOKEN":    testToken,
 			},
+			expectTokenSource: environmentVariable,
 		},
 		"token from env": {
 			env: map[string]string{
 				"TFE_HOSTNAME": serverURL.Host,
 				"TFE_TOKEN":    "",
 			},
-			token: testToken,
+			token:             testToken,
+			expectTokenSource: providerArgument,
 		},
 		"everything from provider config": {
 			env: map[string]string{
 				"TFE_HOSTNAME": "",
 				"TFE_TOKEN":    "",
 			},
-			hostname: serverURL.Host,
-			token:    testToken,
+			hostname:          serverURL.Host,
+			token:             testToken,
+			expectTokenSource: providerArgument,
 		},
 		"token missing": {
 			env: map[string]string{
@@ -129,7 +133,8 @@ credentials "%s" {
 				"TFE_TOKEN":          "",
 				"TF_CLI_CONFIG_FILE": cliConfig.Name(),
 			},
-			hostname: serverURL.Host,
+			hostname:          serverURL.Host,
+			expectTokenSource: credentialFiles,
 		},
 	}
 
@@ -138,7 +143,8 @@ credentials "%s" {
 			t.Setenv(k, v)
 		}
 		// Must always skip SSL verification for this test server
-		client, err := GetClient(c.hostname, c.token, true)
+		providerClient, err := GetClient(c.hostname, c.token, true)
+
 		if c.expectMissingAuth {
 			if !errors.Is(err, ErrMissingAuthToken) {
 				t.Errorf("Expected ErrMissingAuthToken, got %v", err)
@@ -150,13 +156,63 @@ credentials "%s" {
 			t.Errorf("Unexpected error when getting client: %q", err)
 		}
 
+		client := providerClient.TfeClient
 		if client == nil {
 			t.Fatal("Unexpected client was nil")
+		}
+
+		tokenSource := providerClient.tokenSource
+		if tokenSource != c.expectTokenSource {
+			t.Fatalf("Expected token source %d, got %d", c.expectTokenSource, tokenSource)
 		}
 
 		_, err = client.Organizations.List(context.Background(), &tfe.OrganizationListOptions{})
 		if err != nil {
 			t.Errorf("Unexpected error from using client: %q", err)
 		}
+	}
+}
+
+func TestClient_sendAuthenticationWarning(t *testing.T) {
+	// This tests that the SendAuthenticationWarning function returns true when the
+	// token source is credentialFiles and the TFE_AGENT_VERSION env var is set
+	cases := map[string]struct {
+		tokenSource                   tokenSource
+		tfcAgentVersionEnvVariableSet bool
+		expectResult                  bool
+	}{
+		"token from credentials files and TFC_AGENT_VERSION is set": {
+			tokenSource:                   credentialFiles,
+			tfcAgentVersionEnvVariableSet: true,
+			expectResult:                  true,
+		},
+		"token from credentials files but TFC_AGENT_VERSION not set": {
+			tokenSource:                   credentialFiles,
+			tfcAgentVersionEnvVariableSet: false,
+			expectResult:                  false,
+		},
+		"TFC_AGENT_VERSION is set but token not from credentials files": {
+			tokenSource:                   providerArgument,
+			tfcAgentVersionEnvVariableSet: true,
+			expectResult:                  false,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			if tc.tfcAgentVersionEnvVariableSet {
+				t.Setenv("TFC_AGENT_VERSION", "1.0")
+			}
+
+			providerClient := ProviderClient{
+				TfeClient:   nil,
+				tokenSource: tc.tokenSource,
+			}
+
+			result := providerClient.SendAuthenticationWarning()
+			if result != tc.expectResult {
+				t.Fatalf("%s: SendAuthenticationWarning() expected result: %t, got %t", name, tc.expectResult, result)
+			}
+		})
 	}
 }

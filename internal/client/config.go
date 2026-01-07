@@ -41,13 +41,22 @@ type ConfigHost struct {
 	Services map[string]interface{} `hcl:"services"`
 }
 
-// ClientConfiguration is the refined information needed to configure a tfe.Client
+type tokenSource int
+
+const (
+	providerArgument tokenSource = iota
+	environmentVariable
+	credentialFiles
+)
+
+// ClientConfiguration is the refined information needed to configureClient a tfe.Client
 type ClientConfiguration struct {
-	Services   *disco.Disco
-	HTTPClient *http.Client
-	TFEHost    svchost.Hostname
-	Token      string
-	Insecure   bool
+	Services    *disco.Disco
+	HTTPClient  *http.Client
+	TFEHost     svchost.Hostname
+	Token       string
+	tokenSource tokenSource
+	Insecure    bool
 }
 
 // Key returns a string that is comparable to other ClientConfiguration values
@@ -232,11 +241,15 @@ func configure(tfeHost, token string, insecure bool) (*ClientConfiguration, erro
 
 	// If a token wasn't set in the provider configuration block, try and fetch it
 	// from the environment or from Terraform's CLI configuration or configured credential helper.
+
+	tokenSource := providerArgument
 	if token == "" {
 		if os.Getenv("TFE_TOKEN") != "" {
 			token = getTokenFromEnv()
+			tokenSource = environmentVariable
 		} else {
 			token = getTokenFromCreds(services, hostname)
+			tokenSource = credentialFiles
 		}
 	}
 
@@ -246,10 +259,11 @@ func configure(tfeHost, token string, insecure bool) (*ClientConfiguration, erro
 	}
 
 	return &ClientConfiguration{
-		Services:   services,
-		HTTPClient: httpClient,
-		TFEHost:    hostname,
-		Token:      token,
-		Insecure:   insecure,
+		Services:    services,
+		HTTPClient:  httpClient,
+		TFEHost:     hostname,
+		Token:       token,
+		tokenSource: tokenSource,
+		Insecure:    insecure,
 	}, nil
 }
