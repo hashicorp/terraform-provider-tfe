@@ -271,15 +271,9 @@ func TestConfigureEnvOrganization(t *testing.T) {
 func TestConfigureEnvOnCloudUsingConfigFiles(t *testing.T) {
 	// tests that the provider sends a warning when running on cloud (checked using TFE_AGENT_VERSION)
 	// and using a token from configuration files
-	envToken := os.Getenv("TFE_TOKEN")
 
-	reset := func() {
-		os.Setenv("TFE_TOKEN", envToken)
-	}
-	defer reset()
-
-	// temporarily removes TFE_TOKEN so token will be from configuration files
-	os.Unsetenv("TFE_TOKEN")
+	// removes TFE_TOKEN for the test so token will be from configuration files
+	t.Setenv("TFE_TOKEN", "")
 	t.Setenv("TFC_AGENT_VERSION", "1.0")
 	t.Setenv("TFE_HOSTNAME", "app.terraform.io")
 	t.Setenv("TF_CLI_CONFIG_FILE", "test-fixtures/cli-config-files/terraformrc")
