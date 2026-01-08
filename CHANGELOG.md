@@ -1,7 +1,13 @@
 ## Unreleased
+
+## v0.73.0
+
 ENHANCEMENTS:
 * Adds warning when using credentials/config file for authentication and running on cloud, by @christian-doucette [#1890](https://github.com/hashicorp/terraform-provider-tfe/pull/1890/)
 * Adds support for creating stacks with the migration flag as well as consuming the creation_source field, by @aaabdelgany [#1943](https://github.com/hashicorp/terraform-provider-tfe/pull/1943)
+
+FEATURES:
+* `d/tfe_organization_audit_configuration`: is a new resource for reading the auditing configuration for an organizations, by @glennsarti-hashi [#1778](https://github.com/hashicorp/terraform-provider-tfe/pull/1778)
 
 ## v0.72.0
 
@@ -9,7 +15,6 @@ FEATURES:
 * **New resource**: `r/tfe_stack_variable_set` for managing associations between variable sets and stacks.
 * `r/tfe_variable_set`: Adds `stack_ids` attribute for managing which stacks a variable set is applied to.
 * `d/tfe_variable_set`: Adds `stack_ids` computed attribute to retrieve which stacks a variable set is applied to.
-* `d/tfe_organization_audit_configuration`: is a new resource for reading the auditing configuration for an organizations, by @glennsarti-hashi [#1778](https://github.com/hashicorp/terraform-provider-tfe/pull/1778)
 
 ## v0.71.0
 
