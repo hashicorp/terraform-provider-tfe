@@ -23,23 +23,25 @@ func TestAccTFEStackResource_basic(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "brandonc/pet-nulls-stack"),
+				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "hashicorp-guides/pet-nulls-stack"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "id"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "project_id"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "agent_pool_id"),
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "name", "example-stack"),
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "description", "Just an ordinary stack"),
-					resource.TestCheckResourceAttr("tfe_stack.foobar", "vcs_repo.identifier", "brandonc/pet-nulls-stack"),
+					resource.TestCheckResourceAttr("tfe_stack.foobar", "vcs_repo.identifier", "hashicorp-guides/pet-nulls-stack"),
+					resource.TestCheckResourceAttr("tfe_stack.foobar", "creation_source", "migration-api"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "vcs_repo.oauth_token_id"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "created_at"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "updated_at"),
 				),
 			},
 			{
-				ResourceName:      "tfe_stack.foobar",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "tfe_stack.foobar",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"migration"},
 			},
 		},
 	})
@@ -75,7 +77,7 @@ resource "tfe_stack" "foobar" {
 	description = "Just an ordinary stack"
   project_id  = tfe_project.example.id
   agent_pool_id = tfe_agent_pool.foobar.id
-
+	migration = true
 	vcs_repo {
     identifier         = "%s"
     oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id

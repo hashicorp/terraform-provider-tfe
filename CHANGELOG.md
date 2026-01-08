@@ -4,6 +4,7 @@
 
 ENHANCEMENTS:
 * Adds warning when using credentials/config file for authentication and running on cloud, by @christian-doucette [#1890](https://github.com/hashicorp/terraform-provider-tfe/pull/1890/)
+* Adds support for creating stacks with the migration flag as well as consuming the creation_source field, by @aaabdelgany [#1943](https://github.com/hashicorp/terraform-provider-tfe/pull/1943)
 
 FEATURES:
 * `d/tfe_organization_audit_configuration`: is a new resource for reading the auditing configuration for an organizations, by @glennsarti-hashi [#1778](https://github.com/hashicorp/terraform-provider-tfe/pull/1778)

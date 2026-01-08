@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -87,6 +88,18 @@ func (r *resourceTFEStack) Schema(ctx context.Context, req resource.SchemaReques
 				Description: "Name of the Stack",
 				Required:    true,
 			},
+			"migration": schema.BoolAttribute{
+				Description: "Indicates whether the Stack is created in migration mode.",
+				Optional:    true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+					boolplanmodifier.RequiresReplace(),
+				},
+			},
+			"creation_source": schema.StringAttribute{
+				Description: "The source from which the Stack was created.",
+				Computed:    true,
+			},
 			"description": schema.StringAttribute{
 				Description: "Description of the Stack",
 				Optional:    true,
@@ -144,6 +157,10 @@ func (r *resourceTFEStack) Create(ctx context.Context, req resource.CreateReques
 		},
 	}
 
+	if !plan.Migration.IsNull() {
+		options.Migration = tfe.Bool(plan.Migration.ValueBool())
+	}
+
 	if plan.VCSRepo != nil {
 		options.VCSRepo = &tfe.StackVCSRepoOptions{
 			Identifier:        plan.VCSRepo.Identifier.ValueString(),
@@ -172,6 +189,8 @@ func (r *resourceTFEStack) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	result := modelFromTFEStack(stack)
+	// Preserve the migration value from plan since it's not returned by the API
+	result.Migration = plan.Migration
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
@@ -195,6 +214,8 @@ func (r *resourceTFEStack) Read(ctx context.Context, req resource.ReadRequest, r
 	}
 
 	result := modelFromTFEStack(stack)
+	// Preserve the migration value from state since it's not returned by the API
+	result.Migration = state.Migration
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
@@ -248,6 +269,8 @@ func (r *resourceTFEStack) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	result := modelFromTFEStack(stack)
+	// Preserve the migration value from state since it's not returned by the API
+	result.Migration = state.Migration
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
