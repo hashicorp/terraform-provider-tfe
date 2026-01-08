@@ -1,6 +1,7 @@
 ## Unreleased
 ENHANCEMENTS:
 * Adds warning when using credentials/config file for authentication and running on cloud, by @christian-doucette [#1890](https://github.com/hashicorp/terraform-provider-tfe/pull/1890/)
+* Adds support for creating stacks with the migration flag as well as consuming the creation_source field, by @aaabdelgany [#1943](https://github.com/hashicorp/terraform-provider-tfe/pull/1943)
 
 ## v0.72.0
 
