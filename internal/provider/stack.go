@@ -78,10 +78,6 @@ func modelFromTFEStack(v *tfe.Stack) modelTFEStack {
 		}
 	}
 
-	// if v.Migration {
-	// 	result.Migration = types.BoolValue(v.Migration)
-	// }
-
 	if v.CreationSource != "" {
 		result.CreationSource = types.StringValue(v.CreationSource)
 	}
