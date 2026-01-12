@@ -209,11 +209,11 @@ func getClientWithToken(token string) (*tfe.Client, error) {
 		hostname = os.Getenv("TFE_HOSTNAME")
 	}
 
-	tfeClient, err := client.GetClient(hostname, token, defaultSSLSkipVerify)
+	providerClient, err := client.GetClient(hostname, token, defaultSSLSkipVerify)
 	if err != nil {
 		return nil, fmt.Errorf("Error getting client: %w", err)
 	}
-	return tfeClient, nil
+	return providerClient.TfeClient, nil
 }
 
 func TestProvider(t *testing.T) {
