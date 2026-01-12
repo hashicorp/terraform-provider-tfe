@@ -282,6 +282,23 @@ func TestAccTFEWorkspaceSettingsRemoteState(t *testing.T) {
 				Config:      testAccTFEWorkspaceSettingsRemoteState_GlobalConflict(ws.ID, ws2.ID),
 				ExpectError: regexp.MustCompile("If global_remote_state is true, remote_state_consumer_ids must not be set"),
 			},
+			// Unset remote state consumer ids and set project remote state
+			{
+				Config: testAccTFEWorkspaceSettingsRemoteState_Project(ws.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(
+						"tfe_workspace_settings.foobar", "id"),
+					resource.TestCheckResourceAttrSet(
+						"tfe_workspace_settings.foobar", "workspace_id"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.foobar", "global_remote_state", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.foobar", "project_remote_state", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.foobar", "remote_state_consumer_ids.#", "0"),
+				),
+			},
+
 		},
 	})
 }
@@ -484,6 +501,7 @@ func testAccTFEWorkspaceSettingsRemoteState(workspaceID, workspaceID2 string) st
 resource "tfe_workspace_settings" "foobar" {
 	workspace_id              = "%s"
 	global_remote_state       = false
+	project_remote_state	  = false
 	remote_state_consumer_ids = ["%s"]
 }
 `, workspaceID, workspaceID2)
@@ -494,6 +512,18 @@ func testAccTFEWorkspaceSettingsRemoteState_Global(workspaceID string) string {
 resource "tfe_workspace_settings" "foobar" {
 	workspace_id              = "%s"
 	global_remote_state       = true
+	project_remote_state      = false
+
+}
+`, workspaceID)
+}
+
+func testAccTFEWorkspaceSettingsRemoteState_Project(workspaceID string) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace_settings" "foobar" {
+	workspace_id              = "%s"
+	global_remote_state       = true
+	project_remote_state      = true
 }
 `, workspaceID)
 }
@@ -504,6 +534,27 @@ resource "tfe_workspace_settings" "foobar" {
 	workspace_id              = "%s"
 	global_remote_state       = true
 	remote_state_consumer_ids = ["%s"]
+}
+`, workspaceID, workspaceID2)
+}
+
+func testAccTFEWorkspaceSettingsRemoteState_ProjectConflict(workspaceID, workspaceID2 string) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace_settings" "foobar" {
+	workspace_id              = "%s"
+	project_remote_state       = true
+	remote_state_consumer_ids = ["%s"]
+}
+`, workspaceID, workspaceID2)
+}
+
+// TODO: Is this a valid test case? THEN ADD THIS TO THE RESOURCE
+func testAccTFEWorkspaceSettingsRemoteState_GlobalProjectConflict(workspaceID, workspaceID2 string) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace_settings" "foobar" {
+	workspace_id              = "%s"
+	project_remote_state       = true
+	global_remote_state       = true
 }
 `, workspaceID, workspaceID2)
 }

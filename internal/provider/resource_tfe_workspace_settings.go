@@ -49,6 +49,7 @@ type modelWorkspaceSettings struct {
 	AgentPoolID            types.String `tfsdk:"agent_pool_id"`
 	Overwrites             types.List   `tfsdk:"overwrites"`
 	GlobalRemoteState      types.Bool   `tfsdk:"global_remote_state"`
+	ProjectRemoteState	   types.Bool   `tfsdk:"project_remote_state"`
 	RemoteStateConsumerIDs types.Set    `tfsdk:"remote_state_consumer_ids"`
 	Description            types.String `tfsdk:"description"`
 	AutoApply              types.Bool   `tfsdk:"auto_apply"`
@@ -84,8 +85,8 @@ type revertOverwritesIfExecutionModeUnset struct{}
 // revertOverwritesIfExecutionModeUnset.
 type unknownIfExecutionModeUnset struct{}
 
-// validateRemoteStateConsumerIDs validates that if global_remote_state is
-// true, remote_state_consumer_ids is not set.
+// validateRemoteStateConsumerIDs validates that if global_remote_state or
+// project_remote_state is true, remote_state_consumer_ids is not set.
 type validateRemoteStateConsumerIDs struct{}
 
 // validateSelfReference validates that the workspace ID is not in the set of
@@ -135,7 +136,7 @@ func (m validateRemoteStateConsumerIDs) PlanModifySet(_ context.Context, req pla
 		return
 	}
 
-	// This situation is invalid if global_remote_state is true
+	// This situation is invalid if global_remote_state or project_remote_state is true
 	var globalRemoteState types.Bool
 	diags = req.Config.GetAttribute(ctx, path.Root("global_remote_state"), &globalRemoteState)
 	if diags.HasError() {
@@ -145,17 +146,29 @@ func (m validateRemoteStateConsumerIDs) PlanModifySet(_ context.Context, req pla
 
 	log.Printf("[DEBUG] planned global_remote_state: %v", globalRemoteState.ValueBool())
 
-	if !globalRemoteState.IsNull() && globalRemoteState.ValueBool() {
-		resp.Diagnostics.AddError("Invalid remote_state_consumer_ids", "If global_remote_state is true, remote_state_consumer_ids must not be set")
+	var projectRemoteState types.Bool
+	diags = req.Config.GetAttribute(ctx, path.Root("project_remote_state"), &projectRemoteState)
+	if diags.HasError() {
+		resp.Diagnostics.Append(diags...)
+		return
+	}
+
+	// TODO: Do we need a check for when both global_remote_state and project_remote_state are true?
+
+	log.Printf("[DEBUG] planned project_remote_state: %v", projectRemoteState.ValueBool())
+
+	if (!globalRemoteState.IsNull() && globalRemoteState.ValueBool()) ||
+		(!projectRemoteState.IsNull() && projectRemoteState.ValueBool()) {
+		resp.Diagnostics.AddError("Invalid remote_state_consumer_ids", "If global_remote_state or project_remote_state is true, remote_state_consumer_ids must not be set")
 	}
 }
 
 func (m validateRemoteStateConsumerIDs) Description(_ context.Context) string {
-	return "Validates that configuration values for \"global_remote_state\" and \"remote_state_consumer_ids\" are compatible"
+	return "Validates that configuration values for \"global_remote_state\", \"project_remote_state\" and \"remote_state_consumer_ids\" are compatible"
 }
 
 func (m validateRemoteStateConsumerIDs) MarkdownDescription(_ context.Context) string {
-	return "Validates that configuration values for \"global_remote_state\" and \"remote_state_consumer_ids\" are compatible"
+	return "Validates that configuration values for \"global_remote_state\", \"project_remote_state\" and \"remote_state_consumer_ids\" are compatible"
 }
 
 func (m validateSelfReference) PlanModifySet(_ context.Context, req planmodifier.SetRequest, resp *planmodifier.SetResponse) {
@@ -334,6 +347,12 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 				Computed:    true,
 			},
 
+			"project_remote_state": schema.BoolAttribute{
+				Description: "Whether the workspace allows all workspaces in the project to access its state data during runs. If false, then only workspaces defined in `remote_state_consumer_ids` can access its state.",
+				Optional:    true,
+				Computed:    true,
+			},
+
 			"remote_state_consumer_ids": schema.SetAttribute{
 				Description: "The set of workspace IDs set as explicit remote state consumers for the given workspace.",
 				Optional:    true,
@@ -387,6 +406,7 @@ func (r *workspaceSettings) workspaceSettingsModelFromTFEWorkspace(ws *tfe.Works
 		WorkspaceID:        types.StringValue(ws.ID),
 		ExecutionMode:      types.StringValue(ws.ExecutionMode),
 		GlobalRemoteState:  types.BoolValue(ws.GlobalRemoteState),
+		ProjectRemoteState: types.BoolValue(ws.ProjectRemoteState),
 		AutoApply:          types.BoolValue(ws.AutoApply),
 		AssessmentsEnabled: types.BoolValue(ws.AssessmentsEnabled),
 	}
@@ -401,7 +421,7 @@ func (r *workspaceSettings) workspaceSettingsModelFromTFEWorkspace(ws *tfe.Works
 
 	result.RemoteStateConsumerIDs = types.SetValueMust(types.StringType, []attr.Value{})
 
-	if !ws.GlobalRemoteState {
+	if !ws.GlobalRemoteState || !ws.ProjectRemoteState {
 		_, remoteStateConsumerIDs, err := readWorkspaceStateConsumers(ws.ID, r.config.Client)
 		if err != nil {
 			log.Printf("[ERROR] Error reading remote state consumers for workspace %s: %s", ws.ID, err)
@@ -491,6 +511,7 @@ func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorks
 
 	updateOptions := tfe.WorkspaceUpdateOptions{
 		GlobalRemoteState: tfe.Bool(data.GlobalRemoteState.ValueBool()),
+		ProjectRemoteState: tfe.Bool(data.ProjectRemoteState.ValueBool()),
 		SettingOverwrites: &tfe.WorkspaceSettingOverwritesOptions{
 			ExecutionMode: tfe.Bool(false),
 			AgentPool:     tfe.Bool(false),
@@ -551,7 +572,7 @@ func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorks
 		return fmt.Errorf("couldn't update workspace %s: %w", workspaceID, err)
 	}
 
-	if !data.GlobalRemoteState.ValueBool() {
+	if !data.GlobalRemoteState.ValueBool() || !data.ProjectRemoteState.ValueBool() {
 		r.addAndRemoveRemoteStateConsumers(workspaceID, data.RemoteStateConsumerIDs, state)
 	}
 
@@ -656,10 +677,12 @@ func (r *workspaceSettings) Create(ctx context.Context, req resource.CreateReque
 	var autoApply types.Bool
 	var assessmentsEnabled types.Bool
 	var globalRemoteState types.Bool
+	var projectRemoteState types.Bool
 
 	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("auto_apply"), &autoApply)...)
 	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("assessments_enabled"), &assessmentsEnabled)...)
 	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("global_remote_state"), &globalRemoteState)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("project_remote_state"), &projectRemoteState)...)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -677,6 +700,10 @@ func (r *workspaceSettings) Create(ctx context.Context, req resource.CreateReque
 	if globalRemoteState.IsNull() {
 		tflog.Debug(ctx, fmt.Sprintf("global_remote_state is not set in config, overwrite with the read value %v", model.GlobalRemoteState.ValueBool()))
 		planned.GlobalRemoteState = model.GlobalRemoteState
+	}
+	if projectRemoteState.IsNull() {
+		tflog.Debug(ctx, fmt.Sprintf("project_remote_state is not set in config, overwrite with the read value %v", model.ProjectRemoteState.ValueBool()))
+		planned.ProjectRemoteState = model.ProjectRemoteState
 	}
 
 	if resp.Diagnostics.HasError() {
