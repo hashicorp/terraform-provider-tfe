@@ -470,11 +470,11 @@ func testAccCheckTFEOrganizationUserTokensEnabled(
 	org *tfe.Organization, expectedOrgName string, expectedUserTokensEnabled bool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if org.Name != expectedOrgName {
-			return fmt.Errorf("Bad name: %s", org.Name)
+			return fmt.Errorf("Expected org.Name to be: %s, but received: %s", expectedOrgName, org.Name)
 		}
 
 		if org.UserTokensEnabled != nil && *org.UserTokensEnabled != expectedUserTokensEnabled {
-			return fmt.Errorf("Bad user tokens enabled: %v", *org.UserTokensEnabled)
+			return fmt.Errorf("Expected org.UserTokensEnabled to be: %v, but received: %v", expectedUserTokensEnabled, *org.UserTokensEnabled)
 		}
 		return nil
 	}
