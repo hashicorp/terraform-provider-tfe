@@ -67,7 +67,20 @@ The `organization_access` block supports:
 
 ## Import
 
-Teams can be imported; use `<ORGANIZATION NAME>/<TEAM ID>` or `<ORGANIZATION NAME>/<TEAM NAME>` as the import ID. For
+Teams can be imported using an identity. For example:
+
+```hcl
+import {
+  to = tfe_team.test
+  identity = {
+    id           = "team-uomQZysH9ou42ZYY"
+    organization = "my-org-name"
+    hostname     = "app.terraform.io"
+  }
+}
+```
+
+Teams can be imported using the Terraform CLI; use `<ORGANIZATION NAME>/<TEAM ID>` or `<ORGANIZATION NAME>/<TEAM NAME>` as the import ID. For
 example:
 
 ```shell
