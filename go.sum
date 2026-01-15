@@ -112,8 +112,8 @@ github.com/hashicorp/terraform-plugin-testing v1.14.0 h1:5t4VKrjOJ0rg0sVuSJ86dz5
 github.com/hashicorp/terraform-plugin-testing v1.14.0/go.mod h1:1qfWkecyYe1Do2EEOK/5/WnTyvC8wQucUkkhiGLg5nk=
 github.com/hashicorp/terraform-registry-address v0.4.0 h1:S1yCGomj30Sao4l5BMPjTGZmCNzuv7/GDTDX99E9gTk=
 github.com/hashicorp/terraform-registry-address v0.4.0/go.mod h1:LRS1Ay0+mAiRkUyltGT+UHWkIqTFvigGn/LbMshfflE=
-github.com/hashicorp/terraform-svchost v0.1.1 h1:EZZimZ1GxdqFRinZ1tpJwVxxt49xc/S52uzrw4x0jKQ=
-github.com/hashicorp/terraform-svchost v0.1.1/go.mod h1:mNsjQfZyf/Jhz35v6/0LWcv26+X7JPS+buii2c9/ctc=
+github.com/hashicorp/terraform-svchost v0.2.0 h1:wVc2vMiodOHvNZcQw/3y9af1XSomgjGSv+rv3BMCk7I=
+github.com/hashicorp/terraform-svchost v0.2.0/go.mod h1:/98rrS2yZsbppi4VGVCjwYmh8dqsKzISqK7Hli+0rcQ=
 github.com/hashicorp/yamux v0.1.2 h1:XtB8kyFOyHXYVFnwT5C3+Bdo8gArse7j2AQ0DA0Uey8=
 github.com/hashicorp/yamux v0.1.2/go.mod h1:C+zze2n6e/7wshOZep2A70/aQU6QBRWJO/G6FT1wIns=
 github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 h1:BQSFePA1RWJOlocH6Fxy8MmwDt+yVQYULKfN0RoTN8A=
