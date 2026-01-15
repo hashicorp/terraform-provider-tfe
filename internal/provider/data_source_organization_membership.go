@@ -70,10 +70,10 @@ func dataSourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interf
 			return fmt.Errorf("could not find organization membership for organization %s: %w", organization, err)
 		}
 
-		d.SetId(orgMember.ID)
-	} else {
-		d.SetId(orgMemberID)
+		orgMemberID = orgMember.ID
 	}
+
+	d.SetId(orgMemberID)
 
 	return resourceTFEOrganizationMembershipRead(d, meta)
 }
