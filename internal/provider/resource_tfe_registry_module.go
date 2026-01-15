@@ -20,6 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
 )
 
 func resourceTFERegistryModule() *schema.Resource {
@@ -38,6 +39,42 @@ func resourceTFERegistryModule() *schema.Resource {
 			}
 			return validateTestConfig(d)
 		},
+
+		Identity: &schema.ResourceIdentity{
+			SchemaFunc: func() map[string]*schema.Schema {
+				return map[string]*schema.Schema{
+					"id": {
+						Type:              schema.TypeString,
+						RequiredForImport: true,
+					},
+					"hostname": {
+						Type:              schema.TypeString,
+						OptionalForImport: true,
+					},
+					"organization": {
+						Type:              schema.TypeString,
+						RequiredForImport: true,
+					},
+					"registry_name": {
+						Type:              schema.TypeString,
+						RequiredForImport: true,
+					},
+					"namespace": {
+						Type:              schema.TypeString,
+						RequiredForImport: true,
+					},
+					"name": {
+						Type:              schema.TypeString,
+						RequiredForImport: true,
+					},
+					"module_provider": {
+						Type:              schema.TypeString,
+						RequiredForImport: true,
+					},
+				}
+			},
+		},
+
 		Schema: map[string]*schema.Schema{
 			"organization": {
 				Type:     schema.TypeString,
@@ -304,8 +341,9 @@ func resourceTFERegistryModuleCreate(d *schema.ResourceData, meta interface{}) e
 		return err
 	}
 
+	var rmID tfe.RegistryModuleID
 	err = retry.Retry(time.Duration(5)*time.Minute, func() *retry.RetryError {
-		rmID := tfe.RegistryModuleID{
+		rmID = tfe.RegistryModuleID{
 			Organization: registryModule.Organization.Name,
 			Name:         registryModule.Name,
 			Provider:     registryModule.Provider,
@@ -334,6 +372,11 @@ func resourceTFERegistryModuleCreate(d *schema.ResourceData, meta interface{}) e
 	d.Set("organization", registryModule.Organization.Name)
 	d.Set("namespace", registryModule.Namespace)
 	d.Set("registry_name", registryModule.RegistryName)
+
+	err = helpers.WriteRegistryIdentity(d, registryModule.ID, rmID, config.Client.BaseURL().Host)
+	if err != nil {
+		return err
+	}
 
 	return resourceTFERegistryModuleRead(d, meta)
 }
@@ -436,6 +479,11 @@ func resourceTFERegistryModuleRead(d *schema.ResourceData, meta interface{}) err
 		return fmt.Errorf("Error reading registry module %s: %w", d.Id(), err)
 	}
 
+	err = helpers.WriteRegistryIdentity(d, registryModule.ID, rmID, config.Client.BaseURL().Host)
+	if err != nil {
+		return err
+	}
+
 	// Update the config
 	log.Printf("[DEBUG] Update config for registry module: %s", d.Id())
 	d.Set("name", registryModule.Name)
@@ -520,6 +568,28 @@ func resourceTFERegistryModuleDelete(d *schema.ResourceData, meta interface{}) e
 }
 
 func resourceTFERegistryModuleImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	// First we'll check for an identity
+	identity, err := d.Identity()
+	if err != nil {
+		return nil, fmt.Errorf("error reading registry module identity: %w", err)
+	}
+
+	if externalID := identity.Get("id").(string); externalID != "" {
+		// We are importing by identity
+		// This only supported when using an import block, since import blocks
+		// are the only way to specify an identity. Importing via TF CLI does
+		// not support specifying an identity.
+		d.SetId(externalID)
+		d.Set("organization", identity.Get("organization").(string))
+		d.Set("registry_name", identity.Get("registry_name").(string))
+		d.Set("namespace", identity.Get("namespace").(string))
+		d.Set("name", identity.Get("name").(string))
+		d.Set("module_provider", identity.Get("module_provider").(string))
+
+		// Exit early
+		return []*schema.ResourceData{d}, nil
+	}
+
 	registryModuleInfo := strings.SplitN(d.Id(), "/", 6)
 	if len(registryModuleInfo) == 4 {
 		// for format: <ORGANIZATION>/<REGISTRY MODULE NAME>/<REGISTRY MODULE PROVIDER>/<REGISTRY MODULE ID>
