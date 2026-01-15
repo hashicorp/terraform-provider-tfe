@@ -16,6 +16,7 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
 )
 
 func resourceTFEOrganizationMembership() *schema.Resource {
@@ -28,6 +29,21 @@ func resourceTFEOrganizationMembership() *schema.Resource {
 		},
 
 		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
+
+		Identity: &schema.ResourceIdentity{
+			SchemaFunc: func() map[string]*schema.Schema {
+				return map[string]*schema.Schema{
+					"id": {
+						Type:              schema.TypeString,
+						RequiredForImport: true,
+					},
+					"hostname": {
+						Type:              schema.TypeString,
+						OptionalForImport: true,
+					},
+				}
+			},
+		},
 
 		Schema: map[string]*schema.Schema{
 			"email": {
@@ -80,6 +96,11 @@ func resourceTFEOrganizationMembershipCreate(d *schema.ResourceData, meta interf
 
 	d.SetId(membership.ID)
 
+	err = helpers.WriteTFEIdentity(d, membership.ID, config.Client.BaseURL().Host)
+	if err != nil {
+		return err
+	}
+
 	return resourceTFEOrganizationMembershipRead(d, meta)
 }
 
@@ -107,6 +128,11 @@ func resourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interfac
 	d.Set("user_id", membership.User.ID)
 	d.Set("username", membership.User.Username)
 
+	err = helpers.WriteTFEIdentity(d, membership.ID, config.Client.BaseURL().Host)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -127,6 +153,23 @@ func resourceTFEOrganizationMembershipDelete(d *schema.ResourceData, meta interf
 
 func resourceTFEOrganizationMembershipImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(ConfiguredClient)
+
+	// First we'll check for an identity
+	identity, err := d.Identity()
+	if err != nil {
+		return nil, fmt.Errorf("error reading organization membership identity: %w", err)
+	}
+
+	if externalID := identity.Get("id").(string); externalID != "" {
+		// We are importing by identity
+		// This only supported when using an import block, since import blocks
+		// are the only way to specify an identity. Importing via TF CLI does
+		// not support specifying an identity.
+		d.SetId(externalID)
+
+		// Exit early
+		return []*schema.ResourceData{d}, nil
+	}
 
 	// Import formats:
 	//  - <ORGANIZATION MEMBERSHIP ID>
