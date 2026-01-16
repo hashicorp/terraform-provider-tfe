@@ -229,7 +229,6 @@ func TestAccTFEOrganization_user_tokens_enabled(t *testing.T) {
 		ProtoV6ProviderFactories: muxedProvidersWithCustomClient(func() *tfe.Client { return customClient }),
 		Steps: []resource.TestStep{
 			{
-
 				Config: testAccTFEOrganization_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
@@ -242,27 +241,10 @@ func TestAccTFEOrganization_user_tokens_enabled(t *testing.T) {
 			},
 			{
 				PreConfig: func() {
-					// create a team token for the owners team in the org,
-					// then set the provider token to that value
-					ownersTeams, err := testAccConfiguredClient.Client.Teams.List(ctx, org.Name, &tfe.TeamListOptions{
-						Names: []string{"owners"},
-					})
-					if err != nil {
-						t.Fatal(err)
-					}
-					if len(ownersTeams.Items) != 1 {
-						t.Fatalf("expected to find 1 owners team, found %d", len(ownersTeams.Items))
-					}
-					ownersTeam := ownersTeams.Items[0]
-
-					teamToken, err := testAccConfiguredClient.Client.TeamTokens.Create(ctx, ownersTeam.ID)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					// update the custom client pointer, so it is picked up when the provider is reinitialized
+					// create a client for the owners team in the org,
+					// then update the custom client pointer, so it is picked up when the provider is reinitialized
 					// during Config steps
-					customClient, err = getClientWithToken(teamToken.Token)
+					customClient, err = getOwnerTeamClientForOrg(t, orgName)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -383,6 +365,25 @@ func TestAccTFEOrganization_import(t *testing.T) {
 			},
 		},
 	})
+}
+
+func getOwnerTeamClientForOrg(t *testing.T, orgName string) (*tfe.Client, error) {
+	ownersTeams, err := testAccConfiguredClient.Client.Teams.List(ctx, orgName, &tfe.TeamListOptions{
+		Names: []string{"owners"},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(ownersTeams.Items) != 1 {
+		return nil, fmt.Errorf("expected to find 1 owners team, found %d", len(ownersTeams.Items))
+	}
+	ownersTeam := ownersTeams.Items[0]
+
+	teamToken, err := testAccConfiguredClient.Client.TeamTokens.Create(ctx, ownersTeam.ID)
+	if err != nil {
+		return nil, err
+	}
+	return getClientWithToken(teamToken.Token)
 }
 
 func testAccCheckTFEOrganizationExists(

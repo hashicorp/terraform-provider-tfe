@@ -40,7 +40,7 @@ The following arguments are supported:
 * `speculative_plan_management_enabled` - (Optional) Whether or not to enable Speculative Plan Management. If true, pending VCS-triggered speculative plans from outdated commits will be cancelled if a newer commit is pushed to the same branch.
 * `assessments_enforced` - (Optional) (Available only in HCP Terraform) Whether to force health assessments (drift detection) on all eligible workspaces or allow workspaces to set their own preferences.
 * `allow_force_delete_workspaces` - (Optional) Whether workspace administrators are permitted to delete workspaces with resources under management. If false, only organization owners may delete these workspaces. Defaults to false.
-* `user_tokens_enabled` - (Optional) Whether user tokens can be used to read or update the organization. Defaults to true. Use caution updating this setting, if the provider is authenticated using a user token the update will fail.
+* `user_tokens_enabled` - (Optional) Whether user tokens can be used to read or update the organization. Defaults to true.
 
 ## Attributes Reference
 
