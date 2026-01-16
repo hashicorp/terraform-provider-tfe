@@ -244,7 +244,7 @@ func TestAccTFEOrganization_user_tokens_enabled(t *testing.T) {
 					// create a client for the owners team in the org,
 					// then update the custom client pointer, so it is picked up when the provider is reinitialized
 					// during Config steps
-					customClient, err = getOwnerTeamClientForOrg(t, orgName)
+					customClient, err = getOwnerTeamClientForOrg(orgName)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -367,7 +367,7 @@ func TestAccTFEOrganization_import(t *testing.T) {
 	})
 }
 
-func getOwnerTeamClientForOrg(t *testing.T, orgName string) (*tfe.Client, error) {
+func getOwnerTeamClientForOrg(orgName string) (*tfe.Client, error) {
 	ownersTeams, err := testAccConfiguredClient.Client.Teams.List(ctx, orgName, &tfe.TeamListOptions{
 		Names: []string{"owners"},
 	})
