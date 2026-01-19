@@ -42,15 +42,16 @@ In addition to all arguments above, the following attributes are exported:
 * `created_at` - The time when the workspace was created.
 * `environment` - The environment of the workspace.
 * `file_triggers_enabled` - Indicates whether runs are triggered based on the changed files in a VCS push (if `true`) or always triggered on every push (if `false`).
-* `global_remote_state` - (Optional) Whether the workspace should allow all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (determined by the `remote_state_consumer_ids` argument).
+* `global_remote_state` - (Optional) Whether the workspace should allow all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (determined by the `remote_state_consumer_ids` argument). Cannot be true if `project_remote_state` is true.
 * `hyok_enabled` - (Optional) Whether HYOK is enabled for the workspace.
 * `inherits_project_auto_destroy` - Indicates whether this workspace inherits project auto destroy settings.
 * `locked` - Indicates whether the workspace is locked.
-* `remote_state_consumer_ids` - (Optional) A set of workspace IDs that will be set as the remote state consumers for the given workspace. Cannot be used if `global_remote_state` is set to `true`.
+* `remote_state_consumer_ids` - (Optional) A set of workspace IDs that will be set as the remote state consumers for the given workspace. Cannot be used if `global_remote_state` or `project_remote_state` is set to `true`.
 * `operations` - Indicates whether the workspace is using remote execution mode. Set to `false` to switch execution mode to local. `true` by default.
 * `plan_duration_average` - The average duration of plans for this workspace.
 * `policy_check_failures` - The number of policy check failures from the latest run.
 * `project_id` - ID of the workspace's project
+* `project_remote_state` – (Optional) Whether the workspace should allow all workspaces in the project to access its state data during runs. If false, then only specifically approved workspaces can access its state (determined by the `remote_state_consumer_ids` argument). Cannot be true if `global_remote_state` is true.
 * `queue_all_runs` - Indicates whether the workspace will automatically perform runs
   in response to webhooks immediately after its creation. If `false`, an initial run must
   be manually queued to enable future automatic runs.
