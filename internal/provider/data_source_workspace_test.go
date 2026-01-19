@@ -34,7 +34,27 @@ func TestAccTFEWorkspaceDataSource_remoteStateConsumers(t *testing.T) {
 						"data.tfe_workspace.foobar", "name", fmt.Sprintf("workspace-test-%d", rInt1)),
 					resource.TestCheckResourceAttr(
 						"data.tfe_workspace.foobar", "global_remote_state", "false"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "project_remote_state", "false"),
 					testAccCheckTFEWorkspaceDataSourceHasRemoteStateConsumers("data.tfe_workspace.foobar", 1),
+				),
+			},
+			// project_remote_state true, no consumers
+			{
+				Config: testAccTFEWorkspaceDataSourceConfig_projectRemoteStateTrue(rInt1),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "global_remote_state", "false"),
+					resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "project_remote_state", "true"),
+					testAccCheckTFEWorkspaceDataSourceHasRemoteStateConsumers("data.tfe_workspace.foobar", 0),
+				),
+			},
+			// global_remote_state true, no consumers
+			{
+				Config: testAccTFEWorkspaceDataSourceConfig_globalRemoteStateTrue(rInt1),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "global_remote_state", "true"),
+					resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "project_remote_state", "false"),
+					testAccCheckTFEWorkspaceDataSourceHasRemoteStateConsumers("data.tfe_workspace.foobar", 0),
 				),
 			},
 		},
@@ -475,11 +495,69 @@ resource "tfe_workspace" "foobar" {
 	remote_state_consumer_ids = [resource.tfe_workspace.buzz.id]
 }
 
+resource "tfe_workspace_settings" "foobar_settings" {
+	workspace_id         = tfe_workspace.foobar.id
+	project_remote_state = false
+	global_remote_state  = false
+}
+
 data "tfe_workspace" "foobar" {
   name         = tfe_workspace.foobar.name
   organization = tfe_workspace.foobar.organization
 	depends_on   = [tfe_workspace.foobar]
 }`, rInt1, rInt2, rInt1)
+}
+
+func testAccTFEWorkspaceDataSourceConfig_projectRemoteStateTrue(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test-%d"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_workspace_settings" "foobar_settings" {
+  workspace_id         = tfe_workspace.foobar.id
+  project_remote_state = true
+  global_remote_state  = false
+}
+
+data "tfe_workspace" "foobar" {
+  name         = tfe_workspace.foobar.name
+  organization = tfe_workspace.foobar.organization
+  depends_on   = [tfe_workspace_settings.foobar_settings]
+}
+`, rInt, rInt)
+}
+
+func testAccTFEWorkspaceDataSourceConfig_globalRemoteStateTrue(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test-%d"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_workspace_settings" "foobar_settings" {
+  workspace_id         = tfe_workspace.foobar.id
+  global_remote_state  = true
+  project_remote_state = false
+}
+
+data "tfe_workspace" "foobar" {
+  name         = tfe_workspace.foobar.name
+  organization = tfe_workspace.foobar.organization
+  depends_on   = [tfe_workspace_settings.foobar_settings]
+}
+`, rInt, rInt)
 }
 
 func testAccTFEWorkspaceDataSourceConfig_project(rInt int) string {
