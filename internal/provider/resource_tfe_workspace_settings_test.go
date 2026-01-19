@@ -258,6 +258,8 @@ func TestAccTFEWorkspaceSettingsRemoteState(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace_settings.foobar", "global_remote_state", "false"),
 					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.foobar", "project_remote_state", "false"),
+					resource.TestCheckResourceAttr(
 						"tfe_workspace_settings.foobar", "remote_state_consumer_ids.0", ws2.ID),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace_settings.foobar", "remote_state_consumer_ids.#", "1"),
@@ -274,13 +276,37 @@ func TestAccTFEWorkspaceSettingsRemoteState(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_workspace_settings.foobar", "global_remote_state", "true"),
 					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.foobar", "project_remote_state", "false"),
+					resource.TestCheckResourceAttr(
 						"tfe_workspace_settings.foobar", "remote_state_consumer_ids.#", "0"),
 				),
 			},
 			// Unset execution mode
 			{
 				Config:      testAccTFEWorkspaceSettingsRemoteState_GlobalConflict(ws.ID, ws2.ID),
-				ExpectError: regexp.MustCompile("If global_remote_state is true, remote_state_consumer_ids must not be set"),
+				ExpectError: regexp.MustCompile("Invalid remote_state_consumer_ids"),
+			},
+			// Project remote state
+			{
+				Config: testAccTFEWorkspaceSettingsProjectRemoteState(ws.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.foobar", "global_remote_state", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.foobar", "project_remote_state", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.foobar", "remote_state_consumer_ids.#", "0"),
+				),
+			},
+			// set consumer ids with project remote state
+			{
+				Config: testAccTFEWorkspaceSettingsRemoteState_ProjectConflict(ws.ID, ws2.ID),
+				ExpectError: regexp.MustCompile("Invalid remote_state_consumer_ids"),
+			},
+			// Set both global and project remote state
+			{
+				Config: testAccTFEWorkspaceSettingsRemoteState_GlobalProjectConflict(ws.ID, ws2.ID),
+				ExpectError: regexp.MustCompile("Invalid configuration"),
 			},
 		},
 	})
@@ -479,11 +505,22 @@ resource "tfe_workspace_settings" "foobar" {
 `, orgName, orgName)
 }
 
+func testAccTFEWorkspaceSettingsProjectRemoteState(workspaceID string) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace_settings" "foobar" {
+  workspace_id         = "%s"
+  global_remote_state  = false
+  project_remote_state = true
+}
+`, workspaceID)
+}
+
 func testAccTFEWorkspaceSettingsRemoteState(workspaceID, workspaceID2 string) string {
 	return fmt.Sprintf(`
 resource "tfe_workspace_settings" "foobar" {
 	workspace_id              = "%s"
 	global_remote_state       = false
+	project_remote_state      = false
 	remote_state_consumer_ids = ["%s"]
 }
 `, workspaceID, workspaceID2)
@@ -503,6 +540,29 @@ func testAccTFEWorkspaceSettingsRemoteState_GlobalConflict(workspaceID, workspac
 resource "tfe_workspace_settings" "foobar" {
 	workspace_id              = "%s"
 	global_remote_state       = true
+  	project_remote_state      = false
+	remote_state_consumer_ids = ["%s"]
+}
+`, workspaceID, workspaceID2)
+}
+
+func testAccTFEWorkspaceSettingsRemoteState_ProjectConflict(workspaceID, workspaceID2 string) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace_settings" "foobar" {
+	workspace_id              = "%s"
+	global_remote_state       = false
+  	project_remote_state      = true
+	remote_state_consumer_ids = ["%s"]
+}
+`, workspaceID, workspaceID2)
+}
+
+func testAccTFEWorkspaceSettingsRemoteState_GlobalProjectConflict(workspaceID, workspaceID2 string) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace_settings" "foobar" {
+	workspace_id              = "%s"
+	global_remote_state       = true
+  	project_remote_state      = true
 	remote_state_consumer_ids = ["%s"]
 }
 `, workspaceID, workspaceID2)
