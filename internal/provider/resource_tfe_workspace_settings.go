@@ -536,7 +536,7 @@ func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorks
 	workspaceID := data.WorkspaceID.ValueString()
 
 	updateOptions := tfe.WorkspaceUpdateOptions{
-		GlobalRemoteState: tfe.Bool(data.GlobalRemoteState.ValueBool()),
+		GlobalRemoteState:  tfe.Bool(data.GlobalRemoteState.ValueBool()),
 		ProjectRemoteState: tfe.Bool(data.ProjectRemoteState.ValueBool()),
 		SettingOverwrites: &tfe.WorkspaceSettingOverwritesOptions{
 			ExecutionMode: tfe.Bool(false),
@@ -598,7 +598,7 @@ func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorks
 		return fmt.Errorf("couldn't update workspace %s: %w", workspaceID, err)
 	}
 
-	if !data.GlobalRemoteState.ValueBool() && !data.ProjectRemoteState.ValueBool(){
+	if !data.GlobalRemoteState.ValueBool() && !data.ProjectRemoteState.ValueBool() {
 		r.addAndRemoveRemoteStateConsumers(workspaceID, data.RemoteStateConsumerIDs, state)
 	}
 
