@@ -15,6 +15,7 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
 )
 
 func resourceTFETeamMember() *schema.Resource {
@@ -23,7 +24,22 @@ func resourceTFETeamMember() *schema.Resource {
 		Read:   resourceTFETeamMemberRead,
 		Delete: resourceTFETeamMemberDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: schema.ImportStatePassthroughWithIdentity("id"),
+		},
+
+		Identity: &schema.ResourceIdentity{
+			SchemaFunc: func() map[string]*schema.Schema {
+				return map[string]*schema.Schema{
+					"id": {
+						Type:              schema.TypeString,
+						RequiredForImport: true,
+					},
+					"hostname": {
+						Type:              schema.TypeString,
+						OptionalForImport: true,
+					},
+				}
+			},
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -60,7 +76,13 @@ func resourceTFETeamMemberCreate(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("Error adding user %q to team %s: %w", username, teamID, err)
 	}
 
-	d.SetId(packTeamMemberID(teamID, username))
+	memberID := packTeamMemberID(teamID, username)
+	d.SetId(memberID)
+
+	err = helpers.WriteTFEIdentity(d, memberID, config.Client.BaseURL().Host)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -93,7 +115,12 @@ func resourceTFETeamMemberRead(d *schema.ResourceData, meta interface{}) error {
 
 			// We do this here as a means to convert the internal ID,
 			// in case anyone still uses the old format.
-			d.SetId(packTeamMemberID(teamID, username))
+			memberID := packTeamMemberID(teamID, username)
+			d.SetId(memberID)
+			err = helpers.WriteTFEIdentity(d, memberID, config.Client.BaseURL().Host)
+			if err != nil {
+				return err
+			}
 			found = true
 			break
 		}
