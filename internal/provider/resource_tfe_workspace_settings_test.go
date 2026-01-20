@@ -300,12 +300,12 @@ func TestAccTFEWorkspaceSettingsRemoteState(t *testing.T) {
 			},
 			// set consumer ids with project remote state
 			{
-				Config: testAccTFEWorkspaceSettingsRemoteState_ProjectConflict(ws.ID, ws2.ID),
+				Config:      testAccTFEWorkspaceSettingsRemoteState_ProjectConflict(ws.ID, ws2.ID),
 				ExpectError: regexp.MustCompile("Invalid remote_state_consumer_ids"),
 			},
 			// Set both global and project remote state
 			{
-				Config: testAccTFEWorkspaceSettingsRemoteState_GlobalProjectConflict(ws.ID, ws2.ID),
+				Config:      testAccTFEWorkspaceSettingsRemoteState_GlobalProjectConflict(ws.ID, ws2.ID),
 				ExpectError: regexp.MustCompile("Invalid configuration"),
 			},
 		},
