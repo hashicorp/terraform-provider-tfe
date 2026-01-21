@@ -12,6 +12,8 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
+	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
@@ -857,6 +859,42 @@ func TestAccTFEPolicySetImport(t *testing.T) {
 				ResourceName:      "tfe_policy_set.foobar",
 				ImportState:       true,
 				ImportStateVerify: true,
+				// Note: We ignore the optional fields below, since the old API endpoints send empty values
+				// and the results may vary depending on the API version
+				ImportStateVerifyIgnore: []string{"kind", "overridable"},
+			},
+		},
+	})
+}
+
+func TestAccTFEPolicySet_importByIdentity(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicySet_populated(org.Name),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectIdentity("tfe_policy_set.foobar", map[string]knownvalue.Check{
+						"id":       knownvalue.NotNull(),
+						"hostname": knownvalue.StringExact(os.Getenv("TFE_HOSTNAME")),
+					}),
+				},
+			},
+
+			{
+				ResourceName:    "tfe_policy_set.foobar",
+				ImportState:     true,
+				ImportStateKind: resource.ImportBlockWithResourceIdentity,
 				// Note: We ignore the optional fields below, since the old API endpoints send empty values
 				// and the results may vary depending on the API version
 				ImportStateVerifyIgnore: []string{"kind", "overridable"},
