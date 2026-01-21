@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
 )
 
 func resourceTFEPolicy() *schema.Resource {
@@ -32,6 +33,25 @@ func resourceTFEPolicy() *schema.Resource {
 		},
 
 		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
+
+		Identity: &schema.ResourceIdentity{
+			SchemaFunc: func() map[string]*schema.Schema {
+				return map[string]*schema.Schema{
+					"id": {
+						Type:              schema.TypeString,
+						RequiredForImport: true,
+					},
+					"hostname": {
+						Type:              schema.TypeString,
+						OptionalForImport: true,
+					},
+					"organization": {
+						Type:              schema.TypeString,
+						RequiredForImport: true,
+					},
+				}
+			},
+		},
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -171,6 +191,11 @@ func resourceTFEPolicyCreate(d *schema.ResourceData, meta interface{}) error {
 
 	d.SetId(policy.ID)
 
+	err = helpers.WriteTFEIdentityWithOrg(d, policy.ID, organization, config.Client.BaseURL().Host)
+	if err != nil {
+		return err
+	}
+
 	log.Printf("[DEBUG] Upload %s policy %s for organization: %s", kind, name, organization)
 	err = config.Client.Policies.Upload(ctx, policy.ID, []byte(d.Get("policy").(string)))
 	if err != nil {
@@ -265,6 +290,16 @@ func resourceTFEPolicyRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	d.Set("policy", string(content))
 
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
+
+	err = helpers.WriteTFEIdentityWithOrg(d, policy.ID, organization, config.Client.BaseURL().Host)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -339,6 +374,29 @@ func resourceTFEPolicyDelete(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceTFEPolicyImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	// First we'll check for an identity
+	identity, err := d.Identity()
+	if err != nil {
+		return nil, fmt.Errorf("error reading policy identity: %w", err)
+	}
+
+	if externalID := identity.Get("id").(string); externalID != "" {
+		// We are importing by identity
+		// This only supported when using an import block, since import blocks
+		// are the only way to specify an identity. Importing via TF CLI does
+		// not support specifying an identity.
+		d.SetId(externalID)
+		orgName := identity.Get("organization").(string)
+		err = d.Set("organization", orgName)
+		if err != nil {
+			return nil, fmt.Errorf("could not set organization name %s on policy: %w", orgName, err)
+		}
+
+		// Exit early
+		return []*schema.ResourceData{d}, nil
+	}
+
+	// Otherwise we are using legacy import prefix
 	s := strings.SplitN(d.Id(), "/", 2)
 	if len(s) != 2 {
 		return nil, fmt.Errorf(
