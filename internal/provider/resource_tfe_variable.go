@@ -85,7 +85,7 @@ func modelFromTFEVariable(v tfe.Variable, lastValue types.String, isWriteOnlyVal
 // modelFromTFEVariableSetVariable builds a modelTFEVariable struct from a
 // tfe.VariableSetVariable value (plus the last known value of the variable's
 // `value` attribute).
-func modelFromTFEVariableSetVariable(v tfe.VariableSetVariable, lastValue types.String) modelTFEVariable {
+func modelFromTFEVariableSetVariable(v tfe.VariableSetVariable, lastValue types.String, isWriteOnlyValue bool) modelTFEVariable {
 	// Initialize all fields from the provided API struct
 	m := modelTFEVariable{
 		ID:            types.StringValue(v.ID),
@@ -105,6 +105,11 @@ func modelFromTFEVariableSetVariable(v tfe.VariableSetVariable, lastValue types.
 		m.ReadableValue = types.StringNull()
 	} else {
 		m.ReadableValue = m.Value
+	}
+	// Don't retrieve values if write-only is being used. Unset the value and readable_value fields before updating the state.
+	if isWriteOnlyValue {
+		m.Value = types.StringValue("")
+		m.ReadableValue = types.StringValue("")
 	}
 	return m
 }
@@ -356,17 +361,30 @@ func (r *resourceTFEVariable) createWithVariableSet(ctx context.Context, req res
 		return
 	}
 
+	var config modelTFEVariable
+	diags = req.Config.Get(ctx, &config)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	key := data.Key.ValueString()
 	category := data.Category.ValueString()
 	variableSetID := data.VariableSetID.ValueString()
 
 	options := tfe.VariableSetVariableCreateOptions{
 		Key:         data.Key.ValueStringPointer(),
-		Value:       data.Value.ValueStringPointer(),
 		Category:    tfe.Category(tfe.CategoryType(category)),
 		HCL:         data.HCL.ValueBoolPointer(),
 		Sensitive:   data.Sensitive.ValueBoolPointer(),
 		Description: data.Description.ValueStringPointer(),
+	}
+
+	// Set Value from `value_wo` if set, otherwise use the normal value
+	if !config.ValueWO.IsNull() {
+		options.Value = config.ValueWO.ValueStringPointer()
+	} else {
+		options.Value = data.Value.ValueStringPointer()
 	}
 
 	log.Printf("[DEBUG] Create %s variable: %s", category, key)
@@ -379,8 +397,15 @@ func (r *resourceTFEVariable) createWithVariableSet(ctx context.Context, req res
 		return
 	}
 
+	// Store the hashed write-only value in the private state
+	store := r.writeOnlyValueStore(resp.Private)
+	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.ValueWO)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// We got a variable, so set state to new values
-	result := modelFromTFEVariableSetVariable(*variable, data.Value)
+	result := modelFromTFEVariableSetVariable(*variable, data.Value, !config.ValueWO.IsNull())
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -458,8 +483,14 @@ func (r *resourceTFEVariable) readWithVariableSet(ctx context.Context, req resou
 		return
 	}
 
+	// Check if the parameter is write-only
+	isWriteOnly, diags := r.writeOnlyValueStore(resp.Private).PriorValueExists(ctx)
+	resp.Diagnostics.Append(diags...)
+	if diags.HasError() {
+		return
+	}
 	// We got a variable, so update state:
-	result := modelFromTFEVariableSetVariable(*variable, data.Value)
+	result := modelFromTFEVariableSetVariable(*variable, data.Value, isWriteOnly)
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -555,6 +586,12 @@ func (r *resourceTFEVariable) updateWithVariableSet(ctx context.Context, req res
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	var config modelTFEVariable
+	diags = req.Config.Get(ctx, &config)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	variableID := plan.ID.ValueString()
 	variableSetID := plan.VariableSetID.ValueString()
@@ -580,8 +617,14 @@ func (r *resourceTFEVariable) updateWithVariableSet(ctx context.Context, req res
 		)
 		return
 	}
+	// Store the hashed write-only value in the private state
+	store := r.writeOnlyValueStore(resp.Private)
+	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.ValueWO)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	// Update state
-	result := modelFromTFEVariableSetVariable(*variable, plan.Value)
+	result := modelFromTFEVariableSetVariable(*variable, plan.Value, !config.ValueWO.IsNull())
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }

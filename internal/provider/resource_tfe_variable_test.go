@@ -237,6 +237,49 @@ func TestAccTFEVariable_valueWriteOnly(t *testing.T) {
 	})
 }
 
+func TestAccTFEVariable_valueWriteOnly_variable_set(t *testing.T) {
+	variable := &tfe.VariableSetVariable{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	variableValue1 := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	variableValue2 := variableValue1 + 42
+
+	resource.Test(t, resource.TestCase{
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			tfversion.SkipBelow(version.Must(version.NewVersion("1.11.0"))),
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFEVariable_valueAndValueWO_variable_set(rInt, variableValue1, false),
+				ExpectError: regexp.MustCompile(`Attribute "value" cannot be specified when "value_wo" is specified`),
+			},
+			{
+				Config: testAccTFEVariable_valueWriteOnly_variable_set(rInt, variableValue1, false),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEVariableSetVariableExists(
+						"tfe_variable.foobar", variable),
+					resource.TestCheckNoResourceAttr(
+						"tfe_variable.foobar", "value_wo"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "sensitive", "false"),
+				),
+			},
+			{
+				Config: testAccTFEVariable_valueWriteOnly_variable_set(rInt, variableValue2, false),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEVariableSetVariableExists(
+						"tfe_variable.foobar", variable),
+					resource.TestCheckNoResourceAttr(
+						"tfe_variable.foobar", "value_wo"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "sensitive", "false"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEVariable_readable_value(t *testing.T) {
 	variable := &tfe.Variable{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -957,4 +1000,51 @@ resource "tfe_workspace" "downstream-nonreadable" {
   organization = tfe_organization.foobar.id
 }
 `, rIntOrg, rIntVariableValue, strconv.FormatBool(sensitive))
+}
+
+func testAccTFEVariable_valueWriteOnly_variable_set(rIntOrg int, rIntVariableValue int, sensitive bool) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+	name  = "tst-terraform-%d"
+	email = "admin@company.com"
+}
+
+resource "tfe_variable_set" "foobar" {
+	name         = "varset-test"
+	organization = tfe_organization.foobar.id
+}
+
+resource "tfe_variable" "foobar" {
+  key             = "key_test"
+  value_wo        = "%d"
+  description     = "my description"
+  category        = "env"
+  variable_set_id = tfe_variable_set.foobar.id
+  sensitive       = %s
+}
+`, rIntOrg, rIntVariableValue, strconv.FormatBool(sensitive))
+}
+
+func testAccTFEVariable_valueAndValueWO_variable_set(rIntOrg int, rIntVariableValue int, sensitive bool) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+	name  = "tst-terraform-%d"
+	email = "admin@company.com"
+}
+
+resource "tfe_variable_set" "foobar" {
+	name         = "varset-test"
+	organization = tfe_organization.foobar.id
+}
+
+resource "tfe_variable" "foobar" {
+  key             = "key_test"
+  value           = "%d"
+  value_wo        = "%d"
+  description     = "my description"
+  category        = "env"
+  variable_set_id = tfe_variable_set.foobar.id
+  sensitive       = %s
+}
+`, rIntOrg, rIntVariableValue, rIntVariableValue, strconv.FormatBool(sensitive))
 }
