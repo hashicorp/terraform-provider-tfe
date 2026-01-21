@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/identityschema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
@@ -49,6 +50,13 @@ type modelTFEVariable struct {
 	Sensitive     types.Bool   `tfsdk:"sensitive"`
 	WorkspaceID   types.String `tfsdk:"workspace_id"`
 	VariableSetID types.String `tfsdk:"variable_set_id"`
+}
+
+type modelTFEVariableIdentity struct {
+	ID types.String `tfsdk:"id"`
+	// Can be either a variable set id or workspace id
+	ConfigurableID types.String `tfsdk:"configurable_id"`
+	Hostname       types.String `tfsdk:"hostname"`
 }
 
 // modelFromTFEVariable builds a modelTFEVariable struct from a tfe.Variable
@@ -274,6 +282,22 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 	}
 }
 
+func (r *resourceTFEVariable) IdentitySchema(ctx context.Context, req resource.IdentitySchemaRequest, resp *resource.IdentitySchemaResponse) {
+	resp.IdentitySchema = identityschema.Schema{
+		Attributes: map[string]identityschema.Attribute{
+			"id": identityschema.StringAttribute{
+				RequiredForImport: true,
+			},
+			"configurable_id": identityschema.StringAttribute{
+				RequiredForImport: true,
+			},
+			"hostname": identityschema.StringAttribute{
+				OptionalForImport: true,
+			},
+		},
+	}
+}
+
 // isWorkspaceVariable is a helper function for switching between tfe_variable's
 // two separate CRUD implementations.
 func isWorkspaceVariable(ctx context.Context, data AttrGettable) bool {
@@ -350,6 +374,13 @@ func (r *resourceTFEVariable) createWithWorkspace(ctx context.Context, req resou
 
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
+
+	identity := modelTFEVariableIdentity{
+		ID:             result.ID,
+		Hostname:       types.StringValue(r.config.Client.BaseURL().Host),
+		ConfigurableID: result.WorkspaceID,
+	}
+	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
 }
 
 // createWithVariableSet is the variable set version of Create.
@@ -408,6 +439,13 @@ func (r *resourceTFEVariable) createWithVariableSet(ctx context.Context, req res
 	result := modelFromTFEVariableSetVariable(*variable, data.Value, !config.ValueWO.IsNull())
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
+
+	identity := modelTFEVariableIdentity{
+		ID:             result.ID,
+		Hostname:       types.StringValue(r.config.Client.BaseURL().Host),
+		ConfigurableID: result.VariableSetID,
+	}
+	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
 }
 
 // Read implements resource.Resource
@@ -455,6 +493,13 @@ func (r *resourceTFEVariable) readWithWorkspace(ctx context.Context, req resourc
 	result := modelFromTFEVariable(*variable, data.Value, isWriteOnly)
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
+
+	identity := modelTFEVariableIdentity{
+		ID:             result.ID,
+		Hostname:       types.StringValue(r.config.Client.BaseURL().Host),
+		ConfigurableID: result.WorkspaceID,
+	}
+	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
 }
 
 // readWithVariableSet is the variable set version of Read.
@@ -493,6 +538,13 @@ func (r *resourceTFEVariable) readWithVariableSet(ctx context.Context, req resou
 	result := modelFromTFEVariableSetVariable(*variable, data.Value, isWriteOnly)
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
+
+	identity := modelTFEVariableIdentity{
+		ID:             result.ID,
+		Hostname:       types.StringValue(r.config.Client.BaseURL().Host),
+		ConfigurableID: result.VariableSetID,
+	}
+	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
 }
 
 // Update implements resource.Resource
@@ -783,6 +835,38 @@ func (r *resourceTFEVariable) UpgradeState(ctx context.Context) map[int64]resour
 
 // ImportState implements resource.ResourceWithImportState
 func (r *resourceTFEVariable) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	if req.ID != "" {
+		r.legacyImportByID(ctx, req, resp)
+		return
+	}
+
+	var identityData modelTFEVariableIdentity
+	// We are reading an identity here
+	resp.Diagnostics.Append(req.Identity.Get(ctx, &identityData)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	data := modelTFEVariable{
+		ID: identityData.ID,
+	}
+	varsetIDUsed := variableSetIDRegexp.MatchString(identityData.ConfigurableID.ValueString())
+
+	if varsetIDUsed {
+		// The Configurable ID is a varset
+		data.VariableSetID = identityData.ConfigurableID
+		data.WorkspaceID = types.StringNull()
+	} else {
+		// The Configurable ID is a workspace
+		data.VariableSetID = types.StringNull()
+		data.WorkspaceID = identityData.ConfigurableID
+	}
+
+	diags := resp.State.Set(ctx, &data)
+	resp.Diagnostics.Append(diags...)
+}
+
+func (r *resourceTFEVariable) legacyImportByID(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	s := strings.SplitN(req.ID, "/", 3)
 	if len(s) != 3 {
 		resp.Diagnostics.AddError(
@@ -791,10 +875,9 @@ func (r *resourceTFEVariable) ImportState(ctx context.Context, req resource.Impo
 		)
 		return
 	}
-	org := s[0]
+	organization := s[0]
 	container := s[1]
 	id := s[2]
-
 	data := modelTFEVariable{
 		ID:            types.StringValue(id),
 		WorkspaceID:   types.StringNull(),
@@ -805,11 +888,11 @@ func (r *resourceTFEVariable) ImportState(ctx context.Context, req resource.Impo
 	if varsetIDUsed {
 		data.VariableSetID = types.StringValue(container)
 	} else {
-		workspaceID, err := fetchWorkspaceExternalID(org+"/"+container, r.config.Client)
+		workspaceID, err := fetchWorkspaceExternalID(organization+"/"+container, r.config.Client)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Error importing variable",
-				fmt.Sprintf("Couldn't retrieve workspace %s from organization %s: %s", container, org, err.Error()),
+				fmt.Sprintf("Couldn't retrieve workspace %s from organization %s: %s", container, organization, err.Error()),
 			)
 			return
 		}
