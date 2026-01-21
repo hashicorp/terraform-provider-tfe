@@ -16,6 +16,7 @@ import (
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
 )
 
 func resourceTFEPolicySet() *schema.Resource {
@@ -25,10 +26,25 @@ func resourceTFEPolicySet() *schema.Resource {
 		Update: resourceTFEPolicySetUpdate,
 		Delete: resourceTFEPolicySetDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: schema.ImportStatePassthroughWithIdentity("id"),
 		},
 
 		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
+
+		Identity: &schema.ResourceIdentity{
+			SchemaFunc: func() map[string]*schema.Schema {
+				return map[string]*schema.Schema{
+					"id": {
+						Type:              schema.TypeString,
+						RequiredForImport: true,
+					},
+					"hostname": {
+						Type:              schema.TypeString,
+						OptionalForImport: true,
+					},
+				}
+			},
+		},
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -243,6 +259,11 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 
 	d.SetId(policySet.ID)
 
+	err = helpers.WriteTFEIdentity(d, policySet.ID, config.Client.BaseURL().Host)
+	if err != nil {
+		return err
+	}
+
 	return resourceTFEPolicySetRead(d, meta)
 }
 
@@ -324,6 +345,11 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 	d.Set("workspace_ids", workspaceIDs)
+
+	err = helpers.WriteTFEIdentity(d, policySet.ID, config.Client.BaseURL().Host)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
