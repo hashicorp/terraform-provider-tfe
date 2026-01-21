@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/identityschema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
@@ -45,6 +46,15 @@ type modelTFERegistryProvider struct {
 	Name         types.String `tfsdk:"name"`
 	CreatedAt    types.String `tfsdk:"created_at"`
 	UpdatedAt    types.String `tfsdk:"updated_at"`
+}
+
+type modelTFERegistryProviderIdentity struct {
+	ID           types.String `tfsdk:"id"`
+	Hostname     types.String `tfsdk:"hostname"`
+	Organization types.String `tfsdk:"organization"`
+	RegistryName types.String `tfsdk:"registry_name"`
+	Namespace    types.String `tfsdk:"namespace"`
+	Name         types.String `tfsdk:"name"`
 }
 
 func modelFromTFERegistryProvider(v *tfe.RegistryProvider) modelTFERegistryProvider {
@@ -127,6 +137,31 @@ func (r *resourceTFERegistryProvider) Schema(ctx context.Context, req resource.S
 			"updated_at": schema.StringAttribute{
 				Description: "The time when the provider was last updated.",
 				Computed:    true,
+			},
+		},
+	}
+}
+
+func (r *resourceTFERegistryProvider) IdentitySchema(ctx context.Context, req resource.IdentitySchemaRequest, resp *resource.IdentitySchemaResponse) {
+	resp.IdentitySchema = identityschema.Schema{
+		Attributes: map[string]identityschema.Attribute{
+			"id": identityschema.StringAttribute{
+				RequiredForImport: true,
+			},
+			"hostname": identityschema.StringAttribute{
+				OptionalForImport: true,
+			},
+			"organization": identityschema.StringAttribute{
+				RequiredForImport: true,
+			},
+			"registry_name": identityschema.StringAttribute{
+				RequiredForImport: true,
+			},
+			"namespace": identityschema.StringAttribute{
+				RequiredForImport: true,
+			},
+			"name": identityschema.StringAttribute{
+				RequiredForImport: true,
 			},
 		},
 	}
@@ -222,6 +257,17 @@ func (r *resourceTFERegistryProvider) Create(ctx context.Context, req resource.C
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+
+	identity := modelTFERegistryProviderIdentity{
+		ID:           result.ID,
+		Hostname:     types.StringValue(r.config.Client.BaseURL().Host),
+		Organization: result.Organization,
+		RegistryName: result.RegistryName,
+		Namespace:    result.Namespace,
+		Name:         result.Name,
+	}
+
+	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
 }
 
 func (r *resourceTFERegistryProvider) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -263,6 +309,17 @@ func (r *resourceTFERegistryProvider) Read(ctx context.Context, req resource.Rea
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+
+	identity := modelTFERegistryProviderIdentity{
+		ID:           result.ID,
+		Hostname:     types.StringValue(r.config.Client.BaseURL().Host),
+		Organization: result.Organization,
+		RegistryName: result.RegistryName,
+		Namespace:    result.Namespace,
+		Name:         result.Name,
+	}
+
+	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
 }
 
 func (r *resourceTFERegistryProvider) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -301,17 +358,41 @@ func (r *resourceTFERegistryProvider) Delete(ctx context.Context, req resource.D
 }
 
 func (r *resourceTFERegistryProvider) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	s := strings.SplitN(req.ID, "/", 4)
-	if len(s) != 4 {
-		resp.Diagnostics.AddError(
-			"Error importing variable",
-			fmt.Sprintf("Invalid variable import format: %s (expected <ORGANIZATION>/<REGISTRY NAME>/<NAMESPACE>/<PROVIDER NAME>)", req.ID),
-		)
-		return
+	var organization string
+	var registryName string
+	var namespace string
+	var name string
+
+	// We'll try to read the legacy import prefix
+	if req.ID != "" {
+		s := strings.SplitN(req.ID, "/", 4)
+		if len(s) != 4 {
+			resp.Diagnostics.AddError(
+				"Error importing variable",
+				fmt.Sprintf("Invalid variable import format: %s (expected <ORGANIZATION>/<REGISTRY NAME>/<NAMESPACE>/<PROVIDER NAME>)", req.ID),
+			)
+			return
+		}
+		organization = s[0]
+		registryName = s[1]
+		namespace = s[2]
+		name = s[3]
+	} else {
+		// If that is not present we'll read in the identity instead
+		var identity modelTFERegistryProviderIdentity
+		resp.Diagnostics.Append(req.Identity.Get(ctx, &identity)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		organization = identity.Organization.ValueString()
+		registryName = identity.RegistryName.ValueString()
+		namespace = identity.Namespace.ValueString()
+		name = identity.Name.ValueString()
 	}
 
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("organization"), s[0])...)
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("registry_name"), s[1])...)
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("namespace"), s[2])...)
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("name"), s[3])...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("organization"), organization)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("registry_name"), registryName)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("namespace"), namespace)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("name"), name)...)
 }
