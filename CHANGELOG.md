@@ -1,5 +1,8 @@
 ## Unreleased
 
+BUG FIXES:
+* `r/tfe_variable`: Fixed a bug where value_wo was ignored in tfe_variable resources when using variable_set_id. By @Maed223 [#1950](https://github.com/hashicorp/terraform-provider-tfe/pull/1950)
+
 ## v0.73.0
 
 ENHANCEMENTS:
