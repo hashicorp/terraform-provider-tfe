@@ -10,8 +10,10 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -75,5 +77,23 @@ func dataSourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interf
 
 	d.SetId(orgMemberID)
 
-	return resourceTFEOrganizationMembershipRead(d, meta)
+	options := tfe.OrganizationMembershipReadOptions{
+		Include: []tfe.OrgMembershipIncludeOpt{tfe.OrgMembershipUser},
+	}
+
+	membership, err := config.Client.OrganizationMemberships.ReadWithOptions(context.Background(), orgMemberID, options)
+	if err != nil {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			d.SetId("")
+			return nil
+		}
+		return fmt.Errorf("error reading configuration of membership %s: %w", orgMemberID, err)
+	}
+
+	d.Set("email", membership.Email)
+	d.Set("organization", membership.Organization.Name)
+	d.Set("user_id", membership.User.ID)
+	d.Set("username", membership.User.Username)
+
+	return nil
 }
