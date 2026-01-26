@@ -17,6 +17,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
+const minTFEVersionWorkspaceRunTaskStages = "v202404-1"
+
 func workspaceRunTaskEnforcementLevels() []string {
 	return []string{
 		string(tfe.Advisory),
@@ -52,7 +54,6 @@ func sentenceList(items []string, prefix string, suffix string, conjunction stri
 
 type resourceWorkspaceRunTask struct {
 	config         ConfiguredClient
-	capabilities   capabilitiesResolver
 	supportsStages *bool
 }
 
@@ -100,7 +101,6 @@ func (r *resourceWorkspaceRunTask) Configure(ctx context.Context, req resource.C
 		)
 	}
 	r.config = client
-	r.capabilities = newDefaultCapabilityResolver(client.Client)
 }
 
 func (r *resourceWorkspaceRunTask) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -328,11 +328,8 @@ func (r *resourceWorkspaceRunTask) UpgradeState(ctx context.Context) map[int64]r
 
 func (r *resourceWorkspaceRunTask) supportsStagesProperty() bool {
 	// The Stages property is available in HCP Terraform and Terraform Enterprise v202404-1 onwards.
-	//
-	// The version comparison here can use plain string comparisons due to the nature of the naming scheme. If
-	// TFE every changes its scheme, the comparison will be problematic.
 	if r.supportsStages == nil {
-		value := r.capabilities.IsCloud() || r.capabilities.RemoteTFEVersion() > "v202404"
+		value := r.config.MeetsMinRemoteTFEVersion(minTFEVersionWorkspaceRunTaskStages)
 		r.supportsStages = &value
 	}
 	return *r.supportsStages
@@ -340,7 +337,7 @@ func (r *resourceWorkspaceRunTask) supportsStagesProperty() bool {
 
 func (r *resourceWorkspaceRunTask) addStageSupportDiag(d *diag.Diagnostics, isError bool) {
 	summary := "Terraform Enterprise version"
-	detail := fmt.Sprintf("The version of Terraform Enterprise does not support the stages attribute on Workspace Run Tasks. Got %s but requires v202404-1+", r.config.Client.RemoteTFEVersion())
+	detail := fmt.Sprintf("The version of Terraform Enterprise does not support the stages attribute on Workspace Run Tasks. Got %s but requires %s+", r.config.RemoteTFEVersion(), minTFEVersionWorkspaceRunTaskStages)
 	if isError {
 		d.AddError(detail, summary)
 	} else {

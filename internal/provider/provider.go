@@ -6,6 +6,7 @@ package provider
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -41,6 +42,30 @@ func (c ConfiguredClient) schemaOrDefaultOrganizationKey(resource *schema.Resour
 		return "", errMissingOrganization
 	}
 	return c.Organization, nil
+}
+
+func (c ConfiguredClient) MeetsMinRemoteTFEVersion(minVersion string) bool {
+	return meetsMinTFEVersion(c.Client.IsCloud(), c.RemoteTFEVersion(), minVersion)
+}
+
+func meetsMinTFEVersion(isCloud bool, currentVersion, minVersion string) bool {
+	if isCloud {
+		return true
+	}
+
+	meets, err := checkTFEVersion(currentVersion, minVersion)
+	if err != nil {
+		panic(fmt.Sprintf("invalid minimum version: %v", err))
+	}
+
+	return meets
+}
+
+func (c ConfiguredClient) RemoteTFEVersion() string {
+	if v := c.Client.RemoteTFENumericVersion(); v != "" {
+		return v
+	}
+	return c.Client.RemoteTFEVersion()
 }
 
 // ctx is used as default context.Context when making TFE calls.

@@ -117,9 +117,12 @@ func dataSourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) erro
 					d.Set("parent_project_id", vs.Parent.Project.ID)
 				}
 
-				// Only now include vars and workspaces to cut down on request load.
+				includes := []tfe.VariableSetIncludeOpt{tfe.VariableSetWorkspaces, tfe.VariableSetVars}
+				if config.MeetsMinRemoteTFEVersion(minTFEVersionVariableSetStacks) {
+					includes = append(includes, tfe.VariableSetStacks)
+				}
 				readOptions := tfe.VariableSetReadOptions{
-					Include: &[]tfe.VariableSetIncludeOpt{tfe.VariableSetWorkspaces, tfe.VariableSetVars, tfe.VariableSetStacks},
+					Include: &includes,
 				}
 
 				vs, err = config.Client.VariableSets.Read(ctx, vs.ID, &readOptions)
