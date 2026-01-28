@@ -29,8 +29,8 @@ The following arguments are supported:
   generated even if a token already exists. This will invalidate the existing
   token!
 * `expired_at` - (Optional) The token's expiration date. The expiration date must be a date/time string in RFC3339 
-format (e.g., "2024-12-31T23:59:59Z"). If no expiration date is supplied, the expiration date will default to null and 
-never expire.
+  format (e.g., "2024-12-31T23:59:59Z"). If no expiration date is supplied, the expiration date will default 
+  to 2 years from the time of token creation.
 
 ## Example Usage
 
