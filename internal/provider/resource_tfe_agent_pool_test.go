@@ -5,10 +5,15 @@ package provider
 
 import (
 	"fmt"
+	"math/rand"
+	"os"
 	"testing"
+	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
+	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
@@ -161,6 +166,31 @@ func TestAccTFEAgentPool_import(t *testing.T) {
 	})
 }
 
+func TestAccTFEAgentPool_importByIdentity(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEAgentPoolDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEAgentPool_basicImport(rInt),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectIdentity("tfe_agent_pool.foobar", map[string]knownvalue.Check{
+						"id":       knownvalue.NotNull(),
+						"hostname": knownvalue.StringExact(os.Getenv("TFE_HOSTNAME")),
+					}),
+				},
+			},
+			{
+				ResourceName:    "tfe_agent_pool.foobar",
+				ImportState:     true,
+				ImportStateKind: resource.ImportBlockWithResourceIdentity,
+			},
+		},
+	})
+}
+
 func testAccCheckTFEAgentPoolExists(
 	n string, agentPool *tfe.AgentPool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
@@ -233,6 +263,18 @@ resource "tfe_agent_pool" "foobar" {
   name         = "agent-pool-test"
   organization = "%s"
 }`, organization)
+}
+
+func testAccTFEAgentPool_basicImport(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foo" {
+	name = "tst-terraform-%d"
+	email = "admin@mycompany.com"
+}
+resource "tfe_agent_pool" "foobar" {
+  name         = "agent-pool-test"
+  organization = tfe_organization.foo.id
+}`, rInt)
 }
 
 func testAccTFEAgentPool_custom_scope(organization string) string {

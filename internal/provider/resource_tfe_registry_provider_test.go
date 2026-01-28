@@ -6,10 +6,14 @@ package provider
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"testing"
 	"time"
 
+	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
+	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 )
 
 func TestAccTFERegistryProviderResource_public(t *testing.T) {
@@ -55,6 +59,54 @@ func TestAccTFERegistryProviderResource_private(t *testing.T) {
 					resource.TestCheckResourceAttrSet("tfe_registry_provider.foobar", "created_at"),
 					resource.TestCheckResourceAttrSet("tfe_registry_provider.foobar", "updated_at"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccTFERegistryProviderResource_importByIdentity(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFERegistryProviderResourceConfig_private(orgName),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectIdentity("tfe_registry_provider.foobar", map[string]knownvalue.Check{
+						"id":            knownvalue.NotNull(),
+						"hostname":      knownvalue.StringExact(os.Getenv("TFE_HOSTNAME")),
+						"organization":  knownvalue.StringExact(orgName),
+						"registry_name": knownvalue.StringExact(string(tfe.PrivateRegistry)),
+						"namespace":     knownvalue.StringExact(orgName),
+						"name":          knownvalue.StringExact("example"),
+					}),
+				},
+			},
+			{
+				ResourceName:    "tfe_registry_provider.foobar",
+				ImportState:     true,
+				ImportStateKind: resource.ImportBlockWithResourceIdentity,
+			},
+			{
+				Config: testAccTFERegistryProviderResourceConfig_public(orgName),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectIdentity("tfe_registry_provider.foobar", map[string]knownvalue.Check{
+						"id":            knownvalue.NotNull(),
+						"hostname":      knownvalue.StringExact(os.Getenv("TFE_HOSTNAME")),
+						"organization":  knownvalue.StringExact(orgName),
+						"registry_name": knownvalue.StringExact(string(tfe.PublicRegistry)),
+						"namespace":     knownvalue.StringExact("hashicorp"),
+						"name":          knownvalue.StringExact("aws"),
+					}),
+				},
+			},
+			{
+				ResourceName:    "tfe_registry_provider.foobar",
+				ImportState:     true,
+				ImportStateKind: resource.ImportBlockWithResourceIdentity,
 			},
 		},
 	})

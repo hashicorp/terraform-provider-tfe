@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/identityschema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -48,6 +49,11 @@ type modelTFEProject struct {
 	AutoDestroyActivityDuration types.String `tfsdk:"auto_destroy_activity_duration"`
 	Tags                        types.Map    `tfsdk:"tags"`
 	IgnoreAdditionalTags        types.Bool   `tfsdk:"ignore_additional_tags"`
+}
+
+type modelProjectIdentity struct {
+	ID       types.String `tfsdk:"id"`
+	Hostname types.String `tfsdk:"hostname"`
 }
 
 // modelFromTFEProject builds a modelTFEProject struct from a tfe.Project value.
@@ -165,6 +171,19 @@ func (r *resourceTFEProject) Schema(ctx context.Context, req resource.SchemaRequ
 	}
 }
 
+func (r *resourceTFEProject) IdentitySchema(ctx context.Context, req resource.IdentitySchemaRequest, resp *resource.IdentitySchemaResponse) {
+	resp.IdentitySchema = identityschema.Schema{
+		Attributes: map[string]identityschema.Attribute{
+			"id": identityschema.StringAttribute{
+				RequiredForImport: true,
+			},
+			"hostname": identityschema.StringAttribute{
+				OptionalForImport: true,
+			},
+		},
+	}
+}
+
 // Create implements resource.Resource
 func (r *resourceTFEProject) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan modelTFEProject
@@ -215,6 +234,12 @@ func (r *resourceTFEProject) Create(ctx context.Context, req resource.CreateRequ
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+
+	identity := modelProjectIdentity{
+		ID:       result.ID,
+		Hostname: types.StringValue(r.config.Client.BaseURL().Host),
+	}
+	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
 }
 
 // Read implements resource.Resource
@@ -282,6 +307,12 @@ func (r *resourceTFEProject) Read(ctx context.Context, req resource.ReadRequest,
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+
+	identity := modelProjectIdentity{
+		ID:       result.ID,
+		Hostname: types.StringValue(r.config.Client.BaseURL().Host),
+	}
+	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
 }
 
 // Update implements resource.Resource
@@ -378,5 +409,5 @@ func (r *resourceTFEProject) ModifyPlan(ctx context.Context, req resource.Modify
 }
 
 func (r *resourceTFEProject) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+	resource.ImportStatePassthroughWithIdentity(ctx, path.Root("id"), path.Root("id"), req, resp)
 }

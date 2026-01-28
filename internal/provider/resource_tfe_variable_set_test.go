@@ -6,11 +6,14 @@ package provider
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"testing"
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
+	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
@@ -139,6 +142,32 @@ func TestAccTFEVariableSet_import(t *testing.T) {
 				ImportState:         true,
 				ImportStateIdPrefix: "",
 				ImportStateVerify:   true,
+			},
+		},
+	})
+}
+
+func TestAccTFEVariableSet_importByIdentity(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEVariableSetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEVariableSet_basic(rInt),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectIdentity("tfe_variable_set.foobar", map[string]knownvalue.Check{
+						"id":       knownvalue.NotNull(),
+						"hostname": knownvalue.StringExact(os.Getenv("TFE_HOSTNAME")),
+					}),
+				},
+			},
+			{
+				ResourceName:    "tfe_variable_set.foobar",
+				ImportState:     true,
+				ImportStateKind: resource.ImportBlockWithResourceIdentity,
 			},
 		},
 	})
@@ -284,7 +313,7 @@ func testAccTFEVariableSet_basic(rInt int) string {
 			name = "tst-terraform-%d"
 			email = "admin@company.com"
 		}
-	
+
 		resource "tfe_variable_set" "foobar" {
 			name         = "variable_set_test"
 			description  = "a test variable set"
@@ -300,12 +329,12 @@ func testAccTFEVariableSet_full(rInt int) string {
 			name = "tst-terraform-%d"
 			email = "admin@company.com"
 		}
-	
+
 		resource "tfe_workspace" "foobar" {
 			name = "foobar"
 			organization = tfe_organization.foobar.id
 		}
-		
+
 		resource "tfe_variable_set" "foobar" {
 			name         = "variable_set_test"
 			description  = "a test variable set"
@@ -313,7 +342,7 @@ func testAccTFEVariableSet_full(rInt int) string {
 			priority     = false
 			organization = tfe_organization.foobar.id
 		}
-		
+
 		resource "tfe_variable_set" "applied" {
 			name         = "variable_set_applied"
 			description  = "a test variable set"
@@ -328,12 +357,12 @@ func testAccTFEVariableSet_update(rInt int) string {
 			name  = "tst-terraform-%d"
 			email = "admin@company.com"
 		}
-		
+
 		resource "tfe_workspace" "foobar" {
 			name = "foobar"
 			organization = tfe_organization.foobar.id
 		}
-		
+
 		resource "tfe_variable_set" "foobar" {
 			name         = "variable_set_test_updated"
 			description  = "another description"
@@ -341,7 +370,7 @@ func testAccTFEVariableSet_update(rInt int) string {
 			priority     = true
 			organization = tfe_organization.foobar.id
 		}
-		
+
 		resource "tfe_variable_set" "applied" {
 			name         = "variable_set_applied"
 			description  = "a test variable set"
