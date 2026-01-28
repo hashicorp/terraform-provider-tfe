@@ -11,6 +11,8 @@ ENHANCEMENTS:
 
 FEATURES:
 * `d/tfe_organization_audit_configuration`: is a new resource for reading the auditing configuration for an organizations, by @glennsarti-hashi [#1778](https://github.com/hashicorp/terraform-provider-tfe/pull/1778)
+* `r/tfe_organization`: Adds `user_tokens_enabled` attribute to control whether user tokens can be used to read or update the organization.
+
 
 ## v0.72.0
 
