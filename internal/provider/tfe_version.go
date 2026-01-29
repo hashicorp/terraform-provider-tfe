@@ -63,9 +63,9 @@ func compareLegacyVersions(a, b string) (int, error) {
 }
 
 // validateVersion checks if the given version string is valid.
-func validateVersion(version string) error {
-	if !isLegacyVersionFormat(version) && !isModernVersionFormat(version) {
-		return fmt.Errorf("invalid TFE version format %q: must be v{YYYYMM}-{N} or X.Y.Z", version)
+func validateVersion(v string) error {
+	if !isLegacyVersionFormat(v) && !isModernVersionFormat(v) {
+		return fmt.Errorf("invalid TFE version format %q: must be v{YYYYMM}-{N} or X.Y.Z", v)
 	}
 	return nil
 }
