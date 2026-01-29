@@ -11,19 +11,19 @@ import (
 	"github.com/hashicorp/go-version"
 )
 
+var legacyVersionRegex = regexp.MustCompile(`^v(\d{6})-(\d+)$`)
+var modernVersionRegex = regexp.MustCompile(`^v?(\d+)\.(\d+)\.(\d+)(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$`)
+
 func isLegacyVersionFormat(v string) bool {
-	dateVersionRegex := regexp.MustCompile(`^v(\d{6})-(\d+)$`)
-	return dateVersionRegex.MatchString(v)
+	return legacyVersionRegex.MatchString(v)
 }
 
 func isModernVersionFormat(v string) bool {
-	dottedVersionRegex := regexp.MustCompile(`^v?(\d+)\.(\d+)\.(\d+)$`)
-	return dottedVersionRegex.MatchString(v)
+	return modernVersionRegex.MatchString(v)
 }
 
 func parseLegacyVersion(v string) (int, int, bool) {
-	dateVersionRegex := regexp.MustCompile(`^v(\d{6})-(\d+)$`)
-	matches := dateVersionRegex.FindStringSubmatch(v)
+	matches := legacyVersionRegex.FindStringSubmatch(v)
 
 	if matches == nil {
 		return 0, 0, false
@@ -35,43 +35,44 @@ func parseLegacyVersion(v string) (int, int, bool) {
 	return yyyymm, releaseNum, true
 }
 
-func compareLegacyVersions(a, b string) int {
+// compareLegacyVersions compares two legacy version strings and
+// returns -1 if a < b, 0 if a == b, and 1 if a > b.
+func compareLegacyVersions(a, b string) (int, error) {
 	aYYYYMM, aRelease, aOk := parseLegacyVersion(a)
+	if !aOk {
+		return 0, fmt.Errorf("invalid legacy version format: %q", a)
+	}
 	bYYYYMM, bRelease, bOk := parseLegacyVersion(b)
-
-	if !aOk || !bOk {
-		if a < b {
-			return -1
-		} else if a > b {
-			return 1
-		}
-		return 0
+	if !bOk {
+		return 0, fmt.Errorf("invalid legacy version format: %q", b)
 	}
 
 	if aYYYYMM != bYYYYMM {
 		if aYYYYMM < bYYYYMM {
-			return -1
+			return -1, nil
 		}
-		return 1
+		return 1, nil
 	}
 
 	if aRelease < bRelease {
-		return -1
+		return -1, nil
 	} else if aRelease > bRelease {
-		return 1
+		return 1, nil
 	}
-	return 0
+	return 0, nil
 }
 
-func validateMinVersion(minVersion string) error {
-	if !isLegacyVersionFormat(minVersion) && !isModernVersionFormat(minVersion) {
-		return fmt.Errorf("invalid TFE version format %q: must be v{YYYYMM}-{N} or X.Y.Z", minVersion)
+// validateVersion checks if the given version string is valid.
+func validateVersion(version string) error {
+	if !isLegacyVersionFormat(version) && !isModernVersionFormat(version) {
+		return fmt.Errorf("invalid TFE version format %q: must be v{YYYYMM}-{N} or X.Y.Z", version)
 	}
 	return nil
 }
 
+// checkTFEVersion checks if the remoteVersion meets the minVersion requirement.
 func checkTFEVersion(remoteVersion, minVersion string) (bool, error) {
-	if err := validateMinVersion(minVersion); err != nil {
+	if err := validateVersion(minVersion); err != nil {
 		return false, err
 	}
 
@@ -89,7 +90,11 @@ func checkTFEVersion(remoteVersion, minVersion string) (bool, error) {
 	}
 
 	if minIsLegacy && remoteIsLegacy {
-		return compareLegacyVersions(remoteVersion, minVersion) >= 0, nil
+		cmp, err := compareLegacyVersions(remoteVersion, minVersion)
+		if err != nil {
+			return false, fmt.Errorf("comparing versions %q and %q: %w", remoteVersion, minVersion, err)
+		}
+		return cmp >= 0, nil
 	}
 
 	if minIsModern && remoteIsModern {
@@ -100,13 +105,12 @@ func checkTFEVersion(remoteVersion, minVersion string) (bool, error) {
 		if err != nil {
 			return false, fmt.Errorf("parsing remote version %q: %w", remoteVersion, err)
 		}
-
 		minVer, err := version.NewVersion(minNormalized)
 		if err != nil {
 			return false, fmt.Errorf("parsing minimum version %q: %w", minVersion, err)
 		}
 
-		return remoteVer.Compare(minVer) >= 0, nil
+		return remoteVer.GreaterThanOrEqual(minVer), nil
 	}
 
 	return false, nil

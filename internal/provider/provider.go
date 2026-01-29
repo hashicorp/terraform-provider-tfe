@@ -44,23 +44,25 @@ func (c ConfiguredClient) schemaOrDefaultOrganizationKey(resource *schema.Resour
 	return c.Organization, nil
 }
 
-func (c ConfiguredClient) MeetsMinRemoteTFEVersion(minVersion string) bool {
+// MeetsMinRemoteTFEVersion checks if the TFE version meets the minimum required version.
+func (c ConfiguredClient) MeetsMinRemoteTFEVersion(minVersion string) (bool, error) {
 	return meetsMinTFEVersion(c.Client.IsCloud(), c.RemoteTFEVersion(), minVersion)
 }
 
-func meetsMinTFEVersion(isCloud bool, currentVersion, minVersion string) bool {
+func meetsMinTFEVersion(isCloud bool, currentVersion, minVersion string) (bool, error) {
 	if isCloud {
-		return true
+		return true, nil
 	}
 
 	meets, err := checkTFEVersion(currentVersion, minVersion)
 	if err != nil {
-		panic(fmt.Sprintf("invalid minimum version: %v", err))
+		return false, fmt.Errorf("invalid minimum version: %w", err)
 	}
 
-	return meets
+	return meets, nil
 }
 
+// RemoteTFEVersion returns the TFE version.
 func (c ConfiguredClient) RemoteTFEVersion() string {
 	if v := c.Client.RemoteTFENumericVersion(); v != "" {
 		return v

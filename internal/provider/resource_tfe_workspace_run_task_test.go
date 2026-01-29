@@ -29,7 +29,7 @@ func TestTFEWorkspaceRunTask_stagesSupport(t *testing.T) {
 
 	for name, testCase := range testCases {
 		t.Run(name, func(t *testing.T) {
-			actual := meetsMinTFEVersion(testCase.isCloud, testCase.remoteVer, minTFEVersionWorkspaceRunTaskStages)
+			actual, _ := meetsMinTFEVersion(testCase.isCloud, testCase.remoteVer, minTFEVersionWorkspaceRunTaskStages)
 			if actual != testCase.expectResult {
 				t.Fatalf("expected meetsMinTFEVersion to be %t, got %t", testCase.expectResult, actual)
 			}

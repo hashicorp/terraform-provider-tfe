@@ -4,10 +4,11 @@
 package provider
 
 import (
+	"fmt"
 	"testing"
 )
 
-func TestIsLegacyVersionFormat(t *testing.T) {
+func TestTFEVersionIsLegacyVersionFormat(t *testing.T) {
 	cases := map[string]bool{
 		"v202404-1":  true,
 		"v202505-1":  true,
@@ -27,7 +28,7 @@ func TestIsLegacyVersionFormat(t *testing.T) {
 	}
 }
 
-func TestIsModernVersionFormat(t *testing.T) {
+func TestTFEVersionIsModernVersionFormat(t *testing.T) {
 	cases := map[string]bool{
 		"1.0.0":     true,
 		"1.0.1":     true,
@@ -47,30 +48,34 @@ func TestIsModernVersionFormat(t *testing.T) {
 	}
 }
 
-func TestCompareLegacyVersions(t *testing.T) {
+func TestTFEVersionCompareLegacyVersions(t *testing.T) {
 	cases := map[string]struct {
 		a, b     string
 		expected int
+		err      error
 	}{
-		"equal versions":                {"v202404-1", "v202404-1", 0},
-		"a newer month":                 {"v202405-1", "v202404-1", 1},
-		"a older month":                 {"v202404-1", "v202405-1", -1},
-		"a higher release same month":   {"v202404-2", "v202404-1", 1},
-		"a lower release same month":    {"v202404-1", "v202404-2", -1},
-		"a higher release prior month":  {"v202404-2", "v202404-5", -1},
-		"numeric not string comparison": {"v202404-10", "v202404-2", 1},
+		"equal versions":                {"v202404-1", "v202404-1", 0, nil},
+		"a newer month":                 {"v202405-1", "v202404-1", 1, nil},
+		"a older month":                 {"v202404-1", "v202405-1", -1, nil},
+		"a higher release same month":   {"v202404-2", "v202404-1", 1, nil},
+		"a lower release same month":    {"v202404-1", "v202404-2", -1, nil},
+		"a higher release prior month":  {"v202404-2", "v202404-5", -1, nil},
+		"numeric not string comparison": {"v202404-10", "v202404-2", 1, nil},
+		"invalid version":               {"invalid", "v202404-1", 0, fmt.Errorf("invalid legacy version format: %q", "invalid")},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			if got := compareLegacyVersions(tc.a, tc.b); got != tc.expected {
+			if got, err := compareLegacyVersions(tc.a, tc.b); got != tc.expected {
 				t.Errorf("compareLegacyVersions(%q, %q) = %v, want %v", tc.a, tc.b, got, tc.expected)
+			} else if (err != nil && tc.err == nil) || (err == nil && tc.err != nil) || (err != nil && tc.err != nil && err.Error() != tc.err.Error()) {
+				t.Errorf("compareLegacyVersions(%q, %q) error = %v, want %v", tc.a, tc.b, err, tc.err)
 			}
 		})
 	}
 }
 
-func TestCheckTFEVersion(t *testing.T) {
+func TestTFEVersionCheckTFEVersion(t *testing.T) {
 	cases := map[string]struct {
 		remoteVersion string
 		minVersion    string
@@ -121,7 +126,7 @@ func TestCheckTFEVersion(t *testing.T) {
 	}
 }
 
-func TestValidateMinVersion(t *testing.T) {
+func TestTFEVersionValidateVersion(t *testing.T) {
 	cases := map[string]bool{
 		"v202404-1": false,
 		"1.0.0":     false,
@@ -133,9 +138,9 @@ func TestValidateMinVersion(t *testing.T) {
 
 	for version, wantError := range cases {
 		t.Run(version, func(t *testing.T) {
-			err := validateMinVersion(version)
+			err := validateVersion(version)
 			if (err != nil) != wantError {
-				t.Errorf("validateMinVersion(%q) error = %v, wantError %v", version, err, wantError)
+				t.Errorf("validateVersion(%q) error = %v, wantError %v", version, err, wantError)
 			}
 		})
 	}

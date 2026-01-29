@@ -118,7 +118,8 @@ func dataSourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) erro
 				}
 
 				includes := []tfe.VariableSetIncludeOpt{tfe.VariableSetWorkspaces, tfe.VariableSetVars}
-				if config.MeetsMinRemoteTFEVersion(minTFEVersionVariableSetStacks) {
+				meetsMinVersionRequirement, err := config.MeetsMinRemoteTFEVersion(minTFEVersionVariableSetStacks)
+				if err == nil && meetsMinVersionRequirement {
 					includes = append(includes, tfe.VariableSetStacks)
 				}
 				readOptions := tfe.VariableSetReadOptions{

@@ -177,7 +177,8 @@ func resourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) error 
 	log.Printf("[DEBUG] Read configuration of variable set: %s", d.Id())
 
 	includes := []tfe.VariableSetIncludeOpt{tfe.VariableSetWorkspaces}
-	if config.MeetsMinRemoteTFEVersion(minTFEVersionVariableSetStacks) {
+	meetsMinVersionRequirement, err := config.MeetsMinRemoteTFEVersion(minTFEVersionVariableSetStacks)
+	if err == nil && meetsMinVersionRequirement {
 		includes = append(includes, tfe.VariableSetStacks)
 	}
 

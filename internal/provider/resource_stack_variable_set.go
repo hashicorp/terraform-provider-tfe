@@ -94,7 +94,16 @@ func (r *resourceStackVariableSet) Configure(ctx context.Context, req resource.C
 }
 
 func (r *resourceStackVariableSet) checkStackVariableSetSupport(diagnostics *diag.Diagnostics) bool {
-	if !r.config.MeetsMinRemoteTFEVersion(minTFEVersionVariableSetStacks) {
+	meetsMinVersionRequirement, err := r.config.MeetsMinRemoteTFEVersion(minTFEVersionVariableSetStacks)
+	if err != nil {
+		diagnostics.AddError(
+			"Error checking TFE version",
+			fmt.Sprintf("Could not determine if Terraform Enterprise version %s meets minimum required version %s: %v",
+				r.config.RemoteTFEVersion(), minTFEVersionVariableSetStacks, err),
+		)
+		return false
+	}
+	if !meetsMinVersionRequirement {
 		diagnostics.AddError(
 			"Feature not supported",
 			fmt.Sprintf("Associating variable sets with stacks requires Terraform Enterprise version %s or later. Current version: %s",

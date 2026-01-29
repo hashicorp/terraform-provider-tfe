@@ -329,7 +329,7 @@ func (r *resourceWorkspaceRunTask) UpgradeState(ctx context.Context) map[int64]r
 func (r *resourceWorkspaceRunTask) supportsStagesProperty() bool {
 	// The Stages property is available in HCP Terraform and Terraform Enterprise v202404-1 onwards.
 	if r.supportsStages == nil {
-		value := r.config.MeetsMinRemoteTFEVersion(minTFEVersionWorkspaceRunTaskStages)
+		value, _ := r.config.MeetsMinRemoteTFEVersion(minTFEVersionWorkspaceRunTaskStages)
 		r.supportsStages = &value
 	}
 	return *r.supportsStages
