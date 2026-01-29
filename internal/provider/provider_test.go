@@ -327,7 +327,7 @@ func Test_meetsMinTFEVersion(t *testing.T) {
 			remoteVersion: "v202402-1",
 			minVersion:    "v2024031",
 			expected:      false,
-			err:           fmt.Errorf("invalid minimum version: invalid TFE version format %q: must be v{YYYYMM}-{N} or X.Y.Z", "v2024031"),
+			err:           fmt.Errorf("invalid TFE version format %q: must be v{YYYYMM}-{N} or X.Y.Z", "v2024031"),
 		},
 	}
 

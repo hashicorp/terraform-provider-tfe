@@ -10,6 +10,7 @@ package provider
 
 import (
 	"fmt"
+	"log"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -119,7 +120,11 @@ func dataSourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) erro
 
 				includes := []tfe.VariableSetIncludeOpt{tfe.VariableSetWorkspaces, tfe.VariableSetVars}
 				meetsMinVersionRequirement, err := config.MeetsMinRemoteTFEVersion(minTFEVersionVariableSetStacks)
-				if err == nil && meetsMinVersionRequirement {
+				if err != nil {
+					log.Printf("[DEBUG] could not determine if TFE version meets minimum required version %s: %v", minTFEVersionVariableSetStacks, err)
+				} else if !meetsMinVersionRequirement {
+					log.Printf("[DEBUG] TFE version does not meet minimum required version %s", minTFEVersionVariableSetStacks)
+				} else {
 					includes = append(includes, tfe.VariableSetStacks)
 				}
 				readOptions := tfe.VariableSetReadOptions{

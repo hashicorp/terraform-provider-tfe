@@ -6,7 +6,6 @@ package provider
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -56,7 +55,7 @@ func meetsMinTFEVersion(isCloud bool, currentVersion, minVersion string) (bool, 
 
 	meets, err := checkTFEVersion(currentVersion, minVersion)
 	if err != nil {
-		return false, fmt.Errorf("invalid minimum version: %w", err)
+		return false, err
 	}
 
 	return meets, nil
