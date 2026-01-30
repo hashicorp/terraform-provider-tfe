@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -18,6 +19,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
+
+const minTFEVersionVariableSetStacks = "1.0.0"
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &resourceStackVariableSet{}
@@ -90,11 +93,36 @@ func (r *resourceStackVariableSet) Configure(ctx context.Context, req resource.C
 	r.config = client
 }
 
+func (r *resourceStackVariableSet) checkStackVariableSetSupport(diagnostics *diag.Diagnostics) bool {
+	meetsMinVersionRequirement, err := r.config.MeetsMinRemoteTFEVersion(minTFEVersionVariableSetStacks)
+	if err != nil {
+		diagnostics.AddError(
+			"Error checking TFE version",
+			fmt.Sprintf("Could not determine if Terraform Enterprise version %s meets minimum required version %s: %v",
+				r.config.RemoteTFEVersion(), minTFEVersionVariableSetStacks, err),
+		)
+		return false
+	}
+	if !meetsMinVersionRequirement {
+		diagnostics.AddError(
+			"Feature not supported",
+			fmt.Sprintf("Associating variable sets with stacks requires Terraform Enterprise version %s or later. Current version: %s",
+				minTFEVersionVariableSetStacks, r.config.RemoteTFEVersion()),
+		)
+		return false
+	}
+	return true
+}
+
 func (r *resourceStackVariableSet) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan stackVariableSetResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !r.checkStackVariableSetSupport(&resp.Diagnostics) {
 		return
 	}
 
@@ -122,6 +150,10 @@ func (r *resourceStackVariableSet) Read(ctx context.Context, req resource.ReadRe
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !r.checkStackVariableSetSupport(&resp.Diagnostics) {
 		return
 	}
 
@@ -177,6 +209,10 @@ func (r *resourceStackVariableSet) Delete(ctx context.Context, req resource.Dele
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !r.checkStackVariableSetSupport(&resp.Diagnostics) {
 		return
 	}
 

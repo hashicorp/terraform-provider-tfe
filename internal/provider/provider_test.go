@@ -361,6 +361,46 @@ func TestConfigureEnvOnCloudUsingConfigFiles(t *testing.T) {
 	}
 }
 
+func Test_meetsMinTFEVersion(t *testing.T) {
+	testCases := []struct {
+		isCloud       bool
+		remoteVersion string
+		minVersion    string
+		expected      bool
+		err           error
+	}{
+		{
+			isCloud:  true,
+			expected: true,
+			err:      nil,
+		},
+		{
+			isCloud:       false,
+			remoteVersion: "1.2.0",
+			minVersion:    "1.1.0",
+			expected:      true,
+			err:           nil,
+		},
+		{
+			isCloud:       false,
+			remoteVersion: "v202402-1",
+			minVersion:    "v2024031",
+			expected:      false,
+			err:           fmt.Errorf("invalid TFE version format %q: must be v{YYYYMM}-{N} or X.Y.Z", "v2024031"),
+		},
+	}
+
+	for _, tc := range testCases {
+		got, err := meetsMinTFEVersion(tc.isCloud, tc.remoteVersion, tc.minVersion)
+		if got != tc.expected {
+			t.Errorf("meetsMinTFEVersion(%v, %q, %q) = %v; want %v", tc.isCloud, tc.remoteVersion, tc.minVersion, got, tc.expected)
+		}
+		if (err != nil && tc.err == nil) || (err == nil && tc.err != nil) || (err != nil && tc.err != nil && err.Error() != tc.err.Error()) {
+			t.Errorf("meetsMinTFEVersion(%v, %q, %q) error = %v; want %v", tc.isCloud, tc.remoteVersion, tc.minVersion, err, tc.err)
+		}
+	}
+}
+
 // The TFE Provider tests use these environment variables, which are set in the
 // GitHub Action workflow file .github/workflows/ci.yml.
 func testAccGithubPreCheck(t *testing.T) {
