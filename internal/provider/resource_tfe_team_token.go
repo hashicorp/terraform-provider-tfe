@@ -166,6 +166,11 @@ func (r *resourceTFETeamToken) Create(ctx context.Context, req resource.CreateRe
 			return
 		}
 		options.ExpiredAt = &expiry
+	} else {
+		resp.Diagnostics.AddWarning(
+			"Team token expiration not set",
+			"Team token expiration null values default to 24 months (2 years) from the time of token creation.",
+		)
 	}
 
 	token, err := r.config.Client.TeamTokens.CreateWithOptions(ctx, teamID, options)
