@@ -180,6 +180,7 @@ func resourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) error 
 	meetsMinVersionRequirement, err := config.MeetsMinRemoteTFEVersion(minTFEVersionVariableSetStacks)
 	if err != nil {
 		log.Printf("[DEBUG] could not determine if TFE version meets minimum required version %s: %v", minTFEVersionVariableSetStacks, err)
+		return fmt.Errorf("Error while determining TFE version compatibility: %w", err)
 	} else if meetsMinVersionRequirement {
 		includes = append(includes, tfe.VariableSetStacks)
 	}

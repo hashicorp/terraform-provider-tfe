@@ -2,6 +2,10 @@
 
 BUG FIXES:
 * `r/tfe_variable`: Fixed a bug where value_wo was ignored in tfe_variable resources when using variable_set_id. By @Maed223 [#1950](https://github.com/hashicorp/terraform-provider-tfe/pull/1950)
+* `r/stack_variable_set`: Fixed a bug to address incompatiblility of stacks variable set resource with older versions of TFE. By @smishra96 [#1957](https://github.com/hashicorp/terraform-provider-tfe/pull/1957)
+* `r/tfe_variable_set`: Fixed a bug to address incompatiblility of tfe variable set resource with older versions of TFE. By @smishra96 [#1957](https://github.com/hashicorp/terraform-provider-tfe/pull/1957)
+* `r/tfe_workspace_run_task`: Fixed a bug to address incompatiblility of tfe workspace run task resource with older versions of TFE. By @smishra96 [#1957](https://github.com/hashicorp/terraform-provider-tfe/pull/1957)
+* `d/variable_set`: Fixed a bug to address incompatiblility of variable set data source with older versions of TFE. By @smishra96 [#1957](https://github.com/hashicorp/terraform-provider-tfe/pull/1957)
 
 ## v0.73.0
 
