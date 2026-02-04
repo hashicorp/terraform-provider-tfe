@@ -23,14 +23,14 @@ func TestAccTFEStackResource_basic(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "hashicorp-guides/pet-nulls-stack"),
+				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "arunatibm/pet-nulls-stack"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "id"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "project_id"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "agent_pool_id"),
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "name", "example-stack"),
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "description", "Just an ordinary stack"),
-					resource.TestCheckResourceAttr("tfe_stack.foobar", "vcs_repo.identifier", "hashicorp-guides/pet-nulls-stack"),
+					resource.TestCheckResourceAttr("tfe_stack.foobar", "vcs_repo.identifier", "arunatibm/pet-nulls-stack"),
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "creation_source", "migration-api"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "vcs_repo.oauth_token_id"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "speculative_enabled"),
@@ -53,6 +53,7 @@ func testAccTFEStackResourceConfig(orgName, ghToken, ghRepoIdentifier string) st
 resource "tfe_organization" "foobar" {
   name  = "%s"
   email = "admin@tfe.local"
+  stacks_enabled = true
 }
 
 resource "tfe_agent_pool" "foobar" {
@@ -82,8 +83,8 @@ resource "tfe_stack" "foobar" {
 	vcs_repo {
     identifier         = "%s"
     oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
-	speculative_enabled = true
   }
+	speculative_enabled = true
 }
 `, orgName, ghToken, ghRepoIdentifier)
 }
