@@ -7,6 +7,7 @@ import (
 	"context"
 	"os"
 
+	"github.com/hashicorp/terraform-plugin-framework/action"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -26,6 +27,7 @@ type frameworkProvider struct {
 // Compile-time interface check
 var _ provider.Provider = &frameworkProvider{}
 var _ provider.ProviderWithEphemeralResources = &frameworkProvider{}
+var _ provider.ProviderWithActions = &frameworkProvider{}
 
 // FrameworkProviderConfig is a helper type for extracting the provider
 // configuration from the provider block.
@@ -130,6 +132,13 @@ func (p *frameworkProvider) Configure(ctx context.Context, req provider.Configur
 	res.DataSourceData = configuredClient
 	res.ResourceData = configuredClient
 	res.EphemeralResourceData = configuredClient
+	res.ActionData = configuredClient
+}
+
+func (p *frameworkProvider) Actions(ctx context.Context) []func() action.Action {
+	return []func() action.Action{
+		NewQueryRunAction,
+	}
 }
 
 func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
