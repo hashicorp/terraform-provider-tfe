@@ -84,7 +84,9 @@ func resourceTFERunTriggerRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read run trigger: %s", d.Id())
-	runTrigger, err := config.Client.RunTriggers.Read(ctx, d.Id())
+	runTrigger, err := config.Client.RunTriggers.ReadWithOptions(ctx, d.Id(), &tfe.RunTriggerReadOptions{
+		Include: []tfe.RunTriggerIncludeOpt{tfe.RunTriggerWorkspace, tfe.RunTriggerSourceable},
+	})
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] run trigger %s no longer exists", d.Id())
