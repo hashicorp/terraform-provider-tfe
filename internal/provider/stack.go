@@ -42,7 +42,7 @@ func modelFromTFEStack(v *tfe.Stack) modelTFEStack {
 		AgentPoolID:        types.StringNull(),
 		Name:               types.StringValue(v.Name),
 		Migration:          types.BoolNull(),
-		SpeculativeEnabled: types.BoolNull(),
+		SpeculativeEnabled: types.BoolValue(v.SpeculativeEnabled),
 		CreationSource:     types.StringNull(),
 		Description:        types.StringNull(),
 		CreatedAt:          types.StringValue(v.CreatedAt.Format(time.RFC3339)),
