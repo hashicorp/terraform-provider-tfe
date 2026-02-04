@@ -20,16 +20,17 @@ type modelTFEStackVCSRepo struct {
 // modelTFEStack maps the resource or data source schema data to a
 // struct.
 type modelTFEStack struct {
-	ID             types.String          `tfsdk:"id"`
-	ProjectID      types.String          `tfsdk:"project_id"`
-	AgentPoolID    types.String          `tfsdk:"agent_pool_id"`
-	Name           types.String          `tfsdk:"name"`
-	Migration      types.Bool            `tfsdk:"migration"`
-	CreationSource types.String          `tfsdk:"creation_source"`
-	Description    types.String          `tfsdk:"description"`
-	VCSRepo        *modelTFEStackVCSRepo `tfsdk:"vcs_repo"`
-	CreatedAt      types.String          `tfsdk:"created_at"`
-	UpdatedAt      types.String          `tfsdk:"updated_at"`
+	ID                 types.String          `tfsdk:"id"`
+	ProjectID          types.String          `tfsdk:"project_id"`
+	AgentPoolID        types.String          `tfsdk:"agent_pool_id"`
+	Name               types.String          `tfsdk:"name"`
+	Migration          types.Bool            `tfsdk:"migration"`
+	CreationSource     types.String          `tfsdk:"creation_source"`
+	Description        types.String          `tfsdk:"description"`
+	VCSRepo            *modelTFEStackVCSRepo `tfsdk:"vcs_repo"`
+	SpeculativeEnabled types.Bool            `tfsdk:"speculative_enabled"`
+	CreatedAt          types.String          `tfsdk:"created_at"`
+	UpdatedAt          types.String          `tfsdk:"updated_at"`
 }
 
 // modelFromTFEStack builds a modelTFEStack struct from a
