@@ -326,15 +326,6 @@ func (r *resourceWorkspaceRunTask) UpgradeState(ctx context.Context) map[int64]r
 	}
 }
 
-func (r *resourceWorkspaceRunTask) supportsStagesProperty() bool {
-	// The Stages property is available in HCP Terraform and Terraform Enterprise v202404-1 onwards.
-	if r.supportsStages == nil {
-		value, _ := r.config.MeetsMinRemoteTFEVersion(minTFEVersionWorkspaceRunTaskStages)
-		r.supportsStages = &value
-	}
-	return *r.supportsStages
-}
-
 func (r *resourceWorkspaceRunTask) addStageSupportDiag(d *diag.Diagnostics, isError bool) {
 	summary := "Terraform Enterprise version"
 	detail := fmt.Sprintf("The version of Terraform Enterprise does not support the stages attribute on Workspace Run Tasks. Got %s but requires %s+", r.config.RemoteTFEVersion(), minTFEVersionWorkspaceRunTaskStages)
@@ -354,7 +345,18 @@ func (r *resourceWorkspaceRunTask) extractStageAndStages(plan modelTFEWorkspaceR
 		return nil, nil
 	}
 
-	if r.supportsStagesProperty() {
+	meets, err := r.config.MeetsMinRemoteTFEVersion(minTFEVersionWorkspaceRunTaskStages)
+	if err != nil {
+		d.AddError(
+			"Error checking minimum TFE version",
+			fmt.Sprintf("Could not determine if Terraform Enterprise version %s meets minimum required version %s: %v",
+				r.config.RemoteTFEVersion(), minTFEVersionWorkspaceRunTaskStages, err),
+		)
+		return nil, nil
+	}
+	r.supportsStages = &meets
+
+	if meets {
 		if plan.Stages.IsUnknown() {
 			// The user has supplied Stage but not Stages. They would already have received the deprecation warning so just munge
 			// the stage into a slice and we're fine
