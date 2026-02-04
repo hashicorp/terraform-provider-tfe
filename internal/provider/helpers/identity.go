@@ -54,6 +54,10 @@ func WriteTFEIdentityWithOrg(d *schema.ResourceData, externalID string, organiza
 	return nil
 }
 
+// WriteRegistryIdentity writes a standard resource identity using the SDKv2
+// for a Registry module or provider resource in the TFE provider.
+// Note: It expands the complex tfe.RegistryModuleID into individual state fields
+// (namespace, name, module_provider, etc.) required for import and reading.
 func WriteRegistryIdentity(d *schema.ResourceData, externalID string, rmID tfe.RegistryModuleID, hostname string) error {
 	// First write the basic identity
 	if err := WriteTFEIdentity(d, externalID, hostname); err != nil {
