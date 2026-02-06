@@ -1,5 +1,8 @@
 ## Unreleased
 
+ENHANCEMENTS:
+* `r/tfe_registry_module`: Adds support for `name` and `module_provider` alongside `vcs_repo` with `source_directory`, by @jillirami [#1959](https://github.com/hashicorp/terraform-provider-tfe/pull/1959)
+
 BUG FIXES:
 * `r/tfe_variable`: Fixed a bug where value_wo was ignored in tfe_variable resources when using variable_set_id. By @Maed223 [#1950](https://github.com/hashicorp/terraform-provider-tfe/pull/1950)
 

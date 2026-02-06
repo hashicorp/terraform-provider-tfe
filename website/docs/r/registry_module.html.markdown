@@ -129,6 +129,38 @@ resource "tfe_registry_module" "petstore" {
 }
 ```
 
+Create private registry module from a monorepo with source_directory (BETA):
+
+```hcl
+resource "tfe_organization" "test-organization" {
+  name  = "my-org-name"
+  email = "admin@company.com"
+}
+
+resource "tfe_oauth_client" "test-oauth-client" {
+  organization     = tfe_organization.test-organization.name
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "my-vcs-provider-token"
+  service_provider = "github"
+}
+
+resource "tfe_registry_module" "monorepo-module" {
+  organization    = tfe_organization.test-organization.name
+  name            = "vpc"
+  module_provider = "aws"
+
+  vcs_repo {
+    display_identifier = "my-org-name/private-modules"
+    identifier         = "my-org-name/private-modules"
+    oauth_token_id     = tfe_oauth_client.test-oauth-client.oauth_token_id
+    source_directory   = "modules/vpc"
+  }
+}
+```
+
+~> **NOTE:** When using `source_directory`, you **must** explicitly specify both `name` and `module_provider`. This is required because monorepos and repositories with non-standard names (not following `terraform-<provider>-<name>` convention) cannot have these values automatically inferred by the API.
+
 Create private registry module without VCS:
 
 ```hcl
@@ -190,7 +222,7 @@ The following arguments are supported:
 
 * `vcs_repo` - (Optional) Settings for the registry module's VCS repository. Forces a
   new resource if changed. One of `vcs_repo` or `module_provider` is required.
-* `module_provider` - (Optional) Specifies the Terraform provider that this module is used for. For example, "aws"
+* `module_provider` - (Optional) Specifies the Terraform provider that this module is used for. For example, "aws".
 * `name` - (Optional) The name of registry module. It must be set if `module_provider` is used.
 * `organization` - (Optional) The name of the organization associated with the registry module. It must be set if `module_provider` is used, or if `vcs_repo` is used via a GitHub App.
 * `namespace` - (Optional) The namespace of a public registry module. It can be used if `module_provider` is set and `registry_name` is public.

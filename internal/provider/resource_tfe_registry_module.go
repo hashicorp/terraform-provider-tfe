@@ -33,6 +33,9 @@ func resourceTFERegistryModule() *schema.Resource {
 		},
 
 		CustomizeDiff: func(c context.Context, d *schema.ResourceDiff, meta interface{}) error {
+			if err := validateNameAndProvider(d); err != nil {
+				return err
+			}
 			if err := validateVcsRepo(d); err != nil {
 				return err
 			}
@@ -46,12 +49,10 @@ func resourceTFERegistryModule() *schema.Resource {
 				ForceNew: true,
 			},
 			"module_provider": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				Computed:     true,
-				ForceNew:     true,
-				ExactlyOneOf: []string{"vcs_repo"},
-				RequiredWith: []string{"organization", "name"},
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+				ForceNew: true,
 			},
 			"name": {
 				Type:     schema.TypeString,
@@ -191,6 +192,14 @@ func resourceTFERegistryModuleCreateWithVCS(v interface{}, meta interface{}, d *
 	orgName, err := config.schemaOrDefaultOrganization(d)
 	if err != nil {
 		log.Printf("[WARN] Error getting organization name: %s", err)
+	}
+
+	if name, ok := d.GetOk("name"); ok {
+		options.Name = tfe.String(name.(string))
+	}
+
+	if provider, ok := d.GetOk("module_provider"); ok {
+		options.Provider = tfe.String(provider.(string))
 	}
 
 	options.VCSRepo = &tfe.RegistryModuleVCSRepoOptions{
@@ -514,6 +523,76 @@ func resourceTFERegistryModuleDelete(d *schema.ResourceData, meta interface{}) e
 		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 			return fmt.Errorf("Error deleting registry module %s: %w", d.Id(), err)
 		}
+	}
+
+	return nil
+}
+
+func validateNameAndProvider(d *schema.ResourceDiff) error {
+	configMap := d.GetRawConfig().AsValueMap()
+	nameValue, hasName := configMap["name"]
+	providerValue, hasProvider := configMap["module_provider"]
+	vcsRepoValue, hasVcsRepo := configMap["vcs_repo"]
+
+	nameProvided := hasName && !nameValue.IsNull()
+	providerProvided := hasProvider && !providerValue.IsNull()
+	vcsRepoProvided := hasVcsRepo && !vcsRepoValue.IsNull()
+
+	// Either vcs_repo OR module_provider must be provided
+	if !vcsRepoProvided && !providerProvided {
+		return fmt.Errorf("one of vcs_repo or module_provider is required")
+	}
+
+	// Without vcs_repo, both name and module_provider are required
+	if !vcsRepoProvided {
+		if !nameProvided || !providerProvided {
+			return fmt.Errorf("name and module_provider are required when not using vcs_repo")
+		}
+		return nil
+	}
+
+	// With vcs_repo: check source_directory and repo naming convention
+	if vcsRepoValue.LengthInt() == 0 {
+		return nil
+	}
+
+	vcsRepoBlock := vcsRepoValue.AsValueSlice()[0]
+	
+	// When using source_directory, both fields are required
+	sourceDirectory := vcsRepoBlock.GetAttr("source_directory")
+	if !sourceDirectory.IsNull() && sourceDirectory.AsString() != "" {
+		if !nameProvided || !providerProvided {
+			return fmt.Errorf("name and module_provider are required when using source_directory")
+		}
+		return nil
+	}
+
+	// Check if repo follows terraform-<provider>-<name> convention
+	displayIdentifier := vcsRepoBlock.GetAttr("display_identifier")
+	if displayIdentifier.IsNull() || !displayIdentifier.IsKnown() {
+		return nil
+	}
+
+	// Extract repo name from "org/repo" format and check convention
+	repoName := displayIdentifier.AsString()
+	if idx := strings.LastIndex(repoName, "/"); idx >= 0 {
+		repoName = repoName[idx+1:]
+	}
+	
+	nameParts := strings.Split(repoName, "-")
+	followsConvention := len(nameParts) == 3
+
+	// Standard repos allow both provided or both omitted, but not partial
+	if followsConvention && nameProvided != providerProvided {
+		if nameProvided {
+			return fmt.Errorf("module_provider must be provided when name is specified")
+		}
+		return fmt.Errorf("name must be provided when module_provider is specified")
+	}
+
+	// Non-standard repos require both fields
+	if !followsConvention && (!nameProvided || !providerProvided) {
+		return fmt.Errorf("name and module_provider are required when the repository name does not follow the terraform-<provider>-<name> convention")
 	}
 
 	return nil
