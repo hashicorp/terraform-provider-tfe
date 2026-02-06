@@ -6,10 +6,13 @@ package provider
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"regexp"
 	"testing"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
+	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -269,6 +272,32 @@ func TestAccTFEProject_import(t *testing.T) {
 				ImportState:       true,
 				ImportStateId:     project.ID,
 				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccTFEProject_importByIdentity(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEProjectDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEProject_basic(rInt),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectIdentity("tfe_project.foobar", map[string]knownvalue.Check{
+						"id":       knownvalue.NotNull(),
+						"hostname": knownvalue.StringExact(os.Getenv("TFE_HOSTNAME")),
+					}),
+				},
+			},
+			{
+				ResourceName:    "tfe_project.foobar",
+				ImportState:     true,
+				ImportStateKind: resource.ImportBlockWithResourceIdentity,
 			},
 		},
 	})

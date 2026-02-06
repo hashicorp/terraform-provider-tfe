@@ -172,6 +172,18 @@ In addition to all arguments above, the following attributes are exported:
 
 ## Import
 
+Workspaces can be imported using an identity. For example:
+
+```hcl
+import {
+  to = tfe_workspace.test
+  identity = {
+    id       = "ws-CH5in3chf8RJjrVd"
+    hostname = "app.terraform.io"
+  }
+}
+```
+
 Workspaces can be imported; use `<WORKSPACE ID>` or `<ORGANIZATION NAME>/<WORKSPACE NAME>` as the
 import ID. For example:
 

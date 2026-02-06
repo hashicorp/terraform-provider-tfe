@@ -44,7 +44,19 @@ The following arguments are supported:
 
 ## Import
 
-Agent pools can be imported; use `<AGENT POOL ID>` or `<ORGANIZATION NAME>/<AGENT POOL NAME>` as the import ID. For example:
+Agent pools can be imported using an identity. For example:
+
+```hcl
+import {
+  to = tfe_agent_pool.test
+  identity = {
+    id       = "apool-12345678"
+    hostname = "app.terraform.io"
+  }
+}
+```
+
+Agent pools can be imported via the Terraform CLI; use `<AGENT POOL ID>` or `<ORGANIZATION NAME>/<AGENT POOL NAME>` as the import ID. For example:
 
 ```shell
 terraform import tfe_agent_pool.test apool-rW0KoLSlnuNb5adB

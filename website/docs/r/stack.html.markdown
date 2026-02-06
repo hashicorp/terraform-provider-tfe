@@ -98,6 +98,18 @@ The `vcs_repo` block supports:
 
 ## Import
 
+Stacks can be imported using an identity. For example:
+
+```hcl
+import {
+  to = tfe_stack.test
+  identity = {
+    id       = "st-W6k9K23oSXRHGpj3"
+    hostname = "app.terraform.io"
+  }
+}
+```
+
 Stacks can be imported by ID, which can be found on the stack's settings tab in the UI
 
 Example:

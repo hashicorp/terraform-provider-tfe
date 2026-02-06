@@ -6,6 +6,7 @@ package provider
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"regexp"
 	"strconv"
 	"testing"
@@ -14,7 +15,9 @@ import (
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
+	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/hashicorp/terraform-plugin-testing/tfversion"
 )
@@ -443,6 +446,62 @@ func TestAccTFEVariable_varset_readable_value_becomes_sensitive(t *testing.T) {
 			{
 				Config:      testAccTFEVariable_varset_readablevalue(rInt, variableValue2, true),
 				ExpectError: regexp.MustCompile(`tfe_variable.foobar.readable_value is null`),
+			},
+		},
+	})
+}
+
+func TestAccTFEVariable_importIdentityWithWorkspace(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEVariableDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEVariable_basic(rInt),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectIdentity("tfe_variable.foobar", map[string]knownvalue.Check{
+						"id":              knownvalue.NotNull(),
+						"configurable_id": knownvalue.NotNull(),
+						"hostname":        knownvalue.StringExact(os.Getenv("TFE_HOSTNAME")),
+					}),
+				},
+			},
+
+			{
+				ResourceName:    "tfe_variable.foobar",
+				ImportState:     true,
+				ImportStateKind: resource.ImportBlockWithResourceIdentity,
+			},
+		},
+	})
+}
+
+func TestAccTFEVariable_importIdentityWithVarset(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEVariableDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEVariable_basic_variable_set(rInt),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectIdentity("tfe_variable.foobar", map[string]knownvalue.Check{
+						"id":              knownvalue.NotNull(),
+						"configurable_id": knownvalue.NotNull(),
+						"hostname":        knownvalue.StringExact(os.Getenv("TFE_HOSTNAME")),
+					}),
+				},
+			},
+
+			{
+				ResourceName:    "tfe_variable.foobar",
+				ImportState:     true,
+				ImportStateKind: resource.ImportBlockWithResourceIdentity,
 			},
 		},
 	})

@@ -6,12 +6,15 @@ package provider
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"regexp"
 	"testing"
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
+	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
@@ -236,6 +239,34 @@ func TestAccTFETeam_full_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_agent_pools", "false"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccTFETeam_importByIdentity(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeam_full(rInt),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectIdentity("tfe_team.foobar", map[string]knownvalue.Check{
+						"id":           knownvalue.NotNull(),
+						"hostname":     knownvalue.StringExact(os.Getenv("TFE_HOSTNAME")),
+						"organization": knownvalue.StringExact(orgName),
+					}),
+				},
+			},
+			{
+				ResourceName:    "tfe_team.foobar",
+				ImportState:     true,
+				ImportStateKind: resource.ImportBlockWithResourceIdentity,
 			},
 		},
 	})

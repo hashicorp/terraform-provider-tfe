@@ -6,6 +6,7 @@ package provider
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -14,6 +15,8 @@ import (
 
 	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
+	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
@@ -591,6 +594,41 @@ func TestAccTFERegistryModule_noCodeModule(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_registry_module.foobar", "no_code", fmt.Sprint(expectedRegistryModuleAttributes.NoCode)),
 				),
+			},
+		},
+	})
+}
+
+func TestAccTFERegistryModuleImport_byIdentity(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccPreCheckTFERegistryModule(t)
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFERegistryModuleDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFERegistryModule_vcsBasic(rInt),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectIdentity("tfe_registry_module.foobar", map[string]knownvalue.Check{
+						"id":              knownvalue.NotNull(),
+						"hostname":        knownvalue.StringExact(os.Getenv("TFE_HOSTNAME")),
+						"organization":    knownvalue.StringExact(orgName),
+						"registry_name":   knownvalue.StringExact(string(tfe.PrivateRegistry)),
+						"namespace":       knownvalue.StringExact(orgName),
+						"name":            knownvalue.StringExact(getRegistryModuleName()),
+						"module_provider": knownvalue.StringExact(getRegistryModuleProvider()),
+					}),
+				},
+			},
+			{
+				ResourceName:    "tfe_registry_module.foobar",
+				ImportState:     true,
+				ImportStateKind: resource.ImportBlockWithResourceIdentity,
 			},
 		},
 	})
@@ -1883,11 +1921,11 @@ resource "tfe_registry_module" "foobar" {
   name            = "vpc"
   registry_name   = "public"
  }
- 
+
  resource "tfe_no_code_module" "foobar" {
   organization    = tfe_organization.foobar.id
   registry_module = tfe_registry_module.foobar.id
-} 
+}
  `,
 		rInt)
 }
@@ -2218,7 +2256,7 @@ resource "tfe_registry_module" "foobar" {
   test_config {
     tests_enabled         = true
     agent_execution_mode  = "remote"
-    agent_pool_id         = "apool-fake-id"  
+    agent_pool_id         = "apool-fake-id"
   }
 }`, rInt, envGithubToken, envGithubRegistryModuleIdentifer, envGithubRegistryModuleIdentifer)
 }

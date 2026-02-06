@@ -5,10 +5,13 @@ package provider
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
+	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
@@ -367,6 +370,40 @@ func TestAccTFEPolicy_import(t *testing.T) {
 				ImportState:         true,
 				ImportStateIdPrefix: fmt.Sprintf("%s/", org.Name),
 				ImportStateVerify:   true,
+			},
+		},
+	})
+}
+
+func TestAccTFEPolicy_importByIdentity(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicyDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicy_basic(org.Name),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectIdentity("tfe_policy.foobar", map[string]knownvalue.Check{
+						"id":           knownvalue.NotNull(),
+						"hostname":     knownvalue.StringExact(os.Getenv("TFE_HOSTNAME")),
+						"organization": knownvalue.StringExact(org.Name),
+					}),
+				},
+			},
+
+			{
+				ResourceName:    "tfe_policy.foobar",
+				ImportState:     true,
+				ImportStateKind: resource.ImportBlockWithResourceIdentity,
 			},
 		},
 	})

@@ -43,7 +43,19 @@ In addition to all arguments above, the following attributes are exported:
 * `user_id` - The ID of the user associated with the organization membership.
 * `username` - The username of the user associated with the organization membership.
 
-## Import 
+## Import
+
+Organization memberships can be imported using an identity. For example:
+
+```hcl
+import {
+  to = tfe_organization_membership.test
+  identity = {
+    id       = "ou-12345678"
+    hostname = "app.terraform.io"
+  }
+}
+```
 
 Organization memberships can be imported using `<ORGANIZATION>/<USER EMAIL>` or `<ORGANIZATION MEMBERSHIP ID>` as the import ID. For
 example:

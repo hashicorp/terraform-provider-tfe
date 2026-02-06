@@ -60,7 +60,23 @@ The following arguments are supported:
 
 ## Import
 
-Providers can be imported; use `<ORGANIZATION>/<REGISTRY NAME>/<NAMESPACE>/<PROVIDER NAME>` as the import ID.
+Providers can be imported using an identity. For example:
+
+```hcl
+import {
+  to = tfe_registry_provider.test
+  identity = {
+    id            = "prov-kwt1cBiX2SdDz38w"
+    organization  = "my-org-name"
+    registry_name = "private"
+    namespace     = "my-org-name"
+    name          = "aws"
+    hostname      = "app.terraform.io"
+  }
+}
+```
+
+Providers can be imported using the Terraform CLI; use `<ORGANIZATION>/<REGISTRY NAME>/<NAMESPACE>/<PROVIDER NAME>` as the import ID.
 
 For example a private provider:
 

@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
 
 	"errors"
 
@@ -30,6 +31,25 @@ func resourceTFETeam() *schema.Resource {
 		Delete: resourceTFETeamDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: resourceTFETeamImporter,
+		},
+
+		Identity: &schema.ResourceIdentity{
+			SchemaFunc: func() map[string]*schema.Schema {
+				return map[string]*schema.Schema{
+					"id": {
+						Type:              schema.TypeString,
+						RequiredForImport: true,
+					},
+					"hostname": {
+						Type:              schema.TypeString,
+						OptionalForImport: true,
+					},
+					"organization": {
+						Type:              schema.TypeString,
+						RequiredForImport: true,
+					},
+				}
+			},
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -214,6 +234,11 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 
 	d.SetId(team.ID)
 
+	err = helpers.WriteTFEIdentityWithOrg(d, team.ID, organization, config.Client.BaseURL().Host)
+	if err != nil {
+		return err
+	}
+
 	return resourceTFETeamRead(d, meta)
 }
 
@@ -229,6 +254,16 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 			return nil
 		}
 		return fmt.Errorf("Error reading configuration of team %s: %w", d.Id(), err)
+	}
+
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
+
+	err = helpers.WriteTFEIdentityWithOrg(d, team.ID, organization, config.Client.BaseURL().Host)
+	if err != nil {
+		return err
 	}
 
 	// Update the config.
@@ -336,6 +371,29 @@ func resourceTFETeamImporter(ctx context.Context, d *schema.ResourceData, meta i
 	// Import formats:
 	//  - <ORGANIZATION NAME>/<TEAM ID>
 	//  - <ORGANIZATION NAME>/<TEAM NAME>
+
+	// First we'll check for an identity
+	identity, err := d.Identity()
+	if err != nil {
+		return nil, fmt.Errorf("error reading team identity: %w", err)
+	}
+
+	if externalID := identity.Get("id").(string); externalID != "" {
+		// We are importing by identity
+		// This only supported when using an import block, since import blocks
+		// are the only way to specify an identity. Importing via TF CLI does
+		// not support specifying an identity.
+		d.SetId(externalID)
+		orgName := identity.Get("organization").(string)
+		err = d.Set("organization", orgName)
+		if err != nil {
+			return nil, fmt.Errorf("could not set organization name %s on resource: %w", orgName, err)
+		}
+
+		// Exit early
+		return []*schema.ResourceData{d}, nil
+	}
+
 	s := strings.SplitN(d.Id(), "/", 2)
 	if len(s) != 2 {
 		return nil, fmt.Errorf(
@@ -347,7 +405,7 @@ func resourceTFETeamImporter(ctx context.Context, d *schema.ResourceData, meta i
 	orgName := s[0]
 	teamNameOrID := s[1]
 
-	err := d.Set("organization", orgName)
+	err = d.Set("organization", orgName)
 	if err != nil {
 		return nil, fmt.Errorf("could not set organization name %s on resource: %w", orgName, err)
 	}

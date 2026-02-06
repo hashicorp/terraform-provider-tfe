@@ -68,7 +68,19 @@ In addition to all arguments above, the following attributes are exported:
 
 ## Import
 
-Projects can be imported; use `<PROJECT ID>` as the import ID. For example:
+Projects can be imported using an identity. For example:
+
+```hcl
+import {
+  to = tfe_project.test
+  identity = {
+    id       = "prj-12345678"
+    hostname = "app.terraform.io"
+  }
+}
+```
+
+Projects can be imported using the Terraform CLI; use `<PROJECT ID>` as the import ID. For example:
 
 ```shell
 terraform import tfe_project.test prj-niVoeESBXT8ZREhr

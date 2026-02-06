@@ -66,7 +66,20 @@ The following arguments are supported:
 
 ## Import
 
-Policies can be imported; use `<ORGANIZATION NAME>/<POLICY ID>` as the
+Policies can be imported using an identity. For example:
+
+```hcl
+import {
+  to = tfe_policy.test
+  identity = {
+    id           = "pol-wAs3zYmWAhYK7peR"
+    organization = "my-org-name"
+    hostname     = "app.terraform.io"
+  }
+}
+```
+
+Policies can be imported using the Terraform CLI; use `<ORGANIZATION NAME>/<POLICY ID>` as the
 import ID. For example:
 
 ```shell
