@@ -6,12 +6,15 @@ package provider
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"regexp"
 	"testing"
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
+	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
@@ -39,6 +42,32 @@ func TestAccTFEOrganizationMembership_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_organization_membership.foobar", "username", ""),
 				),
+			},
+		},
+	})
+}
+
+func TestAccTFEOrganizationMembership_importByIdentity(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationMembershipDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOrganizationMembership_basic(rInt),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectIdentity("tfe_organization_membership.foobar", map[string]knownvalue.Check{
+						"id":       knownvalue.NotNull(),
+						"hostname": knownvalue.StringExact(os.Getenv("TFE_HOSTNAME")),
+					}),
+				},
+			},
+			{
+				ResourceName:    "tfe_organization_membership.foobar",
+				ImportState:     true,
+				ImportStateKind: resource.ImportBlockWithResourceIdentity,
 			},
 		},
 	})

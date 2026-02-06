@@ -16,6 +16,7 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
 )
 
 func resourceTFEAgentPool() *schema.Resource {
@@ -29,6 +30,21 @@ func resourceTFEAgentPool() *schema.Resource {
 		},
 
 		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
+
+		Identity: &schema.ResourceIdentity{
+			SchemaFunc: func() map[string]*schema.Schema {
+				return map[string]*schema.Schema{
+					"id": {
+						Type:              schema.TypeString,
+						RequiredForImport: true,
+					},
+					"hostname": {
+						Type:              schema.TypeString,
+						OptionalForImport: true,
+					},
+				}
+			},
+		},
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -77,6 +93,11 @@ func resourceTFEAgentPoolCreate(d *schema.ResourceData, meta interface{}) error 
 
 	d.SetId(agentPool.ID)
 
+	err = helpers.WriteTFEIdentity(d, agentPool.ID, config.Client.BaseURL().Host)
+	if err != nil {
+		return err
+	}
+
 	return resourceTFEAgentPoolRead(d, meta)
 }
 
@@ -98,6 +119,11 @@ func resourceTFEAgentPoolRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", agentPool.Name)
 	d.Set("organization", agentPool.Organization.Name)
 	d.Set("organization_scoped", agentPool.OrganizationScoped)
+
+	err = helpers.WriteTFEIdentity(d, agentPool.ID, config.Client.BaseURL().Host)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -138,6 +164,23 @@ func resourceTFEAgentPoolDelete(d *schema.ResourceData, meta interface{}) error 
 func resourceTFEAgentPoolImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(ConfiguredClient)
 
+	if d.Id() != "" {
+		// Import using the import prefix instead of identity
+		return resourceTFEAgentPoolImporterLegacy(d, config)
+	}
+
+	// We are using an identity
+	identity, err := d.Identity()
+	if err != nil {
+		return nil, fmt.Errorf("error reading workspace identity: %w", err)
+	}
+
+	d.SetId(identity.Get("id").(string))
+
+	return []*schema.ResourceData{d}, nil
+}
+
+func resourceTFEAgentPoolImporterLegacy(d *schema.ResourceData, cfg ConfiguredClient) ([]*schema.ResourceData, error) {
 	s := strings.Split(d.Id(), "/")
 	if len(s) >= 3 {
 		return nil, fmt.Errorf(
@@ -147,7 +190,7 @@ func resourceTFEAgentPoolImporter(ctx context.Context, d *schema.ResourceData, m
 	} else if len(s) == 2 {
 		org := s[0]
 		poolName := s[1]
-		pool, err := fetchAgentPool(org, poolName, config.Client)
+		pool, err := fetchAgentPool(org, poolName, cfg.Client)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"error retrieving agent pool with name %s from organization %s %w", poolName, org, err)

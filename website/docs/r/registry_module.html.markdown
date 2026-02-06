@@ -235,7 +235,24 @@ Use the tfe_no_code_module resource instead.
 
 ## Import
 
-Registry modules can be imported; use `<ORGANIZATION>/<REGISTRY_NAME>/<NAMESPACE>/<REGISTRY MODULE NAME>/<REGISTRY MODULE PROVIDER>/<REGISTRY MODULE ID>` as the import ID. For example:
+Registry modules can be imported using an identity. For example:
+
+```hcl
+import {
+  to = tfe_registry_module.test
+  identity = {
+    id              = "mod-qV9JnKRkmtMa4zcA"
+    organization    = "my-org-name"
+    registry_name   = "private"
+    namespace       = "my-org-name"
+    name            = "vpc"
+    module_provider = "aws"
+    hostname        = "app.terraform.io"
+  }
+}
+```
+
+Registry modules can be imported using the Terraform CLI; use `<ORGANIZATION>/<REGISTRY_NAME>/<NAMESPACE>/<REGISTRY MODULE NAME>/<REGISTRY MODULE PROVIDER>/<REGISTRY MODULE ID>` as the import ID. For example:
 
 ```shell
 terraform import tfe_registry_module.test my-org-name/public/namespace/name/provider/mod-qV9JnKRkmtMa4zcA

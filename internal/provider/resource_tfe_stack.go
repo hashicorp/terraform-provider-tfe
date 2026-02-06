@@ -10,10 +10,12 @@ import (
 	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/identityschema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
@@ -119,6 +121,19 @@ func (r *resourceTFEStack) Schema(ctx context.Context, req resource.SchemaReques
 	}
 }
 
+func (r *resourceTFEStack) IdentitySchema(ctx context.Context, req resource.IdentitySchemaRequest, resp *resource.IdentitySchemaResponse) {
+	resp.IdentitySchema = identityschema.Schema{
+		Attributes: map[string]identityschema.Attribute{
+			"id": identityschema.StringAttribute{
+				RequiredForImport: true,
+			},
+			"hostname": identityschema.StringAttribute{
+				OptionalForImport: true,
+			},
+		},
+	}
+}
+
 // Configure implements resource.ResourceWithConfigure
 func (r *resourceTFEStack) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	// Prevent panic if the provider has not been configured.
@@ -194,6 +209,12 @@ func (r *resourceTFEStack) Create(ctx context.Context, req resource.CreateReques
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+
+	identity := modelTFEStackIdentity{
+		ID:       result.ID,
+		Hostname: types.StringValue(r.config.Client.BaseURL().Host),
+	}
+	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
 }
 
 func (r *resourceTFEStack) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -219,6 +240,12 @@ func (r *resourceTFEStack) Read(ctx context.Context, req resource.ReadRequest, r
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+
+	identity := modelTFEStackIdentity{
+		ID:       result.ID,
+		Hostname: types.StringValue(r.config.Client.BaseURL().Host),
+	}
+	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
 }
 
 func (r *resourceTFEStack) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -295,7 +322,7 @@ func (r *resourceTFEStack) Delete(ctx context.Context, req resource.DeleteReques
 }
 
 func (r *resourceTFEStack) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
+	resource.ImportStatePassthroughWithIdentity(ctx, path.Root("id"), path.Root("id"), req, resp)
 }
 
 func (r *resourceTFEStack) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {

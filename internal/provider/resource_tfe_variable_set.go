@@ -16,6 +16,7 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
 )
 
 var variableSetIDRegexp = regexp.MustCompile("varset-[a-zA-Z0-9]{16}$")
@@ -27,7 +28,7 @@ func resourceTFEVariableSet() *schema.Resource {
 		Update: resourceTFEVariableSetUpdate,
 		Delete: resourceTFEVariableSetDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: schema.ImportStatePassthroughWithIdentity("id"),
 		},
 
 		CustomizeDiff: func(c context.Context, d *schema.ResourceDiff, meta interface{}) error {
@@ -39,6 +40,21 @@ func resourceTFEVariableSet() *schema.Resource {
 				return err
 			}
 			return nil
+		},
+
+		Identity: &schema.ResourceIdentity{
+			SchemaFunc: func() map[string]*schema.Schema {
+				return map[string]*schema.Schema{
+					"id": {
+						Type:              schema.TypeString,
+						RequiredForImport: true,
+					},
+					"hostname": {
+						Type:              schema.TypeString,
+						OptionalForImport: true,
+					},
+				}
+			},
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -168,6 +184,11 @@ func resourceTFEVariableSetCreate(d *schema.ResourceData, meta interface{}) erro
 		}
 	}
 
+	err = helpers.WriteTFEIdentity(d, variableSet.ID, config.Client.BaseURL().Host)
+	if err != nil {
+		return err
+	}
+
 	return resourceTFEVariableSetRead(d, meta)
 }
 
@@ -218,6 +239,11 @@ func resourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) error 
 
 	if variableSet.Parent != nil && variableSet.Parent.Project != nil {
 		d.Set("parent_project_id", variableSet.Parent.Project.ID)
+	}
+
+	err = helpers.WriteTFEIdentity(d, variableSet.ID, config.Client.BaseURL().Host)
+	if err != nil {
+		return err
 	}
 
 	return nil

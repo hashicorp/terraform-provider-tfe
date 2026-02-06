@@ -32,6 +32,11 @@ type modelTFEStack struct {
 	UpdatedAt      types.String          `tfsdk:"updated_at"`
 }
 
+type modelTFEStackIdentity struct {
+	ID       types.String `tfsdk:"id"`
+	Hostname types.String `tfsdk:"hostname"`
+}
+
 // modelFromTFEStack builds a modelTFEStack struct from a
 // tfe.Stack value.“
 func modelFromTFEStack(v *tfe.Stack) modelTFEStack {
