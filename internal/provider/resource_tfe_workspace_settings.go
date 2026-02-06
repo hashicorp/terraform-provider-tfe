@@ -362,7 +362,7 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 			},
 
 			"global_remote_state": schema.BoolAttribute{
-				Description: "Whether the workspace allows all workspaces in the organization to access its state data during runs. If false, then only workspaces defined in `remote_state_consumer_ids` can access its state.",
+				Description: "Whether the workspace allows all workspaces in the organization to access its state data during runs. If set to false, and project_remote_state is also false, then only workspaces defined in `remote_state_consumer_ids` can access its state.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.Bool{
@@ -371,7 +371,7 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 			},
 
 			"project_remote_state": schema.BoolAttribute{
-				Description: "Whether the workspace allows all workspaces in the project to access its state data during runs. If false, then only workspaces defined in `remote_state_consumer_ids` can access its state.",
+				Description: "Whether the workspace allows all workspaces in the project to access its state data during runs. If set to false, and global_remote_state is also false, only workspaces listed in remote_state_consumer_ids can access its state,",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.Bool{
