@@ -80,7 +80,7 @@ The following arguments are supported:
 * `agent_pool_id` - (Optional) The ID of an agent pool to assign to the stack.
 * `vcs_repo` - (Optional) Settings for the stack's VCS repository.
 * `description` - (Optional) Description of the stack.
-* `speculative_enabled` - (Optional) Whether this Stack allows automatic speculative plans. Setting this to true will allow Terraform to run plans on pull requests. It is by default false when omitted.
+* `speculative_enabled` - (Optional) Whether this Stack allows automatic speculative plans. Setting this to true will allow Terraform to run plans on pull requests. Defaults to false.
 <!--
 NOTE: This is a proposed schema for allowing force-delete actions on a stack. Force delete is not implemented yet so I've commented it out for now.
 
