@@ -20,16 +20,17 @@ type modelTFEStackVCSRepo struct {
 // modelTFEStack maps the resource or data source schema data to a
 // struct.
 type modelTFEStack struct {
-	ID             types.String          `tfsdk:"id"`
-	ProjectID      types.String          `tfsdk:"project_id"`
-	AgentPoolID    types.String          `tfsdk:"agent_pool_id"`
-	Name           types.String          `tfsdk:"name"`
-	Migration      types.Bool            `tfsdk:"migration"`
-	CreationSource types.String          `tfsdk:"creation_source"`
-	Description    types.String          `tfsdk:"description"`
-	VCSRepo        *modelTFEStackVCSRepo `tfsdk:"vcs_repo"`
-	CreatedAt      types.String          `tfsdk:"created_at"`
-	UpdatedAt      types.String          `tfsdk:"updated_at"`
+	ID                 types.String          `tfsdk:"id"`
+	ProjectID          types.String          `tfsdk:"project_id"`
+	AgentPoolID        types.String          `tfsdk:"agent_pool_id"`
+	Name               types.String          `tfsdk:"name"`
+	Migration          types.Bool            `tfsdk:"migration"`
+	SpeculativeEnabled types.Bool            `tfsdk:"speculative_enabled"`
+	CreationSource     types.String          `tfsdk:"creation_source"`
+	Description        types.String          `tfsdk:"description"`
+	VCSRepo            *modelTFEStackVCSRepo `tfsdk:"vcs_repo"`
+	CreatedAt          types.String          `tfsdk:"created_at"`
+	UpdatedAt          types.String          `tfsdk:"updated_at"`
 }
 
 type modelTFEStackIdentity struct {
@@ -41,15 +42,16 @@ type modelTFEStackIdentity struct {
 // tfe.Stack value.“
 func modelFromTFEStack(v *tfe.Stack) modelTFEStack {
 	result := modelTFEStack{
-		ID:             types.StringValue(v.ID),
-		ProjectID:      types.StringValue(v.Project.ID),
-		AgentPoolID:    types.StringNull(),
-		Name:           types.StringValue(v.Name),
-		Migration:      types.BoolNull(),
-		CreationSource: types.StringNull(),
-		Description:    types.StringNull(),
-		CreatedAt:      types.StringValue(v.CreatedAt.Format(time.RFC3339)),
-		UpdatedAt:      types.StringValue(v.UpdatedAt.Format(time.RFC3339)),
+		ID:                 types.StringValue(v.ID),
+		ProjectID:          types.StringValue(v.Project.ID),
+		AgentPoolID:        types.StringNull(),
+		Name:               types.StringValue(v.Name),
+		Migration:          types.BoolNull(),
+		SpeculativeEnabled: types.BoolValue(v.SpeculativeEnabled),
+		CreationSource:     types.StringNull(),
+		Description:        types.StringNull(),
+		CreatedAt:          types.StringValue(v.CreatedAt.Format(time.RFC3339)),
+		UpdatedAt:          types.StringValue(v.UpdatedAt.Format(time.RFC3339)),
 	}
 
 	if v.VCSRepo != nil {

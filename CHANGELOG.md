@@ -2,6 +2,7 @@
 
 ENHANCEMENTS:
 * Added resource identities to the following resources: `r/tfe_agent_pool`, `r/tfe_organization_membership`, `r/tfe_policy`, `r/tfe_policy_set`, `r/tfe_project`, `r/tfe_registry_module`, `r/tfe_registry_provider`, `r/tfe_stack`, `r/tfe_team`, `r/tfe_team_member`, `r/tfe_variable`, `r/tfe_variable_set`, `r/tfe_workspace`, by @sebasslash [#1937](https://github.com/hashicorp/terraform-provider-tfe/pull/1937)
+* Added the `stacks_enabled` attribute to the Organization and `speculative_enabled` to the Stack by @arunatibm [#1963](https://github.com/hashicorp/terraform-provider-tfe/pull/1963)
 
 BUG FIXES:
 * `r/tfe_variable`: Fixed a bug where value_wo was ignored in tfe_variable resources when using variable_set_id. By @Maed223 [#1950](https://github.com/hashicorp/terraform-provider-tfe/pull/1950)

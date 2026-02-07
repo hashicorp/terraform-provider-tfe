@@ -102,7 +102,6 @@ func resourceTFEOrganization() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-
 			"speculative_plan_management_enabled": {
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -115,6 +114,11 @@ func resourceTFEOrganization() *schema.Resource {
 			},
 
 			"enforce_hyok": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
+			"stacks_enabled": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
@@ -176,6 +180,7 @@ func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error
 	d.Set("allow_force_delete_workspaces", org.AllowForceDeleteWorkspaces)
 	d.Set("speculative_plan_management_enabled", org.SpeculativePlanManagementEnabled)
 	d.Set("enforce_hyok", org.EnforceHYOK)
+	d.Set("stacks_enabled", org.StacksEnabled)
 
 	if org.UserTokensEnabled != nil {
 		d.Set("user_tokens_enabled", org.UserTokensEnabled)
@@ -257,6 +262,11 @@ func resourceTFEOrganizationUpdate(d *schema.ResourceData, meta interface{}) err
 	// If enforce_hyok is supplied, set it using the options struct.
 	if enforceHYOK, ok := d.GetOkExists("enforce_hyok"); ok {
 		options.EnforceHYOK = tfe.Bool(enforceHYOK.(bool))
+	}
+
+	// If speculative_plan_management_enabled is supplied, set it using the options struct.
+	if stacksEnabled, ok := d.GetOkExists("stacks_enabled"); ok {
+		options.StacksEnabled = tfe.Bool(stacksEnabled.(bool))
 	}
 
 	log.Printf("[DEBUG] Update configuration of organization: %s", d.Id())

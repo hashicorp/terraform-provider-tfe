@@ -36,6 +36,7 @@ func TestAccTFEStackResource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "vcs_repo.identifier", "hashicorp-guides/pet-nulls-stack"),
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "creation_source", "migration-api"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "vcs_repo.oauth_token_id"),
+					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "speculative_enabled"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "created_at"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "updated_at"),
 				),
@@ -83,6 +84,7 @@ func testAccTFEStackResourceConfig(orgName, ghToken, ghRepoIdentifier string) st
 resource "tfe_organization" "foobar" {
   name  = "%s"
   email = "admin@tfe.local"
+  stacks_enabled = true
 }
 
 resource "tfe_agent_pool" "foobar" {
@@ -113,6 +115,7 @@ resource "tfe_stack" "foobar" {
     identifier         = "%s"
     oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
   }
+	speculative_enabled = true
 }
 `, orgName, ghToken, ghRepoIdentifier)
 }

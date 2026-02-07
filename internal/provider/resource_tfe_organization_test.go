@@ -39,6 +39,8 @@ func TestAccTFEOrganization_basic(t *testing.T) {
 						"tfe_organization.foobar", "email", "admin@company.com"),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "collaborator_auth_policy", "password"),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "stacks_enabled", "false"),
 				),
 			},
 		},
@@ -87,6 +89,8 @@ func TestAccTFEOrganization_full(t *testing.T) {
 						"tfe_organization.foobar", "speculative_plan_management_enabled", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "user_tokens_enabled", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "stacks_enabled", "true"),
 				),
 			},
 		},
@@ -147,7 +151,7 @@ func TestAccTFEOrganization_update_costEstimation(t *testing.T) {
 		CheckDestroy:             testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOrganization_update(org.Name, org.Email, costEstimationEnabled1, assessmentsEnforced1, allowForceDeleteWorkspaces1),
+				Config: testAccTFEOrganization_update(org.Name, org.Email, costEstimationEnabled1, assessmentsEnforced1, allowForceDeleteWorkspaces1, false),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
 						"tfe_organization.foobar", org),
@@ -178,7 +182,7 @@ func TestAccTFEOrganization_update_costEstimation(t *testing.T) {
 			},
 
 			{
-				Config: testAccTFEOrganization_update(updatedName, org.Email, costEstimationEnabled2, assessmentsEnforced2, allowForceDeleteWorkspaces2),
+				Config: testAccTFEOrganization_update(updatedName, org.Email, costEstimationEnabled2, assessmentsEnforced2, allowForceDeleteWorkspaces2, true),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
 						"tfe_organization.foobar", org),
@@ -201,6 +205,26 @@ func TestAccTFEOrganization_update_costEstimation(t *testing.T) {
 						"tfe_organization.foobar", "assessments_enforced", strconv.FormatBool(assessmentsEnforced2)),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "allow_force_delete_workspaces", strconv.FormatBool(allowForceDeleteWorkspaces2)),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEOrganization_update_stacks_enabled(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOrganization_update(orgName, "test@email.com", false, false, false, true),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "stacks_enabled", "true"),
 				),
 			},
 		},
@@ -563,10 +587,11 @@ resource "tfe_organization" "foobar" {
   cost_estimation_enabled           = false
   assessments_enforced              = false
   allow_force_delete_workspaces     = false
+  stacks_enabled                    = true
 }`, rInt)
 }
 
-func testAccTFEOrganization_update(orgName string, orgEmail string, costEstimationEnabled bool, assessmentsEnforced bool, allowForceDeleteWorkspaces bool) string {
+func testAccTFEOrganization_update(orgName string, orgEmail string, costEstimationEnabled bool, assessmentsEnforced bool, allowForceDeleteWorkspaces bool, stacksEnabled bool) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name                              = "%s"
@@ -577,7 +602,8 @@ resource "tfe_organization" "foobar" {
   cost_estimation_enabled           = %t
   assessments_enforced              = %t
   allow_force_delete_workspaces     = %t
-}`, orgName, orgEmail, costEstimationEnabled, assessmentsEnforced, allowForceDeleteWorkspaces)
+  stacks_enabled                    = %t
+}`, orgName, orgEmail, costEstimationEnabled, assessmentsEnforced, allowForceDeleteWorkspaces, stacksEnabled)
 }
 
 func testAccTFEOrganization_userTokensEnabled(rInt int, userTokensEnabled bool) string {
