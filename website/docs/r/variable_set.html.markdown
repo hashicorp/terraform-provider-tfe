@@ -173,7 +173,7 @@ resource "tfe_project" "test" {
 resource "tfe_workspace" "test" {
   name         = "my-workspace-name"
   organization = tfe_organization.test.name
-  project_id   = tfe_project.test.id 
+  project_id   = tfe_project.test.id
 }
 
 resource "tfe_variable_set" "test" {
@@ -211,7 +211,19 @@ The following arguments are supported:
 
 ## Import
 
-Variable sets can be imported; use `<VARIABLE SET ID>` as the import ID. For example:
+Variable sets can be imported using an identity. For example:
+
+```hcl
+import {
+  to = tfe_variable_set.test
+  identity = {
+    id       = "varset-kjkN545LH2Sfercv"
+    hostname = "app.terraform.io"
+  }
+}
+```
+
+Variable sets can be imported using the Terraform CLI; use `<VARIABLE SET ID>` as the import ID. For example:
 
 ```shell
 terraform import tfe_variable_set.test varset-5rTwnSaRPogw6apb

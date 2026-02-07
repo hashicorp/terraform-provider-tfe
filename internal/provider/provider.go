@@ -43,6 +43,32 @@ func (c ConfiguredClient) schemaOrDefaultOrganizationKey(resource *schema.Resour
 	return c.Organization, nil
 }
 
+// MeetsMinRemoteTFEVersion checks if the TFE version meets the minimum required version.
+func (c ConfiguredClient) MeetsMinRemoteTFEVersion(minVersion string) (bool, error) {
+	return meetsMinTFEVersion(c.Client.IsCloud(), c.RemoteTFEVersion(), minVersion)
+}
+
+func meetsMinTFEVersion(isCloud bool, currentVersion, minVersion string) (bool, error) {
+	if isCloud {
+		return true, nil
+	}
+
+	meets, err := checkTFEVersion(currentVersion, minVersion)
+	if err != nil {
+		return false, err
+	}
+
+	return meets, nil
+}
+
+// RemoteTFEVersion returns the TFE version.
+func (c ConfiguredClient) RemoteTFEVersion() string {
+	if v := c.Client.RemoteTFENumericVersion(); v != "" {
+		return v
+	}
+	return c.Client.RemoteTFEVersion()
+}
+
 // ctx is used as default context.Context when making TFE calls.
 var ctx = context.Background()
 

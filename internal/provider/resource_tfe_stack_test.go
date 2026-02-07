@@ -6,10 +6,13 @@ package provider
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
+	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 )
 
 func TestAccTFEStackResource_basic(t *testing.T) {
@@ -43,6 +46,34 @@ func TestAccTFEStackResource_basic(t *testing.T) {
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"migration"},
+			},
+		},
+	})
+}
+
+func TestAccTFEStackResource_importByIdentity(t *testing.T) {
+	skipUnlessBeta(t)
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "hashicorp-guides/pet-nulls-stack"),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectIdentity("tfe_stack.foobar", map[string]knownvalue.Check{
+						"id":       knownvalue.NotNull(),
+						"hostname": knownvalue.StringExact(os.Getenv("TFE_HOSTNAME")),
+					}),
+				},
+			},
+			{
+				ResourceName:    "tfe_stack.foobar",
+				ImportState:     true,
+				ImportStateKind: resource.ImportBlockWithResourceIdentity,
 			},
 		},
 	})

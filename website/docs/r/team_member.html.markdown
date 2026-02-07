@@ -43,6 +43,18 @@ The following arguments are supported:
 
 ## Import
 
+A team member can be imported using an identity. For example:
+
+```hcl
+import {
+  to = tfe_team_member.test
+  identity = {
+    id       = "team-6p5jTwJQXwqZBncC/my_user_name"
+    hostname = "app.terraform.io"
+  }
+}
+```
+
 A team member can be imported; use `<TEAM ID>/<USERNAME>` as the import ID. For
 example:
 

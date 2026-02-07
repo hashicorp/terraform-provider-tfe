@@ -16,6 +16,7 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
 )
 
 var variableSetIDRegexp = regexp.MustCompile("varset-[a-zA-Z0-9]{16}$")
@@ -27,7 +28,7 @@ func resourceTFEVariableSet() *schema.Resource {
 		Update: resourceTFEVariableSetUpdate,
 		Delete: resourceTFEVariableSetDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: schema.ImportStatePassthroughWithIdentity("id"),
 		},
 
 		CustomizeDiff: func(c context.Context, d *schema.ResourceDiff, meta interface{}) error {
@@ -39,6 +40,21 @@ func resourceTFEVariableSet() *schema.Resource {
 				return err
 			}
 			return nil
+		},
+
+		Identity: &schema.ResourceIdentity{
+			SchemaFunc: func() map[string]*schema.Schema {
+				return map[string]*schema.Schema{
+					"id": {
+						Type:              schema.TypeString,
+						RequiredForImport: true,
+					},
+					"hostname": {
+						Type:              schema.TypeString,
+						OptionalForImport: true,
+					},
+				}
+			},
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -168,6 +184,11 @@ func resourceTFEVariableSetCreate(d *schema.ResourceData, meta interface{}) erro
 		}
 	}
 
+	err = helpers.WriteTFEIdentity(d, variableSet.ID, config.Client.BaseURL().Host)
+	if err != nil {
+		return err
+	}
+
 	return resourceTFEVariableSetRead(d, meta)
 }
 
@@ -175,8 +196,18 @@ func resourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) error 
 	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read configuration of variable set: %s", d.Id())
+
+	includes := []tfe.VariableSetIncludeOpt{tfe.VariableSetWorkspaces}
+	meetsMinVersionRequirement, err := config.MeetsMinRemoteTFEVersion(minTFEVersionVariableSetStacks)
+	if err != nil {
+		log.Printf("[DEBUG] could not determine if TFE version meets minimum required version %s: %v", minTFEVersionVariableSetStacks, err)
+		return fmt.Errorf("Error while determining TFE version compatibility: %w", err)
+	} else if meetsMinVersionRequirement {
+		includes = append(includes, tfe.VariableSetStacks)
+	}
+
 	variableSet, err := config.Client.VariableSets.Read(ctx, d.Id(), &tfe.VariableSetReadOptions{
-		Include: &[]tfe.VariableSetIncludeOpt{tfe.VariableSetWorkspaces, tfe.VariableSetStacks},
+		Include: &includes,
 	})
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
@@ -208,6 +239,11 @@ func resourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) error 
 
 	if variableSet.Parent != nil && variableSet.Parent.Project != nil {
 		d.Set("parent_project_id", variableSet.Parent.Project.ID)
+	}
+
+	err = helpers.WriteTFEIdentity(d, variableSet.ID, config.Client.BaseURL().Host)
+	if err != nil {
+		return err
 	}
 
 	return nil

@@ -7,11 +7,14 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"os"
 	"testing"
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
+	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
@@ -125,6 +128,33 @@ func TestAccTFETeamMember_import(t *testing.T) {
 				ResourceName:      "tfe_team_member.foobar",
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccTFETeamMember_importByIdentity(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamMemberDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeamMember_basic(rInt),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectIdentity("tfe_team_member.foobar", map[string]knownvalue.Check{
+						"id":       knownvalue.NotNull(),
+						"hostname": knownvalue.StringExact(os.Getenv("TFE_HOSTNAME")),
+					}),
+				},
+			},
+
+			{
+				ResourceName:    "tfe_team_member.foobar",
+				ImportState:     true,
+				ImportStateKind: resource.ImportBlockWithResourceIdentity,
 			},
 		},
 	})

@@ -16,7 +16,7 @@ import (
 func TestTFEWorkspaceRunTask_stagesSupport(t *testing.T) {
 	testCases := map[string]struct {
 		isCloud      bool
-		tfeVer       string
+		remoteVer    string
 		expectResult bool
 	}{
 		"when HCP Terraform":                 {true, "", true},
@@ -29,18 +29,9 @@ func TestTFEWorkspaceRunTask_stagesSupport(t *testing.T) {
 
 	for name, testCase := range testCases {
 		t.Run(name, func(t *testing.T) {
-			resolver := &staticCapabilityResolver{}
-			resolver.SetIsCloud(testCase.isCloud)
-			resolver.SetRemoteTFEVersion(testCase.tfeVer)
-
-			subject := resourceWorkspaceRunTask{
-				config:       ConfiguredClient{Organization: "Mock", Client: &tfe.Client{}},
-				capabilities: resolver,
-			}
-
-			actual := subject.supportsStagesProperty()
+			actual, _ := meetsMinTFEVersion(testCase.isCloud, testCase.remoteVer, minTFEVersionWorkspaceRunTaskStages)
 			if actual != testCase.expectResult {
-				t.Fatalf("expected supportsStagesProperty to be %t, got %t", testCase.expectResult, actual)
+				t.Fatalf("expected meetsMinTFEVersion to be %t, got %t", testCase.expectResult, actual)
 			}
 		})
 	}
