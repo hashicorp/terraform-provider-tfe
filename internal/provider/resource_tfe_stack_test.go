@@ -26,7 +26,7 @@ func TestAccTFEStackResource_basic(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "hashicorp-guides/pet-nulls-stack"),
+				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "hashicorp-guides/pet-nulls-stack", true),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "id"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "project_id"),
@@ -51,6 +51,32 @@ func TestAccTFEStackResource_basic(t *testing.T) {
 	})
 }
 
+func TestAccTFEStackResource_update_speculativeEnabled(t *testing.T) {
+	skipUnlessBeta(t)
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "hashicorp-guides/pet-nulls-stack", false),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_stack.foobar", "speculative_enabled", "false"),
+				),
+			},
+			{
+				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "hashicorp-guides/pet-nulls-stack", true),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_stack.foobar", "speculative_enabled", "true"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEStackResource_importByIdentity(t *testing.T) {
 	skipUnlessBeta(t)
 
@@ -62,7 +88,7 @@ func TestAccTFEStackResource_importByIdentity(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "hashicorp-guides/pet-nulls-stack"),
+				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "hashicorp-guides/pet-nulls-stack", true),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectIdentity("tfe_stack.foobar", map[string]knownvalue.Check{
 						"id":       knownvalue.NotNull(),
@@ -79,7 +105,7 @@ func TestAccTFEStackResource_importByIdentity(t *testing.T) {
 	})
 }
 
-func testAccTFEStackResourceConfig(orgName, ghToken, ghRepoIdentifier string) string {
+func testAccTFEStackResourceConfig(orgName, ghToken, ghRepoIdentifier string, speculativeEnabled bool) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "%s"
@@ -111,13 +137,13 @@ resource "tfe_stack" "foobar" {
   project_id  = tfe_project.example.id
   agent_pool_id = tfe_agent_pool.foobar.id
 	migration = true
-	speculative_enabled = true
 	vcs_repo {
     identifier         = "%s"
     oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
   }
+	speculative_enabled = "%t"
 }
-`, orgName, ghToken, ghRepoIdentifier)
+`, orgName, ghToken, ghRepoIdentifier, speculativeEnabled)
 }
 
 func TestAccTFEStackResource_withAgentPool(t *testing.T) {

@@ -221,6 +221,13 @@ func TestAccTFEOrganization_update_stacks_enabled(t *testing.T) {
 		CheckDestroy:             testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
+				Config: testAccTFEOrganization_update(orgName, "test@email.com", false, false, false, false),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "stacks_enabled", "false"),
+				),
+			},
+			{
 				Config: testAccTFEOrganization_update(orgName, "test@email.com", false, false, false, true),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(

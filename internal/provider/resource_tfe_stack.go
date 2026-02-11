@@ -273,8 +273,9 @@ func (r *resourceTFEStack) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	options := tfe.StackUpdateOptions{
-		Name:        tfe.String(plan.Name.ValueString()),
-		Description: tfe.String(plan.Description.ValueString()),
+		Name:               tfe.String(plan.Name.ValueString()),
+		Description:        tfe.String(plan.Description.ValueString()),
+		SpeculativeEnabled: tfe.Bool(plan.SpeculativeEnabled.ValueBool()),
 	}
 
 	if plan.VCSRepo != nil {
