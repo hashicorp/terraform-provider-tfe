@@ -402,6 +402,149 @@ func TestAccTFERegistryModule_vcsRepoWithTagPrefixMonorepo(t *testing.T) {
 	})
 }
 
+// TestAccTFERegistryModule_monorepoNonStandardName tests using source_directory with
+// a repository that doesn't follow the terraform-<provider>-<name> naming convention.
+// This now works because go-tfe supports Name and Provider fields in RegistryModuleCreateWithVCSConnectionOptions.
+func TestAccTFERegistryModule_monorepoNonStandardName(t *testing.T) {
+	skipUnlessBeta(t)
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccPreCheckTFERegistryModule(t)
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFERegistryModule_monorepoNonStandardName(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "name", "nestedA"),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "module_provider", "aws"),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "vcs_repo.0.source_directory", "modules/nestedA"),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "vcs_repo.0.branch", "main"),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "vcs_repo.0.tags", "false"),
+				),
+			},
+		},
+	})
+}
+
+// TestAccTFERegistryModule_monorepoMultipleModules tests creating multiple modules from
+// different subdirectories in the same monorepo repository. This is a common pattern
+// where a single repository contains multiple Terraform modules.
+func TestAccTFERegistryModule_monorepoMultipleModules(t *testing.T) {
+	skipUnlessBeta(t)
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccPreCheckTFERegistryModule(t)
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFERegistryModule_monorepoMultipleModules(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					// Check first module (nestedA)
+					resource.TestCheckResourceAttr("tfe_registry_module.module_a", "name", "nestedA"),
+					resource.TestCheckResourceAttr("tfe_registry_module.module_a", "module_provider", "aws"),
+					resource.TestCheckResourceAttr("tfe_registry_module.module_a", "vcs_repo.0.source_directory", "modules/nestedA"),
+					resource.TestCheckResourceAttr("tfe_registry_module.module_a", "vcs_repo.0.tags", "true"),
+					// Check second module (nestedB)
+					resource.TestCheckResourceAttr("tfe_registry_module.module_b", "name", "nestedB"),
+					resource.TestCheckResourceAttr("tfe_registry_module.module_b", "module_provider", "aws"),
+					resource.TestCheckResourceAttr("tfe_registry_module.module_b", "vcs_repo.0.source_directory", "modules/nestedB"),
+					resource.TestCheckResourceAttr("tfe_registry_module.module_b", "vcs_repo.0.tags", "true"),
+				),
+			},
+		},
+	})
+}
+
+// TestAccTFERegistryModule_monorepoWithTagsEnabled tests a monorepo module configuration
+// with tags publishing enabled. This ensures the fix works when tags = true.
+func TestAccTFERegistryModule_monorepoWithTagsEnabled(t *testing.T) {
+	skipUnlessBeta(t)
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccPreCheckTFERegistryModule(t)
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFERegistryModule_monorepoWithTagsEnabled(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "name", "nestedA"),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "module_provider", "randompet"),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "vcs_repo.0.source_directory", "modules/nestedA"),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "vcs_repo.0.tags", "true"),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "publishing_mechanism", "git_tag"),
+				),
+			},
+		},
+	})
+}
+
+// TestAccTFERegistryModule_monorepoDeepNestedPath tests a monorepo with deeply nested
+// subdirectories, ensuring source_directory works with multiple path levels.
+func TestAccTFERegistryModule_monorepoDeepNestedPath(t *testing.T) {
+	skipUnlessBeta(t)
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccPreCheckTFERegistryModule(t)
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFERegistryModule_monorepoDeepNestedPath(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "name", "compute"),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "module_provider", "aws"),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "vcs_repo.0.source_directory", "terraform/modules/aws/compute"),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "vcs_repo.0.branch", "main"),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "vcs_repo.0.tags", "false"),
+				),
+			},
+		},
+	})
+}
+
+// TestAccTFERegistryModule_monorepoVariousProviders tests that the fix works with
+// different module providers (not just aws), confirming provider flexibility.
+func TestAccTFERegistryModule_monorepoVariousProviders(t *testing.T) {
+	skipUnlessBeta(t)
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccPreCheckTFERegistryModule(t)
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFERegistryModule_monorepoVariousProviders(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_registry_module.gcp_module", "name", "vpc"),
+					resource.TestCheckResourceAttr("tfe_registry_module.gcp_module", "module_provider", "gcp"),
+					resource.TestCheckResourceAttr("tfe_registry_module.gcp_module", "vcs_repo.0.source_directory", "modules/gcp-vpc"),
+					resource.TestCheckResourceAttr("tfe_registry_module.azure_module", "name", "vnet"),
+					resource.TestCheckResourceAttr("tfe_registry_module.azure_module", "module_provider", "azurerm"),
+					resource.TestCheckResourceAttr("tfe_registry_module.azure_module", "vcs_repo.0.source_directory", "modules/azure-vnet"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFERegistryModule_noCodeModule(t *testing.T) {
 	skipIfEnterprise(t)
 
@@ -1533,6 +1676,8 @@ resource "tfe_oauth_client" "foobar" {
 
 resource "tfe_registry_module" "foobar" {
  organization     = tfe_organization.foobar.name
+ name             = "test-module"
+ module_provider  = "aws"
  vcs_repo {
    display_identifier = "%s"
    identifier         = "%s"
@@ -1655,6 +1800,8 @@ resource "tfe_oauth_client" "foobar" {
 
 resource "tfe_registry_module" "foobar" {
  organization     = tfe_organization.foobar.name
+ name             = "test-module"
+ module_provider  = "aws"
  vcs_repo {
    display_identifier = "%s"
    identifier         = "%s"
@@ -2149,3 +2296,187 @@ resource "tfe_registry_module" "foobar" {
   }
 }`, rInt, envGithubToken, envGithubRegistryModuleIdentifer, envGithubRegistryModuleIdentifer)
 }
+
+func testAccTFERegistryModule_monorepoNonStandardName(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_oauth_client" "foobar" {
+  organization     = tfe_organization.foobar.name
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "%s"
+  service_provider = "github"
+}
+
+resource "tfe_registry_module" "foobar" {
+  organization    = tfe_organization.foobar.name
+  # These fields are now supported for non-standard repo names
+  name            = "nestedA"
+  module_provider = "aws"
+  
+  vcs_repo {
+    display_identifier = "berchevorg/private-modules"
+    identifier         = "berchevorg/private-modules"
+    oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
+    branch             = "main"
+    tags               = false
+    source_directory   = "modules/nestedA"
+  }
+}`, rInt, envGithubToken)
+}
+
+func testAccTFERegistryModule_monorepoMultipleModules(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_oauth_client" "foobar" {
+  organization     = tfe_organization.foobar.name
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "%s"
+  service_provider = "github"
+}
+
+resource "tfe_registry_module" "module_a" {
+  organization    = tfe_organization.foobar.name
+  name            = "nestedA"
+  module_provider = "aws"
+  
+  vcs_repo {
+    display_identifier = "berchevorg/private-modules"
+    identifier         = "berchevorg/private-modules"
+    oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
+    tags               = true
+    source_directory   = "modules/nestedA"
+  }
+}
+
+resource "tfe_registry_module" "module_b" {
+  organization    = tfe_organization.foobar.name
+  name            = "nestedB"
+  module_provider = "aws"
+  
+  vcs_repo {
+    display_identifier = "berchevorg/private-modules"
+    identifier         = "berchevorg/private-modules"
+    oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
+    tags               = true
+    source_directory   = "modules/nestedB"
+  }
+}`, rInt, envGithubToken)
+}
+
+func testAccTFERegistryModule_monorepoWithTagsEnabled(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_oauth_client" "foobar" {
+  organization     = tfe_organization.foobar.name
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "%s"
+  service_provider = "github"
+}
+
+resource "tfe_registry_module" "foobar" {
+  organization    = tfe_organization.foobar.name
+  name            = "nestedA"
+  module_provider = "randompet"
+  
+  vcs_repo {
+    display_identifier = "berchevorg/private-modules"
+    identifier         = "berchevorg/private-modules"
+    oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
+    tags               = true
+    source_directory   = "modules/nestedA"
+  }
+}`, rInt, envGithubToken)
+}
+
+func testAccTFERegistryModule_monorepoDeepNestedPath(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_oauth_client" "foobar" {
+  organization     = tfe_organization.foobar.name
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "%s"
+  service_provider = "github"
+}
+
+resource "tfe_registry_module" "foobar" {
+  organization    = tfe_organization.foobar.name
+  name            = "compute"
+  module_provider = "aws"
+  
+  vcs_repo {
+    display_identifier = "berchevorg/private-modules"
+    identifier         = "berchevorg/private-modules"
+    oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
+    branch             = "main"
+    tags               = false
+    source_directory   = "terraform/modules/aws/compute"
+  }
+}`, rInt, envGithubToken)
+}
+
+func testAccTFERegistryModule_monorepoVariousProviders(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_oauth_client" "foobar" {
+  organization     = tfe_organization.foobar.name
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "%s"
+  service_provider = "github"
+}
+
+resource "tfe_registry_module" "gcp_module" {
+  organization    = tfe_organization.foobar.name
+  name            = "vpc"
+  module_provider = "gcp"
+  
+  vcs_repo {
+    display_identifier = "berchevorg/private-modules"
+    identifier         = "berchevorg/private-modules"
+    oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
+    branch             = "main"
+    tags               = false
+    source_directory   = "modules/gcp-vpc"
+  }
+}
+
+resource "tfe_registry_module" "azure_module" {
+  organization    = tfe_organization.foobar.name
+  name            = "vnet"
+  module_provider = "azurerm"
+  
+  vcs_repo {
+    display_identifier = "berchevorg/private-modules"
+    identifier         = "berchevorg/private-modules"
+    oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
+    branch             = "main"
+    tags               = false
+    source_directory   = "modules/azure-vnet"
+  }
+}`, rInt, envGithubToken)
+}
+
