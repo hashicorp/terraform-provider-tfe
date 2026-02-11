@@ -1,5 +1,8 @@
 ## Unreleased
 
+FEATURES:
+* Adds `project_remote_state` boolean attribute to `r/tfe_workspace_settings` and `d/tfe_workspace` for remote state sharing within a project, by @hs26gill [#1953](https://github.com/hashicorp/terraform-provider-tfe/pull/1953)
+
 ENHANCEMENTS:
 * Added resource identities to the following resources: `r/tfe_agent_pool`, `r/tfe_organization_membership`, `r/tfe_policy`, `r/tfe_policy_set`, `r/tfe_project`, `r/tfe_registry_module`, `r/tfe_registry_provider`, `r/tfe_stack`, `r/tfe_team`, `r/tfe_team_member`, `r/tfe_variable`, `r/tfe_variable_set`, `r/tfe_workspace`, by @sebasslash [#1937](https://github.com/hashicorp/terraform-provider-tfe/pull/1937)
 

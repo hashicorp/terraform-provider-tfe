@@ -80,6 +80,11 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Computed: true,
 			},
 
+			"project_remote_state": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
+
 			"remote_state_consumer_ids": {
 				Type:     schema.TypeSet,
 				Computed: true,
@@ -435,9 +440,10 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 		d.Set("html_url", htmlURL.String())
 	}
 
-	// Set remote_state_consumer_ids if global_remote_state is false
+	// Set remote_state_consumer_ids if global_remote_state and project_remote_state are false
 	globalRemoteState := workspace.GlobalRemoteState
-	if globalRemoteState {
+	projectRemoteState := workspace.ProjectRemoteState
+	if globalRemoteState || projectRemoteState {
 		if err := d.Set("remote_state_consumer_ids", []string{}); err != nil {
 			return err
 		}
@@ -455,6 +461,7 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 		d.Set("remote_state_consumer_ids", remoteStateConsumerIDs)
 	}
 	d.Set("global_remote_state", globalRemoteState)
+	d.Set("project_remote_state", projectRemoteState)
 
 	if workspace.SSHKey != nil {
 		d.Set("ssh_key_id", workspace.SSHKey.ID)
