@@ -111,11 +111,11 @@ resource "tfe_stack" "foobar" {
   project_id  = tfe_project.example.id
   agent_pool_id = tfe_agent_pool.foobar.id
 	migration = true
+	speculative_enabled = true
 	vcs_repo {
     identifier         = "%s"
     oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
   }
-	speculative_enabled = true
 }
 `, orgName, ghToken, ghRepoIdentifier)
 }
@@ -222,7 +222,7 @@ resource "tfe_project" "example" {
 resource "tfe_stack" "foobar2" {
 	name        = "example-stack-no-vcs"
 	description = "Stack without VCS repo"
-  project_id  = tfe_project.example.id
+	project_id  = tfe_project.example.id
 }
 `, orgName)
 }

@@ -180,6 +180,10 @@ func (r *resourceTFEStack) Create(ctx context.Context, req resource.CreateReques
 		options.Migration = tfe.Bool(plan.Migration.ValueBool())
 	}
 
+	if !plan.SpeculativeEnabled.IsNull() {
+		options.SpeculativeEnabled = tfe.Bool((plan.SpeculativeEnabled.ValueBool()))
+	}
+
 	if plan.VCSRepo != nil {
 		options.VCSRepo = &tfe.StackVCSRepoOptions{
 			Identifier:        plan.VCSRepo.Identifier.ValueString(),
