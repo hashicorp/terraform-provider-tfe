@@ -167,10 +167,10 @@ func createRun(tfeClient *tfe.Client, waitForRun bool, manualConfirm bool, isDes
 	}
 
 	runConfig := tfe.RunCreateOptions{
-		Workspace:  ws,
-		IsDestroy:  tfe.Bool(isDestroyRun),
-		Message:    tfe.String(message),
-		AutoApply:  tfe.Bool(autoApply),
+		Workspace: ws,
+		IsDestroy: tfe.Bool(isDestroyRun),
+		Message:   tfe.String(message),
+		AutoApply: tfe.Bool(autoApply),
 	}
 	log.Printf("[DEBUG] Create run for workspace: %s", ws.ID)
 	run, err := tfeClient.Runs.Create(ctx, runConfig)
