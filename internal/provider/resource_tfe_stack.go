@@ -106,6 +106,10 @@ func (r *resourceTFEStack) Schema(ctx context.Context, req resource.SchemaReques
 				Description: "Description of the Stack",
 				Optional:    true,
 			},
+			"speculative_enabled": schema.BoolAttribute{
+				Description: "Indicates if speculative plans are enabled on this Stack.",
+				Optional:    true,
+			},
 			"created_at": schema.StringAttribute{
 				Description: "The time when the stack was created.",
 				Computed:    true,
@@ -174,6 +178,10 @@ func (r *resourceTFEStack) Create(ctx context.Context, req resource.CreateReques
 
 	if !plan.Migration.IsNull() {
 		options.Migration = tfe.Bool(plan.Migration.ValueBool())
+	}
+
+	if !plan.SpeculativeEnabled.IsNull() {
+		options.SpeculativeEnabled = tfe.Bool((plan.SpeculativeEnabled.ValueBool()))
 	}
 
 	if plan.VCSRepo != nil {
@@ -265,8 +273,9 @@ func (r *resourceTFEStack) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	options := tfe.StackUpdateOptions{
-		Name:        tfe.String(plan.Name.ValueString()),
-		Description: tfe.String(plan.Description.ValueString()),
+		Name:               tfe.String(plan.Name.ValueString()),
+		Description:        tfe.String(plan.Description.ValueString()),
+		SpeculativeEnabled: tfe.Bool(plan.SpeculativeEnabled.ValueBool()),
 	}
 
 	if plan.VCSRepo != nil {

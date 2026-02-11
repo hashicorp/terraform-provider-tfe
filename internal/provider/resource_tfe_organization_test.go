@@ -39,6 +39,8 @@ func TestAccTFEOrganization_basic(t *testing.T) {
 						"tfe_organization.foobar", "email", "admin@company.com"),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "collaborator_auth_policy", "password"),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "stacks_enabled", "false"),
 				),
 			},
 		},
@@ -87,6 +89,8 @@ func TestAccTFEOrganization_full(t *testing.T) {
 						"tfe_organization.foobar", "speculative_plan_management_enabled", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "user_tokens_enabled", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "stacks_enabled", "true"),
 				),
 			},
 		},
@@ -131,15 +135,17 @@ func TestAccTFEOrganization_update_costEstimation(t *testing.T) {
 	t.Cleanup(orgCleanup)
 
 	// First update
-	costEstimationEnabled1 := true
-	assessmentsEnforced1 := true
-	allowForceDeleteWorkspaces1 := true
+	costEstimationEnabledTrue := true
+	assessmentsEnforcedTrue := true
+	allowForceDeleteWorkspacesTrue := true
+	stacksEnabledFalse := false
 
 	// Second update
-	costEstimationEnabled2 := false
-	assessmentsEnforced2 := false
-	allowForceDeleteWorkspaces2 := false
+	costEstimationEnabledFalse := false
+	assessmentsEnforcedFalse := false
+	allowForceDeleteWorkspacesFalse := false
 	updatedName := org.Name + "_foobar"
+	stacksEnabledTrue := true
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -147,11 +153,11 @@ func TestAccTFEOrganization_update_costEstimation(t *testing.T) {
 		CheckDestroy:             testAccCheckTFEOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEOrganization_update(org.Name, org.Email, costEstimationEnabled1, assessmentsEnforced1, allowForceDeleteWorkspaces1),
+				Config: testAccTFEOrganization_update(org.Name, org.Email, costEstimationEnabledTrue, assessmentsEnforcedTrue, allowForceDeleteWorkspacesTrue, stacksEnabledFalse),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
 						"tfe_organization.foobar", org),
-					testAccCheckTFEOrganizationAttributesUpdated(org, org.Name, costEstimationEnabled1),
+					testAccCheckTFEOrganizationAttributesUpdated(org, org.Name, costEstimationEnabledTrue),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "name", org.Name),
 					resource.TestCheckResourceAttr(
@@ -165,24 +171,24 @@ func TestAccTFEOrganization_update_costEstimation(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "owners_team_saml_role_id", "owners"),
 					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "cost_estimation_enabled", strconv.FormatBool(costEstimationEnabled1)),
+						"tfe_organization.foobar", "cost_estimation_enabled", strconv.FormatBool(costEstimationEnabledTrue)),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "send_passing_statuses_for_untriggered_speculative_plans", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "aggregated_commit_status_enabled", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "assessments_enforced", strconv.FormatBool(assessmentsEnforced1)),
+						"tfe_organization.foobar", "assessments_enforced", strconv.FormatBool(assessmentsEnforcedTrue)),
 					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "allow_force_delete_workspaces", strconv.FormatBool(allowForceDeleteWorkspaces1)),
+						"tfe_organization.foobar", "allow_force_delete_workspaces", strconv.FormatBool(allowForceDeleteWorkspacesTrue)),
 				),
 			},
 
 			{
-				Config: testAccTFEOrganization_update(updatedName, org.Email, costEstimationEnabled2, assessmentsEnforced2, allowForceDeleteWorkspaces2),
+				Config: testAccTFEOrganization_update(updatedName, org.Email, costEstimationEnabledFalse, assessmentsEnforcedFalse, allowForceDeleteWorkspacesFalse, stacksEnabledTrue),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationExists(
 						"tfe_organization.foobar", org),
-					testAccCheckTFEOrganizationAttributesUpdated(org, updatedName, costEstimationEnabled2),
+					testAccCheckTFEOrganizationAttributesUpdated(org, updatedName, costEstimationEnabledFalse),
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "name", updatedName),
 					resource.TestCheckResourceAttr(
@@ -196,11 +202,40 @@ func TestAccTFEOrganization_update_costEstimation(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "owners_team_saml_role_id", "owners"),
 					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "cost_estimation_enabled", strconv.FormatBool(costEstimationEnabled2)),
+						"tfe_organization.foobar", "cost_estimation_enabled", strconv.FormatBool(costEstimationEnabledFalse)),
 					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "assessments_enforced", strconv.FormatBool(assessmentsEnforced2)),
+						"tfe_organization.foobar", "assessments_enforced", strconv.FormatBool(assessmentsEnforcedFalse)),
 					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "allow_force_delete_workspaces", strconv.FormatBool(allowForceDeleteWorkspaces2)),
+						"tfe_organization.foobar", "allow_force_delete_workspaces", strconv.FormatBool(allowForceDeleteWorkspacesFalse)),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEOrganization_update_stacks_enabled(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+	stacksEnabledFalse := false
+	stacksEnabledTrue := true
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOrganization_update(orgName, "test@email.com", false, false, false, stacksEnabledFalse),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "stacks_enabled", "false"),
+				),
+			},
+			{
+				Config: testAccTFEOrganization_update(orgName, "test@email.com", false, false, false, stacksEnabledTrue),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "stacks_enabled", "true"),
 				),
 			},
 		},
@@ -563,10 +598,11 @@ resource "tfe_organization" "foobar" {
   cost_estimation_enabled           = false
   assessments_enforced              = false
   allow_force_delete_workspaces     = false
+  stacks_enabled                    = true
 }`, rInt)
 }
 
-func testAccTFEOrganization_update(orgName string, orgEmail string, costEstimationEnabled bool, assessmentsEnforced bool, allowForceDeleteWorkspaces bool) string {
+func testAccTFEOrganization_update(orgName string, orgEmail string, costEstimationEnabled bool, assessmentsEnforced bool, allowForceDeleteWorkspaces bool, stacksEnabled bool) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name                              = "%s"
@@ -577,7 +613,8 @@ resource "tfe_organization" "foobar" {
   cost_estimation_enabled           = %t
   assessments_enforced              = %t
   allow_force_delete_workspaces     = %t
-}`, orgName, orgEmail, costEstimationEnabled, assessmentsEnforced, allowForceDeleteWorkspaces)
+  stacks_enabled                    = %t
+}`, orgName, orgEmail, costEstimationEnabled, assessmentsEnforced, allowForceDeleteWorkspaces, stacksEnabled)
 }
 
 func testAccTFEOrganization_userTokensEnabled(rInt int, userTokensEnabled bool) string {
