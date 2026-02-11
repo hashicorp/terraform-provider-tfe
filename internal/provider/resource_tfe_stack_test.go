@@ -20,13 +20,14 @@ func TestAccTFEStackResource_basic(t *testing.T) {
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+	speculativeEnabledFalse := false
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "hashicorp-guides/pet-nulls-stack", true),
+				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "hashicorp-guides/pet-nulls-stack", speculativeEnabledFalse),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "id"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "project_id"),
@@ -56,19 +57,21 @@ func TestAccTFEStackResource_update_speculativeEnabled(t *testing.T) {
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+	speculativeEnabledFalse := false
+	speculativeEnabledTrue := true
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "hashicorp-guides/pet-nulls-stack", false),
+				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "hashicorp-guides/pet-nulls-stack", speculativeEnabledFalse),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "speculative_enabled", "false"),
 				),
 			},
 			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "hashicorp-guides/pet-nulls-stack", true),
+				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "hashicorp-guides/pet-nulls-stack", speculativeEnabledTrue),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "speculative_enabled", "true"),
 				),
