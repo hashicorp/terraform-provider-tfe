@@ -24,23 +24,23 @@ import "github.com/aws-samples/dummy/gen/providers/tfe/organization"
 import "github.com/aws-samples/dummy/gen/providers/tfe/workspace"
 import "github.com/aws-samples/dummy/gen/providers/tfe/variable"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	tfeOrganizationTest := organization.NewOrganization(this, jsii.String("test"), &organizationConfig{
+	tfeOrganizationTest := organization.NewOrganization(this, jsii.String("test"), &OrganizationConfig{
 		email: jsii.String("admin@company.com"),
 		name: jsii.String("my-org-name"),
 	})
-	tfeWorkspaceTest := workspace.NewWorkspace(this, jsii.String("test_1"), &workspaceConfig{
+	tfeWorkspaceTest := workspace.NewWorkspace(this, jsii.String("test_1"), &WorkspaceConfig{
 		name: jsii.String("my-workspace-name"),
 		organization: cdktf.Token_AsString(tfeOrganizationTest.name),
 	})
 	/*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
 	tfeWorkspaceTest.OverrideLogicalId(jsii.String("test"))
-	tfeVariableTest := variable.NewVariable(this, jsii.String("test_2"), &variableConfig{
+	tfeVariableTest := variable.NewVariable(this, jsii.String("test_2"), &VariableConfig{
 		category: jsii.String("terraform"),
 		description: jsii.String("a useful description"),
 		key: jsii.String("my_key_name"),
@@ -64,17 +64,17 @@ import "github.com/aws-samples/dummy/gen/providers/tfe/organization"
 import "github.com/aws-samples/dummy/gen/providers/tfe/variableSet"
 import "github.com/aws-samples/dummy/gen/providers/tfe/variable"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	tfeOrganizationTest := organization.NewOrganization(this, jsii.String("test"), &organizationConfig{
+	tfeOrganizationTest := organization.NewOrganization(this, jsii.String("test"), &OrganizationConfig{
 		email: jsii.String("admin@company.com"),
 		name: jsii.String("my-org-name"),
 	})
-	tfeVariableSetTest := variableSet.NewVariableSet(this, jsii.String("test_1"), &variableSetConfig{
+	tfeVariableSetTest := variableSet.NewVariableSet(this, jsii.String("test_1"), &VariableSetConfig{
 		description: jsii.String("Some description."),
 		global: jsii.Boolean(false),
 		name: jsii.String("Test Varset"),
@@ -82,14 +82,14 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 	})
 	/*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
 	tfeVariableSetTest.OverrideLogicalId(jsii.String("test"))
-	variable.NewVariable(this, jsii.String("test-a"), &variableConfig{
+	variable.NewVariable(this, jsii.String("test-a"), &VariableConfig{
 		category: jsii.String("terraform"),
 		description: jsii.String("a useful description"),
 		key: jsii.String("seperate_variable"),
 		value: jsii.String("my_value_name"),
 		variableSetId: cdktf.Token_*AsString(tfeVariableSetTest.id),
 	})
-	variable.NewVariable(this, jsii.String("test-b"), &variableConfig{
+	variable.NewVariable(this, jsii.String("test-b"), &VariableConfig{
 		category: jsii.String("env"),
 		description: jsii.String("an environment variable"),
 		key: jsii.String("another_variable"),
@@ -189,7 +189,31 @@ resource "tfe_workspace" "visible_workspace" {
 
 ## Import
 
-Variables can be imported.
+Variables can be imported using an identity. For example:
+
+```hcl
+import {
+  to = tfe_variable.test
+  identity = {
+    id              = "var-5rTwnSaRPogw6apb"
+    configurable_id = "ws-66fE3LmF42piTaN2"
+    hostname        = "app.terraform.io"
+  }
+}
+```
+
+```hcl
+import {
+  to = tfe_variable.test
+  identity = {
+    id              = "var-5rTwnSaRPogw6apb"
+    configurable_id = "varset-47qC3LmA47piVan7"
+    hostname        = "app.terraform.io"
+  }
+}
+```
+
+Variables can be imported using the Terraform CLI.
 
 To import a variable that's part of a workspace, use
 `<ORGANIZATION NAME>/<WORKSPACE NAME>/<VARIABLE ID>` as the import ID. For
@@ -207,4 +231,4 @@ example:
 terraform import tfe_variable.test my-org-name/varset-47qC3LmA47piVan7/var-5rTwnSaRPogw6apb
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-dd5facfddf4b5fe6779a69237f3aa763521b7592fed6e368aea8dfc6c6e366c8 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-ebecf9de2f7dadece5c43f0b8cf7fcc4511173505d80a16f87e4e498e560d12c -->

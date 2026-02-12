@@ -181,7 +181,31 @@ resource "tfe_workspace" "visible_workspace" {
 
 ## Import
 
-Variables can be imported.
+Variables can be imported using an identity. For example:
+
+```hcl
+import {
+  to = tfe_variable.test
+  identity = {
+    id              = "var-5rTwnSaRPogw6apb"
+    configurable_id = "ws-66fE3LmF42piTaN2"
+    hostname        = "app.terraform.io"
+  }
+}
+```
+
+```hcl
+import {
+  to = tfe_variable.test
+  identity = {
+    id              = "var-5rTwnSaRPogw6apb"
+    configurable_id = "varset-47qC3LmA47piVan7"
+    hostname        = "app.terraform.io"
+  }
+}
+```
+
+Variables can be imported using the Terraform CLI.
 
 To import a variable that's part of a workspace, use
 `<ORGANIZATION NAME>/<WORKSPACE NAME>/<VARIABLE ID>` as the import ID. For
@@ -199,4 +223,4 @@ example:
 terraform import tfe_variable.test my-org-name/varset-47qC3LmA47piVan7/var-5rTwnSaRPogw6apb
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-dd5facfddf4b5fe6779a69237f3aa763521b7592fed6e368aea8dfc6c6e366c8 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-ebecf9de2f7dadece5c43f0b8cf7fcc4511173505d80a16f87e4e498e560d12c -->
