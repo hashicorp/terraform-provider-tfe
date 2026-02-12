@@ -1,5 +1,7 @@
 ## Unreleased
 
+## v0.74.0
+
 FEATURES:
 * Adds `project_remote_state` boolean attribute to `r/tfe_workspace_settings` and `d/tfe_workspace` for remote state sharing within a project, by @hs26gill [#1953](https://github.com/hashicorp/terraform-provider-tfe/pull/1953)
 

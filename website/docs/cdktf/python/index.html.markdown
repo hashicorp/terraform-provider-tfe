@@ -90,7 +90,7 @@ The above snippet using `required_providers` is for Terraform 0.13+; if you are 
 
 ```hcl
 provider "tfe" {
-  version = "~> 0.70.0"
+  version = "~> 0.74.0"
   ...
 }
 ```
