@@ -48,8 +48,8 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 
 	waitForRun := runArgs["wait_for_run"].(bool)
 	manualConfirm := runArgs["manual_confirm"].(bool)
-
 	msg, _ := runArgs["message"].(string)
+	
 	run, err := createRun(config.Client, waitForRun, manualConfirm, isDestroyRun, ws, msg)
 
 	if err != nil {
