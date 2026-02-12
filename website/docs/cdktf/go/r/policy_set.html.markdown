@@ -87,9 +87,11 @@ The following arguments are supported:
 * `Kind` - (Optional) The policy-as-code framework associated with the policy.
    Defaults to `Sentinel` if not provided. Valid values are `Sentinel` and `Opa`.
    A policy set can only have policies that have the same underlying kind.
-* `AgentEnabled` - (Optional) Whether or not the policy set is run as a policy evaluation within the agent. 
+* `AgentEnabled` - (Optional) Whether or not the policy set is run as a policy evaluation within the agent.
    True by default for all "opa" policy sets.
-* `PolicyToolVersion` - (Optional) The policy tool version to run the evaluation against.
+* `PolicyToolVersion` - (Optional) The policy tool version to run the evaluation against. For both Sentinel and OPA,
+   leaving this argument unspecified results in selecting the latest available version at the time of creation.
+   For "opa" policy sets, 'latest' will not be a valid input.
 * `Overridable` - (Optional) Whether or not users can override this policy when
    it fails during a run. Defaults to `False`. Only valid for OPA policies.
 * `Organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
@@ -129,10 +131,22 @@ The `VcsRepo` block supports:
 
 ## Import
 
-Policy sets can be imported; use `<POLICY SET ID>` as the import ID. For example:
+Policy sets can be imported using an identity. For example:
+
+```hcl
+import {
+  to = tfe_policy_set.test
+  identity = {
+    id       = "polset-12345678"
+    hostname = "app.terraform.io"
+  }
+}
+```
+
+Policy sets can be imported using the Terraform CLI; use `<POLICY SET ID>` as the import ID. For example:
 
 ```shell
 terraform import tfe_policy_set.test polset-wAs3zYmWAhYK7peR
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-f5ed6bbfb0faff4fcc68c3079d0530b38a7e6e2ba8e335c2c36cb9bdf7764c47 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-ba35e91b7735ba3fecb7fd3795ea73502c4ec57511cb16a0a6ee8986927cc6da -->

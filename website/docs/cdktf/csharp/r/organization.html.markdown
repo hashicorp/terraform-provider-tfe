@@ -45,6 +45,7 @@ The following arguments are supported:
   `20160`.
 * `CollaboratorAuthPolicy` - (Optional) Authentication policy (`Password`
   or `TwoFactorMandatory`). Defaults to `Password`.
+* `EnforceHyok` - (Optional) (Available only in HCP Terraform) Whether HYOK is enabled for all new workspaces in the organization. Defaults to false.
 * `OwnersTeamSamlRoleId` - (Optional) The name of the "owners" team.
 * `CostEstimationEnabled` - (Optional) Whether or not the cost estimation feature is enabled for all workspaces in the organization. Defaults to true. In a HCP Terraform organization which does not have Teams & Governance features, this value is always false and cannot be changed. In Terraform Enterprise, Cost Estimation must also be enabled in Site Administration.
 * `SendPassingStatusesForUntriggeredSpeculativePlans` - (Optional) Whether or not to send VCS status updates for untriggered speculative plans. This can be useful if large numbers of untriggered workspaces are exhausting request limits for connected version control service providers like GitHub. Defaults to false. In Terraform Enterprise, this setting has no effect and cannot be changed but is also available in Site Administration.
@@ -52,6 +53,8 @@ The following arguments are supported:
 * `SpeculativePlanManagementEnabled` - (Optional) Whether or not to enable Speculative Plan Management. If true, pending VCS-triggered speculative plans from outdated commits will be cancelled if a newer commit is pushed to the same branch.
 * `AssessmentsEnforced` - (Optional) (Available only in HCP Terraform) Whether to force health assessments (drift detection) on all eligible workspaces or allow workspaces to set their own preferences.
 * `AllowForceDeleteWorkspaces` - (Optional) Whether workspace administrators are permitted to delete workspaces with resources under management. If false, only organization owners may delete these workspaces. Defaults to false.
+* `UserTokensEnabled` - (Optional) Whether user tokens can be used to read or update the organization. Defaults to true.
+* `StacksEnabled` - (Optional) Whether the creation of Stacks are enabled in this Organization or not. Defaults to false.
 
 ## Attributes Reference
 
@@ -66,4 +69,4 @@ example:
 terraform import tfe_organization.test my-org-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-ea4761ba0fba70e5174be00cb7bdd57f234347fce87b9f58fdbf78d7ff5a2d5c -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-9f35cac69a6f4491b974cc1e6468115325761f93c3187f2c2a35e71703d1f010 -->

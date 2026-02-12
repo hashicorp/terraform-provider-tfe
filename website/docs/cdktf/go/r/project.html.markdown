@@ -23,17 +23,17 @@ See https://cdk.tf/provider-generation for more details.*/
 import "github.com/aws-samples/dummy/gen/providers/tfe/organization"
 import "github.com/aws-samples/dummy/gen/providers/tfe/project"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &organizationConfig{
+	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &OrganizationConfig{
 		email: jsii.String("admin@company.com"),
 		name: jsii.String("my-org-name"),
 	})
-	project.NewProject(this, jsii.String("test"), &projectConfig{
+	project.NewProject(this, jsii.String("test"), &ProjectConfig{
 		name: jsii.String("projectname"),
 		organization: cdktf.Token_AsString(tfeOrganizationTestOrganization.name),
 	})
@@ -51,17 +51,17 @@ See https://cdk.tf/provider-generation for more details.*/
 import "github.com/aws-samples/dummy/gen/providers/tfe/organization"
 import "github.com/aws-samples/dummy/gen/providers/tfe/project"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &organizationConfig{
+	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &OrganizationConfig{
 		email: jsii.String("admin@company.com"),
 		name: jsii.String("my-org-name"),
 	})
-	project.NewProject(this, jsii.String("test"), &projectConfig{
+	project.NewProject(this, jsii.String("test"), &ProjectConfig{
 		name: jsii.String("projectname"),
 		organization: cdktf.Token_AsString(tfeOrganizationTestOrganization.name),
 		tags: map[string]*string{
@@ -98,10 +98,22 @@ In addition to all arguments above, the following attributes are exported:
 
 ## Import
 
-Projects can be imported; use `<PROJECT ID>` as the import ID. For example:
+Projects can be imported using an identity. For example:
+
+```hcl
+import {
+  to = tfe_project.test
+  identity = {
+    id       = "prj-12345678"
+    hostname = "app.terraform.io"
+  }
+}
+```
+
+Projects can be imported using the Terraform CLI; use `<PROJECT ID>` as the import ID. For example:
 
 ```shell
 terraform import tfe_project.test prj-niVoeESBXT8ZREhr
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-9351973607d3e9ae014783a996eb54fad1d9b32f3e65eeec985b53836806ea20 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-ab5b682ebaa0cc8ee136fb0ee6311b50ebd5fdcf1a586aaaea29b44442faf958 -->
