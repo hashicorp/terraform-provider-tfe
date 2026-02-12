@@ -306,45 +306,51 @@ func testAccTFEWorkspaceRun_withApplyOnlyBlock(parentWorkspaceID string, childWo
 
 func testAccTFEWorkspaceRun_withBothApplyAndDestroyBlocks(orgName string, rInt int) string {
 	return fmt.Sprintf(`
-	data "tfe_workspace" "parent" {
-		name                 = "tst-terraform-%d-parent"
-		organization         = "%s"
-	}
-
-	data "tfe_workspace" "child_depends_on_parent" {
-		name                 = "tst-terraform-%d-child"
-		organization         = "%s"
-	}
-
-	resource "tfe_workspace_run" "ws_run_parent" {
-		workspace_id    = data.tfe_workspace.parent.id
-
-		apply {
-			manual_confirm = false
-			retry = true
-		}
-
-		destroy {
-			manual_confirm = false
-			retry = true
-		}
-	}
-
-	resource "tfe_workspace_run" "ws_run_child" {
-		workspace_id    = data.tfe_workspace.child_depends_on_parent.id
-		depends_on   = [tfe_workspace_run.ws_run_parent]
-
-		apply {
-			manual_confirm = false
-			retry = true
-		}
-
-		destroy {
-			manual_confirm = false
-			retry = true
-		}
-	}`, rInt, orgName, rInt, orgName)
+data "tfe_workspace" "parent" {
+  name         = "tst-terraform-%d-parent"
+  organization = "%s"
 }
+
+data "tfe_workspace" "child_depends_on_parent" {
+  name         = "tst-terraform-%d-child"
+  organization = "%s"
+}
+
+resource "tfe_workspace_run" "ws_run_parent" {
+  workspace_id = data.tfe_workspace.parent.id
+
+  apply {
+    manual_confirm = false
+    retry          = true
+    message        = "acc-apply-parent"
+  }
+
+  destroy {
+    manual_confirm = false
+    retry          = true
+    message        = "acc-destroy-parent"
+  }
+}
+
+resource "tfe_workspace_run" "ws_run_child" {
+  workspace_id = data.tfe_workspace.child_depends_on_parent.id
+  depends_on   = [tfe_workspace_run.ws_run_parent]
+
+  apply {
+    manual_confirm = false
+    retry          = true
+    message        = "acc-apply-child"
+  }
+
+  destroy {
+    manual_confirm = false
+    retry          = true
+    message        = "acc-destroy-child"
+  }
+}
+`, rInt, orgName, rInt, orgName)
+}
+
 
 func testAccTFEWorkspaceRun_noApplyOrDestroyBlockProvided(orgName string, rInt int) string {
 	return fmt.Sprintf(`
