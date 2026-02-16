@@ -95,20 +95,66 @@ func TestAccTFEWorkspaceRun_withBothApplyAndDestroyBlocks(t *testing.T) {
 			{
 				Config: testAccTFEWorkspaceRun_withBothApplyAndDestroyBlocks(org.Name, rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEWorkspaceRunExistWithExpectedStatus("tfe_workspace_run.ws_run_parent", runForParentWorkspace, tfe.RunApplied),
-					testAccCheckTFEWorkspaceRunExistWithExpectedStatus("tfe_workspace_run.ws_run_child", runForChildWorkspace, tfe.RunApplied),
-					resource.TestCheckResourceAttrWith("tfe_workspace_run.ws_run_parent", "id", func(value string) error {
-						if value != runForParentWorkspace.ID {
-							return fmt.Errorf("run ID for ws_run_parent should be %s but was %s", runForParentWorkspace.ID, value)
+					testAccCheckTFEWorkspaceRunExistWithExpectedStatus(
+						"tfe_workspace_run.ws_run_parent",
+						runForParentWorkspace,
+						tfe.RunApplied,
+					),
+					testAccCheckTFEWorkspaceRunExistWithExpectedStatus(
+						"tfe_workspace_run.ws_run_child",
+						runForChildWorkspace,
+						tfe.RunApplied,
+					),
+
+					resource.TestCheckFunc(func(s *terraform.State) error {
+						if runForParentWorkspace.Message != "acc-apply-parent" {
+							return fmt.Errorf(
+								"expected parent message %q got %q",
+								"acc-apply-parent",
+								runForParentWorkspace.Message,
+							)
 						}
 						return nil
 					}),
-					resource.TestCheckResourceAttrWith("tfe_workspace_run.ws_run_child", "id", func(value string) error {
-						if value != runForChildWorkspace.ID {
-							return fmt.Errorf("run ID for ws_run_child should be %s but was %s", runForChildWorkspace.ID, value)
+					resource.TestCheckFunc(func(s *terraform.State) error {
+						if runForChildWorkspace.Message != "acc-apply-child" {
+							return fmt.Errorf(
+								"expected child message %q got %q",
+								"acc-apply-child",
+								runForChildWorkspace.Message,
+							)
 						}
 						return nil
 					}),
+
+					resource.TestCheckResourceAttrWith(
+						"tfe_workspace_run.ws_run_parent",
+						"id",
+						func(value string) error {
+							if value != runForParentWorkspace.ID {
+								return fmt.Errorf(
+									"run ID for ws_run_parent should be %s but was %s",
+									runForParentWorkspace.ID,
+									value,
+								)
+							}
+							return nil
+						},
+					),
+					resource.TestCheckResourceAttrWith(
+						"tfe_workspace_run.ws_run_child",
+						"id",
+						func(value string) error {
+							if value != runForChildWorkspace.ID {
+								return fmt.Errorf(
+									"run ID for ws_run_child should be %s but was %s",
+									runForChildWorkspace.ID,
+									value,
+								)
+							}
+							return nil
+						},
+					),
 				),
 			},
 		},
@@ -306,44 +352,49 @@ func testAccTFEWorkspaceRun_withApplyOnlyBlock(parentWorkspaceID string, childWo
 
 func testAccTFEWorkspaceRun_withBothApplyAndDestroyBlocks(orgName string, rInt int) string {
 	return fmt.Sprintf(`
-	data "tfe_workspace" "parent" {
-		name                 = "tst-terraform-%d-parent"
-		organization         = "%s"
-	}
+data "tfe_workspace" "parent" {
+  name         = "tst-terraform-%d-parent"
+  organization = "%s"
+}
 
-	data "tfe_workspace" "child_depends_on_parent" {
-		name                 = "tst-terraform-%d-child"
-		organization         = "%s"
-	}
+data "tfe_workspace" "child_depends_on_parent" {
+  name         = "tst-terraform-%d-child"
+  organization = "%s"
+}
 
-	resource "tfe_workspace_run" "ws_run_parent" {
-		workspace_id    = data.tfe_workspace.parent.id
+resource "tfe_workspace_run" "ws_run_parent" {
+  workspace_id = data.tfe_workspace.parent.id
 
-		apply {
-			manual_confirm = false
-			retry = true
-		}
+  apply {
+    manual_confirm = false
+    retry          = true
+    message        = "acc-apply-parent"
+  }
 
-		destroy {
-			manual_confirm = false
-			retry = true
-		}
-	}
+  destroy {
+    manual_confirm = false
+    retry          = true
+    message        = "acc-destroy-parent"
+  }
+}
 
-	resource "tfe_workspace_run" "ws_run_child" {
-		workspace_id    = data.tfe_workspace.child_depends_on_parent.id
-		depends_on   = [tfe_workspace_run.ws_run_parent]
+resource "tfe_workspace_run" "ws_run_child" {
+  workspace_id = data.tfe_workspace.child_depends_on_parent.id
+  depends_on   = [tfe_workspace_run.ws_run_parent]
 
-		apply {
-			manual_confirm = false
-			retry = true
-		}
+  apply {
+    manual_confirm = false
+    retry          = true
+    message        = "acc-apply-child"
+  }
 
-		destroy {
-			manual_confirm = false
-			retry = true
-		}
-	}`, rInt, orgName, rInt, orgName)
+  destroy {
+    manual_confirm = false
+    retry          = true
+    message        = "acc-destroy-child"
+  }
+}
+`, rInt, orgName, rInt, orgName)
 }
 
 func testAccTFEWorkspaceRun_noApplyOrDestroyBlockProvided(orgName string, rInt int) string {

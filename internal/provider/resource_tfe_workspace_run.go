@@ -156,6 +156,10 @@ func resourceTFEWorkspaceRunSchema() *schema.Resource {
 				Type:     schema.TypeBool,
 				Required: true,
 			},
+			"message": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 			"retry": {
 				Type:     schema.TypeBool,
 				Optional: true,
