@@ -128,6 +128,7 @@ resource "tfe_workspace_run" "ws_run_parent" {
 
   apply {
     manual_confirm = true
+    message = "test message"
   }
 
   destroy {
@@ -201,6 +202,9 @@ Both `apply` and `destroy` block supports:
 * `retry_backoff_min` - (Optional) The minimum time in seconds to backoff before attempting a retry. Defaults to `1`.
 * `retry_backoff_max` - (Optional) The maximum time in seconds to backoff before attempting a retry. Defaults to `30`.
 * `wait_for_run` - (Optional) Whether or not to wait for a run to reach completion before considering this a success. When set to `false`, the provider considers the `tfe_workspace_run` resource to have been created immediately after the run has been queued. When set to `true`, the provider waits for a successful apply on the target workspace to have applied successfully (or if it resulted in a no-change plan). Defaults to `true`.
+* `message` - (Optional) A custom message to associate with the run. If omitted, the default run message is used. Defaults to `Triggered by tfe_workspace_run resource via terraform-provider-tfe on <date>`.
+
+
 
 ## Attributes Reference
 
