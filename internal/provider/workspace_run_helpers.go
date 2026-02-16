@@ -158,20 +158,16 @@ func createRun(tfeClient *tfe.Client, waitForRun bool, manualConfirm bool, isDes
 		autoApply = !manualConfirm
 	}
 
-	// Preserve current behavior unless user provides a custom message.
-	if message == "" {
-		message = fmt.Sprintf(
-			"Triggered by tfe_workspace_run resource via terraform-provider-tfe on %s",
-			time.Now().Format(time.UnixDate),
-		)
-	}
-
 	runConfig := tfe.RunCreateOptions{
 		Workspace: ws,
 		IsDestroy: tfe.Bool(isDestroyRun),
-		Message:   tfe.String(message),
 		AutoApply: tfe.Bool(autoApply),
 	}
+
+	if message != "" {
+		runConfig.Message = tfe.String(message)
+	}
+
 	log.Printf("[DEBUG] Create run for workspace: %s", ws.ID)
 	run, err := tfeClient.Runs.Create(ctx, runConfig)
 	if err != nil {
