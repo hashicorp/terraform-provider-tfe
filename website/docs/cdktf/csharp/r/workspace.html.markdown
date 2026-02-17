@@ -189,8 +189,21 @@ In addition to all arguments above, the following attributes are exported:
 * `HtmlUrl` - The URL to the browsable HTML overview of the workspace.
 * `InheritsProjectAutoDestroy` - Indicates whether this workspace inherits project auto destroy settings.
 * `EffectiveTags` - A map of key value tags for this workspace, including any tags inherited from the parent project.
+* `HyokEnabled` - (Available only in HCP Terraform) Whether HYOK is enabled for the workspace.
 
 ## Import
+
+Workspaces can be imported using an identity. For example:
+
+```hcl
+import {
+  to = tfe_workspace.test
+  identity = {
+    id       = "ws-CH5in3chf8RJjrVd"
+    hostname = "app.terraform.io"
+  }
+}
+```
 
 Workspaces can be imported; use `<WORKSPACE ID>` or `<ORGANIZATION NAME>/<WORKSPACE NAME>` as the
 import ID. For example:
@@ -203,4 +216,4 @@ terraform import tfe_workspace.test ws-CH5in3chf8RJjrVd
 terraform import tfe_workspace.test my-org-name/my-wkspace-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-9172299860816457fdb3b3fe1ca94efcefcfcf20d4b35727c48cb9ae3ed85745 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-1755d16461bd01675556afc6ed1430a62d290a54adcc241f47fb622aa5f6b1b0 -->

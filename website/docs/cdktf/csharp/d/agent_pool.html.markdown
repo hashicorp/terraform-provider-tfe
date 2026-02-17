@@ -43,6 +43,9 @@ The following arguments are supported:
 In addition to all arguments above, the following attributes are exported:
 
 * `Id` - The agent pool ID.
+* `AllowedProjectIds` - The set of project IDs that have permission to use the agent pool.
+* `AllowedWorkspaceIds` - The set of workspace IDs that have permission to use the agent pool.
+* `ExcludedWorkspaceIds` - The set of workspace IDs that are excluded from the scope of the agent pool.
 * `OrganizationScoped` - Whether or not the agent pool can be used by all workspaces in the organization.
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-b223e1934ef43efb927b0566eadbb97c45112079ed23b335806e0098961b16f3 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-3e5552aa43862ac1bc0016f1fa218246fd9281bb2d7625167bae87683350abb3 -->

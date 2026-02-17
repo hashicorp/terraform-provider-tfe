@@ -23,18 +23,18 @@ See https://cdk.tf/provider-generation for more details.*/
 import "github.com/aws-samples/dummy/gen/providers/tfe/organization"
 import "github.com/aws-samples/dummy/gen/providers/tfe/registryProvider"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	tfeOrganizationExample := organization.NewOrganization(this, jsii.String("example"), &organizationConfig{
+	tfeOrganizationExample := organization.NewOrganization(this, jsii.String("example"), &OrganizationConfig{
 		email: jsii.String("admin@company.com"),
 		name: jsii.String("my-org-name"),
 	})
 	tfeRegistryProviderExample :=
-	registryProvider.NewRegistryProvider(this, jsii.String("example_1"), &registryProviderConfig{
+	registryProvider.NewRegistryProvider(this, jsii.String("example_1"), &RegistryProviderConfig{
 		name: jsii.String("my-provider"),
 		organization: cdktf.Token_AsString(tfeOrganizationExample.name),
 	})
@@ -54,18 +54,18 @@ See https://cdk.tf/provider-generation for more details.*/
 import "github.com/aws-samples/dummy/gen/providers/tfe/organization"
 import "github.com/aws-samples/dummy/gen/providers/tfe/registryProvider"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	tfeOrganizationExample := organization.NewOrganization(this, jsii.String("example"), &organizationConfig{
+	tfeOrganizationExample := organization.NewOrganization(this, jsii.String("example"), &OrganizationConfig{
 		email: jsii.String("admin@company.com"),
 		name: jsii.String("my-org-name"),
 	})
 	tfeRegistryProviderExample :=
-	registryProvider.NewRegistryProvider(this, jsii.String("example_1"), &registryProviderConfig{
+	registryProvider.NewRegistryProvider(this, jsii.String("example_1"), &RegistryProviderConfig{
 		name: jsii.String("aws"),
 		namespace: jsii.String("hashicorp"),
 		organization: cdktf.Token_AsString(tfeOrganizationExample.name),
@@ -94,7 +94,23 @@ The following arguments are supported:
 
 ## Import
 
-Providers can be imported; use `<ORGANIZATION>/<REGISTRY NAME>/<NAMESPACE>/<PROVIDER NAME>` as the import ID.
+Providers can be imported using an identity. For example:
+
+```hcl
+import {
+  to = tfe_registry_provider.test
+  identity = {
+    id            = "prov-kwt1cBiX2SdDz38w"
+    organization  = "my-org-name"
+    registry_name = "private"
+    namespace     = "my-org-name"
+    name          = "aws"
+    hostname      = "app.terraform.io"
+  }
+}
+```
+
+Providers can be imported using the Terraform CLI; use `<ORGANIZATION>/<REGISTRY NAME>/<NAMESPACE>/<PROVIDER NAME>` as the import ID.
 
 For example a private provider:
 
@@ -108,4 +124,4 @@ Or a public provider:
 terraform import tfe_registry_provider.example my-org-name/public/hashicorp/aws
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-0ebe64517a20c552e9e19b3841e4dc62744abf91b85e717ca41ba8858f1723cc -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-40737f69c55d4b8da061b4b0514e3ea2105cb8cf20ed2efa50dd22486f971489 -->
