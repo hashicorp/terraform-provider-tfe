@@ -48,8 +48,10 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 
 	waitForRun := runArgs["wait_for_run"].(bool)
 	manualConfirm := runArgs["manual_confirm"].(bool)
+	msg, _ := runArgs["message"].(string)
 
-	run, err := createRun(config.Client, waitForRun, manualConfirm, isDestroyRun, ws)
+	run, err := createRun(config.Client, waitForRun, manualConfirm, isDestroyRun, ws, msg)
+
 	if err != nil {
 		return err
 	}
@@ -146,7 +148,7 @@ func getRunArgs(d *schema.ResourceData, isDestroyRun bool) map[string]interface{
 	return runArgs
 }
 
-func createRun(tfeClient *tfe.Client, waitForRun bool, manualConfirm bool, isDestroyRun bool, ws *tfe.Workspace) (*tfe.Run, error) {
+func createRun(tfeClient *tfe.Client, waitForRun bool, manualConfirm bool, isDestroyRun bool, ws *tfe.Workspace, message string) (*tfe.Run, error) {
 	// In fire-and-forget mode (waitForRun=false), autoapply is set to !manualConfirm
 	// This should be intuitive, as "manual confirm" is the opposite of "auto apply"
 	//
@@ -159,23 +161,25 @@ func createRun(tfeClient *tfe.Client, waitForRun bool, manualConfirm bool, isDes
 	runConfig := tfe.RunCreateOptions{
 		Workspace: ws,
 		IsDestroy: tfe.Bool(isDestroyRun),
-		Message: tfe.String(fmt.Sprintf(
-			"Triggered by tfe_workspace_run resource via terraform-provider-tfe on %s",
-			time.Now().Format(time.UnixDate),
-		)),
 		AutoApply: tfe.Bool(autoApply),
 	}
+
+	if message != "" {
+		runConfig.Message = tfe.String(message)
+	}
+
 	log.Printf("[DEBUG] Create run for workspace: %s", ws.ID)
 	run, err := tfeClient.Runs.Create(ctx, runConfig)
 	if err != nil {
-		return nil, fmt.Errorf(
-			"error creating run for workspace %s: %w", ws.ID, err)
+		return nil, fmt.Errorf("error creating run for workspace %s: %w", ws.ID, err)
 	}
 
 	if run == nil {
 		log.Printf("[ERROR] The client returned both a nil run and nil error, this should not happen")
 		return nil, fmt.Errorf(
-			"the client returned both a nil run and nil error for workspace %s, this should not happen", ws.ID)
+			"the client returned both a nil run and nil error for workspace %s, this should not happen",
+			ws.ID,
+		)
 	}
 
 	log.Printf("[DEBUG] Run %s created for workspace %s", run.ID, ws.ID)

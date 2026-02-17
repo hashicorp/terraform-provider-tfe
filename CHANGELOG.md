@@ -1,11 +1,14 @@
 ## Unreleased
 
+## v0.74.0
+
 FEATURES:
 * Adds `project_remote_state` boolean attribute to `r/tfe_workspace_settings` and `d/tfe_workspace` for remote state sharing within a project, by @hs26gill [#1953](https://github.com/hashicorp/terraform-provider-tfe/pull/1953)
 
 ENHANCEMENTS:
 * Added resource identities to the following resources: `r/tfe_agent_pool`, `r/tfe_organization_membership`, `r/tfe_policy`, `r/tfe_policy_set`, `r/tfe_project`, `r/tfe_registry_module`, `r/tfe_registry_provider`, `r/tfe_stack`, `r/tfe_team`, `r/tfe_team_member`, `r/tfe_variable`, `r/tfe_variable_set`, `r/tfe_workspace`, by @sebasslash [#1937](https://github.com/hashicorp/terraform-provider-tfe/pull/1937)
 * Added the `stacks_enabled` attribute to the Organization and `speculative_enabled` to the Stack by @arunatibm [#1963](https://github.com/hashicorp/terraform-provider-tfe/pull/1963)
+* `r/tfe_workspace_run`: Add `message` attribute to customize the run message/title. By @Shaunakone [#1967](https://github.com/hashicorp/terraform-provider-tfe/pull/1967)
 
 BUG FIXES:
 * `r/tfe_variable`: Fixed a bug where value_wo was ignored in tfe_variable resources when using variable_set_id. By @Maed223 [#1950](https://github.com/hashicorp/terraform-provider-tfe/pull/1950)
@@ -13,6 +16,7 @@ BUG FIXES:
 * `r/tfe_variable_set`: Fixed a bug to address incompatiblility of tfe variable set resource with older versions of TFE. By @smishra96 [#1957](https://github.com/hashicorp/terraform-provider-tfe/pull/1957)
 * `r/tfe_workspace_run_task`: Fixed a bug to address incompatiblility of tfe workspace run task resource with older versions of TFE. By @smishra96 [#1957](https://github.com/hashicorp/terraform-provider-tfe/pull/1957)
 * `d/variable_set`: Fixed a bug to address incompatiblility of variable set data source with older versions of TFE. By @smishra96 [#1957](https://github.com/hashicorp/terraform-provider-tfe/pull/1957)
+
 
 ## v0.73.0
 
