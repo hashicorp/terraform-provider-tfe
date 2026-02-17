@@ -52,6 +52,32 @@ func TestAccTFEStackResource_basic(t *testing.T) {
 	})
 }
 
+func TestAccTFEStackResource_omit_speculative_enabled(t *testing.T) {
+	skipUnlessBeta(t)
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEStackResourceConfigOmitSpeculativeEnabled(orgName, envGithubToken, "arunatibm/pet-nulls-stack"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_stack.foobar", "speculative_enabled", "false"),
+				),
+			},
+			{
+				ResourceName:            "tfe_stack.foobar",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"migration"},
+			},
+		},
+	})
+}
+
 func TestAccTFEStackResource_update_speculativeEnabled(t *testing.T) {
 	skipUnlessBeta(t)
 
@@ -147,6 +173,46 @@ resource "tfe_stack" "foobar" {
 	speculative_enabled = "%t"
 }
 `, orgName, ghToken, ghRepoIdentifier, speculativeEnabled)
+}
+
+func testAccTFEStackResourceConfigOmitSpeculativeEnabled(orgName, ghToken, ghRepoIdentifier string) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "%s"
+  email = "admin@tfe.local"
+  stacks_enabled = true
+}
+
+resource "tfe_agent_pool" "foobar" {
+  name                  = "agent-pool-test-example"
+  organization          = tfe_organization.foobar.name
+}
+
+resource "tfe_project" "example" {
+	name         = "example"
+	organization = tfe_organization.foobar.name
+}
+
+resource "tfe_oauth_client" "foobar" {
+  organization     = tfe_organization.foobar.name
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "%s"
+  service_provider = "github"
+}
+
+resource "tfe_stack" "foobar" {
+	name        = "example-stack"
+	description = "Just an ordinary stack"
+  project_id  = tfe_project.example.id
+  agent_pool_id = tfe_agent_pool.foobar.id
+	migration = true
+	vcs_repo {
+    identifier         = "%s"
+    oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
+  }
+}
+`, orgName, ghToken, ghRepoIdentifier)
 }
 
 func TestAccTFEStackResource_withAgentPool(t *testing.T) {
