@@ -63,7 +63,7 @@ func TestAccTFEStackResource_omit_speculative_enabled(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEStackResourceConfigOmitSpeculativeEnabled(orgName, envGithubToken, "arunatibm/pet-nulls-stack"),
+				Config: testAccTFEStackResourceConfigOmitSpeculativeEnabled(orgName, envGithubToken, "hashicorp-guides/pet-nulls-stack"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "speculative_enabled", "false"),
 				),
