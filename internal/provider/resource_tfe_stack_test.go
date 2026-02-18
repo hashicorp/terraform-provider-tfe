@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -27,14 +28,14 @@ func TestAccTFEStackResource_basic(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "hashicorp-guides/pet-nulls-stack", speculativeEnabledFalse),
+				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "arunatibm/pet-nulls-stack", true, speculativeEnabledFalse),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "id"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "project_id"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "agent_pool_id"),
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "name", "example-stack"),
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "description", "Just an ordinary stack"),
-					resource.TestCheckResourceAttr("tfe_stack.foobar", "vcs_repo.identifier", "hashicorp-guides/pet-nulls-stack"),
+					resource.TestCheckResourceAttr("tfe_stack.foobar", "vcs_repo.identifier", "arunatibm/pet-nulls-stack"),
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "creation_source", "migration-api"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "vcs_repo.oauth_token_id"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "speculative_enabled"),
@@ -52,7 +53,7 @@ func TestAccTFEStackResource_basic(t *testing.T) {
 	})
 }
 
-func TestAccTFEStackResource_omit_speculative_enabled(t *testing.T) {
+func TestAccTFEStackResource_omitSpeculativeEnabled(t *testing.T) {
 	skipUnlessBeta(t)
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -63,7 +64,7 @@ func TestAccTFEStackResource_omit_speculative_enabled(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEStackResourceConfigOmitSpeculativeEnabled(orgName, envGithubToken, "hashicorp-guides/pet-nulls-stack"),
+				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "arunatibm/pet-nulls-stack", false, false),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "speculative_enabled", "false"),
 				),
@@ -78,7 +79,7 @@ func TestAccTFEStackResource_omit_speculative_enabled(t *testing.T) {
 	})
 }
 
-func TestAccTFEStackResource_update_speculativeEnabled(t *testing.T) {
+func TestAccTFEStackResource_updateSpeculativeEnabled(t *testing.T) {
 	skipUnlessBeta(t)
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -91,13 +92,13 @@ func TestAccTFEStackResource_update_speculativeEnabled(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "hashicorp-guides/pet-nulls-stack", speculativeEnabledFalse),
+				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "arunatibm/pet-nulls-stack", true, speculativeEnabledFalse),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "speculative_enabled", "false"),
 				),
 			},
 			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "hashicorp-guides/pet-nulls-stack", speculativeEnabledTrue),
+				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "arunatibm/pet-nulls-stack", true, speculativeEnabledTrue),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "speculative_enabled", "true"),
 				),
@@ -117,7 +118,7 @@ func TestAccTFEStackResource_importByIdentity(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "hashicorp-guides/pet-nulls-stack", true),
+				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "arunatibm/pet-nulls-stack", true, true),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectIdentity("tfe_stack.foobar", map[string]knownvalue.Check{
 						"id":       knownvalue.NotNull(),
@@ -134,8 +135,9 @@ func TestAccTFEStackResource_importByIdentity(t *testing.T) {
 	})
 }
 
-func testAccTFEStackResourceConfig(orgName, ghToken, ghRepoIdentifier string, speculativeEnabled bool) string {
-	return fmt.Sprintf(`
+func testAccTFEStackResourceConfig(orgName, ghToken, ghRepoIdentifier string, includeSpeculativeEnabled bool, speculativeEnabled bool) string {
+	var builder strings.Builder
+	builder.WriteString(fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "%s"
   email = "admin@tfe.local"
@@ -170,49 +172,12 @@ resource "tfe_stack" "foobar" {
     identifier         = "%s"
     oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
   }
-	speculative_enabled = "%t"
-}
-`, orgName, ghToken, ghRepoIdentifier, speculativeEnabled)
-}
-
-func testAccTFEStackResourceConfigOmitSpeculativeEnabled(orgName, ghToken, ghRepoIdentifier string) string {
-	return fmt.Sprintf(`
-resource "tfe_organization" "foobar" {
-  name  = "%s"
-  email = "admin@tfe.local"
-  stacks_enabled = true
-}
-
-resource "tfe_agent_pool" "foobar" {
-  name                  = "agent-pool-test-example"
-  organization          = tfe_organization.foobar.name
-}
-
-resource "tfe_project" "example" {
-	name         = "example"
-	organization = tfe_organization.foobar.name
-}
-
-resource "tfe_oauth_client" "foobar" {
-  organization     = tfe_organization.foobar.name
-  api_url          = "https://api.github.com"
-  http_url         = "https://github.com"
-  oauth_token      = "%s"
-  service_provider = "github"
-}
-
-resource "tfe_stack" "foobar" {
-	name        = "example-stack"
-	description = "Just an ordinary stack"
-  project_id  = tfe_project.example.id
-  agent_pool_id = tfe_agent_pool.foobar.id
-	migration = true
-	vcs_repo {
-    identifier         = "%s"
-    oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
-  }
-}
-`, orgName, ghToken, ghRepoIdentifier)
+`, orgName, ghToken, ghRepoIdentifier))
+	if includeSpeculativeEnabled {
+		builder.WriteString(fmt.Sprintf(`	speculative_enabled = "%t"`, speculativeEnabled))
+	}
+	builder.WriteString("\n}")
+	return builder.String()
 }
 
 func TestAccTFEStackResource_withAgentPool(t *testing.T) {
