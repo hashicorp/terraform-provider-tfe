@@ -28,14 +28,14 @@ func TestAccTFEStackResource_basic(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "arunatibm/pet-nulls-stack", true, speculativeEnabledFalse),
+				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "hashicorp-guides/pet-nulls-stack", true, speculativeEnabledFalse),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "id"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "project_id"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "agent_pool_id"),
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "name", "example-stack"),
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "description", "Just an ordinary stack"),
-					resource.TestCheckResourceAttr("tfe_stack.foobar", "vcs_repo.identifier", "arunatibm/pet-nulls-stack"),
+					resource.TestCheckResourceAttr("tfe_stack.foobar", "vcs_repo.identifier", "hashicorp-guides/pet-nulls-stack"),
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "creation_source", "migration-api"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "vcs_repo.oauth_token_id"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "speculative_enabled"),
@@ -64,7 +64,7 @@ func TestAccTFEStackResource_omitSpeculativeEnabled(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "arunatibm/pet-nulls-stack", false, false),
+				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "hashicorp-guides/pet-nulls-stack", false, false),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "speculative_enabled", "false"),
 				),
@@ -92,13 +92,13 @@ func TestAccTFEStackResource_updateSpeculativeEnabled(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "arunatibm/pet-nulls-stack", true, speculativeEnabledFalse),
+				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "hashicorp-guides/pet-nulls-stack", true, speculativeEnabledFalse),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "speculative_enabled", "false"),
 				),
 			},
 			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "arunatibm/pet-nulls-stack", true, speculativeEnabledTrue),
+				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "hashicorp-guides/pet-nulls-stack", true, speculativeEnabledTrue),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "speculative_enabled", "true"),
 				),
@@ -118,7 +118,7 @@ func TestAccTFEStackResource_importByIdentity(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "arunatibm/pet-nulls-stack", true, true),
+				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "hashicorp-guides/pet-nulls-stack", true, true),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectIdentity("tfe_stack.foobar", map[string]knownvalue.Check{
 						"id":       knownvalue.NotNull(),
