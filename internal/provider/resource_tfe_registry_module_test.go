@@ -406,6 +406,7 @@ func TestAccTFERegistryModule_vcsRepoWithTagPrefixMonorepo(t *testing.T) {
 // a repository that doesn't follow the terraform-<provider>-<name> naming convention.
 func TestAccTFERegistryModule_monorepoNonStandardName(t *testing.T) {
 	skipUnlessBeta(t)
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
@@ -415,7 +416,7 @@ func TestAccTFERegistryModule_monorepoNonStandardName(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFERegistryModule_monorepoNonStandardName(),
+				Config: testAccTFERegistryModule_monorepoNonStandardName(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "name", "nestedA"),
 					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "module_provider", "aws"),
@@ -427,6 +428,26 @@ func TestAccTFERegistryModule_monorepoNonStandardName(t *testing.T) {
 		},
 	})
 }
+
+func TestAccTFERegistryModule_monorepoNonStandardNameWithoutNameandProvider(t *testing.T) {
+	skipUnlessBeta(t)
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccPreCheckTFERegistryModule(t)
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFERegistryModule_monorepoNonStandardNameWithoutNameandProvider(rInt),
+				ExpectError: regexp.MustCompile(`name and module_provider are required when the repository name does not follow the terraform-<provider>-<name> convention`),
+			},
+		},
+	})
+}
+
 
 func TestAccTFERegistryModule_noCodeModule(t *testing.T) {
 	skipIfEnterprise(t)
@@ -2168,18 +2189,23 @@ resource "tfe_registry_module" "foobar" {
 
   initial_version = "1.0.0"
 
-  test_config {
-    tests_enabled         = true
-    agent_execution_mode  = "agent"
-    agent_pool_id         = "apool-fake-id"
-  }
+	test_config {
+		tests_enabled         = true
+		agent_execution_mode  = "agent"
+		agent_pool_id         = "apool-fake-id"
+	}
 }`, rInt, envGithubToken, envGithubRegistryModuleIdentifer, envGithubRegistryModuleIdentifer)
 }
 
-func testAccTFERegistryModule_monorepoNonStandardName() string {
+func testAccTFERegistryModule_monorepoNonStandardName(rInt int) string {
 	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
 resource "tfe_oauth_client" "foobar" {
-  organization     = "hashicorp"
+  organization     = tfe_organization.foobar.name
   api_url          = "https://api.github.com"
   http_url         = "https://github.com"
   oauth_token      = "%s"
@@ -2187,7 +2213,8 @@ resource "tfe_oauth_client" "foobar" {
 }
 
 resource "tfe_registry_module" "foobar" {
-	organization    = "hashicorp"
+  organization = tfe_organization.foobar.name
+
 	name            = "nestedA"
 	module_provider = "aws"
 
@@ -2200,6 +2227,41 @@ resource "tfe_registry_module" "foobar" {
 		source_directory   = "modules/nestedA"
 	}
 }`,
+		rInt,
+		envGithubToken,
+		envGithubRegistryModuleIdentifer,
+		envGithubRegistryModuleIdentifer,
+	)
+}
+
+func testAccTFERegistryModule_monorepoNonStandardNameWithoutNameandProvider(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_oauth_client" "foobar" {
+  organization     = tfe_organization.foobar.name
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "%s"
+  service_provider = "github"
+}
+
+resource "tfe_registry_module" "foobar" {
+  organization = tfe_organization.foobar.name
+
+	vcs_repo {
+		display_identifier = "%s"
+		identifier         = "%s"
+		oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
+		branch             = "main"
+		tags               = false
+		source_directory   = "modules/nestedA"
+	}
+}`,
+		rInt,
 		envGithubToken,
 		envGithubRegistryModuleIdentifer,
 		envGithubRegistryModuleIdentifer,
