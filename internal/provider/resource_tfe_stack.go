@@ -109,6 +109,7 @@ func (r *resourceTFEStack) Schema(ctx context.Context, req resource.SchemaReques
 			"speculative_enabled": schema.BoolAttribute{
 				Description: "Indicates if speculative plans are enabled on this Stack.",
 				Optional:    true,
+				Computed:    true,
 			},
 			"created_at": schema.StringAttribute{
 				Description: "The time when the stack was created.",
