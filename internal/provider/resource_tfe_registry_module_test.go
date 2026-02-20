@@ -402,6 +402,52 @@ func TestAccTFERegistryModule_vcsRepoWithTagPrefixMonorepo(t *testing.T) {
 	})
 }
 
+// TestAccTFERegistryModule_monorepoNonStandardName tests using source_directory with
+// a repository that doesn't follow the terraform-<provider>-<name> naming convention.
+func TestAccTFERegistryModule_monorepoNonStandardName(t *testing.T) {
+	skipUnlessBeta(t)
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccPreCheckTFERegistryModule(t)
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFERegistryModule_monorepoNonStandardName(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "name", "nestedA"),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "module_provider", "aws"),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "vcs_repo.0.source_directory", "modules/nestedA"),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "vcs_repo.0.branch", "main"),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "vcs_repo.0.tags", "false"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFERegistryModule_monorepoNonStandardNameWithoutNameandProvider(t *testing.T) {
+	skipUnlessBeta(t)
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccPreCheckTFERegistryModule(t)
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFERegistryModule_monorepoNonStandardNameWithoutNameandProvider(rInt),
+				ExpectError: regexp.MustCompile(`name and module_provider are required when the repository name does not follow the terraform-<provider>-<name> convention`),
+			},
+		},
+	})
+}
+
 func TestAccTFERegistryModule_noCodeModule(t *testing.T) {
 	skipIfEnterprise(t)
 
@@ -933,7 +979,7 @@ func TestAccTFERegistryModuleImport_publicRM(t *testing.T) {
 	})
 }
 
-func TestAccTFERegistryModule_invalidWithBothVCSRepoAndModuleProvider(t *testing.T) {
+func TestAccTFERegistryModule_validWithBothVCSRepoAndModuleProvider(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
@@ -941,8 +987,8 @@ func TestAccTFERegistryModule_invalidWithBothVCSRepoAndModuleProvider(t *testing
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccTFERegistryModule_invalidWithBothVCSRepoAndModuleProvider(),
-				ExpectError: regexp.MustCompile("\"module_provider\": only one of `module_provider,vcs_repo` can be specified,\nbut `module_provider,vcs_repo` were specified."),
+				Config:      testAccTFERegistryModule_validWithBothVCSRepoAndModuleProvider(),
+				ExpectError: regexp.MustCompile("\"module_provider\": all of `module_provider,name,organization` must be\nspecified"),
 			},
 		},
 	})
@@ -1783,7 +1829,7 @@ resource "tfe_registry_module" "foobar" {
 		rInt)
 }
 
-func testAccTFERegistryModule_invalidWithBothVCSRepoAndModuleProvider() string {
+func testAccTFERegistryModule_validWithBothVCSRepoAndModuleProvider() string {
 	return `
 resource "tfe_registry_module" "foobar" {
   module_provider = "aws"
@@ -2142,10 +2188,81 @@ resource "tfe_registry_module" "foobar" {
 
   initial_version = "1.0.0"
 
-  test_config {
-    tests_enabled         = true
-    agent_execution_mode  = "agent"
-    agent_pool_id         = "apool-fake-id"
-  }
+	test_config {
+		tests_enabled         = true
+		agent_execution_mode  = "agent"
+		agent_pool_id         = "apool-fake-id"
+	}
 }`, rInt, envGithubToken, envGithubRegistryModuleIdentifer, envGithubRegistryModuleIdentifer)
+}
+
+func testAccTFERegistryModule_monorepoNonStandardName(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_oauth_client" "foobar" {
+  organization     = tfe_organization.foobar.name
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "%s"
+  service_provider = "github"
+}
+
+resource "tfe_registry_module" "foobar" {
+  organization = tfe_organization.foobar.name
+
+	name            = "nestedA"
+	module_provider = "aws"
+
+	vcs_repo {
+		display_identifier = "%s"
+		identifier         = "%s"
+		oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
+		branch             = "main"
+		tags               = false
+		source_directory   = "modules/nestedA"
+	}
+}`,
+		rInt,
+		envGithubToken,
+		envGithubRegistryModuleIdentifer,
+		envGithubRegistryModuleIdentifer,
+	)
+}
+
+func testAccTFERegistryModule_monorepoNonStandardNameWithoutNameandProvider(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_oauth_client" "foobar" {
+  organization     = tfe_organization.foobar.name
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "%s"
+  service_provider = "github"
+}
+
+resource "tfe_registry_module" "foobar" {
+  organization = tfe_organization.foobar.name
+
+	vcs_repo {
+		display_identifier = "%s"
+		identifier         = "%s"
+		oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
+		branch             = "main"
+		tags               = false
+		source_directory   = "modules/nestedA"
+	}
+}`,
+		rInt,
+		envGithubToken,
+		envGithubRegistryModuleIdentifer,
+		envGithubRegistryModuleIdentifer,
+	)
 }

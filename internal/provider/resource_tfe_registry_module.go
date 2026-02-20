@@ -34,6 +34,9 @@ func resourceTFERegistryModule() *schema.Resource {
 		},
 
 		CustomizeDiff: func(c context.Context, d *schema.ResourceDiff, meta interface{}) error {
+			if err := validateNameAndProvider(d); err != nil {
+				return err
+			}
 			if err := validateVcsRepo(d); err != nil {
 				return err
 			}
@@ -87,7 +90,6 @@ func resourceTFERegistryModule() *schema.Resource {
 				Optional:     true,
 				Computed:     true,
 				ForceNew:     true,
-				ExactlyOneOf: []string{"vcs_repo"},
 				RequiredWith: []string{"organization", "name"},
 			},
 			"name": {
@@ -228,6 +230,14 @@ func resourceTFERegistryModuleCreateWithVCS(v interface{}, meta interface{}, d *
 	orgName, err := config.schemaOrDefaultOrganization(d)
 	if err != nil {
 		log.Printf("[WARN] Error getting organization name: %s", err)
+	}
+
+	if name, ok := d.GetOk("name"); ok {
+		options.Name = tfe.String(name.(string))
+	}
+
+	if provider, ok := d.GetOk("module_provider"); ok {
+		options.Provider = tfe.String(provider.(string))
 	}
 
 	options.VCSRepo = &tfe.RegistryModuleVCSRepoOptions{
@@ -562,6 +572,49 @@ func resourceTFERegistryModuleDelete(d *schema.ResourceData, meta interface{}) e
 		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
 			return fmt.Errorf("Error deleting registry module %s: %w", d.Id(), err)
 		}
+	}
+
+	return nil
+}
+
+func validateNameAndProvider(d *schema.ResourceDiff) error {
+	configMap := d.GetRawConfig().AsValueMap()
+	nameValue, hasName := configMap["name"]
+	providerValue, hasProvider := configMap["module_provider"]
+	vcsRepoValue := configMap["vcs_repo"]
+
+	nameProvided := hasName && !nameValue.IsNull()
+	providerProvided := hasProvider && !providerValue.IsNull()
+	if vcsRepoValue.LengthInt() == 0 {
+		return nil
+	}
+
+	vcsRepoBlock := vcsRepoValue.AsValueSlice()[0]
+	sourceDirectory := vcsRepoBlock.GetAttr("source_directory")
+	if sourceDirectory.IsNull() || (sourceDirectory.IsKnown() && sourceDirectory.AsString() == "") {
+		return nil
+	}
+
+	// Check if identifier follows terraform-<provider>-<name> convention
+	displayIdentifier := vcsRepoBlock.GetAttr("display_identifier")
+	if displayIdentifier.IsNull() || !displayIdentifier.IsKnown() {
+		return nil
+	}
+	// Extract repo name from "org/repo" format
+	repoName := displayIdentifier.AsString()
+	if idx := strings.LastIndex(repoName, "/"); idx >= 0 {
+		repoName = repoName[idx+1:]
+	}
+
+	nameParts := strings.SplitN(repoName, "-", 3)
+	followsConvention := len(nameParts) == 3
+	// Standard repos: neither name nor provider is required
+	if followsConvention {
+		return nil
+	}
+	// Non-standard repos: requires both name and provider fields
+	if !followsConvention && (!nameProvided || !providerProvided) {
+		return fmt.Errorf("name and module_provider are required when the repository name does not follow the terraform-<provider>-<name> convention")
 	}
 
 	return nil
