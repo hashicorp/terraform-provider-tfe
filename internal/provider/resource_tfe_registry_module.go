@@ -606,7 +606,7 @@ func validateNameAndProvider(d *schema.ResourceDiff) error {
 		repoName = repoName[idx+1:]
 	}
 
-	nameParts := strings.Split(repoName, "-")
+	nameParts := strings.SplitN(repoName, "-", 3)
 	followsConvention := len(nameParts) == 3
 	// Standard repos: neither name nor provider is required
 	if followsConvention {
