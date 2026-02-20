@@ -441,13 +441,12 @@ func TestAccTFERegistryModule_monorepoNonStandardNameWithoutNameandProvider(t *t
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFERegistryModule_monorepoNonStandardNameWithoutNameandProvider(rInt),
+				Config:      testAccTFERegistryModule_monorepoNonStandardNameWithoutNameandProvider(rInt),
 				ExpectError: regexp.MustCompile(`name and module_provider are required when the repository name does not follow the terraform-<provider>-<name> convention`),
 			},
 		},
 	})
 }
-
 
 func TestAccTFERegistryModule_noCodeModule(t *testing.T) {
 	skipIfEnterprise(t)
