@@ -15,7 +15,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timetypes/timetypes"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/validators"
 )
 
 var (
@@ -65,6 +67,11 @@ func (e *TeamTokenEphemeralResource) Schema(ctx context.Context, req ephemeral.S
 				Optional:    true,
 				Computed:    true,
 				CustomType:  timetypes.RFC3339Type{},
+				Validators: []validator.String{
+					validators.WarnIfNull(
+						"Ephemeral Team Token expiration null values defaults to 24 months",
+					),
+				},
 			},
 		},
 	}

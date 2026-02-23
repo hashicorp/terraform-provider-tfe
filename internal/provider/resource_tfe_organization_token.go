@@ -68,6 +68,11 @@ func resourceTFEOrganizationTokenCreate(d *schema.ResourceData, meta interface{}
 		return err
 	}
 
+	// Issue warning if expired_at is not provided
+	if _, ok := d.GetOk("expired_at"); !ok {
+		log.Printf("[WARN] The 'expired_at' attribute is not set for organization token. The token will default to an expiration of 24 months from creation. It is recommended to explicitly set an expiration date for security best practices.")
+	}
+
 	log.Printf("[DEBUG] Check if a token already exists for organization: %s", organization)
 	_, err = config.Client.OrganizationTokens.Read(ctx, organization)
 	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {

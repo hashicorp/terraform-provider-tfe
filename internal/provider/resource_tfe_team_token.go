@@ -23,6 +23,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/validators"
 )
 
 var (
@@ -103,6 +104,11 @@ func (r *resourceTFETeamToken) Schema(_ context.Context, _ resource.SchemaReques
 				Optional:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validators.WarnIfNull(
+						"Team Token expiration null values defaults to 24 months",
+					),
 				},
 			},
 			"description": schema.StringAttribute{
