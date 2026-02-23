@@ -24,7 +24,8 @@ func (v warnIfNullValidator) MarkdownDescription(ctx context.Context) string {
 func (v warnIfNullValidator) ValidateString(ctx context.Context, req validator.StringRequest, resp *validator.StringResponse) {
 	if req.ConfigValue.IsNull() {
 		resp.Diagnostics.AddWarning(
-			v.message
+			v.message,
+			"",
 		)
 	}
 }
