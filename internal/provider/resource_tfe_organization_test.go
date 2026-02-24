@@ -90,7 +90,7 @@ func TestAccTFEOrganization_full(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_organization.foobar", "user_tokens_enabled", "true"),
 					resource.TestCheckResourceAttr(
-						"tfe_organization.foobar", "stacks_enabled", "true"),
+						"tfe_organization.foobar", "stacks_enabled", "false"),
 				),
 			},
 		},
@@ -214,6 +214,8 @@ func TestAccTFEOrganization_update_costEstimation(t *testing.T) {
 }
 
 func TestAccTFEOrganization_update_stacks_enabled(t *testing.T) {
+	skipIfEnterprise(t)
+
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 	stacksEnabledFalse := false
@@ -598,7 +600,7 @@ resource "tfe_organization" "foobar" {
   cost_estimation_enabled           = false
   assessments_enforced              = false
   allow_force_delete_workspaces     = false
-  stacks_enabled                    = true
+  stacks_enabled                    = false
 }`, rInt)
 }
 

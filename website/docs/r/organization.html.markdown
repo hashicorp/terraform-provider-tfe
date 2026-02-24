@@ -41,7 +41,7 @@ The following arguments are supported:
 * `assessments_enforced` - (Optional) (Available only in HCP Terraform) Whether to force health assessments (drift detection) on all eligible workspaces or allow workspaces to set their own preferences.
 * `allow_force_delete_workspaces` - (Optional) Whether workspace administrators are permitted to delete workspaces with resources under management. If false, only organization owners may delete these workspaces. Defaults to false.
 * `user_tokens_enabled` - (Optional) Whether user tokens can be used to read or update the organization. Defaults to true.
-* `stacks_enabled` - (Optional) Whether the creation of Stacks are enabled in this Organization or not. Defaults to false.
+* `stacks_enabled` - (Optional) Whether the creation of Stacks are enabled in this Organization or not.
 
 ## Attributes Reference
 
