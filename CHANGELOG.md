@@ -1,4 +1,6 @@
 ## Unreleased
+FEATURES:
+* Adds a warning message to `r/tfe_team_token`, `r/tfe_organization_token` and `r/tfe_audit_trail_token` resources to indicate that if no `expired_at` attribute is set, the token will expire in 2 years. By @sana-faraz [#1976](https://github.com/hashicorp/terraform-provider-tfe/pull/1976)
 
 BUG FIXES:
 * `r/tfe_stack`: Fixed a bug where omitting the `speculative_enabled` attribute caused plans to fail. The attribute is optional and defaults to `false` if not provided. By @arunatibm [#1972](https://github.com/hashicorp/terraform-provider-tfe/pull/1972)
