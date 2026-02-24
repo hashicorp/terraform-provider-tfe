@@ -26,21 +26,21 @@ import "github.com/aws-samples/dummy/gen/providers/tfe/organization"
 import "github.com/aws-samples/dummy/gen/providers/tfe/workspace"
 import "github.com/aws-samples/dummy/gen/providers/tfe/workspaceSettings"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &organizationConfig{
+	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &OrganizationConfig{
 		email: jsii.String("admin@company.com"),
 		name: jsii.String("my-org-name"),
 	})
-	tfeWorkspaceTest := workspace.NewWorkspace(this, jsii.String("test"), &workspaceConfig{
+	tfeWorkspaceTest := workspace.NewWorkspace(this, jsii.String("test"), &WorkspaceConfig{
 		name: jsii.String("my-workspace-name"),
 		organization: cdktf.*token_AsString(tfeOrganizationTestOrganization.name),
 	})
-	workspaceSettings.NewWorkspaceSettings(this, jsii.String("test-settings"), &workspaceSettingsConfig{
+	workspaceSettings.NewWorkspaceSettings(this, jsii.String("test-settings"), &WorkspaceSettingsConfig{
 		executionMode: jsii.String("local"),
 		workspaceId: cdktf.*token_*AsString(tfeWorkspaceTest.id),
 	})
@@ -61,26 +61,26 @@ import "github.com/aws-samples/dummy/gen/providers/tfe/agentPool"
 import "github.com/aws-samples/dummy/gen/providers/tfe/agentPoolAllowedWorkspaces"
 import "github.com/aws-samples/dummy/gen/providers/tfe/workspaceSettings"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &organizationConfig{
+	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &OrganizationConfig{
 		email: jsii.String("admin@company.com"),
 		name: jsii.String("my-org-name"),
 	})
-	tfeWorkspaceTest := workspace.NewWorkspace(this, jsii.String("test"), &workspaceConfig{
+	tfeWorkspaceTest := workspace.NewWorkspace(this, jsii.String("test"), &WorkspaceConfig{
 		name: jsii.String("my-workspace-name"),
 		organization: cdktf.*token_AsString(tfeOrganizationTestOrganization.name),
 	})
-	tfeAgentPoolTestAgentPool := agentPool.NewAgentPool(this, jsii.String("test-agent-pool"), &agentPoolConfig{
+	tfeAgentPoolTestAgentPool := agentPool.NewAgentPool(this, jsii.String("test-agent-pool"), &AgentPoolConfig{
 		name: jsii.String("my-agent-pool-name"),
 		organization: cdktf.*token_*AsString(tfeOrganizationTestOrganization.name),
 	})
 	tfeAgentPoolAllowedWorkspacesTest :=
-	agentPoolAllowedWorkspaces.NewAgentPoolAllowedWorkspaces(this, jsii.String("test_3"), &agentPoolAllowedWorkspacesConfig{
+	agentPoolAllowedWorkspaces.NewAgentPoolAllowedWorkspaces(this, jsii.String("test_3"), &AgentPoolAllowedWorkspacesConfig{
 		agentPoolId: cdktf.*token_*AsString(tfeAgentPoolTestAgentPool.id),
 		allowedWorkspaceIds: []*string{
 			cdktf.*token_*AsString(tfeWorkspaceTest.id),
@@ -88,7 +88,7 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 	})
 	/*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
 	tfeAgentPoolAllowedWorkspacesTest.OverrideLogicalId(jsii.String("test"))
-	workspaceSettings.NewWorkspaceSettings(this, jsii.String("test-settings"), &workspaceSettingsConfig{
+	workspaceSettings.NewWorkspaceSettings(this, jsii.String("test-settings"), &WorkspaceSettingsConfig{
 		agentPoolId: cdktf.*token_*AsString(tfeAgentPoolAllowedWorkspacesTest.agentPoolId),
 		executionMode: jsii.String("agent"),
 		workspaceId: cdktf.*token_*AsString(tfeWorkspaceTest.id),
@@ -107,10 +107,10 @@ See https://cdk.tf/provider-generation for more details.*/
 import "github.com/aws-samples/dummy/gen/providers/tfe/workspace"
 import "github.com/aws-samples/dummy/gen/providers/tfe/workspaceSettings"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
 	/*In most cases loops should be handled in the programming language context and
@@ -121,7 +121,7 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 		jsii.String("qa"),
 		jsii.String("production"),
 	})))
-	tfeWorkspaceTest := workspace.NewWorkspace(this, jsii.String("test"), &workspaceConfig{
+	tfeWorkspaceTest := workspace.NewWorkspace(this, jsii.String("test"), &WorkspaceConfig{
 		name: jsii.String("${" + tfeWorkspaceTestForEachIterator.value + "}-test"),
 		forEach: tfeWorkspaceTestForEachIterator,
 	})
@@ -133,15 +133,16 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 		jsii.String("qa"),
 		jsii.String("production"),
 	})))
-	workspaceSettings.NewWorkspaceSettings(this, jsii.String("test-settings"), &workspaceSettingsConfig{
+	workspaceSettings.NewWorkspaceSettings(this, jsii.String("test-settings"), &WorkspaceSettingsConfig{
 		globalRemoteState: jsii.Boolean(false),
+		projectRemoteState: jsii.Boolean(false),
 		remoteStateConsumerIds: cdktf.Token_AsList(cdktf.Fn_*Toset(cdktf.Fn_Compact(cdktf.Token_*AsList([]interface{}{
-			cdktf.conditional(cdktf.Op_Eq(tfeWorkspaceSettingsTestSettingsForEachIterator.value, jsii.String("production")), cdktf.propertyAccess(tfeWorkspaceTest, []interface{}{
+			cdktf.Conditional(cdktf.Op_Eq(tfeWorkspaceSettingsTestSettingsForEachIterator.value, jsii.String("production")), cdktf.PropertyAccess(tfeWorkspaceTest, []interface{}{
 				jsii.String("\"qa\""),
 				jsii.String("id"),
 			}), jsii.String("")),
 		})))),
-		workspaceId: cdktf.Token_AsString(cdktf.propertyAccess(cdktf.propertyAccess(tfeWorkspaceTest, []interface{}{
+		workspaceId: cdktf.Token_AsString(cdktf.*PropertyAccess(cdktf.*PropertyAccess(tfeWorkspaceTest, []interface{}{
 			tfeWorkspaceSettingsTestSettingsForEachIterator.value,
 		}), []interface{}{
 			jsii.String("id"),
@@ -162,18 +163,18 @@ See https://cdk.tf/provider-generation for more details.*/
 import "github.com/aws-samples/dummy/gen/providers/tfe/dataTfeWorkspace"
 import "github.com/aws-samples/dummy/gen/providers/tfe/workspaceSettings"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	dataTfeWorkspaceTest := dataTfeWorkspace.NewDataTfeWorkspace(this, jsii.String("test"), &dataTfeWorkspaceConfig{
+	dataTfeWorkspaceTest := dataTfeWorkspace.NewDataTfeWorkspace(this, jsii.String("test"), &DataTfeWorkspaceConfig{
 		name: jsii.String("my-workspace-name"),
 		organization: jsii.String("my-org-name"),
 	})
 	tfeWorkspaceSettingsTest :=
-	workspaceSettings.NewWorkspaceSettings(this, jsii.String("test_1"), &workspaceSettingsConfig{
+	workspaceSettings.NewWorkspaceSettings(this, jsii.String("test_1"), &WorkspaceSettingsConfig{
 		workspaceId: cdktf.Token_AsString(dataTfeWorkspaceTest.id),
 	})
 	/*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
@@ -181,7 +182,7 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 	cdktf.NewTerraformOutput(this, jsii.String("workspace-explicit-local-execution"), &TerraformOutputConfig{
 		Value: cdktf.Fn_Alltrue(cdktf.Token_AsAny([]interface{}{
 			cdktf.Op_Eq(tfeWorkspaceSettingsTest.executionMode, jsii.String("local")),
-			cdktf.propertyAccess(tfeWorkspaceSettingsTest.overwrites, []interface{}{
+			cdktf.PropertyAccess(tfeWorkspaceSettingsTest.overwrites, []interface{}{
 				jsii.String("0"),
 				jsii.String("\"execution_mode\""),
 			}),
@@ -201,18 +202,18 @@ See https://cdk.tf/provider-generation for more details.*/
 import "github.com/aws-samples/dummy/gen/providers/tfe/dataTfeWorkspace"
 import "github.com/aws-samples/dummy/gen/providers/tfe/workspaceSettings"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	dataTfeWorkspaceSelf := dataTfeWorkspace.NewDataTfeWorkspace(this, jsii.String("self"), &dataTfeWorkspaceConfig{
+	dataTfeWorkspaceSelf := dataTfeWorkspace.NewDataTfeWorkspace(this, jsii.String("self"), &DataTfeWorkspaceConfig{
 		name: jsii.String("self-managed"),
 		organization: jsii.String("foo"),
 	})
 	tfeWorkspaceSettingsSelf :=
-	workspaceSettings.NewWorkspaceSettings(this, jsii.String("self_1"), &workspaceSettingsConfig{
+	workspaceSettings.NewWorkspaceSettings(this, jsii.String("self_1"), &WorkspaceSettingsConfig{
 		assessmentsEnabled: jsii.Boolean(true),
 		tags: map[string]*string{
 			"prod": jsii.String("true"),
@@ -234,8 +235,9 @@ The following arguments are supported:
   to be set to `Agent`. This value _must not_ be provided if `ExecutionMode` is set to any other value.
 * `ExecutionMode` - (Optional) Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode)
   to use. Using HCP Terraform, valid values are `Remote`, `Local` or `Agent`. When set to `Local`, the workspace will be used for state storage only. **Important:** If you omit this attribute, the resource configures the workspace to use your organization's default execution mode (which in turn defaults to `Remote`), removing any explicit value that might have previously been set for the workspace.
-* `GlobalRemoteState` - (Optional) Whether the workspace allows all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (`RemoteStateConsumerIds`). By default, HashiCorp recommends you do not allow other workspaces to access their state. We recommend that you follow the principle of least privilege and only enable state access between workspaces that specifically need information from each other.
-* `RemoteStateConsumerIds` - (Optional) The set of workspace IDs set as explicit remote state consumers for the given workspace. To set this attribute, global_remote_state must be false.
+* `GlobalRemoteState` - (Optional) Whether the workspace allows all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (`RemoteStateConsumerIds`). By default, HashiCorp recommends you do not allow other workspaces to access their state. Cannot be true if project_remote_state is true. We recommend that you follow the principle of least privilege and only enable state access between workspaces that specifically need information from each other.
+* `ProjectRemoteState` – (Optional) Whether the workspace allows all workspaces in the project to access its state data during runs. If false, then only specifically approved workspaces can access its state (`RemoteStateConsumerIds`). Cannot be true if global_remote_state is true.
+* `RemoteStateConsumerIds` - (Optional) The set of workspace IDs set as explicit remote state consumers for the given workspace. To set this attribute, global_remote_state and project_remote_state must be false.
 * `AutoApply` - (Optional) Whether to automatically apply changes when a Terraform plan is successful. Defaults to `False`.
 * `AssessmentsEnabled` - (Optional) Whether to regularly run health assessments such as drift detection on the workspace. Defaults to `False`.
 * `Description` - (Optional) A description for the workspace.
@@ -265,4 +267,4 @@ terraform import tfe_workspace_settings.test ws-CH5in3chf8RJjrVd
 terraform import tfe_workspace_settings.test my-org-name/my-wkspace-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-f1d216f1370b1d9132b01fb3aa83be95a84df918dc873a73de20e2c851d5dc85 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-4e504f607f1c708db5bd2cd54af807c62db6c3cef5c2ba2e9ded76a8bbaac882 -->

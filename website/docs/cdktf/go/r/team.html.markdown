@@ -22,13 +22,13 @@ import cdktf "github.com/hashicorp/terraform-cdk-go/cdktf"
 See https://cdk.tf/provider-generation for more details.*/
 import "github.com/aws-samples/dummy/gen/providers/tfe/team"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	team.NewTeam(this, jsii.String("test"), &teamConfig{
+	team.NewTeam(this, jsii.String("test"), &TeamConfig{
 		name: jsii.String("my-team-name"),
 		organization: jsii.String("my-org-name"),
 	})
@@ -45,16 +45,16 @@ import cdktf "github.com/hashicorp/terraform-cdk-go/cdktf"
 See https://cdk.tf/provider-generation for more details.*/
 import "github.com/aws-samples/dummy/gen/providers/tfe/team"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	team.NewTeam(this, jsii.String("test"), &teamConfig{
+	team.NewTeam(this, jsii.String("test"), &TeamConfig{
 		name: jsii.String("my-team-name"),
 		organization: jsii.String("my-org-name"),
-		organizationAccess: &teamOrganizationAccess{
+		organizationAccess: &TeamOrganizationAccess{
 			manageVcsSettings: jsii.Boolean(true),
 		},
 	})
@@ -97,7 +97,20 @@ The `OrganizationAccess` block supports:
 
 ## Import
 
-Teams can be imported; use `<ORGANIZATION NAME>/<TEAM ID>` or `<ORGANIZATION NAME>/<TEAM NAME>` as the import ID. For
+Teams can be imported using an identity. For example:
+
+```hcl
+import {
+  to = tfe_team.test
+  identity = {
+    id           = "team-uomQZysH9ou42ZYY"
+    organization = "my-org-name"
+    hostname     = "app.terraform.io"
+  }
+}
+```
+
+Teams can be imported using the Terraform CLI; use `<ORGANIZATION NAME>/<TEAM ID>` or `<ORGANIZATION NAME>/<TEAM NAME>` as the import ID. For
 example:
 
 ```shell
@@ -108,4 +121,4 @@ or
 terraform import tfe_team.test my-org-name/my-team-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-a8ccaf24709755acb4147f606dfe99a6622d27a90417431b77a46ddfcd1985f8 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-f9f59f54cdb2caf12334313a2f8f16d6254ae08a16941eae1ccf5cac202a09e5 -->

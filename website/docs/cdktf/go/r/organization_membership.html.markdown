@@ -30,13 +30,13 @@ import cdktf "github.com/hashicorp/terraform-cdk-go/cdktf"
 See https://cdk.tf/provider-generation for more details.*/
 import "github.com/aws-samples/dummy/gen/providers/tfe/organizationMembership"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	organizationMembership.NewOrganizationMembership(this, jsii.String("test"), &organizationMembershipConfig{
+	organizationMembership.NewOrganizationMembership(this, jsii.String("test"), &OrganizationMembershipConfig{
 		email: jsii.String("user@company.com"),
 		organization: jsii.String("my-org-name"),
 	})
@@ -59,7 +59,19 @@ In addition to all arguments above, the following attributes are exported:
 * `UserId` - The ID of the user associated with the organization membership.
 * `Username` - The username of the user associated with the organization membership.
 
-## Import 
+## Import
+
+Organization memberships can be imported using an identity. For example:
+
+```hcl
+import {
+  to = tfe_organization_membership.test
+  identity = {
+    id       = "ou-12345678"
+    hostname = "app.terraform.io"
+  }
+}
+```
 
 Organization memberships can be imported using `<ORGANIZATION>/<USER EMAIL>` or `<ORGANIZATION MEMBERSHIP ID>` as the import ID. For
 example:
@@ -72,4 +84,4 @@ terraform import tfe_organization_membership.test my-org-name/user@example.com
 terraform import tfe_organization_membership.test ou-wAs3zYmWAhYK7peR
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-1cd45ec60638cf8fa976986e04f3a1c6217897c1c1afd4a1fa879b2a5925e7aa -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-e208b61918e9cd87c5b72899104e9009ecdadd352eea50d3c1380660ca5ed812 -->
