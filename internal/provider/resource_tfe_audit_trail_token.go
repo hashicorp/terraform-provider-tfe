@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/hashicorp/terraform-provider-tfe/internal/provider/validators"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/planmodifiers"
 )
 
 type resourceAuditTrailToken struct {
@@ -102,9 +102,7 @@ func (r *resourceAuditTrailToken) Schema(ctx context.Context, req resource.Schem
 				Optional:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
-				},
-				Validators: []validator.String{
-					validators.WarnIfNull(
+					planmodifiers.WarnIfNullOnCreate(
 						"Audit Trail Token expiration null values defaults to 24 months",
 					),
 				},
