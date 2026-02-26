@@ -102,8 +102,10 @@ func (r *resourceTFETeamToken) Schema(_ context.Context, _ resource.SchemaReques
 			"expired_at": schema.StringAttribute{
 				Description: "The token's expiration date.",
 				Optional:    true,
+				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+					stringplanmodifier.UseStateForUnknown(),
 					planmodifiers.WarnIfNullOnCreate(
 						"Team Token expiration null values defaults to 24 months",
 					),
@@ -186,7 +188,14 @@ func (r *resourceTFETeamToken) Create(ctx context.Context, req resource.CreateRe
 		return
 	}
 
-	result := modelFromTFEToken(plan.TeamID, types.StringValue(token.ID), types.StringValue(token.Token), plan.ForceRegenerate, plan.ExpiredAt, plan.Description)
+	var expiredAtValue types.String
+	if !token.ExpiredAt.IsZero() {
+		expiredAtValue = types.StringValue(token.ExpiredAt.Format(time.RFC3339))
+	} else {
+		expiredAtValue = types.StringNull()
+	}
+
+	result := modelFromTFEToken(plan.TeamID, types.StringValue(token.ID), types.StringValue(token.Token), plan.ForceRegenerate, expiredAtValue, plan.Description)
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
 }
 

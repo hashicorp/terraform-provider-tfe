@@ -100,8 +100,10 @@ func (r *resourceAuditTrailToken) Schema(ctx context.Context, req resource.Schem
 				Description: "The time when the audit trail token will expire. This must be a valid ISO8601 timestamp.",
 				CustomType:  timetypes.RFC3339Type{},
 				Optional:    true,
+				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+					stringplanmodifier.UseStateForUnknown(),
 					planmodifiers.WarnIfNullOnCreate(
 						"Audit Trail Token expiration null values defaults to 24 months",
 					),
