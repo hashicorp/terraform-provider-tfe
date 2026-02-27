@@ -1,0 +1,139 @@
+---
+layout: "tfe"
+page_title: "Terraform Enterprise: tfe_project_notification_configuration"
+description: |-
+  Manages project notifications configurations.
+---
+
+# tfe_project_notification_configuration
+
+HCP Terraform can be configured to send notifications for run state transitions within a project.
+Project notification configurations allow you to specify a URL, destination type, and what events will trigger the notification.
+Each project can have up to 20 notification configurations, and they apply to all runs for all workspaces within that project.
+
+## Example Usage
+
+Basic usage:
+
+```hcl
+resource "tfe_organization" "test" {
+  name  = "my-org-name"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "test" {
+  name         = "my-project-name"
+  organization = tfe_organization.test.id
+}
+
+resource "tfe_project_notification_configuration" "test" {
+  name             = "my-test-notification-configuration"
+  enabled          = true
+  destination_type = "generic"
+  triggers         = ["run:created", "run:completed"]
+  url              = "https://example.com"
+  project_id       = tfe_project.test.id
+}
+```
+
+With `destination_type` of `email`:
+
+```hcl
+resource "tfe_organization" "test" {
+  name  = "my-org-name"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "test" {
+  name         = "my-project-name"
+  organization = tfe_organization.test.id
+}
+
+data "tfe_organization_membership" "test" {
+  organization = "my-org-name"
+  email        = "test.member@company.com"
+}
+
+resource "tfe_project_notification_configuration" "test" {
+  name             = "my-test-email-notification-configuration"
+  enabled          = true
+  destination_type = "email"
+  email_user_ids   = [tfe_organization_membership.test.user_id]
+  triggers         = ["run:created", "run:planning", "run:errored"]
+  project_id       = tfe_project.test.id
+}
+```
+
+(**TFE only**) With `destination_type` of `email`, using `email_addresses` list:
+
+```hcl
+resource "tfe_organization" "test" {
+  name  = "my-org-name"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "test" {
+  name         = "my-project-name"
+  organization = tfe_organization.test.id
+}
+
+resource "tfe_organization_membership" "test" {
+  organization = "my-org-name"
+  email        = "test.member@company.com"
+}
+
+resource "tfe_project_notification_configuration" "test" {
+  name             = "my-test-email-notification-configuration"
+  enabled          = true
+  destination_type = "email"
+  email_user_ids   = [tfe_organization_membership.test.user_id]
+  email_addresses  = ["user1@company.com", "user2@company.com", "user3@company.com"]
+  triggers         = ["run:created", "run:planning", "run:errored"]
+  project_id       = tfe_project.test.id
+}
+```
+
+## Argument Reference
+
+The following arguments are supported:
+
+* `name` - (Required) Name of the notification configuration.
+* `destination_type` - (Required) The type of notification configuration payload to send.
+  Valid values are:
+  * `generic`
+  * `email` available in HCP Terraform or Terraform Enterprise v202005-1 or later
+  * `slack`
+  * `microsoft-teams` available in HCP Terraform or Terraform Enterprise v202206-1 or later
+* `email_addresses` - (Optional) **TFE only** A list of email addresses. This value
+  _must not_ be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.
+* `email_user_ids` - (Optional) A list of user IDs. This value _must not_ be provided
+  if `destination_type` is `generic`, `microsoft-teams`, or `slack`.
+* `enabled` - (Optional) Whether the notification configuration should be enabled or not.
+  Disabled configurations will not send any notifications. Defaults to `false`.
+* `token` - (Optional) A token for the notification configuration, which can
+  be used by the receiving server to verify request authenticity when configured for notification
+  configurations with a destination type of `generic`. Defaults to `null`.
+  This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.
+* `token_wo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) Write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Either `token` or `token_wo` can be provided, but not both. This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.
+* `triggers` - (Optional) The array of triggers for which this notification configuration will
+  send notifications. Valid values are `run:created`, `run:planning`, `run:needs_attention`, `run:applying`
+  `run:completed`, `run:errored`, `assessment:check_failure`, `assessment:drifted`, `assessment:failed`, `workspace:auto_destroy_reminder`, or `workspace:auto_destroy_run_results`.
+  If omitted, no notification triggers are configured.
+* `url` - (Required if `destination_type` is `generic`, `microsoft-teams`, or `slack`) The HTTP or HTTPS URL of the notification
+  configuration where notification requests will be made. This value _must not_ be provided if `destination_type`
+  is `email`.
+* `project_id` - (Required) The id of the project that owns the notification configuration.
+
+> **Note:** Write-Only argument `token_wo` is available to use in place of `token`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
+
+## Attributes Reference
+
+* `id` - The ID of the notification configuration.
+
+## Import
+
+Project notification configurations can be imported; use `<NOTIFICATION CONFIGURATION ID>` as the import ID. For example:
+
+```shell
+terraform import tfe_project_notification_configuration.test nc-qV9JnKRkmtMa4zcA
+```
