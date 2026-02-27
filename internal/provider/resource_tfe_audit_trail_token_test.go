@@ -163,6 +163,36 @@ func TestAccTFEAuditTrailToken_withInvalidExpiry(t *testing.T) {
 	})
 }
 
+func TestAccTFEAuditTrailToken_withBlankExpiry(t *testing.T) {
+	token := &tfe.OrganizationToken{}
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEAuditTrailTokenDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEAuditTrailToken_withBlankExpiry(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEAuditTrailTokenExists(
+						"tfe_audit_trail_token.foobar", token),
+					resource.TestCheckResourceAttr(
+						"tfe_audit_trail_token.foobar", "organization", org.Name),
+					resource.TestCheckResourceAttrSet(
+						"tfe_audit_trail_token.foobar", "expired_at"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEAuditTrailToken_import(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
@@ -281,7 +311,6 @@ func testAccTFEAuditTrailToken_withBlankExpiry(orgName string) string {
 	return fmt.Sprintf(`
 resource "tfe_audit_trail_token" "foobar" {
   organization = "%s"
-  expired_at = ""
 }`, orgName)
 }
 

@@ -102,7 +102,6 @@ func TestAccTFEOrganizationToken_existsWithForce(t *testing.T) {
 func TestAccTFEOrganizationToken_withBlankExpiry(t *testing.T) {
 	token := &tfe.OrganizationToken{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	expiredAt := ""
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -114,8 +113,9 @@ func TestAccTFEOrganizationToken_withBlankExpiry(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationTokenExists(
 						"tfe_organization_token.foobar", token),
-					resource.TestCheckResourceAttr(
-						"tfe_organization_token.foobar", "expired_at", expiredAt),
+					// When expired_at is not provided, API sets default (24 months and its value is read from the API response
+					resource.TestCheckResourceAttrSet(
+						"tfe_organization_token.foobar", "expired_at"),
 				),
 			},
 		},
@@ -288,7 +288,7 @@ resource "tfe_organization" "foobar" {
 
 resource "tfe_organization_token" "foobar" {
   organization = tfe_organization.foobar.id
-  expired_at = ""
+  # expired_at not provided - API will set default to 24 months
 }`, rInt)
 }
 
