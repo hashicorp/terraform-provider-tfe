@@ -53,6 +53,7 @@ func resourceTFEOrganizationToken() *schema.Resource {
 			"expired_at": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 				ForceNew: true,
 			},
 		},
@@ -66,6 +67,11 @@ func resourceTFEOrganizationTokenCreate(d *schema.ResourceData, meta interface{}
 	organization, err := config.schemaOrDefaultOrganization(d)
 	if err != nil {
 		return err
+	}
+
+	// Issue warning if expired_at is not provided
+	if _, ok := d.GetOk("expired_at"); !ok {
+		log.Printf("[WARN] The 'expired_at' attribute is not set for organization token. The token will default to an expiration of 24 months from creation.")
 	}
 
 	log.Printf("[DEBUG] Check if a token already exists for organization: %s", organization)
@@ -110,7 +116,9 @@ func resourceTFEOrganizationTokenCreate(d *schema.ResourceData, meta interface{}
 	// We need to set this here in the create function as this value will
 	// only be returned once during the creation of the token.
 	d.Set("token", token.Token)
-
+	if !token.ExpiredAt.IsZero() {
+		d.Set("expired_at", token.ExpiredAt.Format(time.RFC3339))
+	}
 	return resourceTFEOrganizationTokenRead(d, meta)
 }
 

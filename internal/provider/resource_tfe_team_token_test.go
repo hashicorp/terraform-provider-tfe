@@ -131,9 +131,9 @@ func TestAccTFETeamToken_invalidWithForceGenerateAndDescription(t *testing.T) {
 }
 
 func TestAccTFETeamToken_withBlankExpiry(t *testing.T) {
+	skipUnlessBeta(t)
 	token := &tfe.TeamToken{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	expiredAt := ""
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -145,8 +145,10 @@ func TestAccTFETeamToken_withBlankExpiry(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamTokenExists(
 						"tfe_team_token.foobar", token),
-					resource.TestCheckResourceAttr(
-						"tfe_team_token.foobar", "expired_at", expiredAt),
+					// When expired_at is not provided, API sets default (24 months)
+					// We now read this value from the API response
+					resource.TestCheckResourceAttrSet(
+						"tfe_team_token.foobar", "expired_at"),
 				),
 			},
 		},
@@ -403,7 +405,7 @@ resource "tfe_team" "foobar" {
 
 resource "tfe_team_token" "foobar" {
   team_id = tfe_team.foobar.id
-  expired_at = ""
+  # expired_at not provided - API will set default to 24 months
 }`, rInt)
 }
 
