@@ -34,6 +34,8 @@ func TestAccTFEAdminOrganizationSettings_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_admin_organization_settings.settings", "global_module_sharing", "false"),
 					resource.TestCheckResourceAttr(
+						"tfe_admin_organization_settings.settings", "global_provider_sharing", "false"),
+					resource.TestCheckResourceAttr(
 						"tfe_admin_organization_settings.settings", "access_beta_tools", "true"),
 
 					// module_consumers attribute
@@ -58,6 +60,8 @@ func TestAccTFEAdminOrganizationSettings_basic(t *testing.T) {
 						"tfe_admin_organization_settings.settings", "organization", fmt.Sprintf("tst-terraform-%d", rInt1)),
 					resource.TestCheckResourceAttr(
 						"tfe_admin_organization_settings.settings", "global_module_sharing", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_admin_organization_settings.settings", "global_provider_sharing", "false"),
 					resource.TestCheckResourceAttr(
 						"tfe_admin_organization_settings.settings", "access_beta_tools", "true"),
 
@@ -94,6 +98,7 @@ resource "tfe_organization" "bar" {
 resource "tfe_admin_organization_settings" "settings" {
 	organization = tfe_organization.foobar.id
 	global_module_sharing = false
+	global_provider_sharing = false
 	access_beta_tools = true
 
 	module_sharing_consumer_organizations = [tfe_organization.foo.id, tfe_organization.bar.id]
