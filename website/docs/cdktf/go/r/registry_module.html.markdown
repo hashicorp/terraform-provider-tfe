@@ -11,6 +11,10 @@ description: |-
 
 HCP Terraform's private module registry helps you share Terraform modules across your organization.
 
+~> **NOTE:** The `AgentExecutionMode` and `AgentPoolId` fields in the `TestConfig` block are currently in beta and are not available to all users. These features are subject to change or be removed.
+
+**Note**: To manage this resource, the token used with the provider needs to be for a team with **owner** permissions or a user who has the permissions explicitly assigned. Crucially, this **does not work** with an organization token! See the [API Access Levels](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/api-tokens#access-levels) documentation for more information.
+
 ## Example Usage
 
 Basic usage with VCS:
@@ -24,25 +28,25 @@ import "github.com/aws-samples/dummy/gen/providers/tfe/organization"
 import "github.com/aws-samples/dummy/gen/providers/tfe/oauthClient"
 import "github.com/aws-samples/dummy/gen/providers/tfe/registryModule"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &organizationConfig{
+	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &OrganizationConfig{
 		email: jsii.String("admin@company.com"),
 		name: jsii.String("my-org-name"),
 	})
-	tfeOauthClientTestOauthClient := oauthClient.NewOauthClient(this, jsii.String("test-oauth-client"), &oauthClientConfig{
+	tfeOauthClientTestOauthClient := oauthClient.NewOauthClient(this, jsii.String("test-oauth-client"), &OauthClientConfig{
 		apiUrl: jsii.String("https://api.github.com"),
 		httpUrl: jsii.String("https://github.com"),
 		oauthToken: jsii.String("my-vcs-provider-token"),
 		organization: cdktf.Token_AsString(tfeOrganizationTestOrganization.name),
 		serviceProvider: jsii.String("github"),
 	})
-	registryModule.NewRegistryModule(this, jsii.String("test-registry-module"), &registryModuleConfig{
-		vcsRepo: &registryModuleVcsRepo{
+	registryModule.NewRegistryModule(this, jsii.String("test-registry-module"), &RegistryModuleConfig{
+		vcsRepo: &RegistryModuleVcsRepo{
 			displayIdentifier: jsii.String("my-org-name/terraform-provider-name"),
 			identifier: jsii.String("my-org-name/terraform-provider-name"),
 			oauthTokenId: cdktf.Token_*AsString(tfeOauthClientTestOauthClient.oauthTokenId),
@@ -63,30 +67,82 @@ import "github.com/aws-samples/dummy/gen/providers/tfe/organization"
 import "github.com/aws-samples/dummy/gen/providers/tfe/oauthClient"
 import "github.com/aws-samples/dummy/gen/providers/tfe/registryModule"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &organizationConfig{
+	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &OrganizationConfig{
 		email: jsii.String("admin@company.com"),
 		name: jsii.String("my-org-name"),
 	})
-	tfeOauthClientTestOauthClient := oauthClient.NewOauthClient(this, jsii.String("test-oauth-client"), &oauthClientConfig{
+	tfeOauthClientTestOauthClient := oauthClient.NewOauthClient(this, jsii.String("test-oauth-client"), &OauthClientConfig{
 		apiUrl: jsii.String("https://api.github.com"),
 		httpUrl: jsii.String("https://github.com"),
 		oauthToken: jsii.String("my-vcs-provider-token"),
 		organization: cdktf.Token_AsString(tfeOrganizationTestOrganization.name),
 		serviceProvider: jsii.String("github"),
 	})
-	registryModule.NewRegistryModule(this, jsii.String("test-registry-module"), &registryModuleConfig{
+	registryModule.NewRegistryModule(this, jsii.String("test-registry-module"), &RegistryModuleConfig{
 		testConfig: []interface{}{
-			&registryModuleTestConfig{
+			&RegistryModuleTestConfig{
 				testsEnabled: jsii.Boolean(true),
 			},
 		},
-		vcsRepo: &registryModuleVcsRepo{
+		vcsRepo: &RegistryModuleVcsRepo{
+			branch: jsii.String("main"),
+			displayIdentifier: jsii.String("my-org-name/terraform-provider-name"),
+			identifier: jsii.String("my-org-name/terraform-provider-name"),
+			oauthTokenId: cdktf.Token_*AsString(tfeOauthClientTestOauthClient.oauthTokenId),
+		},
+	})
+	return this
+}
+```
+
+Create private registry module with agent pool (BETA):
+
+```go
+import constructs "github.com/aws/constructs-go/constructs"
+import "github.com/hashicorp/terraform-cdk-go/cdktf"
+/*Provider bindings are generated by running cdktf get.
+See https://cdk.tf/provider-generation for more details.*/
+import "github.com/aws-samples/dummy/gen/providers/tfe/organization"
+import "github.com/aws-samples/dummy/gen/providers/tfe/agentPool"
+import "github.com/aws-samples/dummy/gen/providers/tfe/oauthClient"
+import "github.com/aws-samples/dummy/gen/providers/tfe/registryModule"
+type myConvertedCode struct {
+	TerraformStack
+}
+
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
+	this := &myConvertedCode{}
+	cdktf.NewTerraformStack_Override(this, scope, name)
+	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &OrganizationConfig{
+		email: jsii.String("admin@company.com"),
+		name: jsii.String("my-org-name"),
+	})
+	tfeAgentPoolTestAgentPool := agentPool.NewAgentPool(this, jsii.String("test-agent-pool"), &AgentPoolConfig{
+		name: jsii.String("my-agent-pool-name"),
+		organization: cdktf.Token_AsString(tfeOrganizationTestOrganization.name),
+	})
+	tfeOauthClientTestOauthClient := oauthClient.NewOauthClient(this, jsii.String("test-oauth-client"), &OauthClientConfig{
+		apiUrl: jsii.String("https://api.github.com"),
+		httpUrl: jsii.String("https://github.com"),
+		oauthToken: jsii.String("my-vcs-provider-token"),
+		organization: cdktf.Token_*AsString(tfeOrganizationTestOrganization.name),
+		serviceProvider: jsii.String("github"),
+	})
+	registryModule.NewRegistryModule(this, jsii.String("test-registry-module"), &RegistryModuleConfig{
+		testConfig: []interface{}{
+			&RegistryModuleTestConfig{
+				agentExecutionMode: jsii.String("agent"),
+				agentPoolId: cdktf.Token_*AsString(tfeAgentPoolTestAgentPool.id),
+				testsEnabled: jsii.Boolean(true),
+			},
+		},
+		vcsRepo: &RegistryModuleVcsRepo{
 			branch: jsii.String("main"),
 			displayIdentifier: jsii.String("my-org-name/terraform-provider-name"),
 			identifier: jsii.String("my-org-name/terraform-provider-name"),
@@ -108,23 +164,23 @@ import "github.com/aws-samples/dummy/gen/providers/tfe/organization"
 import "github.com/aws-samples/dummy/gen/providers/tfe/dataTfeGithubAppInstallation"
 import "github.com/aws-samples/dummy/gen/providers/tfe/registryModule"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &organizationConfig{
+	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &OrganizationConfig{
 		email: jsii.String("admin@company.com"),
 		name: jsii.String("my-org-name"),
 	})
 	dataTfeGithubAppInstallationGhaInstallation :=
-	dataTfeGithubAppInstallation.NewDataTfeGithubAppInstallation(this, jsii.String("gha_installation"), &dataTfeGithubAppInstallationConfig{
+	dataTfeGithubAppInstallation.NewDataTfeGithubAppInstallation(this, jsii.String("gha_installation"), &DataTfeGithubAppInstallationConfig{
 		name: jsii.String("YOUR_GH_NAME"),
 	})
-	registryModule.NewRegistryModule(this, jsii.String("petstore"), &registryModuleConfig{
+	registryModule.NewRegistryModule(this, jsii.String("petstore"), &RegistryModuleConfig{
 		organization: cdktf.Token_AsString(tfeOrganizationTestOrganization.name),
-		vcsRepo: &registryModuleVcsRepo{
+		vcsRepo: &RegistryModuleVcsRepo{
 			displayIdentifier: jsii.String("GH_NAME/REPO_NAME"),
 			githubAppInstallationId: cdktf.Token_*AsString(dataTfeGithubAppInstallationGhaInstallation.id),
 			identifier: jsii.String("GH_NAME/REPO_NAME"),
@@ -133,6 +189,51 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 	return this
 }
 ```
+
+Create private registry module from a monorepo with source_directory (BETA):
+
+```go
+import constructs "github.com/aws/constructs-go/constructs"
+import "github.com/hashicorp/terraform-cdk-go/cdktf"
+/*Provider bindings are generated by running cdktf get.
+See https://cdk.tf/provider-generation for more details.*/
+import "github.com/aws-samples/dummy/gen/providers/tfe/organization"
+import "github.com/aws-samples/dummy/gen/providers/tfe/oauthClient"
+import "github.com/aws-samples/dummy/gen/providers/tfe/registryModule"
+type myConvertedCode struct {
+	TerraformStack
+}
+
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
+	this := &myConvertedCode{}
+	cdktf.NewTerraformStack_Override(this, scope, name)
+	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &OrganizationConfig{
+		email: jsii.String("admin@company.com"),
+		name: jsii.String("my-org-name"),
+	})
+	tfeOauthClientTestOauthClient := oauthClient.NewOauthClient(this, jsii.String("test-oauth-client"), &OauthClientConfig{
+		apiUrl: jsii.String("https://api.github.com"),
+		httpUrl: jsii.String("https://github.com"),
+		oauthToken: jsii.String("my-vcs-provider-token"),
+		organization: cdktf.Token_AsString(tfeOrganizationTestOrganization.name),
+		serviceProvider: jsii.String("github"),
+	})
+	registryModule.NewRegistryModule(this, jsii.String("monorepo-module"), &RegistryModuleConfig{
+		moduleProvider: jsii.String("aws"),
+		name: jsii.String("vpc"),
+		organization: cdktf.Token_*AsString(tfeOrganizationTestOrganization.name),
+		vcsRepo: &RegistryModuleVcsRepo{
+			displayIdentifier: jsii.String("my-org-name/private-modules"),
+			identifier: jsii.String("my-org-name/private-modules"),
+			oauthTokenId: cdktf.Token_*AsString(tfeOauthClientTestOauthClient.oauthTokenId),
+			sourceDirectory: jsii.String("modules/vpc"),
+		},
+	})
+	return this
+}
+```
+
+~> **NOTE:** When using `SourceDirectory`, you **must** explicitly specify both `Name` and `ModuleProvider`. This is required because monorepos and repositories with non-standard names (not following `Terraform-<provider>-<name>` convention) cannot have these values automatically inferred by the API.
 
 Create private registry module without VCS:
 
@@ -144,17 +245,17 @@ See https://cdk.tf/provider-generation for more details.*/
 import "github.com/aws-samples/dummy/gen/providers/tfe/organization"
 import "github.com/aws-samples/dummy/gen/providers/tfe/registryModule"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &organizationConfig{
+	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &OrganizationConfig{
 		email: jsii.String("admin@company.com"),
 		name: jsii.String("my-org-name"),
 	})
-	registryModule.NewRegistryModule(this, jsii.String("test-private-registry-module"), &registryModuleConfig{
+	registryModule.NewRegistryModule(this, jsii.String("test-private-registry-module"), &RegistryModuleConfig{
 		moduleProvider: jsii.String("my_provider"),
 		name: jsii.String("another_test_module"),
 		organization: cdktf.Token_AsString(tfeOrganizationTestOrganization.name),
@@ -174,17 +275,17 @@ See https://cdk.tf/provider-generation for more details.*/
 import "github.com/aws-samples/dummy/gen/providers/tfe/organization"
 import "github.com/aws-samples/dummy/gen/providers/tfe/registryModule"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &organizationConfig{
+	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &OrganizationConfig{
 		email: jsii.String("admin@company.com"),
 		name: jsii.String("my-org-name"),
 	})
-	registryModule.NewRegistryModule(this, jsii.String("test-public-registry-module"), &registryModuleConfig{
+	registryModule.NewRegistryModule(this, jsii.String("test-public-registry-module"), &RegistryModuleConfig{
 		moduleProvider: jsii.String("aws"),
 		name: jsii.String("vpc"),
 		namespace: jsii.String("terraform-aws-modules"),
@@ -206,25 +307,25 @@ import "github.com/aws-samples/dummy/gen/providers/tfe/organization"
 import "github.com/aws-samples/dummy/gen/providers/tfe/registryModule"
 import "github.com/aws-samples/dummy/gen/providers/tfe/noCodeModule"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &organizationConfig{
+	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &OrganizationConfig{
 		email: jsii.String("admin@company.com"),
 		name: jsii.String("my-org-name"),
 	})
 	tfeRegistryModuleTestNoCodeProvisioningRegistryModule :=
-	registryModule.NewRegistryModule(this, jsii.String("test-no-code-provisioning-registry-module"), &registryModuleConfig{
+	registryModule.NewRegistryModule(this, jsii.String("test-no-code-provisioning-registry-module"), &RegistryModuleConfig{
 		moduleProvider: jsii.String("aws"),
 		name: jsii.String("vpc"),
 		namespace: jsii.String("terraform-aws-modules"),
 		organization: cdktf.Token_AsString(tfeOrganizationTestOrganization.name),
 		registryName: jsii.String("public"),
 	})
-	noCodeModule.NewNoCodeModule(this, jsii.String("foobar"), &noCodeModuleConfig{
+	noCodeModule.NewNoCodeModule(this, jsii.String("foobar"), &NoCodeModuleConfig{
 		organization: cdktf.Token_*AsString(tfeOrganizationTestOrganization.id),
 		registryModule: cdktf.Token_*AsString(tfeRegistryModuleTestNoCodeProvisioningRegistryModule.id),
 	})
@@ -238,15 +339,17 @@ The following arguments are supported:
 
 * `VcsRepo` - (Optional) Settings for the registry module's VCS repository. Forces a
   new resource if changed. One of `VcsRepo` or `ModuleProvider` is required.
-* `ModuleProvider` - (Optional) Specifies the Terraform provider that this module is used for. For example, "aws"
+* `ModuleProvider` - (Optional) Specifies the Terraform provider that this module is used for. For example, "aws".
 * `Name` - (Optional) The name of registry module. It must be set if `ModuleProvider` is used.
 * `Organization` - (Optional) The name of the organization associated with the registry module. It must be set if `ModuleProvider` is used, or if `VcsRepo` is used via a GitHub App.
 * `Namespace` - (Optional) The namespace of a public registry module. It can be used if `ModuleProvider` is set and `RegistryName` is public.
 * `RegistryName` - (Optional) Whether the registry module is private or public. It can be used if `ModuleProvider` is set.
 * `InitialVersion` - (Optional) This specifies the initial version for a branch based module. It can be used if `VcsRepoBranch` is set. If it is omitted, the initial modules version will default to `000`.
 
-The `TestConfig` block supports
+The `TestConfig` block supports:
 * `TestsEnabled` - (Optional) Specifies whether tests run for the registry module. Tests are only supported for branch-based publishing.
+* `AgentExecutionMode` - (Optional) Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode) to use for registry module tests. Valid values are `Agent` and `Remote`. Defaults to `Remote`. This feature is currently in beta and is not available to all users.
+* `AgentPoolId` - (Optional) The ID of an agent pool to assign to the registry module for testing. Requires `AgentExecutionMode` to be set to `Agent`. This value _must not_ be provided if `AgentExecutionMode` is set to `Remote`. This feature is currently in beta and is not available to all users.
 
 The `VcsRepo` block supports:
 
@@ -272,12 +375,33 @@ The `VcsRepo` block supports:
 * `Namespace` - The namespace of the module. For private modules this is the name of the organization that owns the module.
 * `PublishingMechanism` - The publishing mechanism used when releasing new versions of the module.
 * `RegistryName` - The registry name of the registry module depicting whether the registry module is private or public.
+* `TestConfig` - The test configuration for the registry module.
+  * `TestsEnabled` - Whether tests are enabled for the registry module.
+  * `AgentExecutionMode` - The execution mode used for registry module tests.
+  * `AgentPoolId` - The ID of the agent pool used for registry module tests.
 * `NoCode` - **Deprecated** The property that will enable or disable a module as no-code provisioning ready.
 Use the tfe_no_code_module resource instead.
 
 ## Import
 
-Registry modules can be imported; use `<ORGANIZATION>/<REGISTRY_NAME>/<NAMESPACE>/<REGISTRY MODULE NAME>/<REGISTRY MODULE PROVIDER>/<REGISTRY MODULE ID>` as the import ID. For example:
+Registry modules can be imported using an identity. For example:
+
+```hcl
+import {
+  to = tfe_registry_module.test
+  identity = {
+    id              = "mod-qV9JnKRkmtMa4zcA"
+    organization    = "my-org-name"
+    registry_name   = "private"
+    namespace       = "my-org-name"
+    name            = "vpc"
+    module_provider = "aws"
+    hostname        = "app.terraform.io"
+  }
+}
+```
+
+Registry modules can be imported using the Terraform CLI; use `<ORGANIZATION>/<REGISTRY_NAME>/<NAMESPACE>/<REGISTRY MODULE NAME>/<REGISTRY MODULE PROVIDER>/<REGISTRY MODULE ID>` as the import ID. For example:
 
 ```shell
 terraform import tfe_registry_module.test my-org-name/public/namespace/name/provider/mod-qV9JnKRkmtMa4zcA
@@ -289,4 +413,4 @@ terraform import tfe_registry_module.test my-org-name/public/namespace/name/prov
 terraform import tfe_registry_module.test my-org-name/name/provider/mod-qV9JnKRkmtMa4zcA
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-16565cd2602cf10f4cd2198c303f6fbc3cf35c0a00862e1840b30c0ac17bae5d -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-4109f000668c9f505fe44bdb73dd052853f4bec9804235e0c9357e35dec63941 -->

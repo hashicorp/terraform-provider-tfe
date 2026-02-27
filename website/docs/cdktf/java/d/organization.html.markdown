@@ -43,10 +43,11 @@ In addition to all arguments above, the following attributes are exported:
 * `assessmentsEnforced` - (Available only in HCP Terraform) Whether to force health assessments (drift detection) on all eligible workspaces or allow workspaces to set thier own preferences.
 * `collaboratorAuthPolicy` - Authentication policy (`password` or `twoFactorMandatory`). Defaults to `password`.
 * `costEstimationEnabled` - Whether or not the cost estimation feature is enabled for all workspaces in the organization. Defaults to true. In a HCP Terraform organization which does not have Teams & Governance features, this value is always false and cannot be changed. In Terraform Enterprise, Cost Estimation must also be enabled in Site Administration.
+* `enforceHyok` - (Available only in HCP Terraform) Whether HYOK is enforced for all new workspaces in the organization.
 * `ownersTeamSamlRoleId` - The name of the "owners" team.
 * `sendPassingStatusesForUntriggeredSpeculativePlans` - Whether or not to send VCS status updates for untriggered speculative plans. This can be useful if large numbers of untriggered workspaces are exhausting request limits for connected version control service providers like GitHub. Defaults to true. In Terraform Enterprise, this setting has no effect and cannot be changed but is also available in Site Administration.
 * `aggregatedCommitStatusEnabled` - Whether or not to enable Aggregated Status Checks. This can be useful for monorepo repositories with multiple workspaces receiving status checks for events such as a pull request.
 * `speculativePlanManagementEnabled` - Whether or not to enable Speculative Plan Management. If true, pending VCS-triggered speculative plans from outdated commits will be cancelled if a newer commit is pushed to the same branch.
 * `defaultProjectId` - ID of the organization's default project. All workspaces created without specifying a project ID are created in this project.
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-9b73f546422e0ab13be41c89f26de4669725b44bfaf8e4720bbd31f838e37f2f -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-70c51f8c8ce2c10e2426e289d2e220cfc61ba2c6bcc766b885187fa0e26d72ae -->

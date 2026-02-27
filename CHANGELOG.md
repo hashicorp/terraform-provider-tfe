@@ -1,4 +1,4 @@
-## Unreleased
+## v0.74.1
 
 BUG FIXES:
 * `r/tfe_stack`: Fixed a bug where omitting the `speculative_enabled` attribute caused plans to fail. The attribute is optional and defaults to `false` if not provided. By @arunatibm [#1972](https://github.com/hashicorp/terraform-provider-tfe/pull/1972)
