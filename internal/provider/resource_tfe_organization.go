@@ -121,7 +121,6 @@ func resourceTFEOrganization() *schema.Resource {
 			"stacks_enabled": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				Default:  false,
 			},
 		},
 	}
