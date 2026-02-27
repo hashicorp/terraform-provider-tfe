@@ -164,6 +164,7 @@ func TestAccTFEAuditTrailToken_withInvalidExpiry(t *testing.T) {
 }
 
 func TestAccTFEAuditTrailToken_withBlankExpiry(t *testing.T) {
+	skipUnlessBeta(t)
 	token := &tfe.OrganizationToken{}
 
 	tfeClient, err := getClientUsingEnv()

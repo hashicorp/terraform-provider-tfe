@@ -131,6 +131,7 @@ func TestAccTFETeamToken_invalidWithForceGenerateAndDescription(t *testing.T) {
 }
 
 func TestAccTFETeamToken_withBlankExpiry(t *testing.T) {
+	skipUnlessBeta(t)
 	token := &tfe.TeamToken{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 

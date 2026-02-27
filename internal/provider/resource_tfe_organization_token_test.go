@@ -100,6 +100,7 @@ func TestAccTFEOrganizationToken_existsWithForce(t *testing.T) {
 }
 
 func TestAccTFEOrganizationToken_withBlankExpiry(t *testing.T) {
+	skipUnlessBeta(t)
 	token := &tfe.OrganizationToken{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
