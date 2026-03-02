@@ -35,51 +35,51 @@ import "github.com/aws-samples/dummy/gen/providers/tfe/oauthClient"
 import "github.com/aws-samples/dummy/gen/providers/tfe/workspace"
 import "github.com/aws-samples/dummy/gen/providers/tfe/workspaceRun"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &organizationConfig{
+	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &OrganizationConfig{
 		email: jsii.String("admin@company.com"),
 		name: jsii.String("my-org-name"),
 	})
-	tfeOauthClientTest := oauthClient.NewOauthClient(this, jsii.String("test"), &oauthClientConfig{
+	tfeOauthClientTest := oauthClient.NewOauthClient(this, jsii.String("test"), &OauthClientConfig{
 		apiUrl: jsii.String("https://api.github.com"),
 		httpUrl: jsii.String("https://github.com"),
 		oauthToken: jsii.String("oauth_token_id"),
 		organization: cdktf.Token_AsString(tfeOrganizationTestOrganization.name),
 		serviceProvider: jsii.String("github"),
 	})
-	tfeWorkspaceChild := workspace.NewWorkspace(this, jsii.String("child"), &workspaceConfig{
+	tfeWorkspaceChild := workspace.NewWorkspace(this, jsii.String("child"), &WorkspaceConfig{
 		name: jsii.String("child-ws"),
 		organization: cdktf.Token_*AsString(tfeOrganizationTestOrganization.name),
 		queueAllRuns: jsii.Boolean(false),
-		vcsRepo: &workspaceVcsRepo{
+		vcsRepo: &WorkspaceVcsRepo{
 			branch: jsii.String("main"),
 			identifier: jsii.String("my-org-name/vcs-repository"),
 			oauthTokenId: cdktf.Token_*AsString(tfeOauthClientTest.oauthTokenId),
 		},
 	})
-	tfeWorkspaceParent := workspace.NewWorkspace(this, jsii.String("parent"), &workspaceConfig{
+	tfeWorkspaceParent := workspace.NewWorkspace(this, jsii.String("parent"), &WorkspaceConfig{
 		name: jsii.String("parent-ws"),
 		organization: cdktf.Token_*AsString(tfeOrganizationTestOrganization.name),
 		queueAllRuns: jsii.Boolean(false),
-		vcsRepo: &workspaceVcsRepo{
+		vcsRepo: &WorkspaceVcsRepo{
 			branch: jsii.String("main"),
 			identifier: jsii.String("my-org-name/vcs-repository"),
 			oauthTokenId: cdktf.Token_*AsString(tfeOauthClientTest.oauthTokenId),
 		},
 	})
-	tfeWorkspaceRunWsRunParent := workspaceRun.NewWorkspaceRun(this, jsii.String("ws_run_parent"), &workspaceRunConfig{
-		apply: &workspaceRunApply{
+	tfeWorkspaceRunWsRunParent := workspaceRun.NewWorkspaceRun(this, jsii.String("ws_run_parent"), &WorkspaceRunConfig{
+		apply: &WorkspaceRunApply{
 			manualConfirm: jsii.Boolean(false),
 			retryAttempts: jsii.Number(5),
 			retryBackoffMin: jsii.Number(5),
 			waitForRun: jsii.Boolean(true),
 		},
-		destroy: &workspaceRunDestroy{
+		destroy: &WorkspaceRunDestroy{
 			manualConfirm: jsii.Boolean(false),
 			retryAttempts: jsii.Number(3),
 			retryBackoffMin: jsii.Number(10),
@@ -87,16 +87,16 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 		},
 		workspaceId: cdktf.Token_*AsString(tfeWorkspaceParent.id),
 	})
-	workspaceRun.NewWorkspaceRun(this, jsii.String("ws_run_child"), &workspaceRunConfig{
-		apply: &workspaceRunApply{
+	workspaceRun.NewWorkspaceRun(this, jsii.String("ws_run_child"), &WorkspaceRunConfig{
+		apply: &WorkspaceRunApply{
 			manualConfirm: jsii.Boolean(false),
 			retryAttempts: jsii.Number(5),
 			retryBackoffMin: jsii.Number(5),
 		},
-		dependsOn: []iTerraformDependable{
+		dependsOn: []ITerraformDependable{
 			tfeWorkspaceRunWsRunParent,
 		},
-		destroy: &workspaceRunDestroy{
+		destroy: &WorkspaceRunDestroy{
 			manualConfirm: jsii.Boolean(false),
 			retryAttempts: jsii.Number(3),
 			retryBackoffMin: jsii.Number(10),
@@ -120,38 +120,39 @@ import "github.com/aws-samples/dummy/gen/providers/tfe/oauthClient"
 import "github.com/aws-samples/dummy/gen/providers/tfe/workspace"
 import "github.com/aws-samples/dummy/gen/providers/tfe/workspaceRun"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &organizationConfig{
+	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &OrganizationConfig{
 		email: jsii.String("admin@company.com"),
 		name: jsii.String("my-org-name"),
 	})
-	tfeOauthClientTest := oauthClient.NewOauthClient(this, jsii.String("test"), &oauthClientConfig{
+	tfeOauthClientTest := oauthClient.NewOauthClient(this, jsii.String("test"), &OauthClientConfig{
 		apiUrl: jsii.String("https://api.github.com"),
 		httpUrl: jsii.String("https://github.com"),
 		oauthToken: jsii.String("oauth_token_id"),
 		organization: cdktf.Token_AsString(tfeOrganizationTestOrganization.name),
 		serviceProvider: jsii.String("github"),
 	})
-	tfeWorkspaceParent := workspace.NewWorkspace(this, jsii.String("parent"), &workspaceConfig{
+	tfeWorkspaceParent := workspace.NewWorkspace(this, jsii.String("parent"), &WorkspaceConfig{
 		name: jsii.String("parent-ws"),
 		organization: cdktf.Token_*AsString(tfeOrganizationTestOrganization.name),
 		queueAllRuns: jsii.Boolean(false),
-		vcsRepo: &workspaceVcsRepo{
+		vcsRepo: &WorkspaceVcsRepo{
 			branch: jsii.String("main"),
 			identifier: jsii.String("my-org-name/vcs-repository"),
 			oauthTokenId: cdktf.Token_*AsString(tfeOauthClientTest.oauthTokenId),
 		},
 	})
-	workspaceRun.NewWorkspaceRun(this, jsii.String("ws_run_parent"), &workspaceRunConfig{
-		apply: &workspaceRunApply{
+	workspaceRun.NewWorkspaceRun(this, jsii.String("ws_run_parent"), &WorkspaceRunConfig{
+		apply: &WorkspaceRunApply{
 			manualConfirm: jsii.Boolean(true),
+			message: jsii.String("test message"),
 		},
-		destroy: &workspaceRunDestroy{
+		destroy: &WorkspaceRunDestroy{
 			manualConfirm: jsii.Boolean(true),
 			waitForRun: jsii.Boolean(true),
 		},
@@ -173,39 +174,39 @@ import "github.com/aws-samples/dummy/gen/providers/tfe/oauthClient"
 import "github.com/aws-samples/dummy/gen/providers/tfe/workspace"
 import "github.com/aws-samples/dummy/gen/providers/tfe/workspaceRun"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &organizationConfig{
+	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &OrganizationConfig{
 		email: jsii.String("admin@company.com"),
 		name: jsii.String("my-org-name"),
 	})
-	tfeOauthClientTest := oauthClient.NewOauthClient(this, jsii.String("test"), &oauthClientConfig{
+	tfeOauthClientTest := oauthClient.NewOauthClient(this, jsii.String("test"), &OauthClientConfig{
 		apiUrl: jsii.String("https://api.github.com"),
 		httpUrl: jsii.String("https://github.com"),
 		oauthToken: jsii.String("oauth_token_id"),
 		organization: cdktf.Token_AsString(tfeOrganizationTestOrganization.name),
 		serviceProvider: jsii.String("github"),
 	})
-	tfeWorkspaceParent := workspace.NewWorkspace(this, jsii.String("parent"), &workspaceConfig{
+	tfeWorkspaceParent := workspace.NewWorkspace(this, jsii.String("parent"), &WorkspaceConfig{
 		name: jsii.String("parent-ws"),
 		organization: cdktf.Token_*AsString(tfeOrganizationTestOrganization.name),
 		queueAllRuns: jsii.Boolean(false),
-		vcsRepo: &workspaceVcsRepo{
+		vcsRepo: &WorkspaceVcsRepo{
 			branch: jsii.String("main"),
 			identifier: jsii.String("my-org-name/vcs-repository"),
 			oauthTokenId: cdktf.Token_*AsString(tfeOauthClientTest.oauthTokenId),
 		},
 	})
-	workspaceRun.NewWorkspaceRun(this, jsii.String("ws_run_parent"), &workspaceRunConfig{
-		apply: &workspaceRunApply{
+	workspaceRun.NewWorkspaceRun(this, jsii.String("ws_run_parent"), &WorkspaceRunConfig{
+		apply: &WorkspaceRunApply{
 			manualConfirm: jsii.Boolean(false),
 			retry: jsii.Boolean(false),
 		},
-		destroy: &workspaceRunDestroy{
+		destroy: &WorkspaceRunDestroy{
 			manualConfirm: jsii.Boolean(false),
 			retry: jsii.Boolean(false),
 			waitForRun: jsii.Boolean(true),
@@ -235,6 +236,9 @@ Both `Apply` and `Destroy` block supports:
 * `RetryBackoffMin` - (Optional) The minimum time in seconds to backoff before attempting a retry. Defaults to `1`.
 * `RetryBackoffMax` - (Optional) The maximum time in seconds to backoff before attempting a retry. Defaults to `30`.
 * `WaitForRun` - (Optional) Whether or not to wait for a run to reach completion before considering this a success. When set to `False`, the provider considers the `TfeWorkspaceRun` resource to have been created immediately after the run has been queued. When set to `True`, the provider waits for a successful apply on the target workspace to have applied successfully (or if it resulted in a no-change plan). Defaults to `True`.
+* `Message` - (Optional) A custom message to associate with the run. If omitted, the default run message is used. Defaults to `Triggered by tfe_workspace_run resource via terraform-provider-tfe on <date>`.
+
+
 
 ## Attributes Reference
 
@@ -242,4 +246,4 @@ In addition to all arguments above, the following attributes are exported:
 
 * `Id` - The ID of the run created by this resource. Note, if the resource was created without an `Apply{}` configuration block, then this ID will not refer to a real run in HCP Terraform.
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-dabc2fa04a9cee391a5b6193b417eeb4a1debdd321a4cf5b1a13e6c857ed36ac -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-523da2cb05aa7f29609f9e86e5508af5cd9559d11b5b74a24b1fb9a034eb6e6a -->

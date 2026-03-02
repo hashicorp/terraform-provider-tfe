@@ -140,6 +140,7 @@ public class MyConvertedCode extends TerraformStack {
         new WorkspaceRun(this, "ws_run_parent", new WorkspaceRunConfig()
                 .apply(new WorkspaceRunApply()
                         .manualConfirm(true)
+                        .message("test message")
                         )
                 .destroy(new WorkspaceRunDestroy()
                         .manualConfirm(true)
@@ -221,6 +222,9 @@ Both `apply` and `destroy` block supports:
 * `retryBackoffMin` - (Optional) The minimum time in seconds to backoff before attempting a retry. Defaults to `1`.
 * `retryBackoffMax` - (Optional) The maximum time in seconds to backoff before attempting a retry. Defaults to `30`.
 * `waitForRun` - (Optional) Whether or not to wait for a run to reach completion before considering this a success. When set to `false`, the provider considers the `tfeWorkspaceRun` resource to have been created immediately after the run has been queued. When set to `true`, the provider waits for a successful apply on the target workspace to have applied successfully (or if it resulted in a no-change plan). Defaults to `true`.
+* `message` - (Optional) A custom message to associate with the run. If omitted, the default run message is used. Defaults to `Triggered by tfe_workspace_run resource via terraform-provider-tfe on <date>`.
+
+
 
 ## Attributes Reference
 
@@ -228,4 +232,4 @@ In addition to all arguments above, the following attributes are exported:
 
 * `id` - The ID of the run created by this resource. Note, if the resource was created without an `apply{}` configuration block, then this ID will not refer to a real run in HCP Terraform.
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-dabc2fa04a9cee391a5b6193b417eeb4a1debdd321a4cf5b1a13e6c857ed36ac -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-523da2cb05aa7f29609f9e86e5508af5cd9559d11b5b74a24b1fb9a034eb6e6a -->

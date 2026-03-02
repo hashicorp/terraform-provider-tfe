@@ -36,10 +36,11 @@ data "tfe_agent_pool" "agent-pool" {
 }
 
 resource "tfe_stack" "test-stack" {
-  name          = "my-stack"
-  description   = "A Terraform Stack using two components with two environments"
-  project_id    = data.tfe_organization.organization.default_project_id
-  agent_pool_id = data.tfe_agent_pool.agent-pool.id
+  name                = "my-stack"
+  description         = "A Terraform Stack using two components with two environments"
+  project_id          = data.tfe_organization.organization.default_project_id
+  agent_pool_id       = data.tfe_agent_pool.agent-pool.id
+  speculative_enabled = true
 
   vcs_repo {
     branch         = "main"
@@ -80,7 +81,8 @@ The following arguments are supported:
 * `ProjectId` - (Required) ID of the project where the stack should be created.
 * `AgentPoolId` - (Optional) The ID of an agent pool to assign to the stack.
 * `VcsRepo` - (Optional) Settings for the stack's VCS repository.
-* `Description` - (Optional) Description of the stack
+* `Description` - (Optional) Description of the stack.
+* `SpeculativeEnabled` - (Optional) Whether this Stack allows automatic speculative plans. Setting this to true will allow Terraform to run plans on pull requests. Defaults to false.
 <!--
 NOTE: This is a proposed schema for allowing force-delete actions on a stack. Force delete is not implemented yet so I've commented it out for now.
 
@@ -100,6 +102,18 @@ The `VcsRepo` block supports:
 
 ## Import
 
+Stacks can be imported using an identity. For example:
+
+```hcl
+import {
+  to = tfe_stack.test
+  identity = {
+    id       = "st-W6k9K23oSXRHGpj3"
+    hostname = "app.terraform.io"
+  }
+}
+```
+
 Stacks can be imported by ID, which can be found on the stack's settings tab in the UI
 
 Example:
@@ -108,4 +122,4 @@ Example:
 terraform import tfe_stack.test-stack st-9cs9Vf6Z49Zzrk1t
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-2b2bb309b6efaa099d7b361bc32ece1557b0e8d6fcf6cc0f0b796dadd83ce93b -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-1756cf5c83f2ddd1050c282356346f4933184c55ec6ec73e34ae6a394acaeb7f -->

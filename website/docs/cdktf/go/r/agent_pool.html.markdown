@@ -25,17 +25,17 @@ See https://cdk.tf/provider-generation for more details.*/
 import "github.com/aws-samples/dummy/gen/providers/tfe/organization"
 import "github.com/aws-samples/dummy/gen/providers/tfe/agentPool"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &organizationConfig{
+	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &OrganizationConfig{
 		email: jsii.String("admin@company.com"),
 		name: jsii.String("my-org-name"),
 	})
-	agentPool.NewAgentPool(this, jsii.String("test-agent-pool"), &agentPoolConfig{
+	agentPool.NewAgentPool(this, jsii.String("test-agent-pool"), &AgentPoolConfig{
 		name: jsii.String("my-agent-pool-name"),
 		organization: cdktf.Token_AsString(tfeOrganizationTestOrganization.name),
 		organizationScoped: jsii.Boolean(true),
@@ -60,14 +60,26 @@ The following arguments are supported:
 
 ## Import
 
-Agent pools can be imported; use `<AGENT POOL ID>` or `<ORGANIZATION NAME>/<AGENT POOL NAME>` as the import ID. For example:
+Agent pools can be imported using an identity. For example:
+
+```hcl
+import {
+  to = tfe_agent_pool.test
+  identity = {
+    id       = "apool-12345678"
+    hostname = "app.terraform.io"
+  }
+}
+```
+
+Agent pools can be imported via the Terraform CLI; use `<AGENT POOL ID>` or `<ORGANIZATION NAME>/<AGENT POOL NAME>` as the import ID. For example:
 
 ```shell
 terraform import tfe_agent_pool.test apool-rW0KoLSlnuNb5adB
 ```
 
 ```shell
-terraform import tfe_workspace.test my-org-name/my-agent-pool-name
+terraform import tfe_agent_pool.test my-org-name/my-agent-pool-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-34df65a2eaec9900096b8c5dafac6d4d71de1bb94a65e6a1dc1e75cba2f439a2 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-923cb2f3b7d6b4e983b5559950833bb6ff73381b241a2d603f55f497729ef0dc -->
