@@ -127,6 +127,7 @@ FEATURES:
 
 BUG FIXES:
 * `r/tfe_workspace` update `tags` to be a computed attribute, by @Maed223 [#1767](https://github.com/hashicorp/terraform-provider-tfe/pull/1767)
+* `r/tfe_workspace_run`: Allow configuration without `apply` and `destroy` blocks, by @tmatilai [#1604](https://github.com/hashicorp/terraform-provider-tfe/pull/1604)
 
 ## v0.67.0
 
