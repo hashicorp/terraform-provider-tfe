@@ -1,3 +1,8 @@
+## Unreleased
+
+FEATURES:
+* Adds `tfe_query_run` action, allowing users to invoke remote Terraform queries on HCP Terraform and Terraform Enterprise, by @sebasslash [#1982](https://github.com/hashicorp/terraform-provider-tfe/pull/1982)
+
 ## v0.74.1
 
 BUG FIXES:
