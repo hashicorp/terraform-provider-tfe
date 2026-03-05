@@ -1,3 +1,9 @@
+## UNRELEASED
+
+BUG FIXES:
+* `r/tfe_variable`: Fixed a bug where value_wo continuously resulted in new changes on every terraform apply. By @uk1288 [#1983](https://github.com/hashicorp/terraform-provider-tfe/pull/1983)
+* `r/tfe_variable`: Added the `value_wo_version` write-only attribute to allow triggering value_wo updates, by @uk1288 ([#1983](https://github.com/hashicorp/terraform-provider-tfe/pull/1983))
+
 ## v0.74.1
 
 BUG FIXES:
