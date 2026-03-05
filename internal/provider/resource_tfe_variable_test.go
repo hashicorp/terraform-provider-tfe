@@ -1034,7 +1034,7 @@ resource "tfe_variable" "vs_terraform" {
 }`, rInt)
 }
 
-func testAccTFEVariable_valueWriteOnly(rIntOrg int, rIntVariableValue int, version int, sensitive bool) string {
+func testAccTFEVariable_valueWriteOnly(rIntOrg int, rIntVariableValue int, valueVersion int, sensitive bool) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
 	name  = "tst-terraform-%d"
@@ -1055,7 +1055,7 @@ resource "tfe_variable" "foobar" {
   workspace_id = tfe_workspace.foobar.id
   sensitive    = %s
 }
-`, rIntOrg, rIntVariableValue, version, strconv.FormatBool(sensitive))
+`, rIntOrg, rIntVariableValue, valueVersion, strconv.FormatBool(sensitive))
 }
 
 func testAccTFEVariable_valueAndValueWO(rIntOrg int, rIntVariableValue int, sensitive bool) string {
