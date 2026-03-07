@@ -960,13 +960,13 @@ func (u *updateReadableValuePlanModifier) MarkdownDescription(ctx context.Contex
 }
 
 func (u *updateReadableValuePlanModifier) PlanModifyString(ctx context.Context, request planmodifier.StringRequest, response *planmodifier.StringResponse) {
-	var valueWOVersion types.Int64
-	diags := request.Config.GetAttribute(ctx, path.Root("value_wo_version"), &valueWOVersion)
+	var valueWO types.String
+	diags := request.Config.GetAttribute(ctx, path.Root("value_wo"), &valueWO)
 	response.Diagnostics.Append(diags...)
 	if response.Diagnostics.HasError() {
 		return
 	}
-	if valueWOVersion.IsNull() {
+	if valueWO.IsNull() {
 		var sensitive types.Bool
 		diags := request.Plan.GetAttribute(ctx, path.Root("sensitive"), &sensitive)
 		response.Diagnostics.Append(diags...)
