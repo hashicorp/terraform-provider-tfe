@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -17,13 +18,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
-	"github.com/hashicorp/terraform-provider-tfe/internal/provider/planmodifiers"
 	"github.com/hashicorp/terraform-provider-tfe/internal/provider/validators"
 )
 
@@ -52,19 +52,21 @@ type modelTFENotificationConfiguration struct {
 	Enabled         types.Bool   `tfsdk:"enabled"`
 	Token           types.String `tfsdk:"token"`
 	TokenWO         types.String `tfsdk:"token_wo"`
+	TokenWOVersion  types.Int64  `tfsdk:"token_wo_version"`
 	Triggers        types.Set    `tfsdk:"triggers"`
 	URL             types.String `tfsdk:"url"`
 	WorkspaceID     types.String `tfsdk:"workspace_id"`
 }
 
 // modelFromTFENotificationConfiguration builds a modelTFENotificationConfiguration struct from a tfe.NotificationConfiguration value.
-func modelFromTFENotificationConfiguration(v *tfe.NotificationConfiguration, isWriteOnlyValue bool) (modelTFENotificationConfiguration, diag.Diagnostics) {
+func modelFromTFENotificationConfiguration(v *tfe.NotificationConfiguration, tokenWOVersion types.Int64) (modelTFENotificationConfiguration, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	result := modelTFENotificationConfiguration{
 		ID:              types.StringValue(v.ID),
 		Name:            types.StringValue(v.Name),
 		DestinationType: types.StringValue(string(v.DestinationType)),
 		Enabled:         types.BoolValue(v.Enabled),
+		TokenWOVersion:  tokenWOVersion,
 		WorkspaceID:     types.StringValue(v.SubscribableChoice.Workspace.ID),
 	}
 
@@ -103,7 +105,8 @@ func modelFromTFENotificationConfiguration(v *tfe.NotificationConfiguration, isW
 	if v.Token != "" {
 		result.Token = types.StringValue(v.Token)
 	}
-	// Don't retrieve values if write-only is being used. Unset the value and readable_value fields before updating the state.
+	// Don't retrieve values if write-only is being used. Unset the token field before updating the state.
+	isWriteOnlyValue := !tokenWOVersion.IsNull()
 	if isWriteOnlyValue {
 		result.Token = types.StringNull()
 	}
@@ -223,9 +226,43 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 				Description: "Value of the token in write-only mode",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("token")),
+					stringvalidator.AlsoRequires(path.MatchRoot("token_wo_version")),
 				},
 				PlanModifiers: []planmodifier.String{
-					planmodifiers.NewReplaceForWriteOnlyStringValue("token_wo"),
+					stringplanmodifier.RequiresReplaceIf(
+						func(ctx context.Context, req planmodifier.StringRequest, resp *stringplanmodifier.RequiresReplaceIfFuncResponse) {
+							var stateVersion types.Int64
+							diags := req.State.GetAttribute(ctx, path.Root("token_wo_version"), &stateVersion)
+							resp.Diagnostics.Append(diags...)
+							if resp.Diagnostics.HasError() {
+								return
+							}
+							var planVersion types.Int64
+							diags = req.Plan.GetAttribute(ctx, path.Root("token_wo_version"), &planVersion)
+							resp.Diagnostics.Append(diags...)
+							if resp.Diagnostics.HasError() {
+								return
+							}
+
+							if !stateVersion.IsNull() && !planVersion.IsNull() && stateVersion.ValueInt64() != planVersion.ValueInt64() {
+								resp.RequiresReplace = true
+							}
+						},
+						"Force replacement if token_wo_version changed.",
+						"Force replacement if token_wo_version changed.",
+					),
+				},
+			},
+
+			"token_wo_version": schema.Int64Attribute{
+				Optional:    true,
+				Description: "Version of the write-only token to trigger updates",
+				Validators: []validator.Int64{
+					int64validator.ConflictsWith(path.MatchRoot("token")),
+					int64validator.AlsoRequires(path.MatchRoot("token_wo")),
+				},
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.RequiresReplace(),
 				},
 			},
 			"triggers": schema.SetAttribute{
@@ -368,15 +405,8 @@ func (r *resourceTFENotificationConfiguration) Create(ctx context.Context, req r
 	}
 
 	// We got a notification, so set state to new values
-	result, diags := modelFromTFENotificationConfiguration(nc, !config.TokenWO.IsNull())
+	result, diags := modelFromTFENotificationConfiguration(nc, config.TokenWOVersion)
 	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Store the hashed write-only value in the private state
-	store := r.writeOnlyValueStore(resp.Private)
-	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.TokenWO)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -412,13 +442,7 @@ func (r *resourceTFENotificationConfiguration) Read(ctx context.Context, req res
 		nc.Token = state.Token.ValueString()
 	}
 
-	isWriteOnly, diags := r.writeOnlyValueStore(resp.Private).PriorValueExists(ctx)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	result, diags := modelFromTFENotificationConfiguration(nc, isWriteOnly)
+	result, diags := modelFromTFENotificationConfiguration(nc, state.TokenWOVersion)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -451,9 +475,10 @@ func (r *resourceTFENotificationConfiguration) Update(ctx context.Context, req r
 	options := tfe.NotificationConfigurationUpdateOptions{
 		Enabled: plan.Enabled.ValueBoolPointer(),
 		Name:    plan.Name.ValueStringPointer(),
-		Token:   plan.Token.ValueStringPointer(),
 		URL:     plan.URL.ValueStringPointer(),
 	}
+
+	options.Token = r.determineTokenForUpdate(plan, state, config)
 
 	// Add triggers set to the options struct
 	triggers := make([]types.String, len(plan.Triggers.Elements()))
@@ -506,14 +531,7 @@ func (r *resourceTFENotificationConfiguration) Update(ctx context.Context, req r
 		nc.Token = plan.Token.ValueString()
 	}
 
-	// Store the hashed write-only value in the private state
-	store := r.writeOnlyValueStore(resp.Private)
-	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.TokenWO)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	result, diags := modelFromTFENotificationConfiguration(nc, !config.TokenWO.IsNull())
+	result, diags := modelFromTFENotificationConfiguration(nc, config.TokenWOVersion)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -545,6 +563,30 @@ func (r *resourceTFENotificationConfiguration) ImportState(ctx context.Context, 
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
 }
 
-func (r *resourceTFENotificationConfiguration) writeOnlyValueStore(private helpers.PrivateState) *helpers.WriteOnlyValueStore {
-	return helpers.NewWriteOnlyValueStore(private, "token_wo")
+// determineTokenForUpdate returns what token value to send to the API during an update,
+// selecting from plan, state, or config based on four scenarios: switching between token/token_wo,
+// version changes, or regular token changes. Returns nil if no token update is needed.
+func (r *resourceTFENotificationConfiguration) determineTokenForUpdate(plan, state, config modelTFENotificationConfiguration) *string {
+	// Determine if we're using write-only token in plan vs state
+	usingWriteOnlyInPlan := !plan.TokenWOVersion.IsNull()
+	usingWriteOnlyInState := !state.TokenWOVersion.IsNull()
+
+	// Case 1: Switching FROM token TO token_wo
+	if !usingWriteOnlyInState && usingWriteOnlyInPlan && !config.TokenWO.IsNull() {
+		return config.TokenWO.ValueStringPointer()
+	}
+	// Case 2: Switching FROM token_wo TO token
+	if usingWriteOnlyInState && !usingWriteOnlyInPlan && !plan.Token.IsNull() {
+		return plan.Token.ValueStringPointer()
+	}
+	// Case 3: token_wo version changed in plan
+	if usingWriteOnlyInPlan && plan.TokenWOVersion.ValueInt64() != state.TokenWOVersion.ValueInt64() && !config.TokenWO.IsNull() {
+		return config.TokenWO.ValueStringPointer()
+	}
+	// Case 4: Regular token changed. Only set Token if our planned value would be a CHANGE from
+	// the prior state. This prevents accidentally resetting the token on unrelated changes.
+	if state.Token.ValueString() != plan.Token.ValueString() {
+		return plan.Token.ValueStringPointer()
+	}
+	return nil
 }
