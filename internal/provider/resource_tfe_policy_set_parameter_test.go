@@ -342,7 +342,7 @@ resource "tfe_policy_set_parameter" "foobar" {
 }`, organization)
 }
 
-func testAccTFEPolicySetParameter_valueWriteOnly(organization string, version int, value string) string {
+func testAccTFEPolicySetParameter_valueWriteOnly(organization string, valueVersion int, value string) string {
 	return fmt.Sprintf(`
 resource "tfe_policy_set" "foobar" {
   name         = "policy-set-test"
@@ -354,7 +354,7 @@ resource "tfe_policy_set_parameter" "foobar" {
   value_wo           = "%s"
   value_wo_version   = %d
   policy_set_id      = tfe_policy_set.foobar.id
-}`, organization, value, version)
+}`, organization, value, valueVersion)
 }
 
 func testAccTFEPolicySetParameter_valueWriteOnlyMissingVersion(organization string) string {
