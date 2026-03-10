@@ -81,9 +81,30 @@ func TestAccTFESSHKey_update(t *testing.T) {
 	})
 }
 
+func TestAccTFESSHKey_WriteOnlyValidation(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFESSHKeyDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFESSHKey_WriteOnlyMissingVersion(rInt),
+				ExpectError: regexp.MustCompile(`Attribute "key_wo_version" must be specified when "key_wo" is specified`),
+			},
+			{
+				Config:      testAccTFESSHKey_keyAndKeyWO(rInt),
+				ExpectError: regexp.MustCompile(`Attribute "key_wo" cannot be specified when "key" is specified`),
+			},
+		},
+	})
+}
+
 func TestAccTFESSHKey_keyWO(t *testing.T) {
 	sshKey := &tfe.SSHKey{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	versionOne, versionTwo := 1, 2
 
 	// Create the value comparer so we can add state values to it during the test steps
 	compareValuesDiffer := statecheck.CompareValue(compare.ValuesDiffer())
@@ -94,11 +115,7 @@ func TestAccTFESSHKey_keyWO(t *testing.T) {
 		CheckDestroy:             testAccCheckTFEOrganizationRunTaskDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccTFESSHKey_keyAndKeyWO(rInt),
-				ExpectError: regexp.MustCompile(`Attribute "key_wo" cannot be specified when "key" is specified`),
-			},
-			{
-				Config: testAccTFESSHKey_keyWO(rInt, "SSH-KEY-CONTENT"),
+				Config: testAccTFESSHKey_keyWO(rInt, "SSH-KEY-CONTENT", versionOne),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFESSHKeyExists("tfe_ssh_key.foobar", sshKey),
 					testAccCheckTFESSHKeyAttributes(sshKey),
@@ -115,7 +132,7 @@ func TestAccTFESSHKey_keyWO(t *testing.T) {
 				},
 			},
 			{
-				Config: testAccTFESSHKey_keyWO(rInt, "SSH-KEY-CONTENT-UPDATED"),
+				Config: testAccTFESSHKey_keyWO(rInt, "SSH-KEY-CONTENT-UPDATED", versionTwo),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFESSHKeyExists("tfe_ssh_key.foobar", sshKey),
 					testAccCheckTFESSHKeyAttributes(sshKey),
@@ -244,7 +261,7 @@ resource "tfe_ssh_key" "foobar" {
 }`, rInt)
 }
 
-func testAccTFESSHKey_keyWO(rInt int, key string) string {
+func testAccTFESSHKey_keyWO(rInt int, key string, versionValue int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
@@ -255,7 +272,8 @@ resource "tfe_ssh_key" "foobar" {
   name         = "ssh-key-test"
   organization = tfe_organization.foobar.id
   key_wo       = "%s"
-}`, rInt, key)
+  key_wo_version = %d
+}`, rInt, key, versionValue)
 }
 
 func testAccTFESSHKey_keyAndKeyWO(rInt int) string {
@@ -269,6 +287,20 @@ resource "tfe_ssh_key" "foobar" {
   name         = "ssh-key-test"
   organization = tfe_organization.foobar.id
   key          = "SSH-KEY-CONTENT"
+  key_wo       = "SSH-KEY-CONTENT"
+}`, rInt)
+}
+
+func testAccTFESSHKey_WriteOnlyMissingVersion(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_ssh_key" "foobar" {
+  name         = "ssh-key-test"
+  organization = tfe_organization.foobar.id
   key_wo       = "SSH-KEY-CONTENT"
 }`, rInt)
 }
