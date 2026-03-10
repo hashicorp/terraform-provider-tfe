@@ -40,19 +40,9 @@ func TestAccTFEProjectPolicySetExclusion_basic(t *testing.T) {
 				),
 			},
 			{
-				ResourceName: "tfe_project_policy_set_exclusion.test",
-				ImportState:  true,
-				ImportStateIdFunc: func(s *terraform.State) (string, error) {
-					resource := s.RootModule().Resources
-					if resource == nil {
-						return "", fmt.Errorf("resource not found in state: %s", "tfe_project_policy_set_exclusion.test")
-					}
-
-					policySet := resource["tfe_policy_set.test_policy_set"]
-					project := resource["tfe_project.test_project"]
-
-					return fmt.Sprintf("%s/%s", project.Primary.ID, policySet.Primary.ID), nil
-				},
+				ResourceName:      "tfe_project_policy_set_exclusion.test",
+				ImportState:       true,
+				ImportStateIdFunc: testImportIdFunc(),
 				ImportStateVerify: true,
 			},
 		},
@@ -81,7 +71,7 @@ func TestAccTFEProjectPolicySetExclusion_incorrectImportSyntax(t *testing.T) {
 				ResourceName:  "tfe_project_policy_set_exclusion.test",
 				ImportState:   true,
 				ImportStateId: fmt.Sprintf("policy_set_test/%s", "tst-terraform-project-"+fmt.Sprint(rInt)),
-				ExpectError:   regexp.MustCompile(`Error: invalid excluded workspace policy set input format`),
+				ExpectError:   regexp.MustCompile(`Error: Project Not Found During Import`),
 			},
 		},
 	})
@@ -177,4 +167,18 @@ func testAccTFEProjectPolicySetExclusion_basic(orgName string, rInt int) string 
 			policy_set_id = tfe_policy_set.test_policy_set.id
 		}
 	`, rInt, orgName, rInt, orgName)
+}
+
+func testImportIdFunc() resource.ImportStateIdFunc {
+	return func(s *terraform.State) (string, error) {
+		resource := s.RootModule().Resources
+		if resource == nil {
+			return "", fmt.Errorf("resource not found in state: %s", "tfe_project_policy_set_exclusion.test")
+		}
+
+		policySet := resource["tfe_policy_set.test_policy_set"]
+		project := resource["tfe_project.test_project"]
+
+		return fmt.Sprintf("%s/%s", project.Primary.ID, policySet.Primary.ID), nil
+	}
 }
