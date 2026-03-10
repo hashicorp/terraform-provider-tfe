@@ -227,7 +227,7 @@ func TestAccTFEPolicySetParameter_valueWriteOnlyValidation(t *testing.T) {
 			},
 			{
 				Config:      testAccTFEPolicySetParameter_valueVersionConflict(org.Name),
-				ExpectError: regexp.MustCompile(`Attribute "value_wo_version" cannot be specified when "value" is specified`),
+				ExpectError: regexp.MustCompile(`Attribute "value" cannot be specified when "value_wo_version" is specified`),
 			},
 		},
 	})
