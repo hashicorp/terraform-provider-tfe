@@ -10,12 +10,14 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -23,8 +25,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
-	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
-	"github.com/hashicorp/terraform-provider-tfe/internal/provider/planmodifiers"
 	customValidators "github.com/hashicorp/terraform-provider-tfe/internal/provider/validators"
 )
 
@@ -42,27 +42,29 @@ func NewOrganizationRunTaskResource() resource.Resource {
 }
 
 type modelTFEOrganizationRunTaskV0 struct {
-	Category     types.String `tfsdk:"category"`
-	Description  types.String `tfsdk:"description"`
-	Enabled      types.Bool   `tfsdk:"enabled"`
-	HMACKey      types.String `tfsdk:"hmac_key"`
-	ID           types.String `tfsdk:"id"`
-	Name         types.String `tfsdk:"name"`
-	Organization types.String `tfsdk:"organization"`
-	URL          types.String `tfsdk:"url"`
-	HMACKeyWO    types.String `tfsdk:"hmac_key_wo"`
+	Category         types.String `tfsdk:"category"`
+	Description      types.String `tfsdk:"description"`
+	Enabled          types.Bool   `tfsdk:"enabled"`
+	HMACKey          types.String `tfsdk:"hmac_key"`
+	ID               types.String `tfsdk:"id"`
+	Name             types.String `tfsdk:"name"`
+	Organization     types.String `tfsdk:"organization"`
+	URL              types.String `tfsdk:"url"`
+	HMACKeyWO        types.String `tfsdk:"hmac_key_wo"`
+	HMACKeyWOVersion types.Int64  `tfsdk:"hmac_key_wo_version"`
 }
 
-func modelFromTFEOrganizationRunTask(v *tfe.RunTask, hmacKey types.String, isWriteOnlyValue bool) modelTFEOrganizationRunTaskV0 {
+func modelFromTFEOrganizationRunTask(v *tfe.RunTask, hmacKey types.String, hmacKeyWOVersion types.Int64) modelTFEOrganizationRunTaskV0 {
 	result := modelTFEOrganizationRunTaskV0{
-		Category:     types.StringValue(v.Category),
-		Description:  types.StringValue(v.Description),
-		Enabled:      types.BoolValue(v.Enabled),
-		HMACKey:      types.StringValue(""), // This value is never emitted by the API so we inject it later
-		ID:           types.StringValue(v.ID),
-		Name:         types.StringValue(v.Name),
-		Organization: types.StringValue(v.Organization.Name),
-		URL:          types.StringValue(v.URL),
+		Category:         types.StringValue(v.Category),
+		Description:      types.StringValue(v.Description),
+		Enabled:          types.BoolValue(v.Enabled),
+		HMACKey:          types.StringValue(""), // This value is never emitted by the API so we inject it later
+		ID:               types.StringValue(v.ID),
+		Name:             types.StringValue(v.Name),
+		Organization:     types.StringValue(v.Organization.Name),
+		URL:              types.StringValue(v.URL),
+		HMACKeyWOVersion: hmacKeyWOVersion,
 	}
 
 	if len(hmacKey.String()) > 0 {
@@ -70,6 +72,7 @@ func modelFromTFEOrganizationRunTask(v *tfe.RunTask, hmacKey types.String, isWri
 	}
 
 	// Don't retrieve values if write-only is being used. Unset the hmac key field before updating the state.
+	isWriteOnlyValue := !hmacKeyWOVersion.IsNull()
 	if isWriteOnlyValue {
 		result.HMACKey = types.StringValue("")
 	}
@@ -145,6 +148,8 @@ func (r *resourceOrgRunTask) Schema(ctx context.Context, req resource.SchemaRequ
 					stringvalidator.ConflictsWith(path.MatchRoot("hmac_key_wo")),
 				},
 			},
+			// since the hmac_key_wo write-only values are not saved to state, they will not trigger updates on their own.
+			// Instead the hmac_key_wo_version responsibility is to trigger updates to the hmac_key_wo attribute when version number changes.
 			"hmac_key_wo": schema.StringAttribute{
 				Optional:    true,
 				WriteOnly:   true,
@@ -152,9 +157,19 @@ func (r *resourceOrgRunTask) Schema(ctx context.Context, req resource.SchemaRequ
 				Description: "HMAC key in write-only mode",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("hmac_key")),
+					stringvalidator.AlsoRequires(path.MatchRoot("hmac_key_wo_version")),
 				},
-				PlanModifiers: []planmodifier.String{
-					planmodifiers.NewReplaceForWriteOnlyStringValue("hmac_key_wo"),
+			},
+
+			"hmac_key_wo_version": schema.Int64Attribute{
+				Optional:    true,
+				Description: "Version of the write-only HMAC key to trigger updates",
+				Validators: []validator.Int64{
+					int64validator.ConflictsWith(path.MatchRoot("hmac_key")),
+					int64validator.AlsoRequires(path.MatchRoot("hmac_key_wo")),
+				},
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.RequiresReplace(),
 				},
 			},
 			"enabled": schema.BoolAttribute{
@@ -193,13 +208,8 @@ func (r *resourceOrgRunTask) Read(ctx context.Context, req resource.ReadRequest,
 		return
 	}
 
-	isWriteOnly, diags := r.writeOnlyValueStore(resp.Private).PriorValueExists(ctx)
-	resp.Diagnostics.Append(diags...)
-	if diags.HasError() {
-		return
-	}
 	// update state
-	result := modelFromTFEOrganizationRunTask(task, state.HMACKey, isWriteOnly)
+	result := modelFromTFEOrganizationRunTask(task, state.HMACKey, state.HMACKeyWOVersion)
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
@@ -248,10 +258,7 @@ func (r *resourceOrgRunTask) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
-	result := modelFromTFEOrganizationRunTask(task, plan.HMACKey, !config.HMACKeyWO.IsNull())
-	// Store the hashed write-only value in the private state
-	store := r.writeOnlyValueStore(resp.Private)
-	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.HMACKeyWO)...)
+	result := modelFromTFEOrganizationRunTask(task, plan.HMACKey, config.HMACKeyWOVersion)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
@@ -290,9 +297,7 @@ func (r *resourceOrgRunTask) Update(ctx context.Context, req resource.UpdateRequ
 
 	// HMAC Key is a write-only value so we should only send it if
 	// it really has changed.
-	if plan.HMACKey.ValueString() != state.HMACKey.ValueString() {
-		options.HMACKey = plan.HMACKey.ValueStringPointer()
-	}
+	options.HMACKey = r.determineHMACKeyForUpdate(plan, state, config)
 
 	taskID := plan.ID.ValueString()
 
@@ -304,14 +309,7 @@ func (r *resourceOrgRunTask) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 
-	// Store the hashed write-only value in the private state
-	store := r.writeOnlyValueStore(resp.Private)
-	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.HMACKeyWO)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	result := modelFromTFEOrganizationRunTask(task, plan.HMACKey, !config.HMACKeyWO.IsNull())
+	result := modelFromTFEOrganizationRunTask(task, plan.HMACKey, config.HMACKeyWOVersion)
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
@@ -363,11 +361,32 @@ func (r *resourceOrgRunTask) ImportState(ctx context.Context, req resource.Impor
 		)
 	} else {
 		// We can never import the HMACkey (Write-only) so assume it's the default (empty)
-		result := modelFromTFEOrganizationRunTask(task, types.StringValue(""), false)
+		result := modelFromTFEOrganizationRunTask(task, types.StringValue(""), types.Int64Null())
 		resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 	}
 }
 
-func (r *resourceOrgRunTask) writeOnlyValueStore(private helpers.PrivateState) *helpers.WriteOnlyValueStore {
-	return helpers.NewWriteOnlyValueStore(private, "hmac_key_wo")
+func (r *resourceOrgRunTask) determineHMACKeyForUpdate(plan, state, config modelTFEOrganizationRunTaskV0) *string {
+	// Determine if we're using write-only HMAC key in plan vs state
+	usingWriteOnlyInPlan := !plan.HMACKeyWOVersion.IsNull()
+	usingWriteOnlyInState := !state.HMACKeyWOVersion.IsNull()
+
+	// Case 1: Switching FROM hmac_key TO hmac_key_wo
+	if !usingWriteOnlyInState && usingWriteOnlyInPlan && !config.HMACKeyWO.IsNull() {
+		return config.HMACKeyWO.ValueStringPointer()
+	}
+	// Case 2: Switching FROM hmac_key_wo TO hmac_key
+	if usingWriteOnlyInState && !usingWriteOnlyInPlan && !plan.HMACKey.IsNull() {
+		return plan.HMACKey.ValueStringPointer()
+	}
+	// Case 3: hmac_key_wo version changed in plan
+	if usingWriteOnlyInPlan && plan.HMACKeyWOVersion.ValueInt64() != state.HMACKeyWOVersion.ValueInt64() && !config.HMACKeyWO.IsNull() {
+		return config.HMACKeyWO.ValueStringPointer()
+	}
+	// Case 4: Regular hmac_key changed. Only set HMACKey if our planned value would be a CHANGE from
+	// the prior state. This prevents accidentally resetting the HMAC key on unrelated changes.
+	if state.HMACKey.ValueString() != plan.HMACKey.ValueString() {
+		return plan.HMACKey.ValueStringPointer()
+	}
+	return nil
 }
