@@ -23,7 +23,29 @@ resource "tfe_saml_settings" "this" {
   idp_cert         = "foobarCertificate"
   slo_endpoint_url = "https://example.com/slo_endpoint_url"
   sso_endpoint_url = "https://example.com/sso_endpoint_url"
- }
+}
+```
+
+With write-only private key:
+
+```hcl
+variable "private_key" {
+  type      = string
+  ephemeral = true
+}
+
+provider "tfe" {
+  hostname = var.hostname
+  token    = var.admin_token
+}
+
+resource "tfe_saml_settings" "this" {
+  idp_cert              = "foobarCertificate"
+  slo_endpoint_url      = "https://example.com/slo_endpoint_url"
+  sso_endpoint_url      = "https://example.com/sso_endpoint_url"
+  private_key_wo        = var.private_key
+  private_key_wo_version = 1
+}
 ```
 
 ## Argument Reference
@@ -44,7 +66,8 @@ The following arguments are supported:
 * `sso_api_token_session_timeout` - (Optional) Specifies the Single Sign On session timeout in seconds. Defaults to 14 days.
 * `certificate` - (Optional) The certificate used for request and assertion signing.
 * `private_key` - (Optional) The private key used for request and assertion signing.
-* `private_key_wo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) The private key used for request and assertion signing, guaranteed not to be written to plan or state artifacts. Either `private_key` or `private_key_wo` can be provided, but not both.
+* `private_key_wo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) The private key used for request and assertion signing, guaranteed not to be written to plan or state artifacts. Either `private_key` or `private_key_wo` can be provided, but not both. Must be used with `private_key_wo_version`.
+* `private_key_wo_version` - (Optional) Version of the write-only private key. This field is used to trigger updates when the write-only private key changes. Must be used with `private_key_wo`. When `private_key_wo_version` changes, the write-only private key will be updated.
 * `signature_signing_method` - (Optional) Signature Signing Method. Must be either `SHA1` or `SHA256`. Defaults to `SHA256`.
 * `signature_digest_method` - (Optional) Signature Digest Method. Must be either `SHA1` or `SHA256`. Defaults to `SHA256`.
 

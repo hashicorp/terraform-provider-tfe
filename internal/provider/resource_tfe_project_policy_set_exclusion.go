@@ -151,7 +151,6 @@ func (r *resourceTFEProjectPolicySetExclusionParameter) Create(ctx context.Conte
 	})
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
-	fmt.Printf("Project exclusion with project ID %s added to policy set %s", plan.ProjectID.ValueString(), plan.PolicySetID.ValueString())
 
 	if resp.Diagnostics.HasError() {
 		tflog.Debug(ctx, "Failed to set state for project exclusion of policy set after creation", map[string]interface{}{

@@ -64,7 +64,7 @@ jobs:
     needs: [ tests ]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: 20
 
@@ -78,7 +78,7 @@ jobs:
         run: jrm ./ci-summary-provider.xml "junit-test-summary-0/*.xml" "junit-test-summary-1/*.xml" "junit-test-summary-2/*.xml" "junit-test-summary-3/*.xml" "junit-test-summary-4/*.xml" "junit-test-summary-5/*.xml" "junit-test-summary-6/*.xml" "junit-test-summary-7/*.xml" "junit-test-summary-workspace-run/*.xml"
 
       - name: Upload test artifacts
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: junit-test-summary
           path: ./ci-summary-provider.xml
