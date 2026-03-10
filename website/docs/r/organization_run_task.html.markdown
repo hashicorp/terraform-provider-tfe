@@ -25,6 +25,20 @@ resource "tfe_organization_run_task" "example" {
 }
 ```
 
+With write-only HMAC key:
+
+```hcl
+resource "tfe_organization_run_task" "example" {
+  organization       = "org-name"
+  url                = "https://external.service.com"
+  name               = "task-name"
+  enabled            = true
+  description        = "An example task"
+  hmac_key_wo        = var.hmac_key
+  hmac_key_wo_version = 1
+}
+```
+
 ## Argument Reference
 
 The following arguments are supported:
@@ -33,7 +47,8 @@ The following arguments are supported:
 * `enabled` - (Optional) Whether the task will be run.
 * `description` - (Optional) A short description of the the task.
 * `hmac_key` - (Optional) HMAC key to verify run task.
-* `hmac_key_wo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) Write-only HMAC key to verify run task. Either `hmac_key` or `hmac_key_wo` can be provided, but not both.
+* `hmac_key_wo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) Write-only HMAC key to verify run task. Either `hmac_key` or `hmac_key_wo` can be provided, but not both. Must be used with `hmac_key_wo_version`.
+* `hmac_key_wo_version` - (Optional) Version of the write-only HMAC key. This field is used to trigger updates when the write-only HMAC key changes. Must be used with `hmac_key_wo`. When `hmac_key_wo_version` changes, the write-only HMAC key will be updated.
 
 * `name` - (Required) Name of the task.
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
