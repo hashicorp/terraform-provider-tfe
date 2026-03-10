@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -22,8 +23,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
-	"github.com/hashicorp/terraform-provider-tfe/internal/provider/planmodifiers"
 	"github.com/hashicorp/terraform-provider-tfe/internal/provider/validators"
 )
 
@@ -53,15 +52,16 @@ type modelTFETeamNotificationConfiguration struct {
 	EmailUserIDs    types.Set    `tfsdk:"email_user_ids"`
 	Enabled         types.Bool   `tfsdk:"enabled"`
 	Token           types.String `tfsdk:"token"`
+	TokenWO         types.String `tfsdk:"token_wo"`
+	TokenWOVersion  types.Int64  `tfsdk:"token_wo_version"`
 	Triggers        types.Set    `tfsdk:"triggers"`
 	URL             types.String `tfsdk:"url"`
 	TeamID          types.String `tfsdk:"team_id"`
-	TokenWO         types.String `tfsdk:"token_wo"`
 }
 
 // modelFromTFETeamNotificationConfiguration builds a modelTFETeamNotificationConfiguration
 // struct from a tfe.TeamNotificationConfiguration value.
-func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration, isWriteOnly bool, lastValue types.String) (*modelTFETeamNotificationConfiguration, diag.Diagnostics) {
+func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration, tokenWOVersion types.Int64) (*modelTFETeamNotificationConfiguration, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	result := modelTFETeamNotificationConfiguration{
 		ID:              types.StringValue(v.ID),
@@ -69,6 +69,7 @@ func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration,
 		DestinationType: types.StringValue(string(v.DestinationType)),
 		Enabled:         types.BoolValue(v.Enabled),
 		TeamID:          types.StringValue(v.SubscribableChoice.Team.ID),
+		TokenWOVersion:  tokenWOVersion,
 		Token:           types.StringValue(""),
 	}
 
@@ -104,11 +105,12 @@ func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration,
 		result.EmailUserIDs = types.SetValueMust(types.StringType, emailUserIDs)
 	}
 
-	if lastValue.String() != "" {
-		result.Token = lastValue
+	if v.Token != "" {
+		result.Token = types.StringValue(v.Token)
 	}
-
-	if isWriteOnly {
+	// Don't retrieve values if write-only is being used. Unset the token field before updating the state.
+	isWriteOnlyValue := !tokenWOVersion.IsNull()
+	if isWriteOnlyValue {
 		result.Token = types.StringNull()
 	}
 
@@ -200,7 +202,8 @@ func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, r
 					stringvalidator.PreferWriteOnlyAttribute(path.MatchRoot("token_wo")),
 				},
 			},
-
+			// since the token_wo write-only values are not saved to state, they will not trigger updates on their own.
+			// Instead the token_wo_version responsibility is to trigger updates to the token_wo attribute when version number changes.
 			"token_wo": schema.StringAttribute{
 				Description: "A write-only secure token for the notification configuration, guaranteed not to be written to plan or state artifacts.",
 				Optional:    true,
@@ -212,9 +215,16 @@ func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, r
 						[]string{"email", "microsoft-teams", "slack"},
 					),
 					stringvalidator.ConflictsWith(path.MatchRoot("token")),
+					stringvalidator.AlsoRequires(path.MatchRoot("token_wo_version")),
 				},
-				PlanModifiers: []planmodifier.String{
-					planmodifiers.NewReplaceForWriteOnlyStringValue("token_wo"),
+			},
+
+			"token_wo_version": schema.Int64Attribute{
+				Optional:    true,
+				Description: "Version of the write-only token to trigger updates",
+				Validators: []validator.Int64{
+					int64validator.ConflictsWith(path.MatchRoot("token")),
+					int64validator.AlsoRequires(path.MatchRoot("token_wo")),
 				},
 			},
 
@@ -304,8 +314,7 @@ func (r *resourceTFETeamNotificationConfiguration) Create(ctx context.Context, r
 	}
 
 	// Set Token from `token_wo` if set, otherwise use the normal value
-	isWriteOnly := !config.TokenWO.IsNull()
-	if isWriteOnly {
+	if !config.TokenWO.IsNull() {
 		options.Token = config.TokenWO.ValueStringPointer()
 	} else {
 		options.Token = plan.Token.ValueStringPointer()
@@ -360,18 +369,9 @@ func (r *resourceTFETeamNotificationConfiguration) Create(ctx context.Context, r
 		tnc.Token = plan.Token.ValueString()
 	}
 
-	result, diags := modelFromTFETeamNotificationConfiguration(tnc, isWriteOnly, plan.Token)
+	result, diags := modelFromTFETeamNotificationConfiguration(tnc, config.TokenWOVersion)
 	if diags.HasError() {
 		resp.Diagnostics.Append(diags...)
-		return
-	}
-
-	// Write the hashed private token to the state if it was provided
-	store := r.writeOnlyValueStore(resp.Private)
-	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.TokenWO)...)
-
-	if diags.HasError() {
-		resp.Diagnostics.Append((diags)...)
 		return
 	}
 
@@ -401,14 +401,7 @@ func (r *resourceTFETeamNotificationConfiguration) Read(ctx context.Context, req
 		return
 	}
 
-	// Check if the parameter is write-only
-	isWriteOnly, diags := r.writeOnlyValueStore(resp.Private).PriorValueExists(ctx)
-	resp.Diagnostics.Append(diags...)
-	if diags.HasError() {
-		return
-	}
-
-	result, diags := modelFromTFETeamNotificationConfiguration(tnc, isWriteOnly, state.Token)
+	result, diags := modelFromTFETeamNotificationConfiguration(tnc, state.TokenWOVersion)
 	if diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return
@@ -428,7 +421,11 @@ func (r *resourceTFETeamNotificationConfiguration) Update(ctx context.Context, r
 
 	// Read Terraform prior state data into the model
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	// Read configuration data into the model
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -437,9 +434,10 @@ func (r *resourceTFETeamNotificationConfiguration) Update(ctx context.Context, r
 	options := tfe.NotificationConfigurationUpdateOptions{
 		Enabled: plan.Enabled.ValueBoolPointer(),
 		Name:    plan.Name.ValueStringPointer(),
-		Token:   plan.Token.ValueStringPointer(),
 		URL:     plan.URL.ValueStringPointer(),
 	}
+
+	options.Token = r.determineTokenForUpdate(plan, state, config)
 
 	// Add triggers set to the options struct
 	triggers := make([]types.String, len(plan.Triggers.Elements()))
@@ -484,15 +482,11 @@ func (r *resourceTFETeamNotificationConfiguration) Update(ctx context.Context, r
 		return
 	}
 
-	result, diags := modelFromTFETeamNotificationConfiguration(tnc, !config.TokenWO.IsNull(), plan.Token)
+	result, diags := modelFromTFETeamNotificationConfiguration(tnc, config.TokenWOVersion)
 	if diags.HasError() {
 		resp.Diagnostics.Append((diags)...)
 		return
 	}
-
-	// Write the hashed private key to the state if it was provided
-	store := r.writeOnlyValueStore(resp.Private)
-	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.TokenWO)...)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
@@ -520,6 +514,30 @@ func (r *resourceTFETeamNotificationConfiguration) ImportState(ctx context.Conte
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
 }
 
-func (r *resourceTFETeamNotificationConfiguration) writeOnlyValueStore(private helpers.PrivateState) *helpers.WriteOnlyValueStore {
-	return helpers.NewWriteOnlyValueStore(private, "token_wo")
+// determineTokenForUpdate returns what token value to send to the API during an update,
+// selecting from plan, state, or config based on four scenarios: switching between token/token_wo,
+// version changes, or regular token changes. Returns nil if no token update is needed.
+func (r *resourceTFETeamNotificationConfiguration) determineTokenForUpdate(plan, state, config modelTFETeamNotificationConfiguration) *string {
+	// Determine if we're using write-only token in plan vs state
+	usingWriteOnlyInPlan := !plan.TokenWOVersion.IsNull()
+	usingWriteOnlyInState := !state.TokenWOVersion.IsNull()
+
+	// Case 1: Switching FROM token TO token_wo
+	if !usingWriteOnlyInState && usingWriteOnlyInPlan && !config.TokenWO.IsNull() {
+		return config.TokenWO.ValueStringPointer()
+	}
+	// Case 2: Switching FROM token_wo TO token
+	if usingWriteOnlyInState && !usingWriteOnlyInPlan && !plan.Token.IsNull() {
+		return plan.Token.ValueStringPointer()
+	}
+	// Case 3: token_wo version changed in plan
+	if usingWriteOnlyInPlan && plan.TokenWOVersion.ValueInt64() != state.TokenWOVersion.ValueInt64() && !config.TokenWO.IsNull() {
+		return config.TokenWO.ValueStringPointer()
+	}
+	// Case 4: Regular token changed. Only set Token if our planned value would be a CHANGE from
+	// the prior state. This prevents accidentally resetting the token on unrelated changes.
+	if state.Token.ValueString() != plan.Token.ValueString() {
+		return plan.Token.ValueStringPointer()
+	}
+	return nil
 }
