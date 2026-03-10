@@ -187,6 +187,40 @@ func TestAccTFEOrganizationRunTask_Read(t *testing.T) {
 	})
 }
 
+func TestAccTFEOrganizationRunTask_HMACWriteOnlyValidation(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFEOrganizationRunTask_hmacAndHMACWriteOnly(org.Name, rInt, runTasksURL()),
+				ExpectError: regexp.MustCompile(`Attribute "hmac_key_wo" cannot be specified when "hmac_key" is specified`),
+			},
+			{
+				Config:      testAccTFEOrganizationRunTask_hmacWriteOnlyMissingVersion(org.Name, rInt, runTasksURL(), "some-key"),
+				ExpectError: regexp.MustCompile(`Attribute "hmac_key_wo_version" must be specified when "hmac_key_wo" is\s+specified`),
+			},
+			{
+				Config:      testAccTFEOrganizationRunTask_versionMissingHMACKey(org.Name, rInt, runTasksURL()),
+				ExpectError: regexp.MustCompile(`Attribute "hmac_key_wo" must be specified when "hmac_key_wo_version" is\s+specified`),
+			},
+			{
+				Config:      testAccTFEOrganizationRunTask_hmacVersionConflict(org.Name, rInt, runTasksURL()),
+				ExpectError: regexp.MustCompile(`Attribute "hmac_key" cannot be specified when "hmac_key_wo_version" is\s+specified`),
+			},
+		},
+	})
+}
+
 func TestAccTFEOrganizationRunTask_HMACWriteOnly(t *testing.T) {
 	skipUnlessRunTasksDefined(t)
 
@@ -215,15 +249,12 @@ func TestAccTFEOrganizationRunTask_HMACWriteOnly(t *testing.T) {
 		CheckDestroy:             testAccCheckTFEOrganizationRunTaskDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccTFEOrganizationRunTask_hmacAndHMACWriteOnly(org.Name, rInt, runTasksURL()),
-				ExpectError: regexp.MustCompile(`Attribute "hmac_key_wo" cannot be specified when "hmac_key" is specified`),
-			},
-			{
 				Config: testAccTFEOrganizationRunTask_hmacWriteOnly(org.Name, rInt, runTasksURL(), hmacKey),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationRunTaskExists("tfe_organization_run_task.foobar", runTask),
 					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "hmac_key", ""),
 					resource.TestCheckNoResourceAttr("tfe_organization_run_task.foobar", "hmac_key_wo"),
+					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "hmac_key_wo_version", "1"),
 				),
 				// Register the id with the value comparer so we can assert that the
 				// resource has been replaced in the next step.
@@ -239,6 +270,7 @@ func TestAccTFEOrganizationRunTask_HMACWriteOnly(t *testing.T) {
 					testAccCheckTFEOrganizationRunTaskExists("tfe_organization_run_task.foobar", runTask),
 					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "hmac_key", hmacKey),
 					resource.TestCheckNoResourceAttr("tfe_organization_run_task.foobar", "hmac_key_wo"),
+					resource.TestCheckNoResourceAttr("tfe_organization_run_task.foobar", "hmac_key_wo_version"),
 				),
 				// Ensure that the resource has been replaced
 				ConfigStateChecks: []statecheck.StateCheck{
@@ -328,6 +360,7 @@ func testAccTFEOrganizationRunTask_hmacWriteOnly(orgName string, rInt int, runTa
 		name         = "foobar-task-%d"
 		enabled      = false
 		hmac_key_wo  = "%s"
+		hmac_key_wo_version = 1
 	}
 	`, orgName, runTaskURL, rInt, runTaskHMACKey)
 }
@@ -341,6 +374,43 @@ func testAccTFEOrganizationRunTask_hmacAndHMACWriteOnly(orgName string, rInt int
 		enabled      = false
 		hmac_key     = "foo"
 		hmac_key_wo  = "foo"
+	}
+	`, orgName, runTaskURL, rInt)
+}
+
+func testAccTFEOrganizationRunTask_hmacWriteOnlyMissingVersion(orgName string, rInt int, runTaskURL, runTaskHMACKey string) string {
+	return fmt.Sprintf(`
+	resource "tfe_organization_run_task" "foobar" {
+		organization = "%s"
+		url          = "%s"
+		name         = "foobar-task-%d"
+		enabled      = false
+		hmac_key_wo  = "%s"
+	}
+	`, orgName, runTaskURL, rInt, runTaskHMACKey)
+}
+
+func testAccTFEOrganizationRunTask_versionMissingHMACKey(orgName string, rInt int, runTaskURL string) string {
+	return fmt.Sprintf(`
+	resource "tfe_organization_run_task" "foobar" {
+		organization = "%s"
+		url          = "%s"
+		name         = "foobar-task-%d"
+		enabled      = false
+		hmac_key_wo_version = 1
+	}
+	`, orgName, runTaskURL, rInt)
+}
+
+func testAccTFEOrganizationRunTask_hmacVersionConflict(orgName string, rInt int, runTaskURL string) string {
+	return fmt.Sprintf(`
+	resource "tfe_organization_run_task" "foobar" {
+		organization = "%s"
+		url          = "%s"
+		name         = "foobar-task-%d"
+		enabled      = false
+		hmac_key     = "foo"
+		hmac_key_wo_version = 1
 	}
 	`, orgName, runTaskURL, rInt)
 }
