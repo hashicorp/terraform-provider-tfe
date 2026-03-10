@@ -151,30 +151,6 @@ func (r *resourceTFEPolicySetParameter) Schema(ctx context.Context, req resource
 					stringvalidator.ConflictsWith(path.MatchRoot("value")),
 					stringvalidator.AlsoRequires(path.MatchRoot("value_wo_version")),
 				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplaceIf(
-						func(ctx context.Context, req planmodifier.StringRequest, resp *stringplanmodifier.RequiresReplaceIfFuncResponse) {
-							var stateVersion types.Int64
-							diags := req.State.GetAttribute(ctx, path.Root("value_wo_version"), &stateVersion)
-							resp.Diagnostics.Append(diags...)
-							if resp.Diagnostics.HasError() {
-								return
-							}
-							var planVersion types.Int64
-							diags = req.Plan.GetAttribute(ctx, path.Root("value_wo_version"), &planVersion)
-							resp.Diagnostics.Append(diags...)
-							if resp.Diagnostics.HasError() {
-								return
-							}
-
-							if !stateVersion.IsNull() && !planVersion.IsNull() && stateVersion.ValueInt64() != planVersion.ValueInt64() {
-								resp.RequiresReplace = true
-							}
-						},
-						"Force replacement if value_wo_version changed.",
-						"Force replacement if value_wo_version changed.",
-					),
-				},
 			},
 
 			"value_wo_version": schema.Int64Attribute{
