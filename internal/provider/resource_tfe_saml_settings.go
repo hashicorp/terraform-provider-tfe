@@ -15,6 +15,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -248,6 +250,9 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 					int64validator.ConflictsWith(path.MatchRoot("private_key")),
 					int64validator.AlsoRequires(path.MatchRoot("private_key_wo")),
 				},
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.RequiresReplace(),
+				},
 			},
 			"signature_signing_method": schema.StringAttribute{
 				Description: fmt.Sprintf("Signature Signing Method. Must be either `%s` or `%s`. Defaults to `%s`", samlSignatureMethodSHA1, samlSignatureMethodSHA256, samlSignatureMethodSHA256),
@@ -348,8 +353,17 @@ func (r *resourceTFESAMLSettings) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
-	if !config.PrivateKeyWO.IsNull() {
-		m.PrivateKey = config.PrivateKeyWO
+	var state modelTFESAMLSettings
+	diags = req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if privateKey := r.determinePrivateKeyForUpdate(m, state, config); privateKey != nil {
+		m.PrivateKey = types.StringValue(*privateKey)
+	} else {
+		m.PrivateKey = types.StringNull()
 	}
 
 	tflog.Debug(ctx, "Update SAML Settings")
@@ -422,6 +436,34 @@ var (
 // NewSAMLSettingsResource is a resource function for the framework provider.
 func NewSAMLSettingsResource() resource.Resource {
 	return &resourceTFESAMLSettings{}
+}
+
+// determinePrivateKeyForUpdate returns what private key value to send to the API during an update,
+// selecting from plan, state, or config based on four scenarios: switching between private_key/private_key_wo,
+// version changes, or regular private_key changes. Returns nil if no private key update is needed.
+func (r *resourceTFESAMLSettings) determinePrivateKeyForUpdate(plan, state, config modelTFESAMLSettings) *string {
+	// Determine if we're using write-only private key in plan vs state
+	usingWriteOnlyInPlan := !plan.PrivateKeyWOVersion.IsNull()
+	usingWriteOnlyInState := !state.PrivateKeyWOVersion.IsNull()
+
+	// Case 1: Switching FROM private_key TO private_key_wo
+	if !usingWriteOnlyInState && usingWriteOnlyInPlan && !config.PrivateKeyWO.IsNull() {
+		return config.PrivateKeyWO.ValueStringPointer()
+	}
+	// Case 2: Switching FROM private_key_wo TO private_key
+	if usingWriteOnlyInState && !usingWriteOnlyInPlan && !plan.PrivateKey.IsNull() {
+		return plan.PrivateKey.ValueStringPointer()
+	}
+	// Case 3: private_key_wo version changed in plan
+	if usingWriteOnlyInPlan && plan.PrivateKeyWOVersion.ValueInt64() != state.PrivateKeyWOVersion.ValueInt64() && !config.PrivateKeyWO.IsNull() {
+		return config.PrivateKeyWO.ValueStringPointer()
+	}
+	// Case 4: Regular private_key changed. Only set PrivateKey if our planned value would be a CHANGE from
+	// the prior state. This prevents accidentally resetting the private key on unrelated changes.
+	if state.PrivateKey.ValueString() != plan.PrivateKey.ValueString() {
+		return plan.PrivateKey.ValueStringPointer()
+	}
+	return nil
 }
 
 // updateSAMLSettings was created to keep the code DRY. It is used in both Create and Update functions
