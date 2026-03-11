@@ -18,7 +18,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -160,9 +159,6 @@ func (r *resourceTFEPolicySetParameter) Schema(ctx context.Context, req resource
 					int64validator.ConflictsWith(path.MatchRoot("value")),
 					int64validator.AlsoRequires(path.MatchRoot("value_wo")),
 				},
-				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.RequiresReplace(),
-				},
 			},
 
 			"sensitive": schema.BoolAttribute{
@@ -235,7 +231,6 @@ func (r *resourceTFEPolicySetParameter) Create(ctx context.Context, req resource
 		return
 	}
 
-	// We got a parameter, so set state to new values
 	result := modelFromTFEPolicySetParameter(p, plan.Value, config.ValueWOVersion)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
