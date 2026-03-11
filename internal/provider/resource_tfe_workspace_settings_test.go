@@ -305,7 +305,7 @@ func TestAccTFEWorkspaceSettingsRemoteState(t *testing.T) {
 			},
 			// Set both global and project remote state
 			{
-				Config:      testAccTFEWorkspaceSettingsRemoteState_GlobalProjectConflict(ws.ID, ws2.ID),
+				Config:      testAccTFEWorkspaceSettingsRemoteState_GlobalProjectConflict(ws.ID),
 				ExpectError: regexp.MustCompile("Invalid configuration"),
 			},
 		},
@@ -557,15 +557,14 @@ resource "tfe_workspace_settings" "foobar" {
 `, workspaceID, workspaceID2)
 }
 
-func testAccTFEWorkspaceSettingsRemoteState_GlobalProjectConflict(workspaceID, workspaceID2 string) string {
+func testAccTFEWorkspaceSettingsRemoteState_GlobalProjectConflict(workspaceID string) string {
 	return fmt.Sprintf(`
 resource "tfe_workspace_settings" "foobar" {
 	workspace_id              = "%s"
 	global_remote_state       = true
   	project_remote_state      = true
-	remote_state_consumer_ids = ["%s"]
 }
-`, workspaceID, workspaceID2)
+`, workspaceID)
 }
 
 func testAccTFEWorkspaceSettings_basic(workspaceID string) string {
@@ -661,7 +660,7 @@ resource "tfe_workspace_settings" "test" {
 	workspace_id = tfe_workspace.test.id
 	tags = {
 	  keyA = "valueA"
-	  keyB = "valueB"	
+	  keyB = "valueB"
 	}
 }
 `
