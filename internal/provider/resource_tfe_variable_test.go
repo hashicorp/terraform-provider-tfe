@@ -203,8 +203,7 @@ func TestAccTFEVariable_valueWriteOnly(t *testing.T) {
 
 	variableValue1 := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	variableValue2 := variableValue1 + 42
-	versionOne := 1
-	versionTwo := 2
+	versionOne, versionTwo := 1, 2
 
 	resource.Test(t, resource.TestCase{
 		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
@@ -322,6 +321,10 @@ func TestAccTFEVariable_updateValueWriteOnlyToValue(t *testing.T) {
 						"tfe_variable.foobar", variable),
 					resource.TestCheckResourceAttr(
 						"tfe_variable.foobar", "value", ""),
+					resource.TestCheckNoResourceAttr(
+						"tfe_variable.foobar", "value_wo"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "value_wo_version", "1"),
 				),
 			},
 			{
@@ -331,6 +334,10 @@ func TestAccTFEVariable_updateValueWriteOnlyToValue(t *testing.T) {
 						"tfe_variable.foobar", variable),
 					resource.TestCheckResourceAttr(
 						"tfe_variable.foobar", "value", "value_test"),
+					resource.TestCheckNoResourceAttr(
+						"tfe_variable.foobar", "value_wo"),
+					resource.TestCheckNoResourceAttr(
+						"tfe_variable.foobar", "value_wo_version"),
 				),
 			},
 		},
