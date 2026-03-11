@@ -146,6 +146,7 @@ func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource
 		NewHYOKCustomerKeyVersionDataSource,
 		NewHYOKEncryptedDataKeyDataSource,
 		NewNoCodeModuleDataSource,
+		NewOrgMaxTokenTTLPolicyDataSource,
 		NewOrganizationAuditConfigurationDataSource,
 		NewOrganizationRunTaskDataSource,
 		NewOrganizationRunTaskGlobalSettingsDataSource,
@@ -167,6 +168,7 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 	return []func() resource.Resource{
 		NewAuditTrailTokenResource,
 		NewDataRetentionPolicyResource,
+		NewOrgMaxTokenTTLPolicyResource,
 		NewOrganizationDefaultSettings,
 		NewOrganizationRunTaskGlobalSettingsResource,
 		NewOrganizationRunTaskResource,
