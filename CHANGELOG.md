@@ -3,6 +3,9 @@
 FEATURES:
 * Adds `tfe_query_run` action, allowing users to invoke remote Terraform queries on HCP Terraform and Terraform Enterprise, by @sebasslash [#1982](https://github.com/hashicorp/terraform-provider-tfe/pull/1982)
 
+BUG FIXES:
+* `r/tfe_saml_settings`: Added the `private_key_wo_version` write-only attribute to allow triggering `private_key_wo` updates, by @uk1288 ([#1993](https://github.com/hashicorp/terraform-provider-tfe/pull/1993))
+
 ## v0.74.1
 
 BUG FIXES:
