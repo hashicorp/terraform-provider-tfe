@@ -7,7 +7,7 @@ description: |-
 
 # Data Source: tfe_current_user
 
-Use this data source to get information about the current user associated with the API token used to configure the provider.
+Use this data source to get information about the current user associated with the API token used to configure the provider. When authenticated with a team or organization token, HCP Terraform returns a synthetic service user rather than a real user account, so attributes like `email` and `username` will not reflect a real person.
 
 ## Example Usage
 
