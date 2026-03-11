@@ -59,8 +59,7 @@ func TestAccTFETestVariable_valueWriteOnly(t *testing.T) {
 
 	variableValue1 := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	variableValue2 := variableValue1 + 42
-	versionOne := 1
-	versionTwo := 2
+	versionOne, versionTwo := 1, 2
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
