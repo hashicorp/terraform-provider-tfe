@@ -95,7 +95,7 @@ func TestAccTFESAMLSettings_writeOnlyValidation(t *testing.T) {
 			},
 			{
 				Config:      testAccTFESAMLSettings_privateKeyVersionConflict(),
-				ExpectError: regexp.MustCompile(`Attribute "private_key_wo_version" cannot be specified when "private_key" is\s+specified`),
+				ExpectError: regexp.MustCompile(`Attribute "private_key" cannot be specified when "private_key_wo_version" is\s+specified`),
 			},
 		},
 	})
