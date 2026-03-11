@@ -2,10 +2,16 @@
 FEATURES:
 * Adds a warning message to `r/tfe_team_token`, `r/tfe_organization_token` and `r/tfe_audit_trail_token` resources to indicate that if no `expired_at` attribute is set, the token will expire in 2 years. By @sana-faraz [#1976](https://github.com/hashicorp/terraform-provider-tfe/pull/1976)
 
+FEATURES:
+* Adds `tfe_query_run` action, allowing users to invoke remote Terraform queries on HCP Terraform and Terraform Enterprise, by @sebasslash [#1982](https://github.com/hashicorp/terraform-provider-tfe/pull/1982)
+
+## v0.74.1
+
 BUG FIXES:
 * `r/tfe_stack`: Fixed a bug where omitting the `speculative_enabled` attribute caused plans to fail. The attribute is optional and defaults to `false` if not provided. By @arunatibm [#1972](https://github.com/hashicorp/terraform-provider-tfe/pull/1972)
 * `r/tfe_registry_module`: Adds support for `name` and `module_provider` alongside `vcs_repo` with `source_directory`, by @jillirami [#1959](https://github.com/hashicorp/terraform-provider-tfe/pull/1959)
 * `r/tfe_organization`: Prefer backend default for argument `stacks_enabled` by @brandonc [#1978](https://github.com/hashicorp/terraform-provider-tfe/pull/1978)
+* `r/tfe_variable`, `r/tfe_project`, `r/tfe_stack`: Fixes Missing Identity After Update error after provider version upgrade, by @sebasslash [#1977](https://github.com/hashicorp/terraform-provider-tfe/pull/1977)
 
 ## v0.74.0
 

@@ -311,6 +311,17 @@ func (r *resourceTFEStack) Update(ctx context.Context, req resource.UpdateReques
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+
+	currentIdentity := &modelTFEStackIdentity{}
+	resp.Diagnostics.Append(req.Identity.Get(ctx, &currentIdentity)...)
+	// Only set the identity if it is null/empty in the current state
+	if !resp.Diagnostics.HasError() && (currentIdentity == nil || currentIdentity.ID.IsNull()) {
+		identity := modelTFEStackIdentity{
+			ID:       result.ID,
+			Hostname: types.StringValue(r.config.Client.BaseURL().Host),
+		}
+		resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
+	}
 }
 
 func (r *resourceTFEStack) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {

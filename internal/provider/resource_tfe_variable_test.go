@@ -529,6 +529,38 @@ func TestAccTFEVariable_import(t *testing.T) {
 	})
 }
 
+func TestAccTFEVariable_mutableIdentity(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEVariableDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEVariable_mutableIdentity_workspace(rInt),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectIdentity("tfe_variable.foobar", map[string]knownvalue.Check{
+						"id":              knownvalue.NotNull(),
+						"configurable_id": knownvalue.StringRegexp(regexp.MustCompile(`^ws-.*$`)),
+						"hostname":        knownvalue.StringExact(os.Getenv("TFE_HOSTNAME")),
+					}),
+				},
+			},
+			{
+				Config: testAccTFEVariable_mutableIdentity_varset(rInt),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectIdentity("tfe_variable.foobar", map[string]knownvalue.Check{
+						"id":              knownvalue.NotNull(),
+						"configurable_id": knownvalue.StringRegexp(regexp.MustCompile(`^varset-.*$`)),
+						"hostname":        knownvalue.StringExact(os.Getenv("TFE_HOSTNAME")),
+					}),
+				},
+			},
+		},
+	})
+}
+
 // Verify that the rewritten framework version of the resource results in no
 // changes when upgrading from the final sdk v2 version of the resource.
 func TestAccTFEVariable_rewrite(t *testing.T) {
@@ -1106,4 +1138,58 @@ resource "tfe_variable" "foobar" {
   sensitive       = %s
 }
 `, rIntOrg, rIntVariableValue, rIntVariableValue, strconv.FormatBool(sensitive))
+}
+
+func testAccTFEVariable_mutableIdentity_workspace(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_variable_set" "foobar" {
+  name         = "varset-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_variable" "foobar" {
+  key          = "key_test"
+  value        = "value_test"
+  description  = "some description"
+  category     = "env"
+  workspace_id = tfe_workspace.foobar.id
+}
+`, rInt)
+}
+
+func testAccTFEVariable_mutableIdentity_varset(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_variable_set" "foobar" {
+  name         = "varset-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_variable" "foobar" {
+  key             = "key_test"
+  value           = "value_test"
+  description     = "some description"
+  category        = "env"
+  variable_set_id = tfe_variable_set.foobar.id
+}
+`, rInt)
 }

@@ -111,6 +111,7 @@ class MyConvertedCode : TerraformStack
         var tfeWorkspaceSettingsTestSettingsForEachIterator = TerraformIterator.FromList(Token.AsAny(Fn.Toset(new [] { "qa", "production" })));
         new WorkspaceSettings.WorkspaceSettings(this, "test-settings", new WorkspaceSettingsConfig {
             GlobalRemoteState = false,
+            ProjectRemoteState = false,
             RemoteStateConsumerIds = Token.AsList(Fn.Toset(Fn.Compact(Token.AsList(new [] { Conditional(Op.Eq(tfeWorkspaceSettingsTestSettingsForEachIterator.Value, "production"), PropertyAccess(tfeWorkspaceTest, new [] { "\"qa\"", "id" }), "") })))),
             WorkspaceId = Token.AsString(PropertyAccess(PropertyAccess(tfeWorkspaceTest, new [] { tfeWorkspaceSettingsTestSettingsForEachIterator.Value }), new [] { "id" })),
             ForEach = tfeWorkspaceSettingsTestSettingsForEachIterator
@@ -187,8 +188,9 @@ The following arguments are supported:
   to be set to `Agent`. This value _must not_ be provided if `ExecutionMode` is set to any other value.
 * `ExecutionMode` - (Optional) Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode)
   to use. Using HCP Terraform, valid values are `Remote`, `Local` or `Agent`. When set to `Local`, the workspace will be used for state storage only. **Important:** If you omit this attribute, the resource configures the workspace to use your organization's default execution mode (which in turn defaults to `Remote`), removing any explicit value that might have previously been set for the workspace.
-* `GlobalRemoteState` - (Optional) Whether the workspace allows all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (`RemoteStateConsumerIds`). By default, HashiCorp recommends you do not allow other workspaces to access their state. We recommend that you follow the principle of least privilege and only enable state access between workspaces that specifically need information from each other.
-* `RemoteStateConsumerIds` - (Optional) The set of workspace IDs set as explicit remote state consumers for the given workspace. To set this attribute, global_remote_state must be false.
+* `GlobalRemoteState` - (Optional) Whether the workspace allows all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (`RemoteStateConsumerIds`). By default, HashiCorp recommends you do not allow other workspaces to access their state. Cannot be true if project_remote_state is true. We recommend that you follow the principle of least privilege and only enable state access between workspaces that specifically need information from each other.
+* `ProjectRemoteState` – (Optional) Whether the workspace allows all workspaces in the project to access its state data during runs. If false, then only specifically approved workspaces can access its state (`RemoteStateConsumerIds`). Cannot be true if global_remote_state is true.
+* `RemoteStateConsumerIds` - (Optional) The set of workspace IDs set as explicit remote state consumers for the given workspace. To set this attribute, global_remote_state and project_remote_state must be false.
 * `AutoApply` - (Optional) Whether to automatically apply changes when a Terraform plan is successful. Defaults to `False`.
 * `AssessmentsEnabled` - (Optional) Whether to regularly run health assessments such as drift detection on the workspace. Defaults to `False`.
 * `Description` - (Optional) A description for the workspace.
@@ -218,4 +220,4 @@ terraform import tfe_workspace_settings.test ws-CH5in3chf8RJjrVd
 terraform import tfe_workspace_settings.test my-org-name/my-wkspace-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-f1d216f1370b1d9132b01fb3aa83be95a84df918dc873a73de20e2c851d5dc85 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-4e504f607f1c708db5bd2cd54af807c62db6c3cef5c2ba2e9ded76a8bbaac882 -->

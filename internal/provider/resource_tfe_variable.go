@@ -141,6 +141,9 @@ func (r *resourceTFEVariable) Configure(ctx context.Context, req resource.Config
 // Metadata implements resource.Resource
 func (r *resourceTFEVariable) Metadata(_ context.Context, _ resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "tfe_variable"
+	resp.ResourceBehavior = resource.ResourceBehavior{
+		MutableIdentity: true,
+	}
 }
 
 // Schema implements resource.Resource
@@ -621,6 +624,18 @@ func (r *resourceTFEVariable) updateWithWorkspace(ctx context.Context, req resou
 	result := modelFromTFEVariable(*variable, plan.Value, !config.ValueWO.IsNull())
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
+
+	currentIdentity := &modelTFEVariableIdentity{}
+	resp.Diagnostics.Append(req.Identity.Get(ctx, &currentIdentity)...)
+	// Only set the identity if it is null/empty in the current state
+	if !resp.Diagnostics.HasError() && (currentIdentity == nil || currentIdentity.ID.IsNull()) {
+		identity := modelTFEVariableIdentity{
+			ID:             result.ID,
+			Hostname:       types.StringValue(r.config.Client.BaseURL().Host),
+			ConfigurableID: result.WorkspaceID,
+		}
+		resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
+	}
 }
 
 // updateWithVariableSet is the variable set version of Update.
@@ -679,6 +694,18 @@ func (r *resourceTFEVariable) updateWithVariableSet(ctx context.Context, req res
 	result := modelFromTFEVariableSetVariable(*variable, plan.Value, !config.ValueWO.IsNull())
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
+
+	currentIdentity := &modelTFEVariableIdentity{}
+	resp.Diagnostics.Append(req.Identity.Get(ctx, &currentIdentity)...)
+	// Only set the identity if it is null/empty in the current state
+	if !resp.Diagnostics.HasError() && (currentIdentity == nil || currentIdentity.ID.IsNull()) {
+		identity := modelTFEVariableIdentity{
+			ID:             result.ID,
+			Hostname:       types.StringValue(r.config.Client.BaseURL().Host),
+			ConfigurableID: result.VariableSetID,
+		}
+		resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
+	}
 }
 
 // Delete implements resource.Resource

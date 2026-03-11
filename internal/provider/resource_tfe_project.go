@@ -375,6 +375,17 @@ func (r *resourceTFEProject) Update(ctx context.Context, req resource.UpdateRequ
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+
+	currentIdentity := &modelProjectIdentity{}
+	resp.Diagnostics.Append(req.Identity.Get(ctx, &currentIdentity)...)
+	// Only set the identity if it is null/empty in the current state
+	if !resp.Diagnostics.HasError() && (currentIdentity == nil || currentIdentity.ID.IsNull()) {
+		identity := modelProjectIdentity{
+			ID:       result.ID,
+			Hostname: types.StringValue(r.config.Client.BaseURL().Host),
+		}
+		resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
+	}
 }
 
 // Delete implements resource.Resource
