@@ -134,7 +134,7 @@ func TestAccTFENotificationConfiguration_tokenWriteOnlyValidation(t *testing.T) 
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_tokenVersionConflict(rInt),
-				ExpectError: regexp.MustCompile(`Attribute "token_wo_version" cannot be specified when "token" is specified`),
+				ExpectError: regexp.MustCompile(`Attribute "token_wo" must be specified when "token_wo_version" is specified`),
 			},
 		},
 	})

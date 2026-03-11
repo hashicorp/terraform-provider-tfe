@@ -228,30 +228,6 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 					stringvalidator.ConflictsWith(path.MatchRoot("token")),
 					stringvalidator.AlsoRequires(path.MatchRoot("token_wo_version")),
 				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplaceIf(
-						func(ctx context.Context, req planmodifier.StringRequest, resp *stringplanmodifier.RequiresReplaceIfFuncResponse) {
-							var stateVersion types.Int64
-							diags := req.State.GetAttribute(ctx, path.Root("token_wo_version"), &stateVersion)
-							resp.Diagnostics.Append(diags...)
-							if resp.Diagnostics.HasError() {
-								return
-							}
-							var planVersion types.Int64
-							diags = req.Plan.GetAttribute(ctx, path.Root("token_wo_version"), &planVersion)
-							resp.Diagnostics.Append(diags...)
-							if resp.Diagnostics.HasError() {
-								return
-							}
-
-							if !stateVersion.IsNull() && !planVersion.IsNull() && stateVersion.ValueInt64() != planVersion.ValueInt64() {
-								resp.RequiresReplace = true
-							}
-						},
-						"Force replacement if token_wo_version changed.",
-						"Force replacement if token_wo_version changed.",
-					),
-				},
 			},
 
 			"token_wo_version": schema.Int64Attribute{

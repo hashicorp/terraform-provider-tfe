@@ -3,6 +3,9 @@
 FEATURES:
 * Adds `tfe_query_run` action, allowing users to invoke remote Terraform queries on HCP Terraform and Terraform Enterprise, by @sebasslash [#1982](https://github.com/hashicorp/terraform-provider-tfe/pull/1982)
 
+BUG FIXES:
+* `r/tfe_notification_configuration`: Added the `token_wo_version` write-only attribute to allow triggering `token_wo` updates, by @uk1288 ([#1986](https://github.com/hashicorp/terraform-provider-tfe/pull/1986))
+
 ## v0.74.1
 
 BUG FIXES:
