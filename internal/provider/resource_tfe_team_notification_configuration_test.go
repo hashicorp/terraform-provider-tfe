@@ -929,6 +929,39 @@ func testAccCheckTFETeamNotificationConfigurationDestroy(s *terraform.State) err
 	return nil
 }
 
+func TestAccTFETeamNotificationConfiguration_tokenWriteOnlyValidation(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFETeamNotificationConfiguration_tokenAndTokenWO(org.Name),
+				ExpectError: regexp.MustCompile(`Attribute "token_wo" cannot be specified when "token" is specified`),
+			},
+			{
+				Config:      testAccTFETeamNotificationConfiguration_tokenWriteOnlyMissingVersion(org.Name),
+				ExpectError: regexp.MustCompile(`Attribute "token_wo_version" must be specified when "token_wo" is specified`),
+			},
+			{
+				Config:      testAccTFETeamNotificationConfiguration_versionMissingTokenWO(org.Name),
+				ExpectError: regexp.MustCompile(`Attribute "token_wo" must be specified when "token_wo_version" is specified`),
+			},
+			{
+				Config:      testAccTFETeamNotificationConfiguration_tokenVersionConflict(org.Name),
+				ExpectError: regexp.MustCompile(`Attribute "token" cannot be specified when "token_wo_version" is\s+specified`),
+			},
+		},
+	})
+}
+
 func TestAccTFETeamNotificationConfiguration_tokenWO(t *testing.T) {
 	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
@@ -941,6 +974,7 @@ func TestAccTFETeamNotificationConfiguration_tokenWO(t *testing.T) {
 
 	// Create the value comparer so we can add state values to it during the test steps
 	compareValuesDiffer := statecheck.CompareValue(compare.ValuesDiffer())
+	versionOne, versionTwo := 1, 2
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
@@ -948,14 +982,11 @@ func TestAccTFETeamNotificationConfiguration_tokenWO(t *testing.T) {
 		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccTFETeamNotificationConfiguration_tokenAndTokenWO(org.Name),
-				ExpectError: regexp.MustCompile(`Attribute "token_wo" cannot be specified when "token" is specified`),
-			},
-			{
-				Config: testAccTFETeamNotificationConfiguration_tokenWO(org.Name, "1234567890"),
+				Config: testAccTFETeamNotificationConfiguration_tokenWriteOnly(org.Name, versionOne),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "token"),
 					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "token_wo"),
+					resource.TestCheckResourceAttr("tfe_team_notification_configuration.foobar", "token_wo_version", "1"),
 				),
 				// Register the id with the value comparer so we can assert that the
 				// resource has been replaced in the next step.
@@ -966,10 +997,11 @@ func TestAccTFETeamNotificationConfiguration_tokenWO(t *testing.T) {
 				},
 			},
 			{
-				Config: testAccTFETeamNotificationConfiguration_tokenWO(org.Name, "12345678901"),
+				Config: testAccTFETeamNotificationConfiguration_tokenWriteOnly(org.Name, versionTwo),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "token"),
 					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "token_wo"),
+					resource.TestCheckResourceAttr("tfe_team_notification_configuration.foobar", "token_wo_version", "2"),
 				),
 				// Register the id with the value comparer so we can assert that the
 				// resource has been replaced in the next step.
@@ -983,6 +1015,7 @@ func TestAccTFETeamNotificationConfiguration_tokenWO(t *testing.T) {
 				Config: testAccTFETeamNotificationConfiguration_token(org.Name),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_team_notification_configuration.foobar", "token", "1234567890"),
+					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "token_wo"),
 				),
 				// Ensure that the resource has been replaced
 				ConfigStateChecks: []statecheck.StateCheck{
@@ -1453,7 +1486,7 @@ resource "tfe_team_notification_configuration" "foobar" {
 }`, orgName, runTasksURL())
 }
 
-func testAccTFETeamNotificationConfiguration_tokenWO(orgName string, token string) string {
+func testAccTFETeamNotificationConfiguration_tokenWriteOnly(orgName string, versionValue int) string {
 	return fmt.Sprintf(`
 data "tfe_organization" "foobar" {
   name = "%s"
@@ -1468,9 +1501,10 @@ resource "tfe_team_notification_configuration" "foobar" {
   name             = "notification_tokenWO_test"
   destination_type = "generic"
   url 			   = "%s"
-  token_wo         = "%s"
+  token_wo         = "some-token"
+  token_wo_version = %d
   team_id          = tfe_team.foobar.id
-}`, orgName, runTasksURL(), token)
+}`, orgName, runTasksURL(), versionValue)
 }
 
 func testAccTFETeamNotificationConfiguration_tokenAndTokenWO(orgName string) string {
@@ -1490,6 +1524,68 @@ resource "tfe_team_notification_configuration" "foobar" {
   url 			   = "%s"
   token            = "1234567890"
   token_wo         = "1234567890"
+  token_wo_version = 1
+  team_id          = tfe_team.foobar.id
+}`, orgName, runTasksURL())
+}
+
+func testAccTFETeamNotificationConfiguration_tokenWriteOnlyMissingVersion(orgName string) string {
+	return fmt.Sprintf(`
+data "tfe_organization" "foobar" {
+  name = "%s"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-test"
+  organization = data.tfe_organization.foobar.name
+}
+
+resource "tfe_team_notification_configuration" "foobar" {
+  name             = "notification_tokenWO_test"
+  destination_type = "generic"
+  url              = "%s"
+  token_wo         = "some-token"
+  team_id          = tfe_team.foobar.id
+}`, orgName, runTasksURL())
+}
+
+func testAccTFETeamNotificationConfiguration_versionMissingTokenWO(orgName string) string {
+	return fmt.Sprintf(`
+data "tfe_organization" "foobar" {
+  name = "%s"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-test"
+  organization = data.tfe_organization.foobar.name
+}
+
+resource "tfe_team_notification_configuration" "foobar" {
+  name             = "notification_tokenWO_test"
+  destination_type = "generic"
+  url              = "%s"
+  token_wo_version = 1
+  team_id          = tfe_team.foobar.id
+}`, orgName, runTasksURL())
+}
+
+func testAccTFETeamNotificationConfiguration_tokenVersionConflict(orgName string) string {
+	return fmt.Sprintf(`
+data "tfe_organization" "foobar" {
+  name = "%s"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-test"
+  organization = data.tfe_organization.foobar.name
+}
+
+resource "tfe_team_notification_configuration" "foobar" {
+  name             = "notification_tokenWO_test"
+  destination_type = "generic"
+  url              = "%s"
+  token            = "1234567890"
+  token_wo_version = 1
   team_id          = tfe_team.foobar.id
 }`, orgName, runTasksURL())
 }
