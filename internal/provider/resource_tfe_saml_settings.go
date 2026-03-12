@@ -8,20 +8,20 @@ import (
 	"fmt"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
-	"github.com/hashicorp/terraform-provider-tfe/internal/provider/planmodifiers"
 )
 
 const (
@@ -55,6 +55,7 @@ type modelTFESAMLSettings struct {
 	Certificate               types.String `tfsdk:"certificate"`
 	PrivateKey                types.String `tfsdk:"private_key"`
 	PrivateKeyWO              types.String `tfsdk:"private_key_wo"`
+	PrivateKeyWOVersion       types.Int64  `tfsdk:"private_key_wo_version"`
 	SignatureSigningMethod    types.String `tfsdk:"signature_signing_method"`
 	SignatureDigestMethod     types.String `tfsdk:"signature_digest_method"`
 }
@@ -65,7 +66,7 @@ type resourceTFESAMLSettings struct {
 }
 
 // modelFromTFEAdminSAMLSettings builds a modelTFESAMLSettings struct from a tfe.AdminSAMLSetting value
-func modelFromTFEAdminSAMLSettings(v tfe.AdminSAMLSetting, privateKey types.String, isWriteOnly bool) modelTFESAMLSettings {
+func modelFromTFEAdminSAMLSettings(v tfe.AdminSAMLSetting, privateKey types.String, privateKeyWOVersion types.Int64) modelTFESAMLSettings {
 	m := modelTFESAMLSettings{
 		ID:                        types.StringValue(v.ID),
 		Enabled:                   types.BoolValue(v.Enabled),
@@ -86,6 +87,7 @@ func modelFromTFEAdminSAMLSettings(v tfe.AdminSAMLSetting, privateKey types.Stri
 		MetadataURL:               types.StringValue(v.MetadataURL),
 		Certificate:               types.StringValue(v.Certificate),
 		PrivateKey:                types.StringValue(""),
+		PrivateKeyWOVersion:       privateKeyWOVersion,
 		SignatureSigningMethod:    types.StringValue(v.SignatureSigningMethod),
 		SignatureDigestMethod:     types.StringValue(v.SignatureDigestMethod),
 	}
@@ -95,7 +97,8 @@ func modelFromTFEAdminSAMLSettings(v tfe.AdminSAMLSetting, privateKey types.Stri
 	}
 
 	// Don't retrieve values if write-only is being used. Unset the private key field before updating the state.
-	if isWriteOnly {
+	isWriteOnlyValue := !privateKeyWOVersion.IsNull()
+	if isWriteOnlyValue {
 		m.PrivateKey = types.StringValue("")
 	}
 
@@ -227,6 +230,8 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 					stringvalidator.ConflictsWith(path.MatchRoot("private_key_wo")),
 				},
 			},
+			// since the private_key_wo write-only values are not saved to state, they will not trigger updates on their own.
+			// Instead the private_key_wo_version responsibility is to trigger updates to the private_key_wo attribute when version number changes.
 			"private_key_wo": schema.StringAttribute{
 				Description: "The private key in write-only mode used for request and assertion signing",
 				Optional:    true,
@@ -234,9 +239,19 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 				WriteOnly:   true,
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("private_key")),
+					stringvalidator.AlsoRequires(path.MatchRoot("private_key_wo_version")),
 				},
-				PlanModifiers: []planmodifier.String{
-					planmodifiers.NewReplaceForWriteOnlyStringValue("private_key_wo"),
+			},
+
+			"private_key_wo_version": schema.Int64Attribute{
+				Optional:    true,
+				Description: "Version of the write-only private key to trigger updates",
+				Validators: []validator.Int64{
+					int64validator.ConflictsWith(path.MatchRoot("private_key")),
+					int64validator.AlsoRequires(path.MatchRoot("private_key_wo")),
+				},
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.RequiresReplace(),
 				},
 			},
 			"signature_signing_method": schema.StringAttribute{
@@ -284,14 +299,8 @@ func (r *resourceTFESAMLSettings) Read(ctx context.Context, req resource.ReadReq
 		return
 	}
 
-	isWriteOnly, diags := r.writeOnlyValueStore(resp.Private).PriorValueExists(ctx)
-	resp.Diagnostics.Append(diags...)
-	if diags.HasError() {
-		return
-	}
-
 	// update state
-	result := modelFromTFEAdminSAMLSettings(*samlSettings, m.PrivateKey, isWriteOnly)
+	result := modelFromTFEAdminSAMLSettings(*samlSettings, m.PrivateKey, m.PrivateKeyWOVersion)
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -323,10 +332,7 @@ func (r *resourceTFESAMLSettings) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
-	result := modelFromTFEAdminSAMLSettings(*samlSettings, m.PrivateKey, !config.PrivateKeyWO.IsNull())
-	// Store the hashed write-only value in the private state
-	store := r.writeOnlyValueStore(resp.Private)
-	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.PrivateKeyWO)...)
+	result := modelFromTFEAdminSAMLSettings(*samlSettings, m.PrivateKey, config.PrivateKeyWOVersion)
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -347,8 +353,17 @@ func (r *resourceTFESAMLSettings) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
-	if !config.PrivateKeyWO.IsNull() {
-		m.PrivateKey = config.PrivateKeyWO
+	var state modelTFESAMLSettings
+	diags = req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if privateKey := r.determinePrivateKeyForUpdate(m, state, config); privateKey != nil {
+		m.PrivateKey = types.StringValue(*privateKey)
+	} else {
+		m.PrivateKey = types.StringNull()
 	}
 
 	tflog.Debug(ctx, "Update SAML Settings")
@@ -358,14 +373,7 @@ func (r *resourceTFESAMLSettings) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
-	// Store the hashed write-only value in the private state
-	store := r.writeOnlyValueStore(resp.Private)
-	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.PrivateKeyWO)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	result := modelFromTFEAdminSAMLSettings(*samlSettings, m.PrivateKey, !config.PrivateKeyWO.IsNull())
+	result := modelFromTFEAdminSAMLSettings(*samlSettings, m.PrivateKey, config.PrivateKeyWOVersion)
 	// Save data into Terraform state
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
@@ -414,7 +422,7 @@ func (r *resourceTFESAMLSettings) ImportState(ctx context.Context, req resource.
 		return
 	}
 
-	result := modelFromTFEAdminSAMLSettings(*samlSettings, types.StringValue(""), false)
+	result := modelFromTFEAdminSAMLSettings(*samlSettings, types.StringValue(""), types.Int64Null())
 	diags := resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -428,6 +436,34 @@ var (
 // NewSAMLSettingsResource is a resource function for the framework provider.
 func NewSAMLSettingsResource() resource.Resource {
 	return &resourceTFESAMLSettings{}
+}
+
+// determinePrivateKeyForUpdate returns what private key value to send to the API during an update,
+// selecting from plan, state, or config based on four scenarios: switching between private_key/private_key_wo,
+// version changes, or regular private_key changes. Returns nil if no private key update is needed.
+func (r *resourceTFESAMLSettings) determinePrivateKeyForUpdate(plan, state, config modelTFESAMLSettings) *string {
+	// Determine if we're using write-only private key in plan vs state
+	usingWriteOnlyInPlan := !plan.PrivateKeyWOVersion.IsNull()
+	usingWriteOnlyInState := !state.PrivateKeyWOVersion.IsNull()
+
+	// Case 1: Switching FROM private_key TO private_key_wo
+	if !usingWriteOnlyInState && usingWriteOnlyInPlan && !config.PrivateKeyWO.IsNull() {
+		return config.PrivateKeyWO.ValueStringPointer()
+	}
+	// Case 2: Switching FROM private_key_wo TO private_key
+	if usingWriteOnlyInState && !usingWriteOnlyInPlan && !plan.PrivateKey.IsNull() {
+		return plan.PrivateKey.ValueStringPointer()
+	}
+	// Case 3: private_key_wo version changed in plan
+	if usingWriteOnlyInPlan && plan.PrivateKeyWOVersion.ValueInt64() != state.PrivateKeyWOVersion.ValueInt64() && !config.PrivateKeyWO.IsNull() {
+		return config.PrivateKeyWO.ValueStringPointer()
+	}
+	// Case 4: Regular private_key changed. Only set PrivateKey if our planned value would be a CHANGE from
+	// the prior state. This prevents accidentally resetting the private key on unrelated changes.
+	if state.PrivateKey.ValueString() != plan.PrivateKey.ValueString() {
+		return plan.PrivateKey.ValueStringPointer()
+	}
+	return nil
 }
 
 // updateSAMLSettings was created to keep the code DRY. It is used in both Create and Update functions
@@ -455,8 +491,4 @@ func (r *resourceTFESAMLSettings) updateSAMLSettings(ctx context.Context, m mode
 		return s, fmt.Errorf("failed to update SAML Settings: %w", err)
 	}
 	return s, nil
-}
-
-func (r *resourceTFESAMLSettings) writeOnlyValueStore(private helpers.PrivateState) *helpers.WriteOnlyValueStore {
-	return helpers.NewWriteOnlyValueStore(private, "private_key_wo")
 }
