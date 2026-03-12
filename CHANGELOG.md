@@ -4,6 +4,7 @@ FEATURES:
 
 FEATURES:
 * Adds `tfe_query_run` action, allowing users to invoke remote Terraform queries on HCP Terraform and Terraform Enterprise, by @sebasslash [#1982](https://github.com/hashicorp/terraform-provider-tfe/pull/1982)
+* **New Resource:**  `tfe_project_policy_set_exclusion` for managing project level exclusions on policy sets. by @subhro-acharjee-1 [#1990](https://github.com/hashicorp/terraform-provider-tfe/pull/1990) 
 
 ## v0.74.1
 
