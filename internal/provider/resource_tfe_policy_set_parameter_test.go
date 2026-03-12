@@ -147,6 +147,65 @@ func TestAccTFEPolicySetParameter_valueWriteOnly(t *testing.T) {
 	t.Cleanup(orgCleanup)
 
 	compareValuesDiffer := statecheck.CompareValue(compare.ValuesDiffer())
+	versionOne, versionTwo := 1, 2
+
+	resource.Test(t, resource.TestCase{
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			tfversion.SkipBelow(version.Must(version.NewVersion("1.11.0"))),
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicySetParameter_valueWriteOnly(org.Name, versionOne, "test_value"),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetParameterExists("tfe_policy_set_parameter.foobar", param),
+					resource.TestCheckNoResourceAttr("tfe_policy_set_parameter.foobar", "value_wo"),
+					resource.TestCheckResourceAttr("tfe_policy_set_parameter.foobar", "value", ""),
+					resource.TestCheckResourceAttr("tfe_policy_set_parameter.foobar", "value_wo_version", "1"),
+				),
+				ConfigStateChecks: []statecheck.StateCheck{
+					// Initialize the value comparer so we can assert that the resource
+					// was replaced in the next step
+					compareValuesDiffer.AddStateValue("tfe_policy_set_parameter.foobar", tfjsonpath.New("id")),
+				},
+			},
+			{
+				Config: testAccTFEPolicySetParameter_valueWriteOnly(org.Name, versionTwo, "test_updated"),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetParameterExists("tfe_policy_set_parameter.foobar", param),
+					resource.TestCheckNoResourceAttr("tfe_policy_set_parameter.foobar", "value_wo"),
+					resource.TestCheckResourceAttr("tfe_policy_set_parameter.foobar", "value", ""),
+					resource.TestCheckResourceAttr("tfe_policy_set_parameter.foobar", "value_wo_version", "2"),
+				),
+				ConfigStateChecks: []statecheck.StateCheck{
+					// Assert that the resource was replaced when version changed
+					compareValuesDiffer.AddStateValue("tfe_policy_set_parameter.foobar", tfjsonpath.New("id")),
+				},
+			},
+			{
+				Config: testAccTFEPolicySetParameter_basic(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetParameterExists("tfe_policy_set_parameter.foobar", param),
+					resource.TestCheckNoResourceAttr("tfe_policy_set_parameter.foobar", "value_wo"),
+					resource.TestCheckResourceAttr("tfe_policy_set_parameter.foobar", "value", "value_test"),
+				),
+				ConfigStateChecks: []statecheck.StateCheck{
+					// Assert that the resource was replaced when switching from value_wo to value
+					compareValuesDiffer.AddStateValue("tfe_policy_set_parameter.foobar", tfjsonpath.New("id")),
+				},
+			},
+		},
+	})
+}
+
+func TestAccTFEPolicySetParameter_valueWriteOnlyValidation(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
 		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
@@ -159,41 +218,16 @@ func TestAccTFEPolicySetParameter_valueWriteOnly(t *testing.T) {
 				ExpectError: regexp.MustCompile(`Attribute "value" cannot be specified when "value_wo" is specified`),
 			},
 			{
-				Config: testAccTFEPolicySetParameter_valueWriteOnly(org.Name, "test_value"),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEPolicySetParameterExists("tfe_policy_set_parameter.foobar", param),
-					resource.TestCheckNoResourceAttr("tfe_policy_set_parameter.foobar", "value_wo"),
-					resource.TestCheckResourceAttr("tfe_policy_set_parameter.foobar", "value", ""),
-				),
-				ConfigStateChecks: []statecheck.StateCheck{
-					// Initialize the value comparer so we can assert that the resource
-					// was replaced in the next step
-					compareValuesDiffer.AddStateValue("tfe_policy_set_parameter.foobar", tfjsonpath.New("id")),
-				},
+				Config:      testAccTFEPolicySetParameter_valueWriteOnlyMissingVersion(org.Name),
+				ExpectError: regexp.MustCompile(`Attribute "value_wo_version" must be specified when "value_wo" is specified`),
 			},
 			{
-				Config: testAccTFEPolicySetParameter_valueWriteOnly(org.Name, "test_updated"),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEPolicySetParameterExists("tfe_policy_set_parameter.foobar", param),
-					resource.TestCheckNoResourceAttr("tfe_policy_set_parameter.foobar", "value_wo"),
-					resource.TestCheckResourceAttr("tfe_policy_set_parameter.foobar", "value", ""),
-				),
-				ConfigStateChecks: []statecheck.StateCheck{
-					// Assert that the resource was replaced
-					compareValuesDiffer.AddStateValue("tfe_policy_set_parameter.foobar", tfjsonpath.New("id")),
-				},
+				Config:      testAccTFEPolicySetParameter_versionMissingValueWO(org.Name),
+				ExpectError: regexp.MustCompile(`Attribute "value_wo" must be specified when "value_wo_version" is specified`),
 			},
 			{
-				Config: testAccTFEPolicySetParameter_basic(org.Name),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEPolicySetParameterExists("tfe_policy_set_parameter.foobar", param),
-					resource.TestCheckNoResourceAttr("tfe_policy_set_parameter.foobar", "value_wo"),
-					resource.TestCheckResourceAttr("tfe_policy_set_parameter.foobar", "value", "value_test"),
-				),
-				ConfigStateChecks: []statecheck.StateCheck{
-					// Assert that the resource was replaced
-					compareValuesDiffer.AddStateValue("tfe_policy_set_parameter.foobar", tfjsonpath.New("id")),
-				},
+				Config:      testAccTFEPolicySetParameter_valueVersionConflict(org.Name),
+				ExpectError: regexp.MustCompile(`Attribute "value" cannot be specified when "value_wo_version" is specified`),
 			},
 		},
 	})
@@ -308,7 +342,22 @@ resource "tfe_policy_set_parameter" "foobar" {
 }`, organization)
 }
 
-func testAccTFEPolicySetParameter_valueWriteOnly(organization string, value string) string {
+func testAccTFEPolicySetParameter_valueWriteOnly(organization string, valueVersion int, value string) string {
+	return fmt.Sprintf(`
+resource "tfe_policy_set" "foobar" {
+  name         = "policy-set-test"
+  organization = "%s"
+}
+
+resource "tfe_policy_set_parameter" "foobar" {
+  key                = "key_test"
+  value_wo           = "%s"
+  value_wo_version   = %d
+  policy_set_id      = tfe_policy_set.foobar.id
+}`, organization, value, valueVersion)
+}
+
+func testAccTFEPolicySetParameter_valueWriteOnlyMissingVersion(organization string) string {
 	return fmt.Sprintf(`
 resource "tfe_policy_set" "foobar" {
   name         = "policy-set-test"
@@ -317,11 +366,39 @@ resource "tfe_policy_set" "foobar" {
 
 resource "tfe_policy_set_parameter" "foobar" {
   key          = "key_test"
-	value_wo      = "%s"
+  value_wo     = "test_value"
   policy_set_id = tfe_policy_set.foobar.id
-}`, organization, value)
+}`, organization)
 }
 
+func testAccTFEPolicySetParameter_versionMissingValueWO(organization string) string {
+	return fmt.Sprintf(`
+resource "tfe_policy_set" "foobar" {
+  name         = "policy-set-test"
+  organization = "%s"
+}
+
+resource "tfe_policy_set_parameter" "foobar" {
+  key               = "key_test"
+  value_wo_version  = 1
+  policy_set_id     = tfe_policy_set.foobar.id
+}`, organization)
+}
+
+func testAccTFEPolicySetParameter_valueVersionConflict(organization string) string {
+	return fmt.Sprintf(`
+resource "tfe_policy_set" "foobar" {
+  name         = "policy-set-test"
+  organization = "%s"
+}
+
+resource "tfe_policy_set_parameter" "foobar" {
+  key              = "key_test"
+  value            = "test_value"
+  value_wo_version = 1
+  policy_set_id    = tfe_policy_set.foobar.id
+}`, organization)
+}
 func testAccTFEPolicySetParameter_valueAndValueWriteOnly(organization string) string {
 	return fmt.Sprintf(`
 resource "tfe_policy_set" "foobar" {
@@ -330,9 +407,10 @@ resource "tfe_policy_set" "foobar" {
 }
 
 resource "tfe_policy_set_parameter" "foobar" {
-  key          = "key_test"
-  value        = "value_test"
-  value_wo     = "value_test"
-  policy_set_id = tfe_policy_set.foobar.id
+  key              = "key_test"
+  value            = "value_test"
+  value_wo         = "value_test"
+  value_wo_version = 1
+  policy_set_id    = tfe_policy_set.foobar.id
 }`, organization)
 }
