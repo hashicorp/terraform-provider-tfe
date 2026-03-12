@@ -968,6 +968,9 @@ func (u *updateReadableValuePlanModifier) PlanModifyString(ctx context.Context, 
 			return
 		}
 		response.PlanValue = actualValue
+	} else {
+		// it is a write-only value, so unset any previously set readable_value
+		response.PlanValue = types.StringValue("")
 	}
 }
 
