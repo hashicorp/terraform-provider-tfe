@@ -38,9 +38,8 @@ The following arguments are supported:
 * `team_id` - (Required) ID of the team.
 * `description` - (Optional) The token's description, which must be unique per team. Required if creating multiple
   tokens for a single team.
-* `expired_at` - (Optional) The token's expiration date. The expiration date must be a date/time string in RFC3339 
-format (e.g., "2024-12-31T23:59:59Z"). If no expiration date is supplied, the expiration date will default to null and 
-never expire.
+* `expired_at` - (Optional) The token's expiration date. The expiration date must be a date/time string in RFC3339
+format (e.g., "2024-12-31T23:59:59Z"). If no expiration date is supplied, the token will expire 24 months from creation and a warning during plan and apply phases will be displayed.
 * `force_regenerate` - (Optional) Only applies to legacy tokens without descriptions. If set to `true`, a new
   token will be generated even if a token already exists. This will invalidate the existing token! This cannot
   be set with `description`.
