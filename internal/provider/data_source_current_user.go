@@ -27,10 +27,10 @@ type dataSourceCurrentUser struct {
 }
 
 type modelCurrentUser struct {
-	ID        types.String `tfsdk:"id"`
-	Username  types.String `tfsdk:"username"`
-	Email     types.String `tfsdk:"email"`
-	AvatarURL types.String `tfsdk:"avatar_url"`
+	ID               types.String `tfsdk:"id"`
+	Username         types.String `tfsdk:"username"`
+	Email            types.String `tfsdk:"email"`
+	IsServiceAccount types.Bool   `tfsdk:"is_service_account"`
 }
 
 func (d *dataSourceCurrentUser) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -54,9 +54,9 @@ func (d *dataSourceCurrentUser) Schema(_ context.Context, _ datasource.SchemaReq
 				Computed:            true,
 				MarkdownDescription: "The email address of the current user.",
 			},
-			"avatar_url": schema.StringAttribute{
+			"is_service_account": schema.BoolAttribute{
 				Computed:            true,
-				MarkdownDescription: "Avatar URL of the current user.",
+				MarkdownDescription: "Whether the current user is a service account.",
 			},
 		},
 	}
@@ -76,6 +76,7 @@ func (d *dataSourceCurrentUser) Configure(_ context.Context, req datasource.Conf
 
 		return
 	}
+
 	d.config = client
 }
 
@@ -89,15 +90,16 @@ func (d *dataSourceCurrentUser) Read(ctx context.Context, _ datasource.ReadReque
 	}
 
 	model := modelCurrentUser{
-		ID:        types.StringValue(user.ID),
-		Username:  types.StringValue(user.Username),
-		Email:     types.StringValue(user.Email),
-		AvatarURL: types.StringValue(user.AvatarURL),
+		ID:               types.StringValue(user.ID),
+		Username:         types.StringValue(user.Username),
+		Email:            types.StringValue(user.Email),
+		IsServiceAccount: types.BoolValue(user.IsServiceAccount),
 	}
 
 	tflog.Trace(ctx, "Read current user successfully", map[string]any{
-		"user_id":  user.ID,
-		"username": user.Username,
+		"user_id":            user.ID,
+		"username":           user.Username,
+		"is_service_account": user.IsServiceAccount,
 	})
 
 	diags := resp.State.Set(ctx, &model)

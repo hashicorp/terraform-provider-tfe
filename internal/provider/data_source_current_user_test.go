@@ -1,4 +1,4 @@
-// Copyright (c) HashiCorp, Inc.
+// Copyright IBM Corp. 2018, 2025
 // SPDX-License-Identifier: MPL-2.0
 
 package provider
@@ -21,6 +21,7 @@ func TestAccCurrentUserDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resourceAddress, "id"),
 					resource.TestCheckResourceAttrSet(resourceAddress, "username"),
 					resource.TestCheckResourceAttrSet(resourceAddress, "email"),
+					resource.TestCheckResourceAttrSet(resourceAddress, "is_service_account"),
 				),
 			},
 		},
