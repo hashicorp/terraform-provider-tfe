@@ -22,6 +22,22 @@ resource "tfe_ssh_key" "test" {
 }
 ```
 
+With write-only key:
+
+```hcl
+variable "ssh_key" {
+  type      = string
+  ephemeral = true
+}
+
+resource "tfe_ssh_key" "test" {
+  name           = "my-ssh-key-name"
+  organization   = "my-org-name"
+  key_wo         = var.ssh_key
+  key_wo_version = 1
+}
+```
+
 ## Argument Reference
 
 The following arguments are supported:
@@ -31,7 +47,8 @@ The following arguments are supported:
 * `key` - (Optional) The text of the SSH private key. One of `key` or `key_wo`
   must be provided.
 * `key_wo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) The text of the SSH private key, guaranteed not to be
-  written to plan or state artifacts. One of `key` or `key_wo` must be provided.
+  written to plan or state artifacts. One of `key` or `key_wo` must be provided. Must be used with `key_wo_version`.
+* `key_wo_version` - (Optional) Version of the write-only key. This field is used to trigger updates when the write-only key changes. Must be used with `key_wo`. When `key_wo_version` changes, the write-only key will be updated.
 
 ## Attributes Reference
 
