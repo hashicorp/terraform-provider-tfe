@@ -106,9 +106,6 @@ func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration,
 		result.EmailUserIDs = types.SetValueMust(types.StringType, emailUserIDs)
 	}
 
-	if v.Token != "" {
-		result.Token = types.StringValue(v.Token)
-	}
 	// Don't retrieve values if write-only is being used. Unset the token field before updating the state.
 	isWriteOnlyValue := !tokenWOVersion.IsNull()
 	if isWriteOnlyValue {
