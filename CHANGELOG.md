@@ -2,12 +2,12 @@
 FEATURES:
 * Adds a warning message to `r/tfe_team_token`, `r/tfe_organization_token` and `r/tfe_audit_trail_token` resources to indicate that if no `expired_at` attribute is set, the token will expire in 2 years. By @sana-faraz [#1976](https://github.com/hashicorp/terraform-provider-tfe/pull/1976)
 
+BREAKING CHANGES:
+* `r/tfe_organization_run_task`: Added the `hmac_key_wo_version` write-only attribute to allow triggering `hmac_key_wo` updates, by @uk1288 ([#1992](https://github.com/hashicorp/terraform-provider-tfe/pull/1992))
+
 FEATURES:
 * Adds `tfe_query_run` action, allowing users to invoke remote Terraform queries on HCP Terraform and Terraform Enterprise, by @sebasslash [#1982](https://github.com/hashicorp/terraform-provider-tfe/pull/1982)
 * Adds `d/tfe_current_user` data source for retrieving information about the user associated with the configured API token, by @ShaunakRembhotkar
-
-BUG FIXES:
-* `r/tfe_organization_run_task`: Added the `hmac_key_wo_version` write-only attribute to allow triggering `hmac_key_wo` updates, by @uk1288 ([#1992](https://github.com/hashicorp/terraform-provider-tfe/pull/1992))
 
 ## v0.74.1
 
