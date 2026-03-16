@@ -143,6 +143,7 @@ func (p *frameworkProvider) Actions(ctx context.Context) []func() action.Action 
 
 func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
+		NewCurrentUserDataSource,
 		NewHYOKCustomerKeyVersionDataSource,
 		NewHYOKEncryptedDataKeyDataSource,
 		NewNoCodeModuleDataSource,
