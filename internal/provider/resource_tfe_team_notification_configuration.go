@@ -62,7 +62,7 @@ type modelTFETeamNotificationConfiguration struct {
 
 // modelFromTFETeamNotificationConfiguration builds a modelTFETeamNotificationConfiguration
 // struct from a tfe.TeamNotificationConfiguration value.
-func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration, tokenWOVersion types.Int64) (*modelTFETeamNotificationConfiguration, diag.Diagnostics) {
+func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration, tokenWOVersion types.Int64, lastValue types.String) (*modelTFETeamNotificationConfiguration, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	result := modelTFETeamNotificationConfiguration{
 		ID:              types.StringValue(v.ID),
@@ -104,6 +104,10 @@ func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration,
 		}
 
 		result.EmailUserIDs = types.SetValueMust(types.StringType, emailUserIDs)
+	}
+
+	if lastValue.String() != "" {
+		result.Token = lastValue
 	}
 
 	// Don't retrieve values if write-only is being used. Unset the token field before updating the state.
@@ -314,11 +318,14 @@ func (r *resourceTFETeamNotificationConfiguration) Create(ctx context.Context, r
 		},
 	}
 
+	lastTokenValue := types.StringValue("")
 	// Set Token from `token_wo` if set, otherwise use the normal value
 	if !config.TokenWO.IsNull() {
+		// write-only value should not be persisted.
 		options.Token = config.TokenWO.ValueStringPointer()
 	} else {
 		options.Token = plan.Token.ValueStringPointer()
+		lastTokenValue = plan.Token
 	}
 
 	// Add triggers set to the options struct
@@ -365,12 +372,7 @@ func (r *resourceTFETeamNotificationConfiguration) Create(ctx context.Context, r
 		return
 	}
 
-	// Restore token from plan because it is write only
-	if !plan.Token.IsNull() {
-		tnc.Token = plan.Token.ValueString()
-	}
-
-	result, diags := modelFromTFETeamNotificationConfiguration(tnc, config.TokenWOVersion)
+	result, diags := modelFromTFETeamNotificationConfiguration(tnc, config.TokenWOVersion, lastTokenValue)
 	if diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return
@@ -402,7 +404,7 @@ func (r *resourceTFETeamNotificationConfiguration) Read(ctx context.Context, req
 		return
 	}
 
-	result, diags := modelFromTFETeamNotificationConfiguration(tnc, state.TokenWOVersion)
+	result, diags := modelFromTFETeamNotificationConfiguration(tnc, state.TokenWOVersion, state.Token)
 	if diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return
@@ -438,7 +440,25 @@ func (r *resourceTFETeamNotificationConfiguration) Update(ctx context.Context, r
 		URL:     plan.URL.ValueStringPointer(),
 	}
 
-	options.Token = r.determineTokenForUpdate(plan, state, config)
+	// NOTE: while converting this resource to use write-only token-version, it was noted that the last token value should not be preserved since
+	// the API will not return it. However, it seems like this was done to preserve token value consistency in the state after apply.
+	// This is a todo pending discussions.
+
+	// Preserve the previously known token unless this update explicitly sets a non-write-only token value.
+	// The API never returns token values, so we must carry it forward in state to avoid sensitive value drift
+	// when updates are triggered by unrelated attributes.
+	lastTokenValue := state.Token
+
+	tkn, isWOVal := r.determineTokenForUpdate(plan, state, config)
+	// check is needed to prevent accidentally unsetting the token when no changes to token or token_wo were made
+	// this is important when an update is triggered by changes in other attributes
+	if tkn != nil {
+		options.Token = tkn
+
+		if !isWOVal {
+			lastTokenValue = types.StringValue(*tkn)
+		}
+	}
 
 	// Add triggers set to the options struct
 	triggers := make([]types.String, len(plan.Triggers.Elements()))
@@ -483,7 +503,7 @@ func (r *resourceTFETeamNotificationConfiguration) Update(ctx context.Context, r
 		return
 	}
 
-	result, diags := modelFromTFETeamNotificationConfiguration(tnc, config.TokenWOVersion)
+	result, diags := modelFromTFETeamNotificationConfiguration(tnc, config.TokenWOVersion, lastTokenValue)
 	if diags.HasError() {
 		resp.Diagnostics.Append((diags)...)
 		return
@@ -515,30 +535,30 @@ func (r *resourceTFETeamNotificationConfiguration) ImportState(ctx context.Conte
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
 }
 
-// determineTokenForUpdate returns what token value to send to the API during an update,
-// selecting from plan, state, or config based on four scenarios: switching between token/token_wo,
-// version changes, or regular token changes. Returns nil if no token update is needed.
-func (r *resourceTFETeamNotificationConfiguration) determineTokenForUpdate(plan, state, config modelTFETeamNotificationConfiguration) *string {
+// determineTokenForUpdate is invoked only after terraform determines that an attribute update is needed.
+// note that the update can be triggered by other attributes outside of the token attributes.
+// this function compares the write-only token version vs token to ensure that token is not mistakenly unset when its not intended.
+func (r *resourceTFETeamNotificationConfiguration) determineTokenForUpdate(plan, state, config modelTFETeamNotificationConfiguration) (updateToken *string, isWOVal bool) {
 	// Determine if we're using write-only token in plan vs state
 	usingWriteOnlyInPlan := !plan.TokenWOVersion.IsNull()
 	usingWriteOnlyInState := !state.TokenWOVersion.IsNull()
 
 	// Case 1: Switching FROM token TO token_wo
 	if !usingWriteOnlyInState && usingWriteOnlyInPlan && !config.TokenWO.IsNull() {
-		return config.TokenWO.ValueStringPointer()
+		return config.TokenWO.ValueStringPointer(), true
 	}
 	// Case 2: Switching FROM token_wo TO token
 	if usingWriteOnlyInState && !usingWriteOnlyInPlan && !plan.Token.IsNull() {
-		return plan.Token.ValueStringPointer()
+		return plan.Token.ValueStringPointer(), false
 	}
 	// Case 3: token_wo version changed in plan
 	if usingWriteOnlyInPlan && plan.TokenWOVersion.ValueInt64() != state.TokenWOVersion.ValueInt64() && !config.TokenWO.IsNull() {
-		return config.TokenWO.ValueStringPointer()
+		return config.TokenWO.ValueStringPointer(), true
 	}
 	// Case 4: Regular token changed. Only set Token if our planned value would be a CHANGE from
 	// the prior state. This prevents accidentally resetting the token on unrelated changes.
 	if state.Token.ValueString() != plan.Token.ValueString() {
-		return plan.Token.ValueStringPointer()
+		return plan.Token.ValueStringPointer(), false
 	}
-	return nil
+	return nil, false
 }
