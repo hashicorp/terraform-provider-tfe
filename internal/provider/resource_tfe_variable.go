@@ -577,6 +577,15 @@ func (r *resourceTFEVariable) updateWithWorkspace(ctx context.Context, req resou
 		HCL:         plan.HCL.ValueBoolPointer(),
 		Sensitive:   plan.Sensitive.ValueBoolPointer(),
 	}
+	// Specifically, we ONLY want to set Value if our planned value would be a
+	// CHANGE from the prior state. This is so we don't accidentally reset the
+	// value of a sensitive variable on unrelated changes when `ignore_changes =
+	// [value]` is set. (Basically: since we can't observe the real-world
+	// condition of a sensitive variable, we don't KNOW whether setting it to
+	// our last-known value is a safe idempotent operation or not. This is why
+	// Terraform doesn't promise that it can manage drift at all for write-only
+	// attributes.)
+
 	// determines value to update by considering any changes in value, value_wo, and version. Returns nil if no value update is needed.
 	valueToUpdate := r.determineValueForUpdate(plan, state, config)
 	if valueToUpdate != nil {
