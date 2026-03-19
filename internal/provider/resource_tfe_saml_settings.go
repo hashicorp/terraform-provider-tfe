@@ -15,8 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -250,9 +248,6 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 					int64validator.ConflictsWith(path.MatchRoot("private_key")),
 					int64validator.AlsoRequires(path.MatchRoot("private_key_wo")),
 				},
-				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.RequiresReplace(),
-				},
 			},
 			"signature_signing_method": schema.StringAttribute{
 				Description: fmt.Sprintf("Signature Signing Method. Must be either `%s` or `%s`. Defaults to `%s`", samlSignatureMethodSHA1, samlSignatureMethodSHA256, samlSignatureMethodSHA256),
@@ -438,9 +433,10 @@ func NewSAMLSettingsResource() resource.Resource {
 	return &resourceTFESAMLSettings{}
 }
 
-// determinePrivateKeyForUpdate returns what private key value to send to the API during an update,
-// selecting from plan, state, or config based on four scenarios: switching between private_key/private_key_wo,
-// version changes, or regular private_key changes. Returns nil if no private key update is needed.
+// determinePrivateKeyForUpdate is invoked only after terraform determines that an attribute update is needed.
+// note that the update can be triggered by other attributes outside of the private_key/private_key_wo attributes.
+// this function compares the PrivateKeyWOVersion vs PrivateKey to ensure that during api update call, private_key is not mistakenly unset.
+// Returns nil if no key update is needed.
 func (r *resourceTFESAMLSettings) determinePrivateKeyForUpdate(plan, state, config modelTFESAMLSettings) *string {
 	// Determine if we're using write-only private key in plan vs state
 	usingWriteOnlyInPlan := !plan.PrivateKeyWOVersion.IsNull()
