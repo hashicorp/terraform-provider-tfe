@@ -17,7 +17,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -168,9 +167,6 @@ func (r *resourceOrgRunTask) Schema(ctx context.Context, req resource.SchemaRequ
 					int64validator.ConflictsWith(path.MatchRoot("hmac_key")),
 					int64validator.AlsoRequires(path.MatchRoot("hmac_key_wo")),
 				},
-				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.RequiresReplace(),
-				},
 			},
 			"enabled": schema.BoolAttribute{
 				Optional: true,
@@ -297,7 +293,10 @@ func (r *resourceOrgRunTask) Update(ctx context.Context, req resource.UpdateRequ
 
 	// HMAC Key is a write-only value so we should only send it if
 	// it really has changed.
-	options.HMACKey = r.determineHMACKeyForUpdate(plan, state, config)
+	keyToUpdate := r.determineHMACKeyForUpdate(plan, state, config)
+	if keyToUpdate != nil {
+		options.HMACKey = keyToUpdate
+	}
 
 	taskID := plan.ID.ValueString()
 
@@ -366,6 +365,10 @@ func (r *resourceOrgRunTask) ImportState(ctx context.Context, req resource.Impor
 	}
 }
 
+// determineHMACKeyForUpdate is invoked only after terraform determines that an attribute update is needed.
+// note that the update can be triggered by other attributes outside of the key/key_wo attributes.
+// this function compares the KeyWOVersion vs Key to ensure that during api update call, key is not mistakenly unset.
+// Returns nil if no value update is needed.
 func (r *resourceOrgRunTask) determineHMACKeyForUpdate(plan, state, config modelTFEOrganizationRunTaskV0) *string {
 	// Determine if we're using write-only HMAC key in plan vs state
 	usingWriteOnlyInPlan := !plan.HMACKeyWOVersion.IsNull()
