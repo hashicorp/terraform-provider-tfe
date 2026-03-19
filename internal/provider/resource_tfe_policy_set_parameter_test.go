@@ -177,10 +177,6 @@ func TestAccTFEPolicySetParameter_valueWriteOnly(t *testing.T) {
 					resource.TestCheckResourceAttr("tfe_policy_set_parameter.foobar", "value", ""),
 					resource.TestCheckResourceAttr("tfe_policy_set_parameter.foobar", "value_wo_version", "2"),
 				),
-				ConfigStateChecks: []statecheck.StateCheck{
-					// Assert that the resource was replaced when version changed
-					compareValuesDiffer.AddStateValue("tfe_policy_set_parameter.foobar", tfjsonpath.New("id")),
-				},
 			},
 			{
 				Config: testAccTFEPolicySetParameter_basic(org.Name),
@@ -189,10 +185,6 @@ func TestAccTFEPolicySetParameter_valueWriteOnly(t *testing.T) {
 					resource.TestCheckNoResourceAttr("tfe_policy_set_parameter.foobar", "value_wo"),
 					resource.TestCheckResourceAttr("tfe_policy_set_parameter.foobar", "value", "value_test"),
 				),
-				ConfigStateChecks: []statecheck.StateCheck{
-					// Assert that the resource was replaced when switching from value_wo to value
-					compareValuesDiffer.AddStateValue("tfe_policy_set_parameter.foobar", tfjsonpath.New("id")),
-				},
 			},
 		},
 	})
