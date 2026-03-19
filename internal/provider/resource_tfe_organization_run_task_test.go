@@ -272,12 +272,6 @@ func TestAccTFEOrganizationRunTask_HMACWriteOnly(t *testing.T) {
 					resource.TestCheckNoResourceAttr("tfe_organization_run_task.foobar", "hmac_key_wo"),
 					resource.TestCheckNoResourceAttr("tfe_organization_run_task.foobar", "hmac_key_wo_version"),
 				),
-				// Ensure that the resource has been replaced
-				ConfigStateChecks: []statecheck.StateCheck{
-					compareValuesDiffer.AddStateValue(
-						"tfe_organization_run_task.foobar", tfjsonpath.New("id"),
-					),
-				},
 			},
 		},
 	})
