@@ -359,7 +359,12 @@ func (r *resourceTFETestVariable) Update(ctx context.Context, req resource.Updat
 		Sensitive:   plan.Sensitive.ValueBoolPointer(),
 	}
 
-	options.Value = r.determineValueForUpdate(plan, state, config)
+	// determines value to update by considering any changes in value, value_wo, and version. Returns nil if no value update is needed.
+	valueToUpdate := r.determineValueForUpdate(plan, state, config)
+	if valueToUpdate != nil {
+		// unsetting value still works because the framework expects the zero value of a string to be "" not nil
+		options.Value = valueToUpdate
+	}
 
 	tflog.Debug(ctx, fmt.Sprintf("Update variable: %s", variableID))
 	variable, err := r.config.Client.TestVariables.Update(ctx, moduleID, variableID, options)
@@ -404,9 +409,10 @@ func (r *resourceTFETestVariable) Delete(ctx context.Context, req resource.Delet
 	// Resource is implicitly deleted from resp.State if diagnostics have no errors.
 }
 
-// determineValueForUpdate returns what value to send to the API during an update,
-// selecting from plan, state, or config based on four scenarios: switching between value/value_wo,
-// version changes, or regular value changes. Returns nil if no value update is needed.
+// determineValueForUpdate is invoked only after terraform determines that an attribute update is needed.
+// note that the update can be triggered by other attributes outside of the value/value_wo attributes.
+// this function compares the ValueWOVersion vs Value to ensure that during api update call, value is not mistakenly unset.
+// Returns nil if no value update is needed.
 func (r *resourceTFETestVariable) determineValueForUpdate(plan, state, config modelTFETestVariable) *string {
 	// Determine if we're using write-only value in plan vs state
 	usingWriteOnlyInPlan := !plan.ValueWOVersion.IsNull()
