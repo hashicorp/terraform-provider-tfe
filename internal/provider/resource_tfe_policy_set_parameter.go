@@ -18,7 +18,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -160,9 +159,6 @@ func (r *resourceTFEPolicySetParameter) Schema(ctx context.Context, req resource
 					int64validator.ConflictsWith(path.MatchRoot("value")),
 					int64validator.AlsoRequires(path.MatchRoot("value_wo")),
 				},
-				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.RequiresReplace(),
-				},
 			},
 
 			"sensitive": schema.BoolAttribute{
@@ -289,7 +285,12 @@ func (r *resourceTFEPolicySetParameter) Update(ctx context.Context, req resource
 		Sensitive: plan.Sensitive.ValueBoolPointer(),
 	}
 
-	options.Value = r.determineValueForUpdate(plan, state, config)
+	// determines value to update by considering any changes in value, value_wo, and version. Returns nil if no value update is needed.
+	valueToUpdate := r.determineValueForUpdate(plan, state, config)
+	if valueToUpdate != nil {
+		// unsetting value still works because the framework expects the zero value of a string to be "" not nil
+		options.Value = valueToUpdate
+	}
 
 	// Update the policy set parameter
 	tflog.Debug(ctx, fmt.Sprintf("Update parameter: %s", plan.ID.ValueString()))
@@ -351,9 +352,10 @@ func (r *resourceTFEPolicySetParameter) ImportState(ctx context.Context, req res
 	resp.Diagnostics.Append(diags...)
 }
 
-// determineValueForUpdate returns what value to send to the API during an update,
-// selecting from plan, state, or config based on four scenarios: switching between value/value_wo,
-// version changes, or regular value changes. Returns nil if no value update is needed.
+// determineValueForUpdate is invoked only after terraform determines that an attribute update is needed.
+// note that the update can be triggered by other attributes outside of the value/value_wo attributes.
+// this function compares the ValueWOVersion vs Value to ensure that during api update call, value is not mistakenly unset.
+// Returns nil if no value update is needed.
 func (r *resourceTFEPolicySetParameter) determineValueForUpdate(plan, state, config modelTFEPolicySetParameter) *string {
 	// Determine if we're using write-only value in plan vs state
 	usingWriteOnlyInPlan := !plan.ValueWOVersion.IsNull()
