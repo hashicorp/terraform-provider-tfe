@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -23,8 +24,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
-	"github.com/hashicorp/terraform-provider-tfe/internal/provider/planmodifiers"
 )
 
 var (
@@ -42,21 +41,23 @@ func NewPolicySetParameterResource() resource.Resource {
 }
 
 type modelTFEPolicySetParameter struct {
-	ID          types.String `tfsdk:"id"`
-	Key         types.String `tfsdk:"key"`
-	Value       types.String `tfsdk:"value"`
-	ValueWO     types.String `tfsdk:"value_wo"`
-	Sensitive   types.Bool   `tfsdk:"sensitive"`
-	PolicySetID types.String `tfsdk:"policy_set_id"`
+	ID             types.String `tfsdk:"id"`
+	Key            types.String `tfsdk:"key"`
+	Value          types.String `tfsdk:"value"`
+	ValueWO        types.String `tfsdk:"value_wo"`
+	ValueWOVersion types.Int64  `tfsdk:"value_wo_version"`
+	Sensitive      types.Bool   `tfsdk:"sensitive"`
+	PolicySetID    types.String `tfsdk:"policy_set_id"`
 }
 
-func modelFromTFEPolicySetParameter(v *tfe.PolicySetParameter, lastValue types.String, isWriteOnly bool) modelTFEPolicySetParameter {
+func modelFromTFEPolicySetParameter(v *tfe.PolicySetParameter, lastValue types.String, valueWOVersion types.Int64) modelTFEPolicySetParameter {
 	p := modelTFEPolicySetParameter{
-		ID:          types.StringValue(v.ID),
-		Key:         types.StringValue(v.Key),
-		Value:       types.StringValue(v.Value),
-		Sensitive:   types.BoolValue(v.Sensitive),
-		PolicySetID: types.StringValue(v.PolicySet.ID),
+		ID:             types.StringValue(v.ID),
+		Key:            types.StringValue(v.Key),
+		Value:          types.StringValue(v.Value),
+		ValueWOVersion: valueWOVersion,
+		Sensitive:      types.BoolValue(v.Sensitive),
+		PolicySetID:    types.StringValue(v.PolicySet.ID),
 	}
 
 	// If the variable is sensitive, carry forward the last known value
@@ -65,8 +66,9 @@ func modelFromTFEPolicySetParameter(v *tfe.PolicySetParameter, lastValue types.S
 		p.Value = lastValue
 	}
 
-	// If the variable is write-only, clear the value.
-	if isWriteOnly {
+	// Don't retrieve values if write-only is being used. Unset the value field before updating the state.
+	isWriteOnlyValue := !valueWOVersion.IsNull()
+	if isWriteOnlyValue {
 		p.Value = types.StringValue("")
 	}
 
@@ -146,9 +148,16 @@ func (r *resourceTFEPolicySetParameter) Schema(ctx context.Context, req resource
 				Description: "Value of the parameter in write-only mode",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("value")),
+					stringvalidator.AlsoRequires(path.MatchRoot("value_wo_version")),
 				},
-				PlanModifiers: []planmodifier.String{
-					planmodifiers.NewReplaceForWriteOnlyStringValue("value_wo"),
+			},
+
+			"value_wo_version": schema.Int64Attribute{
+				Optional:    true,
+				Description: "Version of the write-only value to trigger updates",
+				Validators: []validator.Int64{
+					int64validator.ConflictsWith(path.MatchRoot("value")),
+					int64validator.AlsoRequires(path.MatchRoot("value_wo")),
 				},
 			},
 
@@ -208,8 +217,7 @@ func (r *resourceTFEPolicySetParameter) Create(ctx context.Context, req resource
 	}
 
 	// Set Value from `value_wo` if set, otherwise use the normal value
-	isWriteOnly := !config.ValueWO.IsNull()
-	if isWriteOnly {
+	if !config.ValueWO.IsNull() {
 		options.Value = config.ValueWO.ValueStringPointer()
 	} else {
 		options.Value = plan.Value.ValueStringPointer()
@@ -223,15 +231,7 @@ func (r *resourceTFEPolicySetParameter) Create(ctx context.Context, req resource
 		return
 	}
 
-	// Store the hashed write-only value in the private state
-	store := r.writeOnlyValueStore(resp.Private)
-	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.ValueWO)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Update state
-	result := modelFromTFEPolicySetParameter(p, plan.Value, isWriteOnly)
+	result := modelFromTFEPolicySetParameter(p, plan.Value, config.ValueWOVersion)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
@@ -263,14 +263,8 @@ func (r *resourceTFEPolicySetParameter) Read(ctx context.Context, req resource.R
 		return
 	}
 
-	// Check if the parameter is write-only
-	isWriteOnly, diags := r.writeOnlyValueStore(resp.Private).PriorValueExists(ctx)
-	resp.Diagnostics.Append(diags...)
-	if diags.HasError() {
-		return
-	}
-
-	result := modelFromTFEPolicySetParameter(p, state.Value, isWriteOnly)
+	// We got a parameter, so update state:
+	result := modelFromTFEPolicySetParameter(p, state.Value, state.ValueWOVersion)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
@@ -291,11 +285,11 @@ func (r *resourceTFEPolicySetParameter) Update(ctx context.Context, req resource
 		Sensitive: plan.Sensitive.ValueBoolPointer(),
 	}
 
-	// Only set Value if our planned value would be a change from the prior state.
-	// This is so we don't accidentally reset the value of a sensitive variable on
-	// unrelated changes when `ignore_changes = [value]` is set.
-	if state.Value.ValueString() != plan.Value.ValueString() {
-		options.Value = plan.Value.ValueStringPointer()
+	// determines value to update by considering any changes in value, value_wo, and version. Returns nil if no value update is needed.
+	valueToUpdate := r.determineValueForUpdate(plan, state, config)
+	if valueToUpdate != nil {
+		// unsetting value still works because the framework expects the zero value of a string to be "" not nil
+		options.Value = valueToUpdate
 	}
 
 	// Update the policy set parameter
@@ -305,15 +299,8 @@ func (r *resourceTFEPolicySetParameter) Update(ctx context.Context, req resource
 		resp.Diagnostics.AddError(fmt.Sprintf("Error updating parameter %s", plan.ID), err.Error())
 	}
 
-	// Store the hashed write-only value in the private state
-	store := r.writeOnlyValueStore(resp.Private)
-	resp.Diagnostics.Append(store.SetPriorValue(ctx, config.ValueWO)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
 	// Update state
-	result := modelFromTFEPolicySetParameter(p, plan.Value, !config.ValueWO.IsNull())
+	result := modelFromTFEPolicySetParameter(p, plan.Value, config.ValueWOVersion)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
@@ -365,6 +352,32 @@ func (r *resourceTFEPolicySetParameter) ImportState(ctx context.Context, req res
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r *resourceTFEPolicySetParameter) writeOnlyValueStore(private helpers.PrivateState) *helpers.WriteOnlyValueStore {
-	return helpers.NewWriteOnlyValueStore(private, "value_wo")
+// determineValueForUpdate is invoked only after terraform determines that an attribute update is needed.
+// note that the update can be triggered by other attributes outside of the value/value_wo attributes.
+// this function compares the ValueWOVersion vs Value to ensure that during api update call, value is not mistakenly unset.
+// Returns nil if no value update is needed.
+func (r *resourceTFEPolicySetParameter) determineValueForUpdate(plan, state, config modelTFEPolicySetParameter) *string {
+	// Determine if we're using write-only value in plan vs state
+	usingWriteOnlyInPlan := !plan.ValueWOVersion.IsNull()
+	usingWriteOnlyInState := !state.ValueWOVersion.IsNull()
+
+	// Case 1: Switching FROM value TO value_wo
+	if !usingWriteOnlyInState && usingWriteOnlyInPlan && !config.ValueWO.IsNull() {
+		return config.ValueWO.ValueStringPointer()
+	}
+	// Case 2: Switching FROM value_wo TO value
+	if usingWriteOnlyInState && !usingWriteOnlyInPlan && !plan.Value.IsNull() {
+		return plan.Value.ValueStringPointer()
+	}
+	// Case 3: value_wo version changed in plan
+	if usingWriteOnlyInPlan && plan.ValueWOVersion.ValueInt64() != state.ValueWOVersion.ValueInt64() && !config.ValueWO.IsNull() {
+		return config.ValueWO.ValueStringPointer()
+	}
+	// Case 4: Regular value changed. Only set Value if our planned value would be a CHANGE from
+	// the prior state. This prevents accidentally resetting the value of sensitive variables on
+	// unrelated changes when ignore_changes=[value] is set.
+	if state.Value.ValueString() != plan.Value.ValueString() {
+		return plan.Value.ValueStringPointer()
+	}
+	return nil
 }
