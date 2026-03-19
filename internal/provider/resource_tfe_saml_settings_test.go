@@ -6,6 +6,7 @@ package provider
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strconv"
 	"testing"
 
@@ -67,11 +68,39 @@ func TestAccTFESAMLSettings_writeOnly(t *testing.T) {
 					resource.TestCheckResourceAttr(testResourceName, "signature_digest_method", samlSignatureMethodSHA256),
 					resource.TestCheckNoResourceAttr(
 						testResourceName, "private_key_wo"),
+					resource.TestCheckResourceAttr(testResourceName, "private_key_wo_version", "1"),
 				),
 			},
 		},
 	})
 }
+func TestAccTFESAMLSettings_writeOnlyValidation(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			tfversion.SkipBelow(version.Must(version.NewVersion("1.11.0"))),
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFESAMLSettings_privateKeyAndPrivateKeyWO(),
+				ExpectError: regexp.MustCompile(`Attribute "private_key_wo" cannot be specified when "private_key" is\s+specified`),
+			},
+			{
+				Config:      testAccTFESAMLSettings_privateKeyWOMissingVersion(),
+				ExpectError: regexp.MustCompile(`Attribute "private_key_wo_version" must be specified when "private_key_wo" is\s+specified`),
+			},
+			{
+				Config:      testAccTFESAMLSettings_versionMissingPrivateKeyWO(),
+				ExpectError: regexp.MustCompile(`Attribute "private_key_wo" must be specified when "private_key_wo_version" is\s+specified`),
+			},
+			{
+				Config:      testAccTFESAMLSettings_privateKeyVersionConflict(),
+				ExpectError: regexp.MustCompile(`Attribute "private_key" cannot be specified when "private_key_wo_version" is\s+specified`),
+			},
+		},
+	})
+}
+
 func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 	t.Run("basic SAML settings resource", func(t *testing.T) {
 		s := tfe.AdminSAMLSetting{
@@ -376,9 +405,53 @@ resource "tfe_saml_settings" "foobar" {
 func testAccTFESAMLSettings_writeOnly(s tfe.AdminSAMLSetting) string {
 	return fmt.Sprintf(`
 resource "tfe_saml_settings" "foobar" {
-  idp_cert         = "%s"
-  slo_endpoint_url = "%s"
-  sso_endpoint_url = "%s"
-  private_key_wo 					= "%s"
+  idp_cert                 = "%s"
+  slo_endpoint_url         = "%s"
+  sso_endpoint_url         = "%s"
+  private_key_wo           = "%s"
+  private_key_wo_version   = 1
 }`, s.IDPCert, s.SLOEndpointURL, s.SSOEndpointURL, s.PrivateKey)
+}
+
+func testAccTFESAMLSettings_privateKeyAndPrivateKeyWO() string {
+	return `
+resource "tfe_saml_settings" "foobar" {
+  idp_cert               = "testIDPCert"
+  slo_endpoint_url       = "https://foobar.com/slo"
+  sso_endpoint_url       = "https://foobar.com/sso"
+  private_key            = "some-key"
+  private_key_wo         = "some-key"
+  private_key_wo_version = 1
+}`
+}
+
+func testAccTFESAMLSettings_privateKeyWOMissingVersion() string {
+	return `
+resource "tfe_saml_settings" "foobar" {
+  idp_cert         = "testIDPCert"
+  slo_endpoint_url = "https://foobar.com/slo"
+  sso_endpoint_url = "https://foobar.com/sso"
+  private_key_wo   = "some-key"
+}`
+}
+
+func testAccTFESAMLSettings_versionMissingPrivateKeyWO() string {
+	return `
+resource "tfe_saml_settings" "foobar" {
+  idp_cert               = "testIDPCert"
+  slo_endpoint_url       = "https://foobar.com/slo"
+  sso_endpoint_url       = "https://foobar.com/sso"
+  private_key_wo_version = 1
+}`
+}
+
+func testAccTFESAMLSettings_privateKeyVersionConflict() string {
+	return `
+resource "tfe_saml_settings" "foobar" {
+  idp_cert               = "testIDPCert"
+  slo_endpoint_url       = "https://foobar.com/slo"
+  sso_endpoint_url       = "https://foobar.com/sso"
+  private_key            = "some-key"
+  private_key_wo_version = 1
+}`
 }
