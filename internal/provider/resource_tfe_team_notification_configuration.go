@@ -18,7 +18,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -227,9 +226,6 @@ func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, r
 				Validators: []validator.Int64{
 					int64validator.ConflictsWith(path.MatchRoot("token")),
 					int64validator.AlsoRequires(path.MatchRoot("token_wo")),
-				},
-				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.RequiresReplace(),
 				},
 			},
 
@@ -536,8 +532,9 @@ func (r *resourceTFETeamNotificationConfiguration) ImportState(ctx context.Conte
 }
 
 // determineTokenForUpdate is invoked only after terraform determines that an attribute update is needed.
-// note that the update can be triggered by other attributes outside of the token attributes.
-// this function compares the write-only token version vs token to ensure that token is not mistakenly unset when its not intended.
+// note that the update can be triggered by other attributes outside of the token/token_wo attributes.
+// this function compares the TokenWOVersion vs Token to ensure that during api update call, token is not mistakenly unset.
+// Returns nil if no token update is needed.
 func (r *resourceTFETeamNotificationConfiguration) determineTokenForUpdate(plan, state, config modelTFETeamNotificationConfiguration) (updateToken *string, isWOVal bool) {
 	// Determine if we're using write-only token in plan vs state
 	usingWriteOnlyInPlan := !plan.TokenWOVersion.IsNull()

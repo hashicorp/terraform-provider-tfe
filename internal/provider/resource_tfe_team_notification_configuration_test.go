@@ -1003,13 +1003,6 @@ func TestAccTFETeamNotificationConfiguration_tokenWO(t *testing.T) {
 					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "token_wo"),
 					resource.TestCheckResourceAttr("tfe_team_notification_configuration.foobar", "token_wo_version", "2"),
 				),
-				// Register the id with the value comparer so we can assert that the
-				// resource has been replaced in the next step.
-				ConfigStateChecks: []statecheck.StateCheck{
-					compareValuesDiffer.AddStateValue(
-						"tfe_team_notification_configuration.foobar", tfjsonpath.New("id"),
-					),
-				},
 			},
 			{
 				Config: testAccTFETeamNotificationConfiguration_token(org.Name),
@@ -1017,12 +1010,6 @@ func TestAccTFETeamNotificationConfiguration_tokenWO(t *testing.T) {
 					resource.TestCheckResourceAttr("tfe_team_notification_configuration.foobar", "token", "1234567890"),
 					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "token_wo"),
 				),
-				// Ensure that the resource has been replaced
-				ConfigStateChecks: []statecheck.StateCheck{
-					compareValuesDiffer.AddStateValue(
-						"tfe_team_notification_configuration.foobar", tfjsonpath.New("id"),
-					),
-				},
 			},
 		},
 	})
