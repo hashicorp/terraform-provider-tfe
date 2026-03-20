@@ -5,10 +5,12 @@ FEATURES:
 BREAKING CHANGES:
 * `r/tfe_variable`: Fixed a bug where value_wo continuously resulted in new changes on every terraform apply. By @uk1288 [#1983](https://github.com/hashicorp/terraform-provider-tfe/pull/1983)
 * `r/tfe_variable`: Added the `value_wo_version` write-only attribute to allow triggering value_wo updates, by @uk1288 ([#1983](https://github.com/hashicorp/terraform-provider-tfe/pull/1983))
+* `r/tfe_test_variable`: Added the `value_wo_version` write-only attribute to allow triggering `value_wo` updates, by @uk1288 ([#1985](https://github.com/hashicorp/terraform-provider-tfe/pull/1985))
 
 FEATURES:
 * Adds `tfe_query_run` action, allowing users to invoke remote Terraform queries on HCP Terraform and Terraform Enterprise, by @sebasslash [#1982](https://github.com/hashicorp/terraform-provider-tfe/pull/1982)
 * Adds `d/tfe_current_user` data source for retrieving information about the user associated with the configured API token, by @ShaunakRembhotkar
+
 
 ## v0.74.1
 
