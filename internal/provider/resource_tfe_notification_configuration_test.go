@@ -117,11 +117,11 @@ func TestAccTFENotificationConfiguration_tokenWriteOnlyValidation(t *testing.T) 
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_tokenWriteOnlyWithoutVersion(rInt),
-				ExpectError: regexp.MustCompile(`version is missing`),
+				ExpectError: regexp.MustCompile(`Attribute "token_wo_version" must be specified when "token_wo" is specified`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_tokenWriteOnlyVersionWithoutToken(rInt),
-				ExpectError: regexp.MustCompile(`token is missing`),
+				ExpectError: regexp.MustCompile(`Attribute "token_wo" must be specified when "token_wo_version" is specified`),
 			},
 			{
 				Config:      testAccTFENotificationConfiguration_tokenAndTokenWriteOnly(rInt),
