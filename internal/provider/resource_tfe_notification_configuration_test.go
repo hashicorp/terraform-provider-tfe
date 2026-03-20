@@ -55,6 +55,7 @@ func TestAccTFENotificationConfiguration_WriteOnly(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	compareValuesDiffer := statecheck.CompareValue(compare.ValuesDiffer())
+	versionOne, versionTwo := 1, 2
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
@@ -62,11 +63,7 @@ func TestAccTFENotificationConfiguration_WriteOnly(t *testing.T) {
 		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccTFENotificationConfiguration_tokenAndTokenWriteOnly(rInt),
-				ExpectError: regexp.MustCompile(`Attribute "token_wo" cannot be specified when "token" is specified`),
-			},
-			{
-				Config: testAccTFENotificationConfiguration_tokenWriteOnly(rInt, "1"),
+				Config: testAccTFENotificationConfiguration_tokenWriteOnly(rInt, versionOne),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
 						"tfe_notification_configuration.foobar", notificationConfiguration),
@@ -80,6 +77,7 @@ func TestAccTFENotificationConfiguration_WriteOnly(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_notification_configuration.foobar", "url", runTasksURL()),
 					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "token_wo"),
+					resource.TestCheckResourceAttr("tfe_notification_configuration.foobar", "token_wo_version", "1"),
 				),
 				ConfigStateChecks: []statecheck.StateCheck{
 					compareValuesDiffer.AddStateValue(
@@ -88,9 +86,10 @@ func TestAccTFENotificationConfiguration_WriteOnly(t *testing.T) {
 				},
 			},
 			{
-				Config: testAccTFENotificationConfiguration_tokenWriteOnly(rInt, "2"),
+				Config: testAccTFENotificationConfiguration_tokenWriteOnly(rInt, versionTwo),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "token_wo"),
+					resource.TestCheckResourceAttr("tfe_notification_configuration.foobar", "token_wo_version", "2"),
 				),
 				ConfigStateChecks: []statecheck.StateCheck{
 					compareValuesDiffer.AddStateValue(
@@ -109,6 +108,33 @@ func TestAccTFENotificationConfiguration_WriteOnly(t *testing.T) {
 						"tfe_notification_configuration.foobar", tfjsonpath.New("id"),
 					),
 				},
+			},
+		},
+	})
+}
+
+func TestAccTFENotificationConfiguration_tokenWriteOnlyValidation(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFENotificationConfiguration_tokenAndTokenWriteOnly(rInt),
+				ExpectError: regexp.MustCompile(`Attribute "token_wo" cannot be specified when "token" is specified`),
+			},
+			{
+				Config:      testAccTFENotificationConfiguration_tokenWriteOnlyMissingVersion(rInt),
+				ExpectError: regexp.MustCompile(`Attribute "token_wo_version" must be specified when "token_wo" is specified`),
+			},
+			{
+				Config:      testAccTFENotificationConfiguration_versionMissingToken(rInt),
+				ExpectError: regexp.MustCompile(`Attribute "token_wo" must be specified when "token_wo_version" is specified`),
+			},
+			{
+				Config:      testAccTFENotificationConfiguration_tokenVersionConflict(rInt),
+				ExpectError: regexp.MustCompile(`Attribute "token_wo" must be specified when "token_wo_version" is specified`),
 			},
 		},
 	})
@@ -883,7 +909,7 @@ resource "tfe_notification_configuration" "foobar" {
 }`, rInt, runTasksURL())
 }
 
-func testAccTFENotificationConfiguration_tokenWriteOnly(rInt int, wo string) string {
+func testAccTFENotificationConfiguration_tokenWriteOnly(rInt int, versionValue int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
   name  = "tst-terraform-%d"
@@ -898,10 +924,75 @@ resource "tfe_workspace" "foobar" {
 resource "tfe_notification_configuration" "foobar" {
   name             = "notification_basic"
   destination_type = "generic"
-  token_wo			   = "%s"
+  token_wo         = "some-token"
+  token_wo_version = %d
   url              = "%s"
   workspace_id     = tfe_workspace.foobar.id
-}`, rInt, wo, runTasksURL())
+}`, rInt, versionValue, runTasksURL())
+}
+
+func testAccTFENotificationConfiguration_tokenWriteOnlyMissingVersion(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name             = "notification_basic"
+  destination_type = "generic"
+  token_wo         = "some-token"
+  url              = "%s"
+  workspace_id     = tfe_workspace.foobar.id
+}`, rInt, runTasksURL())
+}
+
+func testAccTFENotificationConfiguration_versionMissingToken(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name             = "notification_basic"
+  destination_type = "generic"
+  token_wo_version = 1
+  url              = "%s"
+  workspace_id     = tfe_workspace.foobar.id
+}`, rInt, runTasksURL())
+}
+
+func testAccTFENotificationConfiguration_tokenVersionConflict(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name             = "notification_basic"
+  destination_type = "generic"
+  token            = "some-token"
+  token_wo_version = 1
+  url              = "%s"
+  workspace_id     = tfe_workspace.foobar.id
+}`, rInt, runTasksURL())
 }
 
 func testAccTFENotificationConfiguration_tokenAndTokenWriteOnly(rInt int) string {
