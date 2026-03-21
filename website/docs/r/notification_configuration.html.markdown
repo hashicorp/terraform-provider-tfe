@@ -94,6 +94,29 @@ resource "tfe_notification_configuration" "test" {
 }
 ```
 
+With write-only token:
+
+```hcl
+resource "tfe_organization" "test" {
+  name  = "my-org-name"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "test" {
+  name         = "my-workspace-name"
+  organization = tfe_organization.test.id
+}
+
+resource "tfe_notification_configuration" "test" {
+  name             = "my-test-notification-configuration"
+  destination_type = "generic"
+  token_wo         = "my-write-only-token"
+  token_wo_version = 1
+  url              = "https://example.com"
+  workspace_id     = tfe_workspace.test.id
+}
+```
+
 ## Argument Reference
 
 The following arguments are supported:
@@ -115,7 +138,8 @@ The following arguments are supported:
   be used by the receiving server to verify request authenticity when configured for notification
   configurations with a destination type of `generic`. Defaults to `null`.
   This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.
-* `token_wo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) Write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Either `token` or `token_wo` can be provided, but not both. This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.
+* `token_wo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) Write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Either `token` or `token_wo` can be provided, but not both. Must be provided with `token_wo_version`. This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.
+* `token_wo_version` - (Optional) Version for `token_wo` used to trigger updates when the write-only token value changes. Must be provided with `token_wo`, and cannot be used with `token`.
 * `triggers` - (Optional) The array of triggers for which this notification configuration will
   send notifications. Valid values are `run:created`, `run:planning`, `run:needs_attention`, `run:applying`
   `run:completed`, `run:errored`, `assessment:check_failure`, `assessment:drifted`, `assessment:failed`, `workspace:auto_destroy_reminder`, or `workspace:auto_destroy_run_results`.
