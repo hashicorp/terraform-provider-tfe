@@ -297,6 +297,7 @@ func (r *resourceTFEPolicySetParameter) Update(ctx context.Context, req resource
 	p, err := r.config.Client.PolicySetParameters.Update(ctx, plan.PolicySetID.ValueString(), plan.ID.ValueString(), options)
 	if err != nil {
 		resp.Diagnostics.AddError(fmt.Sprintf("Error updating parameter %s", plan.ID), err.Error())
+		return
 	}
 
 	// Update state
