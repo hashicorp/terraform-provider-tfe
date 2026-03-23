@@ -11,10 +11,12 @@ BREAKING CHANGES:
 * `r/tfe_organization_run_task`: Added the `hmac_key_wo_version` write-only attribute to allow triggering `hmac_key_wo` updates, by @uk1288 ([#1992](https://github.com/hashicorp/terraform-provider-tfe/pull/1992))
 * `r/tfe_policy_set_parameter`: Added the `value_wo_version` write-only attribute to allow triggering `value_wo` updates, by @uk1288 ([#1984](https://github.com/hashicorp/terraform-provider-tfe/pull/1984))
 * `r/tfe_saml_settings`: Added the `private_key_wo_version` write-only attribute to allow triggering `private_key_wo` updates, by @uk1288 ([#1993](https://github.com/hashicorp/terraform-provider-tfe/pull/1993))
+* `r/tfe_ssh_key`: Added the `key_wo_version` write-only attribute to allow triggering `key_wo` updates, by @uk1288 ([#1994](https://github.com/hashicorp/terraform-provider-tfe/pull/1994))
 
 FEATURES:
 * Adds `tfe_query_run` action, allowing users to invoke remote Terraform queries on HCP Terraform and Terraform Enterprise, by @sebasslash [#1982](https://github.com/hashicorp/terraform-provider-tfe/pull/1982)
 * Adds `d/tfe_current_user` data source for retrieving information about the user associated with the configured API token, by @ShaunakRembhotkar
+
 
 ## v0.74.1
 
