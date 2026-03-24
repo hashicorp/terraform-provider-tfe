@@ -66,6 +66,11 @@ All TTL attributes accept duration strings in the format `<number><unit>`:
 In addition to all arguments above, the following attributes are exported:
 
 * `id` - The ID of the token TTL policy (same as the organization name).
+* `enabled` - Indicates whether the maximum TTL token policy is enabled (`true`) or disabled (`false`) for the organization.
+* `org_token_max_ttl_ms` - The computed maximum time-to-live for organization tokens, in milliseconds.
+* `team_token_max_ttl_ms` - The computed maximum time-to-live for team tokens, in milliseconds.
+* `audit_trail_token_max_ttl_ms` - The computed maximum time-to-live for audit trail tokens, in milliseconds.
+* `user_token_max_ttl_ms` - The computed maximum time-to-live for user tokens, in milliseconds.
 
 ## Import
 
@@ -73,3 +78,4 @@ Token TTL policies can be imported using the organization name:
 
 ```shell
 terraform import tfe_org_max_token_ttl_policy.example my-organization
+```

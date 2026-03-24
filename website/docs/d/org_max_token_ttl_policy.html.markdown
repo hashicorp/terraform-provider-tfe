@@ -43,7 +43,7 @@ In addition to all arguments above, the following attributes are exported:
 
 ## Notes
 
-* When the policy is disabled, all TTL values default to `63072000000000` milliseconds (2 years).
+* When the policy is disabled, all TTL values default to `63072000000` milliseconds (2 years).
 * The data source fetches the current policy configuration from the database via the TFE API.
 * If no policies have been configured for the organization, the data source will return default values with `enabled = false`.
 * TTL values are returned in milliseconds to preserve the exact values from the database without conversion ambiguity.

@@ -14,6 +14,7 @@ import (
 )
 
 func TestAccTFEOrgMaxTokenTTLPolicy_basic(t *testing.T) {
+	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -40,6 +41,7 @@ func TestAccTFEOrgMaxTokenTTLPolicy_basic(t *testing.T) {
 }
 
 func TestAccTFEOrgMaxTokenTTLPolicy_update(t *testing.T) {
+	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -81,6 +83,7 @@ func TestAccTFEOrgMaxTokenTTLPolicy_update(t *testing.T) {
 }
 
 func TestAccTFEOrgMaxTokenTTLPolicy_disabled(t *testing.T) {
+	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -99,6 +102,7 @@ func TestAccTFEOrgMaxTokenTTLPolicy_disabled(t *testing.T) {
 }
 
 func TestAccTFEOrgMaxTokenTTLPolicy_import(t *testing.T) {
+	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
@@ -124,6 +128,7 @@ func TestAccTFEOrgMaxTokenTTLPolicy_import(t *testing.T) {
 }
 
 func TestAccTFEOrgMaxTokenTTLPolicy_defaultOrg(t *testing.T) {
+	skipUnlessBeta(t)
 	orgName, _ := setupDefaultOrganization(t)
 
 	resource.Test(t, resource.TestCase{

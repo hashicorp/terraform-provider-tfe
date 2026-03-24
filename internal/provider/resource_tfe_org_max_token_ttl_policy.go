@@ -6,6 +6,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"math"
 	"regexp"
 	"strconv"
 
@@ -241,11 +242,28 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Create(ctx context.Context, req resour
 		return
 	}
 
-	// If disabled, just set state without creating policies
+	// If disabled, set very high TTLs (effectively disabled) to ensure remote state matches
 	if !plan.Enabled.ValueBool() {
-		tflog.Debug(ctx, "Token TTL policy is disabled, skipping creation", map[string]any{
+		tflog.Debug(ctx, "Disabling token TTL policy for organization", map[string]any{
 			"organization": organization,
 		})
+		maxTTL := defaultTokenTTLMs
+
+		options := tfe.OrganizationTokenTTLPolicyUpdateOptions{
+			Policies: []tfe.OrganizationTokenTTLPolicyUpdateItem{
+				{TokenType: tfe.TokenTypeOrganization, MaxTTLMs: maxTTL},
+				{TokenType: tfe.TokenTypeTeam, MaxTTLMs: maxTTL},
+				{TokenType: tfe.TokenTypeUser, MaxTTLMs: maxTTL},
+				{TokenType: tfe.TokenTypeAuditTrails, MaxTTLMs: maxTTL},
+			},
+		}
+
+		_, err := r.config.Client.OrganizationTokenTTLPolicies.Update(ctx, organization, options)
+		if err != nil {
+			resp.Diagnostics.AddError("Unable to disable organization token TTL policy", err.Error())
+			return
+		}
+
 		result := newDisabledPolicyModel(organization)
 		resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 		return
@@ -478,15 +496,15 @@ func durationStringToMilliseconds(duration string) (int64, error) {
 
 	switch unit {
 	case "h": // hours
-		milliseconds = int64(value * 60 * 60 * 1000)
+		milliseconds = int64(math.Round(value * 60 * 60 * 1000))
 	case "d": // days
-		milliseconds = int64(value * 24 * 60 * 60 * 1000)
+		milliseconds = int64(math.Round(value * 24 * 60 * 60 * 1000))
 	case "w": // weeks
-		milliseconds = int64(value * 7 * 24 * 60 * 60 * 1000)
+		milliseconds = int64(math.Round(value * 7 * 24 * 60 * 60 * 1000))
 	case "mo": // months (30 days)
-		milliseconds = int64(value * 30 * 24 * 60 * 60 * 1000)
+		milliseconds = int64(math.Round(value * 30 * 24 * 60 * 60 * 1000))
 	case "y": // years (365 days)
-		milliseconds = int64(value * 365 * 24 * 60 * 60 * 1000)
+		milliseconds = int64(math.Round(value * 365 * 24 * 60 * 60 * 1000))
 	default:
 		return 0, fmt.Errorf("unknown unit: %s", unit)
 	}
