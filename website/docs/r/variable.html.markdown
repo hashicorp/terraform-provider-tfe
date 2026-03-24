@@ -74,11 +74,12 @@ variable "session_token" {
 }
 
 resource "tfe_variable" "test" {
-  key          = "my_key_name"
-  value_wo     = var.session_token
-  category     = "terraform"
-  workspace_id = tfe_workspace.test.id
-  description  = "a useful description"
+  key              = "my_key_name"
+  value_wo         = var.session_token
+  value_wo_version = 1
+  category         = "terraform"
+  workspace_id     = tfe_workspace.test.id
+  description      = "a useful description"
 }
 ```
 
@@ -89,6 +90,7 @@ The following arguments are supported:
 * `key` - (Required) Name of the variable.
 * `value` - (Required) Value of the variable.
 * `value_wo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) Value of the variable. `Write-only` attributes function similarly to their non-write-only counterparts, but are never stored to state and do not display in the Terraform plan output. Either `value` or `value_wo` can be provided, but not both.
+* `value_wo_version` - (Optional) Version identifier for the write-only value. Required when `value_wo` is specified to trigger updates. Cannot be used with `value`.
 * `category` - (Required) Whether this is a Terraform or environment variable.
   Valid values are `terraform` or `env`.
 * `description` - (Optional) Description of the variable.

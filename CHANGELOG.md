@@ -1,7 +1,22 @@
 ## Unreleased
+FEATURES:
+* Adds a warning message to `r/tfe_team_token`, `r/tfe_organization_token` and `r/tfe_audit_trail_token` resources to indicate that if no `expired_at` attribute is set, the token will expire in 2 years. By @sana-faraz [#1976](https://github.com/hashicorp/terraform-provider-tfe/pull/1976)
+
+BREAKING CHANGES:
+* `r/tfe_variable`: Fixed a bug where value_wo continuously resulted in new changes on every terraform apply. By @uk1288 [#1983](https://github.com/hashicorp/terraform-provider-tfe/pull/1983)
+* `r/tfe_variable`: Added the `value_wo_version` write-only attribute to allow triggering value_wo updates, by @uk1288 ([#1983](https://github.com/hashicorp/terraform-provider-tfe/pull/1983))
+* `r/tfe_test_variable`: Added the `value_wo_version` write-only attribute to allow triggering `value_wo` updates, by @uk1288 ([#1985](https://github.com/hashicorp/terraform-provider-tfe/pull/1985))
+* `r/tfe_team_notification_configuration`: Added the `token_wo_version` write-only attribute to allow triggering `token_wo` updates, by @uk1288 ([#1995](https://github.com/hashicorp/terraform-provider-tfe/pull/1995))
+* `r/tfe_notification_configuration`: Added the `token_wo_version` write-only attribute to allow triggering token_wo updates, by @uk1288 [#2001](https://github.com/hashicorp/terraform-provider-tfe/pull/2001)
+* `r/tfe_organization_run_task`: Added the `hmac_key_wo_version` write-only attribute to allow triggering `hmac_key_wo` updates, by @uk1288 ([#1992](https://github.com/hashicorp/terraform-provider-tfe/pull/1992))
+* `r/tfe_policy_set_parameter`: Added the `value_wo_version` write-only attribute to allow triggering `value_wo` updates, by @uk1288 ([#1984](https://github.com/hashicorp/terraform-provider-tfe/pull/1984))
+* `r/tfe_saml_settings`: Added the `private_key_wo_version` write-only attribute to allow triggering `private_key_wo` updates, by @uk1288 ([#1993](https://github.com/hashicorp/terraform-provider-tfe/pull/1993))
+* `r/tfe_ssh_key`: Added the `key_wo_version` write-only attribute to allow triggering `key_wo` updates, by @uk1288 ([#1994](https://github.com/hashicorp/terraform-provider-tfe/pull/1994))
 
 FEATURES:
 * Adds `tfe_query_run` action, allowing users to invoke remote Terraform queries on HCP Terraform and Terraform Enterprise, by @sebasslash [#1982](https://github.com/hashicorp/terraform-provider-tfe/pull/1982)
+* Adds `d/tfe_current_user` data source for retrieving information about the user associated with the configured API token, by @ShaunakRembhotkar
+
 
 ## v0.74.1
 
