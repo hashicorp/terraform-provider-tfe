@@ -86,7 +86,7 @@ runs:
 
     - name: Split acceptance tests
       id: test_split
-      uses: hashicorp-forge/go-test-split-action@865081b7d8a3fcb6f3dc48d659365285205f4d82 # unreleased version just using for testing the CI
+      uses: hashicorp-forge/go-test-split-action@e5fd1925a4b58bdc72188477c4099b2b018678b7 # unreleased version just using for testing the CI
       with:
         index: ${{ inputs.matrix_index }}
         total: ${{ inputs.matrix_total }}
