@@ -105,14 +105,22 @@ func (d *dataSourceTFEOrgMaxTokenTTLPolicy) Read(ctx context.Context, req dataso
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("Reading token TTL policies for organization: %s", organization))
+
+	// Read the organization to get max_ttl_enabled status
+	org, err := d.config.Client.Organizations.Read(ctx, organization)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to read organization", err.Error())
+		return
+	}
+
 	policyList, err := d.config.Client.OrganizationTokenTTLPolicies.List(ctx, organization, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read organization token TTL policies", err.Error())
 		return
 	}
 
-	// If no policies exist, treat as disabled with default values
-	enabled := len(policyList.Items) > 0
+	// Use the organization's max_ttl_enabled attribute
+	enabled := org.MaxTTLEnabled
 
 	// Convert the API response to the data source model
 	result := modelFromTokenTTLPoliciesData(organization, enabled, policyList.Items)
@@ -122,7 +130,7 @@ func (d *dataSourceTFEOrgMaxTokenTTLPolicy) Read(ctx context.Context, req dataso
 
 func modelFromTokenTTLPoliciesData(organization string, enabled bool, policies []*tfe.OrganizationTokenTTLPolicy) modelTFEOrgMaxTokenTTLPolicyData {
 	// Default TTL: 2 years in milliseconds
-	defaultTTLMs := int64(63072000000) // 2 years = 365 * 2 * 24 * 60 * 60 * 1000
+	defaultTTLMs := int64(63072000000)
 
 	result := modelTFEOrgMaxTokenTTLPolicyData{
 		Organization:            types.StringValue(organization),

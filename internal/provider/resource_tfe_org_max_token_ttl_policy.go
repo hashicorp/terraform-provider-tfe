@@ -195,37 +195,6 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) ModifyPlan(ctx context.Context, req re
 	if req.Plan.Raw.IsNull() {
 		return
 	}
-
-	// When enabled=false, override user-provided TTL values with defaults
-	var plan modelTFEOrgMaxTokenTTLPolicy
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	if !plan.Enabled.IsNull() && !plan.Enabled.ValueBool() {
-		plan.OrgTokenMaxTTL = types.StringValue(defaultTokenTTL)
-		plan.TeamTokenMaxTTL = types.StringValue(defaultTokenTTL)
-		plan.AuditTrailTokenMaxTTL = types.StringValue(defaultTokenTTL)
-		plan.UserTokenMaxTTL = types.StringValue(defaultTokenTTL)
-
-		resp.Diagnostics.Append(resp.Plan.Set(ctx, &plan)...)
-	}
-}
-
-func newDisabledPolicyModel(organization string) modelTFEOrgMaxTokenTTLPolicy {
-	return modelTFEOrgMaxTokenTTLPolicy{
-		ID:                      types.StringValue(organization),
-		Organization:            types.StringValue(organization),
-		Enabled:                 types.BoolValue(false),
-		OrgTokenMaxTTL:          types.StringValue(defaultTokenTTL),
-		TeamTokenMaxTTL:         types.StringValue(defaultTokenTTL),
-		AuditTrailTokenMaxTTL:   types.StringValue(defaultTokenTTL),
-		UserTokenMaxTTL:         types.StringValue(defaultTokenTTL),
-		OrgTokenMaxTTLMs:        types.Int64Value(defaultTokenTTLMs),
-		TeamTokenMaxTTLMs:       types.Int64Value(defaultTokenTTLMs),
-		AuditTrailTokenMaxTTLMs: types.Int64Value(defaultTokenTTLMs),
-		UserTokenMaxTTLMs:       types.Int64Value(defaultTokenTTLMs),
-	}
 }
 
 func (r *resourceTFEOrgMaxTokenTTLPolicy) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -242,53 +211,12 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Create(ctx context.Context, req resour
 		return
 	}
 
-	// If disabled, set very high TTLs (effectively disabled) to ensure remote state matches
-	if !plan.Enabled.ValueBool() {
-		tflog.Debug(ctx, "Disabling token TTL policy for organization", map[string]any{
-			"organization": organization,
-		})
-		maxTTL := defaultTokenTTLMs
-
-		options := tfe.OrganizationTokenTTLPolicyUpdateOptions{
-			Policies: []tfe.OrganizationTokenTTLPolicyUpdateItem{
-				{TokenType: tfe.TokenTypeOrganization, MaxTTLMs: maxTTL},
-				{TokenType: tfe.TokenTypeTeam, MaxTTLMs: maxTTL},
-				{TokenType: tfe.TokenTypeUser, MaxTTLMs: maxTTL},
-				{TokenType: tfe.TokenTypeAuditTrails, MaxTTLMs: maxTTL},
-			},
-		}
-
-		_, err := r.config.Client.OrganizationTokenTTLPolicies.Update(ctx, organization, options)
-		if err != nil {
-			resp.Diagnostics.AddError("Unable to disable organization token TTL policy", err.Error())
-			return
-		}
-
-		result := newDisabledPolicyModel(organization)
-		resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
-		return
-	}
-
-	policies, diagErr := r.buildPolicyUpdateItems(plan)
-	if diagErr != nil {
-		resp.Diagnostics.AddError("Invalid TTL values", diagErr.Error())
-		return
-	}
-
-	options := tfe.OrganizationTokenTTLPolicyUpdateOptions{
-		Policies: policies,
-	}
-
-	tflog.Debug(ctx, "Creating token TTL policies", map[string]any{
-		"organization": organization,
-	})
-	updatedPolicies, err := r.config.Client.OrganizationTokenTTLPolicies.Update(ctx, organization, options)
+	result, err := r.updateOrgTokenTTLPolicy(ctx, organization, plan)
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to create organization token TTL policies", err.Error())
+		resp.Diagnostics.AddError("Unable to create organization token TTL policy", err.Error())
 		return
 	}
 
-	result := modelFromTokenTTLPolicies(organization, true, updatedPolicies, &plan)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
@@ -309,12 +237,22 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Read(ctx context.Context, req resource
 	tflog.Debug(ctx, "Reading token TTL policies", map[string]any{
 		"organization": organization,
 	})
+
+	// Read the organization to get max_ttl_enabled status
+	org, err := r.config.Client.Organizations.Read(ctx, organization)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to read organization", err.Error())
+		return
+	}
+
 	policyList, err := r.config.Client.OrganizationTokenTTLPolicies.List(ctx, organization, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read organization token TTL policies", err.Error())
 		return
 	}
-	enabled := len(policyList.Items) > 0
+
+	// Use the organization's max_ttl_enabled attribute
+	enabled := org.MaxTTLEnabled
 	result := modelFromTokenTTLPolicies(organization, enabled, policyList.Items, &state)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
@@ -333,35 +271,49 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Update(ctx context.Context, req resour
 		return
 	}
 
-	if !plan.Enabled.ValueBool() {
-		tflog.Debug(ctx, "Disabling token TTL policy", map[string]any{
-			"organization": organization,
-		})
-
-		options := tfe.OrganizationTokenTTLPolicyUpdateOptions{
-			Policies: []tfe.OrganizationTokenTTLPolicyUpdateItem{
-				{TokenType: tfe.TokenTypeOrganization, MaxTTLMs: defaultTokenTTLMs},
-				{TokenType: tfe.TokenTypeTeam, MaxTTLMs: defaultTokenTTLMs},
-				{TokenType: tfe.TokenTypeUser, MaxTTLMs: defaultTokenTTLMs},
-				{TokenType: tfe.TokenTypeAuditTrails, MaxTTLMs: defaultTokenTTLMs},
-			},
-		}
-
-		_, err := r.config.Client.OrganizationTokenTTLPolicies.Update(ctx, organization, options)
-		if err != nil {
-			resp.Diagnostics.AddError("Unable to disable organization token TTL policy", err.Error())
-			return
-		}
-
-		result := newDisabledPolicyModel(organization)
-		resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+	result, err := r.updateOrgTokenTTLPolicy(ctx, organization, plan)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to update organization token TTL policy", err.Error())
 		return
 	}
 
+	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+}
+
+func (r *resourceTFEOrgMaxTokenTTLPolicy) updateOrgTokenTTLPolicy(ctx context.Context, organization string, plan modelTFEOrgMaxTokenTTLPolicy) (modelTFEOrgMaxTokenTTLPolicy, error) {
+	enabled := plan.Enabled.ValueBool()
+
+	// Step 1: Update the organization's max_ttl_enabled attribute
+	if err := r.updateOrganizationMaxTTLEnabled(ctx, organization, enabled); err != nil {
+		return modelTFEOrgMaxTokenTTLPolicy{}, err
+	}
+
+	// Step 2: Update token TTL policies
+	return r.updateTokenTTLPolicies(ctx, organization, plan, enabled)
+}
+
+func (r *resourceTFEOrgMaxTokenTTLPolicy) updateOrganizationMaxTTLEnabled(ctx context.Context, organization string, enabled bool) error {
+	tflog.Debug(ctx, "Setting max_ttl_enabled for organization", map[string]any{
+		"organization": organization,
+		"enabled":      enabled,
+	})
+
+	orgUpdateOptions := tfe.OrganizationUpdateOptions{
+		MaxTTLEnabled: tfe.Bool(enabled),
+	}
+
+	if _, err := r.config.Client.Organizations.Update(ctx, organization, orgUpdateOptions); err != nil {
+		return fmt.Errorf("unable to update organization max_ttl_enabled: %w", err)
+	}
+
+	return nil
+}
+
+func (r *resourceTFEOrgMaxTokenTTLPolicy) updateTokenTTLPolicies(ctx context.Context, organization string, plan modelTFEOrgMaxTokenTTLPolicy, enabled bool) (modelTFEOrgMaxTokenTTLPolicy, error) {
+	// Build policy update options from user's plan values
 	policies, diagErr := r.buildPolicyUpdateItems(plan)
 	if diagErr != nil {
-		resp.Diagnostics.AddError("Invalid TTL values", diagErr.Error())
-		return
+		return modelTFEOrgMaxTokenTTLPolicy{}, fmt.Errorf("invalid TTL values: %w", diagErr)
 	}
 
 	options := tfe.OrganizationTokenTTLPolicyUpdateOptions{
@@ -370,15 +322,15 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Update(ctx context.Context, req resour
 
 	tflog.Debug(ctx, "Updating token TTL policies", map[string]any{
 		"organization": organization,
+		"enabled":      enabled,
 	})
+
 	updatedPolicies, err := r.config.Client.OrganizationTokenTTLPolicies.Update(ctx, organization, options)
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to update organization token TTL policies", err.Error())
-		return
+		return modelTFEOrgMaxTokenTTLPolicy{}, fmt.Errorf("unable to update organization token TTL policies: %w", err)
 	}
 
-	result := modelFromTokenTTLPolicies(organization, true, updatedPolicies, &plan)
-	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+	return modelFromTokenTTLPolicies(organization, enabled, updatedPolicies, &plan), nil
 }
 
 func (r *resourceTFEOrgMaxTokenTTLPolicy) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -395,6 +347,22 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Delete(ctx context.Context, req resour
 		return
 	}
 
+	tflog.Debug(ctx, "Deleting token TTL policy", map[string]any{
+		"organization": organization,
+	})
+
+	// Disable max_ttl_enabled on the organization
+	orgUpdateOptions := tfe.OrganizationUpdateOptions{
+		MaxTTLEnabled: tfe.Bool(false),
+	}
+
+	_, err := r.config.Client.Organizations.Update(ctx, organization, orgUpdateOptions)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to disable organization max_ttl_enabled", err.Error())
+		return
+	}
+
+	// Set TTLs to 2 years (effectively disabled)
 	options := tfe.OrganizationTokenTTLPolicyUpdateOptions{
 		Policies: []tfe.OrganizationTokenTTLPolicyUpdateItem{
 			{TokenType: tfe.TokenTypeOrganization, MaxTTLMs: defaultTokenTTLMs},
@@ -404,10 +372,7 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Delete(ctx context.Context, req resour
 		},
 	}
 
-	tflog.Debug(ctx, "Deleting token TTL policy", map[string]any{
-		"organization": organization,
-	})
-	_, err := r.config.Client.OrganizationTokenTTLPolicies.Update(ctx, organization, options)
+	_, err = r.config.Client.OrganizationTokenTTLPolicies.Update(ctx, organization, options)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to delete organization token TTL policy", err.Error())
 		return
@@ -420,13 +385,22 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) ImportState(ctx context.Context, req r
 	tflog.Debug(ctx, "Importing token TTL policies", map[string]any{
 		"organization": organization,
 	})
+
+	// Read the organization to get max_ttl_enabled status
+	org, err := r.config.Client.Organizations.Read(ctx, organization)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to read organization", err.Error())
+		return
+	}
+
 	policyList, err := r.config.Client.OrganizationTokenTTLPolicies.List(ctx, organization, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Error importing organization token TTL policies", err.Error())
 		return
 	}
 
-	enabled := len(policyList.Items) > 0
+	// Use the organization's max_ttl_enabled attribute
+	enabled := org.MaxTTLEnabled
 	result := modelFromTokenTTLPolicies(organization, enabled, policyList.Items, nil)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
@@ -435,7 +409,6 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) ImportState(ctx context.Context, req r
 func (r *resourceTFEOrgMaxTokenTTLPolicy) buildPolicyUpdateItems(plan modelTFEOrgMaxTokenTTLPolicy) ([]tfe.OrganizationTokenTTLPolicyUpdateItem, error) {
 	var policies []tfe.OrganizationTokenTTLPolicyUpdateItem
 
-	// Define token type and field value
 	tokenConfigs := []struct {
 		tokenType string
 		ttlValue  types.String
