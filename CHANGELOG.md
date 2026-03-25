@@ -1,4 +1,7 @@
 ## Unreleased
+
+## v0.75.0
+
 FEATURES:
 * Adds a warning message to `r/tfe_team_token`, `r/tfe_organization_token` and `r/tfe_audit_trail_token` resources to indicate that if no `expired_at` attribute is set, the token will expire in 2 years. By @sana-faraz [#1976](https://github.com/hashicorp/terraform-provider-tfe/pull/1976)
 
