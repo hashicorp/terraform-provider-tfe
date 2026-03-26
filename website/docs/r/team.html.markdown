@@ -49,6 +49,7 @@ The `organization_access` block supports:
 * `read_projects` - (Optional) Allow members to view all projects within the organization. Requires `read_workspaces` to be set to `true`.
 * `manage_policies` - (Optional) Allows members to create, edit, and delete the organization's Sentinel policies.
 * `manage_policy_overrides` - (Optional) Allows members to override soft-mandatory policy checks.
+* `delegate_policy_overrides` - (Optional) When this setting is enabled for a team, its members can override failed policy evaluations on projects and workspaces they manage.
 * `manage_workspaces` - (Optional) Allows members to create and administrate all workspaces within the organization.
 * `manage_vcs_settings` - (Optional) Allows members to manage the organization's VCS Providers and SSH keys.
 * `manage_providers` - (Optional) Allow members to publish and delete providers in the organization's private registry.

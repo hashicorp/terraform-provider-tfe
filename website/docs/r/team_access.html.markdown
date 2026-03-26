@@ -25,9 +25,18 @@ resource "tfe_workspace" "test" {
 }
 
 resource "tfe_team_access" "test" {
-  access       = "read"
   team_id      = tfe_team.test.id
   workspace_id = tfe_workspace.test.id
+
+  permissions {
+    runs              = "plan"
+    variables         = "read"
+    state_versions    = "read-outputs"
+    sentinel_mocks    = "none"
+    workspace_locking = false
+    run_tasks         = false
+    policy_overrides  = true
+  }
 }
 ```
 
@@ -48,6 +57,7 @@ The `permissions` block supports:
 * `sentinel_mocks` - (Required) The permission to grant the team on the workspace's generated Sentinel mocks, Valid values are `none` or `read`.
 * `workspace_locking` - (Required) Boolean determining whether or not to grant the team permission to manually lock/unlock the workspace.
 * `run_tasks` - (Required) Boolean determining whether or not to grant the team permission to manage workspace run tasks.
+* `policy_overrides` - (Required) This permission allows a team to override soft-mandatory policy evaluations, provided that team has been granted the org level 'delegate policy overrides' permission.
 
 -> **Note:** At least one of `access` or `permissions` _must_ be provided, but not both. Whichever is omitted will automatically reflect the state of the other.
 

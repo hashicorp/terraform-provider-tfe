@@ -148,6 +148,12 @@ func resourceTFETeamProjectAccess() *schema.Resource {
 							Computed: true,
 						},
 
+						"policy_overrides": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Computed: true,
+						},
+
 						"runs": {
 							Type:     schema.TypeString,
 							Optional: true,
@@ -288,6 +294,10 @@ func resourceTFETeamProjectAccessCreate(ctx context.Context, d *schema.ResourceD
 		options.WorkspaceAccess.RunTasks = tfe.Bool(v.(bool))
 	}
 
+	if v, ok := d.GetOk("workspace_access.0.policy_overrides"); ok {
+		options.WorkspaceAccess.PolicyOverrides = tfe.Bool(v.(bool))
+	}
+
 	log.Printf("[DEBUG] Give team %s %s access to project: %s", tm.Name, access, proj.Name)
 	tmAccess, err := config.Client.TeamProjectAccess.Add(ctx, options)
 	if err != nil {
@@ -343,15 +353,16 @@ func resourceTFETeamProjectAccessRead(ctx context.Context, d *schema.ResourceDat
 
 	if tmAccess.WorkspaceAccess != nil {
 		workspaceAccess := []map[string]interface{}{{
-			"state_versions": tmAccess.WorkspaceAccess.WorkspaceStateVersionsPermission,
-			"sentinel_mocks": tmAccess.WorkspaceAccess.WorkspaceSentinelMocksPermission,
-			"runs":           tmAccess.WorkspaceAccess.WorkspaceRunsPermission,
-			"variables":      tmAccess.WorkspaceAccess.WorkspaceVariablesPermission,
-			"create":         tmAccess.WorkspaceAccess.WorkspaceCreatePermission,
-			"locking":        tmAccess.WorkspaceAccess.WorkspaceLockingPermission,
-			"move":           tmAccess.WorkspaceAccess.WorkspaceMovePermission,
-			"delete":         tmAccess.WorkspaceAccess.WorkspaceDeletePermission,
-			"run_tasks":      tmAccess.WorkspaceAccess.WorkspaceRunTasksPermission,
+			"state_versions":   tmAccess.WorkspaceAccess.WorkspaceStateVersionsPermission,
+			"sentinel_mocks":   tmAccess.WorkspaceAccess.WorkspaceSentinelMocksPermission,
+			"runs":             tmAccess.WorkspaceAccess.WorkspaceRunsPermission,
+			"variables":        tmAccess.WorkspaceAccess.WorkspaceVariablesPermission,
+			"create":           tmAccess.WorkspaceAccess.WorkspaceCreatePermission,
+			"locking":          tmAccess.WorkspaceAccess.WorkspaceLockingPermission,
+			"move":             tmAccess.WorkspaceAccess.WorkspaceMovePermission,
+			"delete":           tmAccess.WorkspaceAccess.WorkspaceDeletePermission,
+			"run_tasks":        tmAccess.WorkspaceAccess.WorkspaceRunTasksPermission,
+			"policy_overrides": tmAccess.WorkspaceAccess.WorkspacePolicyOverridesPermission,
 		}}
 
 		if err := d.Set("workspace_access", workspaceAccess); err != nil {
@@ -450,8 +461,14 @@ func resourceTFETeamProjectAccessUpdate(ctx context.Context, d *schema.ResourceD
 	}
 
 	if d.HasChange("workspace_access.0.run_tasks") {
-		if runTasks, ok := d.GetOkExists("workspace_access.0.run_tasks"); ok {
-			options.WorkspaceAccess.RunTasks = tfe.Bool(runTasks.(bool))
+		if v, ok := d.GetOk("workspace_access.0.run_tasks"); ok {
+			options.WorkspaceAccess.RunTasks = tfe.Bool(v.(bool))
+		}
+	}
+
+	if d.HasChange("workspace_access.0.policy_overrides") {
+		if v, ok := d.GetOkExists("workspace_access.0.policy_overrides"); ok {
+			options.WorkspaceAccess.PolicyOverrides = tfe.Bool(v.(bool))
 		}
 	}
 

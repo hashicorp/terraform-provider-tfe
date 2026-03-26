@@ -59,6 +59,11 @@ func dataSourceTFETeamAccess() *schema.Resource {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
+
+						"policy_overrides": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
 					},
 				},
 			},

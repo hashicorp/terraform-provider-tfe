@@ -80,6 +80,37 @@ func TestAccTFETeamProjectCustomAccessDataSource_basic(t *testing.T) {
 						"data.tfe_team_project_access.foobar_custom", "workspace_access.0.delete", "false"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_team_project_access.foobar_custom", "workspace_access.0.run_tasks", "false"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_team_project_access.foobar_custom", "workspace_access.0.policy_overrides", "false"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFETeamProjectCustomAccessDataSource_policyOverrides(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeamProjectCustomAccessDataSourceConfig_with_policy_overrides(org.Name),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.tfe_team_project_access.foobar_custom", "id"),
+					resource.TestCheckResourceAttrSet("data.tfe_team_project_access.foobar_custom", "team_id"),
+					resource.TestCheckResourceAttrSet("data.tfe_team_project_access.foobar_custom", "project_id"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_team_project_access.foobar_custom", "access", "custom"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_team_project_access.foobar_custom", "workspace_access.0.policy_overrides", "true"),
 				),
 			},
 		},
@@ -131,7 +162,6 @@ resource "tfe_team_project_access" "foobar" {
 data "tfe_team_project_access" "foobar" {
   team_id      = tfe_team.foobar.id
   project_id   = tfe_project.foobar.id
-  depends_on = [tfe_team_project_access.foobar]
 }`, organization, organization)
 }
 
@@ -197,15 +227,16 @@ resource "tfe_team_project_access" "foobar_custom" {
     variable_sets = "read"
   }
   workspace_access {
-    state_versions = "write"
-    sentinel_mocks = "read"
-    runs           = "apply"
-    variables      = "write"
-    create         = true
-    locking        = true
-    move           = true
-    delete         = false
-    run_tasks      = false
+    state_versions   = "write"
+    sentinel_mocks   = "read"
+    runs             = "apply"
+    variables        = "write"
+    create           = true
+    locking          = true
+    move             = true
+    delete           = false
+    run_tasks        = false
+    policy_overrides = false
   }
 }
 
@@ -213,5 +244,43 @@ data "tfe_team_project_access" "foobar_custom" {
   team_id      = tfe_team.foobar_custom.id
   project_id   = tfe_project.foobar_custom.id
   depends_on   = [tfe_team_project_access.foobar_custom]
+}`, organization, organization)
+}
+
+func testAccTFETeamProjectCustomAccessDataSourceConfig_with_policy_overrides(organization string) string {
+	return fmt.Sprintf(`
+resource "tfe_team" "foobar_custom" {
+  name         = "team-test2"
+  organization = "%s"
+}
+
+resource "tfe_project" "foobar_custom" {
+  name         = "projecttest2"
+  organization = "%s"
+}
+
+resource "tfe_team_project_access" "foobar_custom" {
+  access     = "custom"
+  team_id    = tfe_team.foobar_custom.id
+  project_id = tfe_project.foobar_custom.id
+
+  workspace_access {
+    state_versions   = "write"
+    sentinel_mocks   = "read"
+    runs             = "apply"
+    variables        = "write"
+    create           = true
+    locking          = true
+    move             = true
+    delete           = false
+    run_tasks        = false
+    policy_overrides = true
+  }
+}
+
+data "tfe_team_project_access" "foobar_custom" {
+  team_id    = tfe_team.foobar_custom.id
+  project_id = tfe_project.foobar_custom.id
+  depends_on = [tfe_team_project_access.foobar_custom]
 }`, organization, organization)
 }
