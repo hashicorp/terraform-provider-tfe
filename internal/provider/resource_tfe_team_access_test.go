@@ -114,6 +114,7 @@ func TestAccTFETeamAccess_custom(t *testing.T) {
 							"sentinel_mocks":    tfe.SentinelMocksPermissionNone,
 							"workspace_locking": false,
 							"run_tasks":         false,
+							"policy_overrides":  false,
 						},
 					),
 					resource.TestCheckResourceAttr("tfe_team_access.foobar", "access", "custom"),
@@ -123,6 +124,47 @@ func TestAccTFETeamAccess_custom(t *testing.T) {
 					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.sentinel_mocks", "none"),
 					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.workspace_locking", "false"),
 					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.run_tasks", "false"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFETeamAccess_policyOverrides(t *testing.T) {
+	tmAccess := &tfe.TeamAccess{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamAccessDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeamAccess_policyOverrides(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFETeamAccessExists(
+						"tfe_team_access.foobar", tmAccess),
+					testAccCheckTFETeamAccessAttributesAccessIs(tmAccess, tfe.AccessCustom),
+					testAccCheckTFETeamAccessAttributesPermissionsAre(
+						tmAccess,
+						map[string]interface{}{
+							"runs":              tfe.RunsPermissionApply,
+							"variables":         tfe.VariablesPermissionRead,
+							"state_versions":    tfe.StateVersionsPermissionReadOutputs,
+							"sentinel_mocks":    tfe.SentinelMocksPermissionNone,
+							"workspace_locking": false,
+							"run_tasks":         false,
+							"policy_overrides":  true,
+						},
+					),
+					resource.TestCheckResourceAttr("tfe_team_access.foobar", "access", "custom"),
+					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.runs", "apply"),
+					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.variables", "read"),
+					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.state_versions", "read-outputs"),
+					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.sentinel_mocks", "none"),
+					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.workspace_locking", "false"),
+					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.run_tasks", "false"),
+					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.policy_overrides", "true"),
 				),
 			},
 		},
@@ -179,6 +221,7 @@ func TestAccTFETeamAccess_updateToCustom(t *testing.T) {
 							"sentinel_mocks":    tfe.SentinelMocksPermissionNone,
 							"workspace_locking": false,
 							"run_tasks":         false,
+							"policy_overrides":  false,
 						},
 					),
 					resource.TestCheckResourceAttr("tfe_team_access.foobar", "access", "custom"),
@@ -218,6 +261,7 @@ func TestAccTFETeamAccess_updateFromCustom(t *testing.T) {
 							"sentinel_mocks":    tfe.SentinelMocksPermissionNone,
 							"workspace_locking": false,
 							"run_tasks":         false,
+							"policy_overrides":  false,
 						},
 					),
 					resource.TestCheckResourceAttr("tfe_team_access.foobar", "access", "custom"),
@@ -336,6 +380,11 @@ func testAccCheckTFETeamAccessAttributesPermissionsAre(tmAccess *tfe.TeamAccess,
 		}
 		if tmAccess.RunTasks != expectedPermissions["run_tasks"].(bool) {
 			return fmt.Errorf("Bad run_tasks permission: Expected %s, Received %t", expectedPermissions["run_tasks"], tmAccess.RunTasks)
+		}
+		if expected, ok := expectedPermissions["policy_overrides"]; ok {
+			if tmAccess.PolicyOverrides != expected.(bool) {
+				return fmt.Errorf("Bad policy_overrides permission: Expected %t, Received %t", expected.(bool), tmAccess.PolicyOverrides)
+			}
 		}
 		return nil
 	}
@@ -457,6 +506,38 @@ resource "tfe_team_access" "foobar" {
     sentinel_mocks = "none"
     workspace_locking = false
     run_tasks = false
+  }
+  team_id      = tfe_team.foobar.id
+  workspace_id = tfe_workspace.foobar.id
+}`, rInt)
+}
+
+func testAccTFETeamAccess_policyOverrides(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_team_access" "foobar" {
+  permissions {
+    runs = "apply"
+    variables = "read"
+    state_versions = "read-outputs"
+    sentinel_mocks = "none"
+    workspace_locking = false
+    run_tasks = false
+    policy_overrides = true
   }
   team_id      = tfe_team.foobar.id
   workspace_id = tfe_workspace.foobar.id

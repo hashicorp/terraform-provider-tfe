@@ -125,6 +125,11 @@ func resourceTFETeamAccess() *schema.Resource {
 							Type:     schema.TypeBool,
 							Required: true,
 						},
+
+						"policy_overrides": {
+							Type:     schema.TypeBool,
+							Required: true,
+						},
 					},
 				},
 			},
@@ -212,6 +217,12 @@ func resourceTFETeamAccessCreate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
+	if d.HasChange("permissions.0.policy_overrides") {
+		if v, ok := d.GetOkExists("permissions.0.policy_overrides"); ok {
+			options.PolicyOverrides = tfe.Bool(v.(bool))
+		}
+	}
+
 	log.Printf("[DEBUG] Give team %s %s access to workspace: %s", tm.Name, access, ws.Name)
 	tmAccess, err := config.Client.TeamAccess.Add(ctx, options)
 	if err != nil {
@@ -247,6 +258,7 @@ func resourceTFETeamAccessRead(d *schema.ResourceData, meta interface{}) error {
 		"sentinel_mocks":    tmAccess.SentinelMocks,
 		"workspace_locking": tmAccess.WorkspaceLocking,
 		"run_tasks":         tmAccess.RunTasks,
+		"policy_overrides":  tmAccess.PolicyOverrides,
 	}}
 	if err := d.Set("permissions", permissions); err != nil {
 		return fmt.Errorf("error setting permissions for team access %s: %w", d.Id(), err)
@@ -307,6 +319,12 @@ func resourceTFETeamAccessUpdate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
+	if d.HasChange("permissions.0.policy_overrides") {
+		if v, ok := d.GetOkExists("permissions.0.policy_overrides"); ok {
+			options.PolicyOverrides = tfe.Bool(v.(bool))
+		}
+	}
+
 	log.Printf("[DEBUG] Update team access: %s", d.Id())
 	tmAccess, err := config.Client.TeamAccess.Update(ctx, d.Id(), options)
 	if err != nil {
@@ -322,6 +340,7 @@ func resourceTFETeamAccessUpdate(d *schema.ResourceData, meta interface{}) error
 		"sentinel_mocks":    tmAccess.SentinelMocks,
 		"workspace_locking": tmAccess.WorkspaceLocking,
 		"run_tasks":         tmAccess.RunTasks,
+		"policy_overrides":  tmAccess.PolicyOverrides,
 	}}
 	if err := d.Set("permissions", permissions); err != nil {
 		return fmt.Errorf("error setting permissions for team access %s: %w", d.Id(), err)

@@ -29,15 +29,16 @@ The following arguments are supported:
 
 In addition to all arguments above, the following attributes are exported:
 
-* `id` The team access ID.
+* `id` - The team access ID.
 * `access` - The type of access granted to the team on the workspace.
-* `permissions` - The permissions granted to the team on the workspaces for each whatever.
+* `permissions` - The custom permissions granted to the team on the workspace.
 
 The `permissions` block contains:
 
-* `runs` - The permission granted to runs. Valid values are `read`, `plan`, or `apply`
-* `variables` - The permissions granted to variables. Valid values are `none`, `read`, or `write`
-* `state_versions` - The permissions granted to state versions. Valid values are `none`, `read-outputs`, `read`, or `write`
-* `sentinel_mocks` - The permissions granted to Sentinel mocks. Valid values are `none` or `read`
-* `workspace_locking` - Whether permission is granted to manually lock the workspace or not.
-* `run_tasks` - Boolean determining whether or not to grant the team permission to manage workspace run tasks.
+* `runs` - The permission granted to runs. Valid values are `read`, `plan`, or `apply`.
+* `variables` - The permission granted to variables. Valid values are `none`, `read`, or `write`.
+* `state_versions` - The permission granted to state versions. Valid values are `none`, `read-outputs`, `read`, or `write`.
+* `sentinel_mocks` - The permission granted to Sentinel mocks. Valid values are `none` or `read`.
+* `workspace_locking` - Whether the team can manually lock or unlock the workspace.
+* `run_tasks` - Whether the team can manage workspace run tasks.
+* `policy_overrides` - This permission allows a team to override soft-mandatory policy evaluations, provided that team has been granted the org level 'delegate policy overrides' permission.

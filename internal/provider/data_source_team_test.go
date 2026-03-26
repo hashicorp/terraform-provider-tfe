@@ -6,9 +6,11 @@ package provider
 import (
 	"fmt"
 	"math/rand"
+	"reflect"
 	"testing"
 	"time"
 
+	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
@@ -34,6 +36,38 @@ func TestAccTFETeamDataSource_basic(t *testing.T) {
 						"data.tfe_team.foobar", "name", fmt.Sprintf("team-test-%d", rInt)),
 					resource.TestCheckResourceAttr(
 						"data.tfe_team.foobar", "organization", org.Name),
+					resource.TestCheckResourceAttr(
+						"data.tfe_team.foobar", "organization_access.0.manage_policies", "true"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_team.foobar", "organization_access.0.manage_policy_overrides", "true"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_team.foobar", "organization_access.0.delegate_policy_overrides", "true"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_team.foobar", "organization_access.0.manage_workspaces", "true"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_team.foobar", "organization_access.0.manage_vcs_settings", "true"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_team.foobar", "organization_access.0.manage_providers", "true"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_team.foobar", "organization_access.0.manage_modules", "true"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_team.foobar", "organization_access.0.manage_run_tasks", "true"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_team.foobar", "organization_access.0.manage_projects", "true"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_team.foobar", "organization_access.0.read_projects", "true"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_team.foobar", "organization_access.0.read_workspaces", "true"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_team.foobar", "organization_access.0.manage_membership", "true"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_team.foobar", "organization_access.0.manage_teams", "true"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_team.foobar", "organization_access.0.manage_organization_access", "true"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_team.foobar", "organization_access.0.access_secret_teams", "true"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_team.foobar", "organization_access.0.manage_agent_pools", "true"),
 					resource.TestCheckResourceAttrSet("data.tfe_team.foobar", "id"),
 				),
 			},
@@ -73,11 +107,74 @@ func TestAccTFETeamDataSource_ssoTeamId(t *testing.T) {
 	})
 }
 
+func TestFlattenTeamOrganizationAccess(t *testing.T) {
+	organizationAccess := flattenTeamOrganizationAccess(&tfe.OrganizationAccess{
+		ManagePolicies:           true,
+		ManagePolicyOverrides:    true,
+		DelegatePolicyOverrides:  true,
+		ManageWorkspaces:         true,
+		ManageVCSSettings:        true,
+		ManageProviders:          true,
+		ManageModules:            true,
+		ManageRunTasks:           true,
+		ManageProjects:           true,
+		ReadProjects:             true,
+		ReadWorkspaces:           true,
+		ManageMembership:         true,
+		ManageTeams:              true,
+		ManageOrganizationAccess: true,
+		AccessSecretTeams:        true,
+		ManageAgentPools:         true,
+	})
+
+	expected := []map[string]bool{{
+		"manage_policies":            true,
+		"manage_policy_overrides":    true,
+		"delegate_policy_overrides":  true,
+		"manage_workspaces":          true,
+		"manage_vcs_settings":        true,
+		"manage_providers":           true,
+		"manage_modules":             true,
+		"manage_run_tasks":           true,
+		"manage_projects":            true,
+		"read_projects":              true,
+		"read_workspaces":            true,
+		"manage_membership":          true,
+		"manage_teams":               true,
+		"manage_organization_access": true,
+		"access_secret_teams":        true,
+		"manage_agent_pools":         true,
+	}}
+
+	if !reflect.DeepEqual(organizationAccess, expected) {
+		t.Fatalf("expected organization access %#v, got %#v", expected, organizationAccess)
+	}
+}
+
 func testAccTFETeamDataSourceConfig_basic(rInt int, organization string) string {
 	return fmt.Sprintf(`
 resource "tfe_team" "foobar" {
   name         = "team-test-%d"
   organization = "%s"
+
+  organization_access {
+    manage_policies            = true
+    manage_policy_overrides    = true
+    delegate_policy_overrides  = true
+    manage_workspaces          = true
+    manage_vcs_settings        = true
+    manage_providers           = true
+    manage_modules             = true
+    manage_run_tasks           = true
+    manage_projects            = true
+    read_projects              = true
+    read_workspaces            = true
+    manage_membership          = true
+    manage_teams               = true
+    manage_organization_access = true
+    access_secret_teams        = true
+    manage_agent_pools         = true
+  }
 }
 
 data "tfe_team" "foobar" {
