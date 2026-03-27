@@ -1,5 +1,10 @@
 ## Unreleased
 
+BUG FIXES:
+* `r/tfe_variable`: Preserve or backfill resource identity on deleted-resource reads to avoid missing identity errors after remote deletion.
+* `r/tfe_project`: Preserve or backfill resource identity on deleted-resource reads to avoid missing identity errors after remote deletion.
+* `r/tfe_stack`: Preserve or backfill resource identity on deleted-resource reads and treat remotely deleted stacks as removed resources instead of read errors.
+
 ## v0.76.0
 
 FEATURES:

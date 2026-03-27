@@ -4,6 +4,7 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"os"
@@ -16,8 +17,54 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	tfe "github.com/hashicorp/go-tfe"
+	fwresource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-go/tftypes"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
+
+type notFoundProjects struct{}
+
+func (notFoundProjects) List(_ context.Context, _ string, _ *tfe.ProjectListOptions) (*tfe.ProjectList, error) {
+	return nil, nil
+}
+
+func (notFoundProjects) Create(_ context.Context, _ string, _ tfe.ProjectCreateOptions) (*tfe.Project, error) {
+	return nil, nil
+}
+
+func (notFoundProjects) Read(_ context.Context, _ string) (*tfe.Project, error) {
+	return nil, tfe.ErrResourceNotFound
+}
+
+func (notFoundProjects) ReadWithOptions(_ context.Context, _ string, _ tfe.ProjectReadOptions) (*tfe.Project, error) {
+	return nil, tfe.ErrResourceNotFound
+}
+
+func (notFoundProjects) Update(_ context.Context, _ string, _ tfe.ProjectUpdateOptions) (*tfe.Project, error) {
+	return nil, nil
+}
+
+func (notFoundProjects) Delete(_ context.Context, _ string) error {
+	return nil
+}
+
+func (notFoundProjects) ListTagBindings(_ context.Context, _ string) ([]*tfe.TagBinding, error) {
+	return nil, nil
+}
+
+func (notFoundProjects) ListEffectiveTagBindings(_ context.Context, _ string) ([]*tfe.EffectiveTagBinding, error) {
+	return nil, nil
+}
+
+func (notFoundProjects) AddTagBindings(_ context.Context, _ string, _ tfe.ProjectAddTagBindingsOptions) ([]*tfe.TagBinding, error) {
+	return nil, nil
+}
+
+func (notFoundProjects) DeleteAllTagBindings(_ context.Context, _ string) error {
+	return nil
+}
 
 func TestAccTFEProject_basic(t *testing.T) {
 	project := &tfe.Project{}
@@ -301,6 +348,122 @@ func TestAccTFEProject_importByIdentity(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestResourceTFEProjectRead_RemovedProjectBackfillsIdentity(t *testing.T) {
+	ctx := context.Background()
+	client := testTfeClient(t, testClientOptions{})
+	client.Projects = notFoundProjects{}
+
+	r := &resourceTFEProject{config: ConfiguredClient{Client: client}}
+
+	readResp := runRemovedProjectRead(t, ctx, r, modelTFEProject{
+		ID:                          types.StringValue("prj-123"),
+		Name:                        types.StringValue("projecttest"),
+		Description:                 types.StringValue("project description"),
+		Organization:                types.StringValue("example-org"),
+		AutoDestroyActivityDuration: types.StringNull(),
+		Tags:                        types.MapNull(types.StringType),
+		IgnoreAdditionalTags:        types.BoolValue(false),
+	})
+
+	assertRemovedProjectRead(t, ctx, readResp, modelProjectIdentity{
+		ID:       types.StringValue("prj-123"),
+		Hostname: types.StringValue(client.BaseURL().Host),
+	})
+}
+
+func TestResourceTFEProjectRead_RemovedProjectPreservesExistingIdentity(t *testing.T) {
+	ctx := context.Background()
+	client := testTfeClient(t, testClientOptions{})
+	client.Projects = notFoundProjects{}
+
+	r := &resourceTFEProject{config: ConfiguredClient{Client: client}}
+	existingIdentity := &modelProjectIdentity{
+		ID:       types.StringValue("prj-existing"),
+		Hostname: types.StringValue("preserve.example.com"),
+	}
+
+	readResp := runRemovedProjectRead(t, ctx, r, modelTFEProject{
+		ID:                          types.StringValue("prj-123"),
+		Name:                        types.StringValue("projecttest"),
+		Description:                 types.StringValue("project description"),
+		Organization:                types.StringValue("example-org"),
+		AutoDestroyActivityDuration: types.StringNull(),
+		Tags:                        types.MapNull(types.StringType),
+		IgnoreAdditionalTags:        types.BoolValue(false),
+	}, existingIdentity)
+
+	assertRemovedProjectRead(t, ctx, readResp, *existingIdentity)
+}
+
+func runRemovedProjectRead(t *testing.T, ctx context.Context, r *resourceTFEProject, stateData modelTFEProject, existingIdentity ...*modelProjectIdentity) fwresource.ReadResponse {
+	t.Helper()
+
+	schemaResp := &fwresource.SchemaResponse{}
+	r.Schema(ctx, fwresource.SchemaRequest{}, schemaResp)
+
+	state := tfsdk.State{Schema: schemaResp.Schema}
+	if diags := state.Set(ctx, &stateData); diags.HasError() {
+		t.Fatalf("unexpected state set diagnostics: %v", diags)
+	}
+
+	identitySchemaResp := &fwresource.IdentitySchemaResponse{}
+	r.IdentitySchema(ctx, fwresource.IdentitySchemaRequest{}, identitySchemaResp)
+	nullIdentity := tftypes.NewValue(identitySchemaResp.IdentitySchema.Type().TerraformType(ctx), nil)
+
+	requestIdentity := &tfsdk.ResourceIdentity{Schema: identitySchemaResp.IdentitySchema, Raw: nullIdentity.Copy()}
+	responseIdentity := &tfsdk.ResourceIdentity{Schema: identitySchemaResp.IdentitySchema, Raw: nullIdentity.Copy()}
+
+	if len(existingIdentity) > 0 && existingIdentity[0] != nil {
+		if diags := requestIdentity.Set(ctx, existingIdentity[0]); diags.HasError() {
+			t.Fatalf("unexpected request identity diagnostics: %v", diags)
+		}
+		if diags := responseIdentity.Set(ctx, existingIdentity[0]); diags.HasError() {
+			t.Fatalf("unexpected response identity diagnostics: %v", diags)
+		}
+	}
+
+	readResp := fwresource.ReadResponse{
+		State:    tfsdk.State{Schema: schemaResp.Schema, Raw: state.Raw.Copy()},
+		Identity: responseIdentity,
+	}
+
+	r.Read(ctx, fwresource.ReadRequest{
+		State:    tfsdk.State{Schema: schemaResp.Schema, Raw: state.Raw.Copy()},
+		Identity: requestIdentity,
+	}, &readResp)
+
+	return readResp
+}
+
+func assertRemovedProjectRead(t *testing.T, ctx context.Context, readResp fwresource.ReadResponse, expectedIdentity modelProjectIdentity) {
+	t.Helper()
+
+	if readResp.Diagnostics.HasError() {
+		t.Fatalf("unexpected read diagnostics: %v", readResp.Diagnostics)
+	}
+
+	if !readResp.State.Raw.IsFullyNull() {
+		t.Fatalf("expected resource to be removed from state, got %s", readResp.State.Raw.String())
+	}
+
+	if readResp.Identity == nil || readResp.Identity.Raw.IsFullyNull() {
+		t.Fatal("expected project identity to be preserved for removed resource")
+	}
+
+	var gotIdentity modelProjectIdentity
+	if diags := readResp.Identity.Get(ctx, &gotIdentity); diags.HasError() {
+		t.Fatalf("unexpected identity diagnostics: %v", diags)
+	}
+
+	if gotIdentity.ID.ValueString() != expectedIdentity.ID.ValueString() {
+		t.Fatalf("expected identity id %q, got %q", expectedIdentity.ID.ValueString(), gotIdentity.ID.ValueString())
+	}
+
+	if gotIdentity.Hostname.ValueString() != expectedIdentity.Hostname.ValueString() {
+		t.Fatalf("expected hostname %q, got %q", expectedIdentity.Hostname.ValueString(), gotIdentity.Hostname.ValueString())
+	}
 }
 
 func TestAccTFEProject_withAutoDestroy(t *testing.T) {
