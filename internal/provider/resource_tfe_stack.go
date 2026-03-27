@@ -5,6 +5,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/hashicorp/go-tfe"
@@ -156,6 +157,18 @@ func (r *resourceTFEStack) Configure(ctx context.Context, req resource.Configure
 	r.config = client
 }
 
+func (r *resourceTFEStack) setReadIdentity(ctx context.Context, resp *resource.ReadResponse, stackID string) {
+	if resp.Identity == nil {
+		return
+	}
+
+	identity := modelTFEStackIdentity{
+		ID:       types.StringValue(stackID),
+		Hostname: types.StringValue(r.config.Client.BaseURL().Host),
+	}
+	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
+}
+
 func (r *resourceTFEStack) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan modelTFEStack
 
@@ -239,6 +252,11 @@ func (r *resourceTFEStack) Read(ctx context.Context, req resource.ReadRequest, r
 	tflog.Debug(ctx, fmt.Sprintf("Reading stack %q", state.ID.ValueString()))
 	stack, err := r.config.Client.Stacks.Read(ctx, state.ID.ValueString())
 	if err != nil {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			r.setReadIdentity(ctx, resp, state.ID.ValueString())
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("Unable to read stack", err.Error())
 		return
 	}
