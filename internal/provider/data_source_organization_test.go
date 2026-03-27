@@ -111,6 +111,38 @@ func TestAccTFEOrganizationDataSource_readEnforceHYOK(t *testing.T) {
 	})
 }
 
+func TestAccTFEOrganizationDataSource_maxTTLEnabled(t *testing.T) {
+	skipUnlessBeta(t)
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	org := &tfe.Organization{}
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOrganizationDataSourceConfig_maxTTLEnabled(rInt, true),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccCheckTFEOrganizationExists("tfe_organization.foo", org),
+					resource.TestCheckResourceAttr("tfe_organization.foo", "name", orgName),
+					resource.TestCheckResourceAttr("tfe_organization.foo", "max_ttl_enabled", "true"),
+					resource.TestCheckResourceAttr("data.tfe_organization.foo", "name", orgName),
+					resource.TestCheckResourceAttr("data.tfe_organization.foo", "max_ttl_enabled", "true"),
+				),
+			},
+			{
+				Config: testAccTFEOrganizationDataSourceConfig_maxTTLEnabled(rInt, false),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccCheckTFEOrganizationExists("tfe_organization.foo", org),
+					resource.TestCheckResourceAttr("tfe_organization.foo", "max_ttl_enabled", "false"),
+					resource.TestCheckResourceAttr("data.tfe_organization.foo", "max_ttl_enabled", "false"),
+				),
+			},
+		},
+	})
+}
+
 func testAccTFEOrganizationDataSourceConfig_basic(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foo" {
@@ -136,4 +168,18 @@ data "tfe_organization" "test" {
   name = "` + orgName + `"
 }
 `
+}
+
+func testAccTFEOrganizationDataSourceConfig_maxTTLEnabled(rInt int, enabled bool) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foo" {
+  name             = "tst-terraform-%d"
+  email            = "admin@company.com"
+  max_ttl_enabled  = %t
+}
+
+data "tfe_organization" "foo" {
+  name       = tfe_organization.foo.name
+  depends_on = [tfe_organization.foo]
+}`, rInt, enabled)
 }

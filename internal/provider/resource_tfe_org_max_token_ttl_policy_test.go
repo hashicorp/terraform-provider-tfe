@@ -25,11 +25,11 @@ func TestAccTFEOrgMaxTokenTTLPolicy_basic(t *testing.T) {
 				Config: testAccTFEOrgMaxTokenTTLPolicy_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(
-						"tfe_org_max_token_ttl_policy.foobar", "enabled", "true"),
+						"tfe_organization.foobar", "max_ttl_enabled", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_org_max_token_ttl_policy.foobar", "org_token_max_ttl", "0.5h"),
 					resource.TestCheckResourceAttr(
-						"tfe_org_max_token_ttl_policy.foobar", "user_token_max_ttl", "2.5d"),
+						"tfe_org_max_token_ttl_policy.foobar", "user_token_max_ttl", "5.5y"),
 					resource.TestCheckResourceAttr(
 						"tfe_org_max_token_ttl_policy.foobar", "team_token_max_ttl", "3w"),
 					resource.TestCheckResourceAttr(
@@ -43,7 +43,6 @@ func TestAccTFEOrgMaxTokenTTLPolicy_basic(t *testing.T) {
 func TestAccTFEOrgMaxTokenTTLPolicy_update(t *testing.T) {
 	skipUnlessBeta(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccMuxedProviders,
@@ -52,11 +51,11 @@ func TestAccTFEOrgMaxTokenTTLPolicy_update(t *testing.T) {
 				Config: testAccTFEOrgMaxTokenTTLPolicy_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(
-						"tfe_org_max_token_ttl_policy.foobar", "enabled", "true"),
+						"tfe_organization.foobar", "max_ttl_enabled", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_org_max_token_ttl_policy.foobar", "org_token_max_ttl", "0.5h"),
 					resource.TestCheckResourceAttr(
-						"tfe_org_max_token_ttl_policy.foobar", "user_token_max_ttl", "2.5d"),
+						"tfe_org_max_token_ttl_policy.foobar", "user_token_max_ttl", "5.5y"),
 					resource.TestCheckResourceAttr(
 						"tfe_org_max_token_ttl_policy.foobar", "team_token_max_ttl", "3w"),
 					resource.TestCheckResourceAttr(
@@ -67,11 +66,11 @@ func TestAccTFEOrgMaxTokenTTLPolicy_update(t *testing.T) {
 				Config: testAccTFEOrgMaxTokenTTLPolicy_updated(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(
-						"tfe_org_max_token_ttl_policy.foobar", "enabled", "true"),
+						"tfe_organization.foobar", "max_ttl_enabled", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_org_max_token_ttl_policy.foobar", "org_token_max_ttl", "12h"),
 					resource.TestCheckResourceAttr(
-						"tfe_org_max_token_ttl_policy.foobar", "user_token_max_ttl", "10d"),
+						"tfe_org_max_token_ttl_policy.foobar", "user_token_max_ttl", "5y"),
 					resource.TestCheckResourceAttr(
 						"tfe_org_max_token_ttl_policy.foobar", "team_token_max_ttl", "5w"),
 					resource.TestCheckResourceAttr(
@@ -94,7 +93,7 @@ func TestAccTFEOrgMaxTokenTTLPolicy_disabled(t *testing.T) {
 				Config: testAccTFEOrgMaxTokenTTLPolicy_disabled(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(
-						"tfe_org_max_token_ttl_policy.foobar", "enabled", "false"),
+						"tfe_organization.foobar", "max_ttl_enabled", "false"),
 				),
 			},
 		},
@@ -114,7 +113,7 @@ func TestAccTFEOrgMaxTokenTTLPolicy_import(t *testing.T) {
 				Config: testAccTFEOrgMaxTokenTTLPolicy_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(
-						"tfe_org_max_token_ttl_policy.foobar", "enabled", "true"),
+						"tfe_organization.foobar", "max_ttl_enabled", "true"),
 				),
 			},
 			{
@@ -122,6 +121,13 @@ func TestAccTFEOrgMaxTokenTTLPolicy_import(t *testing.T) {
 				ImportState:       true,
 				ImportStateId:     orgName,
 				ImportStateVerify: true,
+				// TTL string values normalize to defaults after import since we only store milliseconds in API
+				ImportStateVerifyIgnore: []string{
+					"org_token_max_ttl",
+					"team_token_max_ttl",
+					"audit_trail_token_max_ttl",
+					"user_token_max_ttl",
+				},
 			},
 		},
 	})
@@ -138,8 +144,6 @@ func TestAccTFEOrgMaxTokenTTLPolicy_defaultOrg(t *testing.T) {
 			{
 				Config: testAccTFEOrgMaxTokenTTLPolicy_defaultOrg(orgName),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(
-						"tfe_org_max_token_ttl_policy.foobar", "enabled", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_org_max_token_ttl_policy.foobar", "organization", orgName),
 					resource.TestCheckResourceAttr(
@@ -168,14 +172,15 @@ func testAccCheckTFEOrgMaxTokenTTLPolicyExists(n string) resource.TestCheckFunc 
 func testAccTFEOrgMaxTokenTTLPolicy_basic(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
+  name             = "tst-terraform-%d"
+  email            = "admin@company.com"
+  max_ttl_enabled  = true
 }
 
 resource "tfe_org_max_token_ttl_policy" "foobar" {
   organization              = tfe_organization.foobar.name
-  enabled                   = true
   org_token_max_ttl         = "0.5h"
-  user_token_max_ttl        = "2.5d"
+  user_token_max_ttl        = "5.5y"
   team_token_max_ttl        = "3w"
   audit_trail_token_max_ttl = "6mo"
 }
@@ -185,14 +190,15 @@ resource "tfe_org_max_token_ttl_policy" "foobar" {
 func testAccTFEOrgMaxTokenTTLPolicy_updated(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
+  name             = "tst-terraform-%d"
+  email            = "admin@company.com"
+  max_ttl_enabled  = true
 }
 
 resource "tfe_org_max_token_ttl_policy" "foobar" {
   organization              = tfe_organization.foobar.name
-  enabled                   = true
   org_token_max_ttl         = "12h"
-  user_token_max_ttl        = "10d"
+  user_token_max_ttl        = "5y"
   team_token_max_ttl        = "5w"
   audit_trail_token_max_ttl = "12mo"
 }
@@ -202,12 +208,13 @@ resource "tfe_org_max_token_ttl_policy" "foobar" {
 func testAccTFEOrgMaxTokenTTLPolicy_disabled(rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-  name  = "tst-terraform-%d"
+  name             = "tst-terraform-%d"
+  email            = "admin@company.com"
+  max_ttl_enabled  = false
 }
 
 resource "tfe_org_max_token_ttl_policy" "foobar" {
   organization = tfe_organization.foobar.name
-  enabled      = false
 }
 `, rInt)
 }
@@ -216,7 +223,6 @@ func testAccTFEOrgMaxTokenTTLPolicy_defaultOrg(orgName string) string {
 	return fmt.Sprintf(`
 resource "tfe_org_max_token_ttl_policy" "foobar" {
   organization       = "%s"
-  enabled            = true
   org_token_max_ttl  = "1d"
 }
 `, orgName)

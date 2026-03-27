@@ -27,7 +27,6 @@ type dataSourceTFEOrgMaxTokenTTLPolicy struct {
 
 type modelTFEOrgMaxTokenTTLPolicyData struct {
 	Organization            types.String `tfsdk:"organization"`
-	Enabled                 types.Bool   `tfsdk:"enabled"`
 	OrgTokenMaxTTLMs        types.Int64  `tfsdk:"org_token_max_ttl_ms"`
 	TeamTokenMaxTTLMs       types.Int64  `tfsdk:"team_token_max_ttl_ms"`
 	AuditTrailTokenMaxTTLMs types.Int64  `tfsdk:"audit_trail_token_max_ttl_ms"`
@@ -48,10 +47,6 @@ func (d *dataSourceTFEOrgMaxTokenTTLPolicy) Schema(_ context.Context, _ datasour
 			"organization": schema.StringAttribute{
 				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
 				Optional:    true,
-				Computed:    true,
-			},
-			"enabled": schema.BoolAttribute{
-				Description: "Indicates whether the maximum TTL token policy is enabled (true) or disabled (false) for the organization.",
 				Computed:    true,
 			},
 			"org_token_max_ttl_ms": schema.Int64Attribute{
@@ -106,35 +101,24 @@ func (d *dataSourceTFEOrgMaxTokenTTLPolicy) Read(ctx context.Context, req dataso
 
 	tflog.Debug(ctx, fmt.Sprintf("Reading token TTL policies for organization: %s", organization))
 
-	// Read the organization to get max_ttl_enabled status
-	org, err := d.config.Client.Organizations.Read(ctx, organization)
-	if err != nil {
-		resp.Diagnostics.AddError("Unable to read organization", err.Error())
-		return
-	}
-
 	policyList, err := d.config.Client.OrganizationTokenTTLPolicies.List(ctx, organization, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read organization token TTL policies", err.Error())
 		return
 	}
 
-	// Use the organization's max_ttl_enabled attribute
-	enabled := org.MaxTTLEnabled
-
 	// Convert the API response to the data source model
-	result := modelFromTokenTTLPoliciesData(organization, enabled, policyList.Items)
+	result := modelFromTokenTTLPoliciesData(organization, policyList.Items)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
-func modelFromTokenTTLPoliciesData(organization string, enabled bool, policies []*tfe.OrganizationTokenTTLPolicy) modelTFEOrgMaxTokenTTLPolicyData {
+func modelFromTokenTTLPoliciesData(organization string, policies []*tfe.OrganizationTokenTTLPolicy) modelTFEOrgMaxTokenTTLPolicyData {
 	// Default TTL: 2 years in milliseconds
 	defaultTTLMs := int64(63072000000)
 
 	result := modelTFEOrgMaxTokenTTLPolicyData{
 		Organization:            types.StringValue(organization),
-		Enabled:                 types.BoolValue(enabled),
 		OrgTokenMaxTTLMs:        types.Int64Value(defaultTTLMs),
 		TeamTokenMaxTTLMs:       types.Int64Value(defaultTTLMs),
 		AuditTrailTokenMaxTTLMs: types.Int64Value(defaultTTLMs),
