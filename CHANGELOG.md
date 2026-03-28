@@ -1,5 +1,8 @@
 ## Unreleased
 
+BUG FIXES:
+* `r/tfe_team_token`, `r/tfe_organization_token`: Read now persists API-default `expired_at` values so `ImportStateVerify` succeeds when `expired_at` is omitted from configuration. By @uk1288 [#2017](https://github.com/hashicorp/terraform-provider-tfe/pull/2017)
+
 ## v0.75.0
 
 FEATURES:
