@@ -231,11 +231,12 @@ func (r *resourceTFETeamToken) Read(ctx context.Context, req resource.ReadReques
 
 	teamID := state.TeamID.ValueString()
 	tflog.Debug(ctx, fmt.Sprintf("Read the token from team: %s", teamID))
+	var token *tfe.TeamToken
 	var err error
 	if isTokenID(state.ID.ValueString()) {
-		_, err = r.config.Client.TeamTokens.ReadByID(ctx, state.ID.ValueString())
+		token, err = r.config.Client.TeamTokens.ReadByID(ctx, state.ID.ValueString())
 	} else {
-		_, err = r.config.Client.TeamTokens.Read(ctx, teamID)
+		token, err = r.config.Client.TeamTokens.Read(ctx, teamID)
 	}
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
@@ -249,7 +250,14 @@ func (r *resourceTFETeamToken) Read(ctx context.Context, req resource.ReadReques
 		)
 		return
 	}
-	result := modelFromTFEToken(state.TeamID, state.ID, state.Token, state.ForceRegenerate, state.ExpiredAt, state.Description)
+
+	// if expired_at was set to null at creation, the API returns a default value of 24 months from the creation date.
+	expiredAt := types.StringNull()
+	if token != nil && !token.ExpiredAt.IsZero() {
+		expiredAt = types.StringValue(token.ExpiredAt.Format(time.RFC3339))
+	}
+
+	result := modelFromTFEToken(state.TeamID, state.ID, state.Token, state.ForceRegenerate, expiredAt, state.Description)
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
 }
 
