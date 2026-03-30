@@ -4,6 +4,7 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"os"
@@ -11,10 +12,45 @@ import (
 	"testing"
 	"time"
 
+	tfe "github.com/hashicorp/go-tfe"
+	fwresource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-go/tftypes"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
 	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 )
+
+type notFoundStacks struct{}
+
+func (notFoundStacks) List(_ context.Context, _ string, _ *tfe.StackListOptions) (*tfe.StackList, error) {
+	return nil, nil
+}
+
+func (notFoundStacks) Read(_ context.Context, _ string) (*tfe.Stack, error) {
+	return nil, tfe.ErrResourceNotFound
+}
+
+func (notFoundStacks) Create(_ context.Context, _ tfe.StackCreateOptions) (*tfe.Stack, error) {
+	return nil, nil
+}
+
+func (notFoundStacks) Update(_ context.Context, _ string, _ tfe.StackUpdateOptions) (*tfe.Stack, error) {
+	return nil, nil
+}
+
+func (notFoundStacks) Delete(_ context.Context, _ string) error {
+	return nil
+}
+
+func (notFoundStacks) ForceDelete(_ context.Context, _ string) error {
+	return nil
+}
+
+func (notFoundStacks) FetchLatestFromVcs(_ context.Context, _ string) (*tfe.Stack, error) {
+	return nil, nil
+}
 
 func TestAccTFEStackResource_basic(t *testing.T) {
 	skipUnlessBeta(t)
@@ -241,6 +277,96 @@ resource "tfe_stack" "foobar" {
     agent_pool_id = tfe_agent_pool.foobar.id
 }
 `, orgName)
+}
+
+func TestResourceTFEStackRead_RemovedStackBackfillsIdentity(t *testing.T) {
+	ctx := context.Background()
+	client := testTfeClient(t, testClientOptions{})
+	client.Stacks = notFoundStacks{}
+
+	r := &resourceTFEStack{config: ConfiguredClient{Client: client}}
+
+	readResp := runRemovedStackRead(t, ctx, r, modelTFEStack{
+		ID:                 types.StringValue("stack-123"),
+		ProjectID:          types.StringValue("prj-123"),
+		AgentPoolID:        types.StringNull(),
+		Name:               types.StringValue("test-stack"),
+		Migration:          types.BoolValue(false),
+		SpeculativeEnabled: types.BoolValue(false),
+		CreationSource:     types.StringNull(),
+		Description:        types.StringValue(""),
+		VCSRepo:            nil,
+		CreatedAt:          types.StringValue("2026-01-01T00:00:00Z"),
+		UpdatedAt:          types.StringValue("2026-01-01T00:00:00Z"),
+	})
+
+	if readResp.Diagnostics.HasError() {
+		t.Fatalf("unexpected read diagnostics: %v", readResp.Diagnostics)
+	}
+
+	if !readResp.State.Raw.IsFullyNull() {
+		t.Fatalf("expected stack to be removed from state, got %s", readResp.State.Raw.String())
+	}
+
+	if readResp.Identity == nil || readResp.Identity.Raw.IsFullyNull() {
+		t.Fatal("expected stack identity to be preserved for removed resource")
+	}
+
+	var gotIdentity modelTFEStackIdentity
+	if diags := readResp.Identity.Get(ctx, &gotIdentity); diags.HasError() {
+		t.Fatalf("unexpected identity diagnostics: %v", diags)
+	}
+
+	if gotIdentity.ID.ValueString() != "stack-123" {
+		t.Fatalf("expected identity id %q, got %q", "stack-123", gotIdentity.ID.ValueString())
+	}
+
+	if gotIdentity.Hostname.ValueString() != client.BaseURL().Host {
+		t.Fatalf("expected hostname %q, got %q", client.BaseURL().Host, gotIdentity.Hostname.ValueString())
+	}
+}
+
+func runRemovedStackRead(t *testing.T, ctx context.Context, r *resourceTFEStack, stateData modelTFEStack) fwresource.ReadResponse {
+	t.Helper()
+
+	schemaResp := &fwresource.SchemaResponse{}
+	r.Schema(ctx, fwresource.SchemaRequest{}, schemaResp)
+
+	state := tfsdk.State{Schema: schemaResp.Schema}
+	if diags := state.Set(ctx, &stateData); diags.HasError() {
+		t.Fatalf("unexpected state set diagnostics: %v", diags)
+	}
+
+	identitySchemaResp := &fwresource.IdentitySchemaResponse{}
+	r.IdentitySchema(ctx, fwresource.IdentitySchemaRequest{}, identitySchemaResp)
+	nullIdentity := tftypes.NewValue(identitySchemaResp.IdentitySchema.Type().TerraformType(ctx), nil)
+
+	requestIdentity := &tfsdk.ResourceIdentity{
+		Schema: identitySchemaResp.IdentitySchema,
+		Raw:    nullIdentity.Copy(),
+	}
+	responseIdentity := &tfsdk.ResourceIdentity{
+		Schema: identitySchemaResp.IdentitySchema,
+		Raw:    nullIdentity.Copy(),
+	}
+
+	readResp := fwresource.ReadResponse{
+		State: tfsdk.State{
+			Schema: schemaResp.Schema,
+			Raw:    state.Raw.Copy(),
+		},
+		Identity: responseIdentity,
+	}
+
+	r.Read(ctx, fwresource.ReadRequest{
+		State: tfsdk.State{
+			Schema: schemaResp.Schema,
+			Raw:    state.Raw.Copy(),
+		},
+		Identity: requestIdentity,
+	}, &readResp)
+
+	return readResp
 }
 
 func TestAccTFEStackResource_noVCSRepo(t *testing.T) {
