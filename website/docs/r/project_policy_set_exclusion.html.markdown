@@ -2,12 +2,12 @@
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_project_policy_set_exclusion"
 description: |-
-  Add a policy set to an excluded project
+  Exclude a project from a policy set
 ---
 
 # tfe_project_policy_set_exclusion
 
-Adds and removes policy sets from an excluded project
+Adds and removes project exclusions from a policy set.
 
 -> **Note:** `tfe_policy_set` has an argument `global` that should be `true` to use this resource.
 
@@ -44,15 +44,15 @@ resource "tfe_project_policy_set_exclusion" "test" {
 The following arguments are supported:
 
 * `policy_set_id` - (Required) ID of the policy set.
-* `project_id` - (Required) Excluded workspace ID to add the policy set to.
+* `project_id` - (Required)  The Project ID where HCP Terraform excludes the specified policy set.
 
 ## Attributes Reference
 
-* `id` - The ID of the policy set attachment. ID format: `<project-id>/<policy-set-id>`
+* `id` - The ID of the project policy set exclusion. ID format: `<project-id>/<policy-set-id>`
 
 ## Import
 
-Excluded Workspace Policy Sets can be imported; use `<PROJECT ID>/<POLICY SET ID>`. For example:
+Excluded Project Policy Sets can be imported; use `<PROJECT ID>/<POLICY SET ID>`. For example:
 
 ```shell
-terraform import tfe_workspace_policy_set_exclusion.test 'prj-123456789/polset-123456789`
+terraform import tfe_project_policy_set_exclusion.test 'prj-123456789/polset-123456789`
