@@ -195,6 +195,7 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewAzureOIDCConfigurationResource,
 		NewVaultOIDCConfigurationResource,
 		NewHYOKConfigurationResource,
+		NewProjectPolicySetExclusionResource,
 	}
 }
 
