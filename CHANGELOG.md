@@ -1,5 +1,7 @@
 ## Unreleased
 
+## v0.76.0
+
 FEATURES:
 * **New Resource:**  `tfe_project_policy_set_exclusion` for managing project level exclusions on policy sets. by @subhro-acharjee-1 [#1990](https://github.com/hashicorp/terraform-provider-tfe/pull/1990) 
 BUG FIXES:
