@@ -323,7 +323,6 @@ func (r *resourceTFEProjectPolicySetExclusionParameter) ImportState(ctx context.
 		fmt.Sprintf("The project exclusion with project ID %q was not found on policy set %q. It may have been removed outside of Terraform.", projectID, policySetID),
 	)
 	resp.State.RemoveResource(ctx)
-
 }
 
 func (r *resourceTFEProjectPolicySetExclusionParameter) checkProjectExists(ctx context.Context, client *tfe.Client, projectId string) (bool, error) {

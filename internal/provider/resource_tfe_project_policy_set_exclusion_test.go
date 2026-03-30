@@ -75,7 +75,6 @@ func TestAccTFEProjectPolicySetExclusion_incorrectImportSyntax(t *testing.T) {
 			},
 		},
 	})
-
 }
 
 func testAccCheckTFEProjectPolicySetExclusionExists(resourceName string, param *modelProjectPolicySetExclusionParameter) resource.TestCheckFunc {
@@ -171,13 +170,13 @@ func testAccTFEProjectPolicySetExclusion_basic(orgName string, rInt int) string 
 
 func testImportIdFunc() resource.ImportStateIdFunc {
 	return func(s *terraform.State) (string, error) {
-		resource := s.RootModule().Resources
-		if resource == nil {
+		res := s.RootModule().Resources
+		if res == nil {
 			return "", fmt.Errorf("resource not found in state: %s", "tfe_project_policy_set_exclusion.test")
 		}
 
-		policySet := resource["tfe_policy_set.test_policy_set"]
-		project := resource["tfe_project.test_project"]
+		policySet := res["tfe_policy_set.test_policy_set"]
+		project := res["tfe_project.test_project"]
 
 		return fmt.Sprintf("%s/%s", project.Primary.ID, policySet.Primary.ID), nil
 	}
