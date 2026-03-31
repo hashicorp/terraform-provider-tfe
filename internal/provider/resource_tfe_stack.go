@@ -157,9 +157,20 @@ func (r *resourceTFEStack) Configure(ctx context.Context, req resource.Configure
 	r.config = client
 }
 
-func (r *resourceTFEStack) setReadIdentity(ctx context.Context, resp *resource.ReadResponse, stackID string) {
+func (r *resourceTFEStack) setReadIdentity(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse, stackID string) {
 	if resp.Identity == nil {
 		return
+	}
+
+	if req.Identity != nil {
+		currentIdentity := &modelTFEStackIdentity{}
+		resp.Diagnostics.Append(req.Identity.Get(ctx, &currentIdentity)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		if currentIdentity != nil && !currentIdentity.ID.IsNull() {
+			return
+		}
 	}
 
 	identity := modelTFEStackIdentity{
@@ -253,7 +264,7 @@ func (r *resourceTFEStack) Read(ctx context.Context, req resource.ReadRequest, r
 	stack, err := r.config.Client.Stacks.Read(ctx, state.ID.ValueString())
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
-			r.setReadIdentity(ctx, resp, state.ID.ValueString())
+			r.setReadIdentity(ctx, req, resp, state.ID.ValueString())
 			resp.State.RemoveResource(ctx)
 			return
 		}

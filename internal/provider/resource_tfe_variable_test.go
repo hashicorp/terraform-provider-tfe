@@ -733,7 +733,37 @@ func TestResourceTFEVariableRead_RemovedVariableSetVariableBackfillsIdentity(t *
 	})
 }
 
-func runRemovedVariableRead(t *testing.T, ctx context.Context, r *resourceTFEVariable, stateData modelTFEVariable) fwresource.ReadResponse {
+func TestResourceTFEVariableRead_RemovedWorkspaceVariablePreservesExistingIdentity(t *testing.T) {
+	ctx := context.Background()
+	client := testTfeClient(t, testClientOptions{})
+	client.Variables = notFoundVariables{}
+
+	r := &resourceTFEVariable{config: ConfiguredClient{Client: client}}
+	existingIdentity := &modelTFEVariableIdentity{
+		ID:             types.StringValue("var-existing"),
+		ConfigurableID: types.StringValue("ws-existing"),
+		Hostname:       types.StringValue("preserve.example.com"),
+	}
+
+	readResp := runRemovedVariableRead(t, ctx, r, modelTFEVariable{
+		ID:             types.StringValue("var-123"),
+		Key:            types.StringValue("key_test"),
+		Value:          types.StringValue("value_test"),
+		ValueWO:        types.StringNull(),
+		ValueWOVersion: types.Int64Null(),
+		ReadableValue:  types.StringValue("value_test"),
+		Category:       types.StringValue(string(tfe.CategoryEnv)),
+		Description:    types.StringValue(""),
+		HCL:            types.BoolValue(false),
+		Sensitive:      types.BoolValue(false),
+		WorkspaceID:    types.StringValue("ws-123"),
+		VariableSetID:  types.StringNull(),
+	}, existingIdentity)
+
+	assertRemovedVariableRead(t, ctx, readResp, *existingIdentity)
+}
+
+func runRemovedVariableRead(t *testing.T, ctx context.Context, r *resourceTFEVariable, stateData modelTFEVariable, existingIdentity ...*modelTFEVariableIdentity) fwresource.ReadResponse {
 	t.Helper()
 
 	schemaResp := &fwresource.SchemaResponse{}
@@ -755,6 +785,15 @@ func runRemovedVariableRead(t *testing.T, ctx context.Context, r *resourceTFEVar
 	responseIdentity := &tfsdk.ResourceIdentity{
 		Schema: identitySchemaResp.IdentitySchema,
 		Raw:    nullIdentity.Copy(),
+	}
+
+	if len(existingIdentity) > 0 && existingIdentity[0] != nil {
+		if diags := requestIdentity.Set(ctx, existingIdentity[0]); diags.HasError() {
+			t.Fatalf("unexpected request identity diagnostics: %v", diags)
+		}
+		if diags := responseIdentity.Set(ctx, existingIdentity[0]); diags.HasError() {
+			t.Fatalf("unexpected response identity diagnostics: %v", diags)
+		}
 	}
 
 	readResp := fwresource.ReadResponse{

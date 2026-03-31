@@ -455,9 +455,20 @@ func (r *resourceTFEVariable) Read(ctx context.Context, req resource.ReadRequest
 	}
 }
 
-func (r *resourceTFEVariable) setReadIdentity(ctx context.Context, resp *resource.ReadResponse, variableID string, configurableID string) {
+func (r *resourceTFEVariable) setReadIdentity(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse, variableID string, configurableID string) {
 	if resp.Identity == nil {
 		return
+	}
+
+	if req.Identity != nil {
+		currentIdentity := &modelTFEVariableIdentity{}
+		resp.Diagnostics.Append(req.Identity.Get(ctx, &currentIdentity)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		if currentIdentity != nil && !currentIdentity.ID.IsNull() {
+			return
+		}
 	}
 
 	identity := modelTFEVariableIdentity{
@@ -484,7 +495,7 @@ func (r *resourceTFEVariable) readWithWorkspace(ctx context.Context, req resourc
 		// If it's gone: that's not an error, but we are done.
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			log.Printf("[DEBUG] Variable %s no longer exists", variableID)
-			r.setReadIdentity(ctx, resp, variableID, workspaceID)
+			r.setReadIdentity(ctx, req, resp, variableID, workspaceID)
 			resp.State.RemoveResource(ctx)
 		} else {
 			resp.Diagnostics.AddError(
@@ -524,7 +535,7 @@ func (r *resourceTFEVariable) readWithVariableSet(ctx context.Context, req resou
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			// If it's gone: that's not an error, but we are done.
 			log.Printf("[DEBUG] Variable %s no longer exists", variableID)
-			r.setReadIdentity(ctx, resp, variableID, variableSetID)
+			r.setReadIdentity(ctx, req, resp, variableID, variableSetID)
 			resp.State.RemoveResource(ctx)
 		} else {
 			resp.Diagnostics.AddError(

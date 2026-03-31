@@ -326,7 +326,50 @@ func TestResourceTFEStackRead_RemovedStackBackfillsIdentity(t *testing.T) {
 	}
 }
 
-func runRemovedStackRead(t *testing.T, ctx context.Context, r *resourceTFEStack, stateData modelTFEStack) fwresource.ReadResponse {
+func TestResourceTFEStackRead_RemovedStackPreservesExistingIdentity(t *testing.T) {
+	ctx := context.Background()
+	client := testTfeClient(t, testClientOptions{})
+	client.Stacks = notFoundStacks{}
+
+	r := &resourceTFEStack{config: ConfiguredClient{Client: client}}
+	existingIdentity := &modelTFEStackIdentity{
+		ID:       types.StringValue("stack-existing"),
+		Hostname: types.StringValue("preserve.example.com"),
+	}
+
+	readResp := runRemovedStackRead(t, ctx, r, modelTFEStack{
+		ID:                 types.StringValue("stack-123"),
+		ProjectID:          types.StringValue("prj-123"),
+		AgentPoolID:        types.StringNull(),
+		Name:               types.StringValue("test-stack"),
+		Migration:          types.BoolValue(false),
+		SpeculativeEnabled: types.BoolValue(false),
+		CreationSource:     types.StringNull(),
+		Description:        types.StringValue(""),
+		VCSRepo:            nil,
+		CreatedAt:          types.StringValue("2026-01-01T00:00:00Z"),
+		UpdatedAt:          types.StringValue("2026-01-01T00:00:00Z"),
+	}, existingIdentity)
+
+	if readResp.Diagnostics.HasError() {
+		t.Fatalf("unexpected read diagnostics: %v", readResp.Diagnostics)
+	}
+
+	var gotIdentity modelTFEStackIdentity
+	if diags := readResp.Identity.Get(ctx, &gotIdentity); diags.HasError() {
+		t.Fatalf("unexpected identity diagnostics: %v", diags)
+	}
+
+	if gotIdentity.ID.ValueString() != existingIdentity.ID.ValueString() {
+		t.Fatalf("expected identity id %q, got %q", existingIdentity.ID.ValueString(), gotIdentity.ID.ValueString())
+	}
+
+	if gotIdentity.Hostname.ValueString() != existingIdentity.Hostname.ValueString() {
+		t.Fatalf("expected hostname %q, got %q", existingIdentity.Hostname.ValueString(), gotIdentity.Hostname.ValueString())
+	}
+}
+
+func runRemovedStackRead(t *testing.T, ctx context.Context, r *resourceTFEStack, stateData modelTFEStack, existingIdentity ...*modelTFEStackIdentity) fwresource.ReadResponse {
 	t.Helper()
 
 	schemaResp := &fwresource.SchemaResponse{}
@@ -348,6 +391,15 @@ func runRemovedStackRead(t *testing.T, ctx context.Context, r *resourceTFEStack,
 	responseIdentity := &tfsdk.ResourceIdentity{
 		Schema: identitySchemaResp.IdentitySchema,
 		Raw:    nullIdentity.Copy(),
+	}
+
+	if len(existingIdentity) > 0 && existingIdentity[0] != nil {
+		if diags := requestIdentity.Set(ctx, existingIdentity[0]); diags.HasError() {
+			t.Fatalf("unexpected request identity diagnostics: %v", diags)
+		}
+		if diags := responseIdentity.Set(ctx, existingIdentity[0]); diags.HasError() {
+			t.Fatalf("unexpected response identity diagnostics: %v", diags)
+		}
 	}
 
 	readResp := fwresource.ReadResponse{
