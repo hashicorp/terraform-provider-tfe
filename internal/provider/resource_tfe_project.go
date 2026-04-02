@@ -258,6 +258,7 @@ func (r *resourceTFEProject) Read(ctx context.Context, req resource.ReadRequest,
 	})
 	if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
 		tflog.Debug(ctx, fmt.Sprintf("Project %s no longer exists", id))
+		r.setReadIdentity(ctx, req, resp, id)
 		resp.State.RemoveResource(ctx)
 		return
 	}
@@ -266,6 +267,7 @@ func (r *resourceTFEProject) Read(ctx context.Context, req resource.ReadRequest,
 		project, err = r.config.Client.Projects.Read(ctx, id)
 		if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("Project %s no longer exists", id))
+			r.setReadIdentity(ctx, req, resp, id)
 			resp.State.RemoveResource(ctx)
 			return
 		} else if err != nil {
@@ -310,6 +312,29 @@ func (r *resourceTFEProject) Read(ctx context.Context, req resource.ReadRequest,
 
 	identity := modelProjectIdentity{
 		ID:       result.ID,
+		Hostname: types.StringValue(r.config.Client.BaseURL().Host),
+	}
+	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
+}
+
+func (r *resourceTFEProject) setReadIdentity(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse, projectID string) {
+	if resp.Identity == nil {
+		return
+	}
+
+	if req.Identity != nil {
+		currentIdentity := &modelProjectIdentity{}
+		resp.Diagnostics.Append(req.Identity.Get(ctx, &currentIdentity)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		if currentIdentity != nil && !currentIdentity.ID.IsNull() {
+			return
+		}
+	}
+
+	identity := modelProjectIdentity{
+		ID:       types.StringValue(projectID),
 		Hostname: types.StringValue(r.config.Client.BaseURL().Host),
 	}
 	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
