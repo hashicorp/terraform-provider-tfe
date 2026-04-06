@@ -234,15 +234,18 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 				Optional:    true,
 				WriteOnly:   true,
 				Sensitive:   true,
-				Description: "Value of the token in write-only mode",
+				Description: "Write-only alternative to `token`. Changes are detected automatically via a hash stored in private state; increment `token_wo_version` manually to force an update without changing the value.",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("token")),
-					stringvalidator.AlsoRequires(path.MatchRoot("token_wo_version")),
 				},
 			},
 			"token_wo_version": schema.Int64Attribute{
 				Optional:    true,
-				Description: "Version of the write-only token to trigger updates",
+				Computed:    true,
+				Description: "Tracks the version of the write-only token. When `token_wo` is set and this attribute is not explicitly configured, the provider automatically detects token changes via a hash stored in private state and increments this value. Set this manually to force a token update without changing the value, or for maximum privacy (disables hash storage).",
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
+				},
 				Validators: []validator.Int64{
 					int64validator.ConflictsWith(path.MatchRoot("token")),
 					int64validator.AlsoRequires(path.MatchRoot("token_wo")),
@@ -340,54 +343,88 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 	}
 }
 
-// computeURLWOHash returns a hex-encoded SHA-256 hash of the given URL.
-func computeURLWOHash(url string) string {
-	h := sha256.Sum256([]byte(url))
+// computeWOHash returns a hex-encoded SHA-256 hash of the given value.
+func computeWOHash(value string) string {
+	h := sha256.Sum256([]byte(value))
 	return hex.EncodeToString(h[:])
 }
 
-// ModifyPlan implements resource.ResourceWithModifyPlan. It auto-manages url_wo_version
-// by hashing the url_wo value and incrementing the version when the hash changes,
-// unless url_wo_version is explicitly set in config (manual mode).
+// privateStateSetter is satisfied by the Private field on Create/Update responses.
+type privateStateSetter interface {
+	SetKey(ctx context.Context, key string, value []byte) diag.Diagnostics
+}
+
+// storeWOHash JSON-encodes the SHA-256 hash of woValue and stores it in private state under hashKey.
+// Does nothing if woValue is null.
+func storeWOHash(ctx context.Context, private privateStateSetter, hashKey string, woValue types.String, diags *diag.Diagnostics) {
+	if woValue.IsNull() {
+		return
+	}
+	hashJSON, err := json.Marshal(computeWOHash(woValue.ValueString()))
+	if err != nil {
+		diags.AddError("Failed to encode "+hashKey, err.Error())
+		return
+	}
+	diags.Append(private.SetKey(ctx, hashKey, hashJSON)...)
+}
+
+// ModifyPlan implements resource.ResourceWithModifyPlan. It auto-manages token_wo_version
+// and url_wo_version by hashing the write-only values and incrementing the version when
+// the hash changes, unless the version is explicitly set in config (manual mode).
 func (r *resourceTFENotificationConfiguration) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
 	// Skip on destroy
 	if req.Plan.Raw.IsNull() {
 		return
 	}
 
-	// If url_wo_version is explicitly set in config, use manual mode — skip auto-detection
-	var configURLWOVersion types.Int64
-	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("url_wo_version"), &configURLWOVersion)...)
+	r.modifyPlanWOVersion(ctx, req, resp, "token_wo", "token_wo_version", "token_wo_hash")
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	if !configURLWOVersion.IsNull() {
+	r.modifyPlanWOVersion(ctx, req, resp, "url_wo", "url_wo_version", "url_wo_hash")
+}
+
+// modifyPlanWOVersion manages the auto-detection version for a write-only attribute.
+// If the version attribute is explicitly set in config (manual mode), no auto-detection is performed.
+func (r *resourceTFENotificationConfiguration) modifyPlanWOVersion(
+	ctx context.Context,
+	req resource.ModifyPlanRequest,
+	resp *resource.ModifyPlanResponse,
+	woAttr, versionAttr, hashKey string,
+) {
+	// If version is explicitly set in config, use manual mode — skip auto-detection
+	var configVersion types.Int64
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root(versionAttr), &configVersion)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if !configVersion.IsNull() {
 		return
 	}
 
-	// Get url_wo from config
-	var urlWO types.String
-	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("url_wo"), &urlWO)...)
+	// Get write-only value from config
+	var woValue types.String
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root(woAttr), &woValue)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	if urlWO.IsNull() || urlWO.IsUnknown() {
-		// url_wo not set — clear the version
-		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("url_wo_version"), types.Int64Null())...)
+	if woValue.IsNull() || woValue.IsUnknown() {
+		// Write-only value not set — clear the version
+		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root(versionAttr), types.Int64Null())...)
 		return
 	}
 
-	newHash := computeURLWOHash(urlWO.ValueString())
+	newHash := computeWOHash(woValue.ValueString())
 
 	// On create (no prior state), set initial version to 1
 	if req.State.Raw.IsNull() {
-		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("url_wo_version"), types.Int64Value(1))...)
+		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root(versionAttr), types.Int64Value(1))...)
 		return
 	}
 
 	// On update: compare new hash against stored hash in private state
-	storedHashBytes, diags := req.Private.GetKey(ctx, "url_wo_hash")
+	storedHashBytes, diags := req.Private.GetKey(ctx, hashKey)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -396,7 +433,7 @@ func (r *resourceTFENotificationConfiguration) ModifyPlan(ctx context.Context, r
 	var storedHash string
 	if storedHashBytes != nil {
 		if err := json.Unmarshal(storedHashBytes, &storedHash); err != nil {
-			resp.Diagnostics.AddError("Failed to decode url_wo hash", err.Error())
+			resp.Diagnostics.AddError("Failed to decode "+woAttr+" hash", err.Error())
 			return
 		}
 	}
@@ -404,7 +441,7 @@ func (r *resourceTFENotificationConfiguration) ModifyPlan(ctx context.Context, r
 	if !bytes.Equal([]byte(newHash), []byte(storedHash)) {
 		// Hash changed — increment version
 		var stateVersion types.Int64
-		resp.Diagnostics.Append(req.State.GetAttribute(ctx, path.Root("url_wo_version"), &stateVersion)...)
+		resp.Diagnostics.Append(req.State.GetAttribute(ctx, path.Root(versionAttr), &stateVersion)...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -412,7 +449,7 @@ func (r *resourceTFENotificationConfiguration) ModifyPlan(ctx context.Context, r
 		if !stateVersion.IsNull() && !stateVersion.IsUnknown() {
 			currentVersion = stateVersion.ValueInt64()
 		}
-		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("url_wo_version"), types.Int64Value(currentVersion+1))...)
+		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root(versionAttr), types.Int64Value(currentVersion+1))...)
 	}
 }
 
@@ -507,22 +544,15 @@ func (r *resourceTFENotificationConfiguration) Create(ctx context.Context, req r
 	}
 
 	// We got a notification, so set state to new values
-	result, diags := modelFromTFENotificationConfiguration(nc, config.TokenWOVersion, plan.URLWOVersion)
+	result, diags := modelFromTFENotificationConfiguration(nc, plan.TokenWOVersion, plan.URLWOVersion)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Store hash of url_wo in private state for auto change detection
-	if !config.URLWO.IsNull() {
-		hash := computeURLWOHash(config.URLWO.ValueString())
-		hashJSON, err := json.Marshal(hash)
-		if err != nil {
-			resp.Diagnostics.AddError("Failed to encode url_wo hash", err.Error())
-			return
-		}
-		resp.Diagnostics.Append(resp.Private.SetKey(ctx, "url_wo_hash", hashJSON)...)
-	}
+	// Store hashes in private state for auto change detection
+	storeWOHash(ctx, resp.Private, "token_wo_hash", config.TokenWO, &resp.Diagnostics)
+	storeWOHash(ctx, resp.Private, "url_wo_hash", config.URLWO, &resp.Diagnostics)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
@@ -654,21 +684,21 @@ func (r *resourceTFENotificationConfiguration) Update(ctx context.Context, req r
 		nc.Token = plan.Token.ValueString()
 	}
 
-	result, diags := modelFromTFENotificationConfiguration(nc, config.TokenWOVersion, plan.URLWOVersion)
+	result, diags := modelFromTFENotificationConfiguration(nc, plan.TokenWOVersion, plan.URLWOVersion)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Update hash of url_wo in private state for auto change detection
+	// Update hashes in private state for auto change detection
+	if !config.TokenWO.IsNull() {
+		storeWOHash(ctx, resp.Private, "token_wo_hash", config.TokenWO, &resp.Diagnostics)
+	} else if !state.TokenWOVersion.IsNull() && plan.TokenWOVersion.IsNull() {
+		// Switching from token_wo to token — clear the stored hash
+		resp.Diagnostics.Append(resp.Private.SetKey(ctx, "token_wo_hash", nil)...)
+	}
 	if !config.URLWO.IsNull() {
-		hash := computeURLWOHash(config.URLWO.ValueString())
-		hashJSON, err := json.Marshal(hash)
-		if err != nil {
-			resp.Diagnostics.AddError("Failed to encode url_wo hash", err.Error())
-			return
-		}
-		resp.Diagnostics.Append(resp.Private.SetKey(ctx, "url_wo_hash", hashJSON)...)
+		storeWOHash(ctx, resp.Private, "url_wo_hash", config.URLWO, &resp.Diagnostics)
 	} else if !state.URLWOVersion.IsNull() && plan.URLWOVersion.IsNull() {
 		// Switching from url_wo to url — clear the stored hash
 		resp.Diagnostics.Append(resp.Private.SetKey(ctx, "url_wo_hash", nil)...)
