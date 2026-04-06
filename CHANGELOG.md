@@ -1,5 +1,8 @@
 ## Unreleased
 
+ENHANCEMENTS:
+* `d/tfe_team`: Migrate the team data source to the Terraform Plugin Framework. By @uk1288 ([#2029](https://github.com/hashicorp/terraform-provider-tfe/pull/2029))
+
 ## v0.76.1
 
 BUG FIXES:
@@ -10,7 +13,7 @@ BUG FIXES:
 ## v0.76.0
 
 FEATURES:
-* **New Resource:**  `tfe_project_policy_set_exclusion` for managing project level exclusions on policy sets. by @subhro-acharjee-1 [#1990](https://github.com/hashicorp/terraform-provider-tfe/pull/1990) 
+* **New Resource:**  `tfe_project_policy_set_exclusion` for managing project level exclusions on policy sets. by @subhro-acharjee-1 [#1990](https://github.com/hashicorp/terraform-provider-tfe/pull/1990)
 BUG FIXES:
 * `r/tfe_team_token`, `r/tfe_organization_token`: Read now persists API-default `expired_at` values so `ImportStateVerify` succeeds when `expired_at` is omitted from configuration. By @uk1288 [#2017](https://github.com/hashicorp/terraform-provider-tfe/pull/2017)
 
