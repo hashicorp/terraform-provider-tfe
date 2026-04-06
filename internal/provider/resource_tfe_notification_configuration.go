@@ -4,7 +4,11 @@
 package provider
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -18,6 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -30,6 +35,7 @@ var (
 	_ resource.Resource                = &resourceTFENotificationConfiguration{}
 	_ resource.ResourceWithConfigure   = &resourceTFENotificationConfiguration{}
 	_ resource.ResourceWithImportState = &resourceTFENotificationConfiguration{}
+	_ resource.ResourceWithModifyPlan  = &resourceTFENotificationConfiguration{}
 )
 
 // NewNotificationConfigurationResource
@@ -54,11 +60,13 @@ type modelTFENotificationConfiguration struct {
 	TokenWOVersion  types.Int64  `tfsdk:"token_wo_version"`
 	Triggers        types.Set    `tfsdk:"triggers"`
 	URL             types.String `tfsdk:"url"`
+	URLWO           types.String `tfsdk:"url_wo"`
+	URLWOVersion    types.Int64  `tfsdk:"url_wo_version"`
 	WorkspaceID     types.String `tfsdk:"workspace_id"`
 }
 
 // modelFromTFENotificationConfiguration builds a modelTFENotificationConfiguration struct from a tfe.NotificationConfiguration value.
-func modelFromTFENotificationConfiguration(v *tfe.NotificationConfiguration, tokenWOVersion types.Int64) (modelTFENotificationConfiguration, diag.Diagnostics) {
+func modelFromTFENotificationConfiguration(v *tfe.NotificationConfiguration, tokenWOVersion, urlWOVersion types.Int64) (modelTFENotificationConfiguration, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	result := modelTFENotificationConfiguration{
 		ID:              types.StringValue(v.ID),
@@ -67,6 +75,7 @@ func modelFromTFENotificationConfiguration(v *tfe.NotificationConfiguration, tok
 		Enabled:         types.BoolValue(v.Enabled),
 		WorkspaceID:     types.StringValue(v.SubscribableChoice.Workspace.ID),
 		TokenWOVersion:  tokenWOVersion,
+		URLWOVersion:    urlWOVersion,
 	}
 
 	if len(v.EmailAddresses) == 0 {
@@ -110,7 +119,10 @@ func modelFromTFENotificationConfiguration(v *tfe.NotificationConfiguration, tok
 		result.Token = types.StringNull()
 	}
 
-	if v.URL != "" {
+	isURLWriteOnly := !urlWOVersion.IsNull()
+	if isURLWriteOnly {
+		result.URL = types.StringNull()
+	} else if v.URL != "" {
 		result.URL = types.StringValue(v.URL)
 	}
 
@@ -260,13 +272,14 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 			},
 
 			"url": schema.StringAttribute{
-				Description: "The HTTP or HTTPS URL where notification requests will be made. This value must not be provided if `email_addresses` or `email_user_ids` is present, or if `destination_type` is `email`.",
+				Description: "The HTTP or HTTPS URL where notification requests will be made. This value must not be provided if `email_addresses` or `email_user_ids` is present, or if `destination_type` is `email`. Use `url_wo` instead to prevent the URL from being stored in state.",
 				Optional:    true,
 				Sensitive:   true,
 				Validators: []validator.String{
-					validators.AttributeRequiredIfValueString(
+					validators.AttributeRequiredIfValueStringUnlessOtherSet(
 						"destination_type",
 						[]string{"generic", "microsoft-teams", "slack"},
+						"url_wo",
 					),
 					validators.AttributeValueConflictValidator(
 						"destination_type",
@@ -275,7 +288,44 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 					stringvalidator.ConflictsWith(
 						path.MatchRelative().AtParent().AtName("email_addresses"),
 						path.MatchRelative().AtParent().AtName("email_user_ids"),
+						path.MatchRelative().AtParent().AtName("url_wo"),
 					),
+				},
+			},
+
+			"url_wo": schema.StringAttribute{
+				Description: "Write-only alternative to `url`. The HTTP or HTTPS URL where notification requests will be made. Use this instead of `url` to prevent the URL from being stored in state. Changes are detected automatically via a hash stored in private state; increment `url_wo_version` manually to force an update without changing the value.",
+				Optional:    true,
+				WriteOnly:   true,
+				Sensitive:   true,
+				Validators: []validator.String{
+					validators.AttributeRequiredIfValueStringUnlessOtherSet(
+						"destination_type",
+						[]string{"generic", "microsoft-teams", "slack"},
+						"url",
+					),
+					validators.AttributeValueConflictValidator(
+						"destination_type",
+						[]string{"email"},
+					),
+					stringvalidator.ConflictsWith(
+						path.MatchRelative().AtParent().AtName("email_addresses"),
+						path.MatchRelative().AtParent().AtName("email_user_ids"),
+						path.MatchRelative().AtParent().AtName("url"),
+					),
+				},
+			},
+
+			"url_wo_version": schema.Int64Attribute{
+				Description: "Tracks the version of the write-only URL. When `url_wo` is set and this attribute is not explicitly configured, the provider automatically detects URL changes via a hash stored in private state and increments this value. Set this manually to force a URL update without changing the value, or for maximum privacy (disables hash storage).",
+				Optional:    true,
+				Computed:    true,
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
+				},
+				Validators: []validator.Int64{
+					int64validator.ConflictsWith(path.MatchRoot("url")),
+					int64validator.AlsoRequires(path.MatchRoot("url_wo")),
 				},
 			},
 
@@ -287,6 +337,82 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 				},
 			},
 		},
+	}
+}
+
+// computeURLWOHash returns a hex-encoded SHA-256 hash of the given URL.
+func computeURLWOHash(url string) string {
+	h := sha256.Sum256([]byte(url))
+	return hex.EncodeToString(h[:])
+}
+
+// ModifyPlan implements resource.ResourceWithModifyPlan. It auto-manages url_wo_version
+// by hashing the url_wo value and incrementing the version when the hash changes,
+// unless url_wo_version is explicitly set in config (manual mode).
+func (r *resourceTFENotificationConfiguration) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	// Skip on destroy
+	if req.Plan.Raw.IsNull() {
+		return
+	}
+
+	// If url_wo_version is explicitly set in config, use manual mode — skip auto-detection
+	var configURLWOVersion types.Int64
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("url_wo_version"), &configURLWOVersion)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if !configURLWOVersion.IsNull() {
+		return
+	}
+
+	// Get url_wo from config
+	var urlWO types.String
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("url_wo"), &urlWO)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if urlWO.IsNull() || urlWO.IsUnknown() {
+		// url_wo not set — clear the version
+		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("url_wo_version"), types.Int64Null())...)
+		return
+	}
+
+	newHash := computeURLWOHash(urlWO.ValueString())
+
+	// On create (no prior state), set initial version to 1
+	if req.State.Raw.IsNull() {
+		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("url_wo_version"), types.Int64Value(1))...)
+		return
+	}
+
+	// On update: compare new hash against stored hash in private state
+	storedHashBytes, diags := req.Private.GetKey(ctx, "url_wo_hash")
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var storedHash string
+	if storedHashBytes != nil {
+		if err := json.Unmarshal(storedHashBytes, &storedHash); err != nil {
+			resp.Diagnostics.AddError("Failed to decode url_wo hash", err.Error())
+			return
+		}
+	}
+
+	if !bytes.Equal([]byte(newHash), []byte(storedHash)) {
+		// Hash changed — increment version
+		var stateVersion types.Int64
+		resp.Diagnostics.Append(req.State.GetAttribute(ctx, path.Root("url_wo_version"), &stateVersion)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		currentVersion := int64(0)
+		if !stateVersion.IsNull() && !stateVersion.IsUnknown() {
+			currentVersion = stateVersion.ValueInt64()
+		}
+		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("url_wo_version"), types.Int64Value(currentVersion+1))...)
 	}
 }
 
@@ -323,6 +449,11 @@ func (r *resourceTFENotificationConfiguration) Create(ctx context.Context, req r
 		options.Token = config.TokenWO.ValueStringPointer()
 	} else {
 		options.Token = plan.Token.ValueStringPointer()
+	}
+
+	// Set URL from `url_wo` if set, otherwise use the normal value
+	if !config.URLWO.IsNull() {
+		options.URL = config.URLWO.ValueStringPointer()
 	}
 
 	// Add triggers set to the options struct
@@ -376,10 +507,21 @@ func (r *resourceTFENotificationConfiguration) Create(ctx context.Context, req r
 	}
 
 	// We got a notification, so set state to new values
-	result, diags := modelFromTFENotificationConfiguration(nc, config.TokenWOVersion)
+	result, diags := modelFromTFENotificationConfiguration(nc, config.TokenWOVersion, plan.URLWOVersion)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	// Store hash of url_wo in private state for auto change detection
+	if !config.URLWO.IsNull() {
+		hash := computeURLWOHash(config.URLWO.ValueString())
+		hashJSON, err := json.Marshal(hash)
+		if err != nil {
+			resp.Diagnostics.AddError("Failed to encode url_wo hash", err.Error())
+			return
+		}
+		resp.Diagnostics.Append(resp.Private.SetKey(ctx, "url_wo_hash", hashJSON)...)
 	}
 
 	// Save data into Terraform state
@@ -413,7 +555,7 @@ func (r *resourceTFENotificationConfiguration) Read(ctx context.Context, req res
 		nc.Token = state.Token.ValueString()
 	}
 
-	result, diags := modelFromTFENotificationConfiguration(nc, state.TokenWOVersion)
+	result, diags := modelFromTFENotificationConfiguration(nc, state.TokenWOVersion, state.URLWOVersion)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -492,6 +634,11 @@ func (r *resourceTFENotificationConfiguration) Update(ctx context.Context, req r
 		options.Token = tkn
 	}
 
+	// check is needed to prevent accidentally unsetting the URL when no changes to url or url_wo were made
+	if u := r.determineURLForUpdate(plan, state, config); u != nil {
+		options.URL = u
+	}
+
 	tflog.Debug(ctx, "Updating notification configuration")
 	nc, err := r.config.Client.NotificationConfigurations.Update(ctx, state.ID.ValueString(), options)
 	if err != nil {
@@ -507,10 +654,24 @@ func (r *resourceTFENotificationConfiguration) Update(ctx context.Context, req r
 		nc.Token = plan.Token.ValueString()
 	}
 
-	result, diags := modelFromTFENotificationConfiguration(nc, config.TokenWOVersion)
+	result, diags := modelFromTFENotificationConfiguration(nc, config.TokenWOVersion, plan.URLWOVersion)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	// Update hash of url_wo in private state for auto change detection
+	if !config.URLWO.IsNull() {
+		hash := computeURLWOHash(config.URLWO.ValueString())
+		hashJSON, err := json.Marshal(hash)
+		if err != nil {
+			resp.Diagnostics.AddError("Failed to encode url_wo hash", err.Error())
+			return
+		}
+		resp.Diagnostics.Append(resp.Private.SetKey(ctx, "url_wo_hash", hashJSON)...)
+	} else if !state.URLWOVersion.IsNull() && plan.URLWOVersion.IsNull() {
+		// Switching from url_wo to url — clear the stored hash
+		resp.Diagnostics.Append(resp.Private.SetKey(ctx, "url_wo_hash", nil)...)
 	}
 
 	// Save data into Terraform state
@@ -537,6 +698,32 @@ func (r *resourceTFENotificationConfiguration) Delete(ctx context.Context, req r
 
 func (r *resourceTFENotificationConfiguration) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
+}
+
+// determineURLForUpdate is invoked only after terraform determines that an attribute update is needed.
+// It prevents accidentally unsetting the URL when changes to other attributes trigger an update.
+// Returns nil if no URL update is needed.
+func (r *resourceTFENotificationConfiguration) determineURLForUpdate(plan, state, config modelTFENotificationConfiguration) *string {
+	usingWriteOnlyInPlan := !plan.URLWOVersion.IsNull()
+	usingWriteOnlyInState := !state.URLWOVersion.IsNull()
+
+	// Case 1: Switching FROM url TO url_wo
+	if !usingWriteOnlyInState && usingWriteOnlyInPlan && !config.URLWO.IsNull() {
+		return config.URLWO.ValueStringPointer()
+	}
+	// Case 2: Switching FROM url_wo TO url
+	if usingWriteOnlyInState && !usingWriteOnlyInPlan && !plan.URL.IsNull() {
+		return plan.URL.ValueStringPointer()
+	}
+	// Case 3: url_wo version changed in plan (auto-detected hash change or manual increment)
+	if usingWriteOnlyInPlan && plan.URLWOVersion.ValueInt64() != state.URLWOVersion.ValueInt64() && !config.URLWO.IsNull() {
+		return config.URLWO.ValueStringPointer()
+	}
+	// Case 4: Regular url changed
+	if state.URL.ValueString() != plan.URL.ValueString() {
+		return plan.URL.ValueStringPointer()
+	}
+	return nil
 }
 
 // determineTokenForUpdate is invoked only after terraform determines that an attribute update is needed.
