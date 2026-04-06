@@ -114,6 +114,7 @@ func TestAccTFENotificationConfiguration_tokenWriteOnlyValidation(t *testing.T) 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
 		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccTFENotificationConfiguration_tokenWriteOnlyVersionWithoutToken(rInt),
@@ -123,6 +124,14 @@ func TestAccTFENotificationConfiguration_tokenWriteOnlyValidation(t *testing.T) 
 				Config:      testAccTFENotificationConfiguration_tokenAndTokenWriteOnly(rInt),
 				ExpectError: regexp.MustCompile(`Attribute "token_wo" cannot be specified when "token" is specified`),
 			},
+			{
+				// Create using token_wo, then attempt to switch to plaintext token — should be blocked
+				Config: testAccTFENotificationConfiguration_tokenWriteOnlyAuto(rInt, "secret-token"),
+			},
+			{
+				Config:      testAccTFENotificationConfiguration_update(rInt),
+				ExpectError: regexp.MustCompile(`Cannot switch from write-only to plaintext`),
+			},
 		},
 	})
 }
@@ -130,7 +139,7 @@ func TestAccTFENotificationConfiguration_tokenWriteOnlyValidation(t *testing.T) 
 // TestAccTFENotificationConfiguration_tokenWriteOnlyAutoDetect tests auto-managed token_wo:
 // - create with token_wo (version auto-set to 1)
 // - update with changed token value (version auto-increments to 2)
-// - switch back to no token (token_wo_version cleared)
+// - remove token_wo entirely (token_wo_version cleared, no token set)
 func TestAccTFENotificationConfiguration_tokenWriteOnlyAutoDetect(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -179,7 +188,7 @@ func TestAccTFENotificationConfiguration_tokenWriteOnlyAutoDetect(t *testing.T) 
 				),
 			},
 			{
-				// Switch back to no token — token_wo_version should be cleared
+				// Remove token_wo entirely (no token set) — token_wo_version should be cleared
 				Config: testAccTFENotificationConfiguration_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "token_wo"),
@@ -1465,7 +1474,7 @@ func preCheckTFENotificationConfiguration(t *testing.T) {
 // TestAccTFENotificationConfiguration_urlWriteOnly tests auto-managed url_wo:
 // - create with url_wo (version auto-set to 1)
 // - update with changed url value (version auto-increments to 2)
-// - switch back to regular url (url_wo_version cleared)
+// - same url again (version stays at 2)
 func TestAccTFENotificationConfiguration_urlWriteOnly(t *testing.T) {
 	notificationConfiguration := &tfe.NotificationConfiguration{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -1521,14 +1530,9 @@ func TestAccTFENotificationConfiguration_urlWriteOnly(t *testing.T) {
 				),
 			},
 			{
-				// Switch back to regular url — url_wo_version should be cleared
-				Config: testAccTFENotificationConfiguration_basic(rInt),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "url_wo"),
-					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "url_wo_version"),
-					resource.TestCheckResourceAttr(
-						"tfe_notification_configuration.foobar", "url", runTasksURL()),
-				),
+				// Attempting to switch from url_wo to plaintext url should be blocked
+				Config:      testAccTFENotificationConfiguration_basic(rInt),
+				ExpectError: regexp.MustCompile(`Cannot switch from write-only to plaintext`),
 			},
 		},
 	})

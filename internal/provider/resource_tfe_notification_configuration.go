@@ -371,10 +371,24 @@ func storeWOHash(ctx context.Context, private privateStateSetter, hashKey string
 // ModifyPlan implements resource.ResourceWithModifyPlan. It auto-manages token_wo_version
 // and url_wo_version by hashing the write-only values and incrementing the version when
 // the hash changes, unless the version is explicitly set in config (manual mode).
+// It also blocks switching from a write-only attribute to its plaintext equivalent, which
+// would expose a previously secret value in state.
 func (r *resourceTFENotificationConfiguration) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
 	// Skip on destroy
 	if req.Plan.Raw.IsNull() {
 		return
+	}
+
+	// Block write-only → plaintext transitions on existing resources
+	if !req.State.Raw.IsNull() {
+		blockWOToPlaintextTransition(ctx, req, resp, "token_wo_version", "token")
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		blockWOToPlaintextTransition(ctx, req, resp, "url_wo_version", "url")
+		if resp.Diagnostics.HasError() {
+			return
+		}
 	}
 
 	r.modifyPlanWOVersion(ctx, req, resp, "token_wo", "token_wo_version", "token_wo_hash")
@@ -382,6 +396,29 @@ func (r *resourceTFENotificationConfiguration) ModifyPlan(ctx context.Context, r
 		return
 	}
 	r.modifyPlanWOVersion(ctx, req, resp, "url_wo", "url_wo_version", "url_wo_hash")
+}
+
+// blockWOToPlaintextTransition errors if the state has an active write-only version (woVersionAttr
+// is non-null) while the plan sets the corresponding plaintext attribute (plaintextAttr is non-null).
+func blockWOToPlaintextTransition(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse, woVersionAttr, plaintextAttr string) {
+	var stateVersion types.Int64
+	resp.Diagnostics.Append(req.State.GetAttribute(ctx, path.Root(woVersionAttr), &stateVersion)...)
+	if resp.Diagnostics.HasError() || stateVersion.IsNull() {
+		return
+	}
+
+	var planPlaintext types.String
+	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, path.Root(plaintextAttr), &planPlaintext)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !planPlaintext.IsNull() {
+		resp.Diagnostics.AddError(
+			"Cannot switch from write-only to plaintext",
+			fmt.Sprintf("The %q attribute is currently managed as write-only. Setting %q would store the value in state, potentially exposing a previously secret value. Continue using the write-only attribute instead.", woVersionAttr, plaintextAttr),
+		)
+	}
 }
 
 // modifyPlanWOVersion manages the auto-detection version for a write-only attribute.
@@ -691,18 +728,8 @@ func (r *resourceTFENotificationConfiguration) Update(ctx context.Context, req r
 	}
 
 	// Update hashes in private state for auto change detection
-	if !config.TokenWO.IsNull() {
-		storeWOHash(ctx, resp.Private, "token_wo_hash", config.TokenWO, &resp.Diagnostics)
-	} else if !state.TokenWOVersion.IsNull() && plan.TokenWOVersion.IsNull() {
-		// Switching from token_wo to token — clear the stored hash
-		resp.Diagnostics.Append(resp.Private.SetKey(ctx, "token_wo_hash", nil)...)
-	}
-	if !config.URLWO.IsNull() {
-		storeWOHash(ctx, resp.Private, "url_wo_hash", config.URLWO, &resp.Diagnostics)
-	} else if !state.URLWOVersion.IsNull() && plan.URLWOVersion.IsNull() {
-		// Switching from url_wo to url — clear the stored hash
-		resp.Diagnostics.Append(resp.Private.SetKey(ctx, "url_wo_hash", nil)...)
-	}
+	storeWOHash(ctx, resp.Private, "token_wo_hash", config.TokenWO, &resp.Diagnostics)
+	storeWOHash(ctx, resp.Private, "url_wo_hash", config.URLWO, &resp.Diagnostics)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
@@ -741,11 +768,7 @@ func (r *resourceTFENotificationConfiguration) determineURLForUpdate(plan, state
 	if !usingWriteOnlyInState && usingWriteOnlyInPlan && !config.URLWO.IsNull() {
 		return config.URLWO.ValueStringPointer()
 	}
-	// Case 2: Switching FROM url_wo TO url
-	if usingWriteOnlyInState && !usingWriteOnlyInPlan && !plan.URL.IsNull() {
-		return plan.URL.ValueStringPointer()
-	}
-	// Case 3: url_wo version changed in plan (auto-detected hash change or manual increment)
+	// Case 2: url_wo version changed in plan (auto-detected hash change or manual increment)
 	if usingWriteOnlyInPlan && plan.URLWOVersion.ValueInt64() != state.URLWOVersion.ValueInt64() && !config.URLWO.IsNull() {
 		return config.URLWO.ValueStringPointer()
 	}
@@ -769,11 +792,7 @@ func (r *resourceTFENotificationConfiguration) determineTokenForUpdate(plan, sta
 	if !usingWriteOnlyInState && usingWriteOnlyInPlan && !config.TokenWO.IsNull() {
 		return config.TokenWO.ValueStringPointer()
 	}
-	// Case 2: Switching FROM token_wo TO token
-	if usingWriteOnlyInState && !usingWriteOnlyInPlan && !plan.Token.IsNull() {
-		return plan.Token.ValueStringPointer()
-	}
-	// Case 3: token_wo version changed in plan
+	// Case 2: token_wo version changed in plan
 	if usingWriteOnlyInPlan && plan.TokenWOVersion.ValueInt64() != state.TokenWOVersion.ValueInt64() && !config.TokenWO.IsNull() {
 		return config.TokenWO.ValueStringPointer()
 	}
