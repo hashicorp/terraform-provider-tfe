@@ -358,6 +358,8 @@ type privateStateSetter interface {
 // Does nothing if woValue is null.
 func storeWOHash(ctx context.Context, private privateStateSetter, hashKey string, woValue types.String, diags *diag.Diagnostics) {
 	if woValue.IsNull() {
+		// Clear any stale hash so that re-adding the same value later is treated as a new value.
+		diags.Append(private.SetKey(ctx, hashKey, nil)...)
 		return
 	}
 	hashJSON, err := json.Marshal(computeWOHash(woValue.ValueString()))

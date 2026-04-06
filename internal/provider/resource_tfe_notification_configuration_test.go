@@ -140,6 +140,7 @@ func TestAccTFENotificationConfiguration_tokenWriteOnlyValidation(t *testing.T) 
 // - create with token_wo (version auto-set to 1)
 // - update with changed token value (version auto-increments to 2)
 // - remove token_wo entirely (token_wo_version cleared, no token set)
+// - re-add the same token value (version must increment to 1, not stay null)
 func TestAccTFENotificationConfiguration_tokenWriteOnlyAutoDetect(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -194,6 +195,15 @@ func TestAccTFENotificationConfiguration_tokenWriteOnlyAutoDetect(t *testing.T) 
 					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "token_wo"),
 					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "token_wo_version"),
 					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "token"),
+				),
+			},
+			{
+				// Re-add the same token value that was previously used — the stale hash must have
+				// been cleared on removal, so this is treated as a new value and version increments.
+				Config: testAccTFENotificationConfiguration_tokenWriteOnlyAuto(rInt, "token-v2"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "token_wo_version", "1"),
 				),
 			},
 		},
