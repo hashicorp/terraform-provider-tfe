@@ -114,11 +114,8 @@ func TestAccTFENotificationConfiguration_tokenWriteOnlyValidation(t *testing.T) 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
 		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
-			{
-				Config:      testAccTFENotificationConfiguration_tokenWriteOnlyWithoutVersion(rInt),
-				ExpectError: regexp.MustCompile(`Attribute "token_wo_version" must be specified when "token_wo" is specified`),
-			},
 			{
 				Config:      testAccTFENotificationConfiguration_tokenWriteOnlyVersionWithoutToken(rInt),
 				ExpectError: regexp.MustCompile(`Attribute "token_wo" must be specified when "token_wo_version" is specified`),
@@ -126,6 +123,88 @@ func TestAccTFENotificationConfiguration_tokenWriteOnlyValidation(t *testing.T) 
 			{
 				Config:      testAccTFENotificationConfiguration_tokenAndTokenWriteOnly(rInt),
 				ExpectError: regexp.MustCompile(`Attribute "token_wo" cannot be specified when "token" is specified`),
+			},
+			{
+				// Create using token_wo, then attempt to switch to plaintext token — should be blocked
+				Config: testAccTFENotificationConfiguration_tokenWriteOnlyAuto(rInt, "secret-token"),
+			},
+			{
+				Config:      testAccTFENotificationConfiguration_update(rInt),
+				ExpectError: regexp.MustCompile(`Cannot switch from write-only to plaintext`),
+			},
+		},
+	})
+}
+
+// TestAccTFENotificationConfiguration_tokenWriteOnlyAutoDetect tests auto-managed token_wo:
+// - create with token_wo (version auto-set to 1)
+// - update with changed token value (version auto-increments to 2)
+// - remove token_wo entirely (token_wo_version cleared, no token set)
+// - re-add the same token value (version must increment to 1, not stay null)
+func TestAccTFENotificationConfiguration_tokenWriteOnlyAutoDetect(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	compareValuesSame := statecheck.CompareValue(compare.ValuesSame())
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				// Create with token_wo — version should be auto-set to 1
+				Config: testAccTFENotificationConfiguration_tokenWriteOnlyAuto(rInt, "token-v1"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "token_wo_version", "1"),
+					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "token_wo"),
+					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "token"),
+				),
+				ConfigStateChecks: []statecheck.StateCheck{
+					compareValuesSame.AddStateValue(
+						"tfe_notification_configuration.foobar", tfjsonpath.New("id"),
+					),
+				},
+			},
+			{
+				// Update with a different token — version should auto-increment to 2
+				Config: testAccTFENotificationConfiguration_tokenWriteOnlyAuto(rInt, "token-v2"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "token_wo_version", "2"),
+					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "token_wo"),
+				),
+				ConfigStateChecks: []statecheck.StateCheck{
+					compareValuesSame.AddStateValue(
+						"tfe_notification_configuration.foobar", tfjsonpath.New("id"),
+					),
+				},
+			},
+			{
+				// Same token again — version should stay at 2 (no hash change)
+				Config: testAccTFENotificationConfiguration_tokenWriteOnlyAuto(rInt, "token-v2"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "token_wo_version", "2"),
+				),
+			},
+			{
+				// Remove token_wo entirely (no token set) — token_wo_version should be cleared
+				Config: testAccTFENotificationConfiguration_basic(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "token_wo"),
+					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "token_wo_version"),
+					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "token"),
+				),
+			},
+			{
+				// Re-add the same token value that was previously used — the stale hash must have
+				// been cleared on removal, so this is treated as a new value and version increments.
+				Config: testAccTFENotificationConfiguration_tokenWriteOnlyAuto(rInt, "token-v2"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "token_wo_version", "1"),
+				),
 			},
 		},
 	})
@@ -922,25 +1001,25 @@ resource "tfe_notification_configuration" "foobar" {
 }`, rInt, wo, version, runTasksURL())
 }
 
-func testAccTFENotificationConfiguration_tokenWriteOnlyWithoutVersion(rInt int) string {
+func testAccTFENotificationConfiguration_tokenWriteOnlyAuto(rInt int, token string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
-	name  = "tst-terraform-%d"
-	email = "admin@company.com"
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
 }
 
 resource "tfe_workspace" "foobar" {
-	name         = "workspace-test"
-	organization = tfe_organization.foobar.id
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
 }
 
 resource "tfe_notification_configuration" "foobar" {
-	name             = "notification_basic"
-	destination_type = "generic"
-	token_wo         = "some-token"
-	url              = "%s"
-	workspace_id     = tfe_workspace.foobar.id
-}`, rInt, runTasksURL())
+  name             = "notification_basic"
+  destination_type = "generic"
+  token_wo         = "%s"
+  url              = "%s"
+  workspace_id     = tfe_workspace.foobar.id
+}`, rInt, token, runTasksURL())
 }
 
 func testAccTFENotificationConfiguration_tokenWriteOnlyVersionWithoutToken(rInt int) string {
@@ -1400,4 +1479,205 @@ func preCheckTFENotificationConfiguration(t *testing.T) {
 	if runTasksURL() == "" {
 		t.Skip("RUN_TASKS_URL must be set for notification configuration acceptance tests")
 	}
+}
+
+// TestAccTFENotificationConfiguration_urlWriteOnly tests auto-managed url_wo:
+// - create with url_wo (version auto-set to 1)
+// - update with changed url value (version auto-increments to 2)
+// - same url again (version stays at 2)
+func TestAccTFENotificationConfiguration_urlWriteOnly(t *testing.T) {
+	notificationConfiguration := &tfe.NotificationConfiguration{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	compareValuesSame := statecheck.CompareValue(compare.ValuesSame())
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				// Create with url_wo — version should be auto-set to 1
+				Config: testAccTFENotificationConfiguration_urlWriteOnly(rInt, runTasksURL()),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFENotificationConfigurationExists(
+						"tfe_notification_configuration.foobar", notificationConfiguration),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "destination_type", "generic"),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "url_wo_version", "1"),
+					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "url_wo"),
+					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "url"),
+				),
+				ConfigStateChecks: []statecheck.StateCheck{
+					compareValuesSame.AddStateValue(
+						"tfe_notification_configuration.foobar", tfjsonpath.New("id"),
+					),
+				},
+			},
+			{
+				// Update with a different URL — version should auto-increment to 2
+				Config: testAccTFENotificationConfiguration_urlWriteOnly(rInt, runTasksURL()+"?updated=true"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "url_wo_version", "2"),
+					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "url_wo"),
+					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "url"),
+				),
+				ConfigStateChecks: []statecheck.StateCheck{
+					// Same resource, not recreated
+					compareValuesSame.AddStateValue(
+						"tfe_notification_configuration.foobar", tfjsonpath.New("id"),
+					),
+				},
+			},
+			{
+				// Same URL again — version should stay at 2 (no hash change)
+				Config: testAccTFENotificationConfiguration_urlWriteOnly(rInt, runTasksURL()+"?updated=true"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "url_wo_version", "2"),
+				),
+			},
+			{
+				// Attempting to switch from url_wo to plaintext url should be blocked
+				Config:      testAccTFENotificationConfiguration_basic(rInt),
+				ExpectError: regexp.MustCompile(`Cannot switch from write-only to plaintext`),
+			},
+		},
+	})
+}
+
+// TestAccTFENotificationConfiguration_urlWriteOnlyManualVersion tests manual url_wo_version mode:
+// explicitly setting url_wo_version disables hash auto-detection.
+func TestAccTFENotificationConfiguration_urlWriteOnlyManualVersion(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFENotificationConfiguration_urlWriteOnlyManual(rInt, runTasksURL(), 1),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "url_wo_version", "1"),
+					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "url_wo"),
+					resource.TestCheckNoResourceAttr("tfe_notification_configuration.foobar", "url"),
+				),
+			},
+			{
+				// Increment version manually to trigger URL update
+				Config: testAccTFENotificationConfiguration_urlWriteOnlyManual(rInt, runTasksURL()+"?v2=true", 2),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "url_wo_version", "2"),
+				),
+			},
+		},
+	})
+}
+
+// TestAccTFENotificationConfiguration_urlWriteOnlyValidation tests that schema
+// validators reject invalid combinations for url_wo.
+func TestAccTFENotificationConfiguration_urlWriteOnlyValidation(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFENotificationConfiguration_urlAndUrlWriteOnly(rInt),
+				ExpectError: regexp.MustCompile(`Attribute "url_wo" cannot be specified when "url" is specified`),
+			},
+			{
+				Config:      testAccTFENotificationConfiguration_urlWriteOnlyVersionWithoutURL(rInt),
+				ExpectError: regexp.MustCompile(`Attribute "url_wo" must be specified when "url_wo_version" is specified`),
+			},
+		},
+	})
+}
+
+func testAccTFENotificationConfiguration_urlWriteOnly(rInt int, url string) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name             = "notification_basic"
+  destination_type = "generic"
+  url_wo           = "%s"
+  workspace_id     = tfe_workspace.foobar.id
+}`, rInt, url)
+}
+
+func testAccTFENotificationConfiguration_urlWriteOnlyManual(rInt int, url string, version int64) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name             = "notification_basic"
+  destination_type = "generic"
+  url_wo           = "%s"
+  url_wo_version   = %d
+  workspace_id     = tfe_workspace.foobar.id
+}`, rInt, url, version)
+}
+
+func testAccTFENotificationConfiguration_urlAndUrlWriteOnly(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name             = "notification_basic"
+  destination_type = "generic"
+  url              = "%s"
+  url_wo           = "%s"
+  workspace_id     = tfe_workspace.foobar.id
+}`, rInt, runTasksURL(), runTasksURL())
+}
+
+func testAccTFENotificationConfiguration_urlWriteOnlyVersionWithoutURL(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name             = "notification_basic"
+  destination_type = "generic"
+  url_wo_version   = 1
+  workspace_id     = tfe_workspace.foobar.id
+}`, rInt)
 }
