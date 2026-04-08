@@ -43,6 +43,10 @@ The following arguments are supported:
 * `project_ids` - IDs of the projects that use the policy set.
 * `policy_ids` - IDs of the policies attached to the policy set.
 * `policies_path` - The sub-path within the attached VCS repository when using `vcs_repo`.
+* `policy_update_patterns` - Glob patterns specifying which file changes trigger
+  policy set updates. Patterns are relative to the repository root, and a
+  maximum of 100 patterns can be returned. This attribute is only valid when
+  the policy set specifies a VCS repository.
 * `vcs_repo` - Settings for the workspace's VCS repository.
 
 The `vcs_repo` block contains:
