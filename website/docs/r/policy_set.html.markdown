@@ -27,6 +27,8 @@ resource "tfe_policy_set" "test" {
   kind                = "sentinel"
   agent_enabled       = "true"
   policy_tool_version = "0.24.1"
+  # Top-level policy set argument that applies when vcs_repo is configured.
+  policy_update_patterns = ["**/*.sentinel", "policies/**/*.hcl"]
   policies_path       = "policies/my-policy-set"
   workspace_ids       = [tfe_workspace.test.id]
 
@@ -90,6 +92,10 @@ The following arguments are supported:
 * `policy_tool_version` - (Optional) The policy tool version to run the evaluation against. For both Sentinel and OPA,
    leaving this argument unspecified results in selecting the latest available version at the time of creation.
    For "opa" policy sets, 'latest' will not be a valid input.
+* `policy_update_patterns` - (Optional) A list of glob patterns specifying which
+  file changes trigger policy set updates. Patterns are relative to the repository
+  root, and you can specify a maximum of 100 patterns. This argument is only
+  valid when you specify a VCS repository for the policy set.
 * `overridable` - (Optional) Whether or not users can override this policy when
    it fails during a run. Defaults to `false`. Only valid for OPA policies.
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
