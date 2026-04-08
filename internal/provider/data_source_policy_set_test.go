@@ -219,6 +219,12 @@ func TestAccTFEPolicySetDataSource_vcs(t *testing.T) {
 						"data.tfe_policy_set.bar", "project_ids.#", "0"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_policy_set.bar", "vcs_repo.#", "1"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_policy_set.bar", "policy_update_patterns.#", "2"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_policy_set.bar", "policy_update_patterns.0", "**/*.sentinel"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_policy_set.bar", "policy_update_patterns.1", "policies/**/*.hcl"),
 				),
 			},
 		},
@@ -401,6 +407,7 @@ resource "tfe_policy_set" "foobar" {
   name         = "tst-policy-set-%d"
   description  = "Policy Set"
   organization = local.organization_name
+	policy_update_patterns = ["**/*.sentinel", "policies/**/*.hcl"]
   vcs_repo {
 	identifier         = "%s"
 	branch             = "main"
