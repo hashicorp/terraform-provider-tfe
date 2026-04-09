@@ -33,14 +33,40 @@ resource "tfe_policy_set_parameter" "test" {
 }
 ```
 
+Usage for the write-only value:
+
+```hcl
+variable "session_token" {
+  type      = string
+  ephemeral = true
+}
+
+resource "tfe_organization" "test" {
+  name  = "my-org-name"
+  email = "admin@company.com"
+}
+
+resource "tfe_policy_set" "test" {
+  name         = "my-policy-set-name"
+  organization = tfe_organization.test.id
+}
+
+resource "tfe_policy_set_parameter" "test" {
+  key              = "my_key_name"
+  value_wo         = var.session_token
+  value_wo_version = 1
+  policy_set_id    = tfe_policy_set.test.id
+}
+```
+
 ## Argument Reference
 
 The following arguments are supported:
 
 * `Key` - (Required) Name of the parameter.
-* `Value` - (Required) Value of the parameter.
-* `ValueWo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) Write-only value of the parameter. Either `Value` or `ValueWo` can be provided, but not both.
-
+* `Value` - (Optional) Value of the parameter. Either `Value` or `ValueWo` can be provided, but not both.
+* `ValueWo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) Write-only value of the parameter. `WriteOnly` attributes function similarly to their non-write-only counterparts, but are never stored to state and do not display in the Terraform plan output. Either `Value` or `ValueWo` can be provided, but not both. Must be used with `ValueWoVersion`.
+* `ValueWoVersion` - (Optional) Version of the write-only value. This field is used to trigger updates when the write-only value changes. Must be used with `ValueWo`. When `ValueWoVersion` changes, the write-only value will be updated.
 * `Sensitive` - (Optional) Whether the value is sensitive. If true then the
   parameter is written once and not visible thereafter. Defaults to `False`.
 * `PolicySetId` - (Required) The ID of the policy set that owns the parameter.
@@ -61,4 +87,4 @@ terraform import tfe_policy_set_parameter.test polset-wAs3zYmWAhYK7peR/var-5rTwn
 
 -> **Note:** Write-Only argument `ValueWo` is available to use in place of `Value`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-42fcb606484d85e415494f572d486c767045f2bc11f03fe7b36dccb6b4ea0564 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-307aeedb7b33d4a98b37599e1940be19e41a3b047c5d919ab8e9ebf4f061993c -->

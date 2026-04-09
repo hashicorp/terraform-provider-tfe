@@ -24,13 +24,13 @@ import cdktf "github.com/hashicorp/terraform-cdk-go/cdktf"
 See https://cdk.tf/provider-generation for more details.*/
 import "github.com/aws-samples/dummy/gen/providers/tfe/organizationRunTask"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	organizationRunTask.NewOrganizationRunTask(this, jsii.String("example"), &organizationRunTaskConfig{
+	organizationRunTask.NewOrganizationRunTask(this, jsii.String("example"), &OrganizationRunTaskConfig{
 		description: jsii.String("An example task"),
 		enabled: jsii.Boolean(true),
 		name: jsii.String("task-name"),
@@ -38,6 +38,20 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 		url: jsii.String("https://external.service.com"),
 	})
 	return this
+}
+```
+
+With write-only HMAC key:
+
+```hcl
+resource "tfe_organization_run_task" "example" {
+  organization       = "org-name"
+  url                = "https://external.service.com"
+  name               = "task-name"
+  enabled            = true
+  description        = "An example task"
+  hmac_key_wo        = var.hmac_key
+  hmac_key_wo_version = 1
 }
 ```
 
@@ -49,7 +63,8 @@ The following arguments are supported:
 * `Enabled` - (Optional) Whether the task will be run.
 * `Description` - (Optional) A short description of the the task.
 * `HmacKey` - (Optional) HMAC key to verify run task.
-* `HmacKeyWo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) Write-only HMAC key to verify run task. Either `HmacKey` or `HmacKeyWo` can be provided, but not both.
+* `HmacKeyWo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) Write-only HMAC key to verify run task. Either `HmacKey` or `HmacKeyWo` can be provided, but not both. Must be used with `HmacKeyWoVersion`.
+* `HmacKeyWoVersion` - (Optional) Version of the write-only HMAC key. This field is used to trigger updates when the write-only HMAC key changes. Must be used with `HmacKeyWo`. When `HmacKeyWoVersion` changes, the write-only HMAC key will be updated.
 
 * `Name` - (Required) Name of the task.
 * `Organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
@@ -69,4 +84,4 @@ terraform import tfe_organization_run_task.test my-org-name/task-name
 ```
 -> **Note:** Write-Only argument `HmacKeyWo` is available to use in place of `HmacKey`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-039df03871d723a66050b1f719515044bcfb16941fe4b297d4ad11281a34813b -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-d3fbdf3ba7ca5eb13b5ed9f5e74a105245df5e1c2838be3cd95b876511a6a744 -->
