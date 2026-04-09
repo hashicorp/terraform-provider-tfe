@@ -2,7 +2,7 @@
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_test_variable"
 description: |-
-  Manages environmet variables used for testing by modules in the Private Module Registry.
+  Manages environment variables used for testing by modules in the Private Module Registry.
 ---
 
 
@@ -62,6 +62,26 @@ public class MyConvertedCode extends TerraformStack {
 }
 ```
 
+Usage of the write‑only value for tfe_test_variable:
+
+```hcl
+variable "session_token" {
+  type      = string
+  ephemeral = true
+}
+
+resource "tfe_test_variable" "tf_test_test_variable" {
+  key              = "key_test"
+  value_wo         = var.session_token
+  value_wo_version = 1
+  description      = "some description"
+  category         = "env"
+  organization     = tfe_organization.test_org.name
+  module_name      = tfe_registry_module.test_module.name
+  module_provider  = tfe_registry_module.test_module.module_provider
+}
+```
+
 -> **Note:** Write-Only argument `valueWo` is available to use in place of `value`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
 
 ## Argument Reference
@@ -71,6 +91,7 @@ The following arguments are supported:
 * `key` - (Required) Name of the variable.
 * `value` - (Optional) Value of the variable. Defaults to `""`. Cannot be used with `valueWo`.
 * `valueWo` - (Optional) Value of the variable in write-only mode. Cannot be used with `value`.
+* `valueWoVersion` - (Optional) Version identifier for the write-only value. Required when `valueWo` is specified to trigger updates. Cannot be used with `value`.
 * `category` - (Required) Whether this is a Terraform or environment variable. Valid values are `"env"`.
 * `description` - (Optional) Description of the variable. Defaults to `""`.
 * `hcl` - (Optional) Whether to evaluate the value of the variable as a string of HCL code. Defaults to `false`.
@@ -86,4 +107,4 @@ In addition to all arguments above, the following attributes are exported:
 * `id` - The ID of the variable.
 * `readableValue` - A non-sensitive read-only copy of the variable value, which can be viewed or referenced in plan outputs without being redacted. Will only be present if the variable is not sensitive.
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-b6fc54853e81b059c6fdc4ac99e31d89dcbe93d02a6f08d086a76704ca60094c -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-4310f1567e747ec81503579374d4711b9cd2e24ceaca6f109ce241036f0ad682 -->

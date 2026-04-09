@@ -35,6 +35,22 @@ class MyConvertedCode : TerraformStack
 }
 ```
 
+With write-only key:
+
+```hcl
+variable "ssh_key" {
+  type      = string
+  ephemeral = true
+}
+
+resource "tfe_ssh_key" "test" {
+  name           = "my-ssh-key-name"
+  organization   = "my-org-name"
+  key_wo         = var.ssh_key
+  key_wo_version = 1
+}
+```
+
 ## Argument Reference
 
 The following arguments are supported:
@@ -44,7 +60,8 @@ The following arguments are supported:
 * `Key` - (Optional) The text of the SSH private key. One of `Key` or `KeyWo`
   must be provided.
 * `KeyWo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) The text of the SSH private key, guaranteed not to be
-  written to plan or state artifacts. One of `Key` or `KeyWo` must be provided.
+  written to plan or state artifacts. One of `Key` or `KeyWo` must be provided. Must be used with `KeyWoVersion`.
+* `KeyWoVersion` - (Optional) Version of the write-only key. This field is used to trigger updates when the write-only key changes. Must be used with `KeyWo`. When `KeyWoVersion` changes, the write-only key will be updated.
 
 ## Attributes Reference
 
@@ -57,4 +74,4 @@ content, this resource cannot be imported.
 
 -> **Note:** Write-Only argument `KeyWo` is available to use in place of `Key`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-4145429fa09f70dcbd1e53bbbe9cacef09123cd081cf03a8b4a30f26615f87e5 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-c35cb4e40f092bbcb60fc8da6e73149db2f4f8ad56fe78955c31d714536261ad -->

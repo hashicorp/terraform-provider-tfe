@@ -51,9 +51,8 @@ The following arguments are supported:
 * `teamId` - (Required) ID of the team.
 * `description` - (Optional) The token's description, which must be unique per team. Required if creating multiple
   tokens for a single team.
-* `expiredAt` - (Optional) The token's expiration date. The expiration date must be a date/time string in RFC3339 
-format (e.g., "2024-12-31T23:59:59Z"). If no expiration date is supplied, the expiration date will default to null and 
-never expire.
+* `expiredAt` - (Optional) The token's expiration date. The expiration date must be a date/time string in RFC3339
+format (e.g., "2024-12-31T23:59:59Z"). If no expiration date is supplied, the token will expire 24 months from creation and a warning during plan and apply phases will be displayed.
 * `forceRegenerate` - (Optional) Only applies to legacy tokens without descriptions. If set to `true`, a new
   token will be generated even if a token already exists. This will invalidate the existing token! This cannot
   be set with `description`.
@@ -110,4 +109,4 @@ terraform import tfe_team_token.test at-47qC3LmA47piVan7
 terraform import tfe_team_token.test team-47qC3LmA47piVan7
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-292898c6eaed44c7a5d55942b397c8db6d933d9f88e258bb804dbd6e2a77157c -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-a9632cfcc511cd130a315d04d218d1e4f293fd877800aaf8650c1123cf4d9028 -->

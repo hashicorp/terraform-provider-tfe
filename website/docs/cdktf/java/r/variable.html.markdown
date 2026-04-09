@@ -101,11 +101,12 @@ variable "session_token" {
 }
 
 resource "tfe_variable" "test" {
-  key          = "my_key_name"
-  value_wo     = var.session_token
-  category     = "terraform"
-  workspace_id = tfe_workspace.test.id
-  description  = "a useful description"
+  key              = "my_key_name"
+  value_wo         = var.session_token
+  value_wo_version = 1
+  category         = "terraform"
+  workspace_id     = tfe_workspace.test.id
+  description      = "a useful description"
 }
 ```
 
@@ -116,6 +117,7 @@ The following arguments are supported:
 * `key` - (Required) Name of the variable.
 * `value` - (Required) Value of the variable.
 * `valueWo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) Value of the variable. `writeOnly` attributes function similarly to their non-write-only counterparts, but are never stored to state and do not display in the Terraform plan output. Either `value` or `valueWo` can be provided, but not both.
+* `valueWoVersion` - (Optional) Version identifier for the write-only value. Required when `valueWo` is specified to trigger updates. Cannot be used with `value`.
 * `category` - (Required) Whether this is a Terraform or environment variable.
   Valid values are `terraform` or `env`.
 * `description` - (Optional) Description of the variable.
@@ -223,4 +225,4 @@ example:
 terraform import tfe_variable.test my-org-name/varset-47qC3LmA47piVan7/var-5rTwnSaRPogw6apb
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-ebecf9de2f7dadece5c43f0b8cf7fcc4511173505d80a16f87e4e498e560d12c -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-901c8ea476f19eb713abafd2ebca0d5a011d6b1991a5dd41f9ef4e6952265ff5 -->

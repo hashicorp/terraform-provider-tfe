@@ -23,13 +23,13 @@ import cdktf "github.com/hashicorp/terraform-cdk-go/cdktf"
 See https://cdk.tf/provider-generation for more details.*/
 import "github.com/aws-samples/dummy/gen/providers/tfe/organizationToken"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	organizationToken.NewOrganizationToken(this, jsii.String("test"), &organizationTokenConfig{
+	organizationToken.NewOrganizationToken(this, jsii.String("test"), &OrganizationTokenConfig{
 		organization: jsii.String("my-org-name"),
 	})
 	return this
@@ -44,9 +44,8 @@ The following arguments are supported:
 * `ForceRegenerate` - (Optional) If set to `True`, a new token will be
   generated even if a token already exists. This will invalidate the existing
   token!
-* `ExpiredAt` - (Optional) The token's expiration date. The expiration date must be a date/time string in RFC3339 
-format (e.g., "2024-12-31T23:59:59Z"). If no expiration date is supplied, the expiration date will default to null and 
-never expire.
+* `ExpiredAt` - (Optional) The token's expiration date. The expiration date must be a date/time string in RFC3339
+format (e.g., "2024-12-31T23:59:59Z"). If no expiration date is supplied, the token will expire 24 months from creation.
 
 ## Example Usage
 
@@ -77,4 +76,4 @@ For example:
 terraform import tfe_organization_token.test my-org-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-5b9e020334a13d0577c4e9e4346975577380e0411aedc8378ee9dd8564dceb66 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-aedc78080a06b1e0f3639ee9c6731a3a98b0fefcd526497f21fa17b7b01cc93c -->
