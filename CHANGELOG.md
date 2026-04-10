@@ -3,6 +3,9 @@
 FEATURES:
 * `r/tfe_notification_configuration`: Optionally set `url` as a write-only (`url_wo`). Adds support for auto-managed (via hash) for `token_wo` param to avoid manually managing `_version` arguments. By @drewmullen [#2028](https://github.com/hashicorp/terraform-provider-tfe/pull/2028)
 
+ENHANCEMENTS:
+* `d/tfe_team`: Migrate the team data source to the Terraform Plugin Framework. By @uk1288 ([#2029](https://github.com/hashicorp/terraform-provider-tfe/pull/2029))
+
 ## v0.76.1
 
 BUG FIXES:
