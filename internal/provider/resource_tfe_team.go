@@ -80,6 +80,11 @@ func resourceTFETeam() *schema.Resource {
 							Optional: true,
 							Default:  false,
 						},
+						"delegate_policy_overrides": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
+						},
 						"manage_workspaces": {
 							Type:     schema.TypeBool,
 							Optional: true,
@@ -191,6 +196,7 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 		options.OrganizationAccess = &tfe.OrganizationAccessOptions{
 			ManagePolicies:           tfe.Bool(organizationAccess["manage_policies"].(bool)),
 			ManagePolicyOverrides:    tfe.Bool(organizationAccess["manage_policy_overrides"].(bool)),
+			DelegatePolicyOverrides:  tfe.Bool(organizationAccess["delegate_policy_overrides"].(bool)),
 			ManageWorkspaces:         tfe.Bool(organizationAccess["manage_workspaces"].(bool)),
 			ManageVCSSettings:        tfe.Bool(organizationAccess["manage_vcs_settings"].(bool)),
 			ManageProviders:          tfe.Bool(organizationAccess["manage_providers"].(bool)),
@@ -272,6 +278,7 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 		organizationAccess := []map[string]bool{{
 			"manage_policies":            team.OrganizationAccess.ManagePolicies,
 			"manage_policy_overrides":    team.OrganizationAccess.ManagePolicyOverrides,
+			"delegate_policy_overrides":  team.OrganizationAccess.DelegatePolicyOverrides,
 			"manage_workspaces":          team.OrganizationAccess.ManageWorkspaces,
 			"manage_vcs_settings":        team.OrganizationAccess.ManageVCSSettings,
 			"manage_providers":           team.OrganizationAccess.ManageProviders,
@@ -314,6 +321,7 @@ func resourceTFETeamUpdate(d *schema.ResourceData, meta interface{}) error {
 		options.OrganizationAccess = &tfe.OrganizationAccessOptions{
 			ManagePolicies:           tfe.Bool(organizationAccess["manage_policies"].(bool)),
 			ManagePolicyOverrides:    tfe.Bool(organizationAccess["manage_policy_overrides"].(bool)),
+			DelegatePolicyOverrides:  tfe.Bool(organizationAccess["delegate_policy_overrides"].(bool)),
 			ManageWorkspaces:         tfe.Bool(organizationAccess["manage_workspaces"].(bool)),
 			ManageVCSSettings:        tfe.Bool(organizationAccess["manage_vcs_settings"].(bool)),
 			ManageProviders:          tfe.Bool(organizationAccess["manage_providers"].(bool)),

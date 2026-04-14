@@ -1,6 +1,7 @@
 ## Unreleased
 ENHANCEMENTS:
 * Updates warning when using credentials/config file for authentication and running on cloud to be clearer, by @christian-doucette [#2036](https://github.com/hashicorp/terraform-provider-tfe/pull/2036)
+* `r/tfe_team`, `d/tfe_team`, `r/tfe_team_access`, `d/tfe_team_access`, `r/tfe_team_project_access`, `d/tfe_team_project_access`: Add delegated policy override permissions and document the relationship between organization-level delegation and project/workspace-level override access, by @jbonhag [#2037](https://github.com/hashicorp/terraform-provider-tfe/pull/2037)
 
 ## v0.76.2
 

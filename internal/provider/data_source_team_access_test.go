@@ -40,6 +40,8 @@ func TestAccTFETeamAccessDataSource_basic(t *testing.T) {
 						"data.tfe_team_access.foobar", "permissions.0.workspace_locking", "true"),
 					resource.TestCheckResourceAttr(
 						"data.tfe_team_access.foobar", "permissions.0.run_tasks", "false"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_team_access.foobar", "permissions.0.policy_overrides", "false"),
 					resource.TestCheckResourceAttrSet("data.tfe_team_access.foobar", "id"),
 					resource.TestCheckResourceAttrSet("data.tfe_team_access.foobar", "team_id"),
 					resource.TestCheckResourceAttrSet("data.tfe_team_access.foobar", "workspace_id"),
@@ -62,9 +64,18 @@ resource "tfe_workspace" "foobar" {
 }
 
 resource "tfe_team_access" "foobar" {
-  access       = "write"
   team_id      = tfe_team.foobar.id
   workspace_id = tfe_workspace.foobar.id
+
+  permissions {
+    runs              = "apply"
+    variables         = "write"
+    state_versions    = "write"
+    sentinel_mocks    = "read"
+    workspace_locking = true
+    run_tasks         = false
+    policy_overrides  = false
+  }
 }
 
 data "tfe_team_access" "foobar" {
