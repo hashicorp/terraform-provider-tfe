@@ -1,3 +1,7 @@
+## Unreleased
+ENHANCEMENTS:
+* Updates warning when using credentials/config file for authentication and running on cloud to be clearer, by @christian-doucette [#2036](https://github.com/hashicorp/terraform-provider-tfe/pull/2036)
+
 ## v0.76.2
 
 FEATURES:
