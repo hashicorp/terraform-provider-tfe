@@ -42,6 +42,7 @@ The following arguments are supported:
 * `allow_force_delete_workspaces` - (Optional) Whether workspace administrators are permitted to delete workspaces with resources under management. If false, only organization owners may delete these workspaces. Defaults to false.
 * `user_tokens_enabled` - (Optional) Whether user tokens can be used to read or update the organization. Defaults to true.
 * `stacks_enabled` - (Optional) Whether the creation of Stacks are enabled in this Organization or not.
+* `max_ttl_enabled` - (Optional) Whether maximum token TTL policies are enabled for the organization. When enabled, you can configure maximum TTL values for different token types using the `tfe_org_max_token_ttl_policy` resource. Defaults to false.
 
 ## Attributes Reference
 

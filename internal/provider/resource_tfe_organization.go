@@ -122,6 +122,11 @@ func resourceTFEOrganization() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 			},
+			"max_ttl_enabled": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
 		},
 	}
 }
@@ -180,6 +185,7 @@ func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error
 	d.Set("speculative_plan_management_enabled", org.SpeculativePlanManagementEnabled)
 	d.Set("enforce_hyok", org.EnforceHYOK)
 	d.Set("stacks_enabled", org.StacksEnabled)
+	d.Set("max_ttl_enabled", org.MaxTTLEnabled)
 
 	if org.UserTokensEnabled != nil {
 		d.Set("user_tokens_enabled", org.UserTokensEnabled)
@@ -266,6 +272,11 @@ func resourceTFEOrganizationUpdate(d *schema.ResourceData, meta interface{}) err
 	// If speculative_plan_management_enabled is supplied, set it using the options struct.
 	if stacksEnabled, ok := d.GetOkExists("stacks_enabled"); ok {
 		options.StacksEnabled = tfe.Bool(stacksEnabled.(bool))
+	}
+
+	// If max_ttl_enabled is supplied, set it using the options struct.
+	if maxTTLEnabled, ok := d.GetOkExists("max_ttl_enabled"); ok {
+		options.MaxTTLEnabled = tfe.Bool(maxTTLEnabled.(bool))
 	}
 
 	log.Printf("[DEBUG] Update configuration of organization: %s", d.Id())
