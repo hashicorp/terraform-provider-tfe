@@ -191,7 +191,7 @@ func configure() schema.ConfigureContextFunc {
 				diag.Diagnostic{
 					Severity: diag.Warning,
 					Summary:  "Authentication method has limited TFE provider permissions",
-					Detail:   "When running in HCP Terraform or Terraform Enterprise, the current authentication method may not have sufficient permissions for all TFE provider operations. Data sources and plans may work, but resource create, update, or delete operations can fail. To ensure consistent behavior, authenticate using the token argument to the provider block or the TFE_TOKEN environment variable.",
+					Detail:   "When running in HCP Terraform or Terraform Enterprise, the current authentication method may not have sufficient permissions for all TFE provider operations. Data sources and plans may work, but resource create, update, or delete operations can fail. To avoid this, authenticate using the provider token argument or the TFE_TOKEN environment variable.",
 				},
 			}
 		}
