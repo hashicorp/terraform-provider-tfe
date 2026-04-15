@@ -1,4 +1,8 @@
 ## Unreleased
+ENHANCEMENTS:
+* Updates warning when using credentials/config file for authentication and running on cloud to be clearer, by @christian-doucette [#2036](https://github.com/hashicorp/terraform-provider-tfe/pull/2036)
+
+## v0.76.2
 
 FEATURES:
 * `r/tfe_notification_configuration`: Optionally set `url` as a write-only (`url_wo`). Adds support for auto-managed (via hash) for `token_wo` param to avoid manually managing `_version` arguments. By @drewmullen [#2028](https://github.com/hashicorp/terraform-provider-tfe/pull/2028)
@@ -13,7 +17,7 @@ BUG FIXES:
 ## v0.76.0
 
 FEATURES:
-* **New Resource:**  `tfe_project_policy_set_exclusion` for managing project level exclusions on policy sets. by @subhro-acharjee-1 [#1990](https://github.com/hashicorp/terraform-provider-tfe/pull/1990) 
+* **New Resource:**  `tfe_project_policy_set_exclusion` for managing project level exclusions on policy sets. by @subhro-acharjee-1 [#1990](https://github.com/hashicorp/terraform-provider-tfe/pull/1990)
 BUG FIXES:
 * `r/tfe_team_token`, `r/tfe_organization_token`: Read now persists API-default `expired_at` values so `ImportStateVerify` succeeds when `expired_at` is omitted from configuration. By @uk1288 [#2017](https://github.com/hashicorp/terraform-provider-tfe/pull/2017)
 

@@ -24,13 +24,13 @@ import cdktf "github.com/hashicorp/terraform-cdk-go/cdktf"
 See https://cdk.tf/provider-generation for more details.*/
 import "github.com/aws-samples/dummy/gen/providers/tfe/auditTrailToken"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	auditTrailToken.NewAuditTrailToken(this, jsii.String("test"), &auditTrailTokenConfig{
+	auditTrailToken.NewAuditTrailToken(this, jsii.String("test"), &AuditTrailTokenConfig{
 		organization: jsii.String("my-org-name"),
 	})
 	return this
@@ -46,8 +46,7 @@ The following arguments are supported:
   generated even if a token already exists. This will invalidate the existing
   token!
 * `ExpiredAt` - (Optional) The token's expiration date. The expiration date must be a date/time string in RFC3339
-format (e.g., "2024-12-31T23:59:59Z"). If no expiration date is supplied, the expiration date will default to null and
-never expire.
+format (e.g., "2024-12-31T23:59:59Z"). If no expiration date is supplied, the token will expire 24 months from creation and a warning during plan and apply phases will be displayed.
 
 ## Example Usage
 
@@ -78,4 +77,4 @@ For example:
 terraform import tfe_audit_trail_token.test my-org-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-2c87d1201e89a4243d53e9ef85752b50f8797786174b1c7744ecc61fd3ced2cd -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-9b322018b2f45bc8bd022ba03991dd68cdbd8a366fb285b156d28bf1519e3e75 -->

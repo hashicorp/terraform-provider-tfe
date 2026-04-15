@@ -24,21 +24,21 @@ See https://cdk.tf/provider-generation for more details.*/
 import "github.com/aws-samples/dummy/gen/providers/tfe/team"
 import "github.com/aws-samples/dummy/gen/providers/tfe/teamToken"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	tfeTeamTest := team.NewTeam(this, jsii.String("test"), &teamConfig{
+	tfeTeamTest := team.NewTeam(this, jsii.String("test"), &TeamConfig{
 		name: jsii.String("my-team-name"),
 		organization: jsii.String("my-org-name"),
 	})
-	teamToken.NewTeamToken(this, jsii.String("ci"), &teamTokenConfig{
+	teamToken.NewTeamToken(this, jsii.String("ci"), &TeamTokenConfig{
 		description: jsii.String("my second team token"),
 		teamId: cdktf.Token_AsString(tfeTeamTest.id),
 	})
-	tfeTeamTokenTest := teamToken.NewTeamToken(this, jsii.String("test_2"), &teamTokenConfig{
+	tfeTeamTokenTest := teamToken.NewTeamToken(this, jsii.String("test_2"), &TeamTokenConfig{
 		description: jsii.String("my team token"),
 		teamId: cdktf.Token_*AsString(tfeTeamTest.id),
 	})
@@ -55,9 +55,8 @@ The following arguments are supported:
 * `TeamId` - (Required) ID of the team.
 * `Description` - (Optional) The token's description, which must be unique per team. Required if creating multiple
   tokens for a single team.
-* `ExpiredAt` - (Optional) The token's expiration date. The expiration date must be a date/time string in RFC3339 
-format (e.g., "2024-12-31T23:59:59Z"). If no expiration date is supplied, the expiration date will default to null and 
-never expire.
+* `ExpiredAt` - (Optional) The token's expiration date. The expiration date must be a date/time string in RFC3339
+format (e.g., "2024-12-31T23:59:59Z"). If no expiration date is supplied, the token will expire 24 months from creation and a warning during plan and apply phases will be displayed.
 * `ForceRegenerate` - (Optional) Only applies to legacy tokens without descriptions. If set to `True`, a new
   token will be generated even if a token already exists. This will invalidate the existing token! This cannot
   be set with `Description`.
@@ -75,22 +74,22 @@ import "github.com/aws-samples/dummy/gen/providers/tfe/team"
 import "github.com/aws-samples/dummy/gen/providers/tfe/teamToken"
 import "github.com/aws-samples/dummy/gen/providers/time/rotating"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
 	/*The following providers are missing schema information and might need manual adjustments to synthesize correctly: time.
 	    For a more precise conversion please use the --provider flag in convert.*/
-	tfeTeamTest := team.NewTeam(this, jsii.String("test"), &teamConfig{
+	tfeTeamTest := team.NewTeam(this, jsii.String("test"), &TeamConfig{
 		name: jsii.String("my-team-name"),
 		organization: jsii.String("my-org-name"),
 	})
 	timeRotatingExample := rotating.NewRotating(this, jsii.String("example"), map[string]*f64{
 		"rotation_days": jsii.Number(30),
 	})
-	tfeTeamTokenTest := teamToken.NewTeamToken(this, jsii.String("test_2"), &teamTokenConfig{
+	tfeTeamTokenTest := teamToken.NewTeamToken(this, jsii.String("test_2"), &TeamTokenConfig{
 		description: jsii.String("my team token"),
 		expiredAt: cdktf.Token_AsString(timeRotatingExample.rotationRfc3339),
 		teamId: cdktf.Token_*AsString(tfeTeamTest.id),
@@ -118,4 +117,4 @@ terraform import tfe_team_token.test at-47qC3LmA47piVan7
 terraform import tfe_team_token.test team-47qC3LmA47piVan7
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-292898c6eaed44c7a5d55942b397c8db6d933d9f88e258bb804dbd6e2a77157c -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-a9632cfcc511cd130a315d04d218d1e4f293fd877800aaf8650c1123cf4d9028 -->

@@ -25,7 +25,29 @@ resource "tfe_saml_settings" "this" {
   idp_cert         = "foobarCertificate"
   slo_endpoint_url = "https://example.com/slo_endpoint_url"
   sso_endpoint_url = "https://example.com/sso_endpoint_url"
- }
+}
+```
+
+With write-only private key:
+
+```hcl
+variable "private_key" {
+  type      = string
+  ephemeral = true
+}
+
+provider "tfe" {
+  hostname = var.hostname
+  token    = var.admin_token
+}
+
+resource "tfe_saml_settings" "this" {
+  idp_cert              = "foobarCertificate"
+  slo_endpoint_url      = "https://example.com/slo_endpoint_url"
+  sso_endpoint_url      = "https://example.com/sso_endpoint_url"
+  private_key_wo        = var.private_key
+  private_key_wo_version = 1
+}
 ```
 
 ## Argument Reference
@@ -46,7 +68,8 @@ The following arguments are supported:
 * `ssoApiTokenSessionTimeout` - (Optional) Specifies the Single Sign On session timeout in seconds. Defaults to 14 days.
 * `certificate` - (Optional) The certificate used for request and assertion signing.
 * `privateKey` - (Optional) The private key used for request and assertion signing.
-* `privateKeyWo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) The private key used for request and assertion signing, guaranteed not to be written to plan or state artifacts. Either `privateKey` or `privateKeyWo` can be provided, but not both.
+* `privateKeyWo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) The private key used for request and assertion signing, guaranteed not to be written to plan or state artifacts. Either `privateKey` or `privateKeyWo` can be provided, but not both. Must be used with `privateKeyWoVersion`.
+* `privateKeyWoVersion` - (Optional) Version of the write-only private key. This field is used to trigger updates when the write-only private key changes. Must be used with `privateKeyWo`. When `privateKeyWoVersion` changes, the write-only private key will be updated.
 * `signatureSigningMethod` - (Optional) Signature Signing Method. Must be either `sha1` or `sha256`. Defaults to `sha256`.
 * `signatureDigestMethod` - (Optional) Signature Digest Method. Must be either `sha1` or `sha256`. Defaults to `sha256`.
 
@@ -67,4 +90,4 @@ SAML Settings can be imported.
 terraform import tfe_saml_settings.this saml
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-6e71321b8aa7612361601347f5216bf83460d5273c1f8d934c06f7a6925258da -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-4f0cd06e50ae30e58e17466cc7f269811fe28c01f8bf10bdc8f961c2e12e28b4 -->
