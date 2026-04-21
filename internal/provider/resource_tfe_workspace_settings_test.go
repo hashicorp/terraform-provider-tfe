@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math/rand"
 	"regexp"
+	"slices"
 	"testing"
 	"time"
 
@@ -263,6 +264,26 @@ func TestAccTFEWorkspaceSettingsRemoteState(t *testing.T) {
 						"tfe_workspace_settings.foobar", "remote_state_consumer_ids.0", ws2.ID),
 					resource.TestCheckResourceAttr(
 						"tfe_workspace_settings.foobar", "remote_state_consumer_ids.#", "1"),
+					testAccCheckTFEWorkspaceSettingsHasRemoteConsumers(
+						"tfe_workspace_settings.foobar", []string{ws2.ID}),
+				),
+			},
+			// Removing remote_state_consumer_ids from config should clear all explicit consumers.
+			{
+				Config: testAccTFEWorkspaceSettingsRemoteState_UnsetConsumers(ws.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(
+						"tfe_workspace_settings.foobar", "id"),
+					resource.TestCheckResourceAttrSet(
+						"tfe_workspace_settings.foobar", "workspace_id"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.foobar", "global_remote_state", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.foobar", "project_remote_state", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_workspace_settings.foobar", "remote_state_consumer_ids.#", "0"),
+					testAccCheckTFEWorkspaceSettingsHasRemoteConsumers(
+						"tfe_workspace_settings.foobar", []string{}),
 				),
 			},
 			// Unset remote state consumer ids and set global remote state
@@ -471,6 +492,35 @@ func testAccCheckTFEWorkspaceSettingsDestroy(s *terraform.State) error {
 	return nil
 }
 
+func testAccCheckTFEWorkspaceSettingsHasRemoteConsumers(ws string, expectedConsumerIDs []string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rsWorkspaceSettings, ok := s.RootModule().Resources[ws]
+		if !ok {
+			return fmt.Errorf("Not found: %s", ws)
+		}
+
+		tfeClient, err := getClientUsingEnv()
+		if err != nil {
+			return err
+		}
+
+		_, actualConsumerIDs, err := readWorkspaceStateConsumers(rsWorkspaceSettings.Primary.ID, tfeClient)
+		if err != nil {
+			return fmt.Errorf("error reading remote state consumers for workspace %s: %w", rsWorkspaceSettings.Primary.ID, err)
+		}
+
+		expected := append([]string(nil), expectedConsumerIDs...)
+		slices.Sort(expected)
+		slices.Sort(actualConsumerIDs)
+
+		if !slices.Equal(actualConsumerIDs, expected) {
+			return fmt.Errorf("expected remote state consumers %v for workspace %s, got %v", expected, rsWorkspaceSettings.Primary.ID, actualConsumerIDs)
+		}
+
+		return nil
+	}
+}
+
 func testAccTFEWorkspaceSettingsOverlappingBooleans(orgName string) string {
 	return fmt.Sprintf(`
 resource "tfe_workspace_settings" "self" {
@@ -531,6 +581,16 @@ func testAccTFEWorkspaceSettingsRemoteState_Global(workspaceID string) string {
 resource "tfe_workspace_settings" "foobar" {
 	workspace_id              = "%s"
 	global_remote_state       = true
+}
+`, workspaceID)
+}
+
+func testAccTFEWorkspaceSettingsRemoteState_UnsetConsumers(workspaceID string) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace_settings" "foobar" {
+	workspace_id         = "%s"
+	global_remote_state  = false
+	project_remote_state = false
 }
 `, workspaceID)
 }

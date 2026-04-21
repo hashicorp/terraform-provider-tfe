@@ -89,6 +89,10 @@ type unknownIfExecutionModeUnset struct{}
 // true, remote_state_consumer_ids is not set.
 type validateRemoteStateConsumerIDs struct{}
 
+// unsetRemoteStateConsumerIDsIfOmitted ensures the attribute is treated as an
+// explicit empty set when it is removed from configuration after being set.
+type unsetRemoteStateConsumerIDsIfOmitted struct{}
+
 // validate global and remote state mutual exclusion
 type validateRemoteStateExclusion struct{}
 
@@ -99,8 +103,29 @@ type validateSelfReference struct{}
 var _ planmodifier.String = (*validateAgentExecutionMode)(nil)
 var _ planmodifier.List = (*revertOverwritesIfExecutionModeUnset)(nil)
 var _ planmodifier.String = (*unknownIfExecutionModeUnset)(nil)
+var _ planmodifier.Set = (*unsetRemoteStateConsumerIDsIfOmitted)(nil)
 var _ planmodifier.Set = (*validateRemoteStateConsumerIDs)(nil)
 var _ planmodifier.Bool = (*validateRemoteStateExclusion)(nil)
+
+func (m unsetRemoteStateConsumerIDsIfOmitted) PlanModifySet(_ context.Context, req planmodifier.SetRequest, resp *planmodifier.SetResponse) {
+	if req.Plan.Raw.IsNull() || req.State.Raw.IsNull() {
+		return
+	}
+
+	if !req.ConfigValue.IsNull() && !req.ConfigValue.IsUnknown() {
+		return
+	}
+
+	resp.PlanValue = types.SetValueMust(types.StringType, []attr.Value{})
+}
+
+func (m unsetRemoteStateConsumerIDsIfOmitted) Description(_ context.Context) string {
+	return "Treats omitted remote_state_consumer_ids as an empty set during updates"
+}
+
+func (m unsetRemoteStateConsumerIDsIfOmitted) MarkdownDescription(_ context.Context) string {
+	return "Treats omitted `remote_state_consumer_ids` as an empty set during updates"
+}
 
 func (m validateAgentExecutionMode) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
 	// Check if the resource is being created.
@@ -385,6 +410,7 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 				Computed:    true,
 				ElementType: types.StringType,
 				PlanModifiers: []planmodifier.Set{
+					unsetRemoteStateConsumerIDsIfOmitted{},
 					validateRemoteStateConsumerIDs{},
 					validateSelfReference{},
 				},
