@@ -1,8 +1,4 @@
 ## Unreleased
-
-BUG FIXES:
-* Pin `github.com/hashicorp/hc-install` to `v0.9.4` so Terraform CLI installation in provider tests no longer fails with `key expired`. By @shwetamurali [#2041](https://github.com/hashicorp/terraform-provider-tfe/pull/2041)
-
 ENHANCEMENTS:
 * Updates warning when using credentials/config file for authentication and running on cloud to be clearer, by @christian-doucette [#2036](https://github.com/hashicorp/terraform-provider-tfe/pull/2036)
 
