@@ -965,6 +965,7 @@ resource "tfe_workspace" "bar" {
   name         = "workspace-bar-%d"
   organization = tfe_organization.foobar.id
   tag_names    = ["bar"]
+  depends_on   = [tfe_workspace.foo]
 }
 
 data "tfe_workspace_ids" "good" {
@@ -1053,12 +1054,14 @@ resource "tfe_workspace" "bar" {
   name         = "workspace-bar-%d"
   organization = tfe_organization.foobar.id
   tag_names    = ["happy", "play"]
+  depends_on   = [tfe_workspace.foo]
 }
 
 resource "tfe_workspace" "dummy" {
   name         = "workspace-dummy-%d"
   organization = tfe_organization.foobar.id
-	tag_names    = ["good", "play", "happy"]
+  tag_names    = ["good", "play", "happy"]
+  depends_on   = [tfe_workspace.bar]
 }
 
 data "tfe_workspace_ids" "good" {
