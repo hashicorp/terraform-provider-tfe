@@ -237,7 +237,10 @@ func TestAccTFEWorkspaceSettingsRemoteState(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	org, cleanupOrg := createBusinessOrganization(t, tfeClient)
+	org, cleanupOrg := createOrganization(t, tfeClient, tfe.OrganizationCreateOptions{
+		Name:  tfe.String("tst-" + randomString(t)),
+		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
+	})
 	t.Cleanup(cleanupOrg)
 
 	ws := createTempWorkspace(t, tfeClient, org.Name)
