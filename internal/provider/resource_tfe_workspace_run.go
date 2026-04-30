@@ -23,14 +23,16 @@ var (
 )
 
 var applyPendingStatuses = map[tfe.RunStatus]bool{
-	tfe.RunConfirmed:         true,
-	tfe.RunApplyQueued:       true,
-	tfe.RunApplying:          true,
-	tfe.RunQueuing:           true,
-	tfe.RunFetching:          true,
-	tfe.RunQueuingApply:      true,
-	tfe.RunPreApplyRunning:   true,
-	tfe.RunPreApplyCompleted: true,
+	tfe.RunConfirmed:          true,
+	tfe.RunApplyQueued:        true,
+	tfe.RunApplying:           true,
+	tfe.RunQueuing:            true,
+	tfe.RunFetching:           true,
+	tfe.RunQueuingApply:       true,
+	tfe.RunPreApplyRunning:    true,
+	tfe.RunPreApplyCompleted:  true,
+	tfe.RunPostApplyRunning:   true,
+	tfe.RunPostApplyCompleted: true,
 }
 
 var applyDoneStatuses = map[tfe.RunStatus]bool{
