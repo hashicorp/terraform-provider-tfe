@@ -73,7 +73,7 @@ func TestAccTFEStackResource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "trigger_patterns.#", "1"),
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "trigger_patterns.0", "/**/*"),
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "vcs_repo.identifier", "svc-team-tf-core-cloud/tf-stacks-pet-nulls"),
-					resource.TestCheckResourceAttr("tfe_stack.foobar", "creation_source", "migration-api"),
+					resource.TestCheckResourceAttr("tfe_stack.foobar", "creation_source", "api"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "vcs_repo.oauth_token_id"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "speculative_enabled"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "created_at"),
