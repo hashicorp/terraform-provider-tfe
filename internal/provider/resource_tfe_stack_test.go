@@ -55,14 +55,13 @@ func (notFoundStacks) FetchLatestFromVcs(_ context.Context, _ string) (*tfe.Stac
 func TestAccTFEStackResource_basic(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
-	speculativeEnabledFalse := false
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "svc-team-tf-core-cloud/tf-stacks-pet-nulls", true, speculativeEnabledFalse),
+				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "svc-team-tf-core-cloud/tf-stacks-pet-nulls"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "id"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "project_id"),
@@ -90,62 +89,6 @@ func TestAccTFEStackResource_basic(t *testing.T) {
 	})
 }
 
-func TestAccTFEStackResource_omitSpeculativeEnabled(t *testing.T) {
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccMuxedProviders,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "svc-team-tf-core-cloud/tf-stacks-pet-nulls", false, false),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("tfe_stack.foobar", "speculative_enabled", "false"),
-				),
-			},
-			{
-				ResourceName:            "tfe_stack.foobar",
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"migration"},
-			},
-		},
-	})
-}
-
-func TestAccTFEStackResource_updateSpeculativeEnabled(t *testing.T) {
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
-	speculativeEnabledFalse := false
-	speculativeEnabledTrue := true
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccMuxedProviders,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "svc-team-tf-core-cloud/tf-stacks-pet-nulls", false, speculativeEnabledFalse),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("tfe_stack.foobar", "speculative_enabled", "false"),
-				),
-			},
-			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "svc-team-tf-core-cloud/tf-stacks-pet-nulls", true, speculativeEnabledFalse),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("tfe_stack.foobar", "speculative_enabled", "false"),
-				),
-			},
-			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "svc-team-tf-core-cloud/tf-stacks-pet-nulls", true, speculativeEnabledTrue),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("tfe_stack.foobar", "speculative_enabled", "true"),
-				),
-			},
-		},
-	})
-}
-
 func TestAccTFEStackResource_importByIdentity(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
@@ -155,7 +98,7 @@ func TestAccTFEStackResource_importByIdentity(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEStackResourceConfigFull(orgName, envGithubToken, "svc-team-tf-core-cloud/tf-stacks-pet-nulls", false, true, true),
+				Config: testAccTFEStackResourceConfigFull(orgName, envGithubToken, "svc-team-tf-core-cloud/tf-stacks-pet-nulls"),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectIdentity("tfe_stack.foobar", map[string]knownvalue.Check{
 						"id":       knownvalue.NotNull(),
@@ -172,11 +115,11 @@ func TestAccTFEStackResource_importByIdentity(t *testing.T) {
 	})
 }
 
-func testAccTFEStackResourceConfig(orgName, ghToken, ghRepoIdentifier string, includeSpeculativeEnabled bool, speculativeEnabled bool) string {
-	return testAccTFEStackResourceConfigFull(orgName, ghToken, ghRepoIdentifier, true, includeSpeculativeEnabled, speculativeEnabled)
+func testAccTFEStackResourceConfig(orgName, ghToken, ghRepoIdentifier string) string {
+	return testAccTFEStackResourceConfigFull(orgName, ghToken, ghRepoIdentifier)
 }
 
-func testAccTFEStackResourceConfigFull(orgName, ghToken, ghRepoIdentifier string, migration bool, includeSpeculativeEnabled bool, speculativeEnabled bool) string {
+func testAccTFEStackResourceConfigFull(orgName, ghToken, ghRepoIdentifier string) string {
 	var builder strings.Builder
 	builder.WriteString(fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
@@ -210,15 +153,13 @@ resource "tfe_stack" "foobar" {
   agent_pool_id = tfe_agent_pool.foobar.id
 	working_directory = "envs"
 	trigger_patterns  = ["/**/*"]
+	speculative_enabled = true
 	vcs_repo {
     identifier         = "%s"
     oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
   }
 `, orgName, ghToken, ghRepoIdentifier))
-	if includeSpeculativeEnabled {
-		builder.WriteString(fmt.Sprintf(`	speculative_enabled = "%t"`, speculativeEnabled))
-	}
-	builder.WriteString("\n}")
+	builder.WriteString("}")
 	return builder.String()
 }
 
