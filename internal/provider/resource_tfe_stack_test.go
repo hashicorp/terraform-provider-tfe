@@ -53,8 +53,6 @@ func (notFoundStacks) FetchLatestFromVcs(_ context.Context, _ string) (*tfe.Stac
 }
 
 func TestAccTFEStackResource_basic(t *testing.T) {
-	skipUnlessBeta(t)
-
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 	speculativeEnabledFalse := false
@@ -64,14 +62,17 @@ func TestAccTFEStackResource_basic(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "arunatibm/pet-nulls-stack", true, speculativeEnabledFalse),
+				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "svc-team-tf-core-cloud/tf-stacks-pet-nulls", true, speculativeEnabledFalse),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "id"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "project_id"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "agent_pool_id"),
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "name", "example-stack"),
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "description", "Just an ordinary stack"),
-					resource.TestCheckResourceAttr("tfe_stack.foobar", "vcs_repo.identifier", "arunatibm/pet-nulls-stack"),
+					resource.TestCheckResourceAttr("tfe_stack.foobar", "working_directory", "envs"),
+					resource.TestCheckResourceAttr("tfe_stack.foobar", "trigger_patterns.#", "1"),
+					resource.TestCheckResourceAttr("tfe_stack.foobar", "trigger_patterns.0", "/**/*"),
+					resource.TestCheckResourceAttr("tfe_stack.foobar", "vcs_repo.identifier", "svc-team-tf-core-cloud/tf-stacks-pet-nulls"),
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "creation_source", "migration-api"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "vcs_repo.oauth_token_id"),
 					resource.TestCheckResourceAttrSet("tfe_stack.foobar", "speculative_enabled"),
@@ -90,8 +91,6 @@ func TestAccTFEStackResource_basic(t *testing.T) {
 }
 
 func TestAccTFEStackResource_omitSpeculativeEnabled(t *testing.T) {
-	skipUnlessBeta(t)
-
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
@@ -100,7 +99,7 @@ func TestAccTFEStackResource_omitSpeculativeEnabled(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "arunatibm/pet-nulls-stack", false, false),
+				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "svc-team-tf-core-cloud/tf-stacks-pet-nulls", false, false),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "speculative_enabled", "false"),
 				),
@@ -116,8 +115,6 @@ func TestAccTFEStackResource_omitSpeculativeEnabled(t *testing.T) {
 }
 
 func TestAccTFEStackResource_updateSpeculativeEnabled(t *testing.T) {
-	skipUnlessBeta(t)
-
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 	speculativeEnabledFalse := false
@@ -128,19 +125,19 @@ func TestAccTFEStackResource_updateSpeculativeEnabled(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "arunatibm/pet-nulls-stack", false, speculativeEnabledFalse),
+				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "svc-team-tf-core-cloud/tf-stacks-pet-nulls", false, speculativeEnabledFalse),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "speculative_enabled", "false"),
 				),
 			},
 			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "arunatibm/pet-nulls-stack", true, speculativeEnabledFalse),
+				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "svc-team-tf-core-cloud/tf-stacks-pet-nulls", true, speculativeEnabledFalse),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "speculative_enabled", "false"),
 				),
 			},
 			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "arunatibm/pet-nulls-stack", true, speculativeEnabledTrue),
+				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "svc-team-tf-core-cloud/tf-stacks-pet-nulls", true, speculativeEnabledTrue),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_stack.foobar", "speculative_enabled", "true"),
 				),
@@ -150,8 +147,6 @@ func TestAccTFEStackResource_updateSpeculativeEnabled(t *testing.T) {
 }
 
 func TestAccTFEStackResource_importByIdentity(t *testing.T) {
-	skipUnlessBeta(t)
-
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
@@ -160,7 +155,7 @@ func TestAccTFEStackResource_importByIdentity(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "arunatibm/pet-nulls-stack", true, true),
+				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "svc-team-tf-core-cloud/tf-stacks-pet-nulls", true, true),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectIdentity("tfe_stack.foobar", map[string]knownvalue.Check{
 						"id":       knownvalue.NotNull(),
@@ -210,6 +205,8 @@ resource "tfe_stack" "foobar" {
   project_id  = tfe_project.example.id
   agent_pool_id = tfe_agent_pool.foobar.id
 	migration = true
+	working_directory = "envs"
+	trigger_patterns  = ["/**/*"]
 	vcs_repo {
     identifier         = "%s"
     oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
@@ -223,8 +220,6 @@ resource "tfe_stack" "foobar" {
 }
 
 func TestAccTFEStackResource_withAgentPool(t *testing.T) {
-	skipUnlessBeta(t)
-
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
@@ -295,6 +290,8 @@ func TestResourceTFEStackRead_RemovedStackBackfillsIdentity(t *testing.T) {
 		SpeculativeEnabled: types.BoolValue(false),
 		CreationSource:     types.StringNull(),
 		Description:        types.StringValue(""),
+		WorkingDirectory:   types.StringNull(),
+		TriggerPatterns:    types.ListNull(types.StringType),
 		VCSRepo:            nil,
 		CreatedAt:          types.StringValue("2026-01-01T00:00:00Z"),
 		UpdatedAt:          types.StringValue("2026-01-01T00:00:00Z"),
@@ -346,6 +343,8 @@ func TestResourceTFEStackRead_RemovedStackPreservesExistingIdentity(t *testing.T
 		SpeculativeEnabled: types.BoolValue(false),
 		CreationSource:     types.StringNull(),
 		Description:        types.StringValue(""),
+		WorkingDirectory:   types.StringNull(),
+		TriggerPatterns:    types.ListNull(types.StringType),
 		VCSRepo:            nil,
 		CreatedAt:          types.StringValue("2026-01-01T00:00:00Z"),
 		UpdatedAt:          types.StringValue("2026-01-01T00:00:00Z"),
@@ -422,8 +421,6 @@ func runRemovedStackRead(t *testing.T, ctx context.Context, r *resourceTFEStack,
 }
 
 func TestAccTFEStackResource_noVCSRepo(t *testing.T) {
-	skipUnlessBeta(t)
-
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
