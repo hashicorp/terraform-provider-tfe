@@ -1,6 +1,7 @@
 ## Unreleased
 ENHANCEMENTS:
 * Updates warning when using credentials/config file for authentication and running on cloud to be clearer, by @christian-doucette [#2036](https://github.com/hashicorp/terraform-provider-tfe/pull/2036)
+* Support trigger patterns and working directories in stacks by @aaabdelgany [#2048](https://github.com/hashicorp/terraform-provider-tfe/pull/2048)
 
 ## v0.76.2
 
