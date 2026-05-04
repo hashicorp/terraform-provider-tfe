@@ -155,7 +155,7 @@ func TestAccTFEStackResource_importByIdentity(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEStackResourceConfig(orgName, envGithubToken, "svc-team-tf-core-cloud/tf-stacks-pet-nulls", true, true),
+				Config: testAccTFEStackResourceConfigFull(orgName, envGithubToken, "svc-team-tf-core-cloud/tf-stacks-pet-nulls", false, true, true),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectIdentity("tfe_stack.foobar", map[string]knownvalue.Check{
 						"id":       knownvalue.NotNull(),
@@ -173,6 +173,10 @@ func TestAccTFEStackResource_importByIdentity(t *testing.T) {
 }
 
 func testAccTFEStackResourceConfig(orgName, ghToken, ghRepoIdentifier string, includeSpeculativeEnabled bool, speculativeEnabled bool) string {
+	return testAccTFEStackResourceConfigFull(orgName, ghToken, ghRepoIdentifier, true, includeSpeculativeEnabled, speculativeEnabled)
+}
+
+func testAccTFEStackResourceConfigFull(orgName, ghToken, ghRepoIdentifier string, migration bool, includeSpeculativeEnabled bool, speculativeEnabled bool) string {
 	var builder strings.Builder
 	builder.WriteString(fmt.Sprintf(`
 resource "tfe_organization" "foobar" {
@@ -204,7 +208,6 @@ resource "tfe_stack" "foobar" {
 	description = "Just an ordinary stack"
   project_id  = tfe_project.example.id
   agent_pool_id = tfe_agent_pool.foobar.id
-	migration = true
 	working_directory = "envs"
 	trigger_patterns  = ["/**/*"]
 	vcs_repo {
@@ -253,6 +256,7 @@ func testAccTFEStackResourceConfigWithAgentPool(orgName string) string {
 resource "tfe_organization" "foobar" {
   name  = "%s"
   email = "admin@tfe.local"
+	stacks_enabled = true
 }
 
 resource "tfe_agent_pool" "foobar" {
@@ -453,6 +457,7 @@ func testAccTFEStackResourceConfigNoVCSRepo(orgName string) string {
 resource "tfe_organization" "foobar" {
   name  = "%s"
   email = "admin@tfe.local"
+  stacks_enabled = true
 }
 
 resource "tfe_project" "example" {
