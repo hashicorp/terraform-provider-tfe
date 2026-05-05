@@ -407,18 +407,19 @@ func resourceTFETeamAccessImporter(ctx context.Context, d *schema.ResourceData, 
 // limitations, rooting out the user's intentions to figure out when to automatically assign 'access' to custom and/or
 // recompute 'permissions'.
 func setCustomOrComputedPermissions(_ context.Context, d *schema.ResourceDiff, meta interface{}) error {
-	// Check if access is being removed from config (exists in old but not in new config)
-	oldAccess, _ := d.GetChange(teamAccessAccessKey)
-	accessRemovedFromConfig := oldAccess != nil && oldAccess.(string) != "" && !d.NewValueKnown(teamAccessAccessKey)
+	// Check if permissions block is present in new config
+	_, hasPermissionsInNew := d.GetOk(teamAccessPermissionsKey)
 
-	// If access was removed from config and permissions block is present, set to custom
-	if accessRemovedFromConfig {
-		if _, ok := d.GetOk(teamAccessPermissionsKey); ok {
-			if err := setCustomAccess(d); err != nil {
-				return err
-			}
-			return nil
+	// Check if access is in the raw config as state may have both access and permissions
+	rawConfig := d.GetRawConfig()
+	accessInConfig := !rawConfig.GetAttr(teamAccessAccessKey).IsNull()
+
+	// User removed 'access' from config and has 'permissions' block in new config
+	if !accessInConfig && hasPermissionsInNew {
+		if err := setCustomAccess(d); err != nil {
+			return err
 		}
+		return nil
 	}
 
 	if _, ok := d.GetOk(teamAccessAccessKey); ok {
