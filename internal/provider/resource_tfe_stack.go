@@ -107,6 +107,15 @@ func (r *resourceTFEStack) Schema(ctx context.Context, req resource.SchemaReques
 				Description: "Description of the Stack",
 				Optional:    true,
 			},
+			"working_directory": schema.StringAttribute{
+				Description: "The working directory of the Stack.",
+				Optional:    true,
+			},
+			"trigger_patterns": schema.ListAttribute{
+				Description: "List of trigger patterns for the Stack.",
+				Optional:    true,
+				ElementType: types.StringType,
+			},
 			"speculative_enabled": schema.BoolAttribute{
 				Description: "Indicates if speculative plans are enabled on this Stack.",
 				Optional:    true,
@@ -228,6 +237,14 @@ func (r *resourceTFEStack) Create(ctx context.Context, req resource.CreateReques
 		options.Description = tfe.String(plan.Description.ValueString())
 	}
 
+	if !plan.WorkingDirectory.IsNull() {
+		options.WorkingDirectory = tfe.String(plan.WorkingDirectory.ValueString())
+	}
+
+	if !plan.TriggerPatterns.IsNull() {
+		options.TriggerPatterns = triggerPatternsFromList(ctx, plan.TriggerPatterns)
+	}
+
 	tflog.Debug(ctx, "Creating stack")
 	stack, err := r.config.Client.Stacks.Create(ctx, options)
 	if err != nil {
@@ -306,6 +323,18 @@ func (r *resourceTFEStack) Update(ctx context.Context, req resource.UpdateReques
 		Name:               tfe.String(plan.Name.ValueString()),
 		Description:        tfe.String(plan.Description.ValueString()),
 		SpeculativeEnabled: tfe.Bool(plan.SpeculativeEnabled.ValueBool()),
+	}
+
+	if !plan.WorkingDirectory.IsNull() {
+		options.WorkingDirectory = tfe.String(plan.WorkingDirectory.ValueString())
+	} else {
+		options.WorkingDirectory = tfe.String("")
+	}
+
+	if !plan.TriggerPatterns.IsNull() {
+		options.TriggerPatterns = triggerPatternsFromList(ctx, plan.TriggerPatterns)
+	} else {
+		options.TriggerPatterns = []string{}
 	}
 
 	if plan.VCSRepo != nil {
