@@ -19,6 +19,22 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+const (
+	// Schema field names for tfe_team_access resource
+	teamAccessAccessKey      = "access"
+	teamAccessPermissionsKey = "permissions"
+	teamAccessTeamIDKey      = "team_id"
+	teamAccessWorkspaceIDKey = "workspace_id"
+
+	// Permission field names
+	permissionsRunsKey             = "runs"
+	permissionsVariablesKey        = "variables"
+	permissionsStateVersionsKey    = "state_versions"
+	permissionsSentinelMocksKey    = "sentinel_mocks"
+	permissionsWorkspaceLockingKey = "workspace_locking"
+	permissionsRunTasksKey         = "run_tasks"
+)
+
 func resourceTFETeamAccess() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceTFETeamAccessCreate,
@@ -40,13 +56,13 @@ func resourceTFETeamAccess() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"access": {
+			teamAccessAccessKey: {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 				// This should be moved to the Resource level when possible:
 				// https://github.com/hashicorp/terraform-plugin-sdk/issues/470
-				ExactlyOneOf: []string{"access", "permissions"},
+				ExactlyOneOf: []string{teamAccessAccessKey, teamAccessPermissionsKey},
 				ValidateFunc: validation.StringInSlice(
 					[]string{
 						string(tfe.AccessAdmin),
@@ -58,13 +74,13 @@ func resourceTFETeamAccess() *schema.Resource {
 				),
 			},
 
-			"permissions": {
+			teamAccessPermissionsKey: {
 				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"runs": {
+						permissionsRunsKey: {
 							Type:     schema.TypeString,
 							Required: true,
 							ValidateFunc: validation.StringInSlice(
@@ -77,7 +93,7 @@ func resourceTFETeamAccess() *schema.Resource {
 							),
 						},
 
-						"variables": {
+						permissionsVariablesKey: {
 							Type:     schema.TypeString,
 							Required: true,
 							ValidateFunc: validation.StringInSlice(
@@ -90,7 +106,7 @@ func resourceTFETeamAccess() *schema.Resource {
 							),
 						},
 
-						"state_versions": {
+						permissionsStateVersionsKey: {
 							Type:     schema.TypeString,
 							Required: true,
 							ValidateFunc: validation.StringInSlice(
@@ -104,7 +120,7 @@ func resourceTFETeamAccess() *schema.Resource {
 							),
 						},
 
-						"sentinel_mocks": {
+						permissionsSentinelMocksKey: {
 							Type:     schema.TypeString,
 							Required: true,
 							ValidateFunc: validation.StringInSlice(
@@ -116,12 +132,12 @@ func resourceTFETeamAccess() *schema.Resource {
 							),
 						},
 
-						"workspace_locking": {
+						permissionsWorkspaceLockingKey: {
 							Type:     schema.TypeBool,
 							Required: true,
 						},
 
-						"run_tasks": {
+						permissionsRunTasksKey: {
 							Type:     schema.TypeBool,
 							Required: true,
 						},
@@ -129,13 +145,13 @@ func resourceTFETeamAccess() *schema.Resource {
 				},
 			},
 
-			"team_id": {
+			teamAccessTeamIDKey: {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"workspace_id": {
+			teamAccessWorkspaceIDKey: {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
@@ -152,10 +168,10 @@ func resourceTFETeamAccessCreate(d *schema.ResourceData, meta interface{}) error
 	config := meta.(ConfiguredClient)
 
 	// Get the access level
-	access := d.Get("access").(string)
+	access := d.Get(teamAccessAccessKey).(string)
 
 	// Get the workspace
-	workspaceID := d.Get("workspace_id").(string)
+	workspaceID := d.Get(teamAccessWorkspaceIDKey).(string)
 	ws, err := config.Client.Workspaces.ReadByID(ctx, workspaceID)
 	if err != nil {
 		return fmt.Errorf(
@@ -163,7 +179,7 @@ func resourceTFETeamAccessCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	// Get the team.
-	teamID := d.Get("team_id").(string)
+	teamID := d.Get(teamAccessTeamIDKey).(string)
 	tm, err := config.Client.Teams.Read(ctx, teamID)
 	if err != nil {
 		return fmt.Errorf("Error retrieving team %s: %w", teamID, err)
@@ -176,38 +192,44 @@ func resourceTFETeamAccessCreate(d *schema.ResourceData, meta interface{}) error
 		Workspace: ws,
 	}
 
-	if d.HasChange("permissions.0.runs") {
-		if v, ok := d.GetOk("permissions.0.runs"); ok {
+	permissionsRunsPath := fmt.Sprintf("%s.0.%s", teamAccessPermissionsKey, permissionsRunsKey)
+	if d.HasChange(permissionsRunsPath) {
+		if v, ok := d.GetOk(permissionsRunsPath); ok {
 			options.Runs = tfe.RunsPermission(tfe.RunsPermissionType(v.(string)))
 		}
 	}
 
-	if d.HasChange("permissions.0.variables") {
-		if v, ok := d.GetOk("permissions.0.variables"); ok {
+	permissionsVariablesPath := fmt.Sprintf("%s.0.%s", teamAccessPermissionsKey, permissionsVariablesKey)
+	if d.HasChange(permissionsVariablesPath) {
+		if v, ok := d.GetOk(permissionsVariablesPath); ok {
 			options.Variables = tfe.VariablesPermission(tfe.VariablesPermissionType(v.(string)))
 		}
 	}
 
-	if d.HasChange("permissions.0.state_versions") {
-		if v, ok := d.GetOk("permissions.0.state_versions"); ok {
+	permissionsStateVersionsPath := fmt.Sprintf("%s.0.%s", teamAccessPermissionsKey, permissionsStateVersionsKey)
+	if d.HasChange(permissionsStateVersionsPath) {
+		if v, ok := d.GetOk(permissionsStateVersionsPath); ok {
 			options.StateVersions = tfe.StateVersionsPermission(tfe.StateVersionsPermissionType(v.(string)))
 		}
 	}
 
-	if d.HasChange("permissions.0.sentinel_mocks") {
-		if v, ok := d.GetOk("permissions.0.sentinel_mocks"); ok {
+	permissionsSentinelMocksPath := fmt.Sprintf("%s.0.%s", teamAccessPermissionsKey, permissionsSentinelMocksKey)
+	if d.HasChange(permissionsSentinelMocksPath) {
+		if v, ok := d.GetOk(permissionsSentinelMocksPath); ok {
 			options.SentinelMocks = tfe.SentinelMocksPermission(tfe.SentinelMocksPermissionType(v.(string)))
 		}
 	}
 
-	if d.HasChange("permissions.0.workspace_locking") {
-		if v, ok := d.GetOkExists("permissions.0.workspace_locking"); ok {
+	permissionsWorkspaceLockingPath := fmt.Sprintf("%s.0.%s", teamAccessPermissionsKey, permissionsWorkspaceLockingKey)
+	if d.HasChange(permissionsWorkspaceLockingPath) {
+		if v, ok := d.GetOkExists(permissionsWorkspaceLockingPath); ok {
 			options.WorkspaceLocking = tfe.Bool(v.(bool))
 		}
 	}
 
-	if d.HasChange("permissions.0.run_tasks") {
-		if v, ok := d.GetOkExists("permissions.0.run_tasks"); ok {
+	permissionsRunTasksPath := fmt.Sprintf("%s.0.%s", teamAccessPermissionsKey, permissionsRunTasksKey)
+	if d.HasChange(permissionsRunTasksPath) {
+		if v, ok := d.GetOkExists(permissionsRunTasksPath); ok {
 			options.RunTasks = tfe.Bool(v.(bool))
 		}
 	}
@@ -239,23 +261,23 @@ func resourceTFETeamAccessRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	// Update config.
-	d.Set("access", string(tmAccess.Access))
+	d.Set(teamAccessAccessKey, string(tmAccess.Access))
 	permissions := []map[string]interface{}{{
-		"runs":              tmAccess.Runs,
-		"variables":         tmAccess.Variables,
-		"state_versions":    tmAccess.StateVersions,
-		"sentinel_mocks":    tmAccess.SentinelMocks,
-		"workspace_locking": tmAccess.WorkspaceLocking,
-		"run_tasks":         tmAccess.RunTasks,
+		permissionsRunsKey:             tmAccess.Runs,
+		permissionsVariablesKey:        tmAccess.Variables,
+		permissionsStateVersionsKey:    tmAccess.StateVersions,
+		permissionsSentinelMocksKey:    tmAccess.SentinelMocks,
+		permissionsWorkspaceLockingKey: tmAccess.WorkspaceLocking,
+		permissionsRunTasksKey:         tmAccess.RunTasks,
 	}}
-	if err := d.Set("permissions", permissions); err != nil {
+	if err := d.Set(teamAccessPermissionsKey, permissions); err != nil {
 		return fmt.Errorf("error setting permissions for team access %s: %w", d.Id(), err)
 	}
 
 	if tmAccess.Team != nil {
-		d.Set("team_id", tmAccess.Team.ID)
+		d.Set(teamAccessTeamIDKey, tmAccess.Team.ID)
 	} else {
-		d.Set("team_id", "")
+		d.Set(teamAccessTeamIDKey, "")
 	}
 
 	return nil
@@ -268,41 +290,47 @@ func resourceTFETeamAccessUpdate(d *schema.ResourceData, meta interface{}) error
 	options := tfe.TeamAccessUpdateOptions{}
 
 	// Set access level
-	access := d.Get("access").(string)
+	access := d.Get(teamAccessAccessKey).(string)
 	options.Access = tfe.Access(tfe.AccessType(access))
 
-	if d.HasChange("permissions.0.runs") {
-		if v, ok := d.GetOk("permissions.0.runs"); ok {
+	permissionsRunsPath := fmt.Sprintf("%s.0.%s", teamAccessPermissionsKey, permissionsRunsKey)
+	if d.HasChange(permissionsRunsPath) {
+		if v, ok := d.GetOk(permissionsRunsPath); ok {
 			options.Runs = tfe.RunsPermission(tfe.RunsPermissionType(v.(string)))
 		}
 	}
 
-	if d.HasChange("permissions.0.variables") {
-		if v, ok := d.GetOk("permissions.0.variables"); ok {
+	permissionsVariablesPath := fmt.Sprintf("%s.0.%s", teamAccessPermissionsKey, permissionsVariablesKey)
+	if d.HasChange(permissionsVariablesPath) {
+		if v, ok := d.GetOk(permissionsVariablesPath); ok {
 			options.Variables = tfe.VariablesPermission(tfe.VariablesPermissionType(v.(string)))
 		}
 	}
 
-	if d.HasChange("permissions.0.state_versions") {
-		if v, ok := d.GetOk("permissions.0.state_versions"); ok {
+	permissionsStateVersionsPath := fmt.Sprintf("%s.0.%s", teamAccessPermissionsKey, permissionsStateVersionsKey)
+	if d.HasChange(permissionsStateVersionsPath) {
+		if v, ok := d.GetOk(permissionsStateVersionsPath); ok {
 			options.StateVersions = tfe.StateVersionsPermission(tfe.StateVersionsPermissionType(v.(string)))
 		}
 	}
 
-	if d.HasChange("permissions.0.sentinel_mocks") {
-		if v, ok := d.GetOk("permissions.0.sentinel_mocks"); ok {
+	permissionsSentinelMocksPath := fmt.Sprintf("%s.0.%s", teamAccessPermissionsKey, permissionsSentinelMocksKey)
+	if d.HasChange(permissionsSentinelMocksPath) {
+		if v, ok := d.GetOk(permissionsSentinelMocksPath); ok {
 			options.SentinelMocks = tfe.SentinelMocksPermission(tfe.SentinelMocksPermissionType(v.(string)))
 		}
 	}
 
-	if d.HasChange("permissions.0.workspace_locking") {
-		if v, ok := d.GetOkExists("permissions.0.workspace_locking"); ok {
+	permissionsWorkspaceLockingPath := fmt.Sprintf("%s.0.%s", teamAccessPermissionsKey, permissionsWorkspaceLockingKey)
+	if d.HasChange(permissionsWorkspaceLockingPath) {
+		if v, ok := d.GetOkExists(permissionsWorkspaceLockingPath); ok {
 			options.WorkspaceLocking = tfe.Bool(v.(bool))
 		}
 	}
 
-	if d.HasChange("permissions.0.run_tasks") {
-		if v, ok := d.GetOkExists("permissions.0.run_tasks"); ok {
+	permissionsRunTasksPath := fmt.Sprintf("%s.0.%s", teamAccessPermissionsKey, permissionsRunTasksKey)
+	if d.HasChange(permissionsRunTasksPath) {
+		if v, ok := d.GetOkExists(permissionsRunTasksPath); ok {
 			options.RunTasks = tfe.Bool(v.(bool))
 		}
 	}
@@ -316,14 +344,14 @@ func resourceTFETeamAccessUpdate(d *schema.ResourceData, meta interface{}) error
 
 	// Update permissions, in the case that they were marked to be recomputed.
 	permissions := []map[string]interface{}{{
-		"runs":              tmAccess.Runs,
-		"variables":         tmAccess.Variables,
-		"state_versions":    tmAccess.StateVersions,
-		"sentinel_mocks":    tmAccess.SentinelMocks,
-		"workspace_locking": tmAccess.WorkspaceLocking,
-		"run_tasks":         tmAccess.RunTasks,
+		permissionsRunsKey:             tmAccess.Runs,
+		permissionsVariablesKey:        tmAccess.Variables,
+		permissionsStateVersionsKey:    tmAccess.StateVersions,
+		permissionsSentinelMocksKey:    tmAccess.SentinelMocks,
+		permissionsWorkspaceLockingKey: tmAccess.WorkspaceLocking,
+		permissionsRunTasksKey:         tmAccess.RunTasks,
 	}}
-	if err := d.Set("permissions", permissions); err != nil {
+	if err := d.Set(teamAccessPermissionsKey, permissions); err != nil {
 		return fmt.Errorf("error setting permissions for team access %s: %w", d.Id(), err)
 	}
 
@@ -362,7 +390,7 @@ func resourceTFETeamAccessImporter(ctx context.Context, d *schema.ResourceData, 
 		return nil, fmt.Errorf(
 			"error retrieving workspace %s from organization %s: %w", s[1], s[0], err)
 	}
-	d.Set("workspace_id", workspaceID)
+	d.Set(teamAccessWorkspaceIDKey, workspaceID)
 	d.SetId(s[2])
 
 	return []*schema.ResourceData{d}, nil
@@ -379,13 +407,27 @@ func resourceTFETeamAccessImporter(ctx context.Context, d *schema.ResourceData, 
 // limitations, rooting out the user's intentions to figure out when to automatically assign 'access' to custom and/or
 // recompute 'permissions'.
 func setCustomOrComputedPermissions(_ context.Context, d *schema.ResourceDiff, meta interface{}) error {
-	if _, ok := d.GetOk("access"); ok {
-		if d.HasChange("access") {
+	// Check if access is being removed from config (exists in old but not in new config)
+	oldAccess, _ := d.GetChange(teamAccessAccessKey)
+	accessRemovedFromConfig := oldAccess != nil && oldAccess.(string) != "" && !d.NewValueKnown(teamAccessAccessKey)
+
+	// If access was removed from config and permissions block is present, set to custom
+	if accessRemovedFromConfig {
+		if _, ok := d.GetOk(teamAccessPermissionsKey); ok {
+			if err := setCustomAccess(d); err != nil {
+				return err
+			}
+			return nil
+		}
+	}
+
+	if _, ok := d.GetOk(teamAccessAccessKey); ok {
+		if d.HasChange(teamAccessAccessKey) {
 			// If access is being added or changed to a known value, all permissions
 			// will be read-only and computed by the API (access is never marked as 'custom' in the
 			// configuration).
-			d.SetNewComputed("permissions")
-		} else if d.HasChange("permissions.0") {
+			d.SetNewComputed(teamAccessPermissionsKey)
+		} else if d.HasChange(fmt.Sprintf("%s.0", teamAccessPermissionsKey)) {
 			// If access is present, not being explicitly changed, but permissions are being
 			// changed, the user might be switching from using a fixed access level
 			// (read/plan/write/admin) to a permissions block ('custom' access).
@@ -394,13 +436,13 @@ func setCustomOrComputedPermissions(_ context.Context, d *schema.ResourceDiff, m
 				return err
 			}
 		}
-	} else if !d.NewValueKnown("access") {
+	} else if !d.NewValueKnown(teamAccessAccessKey) {
 		if d.Id() != "" {
 			// If the value for access isn't known on an existing resource, the user must have set the
 			// access attribute to an interpolated value not known at plan time.
 			// Set permissions as computed.
-			d.SetNewComputed("permissions")
-		} else if _, ok := d.GetOk("permissions"); ok {
+			d.SetNewComputed(teamAccessPermissionsKey)
+		} else if _, ok := d.GetOk(teamAccessPermissionsKey); ok {
 			// If the resource is new, the value for access isn't known, and permissions are
 			// present, the user must be creating a new resource with custom access.
 			// Set access to custom.
