@@ -360,7 +360,7 @@ func (r *resourceTFESMTPSettings) updateSMTPSettings(ctx context.Context, m mode
 	if !config.PasswordWO.IsNull() && !config.PasswordWO.IsUnknown() {
 		cur_pass = config.PasswordWO
 	}
-	
+
 	s, err := r.client.Admin.Settings.SMTP.Update(ctx, tfe.AdminSMTPSettingsUpdateOptions{
 		Enabled:          m.Enabled.ValueBoolPointer(),
 		Host:             m.Host.ValueStringPointer(),
