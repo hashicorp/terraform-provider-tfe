@@ -354,7 +354,6 @@ func NewSMTPSettingsResource() resource.Resource {
 
 // updateSMTPSettings was created to keep the code DRY. It is used in both Create and Update functions
 func (r *resourceTFESMTPSettings) updateSMTPSettings(ctx context.Context, m modelTFESMTPSettings, config modelTFESMTPSettings) (*tfe.AdminSMTPSetting, error) {
-
 	// Use password from config since write-only attributes aren't in the plan
 	cur_pass := config.Password
 	if !config.PasswordWO.IsNull() && !config.PasswordWO.IsUnknown() {

@@ -308,7 +308,7 @@ resource "tfe_smtp_settings" "foobar" {
 }`, s.Host, s.Port, s.Sender, s.Auth, s.Username, password)
 }
 
-func testAccTFESMTPSettings_AuthPlainLogin_writeOnly_version(s tfe.AdminSMTPSetting, password string, version int) string {
+func testAccTFESMTPSettings_AuthPlainLogin_writeOnly_version(s tfe.AdminSMTPSetting, password string, passwordVersion int) string {
 	return fmt.Sprintf(`
 resource "tfe_smtp_settings" "foobar" {
   enabled               = false
@@ -319,7 +319,7 @@ resource "tfe_smtp_settings" "foobar" {
   username              = "%s"
   password_wo           = "%s"
   password_wo_version   = %d
-}`, s.Host, s.Port, s.Sender, s.Auth, s.Username, password, version)
+}`, s.Host, s.Port, s.Sender, s.Auth, s.Username, password, passwordVersion)
 }
 
 func testAccTFESMTPSettings_AuthPlainLogin(s tfe.AdminSMTPSetting, password string) string {
