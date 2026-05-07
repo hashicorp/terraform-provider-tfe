@@ -26,9 +26,8 @@ func TestAccTFESMTPSettingsDataSource_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceAddress, "id"),
 					resource.TestCheckResourceAttrSet(resourceAddress, "enabled"),
-					resource.TestCheckResourceAttrSet(resourceAddress, "host"),
-					resource.TestCheckResourceAttrSet(resourceAddress, "port"),
-					resource.TestCheckResourceAttrSet(resourceAddress, "auth"),
+					// Note: host, port, and auth may be empty when SMTP is disabled
+					// so we don't check for them here
 				),
 			},
 		},

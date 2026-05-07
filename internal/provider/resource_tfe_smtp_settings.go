@@ -9,6 +9,7 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/resourcevalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -69,6 +70,16 @@ func (r *resourceTFESMTPSettings) Metadata(_ context.Context, req resource.Metad
 	resp.TypeName = req.ProviderTypeName + "_smtp_settings"
 }
 
+// ConfigValidators implements resource.ResourceWithConfigValidators
+func (r *resourceTFESMTPSettings) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
+	return []resource.ConfigValidator{
+		resourcevalidator.PreferWriteOnlyAttribute(
+			path.MatchRoot("password"),
+			path.MatchRoot("password_wo"),
+		),
+	}
+}
+
 // Schema implements resource.Resource
 func (r *resourceTFESMTPSettings) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
@@ -84,8 +95,9 @@ func (r *resourceTFESMTPSettings) Schema(ctx context.Context, req resource.Schem
 			},
 			"enabled": schema.BoolAttribute{
 				Description: "Whether SMTP is enabled. When enabled, all other attributes must have valid values.",
+				Optional:    true,
 				Computed:    true,
-				Default: booldefault.StaticBool(false),
+				Default:     booldefault.StaticBool(false),
 			},
 			"host": schema.StringAttribute{
 				Description: "The hostname of the SMTP server.",
@@ -144,7 +156,6 @@ func (r *resourceTFESMTPSettings) Schema(ctx context.Context, req resource.Schem
 				WriteOnly:   true,
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("password")),
-					stringvalidator.AlsoRequires(path.MatchRoot("password_wo")),
 					validators.AttributeValueConflictValidator("auth", []string{string(tfe.SMTPAuthNone)}),
 				},
 			},
@@ -186,6 +197,17 @@ func (r *resourceTFESMTPSettings) Read(ctx context.Context, req resource.ReadReq
 	
 	// update state
 	result := modelFromTFEAdminSMTPSettings(smtpSettings, m.Password, isWriteOnly)
+	// Preserve null values for optional fields from state
+	if m.Username.IsNull() {
+		result.Username = types.StringNull()
+	}
+	if m.Password.IsNull() {
+		result.Password = types.StringNull()
+	}
+	// Preserve password_wo_version from state
+	if !m.PasswordWOVersion.IsNull() {
+		result.PasswordWOVersion = m.PasswordWOVersion
+	}
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -216,7 +238,20 @@ func (r *resourceTFESMTPSettings) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
-	result := modelFromTFEAdminSMTPSettings(smtpSettings, types.StringValue(""), false)
+	// Determine if write-only password was used
+	isWriteOnly := !m.PasswordWO.IsNull() && !m.PasswordWO.IsUnknown()
+	result := modelFromTFEAdminSMTPSettings(smtpSettings, m.Password, isWriteOnly)
+	// Preserve config values for optional fields
+	if config.Username.IsNull() {
+		result.Username = types.StringNull()
+	}
+	if config.Password.IsNull() {
+		result.Password = types.StringNull()
+	}
+	// Preserve password_wo_version from config
+	if !config.PasswordWOVersion.IsNull() {
+		result.PasswordWOVersion = config.PasswordWOVersion
+	}
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -251,7 +286,20 @@ func (r *resourceTFESMTPSettings) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
-	result := modelFromTFEAdminSMTPSettings(smtpSettings, types.StringValue(""), false)
+	// Determine if write-only password was used
+	isWriteOnly := !m.PasswordWO.IsNull() && !m.PasswordWO.IsUnknown()
+	result := modelFromTFEAdminSMTPSettings(smtpSettings, m.Password, isWriteOnly)
+	// Preserve config values for optional fields
+	if config.Username.IsNull() {
+		result.Username = types.StringNull()
+	}
+	if config.Password.IsNull() {
+		result.Password = types.StringNull()
+	}
+	// Preserve password_wo_version from config
+	if !config.PasswordWOVersion.IsNull() {
+		result.PasswordWOVersion = config.PasswordWOVersion
+	}
 	// Save data into Terraform state
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
@@ -316,7 +364,7 @@ func (r *resourceTFESMTPSettings) updateSMTPSettings(ctx context.Context, m mode
 		cur_pass=m.PasswordWO
 	}
 	s, err := r.client.Admin.Settings.SMTP.Update(ctx, tfe.AdminSMTPSettingsUpdateOptions{
-		Enabled:                   basetypes.NewBoolValue(true).ValueBoolPointer(),
+		Enabled:                   m.Enabled.ValueBoolPointer(),
 		Host:                      m.Host.ValueStringPointer(),
 		Port:                      tfe.Int(int(m.Port.ValueInt64())),
 		Sender:                    m.Sender.ValueStringPointer(),

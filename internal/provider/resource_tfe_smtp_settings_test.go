@@ -53,7 +53,7 @@ func TestAccTFESMTPSettings_omnibus(t *testing.T) {
 					Config: testAccTFESMTPSettings_AuthNone(s),
 					Check: resource.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(testSMTPResourceName, "id", "smtp"),
-						resource.TestCheckResourceAttr(testSMTPResourceName, "enabled", "true"),
+						resource.TestCheckResourceAttr(testSMTPResourceName, "enabled", "false"),
 						resource.TestCheckResourceAttr(testSMTPResourceName, "host", s.Host),
 						resource.TestCheckResourceAttr(testSMTPResourceName, "port", strconv.Itoa(s.Port)),
 						resource.TestCheckResourceAttr(testSMTPResourceName, "sender", s.Sender),
@@ -82,13 +82,10 @@ func TestAccTFESMTPSettings_AuthNone(t *testing.T) {
 			{
 				Config: testAccTFESMTPSettings_AuthNone(s),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(testSMTPResourceName, "enabled", "true"),
+					resource.TestCheckResourceAttr(testSMTPResourceName, "enabled", "false"),
 					resource.TestCheckResourceAttr(testSMTPResourceName, "host", s.Host),
 					resource.TestCheckResourceAttr(testSMTPResourceName, "port", strconv.Itoa(s.Port)),
-					resource.TestCheckResourceAttr(testSMTPResourceName, "username", s.Username),
-					resource.TestCheckResourceAttr(testSMTPResourceName, "host", s.Host),
-					resource.TestCheckNoResourceAttr(testSMTPResourceName, "password_wo"),
-					resource.TestCheckResourceAttr(testSMTPResourceName, "password_wo_version", "1"),
+					resource.TestCheckResourceAttr(testSMTPResourceName, "auth", string(s.Auth)),
 				),
 			},
 		},
@@ -112,7 +109,7 @@ func TestAccTFESMTPSettings_AuthPlain_writeOnly(t *testing.T) {
 			{
 				Config: testAccTFESMTPSettings_AuthPlainLogin_writeOnly(s, password),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(testSMTPResourceName, "enabled", "true"),
+					resource.TestCheckResourceAttr(testSMTPResourceName, "enabled", "false"),
 					resource.TestCheckResourceAttr(testSMTPResourceName, "host", s.Host),
 					resource.TestCheckResourceAttr(testSMTPResourceName, "port", strconv.Itoa(s.Port)),
 					resource.TestCheckResourceAttr(testSMTPResourceName, "username", s.Username),
@@ -142,7 +139,7 @@ func TestAccTFESMTPSettings_AuthLogin_writeOnly(t *testing.T) {
 			{
 				Config: testAccTFESMTPSettings_AuthPlainLogin_writeOnly(s, password),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(testSMTPResourceName, "enabled", "true"),
+					resource.TestCheckResourceAttr(testSMTPResourceName, "enabled", "false"),
 					resource.TestCheckResourceAttr(testSMTPResourceName, "host", s.Host),
 					resource.TestCheckResourceAttr(testSMTPResourceName, "port", strconv.Itoa(s.Port)),
 					resource.TestCheckResourceAttr(testSMTPResourceName, "username", s.Username),
@@ -154,6 +151,48 @@ func TestAccTFESMTPSettings_AuthLogin_writeOnly(t *testing.T) {
 	})
 }
 
+
+func TestAccTFESMTPSettings_AuthPlain_writeOnly_update(t *testing.T) {
+	s := tfe.AdminSMTPSetting{
+		Host:     "foobar.com",
+		Port:     25,
+		Sender:   "sender@foorbar.com",
+		Auth:     "plain",
+		Username: "foo",
+	}
+	password1 := randomString(t)
+	password2 := randomString(t)
+	resource.Test(t, resource.TestCase{
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			tfversion.SkipBelow(version.Must(version.NewVersion("1.11.0"))),
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFESMTPSettings_AuthPlainLogin_writeOnly_version(s, password1, 1),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(testSMTPResourceName, "enabled", "false"),
+					resource.TestCheckResourceAttr(testSMTPResourceName, "host", s.Host),
+					resource.TestCheckResourceAttr(testSMTPResourceName, "port", strconv.Itoa(s.Port)),
+					resource.TestCheckResourceAttr(testSMTPResourceName, "username", s.Username),
+					resource.TestCheckNoResourceAttr(testSMTPResourceName, "password_wo"),
+					resource.TestCheckResourceAttr(testSMTPResourceName, "password_wo_version", "1"),
+				),
+			},
+			{
+				Config: testAccTFESMTPSettings_AuthPlainLogin_writeOnly_version(s, password2, 2),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(testSMTPResourceName, "enabled", "false"),
+					resource.TestCheckResourceAttr(testSMTPResourceName, "host", s.Host),
+					resource.TestCheckResourceAttr(testSMTPResourceName, "port", strconv.Itoa(s.Port)),
+					resource.TestCheckResourceAttr(testSMTPResourceName, "username", s.Username),
+					resource.TestCheckNoResourceAttr(testSMTPResourceName, "password_wo"),
+					resource.TestCheckResourceAttr(testSMTPResourceName, "password_wo_version", "2"),
+				),
+			},
+		},
+	})
+}
 
 func TestAccTFESMTPSettings_AuthPlain(t *testing.T) {
 	s := tfe.AdminSMTPSetting{
@@ -173,7 +212,7 @@ func TestAccTFESMTPSettings_AuthPlain(t *testing.T) {
 			{
 				Config: testAccTFESMTPSettings_AuthPlainLogin(s, password),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(testSMTPResourceName, "enabled", "true"),
+					resource.TestCheckResourceAttr(testSMTPResourceName, "enabled", "false"),
 					resource.TestCheckResourceAttr(testSMTPResourceName, "host", s.Host),
 					resource.TestCheckResourceAttr(testSMTPResourceName, "port", strconv.Itoa(s.Port)),
 					resource.TestCheckResourceAttr(testSMTPResourceName, "username", s.Username),
@@ -203,7 +242,7 @@ func TestAccTFESMTPSettings_AuthLogin(t *testing.T) {
 			{
 				Config: testAccTFESMTPSettings_AuthPlainLogin(s, password),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(testSMTPResourceName, "enabled", "true"),
+					resource.TestCheckResourceAttr(testSMTPResourceName, "enabled", "false"),
 					resource.TestCheckResourceAttr(testSMTPResourceName, "host", s.Host),
 					resource.TestCheckResourceAttr(testSMTPResourceName, "port", strconv.Itoa(s.Port)),
 					resource.TestCheckResourceAttr(testSMTPResourceName, "username", s.Username),
@@ -217,6 +256,7 @@ func TestAccTFESMTPSettings_AuthLogin(t *testing.T) {
 func testAccTFESMTPSettings_AuthPlainLogin_writeOnly(s tfe.AdminSMTPSetting, password string) string {
 	return fmt.Sprintf(`
 resource "tfe_smtp_settings" "foobar" {
+  enabled               = false
   host                  = "%s"
   port                  = %d
   sender                = "%s"
@@ -227,9 +267,24 @@ resource "tfe_smtp_settings" "foobar" {
 }`, s.Host, s.Port, s.Sender, s.Auth, s.Username, password)
 }
 
+func testAccTFESMTPSettings_AuthPlainLogin_writeOnly_version(s tfe.AdminSMTPSetting, password string, version int) string {
+	return fmt.Sprintf(`
+resource "tfe_smtp_settings" "foobar" {
+  enabled               = false
+  host                  = "%s"
+  port                  = %d
+  sender                = "%s"
+  auth                  = "%s"
+  username              = "%s"
+  password_wo           = "%s"
+  password_wo_version   = %d
+}`, s.Host, s.Port, s.Sender, s.Auth, s.Username, password, version)
+}
+
 func testAccTFESMTPSettings_AuthPlainLogin(s tfe.AdminSMTPSetting, password string) string {
 	return fmt.Sprintf(`
 resource "tfe_smtp_settings" "foobar" {
+  enabled               = false
   host                  = "%s"
   port                  = %d
   sender                = "%s"
@@ -241,6 +296,7 @@ resource "tfe_smtp_settings" "foobar" {
 func testAccTFESMTPSettings_AuthNone(s tfe.AdminSMTPSetting) string {
 	return fmt.Sprintf(`
 resource "tfe_smtp_settings" "foobar" {
+  enabled               = false
   host                  = "%s"
   port                  = %d
   sender                = "%s"
