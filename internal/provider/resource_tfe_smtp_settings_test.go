@@ -39,16 +39,16 @@ func TestAccTFESMTPSettings_omnibus(t *testing.T) {
 
 	t.Run("basic SMTP settings without authentication", func(t *testing.T) {
 		s := tfe.AdminSMTPSetting{
-			Host:     "foobar.com",
-			Port:     25,
-			Sender:   "sender@foorbar.com",
-			Auth:     "none",
+			Host:   "foobar.com",
+			Port:   25,
+			Sender: "sender@foorbar.com",
+			Auth:   "none",
 		}
 		resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccMuxedProviders,
-		CheckDestroy:             testAccTFESMTPSettingsDestroy,
-		Steps: []resource.TestStep{
+			PreCheck:                 func() { testAccPreCheck(t) },
+			ProtoV6ProviderFactories: testAccMuxedProviders,
+			CheckDestroy:             testAccTFESMTPSettingsDestroy,
+			Steps: []resource.TestStep{
 				{
 					Config: testAccTFESMTPSettings_AuthNone(s),
 					Check: resource.ComposeTestCheckFunc(
@@ -67,10 +67,10 @@ func TestAccTFESMTPSettings_omnibus(t *testing.T) {
 
 func TestAccTFESMTPSettings_AuthNone(t *testing.T) {
 	s := tfe.AdminSMTPSetting{
-		Host:     "foobar.com",
-		Port:     25,
-		Sender:   "sender@foorbar.com",
-		Auth:     "none",
+		Host:   "foobar.com",
+		Port:   25,
+		Sender: "sender@foorbar.com",
+		Auth:   "none",
 	}
 
 	resource.Test(t, resource.TestCase{
@@ -151,7 +151,6 @@ func TestAccTFESMTPSettings_AuthLogin_writeOnly(t *testing.T) {
 	})
 }
 
-
 func TestAccTFESMTPSettings_AuthPlain_writeOnly_update(t *testing.T) {
 	s := tfe.AdminSMTPSetting{
 		Host:     "foobar.com",
@@ -194,6 +193,49 @@ func TestAccTFESMTPSettings_AuthPlain_writeOnly_update(t *testing.T) {
 	})
 }
 
+func TestAccTFESMTPSettings_AuthPlain_writeOnly_no_version_change(t *testing.T) {
+	s := tfe.AdminSMTPSetting{
+		Host:     "foobar.com",
+		Port:     25,
+		Sender:   "sender@foorbar.com",
+		Auth:     "plain",
+		Username: "foo",
+	}
+	password1 := randomString(t)
+	password2 := randomString(t)
+	resource.Test(t, resource.TestCase{
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			tfversion.SkipBelow(version.Must(version.NewVersion("1.11.0"))),
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFESMTPSettings_AuthPlainLogin_writeOnly_version(s, password1, 1),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(testSMTPResourceName, "enabled", "false"),
+					resource.TestCheckResourceAttr(testSMTPResourceName, "host", s.Host),
+					resource.TestCheckResourceAttr(testSMTPResourceName, "port", strconv.Itoa(s.Port)),
+					resource.TestCheckResourceAttr(testSMTPResourceName, "username", s.Username),
+					resource.TestCheckNoResourceAttr(testSMTPResourceName, "password_wo"),
+					resource.TestCheckResourceAttr(testSMTPResourceName, "password_wo_version", "1"),
+				),
+			},
+			{
+				// Same version (1) but different password - should NOT trigger update
+				Config: testAccTFESMTPSettings_AuthPlainLogin_writeOnly_version(s, password2, 1),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(testSMTPResourceName, "enabled", "false"),
+					resource.TestCheckResourceAttr(testSMTPResourceName, "host", s.Host),
+					resource.TestCheckResourceAttr(testSMTPResourceName, "port", strconv.Itoa(s.Port)),
+					resource.TestCheckResourceAttr(testSMTPResourceName, "username", s.Username),
+					resource.TestCheckNoResourceAttr(testSMTPResourceName, "password_wo"),
+					resource.TestCheckResourceAttr(testSMTPResourceName, "password_wo_version", "1"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFESMTPSettings_AuthPlain(t *testing.T) {
 	s := tfe.AdminSMTPSetting{
 		Host:     "foobar.com",
@@ -217,7 +259,6 @@ func TestAccTFESMTPSettings_AuthPlain(t *testing.T) {
 					resource.TestCheckResourceAttr(testSMTPResourceName, "port", strconv.Itoa(s.Port)),
 					resource.TestCheckResourceAttr(testSMTPResourceName, "username", s.Username),
 					resource.TestCheckResourceAttr(testSMTPResourceName, "password", password),
-
 				),
 			},
 		},

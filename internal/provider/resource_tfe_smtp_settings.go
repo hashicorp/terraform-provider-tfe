@@ -43,11 +43,11 @@ type modelTFESMTPSettings struct {
 	PasswordWOVersion types.Int64  `tfsdk:"password_wo_version"`
 	TestEmailAddress  types.String `tfsdk:"test_email_address"`
 }
+
 // resourceTFESMTPSettings implements the tfe_smtp_settings resource type
 type resourceTFESMTPSettings struct {
 	client *tfe.Client
 }
-
 
 // Configure implements resource.ResourceWithConfigure
 func (r *resourceTFESMTPSettings) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -194,7 +194,7 @@ func (r *resourceTFESMTPSettings) Read(ctx context.Context, req resource.ReadReq
 
 	// Determine if we should use write-only pattern for password
 	isWriteOnly := !m.PasswordWO.IsNull() && !m.PasswordWO.IsUnknown()
-	
+
 	// update state
 	result := modelFromTFEAdminSMTPSettings(smtpSettings, m.Password, isWriteOnly)
 	// Preserve null values for optional fields from state
@@ -212,8 +212,6 @@ func (r *resourceTFESMTPSettings) Read(ctx context.Context, req resource.ReadReq
 	resp.Diagnostics.Append(diags...)
 }
 
-
-
 // Create implements resource.Resource
 func (r *resourceTFESMTPSettings) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var m modelTFESMTPSettings
@@ -230,16 +228,15 @@ func (r *resourceTFESMTPSettings) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
-
 	tflog.Debug(ctx, "Create SMTP Settings")
-	smtpSettings, err := r.updateSMTPSettings(ctx, m)
+	// Check config for write-only password since plan may not have it populated
+	isWriteOnly := !config.PasswordWO.IsNull() && !config.PasswordWO.IsUnknown()
+	smtpSettings, err := r.updateSMTPSettings(ctx, m, config)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating SMTP Settings", "Could not set SMTP Settings, unexpected error: "+err.Error())
 		return
 	}
 
-	// Determine if write-only password was used
-	isWriteOnly := !m.PasswordWO.IsNull() && !m.PasswordWO.IsUnknown()
 	result := modelFromTFEAdminSMTPSettings(smtpSettings, m.Password, isWriteOnly)
 	// Preserve config values for optional fields
 	if config.Username.IsNull() {
@@ -280,14 +277,14 @@ func (r *resourceTFESMTPSettings) Update(ctx context.Context, req resource.Updat
 	}
 
 	tflog.Debug(ctx, "Update SMTP Settings")
-	smtpSettings, err := r.updateSMTPSettings(ctx, m)
+	// Check config for write-only password since plan may not have it populated
+	isWriteOnly := !config.PasswordWO.IsNull() && !config.PasswordWO.IsUnknown()
+	smtpSettings, err := r.updateSMTPSettings(ctx, m, config)
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating SMTP Settings", "Could not set SMTP Settings, unexpected error: "+err.Error())
 		return
 	}
 
-	// Determine if write-only password was used
-	isWriteOnly := !m.PasswordWO.IsNull() && !m.PasswordWO.IsUnknown()
 	result := modelFromTFEAdminSMTPSettings(smtpSettings, m.Password, isWriteOnly)
 	// Preserve config values for optional fields
 	if config.Username.IsNull() {
@@ -316,14 +313,14 @@ func (r *resourceTFESMTPSettings) Delete(ctx context.Context, req resource.Delet
 
 	tflog.Debug(ctx, "Delete SMTP Settings")
 	_, err := r.client.Admin.Settings.SMTP.Update(ctx, tfe.AdminSMTPSettingsUpdateOptions{
-		Enabled:                   basetypes.NewBoolValue(false).ValueBoolPointer(),
-		Host:                      basetypes.NewStringValue("").ValueStringPointer(),
-		Port:                      tfe.Int(int(smtpDefaultPort)),
-		Sender:                    basetypes.NewStringValue("").ValueStringPointer(),
-		Auth:                      (*tfe.SMTPAuthType)(m.Auth.ValueStringPointer()),
-		Username:                  basetypes.NewStringValue("").ValueStringPointer(),
-		Password:                  basetypes.NewStringValue("").ValueStringPointer(),
-		TestEmailAddress:          basetypes.NewStringValue("").ValueStringPointer(),
+		Enabled:          basetypes.NewBoolValue(false).ValueBoolPointer(),
+		Host:             basetypes.NewStringValue("").ValueStringPointer(),
+		Port:             tfe.Int(int(smtpDefaultPort)),
+		Sender:           basetypes.NewStringValue("").ValueStringPointer(),
+		Auth:             (*tfe.SMTPAuthType)(m.Auth.ValueStringPointer()),
+		Username:         basetypes.NewStringValue("").ValueStringPointer(),
+		Password:         basetypes.NewStringValue("").ValueStringPointer(),
+		TestEmailAddress: basetypes.NewStringValue("").ValueStringPointer(),
 	})
 	if err != nil {
 		resp.Diagnostics.AddError("Error deleting SMTP Settings", "Could not disable SMTP Settings, unexpected error: "+err.Error())
@@ -355,24 +352,25 @@ func NewSMTPSettingsResource() resource.Resource {
 	return &resourceTFESMTPSettings{}
 }
 
-
 // updateSMTPSettings was created to keep the code DRY. It is used in both Create and Update functions
-func (r *resourceTFESMTPSettings) updateSMTPSettings(ctx context.Context, m modelTFESMTPSettings) (*tfe.AdminSMTPSetting, error) {
+func (r *resourceTFESMTPSettings) updateSMTPSettings(ctx context.Context, m modelTFESMTPSettings, config modelTFESMTPSettings) (*tfe.AdminSMTPSetting, error) {
 
-	cur_pass :=m.Password
-	if ( !m.PasswordWO.IsNull() && !m.PasswordWO.IsUnknown() ) {
-		cur_pass=m.PasswordWO
+	// Use password from config since write-only attributes aren't in the plan
+	cur_pass := config.Password
+	if !config.PasswordWO.IsNull() && !config.PasswordWO.IsUnknown() {
+		cur_pass = config.PasswordWO
 	}
+	
 	s, err := r.client.Admin.Settings.SMTP.Update(ctx, tfe.AdminSMTPSettingsUpdateOptions{
-		Enabled:                   m.Enabled.ValueBoolPointer(),
-		Host:                      m.Host.ValueStringPointer(),
-		Port:                      tfe.Int(int(m.Port.ValueInt64())),
-		Sender:                    m.Sender.ValueStringPointer(),
-		Auth:                      (*tfe.SMTPAuthType)(m.Auth.ValueStringPointer()),
-		Username:                  m.Username.ValueStringPointer(),
-		Password:                  cur_pass.ValueStringPointer(),
-		TestEmailAddress:          m.TestEmailAddress.ValueStringPointer(),
-		})
+		Enabled:          m.Enabled.ValueBoolPointer(),
+		Host:             m.Host.ValueStringPointer(),
+		Port:             tfe.Int(int(m.Port.ValueInt64())),
+		Sender:           m.Sender.ValueStringPointer(),
+		Auth:             (*tfe.SMTPAuthType)(m.Auth.ValueStringPointer()),
+		Username:         m.Username.ValueStringPointer(),
+		Password:         cur_pass.ValueStringPointer(),
+		TestEmailAddress: m.TestEmailAddress.ValueStringPointer(),
+	})
 	if err != nil {
 		return s, fmt.Errorf("failed to update SMTP Settings: %w", err)
 	}
