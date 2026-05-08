@@ -126,7 +126,7 @@ func resourceTFEOrganizationTokenRead(d *schema.ResourceData, meta interface{}) 
 	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read the token from organization: %s", d.Id())
-	_, err := config.Client.OrganizationTokens.Read(ctx, d.Id())
+	token, err := config.Client.OrganizationTokens.Read(ctx, d.Id())
 	if err != nil {
 		if err == tfe.ErrResourceNotFound {
 			log.Printf("[DEBUG] Token for organization %s no longer exists", d.Id())
@@ -134,6 +134,11 @@ func resourceTFEOrganizationTokenRead(d *schema.ResourceData, meta interface{}) 
 			return nil
 		}
 		return fmt.Errorf("error reading token from organization %s: %w", d.Id(), err)
+	}
+
+	// if expired_at was set to null at creation, the API returns a default value of 24 months from the creation date.
+	if !token.ExpiredAt.IsZero() {
+		d.Set("expired_at", token.ExpiredAt.Format(time.RFC3339))
 	}
 
 	return nil

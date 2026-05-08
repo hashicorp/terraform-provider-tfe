@@ -121,7 +121,7 @@ func (p *frameworkProvider) Configure(ctx context.Context, req provider.Configur
 	}
 
 	if providerClient.SendAuthenticationWarning() {
-		res.Diagnostics.AddWarning("Authentication with configuration files is invalid for TFE Provider running on HCP Terraform or Terraform Enterprise", "Use a TFE_TOKEN variable in the workspace or the token argument for the provider. This authentication method will be deprecated in a future version.")
+		res.Diagnostics.AddWarning("Authentication method has limited TFE provider permissions", "When running in HCP Terraform or Terraform Enterprise, the current authentication method may not have sufficient permissions for all TFE provider operations. Data sources and plans may work, but resource create, update, or delete operations can fail. To avoid this, authenticate using the provider token argument or the TFE_TOKEN environment variable.")
 	}
 
 	configuredClient := ConfiguredClient{
@@ -197,6 +197,7 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewAzureOIDCConfigurationResource,
 		NewVaultOIDCConfigurationResource,
 		NewHYOKConfigurationResource,
+		NewProjectPolicySetExclusionResource,
 	}
 }
 

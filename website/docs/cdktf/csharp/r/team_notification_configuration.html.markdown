@@ -52,6 +52,36 @@ class MyConvertedCode : TerraformStack
 }
 ```
 
+With `DestinationType` of `Generic` using write-only token:
+
+```hcl
+variable "notification_token" {
+  type      = string
+  ephemeral = true
+}
+
+resource "tfe_organization" "test" {
+  name  = "my-org-name"
+  email = "admin@company.com"
+}
+
+resource "tfe_team" "test" {
+  name         = "my-team-name"
+  organization = tfe_organization.test.id
+}
+
+resource "tfe_team_notification_configuration" "test" {
+  name             = "my-test-notification-configuration"
+  enabled          = true
+  destination_type = "generic"
+  token_wo         = var.notification_token
+  token_wo_version = 1
+  triggers         = ["change_request:created"]
+  url              = "https://example.com"
+  team_id          = tfe_team.test.id
+}
+```
+
 With `DestinationType` of `Email`:
 
 ```hcl
@@ -139,7 +169,8 @@ The following arguments are supported:
 - `Enabled` - (Optional) Whether the notification configuration should be enabled or not.
   Disabled configurations will not send any notifications. Defaults to `False`.
 - `Token` - (Optional) A write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `Generic`. Defaults to `Null`. This value _must not_ be provided if `DestinationType` is `Email`, `MicrosoftTeams`, or `Slack`.
-- `TokenWo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) A write-only secure token for the notification configuration, guaranteed not to be written to plan or state artifacts. Either `Token` or `TokenWo` can be provided, but not both. This value _must not_ be provided if `DestinationType` is `Email`, `MicrosoftTeams`, or `Slack`.
+- `TokenWo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) Write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `Generic`. Either `Token` or `TokenWo` can be provided, but not both. Must be used with `TokenWoVersion`. This value _must not_ be provided if `DestinationType` is `Email`, `MicrosoftTeams`, or `Slack`.
+- `TokenWoVersion` - (Optional) Version of the write-only token. This field is used to trigger updates when the write-only token changes. Must be used with `TokenWo`. When `TokenWoVersion` changes, the write-only token will be updated.
 - `Triggers` - (Optional) The array of triggers for which this notification configuration will
   send notifications. Currently, the only valid value is `ChangeRequest:created`.
 
@@ -154,6 +185,6 @@ Team notification configurations can be imported; use `<NOTIFICATION CONFIGURATI
 ```shell
 terraform import tfe_team_notification_configuration.test nc-qV9JnKRkmtMa4zcA
 ```
-> **Note:** Write-Only argument `TokenWo` is available to use in place of `TokenWo`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
+> **Note:** Write-Only argument `TokenWo` is available to use in place of `Token`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-7fba13f400a07acdbcb49ea8aa42298d53429f96ca00c2dbe68dfb3a55dfdfd6 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-202dc6cd8b87b16d2e491cc5b8e90044b16c1b3220d7adbccb59809b20e2f427 -->

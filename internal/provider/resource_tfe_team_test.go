@@ -244,6 +244,39 @@ func TestAccTFETeam_full_update(t *testing.T) {
 	})
 }
 
+func TestAccTFETeam_identity_preserved_after_update(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeam_full(rInt),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectIdentity("tfe_team.foobar", map[string]knownvalue.Check{
+						"id":           knownvalue.NotNull(),
+						"hostname":     knownvalue.StringExact(os.Getenv("TFE_HOSTNAME")),
+						"organization": knownvalue.StringExact(orgName),
+					}),
+				},
+			},
+			{
+				Config: testAccTFETeam_full_update(rInt),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectIdentity("tfe_team.foobar", map[string]knownvalue.Check{
+						"id":           knownvalue.NotNull(),
+						"hostname":     knownvalue.StringExact(os.Getenv("TFE_HOSTNAME")),
+						"organization": knownvalue.StringExact(orgName),
+					}),
+				},
+			},
+		},
+	})
+}
+
 func TestAccTFETeam_importByIdentity(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)

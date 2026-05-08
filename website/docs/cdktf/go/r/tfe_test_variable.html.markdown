@@ -2,7 +2,7 @@
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_test_variable"
 description: |-
-  Manages environmet variables used for testing by modules in the Private Module Registry.
+  Manages environment variables used for testing by modules in the Private Module Registry.
 ---
 
 
@@ -23,31 +23,31 @@ import "github.com/aws-samples/dummy/gen/providers/tfe/oauthClient"
 import "github.com/aws-samples/dummy/gen/providers/tfe/registryModule"
 import "github.com/aws-samples/dummy/gen/providers/tfe/testVariable"
 type myConvertedCode struct {
-	terraformStack
+	TerraformStack
 }
 
-func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
+func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
-	tfeOrganizationTestOrg := organization.NewOrganization(this, jsii.String("test_org"), &organizationConfig{
+	tfeOrganizationTestOrg := organization.NewOrganization(this, jsii.String("test_org"), &OrganizationConfig{
 		email: jsii.String("admin@company.com"),
 		name: jsii.String("my-org-name"),
 	})
-	tfeOauthClientTestClient := oauthClient.NewOauthClient(this, jsii.String("test_client"), &oauthClientConfig{
+	tfeOauthClientTestClient := oauthClient.NewOauthClient(this, jsii.String("test_client"), &OauthClientConfig{
 		apiUrl: jsii.String("https://api.github.com"),
 		httpUrl: jsii.String("https://github.com"),
 		oauthToken: jsii.String("my-token-123"),
 		organization: cdktf.Token_AsString(tfeOrganizationTestOrg.name),
 		serviceProvider: jsii.String("github"),
 	})
-	tfeRegistryModuleTestModule := registryModule.NewRegistryModule(this, jsii.String("test_module"), &registryModuleConfig{
+	tfeRegistryModuleTestModule := registryModule.NewRegistryModule(this, jsii.String("test_module"), &RegistryModuleConfig{
 		organization: jsii.String("test-module"),
 		testConfig: []interface{}{
-			&registryModuleTestConfig{
+			&RegistryModuleTestConfig{
 				testsEnabled: jsii.Boolean(true),
 			},
 		},
-		vcsRepo: &registryModuleVcsRepo{
+		vcsRepo: &RegistryModuleVcsRepo{
 			branch: jsii.String("main"),
 			displayIdentifier: jsii.String("GH_NAME/REPO_NAME"),
 			identifier: jsii.String("GH_NAME/REPO_NAME"),
@@ -55,7 +55,7 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 			tags: jsii.Boolean(false),
 		},
 	})
-	testVariable.NewTestVariable(this, jsii.String("tf_test_test_variable"), &testVariableConfig{
+	testVariable.NewTestVariable(this, jsii.String("tf_test_test_variable"), &TestVariableConfig{
 		category: jsii.String("env"),
 		description: jsii.String("some description"),
 		key: jsii.String("key_test"),
@@ -68,6 +68,26 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 }
 ```
 
+Usage of the write‑only value for tfe_test_variable:
+
+```hcl
+variable "session_token" {
+  type      = string
+  ephemeral = true
+}
+
+resource "tfe_test_variable" "tf_test_test_variable" {
+  key              = "key_test"
+  value_wo         = var.session_token
+  value_wo_version = 1
+  description      = "some description"
+  category         = "env"
+  organization     = tfe_organization.test_org.name
+  module_name      = tfe_registry_module.test_module.name
+  module_provider  = tfe_registry_module.test_module.module_provider
+}
+```
+
 -> **Note:** Write-Only argument `ValueWo` is available to use in place of `Value`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
 
 ## Argument Reference
@@ -77,6 +97,7 @@ The following arguments are supported:
 * `Key` - (Required) Name of the variable.
 * `Value` - (Optional) Value of the variable. Defaults to `""`. Cannot be used with `ValueWo`.
 * `ValueWo` - (Optional) Value of the variable in write-only mode. Cannot be used with `Value`.
+* `ValueWoVersion` - (Optional) Version identifier for the write-only value. Required when `ValueWo` is specified to trigger updates. Cannot be used with `Value`.
 * `Category` - (Required) Whether this is a Terraform or environment variable. Valid values are `"env"`.
 * `Description` - (Optional) Description of the variable. Defaults to `""`.
 * `Hcl` - (Optional) Whether to evaluate the value of the variable as a string of HCL code. Defaults to `False`.
@@ -92,4 +113,4 @@ In addition to all arguments above, the following attributes are exported:
 * `Id` - The ID of the variable.
 * `ReadableValue` - A non-sensitive read-only copy of the variable value, which can be viewed or referenced in plan outputs without being redacted. Will only be present if the variable is not sensitive.
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-b6fc54853e81b059c6fdc4ac99e31d89dcbe93d02a6f08d086a76704ca60094c -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-4310f1567e747ec81503579374d4711b9cd2e24ceaca6f109ce241036f0ad682 -->

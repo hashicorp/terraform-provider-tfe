@@ -40,9 +40,8 @@ The following arguments are supported:
 * `forceRegenerate` - (Optional) If set to `true`, a new token will be
   generated even if a token already exists. This will invalidate the existing
   token!
-* `expiredAt` - (Optional) The token's expiration date. The expiration date must be a date/time string in RFC3339 
-format (e.g., "2024-12-31T23:59:59Z"). If no expiration date is supplied, the expiration date will default to null and 
-never expire.
+* `expiredAt` - (Optional) The token's expiration date. The expiration date must be a date/time string in RFC3339
+format (e.g., "2024-12-31T23:59:59Z"). If no expiration date is supplied, the token will expire 24 months from creation.
 
 ## Example Usage
 
@@ -73,4 +72,4 @@ For example:
 terraform import tfe_organization_token.test my-org-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-5b9e020334a13d0577c4e9e4346975577380e0411aedc8378ee9dd8564dceb66 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-aedc78080a06b1e0f3639ee9c6731a3a98b0fefcd526497f21fa17b7b01cc93c -->

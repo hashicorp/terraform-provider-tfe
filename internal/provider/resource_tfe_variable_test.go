@@ -4,6 +4,7 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"os"
@@ -14,6 +15,10 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/go-version"
+	fwresource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-go/tftypes"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
@@ -620,6 +625,231 @@ func TestAccTFEVariable_mutableIdentity(t *testing.T) {
 			},
 		},
 	})
+}
+
+type notFoundVariables struct{}
+
+func (notFoundVariables) List(_ context.Context, _ string, _ *tfe.VariableListOptions) (*tfe.VariableList, error) {
+	return nil, nil
+}
+
+func (notFoundVariables) ListAll(_ context.Context, _ string, _ *tfe.VariableListOptions) (*tfe.VariableList, error) {
+	return nil, nil
+}
+
+func (notFoundVariables) Create(_ context.Context, _ string, _ tfe.VariableCreateOptions) (*tfe.Variable, error) {
+	return nil, nil
+}
+
+func (notFoundVariables) Read(_ context.Context, _ string, _ string) (*tfe.Variable, error) {
+	return nil, tfe.ErrResourceNotFound
+}
+
+func (notFoundVariables) Update(_ context.Context, _ string, _ string, _ tfe.VariableUpdateOptions) (*tfe.Variable, error) {
+	return nil, nil
+}
+
+func (notFoundVariables) Delete(_ context.Context, _ string, _ string) error {
+	return nil
+}
+
+type notFoundVariableSetVariables struct{}
+
+func (notFoundVariableSetVariables) List(_ context.Context, _ string, _ *tfe.VariableSetVariableListOptions) (*tfe.VariableSetVariableList, error) {
+	return nil, nil
+}
+
+func (notFoundVariableSetVariables) Create(_ context.Context, _ string, _ *tfe.VariableSetVariableCreateOptions) (*tfe.VariableSetVariable, error) {
+	return nil, nil
+}
+
+func (notFoundVariableSetVariables) Read(_ context.Context, _ string, _ string) (*tfe.VariableSetVariable, error) {
+	return nil, tfe.ErrResourceNotFound
+}
+
+func (notFoundVariableSetVariables) Update(_ context.Context, _ string, _ string, _ *tfe.VariableSetVariableUpdateOptions) (*tfe.VariableSetVariable, error) {
+	return nil, nil
+}
+
+func (notFoundVariableSetVariables) Delete(_ context.Context, _ string, _ string) error {
+	return nil
+}
+
+func TestResourceTFEVariableRead_RemovedWorkspaceVariableBackfillsIdentity(t *testing.T) {
+	ctx := context.Background()
+	client := testTfeClient(t, testClientOptions{})
+	client.Variables = notFoundVariables{}
+
+	r := &resourceTFEVariable{config: ConfiguredClient{Client: client}}
+
+	readResp := runRemovedVariableRead(t, ctx, r, modelTFEVariable{
+		ID:             types.StringValue("var-123"),
+		Key:            types.StringValue("key_test"),
+		Value:          types.StringValue("value_test"),
+		ValueWO:        types.StringNull(),
+		ValueWOVersion: types.Int64Null(),
+		ReadableValue:  types.StringValue("value_test"),
+		Category:       types.StringValue(string(tfe.CategoryEnv)),
+		Description:    types.StringValue(""),
+		HCL:            types.BoolValue(false),
+		Sensitive:      types.BoolValue(false),
+		WorkspaceID:    types.StringValue("ws-123"),
+		VariableSetID:  types.StringNull(),
+	})
+
+	assertRemovedVariableRead(t, ctx, readResp, modelTFEVariableIdentity{
+		ID:             types.StringValue("var-123"),
+		ConfigurableID: types.StringValue("ws-123"),
+		Hostname:       types.StringValue(client.BaseURL().Host),
+	})
+}
+
+func TestResourceTFEVariableRead_RemovedVariableSetVariableBackfillsIdentity(t *testing.T) {
+	ctx := context.Background()
+	client := testTfeClient(t, testClientOptions{})
+	client.VariableSetVariables = notFoundVariableSetVariables{}
+
+	r := &resourceTFEVariable{config: ConfiguredClient{Client: client}}
+
+	readResp := runRemovedVariableRead(t, ctx, r, modelTFEVariable{
+		ID:             types.StringValue("var-456"),
+		Key:            types.StringValue("key_test"),
+		Value:          types.StringValue("value_test"),
+		ValueWO:        types.StringNull(),
+		ValueWOVersion: types.Int64Null(),
+		ReadableValue:  types.StringValue("value_test"),
+		Category:       types.StringValue(string(tfe.CategoryEnv)),
+		Description:    types.StringValue(""),
+		HCL:            types.BoolValue(false),
+		Sensitive:      types.BoolValue(false),
+		WorkspaceID:    types.StringNull(),
+		VariableSetID:  types.StringValue("varset-123"),
+	})
+
+	assertRemovedVariableRead(t, ctx, readResp, modelTFEVariableIdentity{
+		ID:             types.StringValue("var-456"),
+		ConfigurableID: types.StringValue("varset-123"),
+		Hostname:       types.StringValue(client.BaseURL().Host),
+	})
+}
+
+func TestResourceTFEVariableRead_RemovedWorkspaceVariablePreservesExistingIdentity(t *testing.T) {
+	ctx := context.Background()
+	client := testTfeClient(t, testClientOptions{})
+	client.Variables = notFoundVariables{}
+
+	r := &resourceTFEVariable{config: ConfiguredClient{Client: client}}
+	existingIdentity := &modelTFEVariableIdentity{
+		ID:             types.StringValue("var-existing"),
+		ConfigurableID: types.StringValue("ws-existing"),
+		Hostname:       types.StringValue("preserve.example.com"),
+	}
+
+	readResp := runRemovedVariableRead(t, ctx, r, modelTFEVariable{
+		ID:             types.StringValue("var-123"),
+		Key:            types.StringValue("key_test"),
+		Value:          types.StringValue("value_test"),
+		ValueWO:        types.StringNull(),
+		ValueWOVersion: types.Int64Null(),
+		ReadableValue:  types.StringValue("value_test"),
+		Category:       types.StringValue(string(tfe.CategoryEnv)),
+		Description:    types.StringValue(""),
+		HCL:            types.BoolValue(false),
+		Sensitive:      types.BoolValue(false),
+		WorkspaceID:    types.StringValue("ws-123"),
+		VariableSetID:  types.StringNull(),
+	}, existingIdentity)
+
+	assertRemovedVariableRead(t, ctx, readResp, *existingIdentity)
+}
+
+func runRemovedVariableRead(t *testing.T, ctx context.Context, r *resourceTFEVariable, stateData modelTFEVariable, existingIdentity ...*modelTFEVariableIdentity) fwresource.ReadResponse {
+	t.Helper()
+
+	schemaResp := &fwresource.SchemaResponse{}
+	r.Schema(ctx, fwresource.SchemaRequest{}, schemaResp)
+
+	state := tfsdk.State{Schema: schemaResp.Schema}
+	if diags := state.Set(ctx, &stateData); diags.HasError() {
+		t.Fatalf("unexpected state set diagnostics: %v", diags)
+	}
+
+	identitySchemaResp := &fwresource.IdentitySchemaResponse{}
+	r.IdentitySchema(ctx, fwresource.IdentitySchemaRequest{}, identitySchemaResp)
+	nullIdentity := tftypes.NewValue(identitySchemaResp.IdentitySchema.Type().TerraformType(ctx), nil)
+
+	requestIdentity := &tfsdk.ResourceIdentity{
+		Schema: identitySchemaResp.IdentitySchema,
+		Raw:    nullIdentity.Copy(),
+	}
+	responseIdentity := &tfsdk.ResourceIdentity{
+		Schema: identitySchemaResp.IdentitySchema,
+		Raw:    nullIdentity.Copy(),
+	}
+
+	if len(existingIdentity) > 0 && existingIdentity[0] != nil {
+		if diags := requestIdentity.Set(ctx, existingIdentity[0]); diags.HasError() {
+			t.Fatalf("unexpected request identity diagnostics: %v", diags)
+		}
+		if diags := responseIdentity.Set(ctx, existingIdentity[0]); diags.HasError() {
+			t.Fatalf("unexpected response identity diagnostics: %v", diags)
+		}
+	}
+
+	readResp := fwresource.ReadResponse{
+		State: tfsdk.State{
+			Schema: schemaResp.Schema,
+			Raw:    state.Raw.Copy(),
+		},
+		Identity: responseIdentity,
+	}
+
+	r.Read(ctx, fwresource.ReadRequest{
+		State: tfsdk.State{
+			Schema: schemaResp.Schema,
+			Raw:    state.Raw.Copy(),
+		},
+		Identity: requestIdentity,
+	}, &readResp)
+
+	return readResp
+}
+
+func assertRemovedVariableRead(t *testing.T, ctx context.Context, readResp fwresource.ReadResponse, expectedIdentity modelTFEVariableIdentity) {
+	t.Helper()
+
+	if readResp.Diagnostics.HasError() {
+		t.Fatalf("unexpected read diagnostics: %v", readResp.Diagnostics)
+	}
+
+	if !readResp.State.Raw.IsFullyNull() {
+		t.Fatalf("expected resource to be removed from state, got %s", readResp.State.Raw.String())
+	}
+
+	if readResp.Identity == nil {
+		t.Fatal("expected resource identity to be preserved")
+	}
+
+	if readResp.Identity.Raw.IsFullyNull() {
+		t.Fatal("expected resource identity to be backfilled for removed resource")
+	}
+
+	var gotIdentity modelTFEVariableIdentity
+	if diags := readResp.Identity.Get(ctx, &gotIdentity); diags.HasError() {
+		t.Fatalf("unexpected identity diagnostics: %v", diags)
+	}
+
+	if gotIdentity.ID.ValueString() != expectedIdentity.ID.ValueString() {
+		t.Fatalf("expected identity id %q, got %q", expectedIdentity.ID.ValueString(), gotIdentity.ID.ValueString())
+	}
+
+	if gotIdentity.ConfigurableID.ValueString() != expectedIdentity.ConfigurableID.ValueString() {
+		t.Fatalf("expected configurable_id %q, got %q", expectedIdentity.ConfigurableID.ValueString(), gotIdentity.ConfigurableID.ValueString())
+	}
+
+	if gotIdentity.Hostname.ValueString() != expectedIdentity.Hostname.ValueString() {
+		t.Fatalf("expected hostname %q, got %q", expectedIdentity.Hostname.ValueString(), gotIdentity.Hostname.ValueString())
+	}
 }
 
 // Verify that the rewritten framework version of the resource results in no

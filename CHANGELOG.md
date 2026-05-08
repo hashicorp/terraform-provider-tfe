@@ -1,4 +1,26 @@
 ## Unreleased
+ENHANCEMENTS:
+* Updates warning when using credentials/config file for authentication and running on cloud to be clearer, by @christian-doucette [#2036](https://github.com/hashicorp/terraform-provider-tfe/pull/2036)
+* Support trigger patterns and working directories in stacks by @aaabdelgany [#2048](https://github.com/hashicorp/terraform-provider-tfe/pull/2048)
+
+## v0.76.2
+
+FEATURES:
+* `r/tfe_notification_configuration`: Optionally set `url` as a write-only (`url_wo`). Adds support for auto-managed (via hash) for `token_wo` param to avoid manually managing `_version` arguments. By @drewmullen [#2028](https://github.com/hashicorp/terraform-provider-tfe/pull/2028)
+
+## v0.76.1
+
+BUG FIXES:
+* `r/tfe_variable`: Preserve or backfill resource identity on deleted-resource reads to avoid missing identity errors after remote deletion.
+* `r/tfe_project`: Preserve or backfill resource identity on deleted-resource reads to avoid missing identity errors after remote deletion.
+* `r/tfe_stack`: Preserve or backfill resource identity on deleted-resource reads and treat remotely deleted stacks as removed resources instead of read errors.
+
+## v0.76.0
+
+FEATURES:
+* **New Resource:**  `tfe_project_policy_set_exclusion` for managing project level exclusions on policy sets. by @subhro-acharjee-1 [#1990](https://github.com/hashicorp/terraform-provider-tfe/pull/1990)
+BUG FIXES:
+* `r/tfe_team_token`, `r/tfe_organization_token`: Read now persists API-default `expired_at` values so `ImportStateVerify` succeeds when `expired_at` is omitted from configuration. By @uk1288 [#2017](https://github.com/hashicorp/terraform-provider-tfe/pull/2017)
 
 ## v0.75.0
 

@@ -5,6 +5,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/hashicorp/go-tfe"
@@ -106,6 +107,15 @@ func (r *resourceTFEStack) Schema(ctx context.Context, req resource.SchemaReques
 				Description: "Description of the Stack",
 				Optional:    true,
 			},
+			"working_directory": schema.StringAttribute{
+				Description: "The working directory of the Stack.",
+				Optional:    true,
+			},
+			"trigger_patterns": schema.ListAttribute{
+				Description: "List of trigger patterns for the Stack.",
+				Optional:    true,
+				ElementType: types.StringType,
+			},
 			"speculative_enabled": schema.BoolAttribute{
 				Description: "Indicates if speculative plans are enabled on this Stack.",
 				Optional:    true,
@@ -156,6 +166,29 @@ func (r *resourceTFEStack) Configure(ctx context.Context, req resource.Configure
 	r.config = client
 }
 
+func (r *resourceTFEStack) setReadIdentity(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse, stackID string) {
+	if resp.Identity == nil {
+		return
+	}
+
+	if req.Identity != nil {
+		currentIdentity := &modelTFEStackIdentity{}
+		resp.Diagnostics.Append(req.Identity.Get(ctx, &currentIdentity)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		if currentIdentity != nil && !currentIdentity.ID.IsNull() {
+			return
+		}
+	}
+
+	identity := modelTFEStackIdentity{
+		ID:       types.StringValue(stackID),
+		Hostname: types.StringValue(r.config.Client.BaseURL().Host),
+	}
+	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
+}
+
 func (r *resourceTFEStack) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan modelTFEStack
 
@@ -204,6 +237,14 @@ func (r *resourceTFEStack) Create(ctx context.Context, req resource.CreateReques
 		options.Description = tfe.String(plan.Description.ValueString())
 	}
 
+	if !plan.WorkingDirectory.IsNull() {
+		options.WorkingDirectory = tfe.String(plan.WorkingDirectory.ValueString())
+	}
+
+	if !plan.TriggerPatterns.IsNull() {
+		options.TriggerPatterns = triggerPatternsFromList(ctx, plan.TriggerPatterns)
+	}
+
 	tflog.Debug(ctx, "Creating stack")
 	stack, err := r.config.Client.Stacks.Create(ctx, options)
 	if err != nil {
@@ -239,6 +280,11 @@ func (r *resourceTFEStack) Read(ctx context.Context, req resource.ReadRequest, r
 	tflog.Debug(ctx, fmt.Sprintf("Reading stack %q", state.ID.ValueString()))
 	stack, err := r.config.Client.Stacks.Read(ctx, state.ID.ValueString())
 	if err != nil {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			r.setReadIdentity(ctx, req, resp, state.ID.ValueString())
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("Unable to read stack", err.Error())
 		return
 	}
@@ -277,6 +323,18 @@ func (r *resourceTFEStack) Update(ctx context.Context, req resource.UpdateReques
 		Name:               tfe.String(plan.Name.ValueString()),
 		Description:        tfe.String(plan.Description.ValueString()),
 		SpeculativeEnabled: tfe.Bool(plan.SpeculativeEnabled.ValueBool()),
+	}
+
+	if !plan.WorkingDirectory.IsNull() {
+		options.WorkingDirectory = tfe.String(plan.WorkingDirectory.ValueString())
+	} else {
+		options.WorkingDirectory = tfe.String("")
+	}
+
+	if !plan.TriggerPatterns.IsNull() {
+		options.TriggerPatterns = triggerPatternsFromList(ctx, plan.TriggerPatterns)
+	} else {
+		options.TriggerPatterns = []string{}
 	}
 
 	if plan.VCSRepo != nil {

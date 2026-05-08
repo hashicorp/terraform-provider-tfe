@@ -349,6 +349,16 @@ func resourceTFETeamUpdate(d *schema.ResourceData, meta interface{}) error {
 			"Error updating team %s: %w", d.Id(), err)
 	}
 
+	organization, err := config.schemaOrDefaultOrganization(d)
+	if err != nil {
+		return err
+	}
+
+	err = helpers.WriteTFEIdentityWithOrg(d, d.Id(), organization, config.Client.BaseURL().Host)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
