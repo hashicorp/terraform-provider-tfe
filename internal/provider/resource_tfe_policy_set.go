@@ -220,6 +220,12 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 		for _, pattern := range vPolicyUpdatePatterns.([]interface{}) {
 			options.PolicyUpdatePatterns = append(options.PolicyUpdatePatterns, pattern.(string))
 		}
+	} else {
+		options.PolicyUpdatePatterns = []string{}
+	}
+
+	if d.GetRawConfig().GetAttr("policy_update_patterns").IsNull() {
+		options.PolicyUpdatePatterns = nil
 	}
 
 	if desc, ok := d.GetOk("description"); ok {
@@ -397,7 +403,21 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	// Don't bother updating the policy set's attributes if they haven't changed
-	if d.HasChange("name") || d.HasChange("description") || d.HasChange("global") || d.HasChange("vcs_repo") || d.HasChange("overridable") || d.HasChange("agent_enabled") || d.HasChange("policy_tool_version") || d.HasChange("policy_update_patterns") {
+	fields := []string{
+		"name", "description", "global", "vcs_repo",
+		"overridable", "agent_enabled", "policy_tool_version",
+		"policy_update_patterns",
+	}
+
+	hasAnyChange := false
+	for _, field := range fields {
+		if d.HasChange(field) {
+			hasAnyChange = true
+			break
+		}
+	}
+
+	if hasAnyChange {
 		// Create a new options struct.
 		options := tfe.PolicySetUpdateOptions{
 			Name:   tfe.String(name),
@@ -423,8 +443,16 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 		}
 
 		if d.HasChange("policy_update_patterns") {
-			for _, pattern := range d.Get("policy_update_patterns").([]interface{}) {
-				options.PolicyUpdatePatterns = append(options.PolicyUpdatePatterns, pattern.(string))
+			if vPolicyUpdatePatterns, ok := d.GetOk("policy_update_patterns"); ok {
+				for _, pattern := range vPolicyUpdatePatterns.([]interface{}) {
+					options.PolicyUpdatePatterns = append(options.PolicyUpdatePatterns, pattern.(string))
+				}
+			} else {
+				options.PolicyUpdatePatterns = []string{}
+			}
+
+			if d.GetRawConfig().GetAttr("policy_update_patterns").IsNull() {
+				options.PolicyUpdatePatterns = nil
 			}
 		}
 

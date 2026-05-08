@@ -407,7 +407,7 @@ resource "tfe_policy_set" "foobar" {
   name         = "tst-policy-set-%d"
   description  = "Policy Set"
   organization = local.organization_name
-	policy_update_patterns = ["**/*.sentinel", "policies/**/*.hcl"]
+  policy_update_patterns = ["**/*.sentinel", "policies/**/*.hcl"]
   vcs_repo {
 	identifier         = "%s"
 	branch             = "main"
