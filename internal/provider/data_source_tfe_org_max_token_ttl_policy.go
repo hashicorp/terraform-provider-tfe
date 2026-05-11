@@ -14,6 +14,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
+const minTFEVersionOrgMaxTokenTTLPolicyDataSource = "2.0.1"
+
 var _ datasource.DataSource = &dataSourceTFEOrgMaxTokenTTLPolicy{}
 var _ datasource.DataSourceWithConfigure = &dataSourceTFEOrgMaxTokenTTLPolicy{}
 
@@ -90,6 +92,25 @@ func (d *dataSourceTFEOrgMaxTokenTTLPolicy) Read(ctx context.Context, req dataso
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Check if TFE version supports max token TTL policy
+	meetsMinVersionRequirement, err := d.config.MeetsMinRemoteTFEVersion(minTFEVersionOrgMaxTokenTTLPolicyDataSource)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error checking TFE version",
+			fmt.Sprintf("Could not determine if Terraform Enterprise version %s meets minimum required version %s: %v",
+				d.config.RemoteTFEVersion(), minTFEVersionOrgMaxTokenTTLPolicyDataSource, err),
+		)
+		return
+	}
+	if !meetsMinVersionRequirement {
+		resp.Diagnostics.AddError(
+			"Feature not supported",
+			fmt.Sprintf("Organization max token TTL policy requires Terraform Enterprise version %s or later. Current version: %s",
+				minTFEVersionOrgMaxTokenTTLPolicyDataSource, d.config.RemoteTFEVersion()),
+		)
 		return
 	}
 

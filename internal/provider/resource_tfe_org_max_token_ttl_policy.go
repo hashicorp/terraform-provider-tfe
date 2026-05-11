@@ -22,6 +22,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
+const minTFEVersionOrgMaxTokenTTLPolicy = "2.0.1"
+
 var _ resource.Resource = &resourceTFEOrgMaxTokenTTLPolicy{}
 var _ resource.ResourceWithConfigure = &resourceTFEOrgMaxTokenTTLPolicy{}
 var _ resource.ResourceWithImportState = &resourceTFEOrgMaxTokenTTLPolicy{}
@@ -192,11 +194,30 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) ModifyPlan(ctx context.Context, req re
 	}
 }
 
+func (r *resourceTFEOrgMaxTokenTTLPolicy) checkMaxTokenTTLPolicySupport(ctx context.Context) error {
+	meetsMinVersionRequirement, err := r.config.MeetsMinRemoteTFEVersion(minTFEVersionOrgMaxTokenTTLPolicy)
+	if err != nil {
+		return fmt.Errorf("could not determine if Terraform Enterprise version %s meets minimum required version %s: %w",
+			r.config.RemoteTFEVersion(), minTFEVersionOrgMaxTokenTTLPolicy, err)
+	}
+	if !meetsMinVersionRequirement {
+		return fmt.Errorf("organization max token TTL policy requires Terraform Enterprise version %s or later. Current version: %s",
+			minTFEVersionOrgMaxTokenTTLPolicy, r.config.RemoteTFEVersion())
+	}
+	return nil
+}
+
 func (r *resourceTFEOrgMaxTokenTTLPolicy) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state modelTFEOrgMaxTokenTTLPolicy
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Check if TFE version supports max token TTL policy
+	if err := r.checkMaxTokenTTLPolicySupport(ctx); err != nil {
+		resp.Diagnostics.AddError("Feature not supported", err.Error())
 		return
 	}
 
@@ -228,6 +249,12 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Create(ctx context.Context, req resour
 		return
 	}
 
+	// Check if TFE version supports max token TTL policy
+	if err := r.checkMaxTokenTTLPolicySupport(ctx); err != nil {
+		resp.Diagnostics.AddError("Feature not supported", err.Error())
+		return
+	}
+
 	var organization string
 	resp.Diagnostics.Append(r.config.dataOrDefaultOrganization(ctx, req.Plan, &organization)...)
 	if resp.Diagnostics.HasError() {
@@ -248,6 +275,12 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Update(ctx context.Context, req resour
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Check if TFE version supports max token TTL policy
+	if err := r.checkMaxTokenTTLPolicySupport(ctx); err != nil {
+		resp.Diagnostics.AddError("Feature not supported", err.Error())
 		return
 	}
 
@@ -297,6 +330,12 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Delete(ctx context.Context, req resour
 		return
 	}
 
+	// Check if TFE version supports max token TTL policy
+	if err := r.checkMaxTokenTTLPolicySupport(ctx); err != nil {
+		resp.Diagnostics.AddError("Feature not supported", err.Error())
+		return
+	}
+
 	var organization string
 	resp.Diagnostics.Append(r.config.dataOrDefaultOrganization(ctx, req.State, &organization)...)
 	if resp.Diagnostics.HasError() {
@@ -327,6 +366,12 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Delete(ctx context.Context, req resour
 func (r *resourceTFEOrgMaxTokenTTLPolicy) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	organization := req.ID
 
+	// Check if TFE version supports max token TTL policy
+	if err := r.checkMaxTokenTTLPolicySupport(ctx); err != nil {
+		resp.Diagnostics.AddError("Feature not supported", err.Error())
+		return
+	}
+
 	tflog.Debug(ctx, "Importing token TTL policies", map[string]any{
 		"organization": organization,
 	})
@@ -346,7 +391,7 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) buildPolicyUpdateItems(plan modelTFEOr
 	var policies []tfe.OrganizationTokenTTLPolicyUpdateItem
 
 	tokenConfigs := []struct {
-		tokenType string
+		tokenType tfe.TokenType
 		ttlValue  types.String
 	}{
 		{tfe.TokenTypeOrganization, plan.OrgTokenMaxTTL},
@@ -365,7 +410,7 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) buildPolicyUpdateItems(plan modelTFEOr
 }
 
 // Adds a policy to the list if the TTL value is set
-func (r *resourceTFEOrgMaxTokenTTLPolicy) addPolicyIfSet(tokenType string, ttlValue types.String, policies *[]tfe.OrganizationTokenTTLPolicyUpdateItem) error {
+func (r *resourceTFEOrgMaxTokenTTLPolicy) addPolicyIfSet(tokenType tfe.TokenType, ttlValue types.String, policies *[]tfe.OrganizationTokenTTLPolicyUpdateItem) error {
 	if ttlValue.IsNull() || ttlValue.IsUnknown() {
 		return nil
 	}
