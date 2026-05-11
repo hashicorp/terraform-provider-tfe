@@ -33,6 +33,10 @@ type modelTFEOrgMaxTokenTTLPolicyData struct {
 	TeamTokenMaxTTLMs       types.Int64  `tfsdk:"team_token_max_ttl_ms"`
 	AuditTrailTokenMaxTTLMs types.Int64  `tfsdk:"audit_trail_token_max_ttl_ms"`
 	UserTokenMaxTTLMs       types.Int64  `tfsdk:"user_token_max_ttl_ms"`
+	OrgTokenMaxTTL          types.String `tfsdk:"org_token_max_ttl"`
+	TeamTokenMaxTTL         types.String `tfsdk:"team_token_max_ttl"`
+	AuditTrailTokenMaxTTL   types.String `tfsdk:"audit_trail_token_max_ttl"`
+	UserTokenMaxTTL         types.String `tfsdk:"user_token_max_ttl"`
 }
 
 func (d *dataSourceTFEOrgMaxTokenTTLPolicy) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -65,6 +69,22 @@ func (d *dataSourceTFEOrgMaxTokenTTLPolicy) Schema(_ context.Context, _ datasour
 			},
 			"user_token_max_ttl_ms": schema.Int64Attribute{
 				Description: "Maximum lifespan allowed for user tokens in milliseconds.",
+				Computed:    true,
+			},
+			"org_token_max_ttl": schema.StringAttribute{
+				Description: "Maximum lifespan allowed for organization tokens in human-readable duration format (e.g., '30d', '6mo', '2y').",
+				Computed:    true,
+			},
+			"team_token_max_ttl": schema.StringAttribute{
+				Description: "Maximum lifespan allowed for team tokens in human-readable duration format (e.g., '30d', '6mo', '2y').",
+				Computed:    true,
+			},
+			"audit_trail_token_max_ttl": schema.StringAttribute{
+				Description: "Maximum lifespan allowed for audit trail tokens in human-readable duration format (e.g., '30d', '6mo', '2y').",
+				Computed:    true,
+			},
+			"user_token_max_ttl": schema.StringAttribute{
+				Description: "Maximum lifespan allowed for user tokens in human-readable duration format (e.g., '30d', '6mo', '2y').",
 				Computed:    true,
 			},
 		},
@@ -137,6 +157,7 @@ func (d *dataSourceTFEOrgMaxTokenTTLPolicy) Read(ctx context.Context, req dataso
 func modelFromTokenTTLPoliciesData(organization string, policies []*tfe.OrganizationTokenTTLPolicy) modelTFEOrgMaxTokenTTLPolicyData {
 	// Default TTL: 2 years in milliseconds
 	defaultTTLMs := int64(63072000000)
+	defaultTTLString := millisecondsToDurationString(defaultTTLMs)
 
 	result := modelTFEOrgMaxTokenTTLPolicyData{
 		Organization:            types.StringValue(organization),
@@ -144,19 +165,28 @@ func modelFromTokenTTLPoliciesData(organization string, policies []*tfe.Organiza
 		TeamTokenMaxTTLMs:       types.Int64Value(defaultTTLMs),
 		AuditTrailTokenMaxTTLMs: types.Int64Value(defaultTTLMs),
 		UserTokenMaxTTLMs:       types.Int64Value(defaultTTLMs),
+		OrgTokenMaxTTL:          types.StringValue(defaultTTLString),
+		TeamTokenMaxTTL:         types.StringValue(defaultTTLString),
+		AuditTrailTokenMaxTTL:   types.StringValue(defaultTTLString),
+		UserTokenMaxTTL:         types.StringValue(defaultTTLString),
 	}
 
-	// Set actual values from policies
+	// Set actual values from policies and convert to human-readable format
 	for _, policy := range policies {
+		durationString := millisecondsToDurationString(policy.MaxTTLMs)
 		switch policy.TokenType {
 		case tfe.TokenTypeOrganization:
 			result.OrgTokenMaxTTLMs = types.Int64Value(policy.MaxTTLMs)
+			result.OrgTokenMaxTTL = types.StringValue(durationString)
 		case tfe.TokenTypeTeam:
 			result.TeamTokenMaxTTLMs = types.Int64Value(policy.MaxTTLMs)
+			result.TeamTokenMaxTTL = types.StringValue(durationString)
 		case tfe.TokenTypeAuditTrails:
 			result.AuditTrailTokenMaxTTLMs = types.Int64Value(policy.MaxTTLMs)
+			result.AuditTrailTokenMaxTTL = types.StringValue(durationString)
 		case tfe.TokenTypeUser:
 			result.UserTokenMaxTTLMs = types.Int64Value(policy.MaxTTLMs)
+			result.UserTokenMaxTTL = types.StringValue(durationString)
 		}
 	}
 
