@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 list "concept_pet" "pets" {
     provider = concept
     include_resource = true
