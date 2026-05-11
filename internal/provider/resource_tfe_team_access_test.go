@@ -261,6 +261,7 @@ func TestAccTFETeamAccess_updateFromCustom(t *testing.T) {
 }
 
 func TestAccTFETeamAccess_updateAdminToCustomWithSamePermissions(t *testing.T) {
+	skipUnlessBeta(t)
 	tmAccess := &tfe.TeamAccess{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
