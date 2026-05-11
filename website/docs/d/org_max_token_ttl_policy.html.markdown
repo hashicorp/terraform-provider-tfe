@@ -9,6 +9,8 @@ description: |-
 
 Use this data source to retrieve information about an organization's maximum time-to-live (TTL) policy for API tokens. This policy defines the maximum lifespan for organization, team, audit trail, and user tokens.
 
+This data source requires Terraform Enterprise version 2.0.1 or higher.
+
 ## Example Usage
 
 ```hcl
@@ -31,6 +33,10 @@ The following arguments are supported:
 
 In addition to all arguments above, the following attributes are exported:
 
+* `org_token_max_ttl` - Maximum lifespan allowed for organization tokens in human-readable duration format (e.g., `30d`, `6mo`, `2y`).
+* `team_token_max_ttl` - Maximum lifespan allowed for team tokens in human-readable duration format (e.g., `30d`, `6mo`, `2y`).
+* `audit_trail_token_max_ttl` - Maximum lifespan allowed for audit trail tokens in human-readable duration format (e.g., `30d`, `6mo`, `2y`).
+* `user_token_max_ttl` - Maximum lifespan allowed for user tokens in human-readable duration format (e.g., `30d`, `6mo`, `2y`).
 * `org_token_max_ttl_ms` - Maximum lifespan allowed for organization tokens in milliseconds.
 * `team_token_max_ttl_ms` - Maximum lifespan allowed for team tokens in milliseconds.
 * `audit_trail_token_max_ttl_ms` - Maximum lifespan allowed for audit trail tokens in milliseconds.
@@ -39,6 +45,5 @@ In addition to all arguments above, the following attributes are exported:
 ## Notes
 
 * To check if the maximum TTL policy feature is enabled for an organization, use the `max_ttl_enabled` attribute on the `tfe_organization` data source.
-* The data source fetches the current policy configuration from the TFE API.
 * If no policies have been configured for the organization, the data source will return default values (2 years for all token types).
-* TTL values are returned in milliseconds to preserve the exact values from the API without conversion ambiguity.
+* Both human-readable duration strings (`*_max_ttl`) and millisecond values (`*_max_ttl_ms`) are provided for convenience. Use the duration strings for display purposes and milliseconds for calculations.

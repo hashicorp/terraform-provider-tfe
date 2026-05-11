@@ -11,6 +11,8 @@ Manages the maximum time-to-live (TTL) policy for API tokens in an organization.
 
 **Note:** To enable or disable the maximum TTL policy feature for an organization, use the `max_ttl_enabled` attribute on the `tfe_organization` resource.
 
+This resource requires Terraform Enterprise version 2.0.1 or higher.
+
 ## Example Usage
 
 ```hcl
@@ -71,4 +73,4 @@ Token TTL policies can be imported using the organization name:
 terraform import tfe_org_max_token_ttl_policy.example my-organization
 ```
 
-**Note:** After import, only the millisecond values (`*_max_ttl_ms` attributes) will be populated from the API. The duration string attributes (`org_token_max_ttl`, `user_token_max_ttl`, etc.) will default to `2y`. You should update your Terraform configuration to match your desired TTL values in human-readable format (e.g., `5.5y`, `30d`, `12h`).
+**Note:** After import, the provider will convert the API's millisecond values to human-readable duration strings (e.g., `30d`, `6mo`, `2y`). If you prefer a different format (e.g., `720h` instead of `30d`), update your Terraform configuration accordingly. The provider will preserve your chosen format as long as it represents the same duration.

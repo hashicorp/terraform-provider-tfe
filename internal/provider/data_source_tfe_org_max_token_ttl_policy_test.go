@@ -25,10 +25,16 @@ func TestAccTFEOrgMaxTokenTTLPolicyDataSource_basic(t *testing.T) {
 				Config: testAccTFEOrgMaxTokenTTLPolicyDataSourceConfig_basic(orgName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.tfe_org_max_token_ttl_policy.test", "organization", orgName),
+					// Check millisecond attributes are set
 					resource.TestCheckResourceAttrSet("data.tfe_org_max_token_ttl_policy.test", "org_token_max_ttl_ms"),
 					resource.TestCheckResourceAttrSet("data.tfe_org_max_token_ttl_policy.test", "team_token_max_ttl_ms"),
 					resource.TestCheckResourceAttrSet("data.tfe_org_max_token_ttl_policy.test", "audit_trail_token_max_ttl_ms"),
 					resource.TestCheckResourceAttrSet("data.tfe_org_max_token_ttl_policy.test", "user_token_max_ttl_ms"),
+					// Check human-readable duration attributes are set
+					resource.TestCheckResourceAttrSet("data.tfe_org_max_token_ttl_policy.test", "org_token_max_ttl"),
+					resource.TestCheckResourceAttrSet("data.tfe_org_max_token_ttl_policy.test", "team_token_max_ttl"),
+					resource.TestCheckResourceAttrSet("data.tfe_org_max_token_ttl_policy.test", "audit_trail_token_max_ttl"),
+					resource.TestCheckResourceAttrSet("data.tfe_org_max_token_ttl_policy.test", "user_token_max_ttl"),
 				),
 			},
 		},
@@ -54,7 +60,7 @@ func TestAccTFEOrgMaxTokenTTLPolicyDataSource_withResource(t *testing.T) {
 					resource.TestCheckResourceAttr("tfe_org_max_token_ttl_policy.foo", "team_token_max_ttl", "7d"),
 					resource.TestCheckResourceAttr("tfe_org_max_token_ttl_policy.foo", "user_token_max_ttl", "5y"),
 					resource.TestCheckResourceAttr("tfe_org_max_token_ttl_policy.foo", "audit_trail_token_max_ttl", "90d"),
-					// Check data source returns milliseconds
+					// Check data source returns milliseconds (API values)
 					resource.TestCheckResourceAttr("data.tfe_org_max_token_ttl_policy.foo", "org_token_max_ttl_ms", "2592000000"),         // 30 days
 					resource.TestCheckResourceAttr("data.tfe_org_max_token_ttl_policy.foo", "team_token_max_ttl_ms", "604800000"),         // 7 days
 					resource.TestCheckResourceAttr("data.tfe_org_max_token_ttl_policy.foo", "user_token_max_ttl_ms", "157680000000"),      // 5 years

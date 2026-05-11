@@ -171,7 +171,6 @@ func modelFromTokenTTLPoliciesData(organization string, policies []*tfe.Organiza
 		UserTokenMaxTTL:         types.StringValue(defaultTTLString),
 	}
 
-	// Set actual values from policies and convert to human-readable format
 	for _, policy := range policies {
 		durationString := millisecondsToDurationString(policy.MaxTTLMs)
 		switch policy.TokenType {

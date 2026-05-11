@@ -117,17 +117,11 @@ func TestAccTFEOrgMaxTokenTTLPolicy_import(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      "tfe_org_max_token_ttl_policy.foobar",
-				ImportState:       true,
-				ImportStateId:     orgName,
-				ImportStateVerify: true,
-				// TTL string values normalize to defaults after import since we only store milliseconds in API
-				ImportStateVerifyIgnore: []string{
-					"org_token_max_ttl",
-					"team_token_max_ttl",
-					"audit_trail_token_max_ttl",
-					"user_token_max_ttl",
-				},
+				ResourceName:            "tfe_org_max_token_ttl_policy.foobar",
+				ImportState:             true,
+				ImportStateId:           orgName,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"org_token_max_ttl", "user_token_max_ttl"},
 			},
 		},
 	})

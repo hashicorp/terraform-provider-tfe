@@ -9,7 +9,6 @@ import (
 	"math"
 	"regexp"
 	"strconv"
-	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -238,8 +237,7 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Read(ctx context.Context, req resource
 		return
 	}
 
-	// Pass nil to enable drift detection - API values will be converted to duration strings
-	result := modelFromTokenTTLPolicies(organization, policyList.Items, nil)
+	result := modelFromTokenTTLPolicies(organization, policyList.Items, &state)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
@@ -468,118 +466,112 @@ func durationStringToMilliseconds(duration string) (int64, error) {
 	return milliseconds, nil
 }
 
-// Converts milliseconds to a normalized duration string for drift detection
+// formatDuration formats a value with its unit, supporting fractional values
+// Returns empty string if value < 1 or not cleanly representable
+func formatDuration(value float64, unit string) string {
+	if value < 1 {
+		return ""
+	}
+
+	// Check for whole number
+	if value == float64(int64(value)) {
+		return fmt.Sprintf("%d%s", int64(value), unit)
+	}
+
+	// Check for clean 1 decimal place (e.g., 5.5)
+	if value*10 == float64(int64(value*10)) {
+		return fmt.Sprintf("%.1f%s", value, unit)
+	}
+
+	// Check for clean 2 decimal places (e.g., 2.25)
+	if value*100 == float64(int64(value*100)) {
+		return fmt.Sprintf("%.2f%s", value, unit)
+	}
+
+	return ""
+}
+
+// Supports both whole and fractional values (e.g., 5y, 5.5y, 0.5h)
 func millisecondsToDurationString(ms int64) string {
 	hours := float64(ms) / (60 * 60 * 1000)
 
-	// Years (365 days * 24 hours)
-	if hours >= 8760 && int64(hours)%8760 == 0 {
-		years := int64(hours) / 8760
-		return fmt.Sprintf("%dy", years)
+	// Try each unit in descending order of size
+	if result := formatDuration(hours/8760, "y"); result != "" {
+		return result
+	}
+	if result := formatDuration(hours/720, "mo"); result != "" {
+		return result
+	}
+	if result := formatDuration(hours/168, "w"); result != "" {
+		return result
+	}
+	if result := formatDuration(hours/24, "d"); result != "" {
+		return result
+	}
+	if result := formatDuration(hours, "h"); result != "" {
+		return result
 	}
 
-	// Months (30 days * 24 hours)
-	if hours >= 720 && int64(hours)%720 == 0 {
-		months := int64(hours) / 720
-		return fmt.Sprintf("%dmo", months)
-	}
-
-	// Weeks (7 days * 24 hours)
-	if hours >= 168 && int64(hours)%168 == 0 {
-		weeks := int64(hours) / 168
-		return fmt.Sprintf("%dw", weeks)
-	}
-
-	// Days (24 hours)
-	if hours >= 24 && int64(hours)%24 == 0 {
-		days := int64(hours) / 24
-		return fmt.Sprintf("%dd", days)
-	}
-
-	// Hours (check if it's a whole number)
-	if hours == float64(int64(hours)) {
-		return fmt.Sprintf("%dh", int64(hours))
-	}
-
-	// Fractional hours - round to nearest hour
-	return fmt.Sprintf("%dh", int64(math.Round(hours)))
+	// Fallback: format hours with 2 decimal places
+	return fmt.Sprintf("%.2fh", hours)
 }
 
-func modelFromTokenTTLPolicies(organization string, policies []*tfe.OrganizationTokenTTLPolicy, plan *modelTFEOrgMaxTokenTTLPolicy) modelTFEOrgMaxTokenTTLPolicy {
+func durationConversion(apiMs int64, userDuration string) string {
+	// Parse the user's duration string to milliseconds
+	userMs, err := durationStringToMilliseconds(userDuration)
+	if err != nil {
+		// If we can't parse the user's duration, just convert the API value
+		return millisecondsToDurationString(apiMs)
+	}
+
+	// If the API value matches the user's value, preserve the user's format
+	if apiMs == userMs {
+		return userDuration
+	}
+
+	// Otherwise, convert the API value to a readable format (drift detected)
+	return millisecondsToDurationString(apiMs)
+}
+
+func convertDurationWithContext(apiMs int64, currentValue string, stateOrPlan *modelTFEOrgMaxTokenTTLPolicy) string {
+	if stateOrPlan != nil {
+		return durationConversion(apiMs, currentValue)
+	}
+	return millisecondsToDurationString(apiMs)
+}
+
+// - For Create/Update: pass plan to preserve user's exact input format
+// - For Read: pass state to enable smart conversion (preserves format if values match)
+// - For ImportState: pass nil to convert all values to readable format
+func modelFromTokenTTLPolicies(organization string, policies []*tfe.OrganizationTokenTTLPolicy, stateOrPlan *modelTFEOrgMaxTokenTTLPolicy) modelTFEOrgMaxTokenTTLPolicy {
 	result := modelTFEOrgMaxTokenTTLPolicy{
 		ID:           types.StringValue(organization),
 		Organization: types.StringValue(organization),
 	}
 
-	// If plan is provided (Create/Update), preserve user input (includes schema defaults)
-	if plan != nil {
-		result.OrgTokenMaxTTL = plan.OrgTokenMaxTTL
-		result.TeamTokenMaxTTL = plan.TeamTokenMaxTTL
-		result.AuditTrailTokenMaxTTL = plan.AuditTrailTokenMaxTTL
-		result.UserTokenMaxTTL = plan.UserTokenMaxTTL
-	} else {
-		// For Read/ImportState without plan, convert API milliseconds to duration strings
-		result.OrgTokenMaxTTL = types.StringValue(defaultTokenTTL)
-		result.TeamTokenMaxTTL = types.StringValue(defaultTokenTTL)
-		result.AuditTrailTokenMaxTTL = types.StringValue(defaultTokenTTL)
-		result.UserTokenMaxTTL = types.StringValue(defaultTokenTTL)
-	}
+	// Initialize with defaults for ImportState case
+	result.OrgTokenMaxTTL = types.StringValue(defaultTokenTTL)
+	result.TeamTokenMaxTTL = types.StringValue(defaultTokenTTL)
+	result.AuditTrailTokenMaxTTL = types.StringValue(defaultTokenTTL)
+	result.UserTokenMaxTTL = types.StringValue(defaultTokenTTL)
 
-	// Store API milliseconds in _ms fields and intelligently update duration strings for Read operations
+	// Store API milliseconds and apply appropriate conversion logic
 	for _, policy := range policies {
 		switch policy.TokenType {
 		case tfe.TokenTypeOrganization:
 			result.OrgTokenMaxTTLMs = types.Int64Value(policy.MaxTTLMs)
-			if plan == nil {
-				result.OrgTokenMaxTTL = types.StringValue(millisecondsToDurationString(policy.MaxTTLMs))
-			} else {
-				// Check if user's config value matches the API value
-				result.OrgTokenMaxTTL = convertDuration(plan.OrgTokenMaxTTL.ValueString(), policy.MaxTTLMs)
-			}
+			result.OrgTokenMaxTTL = types.StringValue(convertDurationWithContext(policy.MaxTTLMs, result.OrgTokenMaxTTL.ValueString(), stateOrPlan))
 		case tfe.TokenTypeTeam:
 			result.TeamTokenMaxTTLMs = types.Int64Value(policy.MaxTTLMs)
-			if plan == nil {
-				result.TeamTokenMaxTTL = types.StringValue(millisecondsToDurationString(policy.MaxTTLMs))
-			} else {
-				result.TeamTokenMaxTTL = convertDuration(plan.TeamTokenMaxTTL.ValueString(), policy.MaxTTLMs)
-			}
+			result.TeamTokenMaxTTL = types.StringValue(convertDurationWithContext(policy.MaxTTLMs, result.TeamTokenMaxTTL.ValueString(), stateOrPlan))
 		case tfe.TokenTypeAuditTrails:
 			result.AuditTrailTokenMaxTTLMs = types.Int64Value(policy.MaxTTLMs)
-			if plan == nil {
-				result.AuditTrailTokenMaxTTL = types.StringValue(millisecondsToDurationString(policy.MaxTTLMs))
-			} else {
-				result.AuditTrailTokenMaxTTL = convertDuration(plan.AuditTrailTokenMaxTTL.ValueString(), policy.MaxTTLMs)
-			}
+			result.AuditTrailTokenMaxTTL = types.StringValue(convertDurationWithContext(policy.MaxTTLMs, result.AuditTrailTokenMaxTTL.ValueString(), stateOrPlan))
 		case tfe.TokenTypeUser:
 			result.UserTokenMaxTTLMs = types.Int64Value(policy.MaxTTLMs)
-			if plan == nil {
-				result.UserTokenMaxTTL = types.StringValue(millisecondsToDurationString(policy.MaxTTLMs))
-			} else {
-				result.UserTokenMaxTTL = convertDuration(plan.UserTokenMaxTTL.ValueString(), policy.MaxTTLMs)
-			}
+			result.UserTokenMaxTTL = types.StringValue(convertDurationWithContext(policy.MaxTTLMs, result.UserTokenMaxTTL.ValueString(), stateOrPlan))
 		}
 	}
 
 	return result
-}
-
-// convertDuration checks if the user's config value matches the API value.
-// If it matches, preserve the user's format. Otherwise, convert using UI logic.
-func convertDuration(configValue string, apiMs int64) types.String {
-	// Parse the user's config value to milliseconds
-	duration, err := time.ParseDuration(configValue)
-	if err != nil {
-		// If parsing fails, convert API value
-		return types.StringValue(millisecondsToDurationString(apiMs))
-	}
-
-	configMs := duration.Milliseconds()
-
-	// If the config value matches the API value, preserve user's format
-	if configMs == apiMs {
-		return types.StringValue(configValue)
-	}
-
-	// Otherwise, convert API value using UI logic
-	return types.StringValue(millisecondsToDurationString(apiMs))
 }
