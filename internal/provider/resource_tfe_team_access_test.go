@@ -6,6 +6,7 @@ package provider
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"testing"
 	"time"
 
@@ -259,6 +260,57 @@ func TestAccTFETeamAccess_updateFromCustom(t *testing.T) {
 	})
 }
 
+func TestAccTFETeamAccess_updateAdminToCustomWithSamePermissions(t *testing.T) {
+	skipUnlessBeta(t)
+	tmAccess := &tfe.TeamAccess{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	// Admin permissions that match the custom permissions we'll use
+	adminPermissions := map[string]interface{}{
+		"runs":              tfe.RunsPermissionApply,
+		"variables":         tfe.VariablesPermissionWrite,
+		"state_versions":    tfe.StateVersionsPermissionWrite,
+		"sentinel_mocks":    tfe.SentinelMocksPermissionRead,
+		"workspace_locking": true,
+		"run_tasks":         true,
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamAccessDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeamAccess_admin(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFETeamAccessExists(
+						"tfe_team_access.foobar", tmAccess),
+					testAccCheckTFETeamAccessAttributesAccessIs(tmAccess, tfe.AccessAdmin),
+					testAccCheckTFETeamAccessAttributesPermissionsAre(tmAccess, adminPermissions),
+					resource.TestCheckResourceAttr("tfe_team_access.foobar", "access", "admin"),
+				),
+			},
+			{
+				// Remove access attribute and use permissions block with same values as admin
+				Config: testAccTFETeamAccess_customAdminEquivalent(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFETeamAccessExists(
+						"tfe_team_access.foobar", tmAccess),
+					testAccCheckTFETeamAccessAttributesAccessIs(tmAccess, tfe.AccessCustom),
+					testAccCheckTFETeamAccessAttributesPermissionsAre(tmAccess, adminPermissions),
+					resource.TestCheckResourceAttr("tfe_team_access.foobar", "access", "custom"),
+					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.runs", "apply"),
+					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.variables", "write"),
+					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.state_versions", "write"),
+					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.sentinel_mocks", "read"),
+					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.workspace_locking", "true"),
+					resource.TestCheckResourceAttr("tfe_team_access.foobar", "permissions.0.run_tasks", "true"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFETeamAccess_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -461,4 +513,34 @@ resource "tfe_team_access" "foobar" {
   team_id      = tfe_team.foobar.id
   workspace_id = tfe_workspace.foobar.id
 }`, rInt)
+}
+
+func testAccTFETeamAccess_customAdminEquivalent(rInt int) string {
+	return fmt.Sprintf(`
+data "tfe_organization" "foobar" {
+  name = "%s"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-test-%d"
+  organization = data.tfe_organization.foobar.name
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test-%d"
+  organization = data.tfe_organization.foobar.name
+}
+
+resource "tfe_team_access" "foobar" {
+  permissions {
+    runs = "apply"
+    variables = "write"
+    state_versions = "write"
+    sentinel_mocks = "read"
+    workspace_locking = true
+    run_tasks = true
+  }
+  team_id      = tfe_team.foobar.id
+  workspace_id = tfe_workspace.foobar.id
+}`, os.Getenv("TFE_ORGANIZATION"), rInt, rInt)
 }
