@@ -1,5 +1,9 @@
 ## Unreleased
 
+FEATURES:
+* **New Resource:** `r/tfe_smtp_settings` for managing SMTP settings in Terraform Enterprise
+* **New Data Source:** `d/tfe_smtp_settings` for reading SMTP settings in Terraform Enterprise
+
 BUG FIXES:
 * `r/tfe_team_access`: Fixed a bug where switching from `access` attribute to `permissions` block with identical permission values showed "No changes" instead of updating the resource. The fix detects when `access` is removed from configuration, even when both `access` and `permissions` exist in state. By @sana-faraz [#2049]https://github.com/hashicorp/terraform-provider-tfe/pull/2049/
 
