@@ -1,7 +1,7 @@
 ## Unreleased
 ENHANCEMENTS:
 * Updates warning when using credentials/config file for authentication and running on cloud to be clearer, by @christian-doucette [#2036](https://github.com/hashicorp/terraform-provider-tfe/pull/2036)
-* Support trigger patterns and working directories in stacks by @aaabdelgany [#2048](https://github.com/hashicorp/terraform-provider-tfe/pull/2048)
+* `r/tfe_policy_set` and `d/tfe_policy_set`: Add `policy_update_patterns` attribute support for policy sets. By @nithishravindra [#2030](https://github.com/hashicorp/terraform-provider-tfe/pull/2030)
 
 BUG FIXES:
 * `r/tfe_team`: Fixed a `Missing Identity After Update` error on resource update by @sebasslash [#2045](https://github.com/hashicorp/terraform-provider-tfe/pull/2045)
@@ -10,7 +10,6 @@ BUG FIXES:
 
 FEATURES:
 * `r/tfe_notification_configuration`: Optionally set `url` as a write-only (`url_wo`). Adds support for auto-managed (via hash) for `token_wo` param to avoid manually managing `_version` arguments. By @drewmullen [#2028](https://github.com/hashicorp/terraform-provider-tfe/pull/2028)
-- `r/tfe_policy_set` and `d/tfe_policy_set`: Add `policy_update_patterns` attribute support for policy sets. By @nithishravindra [#2030](https://github.com/hashicorp/terraform-provider-tfe/pull/2030)
 
 ## v0.76.1
 
