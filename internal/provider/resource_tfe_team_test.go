@@ -1,4 +1,4 @@
-// Copyright IBM Corp. 2018, 2025
+// Copyright IBM Corp. 2018, 2026
 // SPDX-License-Identifier: MPL-2.0
 
 package provider
@@ -239,6 +239,39 @@ func TestAccTFETeam_full_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_team.foobar", "organization_access.0.manage_agent_pools", "false"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccTFETeam_identity_preserved_after_update(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeam_full(rInt),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectIdentity("tfe_team.foobar", map[string]knownvalue.Check{
+						"id":           knownvalue.NotNull(),
+						"hostname":     knownvalue.StringExact(os.Getenv("TFE_HOSTNAME")),
+						"organization": knownvalue.StringExact(orgName),
+					}),
+				},
+			},
+			{
+				Config: testAccTFETeam_full_update(rInt),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectIdentity("tfe_team.foobar", map[string]knownvalue.Check{
+						"id":           knownvalue.NotNull(),
+						"hostname":     knownvalue.StringExact(os.Getenv("TFE_HOSTNAME")),
+						"organization": knownvalue.StringExact(orgName),
+					}),
+				},
 			},
 		},
 	})
