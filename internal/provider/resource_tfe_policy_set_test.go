@@ -522,6 +522,12 @@ func TestAccTFEPolicySet_vcs(t *testing.T) {
 						"tfe_policy_set.foobar", "vcs_repo.0.ingress_submodules", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "policies_path", envGithubPolicySetPath),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_update_patterns.#", "2"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_update_patterns.0", "**/*.sentinel"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_update_patterns.1", "policies/**/*.hcl"),
 				),
 			},
 		},
@@ -577,6 +583,12 @@ func TestAccTFEPolicySet_GithubApp(t *testing.T) {
 						"tfe_policy_set.foobar", "vcs_repo.0.ingress_submodules", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "policies_path", envGithubPolicySetPath),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_update_patterns.#", "2"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_update_patterns.0", "**/*.sentinel"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_update_patterns.1", "policies/**/*.hcl"),
 				),
 			},
 		},
@@ -632,6 +644,12 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 						"tfe_policy_set.foobar", "vcs_repo.0.ingress_submodules", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "policies_path", envGithubPolicySetPath),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_update_patterns.#", "2"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_update_patterns.0", "**/*.sentinel"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_update_patterns.1", "policies/**/*.hcl"),
 				),
 			},
 
@@ -654,6 +672,12 @@ func TestAccTFEPolicySet_updateVCSBranch(t *testing.T) {
 						"tfe_policy_set.foobar", "vcs_repo.0.ingress_submodules", "true"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "policies_path", envGithubPolicySetPath),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_update_patterns.#", "2"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_update_patterns.0", "**/*.sentinel"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policy_update_patterns.1", "policies/**/*.hcl"),
 				),
 			},
 		},

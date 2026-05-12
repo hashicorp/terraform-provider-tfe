@@ -70,6 +70,12 @@ func dataSourceTFEPolicySet() *schema.Resource {
 				Computed: true,
 			},
 
+			"policy_update_patterns": {
+				Type:     schema.TypeList,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Computed: true,
+			},
+
 			"policy_ids": {
 				Type:     schema.TypeSet,
 				Elem:     &schema.Schema{Type: schema.TypeString},
@@ -158,6 +164,7 @@ func dataSourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error 
 				d.Set("description", policySet.Description)
 				d.Set("global", policySet.Global)
 				d.Set("policies_path", policySet.PoliciesPath)
+				d.Set("policy_update_patterns", policySet.PolicyUpdatePatterns)
 				d.Set("agent_enabled", policySet.AgentEnabled)
 
 				if policySet.Kind != "" {

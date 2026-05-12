@@ -105,6 +105,13 @@ func resourceTFEPolicySet() *schema.Resource {
 				Computed:    true,
 			},
 
+			"policy_update_patterns": {
+				Type:     schema.TypeList,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Optional: true,
+				Computed: true,
+			},
+
 			"policies_path": {
 				Type:          schema.TypeString,
 				Optional:      true,
@@ -209,6 +216,18 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 		options.PolicyToolVersion = tfe.String(vPolicyToolVersion.(string))
 	}
 
+	if vPolicyUpdatePatterns, ok := d.GetOk("policy_update_patterns"); ok {
+		for _, pattern := range vPolicyUpdatePatterns.([]interface{}) {
+			options.PolicyUpdatePatterns = append(options.PolicyUpdatePatterns, pattern.(string))
+		}
+	} else {
+		options.PolicyUpdatePatterns = []string{}
+	}
+
+	if d.GetRawConfig().GetAttr("policy_update_patterns").IsNull() {
+		options.PolicyUpdatePatterns = nil
+	}
+
 	if desc, ok := d.GetOk("description"); ok {
 		options.Description = tfe.String(desc.(string))
 	}
@@ -286,6 +305,7 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("description", policySet.Description)
 	d.Set("global", policySet.Global)
 	d.Set("policies_path", policySet.PoliciesPath)
+	d.Set("policy_update_patterns", policySet.PolicyUpdatePatterns)
 	d.Set("agent_enabled", policySet.AgentEnabled)
 
 	if policySet.Organization != nil {
@@ -383,7 +403,21 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	// Don't bother updating the policy set's attributes if they haven't changed
-	if d.HasChange("name") || d.HasChange("description") || d.HasChange("global") || d.HasChange("vcs_repo") || d.HasChange("overridable") || d.HasChange("agent_enabled") || d.HasChange("policy_tool_version") {
+	fields := []string{
+		"name", "description", "global", "vcs_repo",
+		"overridable", "agent_enabled", "policy_tool_version",
+		"policy_update_patterns",
+	}
+
+	hasAnyChange := false
+	for _, field := range fields {
+		if d.HasChange(field) {
+			hasAnyChange = true
+			break
+		}
+	}
+
+	if hasAnyChange {
 		// Create a new options struct.
 		options := tfe.PolicySetUpdateOptions{
 			Name:   tfe.String(name),
@@ -406,6 +440,20 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 
 		if policyToolVersion, ok := d.GetOk("policy_tool_version"); ok {
 			options.PolicyToolVersion = tfe.String(policyToolVersion.(string))
+		}
+
+		if d.HasChange("policy_update_patterns") {
+			if vPolicyUpdatePatterns, ok := d.GetOk("policy_update_patterns"); ok {
+				for _, pattern := range vPolicyUpdatePatterns.([]interface{}) {
+					options.PolicyUpdatePatterns = append(options.PolicyUpdatePatterns, pattern.(string))
+				}
+			} else {
+				options.PolicyUpdatePatterns = []string{}
+			}
+
+			if d.GetRawConfig().GetAttr("policy_update_patterns").IsNull() {
+				options.PolicyUpdatePatterns = nil
+			}
 		}
 
 		if v, ok := d.GetOk("vcs_repo"); ok {
