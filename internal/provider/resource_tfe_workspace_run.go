@@ -1,4 +1,4 @@
-// Copyright IBM Corp. 2018, 2025
+// Copyright IBM Corp. 2018, 2026
 // SPDX-License-Identifier: MPL-2.0
 
 // NOTE: This is a legacy resource and should be migrated to the Plugin
@@ -23,14 +23,16 @@ var (
 )
 
 var applyPendingStatuses = map[tfe.RunStatus]bool{
-	tfe.RunConfirmed:         true,
-	tfe.RunApplyQueued:       true,
-	tfe.RunApplying:          true,
-	tfe.RunQueuing:           true,
-	tfe.RunFetching:          true,
-	tfe.RunQueuingApply:      true,
-	tfe.RunPreApplyRunning:   true,
-	tfe.RunPreApplyCompleted: true,
+	tfe.RunConfirmed:          true,
+	tfe.RunApplyQueued:        true,
+	tfe.RunApplying:           true,
+	tfe.RunQueuing:            true,
+	tfe.RunFetching:           true,
+	tfe.RunQueuingApply:       true,
+	tfe.RunPreApplyRunning:    true,
+	tfe.RunPreApplyCompleted:  true,
+	tfe.RunPostApplyRunning:   true,
+	tfe.RunPostApplyCompleted: true,
 }
 
 var applyDoneStatuses = map[tfe.RunStatus]bool{

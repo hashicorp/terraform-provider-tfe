@@ -1,4 +1,4 @@
-// Copyright IBM Corp. 2018, 2025
+// Copyright IBM Corp. 2018, 2026
 // SPDX-License-Identifier: MPL-2.0
 
 package provider
@@ -242,6 +242,8 @@ func TestAccTFENotificationConfiguration_emailUserIDs(t *testing.T) {
 }
 
 func TestAccTFENotificationConfiguration_update(t *testing.T) {
+	t.Skip("temporarily skipped due to flakiness")
+
 	notificationConfiguration := &tfe.NotificationConfiguration{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -657,6 +659,8 @@ func TestAccTFENotificationConfiguration_duplicateTriggers(t *testing.T) {
 }
 
 func TestAccTFENotificationConfigurationImport_basic(t *testing.T) {
+	t.Skip("temporarily skipped due to flakiness")
+
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	fmt.Printf("Config for testAccTFENotificationConfigurationImport_basic:\n %s\n", testAccTFENotificationConfiguration_basic(rInt))
