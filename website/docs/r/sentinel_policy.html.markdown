@@ -7,6 +7,8 @@ description: |-
 
 # tfe_sentinel_policy
 
+-> **Note:** `tfe_sentinel_policy` is deprecated, please use `tfe_policy` instead.
+
 Sentinel Policy as Code is an embedded policy as code framework integrated
 with Terraform Enterprise.
 
