@@ -194,7 +194,7 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) ModifyPlan(ctx context.Context, req re
 	}
 }
 
-func (r *resourceTFEOrgMaxTokenTTLPolicy) checkMaxTokenTTLPolicySupport(ctx context.Context) error {
+func (r *resourceTFEOrgMaxTokenTTLPolicy) checkMaxTokenTTLPolicySupport() error {
 	meetsMinVersionRequirement, err := r.config.MeetsMinRemoteTFEVersion(minTFEVersionOrgMaxTokenTTLPolicy)
 	if err != nil {
 		return fmt.Errorf("could not determine if Terraform Enterprise version %s meets minimum required version %s: %w",
@@ -216,7 +216,7 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Read(ctx context.Context, req resource
 	}
 
 	// Check if TFE version supports max token TTL policy
-	if err := r.checkMaxTokenTTLPolicySupport(ctx); err != nil {
+	if err := r.checkMaxTokenTTLPolicySupport(); err != nil {
 		resp.Diagnostics.AddError("Feature not supported", err.Error())
 		return
 	}
@@ -250,7 +250,7 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Create(ctx context.Context, req resour
 	}
 
 	// Check if TFE version supports max token TTL policy
-	if err := r.checkMaxTokenTTLPolicySupport(ctx); err != nil {
+	if err := r.checkMaxTokenTTLPolicySupport(); err != nil {
 		resp.Diagnostics.AddError("Feature not supported", err.Error())
 		return
 	}
@@ -279,7 +279,7 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Update(ctx context.Context, req resour
 	}
 
 	// Check if TFE version supports max token TTL policy
-	if err := r.checkMaxTokenTTLPolicySupport(ctx); err != nil {
+	if err := r.checkMaxTokenTTLPolicySupport(); err != nil {
 		resp.Diagnostics.AddError("Feature not supported", err.Error())
 		return
 	}
@@ -331,7 +331,7 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Delete(ctx context.Context, req resour
 	}
 
 	// Check if TFE version supports max token TTL policy
-	if err := r.checkMaxTokenTTLPolicySupport(ctx); err != nil {
+	if err := r.checkMaxTokenTTLPolicySupport(); err != nil {
 		resp.Diagnostics.AddError("Feature not supported", err.Error())
 		return
 	}
@@ -367,7 +367,7 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) ImportState(ctx context.Context, req r
 	organization := req.ID
 
 	// Check if TFE version supports max token TTL policy
-	if err := r.checkMaxTokenTTLPolicySupport(ctx); err != nil {
+	if err := r.checkMaxTokenTTLPolicySupport(); err != nil {
 		resp.Diagnostics.AddError("Feature not supported", err.Error())
 		return
 	}
@@ -434,7 +434,7 @@ func durationStringToMilliseconds(duration string) (int64, error) {
 		return 0, fmt.Errorf("duration cannot be empty")
 	}
 
-	re := regexp.MustCompile(`^([0-9]+(?:\.[0-9]+)?)(h|d|w|mo|y)$`)
+	re := regexp.MustCompile(`^(\d+(?:\.\d+)?)(h|d|w|mo|y)$`)
 	matches := re.FindStringSubmatch(duration)
 	if matches == nil {
 		return 0, fmt.Errorf("invalid duration format: %s", duration)
