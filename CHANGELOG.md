@@ -1,8 +1,5 @@
 ## Unreleased
 
-BUG FIXES:
-* `r/tfe_team_access`: Fixed a bug where switching from `access` attribute to `permissions` block with identical permission values showed "No changes" instead of updating the resource. The fix detects when `access` is removed from configuration, even when both `access` and `permissions` exist in state. By @sana-faraz [#2049]https://github.com/hashicorp/terraform-provider-tfe/pull/2049/
-
 ENHANCEMENTS:
 * Updates warning when using credentials/config file for authentication and running on cloud to be clearer, by @christian-doucette [#2036](https://github.com/hashicorp/terraform-provider-tfe/pull/2036)
 * Support trigger patterns and working directories in stacks by @aaabdelgany [#2048](https://github.com/hashicorp/terraform-provider-tfe/pull/2048)
@@ -11,6 +8,7 @@ ENHANCEMENTS:
 
 BUG FIXES:
 * `r/tfe_team`: Fixed a `Missing Identity After Update` error on resource update by @sebasslash [#2045](https://github.com/hashicorp/terraform-provider-tfe/pull/2045)
+* `r/tfe_team_access`: Fixed a bug where switching from `access` attribute to `permissions` block with identical permission values showed "No changes" instead of updating the resource. The fix detects when `access` is removed from configuration, even when both `access` and `permissions` exist in state. By @sana-faraz [#2049]https://github.com/hashicorp/terraform-provider-tfe/pull/2049/
 
 ## v0.76.2
 
