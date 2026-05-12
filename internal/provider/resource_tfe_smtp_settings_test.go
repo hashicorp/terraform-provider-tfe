@@ -66,6 +66,8 @@ func TestAccTFESMTPSettings_omnibus(t *testing.T) {
 }
 
 func TestAccTFESMTPSettings_AuthNone(t *testing.T) {
+	skipIfCloud(t)
+
 	s := tfe.AdminSMTPSetting{
 		Host:   "foobar.com",
 		Port:   25,
@@ -92,6 +94,8 @@ func TestAccTFESMTPSettings_AuthNone(t *testing.T) {
 	})
 }
 func TestAccTFESMTPSettings_AuthPlain_writeOnly(t *testing.T) {
+	skipIfCloud(t)
+
 	s := tfe.AdminSMTPSetting{
 		Host:     "foobar.com",
 		Port:     25,
@@ -122,6 +126,8 @@ func TestAccTFESMTPSettings_AuthPlain_writeOnly(t *testing.T) {
 }
 
 func TestAccTFESMTPSettings_AuthLogin_writeOnly(t *testing.T) {
+	skipIfCloud(t)
+
 	s := tfe.AdminSMTPSetting{
 		Host:     "foobar.com",
 		Port:     25,
@@ -152,6 +158,8 @@ func TestAccTFESMTPSettings_AuthLogin_writeOnly(t *testing.T) {
 }
 
 func TestAccTFESMTPSettings_AuthPlain_writeOnly_update(t *testing.T) {
+	skipIfCloud(t)
+
 	s := tfe.AdminSMTPSetting{
 		Host:     "foobar.com",
 		Port:     25,
@@ -194,6 +202,8 @@ func TestAccTFESMTPSettings_AuthPlain_writeOnly_update(t *testing.T) {
 }
 
 func TestAccTFESMTPSettings_AuthPlain_writeOnly_no_version_change(t *testing.T) {
+	skipIfCloud(t)
+
 	s := tfe.AdminSMTPSetting{
 		Host:     "foobar.com",
 		Port:     25,
@@ -237,6 +247,8 @@ func TestAccTFESMTPSettings_AuthPlain_writeOnly_no_version_change(t *testing.T) 
 }
 
 func TestAccTFESMTPSettings_AuthPlain(t *testing.T) {
+	skipIfCloud(t)
+
 	s := tfe.AdminSMTPSetting{
 		Host:     "foobar.com",
 		Port:     25,
@@ -266,6 +278,8 @@ func TestAccTFESMTPSettings_AuthPlain(t *testing.T) {
 }
 
 func TestAccTFESMTPSettings_AuthLogin(t *testing.T) {
+	skipIfCloud(t)
+
 	s := tfe.AdminSMTPSetting{
 		Host:     "foobar.com",
 		Port:     25,
