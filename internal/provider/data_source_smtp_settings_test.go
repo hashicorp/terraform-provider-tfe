@@ -16,6 +16,8 @@ import (
 // `resource_tfe_smtp_settings_test.go` exists. See that file for more color on
 // this.
 func TestAccTFESMTPSettingsDataSource_basic(t *testing.T) {
+	skipIfCloud(t)
+
 	resourceAddress := "data.tfe_smtp_settings.foobar"
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
