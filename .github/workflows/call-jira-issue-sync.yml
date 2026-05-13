@@ -6,6 +6,12 @@ on:
   issue_comment:
     types: [created]
 
+# Caller for local Jira issue sync. Jira writes use the inherited Jira API
+# token; default GITHUB_TOKEN only needs read.
+permissions:
+  contents: read
+  issues: read
+
 jobs:
   call-workflow:
     uses: ./.github/workflows/jira-issue-sync.yml

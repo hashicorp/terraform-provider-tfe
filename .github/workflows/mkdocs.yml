@@ -5,6 +5,10 @@ on:
       - main
   workflow_dispatch:
 
+# mhausenblas/mkdocs-deploy-gh-pages pushes built docs to gh-pages branch.
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Deploy docs
