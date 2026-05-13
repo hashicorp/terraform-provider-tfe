@@ -197,17 +197,10 @@ func (r *resourceTFESMTPSettings) Read(ctx context.Context, req resource.ReadReq
 
 	// update state
 	result := modelFromTFEAdminSMTPSettings(smtpSettings, m.Password, isWriteOnly)
-	// Preserve null values for optional fields from state
-	if m.Username.IsNull() {
-		result.Username = types.StringNull()
-	}
-	if m.Password.IsNull() {
-		result.Password = types.StringNull()
-	}
-	// Preserve password_wo_version from state
-	if !m.PasswordWOVersion.IsNull() {
-		result.PasswordWOVersion = m.PasswordWOVersion
-	}
+
+	// Preserve optional fields from state
+	preserveOptionalFields(&result, m)
+	
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -238,17 +231,10 @@ func (r *resourceTFESMTPSettings) Create(ctx context.Context, req resource.Creat
 	}
 
 	result := modelFromTFEAdminSMTPSettings(smtpSettings, m.Password, isWriteOnly)
-	// Preserve config values for optional fields
-	if config.Username.IsNull() {
-		result.Username = types.StringNull()
-	}
-	if config.Password.IsNull() {
-		result.Password = types.StringNull()
-	}
-	// Preserve password_wo_version from config
-	if !config.PasswordWOVersion.IsNull() {
-		result.PasswordWOVersion = config.PasswordWOVersion
-	}
+
+	// Preserve optional fields from config
+	preserveOptionalFields(&result, config)
+	
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -286,18 +272,10 @@ func (r *resourceTFESMTPSettings) Update(ctx context.Context, req resource.Updat
 	}
 
 	result := modelFromTFEAdminSMTPSettings(smtpSettings, m.Password, isWriteOnly)
-	// Preserve config values for optional fields
-	if config.Username.IsNull() {
-		result.Username = types.StringNull()
-	}
-	if config.Password.IsNull() {
-		result.Password = types.StringNull()
-	}
-	// Preserve password_wo_version from config
-	if !config.PasswordWOVersion.IsNull() {
-		result.PasswordWOVersion = config.PasswordWOVersion
-	}
-	// Save data into Terraform state
+
+	// Preserve optional fields from config
+	preserveOptionalFields(&result, config)
+	
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -399,4 +377,29 @@ func modelFromTFEAdminSMTPSettings(v *tfe.AdminSMTPSetting, password types.Strin
 	}
 
 	return m
+}
+
+// preserveOptionalFields updates the result model with preserved values from source model
+func preserveOptionalFields(result *modelTFESMTPSettings, source modelTFESMTPSettings) {
+	// Preserve null values for optional fields
+	if source.Host.IsNull() {
+		result.Host = types.StringNull()
+	}
+	if source.Sender.IsNull() {
+		result.Sender = types.StringNull()
+	}
+	if source.Username.IsNull() {
+		result.Username = types.StringNull()
+	}
+	if source.Password.IsNull() {
+		result.Password = types.StringNull()
+	}
+	// Preserve password_wo_version
+	if !source.PasswordWOVersion.IsNull() {
+		result.PasswordWOVersion = source.PasswordWOVersion
+	}
+	// Preserve test_email_address since API doesn't return it
+	if !source.TestEmailAddress.IsNull() {
+		result.TestEmailAddress = source.TestEmailAddress
+	}
 }
