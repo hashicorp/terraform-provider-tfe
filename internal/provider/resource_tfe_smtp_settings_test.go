@@ -308,6 +308,95 @@ func TestAccTFESMTPSettings_AuthLogin(t *testing.T) {
 	})
 }
 
+// TestAccTFESMTPSettings_TestEmailAddressDrift validates that setting
+// test_email_address does not cause a perpetual diff on subsequent plans.
+func TestAccTFESMTPSettings_TestEmailAddressDrift(t *testing.T) {
+	skipIfCloud(t)
+
+	s := tfe.AdminSMTPSetting{
+		Host:     "foobar.com",
+		Port:     25,
+		Sender:   "sender@foorbar.com",
+		Auth:     "none",
+	}
+
+	resource.Test(t, resource.TestCase{
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			tfversion.SkipBelow(version.Must(version.NewVersion("1.11.0"))),
+		},
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccTFESMTPSettingsDestroy,
+		Steps: []resource.TestStep{
+			// Step 1: initial apply — sets test_email_address in config.
+			{
+				Config: testAccTFESMTPSettings_TestEmailAddressDrift(s),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(testSMTPResourceName, "host", s.Host),
+					resource.TestCheckResourceAttr(testSMTPResourceName, "test_email_address", "test-recipient@example.com"),
+				),
+			},
+			// Step 2: Apply the same config.  Read is called, test_email_address is
+			// not returned by the API so the buggy Read drops it from state.
+			// Terraform then diffs the config value ("test-recipient@example.com")
+			// against the state value (null) and drift occurs.
+			{
+				Config: testAccTFESMTPSettings_TestEmailAddressDrift(s),
+				ExpectNonEmptyPlan: false,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(testSMTPResourceName, "test_email_address", "test-recipient@example.com"),
+				),
+			},
+		},
+	})
+}
+
+// TestAccTFESMTPSettings_HostSenderNullPreservation validates that
+// host and sender are preserved correctly in state and do not produce a
+// perpetual diff when removed from config.
+func TestAccTFESMTPSettings_HostSenderNullPreservation(t *testing.T) {
+	skipIfCloud(t)
+
+	s := tfe.AdminSMTPSetting{
+		Host:     "foobar.com",
+		Port:     25,
+		Sender:   "sender@foorbar.com",
+		Auth:     "none",
+	}
+
+	resource.Test(t, resource.TestCase{
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			tfversion.SkipBelow(version.Must(version.NewVersion("1.11.0"))),
+		},
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccTFESMTPSettingsDestroy,
+		Steps: []resource.TestStep{
+			// Step 1: apply with host and sender explicitly set.
+			{
+				Config: testAccTFESMTPSettings_HostSenderNullPreservation_WithHostSender(s),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(testSMTPResourceName, "host", s.Host),
+					resource.TestCheckResourceAttr(testSMTPResourceName, "sender", s.Sender),
+					resource.TestCheckResourceAttr(testSMTPResourceName, "port", strconv.Itoa(s.Port)),
+				),
+			},
+			// Step 2: Remove host and sender from config. Read causes
+			// host="" and sender="" to be written into state.  On the
+			// next plan Terraform sees config=null vs state="" and drift occurs.
+			{
+				Config: testAccTFESMTPSettings_HostSenderNullPreservation_NoHostSender(s),
+				ExpectNonEmptyPlan: false,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckNoResourceAttr(testSMTPResourceName, "host"),
+					resource.TestCheckNoResourceAttr(testSMTPResourceName, "sender"),
+				),
+			},
+		},
+	})
+}
+
+
 func testAccTFESMTPSettings_AuthPlainLogin_writeOnly(s tfe.AdminSMTPSetting, password string) string {
 	return fmt.Sprintf(`
 resource "tfe_smtp_settings" "foobar" {
@@ -357,6 +446,35 @@ resource "tfe_smtp_settings" "foobar" {
   sender                = "%s"
   auth                  = "%s"
 }`, s.Host, s.Port, s.Sender, s.Auth)
+}
+
+func testAccTFESMTPSettings_TestEmailAddressDrift(s tfe.AdminSMTPSetting) string {
+	return fmt.Sprintf(`
+resource "tfe_smtp_settings" "foobar" {
+  host               = "%s"
+  port               = %d
+  sender             = "%s"
+  auth               = "%s"
+  test_email_address = "test-recipient@example.com"
+}`, s.Host, s.Port, s.Sender, s.Auth)
+}
+
+func testAccTFESMTPSettings_HostSenderNullPreservation_WithHostSender(s tfe.AdminSMTPSetting) string {
+	return 	fmt.Sprintf(`
+resource "tfe_smtp_settings" "foobar" {
+  host   = "%s"
+  port   = %d
+  sender = "%s"
+  auth   = "%s"
+}`, s.Host, s.Port, s.Sender, s.Auth)	
+}
+
+func testAccTFESMTPSettings_HostSenderNullPreservation_NoHostSender(s tfe.AdminSMTPSetting) string {
+	return fmt.Sprintf(`
+resource "tfe_smtp_settings" "foobar" {
+  port = %d
+  auth = "%s"
+}`, s.Port, s.Auth)
 }
 
 func testAccTFESMTPSettingsDestroy(_ *terraform.State) error {
