@@ -1,5 +1,9 @@
 ## Unreleased
 
+FEATURES:
+* **New Resource:** `r/tfe_smtp_settings` for managing SMTP settings in Terraform Enterprise by @chpag [#2059](https://github.com/hashicorp/terraform-provider-tfe/pull/2059)
+* **New Data Source:** `d/tfe_smtp_settings` for reading SMTP settings in Terraform Enterprise by @chpag [#2059](https://github.com/hashicorp/terraform-provider-tfe/pull/2059)
+
 ENHANCEMENTS:
 * Updates warning when using credentials/config file for authentication and running on cloud to be clearer, by @christian-doucette [#2036](https://github.com/hashicorp/terraform-provider-tfe/pull/2036)
 * Support trigger patterns and working directories in stacks by @aaabdelgany [#2048](https://github.com/hashicorp/terraform-provider-tfe/pull/2048)

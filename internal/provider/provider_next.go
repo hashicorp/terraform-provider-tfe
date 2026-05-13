@@ -159,6 +159,7 @@ func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource
 		NewRegistryProviderDataSource,
 		NewRegistryProvidersDataSource,
 		NewSAMLSettingsDataSource,
+		NewSMTPSettingsDataSource,
 		NewVariablesDataSource,
 		NewWorkspaceRunTaskDataSource,
 	}
@@ -178,6 +179,7 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewResourceVariable,
 		NewResourceWorkspaceSettings,
 		NewSAMLSettingsResource,
+		NewSMTPSettingsResource,
 		NewSSHKey,
 		NewStackResource,
 		NewStackVariableSetResource,
