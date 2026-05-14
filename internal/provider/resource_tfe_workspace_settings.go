@@ -125,11 +125,23 @@ func (m unsetRemoteStateConsumerIDsIfOmitted) PlanModifySet(ctx context.Context,
 
 	wasConfigured, diags := req.Private.GetKey(ctx, remoteStateConsumerIDsConfiguredKey)
 	resp.Diagnostics.Append(diags...)
-	if diags.HasError() || len(wasConfigured) == 0 {
+	if diags.HasError() {
 		return
 	}
 
+	// If the private key was never set (e.g. after an import), fall back to
+	// checking whether the state already has explicit consumers. If it does,
+	// we still need to plan their removal.
+	if len(wasConfigured) == 0 {
+		if req.StateValue.IsNull() || len(req.StateValue.Elements()) == 0 {
+			return
+		}
+	}
+
 	resp.PlanValue = types.SetValueMust(types.StringType, []attr.Value{})
+	// Clear the private key so subsequent plans don't keep treating the
+	// attribute as "was configured, now omitted" indefinitely.
+	resp.Diagnostics.Append(resp.Private.SetKey(ctx, remoteStateConsumerIDsConfiguredKey, nil)...)
 }
 
 func (m unsetRemoteStateConsumerIDsIfOmitted) Description(_ context.Context) string {
@@ -786,19 +798,10 @@ func (r *workspaceSettings) Create(ctx context.Context, req resource.CreateReque
 }
 
 func (r *workspaceSettings) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data, configured modelWorkspaceSettings
+	var data modelWorkspaceSettings
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
-	resp.Diagnostics.Append(req.Config.Get(ctx, &configured)...)
 	if resp.Diagnostics.HasError() {
 		return
-	}
-
-	if configured.ExecutionMode.IsNull() {
-		data.ExecutionMode = types.StringNull()
-	}
-
-	if configured.AgentPoolID.IsNull() {
-		data.AgentPoolID = types.StringNull()
 	}
 
 	if err := r.updateSettings(ctx, &data, &req.State, &resp.State); err != nil {
