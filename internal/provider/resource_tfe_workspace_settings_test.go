@@ -271,7 +271,6 @@ func TestAccTFEWorkspaceSettingsRemoteState(t *testing.T) {
 						"tfe_workspace_settings.foobar", []string{ws2.ID}),
 				),
 			},
-			// Removing remote_state_consumer_ids from config should clear all explicit consumers.
 			{
 				Config: testAccTFEWorkspaceSettingsRemoteState_UnsetConsumers(ws.ID),
 				Check: resource.ComposeTestCheckFunc(
@@ -493,6 +492,111 @@ func testAccCheckTFEWorkspaceSettingsDestroy(s *terraform.State) error {
 	}
 
 	return nil
+}
+
+// TestAccTFEWorkspaceSettingsRemoteState_idempotentAfterClear verifies that
+// once remote_state_consumer_ids has been removed from config and the consumers
+// have been cleared, subsequent plans do not produce a spurious diff.
+func TestAccTFEWorkspaceSettingsRemoteState_idempotentAfterClear(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createOrganization(t, tfeClient, tfe.OrganizationCreateOptions{
+		Name:  tfe.String("tst-" + randomString(t)),
+		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
+	})
+	t.Cleanup(cleanupOrg)
+
+	ws := createTempWorkspace(t, tfeClient, org.Name)
+	ws2 := createTempWorkspace(t, tfeClient, org.Name)
+
+	configWithConsumers := testAccTFEWorkspaceSettingsRemoteState(ws.ID, ws2.ID)
+	configWithoutConsumers := testAccTFEWorkspaceSettingsRemoteState_UnsetConsumers(ws.ID)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceSettingsDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: configWithConsumers,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceSettingsHasRemoteConsumers(
+						"tfe_workspace_settings.foobar", []string{ws2.ID},
+					),
+				),
+			},
+			{
+				Config: configWithoutConsumers,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceSettingsHasRemoteConsumers(
+						"tfe_workspace_settings.foobar", []string{},
+					),
+				),
+			},
+			{
+				Config:             configWithoutConsumers,
+				ExpectNonEmptyPlan: false,
+			},
+		},
+	})
+}
+
+// TestAccTFEWorkspaceSettingsRemoteState_importClearsOutOfBandConsumers
+// verifies that importing a workspace whose remote state consumers were added
+// out-of-band (via the UI or API) and then applying a config that omits
+// remote_state_consumer_ids correctly removes those consumers.
+func TestAccTFEWorkspaceSettingsRemoteState_importClearsOutOfBandConsumers(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createOrganization(t, tfeClient, tfe.OrganizationCreateOptions{
+		Name:  tfe.String("tst-" + randomString(t)),
+		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
+	})
+	t.Cleanup(cleanupOrg)
+
+	ws := createTempWorkspace(t, tfeClient, org.Name)
+	ws2 := createTempWorkspace(t, tfeClient, org.Name)
+
+	// Add ws2 as a remote state consumer out-of-band (simulating the UI/API).
+	err = tfeClient.Workspaces.AddRemoteStateConsumers(ctx, ws.ID,
+		tfe.WorkspaceAddRemoteStateConsumersOptions{
+			Workspaces: []*tfe.Workspace{{ID: ws2.ID}},
+		})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Config deliberately omits remote_state_consumer_ids.
+	configWithoutConsumers := testAccTFEWorkspaceSettingsRemoteState_UnsetConsumers(ws.ID)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspaceSettingsDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:            configWithoutConsumers,
+				ResourceName:      "tfe_workspace_settings.foobar",
+				ImportState:       true,
+				ImportStateId:     ws.ID,
+				ImportStateVerify: false, // state has consumers, config does not
+			},
+			{
+				Config: configWithoutConsumers,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspaceSettingsHasRemoteConsumers(
+						"tfe_workspace_settings.foobar", []string{},
+					),
+				),
+			},
+		},
+	})
 }
 
 func testAccCheckTFEWorkspaceSettingsHasRemoteConsumers(ws string, expectedConsumerIDs []string) resource.TestCheckFunc {
