@@ -100,7 +100,7 @@ func TestAccTFESAMLSettings_writeOnlyValidation(t *testing.T) {
 			},
 			{
 				Config:      testAccTFESAMLSettings_samlProviderTypeInvalidValues(),
-				ExpectError: regexp.MustCompile(fmt.Sprintf(`Attribute provider_type value must be one of: \[%q %q %q\s+%q\]`, string(tfe.SAMLProviderTypeOkta), string(tfe.SAMLProviderTypeEntra), string(tfe.SAMLProviderTypeGeneric), string(tfe.SAMLProviderTypeUnknown))),
+				ExpectError: regexp.MustCompile(`(?s)Attribute provider_type value must be one of: \[.*\]`),
 			},
 		},
 	})

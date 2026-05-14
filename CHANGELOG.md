@@ -5,7 +5,7 @@ ENHANCEMENTS:
 * Support trigger patterns and working directories in stacks by @aaabdelgany [#2048](https://github.com/hashicorp/terraform-provider-tfe/pull/2048)
 * Adds `RunPostApplyRunning`,`RunPostApplyCompleted` run status by @jose-kunnel [#2046](https://github.com/hashicorp/terraform-provider-tfe/pull/2046)
 * `r/tfe_policy_set` and `d/tfe_policy_set`: Add `policy_update_patterns` attribute support for policy sets. By @nithishravindra [#2030](https://github.com/hashicorp/terraform-provider-tfe/pull/2030)
-* `r/tfe_saml_settings` and `d/tfe_saml_settings`: Add `provider_type` attribute to specify the SAML identity provider type (`okta`, `entra`, `generic`, `unknown`). By @skj-skj [#2066](https://github.com/hashicorp/terraform-provider-tfe/pull/2066)
+* `r/tfe_saml_settings` and `d/tfe_saml_settings`: Add `provider_type` attribute to specify the SAML identity provider type (`okta`, `entra`, `saml`, `unknown`). By @skj-skj [#2066](https://github.com/hashicorp/terraform-provider-tfe/pull/2066)
 
 BUG FIXES:
 * `r/tfe_team`: Fixed a `Missing Identity After Update` error on resource update by @sebasslash [#2045](https://github.com/hashicorp/terraform-provider-tfe/pull/2045)
