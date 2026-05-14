@@ -9,7 +9,7 @@ description: |-
 
 Use this data source to retrieve information about an organization's maximum time-to-live (TTL) policy for API tokens. This policy defines the maximum lifespan for organization, team, audit trail, and user tokens.
 
-This data source requires Terraform Enterprise version 2.0.1 or higher.
+~> **NOTE:** This data source requires using the provider with HCP Terraform or an instance of Terraform Enterprise at least as recent as v2.0.1.
 
 ## Example Usage
 
