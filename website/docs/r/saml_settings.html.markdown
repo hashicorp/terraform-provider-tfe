@@ -70,6 +70,7 @@ The following arguments are supported:
 * `private_key_wo_version` - (Optional) Version of the write-only private key. This field is used to trigger updates when the write-only private key changes. Must be used with `private_key_wo`. When `private_key_wo_version` changes, the write-only private key will be updated.
 * `signature_signing_method` - (Optional) Signature Signing Method. Must be either `SHA1` or `SHA256`. Defaults to `SHA256`.
 * `signature_digest_method` - (Optional) Signature Digest Method. Must be either `SHA1` or `SHA256`. Defaults to `SHA256`.
+* `provider_type` - (Optional) The type of identity provider used. Valid values are `okta`, `entra`, `saml`, and `unknown`. Defaults to `unknown`.
 
 -> **Note:** Write-Only argument `private_key_wo` is available to use in place of `private_key`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
 

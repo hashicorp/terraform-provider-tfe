@@ -61,3 +61,4 @@ The following attributes are exported:
 * `private_key` - The private key used for request and assertion signing.
 * `signature_signing_method` - Signature Signing Method.
 * `signature_digest_method` - Signature Digest Method.
+* `provider_type` - The type of identity provider used. One of `okta`, `entra`, `saml`, or `unknown`.

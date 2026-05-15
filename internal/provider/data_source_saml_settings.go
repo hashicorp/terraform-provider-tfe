@@ -52,6 +52,7 @@ type modelDataTFESAMLSettings struct {
 	PrivateKey                types.String `tfsdk:"private_key"`
 	SignatureSigningMethod    types.String `tfsdk:"signature_signing_method"`
 	SignatureDigestMethod     types.String `tfsdk:"signature_digest_method"`
+	ProviderType              types.String `tfsdk:"provider_type"`
 }
 
 // Metadata returns the data source type name.
@@ -127,6 +128,9 @@ func (d *dataSourceTFESAMLSettings) Schema(_ context.Context, _ datasource.Schem
 			"signature_digest_method": schema.StringAttribute{
 				Computed: true,
 			},
+			"provider_type": schema.StringAttribute{
+				Computed: true,
+			},
 		},
 	}
 }
@@ -180,6 +184,7 @@ func (d *dataSourceTFESAMLSettings) Read(ctx context.Context, _ datasource.ReadR
 		PrivateKey:                types.StringValue(s.PrivateKey),
 		SignatureSigningMethod:    types.StringValue(s.SignatureSigningMethod),
 		SignatureDigestMethod:     types.StringValue(s.SignatureDigestMethod),
+		ProviderType:              types.StringValue(string(s.ProviderType)),
 	})
 	resp.Diagnostics.Append(diags...)
 }

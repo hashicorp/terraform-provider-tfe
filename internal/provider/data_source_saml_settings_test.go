@@ -37,6 +37,7 @@ func TestAccTFESAMLSettingsDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resourceAddress, "sso_api_token_session_timeout"),
 					resource.TestCheckResourceAttrSet(resourceAddress, "acs_consumer_url"),
 					resource.TestCheckResourceAttrSet(resourceAddress, "metadata_url"),
+					resource.TestCheckResourceAttrSet(resourceAddress, "provider_type"),
 				),
 			},
 		},
