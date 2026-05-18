@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-const testSMTPResourceName = "tfe_smtp_settings.foobar"
+const testSMTPResourceName = "tfe_admin_smtp_settings.foobar"
 
 // FLAKE ALERT: SMTP settings are a singleton resource shared by the entire TFE
 // instance, and any test touching them is at high risk to flake.
@@ -31,10 +31,10 @@ const testSMTPResourceName = "tfe_smtp_settings.foobar"
 // tests running concurrently in different containers will be competing to set
 // the same shared global state in the TFE instance.
 
-// TestAccTFESMTPSettings_omnibus test suite is skipped in the CI, and will only run in TFE Nightly workflow
+// TestAccTFEAdminSMTPSettings_omnibus test suite is skipped in the CI, and will only run in TFE Nightly workflow
 // Should this test name ever change, you will also need to update the regex in ci.yml
 
-func TestAccTFESMTPSettings_omnibus(t *testing.T) {
+func TestAccTFEAdminSMTPSettings_omnibus(t *testing.T) {
 	skipIfCloud(t)
 
 	t.Run("basic SMTP settings without authentication", func(t *testing.T) {
@@ -47,10 +47,10 @@ func TestAccTFESMTPSettings_omnibus(t *testing.T) {
 		resource.Test(t, resource.TestCase{
 			PreCheck:                 func() { testAccPreCheck(t) },
 			ProtoV6ProviderFactories: testAccMuxedProviders,
-			CheckDestroy:             testAccTFESMTPSettingsDestroy,
+			CheckDestroy:             testAccTFEAdminSMTPSettingsDestroy,
 			Steps: []resource.TestStep{
 				{
-					Config: testAccTFESMTPSettings_AuthNone(s),
+					Config: testAccTFEAdminSMTPSettings_AuthNone(s),
 					Check: resource.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(testSMTPResourceName, "id", "smtp"),
 						resource.TestCheckResourceAttr(testSMTPResourceName, "enabled", "false"),
@@ -65,7 +65,7 @@ func TestAccTFESMTPSettings_omnibus(t *testing.T) {
 	})
 }
 
-func TestAccTFESMTPSettings_AuthNone(t *testing.T) {
+func TestAccTFEAdminSMTPSettings_AuthNone(t *testing.T) {
 	skipIfCloud(t)
 
 	s := tfe.AdminSMTPSetting{
@@ -82,7 +82,7 @@ func TestAccTFESMTPSettings_AuthNone(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFESMTPSettings_AuthNone(s),
+				Config: testAccTFEAdminSMTPSettings_AuthNone(s),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(testSMTPResourceName, "enabled", "false"),
 					resource.TestCheckResourceAttr(testSMTPResourceName, "host", s.Host),
@@ -93,7 +93,7 @@ func TestAccTFESMTPSettings_AuthNone(t *testing.T) {
 		},
 	})
 }
-func TestAccTFESMTPSettings_AuthPlain_writeOnly(t *testing.T) {
+func TestAccTFEAdminSMTPSettings_AuthPlain_writeOnly(t *testing.T) {
 	skipIfCloud(t)
 
 	s := tfe.AdminSMTPSetting{
@@ -111,7 +111,7 @@ func TestAccTFESMTPSettings_AuthPlain_writeOnly(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFESMTPSettings_AuthPlainLogin_writeOnly(s, password),
+				Config: testAccTFEAdminSMTPSettings_AuthPlainLogin_writeOnly(s, password),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(testSMTPResourceName, "enabled", "false"),
 					resource.TestCheckResourceAttr(testSMTPResourceName, "host", s.Host),
@@ -125,7 +125,7 @@ func TestAccTFESMTPSettings_AuthPlain_writeOnly(t *testing.T) {
 	})
 }
 
-func TestAccTFESMTPSettings_AuthLogin_writeOnly(t *testing.T) {
+func TestAccTFEAdminSMTPSettings_AuthLogin_writeOnly(t *testing.T) {
 	skipIfCloud(t)
 
 	s := tfe.AdminSMTPSetting{
@@ -143,7 +143,7 @@ func TestAccTFESMTPSettings_AuthLogin_writeOnly(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFESMTPSettings_AuthPlainLogin_writeOnly(s, password),
+				Config: testAccTFEAdminSMTPSettings_AuthPlainLogin_writeOnly(s, password),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(testSMTPResourceName, "enabled", "false"),
 					resource.TestCheckResourceAttr(testSMTPResourceName, "host", s.Host),
@@ -157,7 +157,7 @@ func TestAccTFESMTPSettings_AuthLogin_writeOnly(t *testing.T) {
 	})
 }
 
-func TestAccTFESMTPSettings_AuthPlain_writeOnly_update(t *testing.T) {
+func TestAccTFEAdminSMTPSettings_AuthPlain_writeOnly_update(t *testing.T) {
 	skipIfCloud(t)
 
 	s := tfe.AdminSMTPSetting{
@@ -176,7 +176,7 @@ func TestAccTFESMTPSettings_AuthPlain_writeOnly_update(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFESMTPSettings_AuthPlainLogin_writeOnly_version(s, password1, 1),
+				Config: testAccTFEAdminSMTPSettings_AuthPlainLogin_writeOnly_version(s, password1, 1),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(testSMTPResourceName, "enabled", "false"),
 					resource.TestCheckResourceAttr(testSMTPResourceName, "host", s.Host),
@@ -187,7 +187,7 @@ func TestAccTFESMTPSettings_AuthPlain_writeOnly_update(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFESMTPSettings_AuthPlainLogin_writeOnly_version(s, password2, 2),
+				Config: testAccTFEAdminSMTPSettings_AuthPlainLogin_writeOnly_version(s, password2, 2),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(testSMTPResourceName, "enabled", "false"),
 					resource.TestCheckResourceAttr(testSMTPResourceName, "host", s.Host),
@@ -201,7 +201,7 @@ func TestAccTFESMTPSettings_AuthPlain_writeOnly_update(t *testing.T) {
 	})
 }
 
-func TestAccTFESMTPSettings_AuthPlain_writeOnly_no_version_change(t *testing.T) {
+func TestAccTFEAdminSMTPSettings_AuthPlain_writeOnly_no_version_change(t *testing.T) {
 	skipIfCloud(t)
 
 	s := tfe.AdminSMTPSetting{
@@ -220,7 +220,7 @@ func TestAccTFESMTPSettings_AuthPlain_writeOnly_no_version_change(t *testing.T) 
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFESMTPSettings_AuthPlainLogin_writeOnly_version(s, password1, 1),
+				Config: testAccTFEAdminSMTPSettings_AuthPlainLogin_writeOnly_version(s, password1, 1),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(testSMTPResourceName, "enabled", "false"),
 					resource.TestCheckResourceAttr(testSMTPResourceName, "host", s.Host),
@@ -232,7 +232,7 @@ func TestAccTFESMTPSettings_AuthPlain_writeOnly_no_version_change(t *testing.T) 
 			},
 			{
 				// Same version (1) but different password - should NOT trigger update
-				Config: testAccTFESMTPSettings_AuthPlainLogin_writeOnly_version(s, password2, 1),
+				Config: testAccTFEAdminSMTPSettings_AuthPlainLogin_writeOnly_version(s, password2, 1),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(testSMTPResourceName, "enabled", "false"),
 					resource.TestCheckResourceAttr(testSMTPResourceName, "host", s.Host),
@@ -246,7 +246,7 @@ func TestAccTFESMTPSettings_AuthPlain_writeOnly_no_version_change(t *testing.T) 
 	})
 }
 
-func TestAccTFESMTPSettings_AuthPlain(t *testing.T) {
+func TestAccTFEAdminSMTPSettings_AuthPlain(t *testing.T) {
 	skipIfCloud(t)
 
 	s := tfe.AdminSMTPSetting{
@@ -264,7 +264,7 @@ func TestAccTFESMTPSettings_AuthPlain(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFESMTPSettings_AuthPlainLogin(s, password),
+				Config: testAccTFEAdminSMTPSettings_AuthPlainLogin(s, password),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(testSMTPResourceName, "enabled", "false"),
 					resource.TestCheckResourceAttr(testSMTPResourceName, "host", s.Host),
@@ -277,7 +277,7 @@ func TestAccTFESMTPSettings_AuthPlain(t *testing.T) {
 	})
 }
 
-func TestAccTFESMTPSettings_AuthLogin(t *testing.T) {
+func TestAccTFEAdminSMTPSettings_AuthLogin(t *testing.T) {
 	skipIfCloud(t)
 
 	s := tfe.AdminSMTPSetting{
@@ -295,7 +295,7 @@ func TestAccTFESMTPSettings_AuthLogin(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFESMTPSettings_AuthPlainLogin(s, password),
+				Config: testAccTFEAdminSMTPSettings_AuthPlainLogin(s, password),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(testSMTPResourceName, "enabled", "false"),
 					resource.TestCheckResourceAttr(testSMTPResourceName, "host", s.Host),
@@ -308,9 +308,9 @@ func TestAccTFESMTPSettings_AuthLogin(t *testing.T) {
 	})
 }
 
-// TestAccTFESMTPSettings_TestEmailAddressDrift validates that setting
+// TestAccTFEAdminSMTPSettings_TestEmailAddressDrift validates that setting
 // test_email_address does not cause a perpetual diff on subsequent plans.
-func TestAccTFESMTPSettings_TestEmailAddressDrift(t *testing.T) {
+func TestAccTFEAdminSMTPSettings_TestEmailAddressDrift(t *testing.T) {
 	skipIfCloud(t)
 
 	s := tfe.AdminSMTPSetting{
@@ -326,11 +326,11 @@ func TestAccTFESMTPSettings_TestEmailAddressDrift(t *testing.T) {
 		},
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccMuxedProviders,
-		CheckDestroy:             testAccTFESMTPSettingsDestroy,
+		CheckDestroy:             testAccTFEAdminSMTPSettingsDestroy,
 		Steps: []resource.TestStep{
 			// Step 1: initial apply — sets test_email_address in config.
 			{
-				Config: testAccTFESMTPSettings_TestEmailAddressDrift(s),
+				Config: testAccTFEAdminSMTPSettings_TestEmailAddressDrift(s),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(testSMTPResourceName, "host", s.Host),
 					resource.TestCheckResourceAttr(testSMTPResourceName, "test_email_address", "test-recipient@example.com"),
@@ -341,7 +341,7 @@ func TestAccTFESMTPSettings_TestEmailAddressDrift(t *testing.T) {
 			// Terraform then diffs the config value ("test-recipient@example.com")
 			// against the state value (null) and drift occurs.
 			{
-				Config:             testAccTFESMTPSettings_TestEmailAddressDrift(s),
+				Config:             testAccTFEAdminSMTPSettings_TestEmailAddressDrift(s),
 				ExpectNonEmptyPlan: false,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(testSMTPResourceName, "test_email_address", "test-recipient@example.com"),
@@ -351,10 +351,10 @@ func TestAccTFESMTPSettings_TestEmailAddressDrift(t *testing.T) {
 	})
 }
 
-// TestAccTFESMTPSettings_HostSenderNullPreservation validates that
+// TestAccTFEAdminSMTPSettings_HostSenderNullPreservation validates that
 // host and sender are preserved correctly in state and do not produce a
 // perpetual diff when removed from config.
-func TestAccTFESMTPSettings_HostSenderNullPreservation(t *testing.T) {
+func TestAccTFEAdminSMTPSettings_HostSenderNullPreservation(t *testing.T) {
 	skipIfCloud(t)
 
 	s := tfe.AdminSMTPSetting{
@@ -370,11 +370,11 @@ func TestAccTFESMTPSettings_HostSenderNullPreservation(t *testing.T) {
 		},
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccMuxedProviders,
-		CheckDestroy:             testAccTFESMTPSettingsDestroy,
+		CheckDestroy:             testAccTFEAdminSMTPSettingsDestroy,
 		Steps: []resource.TestStep{
 			// Step 1: apply with host and sender explicitly set.
 			{
-				Config: testAccTFESMTPSettings_HostSenderNullPreservation_WithHostSender(s),
+				Config: testAccTFEAdminSMTPSettings_HostSenderNullPreservation_WithHostSender(s),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(testSMTPResourceName, "host", s.Host),
 					resource.TestCheckResourceAttr(testSMTPResourceName, "sender", s.Sender),
@@ -385,7 +385,7 @@ func TestAccTFESMTPSettings_HostSenderNullPreservation(t *testing.T) {
 			// host="" and sender="" to be written into state.  On the
 			// next plan Terraform sees config=null vs state="" and drift occurs.
 			{
-				Config:             testAccTFESMTPSettings_HostSenderNullPreservation_NoHostSender(s),
+				Config:             testAccTFEAdminSMTPSettings_HostSenderNullPreservation_NoHostSender(s),
 				ExpectNonEmptyPlan: false,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckNoResourceAttr(testSMTPResourceName, "host"),
@@ -396,9 +396,9 @@ func TestAccTFESMTPSettings_HostSenderNullPreservation(t *testing.T) {
 	})
 }
 
-func testAccTFESMTPSettings_AuthPlainLogin_writeOnly(s tfe.AdminSMTPSetting, password string) string {
+func testAccTFEAdminSMTPSettings_AuthPlainLogin_writeOnly(s tfe.AdminSMTPSetting, password string) string {
 	return fmt.Sprintf(`
-resource "tfe_smtp_settings" "foobar" {
+resource "tfe_admin_smtp_settings" "foobar" {
   enabled               = false
   host                  = "%s"
   port                  = %d
@@ -410,9 +410,9 @@ resource "tfe_smtp_settings" "foobar" {
 }`, s.Host, s.Port, s.Sender, s.Auth, s.Username, password)
 }
 
-func testAccTFESMTPSettings_AuthPlainLogin_writeOnly_version(s tfe.AdminSMTPSetting, password string, passwordVersion int) string {
+func testAccTFEAdminSMTPSettings_AuthPlainLogin_writeOnly_version(s tfe.AdminSMTPSetting, password string, passwordVersion int) string {
 	return fmt.Sprintf(`
-resource "tfe_smtp_settings" "foobar" {
+resource "tfe_admin_smtp_settings" "foobar" {
   enabled               = false
   host                  = "%s"
   port                  = %d
@@ -424,9 +424,9 @@ resource "tfe_smtp_settings" "foobar" {
 }`, s.Host, s.Port, s.Sender, s.Auth, s.Username, password, passwordVersion)
 }
 
-func testAccTFESMTPSettings_AuthPlainLogin(s tfe.AdminSMTPSetting, password string) string {
+func testAccTFEAdminSMTPSettings_AuthPlainLogin(s tfe.AdminSMTPSetting, password string) string {
 	return fmt.Sprintf(`
-resource "tfe_smtp_settings" "foobar" {
+resource "tfe_admin_smtp_settings" "foobar" {
   enabled               = false
   host                  = "%s"
   port                  = %d
@@ -436,9 +436,9 @@ resource "tfe_smtp_settings" "foobar" {
   password              = "%s"
 }`, s.Host, s.Port, s.Sender, s.Auth, s.Username, password)
 }
-func testAccTFESMTPSettings_AuthNone(s tfe.AdminSMTPSetting) string {
+func testAccTFEAdminSMTPSettings_AuthNone(s tfe.AdminSMTPSetting) string {
 	return fmt.Sprintf(`
-resource "tfe_smtp_settings" "foobar" {
+resource "tfe_admin_smtp_settings" "foobar" {
   enabled               = false
   host                  = "%s"
   port                  = %d
@@ -447,9 +447,9 @@ resource "tfe_smtp_settings" "foobar" {
 }`, s.Host, s.Port, s.Sender, s.Auth)
 }
 
-func testAccTFESMTPSettings_TestEmailAddressDrift(s tfe.AdminSMTPSetting) string {
+func testAccTFEAdminSMTPSettings_TestEmailAddressDrift(s tfe.AdminSMTPSetting) string {
 	return fmt.Sprintf(`
-resource "tfe_smtp_settings" "foobar" {
+resource "tfe_admin_smtp_settings" "foobar" {
   host               = "%s"
   port               = %d
   sender             = "%s"
@@ -458,9 +458,9 @@ resource "tfe_smtp_settings" "foobar" {
 }`, s.Host, s.Port, s.Sender, s.Auth)
 }
 
-func testAccTFESMTPSettings_HostSenderNullPreservation_WithHostSender(s tfe.AdminSMTPSetting) string {
+func testAccTFEAdminSMTPSettings_HostSenderNullPreservation_WithHostSender(s tfe.AdminSMTPSetting) string {
 	return fmt.Sprintf(`
-resource "tfe_smtp_settings" "foobar" {
+resource "tfe_admin_smtp_settings" "foobar" {
   host   = "%s"
   port   = %d
   sender = "%s"
@@ -468,15 +468,15 @@ resource "tfe_smtp_settings" "foobar" {
 }`, s.Host, s.Port, s.Sender, s.Auth)
 }
 
-func testAccTFESMTPSettings_HostSenderNullPreservation_NoHostSender(s tfe.AdminSMTPSetting) string {
+func testAccTFEAdminSMTPSettings_HostSenderNullPreservation_NoHostSender(s tfe.AdminSMTPSetting) string {
 	return fmt.Sprintf(`
-resource "tfe_smtp_settings" "foobar" {
+resource "tfe_admin_smtp_settings" "foobar" {
   port = %d
   auth = "%s"
 }`, s.Port, s.Auth)
 }
 
-func testAccTFESMTPSettingsDestroy(_ *terraform.State) error {
+func testAccTFEAdminSMTPSettingsDestroy(_ *terraform.State) error {
 	settings, err := testAccConfiguredClient.Client.Admin.Settings.SMTP.Read(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to read SMTP Settings: %w", err)

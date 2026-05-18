@@ -1,11 +1,11 @@
 ---
 layout: "tfe"
-page_title: "Terraform Enterprise: tfe_smtp_settings"
+page_title: "Terraform Enterprise: tfe_admin_smtp_settings"
 description: |-
-  Manages SMTP Settings.
+  Manages Admin SMTP Settings.
 ---
 
-# tfe_smtp_settings
+# tfe_admin_smtp_settings
 
 Use this resource to create, update and destroy SMTP Settings. It applies only to Terraform Enterprise and requires admin token configuration. See example usage for incorporating an admin token in your provider config.
 
@@ -19,7 +19,7 @@ provider "tfe" {
   token    = var.admin_token
 }
 
-resource "tfe_smtp_settings" "this" {
+resource "tfe_admin_smtp_settings" "this" {
   host   = "smtp.example.com"
   port   = 25
   sender = "noreply@example.com"
@@ -35,7 +35,7 @@ provider "tfe" {
   token    = var.admin_token
 }
 
-resource "tfe_smtp_settings" "this" {
+resource "tfe_admin_smtp_settings" "this" {
   host     = "smtp.example.com"
   port     = 587
   sender   = "noreply@example.com"
@@ -58,7 +58,7 @@ provider "tfe" {
   token    = var.admin_token
 }
 
-resource "tfe_smtp_settings" "this" {
+resource "tfe_admin_smtp_settings" "this" {
   host                = "smtp.example.com"
   port                = 587
   sender              = "noreply@example.com"
@@ -95,4 +95,4 @@ The following arguments are supported:
 SMTP Settings can be imported.
 
 ```shell
-terraform import tfe_smtp_settings.this smtp
+terraform import tfe_admin_smtp_settings.this smtp

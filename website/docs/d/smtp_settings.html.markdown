@@ -1,11 +1,11 @@
 ---
 layout: "tfe"
-page_title: "Terraform Enterprise: tfe_smtp_settings"
+page_title: "Terraform Enterprise: tfe_admin_smtp_settings"
 description: |-
-  Get information on SMTP Settings.
+  Get information on Admin SMTP Settings.
 ---
 
-# Data Source: tfe_smtp_settings
+# Data Source: tfe_admin_smtp_settings
 
 Use this data source to get information about SMTP Settings. It applies only to Terraform Enterprise and requires admin token configuration. See example usage for incorporating an admin token in your provider config.
 
@@ -26,7 +26,7 @@ provider "tfe" {
   token    = var.admin_token
 }
 
-data "tfe_smtp_settings" "foo" {
+data "tfe_admin_smtp_settings" "foo" {
   provider = tfe.admin
 }
 ```

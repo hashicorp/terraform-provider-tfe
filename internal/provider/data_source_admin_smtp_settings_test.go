@@ -13,18 +13,18 @@ import (
 // instance, and any test touching them is at high risk to flake.
 // This test is fine, because it only checks that the attributes have SOME
 // value. Testing for any _particular_ value would not be viable, because
-// `resource_tfe_smtp_settings_test.go` exists. See that file for more color on
+// `resource_tfe_admin_smtp_settings_test.go` exists. See that file for more color on
 // this.
-func TestAccTFESMTPSettingsDataSource_basic(t *testing.T) {
+func TestAccTFEAdminSMTPSettingsDataSource_basic(t *testing.T) {
 	skipIfCloud(t)
 
-	resourceAddress := "data.tfe_smtp_settings.foobar"
+	resourceAddress := "data.tfe_admin_smtp_settings.foobar"
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFESMTPSettingsDataSourceConfig_basic(),
+				Config: testAccTFEAdminSMTPSettingsDataSourceConfig_basic(),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceAddress, "id"),
 					resource.TestCheckResourceAttrSet(resourceAddress, "enabled"),
@@ -37,6 +37,6 @@ func TestAccTFESMTPSettingsDataSource_basic(t *testing.T) {
 	)
 }
 
-func testAccTFESMTPSettingsDataSourceConfig_basic() string {
-	return `data "tfe_smtp_settings" "foobar" {}`
+func testAccTFEAdminSMTPSettingsDataSourceConfig_basic() string {
+	return `data "tfe_admin_smtp_settings" "foobar" {}`
 }

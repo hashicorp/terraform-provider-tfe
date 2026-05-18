@@ -30,7 +30,7 @@ const (
 	smtpDefaultPort int64 = 25
 )
 
-type modelTFESMTPSettings struct {
+type modelTFEAdminSMTPSettings struct {
 	ID                types.String `tfsdk:"id"`
 	Enabled           types.Bool   `tfsdk:"enabled"`
 	Host              types.String `tfsdk:"host"`
@@ -44,13 +44,13 @@ type modelTFESMTPSettings struct {
 	TestEmailAddress  types.String `tfsdk:"test_email_address"`
 }
 
-// resourceTFESMTPSettings implements the tfe_smtp_settings resource type
-type resourceTFESMTPSettings struct {
+// resourceTFEAdminSMTPSettings implements the tfe_admin_smtp_settings resource type
+type resourceTFEAdminSMTPSettings struct {
 	client *tfe.Client
 }
 
 // Configure implements resource.ResourceWithConfigure
-func (r *resourceTFESMTPSettings) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *resourceTFEAdminSMTPSettings) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	// Early exit if provider is not properly configured (i.e. we're only validating config or something)
 	if req.ProviderData == nil {
 		return
@@ -66,12 +66,12 @@ func (r *resourceTFESMTPSettings) Configure(ctx context.Context, req resource.Co
 }
 
 // Metadata implements resource.Resource
-func (r *resourceTFESMTPSettings) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_smtp_settings"
+func (r *resourceTFEAdminSMTPSettings) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_admin_smtp_settings"
 }
 
 // ConfigValidators implements resource.ResourceWithConfigValidators
-func (r *resourceTFESMTPSettings) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
+func (r *resourceTFEAdminSMTPSettings) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
 	return []resource.ConfigValidator{
 		resourcevalidator.PreferWriteOnlyAttribute(
 			path.MatchRoot("password"),
@@ -81,7 +81,7 @@ func (r *resourceTFESMTPSettings) ConfigValidators(ctx context.Context) []resour
 }
 
 // Schema implements resource.Resource
-func (r *resourceTFESMTPSettings) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *resourceTFEAdminSMTPSettings) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Version:     0,
 		Description: "Manages SMTP settings for Terraform Enterprise.",
@@ -176,19 +176,19 @@ func (r *resourceTFESMTPSettings) Schema(ctx context.Context, req resource.Schem
 }
 
 // Read implements resource.Resource
-func (r *resourceTFESMTPSettings) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var m modelTFESMTPSettings
+func (r *resourceTFEAdminSMTPSettings) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var m modelTFEAdminSMTPSettings
 	diags := req.State.Get(ctx, &m)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	tflog.Debug(ctx, "Reading SMTP Settings")
+	tflog.Debug(ctx, "Reading Admin SMTP Settings")
 
 	smtpSettings, err := r.client.Admin.Settings.SMTP.Read(ctx)
 	if err != nil {
-		resp.Diagnostics.AddError("Error reading SMTP Settings", "Could not read SMTP Settings, unexpected error: "+err.Error())
+		resp.Diagnostics.AddError("Error reading Admin SMTP Settings", "Could not read Admin SMTP Settings, unexpected error: "+err.Error())
 		return
 	}
 
@@ -206,27 +206,27 @@ func (r *resourceTFESMTPSettings) Read(ctx context.Context, req resource.ReadReq
 }
 
 // Create implements resource.Resource
-func (r *resourceTFESMTPSettings) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var m modelTFESMTPSettings
+func (r *resourceTFEAdminSMTPSettings) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var m modelTFEAdminSMTPSettings
 	diags := req.Plan.Get(ctx, &m)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	var config modelTFESMTPSettings
+	var config modelTFEAdminSMTPSettings
 	diags = req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	tflog.Debug(ctx, "Create SMTP Settings")
+	tflog.Debug(ctx, "Create Admin SMTP Settings")
 	// Check config for write-only password since plan may not have it populated
 	isWriteOnly := !config.PasswordWO.IsNull() && !config.PasswordWO.IsUnknown()
-	smtpSettings, err := r.updateSMTPSettings(ctx, m, config)
+	smtpSettings, err := r.updateAdminSMTPSettings(ctx, m, config)
 	if err != nil {
-		resp.Diagnostics.AddError("Error creating SMTP Settings", "Could not set SMTP Settings, unexpected error: "+err.Error())
+		resp.Diagnostics.AddError("Error creating AdminSMTP Settings", "Could not set Admin SMTP Settings, unexpected error: "+err.Error())
 		return
 	}
 
@@ -240,34 +240,34 @@ func (r *resourceTFESMTPSettings) Create(ctx context.Context, req resource.Creat
 }
 
 // Update implements resource.Resource
-func (r *resourceTFESMTPSettings) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var m modelTFESMTPSettings
+func (r *resourceTFEAdminSMTPSettings) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var m modelTFEAdminSMTPSettings
 	diags := req.Plan.Get(ctx, &m)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	var config modelTFESMTPSettings
+	var config modelTFEAdminSMTPSettings
 	diags = req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	var state modelTFESMTPSettings
+	var state modelTFEAdminSMTPSettings
 	diags = req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	tflog.Debug(ctx, "Update SMTP Settings")
+	tflog.Debug(ctx, "Update Admin SMTP Settings")
 	// Check config for write-only password since plan may not have it populated
 	isWriteOnly := !config.PasswordWO.IsNull() && !config.PasswordWO.IsUnknown()
-	smtpSettings, err := r.updateSMTPSettings(ctx, m, config)
+	smtpSettings, err := r.updateAdminSMTPSettings(ctx, m, config)
 	if err != nil {
-		resp.Diagnostics.AddError("Error updating SMTP Settings", "Could not set SMTP Settings, unexpected error: "+err.Error())
+		resp.Diagnostics.AddError("Error updating Admin SMTP Settings", "Could not set Admin SMTP Settings, unexpected error: "+err.Error())
 		return
 	}
 
@@ -281,15 +281,15 @@ func (r *resourceTFESMTPSettings) Update(ctx context.Context, req resource.Updat
 }
 
 // Delete disables the SMTP Settings and then removes the resource from the state file. You cannot delete TFE SMTP Settings, only disable them
-func (r *resourceTFESMTPSettings) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var m modelTFESMTPSettings
+func (r *resourceTFEAdminSMTPSettings) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var m modelTFEAdminSMTPSettings
 	diags := req.State.Get(ctx, &m)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	tflog.Debug(ctx, "Delete SMTP Settings")
+	tflog.Debug(ctx, "Delete Admin SMTP Settings")
 	_, err := r.client.Admin.Settings.SMTP.Update(ctx, tfe.AdminSMTPSettingsUpdateOptions{
 		Enabled:          basetypes.NewBoolValue(false).ValueBoolPointer(),
 		Host:             basetypes.NewStringValue("").ValueStringPointer(),
@@ -307,10 +307,10 @@ func (r *resourceTFESMTPSettings) Delete(ctx context.Context, req resource.Delet
 }
 
 // ImportState implements resource.ResourceWithImportState
-func (r *resourceTFESMTPSettings) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *resourceTFEAdminSMTPSettings) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	smtpSettings, err := r.client.Admin.Settings.SMTP.Read(ctx)
 	if err != nil {
-		resp.Diagnostics.AddError("Error importing SMTP Settings", "Could not retrieve SMTP Settings, unexpected error: "+err.Error())
+		resp.Diagnostics.AddError("Error importing Admin SMTP Settings", "Could not retrieve Admin SMTP Settings, unexpected error: "+err.Error())
 		return
 	}
 
@@ -320,18 +320,18 @@ func (r *resourceTFESMTPSettings) ImportState(ctx context.Context, req resource.
 }
 
 var (
-	_ resource.Resource                = &resourceTFESMTPSettings{}
-	_ resource.ResourceWithConfigure   = &resourceTFESMTPSettings{}
-	_ resource.ResourceWithImportState = &resourceTFESMTPSettings{}
+	_ resource.Resource                = &resourceTFEAdminSMTPSettings{}
+	_ resource.ResourceWithConfigure   = &resourceTFEAdminSMTPSettings{}
+	_ resource.ResourceWithImportState = &resourceTFEAdminSMTPSettings{}
 )
 
 // NewSMTPSettingsResource is a resource function for the framework provider.
-func NewSMTPSettingsResource() resource.Resource {
-	return &resourceTFESMTPSettings{}
+func NewAdminSMTPSettingsResource() resource.Resource {
+	return &resourceTFEAdminSMTPSettings{}
 }
 
 // updateSMTPSettings was created to keep the code DRY. It is used in both Create and Update functions
-func (r *resourceTFESMTPSettings) updateSMTPSettings(ctx context.Context, m modelTFESMTPSettings, config modelTFESMTPSettings) (*tfe.AdminSMTPSetting, error) {
+func (r *resourceTFEAdminSMTPSettings) updateAdminSMTPSettings(ctx context.Context, m modelTFEAdminSMTPSettings, config modelTFEAdminSMTPSettings) (*tfe.AdminSMTPSetting, error) {
 	// Use password from config since write-only attributes aren't in the plan
 	cur_pass := config.Password
 	if !config.PasswordWO.IsNull() && !config.PasswordWO.IsUnknown() {
@@ -349,14 +349,14 @@ func (r *resourceTFESMTPSettings) updateSMTPSettings(ctx context.Context, m mode
 		TestEmailAddress: m.TestEmailAddress.ValueStringPointer(),
 	})
 	if err != nil {
-		return s, fmt.Errorf("failed to update SMTP Settings: %w", err)
+		return s, fmt.Errorf("failed to update Admin SMTP Settings: %w", err)
 	}
 	return s, nil
 }
 
-// modelFromTFEAdminSMTPSettings builds a modelTFESMTPSettings struct from a tfe.AdminSMTPSetting value
-func modelFromTFEAdminSMTPSettings(v *tfe.AdminSMTPSetting, password types.String, isWriteOnly bool) modelTFESMTPSettings {
-	m := modelTFESMTPSettings{
+// modelFromTFEAdminSMTPSettings builds a modelTFEAdminSMTPSettings struct from a tfe.AdminSMTPSetting value
+func modelFromTFEAdminSMTPSettings(v *tfe.AdminSMTPSetting, password types.String, isWriteOnly bool) modelTFEAdminSMTPSettings {
+	m := modelTFEAdminSMTPSettings{
 		ID:       types.StringValue(v.ID),
 		Enabled:  types.BoolValue(v.Enabled),
 		Host:     types.StringValue(v.Host),
@@ -380,7 +380,7 @@ func modelFromTFEAdminSMTPSettings(v *tfe.AdminSMTPSetting, password types.Strin
 }
 
 // preserveOptionalFields updates the result model with preserved values from source model
-func preserveOptionalFields(result *modelTFESMTPSettings, source modelTFESMTPSettings) {
+func preserveOptionalFields(result *modelTFEAdminSMTPSettings, source modelTFEAdminSMTPSettings) {
 	// Preserve null values for optional fields
 	if source.Host.IsNull() {
 		result.Host = types.StringNull()

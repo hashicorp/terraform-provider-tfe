@@ -15,22 +15,22 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ datasource.DataSource              = &dataSourceTFESMTPSettings{}
-	_ datasource.DataSourceWithConfigure = &dataSourceTFESMTPSettings{}
+	_ datasource.DataSource              = &dataSourceTFEAdminSMTPSettings{}
+	_ datasource.DataSourceWithConfigure = &dataSourceTFEAdminSMTPSettings{}
 )
 
-// NewSMTPSettingsDataSource is a helper function to simplify the provider implementation.
-func NewSMTPSettingsDataSource() datasource.DataSource {
-	return &dataSourceTFESMTPSettings{}
+// NewAdminSMTPSettingsDataSource is a helper function to simplify the provider implementation.
+func NewAdminSMTPSettingsDataSource() datasource.DataSource {
+	return &dataSourceTFEAdminSMTPSettings{}
 }
 
-// dataSourceTFESMTPSettings is the data source implementation.
-type dataSourceTFESMTPSettings struct {
+// dataSourceTFEAdminSMTPSettings is the data source implementation.
+type dataSourceTFEAdminSMTPSettings struct {
 	client *tfe.Client
 }
 
-// modelDataTFESMTPSettings maps the data source schema data.
-type modelDataTFESMTPSettings struct {
+// modelDataTFEAdminSMTPSettings maps the data source schema data.
+type modelDataTFEAdminSMTPSettings struct {
 	ID       types.String `tfsdk:"id"`
 	Enabled  types.Bool   `tfsdk:"enabled"`
 	Host     types.String `tfsdk:"host"`
@@ -41,12 +41,12 @@ type modelDataTFESMTPSettings struct {
 }
 
 // Metadata returns the data source type name.
-func (d *dataSourceTFESMTPSettings) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_smtp_settings"
+func (d *dataSourceTFEAdminSMTPSettings) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_admin_smtp_settings"
 }
 
 // Schema defines the schema for the data source.
-func (d *dataSourceTFESMTPSettings) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *dataSourceTFEAdminSMTPSettings) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Reads SMTP settings for Terraform Enterprise.",
 		Attributes: map[string]schema.Attribute{
@@ -83,7 +83,7 @@ func (d *dataSourceTFESMTPSettings) Schema(_ context.Context, _ datasource.Schem
 }
 
 // Configure adds the provider configured client to the data source.
-func (d *dataSourceTFESMTPSettings) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *dataSourceTFEAdminSMTPSettings) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -101,8 +101,8 @@ func (d *dataSourceTFESMTPSettings) Configure(_ context.Context, req datasource.
 }
 
 // Read refreshes the Terraform state with the latest data.
-func (d *dataSourceTFESMTPSettings) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var data modelDataTFESMTPSettings
+func (d *dataSourceTFEAdminSMTPSettings) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var data modelDataTFEAdminSMTPSettings
 
 	smtpSettings, err := d.client.Admin.Settings.SMTP.Read(ctx)
 	if err != nil {
