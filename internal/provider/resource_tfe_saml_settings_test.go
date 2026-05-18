@@ -69,6 +69,7 @@ func TestAccTFESAMLSettings_writeOnly(t *testing.T) {
 					resource.TestCheckNoResourceAttr(
 						testResourceName, "private_key_wo"),
 					resource.TestCheckResourceAttr(testResourceName, "private_key_wo_version", "1"),
+					resource.TestCheckResourceAttr(testResourceName, "provider_type", string(tfe.SAMLProviderTypeUnknown)),
 				),
 			},
 		},
@@ -96,6 +97,10 @@ func TestAccTFESAMLSettings_writeOnlyValidation(t *testing.T) {
 			{
 				Config:      testAccTFESAMLSettings_privateKeyVersionConflict(),
 				ExpectError: regexp.MustCompile(`Attribute "private_key" cannot be specified when "private_key_wo_version" is\s+specified`),
+			},
+			{
+				Config:      testAccTFESAMLSettings_samlProviderTypeInvalidValues(),
+				ExpectError: regexp.MustCompile(`(?s)Attribute provider_type value must be one of: \[.*\]`),
 			},
 		},
 	})
@@ -133,6 +138,7 @@ func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 						resource.TestCheckResourceAttrSet(testResourceName, "metadata_url"),
 						resource.TestCheckResourceAttr(testResourceName, "signature_signing_method", samlSignatureMethodSHA256),
 						resource.TestCheckResourceAttr(testResourceName, "signature_digest_method", samlSignatureMethodSHA256),
+						resource.TestCheckResourceAttr(testResourceName, "provider_type", string(tfe.SAMLProviderTypeUnknown)),
 					),
 				},
 			},
@@ -157,6 +163,7 @@ func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 			PrivateKey:                "TestPrivateKeyFull",
 			SignatureSigningMethod:    samlSignatureMethodSHA1,
 			SignatureDigestMethod:     samlSignatureMethodSHA256,
+			ProviderType:              tfe.SAMLProviderTypeOkta,
 		}
 		resource.Test(t, resource.TestCase{
 			PreCheck:                 func() { testAccPreCheck(t) },
@@ -183,6 +190,7 @@ func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 						resource.TestCheckResourceAttrSet(testResourceName, "metadata_url"),
 						resource.TestCheckResourceAttr(testResourceName, "signature_signing_method", s.SignatureSigningMethod),
 						resource.TestCheckResourceAttr(testResourceName, "signature_digest_method", s.SignatureDigestMethod),
+						resource.TestCheckResourceAttr(testResourceName, "provider_type", string(tfe.SAMLProviderTypeOkta)),
 					),
 				},
 			},
@@ -212,6 +220,7 @@ func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 			PrivateKey:                "TestPrivateKeyUpdate",
 			SignatureSigningMethod:    samlSignatureMethodSHA1,
 			SignatureDigestMethod:     samlSignatureMethodSHA256,
+			ProviderType:              tfe.SAMLProviderTypeEntra,
 		}
 
 		resource.Test(t, resource.TestCase{
@@ -239,6 +248,7 @@ func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 						resource.TestCheckResourceAttrSet(testResourceName, "metadata_url"),
 						resource.TestCheckResourceAttr(testResourceName, "signature_signing_method", samlSignatureMethodSHA256),
 						resource.TestCheckResourceAttr(testResourceName, "signature_digest_method", samlSignatureMethodSHA256),
+						resource.TestCheckResourceAttr(testResourceName, "provider_type", string(tfe.SAMLProviderTypeUnknown)),
 					),
 				},
 				{
@@ -261,6 +271,7 @@ func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 						resource.TestCheckResourceAttrSet(testResourceName, "metadata_url"),
 						resource.TestCheckResourceAttr(testResourceName, "signature_signing_method", updatedSetting.SignatureSigningMethod),
 						resource.TestCheckResourceAttr(testResourceName, "signature_digest_method", updatedSetting.SignatureDigestMethod),
+						resource.TestCheckResourceAttr(testResourceName, "provider_type", string(tfe.SAMLProviderTypeEntra)),
 					),
 				},
 			},
@@ -303,6 +314,10 @@ func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 						}
 						if rs.Attributes["sso_endpoint_url"] != sso {
 							return fmt.Errorf("expected sso_endpoint_url attribute to be equal to %s, received: %s", sso, rs.Attributes["sso_endpoint_url"])
+						}
+
+						if rs.Attributes["provider_type"] != string(tfe.SAMLProviderTypeUnknown) {
+							return fmt.Errorf("expected provider_type attribute to be equal to %s, received: %s", tfe.SAMLProviderTypeUnknown, rs.Attributes["provider_type"])
 						}
 						return nil
 					},
@@ -368,6 +383,9 @@ func testAccTFESAMLSettingsDestroy(_ *terraform.State) error {
 	if s.SSOAPITokenSessionTimeout != int(samlDefaultSSOAPITokenSessionTimeoutSeconds) {
 		return fmt.Errorf("SAML settings SignatureDigestMethod is not `%d`", samlDefaultSSOAPITokenSessionTimeoutSeconds)
 	}
+	if s.ProviderType != tfe.SAMLProviderTypeUnknown {
+		return fmt.Errorf("SAML settings ProviderType is not `%s`", tfe.SAMLProviderTypeUnknown)
+	}
 	return nil
 }
 
@@ -399,7 +417,8 @@ resource "tfe_saml_settings" "foobar" {
   private_key 					= "%s"
   signature_signing_method 		= "%s"
   signature_digest_method 		= "%s"
-}`, s.IDPCert, s.SLOEndpointURL, s.SSOEndpointURL, s.Debug, s.AuthnRequestsSigned, s.WantAssertionsSigned, s.TeamManagementEnabled, s.AttrUsername, s.AttrSiteAdmin, s.AttrGroups, s.SiteAdminRole, s.SSOAPITokenSessionTimeout, s.Certificate, s.PrivateKey, s.SignatureSigningMethod, s.SignatureDigestMethod)
+  provider_type                 = "%s"
+}`, s.IDPCert, s.SLOEndpointURL, s.SSOEndpointURL, s.Debug, s.AuthnRequestsSigned, s.WantAssertionsSigned, s.TeamManagementEnabled, s.AttrUsername, s.AttrSiteAdmin, s.AttrGroups, s.SiteAdminRole, s.SSOAPITokenSessionTimeout, s.Certificate, s.PrivateKey, s.SignatureSigningMethod, s.SignatureDigestMethod, s.ProviderType)
 }
 
 func testAccTFESAMLSettings_writeOnly(s tfe.AdminSAMLSetting) string {
@@ -453,5 +472,15 @@ resource "tfe_saml_settings" "foobar" {
   sso_endpoint_url       = "https://foobar.com/sso"
   private_key            = "some-key"
   private_key_wo_version = 1
+}`
+}
+
+func testAccTFESAMLSettings_samlProviderTypeInvalidValues() string {
+	return `
+resource "tfe_saml_settings" "foobar" {
+  idp_cert         = "testIDPCert"
+  slo_endpoint_url = "https://foobar.com/slo"
+  sso_endpoint_url = "https://foobar.com/sso"
+  provider_type    = "foo"
 }`
 }

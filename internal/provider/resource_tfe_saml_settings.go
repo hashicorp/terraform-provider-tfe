@@ -56,6 +56,7 @@ type modelTFESAMLSettings struct {
 	PrivateKeyWOVersion       types.Int64  `tfsdk:"private_key_wo_version"`
 	SignatureSigningMethod    types.String `tfsdk:"signature_signing_method"`
 	SignatureDigestMethod     types.String `tfsdk:"signature_digest_method"`
+	ProviderType              types.String `tfsdk:"provider_type"`
 }
 
 // resourceTFESAMLSettings implements the tfe_saml_settings resource type
@@ -88,6 +89,7 @@ func modelFromTFEAdminSAMLSettings(v tfe.AdminSAMLSetting, privateKey types.Stri
 		PrivateKeyWOVersion:       privateKeyWOVersion,
 		SignatureSigningMethod:    types.StringValue(v.SignatureSigningMethod),
 		SignatureDigestMethod:     types.StringValue(v.SignatureDigestMethod),
+		ProviderType:              types.StringValue(string(v.ProviderType)),
 	}
 
 	if len(privateKey.String()) > 0 {
@@ -273,6 +275,21 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 					),
 				},
 			},
+			"provider_type": schema.StringAttribute{
+				Description: fmt.Sprintf("The type of identity provider used. Valid values are `%s`, `%s`, `%s`, and `%s`. Defaults to `%s`", string(tfe.SAMLProviderTypeOkta), string(tfe.SAMLProviderTypeEntra), string(tfe.SAMLProviderTypeGeneric), string(tfe.SAMLProviderTypeUnknown), string(tfe.SAMLProviderTypeUnknown)),
+				Optional:    true,
+				Computed:    true,
+				Default:     stringdefault.StaticString(string(tfe.SAMLProviderTypeUnknown)),
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						string(tfe.SAMLProviderTypeOkta),
+						string(tfe.SAMLProviderTypeEntra),
+						// `tfe.SAMLProviderTypeGeneric` is the string literal "saml", and is shown as `SAML` in the TFE UI.
+						string(tfe.SAMLProviderTypeGeneric),
+						string(tfe.SAMLProviderTypeUnknown),
+					),
+				},
+			},
 		},
 	}
 }
@@ -402,6 +419,7 @@ func (r *resourceTFESAMLSettings) Delete(ctx context.Context, req resource.Delet
 		PrivateKey:                basetypes.NewStringValue("").ValueStringPointer(),
 		SignatureSigningMethod:    basetypes.NewStringValue(samlSignatureMethodSHA256).ValueStringPointer(),
 		SignatureDigestMethod:     basetypes.NewStringValue(samlSignatureMethodSHA256).ValueStringPointer(),
+		ProviderType:              tfe.SAMLProvider(tfe.SAMLProviderTypeUnknown),
 	})
 	if err != nil {
 		resp.Diagnostics.AddError("Error deleting SAML Settings", "Could not disable SAML Settings, unexpected error: "+err.Error())
@@ -482,6 +500,7 @@ func (r *resourceTFESAMLSettings) updateSAMLSettings(ctx context.Context, m mode
 		WantAssertionsSigned:      m.WantAssertionsSigned.ValueBoolPointer(),
 		SignatureSigningMethod:    m.SignatureSigningMethod.ValueStringPointer(),
 		SignatureDigestMethod:     m.SignatureDigestMethod.ValueStringPointer(),
+		ProviderType:              tfe.SAMLProvider(tfe.SAMLProviderType(m.ProviderType.ValueString())),
 	})
 	if err != nil {
 		return s, fmt.Errorf("failed to update SAML Settings: %w", err)
