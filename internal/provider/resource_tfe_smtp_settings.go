@@ -200,7 +200,7 @@ func (r *resourceTFESMTPSettings) Read(ctx context.Context, req resource.ReadReq
 
 	// Preserve optional fields from state
 	preserveOptionalFields(&result, m)
-	
+
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -234,7 +234,7 @@ func (r *resourceTFESMTPSettings) Create(ctx context.Context, req resource.Creat
 
 	// Preserve optional fields from config
 	preserveOptionalFields(&result, config)
-	
+
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -275,7 +275,7 @@ func (r *resourceTFESMTPSettings) Update(ctx context.Context, req resource.Updat
 
 	// Preserve optional fields from config
 	preserveOptionalFields(&result, config)
-	
+
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
