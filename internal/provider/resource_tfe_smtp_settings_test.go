@@ -314,10 +314,10 @@ func TestAccTFESMTPSettings_TestEmailAddressDrift(t *testing.T) {
 	skipIfCloud(t)
 
 	s := tfe.AdminSMTPSetting{
-		Host:     "foobar.com",
-		Port:     25,
-		Sender:   "sender@foorbar.com",
-		Auth:     "none",
+		Host:   "foobar.com",
+		Port:   25,
+		Sender: "sender@foorbar.com",
+		Auth:   "none",
 	}
 
 	resource.Test(t, resource.TestCase{
@@ -341,7 +341,7 @@ func TestAccTFESMTPSettings_TestEmailAddressDrift(t *testing.T) {
 			// Terraform then diffs the config value ("test-recipient@example.com")
 			// against the state value (null) and drift occurs.
 			{
-				Config: testAccTFESMTPSettings_TestEmailAddressDrift(s),
+				Config:             testAccTFESMTPSettings_TestEmailAddressDrift(s),
 				ExpectNonEmptyPlan: false,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(testSMTPResourceName, "test_email_address", "test-recipient@example.com"),
@@ -358,10 +358,10 @@ func TestAccTFESMTPSettings_HostSenderNullPreservation(t *testing.T) {
 	skipIfCloud(t)
 
 	s := tfe.AdminSMTPSetting{
-		Host:     "foobar.com",
-		Port:     25,
-		Sender:   "sender@foorbar.com",
-		Auth:     "none",
+		Host:   "foobar.com",
+		Port:   25,
+		Sender: "sender@foorbar.com",
+		Auth:   "none",
 	}
 
 	resource.Test(t, resource.TestCase{
@@ -385,7 +385,7 @@ func TestAccTFESMTPSettings_HostSenderNullPreservation(t *testing.T) {
 			// host="" and sender="" to be written into state.  On the
 			// next plan Terraform sees config=null vs state="" and drift occurs.
 			{
-				Config: testAccTFESMTPSettings_HostSenderNullPreservation_NoHostSender(s),
+				Config:             testAccTFESMTPSettings_HostSenderNullPreservation_NoHostSender(s),
 				ExpectNonEmptyPlan: false,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckNoResourceAttr(testSMTPResourceName, "host"),
@@ -395,7 +395,6 @@ func TestAccTFESMTPSettings_HostSenderNullPreservation(t *testing.T) {
 		},
 	})
 }
-
 
 func testAccTFESMTPSettings_AuthPlainLogin_writeOnly(s tfe.AdminSMTPSetting, password string) string {
 	return fmt.Sprintf(`
@@ -460,13 +459,13 @@ resource "tfe_smtp_settings" "foobar" {
 }
 
 func testAccTFESMTPSettings_HostSenderNullPreservation_WithHostSender(s tfe.AdminSMTPSetting) string {
-	return 	fmt.Sprintf(`
+	return fmt.Sprintf(`
 resource "tfe_smtp_settings" "foobar" {
   host   = "%s"
   port   = %d
   sender = "%s"
   auth   = "%s"
-}`, s.Host, s.Port, s.Sender, s.Auth)	
+}`, s.Host, s.Port, s.Sender, s.Auth)
 }
 
 func testAccTFESMTPSettings_HostSenderNullPreservation_NoHostSender(s tfe.AdminSMTPSetting) string {
