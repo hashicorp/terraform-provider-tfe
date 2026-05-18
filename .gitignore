@@ -23,3 +23,6 @@ provider_tfe_override.tfrc
 site/
 .envrc
 .vscode
+
+# macOS metadata files
+.DS_Store
