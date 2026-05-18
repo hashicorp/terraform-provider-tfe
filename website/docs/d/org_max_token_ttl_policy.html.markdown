@@ -47,3 +47,4 @@ In addition to all arguments above, the following attributes are exported:
 * To check if the maximum TTL policy feature is enabled for an organization, use the `max_ttl_enabled` attribute on the `tfe_organization` data source.
 * If no policies have been configured for the organization, the data source will return default values (2 years for all token types).
 * Both human-readable duration strings (`*_max_ttl`) and millisecond values (`*_max_ttl_ms`) are provided for convenience. Use the duration strings for display purposes and milliseconds for calculations.
+* **Important:** Maximum TTL policies are enforced immediately. Any tokens that exceed the configured limits will stop working and return an "Unauthorized" error when used.

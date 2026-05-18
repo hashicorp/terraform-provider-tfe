@@ -9,7 +9,9 @@ description: |-
 
 Manages the maximum time-to-live (TTL) policy for API tokens in an organization. This resource configures the maximum lifespans for organization, team, audit trail, and user tokens. Any tokens that exceed the configured limits will cease to work.
 
-~> **Note:** To enable or disable the maximum TTL policy feature for an organization, use the `max_ttl_enabled` attribute on the `tfe_organization` resource.
+~> **NOTE:** To enable or disable the maximum TTL policy feature for an organization, use the `max_ttl_enabled` attribute on the `tfe_organization` resource.
+
+~> **WARNING:** Maximum TTL policies are enforced immediately upon creation or update. Any existing tokens that exceed the newly configured limits will stop working and return an "Unauthorized" error. Ensure all active tokens comply with the new limits before applying changes.
 
 ~> **NOTE:** This resource requires using the provider with HCP Terraform or an instance of Terraform Enterprise at least as recent as v2.0.1.
 
