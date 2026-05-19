@@ -29,6 +29,8 @@ resource "tfe_policy_set" "test" {
   kind                = "sentinel"
   agent_enabled       = "true"
   policy_tool_version = "0.24.1"
+  # Top-level policy set argument that applies when vcs_repo is configured.
+  policy_update_patterns = ["**/*.sentinel", "policies/**/*.hcl"]
   policies_path       = "policies/my-policy-set"
   workspace_ids       = [tfe_workspace.test.id]
 
@@ -92,6 +94,10 @@ The following arguments are supported:
 * `policy_tool_version` - (Optional) The policy tool version to run the evaluation against. For both Sentinel and OPA,
    leaving this argument unspecified results in selecting the latest available version at the time of creation.
    For "opa" policy sets, 'latest' will not be a valid input.
+* `policy_update_patterns` - (Optional) A list of glob patterns specifying which
+  file changes trigger policy set updates. Patterns are relative to the repository
+  root, and you can specify a maximum of 100 patterns. This argument is only
+  valid when you specify a VCS repository for the policy set.
 * `overridable` - (Optional) Whether or not users can override this policy when
    it fails during a run. Defaults to `false`. Only valid for OPA policies.
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
@@ -149,4 +155,4 @@ Policy sets can be imported using the Terraform CLI; use `<POLICY SET ID>` as th
 terraform import tfe_policy_set.test polset-wAs3zYmWAhYK7peR
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-ba35e91b7735ba3fecb7fd3795ea73502c4ec57511cb16a0a6ee8986927cc6da -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-843bd14b4615431f8800ed507d591d9e5f95a57838045ed8359b940b559bb707 -->
