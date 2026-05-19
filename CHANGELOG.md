@@ -1,4 +1,4 @@
-## Unreleased
+## v0.77.0
 
 FEATURES:
 * **New Resource:** `r/tfe_scim_settings` and **New Data Source:** `d/tfe_scim_settings`: Adds resource and data source to manage SCIM settings on Terraform Enterprise. By @skj-skj

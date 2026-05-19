@@ -53,6 +53,10 @@ The following arguments are supported:
 * `project_ids` - IDs of the projects that use the policy set.
 * `policy_ids` - IDs of the policies attached to the policy set.
 * `policies_path` - The sub-path within the attached VCS repository when using `vcs_repo`.
+* `policy_update_patterns` - Glob patterns specifying which file changes trigger
+  policy set updates. Patterns are relative to the repository root, and a
+  maximum of 100 patterns can be returned. This attribute is only valid when
+  the policy set specifies a VCS repository.
 * `vcs_repo` - Settings for the workspace's VCS repository.
 
 The `vcs_repo` block contains:
@@ -66,4 +70,4 @@ The `vcs_repo` block contains:
 * `oauth_token_id` - OAuth token ID of the configured VCS connection.
 
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-4c4e1b1b4cb1e61e614c803dc3189a486ce950b6c953d3e26c643893c12ffcbc -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-b432bacbcb78150f54b31b5365f6816f4088c72bda46cdff211f412f93a1555c -->
