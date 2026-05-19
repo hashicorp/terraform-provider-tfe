@@ -99,7 +99,12 @@ runs:
       with:
         languages: go
         api_key: ${{ inputs.datadog-workflow-token }}
-        site: datadoghq.com 
+        site: datadoghq.com
+
+    - name: Install Terraform CLI
+      uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+      with:
+        terraform_wrapper: false
 
     - name: Run Tests
       shell: bash
