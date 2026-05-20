@@ -4,8 +4,12 @@
 package provider
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"testing"
 	"time"
@@ -14,6 +18,7 @@ import (
 	"github.com/hashicorp/go-uuid"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/hashicorp/terraform-provider-tfe/internal/client"
 )
 
 const RunTasksURLEnvName = "RUN_TASKS_URL"
@@ -357,4 +362,53 @@ func retryFn(maxRetries, secondsBetween int, f retryableFn) (any, error) {
 
 		retries += 1
 	}
+}
+
+// createSCIMGroup creates a SCIM group via the SCIM v2 API and returns its ID.
+func createSCIMGroup(t *testing.T, displayName, scimToken string) string {
+	t.Helper()
+
+	hostname := os.Getenv("TFE_HOSTNAME")
+	if hostname == "" {
+		hostname = client.DefaultHostname
+	}
+
+	body, err := json.Marshal(map[string]any{
+		"displayName": displayName,
+		"schemas":     []string{"urn:ietf:params:scim:schemas:core:2.0:Group"},
+	})
+	if err != nil {
+		t.Fatalf("marshal SCIM group request body: %v", err)
+	}
+
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost,
+		fmt.Sprintf("https://%s/scim/v2/Groups", hostname), bytes.NewReader(body))
+	if err != nil {
+		t.Fatalf("build SCIM group request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/scim+json")
+	req.Header.Set("Authorization", "Bearer "+scimToken)
+
+	httpClient := &http.Client{Timeout: 30 * time.Second}
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		t.Fatalf("POST /scim/v2/Groups: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		errBody, _ := io.ReadAll(resp.Body)
+		t.Fatalf("create SCIM group: status %d body: %s", resp.StatusCode, errBody)
+	}
+
+	var res struct {
+		ID string `json:"id"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		t.Fatalf("decode SCIM group response: %v", err)
+	}
+	if res.ID == "" {
+		t.Fatal("SCIM group response missing id")
+	}
+	return res.ID
 }

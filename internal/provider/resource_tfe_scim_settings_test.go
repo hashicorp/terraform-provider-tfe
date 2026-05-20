@@ -4,21 +4,14 @@
 package provider
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
-	"os"
 	"testing"
-	"time"
 
 	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"github.com/hashicorp/terraform-provider-tfe/internal/client"
 )
 
 var scimTestSAMLSetting = tfe.AdminSAMLSetting{
@@ -98,7 +91,9 @@ func TestAccTFESCIMSettings_omnibus(t *testing.T) {
 
 	t.Run("SCIM settings site admin group", func(t *testing.T) {
 		var siteAdminGroupID string
+		var siteAdminGroupName string
 		var siteAdminGroupBID string
+		var siteAdminGroupBName string
 
 		resource.Test(t, resource.TestCase{
 			PreCheck:                 func() { testAccPreCheck(t) },
@@ -115,14 +110,20 @@ func TestAccTFESCIMSettings_omnibus(t *testing.T) {
 				// Create a SCIM group out-of-band and link it via TF_VAR.
 				{
 					PreConfig: func() {
+						tokenName := "tf-acc-test-scim-token-" + randomString(t)
 						token, err := testAccConfiguredClient.Client.Admin.Settings.SCIM.Tokens.Create(
-							context.Background(), "tf-acc-test-scim-token",
+							context.Background(), tokenName,
 						)
 						if err != nil {
 							t.Fatalf("create SCIM token: %v", err)
 						}
+						t.Cleanup(func() {
+							_ = testAccConfiguredClient.Client.Admin.Settings.SCIM.Tokens.Delete(context.Background(), token.ID)
+						})
 
-						siteAdminGroupID = createSCIMGroup(t, "tf-acc-site-admins", token.Token)
+						// No explicit group cleanup: disabling SCIM (CheckDestroy) removes all groups from the backend.
+						siteAdminGroupName = "tf-acc-site-admins-" + randomString(t)
+						siteAdminGroupID = createSCIMGroup(t, siteAdminGroupName, token.Token)
 						t.Setenv("TF_VAR_site_admin_group_scim_id", siteAdminGroupID)
 					},
 					Config: testAccTFESCIMSettings_withSiteAdminGroup(),
@@ -133,10 +134,10 @@ func TestAccTFESCIMSettings_omnibus(t *testing.T) {
 							"site_admin_group_scim_id",
 							&siteAdminGroupID,
 						),
-						resource.TestCheckResourceAttr(
+						resource.TestCheckResourceAttrPtr(
 							"tfe_scim_settings.enable_scim",
 							"site_admin_group_display_name",
-							"tf-acc-site-admins",
+							&siteAdminGroupName,
 						),
 					),
 				},
@@ -176,13 +177,19 @@ func TestAccTFESCIMSettings_omnibus(t *testing.T) {
 				// Switch from group A to group B (non-null → non-null).
 				{
 					PreConfig: func() {
+						tokenName := "tf-acc-test-scim-token-b-" + randomString(t)
 						token, err := testAccConfiguredClient.Client.Admin.Settings.SCIM.Tokens.Create(
-							context.Background(), "tf-acc-test-scim-token-b",
+							context.Background(), tokenName,
 						)
 						if err != nil {
 							t.Fatalf("create SCIM token for group B: %v", err)
 						}
-						siteAdminGroupBID = createSCIMGroup(t, "tf-acc-site-admins-b", token.Token)
+						t.Cleanup(func() {
+							_ = testAccConfiguredClient.Client.Admin.Settings.SCIM.Tokens.Delete(context.Background(), token.ID)
+						})
+						// No explicit group cleanup: disabling SCIM (CheckDestroy) removes all groups from the backend.
+						siteAdminGroupBName = "tf-acc-site-admins-b-" + randomString(t)
+						siteAdminGroupBID = createSCIMGroup(t, siteAdminGroupBName, token.Token)
 						t.Setenv("TF_VAR_site_admin_group_b_scim_id", siteAdminGroupBID)
 					},
 					Config: testAccTFESCIMSettings_withSiteAdminGroupB(),
@@ -193,10 +200,10 @@ func TestAccTFESCIMSettings_omnibus(t *testing.T) {
 							"site_admin_group_scim_id",
 							&siteAdminGroupBID,
 						),
-						resource.TestCheckResourceAttr(
+						resource.TestCheckResourceAttrPtr(
 							"tfe_scim_settings.enable_scim",
 							"site_admin_group_display_name",
-							"tf-acc-site-admins-b",
+							&siteAdminGroupBName,
 						),
 					),
 				},
@@ -367,53 +374,4 @@ resource "tfe_scim_settings" "enable_scim" {
     depends_on               = [tfe_saml_settings.enable_saml]
 }
 `, testAccTFESCIMSettings_enableSAMLWithProviderType(scimTestSAMLSetting))
-}
-
-// createSCIMGroup creates a SCIM group via the SCIM v2 API and returns its ID.
-func createSCIMGroup(t *testing.T, displayName, scimToken string) string {
-	t.Helper()
-
-	hostname := os.Getenv("TFE_HOSTNAME")
-	if hostname == "" {
-		hostname = client.DefaultHostname
-	}
-
-	body, err := json.Marshal(map[string]any{
-		"displayName": displayName,
-		"schemas":     []string{"urn:ietf:params:scim:schemas:core:2.0:Group"},
-	})
-	if err != nil {
-		t.Fatalf("marshal SCIM group request body: %v", err)
-	}
-
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost,
-		fmt.Sprintf("https://%s/scim/v2/Groups", hostname), bytes.NewReader(body))
-	if err != nil {
-		t.Fatalf("build SCIM group request: %v", err)
-	}
-	req.Header.Set("Content-Type", "application/scim+json")
-	req.Header.Set("Authorization", "Bearer "+scimToken)
-
-	httpClient := &http.Client{Timeout: 30 * time.Second}
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		t.Fatalf("POST /scim/v2/Groups: %v", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		errBody, _ := io.ReadAll(resp.Body)
-		t.Fatalf("create SCIM group: status %d body: %s", resp.StatusCode, errBody)
-	}
-
-	var res struct {
-		ID string `json:"id"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
-		t.Fatalf("decode SCIM group response: %v", err)
-	}
-	if res.ID == "" {
-		t.Fatal("SCIM group response missing id")
-	}
-	return res.ID
 }
