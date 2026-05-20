@@ -190,6 +190,14 @@ func (r *resourceTFESCIMSettings) ImportState(ctx context.Context, _ resource.Im
 		return
 	}
 
+	if !scimSettings.Enabled {
+		resp.Diagnostics.AddError(
+			"Cannot import disabled SCIM Settings",
+			"SCIM provisioning is currently disabled. Enable SCIM before importing, or use 'terraform apply' to enable it via this resource.",
+		)
+		return
+	}
+
 	result := modelFromTFEAdminSCIMSettings(*scimSettings)
 	diags := resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
@@ -201,10 +209,15 @@ func (r *resourceTFESCIMSettings) ImportState(ctx context.Context, _ resource.Im
 // when empty (unlinks the group) and the raw value otherwise (links it).
 func (r *resourceTFESCIMSettings) updateSCIMSettings(ctx context.Context, m modelTFESCIMSettings) (*tfe.AdminSCIMSetting, error) {
 	var siteAdminGroupSCIMID jsonapi.NullableAttr[string]
-	if v := m.SiteAdminGroupSCIMID.ValueString(); v == "" {
+	switch {
+	case m.SiteAdminGroupSCIMID.IsUnknown():
+		// Can't distinguish "not yet resolved" from an intentional unlink; fail loudly.
+		return nil, fmt.Errorf("site_admin_group_scim_id is not yet known; ensure the value is resolved before applying")
+	case m.SiteAdminGroupSCIMID.IsNull() || m.SiteAdminGroupSCIMID.ValueString() == "":
+		// Empty/null → unlink the site admin group.
 		siteAdminGroupSCIMID = tfe.NullString()
-	} else {
-		siteAdminGroupSCIMID = tfe.NullableString(v)
+	default:
+		siteAdminGroupSCIMID = tfe.NullableString(m.SiteAdminGroupSCIMID.ValueString())
 	}
 
 	s, err := r.client.Admin.Settings.SCIM.Update(ctx, tfe.AdminSCIMSettingUpdateOptions{
