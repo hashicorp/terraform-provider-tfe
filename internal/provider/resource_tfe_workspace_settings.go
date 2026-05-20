@@ -613,8 +613,22 @@ func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorks
 	executionMode := data.ExecutionMode.ValueString()
 	if executionMode != "" {
 		updateOptions.ExecutionMode = tfe.String(executionMode)
-		updateOptions.SettingOverwrites.ExecutionMode = tfe.Bool(true)
-		updateOptions.SettingOverwrites.AgentPool = tfe.Bool(true)
+
+		// Determine whether to mark execution_mode as overwritten. During
+		// Create the overwrites field is null/unknown (computed, not in config)
+		// so we always send the override. During Update, only send the
+		// override when the planned overwrites confirm it — this avoids
+		// inconsistencies when execution_mode is merely inherited from state.
+		sendOverwrite := data.Overwrites.IsNull() || data.Overwrites.IsUnknown()
+		if !sendOverwrite {
+			var overwritesPlanned []modelOverwrites
+			data.Overwrites.ElementsAs(ctx, &overwritesPlanned, true)
+			sendOverwrite = len(overwritesPlanned) > 0 && overwritesPlanned[0].ExecutionMode.ValueBool()
+		}
+		if sendOverwrite {
+			updateOptions.SettingOverwrites.ExecutionMode = tfe.Bool(true)
+			updateOptions.SettingOverwrites.AgentPool = tfe.Bool(true)
+		}
 
 		agentPoolID := data.AgentPoolID.ValueString() // may be empty
 		updateOptions.AgentPoolID = tfe.String(agentPoolID)
@@ -668,18 +682,26 @@ func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorks
 }
 
 func (r *workspaceSettings) addAndRemoveRemoteStateConsumers(workspaceID string, newWorkspaceIDsSet types.Set, state *tfsdk.State) error {
-	var oldWorkspaceIDsSet types.Set
+	var oldWorkspaceIDs []string
+
 	if state != nil && !state.Raw.IsNull() {
+		var oldWorkspaceIDsSet types.Set
 		if diags := state.GetAttribute(ctx, path.Root("remote_state_consumer_ids"), &oldWorkspaceIDsSet); diags.HasError() {
 			return fmt.Errorf("error comparing remote state consumer IDs: %s", diags.Errors())
 		}
-	}
-
-	var oldWorkspaceIDs []string
-	if !oldWorkspaceIDsSet.IsNull() {
-		if diags := oldWorkspaceIDsSet.ElementsAs(ctx, &oldWorkspaceIDs, true); diags.HasError() {
-			return fmt.Errorf("error comparing remote state consumer IDs: %s", diags.Errors())
+		if !oldWorkspaceIDsSet.IsNull() {
+			if diags := oldWorkspaceIDsSet.ElementsAs(ctx, &oldWorkspaceIDs, true); diags.HasError() {
+				return fmt.Errorf("error comparing remote state consumer IDs: %s", diags.Errors())
+			}
 		}
+	} else {
+		// No prior state (e.g. during Create after import). Read current
+		// consumers from the API so we can remove any that aren't desired.
+		_, currentIDs, err := readWorkspaceStateConsumers(workspaceID, r.config.Client)
+		if err != nil {
+			return fmt.Errorf("error reading current remote state consumers for workspace %s: %w", workspaceID, err)
+		}
+		oldWorkspaceIDs = currentIDs
 	}
 
 	var newWorkspaceIDs []string

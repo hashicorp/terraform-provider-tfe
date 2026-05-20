@@ -563,6 +563,14 @@ func TestAccTFEWorkspaceSettingsRemoteState_importClearsOutOfBandConsumers(t *te
 	ws := createTempWorkspace(t, tfeClient, org.Name)
 	ws2 := createTempWorkspace(t, tfeClient, org.Name)
 
+	// Disable global remote state so we can add specific consumers.
+	_, err = tfeClient.Workspaces.UpdateByID(ctx, ws.ID, tfe.WorkspaceUpdateOptions{
+		GlobalRemoteState: tfe.Bool(false),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	// Add ws2 as a remote state consumer out-of-band (simulating the UI/API).
 	err = tfeClient.Workspaces.AddRemoteStateConsumers(ctx, ws.ID,
 		tfe.WorkspaceAddRemoteStateConsumersOptions{
