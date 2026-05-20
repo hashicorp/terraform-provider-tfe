@@ -241,6 +241,34 @@ func TestAccTFESCIMSettings_omnibus(t *testing.T) {
 		})
 	})
 
+	t.Run("destroy when SCIM already disabled out-of-band", func(t *testing.T) {
+		resource.Test(t, resource.TestCase{
+			PreCheck:                 func() { testAccPreCheck(t) },
+			ProtoV6ProviderFactories: testAccMuxedProviders,
+			CheckDestroy:             testAccTFESCIMSettingsDestroy,
+			Steps: []resource.TestStep{
+				// Enable SCIM.
+				{
+					Config: testAccTFESCIMSettings_enable(),
+					Check: resource.ComposeAggregateTestCheckFunc(
+						resource.TestCheckResourceAttr("tfe_scim_settings.enable_scim", "enabled", "true"),
+					),
+				},
+				// Disable SCIM out-of-band, then refresh: Read should remove the resource
+				// from state without error, and the subsequent destroy should be a no-op.
+				{
+					PreConfig: func() {
+						if err := testAccConfiguredClient.Client.Admin.Settings.SCIM.Delete(ctx); err != nil {
+							t.Fatalf("disable SCIM out-of-band: %v", err)
+						}
+					},
+					RefreshState:       true,
+					ExpectNonEmptyPlan: true, // config still wants the resource; Terraform plans to re-create it
+				},
+			},
+		})
+	})
+
 	t.Run("SCIM settings out-of-band drift", func(t *testing.T) {
 		resource.Test(t, resource.TestCase{
 			PreCheck:                 func() { testAccPreCheck(t) },
