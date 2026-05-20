@@ -18,7 +18,6 @@ import (
 	"github.com/hashicorp/go-uuid"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"github.com/hashicorp/terraform-provider-tfe/internal/client"
 )
 
 const RunTasksURLEnvName = "RUN_TASKS_URL"
@@ -370,7 +369,7 @@ func createSCIMGroup(t *testing.T, displayName, scimToken string) string {
 
 	hostname := os.Getenv("TFE_HOSTNAME")
 	if hostname == "" {
-		hostname = client.DefaultHostname
+		hostname = "app.terraform.io"
 	}
 
 	body, err := json.Marshal(map[string]any{
