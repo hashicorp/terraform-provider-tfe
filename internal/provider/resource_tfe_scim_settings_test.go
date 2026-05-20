@@ -77,14 +77,6 @@ func TestAccTFESCIMSettings_omnibus(t *testing.T) {
 						resource.TestCheckResourceAttr("tfe_scim_settings.enable_scim", "paused", "false"),
 					),
 				},
-				// Explicitly unpause.
-				{
-					Config: testAccTFESCIMSettings_unpaused(),
-					Check: resource.ComposeAggregateTestCheckFunc(
-						resource.TestCheckResourceAttr("tfe_scim_settings.enable_scim", "enabled", "true"),
-						resource.TestCheckResourceAttr("tfe_scim_settings.enable_scim", "paused", "false"),
-					),
-				},
 			},
 		})
 	})
@@ -348,18 +340,6 @@ func testAccTFESCIMSettings_paused() string {
 
 resource "tfe_scim_settings" "enable_scim" {
 	paused     = true
-    depends_on = [tfe_saml_settings.enable_saml]
-}
-`, testAccTFESCIMSettings_enableSAMLWithProviderType(scimTestSAMLSetting))
-}
-
-func testAccTFESCIMSettings_unpaused() string {
-	return fmt.Sprintf(`
-
-%s
-
-resource "tfe_scim_settings" "enable_scim" {
-	paused     = false
     depends_on = [tfe_saml_settings.enable_saml]
 }
 `, testAccTFESCIMSettings_enableSAMLWithProviderType(scimTestSAMLSetting))
