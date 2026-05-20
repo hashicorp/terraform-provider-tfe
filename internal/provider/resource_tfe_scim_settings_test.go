@@ -211,7 +211,6 @@ func TestAccTFESCIMSettings_omnibus(t *testing.T) {
 				},
 			},
 		})
-
 	})
 
 	t.Run("SCIM settings import", func(t *testing.T) {
