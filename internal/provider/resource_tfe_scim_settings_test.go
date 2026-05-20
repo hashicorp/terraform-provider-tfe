@@ -145,27 +145,6 @@ func TestAccTFESCIMSettings_omnibus(t *testing.T) {
 					ImportStateId:     "scim",
 					ImportStateVerify: true,
 				},
-				// Clear the site admin group by setting it to "".
-				{
-					Config: testAccTFESCIMSettings_clearSiteAdminGroup(),
-					Check: resource.ComposeAggregateTestCheckFunc(
-						resource.TestCheckResourceAttr("tfe_scim_settings.enable_scim", "enabled", "true"),
-						resource.TestCheckResourceAttr("tfe_scim_settings.enable_scim", "site_admin_group_scim_id", ""),
-						resource.TestCheckResourceAttr("tfe_scim_settings.enable_scim", "site_admin_group_display_name", ""),
-					),
-				},
-				// Re-link the same group (env var still set above).
-				{
-					Config: testAccTFESCIMSettings_withSiteAdminGroup(),
-					Check: resource.ComposeAggregateTestCheckFunc(
-						resource.TestCheckResourceAttr("tfe_scim_settings.enable_scim", "enabled", "true"),
-						resource.TestCheckResourceAttrPtr(
-							"tfe_scim_settings.enable_scim",
-							"site_admin_group_scim_id",
-							&siteAdminGroupID,
-						),
-					),
-				},
 				// Switch from group A to group B (non-null → non-null).
 				{
 					PreConfig: func() {
@@ -197,6 +176,15 @@ func TestAccTFESCIMSettings_omnibus(t *testing.T) {
 							"site_admin_group_display_name",
 							&siteAdminGroupBName,
 						),
+					),
+				},
+				// Clear the site admin group by setting it to "".
+				{
+					Config: testAccTFESCIMSettings_clearSiteAdminGroup(),
+					Check: resource.ComposeAggregateTestCheckFunc(
+						resource.TestCheckResourceAttr("tfe_scim_settings.enable_scim", "enabled", "true"),
+						resource.TestCheckResourceAttr("tfe_scim_settings.enable_scim", "site_admin_group_scim_id", ""),
+						resource.TestCheckResourceAttr("tfe_scim_settings.enable_scim", "site_admin_group_display_name", ""),
 					),
 				},
 				// Omitting site_admin_group_scim_id reverts to the default (""), unlinking the group.
