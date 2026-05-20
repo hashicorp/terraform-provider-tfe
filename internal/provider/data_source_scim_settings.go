@@ -46,6 +46,7 @@ func (d *dataSourceTFESCIMSettings) Metadata(_ context.Context, req datasource.M
 // Schema defines the schema for the data source.
 func (d *dataSourceTFESCIMSettings) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Reads the current SCIM provisioning settings for the Terraform Enterprise instance.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,

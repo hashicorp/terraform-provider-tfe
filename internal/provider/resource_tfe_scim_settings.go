@@ -79,6 +79,7 @@ func (r *resourceTFESCIMSettings) Configure(_ context.Context, req resource.Conf
 // Schema implements resource.Resource
 func (r *resourceTFESCIMSettings) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Manages SCIM provisioning settings for the Terraform Enterprise instance.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "The ID of the SCIM settings. Always `scim`.",
