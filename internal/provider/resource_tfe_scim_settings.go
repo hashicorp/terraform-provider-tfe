@@ -228,7 +228,7 @@ func (r *resourceTFESCIMSettings) updateSCIMSettings(ctx context.Context, m mode
 	})
 
 	if err != nil {
-		return s, fmt.Errorf("failed to update SCIM Settings: %w", err)
+		return s, fmt.Errorf("failed to set SCIM Settings: %w", err)
 	}
 	return s, nil
 }
