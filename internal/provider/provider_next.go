@@ -161,6 +161,7 @@ func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource
 		NewSAMLSettingsDataSource,
 		NewVariablesDataSource,
 		NewWorkspaceRunTaskDataSource,
+		NewSCIMSettingsDataSource,
 	}
 }
 
@@ -196,6 +197,7 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewVaultOIDCConfigurationResource,
 		NewHYOKConfigurationResource,
 		NewProjectPolicySetExclusionResource,
+		NewSCIMSettingsResource,
 	}
 }
 
