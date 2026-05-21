@@ -100,7 +100,7 @@ func (d *dataSourceTFESCIMSettings) Read(ctx context.Context, _ datasource.ReadR
 
 	// Set state
 	diags := resp.State.Set(ctx, &modelDataTFESCIMSettings{
-		ID:                        types.StringValue("scim"),
+		ID:                        types.StringValue(s.ID),
 		Enabled:                   types.BoolValue(s.Enabled),
 		Paused:                    types.BoolValue(s.Paused),
 		SiteAdminGroupSCIMID:      types.StringValue(s.SiteAdminGroupSCIMID),

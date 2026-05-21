@@ -33,7 +33,7 @@ type resourceTFESCIMSettings struct {
 // modelFromTFEAdminSCIMSettings builds a modelTFESCIMSettings struct from a tfe.AdminSCIMSetting value
 func modelFromTFEAdminSCIMSettings(v tfe.AdminSCIMSetting) modelTFESCIMSettings {
 	m := modelTFESCIMSettings{
-		ID:                        types.StringValue("scim"),
+		ID:                        types.StringValue(v.ID),
 		Enabled:                   types.BoolValue(v.Enabled),
 		Paused:                    types.BoolValue(v.Paused),
 		SiteAdminGroupSCIMID:      types.StringValue(v.SiteAdminGroupSCIMID),
