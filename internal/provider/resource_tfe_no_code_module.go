@@ -78,7 +78,7 @@ func resourceTFENoCodeModule() *schema.Resource {
 						"options": {
 							Type:     schema.TypeList,
 							ForceNew: false,
-							Required: true,
+							Optional: true,
 							MinItems: 0,
 							Elem:     &schema.Schema{Type: schema.TypeString},
 						},
