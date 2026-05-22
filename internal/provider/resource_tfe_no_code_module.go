@@ -79,7 +79,7 @@ func resourceTFENoCodeModule() *schema.Resource {
 							Type:     schema.TypeList,
 							ForceNew: false,
 							Required: true,
-							MinItems: 1,
+							MinItems: 0,
 							Elem:     &schema.Schema{Type: schema.TypeString},
 						},
 					},
