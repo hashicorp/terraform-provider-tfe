@@ -88,6 +88,18 @@ func TestAccTFENoCodeModule_with_variable_options(t *testing.T) {
 									return fmt.Errorf("Bad 'min_lower' attribute options: %v", nocodeModule.VariableOptions)
 								}
 							}
+
+							if vo.VariableName == "freetext_string_emptylist" {
+								if len(vo.Options) != 0 {
+									return fmt.Errorf("Bad 'freetext_string_emptylist' attribute options: %v", nocodeModule.VariableOptions)
+								}
+							}
+
+							if vo.VariableName == "freetext_string" {
+								if len(vo.Options) != 0 {
+									return fmt.Errorf("Bad 'freetext_string' attribute options: %v", nocodeModule.VariableOptions)
+								}
+							}
 						}
 
 						return nil
@@ -469,6 +481,17 @@ func testAccTFENoCodeModule_with_variable_options(org string) string {
 			name    = "min_lower"
 			type    = "number"
 			options = [ "1", "2", "3", "4", "5" ]
+	}
+
+	variable_options {
+			name    = "freetext_string_emptylist"
+			type    = "string"
+			options = []
+	}
+
+	variable_options {
+			name    = "freetext_string"
+			type    = "string"
 	}
 }
 `, org, envGithubRegistryModuleIdentifer, envGithubToken)
