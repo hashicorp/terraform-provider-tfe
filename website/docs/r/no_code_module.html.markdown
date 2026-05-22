@@ -75,7 +75,7 @@ The following arguments are supported:
 - `variable_options` - (Optional) A list of variable options to associate with the no code module.
   - `name` - (Required) The name of the variable option.
   - `type` - (Required) The type of the variable option.
-  - `options` - (Required) A list of options for the variable option.
+  - `options` - (Optional) A list of options for the variable option.
 
 ## Attributes Reference
 
