@@ -46,7 +46,7 @@ resource "tfe_scim_token" "this" {
 
 ### With an explicit expiration
 
-`expired_at` accepts an RFC3339 timestamp and must be no more than 365 days in the future. You can use `time_rotating` to generate this dynamically:
+`expired_at` accepts an RFC3339/iso8601 timestamp and must be no more than 365 days in the future. You can use `time_rotating` to generate this dynamically:
 
 ```hcl
 resource "time_rotating" "example" {
@@ -65,7 +65,7 @@ resource "tfe_scim_token" "this" {
 The following arguments are supported:
 
 * `description` - (Required) A human-readable description of the SCIM token. Changing this forces the resource to be replaced.
-* `expired_at` - (Optional) The time when the SCIM token expires, in RFC3339 format. Defaults to 365 days from creation if unset. Changing this — or removing it after it has been set — forces the resource to be replaced.
+* `expired_at` - (Optional) The time when the SCIM token expires, in RFC3339/iso8601 format. Defaults to 365 days from creation if unset. Changing this — or removing it after it has been set — forces the resource to be replaced.
 
 ## Attributes Reference
 

@@ -234,7 +234,7 @@ func (r *resourceTFESCIMToken) Create(ctx context.Context, req resource.CreateRe
 		if expiredAt == "" {
 			resp.Diagnostics.AddError(
 				"Invalid expired_at value",
-				`expired_at must be omitted or set to a non-empty iso8601 format timestamp; use null or remove the attribute instead of "".`,
+				`expired_at must be omitted or set to a non-empty RFC3339/iso8601 format timestamp; use null or remove the attribute instead of "".`,
 			)
 			return
 		}
@@ -242,7 +242,7 @@ func (r *resourceTFESCIMToken) Create(ctx context.Context, req resource.CreateRe
 		expiry, err := time.Parse(time.RFC3339, expiredAt)
 		if err != nil {
 			resp.Diagnostics.AddError(
-				fmt.Sprintf("%s must be a valid date or time, provided in iso8601 format", expiredAt),
+				fmt.Sprintf("%s must be a valid date or time, provided in RFC3339/iso8601 format", expiredAt),
 				err.Error(),
 			)
 			return
