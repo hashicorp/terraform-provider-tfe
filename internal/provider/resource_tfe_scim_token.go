@@ -230,7 +230,15 @@ func (r *resourceTFESCIMToken) Create(ctx context.Context, req resource.CreateRe
 		Description: plan.Description.ValueStringPointer(),
 	}
 
-	if !plan.ExpiredAt.IsNull() && expiredAt != "" {
+	if !plan.ExpiredAt.IsNull() && !plan.ExpiredAt.IsUnknown() {
+		if expiredAt == "" {
+			resp.Diagnostics.AddError(
+				"Invalid expired_at value",
+				`expired_at must be omitted or set to a non-empty iso8601 format timestamp; use null or remove the attribute instead of "".`,
+			)
+			return
+		}
+
 		expiry, err := time.Parse(time.RFC3339, expiredAt)
 		if err != nil {
 			resp.Diagnostics.AddError(
