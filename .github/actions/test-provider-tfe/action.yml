@@ -50,6 +50,7 @@ inputs:
   skip:
     description: Regex pattern forwarded to `go test -skip` to exclude specific tests from a run.
     required: false
+    default: "^$"
   run_tasks_url:
     description: The mock run tasks URL to use for testing.
     required: false
