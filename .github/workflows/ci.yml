@@ -57,7 +57,7 @@ jobs:
           # action.yml uses https://github.com/hashicorp-forge/go-test-split-action/blob/main/action.yml to split acceptance tests
           # which runs against all tests using the list arg
           # list_tests regex is used to skip the TestAccTFESAMLSettings_omnibus and TestAccTFESCIMSettings_omnibus test suites for CI tests only
-          list_tests: "[^(TestAccTFESAMLSettings_omnibus|TestAccTFESCIMSettings_omnibus)]"
+          list_tests: "[^(TestAccTFESAMLSettings_omnibus|TestAccTFESCIMSettings_omnibus|TestAccTFESCIMTokenDataSource_omnibus|TestAccTFESCIMToken_omnibus)]"
   tests-combine-summaries:
     name: Combine Test Reports
     if: "!startsWith(github.head_ref, 'changelog/')"
