@@ -5,6 +5,7 @@ package provider
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 	"time"
 
@@ -71,6 +72,19 @@ func TestAccTFESCIMTokenDataSource_omnibus(t *testing.T) {
 			},
 		})
 	})
+
+	t.Run("invalid id is rejected at validate time", func(t *testing.T) {
+		resource.Test(t, resource.TestCase{
+			PreCheck:                 func() { testAccPreCheck(t) },
+			ProtoV6ProviderFactories: testAccMuxedProviders,
+			Steps: []resource.TestStep{
+				{
+					Config:      testAccTFESCIMTokenDataSourceConfigInvalidID(),
+					ExpectError: regexp.MustCompile("must be a valid SCIM token ID starting with 'at-'"),
+				},
+			},
+		})
+	})
 }
 
 // testAccTFESCIMTokenDataSourceConfig_basic returns a config that enables
@@ -118,4 +132,16 @@ data "tfe_scim_token" "test" {
     depends_on = [tfe_scim_token.test]
 }
 `, testAccTFESCIMSettings_enableSAMLWithProviderType(scimTestSAMLSetting), description, expiredAt)
+}
+
+// testAccTFESCIMTokenDataSourceConfigInvalidID returns a config with an
+// invalid SCIM token ID format to validate schema-level ID checks.
+func testAccTFESCIMTokenDataSourceConfigInvalidID() string {
+	return fmt.Sprintf(`
+%s
+
+data "tfe_scim_token" "test" {
+	id = "invalid-token-id"
+}
+`, testAccTFESCIMSettings_enableSAMLWithProviderType(scimTestSAMLSetting))
 }

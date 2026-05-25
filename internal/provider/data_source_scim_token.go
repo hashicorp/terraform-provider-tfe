@@ -7,10 +7,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
@@ -52,7 +55,13 @@ func (d *dataSourceTFESCIMToken) Schema(_ context.Context, _ datasource.SchemaRe
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Required:    true,
-				Description: "The ID of the SCIM token (starts with `at-`).",
+				Description: "The ID of the SCIM token",
+				Validators: []validator.String{
+					stringvalidator.RegexMatches(
+						regexp.MustCompile(`^at-`),
+						"must be a valid SCIM token ID starting with 'at-'",
+					),
+				},
 			},
 			"description": schema.StringAttribute{
 				Computed:    true,
