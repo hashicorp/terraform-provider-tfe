@@ -290,6 +290,9 @@ func (r *resourceTFESCIMToken) Delete(ctx context.Context, req resource.DeleteRe
 	tflog.Debug(ctx, fmt.Sprintf("Deleting SCIM Token with ID %s", scimTokenID))
 	err := r.client.Admin.Settings.SCIM.Tokens.Delete(ctx, scimTokenID)
 	if err != nil {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			return
+		}
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("Error deleting SCIM Token with ID %s", scimTokenID),
 			"Could not delete SCIM Token, unexpected error: "+err.Error(),
