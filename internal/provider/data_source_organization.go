@@ -85,6 +85,10 @@ func dataSourceTFEOrganization() *schema.Resource {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
+			"max_ttl_enabled": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -125,6 +129,7 @@ func dataSourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) err
 	d.Set("assessments_enforced", org.AssessmentsEnforced)
 	d.Set("speculative_plan_management_enabled", org.SpeculativePlanManagementEnabled)
 	d.Set("enforce_hyok", org.EnforceHYOK)
+	d.Set("max_ttl_enabled", org.MaxTTLEnabled)
 
 	return nil
 }

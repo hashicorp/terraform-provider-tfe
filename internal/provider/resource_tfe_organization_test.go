@@ -243,6 +243,42 @@ func TestAccTFEOrganization_update_stacks_enabled(t *testing.T) {
 		},
 	})
 }
+func TestAccTFEOrganization_maxTTLEnabled(t *testing.T) {
+	skipUnlessBeta(t)
+	org := &tfe.Organization{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEOrganizationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOrganization_maxTTLEnabled(rInt, false),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOrganizationExists(
+						"tfe_organization.foobar", org),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "name", orgName),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "max_ttl_enabled", "false"),
+				),
+			},
+			{
+				Config: testAccTFEOrganization_maxTTLEnabled(rInt, true),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOrganizationExists(
+						"tfe_organization.foobar", org),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "name", orgName),
+					resource.TestCheckResourceAttr(
+						"tfe_organization.foobar", "max_ttl_enabled", "true"),
+				),
+			},
+		},
+	})
+}
 
 func TestAccTFEOrganization_user_tokens_enabled(t *testing.T) {
 	// this test is a bit tricky because once user tokens are disabled, we cannot use a user token to re-enable them
@@ -602,6 +638,15 @@ resource "tfe_organization" "foobar" {
   allow_force_delete_workspaces     = false
   stacks_enabled                    = false
 }`, rInt)
+}
+
+func testAccTFEOrganization_maxTTLEnabled(rInt int, maxTTLEnabled bool) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name            = "tst-terraform-%d"
+  email           = "admin@company.com"
+  max_ttl_enabled = %t
+}`, rInt, maxTTLEnabled)
 }
 
 func testAccTFEOrganization_update(orgName string, orgEmail string, costEstimationEnabled bool, assessmentsEnforced bool, allowForceDeleteWorkspaces bool, stacksEnabled bool) string {
