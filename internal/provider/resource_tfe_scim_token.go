@@ -152,7 +152,11 @@ func (r *resourceTFESCIMToken) Schema(_ context.Context, _ resource.SchemaReques
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
-					// Order matters: UseStateForUnknown first (keeps re-applies
+					// Modifiers must run in the following order to ensure correct behavior:
+					// 1. UseStateForUnknown – copies prior state so re-applies results in no-ops.
+					// 2. replaceWhenExpiredAtRemoved – forces replace if user removes this attribute.
+					// 3. RequiresReplace – forces replace if the value changes.
+					// 4. WarnIfNullOnCreate – warns about the 365-day default on first create.
 					// no-ops), then the removal check, then RequiresReplace.
 					stringplanmodifier.UseStateForUnknown(),
 					replaceWhenExpiredAtRemoved{},
