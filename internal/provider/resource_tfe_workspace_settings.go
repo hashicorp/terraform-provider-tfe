@@ -614,21 +614,16 @@ func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorks
 	if executionMode != "" {
 		updateOptions.ExecutionMode = tfe.String(executionMode)
 
-		if data.Overwrites.IsNull() || data.Overwrites.IsUnknown() {
+		if shouldSendExecutionModeOverwrite(ctx, data.Overwrites) {
 			updateOptions.SettingOverwrites.ExecutionMode = tfe.Bool(true)
 			updateOptions.SettingOverwrites.AgentPool = tfe.Bool(true)
-		} else {
-			var overwritesPlanned []modelOverwrites
-			data.Overwrites.ElementsAs(ctx, &overwritesPlanned, true)
-			if len(overwritesPlanned) > 0 && overwritesPlanned[0].ExecutionMode.ValueBool() {
-				updateOptions.SettingOverwrites.ExecutionMode = tfe.Bool(true)
-				updateOptions.SettingOverwrites.AgentPool = tfe.Bool(true)
-			}
 		}
 
 		agentPoolID := data.AgentPoolID.ValueString() // may be empty
 		updateOptions.AgentPoolID = tfe.String(agentPoolID)
-	} else if executionMode == "" && data.Overwrites.IsNull() {
+	}
+
+	if executionMode == "" && data.Overwrites.IsNull() {
 		// Not supported by TFE
 		updateOptions.ExecutionMode = tfe.String("remote")
 	}
@@ -677,27 +672,50 @@ func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorks
 	return err
 }
 
-func (r *workspaceSettings) addAndRemoveRemoteStateConsumers(workspaceID string, newWorkspaceIDsSet types.Set, state *tfsdk.State) error {
-	var oldWorkspaceIDs []string
+func shouldSendExecutionModeOverwrite(ctx context.Context, overwrites types.List) bool {
+	if overwrites.IsNull() || overwrites.IsUnknown() {
+		return true
+	}
 
-	if state != nil && !state.Raw.IsNull() {
-		var oldWorkspaceIDsSet types.Set
-		if diags := state.GetAttribute(ctx, path.Root("remote_state_consumer_ids"), &oldWorkspaceIDsSet); diags.HasError() {
-			return fmt.Errorf("error comparing remote state consumer IDs: %s", diags.Errors())
-		}
-		if !oldWorkspaceIDsSet.IsNull() {
-			if diags := oldWorkspaceIDsSet.ElementsAs(ctx, &oldWorkspaceIDs, true); diags.HasError() {
-				return fmt.Errorf("error comparing remote state consumer IDs: %s", diags.Errors())
-			}
-		}
-	} else {
+	var overwritesPlanned []modelOverwrites
+	overwrites.ElementsAs(ctx, &overwritesPlanned, true)
+
+	return len(overwritesPlanned) > 0 && overwritesPlanned[0].ExecutionMode.ValueBool()
+}
+
+func (r *workspaceSettings) oldRemoteStateConsumerIDs(workspaceID string, state *tfsdk.State) ([]string, error) {
+	if state == nil || state.Raw.IsNull() {
 		// No prior state (e.g. during Create after import). Read current
 		// consumers from the API so we can remove any that aren't desired.
 		_, currentIDs, err := readWorkspaceStateConsumers(workspaceID, r.config.Client)
 		if err != nil {
-			return fmt.Errorf("error reading current remote state consumers for workspace %s: %w", workspaceID, err)
+			return nil, fmt.Errorf("error reading current remote state consumers for workspace %s: %w", workspaceID, err)
 		}
-		oldWorkspaceIDs = currentIDs
+
+		return currentIDs, nil
+	}
+
+	var oldWorkspaceIDsSet types.Set
+	if diags := state.GetAttribute(ctx, path.Root("remote_state_consumer_ids"), &oldWorkspaceIDsSet); diags.HasError() {
+		return nil, fmt.Errorf("error comparing remote state consumer IDs: %s", diags.Errors())
+	}
+
+	if oldWorkspaceIDsSet.IsNull() {
+		return nil, nil
+	}
+
+	var oldWorkspaceIDs []string
+	if diags := oldWorkspaceIDsSet.ElementsAs(ctx, &oldWorkspaceIDs, true); diags.HasError() {
+		return nil, fmt.Errorf("error comparing remote state consumer IDs: %s", diags.Errors())
+	}
+
+	return oldWorkspaceIDs, nil
+}
+
+func (r *workspaceSettings) addAndRemoveRemoteStateConsumers(workspaceID string, newWorkspaceIDsSet types.Set, state *tfsdk.State) error {
+	oldWorkspaceIDs, err := r.oldRemoteStateConsumerIDs(workspaceID, state)
+	if err != nil {
+		return err
 	}
 
 	var newWorkspaceIDs []string
@@ -721,7 +739,7 @@ func (r *workspaceSettings) addAndRemoveRemoteStateConsumers(workspaceID string,
 		}
 	}
 
-	// First add the new consumerss
+	// First add the new consumers
 	if len(workspaceIDsToAdd) > 0 {
 		options := tfe.WorkspaceAddRemoteStateConsumersOptions{}
 
