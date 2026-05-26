@@ -1,15 +1,24 @@
-// Copyright IBM Corp. 2018, 2025
+// Copyright IBM Corp. 2018, 2026
 // SPDX-License-Identifier: MPL-2.0
 
 package provider
 
 import (
 	"context"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
+
+// timeStringOrNull returns t formatted as RFC3339, or null if t is the zero value.
+func timeStringOrNull(t time.Time) types.String {
+	if t.IsZero() {
+		return types.StringNull()
+	}
+	return types.StringValue(t.Format(time.RFC3339))
+}
 
 // AttrGettable is a small enabler for helper functions that need to read one
 // attribute of a Configuration, Plan, or State.

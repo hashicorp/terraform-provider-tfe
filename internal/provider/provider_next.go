@@ -148,6 +148,7 @@ func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource
 		NewHYOKCustomerKeyVersionDataSource,
 		NewHYOKEncryptedDataKeyDataSource,
 		NewNoCodeModuleDataSource,
+		NewOrgMaxTokenTTLPolicyDataSource,
 		NewOrganizationAuditConfigurationDataSource,
 		NewOrganizationRunTaskDataSource,
 		NewOrganizationRunTaskGlobalSettingsDataSource,
@@ -162,6 +163,8 @@ func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource
 		NewSAMLSettingsDataSource,
 		NewVariablesDataSource,
 		NewWorkspaceRunTaskDataSource,
+		NewSCIMSettingsDataSource,
+		NewSCIMTokenDataSource,
 	}
 }
 
@@ -170,6 +173,7 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewAdminSMTPSettingsResource,
 		NewAuditTrailTokenResource,
 		NewDataRetentionPolicyResource,
+		NewOrgMaxTokenTTLPolicyResource,
 		NewOrganizationDefaultSettings,
 		NewOrganizationRunTaskGlobalSettingsResource,
 		NewOrganizationRunTaskResource,
@@ -198,6 +202,8 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewVaultOIDCConfigurationResource,
 		NewHYOKConfigurationResource,
 		NewProjectPolicySetExclusionResource,
+		NewSCIMSettingsResource,
+		NewSCIMTokenResource,
 	}
 }
 

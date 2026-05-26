@@ -46,15 +46,51 @@ jobs:
           token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_token }}
           testing-github-token: ${{ secrets.TESTING_GITHUB_TOKEN }}
           enterprise: "1"
+          # Skip SAML/SCIM here; they run serially in the singleton-tests job.
+          skip: "TestAccTFESAML|TestAccTFESCIM"
+
+  singleton-tests:
+    name: SAML and SCIM Tests
+    needs: instance
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Runs SAML/SCIM tests serially on one runner; they share singleton TFE state.
+    # The 1-entry matrix exists only so `matrix.index` resolves to a unique value
+    # for the composite action's artifact upload name (junit-test-summary-singletons).
+    strategy:
+      fail-fast: false
+      matrix:
+        index: [ singletons ]
+    steps:
+      - name: Fetch Outputs
+        id: tflocal
+        uses: hashicorp-forge/terraform-cloud-action/outputs@ceddc497db955594f0b0d5f0bee29c41f60d6d33 # v1.1.1
+        with:
+          token: "${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}"
+          organization: hashicorp-v2
+          workspace: tflocal-terraform-provider-tfe-nightly
+
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+
+      - uses: ./.github/actions/test-provider-tfe
+        with:
+          # Single slice: include every SAML/SCIM test in one serial run.
+          matrix_index: 0
+          matrix_total: 1
+          hostname: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).ngrok_domain }}
+          token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_token }}
+          testing-github-token: ${{ secrets.TESTING_GITHUB_TOKEN }}
+          enterprise: "1"
+          list_tests: "TestAccTFESAML|TestAccTFESCIM"
 
   tests-summarize:
-    needs: [tests]
+    needs: [tests, singleton-tests]
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:
       - name: Check tests Status
         run: |
-          if [ "${{ needs.tests.result }}" = "success" ]; then
+          if [ "${{ needs.tests.result }}" = "success" ] && [ "${{ needs.singleton-tests.result }}" = "success" ]; then
             exit 0
           fi
           exit 1

@@ -53,6 +53,7 @@ func (notFoundStacks) FetchLatestFromVcs(_ context.Context, _ string) (*tfe.Stac
 }
 
 func TestAccTFEStackResource_basic(t *testing.T) {
+	skipIfEnterprise(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
@@ -90,6 +91,7 @@ func TestAccTFEStackResource_basic(t *testing.T) {
 }
 
 func TestAccTFEStackResource_importByIdentity(t *testing.T) {
+	skipIfEnterprise(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
@@ -164,6 +166,7 @@ resource "tfe_stack" "foobar" {
 }
 
 func TestAccTFEStackResource_withAgentPool(t *testing.T) {
+	skipIfEnterprise(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
@@ -366,6 +369,7 @@ func runRemovedStackRead(t *testing.T, ctx context.Context, r *resourceTFEStack,
 }
 
 func TestAccTFEStackResource_noVCSRepo(t *testing.T) {
+	skipIfEnterprise(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 

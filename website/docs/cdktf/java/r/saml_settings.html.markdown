@@ -72,6 +72,7 @@ The following arguments are supported:
 * `privateKeyWoVersion` - (Optional) Version of the write-only private key. This field is used to trigger updates when the write-only private key changes. Must be used with `privateKeyWo`. When `privateKeyWoVersion` changes, the write-only private key will be updated.
 * `signatureSigningMethod` - (Optional) Signature Signing Method. Must be either `sha1` or `sha256`. Defaults to `sha256`.
 * `signatureDigestMethod` - (Optional) Signature Digest Method. Must be either `sha1` or `sha256`. Defaults to `sha256`.
+* `providerType` - (Optional) The type of identity provider used. Valid values are `okta`, `entra`, `saml`, and `unknown`. Defaults to `unknown`.
 
 -> **Note:** Write-Only argument `privateKeyWo` is available to use in place of `privateKey`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
 
@@ -90,4 +91,4 @@ SAML Settings can be imported.
 terraform import tfe_saml_settings.this saml
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-4f0cd06e50ae30e58e17466cc7f269811fe28c01f8bf10bdc8f961c2e12e28b4 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-b76f503831b43c4bcf1a9b6f78ff34192e500161b179927685e80a3ebf6b6f28 -->

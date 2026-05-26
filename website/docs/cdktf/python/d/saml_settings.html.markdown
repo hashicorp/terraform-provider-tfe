@@ -63,5 +63,6 @@ The following attributes are exported:
 * `private_key` - The private key used for request and assertion signing.
 * `signature_signing_method` - Signature Signing Method.
 * `signature_digest_method` - Signature Digest Method.
+* `provider_type` - The type of identity provider used. One of `okta`, `entra`, `saml`, or `unknown`.
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-2995e79c51b29afd8d8b89c5d98dae47701709e1502f993d5be8b2b681de4895 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-395309388b2415092151054c84f9762c9457dc4aa16795affcca4687eb2932c3 -->

@@ -1,0 +1,49 @@
+---
+layout: "tfe"
+page_title: "Terraform Enterprise: tfe_scim_token"
+description: |-
+  Get information on a SCIM authentication token.
+---
+
+# Data Source: tfe_scim_token
+
+Use this data source to get information about a SCIM authentication token by its ID. It applies only to Terraform Enterprise and requires admin token configuration. See example usage for incorporating an admin token in your provider config.
+
+The token value itself is never returned by the read endpoint; only metadata about the token is available.
+
+## Example Usage
+
+Basic usage:
+
+```hcl
+provider "tfe" {
+  hostname = var.hostname
+  token    = var.token
+}
+
+provider "tfe" {
+  alias    = "admin"
+  hostname = var.hostname
+  token    = var.admin_token
+}
+
+data "tfe_scim_token" "foo" {
+  provider = tfe.admin
+  id       = "at-XXXXXXXXXXXXXXXX"
+}
+```
+
+## Argument Reference
+
+The following arguments are supported:
+
+* `id` - (Required) The ID of the SCIM token. Starts with `at-`.
+
+## Attributes Reference
+
+The following attributes are exported:
+
+* `description` - The description of the SCIM token.
+* `expired_at` - The time when the SCIM token expires.
+* `created_at` - The time when the SCIM token was created.
+* `last_used_at` - The time when the SCIM token was last used.
