@@ -614,20 +614,16 @@ func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorks
 	if executionMode != "" {
 		updateOptions.ExecutionMode = tfe.String(executionMode)
 
-		// Determine whether to mark execution_mode as overwritten. During
-		// Create the overwrites field is null/unknown (computed, not in config)
-		// so we always send the override. During Update, only send the
-		// override when the planned overwrites confirm it — this avoids
-		// inconsistencies when execution_mode is merely inherited from state.
-		sendOverwrite := data.Overwrites.IsNull() || data.Overwrites.IsUnknown()
-		if !sendOverwrite {
-			var overwritesPlanned []modelOverwrites
-			data.Overwrites.ElementsAs(ctx, &overwritesPlanned, true)
-			sendOverwrite = len(overwritesPlanned) > 0 && overwritesPlanned[0].ExecutionMode.ValueBool()
-		}
-		if sendOverwrite {
+		if data.Overwrites.IsNull() || data.Overwrites.IsUnknown() {
 			updateOptions.SettingOverwrites.ExecutionMode = tfe.Bool(true)
 			updateOptions.SettingOverwrites.AgentPool = tfe.Bool(true)
+		} else {
+			var overwritesPlanned []modelOverwrites
+			data.Overwrites.ElementsAs(ctx, &overwritesPlanned, true)
+			if len(overwritesPlanned) > 0 && overwritesPlanned[0].ExecutionMode.ValueBool() {
+				updateOptions.SettingOverwrites.ExecutionMode = tfe.Bool(true)
+				updateOptions.SettingOverwrites.AgentPool = tfe.Bool(true)
+			}
 		}
 
 		agentPoolID := data.AgentPoolID.ValueString() // may be empty
