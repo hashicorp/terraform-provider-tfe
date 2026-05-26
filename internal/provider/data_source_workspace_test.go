@@ -491,20 +491,19 @@ resource "tfe_workspace" "buzz" {
 resource "tfe_workspace" "foobar" {
   name                      = "workspace-test-%d"
   organization              = tfe_organization.foobar.id
-	global_remote_state       = false
-	remote_state_consumer_ids = [resource.tfe_workspace.buzz.id]
 }
 
 resource "tfe_workspace_settings" "foobar_settings" {
 	workspace_id         = tfe_workspace.foobar.id
 	project_remote_state = false
 	global_remote_state  = false
+	remote_state_consumer_ids = [tfe_workspace.buzz.id]
 }
 
 data "tfe_workspace" "foobar" {
   name         = tfe_workspace.foobar.name
   organization = tfe_workspace.foobar.organization
-	depends_on   = [tfe_workspace.foobar]
+	depends_on   = [tfe_workspace_settings.foobar_settings]
 }`, rInt1, rInt2, rInt1)
 }
 
