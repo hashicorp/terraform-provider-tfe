@@ -163,6 +163,7 @@ func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource
 		NewVariablesDataSource,
 		NewWorkspaceRunTaskDataSource,
 		NewSCIMSettingsDataSource,
+		NewSCIMTokenDataSource,
 	}
 }
 
@@ -200,6 +201,7 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewHYOKConfigurationResource,
 		NewProjectPolicySetExclusionResource,
 		NewSCIMSettingsResource,
+		NewSCIMTokenResource,
 	}
 }
 

@@ -2,6 +2,7 @@
 
 FEATURES:
 * **New Resource:** `r/tfe_scim_settings` and **New Data Source:** `d/tfe_scim_settings`: Adds resource and data source to manage SCIM settings on Terraform Enterprise. By @skj-skj [#2072](https://github.com/hashicorp/terraform-provider-tfe/pull/2072)
+* **New Resource:** `r/tfe_scim_token` and **New Data Source:** `d/tfe_scim_token`: Adds resource and data source to manage SCIM tokens on Terraform Enterprise. By @skj-skj [#2076](https://github.com/hashicorp/terraform-provider-tfe/pull/2076)
 
 ## v0.77.0
 

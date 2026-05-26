@@ -47,6 +47,10 @@ inputs:
     description: Accepts regex rules to either include or exclude specific tests from running in either CI or nightly workflows.
     required: false
     default: "."
+  skip:
+    description: Regex pattern forwarded to `go test -skip` to exclude specific tests from a run.
+    required: false
+    default: "^$"
   run_tasks_url:
     description: The mock run tasks URL to use for testing.
     required: false
@@ -127,7 +131,7 @@ runs:
         MOD_TFE: github.com/hashicorp/terraform-provider-tfe/internal/provider
         MOD_VERSION: github.com/hashicorp/terraform-provider-tfe/version
       run: |
-        gotestsum --junitfile summary.xml --format standard-verbose -- $MOD_PROVIDER $MOD_TFE $MOD_VERSION -v -timeout=60m -parallel=2 -run "${{ steps.test_split.outputs.run }}"
+        gotestsum --junitfile summary.xml --format standard-verbose -- $MOD_PROVIDER $MOD_TFE $MOD_VERSION -v -timeout=60m -parallel=2 -skip "${{ inputs.skip}}" -run "${{ steps.test_split.outputs.run }}"
 
     - name: Upload test artifacts
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

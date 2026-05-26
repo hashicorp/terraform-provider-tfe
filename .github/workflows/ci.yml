@@ -53,11 +53,14 @@ jobs:
           admin_subscription_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.subscription }}
           admin_support_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.support }}
           admin_version_maintenance_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.version-maintenance }}
-          # Run terminal cmd 'go help testflag' to learn more about -list flag
+          # Run terminal cmd 'go help testflag' to learn more about -list and -skip flags
           # action.yml uses https://github.com/hashicorp-forge/go-test-split-action/blob/main/action.yml to split acceptance tests
-          # which runs against all tests using the list arg
-          # list_tests regex is used to skip the TestAccTFESAMLSettings_omnibus and TestAccTFESCIMSettings_omnibus test suites for CI tests only
-          list_tests: "[^(TestAccTFESAMLSettings_omnibus|TestAccTFESCIMSettings_omnibus)]"
+          # which runs against all tests using the list arg.
+          # list_tests previously held a negated regex to exclude omnibus suites, but that regex pattern only
+          # worked reliably for a single test name and broke when excluding multiple suites. We now keep
+          # list_tests at its default (".") and use the `skip` input below, which is forwarded to `go test -skip`
+          # to reliably exclude multiple specific test suites from CI runs.
+          skip: "TestAccTFESAMLSettings_omnibus|TestAccTFESCIMSettings_omnibus|TestAccTFESCIMTokenDataSource_omnibus|TestAccTFESCIMToken_omnibus"
   tests-combine-summaries:
     name: Combine Test Reports
     if: "!startsWith(github.head_ref, 'changelog/')"
