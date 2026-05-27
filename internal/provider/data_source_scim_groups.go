@@ -67,7 +67,7 @@ func (d *dataSourceTFESCIMGroups) Schema(_ context.Context, _ datasource.SchemaR
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "The internal ID of the data source, formatted as `<argument>/<value>` (e.g., `name/admin-team` or `search/-eng-team`).",
+				Description: "The internal ID of the data source, formatted as `<argument>/<value>`, where the `<value>` portion is URL-path-escaped before being stored in state (for example, spaces become `%20` and `/` becomes `%2F`; e.g., `name/admin-team`, `search/-eng-team`, or `name/Platform%20Ops`).",
 			},
 			"name": schema.StringAttribute{
 				Optional:    true,
