@@ -87,6 +87,9 @@ func (d *dataSourceTFESCIMGroups) Schema(_ context.Context, _ datasource.SchemaR
 				Optional:    true,
 				Description: "A search string used to filter SCIM groups by name via the API's query parameter (`?q=<search>`, case-insensitive). Cannot be used with `name`.",
 				Validators: []validator.String{
+					stringvalidator.ExactlyOneOf(
+						path.MatchRelative().AtParent().AtName("name"),
+					),
 					stringvalidator.LengthAtLeast(1),
 					stringvalidator.RegexMatches(
 						scimGroupNonWhitespaceRegex,
