@@ -404,15 +404,19 @@ func createSCIMGroup(t *testing.T, displayName, scimToken string) string {
 			break
 		}
 
-		resp.Body.Close()
-		wait := time.Duration(1<<attempt) * time.Second
-		if ra := resp.Header.Get("Retry-After"); ra != "" {
-			if secs, err := time.ParseDuration(ra + "s"); err == nil {
-				wait = secs
+		// Only sleep and discard the body when another attempt will follow.
+		// On the final attempt leave the body open so the error path below can read it.
+		if attempt < maxRetries-1 {
+			resp.Body.Close()
+			wait := time.Duration(1<<attempt) * time.Second
+			if ra := resp.Header.Get("Retry-After"); ra != "" {
+				if secs, err := time.ParseDuration(ra + "s"); err == nil {
+					wait = secs
+				}
 			}
+			t.Logf("SCIM rate-limited (429), retrying in %s (attempt %d/%d)", wait, attempt+1, maxRetries)
+			time.Sleep(wait)
 		}
-		t.Logf("SCIM rate-limited (429), retrying in %s (attempt %d/%d)", wait, attempt+1, maxRetries)
-		time.Sleep(wait)
 	}
 	defer resp.Body.Close()
 
