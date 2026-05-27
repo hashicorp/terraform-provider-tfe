@@ -89,6 +89,12 @@ type unknownIfExecutionModeUnset struct{}
 // true, remote_state_consumer_ids is not set.
 type validateRemoteStateConsumerIDs struct{}
 
+// unsetRemoteStateConsumerIDsIfOmitted ensures the attribute is treated as an
+// explicit empty set when it is removed from configuration after being set.
+type unsetRemoteStateConsumerIDsIfOmitted struct{}
+
+const remoteStateConsumerIDsConfiguredKey = "remote_state_consumer_ids_configured"
+
 // validate global and remote state mutual exclusion
 type validateRemoteStateExclusion struct{}
 
@@ -99,8 +105,52 @@ type validateSelfReference struct{}
 var _ planmodifier.String = (*validateAgentExecutionMode)(nil)
 var _ planmodifier.List = (*revertOverwritesIfExecutionModeUnset)(nil)
 var _ planmodifier.String = (*unknownIfExecutionModeUnset)(nil)
+var _ planmodifier.Set = (*unsetRemoteStateConsumerIDsIfOmitted)(nil)
 var _ planmodifier.Set = (*validateRemoteStateConsumerIDs)(nil)
 var _ planmodifier.Bool = (*validateRemoteStateExclusion)(nil)
+
+func (m unsetRemoteStateConsumerIDsIfOmitted) PlanModifySet(ctx context.Context, req planmodifier.SetRequest, resp *planmodifier.SetResponse) {
+	if req.Plan.Raw.IsNull() {
+		return
+	}
+
+	if !req.ConfigValue.IsNull() {
+		resp.Diagnostics.Append(resp.Private.SetKey(ctx, remoteStateConsumerIDsConfiguredKey, []byte("true"))...)
+		return
+	}
+
+	if req.State.Raw.IsNull() {
+		return
+	}
+
+	wasConfigured, diags := req.Private.GetKey(ctx, remoteStateConsumerIDsConfiguredKey)
+	resp.Diagnostics.Append(diags...)
+	if diags.HasError() {
+		return
+	}
+
+	// If the private key was never set (e.g. after an import), fall back to
+	// checking whether the state already has explicit consumers. If it does,
+	// we still need to plan their removal.
+	if len(wasConfigured) == 0 {
+		if req.StateValue.IsNull() || len(req.StateValue.Elements()) == 0 {
+			return
+		}
+	}
+
+	resp.PlanValue = types.SetValueMust(types.StringType, []attr.Value{})
+	// Clear the private key so subsequent plans don't keep treating the
+	// attribute as "was configured, now omitted" indefinitely.
+	resp.Diagnostics.Append(resp.Private.SetKey(ctx, remoteStateConsumerIDsConfiguredKey, nil)...)
+}
+
+func (m unsetRemoteStateConsumerIDsIfOmitted) Description(_ context.Context) string {
+	return "Treats omitted remote_state_consumer_ids as an empty set during updates"
+}
+
+func (m unsetRemoteStateConsumerIDsIfOmitted) MarkdownDescription(_ context.Context) string {
+	return "Treats omitted `remote_state_consumer_ids` as an empty set during updates"
+}
 
 func (m validateAgentExecutionMode) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
 	// Check if the resource is being created.
@@ -385,6 +435,7 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 				Computed:    true,
 				ElementType: types.StringType,
 				PlanModifiers: []planmodifier.Set{
+					unsetRemoteStateConsumerIDsIfOmitted{},
 					validateRemoteStateConsumerIDs{},
 					validateSelfReference{},
 				},
@@ -532,7 +583,7 @@ func (r *workspaceSettings) readSettings(ctx context.Context, workspaceID string
 	return r.workspaceSettingsModelFromTFEWorkspace(ws), nil
 }
 
-func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorkspaceSettings, state *tfsdk.State) error {
+func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorkspaceSettings, priorState, targetState *tfsdk.State) error {
 	workspaceID := data.WorkspaceID.ValueString()
 
 	updateOptions := tfe.WorkspaceUpdateOptions{
@@ -562,12 +613,17 @@ func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorks
 	executionMode := data.ExecutionMode.ValueString()
 	if executionMode != "" {
 		updateOptions.ExecutionMode = tfe.String(executionMode)
-		updateOptions.SettingOverwrites.ExecutionMode = tfe.Bool(true)
-		updateOptions.SettingOverwrites.AgentPool = tfe.Bool(true)
+
+		if shouldSendExecutionModeOverwrite(ctx, data.Overwrites) {
+			updateOptions.SettingOverwrites.ExecutionMode = tfe.Bool(true)
+			updateOptions.SettingOverwrites.AgentPool = tfe.Bool(true)
+		}
 
 		agentPoolID := data.AgentPoolID.ValueString() // may be empty
 		updateOptions.AgentPoolID = tfe.String(agentPoolID)
-	} else if executionMode == "" && data.Overwrites.IsNull() {
+	}
+
+	if executionMode == "" && data.Overwrites.IsNull() {
 		// Not supported by TFE
 		updateOptions.ExecutionMode = tfe.String("remote")
 	}
@@ -599,40 +655,72 @@ func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorks
 	}
 
 	if !data.GlobalRemoteState.ValueBool() && !data.ProjectRemoteState.ValueBool() {
-		r.addAndRemoveRemoteStateConsumers(workspaceID, data.RemoteStateConsumerIDs, state)
+		if err := r.addAndRemoveRemoteStateConsumers(workspaceID, data.RemoteStateConsumerIDs, priorState); err != nil {
+			return err
+		}
 	}
 
 	model, err := r.readSettings(ctx, ws.ID)
 	if errors.Is(err, errWorkspaceNoLongerExists) {
-		state.RemoveResource(ctx)
+		targetState.RemoveResource(ctx)
 	}
 
 	if err == nil {
-		state.Set(ctx, model)
+		targetState.Set(ctx, model)
 	}
 
 	return err
 }
 
-func (r *workspaceSettings) addAndRemoveRemoteStateConsumers(workspaceID string, newWorkspaceIDsSet types.Set, state *tfsdk.State) error {
+func shouldSendExecutionModeOverwrite(ctx context.Context, overwrites types.List) bool {
+	if overwrites.IsNull() || overwrites.IsUnknown() {
+		return true
+	}
+
+	var overwritesPlanned []modelOverwrites
+	overwrites.ElementsAs(ctx, &overwritesPlanned, true)
+
+	return len(overwritesPlanned) > 0 && overwritesPlanned[0].ExecutionMode.ValueBool()
+}
+
+func (r *workspaceSettings) oldRemoteStateConsumerIDs(workspaceID string, state *tfsdk.State) ([]string, error) {
+	if state == nil || state.Raw.IsNull() {
+		// No prior state (e.g. during Create after import). Read current
+		// consumers from the API so we can remove any that aren't desired.
+		_, currentIDs, err := readWorkspaceStateConsumers(workspaceID, r.config.Client)
+		if err != nil {
+			return nil, fmt.Errorf("error reading current remote state consumers for workspace %s: %w", workspaceID, err)
+		}
+
+		return currentIDs, nil
+	}
+
 	var oldWorkspaceIDsSet types.Set
-	diags := state.GetAttribute(ctx, path.Root("remote_state_consumer_ids"), &oldWorkspaceIDsSet)
-	if diags.HasError() {
-		return fmt.Errorf("error comparing remote state consumer IDs: %s", diags.Errors())
+	if diags := state.GetAttribute(ctx, path.Root("remote_state_consumer_ids"), &oldWorkspaceIDsSet); diags.HasError() {
+		return nil, fmt.Errorf("error comparing remote state consumer IDs: %s", diags.Errors())
+	}
+
+	if oldWorkspaceIDsSet.IsNull() {
+		return nil, nil
 	}
 
 	var oldWorkspaceIDs []string
-	if !oldWorkspaceIDsSet.IsNull() {
-		diags = oldWorkspaceIDsSet.ElementsAs(ctx, &oldWorkspaceIDs, true)
-		if diags.HasError() {
-			return fmt.Errorf("error comparing remote state consumer IDs: %s", diags.Errors())
-		}
+	if diags := oldWorkspaceIDsSet.ElementsAs(ctx, &oldWorkspaceIDs, true); diags.HasError() {
+		return nil, fmt.Errorf("error comparing remote state consumer IDs: %s", diags.Errors())
+	}
+
+	return oldWorkspaceIDs, nil
+}
+
+func (r *workspaceSettings) addAndRemoveRemoteStateConsumers(workspaceID string, newWorkspaceIDsSet types.Set, state *tfsdk.State) error {
+	oldWorkspaceIDs, err := r.oldRemoteStateConsumerIDs(workspaceID, state)
+	if err != nil {
+		return err
 	}
 
 	var newWorkspaceIDs []string
 	if !newWorkspaceIDsSet.IsNull() {
-		diags = newWorkspaceIDsSet.ElementsAs(ctx, &newWorkspaceIDs, true)
-		if diags.HasError() {
+		if diags := newWorkspaceIDsSet.ElementsAs(ctx, &newWorkspaceIDs, true); diags.HasError() {
 			return fmt.Errorf("error comparing remote state consumer IDs: %s", diags.Errors())
 		}
 	}
@@ -651,7 +739,7 @@ func (r *workspaceSettings) addAndRemoveRemoteStateConsumers(workspaceID string,
 		}
 	}
 
-	// First add the new consumerss
+	// First add the new consumers
 	if len(workspaceIDsToAdd) > 0 {
 		options := tfe.WorkspaceAddRemoteStateConsumersOptions{}
 
@@ -714,6 +802,10 @@ func (r *workspaceSettings) Create(ctx context.Context, req resource.CreateReque
 		return
 	}
 
+	if !planned.RemoteStateConsumerIDs.IsNull() {
+		resp.Diagnostics.Append(resp.Private.SetKey(ctx, remoteStateConsumerIDsConfiguredKey, []byte("true"))...)
+	}
+
 	// Prefer the read value if there is no config value
 	if autoApply.IsNull() {
 		tflog.Debug(ctx, fmt.Sprintf("auto_apply is not set in config, overwrite with the read value %v", model.AutoApply.ValueBool()))
@@ -736,7 +828,7 @@ func (r *workspaceSettings) Create(ctx context.Context, req resource.CreateReque
 		return
 	}
 
-	if err := r.updateSettings(ctx, &planned, &resp.State); err != nil {
+	if err := r.updateSettings(ctx, &planned, nil, &resp.State); err != nil {
 		resp.Diagnostics.AddError("Error updating workspace", err.Error())
 	}
 }
@@ -744,8 +836,11 @@ func (r *workspaceSettings) Create(ctx context.Context, req resource.CreateReque
 func (r *workspaceSettings) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var data modelWorkspaceSettings
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
-	if err := r.updateSettings(ctx, &data, &resp.State); err != nil {
+	if err := r.updateSettings(ctx, &data, &req.State, &resp.State); err != nil {
 		resp.Diagnostics.AddError("Error updating workspace", err.Error())
 	}
 }
@@ -759,7 +854,7 @@ func (r *workspaceSettings) Delete(ctx context.Context, req resource.DeleteReque
 		WorkspaceID: data.ID,
 	}
 
-	if err := r.updateSettings(ctx, &noneModel, &resp.State); err == nil {
+	if err := r.updateSettings(ctx, &noneModel, &req.State, &resp.State); err == nil {
 		resp.State.RemoveResource(ctx)
 	}
 }
