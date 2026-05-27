@@ -192,7 +192,7 @@ func (d *dataSourceTFESCIMGroups) Read(ctx context.Context, req datasource.ReadR
 			if argument == "name" {
 				matched = make([]*tfe.AdminSCIMGroup, 0, 1)
 			} else {
-				matched = make([]*tfe.AdminSCIMGroup, 0, list.TotalCount)
+				matched = make([]*tfe.AdminSCIMGroup, 0, len(list.Items))
 			}
 		}
 
