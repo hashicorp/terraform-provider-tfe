@@ -26,7 +26,8 @@ import (
 // must be treated as exclusive resources: do not run SCIM and SAML acceptance
 // tests concurrently.
 //
-// Should this test name ever change, you will also need to update the regex in ci.yml.
+// Keep this test name matching the SCIM acceptance-test prefix used by the
+// skip regex in ci.yml (currently TestAccTFESCIM), or update that regex.
 func TestAccTFESCIMGroupsDataSource_omnibus(t *testing.T) {
 	skipIfCloud(t)
 
