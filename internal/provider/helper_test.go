@@ -380,18 +380,39 @@ func createSCIMGroup(t *testing.T, displayName, scimToken string) string {
 		t.Fatalf("marshal SCIM group request body: %v", err)
 	}
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost,
-		fmt.Sprintf("https://%s/scim/v2/Groups", hostname), bytes.NewReader(body))
-	if err != nil {
-		t.Fatalf("build SCIM group request: %v", err)
-	}
-	req.Header.Set("Content-Type", "application/scim+json")
-	req.Header.Set("Authorization", "Bearer "+scimToken)
-
 	httpClient := &http.Client{Timeout: 30 * time.Second}
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		t.Fatalf("POST /scim/v2/Groups: %v", err)
+
+	const maxRetries = 5
+	var resp *http.Response
+	for attempt := range maxRetries {
+		// Re-create the request body each attempt since the reader is consumed.
+		reqBody := bytes.NewReader(body)
+		retryReq, err := http.NewRequestWithContext(context.Background(), http.MethodPost,
+			fmt.Sprintf("https://%s/scim/v2/Groups", hostname), reqBody)
+		if err != nil {
+			t.Fatalf("build SCIM group request: %v", err)
+		}
+		retryReq.Header.Set("Content-Type", "application/scim+json")
+		retryReq.Header.Set("Authorization", "Bearer "+scimToken)
+
+		resp, err = httpClient.Do(retryReq)
+		if err != nil {
+			t.Fatalf("POST /scim/v2/Groups: %v", err)
+		}
+
+		if resp.StatusCode != http.StatusTooManyRequests {
+			break
+		}
+
+		resp.Body.Close()
+		wait := time.Duration(1<<attempt) * time.Second
+		if ra := resp.Header.Get("Retry-After"); ra != "" {
+			if secs, err := time.ParseDuration(ra + "s"); err == nil {
+				wait = secs
+			}
+		}
+		t.Logf("SCIM rate-limited (429), retrying in %s (attempt %d/%d)", wait, attempt+1, maxRetries)
+		time.Sleep(wait)
 	}
 	defer resp.Body.Close()
 
