@@ -411,3 +411,20 @@ func createSCIMGroup(t *testing.T, displayName, scimToken string) string {
 	}
 	return res.ID
 }
+
+// captureSCIMTokenValue pulls the `token` attribute off a tfe_scim_token in
+// state and stores it in out. The value is only available right after Create.
+func captureSCIMTokenValue(resourceName string, out *string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("resource %s not found in state", resourceName)
+		}
+		v := rs.Primary.Attributes["token"]
+		if v == "" {
+			return fmt.Errorf("resource %s has empty token attribute", resourceName)
+		}
+		*out = v
+		return nil
+	}
+}

@@ -60,7 +60,7 @@ jobs:
           # worked reliably for a single test name and broke when excluding multiple suites. We now keep
           # list_tests at its default (".") and use the `skip` input below, which is forwarded to `go test -skip`
           # to reliably exclude multiple specific test suites from CI runs.
-          skip: "TestAccTFESAMLSettings_omnibus|TestAccTFESCIMSettings_omnibus|TestAccTFESCIMTokenDataSource_omnibus|TestAccTFESCIMToken_omnibus"
+          skip: "TestAccTFESAMLSettings_omnibus|TestAccTFESCIM"
   tests-combine-summaries:
     name: Combine Test Reports
     if: "!startsWith(github.head_ref, 'changelog/')"
