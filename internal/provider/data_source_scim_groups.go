@@ -20,8 +20,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-// nonWhitespaceRegex rejects whitespace-only inputs that slip past LengthAtLeast(1).
-var nonWhitespaceRegex = regexp.MustCompile(`\S`)
+// scimGroupNonWhitespaceRegex rejects whitespace-only inputs that slip past LengthAtLeast(1).
+var scimGroupNonWhitespaceRegex = regexp.MustCompile(`\S`)
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
@@ -78,7 +78,7 @@ func (d *dataSourceTFESCIMGroups) Schema(_ context.Context, _ datasource.SchemaR
 					),
 					stringvalidator.LengthAtLeast(1),
 					stringvalidator.RegexMatches(
-						nonWhitespaceRegex,
+						scimGroupNonWhitespaceRegex,
 						"must contain at least one non-whitespace character",
 					),
 				},
@@ -89,7 +89,7 @@ func (d *dataSourceTFESCIMGroups) Schema(_ context.Context, _ datasource.SchemaR
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 					stringvalidator.RegexMatches(
-						nonWhitespaceRegex,
+						scimGroupNonWhitespaceRegex,
 						"must contain at least one non-whitespace character",
 					),
 				},
