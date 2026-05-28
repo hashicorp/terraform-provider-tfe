@@ -5,6 +5,9 @@ FEATURES:
 * **New Resource:** `r/tfe_scim_token` and **New Data Source:** `d/tfe_scim_token`: Adds resource and data source to manage SCIM tokens on Terraform Enterprise. By @skj-skj [#2076](https://github.com/hashicorp/terraform-provider-tfe/pull/2076)
 * **New Resource:** `r/tfe_admin_smtp_settings` and **New Data Source:** `d/tfe_admin_smtp_settings`: Adds resource and data source to manage Admin SMTP settings in Terraform Enterprise by @chpag [#2059](https://github.com/hashicorp/terraform-provider-tfe/pull/2059)
 
+ENHANCEMENTS:
+* `r/tfe_no_code_module`: Allow `variable_options.options` to be empty or omitted [#2074](https://github.com/hashicorp/terraform-provider-tfe/pull/2074)
+
 ## v0.77.0
 
 ENHANCEMENTS:
