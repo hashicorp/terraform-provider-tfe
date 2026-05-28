@@ -30,7 +30,7 @@ jobs:
     steps:
       - name: Fetch Outputs
         id: tflocal
-        uses: hashicorp-forge/terraform-cloud-action/outputs@ceddc497db955594f0b0d5f0bee29c41f60d6d33 # v1.1.1
+        uses: hashicorp-forge/terraform-cloud-action/outputs@63b5112558a7f2b1bf5ad05a5d4bbd3c5dfe7a82 # v1.1.2
         with:
           token: "${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}"
           organization: hashicorp-v2
@@ -67,12 +67,12 @@ jobs:
     needs: [ tests ]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 20
 
       - name: Download artifacts
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
 
       - name: Install junit-report-merger
         run: npm install -g junit-report-merger
@@ -81,7 +81,7 @@ jobs:
         run: jrm ./ci-summary-provider.xml "junit-test-summary-0/*.xml" "junit-test-summary-1/*.xml" "junit-test-summary-2/*.xml" "junit-test-summary-3/*.xml" "junit-test-summary-4/*.xml" "junit-test-summary-5/*.xml" "junit-test-summary-6/*.xml" "junit-test-summary-7/*.xml" "junit-test-summary-workspace-run/*.xml"
 
       - name: Upload test artifacts
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: junit-test-summary
           path: ./ci-summary-provider.xml

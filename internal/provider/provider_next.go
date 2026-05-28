@@ -143,6 +143,7 @@ func (p *frameworkProvider) Actions(ctx context.Context) []func() action.Action 
 
 func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
+		NewAdminSMTPSettingsDataSource,
 		NewCurrentUserDataSource,
 		NewHYOKCustomerKeyVersionDataSource,
 		NewHYOKEncryptedDataKeyDataSource,
@@ -170,6 +171,7 @@ func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource
 
 func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
+		NewAdminSMTPSettingsResource,
 		NewAuditTrailTokenResource,
 		NewDataRetentionPolicyResource,
 		NewOrgMaxTokenTTLPolicyResource,
