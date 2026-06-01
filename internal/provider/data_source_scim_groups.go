@@ -199,11 +199,10 @@ func (d *dataSourceTFESCIMGroups) Read(ctx context.Context, req datasource.ReadR
 			}
 		}
 
-		for _, g := range list.Items {
-			if argument == "name" && !strings.EqualFold(g.Name, value) {
-				continue
-			}
-			matched = append(matched, g)
+		if argument == "name" {
+			matched = append(matched, filterExactSCIMGroups(list.Items, value)...)
+		} else {
+			matched = append(matched, list.Items...)
 		}
 
 		if argument == "name" && len(matched) > 0 {
