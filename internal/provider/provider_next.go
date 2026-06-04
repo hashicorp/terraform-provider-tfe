@@ -165,7 +165,7 @@ func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource
 		NewWorkspaceRunTaskDataSource,
 		NewSCIMSettingsDataSource,
 		NewSCIMTokenDataSource,
-		NewSCIMGroupsDataSource,
+		NewSCIMGroupDataSource,
 	}
 }
 
