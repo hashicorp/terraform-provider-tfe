@@ -12,13 +12,9 @@ configured Identity Provider into Terraform Enterprise. It applies only to
 Terraform Enterprise and requires admin token configuration. See example usage
 for incorporating an admin token in your provider config.
 
-Exactly one of `name` or `search` must be provided:
-
-* Use `name` to look up a single group by its exact display name
-  (case-insensitive). The data source filters out fuzzy substring matches
-  returned by the API and keeps only exact matches.
-* Use `search` to retrieve every group whose name matches the API's substring
-  query (`?q=<search>`). Results across all pages are returned.
+Use `name` to look up a single group by its exact display name
+(case-insensitive). The data source filters out fuzzy substring matches
+returned by the API and keeps only exact matches.
 
 ## Example Usage
 
@@ -46,19 +42,6 @@ output "admin_group_id" {
 }
 ```
 
-List every SCIM group whose name contains a given substring:
-
-```hcl
-data "tfe_scim_groups" "engineering" {
-  provider = tfe.admin
-  search   = "-eng-"
-}
-
-output "engineering_group_names" {
-  value = [for g in data.tfe_scim_groups.engineering.groups : g.name]
-}
-```
-
 Pair with `tfe_scim_settings` to map a SCIM group to the site admin role:
 
 ```hcl
@@ -77,17 +60,15 @@ resource "tfe_scim_settings" "this" {
 
 The following arguments are supported:
 
-* `name` - (Optional) The exact name of the SCIM group to retrieve
-  (case-insensitive). Cannot be used with `search`.
-* `search` - (Optional) A substring used to filter SCIM groups by name via the
-  API's query parameter (`?q=<search>`, case-insensitive). Cannot be used with `name`.
+* `name` - (Required) The exact name of the SCIM group to retrieve
+  (case-insensitive).
 
 ## Attributes Reference
 
 The following attributes are exported:
 
-* `id` - The internal ID of the data source, formatted as `<argument>/<value>`
-  (e.g., `name/platform-admins` or `search/-eng-`). The `<value>` portion is
+* `id` - The internal ID of the data source, formatted as `name/<value>`
+  (e.g., `name/platform-admins`). The `<value>` portion is
   URL-path-escaped, so characters such as spaces or `/` appear percent-encoded
   (e.g., `name/platform%20admins`).
 * `groups` - The list of all matching SCIM groups. Each entry exports:

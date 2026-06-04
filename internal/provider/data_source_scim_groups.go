@@ -14,7 +14,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -49,7 +48,6 @@ type modelDataTFESCIMGroup struct {
 type modelDataTFESCIMGroups struct {
 	ID        types.String            `tfsdk:"id"`
 	Name      types.String            `tfsdk:"name"`
-	Search    types.String            `tfsdk:"search"`
 	GroupID   types.String            `tfsdk:"group_id"`
 	GroupName types.String            `tfsdk:"group_name"`
 	Groups    []modelDataTFESCIMGroup `tfsdk:"groups"`
@@ -63,33 +61,16 @@ func (d *dataSourceTFESCIMGroups) Metadata(_ context.Context, req datasource.Met
 // Schema defines the schema for the data source.
 func (d *dataSourceTFESCIMGroups) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Reads SCIM groups synchronized from the configured Identity Provider into Terraform Enterprise. Exactly one of `name` or `search` must be provided.",
+		Description: "Reads SCIM groups synchronized from the configured Identity Provider into Terraform Enterprise.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "The internal ID of the data source, formatted as `<argument>/<value>`, where the `<value>` portion is URL-path-escaped before being stored in state (for example, spaces become `%20` and `/` becomes `%2F`; e.g., `name/admin-team`, `search/-eng-team`, or `name/Platform%20Ops`).",
+				Description: "The internal ID of the data source, formatted as `name/<value>`, where the `<value>` portion is URL-path-escaped before being stored in state (for example, spaces become `%20` and `/` becomes `%2F`; e.g., `name/admin-team` or `name/Platform%20Ops`).",
 			},
 			"name": schema.StringAttribute{
-				Optional:    true,
-				Description: "The exact name of the SCIM group to retrieve (case-insensitive). Cannot be used with `search`.",
+				Required:    true,
+				Description: "The exact name of the SCIM group to retrieve (case-insensitive).",
 				Validators: []validator.String{
-					stringvalidator.ExactlyOneOf(
-						path.MatchRelative().AtParent().AtName("search"),
-					),
-					stringvalidator.LengthAtLeast(1),
-					stringvalidator.RegexMatches(
-						scimGroupNonWhitespaceRegex,
-						"must contain at least one non-whitespace character",
-					),
-				},
-			},
-			"search": schema.StringAttribute{
-				Optional:    true,
-				Description: "A search string used to filter SCIM groups by name via the API's query parameter (`?q=<search>`, case-insensitive). Cannot be used with `name`.",
-				Validators: []validator.String{
-					stringvalidator.ExactlyOneOf(
-						path.MatchRelative().AtParent().AtName("name"),
-					),
 					stringvalidator.LengthAtLeast(1),
 					stringvalidator.RegexMatches(
 						scimGroupNonWhitespaceRegex,
@@ -151,37 +132,27 @@ func (d *dataSourceTFESCIMGroups) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
-	// ExactlyOneOf guarantees exactly one of `name` or `search` is set.
-	// If either is still unknown, defer to apply by returning without
+	// If `name` is still unknown, defer to apply by returning without
 	// writing state; the framework will mark all computed attributes as
 	// unknown for downstream consumers.
-	var argument, value, query string
-	switch {
-	case data.Name.IsUnknown() || data.Search.IsUnknown():
+	if data.Name.IsUnknown() {
 		return
-	case !data.Name.IsNull():
-		argument = "name"
-		value = strings.TrimSpace(data.Name.ValueString())
-		query = value
-	case !data.Search.IsNull():
-		argument = "search"
-		value = strings.TrimSpace(data.Search.ValueString())
-		query = value
 	}
+	value := strings.TrimSpace(data.Name.ValueString())
 
 	options := &tfe.AdminSCIMGroupListOptions{
-		Query: query,
+		// ?q= is a fuzzy substring match used here only as a server-side
+		// prefilter; we still narrow to an exact, case-insensitive match below.
+		Query: value,
 	}
 
 	tflog.Debug(ctx, "Listing SCIM groups", map[string]any{
-		"argument": argument,
-		"value":    value,
+		"name": value,
 	})
 
-	// ?q= is a fuzzy substring match; for `name` keep only case-insensitive
-	// exact matches (at most one) and stop paginating as soon as we find it.
-	// For `search` accept every item the API returns.
-	var matched []*tfe.AdminSCIMGroup
+	// Keep only case-insensitive exact matches (at most one) and stop
+	// paginating as soon as we find it.
+	matched := make([]*tfe.AdminSCIMGroup, 0, 1)
 	for {
 		list, err := d.client.Admin.Settings.SCIM.Groups.List(ctx, options)
 		if err != nil {
@@ -189,26 +160,9 @@ func (d *dataSourceTFESCIMGroups) Read(ctx context.Context, req datasource.ReadR
 			return
 		}
 
-		if matched == nil {
-			if argument == "name" {
-				matched = make([]*tfe.AdminSCIMGroup, 0, 1)
-			} else {
-				matched = make([]*tfe.AdminSCIMGroup, 0, len(list.Items))
-			}
-		}
+		matched = append(matched, filterExactSCIMGroups(list.Items, value)...)
 
-		if argument == "name" {
-			matched = append(matched, filterExactSCIMGroups(list.Items, value)...)
-		} else {
-			for _, g := range list.Items {
-				if g == nil {
-					continue
-				}
-				matched = append(matched, g)
-			}
-		}
-
-		if argument == "name" && len(matched) > 0 {
+		if len(matched) > 0 {
 			break
 		}
 		if list.Pagination == nil || list.CurrentPage >= list.TotalPages {
@@ -218,7 +172,7 @@ func (d *dataSourceTFESCIMGroups) Read(ctx context.Context, req datasource.ReadR
 	}
 
 	// PathEscape so `/` or spaces in value don't break the id format.
-	data.ID = types.StringValue(fmt.Sprintf("%s/%s", argument, url.PathEscape(value)))
+	data.ID = types.StringValue(fmt.Sprintf("name/%s", url.PathEscape(value)))
 
 	groups := make([]modelDataTFESCIMGroup, 0, len(matched))
 	for _, g := range matched {
