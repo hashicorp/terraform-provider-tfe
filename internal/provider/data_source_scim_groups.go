@@ -162,12 +162,10 @@ func (d *dataSourceTFESCIMGroups) Read(ctx context.Context, req datasource.ReadR
 	case !data.Name.IsNull():
 		argument = "name"
 		value = strings.TrimSpace(data.Name.ValueString())
-		data.Name = types.StringValue(value)
 		query = value
 	case !data.Search.IsNull():
 		argument = "search"
 		value = strings.TrimSpace(data.Search.ValueString())
-		data.Search = types.StringValue(value)
 		query = value
 	}
 
