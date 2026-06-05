@@ -7,10 +7,10 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
-	"os"
 	"testing"
 	"time"
 
+	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
@@ -118,20 +118,30 @@ func TestAccTFESCIMTeamDataSource_omnibus(t *testing.T) {
 
 	t.Run("SCIM attributes across full lifecycle", func(t *testing.T) {
 		teamName := "tf-acc-scim-team-" + randomString(t)
-		org := os.Getenv("TFE_ORGANIZATION")
+
+		client, err := getClientUsingEnv()
+		if err != nil {
+			t.Fatal(err)
+		}
+		org, orgCleanup := createOrganization(t, client, tfe.OrganizationCreateOptions{
+			Name:  tfe.String("tst-" + randomString(t)),
+			Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
+		})
+		t.Cleanup(orgCleanup)
 
 		// teamID is captured from Terraform state after step 1 so that step 3
-		// PreConfig can call linkSCIMGroupToTeam with the correct external ID.
+		// PreConfig can call SCIMGroupMappings.Create with the correct external ID.
 		var teamID string
 
 		resource.Test(t, resource.TestCase{
 			PreCheck:                 func() { testAccPreCheck(t) },
 			ProtoV6ProviderFactories: testAccMuxedProviders,
+			CheckDestroy:             testAccTFESCIMSettingsDestroy,
 			Steps: []resource.TestStep{
 				// Step 1: No SCIM at all. Verify the data source reads successfully
 				// and does not panic when SCIM fields are absent from the API response.
 				{
-					Config: testAccTFETeamDataSourceConfig_noSCIM(teamName, org),
+					Config: testAccTFETeamDataSourceConfig_noSCIM(teamName, org.Name),
 					Check: resource.ComposeAggregateTestCheckFunc(
 						resource.TestCheckResourceAttrSet("data.tfe_team.test", "id"),
 						resource.TestCheckResourceAttr("data.tfe_team.test", "name", teamName),
@@ -150,7 +160,7 @@ func TestAccTFESCIMTeamDataSource_omnibus(t *testing.T) {
 				// The API now returns SCIM fields (scim_enabled? is true), so we
 				// assert their unlinked zero values.
 				{
-					Config: testAccTFETeamDataSourceConfig_scimEnabled(teamName, org),
+					Config: testAccTFETeamDataSourceConfig_scimEnabled(teamName, org.Name),
 					Check: resource.ComposeAggregateTestCheckFunc(
 						resource.TestCheckResourceAttr("data.tfe_team.test", "scim_linked", "false"),
 						resource.TestCheckNoResourceAttr("data.tfe_team.test", "scim_group_name"),
@@ -176,9 +186,13 @@ func TestAccTFESCIMTeamDataSource_omnibus(t *testing.T) {
 
 						// No explicit group cleanup: disabling SCIM (CheckDestroy) removes all groups.
 						scimGroupID := createSCIMGroup(t, teamName, token.Token)
-						linkSCIMGroupToTeam(t, teamID, scimGroupID)
+						if err := testAccConfiguredClient.Client.Admin.Settings.SCIM.SCIMGroupMappings.Create(
+							context.Background(), teamID, &tfe.AdminSCIMGroupMappingCreateOptions{SCIMGroupID: scimGroupID},
+						); err != nil {
+							t.Fatalf("link SCIM group to team: %v", err)
+						}
 					},
-					Config: testAccTFETeamDataSourceConfig_scimEnabled(teamName, org),
+					Config: testAccTFETeamDataSourceConfig_scimEnabled(teamName, org.Name),
 					Check: resource.ComposeAggregateTestCheckFunc(
 						resource.TestCheckResourceAttr("data.tfe_team.test", "scim_linked", "true"),
 						resource.TestCheckResourceAttr("data.tfe_team.test", "scim_group_name", teamName),
