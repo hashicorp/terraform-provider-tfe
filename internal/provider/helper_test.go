@@ -24,6 +24,9 @@ const RunTasksURLEnvName = "RUN_TASKS_URL"
 const RunTasksHMACKeyEnvName = "RUN_TASKS_HMAC"
 const EnableHYOKEnvName = "ENABLE_HYOK"
 
+const TFEScimGroupAPI = "https://%s/scim/v2/Groups"
+const TFEScimLinkAPI = "https://%s/api/v2/admin/teams/%s/scim-group-mapping"
+
 type testClientOptions struct {
 	defaultOrganization          string
 	defaultWorkspaceID           string
@@ -381,7 +384,7 @@ func createSCIMGroup(t *testing.T, displayName, scimToken string) string {
 	}
 
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost,
-		fmt.Sprintf("https://%s/scim/v2/Groups", hostname), bytes.NewReader(body))
+		fmt.Sprintf(TFEScimGroupAPI, hostname), bytes.NewReader(body))
 	if err != nil {
 		t.Fatalf("build SCIM group request: %v", err)
 	}
@@ -391,7 +394,7 @@ func createSCIMGroup(t *testing.T, displayName, scimToken string) string {
 	httpClient := &http.Client{Timeout: 30 * time.Second}
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		t.Fatalf("POST /scim/v2/Groups: %v", err)
+		t.Fatalf("POST %s: %v", fmt.Sprintf(TFEScimGroupAPI, hostname), err)
 	}
 	defer resp.Body.Close()
 
@@ -410,4 +413,47 @@ func createSCIMGroup(t *testing.T, displayName, scimToken string) string {
 		t.Fatal("SCIM group response missing id")
 	}
 	return res.ID
+}
+
+// linkSCIMGroupToTeam links an existing SCIM group to an existing TFE team via the admin SCIM API.
+func linkSCIMGroupToTeam(t *testing.T, teamExternalID, scimGroupID string) {
+	t.Helper()
+
+	hostname := os.Getenv("TFE_HOSTNAME")
+	if hostname == "" {
+		hostname = "app.terraform.io"
+	}
+	token := os.Getenv("TFE_TOKEN")
+
+	body, err := json.Marshal(map[string]any{
+		"data": map[string]any{
+			"attributes": map[string]any{
+				"scim-group-id": scimGroupID,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("marshal link SCIM group request body: %v", err)
+	}
+
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost,
+		fmt.Sprintf(TFEScimLinkAPI, hostname, teamExternalID),
+		bytes.NewReader(body))
+	if err != nil {
+		t.Fatalf("build link SCIM group request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/vnd.api+json")
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	httpClient := &http.Client{Timeout: 30 * time.Second}
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		t.Fatalf("POST %s: %v", fmt.Sprintf(TFEScimLinkAPI, hostname, teamExternalID), err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent {
+		errBody, _ := io.ReadAll(resp.Body)
+		t.Fatalf("link SCIM group to team: status %d body: %s", resp.StatusCode, errBody)
+	}
 }

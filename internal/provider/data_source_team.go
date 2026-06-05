@@ -10,6 +10,7 @@ package provider
 
 import (
 	"fmt"
+	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -30,6 +31,22 @@ func dataSourceTFETeam() *schema.Resource {
 				Optional: true,
 			},
 			"sso_team_id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"scim_linked": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
+			"scim_group_name": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"scim_sync_paused": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
+			"scim_updated_at": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
@@ -64,9 +81,7 @@ func dataSourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 			return fmt.Errorf("could not find team %s/%s", organization, name)
 		}
 
-		d.SetId(tl.Items[0].ID)
-		d.Set("sso_team_id", tl.Items[0].SSOTeamID)
-
+		setTeamResourceData(d, tl.Items[0])
 		return nil
 	default:
 		options := &tfe.TeamListOptions{}
@@ -74,8 +89,7 @@ func dataSourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 		for {
 			for _, team := range tl.Items {
 				if team.Name == name {
-					d.SetId(team.ID)
-					d.Set("sso_team_id", team.SSOTeamID)
+					setTeamResourceData(d, team)
 					return nil
 				}
 			}
@@ -94,4 +108,24 @@ func dataSourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	return fmt.Errorf("could not find team %s/%s", organization, name)
+}
+
+// setTeamResourceData populates state with the team's attributes. SCIM fields are
+// guarded by nil checks so that older TFE instances do not panic.
+func setTeamResourceData(d *schema.ResourceData, team *tfe.Team) {
+	d.SetId(team.ID)
+	d.Set("sso_team_id", team.SSOTeamID)
+
+	if team.SCIMLinked != nil {
+		d.Set("scim_linked", *team.SCIMLinked)
+	}
+	if team.SCIMGroupName != nil {
+		d.Set("scim_group_name", *team.SCIMGroupName)
+	}
+	if team.SCIMSyncPaused != nil {
+		d.Set("scim_sync_paused", *team.SCIMSyncPaused)
+	}
+	if team.SCIMUpdatedAt != nil {
+		d.Set("scim_updated_at", team.SCIMUpdatedAt.Format(time.RFC3339))
+	}
 }
