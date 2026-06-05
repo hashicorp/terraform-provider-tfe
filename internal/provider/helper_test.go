@@ -397,9 +397,6 @@ func createSCIMGroup(t *testing.T, displayName, scimToken string) string {
 
 		resp, err = httpClient.Do(retryReq)
 		if err != nil {
-			if resp != nil && resp.Body != nil {
-				resp.Body.Close()
-			}
 			t.Fatalf("POST /scim/v2/Groups: %v", err)
 		}
 
