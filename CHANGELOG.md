@@ -6,7 +6,7 @@ FEATURES:
 * **New Resource:** `r/tfe_admin_smtp_settings` and **New Data Source:** `d/tfe_admin_smtp_settings`: Adds resource and data source to manage Admin SMTP settings in Terraform Enterprise by @chpag [#2059](https://github.com/hashicorp/terraform-provider-tfe/pull/2059)
 
 ENHANCEMENTS:
-* `d/tfe_team`: Expose SCIM attributes (`scim_linked`, `scim_group_name`, `scim_sync_paused`, `scim_updated_at`) as computed read-only fields. These are only populated when SCIM is enabled on the TFE instance.
+* `d/tfe_team`: Expose SCIM attributes (`scim_linked`, `scim_group_name`, `scim_sync_paused`, `scim_updated_at`) as computed read-only fields. These are only populated when SCIM is enabled on the TFE instance [#2088](https://github.com/hashicorp/terraform-provider-tfe/pull/2088)
 * `r/tfe_no_code_module`: Allow `variable_options.options` to be empty or omitted [#2074](https://github.com/hashicorp/terraform-provider-tfe/pull/2074)
 
 ## v0.77.0
