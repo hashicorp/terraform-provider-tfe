@@ -5,8 +5,9 @@ FEATURES:
 * **New Resource:** `r/tfe_scim_token` and **New Data Source:** `d/tfe_scim_token`: Adds resource and data source to manage SCIM tokens on Terraform Enterprise. By @skj-skj [#2076](https://github.com/hashicorp/terraform-provider-tfe/pull/2076)
 * **New Resource:** `r/tfe_admin_smtp_settings` and **New Data Source:** `d/tfe_admin_smtp_settings`: Adds resource and data source to manage Admin SMTP settings in Terraform Enterprise by @chpag [#2059](https://github.com/hashicorp/terraform-provider-tfe/pull/2059)
 * **New Data Source:** `d/tfe_scim_group`: Adds a data source to retrieve a SCIM group from Terraform Enterprise. By @skj-skj [#2083](https://github.com/hashicorp/terraform-provider-tfe/pull/2083)
-* **New Resource:** `r/tfe_provider_set` for managing shared provider configurations for internal testing. NOTE: This resource is subject to change and has limited support in HCP Terraform. By @mogrogan [#2086](https://github.com/hashicorp/terraform-provider-tfe/pull/2086)
 * **New Resource:** `r/tfe_scim_group_mapping`: Adds a resource to map a SCIM group to a team on Terraform Enterprise. By @skj-skj [#2090](https://github.com/hashicorp/terraform-provider-tfe/pull/2090)
+* **New Resource:** `r/tfe_provider_set` for managing shared provider configurations for internal testing. NOTE: This resource is subject to change and has limited support in HCP Terraform. It is not available to public. By @mogrogan [#2086](https://github.com/hashicorp/terraform-provider-tfe/pull/2086)
+* **New Data Source:** `d/tfe_provider_set` for retrieving shared provider configurations for internal testing. NOTE: This data source is subject to change and has limited support in HCP Terraform. It is not available to public. By @mogrogan [#2091](https://github.com/hashicorp/terraform-provider-tfe/pull/2091)
 
 ENHANCEMENTS:
 * `d/tfe_team`: Expose SCIM attributes (`scim_linked`, `scim_group_name`, `scim_sync_paused`, `scim_updated_at`) as computed read-only fields. These are only populated when SCIM is enabled on the TFE instance [#2088](https://github.com/hashicorp/terraform-provider-tfe/pull/2088)
