@@ -145,6 +145,10 @@ func TestAccTFESCIMTeamDataSource_omnibus(t *testing.T) {
 					Check: resource.ComposeAggregateTestCheckFunc(
 						resource.TestCheckResourceAttrSet("data.tfe_team.test", "id"),
 						resource.TestCheckResourceAttr("data.tfe_team.test", "name", teamName),
+						resource.TestCheckNoResourceAttr("data.tfe_team.test", "scim_linked"),
+						resource.TestCheckNoResourceAttr("data.tfe_team.test", "scim_group_name"),
+						resource.TestCheckNoResourceAttr("data.tfe_team.test", "scim_sync_paused"),
+						resource.TestCheckNoResourceAttr("data.tfe_team.test", "scim_updated_at"),
 						// Capture the team external ID for use in step 3.
 						func(s *terraform.State) error {
 							rs, ok := s.RootModule().Resources["tfe_team.test"]
@@ -162,6 +166,8 @@ func TestAccTFESCIMTeamDataSource_omnibus(t *testing.T) {
 				{
 					Config: testAccTFETeamDataSourceConfig_scimEnabled(teamName, org.Name),
 					Check: resource.ComposeAggregateTestCheckFunc(
+						resource.TestCheckResourceAttrSet("data.tfe_team.test", "id"),
+						resource.TestCheckResourceAttr("data.tfe_team.test", "name", teamName),
 						resource.TestCheckResourceAttr("data.tfe_team.test", "scim_linked", "false"),
 						resource.TestCheckNoResourceAttr("data.tfe_team.test", "scim_group_name"),
 						resource.TestCheckResourceAttr("data.tfe_team.test", "scim_sync_paused", "false"),
@@ -194,6 +200,8 @@ func TestAccTFESCIMTeamDataSource_omnibus(t *testing.T) {
 					},
 					Config: testAccTFETeamDataSourceConfig_scimEnabled(teamName, org.Name),
 					Check: resource.ComposeAggregateTestCheckFunc(
+						resource.TestCheckResourceAttrSet("data.tfe_team.test", "id"),
+						resource.TestCheckResourceAttr("data.tfe_team.test", "name", teamName),
 						resource.TestCheckResourceAttr("data.tfe_team.test", "scim_linked", "true"),
 						resource.TestCheckResourceAttr("data.tfe_team.test", "scim_group_name", teamName),
 						resource.TestCheckResourceAttr("data.tfe_team.test", "scim_sync_paused", "false"),

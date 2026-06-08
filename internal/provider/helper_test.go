@@ -24,7 +24,7 @@ const RunTasksURLEnvName = "RUN_TASKS_URL"
 const RunTasksHMACKeyEnvName = "RUN_TASKS_HMAC"
 const EnableHYOKEnvName = "ENABLE_HYOK"
 
-const TFEScimGroupAPI = "https://%s/scim/v2/Groups"
+const TFESCIMGroupAPI = "https://%s/scim/v2/Groups"
 
 type testClientOptions struct {
 	defaultOrganization          string
@@ -390,7 +390,7 @@ func createSCIMGroup(t *testing.T, displayName, scimToken string) string {
 		// Re-create the request body each attempt since the reader is consumed.
 		reqBody := bytes.NewReader(body)
 		retryReq, err := http.NewRequestWithContext(context.Background(), http.MethodPost,
-			fmt.Sprintf(TFEScimGroupAPI, hostname), reqBody)
+			fmt.Sprintf(TFESCIMGroupAPI, hostname), reqBody)
 		if err != nil {
 			t.Fatalf("build SCIM group request: %v", err)
 		}
@@ -399,7 +399,7 @@ func createSCIMGroup(t *testing.T, displayName, scimToken string) string {
 
 		resp, err = httpClient.Do(retryReq)
 		if err != nil {
-			t.Fatalf("POST %s: %v", fmt.Sprintf(TFEScimGroupAPI, hostname), err)
+			t.Fatalf("POST %s: %v", fmt.Sprintf(TFESCIMGroupAPI, hostname), err)
 		}
 
 		if resp.StatusCode != http.StatusTooManyRequests {
