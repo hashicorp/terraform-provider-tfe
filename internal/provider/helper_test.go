@@ -382,18 +382,43 @@ func createSCIMGroup(t *testing.T, displayName, scimToken string) string {
 		t.Fatalf("marshal SCIM group request body: %v", err)
 	}
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost,
-		fmt.Sprintf(TFEScimGroupAPI, hostname), bytes.NewReader(body))
-	if err != nil {
-		t.Fatalf("build SCIM group request: %v", err)
-	}
-	req.Header.Set("Content-Type", "application/scim+json")
-	req.Header.Set("Authorization", "Bearer "+scimToken)
-
 	httpClient := &http.Client{Timeout: 30 * time.Second}
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		t.Fatalf("POST %s: %v", fmt.Sprintf(TFEScimGroupAPI, hostname), err)
+
+	const maxRetries = 5
+	var resp *http.Response
+	for attempt := range maxRetries {
+		// Re-create the request body each attempt since the reader is consumed.
+		reqBody := bytes.NewReader(body)
+		retryReq, err := http.NewRequestWithContext(context.Background(), http.MethodPost,
+			fmt.Sprintf(TFEScimGroupAPI, hostname), reqBody)
+		if err != nil {
+			t.Fatalf("build SCIM group request: %v", err)
+		}
+		retryReq.Header.Set("Content-Type", "application/scim+json")
+		retryReq.Header.Set("Authorization", "Bearer "+scimToken)
+
+		resp, err = httpClient.Do(retryReq)
+		if err != nil {
+			t.Fatalf("POST %s: %v", fmt.Sprintf(TFEScimGroupAPI, hostname), err)
+		}
+
+		if resp.StatusCode != http.StatusTooManyRequests {
+			break
+		}
+
+		// Only sleep and discard the body when another attempt will follow.
+		// On the final attempt leave the body open so the error path below can read it.
+		if attempt < maxRetries-1 {
+			resp.Body.Close()
+			wait := time.Duration(1<<attempt) * time.Second
+			if ra := resp.Header.Get("Retry-After"); ra != "" {
+				if secs, err := time.ParseDuration(ra + "s"); err == nil {
+					wait = secs
+				}
+			}
+			t.Logf("SCIM rate-limited (429), retrying in %s (attempt %d/%d)", wait, attempt+1, maxRetries)
+			time.Sleep(wait)
+		}
 	}
 	defer resp.Body.Close()
 
@@ -412,4 +437,23 @@ func createSCIMGroup(t *testing.T, displayName, scimToken string) string {
 		t.Fatal("SCIM group response missing id")
 	}
 	return res.ID
+}
+
+// captureSCIMTokenValue pulls the `token` attribute off a tfe_scim_token in
+// state and stores it in out. The API only returns the token at create time,
+// but the provider preserves it in state on subsequent reads unless that state
+// was lost (for example via import, taint, or recreation).
+func captureSCIMTokenValue(resourceName string, out *string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("resource %s not found in state", resourceName)
+		}
+		v := rs.Primary.Attributes["token"]
+		if v == "" {
+			return fmt.Errorf("resource %s has empty token attribute", resourceName)
+		}
+		*out = v
+		return nil
+	}
 }

@@ -165,6 +165,7 @@ func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource
 		NewWorkspaceRunTaskDataSource,
 		NewSCIMSettingsDataSource,
 		NewSCIMTokenDataSource,
+		NewSCIMGroupDataSource,
 	}
 }
 
@@ -179,6 +180,7 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewOrganizationRunTaskResource,
 		NewPolicySetParameterResource,
 		NewProjectResource,
+		NewProviderSetResource,
 		NewRegistryGPGKeyResource,
 		NewRegistryProviderResource,
 		NewResourceVariable,

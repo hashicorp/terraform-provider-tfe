@@ -40,6 +40,8 @@ type resourceTFEProject struct {
 	config ConfiguredClient
 }
 
+var projectIDRegexp = regexp.MustCompile("^prj-[a-zA-Z0-9]{16}$")
+
 // modelTFEProject maps the resource schema data to a struct.
 type modelTFEProject struct {
 	ID                          types.String `tfsdk:"id"`

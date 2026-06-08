@@ -1,0 +1,94 @@
+---
+layout: "tfe"
+page_title: "Terraform Enterprise: tfe_provider_set"
+description: |-
+  Manages provider sets.
+---
+
+# tfe_provider_set
+
+Creates, updates and destroys provider sets.
+
+~> **NOTE:** This resource is currently in beta and isn't generally
+available to all users. It is subject to change or be removed.
+
+
+## Example Usage
+
+Basic usage:
+
+```hcl
+resource "tfe_provider_set" "standard" {
+  name            = "example-provider-set"
+  description     = "Reusable provider config for selected workspaces"
+  organization    = "example-org"
+  provider_source = "registry.terraform.io/hashicorp/aws"
+  workspace_ids = [
+    "ws-exampleaaaa11111",
+    "ws-examplebbbb22222",
+  ]
+
+  provider_config_hcl = <<-EOT
+  provider "aws" {
+    region = "us-east-1"
+  }
+  EOT
+}
+```
+
+Write-only configuration:
+
+```hcl
+variable "aws_access_key" {
+  type      = string
+  ephemeral = true
+}
+
+variable "aws_secret_key" {
+  type      = string
+  ephemeral = true
+}
+
+resource "tfe_provider_set" "write_only" {
+  name            = "example-provider-set-write-only"
+  description     = "Reusable provider config with write-only secrets"
+  organization    = "example-org"
+  provider_source = "registry.terraform.io/hashicorp/aws"
+  workspace_ids = [
+    "ws-exampleaaaa1111",
+    "ws-examplebbbb2222",
+  ]
+
+  provider_config_hcl_wo_version = 1
+  provider_config_hcl_wo = <<-EOT
+  provider "aws" {
+    region     = "us-east-1"
+    access_key = var.aws_access_key
+    secret_key = var.aws_secret_key
+  }
+  EOT
+}
+```
+
+## Argument Reference
+
+The following arguments are supported:
+
+* `name` - (Required) Name of the provider set.
+* `provider_source` - (Required) Source address of the provider, e.g. `registry.terraform.io/hashicorp/tfe`.
+* `description` - (Optional) Description of the provider set.
+* `global` - (Optional) Whether the provider set applies globally. Defaults to `false`.
+* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
+* `workspace_ids` - (Optional) IDs of the workspaces attached to the provider set. Cannot be set if `global` is `true`.
+* `project_ids` - (Optional) IDs of the projects attached to the provider set. Cannot be set if `global` is `true`.
+* `provider_config_hcl` - (Optional) Provider configuration HCL stored in Terraform state.
+* `provider_config_hcl_wo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments), Sensitive) Provider configuration HCL that is never stored in state. Cannot be used with `provider_config_hcl`.
+* `provider_config_hcl_wo_version` - (Optional) Version identifier required when `provider_config_hcl_wo` is set to trigger updates.
+
+## Attributes Reference
+
+* `id` - The ID of the provider set.
+
+## Import
+
+Import is not currently supported for the `tfe_provider_set` prep stub.
