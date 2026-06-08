@@ -6,7 +6,7 @@ FEATURES:
 * **New Resource:** `r/tfe_admin_smtp_settings` and **New Data Source:** `d/tfe_admin_smtp_settings`: Adds resource and data source to manage Admin SMTP settings in Terraform Enterprise by @chpag [#2059](https://github.com/hashicorp/terraform-provider-tfe/pull/2059)
 * **New Data Source:** `d/tfe_scim_group`: Adds a data source to retrieve a SCIM group from Terraform Enterprise. By @skj-skj [#2083](https://github.com/hashicorp/terraform-provider-tfe/pull/2083)
 * **New Resource:** `r/tfe_provider_set` for managing shared provider configurations for internal testing. NOTE: This resource is subject to change and has limited support in HCP Terraform. By @mogrogan [#2086](https://github.com/hashicorp/terraform-provider-tfe/pull/2086)
-* **New Resource:** `r/tfe_scim_group_mapping`: Adds a resource to map a SCIM group to a team on Terraform Enterprise. By @skj-skj
+* **New Resource:** `r/tfe_scim_group_mapping`: Adds a resource to map a SCIM group to a team on Terraform Enterprise. By @skj-skj [#2090](https://github.com/hashicorp/terraform-provider-tfe/pull/2090)
 
 ENHANCEMENTS:
 * `r/tfe_no_code_module`: Allow `variable_options.options` to be empty or omitted [#2074](https://github.com/hashicorp/terraform-provider-tfe/pull/2074)
