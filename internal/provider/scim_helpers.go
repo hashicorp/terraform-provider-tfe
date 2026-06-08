@@ -52,7 +52,7 @@ func findSCIMGroupByName(ctx context.Context, client *tfe.Client, name string) (
 		// Guard against a malformed response (NextPage not advancing past the
 		// current page) that would otherwise re-fetch the same page forever.
 		if list.NextPage <= list.CurrentPage {
-			break
+			return nil, fmt.Errorf("unable to list SCIM groups: pagination did not advance (current_page=%d next_page=%d)", list.CurrentPage, list.NextPage)
 		}
 		options.PageNumber = list.NextPage
 	}
