@@ -206,6 +206,7 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewProjectPolicySetExclusionResource,
 		NewSCIMSettingsResource,
 		NewSCIMTokenResource,
+		NewSCIMGroupMappingResource,
 	}
 }
 
