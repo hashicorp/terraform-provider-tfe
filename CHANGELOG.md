@@ -8,6 +8,7 @@ FEATURES:
 * **New Resource:** `r/tfe_provider_set` for managing shared provider configurations for internal testing. NOTE: This resource is subject to change and has limited support in HCP Terraform. By @mogrogan [#2086](https://github.com/hashicorp/terraform-provider-tfe/pull/2086)
 
 ENHANCEMENTS:
+* `d/tfe_team`: Expose SCIM attributes (`scim_linked`, `scim_group_name`, `scim_sync_paused`, `scim_updated_at`) as computed read-only fields. These are only populated when SCIM is enabled on the TFE instance [#2088](https://github.com/hashicorp/terraform-provider-tfe/pull/2088)
 * `r/tfe_no_code_module`: Allow `variable_options.options` to be empty or omitted [#2074](https://github.com/hashicorp/terraform-provider-tfe/pull/2074)
 
 ## v0.77.0
