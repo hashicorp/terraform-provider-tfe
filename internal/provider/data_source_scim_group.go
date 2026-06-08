@@ -105,34 +105,16 @@ func (d *dataSourceTFESCIMGroup) Read(ctx context.Context, req datasource.ReadRe
 	}
 	name := data.Name.ValueString()
 
-	options := &tfe.AdminSCIMGroupListOptions{
-		// ?q= is a fuzzy substring match used here only as a server-side
-		// prefilter; we still narrow to an exact, case-insensitive match below.
-		Query: name,
-	}
-
 	tflog.Debug(ctx, "Listing SCIM groups", map[string]any{
 		"name": name,
 	})
 
-	// Keep the case-insensitive exact match (at most one) and stop
-	// paginating as soon as we find it.
-	var match *tfe.AdminSCIMGroup
-	for {
-		list, err := d.client.Admin.Settings.SCIM.Groups.List(ctx, options)
-		if err != nil {
-			resp.Diagnostics.AddError("Unable to list SCIM groups", err.Error())
-			return
-		}
-
-		if matched := filterExactSCIMGroups(list.Items, name); len(matched) > 0 {
-			match = matched[0]
-			break
-		}
-		if list.Pagination == nil || list.CurrentPage >= list.TotalPages {
-			break
-		}
-		options.PageNumber = list.NextPage
+	// Reuse the shared helper so the pagination and exact, case-insensitive
+	// matching behavior stays consistent with the SCIM group mapping resource.
+	match, err := findSCIMGroupByName(ctx, d.client, name)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to list SCIM groups", err.Error())
+		return
 	}
 
 	if match == nil {
