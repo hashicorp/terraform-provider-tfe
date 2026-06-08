@@ -49,6 +49,11 @@ func findSCIMGroupByName(ctx context.Context, client *tfe.Client, name string) (
 		if list.Pagination == nil || list.CurrentPage >= list.TotalPages {
 			break
 		}
+		// Guard against a malformed response (NextPage not advancing past the
+		// current page) that would otherwise re-fetch the same page forever.
+		if list.NextPage <= list.CurrentPage {
+			break
+		}
 		options.PageNumber = list.NextPage
 	}
 
