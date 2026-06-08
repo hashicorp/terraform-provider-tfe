@@ -298,7 +298,7 @@ func (r *resourceTFESCIMGroupMapping) ImportState(ctx context.Context, req resou
 // only gives us the group's name and not its ID.
 func (r *resourceTFESCIMGroupMapping) resolveSCIMGroupID(ctx context.Context, name string) (string, error) {
 	if name == "" {
-		return "", errors.New("Team is SCIM-linked but the linked SCIM group name is empty; cannot resolve scim_group_id")
+		return "", errors.New("team is SCIM-linked but the linked SCIM group name is empty; cannot resolve scim_group_id")
 	}
 
 	group, err := findSCIMGroupByName(ctx, r.client, name)
