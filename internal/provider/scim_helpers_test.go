@@ -275,4 +275,27 @@ func TestFindSCIMGroupByName(t *testing.T) {
 		assert.Contains(t, err.Error(), "bar")
 		assert.Len(t, fake.calls, 2)
 	})
+
+	t.Run("non-advancing pagination errors instead of looping", func(t *testing.T) {
+		fake := &fakeSCIMGroups{
+			pages: []*tfe.AdminSCIMGroupList{
+				{
+					// Pagination claims another page exists but NextPage does
+					// not advance past CurrentPage, which would otherwise
+					// re-fetch the same page forever.
+					Pagination: &tfe.Pagination{CurrentPage: 1, TotalPages: 2, NextPage: 1},
+					Items: []*tfe.AdminSCIMGroup{
+						{ID: "sgr-1", Name: "platform-ops-idp-bar"},
+					},
+				},
+			},
+		}
+
+		group, err := findSCIMGroupByName(ctx, newSCIMGroupsTestClient(fake), testSCIMGroupName)
+		require.Error(t, err)
+		assert.Nil(t, group)
+		assert.Contains(t, err.Error(), "pagination did not advance")
+		// Only one request was made; the loop bailed instead of repeating.
+		assert.Len(t, fake.calls, 1)
+	})
 }
