@@ -162,6 +162,7 @@ resource "tfe_team_project_access" "foobar" {
 data "tfe_team_project_access" "foobar" {
   team_id      = tfe_team.foobar.id
   project_id   = tfe_project.foobar.id
+  depends_on = [tfe_team_project_access.foobar]
 }`, organization, organization)
 }
 

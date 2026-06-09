@@ -146,7 +146,7 @@ func resourceTFETeamAccess() *schema.Resource {
 						"policy_overrides": {
 							Type:     schema.TypeBool,
 							Optional: true,
-							Default:  false,
+							Computed: true,
 						},
 					},
 				},

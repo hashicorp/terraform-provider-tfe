@@ -461,8 +461,8 @@ func resourceTFETeamProjectAccessUpdate(ctx context.Context, d *schema.ResourceD
 	}
 
 	if d.HasChange("workspace_access.0.run_tasks") {
-		if v, ok := d.GetOk("workspace_access.0.run_tasks"); ok {
-			options.WorkspaceAccess.RunTasks = tfe.Bool(v.(bool))
+		if runTasks, ok := d.GetOkExists("workspace_access.0.run_tasks"); ok {
+			options.WorkspaceAccess.RunTasks = tfe.Bool(runTasks.(bool))
 		}
 	}
 
