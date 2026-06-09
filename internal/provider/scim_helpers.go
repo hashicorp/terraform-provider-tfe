@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe"
 )
 
 // filterExactSCIMGroups returns the groups whose name matches the given name,

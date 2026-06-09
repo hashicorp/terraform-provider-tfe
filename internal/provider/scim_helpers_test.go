@@ -8,7 +8,7 @@ import (
 	"errors"
 	"testing"
 
-	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
