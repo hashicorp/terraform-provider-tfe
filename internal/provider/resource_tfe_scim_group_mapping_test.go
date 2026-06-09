@@ -124,6 +124,58 @@ func TestAccTFESCIMGroupMapping_omnibus(t *testing.T) {
 		})
 	})
 
+	t.Run("create starts paused", func(t *testing.T) {
+		org, cleanupOrg := createScimGroupMappingOrganization(t, tfeClient)
+		t.Cleanup(cleanupOrg)
+
+		rand := randomString(t)
+		teamName := "tf-acc-scim-map-paused-" + rand
+		tokenDescription := "scim group mapping create paused " + rand
+		groupName := "tf-acc-scim-map-paused-group-" + rand
+
+		var scimToken string
+		requireToken := func() {
+			if scimToken == "" {
+				t.Fatal("captured SCIM token value is empty")
+			}
+		}
+
+		resource.Test(t, resource.TestCase{
+			PreCheck:                 func() { testAccPreCheck(t) },
+			ProtoV6ProviderFactories: testAccMuxedProviders,
+			CheckDestroy:             testAccTFESCIMGroupMappingDestroy,
+			Steps: []resource.TestStep{
+				// Enable SCIM and grab a token for the SCIM API.
+				{
+					Config: testAccTFESCIMGroupMapping_setup(org.Name, teamName, tokenDescription),
+					Check:  captureSCIMTokenValue("tfe_scim_token.this", &scimToken),
+				},
+				// Create the SCIM group out-of-band, then map it to the team
+				// with paused set to true on creation. Create always starts
+				// unpaused, so the provider pauses it in a follow-up update.
+				{
+					PreConfig: func() {
+						requireToken()
+						createSCIMGroup(t, groupName, scimToken)
+					},
+					Config: testAccTFESCIMGroupMapping_paused(org.Name, teamName, tokenDescription, groupName, true),
+					Check: resource.ComposeAggregateTestCheckFunc(
+						resource.TestCheckResourceAttr("tfe_scim_group_mapping.test", "paused", "true"),
+						resource.TestCheckResourceAttrPair(
+							"tfe_scim_group_mapping.test", "scim_group_id",
+							"data.tfe_scim_group.test", "id",
+						),
+					),
+				},
+				// Re-apply must be a no-op.
+				{
+					Config:   testAccTFESCIMGroupMapping_paused(org.Name, teamName, tokenDescription, groupName, true),
+					PlanOnly: true,
+				},
+			},
+		})
+	})
+
 	t.Run("out-of-band drift is detected and re-created", func(t *testing.T) {
 		org, cleanupOrg := createScimGroupMappingOrganization(t, tfeClient)
 		t.Cleanup(cleanupOrg)

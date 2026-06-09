@@ -226,6 +226,25 @@ func TestFindSCIMGroupByName(t *testing.T) {
 		assert.Len(t, fake.calls, 2)
 	})
 
+	t.Run("empty name forwards an empty query and matches nothing named", func(t *testing.T) {
+		fake := &fakeSCIMGroups{
+			pages: []*tfe.AdminSCIMGroupList{
+				{
+					Pagination: &tfe.Pagination{CurrentPage: 1, TotalPages: 1},
+					Items: []*tfe.AdminSCIMGroup{
+						{ID: "sgr-1", Name: "platform-ops-idp"},
+					},
+				},
+			},
+		}
+
+		group, err := findSCIMGroupByName(ctx, newSCIMGroupsTestClient(fake), "")
+		require.NoError(t, err)
+		assert.Nil(t, group)
+		require.Len(t, fake.calls, 1)
+		assert.Empty(t, fake.calls[0].Query)
+	})
+
 	t.Run("nil pagination stops after one page", func(t *testing.T) {
 		fake := &fakeSCIMGroups{
 			pages: []*tfe.AdminSCIMGroupList{
