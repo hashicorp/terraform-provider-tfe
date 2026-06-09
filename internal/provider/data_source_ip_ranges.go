@@ -29,15 +29,17 @@ type dataSourceTFEIPRanges struct {
 
 // model TFEIPRages maps the data source schema data to a struct.
 type modelTFEIPRanges struct {
-	API           types.List `tfsdk:"api"`
-	Notifications types.List `tfsdk:"notifications"`
-	Sentinel      types.List `tfsdk:"sentinel"`
-	VCS           types.List `tfsdk:"vcs"`
+	ID            types.String `tfsdk:"id"`
+	API           types.List   `tfsdk:"api"`
+	Notifications types.List   `tfsdk:"notifications"`
+	Sentinel      types.List   `tfsdk:"sentinel"`
+	VCS           types.List   `tfsdk:"vcs"`
 }
 
 // modelFromTFEIPRanges builds a modelTFEIPRanges struct from a tfe.IPRanges value.
 func modelFromTFEIPRanges(i *tfe.IPRange) (modelTFEIPRanges, diag.Diagnostics) {
 	model := modelTFEIPRanges{
+		ID:            types.StringValue("ip_ranges"),
 		API:           types.ListNull(types.StringType),
 		Notifications: types.ListNull(types.StringType),
 		Sentinel:      types.ListNull(types.StringType),
@@ -74,6 +76,10 @@ func (d *dataSourceTFEIPRanges) Schema(ctx context.Context, req datasource.Schem
 	resp.Schema = schema.Schema{
 		Description: "This data source can be used to retrieve a list of HCP Terraform's IP ranges.",
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Description: "Static identifier for HCP IP ranges.",
+				Computed:    true,
+			},
 			"api": schema.ListAttribute{
 				ElementType: types.StringType,
 				Description: "The list of IP ranges in CIDR notation used for connections from user site to HCP Terraform APIs.",
@@ -99,9 +105,9 @@ func (d *dataSourceTFEIPRanges) Schema(ctx context.Context, req datasource.Schem
 }
 
 func (d *dataSourceTFEIPRanges) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config modelTFEIPRanges
+	var data modelTFEIPRanges
 
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -130,7 +136,7 @@ func (d *dataSourceTFEIPRanges) Configure(ctx context.Context, req datasource.Co
 	client, ok := req.ProviderData.(ConfiguredClient)
 	if !ok {
 		resp.Diagnostics.AddError(
-			"Unexpected resource Configure type",
+			"Unexpected Data Source Configure type",
 			fmt.Sprintf("Expected tfe.ConfiguredClient, got %T. This is a bug in the tfe provider, so please report it on GitHub.", req.ProviderData),
 		)
 	}
