@@ -7,7 +7,7 @@ description: |-
 
 # tfe_scim_group_mapping
 
-Use this resource to map a SCIM group to a team in Terraform Enterprise. When a
+Use this resource to map a team in Terraform Enterprise to a SCIM group. When a
 team is mapped to a SCIM group, its membership is managed by your Identity
 Provider (IdP) through SCIM provisioning. A team can be mapped to at most one
 SCIM group.
