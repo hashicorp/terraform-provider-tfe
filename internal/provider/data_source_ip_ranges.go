@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 var (
@@ -77,7 +78,7 @@ func (d *dataSourceTFEIPRanges) Schema(ctx context.Context, req datasource.Schem
 		Description: "This data source can be used to retrieve a list of HCP Terraform's IP ranges.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "Static identifier for HCP IP ranges.",
+				Description: "Static identifier for HCP Terraform's IP ranges data source.",
 				Computed:    true,
 			},
 			"api": schema.ListAttribute{
@@ -112,6 +113,7 @@ func (d *dataSourceTFEIPRanges) Read(ctx context.Context, req datasource.ReadReq
 		return
 	}
 
+	tflog.Debug(ctx, "Requesting IP Ranges")
 	ipRanges, err := d.config.Client.Meta.IPRanges.Read(ctx, "")
 	if err != nil {
 		resp.Diagnostics.AddError("Error retrieving IP Ranges", err.Error())
