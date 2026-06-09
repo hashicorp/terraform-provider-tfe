@@ -183,15 +183,16 @@ func (r *resourceTFESCIMGroupMapping) Create(ctx context.Context, req resource.C
 	}
 
 	teamID := plan.TeamID.ValueString()
+	scimGroupID := plan.SCIMGroupID.ValueString()
 
-	tflog.Debug(ctx, fmt.Sprintf("Creating SCIM group mapping for team %s", teamID))
+	tflog.Debug(ctx, fmt.Sprintf("Creating SCIM group mapping for team %s and SCIM group %s", teamID, scimGroupID))
 	err := r.client.Admin.Settings.SCIM.SCIMGroupMappings.Create(ctx, teamID, &tfe.AdminSCIMGroupMappingCreateOptions{
-		SCIMGroupID: plan.SCIMGroupID.ValueString(),
+		SCIMGroupID: scimGroupID,
 	})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating SCIM group mapping",
-			fmt.Sprintf("Could not create SCIM group mapping for team %s, unexpected error: %s", teamID, err.Error()),
+			fmt.Sprintf("Could not create SCIM group mapping for team %s and SCIM group %s, unexpected error: %s", teamID, scimGroupID, err.Error()),
 		)
 		return
 	}
