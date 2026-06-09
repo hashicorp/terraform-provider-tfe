@@ -145,12 +145,7 @@ func (r *resourceTFESCIMGroupMapping) Read(ctx context.Context, req resource.Rea
 		return
 	}
 
-	groupName := ""
-	if team.SCIMGroupName != nil {
-		groupName = *team.SCIMGroupName
-	}
-
-	scimGroupID, err := r.resolveSCIMGroupID(ctx, groupName)
+	scimGroupID, err := r.resolveSCIMGroupID(ctx, *team.SCIMGroupName)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("Error resolving SCIM group for team %s", teamID),
