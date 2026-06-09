@@ -8,9 +8,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/hashicorp/go-tfe"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	tfe "github.com/hashicorp/go-tfe"
 )
 
 func TestFilterExactSCIMGroups(t *testing.T) {

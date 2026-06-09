@@ -9,10 +9,11 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+
+	tfe "github.com/hashicorp/go-tfe"
 )
 
 // TestAccTFESCIMGroupMapping_omnibus is the single test function for all SCIM
