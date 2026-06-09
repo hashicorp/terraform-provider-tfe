@@ -74,6 +74,13 @@ resource "tfe_scim_group_mapping" "engineering" {
 }
 ```
 
+~> **Note:** Creating a mapping with `paused = true` does not skip the initial
+sync. The mapping API does not support creating a mapping in a paused state, so
+the mapping is created active and then paused in a follow-up request. This means
+an initial sync of the SCIM group's members onto the team runs before the pause
+takes effect, and any changes made to the SCIM group during that brief window may
+be reflected on the team.
+
 ## Argument Reference
 
 The following arguments are supported:
@@ -84,7 +91,8 @@ The following arguments are supported:
   Changing this forces a new mapping to be created, since the mapping API only
   supports updating the paused state.
 * `paused` - (Optional) Whether provisioning for this mapping is paused. Defaults
-  to `false`.
+  to `false`. Setting this to `true` on creation does not skip the initial sync,
+  since the mapping is created active and then paused in a follow-up request.
 
 ## Attributes Reference
 
