@@ -100,8 +100,8 @@ func (b *organizationSubscriptionUpdater) WithPremiumPlan() *organizationSubscri
 	return b
 }
 
-func (b *organizationSubscriptionUpdater) WithTrialPlan() *organizationSubscriptionUpdater {
-	b.planName = "Trial"
+func (b *organizationSubscriptionUpdater) WithFreePlan() *organizationSubscriptionUpdater {
+	b.planName = "Free"
 	ceiling := 1
 	b.updateOpts.RunsCeiling = &ceiling
 	return b

@@ -46,7 +46,7 @@ func TestAccTFEOrganizationAuditConfigurationDataSource_disallowed(t *testing.T)
 		t.Fatal(err)
 	}
 
-	org, orgCleanup := createTrialOrganization(t, tfeClient)
+	org, orgCleanup := createFreeOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
 	resource.Test(t, resource.TestCase{
