@@ -11,6 +11,8 @@ Adds and removes project exclusions from a policy set.
 
 -> **Note:** `tfe_policy_set` has an argument `global` that should be `true` to use this resource.
 
+~> **NOTE:** Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (`terraform apply`), then add the new one (`terraform apply`). Attempting both in a single apply may fail.
+
 ## Example Usage
 
 Basic usage:

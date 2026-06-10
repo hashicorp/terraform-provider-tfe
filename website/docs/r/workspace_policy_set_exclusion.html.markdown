@@ -11,6 +11,8 @@ Adds and removes policy sets from an excluded workspace
 
 -> **Note:** `tfe_policy_set` has an argument `workspace_ids` that should not be used alongside this resource. They attempt to manage the same attachments.
 
+~> **NOTE:** Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (`terraform apply`), then add the new one (`terraform apply`). Attempting both in a single apply may fail.
+
 ## Example Usage
 
 Basic usage:
