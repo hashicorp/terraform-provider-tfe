@@ -113,7 +113,7 @@ func (d *dataSourceTFESCIMGroup) Read(ctx context.Context, req datasource.ReadRe
 	// matching behavior stays consistent with the SCIM group mapping resource.
 	match, err := findSCIMGroupByName(ctx, d.client, name)
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to list SCIM groups", err.Error())
+		resp.Diagnostics.AddError("Error reading SCIM group", err.Error())
 		return
 	}
 
