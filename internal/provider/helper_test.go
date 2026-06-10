@@ -95,13 +95,13 @@ func createStandardOrganization(t *testing.T, client *tfe.Client) (*tfe.Organiza
 	return org, orgCleanup
 }
 
-func createTrialOrganization(t *testing.T, client *tfe.Client) (*tfe.Organization, func()) {
+func createFreeOrganization(t *testing.T, client *tfe.Client) (*tfe.Organization, func()) {
 	org, orgCleanup := createOrganization(t, client, tfe.OrganizationCreateOptions{
 		Name:  tfe.String("tst-" + randomString(t)),
 		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
 	})
 
-	newSubscriptionUpdater(org).WithTrialPlan().Update(t)
+	newSubscriptionUpdater(org).WithFreePlan().Update(t)
 
 	return org, orgCleanup
 }
