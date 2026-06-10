@@ -96,7 +96,7 @@ func TestAccTFEOrganizationRunTaskGlobalSettings_createUnsupported(t *testing.T)
 		t.Fatal(err)
 	}
 
-	org, orgCleanup := createTrialOrganization(t, tfeClient)
+	org, orgCleanup := createFreeOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
