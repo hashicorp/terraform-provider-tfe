@@ -145,7 +145,7 @@ func (r *resourceTFESCIMGroupMapping) Read(ctx context.Context, req resource.Rea
 		return
 	}
 
-	scimGroupID, err := r.resolveSCIMGroupID(ctx, *team.SCIMGroupName)
+	scimGroupID, err := r.resolveSCIMGroupID(ctx, team.SCIMGroupName)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("Error resolving SCIM group for team %s", teamID),
@@ -293,17 +293,17 @@ func (r *resourceTFESCIMGroupMapping) ImportState(ctx context.Context, req resou
 
 // resolveSCIMGroupID looks up a SCIM group's ID by name, since the Teams API
 // only gives us the group's name and not its ID.
-func (r *resourceTFESCIMGroupMapping) resolveSCIMGroupID(ctx context.Context, name string) (string, error) {
-	if name == "" {
+func (r *resourceTFESCIMGroupMapping) resolveSCIMGroupID(ctx context.Context, name *string) (string, error) {
+	if name == nil || *name == "" {
 		return "", errors.New("team is SCIM-linked but the linked SCIM group name is empty; cannot resolve scim_group_id")
 	}
 
-	group, err := findSCIMGroupByName(ctx, r.client, name)
+	group, err := findSCIMGroupByName(ctx, r.client, *name)
 	if err != nil {
 		return "", err
 	}
 	if group == nil {
-		return "", fmt.Errorf("no SCIM group found with name %q", name)
+		return "", fmt.Errorf("no SCIM group found with name %q", *name)
 	}
 
 	return group.ID, nil
