@@ -2,6 +2,7 @@
 
 # HCP Terraform and Terraform Enterprise Provider
 
+test
 The official Terraform provider for [HCP Terraform and Terraform Enterprise](https://www.hashicorp.com/products/terraform).
 
 As Terraform Enterprise is a self-hosted distribution of HCP Terraform, this
