@@ -5,13 +5,15 @@ FEATURES:
 * **New Resource:** `r/tfe_scim_token` and **New Data Source:** `d/tfe_scim_token`: Adds resource and data source to manage SCIM tokens on Terraform Enterprise. By @skj-skj [#2076](https://github.com/hashicorp/terraform-provider-tfe/pull/2076)
 * **New Resource:** `r/tfe_admin_smtp_settings` and **New Data Source:** `d/tfe_admin_smtp_settings`: Adds resource and data source to manage Admin SMTP settings in Terraform Enterprise by @chpag [#2059](https://github.com/hashicorp/terraform-provider-tfe/pull/2059)
 * **New Data Source:** `d/tfe_scim_group`: Adds a data source to retrieve a SCIM group from Terraform Enterprise. By @skj-skj [#2083](https://github.com/hashicorp/terraform-provider-tfe/pull/2083)
-* **New Resource:** `r/tfe_provider_set` for managing shared provider configurations for internal testing. NOTE: This resource is subject to change and has limited support in HCP Terraform. By @mogrogan [#2086](https://github.com/hashicorp/terraform-provider-tfe/pull/2086)
 * **New Resource:** `r/tfe_scim_group_mapping`: Adds a resource to map a SCIM group to a team on Terraform Enterprise. By @skj-skj [#2090](https://github.com/hashicorp/terraform-provider-tfe/pull/2090)
+* **New Resource:** `r/tfe_provider_set` for managing shared provider configurations for internal testing. NOTE: This resource is subject to change and has limited support in HCP Terraform. It is not available to public. By @mogrogan [#2086](https://github.com/hashicorp/terraform-provider-tfe/pull/2086)
+* **New Data Source:** `d/tfe_provider_set` for retrieving shared provider configurations for internal testing. NOTE: This data source is subject to change and has limited support in HCP Terraform. It is not available to public. By @mogrogan [#2091](https://github.com/hashicorp/terraform-provider-tfe/pull/2091)
 * **New Resource:** `r/tfe_project_notification_configuration`: Adds a resource for managing project notification configurations, by @jillirami ([#1958](https://github.com/hashicorp/terraform-provider-tfe/pull/1958))
 
 ENHANCEMENTS:
 * `d/tfe_team`: Expose SCIM attributes (`scim_linked`, `scim_group_name`, `scim_sync_paused`, `scim_updated_at`) as computed read-only fields. These are only populated when SCIM is enabled on the TFE instance [#2088](https://github.com/hashicorp/terraform-provider-tfe/pull/2088)
 * `r/tfe_no_code_module`: Allow `variable_options.options` to be empty or omitted [#2074](https://github.com/hashicorp/terraform-provider-tfe/pull/2074)
+* `r/tfe_team`, `r/tfe_team_access`, `d/tfe_team_access`, `r/tfe_team_project_access`, `d/tfe_team_project_access`: Add delegated policy override permissions and document the relationship between organization-level delegation and project/workspace-level override access, by @jbonhag [#2037](https://github.com/hashicorp/terraform-provider-tfe/pull/2037)
 
 ## v0.77.0
 
@@ -21,7 +23,6 @@ ENHANCEMENTS:
 * Adds `RunPostApplyRunning`,`RunPostApplyCompleted` run status by @jose-kunnel [#2046](https://github.com/hashicorp/terraform-provider-tfe/pull/2046)
 * `r/tfe_policy_set` and `d/tfe_policy_set`: Add `policy_update_patterns` attribute support for policy sets. By @nithishravindra [#2030](https://github.com/hashicorp/terraform-provider-tfe/pull/2030)
 * `r/tfe_saml_settings` and `d/tfe_saml_settings`: Add `provider_type` attribute to specify the SAML identity provider type (`okta`, `entra`, `saml`, `unknown`). By @skj-skj [#2066](https://github.com/hashicorp/terraform-provider-tfe/pull/2066)
-* `r/tfe_team`, `r/tfe_team_access`, `d/tfe_team_access`, `r/tfe_team_project_access`, `d/tfe_team_project_access`: Add delegated policy override permissions and document the relationship between organization-level delegation and project/workspace-level override access, by @jbonhag [#2037](https://github.com/hashicorp/terraform-provider-tfe/pull/2037)
 
 BUG FIXES:
 * `r/tfe_team`: Fixed a `Missing Identity After Update` error on resource update by @sebasslash [#2045](https://github.com/hashicorp/terraform-provider-tfe/pull/2045)

@@ -25,9 +25,11 @@ type frameworkProvider struct {
 }
 
 // Compile-time interface check
-var _ provider.Provider = &frameworkProvider{}
-var _ provider.ProviderWithEphemeralResources = &frameworkProvider{}
-var _ provider.ProviderWithActions = &frameworkProvider{}
+var (
+	_ provider.Provider                       = &frameworkProvider{}
+	_ provider.ProviderWithEphemeralResources = &frameworkProvider{}
+	_ provider.ProviderWithActions            = &frameworkProvider{}
+)
 
 // FrameworkProviderConfig is a helper type for extracting the provider
 // configuration from the provider block.
@@ -114,7 +116,6 @@ func (p *frameworkProvider) Configure(ctx context.Context, req provider.Configur
 	}
 
 	providerClient, err := client.GetClient(data.Hostname.ValueString(), data.Token.ValueString(), data.SSLSkipVerify.ValueBool())
-
 	if err != nil {
 		res.Diagnostics.AddError("Failed to initialize HTTP client", err.Error())
 		return
@@ -155,6 +156,7 @@ func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource
 		NewOutputsDataSource,
 		NewProjectDataSource,
 		NewProjectsDataSource,
+		NewProviderSetDataSource,
 		NewRegistryGPGKeyDataSource,
 		NewRegistryGPGKeysDataSource,
 		NewRegistryModuleDataSource,
