@@ -20,6 +20,7 @@ ENHANCEMENTS:
 * Adds `RunPostApplyRunning`,`RunPostApplyCompleted` run status by @jose-kunnel [#2046](https://github.com/hashicorp/terraform-provider-tfe/pull/2046)
 * `r/tfe_policy_set` and `d/tfe_policy_set`: Add `policy_update_patterns` attribute support for policy sets. By @nithishravindra [#2030](https://github.com/hashicorp/terraform-provider-tfe/pull/2030)
 * `r/tfe_saml_settings` and `d/tfe_saml_settings`: Add `provider_type` attribute to specify the SAML identity provider type (`okta`, `entra`, `saml`, `unknown`). By @skj-skj [#2066](https://github.com/hashicorp/terraform-provider-tfe/pull/2066)
+* `r/tfe_team`, `r/tfe_team_access`, `d/tfe_team_access`, `r/tfe_team_project_access`, `d/tfe_team_project_access`: Add delegated policy override permissions and document the relationship between organization-level delegation and project/workspace-level override access, by @jbonhag [#2037](https://github.com/hashicorp/terraform-provider-tfe/pull/2037)
 
 BUG FIXES:
 * `r/tfe_team`: Fixed a `Missing Identity After Update` error on resource update by @sebasslash [#2045](https://github.com/hashicorp/terraform-provider-tfe/pull/2045)

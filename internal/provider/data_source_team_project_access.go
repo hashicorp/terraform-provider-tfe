@@ -90,6 +90,11 @@ func dataSourceTFETeamProjectAccess() *schema.Resource {
 							Computed: true,
 						},
 
+						"policy_overrides": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+
 						"runs": {
 							Type:     schema.TypeString,
 							Computed: true,
