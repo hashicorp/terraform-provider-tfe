@@ -110,7 +110,8 @@ func (b *organizationSubscriptionUpdater) WithFreePlan() *organizationSubscripti
 // Attempts to change an organization's subscription to a different plan. Requires a user token with admin access.
 func (b *organizationSubscriptionUpdater) Update(t *testing.T) {
 	if enterpriseEnabled() {
-		t.Skip("Cannot upgrade an organization's subscription when enterprise is enabled. Set ENABLE_TFE=0 to run.")
+		t.Log("Skipping subscription upgrade: enterprise mode enabled (TFE orgs have full entitlements by default)")
+		return
 	}
 
 	if b.planName == "" {
