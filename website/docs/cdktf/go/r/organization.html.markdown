@@ -58,6 +58,7 @@ The following arguments are supported:
 * `AllowForceDeleteWorkspaces` - (Optional) Whether workspace administrators are permitted to delete workspaces with resources under management. If false, only organization owners may delete these workspaces. Defaults to false.
 * `UserTokensEnabled` - (Optional) Whether user tokens can be used to read or update the organization. Defaults to true.
 * `StacksEnabled` - (Optional) Whether the creation of Stacks are enabled in this Organization or not.
+* `MaxTtlEnabled` - (Optional) Whether maximum token TTL policies are enabled for the organization. When enabled, you can configure maximum TTL values for different token types using the `TfeOrgMaxTokenTtlPolicy` resource. Defaults to false.
 
 ## Attributes Reference
 
@@ -72,4 +73,4 @@ example:
 terraform import tfe_organization.test my-org-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-6db5355837586284e32de3c2360f0572c86fca6dbb85251adf6045208f5d61b7 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-baaced76d88f12b4dec69af42fe9e230fb25c6775306c0e2bf58ac4702a22753 -->

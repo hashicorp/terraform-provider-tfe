@@ -50,5 +50,5 @@ In addition to all arguments above, the following attributes are exported:
 * `aggregatedCommitStatusEnabled` - Whether or not to enable Aggregated Status Checks. This can be useful for monorepo repositories with multiple workspaces receiving status checks for events such as a pull request.
 * `speculativePlanManagementEnabled` - Whether or not to enable Speculative Plan Management. If true, pending VCS-triggered speculative plans from outdated commits will be cancelled if a newer commit is pushed to the same branch.
 * `defaultProjectId` - ID of the organization's default project. All workspaces created without specifying a project ID are created in this project.
-
-<!-- cache-key: cdktf-0.17.0-pre.15 input-70c51f8c8ce2c10e2426e289d2e220cfc61ba2c6bcc766b885187fa0e26d72ae -->
+* `maxTtlEnabled` - Whether maximum token TTL policies are enabled for the organization.
+<!-- cache-key: cdktf-0.17.0-pre.15 input-d269e177b9b44c45d9c55a9ff118127a8e5500cc35a41aa41f973c42566d7fc2 -->

@@ -102,7 +102,7 @@ The following arguments are supported:
 - `variableOptions` - (Optional) A list of variable options to associate with the no code module.
   - `name` - (Required) The name of the variable option.
   - `type` - (Required) The type of the variable option.
-  - `options` - (Required) A list of options for the variable option.
+  - `options` - (Optional) A list of options for the variable option.
 
 ## Attributes Reference
 
@@ -116,4 +116,4 @@ No-code modules can be imported; use `<NO CODE MODULE ID>` as the import ID. For
 terraform import tfe_no_code_module.test nocode-qV9JnKRkmtMa4zcA
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-1204d286dd93ad6b8890ea46ff233ae490bae459320c56bddd6dbe876dc0cdb5 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-36180a68c5c8a3c5d0c4d5c5d437a49d157076512727109b9a75d9d11237bcbe -->
