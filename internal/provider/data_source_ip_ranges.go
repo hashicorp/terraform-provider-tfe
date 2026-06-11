@@ -40,7 +40,7 @@ type modelTFEIPRanges struct {
 // modelFromTFEIPRanges builds a modelTFEIPRanges struct from a tfe.IPRanges value.
 func modelFromTFEIPRanges(i *tfe.IPRange) (modelTFEIPRanges, diag.Diagnostics) {
 	model := modelTFEIPRanges{
-		ID:            types.StringValue("ip_ranges"),
+		ID:            types.StringValue("ip-ranges"),
 		API:           types.ListNull(types.StringType),
 		Notifications: types.ListNull(types.StringType),
 		Sentinel:      types.ListNull(types.StringType),
