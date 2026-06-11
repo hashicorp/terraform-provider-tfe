@@ -83,6 +83,7 @@ The following permissions apply to all workspaces (and future workspaces) in the
 | `Delete`             | The permission to delete the project's workspaces. Default: `False`. Valid booleans: `True`, `False` |
 | `Move`               | This permission to move workspaces into and out of the project. The team must also have permissions to the project(s) receiving the the workspace(s). Default: `False`. Valid booleans: `True`, `False` |
 | `RunTasks`          | The permission to manage run tasks within the project's workspaces. Default `False`. Valid booleans: `True`, `False` |
+| `PolicyOverrides`   | This permission allows a team to override soft-mandatory policy evaluations, provided that team has been granted the org level 'delegate policy overrides' permission. Default: `False`. Valid booleans: `True`, `False` |
 
 
 ## Example Usage with Custom Project Permissions
@@ -119,6 +120,7 @@ class MyConvertedCode : TerraformStack
                 Delete = false,
                 Locking = true,
                 Move = false,
+                PolicyOverrides = true,
                 RunTasks = false,
                 Runs = "apply",
                 SentinelMocks = "none",
@@ -143,4 +145,4 @@ example:
 terraform import tfe_team_project_access.admin tprj-2pmtXpZa4YzVMTPi
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-9d287e81f7a933c07074422fa33873c0864ee9399463d646b8c6c4a8dda3dfca -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-211c2e9b9dfa8613e3ebe4f6092fa8ae69931d1ec08997b7c810fa2f1d4a7c14 -->

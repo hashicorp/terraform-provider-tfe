@@ -71,6 +71,7 @@ The `organizationAccess` block supports:
 * `readProjects` - (Optional) Allow members to view all projects within the organization. Requires `readWorkspaces` to be set to `true`.
 * `managePolicies` - (Optional) Allows members to create, edit, and delete the organization's Sentinel policies.
 * `managePolicyOverrides` - (Optional) Allows members to override soft-mandatory policy checks.
+* `delegatePolicyOverrides` - (Optional) When this setting is enabled for a team, its members can override failed policy evaluations on projects and workspaces they manage.
 * `manageWorkspaces` - (Optional) Allows members to create and administrate all workspaces within the organization.
 * `manageVcsSettings` - (Optional) Allows members to manage the organization's VCS Providers and SSH keys.
 * `manageProviders` - (Optional) Allow members to publish and delete providers in the organization's private registry.
@@ -113,4 +114,4 @@ or
 terraform import tfe_team.test my-org-name/my-team-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-f9f59f54cdb2caf12334313a2f8f16d6254ae08a16941eae1ccf5cac202a09e5 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-a3ede24b05b67f1c4c4fd49cc6ec98b7a37b147ddc011e7ec28d5334fdacfebf -->
