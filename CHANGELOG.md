@@ -20,6 +20,8 @@ FEATURES:
 * **New Resource:** `r/tfe_project_notification_configuration`: Adds a resource for managing project notification configurations, by @jillirami ([#1958](https://github.com/hashicorp/terraform-provider-tfe/pull/1958))
 
 ENHANCEMENTS:
+
+* Adds support for tfplugindocs-based documentation generation, including templates and `make docs` workflow, by @marzuqmazid-ibm [#2101](https://github.com/hashicorp/terraform-provider-tfe/pull/2101)
 * `d/tfe_team`: Expose SCIM attributes (`scim_linked`, `scim_group_name`, `scim_sync_paused`, `scim_updated_at`) as computed read-only fields. These are only populated when SCIM is enabled on the TFE instance [#2088](https://github.com/hashicorp/terraform-provider-tfe/pull/2088)
 * `r/tfe_no_code_module`: Allow `variable_options.options` to be empty or omitted [#2074](https://github.com/hashicorp/terraform-provider-tfe/pull/2074)
 * `r/tfe_team`, `r/tfe_team_access`, `d/tfe_team_access`, `r/tfe_team_project_access`, `d/tfe_team_project_access`: Add delegated policy override permissions and document the relationship between organization-level delegation and project/workspace-level override access, by @jbonhag [#2037](https://github.com/hashicorp/terraform-provider-tfe/pull/2037)
