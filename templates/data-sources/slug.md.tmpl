@@ -1,0 +1,60 @@
+---
+page_title: "Terraform Enterprise: tfe_slug"
+description: |-
+  Manages files.
+---
+
+{{/* This template serves as a starting point for documentation generation, and can be customized with hardcoded values and/or doc gen templates.
+
+For example, the {{ .SchemaMarkdown }} template can be used to replace manual schema documentation if descriptions of schema attributes are added in the provider source code. */ -}}
+
+# Data Source: tfe_slug
+
+This data source is used to represent configuration files on a local filesystem intended to be uploaded to HCP Terraform and Terraform Enterprise, in lieu of those files being sourced from a configured VCS provider.
+
+A unique checksum is generated for the specified local directory, which allows resources such as `tfe_policy_set` track the files and upload a new gzip compressed tar file containing configuration files (a Terraform "slug") when those files change.
+
+## Example Usage
+
+Tracking a local directory to upload the Sentinel configuration and policies:
+
+{{tffile "examples/data-sources/slug/example_1.tf"}}
+
+## Argument Reference
+
+The following arguments are supported:
+
+* `source_path` - (Required) The path to the directory where the files are located.
+e https://cdk.tf/provider-generation for more details.*/
+import * as tfe from "./.gen/providers/tfe";
+class MyConvertedCode extends cdktf.TerraformStack {
+  constructor(scope: constructs.Construct, name: string) {
+    super(scope, name);
+    const dataTfeSlugTest = new tfe.dataTfeSlug.DataTfeSlug(this, "test", {
+      sourcePath: "policies/my-policy-set",
+    });
+    const tfePolicySetTest = new tfe.policySet.PolicySet(this, "test_1", {
+      name: "my-policy-set",
+      organization: "my-org-name",
+      slug: cdktf.Token.asStringMap(dataTfeSlugTest),
+    });
+    /*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
+    tfePolicySetTest.overrideLogicalId("test");
+  }
+}
+
+```
+
+## Argument Reference
+
+The following arguments are supported:
+
+* `sourcePath` - (Required) The path to the directory where the files are located.
+
+<!-- cache-key: cdktf-0.17.0-pre.15 input-fa2c542204f0df625488e508b9c38200a5fbba730db218a920e6358651a4f10c -->
+
+
+<!-- cache-key: cdktf-0.17.0-pre.15 input-fa2c542204f0df625488e508b9c38200a5fbba730db218a920e6358651a4f10c -->
+re the files are located.
+
+<!-- cache-key: cdktf-0.17.0-pre.15 input-fa2c542204f0df625488e508b9c38200a5fbba730db218a920e6358651a4f10c -->

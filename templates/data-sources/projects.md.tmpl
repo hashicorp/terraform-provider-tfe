@@ -1,0 +1,48 @@
+---
+page_title: "Terraform Enterprise: tfe_projects"
+description: |-
+  Get information on projects in an organization.
+---
+
+{{/* This template serves as a starting point for documentation generation, and can be customized with hardcoded values and/or doc gen templates.
+
+For example, the {{ .SchemaMarkdown }} template can be used to replace manual schema documentation if descriptions of schema attributes are added in the provider source code. */ -}}
+
+# Data Source: tfe_projects
+
+Use this data source to get information about all projects in an organization.
+
+## Example Usage
+
+{{tffile "examples/data-sources/projects/example_1.tf"}}
+
+## Argument Reference
+
+The following arguments are supported:
+
+* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
+
+## Attributes Reference
+
+* `projects` - List of projects in the organization. Each element contains the following attributes:
+  * `id` - ID of the project.
+  * `name` - Name of the project.
+  * `description` - Description of the organization.
+  * `organization` - Name of the organization.
+  * `auto_destroy_activity_duration` - A duration string for all workspaces in the project, representing time after each workspace's activity when an auto-destroy run will be triggered.
+he provider config.
+
+## Attributes Reference
+
+* `projects` - List of projects in the organization. Each element contains the following attributes:
+  * `id` - ID of the project.
+  * `name` - Name of the project.
+  * `description` - Description of the organization.
+  * `organization` - Name of the organization.
+  * `autoDestroyActivityDuration` - A duration string for all workspaces in the project, representing time after each workspace's activity when an auto-destroy run will be triggered.
+
+<!-- cache-key: cdktf-0.17.0-pre.15 input-80f7374bb86183375fd75ccdf9e337a9635c8ca4a605c4f1544be31f69bcced8 -->
+31f69bcced8 -->
+when an auto-destroy run will be triggered.
+
+<!-- cache-key: cdktf-0.17.0-pre.15 input-80f7374bb86183375fd75ccdf9e337a9635c8ca4a605c4f1544be31f69bcced8 -->

@@ -1,0 +1,92 @@
+---
+page_title: "Terraform Enterprise: tfe_run_trigger"
+description: |-
+  Manages run triggers
+---
+
+{{/* This template serves as a starting point for documentation generation, and can be customized with hardcoded values and/or doc gen templates.
+
+For example, the {{ .SchemaMarkdown }} template can be used to replace manual schema documentation if descriptions of schema attributes are added in the provider source code. */ -}}
+
+# tfe_run_trigger
+
+HCP Terraform provides a way to connect your workspace to one or more workspaces within your organization, known as "source workspaces". These connections, called run triggers, allow runs to queue automatically in your workspace on successful apply of runs in any of the source workspaces. You can connect your workspace to up to 20 source workspaces.
+
+## Example Usage
+
+Basic usage:
+
+{{tffile "examples/resources/run_trigger/example_1.tf"}}
+
+## Argument Reference
+
+The following arguments are supported:
+
+* `workspace_id` - (Required) The id of the workspace that owns the run trigger. This is the workspace where runs will be triggered.
+* `sourceable_id` - (Required) The id of the sourceable. The sourceable must be a workspace.
+
+## Attributes Reference
+
+* `id` - The ID of the run trigger.
+
+## Import
+
+Run triggers can be imported; use `<RUN TRIGGER ID>` as the import ID. For example:
+
+```shell
+terraform import tfe_run_trigger.test rt-qV9JnKRkmtMa4zcA
+```
+ail: "admin@company.com",
+        name: "my-org-name",
+      }
+    );
+    const tfeWorkspaceTestSourceable = new tfe.workspace.Workspace(
+      this,
+      "test-sourceable",
+      {
+        name: "my-sourceable-workspace-name",
+        organization: cdktf.Token.asString(tfeOrganizationTestOrganization.id),
+      }
+    );
+    const tfeWorkspaceTestWorkspace = new tfe.workspace.Workspace(
+      this,
+      "test-workspace",
+      {
+        name: "my-workspace-name",
+        organization: cdktf.Token.asString(tfeOrganizationTestOrganization.id),
+      }
+    );
+    new tfe.runTrigger.RunTrigger(this, "test", {
+      sourceableId: cdktf.Token.asString(tfeWorkspaceTestSourceable.id),
+      workspaceId: cdktf.Token.asString(tfeWorkspaceTestWorkspace.id),
+    });
+  }
+}
+
+```
+
+## Argument Reference
+
+The following arguments are supported:
+
+* `workspaceId` - (Required) The id of the workspace that owns the run trigger. This is the workspace where runs will be triggered.
+* `sourceableId` - (Required) The id of the sourceable. The sourceable must be a workspace.
+
+## Attributes Reference
+
+* `id` - The ID of the run trigger.
+
+## Import
+
+Run triggers can be imported; use `<RUN TRIGGER ID>` as the import ID. For example:
+
+```shell
+terraform import tfe_run_trigger.test rt-qV9JnKRkmtMa4zcA
+```
+
+<!-- cache-key: cdktf-0.17.0-pre.15 input-4cc4ec907e7f9bb7aeb8b049d62ceae16783fcb2b4d804b22d75b4f91ed5eaeb -->
+er.test rt-qV9JnKRkmtMa4zcA
+```
+
+<!-- cache-key: cdktf-0.17.0-pre.15 input-4cc4ec907e7f9bb7aeb8b049d62ceae16783fcb2b4d804b22d75b4f91ed5eaeb -->
+!-- cache-key: cdktf-0.17.0-pre.15 input-4cc4ec907e7f9bb7aeb8b049d62ceae16783fcb2b4d804b22d75b4f91ed5eaeb -->

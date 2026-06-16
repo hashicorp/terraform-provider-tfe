@@ -63,5 +63,7 @@ test-compile:
 	fi
 	go test -c $(TEST) $(TESTARGS)
 
-.PHONY: build test testacc vet fmt fmtcheck errcheck test-compile sweep
+.PHONY: build test testacc vet fmt fmtcheck errcheck test-compile sweep docs
 
+docs:
+	tfplugindocs generate

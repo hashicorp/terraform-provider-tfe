@@ -1,0 +1,41 @@
+---
+page_title: "Terraform Enterprise: tfe_registry_provider_version_platform"
+description: |-
+  Manages private registry provider versions.
+---
+
+{{/* This template serves as a starting point for documentation generation, and can be customized with hardcoded values and/or doc gen templates.
+
+For example, the {{ .SchemaMarkdown }} template can be used to replace manual schema documentation if descriptions of schema attributes are added in the provider source code. */ -}}
+
+# tfe_registry_provider_version_platform
+
+Manages a platform release binary of a Provider Version in a private registry. Unlike the public Terraform Registry, the private registry does not automatically upload new releases. You must manually add new provider versions and the associated release files for each platform.
+
+## Example Usage
+
+{{tffile "examples/resources/registry_provider_version_platform/example_1.tf"}}
+
+## Argument Reference
+
+The following arguments are supported:
+
+* `os_arch` - (Required) A valid operating system string and architecture string, separated by an underscore. Example: `linux_amd64`.
+* `filename` - (Required) The path to the release file described by the version signing defined in the associated `tfe_registry_provider_version`
+
+## Attributes Reference
+
+* `id` - ID of the provider version platform.
+* `permissions` - A block with read-only permissions related to this provider version platform
+
+The `permissions` block supports the following attributes:
+
+* `can-delete` - Whether or not the provider version platform can be destroyed
+
+## Import
+
+Keys can be imported; use `<registry provider id>` as the import ID. For example:
+
+```shell
+terraform import tfe_registry_provider_version.example provpltfrm-BLJWvWyJ2QMs525k
+```

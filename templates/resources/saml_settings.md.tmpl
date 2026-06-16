@@ -1,0 +1,69 @@
+---
+page_title: "Terraform Enterprise: tfe_saml_settings"
+description: |-
+  Manages SAML Settings.
+---
+
+{{/* This template serves as a starting point for documentation generation, and can be customized with hardcoded values and/or doc gen templates.
+
+For example, the {{ .SchemaMarkdown }} template can be used to replace manual schema documentation if descriptions of schema attributes are added in the provider source code. */ -}}
+
+# tfe_saml_settings
+
+Use this resource to create, update and destroy SAML Settings. It applies only to Terraform Enterprise and requires admin token configuration. See example usage for incorporating an admin token in your provider config.
+
+## Example Usage
+
+Basic usage for SAML Settings:
+
+{{tffile "examples/resources/saml_settings/example_1.tf"}}
+
+With write-only private key:
+
+{{tffile "examples/resources/saml_settings/example_2.tf"}}
+
+## Argument Reference
+
+The following arguments are supported:
+
+* `idp_cert` - (Required) Identity Provider Certificate specifies the PEM encoded X.509 Certificate as provided by the IdP configuration.
+* `slo_endpoint_url` - (Required) Single Log Out URL specifies the HTTPS endpoint on your IdP for single logout requests. This value is provided by the IdP configuration.
+* `sso_endpoint_url` - (Required) Single Sign On URL specifies the HTTPS endpoint on your IdP for single sign-on requests. This value is provided by the IdP configuration.
+* `debug` - (Optional) When sign-on fails and this is enabled, the SAMLResponse XML will be displayed on the login page.
+* `authn_requests_signed` - (Optional) Whether to ensure that `<samlp:AuthnRequest>` messages are signed.
+* `want_assertions_signed` - (Optional) Whether to ensure that `<samlp:Assertion>` elements are signed.
+* `team_management_enabled` - (Optional) Set it to false if you would rather use Terraform Enterprise to manage team membership.
+* `attr_username` - (Optional) Username Attribute Name specifies the name of the SAML attribute that determines the user's username.
+* `attr_site_admin` - (Optional) Specifies the role for site admin access. Overrides the `Site Admin Role` method.
+* `attr_groups` - (Optional) Team Attribute Name specifies the name of the SAML attribute that determines team membership.
+* `site_admin_role` - (Optional) Specifies the role for site admin access, provided in the list of roles sent in the Team Attribute Name attribute.
+* `sso_api_token_session_timeout` - (Optional) Specifies the Single Sign On session timeout in seconds. Defaults to 14 days.
+* `certificate` - (Optional) The certificate used for request and assertion signing.
+* `private_key` - (Optional) The private key used for request and assertion signing.
+* `private_key_wo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) The private key used for request and assertion signing, guaranteed not to be written to plan or state artifacts. Either `private_key` or `private_key_wo` can be provided, but not both. Must be used with `private_key_wo_version`.
+* `private_key_wo_version` - (Optional) Version of the write-only private key. This field is used to trigger updates when the write-only private key changes. Must be used with `private_key_wo`. When `private_key_wo_version` changes, the write-only private key will be updated.
+* `signature_signing_method` - (Optional) Signature Signing Method. Must be either `SHA1` or `SHA256`. Defaults to `SHA256`.
+* `signature_digest_method` - (Optional) Signature Digest Method. Must be either `SHA1` or `SHA256`. Defaults to `SHA256`.
+* `provider_type` - (Optional) The type of identity provider used. Valid values are `okta`, `entra`, `saml`, and `unknown`. Defaults to `unknown`.
+
+-> **Note:** Write-Only argument `private_key_wo` is available to use in place of `private_key`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
+
+## Attributes Reference
+
+* `id` - The ID of the SAML Settings. Always `saml`.
+* `acs_consumer_url` - ACS Consumer (Recipient) URL.
+* `metadata_url` - Metadata (Audience) URL.
+* `old_idp_cert` - Value of the old IDP Certificate.
+
+## Import
+
+SAML Settings can be imported.
+
+```shell
+terraform import tfe_saml_settings.this saml
+```
+l
+```
+
+<!-- cache-key: cdktf-0.17.0-pre.15 input-b76f503831b43c4bcf1a9b6f78ff34192e500161b179927685e80a3ebf6b6f28 -->
+1a9b6f78ff34192e500161b179927685e80a3ebf6b6f28 -->

@@ -1,0 +1,59 @@
+---
+page_title: "Terraform Enterprise: tfe_team_project_access"
+description: |-
+  Get information on team permissions on a project.
+---
+
+{{/* This template serves as a starting point for documentation generation, and can be customized with hardcoded values and/or doc gen templates.
+
+For example, the {{ .SchemaMarkdown }} template can be used to replace manual schema documentation if descriptions of schema attributes are added in the provider source code. */ -}}
+
+# Data Source: tfe_team_project_access
+
+Use this data source to get information about team permissions for a project.
+
+## Example Usage
+
+{{tffile "examples/data-sources/team_project_access/example_1.tf"}}
+
+## Argument Reference
+
+The following arguments are supported:
+
+* `team_id` - (Required) ID of the team.
+* `project_id` - (Required) ID of the project.
+
+## Attributes Reference
+
+In addition to all arguments above, the following attributes are exported:
+
+* `id` The team project access ID.
+* `access` - The type of access granted to the team on the project.
+r(scope, name);
+    new tfe.dataTfeTeamProjectAccess.DataTfeTeamProjectAccess(this, "test", {
+      projectId: "my-project-id",
+      teamId: "my-team-id",
+    });
+  }
+}
+
+```
+
+## Argument Reference
+
+The following arguments are supported:
+
+* `teamId` - (Required) ID of the team.
+* `projectId` - (Required) ID of the project.
+
+## Attributes Reference
+
+In addition to all arguments above, the following attributes are exported:
+
+* `id` The team project access ID.
+* `access` - The type of access granted to the team on the project.
+
+<!-- cache-key: cdktf-0.17.0-pre.15 input-204103613e94c6b9eafe1ca3f90afd99a5659e7479ad472937135a7066629cf3 -->
+d to the team on the project.
+
+<!-- cache-key: cdktf-0.17.0-pre.15 input-204103613e94c6b9eafe1ca3f90afd99a5659e7479ad472937135a7066629cf3 -->

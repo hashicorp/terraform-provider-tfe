@@ -1,0 +1,82 @@
+---
+page_title: "Terraform Enterprise: tfe_organization_default_settings
+description: |-
+  Sets the workspace defaults for an organization
+---
+
+{{/* This template serves as a starting point for documentation generation, and can be customized with hardcoded values and/or doc gen templates.
+
+For example, the {{ .SchemaMarkdown }} template can be used to replace manual schema documentation if descriptions of schema attributes are added in the provider source code. */ -}}
+
+layout: "tfe" page_title: "Terraform Enterprise: tfe_organization_default_settings description: |-  Sets the workspace defaults for an organization <!-- yaml: line 5: found unexpected end of stream -->
+
+# tfe_organization_default_settings
+
+Primarily, this is used to set the default execution mode of an organization. Settings configured here will be used as the default for all workspaces in the organization, unless they specify their own values with a [`tfe_workspace_settings` resource](workspace_settings.html) (or deprecated attributes on the workspace resource).
+
+## Example Usage
+
+Basic usage:
+
+{{tffile "examples/resources/organization_default_settings/example_1.tf"}}
+
+## Argument Reference
+
+The following arguments are supported:
+
+* `default_execution_mode` - (Optional) Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode) to use as the default for all workspaces in the organization. Valid values are `remote`, `local` or`agent`.
+* `default_agent_pool_id` - (Optional) The ID of an agent pool to assign to the workspace. Requires `default_execution_mode` to be set to `agent`. This value *must not* be provided if `default_execution_mode` is set to any other value.
+* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
+
+## Import
+
+Organization default execution mode can be imported; use `<ORGANIZATION NAME>` as the import ID. For example:
+
+```shell
+terraform import tfe_organization_default_settings.test my-org-name
+```
+        this,
+        "org_default",
+        {
+          defaultAgentPoolId: cdktf.Token.asString(tfeAgentPoolMyAgents.id),
+          defaultExecutionMode: "agent",
+          organization: cdktf.Token.asString(tfeOrganizationTest.name),
+        }
+      );
+    new tfe.workspace.Workspace(this, "my_workspace", {
+      dependsOn: [tfeOrganizationDefaultSettingsOrgDefault],
+      name: "my-workspace",
+    });
+  }
+}
+
+```
+
+## Argument Reference
+
+The following arguments are supported:
+
+* `defaultExecutionMode` - (Optional) Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode) to use as the default for all workspaces in the organization. Valid values are `remote`, `local` or`agent`.
+* `defaultAgentPoolId` - (Optional) The ID of an agent pool to assign to the workspace. Requires `defaultExecutionMode` to be set to `agent`. This value *must not* be provided if `defaultExecutionMode` is set to any other value.
+* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
+
+## Import
+
+Organization default execution mode can be imported; use `<ORGANIZATION NAME>` as the import ID. For example:
+
+```shell
+terraform import tfe_organization_default_settings.test my-org-name
+```
+
+<!-- cache-key: cdktf-0.17.0-pre.15 input-b7467c77fffd159e3cdab9b6ddfb780bc812a3e93de10c97674b55c73546de26 -->
+ import ID. For example:
+
+```shell
+terraform import tfe_organization_default_settings.test my-org-name
+```
+
+<!-- cache-key: cdktf-0.17.0-pre.15 input-b7467c77fffd159e3cdab9b6ddfb780bc812a3e93de10c97674b55c73546de26 -->
+default_settings.test my-org-name
+```
+
+<!-- cache-key: cdktf-0.17.0-pre.15 input-b7467c77fffd159e3cdab9b6ddfb780bc812a3e93de10c97674b55c73546de26 -->

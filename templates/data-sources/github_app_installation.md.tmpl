@@ -1,0 +1,82 @@
+---
+page_title: "Terraform Enterprise: tfe_github_app_installation"
+description: |-
+Get information on the Github App Installation.
+---
+
+{{/* This template serves as a starting point for documentation generation, and can be customized with hardcoded values and/or doc gen templates.
+
+For example, the {{ .SchemaMarkdown }} template can be used to replace manual schema documentation if descriptions of schema attributes are added in the provider source code. */ -}}
+
+layout: "tfe" page_title: "Terraform Enterprise: tfe_github_app_installation" description: |- Get information on the Github App Installation. <!-- yaml: line 5: could not find expected ':' -->
+
+# Data Source: tfe_github_app_installation
+
+Use this data source to get information about the Github App Installation.
+
+## Example Usage
+
+### Finding a Github App Installation by its installation ID
+
+{{tffile "examples/data-sources/github_app_installation/example_1.tf"}}
+
+### Finding a Github App Installation by its name
+
+{{tffile "examples/data-sources/github_app_installation/example_2.tf"}}
+
+## Argument Reference
+
+The following arguments are supported. At least one of `name`, `installation_id` must be set.
+
+* `installation_id` - (Optional) ID of the Github Installation. The installation ID can be found in the URL slug when visiting the installation's configuration page, e.g `https://github.com/settings/installations/12345678`.
+* `name` - (Optional) Name of the Github user or organization account that installed the app.
+
+Must be one of: `installation_id` or `name`.
+
+## Attributes Reference
+
+In addition to all arguments above, the following attributes are exported:
+
+* `id` - The internal ID of the Github Installation. This is different from the `installation_id`.
+* as tfe from "./.gen/providers/tfe";
+class MyConvertedCode extends cdktf.TerraformStack {
+  constructor(scope: constructs.Construct, name: string) {
+    super(scope, name);
+    new tfe.dataTfeGithubAppInstallation.DataTfeGithubAppInstallation(
+      this,
+      "gha_installation",
+      {
+        name: "github_username_or_organization",
+      }
+    );
+  }
+}
+
+```
+
+## Argument Reference
+
+The following arguments are supported. At least one of `name`, `installationId` must be set.
+
+* `installationId` - (Optional) ID of the Github Installation. The installation ID can be found in the URL slug when visiting the installation's configuration page, e.g `https://githubCom/settings/installations/12345678`.
+* `name` - (Optional) Name of the Github user or organization account that installed the app.
+
+Must be one of: `installationId` or `name`.
+
+## Attributes Reference
+
+In addition to all arguments above, the following attributes are exported:
+
+* `id` - The internal ID of the Github Installation. This is different from the `installationId`.
+
+<!-- cache-key: cdktf-0.17.0-pre.15 input-5d439ec2ae1e837495b8cb500e2fcfe96d47a32f9fce3a10ffac876fe18a89dc -->
+>
+nstallationId` or `Name`.
+
+## Attributes Reference
+
+In addition to all arguments above, the following attributes are exported:
+
+* `Id` - The internal ID of the Github Installation. This is different from the `InstallationId`.
+
+<!-- cache-key: cdktf-0.17.0-pre.15 input-5d439ec2ae1e837495b8cb500e2fcfe96d47a32f9fce3a10ffac876fe18a89dc -->

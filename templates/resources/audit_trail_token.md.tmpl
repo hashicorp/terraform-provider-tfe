@@ -1,0 +1,75 @@
+---
+page_title: "Terraform Enterprise: tfe_audit_trail_token"
+description: |-
+  Generates a new audit trail token in organization, replacing any existing token.
+---
+
+{{/* This template serves as a starting point for documentation generation, and can be customized with hardcoded values and/or doc gen templates.
+
+For example, the {{ .SchemaMarkdown }} template can be used to replace manual schema documentation if descriptions of schema attributes are added in the provider source code. */ -}}
+
+# tfe_audit_trail_token
+
+Generates a new audit trail token in organization, replacing any existing token.
+
+Note that only organizations that have the [audit-logging entitlement](https://developer.hashicorp.com/terraform/cloud-docs/api-docs#audit-logging) may create audit trail tokens.
+
+## Example Usage
+
+Basic usage:
+
+{{tffile "examples/resources/audit_trail_token/example_1.tf"}}
+
+## Argument Reference
+
+The following arguments are supported:
+
+* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
+* `force_regenerate` - (Optional) If set to `true`, a new token will be generated even if a token already exists. This will invalidate the existing token!
+* `expired_at` - (Optional) The token's expiration date. The expiration date must be a date/time string in RFC3339 format (e.g., "2024-12-31T23:59:59Z"). If no expiration date is supplied, the token will expire 24 months from creation and a warning during plan and apply phases will be displayed.
+
+## Example Usage
+
+When a token has an expiry:
+
+{{tffile "examples/resources/audit_trail_token/example_2.tf"}}
+
+## Attributes Reference
+
+* `id` - The ID of the token.
+* `token` - The generated token.
+
+## Import
+
+Audit trail tokens can be imported; use `<ORGANIZATION NAME>` as the import ID. For example:
+
+```shell
+terraform import tfe_audit_trail_token.test my-org-name
+```
+plied, the token will expire 24 months from creation and a warning during plan and apply phases will be displayed.
+
+## Example Usage
+
+When a token has an expiry:
+
+{{tffile "examples/resources/audit_trail_token/example_1.tf"}}
+
+## Attributes Reference
+
+* `id` - The ID of the token.
+* `token` - The generated token.
+
+## Import
+
+Audit trail tokens can be imported; use `<ORGANIZATION NAME>` as the import ID. For example:
+
+```shell
+terraform import tfe_audit_trail_token.test my-org-name
+```
+
+<!-- cache-key: cdktf-0.17.0-pre.15 input-9b322018b2f45bc8bd022ba03991dd68cdbd8a366fb285b156d28bf1519e3e75 -->
+bf1519e3e75 -->
+ tfe_audit_trail_token.test my-org-name
+```
+
+<!-- cache-key: cdktf-0.17.0-pre.15 input-9b322018b2f45bc8bd022ba03991dd68cdbd8a366fb285b156d28bf1519e3e75 -->

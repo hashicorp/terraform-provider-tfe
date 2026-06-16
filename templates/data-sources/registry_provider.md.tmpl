@@ -1,0 +1,78 @@
+---
+page_title: "Terraform Enterprise: tfe_registry_provider"
+description: |-
+  Get information on a public or private provider in the private registry.
+---
+
+{{/* This template serves as a starting point for documentation generation, and can be customized with hardcoded values and/or doc gen templates.
+
+For example, the {{ .SchemaMarkdown }} template can be used to replace manual schema documentation if descriptions of schema attributes are added in the provider source code. */ -}}
+
+# Data Source: tfe_registry_provider
+
+Use this data source to get information about a public or private provider in the private registry.
+
+## Example Usage
+
+A private provider:
+
+{{tffile "examples/data-sources/registry_provider/example_1.tf"}}
+
+A public provider:
+
+{{tffile "examples/data-sources/registry_provider/example_2.tf"}}
+
+## Argument Reference
+
+The following arguments are supported:
+
+* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
+* `registry_name` - (Optional) Whether this is a publicly maintained provider or private. Must be either `public` or `private`. Defaults to `private`.
+* `namespace` - (Optional) The namespace of the provider. Required if `registry_name` is `public`, otherwise it can't be configured, and it will be set to same value as the `organization`.
+* `name` - (Required) Name of the provider.
+
+## Attributes Reference
+
+* `id` - ID of the provider.
+* `created_at` - The time when the provider was created.
+* `updated_at` - The time when the provider was last updated.
+aformStack {
+  constructor(scope: constructs.Construct, name: string) {
+    super(scope, name);
+    new tfe.registryProvider.RegistryProvider(this, "example", {
+      name: "aws",
+      namespace: "hashicorp",
+      organization: "my-org-name",
+      registryName: "public",
+    });
+  }
+}
+
+```
+
+## Argument Reference
+
+The following arguments are supported:
+
+* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
+* `registryName` - (Optional) Whether this is a publicly maintained provider or private. Must be either `public` or `private`. Defaults to `private`.
+* `namespace` - (Optional) The namespace of the provider. Required if `registryName` is `public`, otherwise it can't be configured, and it will be set to same value as the `organization`.
+* `name` - (Required) Name of the provider.
+
+## Attributes Reference
+
+* `id` - ID of the provider.
+* `createdAt` - The time when the provider was created.
+* `updatedAt` - The time when the provider was last updated.
+
+<!-- cache-key: cdktf-0.17.0-pre.15 input-f9e0af19d1890c9a1f513b4733d64c1b0de8c9da99113cd78d129a1840acbbec -->
+nput-f9e0af19d1890c9a1f513b4733d64c1b0de8c9da99113cd78d129a1840acbbec -->
+ed) Name of the provider.
+
+## Attributes Reference
+
+* `Id` - ID of the provider.
+* `CreatedAt` - The time when the provider was created.
+* `UpdatedAt` - The time when the provider was last updated.
+
+<!-- cache-key: cdktf-0.17.0-pre.15 input-f9e0af19d1890c9a1f513b4733d64c1b0de8c9da99113cd78d129a1840acbbec -->

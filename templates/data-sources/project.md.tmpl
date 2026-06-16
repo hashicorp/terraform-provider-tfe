@@ -1,0 +1,56 @@
+---
+page_title: "Terraform Enterprise: tfe_project"
+description: |-
+Get information on a Project.
+---
+
+{{/* This template serves as a starting point for documentation generation, and can be customized with hardcoded values and/or doc gen templates.
+
+For example, the {{ .SchemaMarkdown }} template can be used to replace manual schema documentation if descriptions of schema attributes are added in the provider source code. */ -}}
+
+layout: "tfe" page_title: "Terraform Enterprise: tfe_project" description: |- Get information on a Project. <!-- yaml: line 5: could not find expected ':' -->
+
+# Data Source: tfe_project
+
+Use this data source to get information about a project.
+
+~> **NOTE:** The `workspace_ids` and `workspace_names` attributes are not guaranteed to return values in the same order, so they cannot be reliably mapped to one another. To map workspace names to IDs reliably, it is recommended to pass those names into the `tfe_workspace_ids` data source.
+
+## Example Usage
+
+{{tffile "examples/data-sources/project/example_1.tf"}}
+
+## Argument Reference
+
+The following arguments are supported:
+* `name` - (Required) Name of the project.
+* `organization` - (Required) Name of the organization.
+
+## Attributes Reference
+
+In addition to all arguments above, the following attributes are exported:
+
+* `id` - The project ID.
+* `workspace_ids` - IDs of the workspaces that are associated with the project.
+* `workspace_names` - Names of the workspaces that are associated with the project.
+* `effective_tags` - A map of key-value tags associated with the project.
+Argument Reference
+
+The following arguments are supported:
+* `name` - (Required) Name of the project.
+* `organization` - (Required) Name of the organization.
+
+## Attributes Reference
+
+In addition to all arguments above, the following attributes are exported:
+
+* `id` - The project ID.
+* `workspaceIds` - IDs of the workspaces that are associated with the project.
+* `workspaceNames` - Names of the workspaces that are associated with the project.
+* `effectiveTags` - A map of key-value tags associated with the project.
+
+<!-- cache-key: cdktf-0.17.0-pre.15 input-d6ced138e71a16de8ba95b284a41c0a5b1ee88185ba1da147742ea5af9e97163 -->
+da147742ea5af9e97163 -->
+y-value tags associated with the project.
+
+<!-- cache-key: cdktf-0.17.0-pre.15 input-d6ced138e71a16de8ba95b284a41c0a5b1ee88185ba1da147742ea5af9e97163 -->

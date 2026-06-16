@@ -1,0 +1,48 @@
+---
+page_title: "Terraform Enterprise: tfe_provider_set"
+description: |-
+  Manages provider sets.
+---
+
+{{/* This template serves as a starting point for documentation generation, and can be customized with hardcoded values and/or doc gen templates.
+
+For example, the {{ .SchemaMarkdown }} template can be used to replace manual schema documentation if descriptions of schema attributes are added in the provider source code. */ -}}
+
+# tfe_provider_set
+
+Creates, updates and destroys provider sets.
+
+~> **NOTE:** This resource is currently in beta and isn't generally available to all users. It is subject to change or be removed.
+
+## Example Usage
+
+Basic usage:
+
+{{tffile "examples/resources/provider_set/example_1.tf"}}
+
+Write-only configuration:
+
+{{tffile "examples/resources/provider_set/example_2.tf"}}
+
+## Argument Reference
+
+The following arguments are supported:
+
+* `name` - (Required) Name of the provider set.
+* `provider_source` - (Required) Source address of the provider, e.g. `registry.terraform.io/hashicorp/tfe`.
+* `description` - (Optional) Description of the provider set.
+* `global` - (Optional) Whether the provider set applies globally. Defaults to `false`.
+* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
+* `workspace_ids` - (Optional) IDs of the workspaces attached to the provider set. Cannot be set if `global` is `true`.
+* `project_ids` - (Optional) IDs of the projects attached to the provider set. Cannot be set if `global` is `true`.
+* `provider_config_hcl` - (Optional) Provider configuration HCL stored in Terraform state.
+* `provider_config_hcl_wo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments), Sensitive) Provider configuration HCL that is never stored in state. Cannot be used with `provider_config_hcl`.
+* `provider_config_hcl_wo_version` - (Optional) Version identifier required when `provider_config_hcl_wo` is set to trigger updates.
+
+## Attributes Reference
+
+* `id` - The ID of the provider set.
+
+## Import
+
+Import is not currently supported for the `tfe_provider_set` prep stub.

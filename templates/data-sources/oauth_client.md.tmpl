@@ -1,0 +1,82 @@
+---
+page_title: "Terraform Enterprise: tfe_oauth_client"
+description: |-
+  Get information on an OAuth client.
+---
+
+{{/* This template serves as a starting point for documentation generation, and can be customized with hardcoded values and/or doc gen templates.
+
+For example, the {{ .SchemaMarkdown }} template can be used to replace manual schema documentation if descriptions of schema attributes are added in the provider source code. */ -}}
+
+# Data Source: tfe_oauth_client
+
+Use this data source to get information about an OAuth client.
+
+## Example Usage
+
+### Finding an OAuth client by its ID
+
+{{tffile "examples/data-sources/oauth_client/example_1.tf"}}
+
+### Finding an OAuth client by its name
+
+{{tffile "examples/data-sources/oauth_client/example_2.tf"}}
+
+### Finding an OAuth client by its service provider
+
+{{tffile "examples/data-sources/oauth_client/example_3.tf"}}
+
+## Argument Reference
+
+The following arguments are supported. At least one of `name`, `oauth_client_id`, or `service_provider` must be set. `name` and `service_provider` may be used together. If either `name` or `service_provider` is set, `organization` must also be set.
+
+* `name` - (Optional) Name of the OAuth client.
+* `oauth_client_id` - (Optional) ID of the OAuth client.
+* `organization` - (Optional) The name of the organization in which to search.
+* `service_provider` - (Optional) The API identifier of the OAuth service provider. If set, must be one of: `ado_server`, `ado_services`, `bitbucket_data_center`, `bitbucket_hosted`, `bitbucket_server`(deprecated), `github`, `github_enterprise`, `gitlab_hosted`, `gitlab_community_edition`, or `gitlab_enterprise_edition`.
+
+## Attributes Reference
+
+In addition to all arguments above, the following attributes are exported:
+
+* `id` - The OAuth client ID. This will match `oauth_client_id`.
+* `api_url` - The client's API URL.
+* `callback_url` - OAuth callback URL to provide to the OAuth service provider.
+* `created_at` - The date and time this OAuth client was created in RFC3339 format.
+* `http_url` - The client's HTTP URL.
+* `oauth_token_id` - The ID of the OAuth token associated with the OAuth client.
+* `name` - The name of the OAuth client (may be `null`).
+* `organization` - The organization in which the OAuth client is registered.
+* `service_provider` - The API identifier of the OAuth service provider.
+* `service_provider_display_name` - The display name of the OAuth service provider.
+* `organization_scoped` - Whether or not the agent pool can be used by all workspaces and projects in the organization.
+* `project_ids` - IDs of the projects that use the oauth client.
+f the OAuth client.
+* `oauthClientId` - (Optional) ID of the OAuth client.
+* `organization` - (Optional) The name of the organization in which to search.
+* `serviceProvider` - (Optional) The API identifier of the OAuth service provider. If set, must be one of: `adoServer`, `adoServices`, `bitbucketDataCenter`, `bitbucketHosted`, `bitbucketServer`(deprecated), `github`, `githubEnterprise`, `gitlabHosted`, `gitlabCommunityEdition`, or `gitlabEnterpriseEdition`.
+
+## Attributes Reference
+
+In addition to all arguments above, the following attributes are exported:
+
+* `id` - The OAuth client ID. This will match `oauthClientId`.
+* `apiUrl` - The client's API URL.
+* `callbackUrl` - OAuth callback URL to provide to the OAuth service provider.
+* `createdAt` - The date and time this OAuth client was created in RFC3339 format.
+* `httpUrl` - The client's HTTP URL.
+* `oauthTokenId` - The ID of the OAuth token associated with the OAuth client.
+* `name` - The name of the OAuth client (may be `null`).
+* `organization` - The organization in which the OAuth client is registered.
+* `serviceProvider` - The API identifier of the OAuth service provider.
+* `serviceProviderDisplayName` - The display name of the OAuth service provider.
+* `organizationScoped` - Whether or not the agent pool can be used by all workspaces and projects in the organization.
+* `projectIds` - IDs of the projects that use the oauth client.
+<!-- cache-key: cdktf-0.17.0-pre.15 input-001f05442f17fd9a94d45188c279515be0f5fbe96f6057ed44a16f3e9be03580 -->
+5 input-001f05442f17fd9a94d45188c279515be0f5fbe96f6057ed44a16f3e9be03580 -->
+OAuth client is registered.
+* `ServiceProvider` - The API identifier of the OAuth service provider.
+* `ServiceProviderDisplayName` - The display name of the OAuth service provider.
+* `OrganizationScoped` - Whether or not the agent pool can be used by all workspaces and projects in the organization.
+* `ProjectIds` - IDs of the projects that use the oauth client.
+<!-- cache-key: cdktf-0.17.0-pre.15 input-001f05442f17fd9a94d45188c279515be0f5fbe96f6057ed44a16f3e9be03580 -->

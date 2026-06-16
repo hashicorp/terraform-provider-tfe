@@ -1,0 +1,66 @@
+---
+page_title: "Terraform Enterprise: tfe_scim_settings"
+description: |-
+  Manages SCIM Settings.
+---
+
+{{/* This template serves as a starting point for documentation generation, and can be customized with hardcoded values and/or doc gen templates.
+
+For example, the {{ .SchemaMarkdown }} template can be used to replace manual schema documentation if descriptions of schema attributes are added in the provider source code. */ -}}
+
+# tfe_scim_settings
+
+Use this resource to enable, configure and disable SCIM Settings. It applies only to Terraform Enterprise and requires admin token configuration. See example usage for incorporating an admin token in your provider config.
+
+SCIM requires SAML to be configured first, so the examples below depend on a `tfe_saml_settings` resource. While this resource exists, SCIM is always `enabled = true`; running `terraform destroy` disables SCIM.
+
+## Example Usage
+
+### Basic usage
+
+Enable SCIM with default settings (unpaused, no site admin group linked):
+
+{{tffile "examples/resources/scim_settings/example_1.tf"}}
+
+You can also pause SCIM provisioning without disabling it:
+
+{{tffile "examples/resources/scim_settings/example_2.tf"}}
+
+### Linking a SCIM group to site admin (two-apply workflow)
+
+The `site_admin_group_scim_id` argument links a SCIM group to the site admin role. The group must already exist in Terraform Enterprise, but groups are only created by your IdP after SCIM provisioning is enabled. This requires a two-apply workflow:
+
+**Apply 1 — enable SCIM** so your IdP can begin pushing groups. Do **not** set `site_admin_group_scim_id` yet:
+
+{{tffile "examples/resources/scim_settings/example_3.tf"}}
+
+Run `terraform apply`, then wait for your IdP to provision the desired group into Terraform Enterprise via SCIM. Locate the SCIM ID of that group (for example, from the IdP's SCIM logs or by querying `GET /scim/v2/Groups`).
+
+**Apply 2 — link the site admin group** by adding `site_admin_group_scim_id` to the same resource:
+
+{{tffile "examples/resources/scim_settings/example_4.tf"}}
+
+Keep `site_admin_group_scim_id` in your config from this point on. Removing it (or setting it to `""`) unlinks the group on the next apply.
+
+## Argument Reference
+
+The following arguments are supported:
+
+* `paused` - (Optional) Whether SCIM provisioning is paused. Defaults to `false`.
+* `site_admin_group_scim_id` - (Optional) The SCIM ID of the group to map to site admin. Defaults to `""` (unlinked).
+
+`paused` and `site_admin_group_scim_id` are the only mutable arguments. To fully disable SCIM you must run `terraform destroy` on this resource; there is no argument to disable it in-place.
+
+## Attributes Reference
+
+* `id` - The ID of the SCIM Settings. Always `scim`.
+* `enabled` - Whether SCIM provisioning is enabled. Always `true` while this resource exists; use `terraform destroy` to disable.
+* `site_admin_group_display_name` - The display name of the SCIM group mapped to site admin. Empty when no group is linked.
+
+## Import
+
+SCIM Settings can be imported using the fixed ID `scim`.
+
+```shell
+terraform import tfe_scim_settings.this scim
+```
