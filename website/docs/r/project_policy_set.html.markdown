@@ -9,6 +9,8 @@ description: |-
 
 Adds and removes policy sets from a project
 
+~> **NOTE:** Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (`terraform apply`), then add the new one (`terraform apply`). Attempting both in a single apply may fail.
+
 ## Example Usage
 
 Basic usage:
