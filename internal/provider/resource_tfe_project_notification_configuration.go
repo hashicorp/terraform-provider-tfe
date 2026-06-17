@@ -70,7 +70,12 @@ func modelFromTFEProjectNotificationConfiguration(v *tfe.NotificationConfigurati
 		Enabled:         types.BoolValue(v.Enabled),
 		ProjectID:       types.StringValue(v.SubscribableChoice.Project.ID),
 		TokenWOVersion:  tokenWOVersion,
-		Token:           types.StringValue(""),
+		// Token defaults to types.StringNull(); only populated below when
+		// the user actually provided one (lastValue). Initializing to "" here
+		// causes a post-apply "inconsistent values for sensitive attribute"
+		// error for destination types that forbid setting `token` (email,
+		// slack, microsoft-teams), because the plan has Token = null but the
+		// state would have Token = "".
 	}
 
 	if len(v.EmailAddresses) == 0 {

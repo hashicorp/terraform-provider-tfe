@@ -96,6 +96,70 @@ func TestAccTFEProjectNotificationConfiguration_emailUserIDs(t *testing.T) {
 	})
 }
 
+// TestAccTFEProjectNotificationConfiguration_slack is a regression test for
+// https://github.com/hashicorp/terraform-provider-tfe/issues/2102.
+//
+// For destination types that forbid setting the `token` attribute (slack,
+// microsoft-teams, email), Create previously returned state with
+// token = "" (empty string) while the plan had token = null. Terraform
+// core's post-apply consistency check then failed with "inconsistent values
+// for sensitive attribute".
+//
+// This test creates a slack notification configuration with no token in
+// config, applies it, then runs a second step with the same config to
+// confirm no spurious drift on subsequent plans. Both steps must succeed
+// and the `token` attribute must remain null in state.
+func TestAccTFEProjectNotificationConfiguration_slack(t *testing.T) {
+	skipUnlessBeta(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
+	project := createProject(t, tfeClient, org.Name, tfe.ProjectCreateOptions{
+		Name: "test-project",
+	})
+
+	notificationConfiguration := &tfe.NotificationConfiguration{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { preCheckTFEProjectNotificationConfiguration(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEProjectNotificationConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEProjectNotificationConfiguration_slack(org.Name, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEProjectNotificationConfigurationExists(
+						"tfe_project_notification_configuration.foobar", notificationConfiguration),
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "destination_type", "slack"),
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "name", "notification_slack"),
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "url", runTasksURL()),
+					// State must reflect the user's config: no token attribute set.
+					// Initializing Token: types.StringValue("") in
+					// modelFromTFEProjectNotificationConfiguration regressed this and
+					// caused "inconsistent values for sensitive attribute" on apply.
+					resource.TestCheckNoResourceAttr(
+						"tfe_project_notification_configuration.foobar", "token"),
+				),
+			},
+			{
+				// Re-apply the same config to confirm no drift / no Update planned.
+				// With the bug present, the second plan would detect "drift" between
+				// config (token = null) and state (token = "") and attempt to update.
+				Config:   testAccTFEProjectNotificationConfiguration_slack(org.Name, project.ID),
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
 func TestAccTFEProjectNotificationConfiguration_update(t *testing.T) {
 	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
@@ -374,6 +438,22 @@ resource "tfe_project_notification_configuration" "foobar" {
   token            = "1234567890_update"
   triggers         = ["change_request:created"]
   url              = "%s"
+  project_id       = "%s"
+}`, orgName, runTasksURL(), projectID)
+}
+
+func testAccTFEProjectNotificationConfiguration_slack(orgName, projectID string) string {
+	return fmt.Sprintf(`
+data "tfe_organization" "foobar" {
+  name = "%s"
+}
+
+resource "tfe_project_notification_configuration" "foobar" {
+  name             = "notification_slack"
+  destination_type = "slack"
+  enabled          = true
+  url              = "%s"
+  triggers         = ["run:errored", "run:needs_attention"]
   project_id       = "%s"
 }`, orgName, runTasksURL(), projectID)
 }
