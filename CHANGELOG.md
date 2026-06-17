@@ -7,6 +7,9 @@ BUG FIXES:
 * Removed two documentation files for resources that do not exist and that are not planned. By @brandonc [#2100](https://github.com/hashicorp/terraform-provider-tfe/pull/2100)
 * `r/tfe_project_notification_configuration`: Fix "Provider produced inconsistent result after apply" error on Create for `destination_type` values that forbid setting `token` (`slack`, `microsoft-teams`, `email`). The plan-time `token` is null but the resource was initializing the state value to `""`, tripping Terraform core's sensitive-attribute consistency check. The initializer now defaults to null, matching the equivalent workspace-scoped resource. [#2102](https://github.com/hashicorp/terraform-provider-tfe/issues/2102)
 
+ENHANCEMENTS:
+* `r/tfe_project_notification_configuration`: Adds `url_wo` (write-only) and `url_wo_version` attributes, plus auto change-detection via SHA-256 hashing in private state and a write-only → plaintext transition guard. Mirrors the existing `token_wo` mechanism and brings the resource to parity with `r/tfe_notification_configuration`, letting users keep Slack / Generic webhook URLs out of state. [#2104](https://github.com/hashicorp/terraform-provider-tfe/issues/2104)
+
 
 ## v0.78.0
 
