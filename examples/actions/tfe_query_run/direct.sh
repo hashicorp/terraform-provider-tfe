@@ -1,1 +1,0 @@
-terraform apply -invoke=action.tfe_query_run.wait_for_latest

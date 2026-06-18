@@ -1,6 +1,6 @@
 ephemeral "tfe_outputs" "foo" {
   organization = "my-org"
-  workspace = "my-workspace"
+  workspace    = "my-workspace"
 }
 
 provider "vault" {
