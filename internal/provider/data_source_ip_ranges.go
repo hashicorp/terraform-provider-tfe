@@ -38,7 +38,7 @@ type modelTFEIPRanges struct {
 }
 
 // modelFromTFEIPRanges builds a modelTFEIPRanges struct from a tfe.IPRanges value.
-func modelFromTFEIPRanges(i *tfe.IPRange) (modelTFEIPRanges, diag.Diagnostics) {
+func modelFromTFEIPRanges(ctx context.Context, i *tfe.IPRange) (modelTFEIPRanges, diag.Diagnostics) {
 	model := modelTFEIPRanges{
 		ID:            types.StringValue("ip-ranges"),
 		API:           types.ListNull(types.StringType),
@@ -120,7 +120,7 @@ func (d *dataSourceTFEIPRanges) Read(ctx context.Context, req datasource.ReadReq
 		return
 	}
 
-	result, diags := modelFromTFEIPRanges(ipRanges)
+	result, diags := modelFromTFEIPRanges(ctx, ipRanges)
 	resp.Diagnostics.Append(diags...)
 	if diags.HasError() {
 		return
