@@ -13,6 +13,11 @@ resource "tfe_workspace" "test" {
   organization = tfe_organization.test.name
 }
 
+resource "tfe_stack" "test" {
+  project_id = tfe_organization.test.default_project_id
+  name         = "my-stack-name"
+}
+
 resource "tfe_variable_set" "test" {
   name         = "Test Varset"
   description  = "Some description."

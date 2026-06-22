@@ -12,7 +12,7 @@ data "tfe_organization" "organization" {
 
 data "tfe_agent_pool" "agent-pool" {
   name         = "my-example-agent-pool"
-  organization = tfe_organization.organization.name
+  organization = data.tfe_organization.organization.name
 }
 
 resource "tfe_stack" "test-stack" {

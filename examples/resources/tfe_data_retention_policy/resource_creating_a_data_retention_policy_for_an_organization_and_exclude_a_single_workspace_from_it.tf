@@ -4,7 +4,7 @@ resource "tfe_organization" "test-organization" {
 }
 
 // create data retention policy the organization
-resource "tfe_data_retention_policy" "foobar" {
+resource "tfe_data_retention_policy" "foo" {
   organization = tfe_organization.test-organization.name
 
   delete_older_than {
@@ -18,7 +18,7 @@ resource "tfe_workspace" "test-workspace" {
 }
 
 // create a policy that prevents automatic deletion of data in the test-workspace
-resource "tfe_data_retention_policy" "foobar" {
+resource "tfe_data_retention_policy" "bar" {
   workspace_id = tfe_workspace.test-workspace.id
 
   dont_delete {}

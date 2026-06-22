@@ -9,7 +9,7 @@ resource "tfe_project" "test" {
 }
 
 resource "tfe_oauth_client" "test" {
-  organization     = tfe_organization.test
+  organization     = tfe_organization.test.name
   api_url          = "https://api.github.com"
   http_url         = "https://github.com"
   oauth_token      = "oauth_token_id"

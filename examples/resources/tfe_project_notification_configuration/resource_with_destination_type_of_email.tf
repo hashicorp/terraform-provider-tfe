@@ -17,7 +17,7 @@ resource "tfe_project_notification_configuration" "test" {
   name             = "my-test-email-notification-configuration"
   enabled          = true
   destination_type = "email"
-  email_user_ids   = [tfe_organization_membership.test.user_id]
+  email_user_ids   = [data.tfe_organization_membership.test.user_id]
   triggers         = ["run:created", "run:planning", "run:errored"]
   project_id       = tfe_project.test.id
 }

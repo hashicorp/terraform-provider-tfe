@@ -14,8 +14,8 @@ resource "tfe_provider_set" "write_only" {
   organization    = "example-org"
   provider_source = "registry.terraform.io/hashicorp/aws"
   workspace_ids = [
-    "ws-exampleaaaa1111",
-    "ws-examplebbbb2222",
+    "ws-exampleaaaa11111",
+    "ws-examplebbbb22222",
   ]
 
   provider_config_hcl_wo_version = 1
