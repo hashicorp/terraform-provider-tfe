@@ -148,6 +148,7 @@ func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource
 		NewCurrentUserDataSource,
 		NewHYOKCustomerKeyVersionDataSource,
 		NewHYOKEncryptedDataKeyDataSource,
+		NewIPRangesDataSource,
 		NewNoCodeModuleDataSource,
 		NewOrgMaxTokenTTLPolicyDataSource,
 		NewOrganizationAuditConfigurationDataSource,
