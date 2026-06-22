@@ -156,6 +156,162 @@ func TestAccTFEPolicySetOPA_basic(t *testing.T) {
 	})
 }
 
+// TestAccTFEPolicySetTFPolicy_basic asserts kind="tfpolicy" with workspace_ids scoping.
+func TestAccTFEPolicySetTFPolicy_basic(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	policySet := &tfe.PolicySet{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicySetTFPolicy_basic(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					testAccCheckTFEPolicySetAttributes(policySet),
+					testAccCheckTFEPolicySetKind(policySet, tfe.TFPolicy),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "name", "tst-terraform"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "kind", "tfpolicy"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "description", "Policy Set"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "global", "false"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "workspace_ids.#", "1"),
+				),
+			},
+		},
+	})
+}
+
+// TestAccTFEPolicySetTFPolicy_vcs asserts a VCS-backed tfpolicy set with policies_path.
+func TestAccTFEPolicySetTFPolicy_vcs(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	policySet := &tfe.PolicySet{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			if envGithubToken == "" {
+				t.Skip("Please set GITHUB_TOKEN to run this test")
+			}
+			if envGithubPolicySetIdentifier == "" {
+				t.Skip("Please set GITHUB_POLICY_SET_IDENTIFIER to run this test")
+			}
+			if envGithubPolicySetPath == "" {
+				t.Skip("Please set GITHUB_POLICY_SET_PATH to run this test")
+			}
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicySetTFPolicy_vcs(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
+					testAccCheckTFEPolicySetAttributes(policySet),
+					testAccCheckTFEPolicySetKind(policySet, tfe.TFPolicy),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "kind", "tfpolicy"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "vcs_repo.0.identifier", envGithubPolicySetIdentifier),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "vcs_repo.0.branch", "main"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "vcs_repo.0.ingress_submodules", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "policies_path", envGithubPolicySetPath),
+				),
+			},
+		},
+	})
+}
+
+// TestAccTFEPolicySetTFPolicy_import asserts a tfpolicy set round-trips through import.
+func TestAccTFEPolicySetTFPolicy_import(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicySetTFPolicy_basic(org.Name),
+			},
+			{
+				ResourceName:      "tfe_policy_set.foobar",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+// TestAccTFEPolicySetTFPolicy_kindForceNew asserts kind is ForceNew (sentinel -> tfpolicy replaces).
+func TestAccTFEPolicySetTFPolicy_kindForceNew(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	firstPolicySet := &tfe.PolicySet{}
+	secondPolicySet := &tfe.PolicySet{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicySetTFPolicy_empty(org.Name, "sentinel"),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", firstPolicySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "kind", "sentinel"),
+				),
+			},
+			{
+				Config: testAccTFEPolicySetTFPolicy_empty(org.Name, "tfpolicy"),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", secondPolicySet),
+					testAccCheckTFEPolicySetKind(secondPolicySet, tfe.TFPolicy),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar", "kind", "tfpolicy"),
+					testAccCheckTFEPolicySetRecreated(firstPolicySet, secondPolicySet),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEPolicySet_updateOverridable(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
@@ -1068,6 +1224,26 @@ func testAccCheckTFEPolicySetGlobal(policySet *tfe.PolicySet) resource.TestCheck
 	}
 }
 
+func testAccCheckTFEPolicySetKind(policySet *tfe.PolicySet, kind tfe.PolicyKind) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if policySet.Kind != kind {
+			return fmt.Errorf("Bad kind: expected %q, got %q", kind, policySet.Kind)
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckTFEPolicySetRecreated(before, after *tfe.PolicySet) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if before.ID == after.ID {
+			return fmt.Errorf("Expected policy set to be recreated, but ID %q was reused", before.ID)
+		}
+
+		return nil
+	}
+}
+
 func testAccCheckTFEPolicySetDestroy(s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_policy_set" {
@@ -1139,6 +1315,71 @@ resource "tfe_policy_set" "foobar" {
   policy_tool_version = "%s"
   depends_on = [tfe_opa_version.foobar]
 }`, version, sha, organization, version)
+}
+
+func testAccTFEPolicySetTFPolicy_basic(organization string) string {
+	return fmt.Sprintf(`
+locals {
+    organization_name = "%s"
+}
+
+resource "tfe_workspace" "foo" {
+  name         = "workspace-foo"
+  organization = local.organization_name
+}
+
+resource "tfe_policy_set" "foobar" {
+  name          = "tst-terraform"
+  description   = "Policy Set"
+  organization  = local.organization_name
+  kind          = "tfpolicy"
+  workspace_ids = [tfe_workspace.foo.id]
+}`, organization)
+}
+
+func testAccTFEPolicySetTFPolicy_empty(organization string, kind string) string {
+	return fmt.Sprintf(`
+resource "tfe_policy_set" "foobar" {
+  name         = "tst-terraform"
+  description  = "Policy Set"
+  organization = "%s"
+  kind         = "%s"
+}`, organization, kind)
+}
+
+func testAccTFEPolicySetTFPolicy_vcs(organization string) string {
+	return fmt.Sprintf(`
+locals {
+    organization_name = "%s"
+}
+
+resource "tfe_oauth_client" "test" {
+  organization     = local.organization_name
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "%s"
+  service_provider = "github"
+}
+
+resource "tfe_policy_set" "foobar" {
+  name         = "tst-terraform"
+  description  = "Policy Set"
+  organization = local.organization_name
+  kind         = "tfpolicy"
+  vcs_repo {
+    identifier         = "%s"
+    branch             = "main"
+    ingress_submodules = true
+    oauth_token_id     = tfe_oauth_client.test.oauth_token_id
+  }
+
+  policies_path = "%s"
+}
+`, organization,
+		envGithubToken,
+		envGithubPolicySetIdentifier,
+		envGithubPolicySetPath,
+	)
 }
 
 func testAccTFEPolicySet_empty(organization string) string {
