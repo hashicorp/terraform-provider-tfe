@@ -12,16 +12,16 @@ resource "tfe_oauth_client" "test_client" {
 }
 
 resource "tfe_registry_module" "test_module" {
-  organization     = "test-module"
+  organization = "test-module"
   vcs_repo {
-  display_identifier = "GH_NAME/REPO_NAME"
-  identifier         = "GH_NAME/REPO_NAME"
-  oauth_token_id     = tfe_oauth_client.test_client.oauth_token_id
-  branch             = "main"
-  tags				 = false
-}
+    display_identifier = "GH_NAME/REPO_NAME"
+    identifier         = "GH_NAME/REPO_NAME"
+    oauth_token_id     = tfe_oauth_client.test_client.oauth_token_id
+    branch             = "main"
+    tags               = false
+  }
   test_config {
-	tests_enabled = true
+    tests_enabled = true
   }
 }
 

@@ -6,5 +6,6 @@ resource "tfe_saml_settings" "this" {
 }
 
 resource "tfe_scim_settings" "this" {
+  paused     = true
   depends_on = [tfe_saml_settings.this]
 }

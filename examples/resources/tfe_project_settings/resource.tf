@@ -10,7 +10,7 @@ resource "tfe_agent_pool" "my_agents" {
 
 # this section here for demonstration and is not necessary explicitly for use of tfe_project_settings
 resource "tfe_organization_default_settings" "org_default" {
-  organization           = tfe_organization.test.name
+  organization = tfe_organization.test.name
   # this will end up being overwritten at the project level
   default_execution_mode = "agent"
   default_agent_pool_id  = tfe_agent_pool.my_agents.id

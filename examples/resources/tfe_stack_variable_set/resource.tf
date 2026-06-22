@@ -5,7 +5,7 @@ resource "tfe_organization" "test" {
 
 resource "tfe_stack" "test" {
   project_id = tfe_organization.test.default_project_id
-  name         = "my-stack-name"
+  name       = "my-stack-name"
 }
 
 resource "tfe_variable_set" "test" {
