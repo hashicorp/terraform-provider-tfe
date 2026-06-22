@@ -12,6 +12,7 @@ resource "tfe_registry_module" "foobar" {
 resource "tfe_no_code_module" "foobar" {
   organization    = tfe_organization.foobar.id
   registry_module = tfe_registry_module.foobar.id
+  version_pin     = "~> 1.1"
 
   variable_options {
     name    = "ami"
