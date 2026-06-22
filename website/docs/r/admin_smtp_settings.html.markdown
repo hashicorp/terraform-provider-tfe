@@ -20,10 +20,11 @@ provider "tfe" {
 }
 
 resource "tfe_admin_smtp_settings" "this" {
-  host   = "smtp.example.com"
-  port   = 25
-  sender = "noreply@example.com"
-  auth   = "none"
+  enabled = true
+  host    = "smtp.example.com"
+  port    = 25
+  sender  = "noreply@example.com"
+  auth    = "none"
 }
 ```
 
@@ -36,6 +37,7 @@ provider "tfe" {
 }
 
 resource "tfe_admin_smtp_settings" "this" {
+  enabled  = true
   host     = "smtp.example.com"
   port     = 587
   sender   = "noreply@example.com"
@@ -59,6 +61,7 @@ provider "tfe" {
 }
 
 resource "tfe_admin_smtp_settings" "this" {
+  enabled             = true
   host                = "smtp.example.com"
   port                = 587
   sender              = "noreply@example.com"
@@ -73,6 +76,7 @@ resource "tfe_admin_smtp_settings" "this" {
 
 The following arguments are supported:
 
+* `enabled` - (Optional) Whether SMTP is enabled. When enabled, all other attributes must have valid values. Defaults to `false`
 * `host` - (Optional) The hostname of the SMTP server.
 * `port` - (Optional) The port of the SMTP server. Defaults to `25`.
 * `sender` - (Optional) The desired sender email address.
