@@ -5,6 +5,7 @@ FEATURES:
 
 BUG FIXES:
 * Removed two documentation files for resources that do not exist and that are not planned. By @brandonc [#2100](https://github.com/hashicorp/terraform-provider-tfe/pull/2100)
+* r/tfe_workspace: fixed documentation Example and Attribute list to add missing enabled field
 
 
 ## v0.78.0
