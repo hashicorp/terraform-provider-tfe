@@ -1,3 +1,7 @@
+variable "session_token" {
+  description = "The session token for use in the write only field"
+}
+
 resource "tfe_organization" "test_org" {
   name  = "my-org-name"
   email = "admin@company.com"

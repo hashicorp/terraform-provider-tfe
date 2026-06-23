@@ -1,5 +1,5 @@
 data "tfe_registry_module" "example" {
-  organization    = var.organization_name
+  organization    = "my-organization"
   name            = "no-code-ssm"
   module_provider = "aws"
 }

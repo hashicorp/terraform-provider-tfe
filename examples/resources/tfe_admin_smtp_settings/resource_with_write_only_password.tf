@@ -1,3 +1,12 @@
+variable "admin_token" {
+  description = "An admin access token"
+}
+
+variable "hostname" {
+  description = "The HCP Terraform or Enterprise hostname."
+  default     = "app.terraform.io"
+}
+
 variable "smtp_password" {
   type      = string
   ephemeral = true

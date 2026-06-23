@@ -1,3 +1,7 @@
+variable "github_token" {
+  description = "An access token for github"
+}
+
 resource "tfe_oauth_client" "test" {
   organization     = "my-example-org"
   api_url          = "https://api.github.com"
