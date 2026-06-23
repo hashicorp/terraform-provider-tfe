@@ -1,0 +1,22 @@
+variable "admin_token" {
+  description = "An admin access token"
+}
+
+variable "hostname" {
+  description = "The HCP Terraform or Enterprise hostname."
+  default     = "app.terraform.io"
+}
+
+provider "tfe" {
+  hostname = var.hostname
+  token    = var.admin_token
+}
+
+resource "tfe_admin_smtp_settings" "this" {
+  host     = "smtp.example.com"
+  port     = 587
+  sender   = "noreply@example.com"
+  auth     = "plain"
+  username = "smtp_user"
+  password = "smtp_password"
+}
