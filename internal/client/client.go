@@ -17,6 +17,7 @@ import (
 	tfe "github.com/hashicorp/go-tfe"
 	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/go-version"
+	"github.com/hashicorp/terraform-provider-tfe/internal/logging"
 	providerVersion "github.com/hashicorp/terraform-provider-tfe/version"
 	svchost "github.com/hashicorp/terraform-svchost"
 	"github.com/hashicorp/terraform-svchost/disco"
@@ -67,10 +68,10 @@ func getTokenFromEnv() string {
 }
 
 func getTokenFromCreds(services *disco.Disco, hostname svchost.Hostname) string {
-	log.Printf("[DEBUG] Attempting to fetch token from Terraform CLI configuration for hostname %q...", hostname)
+	log.Printf("[DEBUG] Attempting to fetch token from Terraform CLI configuration for configured hostname")
 	creds, err := services.CredentialsForHost(hostname)
 	if err != nil {
-		log.Printf("[DEBUG] Failed to get credentials for %s: %s (ignoring)", hostname, err)
+		log.Printf("[DEBUG] Failed to get credentials for %s: %s (ignoring)", logging.Sanitize(string(hostname)), logging.Sanitize(err.Error())) // nolint:gosec
 	}
 	if creds != nil {
 		return creds.Token()
@@ -188,6 +189,9 @@ func GetClient(tfeHost, token string, insecure bool) (*ProviderClient, error) {
 			}
 		},
 	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create client: %w", err)
+	}
 
 	client.RetryServerErrors(true)
 	clientCache.Set(client, v2Client, config)
