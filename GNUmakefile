@@ -63,5 +63,17 @@ test-compile:
 	fi
 	go test -c $(TEST) $(TESTARGS)
 
+<<<<<<< HEAD
 .PHONY: build test testacc vet fmt fmtcheck errcheck test-compile sweep
 
+=======
+
+generate:
+	go generate ./...
+ifdef RESOURCE
+	find docs -type f -name '*.md' ! -name '$(RESOURCE).md' -delete
+	find docs -type d -empty -delete
+endif
+
+.PHONY: build test testacc vet fmt fmtcheck errcheck test-compile sweep generate
+>>>>>>> a559c35b (Add targetable docgen to terraform-provider-tfe)
