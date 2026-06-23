@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"sort"
@@ -14,6 +15,7 @@ import (
 	"sync"
 
 	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/go-version"
 	providerVersion "github.com/hashicorp/terraform-provider-tfe/version"
 	svchost "github.com/hashicorp/terraform-svchost"
@@ -30,16 +32,17 @@ var (
 )
 
 type ClientConfigMap struct {
-	mu     sync.Mutex
-	values map[string]*tfe.Client
+	mu       sync.Mutex
+	valuesV1 map[string]*tfe.Client
+	values   map[string]*tfev2.Client
 }
 
-func (c *ClientConfigMap) GetByConfig(config *ClientConfiguration) *tfe.Client {
+func (c *ClientConfigMap) GetByConfig(config *ClientConfiguration) (*tfe.Client, *tfev2.Client) {
 	if c.mu.TryLock() {
 		defer c.Unlock()
 	}
 
-	return c.values[config.Key()]
+	return c.valuesV1[config.Key()], c.values[config.Key()]
 }
 
 func (c *ClientConfigMap) Lock() {
@@ -50,11 +53,12 @@ func (c *ClientConfigMap) Unlock() {
 	c.mu.Unlock()
 }
 
-func (c *ClientConfigMap) Set(client *tfe.Client, config *ClientConfiguration) {
+func (c *ClientConfigMap) Set(client *tfe.Client, clientV2 *tfev2.Client, config *ClientConfiguration) {
 	if c.mu.TryLock() {
 		defer c.Unlock()
 	}
-	c.values[config.Key()] = client
+	c.valuesV1[config.Key()] = client
+	c.values[config.Key()] = clientV2
 }
 
 func getTokenFromEnv() string {
@@ -77,6 +81,7 @@ func getTokenFromCreds(services *disco.Disco, hostname svchost.Hostname) string 
 // TFE Client along with other necessary information for the provider to run it
 type ProviderClient struct {
 	TfeClient   *tfe.Client
+	TFEClientV2 *tfev2.Client
 	tokenSource tokenSource
 }
 
@@ -107,9 +112,9 @@ func GetClient(tfeHost, token string, insecure bool) (*ProviderClient, error) {
 	defer clientCache.Unlock()
 
 	// Try to retrieve the client from cache
-	cached := clientCache.GetByConfig(config)
-	if cached != nil {
-		return &ProviderClient{cached, config.tokenSource}, nil
+	cachedV1, cachedV2 := clientCache.GetByConfig(config)
+	if cachedV1 != nil && cachedV2 != nil {
+		return &ProviderClient{TfeClient: cachedV1, TFEClientV2: cachedV2, tokenSource: config.tokenSource}, nil
 	}
 
 	// Discover the Terraform Enterprise address.
@@ -170,10 +175,17 @@ func GetClient(tfeHost, token string, insecure bool) (*ProviderClient, error) {
 		return nil, fmt.Errorf("failed to create client: %w", err)
 	}
 
-	client.RetryServerErrors(true)
-	clientCache.Set(client, config)
+	v2Client, err := tfev2.NewClient(&tfev2.Config{
+		Address:           address.String(),
+		Token:             config.Token,
+		RetryServerErrors: true,
+		Headers:           http.Header{"User-Agent": []string{TFEUserAgent}},
+	})
 
-	return &ProviderClient{client, config.tokenSource}, nil
+	client.RetryServerErrors(true)
+	clientCache.Set(client, v2Client, config)
+
+	return &ProviderClient{TfeClient: client, TFEClientV2: v2Client, tokenSource: config.tokenSource}, nil
 }
 
 // CheckConstraints checks service version constrains against our own
