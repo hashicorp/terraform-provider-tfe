@@ -179,7 +179,14 @@ func GetClient(tfeHost, token string, insecure bool) (*ProviderClient, error) {
 		Address:           address.String(),
 		Token:             config.Token,
 		RetryServerErrors: true,
+		RetryRateLimited:  true,
+		RetryMaxRetries:   10,
 		Headers:           http.Header{"User-Agent": []string{TFEUserAgent}},
+		RetryHook: func(attempt int, resp *http.Response) {
+			if resp.StatusCode == http.StatusTooManyRequests {
+				log.Printf("[DEBUG] Rate limited by TFE API, retrying request (attempt %d)", attempt)
+			}
+		},
 	})
 
 	client.RetryServerErrors(true)
