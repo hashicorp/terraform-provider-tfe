@@ -1,0 +1,43 @@
+---
+layout: "tfe"
+page_title: "Terraform Enterprise: {{.Name}}"
+description: |-
+{{- if .Description }}
+{{ .Description | plainmarkdown | prefixlines "  " }}
+{{- end }}
+---
+
+# {{.Name}}
+
+{{- if .Description }}
+
+{{ .Description }}
+{{- end }}
+
+{{- if or .HasExample .HasExamples }}
+
+## Example Usage
+
+{{- if .HasExamples }}
+{{- range $index, $file := .ExampleFiles }}
+{{- if eq $index 0 }}
+
+Basic usage:
+{{- else if eq $index 1 }}
+
+Additional example(s):
+{{- end }}
+
+{{ tffile $file }}
+{{- end }}
+{{- else if .HasExample }}
+
+{{ tffile .ExampleFile }}
+{{- end }}
+{{- end }}
+
+{{- if .SchemaMarkdown }}
+
+{{ .SchemaMarkdown }}
+
+{{- end }}

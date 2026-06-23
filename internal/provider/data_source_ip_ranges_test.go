@@ -22,6 +22,7 @@ func TestAccTFEIPRangesDataSource_basic(t *testing.T) {
 				Config: testAccTFEIPRangesDataSourceConfig(),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.tfe_ip_ranges.ips", "id"),
+					resource.TestCheckResourceAttr("data.tfe_ip_ranges.ips", "id", "ip-ranges"),
 					resource.TestCheckResourceAttrSet("data.tfe_ip_ranges.ips", "api.0"),
 					resource.TestMatchResourceAttr("data.tfe_ip_ranges.ips", "api.0", ipRegex),
 					resource.TestCheckResourceAttrSet("data.tfe_ip_ranges.ips", "notifications.0"),
