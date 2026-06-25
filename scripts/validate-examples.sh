@@ -7,14 +7,14 @@
 #
 # Exit codes:
 #  0 - Complete success
-#  1 - Other generic warnings
+#  1 - Generic errors (including command line args)
 #  3 - Warnings found in examples, no errors
-#  4 - Errors found in examples
-#  5 - Input files/directories do not exist
-#  6 - Test directory already exists
-#  7 - Required commands (terraform, jq) not found
-#  8 - Internal data merge error
-#  9 - Unused exceptions found in error_exceptions.json
+#  4 - Warning that unused exceptions were found in error_exceptions.json
+#  5 - Errors found in examples
+#  6 - Required commands (terraform, jq) not found
+#  7 - Input files/directories do not exist
+#  8 - Test directory already exists
+#  9 - Internal data merge error
 
 
 # Crash on error
@@ -25,7 +25,6 @@ SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
 JSON_OUTPUT_NAME="failure_info.json"
 EXCEPTIONS_FILE=""
 TEMP_BREAKING_INFO=""
-CLEANUP_DONE=false
 HAS_ERRORS=false
 HAS_WARNINGS=false
 UNUSED_EXCEPTIONS=()
@@ -36,7 +35,7 @@ PROVIDER_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 TARGET_DIR="${PROVIDER_DIR}/examples"
 
 # Local Constant
-TEST_DIR="${PROVIDER_DIR}/temp-example-validation" # this is set to ./temp-example-validation
+TEST_DIR="${PROVIDER_DIR}/temp-example-validation"
 
 # Constants
 JQ_ERROR_PROCESSING='{"diagnostics":[{"severity":"error","summary":"Processing error","detail":"jq processing failed"}],"error_count":1,"warning_count":0}'
@@ -65,12 +64,12 @@ while [[ $# -gt 0 ]]; do
             echo "Exit Codes:"
             echo "  0 - Complete success"
             echo "  3 - Warnings found in examples, no errors"
-            echo "  4 - Errors found in examples"
-            echo "  5 - Input files/directories do not exist"
-            echo "  6 - Test directory already exists"
-            echo "  7 - Required commands (terraform, jq) not found"
-            echo "  8 - Internal data merge error"
-            echo "  9 - Unused exceptions found in error_exceptions.json"
+            echo "  4 - Unused exceptions found in error_exceptions.json"
+            echo "  5 - Errors found in examples"
+            echo "  6 - Required commands (terraform, jq) not found"
+            echo "  7 - Input files/directories do not exist"
+            echo "  8 - Test directory already exists"
+            echo "  9 - Internal data merge error"
             exit 0
             ;;
         *)
@@ -84,32 +83,32 @@ done
 # Terraform and jq dependencies
 if ! command -v terraform >/dev/null 2>&1; then
     echo "Error: terraform command not found. Please install Terraform." >&2
-    exit 7
+    exit 6
 fi
 
 if ! command -v jq >/dev/null 2>&1; then
     echo "Error: jq command not found. Please install jq for JSON processing." >&2
-    exit 7
+    exit 6
 fi
 
 # Check if TARGET_DIR exists
 if [ ! -d "${TARGET_DIR}" ]; then
     echo "Error: Examples directory does not exist: ${TARGET_DIR}"
-    exit 5
+    exit 7
 fi
 
 # Exit if TEST_DIR already exists
 if [ -d "${TEST_DIR}" ]; then
     echo "Error: Test directory already exists: ${TEST_DIR}"
     echo "Use of this script will destroy that directory. Please delete or rename this directory to use this script"
-    exit 6
+    exit 8
 fi
 
 # Check if EXCEPTIONS_FILE exists and make it absolute, if provided
 if [ -n "${EXCEPTIONS_FILE}" ]; then
     if [ ! -f "${EXCEPTIONS_FILE}" ]; then
         echo "Error: Exceptions file does not exist: ${EXCEPTIONS_FILE}"
-        exit 5
+        exit 7
     fi
     EXCEPTIONS_FILE="$(cd "$(dirname "${EXCEPTIONS_FILE}")" && pwd)/$(basename "${EXCEPTIONS_FILE}")"
 fi
@@ -148,8 +147,6 @@ export TF_CLI_CONFIG_FILE="$(pwd)/terraform.rc"
 
 # Recurse across the examples directory
 while IFS= read -r -d '' path; do
-    [ ! -f "${path}" ] && continue
-    
     relative_path="${path#${TARGET_DIR}/}"
     echo "Validating: ${relative_path}"
     
@@ -166,8 +163,7 @@ while IFS= read -r -d '' path; do
                 "severity": "warning",
                 "summary": "Formatting violation",
                 "detail": "File does not conform to terraform fmt standards"
-            }] |
-            .warning_count = (.warning_count // 0) + 1
+            }]
         ' 2>&1); then
             # jq failed, swap to jq error
             validate_output="${JQ_ERROR_PROCESSING}"
@@ -175,7 +171,7 @@ while IFS= read -r -d '' path; do
     fi
     
     # Always ignore "Provider development overrides are in effect" warning
-    # this error comes from how we formulate .terraform.rc
+    # this warning comes from how we formulate terraform.rc
     if ! validate_output=$(echo "${validate_output}" | jq '
         if .diagnostics then
             .diagnostics = [.diagnostics[] | select(.summary != "Provider development overrides are in effect")]
@@ -191,15 +187,23 @@ while IFS= read -r -d '' path; do
     
     # Apply file-specific exceptions, if provided
     if [ -n "${EXCEPTIONS_FILE}" ]; then
-        # Pull on the specific relative path from file_exceptions
+        # Check whether this file has any exceptions defined
         has_exceptions=$(jq --arg path "${relative_path}" '.file_exceptions | has($path)' "${EXCEPTIONS_FILE}" 2>/dev/null)
         
         # Then destroy those errors/warnings
         if [ "${has_exceptions}" = "true" ]; then
-            # Get the original error/warning count before filtering
-            original_error_count=$(echo "${validate_output}" | jq -r '.error_count // 0')
-            original_warning_count=$(echo "${validate_output}" | jq -r '.warning_count // 0')
-            
+            # Find which individual exception summaries did not match any diagnostic
+            unmatched=$(echo "${validate_output}" | jq -r --arg path "${relative_path}" --slurpfile exceptions "${EXCEPTIONS_FILE}" '
+                ($exceptions[0].file_exceptions[$path] // []) as $exception_list |
+                ($exception_list - ([.diagnostics[]?.summary] | unique)) |
+                .[]
+            ' 2>/dev/null || echo "")
+            if [ -n "${unmatched}" ]; then
+                while IFS= read -r summary; do
+                    UNUSED_EXCEPTIONS+=("${relative_path}: \"${summary}\"")
+                done <<< "${unmatched}"
+            fi
+
             if ! validate_output=$(echo "${validate_output}" | jq --arg path "${relative_path}" --slurpfile exceptions "${EXCEPTIONS_FILE}" '
                 ($exceptions[0].file_exceptions[$path] // []) as $exception_list |
                 if .diagnostics then
@@ -212,15 +216,6 @@ while IFS= read -r -d '' path; do
             ' 2>&1); then
                 # jq failed during exception filtering, swap to jq error
                 validate_output="${JQ_ERROR_PROCESSING}"
-            else
-                # Check if the exception actually filtered anything
-                new_error_count=$(echo "${validate_output}" | jq -r '.error_count // 0')
-                new_warning_count=$(echo "${validate_output}" | jq -r '.warning_count // 0')
-                
-                # If counts didn't change, the exception was unnecessary
-                if [ "${original_error_count}" -eq "${new_error_count}" ] && [ "${original_warning_count}" -eq "${new_warning_count}" ]; then
-                    UNUSED_EXCEPTIONS+=("${relative_path}")
-                fi
             fi
         fi
     fi
@@ -244,20 +239,20 @@ while IFS= read -r -d '' path; do
             # Since this failure is almost certainly a broad failure and
             # invalidating of other work, we exit fatally
             echo "Failed to merge validation results for ${relative_path}" >&2
-            exit 8
+            exit 9
         fi
         rm -f "${TEMP_BREAKING_INFO}.single"
     fi
 done < <(find "${TARGET_DIR}" -name "*.tf" -type f -print0) # Find next .tf file
 
 
-cd "${TEST_DIR}/.."
+cd "${PROVIDER_DIR}"
 
 # Report unused exceptions
 # This happens separately so that we always get this output
 if [ ${#UNUSED_EXCEPTIONS[@]} -gt 0 ]; then
     echo ""
-    echo "The following files have exceptions defined but didn't trigger any errors/warnings:"
+    echo "The following exception entries did not match any diagnostic:"
     echo ""
     for unused in "${UNUSED_EXCEPTIONS[@]}"; do
         echo "  - ${unused}"
@@ -271,13 +266,13 @@ fi
 if [ "${HAS_ERRORS}" = "true" ]; then
     jq -S '.' "${TEMP_BREAKING_INFO}" > "${JSON_OUTPUT_NAME}"
     echo "Validation errors found. See ${JSON_OUTPUT_NAME} for details."
-    exit 4
+    exit 5
 elif [ "${HAS_WARNINGS}" = "true" ]; then
     jq -S '.' "${TEMP_BREAKING_INFO}" > "${JSON_OUTPUT_NAME}"
     echo "Warnings found. See ${JSON_OUTPUT_NAME} for details."
     exit 3
 elif [ ${#UNUSED_EXCEPTIONS[@]} -gt 0 ]; then
-    exit 9
+    exit 4
 fi
 
 echo "All validations passed successfully."

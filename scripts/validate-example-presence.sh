@@ -7,9 +7,10 @@
 #
 # Exit codes:
 #   0 - Success: All components have examples
-#   1 - Error: Missing dependencies or required files
-#   3 - Validation failed: One or more components are missing examples
-#   4 - Validation warning: Components marked as no_example_required have examples
+#   3 - Validation warning: Components marked as no_example_required have examples
+#   5 - Validation failed: One or more components are missing examples in examples/
+#   6 - Required commands (terraform, jq, go) not found
+#   7 - Provider directory not found or its schema could not be generated
 
 
 # Crash on error
@@ -24,23 +25,34 @@ EXCEPTIONS_FILE="${PROVIDER_DIR}/examples/error_exceptions.json"
 # Check dependencies
 if ! command -v jq >/dev/null 2>&1; then
     echo "Error: jq command not found. Please install jq for JSON processing." >&2
-    exit 1
+    exit 6
 fi
 
 if ! command -v terraform >/dev/null 2>&1; then
     echo "Error: terraform command not found. Please install Terraform." >&2
-    exit 1
+    exit 6
 fi
 
 if ! command -v go >/dev/null 2>&1; then
     echo "Error: go command not found. Please install Go." >&2
-    exit 1
+    exit 6
+fi
+
+# Exit if input folders are missing
+if [ ! -d "${EXAMPLES_DIR}" ]; then
+    echo "Error: examples directory not found at ${EXAMPLES_DIR}" >&2
+    exit 5
+fi
+
+if [ ! -f "${EXCEPTIONS_FILE}" ]; then
+    echo "Warning: error_exceptions.json not found at ${EXCEPTIONS_FILE}" >&2
+    echo "Proceeding without exceptions..." >&2
 fi
 
 # Generate provider schema to temporary file
 echo "Generating provider schema..."
 TEMP_DIR=$(mktemp -d)
-TEMP_SCHEMA="${TEMP_DIR}/provider-schema.json"
+PROVIDER_SCHEMA="${TEMP_DIR}/provider-schema.json"
 trap "rm -rf ${TEMP_DIR}" EXIT INT TERM
 
 # Build provider binary
@@ -48,7 +60,10 @@ OS_ARCH="$(go env GOOS)_$(go env GOARCH)"
 PLUGIN_DIR="${TEMP_DIR}/plugins/registry.terraform.io/hashicorp/tfe/0.0.1/${OS_ARCH}"
 mkdir -p "${PLUGIN_DIR}"
 PROVIDER_BINARY="${PLUGIN_DIR}/terraform-provider-tfe"
-(cd "${PROVIDER_DIR}" && go build -o "${PROVIDER_BINARY}") >/dev/null 2>&1
+if ! (cd "${PROVIDER_DIR}" && go build -o "${PROVIDER_BINARY}" 2>&1) >/dev/null; then
+    echo "Error: failed to build provider binary." >&2
+    exit 7
+fi
 
 # Create minimal provider configuration
 cat > "${TEMP_DIR}/provider.tf" <<EOF
@@ -57,20 +72,19 @@ provider "tfe" {
 EOF
 
 # Initialize and extract schema
-(cd "${TEMP_DIR}" && terraform init -get=false -plugin-dir=./plugins >/dev/null 2>&1)
-(cd "${TEMP_DIR}" && terraform providers schema -json > "${TEMP_SCHEMA}" 2>/dev/null)
-
-PROVIDER_SCHEMA="${TEMP_SCHEMA}"
-
-# Exit if input folders are missing
-if [ ! -d "${EXAMPLES_DIR}" ]; then
-    echo "Error: examples directory not found at ${EXAMPLES_DIR}" >&2
-    exit 1
+if ! (cd "${TEMP_DIR}" && terraform init -get=false -plugin-dir=./plugins >/dev/null 2>&1); then
+    echo "Error: terraform init failed for provider schema generation." >&2
+    exit 7
+fi
+if ! (cd "${TEMP_DIR}" && terraform providers schema -json > "${PROVIDER_SCHEMA}" 2>/dev/null); then
+    echo "Error: terraform providers schema failed." >&2
+    exit 7
 fi
 
-if [ ! -f "${EXCEPTIONS_FILE}" ]; then
-    echo "Warning: error_exceptions.json not found at ${EXCEPTIONS_FILE}" >&2
-    echo "Proceeding without exceptions..." >&2
+# Verify the schema file is valid JSON and contains the expected provider key
+if ! jq -e '.provider_schemas["registry.terraform.io/hashicorp/tfe"]' "${PROVIDER_SCHEMA}" >/dev/null 2>&1; then
+    echo "Error: provider schema is missing or invalid. The provider may not have been found." >&2
+    exit 7
 fi
 
 # Track missing examples and unexpected examples
@@ -99,8 +113,7 @@ is_example_not_required() {
     return 1
 }
 
-# Check if examples exist for a component
-# 0 on true, 1 on false
+# Check if examples exist for a component; appends to MISSING_EXAMPLES or UNEXPECTED_EXAMPLES as appropriate
 check_examples() {
     local component_type="$1"  # e.g., "resources", "data-sources", "actions", "ephemeral-resources"
     local component_name="$2"  # e.g., "tfe_workspace"
@@ -147,12 +160,9 @@ check_examples() {
         if [ ! -d "${example_dir}" ]; then
             MISSING_EXAMPLES+=("${component_path}: directory does not exist")
         else
-            MISSING_EXAMPLES+=("${component_path}: directory exists but contains no .tf files")
+            MISSING_EXAMPLES+=("${component_path}: directory exists but contains no example .tf files with the required prefix '${required_prefix}'")
         fi
-        return 1
     fi
-    
-    return 0
 }
 
 echo "Validating example presence for provider components..."
@@ -160,17 +170,21 @@ echo ""
 
 # Extract and check resources
 echo "Checking resources..."
-RESOURCES=$(jq -r '.provider_schemas["registry.terraform.io/hashicorp/tfe"].resource_schemas | keys[]' "${PROVIDER_SCHEMA}")
-while IFS= read -r resource; do
-    check_examples "resources" "${resource}" || true
-done <<< "${RESOURCES}"
+RESOURCES=$(jq -r '.provider_schemas["registry.terraform.io/hashicorp/tfe"].resource_schemas | keys[]' "${PROVIDER_SCHEMA}" 2>/dev/null || echo "")
+if [ -n "${RESOURCES}" ]; then
+    while IFS= read -r resource; do
+        check_examples "resources" "${resource}" || true
+    done <<< "${RESOURCES}"
+fi
 
 # Extract and check data sources
 echo "Checking data sources..."
-DATA_SOURCES=$(jq -r '.provider_schemas["registry.terraform.io/hashicorp/tfe"].data_source_schemas | keys[]' "${PROVIDER_SCHEMA}")
-while IFS= read -r data_source; do
-    check_examples "data-sources" "${data_source}" || true
-done <<< "${DATA_SOURCES}"
+DATA_SOURCES=$(jq -r '.provider_schemas["registry.terraform.io/hashicorp/tfe"].data_source_schemas | keys[]' "${PROVIDER_SCHEMA}" 2>/dev/null || echo "")
+if [ -n "${DATA_SOURCES}" ]; then
+    while IFS= read -r data_source; do
+        check_examples "data-sources" "${data_source}" || true
+    done <<< "${DATA_SOURCES}"
+fi
 
 # Extract and check actions
 echo "Checking actions..."
@@ -190,13 +204,6 @@ if [ -n "${EPHEMERAL_RESOURCES}" ]; then
     done <<< "${EPHEMERAL_RESOURCES}"
 fi
 
-echo ""
-echo "=========================================="
-echo "Total components checked: ${TOTAL_COMPONENTS}"
-echo "Missing examples: ${#MISSING_EXAMPLES[@]}"
-echo "Unexpected examples: ${#UNEXPECTED_EXAMPLES[@]}"
-echo ""
-
 # Check for unexpected examples first (warning)
 if [ ${#UNEXPECTED_EXAMPLES[@]} -gt 0 ]; then
     echo "Components marked as no_example_required but have examples:"
@@ -205,7 +212,7 @@ if [ ${#UNEXPECTED_EXAMPLES[@]} -gt 0 ]; then
         echo "  - ${unexpected}"
     done
     echo ""
-    echo "Consider either removing these components from no_example_requireed in the error exceptions json"
+    echo "Consider either removing these components from no_example_required in the error exceptions json"
     echo ""
 fi
 
@@ -217,15 +224,15 @@ if [ ${#MISSING_EXAMPLES[@]} -gt 0 ]; then
         echo "  - ${missing}"
     done
     echo ""
-    exit 3
+    echo "Checked ${TOTAL_COMPONENTS} components total."
+    exit 5
 fi
 
 # Exit with warning code if there are unexpected examples
 if [ ${#UNEXPECTED_EXAMPLES[@]} -gt 0 ]; then
-    exit 4
+    exit 3
 fi
 
-echo "All components have at least one example file"
+echo "All ${TOTAL_COMPONENTS} components have at least one example file, or are excepted"
 exit 0
 
-# Made with Bob
