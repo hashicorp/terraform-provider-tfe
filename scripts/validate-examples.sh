@@ -2,8 +2,19 @@
 # Copyright IBM Corp. 2018, 2026
 # SPDX-License-Identifier: MPL-2.0
 #
-# USAGE:
-#   ./scripts/validate_examples.sh [-t <target directory; ./examples>] [-o <json holding failure data; no default] [-e <json holding errors to except; ./examples/error_exceptions>] [--help]
+# Usage:
+#   ./scripts/validate-examples.sh [-o <json holding failure data; ./examples/failure_info.json] [-e <json holding errors to except; no default] [--help]
+#
+# Exit codes:
+#  0 - Complete success
+#  1 - Other generic warnings
+#  3 - Warnings found in examples, no errors
+#  4 - Errors found in examples
+#  5 - Input files/directories do not exist
+#  6 - Test directory already exists
+#  7 - Required commands (terraform, jq) not found
+#  8 - Internal data merge error
+#  9 - Unused exceptions found in error_exceptions.json
 
 
 # Crash on error
@@ -17,11 +28,15 @@ TEMP_BREAKING_INFO=""
 CLEANUP_DONE=false
 HAS_ERRORS=false
 HAS_WARNINGS=false
+UNUSED_EXCEPTIONS=()
 
 # Normalize paths by resolving .. components
 # Note that this makes a (strong) assumption about file structure
-TARGET_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)/examples" # this default is set to ./examples
-TEST_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)/temp-example-validation" # this is set to ./temp-example-validation
+PROVIDER_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+TARGET_DIR="${PROVIDER_DIR}/examples"
+
+# Local Constant
+TEST_DIR="${PROVIDER_DIR}/temp-example-validation" # this is set to ./temp-example-validation
 
 # Constants
 JQ_ERROR_PROCESSING='{"diagnostics":[{"severity":"error","summary":"Processing error","detail":"jq processing failed"}],"error_count":1,"warning_count":0}'
@@ -29,10 +44,6 @@ JQ_ERROR_PROCESSING='{"diagnostics":[{"severity":"error","summary":"Processing e
 # Arg parsing
 while [[ $# -gt 0 ]]; do
     case $1 in
-        -t|--target)
-            TARGET_DIR="$2"
-            shift 2
-            ;;
         -o|--output)
             JSON_OUTPUT_NAME="$2"
             shift 2
@@ -44,11 +55,10 @@ while [[ $# -gt 0 ]]; do
         -h|--help)
             echo "Usage: $0 [OPTIONS]"
             echo ""
-            echo "Validates Terraform files in the target directory."
+            echo "Validates Terraform files in the examples directory."
             echo ""
             echo "Options:"
-            echo "  -t, --target DIR            Target directory containing .tf files (default: ./examples)"
-            echo "  -o, --output FILE           Output JSON file for failures (default: failure_info.json)"
+            echo "  -o, --output FILE           Output JSON file for failures (default: ./failure_info.json)"
             echo "  -e, --exceptions FILE       JSON file with error/warning exceptions to ignore"
             echo "  -h, --help                  Show this help message"
             echo ""
@@ -60,6 +70,7 @@ while [[ $# -gt 0 ]]; do
             echo "  6 - Test directory already exists"
             echo "  7 - Required commands (terraform, jq) not found"
             echo "  8 - Internal data merge error"
+            echo "  9 - Unused exceptions found in error_exceptions.json"
             exit 0
             ;;
         *)
@@ -81,12 +92,11 @@ if ! command -v jq >/dev/null 2>&1; then
     exit 7
 fi
 
-# Check if TARGET_DIR exists and make it absolute
+# Check if TARGET_DIR exists
 if [ ! -d "${TARGET_DIR}" ]; then
-    echo "Error: Target directory does not exist: ${TARGET_DIR}"
+    echo "Error: Examples directory does not exist: ${TARGET_DIR}"
     exit 5
 fi
-TARGET_DIR="$(cd "${TARGET_DIR}" && pwd)"
 
 # Exit if TEST_DIR already exists
 if [ -d "${TEST_DIR}" ]; then
@@ -101,7 +111,6 @@ if [ -n "${EXCEPTIONS_FILE}" ]; then
         echo "Error: Exceptions file does not exist: ${EXCEPTIONS_FILE}"
         exit 5
     fi
-    # Convert to absolute path before we cd into TEST_DIR
     EXCEPTIONS_FILE="$(cd "$(dirname "${EXCEPTIONS_FILE}")" && pwd)/$(basename "${EXCEPTIONS_FILE}")"
 fi
 
@@ -118,7 +127,7 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-# Temporary file to hold (potentially large) JSON
+# Temporary file to hold JSON
 TEMP_BREAKING_INFO=$(mktemp)
 echo "{}" > "${TEMP_BREAKING_INFO}"
 
@@ -137,12 +146,12 @@ EOF
 cd "${TEST_DIR}"
 export TF_CLI_CONFIG_FILE="$(pwd)/terraform.rc"
 
-# Recurse across the target directory
+# Recurse across the examples directory
 while IFS= read -r -d '' path; do
     [ ! -f "${path}" ] && continue
     
-    # Get path relative to target
     relative_path="${path#${TARGET_DIR}/}"
+    echo "Validating: ${relative_path}"
     
     # Copy file to TEST_DIR
     cp "${path}" "${TEST_DIR}/main.tf"
@@ -182,13 +191,17 @@ while IFS= read -r -d '' path; do
     
     # Apply file-specific exceptions, if provided
     if [ -n "${EXCEPTIONS_FILE}" ]; then
-        # Pull on the specific relative path
-        has_exceptions=$(jq --arg path "${relative_path}" 'has($path)' "${EXCEPTIONS_FILE}" 2>/dev/null)
+        # Pull on the specific relative path from file_exceptions
+        has_exceptions=$(jq --arg path "${relative_path}" '.file_exceptions | has($path)' "${EXCEPTIONS_FILE}" 2>/dev/null)
         
         # Then destroy those errors/warnings
         if [ "${has_exceptions}" = "true" ]; then
+            # Get the original error/warning count before filtering
+            original_error_count=$(echo "${validate_output}" | jq -r '.error_count // 0')
+            original_warning_count=$(echo "${validate_output}" | jq -r '.warning_count // 0')
+            
             if ! validate_output=$(echo "${validate_output}" | jq --arg path "${relative_path}" --slurpfile exceptions "${EXCEPTIONS_FILE}" '
-                ($exceptions[0][$path] // []) as $exception_list |
+                ($exceptions[0].file_exceptions[$path] // []) as $exception_list |
                 if .diagnostics then
                     .diagnostics = [.diagnostics[] | select(.summary as $sum | ($exception_list | index($sum)) == null)]
                 else . end |
@@ -199,6 +212,15 @@ while IFS= read -r -d '' path; do
             ' 2>&1); then
                 # jq failed during exception filtering, swap to jq error
                 validate_output="${JQ_ERROR_PROCESSING}"
+            else
+                # Check if the exception actually filtered anything
+                new_error_count=$(echo "${validate_output}" | jq -r '.error_count // 0')
+                new_warning_count=$(echo "${validate_output}" | jq -r '.warning_count // 0')
+                
+                # If counts didn't change, the exception was unnecessary
+                if [ "${original_error_count}" -eq "${new_error_count}" ] && [ "${original_warning_count}" -eq "${new_warning_count}" ]; then
+                    UNUSED_EXCEPTIONS+=("${relative_path}")
+                fi
             fi
         fi
     fi
@@ -228,8 +250,22 @@ while IFS= read -r -d '' path; do
     fi
 done < <(find "${TARGET_DIR}" -name "*.tf" -type f -print0) # Find next .tf file
 
-# Return
+
 cd "${TEST_DIR}/.."
+
+# Report unused exceptions
+# This happens separately so that we always get this output
+if [ ${#UNUSED_EXCEPTIONS[@]} -gt 0 ]; then
+    echo ""
+    echo "The following files have exceptions defined but didn't trigger any errors/warnings:"
+    echo ""
+    for unused in "${UNUSED_EXCEPTIONS[@]}"; do
+        echo "  - ${unused}"
+    done
+    echo ""
+    echo "Consider removing these entries from file_exceptions in error_exceptions.json"
+    echo ""
+fi
 
 # Collapse into the 'standard' error codes and make sorted json output should errors exist
 if [ "${HAS_ERRORS}" = "true" ]; then
@@ -240,6 +276,8 @@ elif [ "${HAS_WARNINGS}" = "true" ]; then
     jq -S '.' "${TEMP_BREAKING_INFO}" > "${JSON_OUTPUT_NAME}"
     echo "Warnings found. See ${JSON_OUTPUT_NAME} for details."
     exit 3
+elif [ ${#UNUSED_EXCEPTIONS[@]} -gt 0 ]; then
+    exit 9
 fi
 
 echo "All validations passed successfully."

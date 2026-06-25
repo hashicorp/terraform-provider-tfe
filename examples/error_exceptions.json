@@ -1,47 +1,54 @@
 {
-  "resources/tfe_admin_smtp_settings/resource_with_authentication_using_plain_password.tf": [
-    "Available Write-Only Attribute Alternative"
+  "no_example_required": [
+    "ephemeral-resources/tfe_agent_token",
+    "ephemeral-resources/tfe_audit_trail_token",
+    "ephemeral-resources/tfe_organization_token"
   ],
-  "resources/tfe_scim_token/resource_with_an_explicit_expiration.tf": [
-    "Missing required provider"
-  ],
-  "resources/tfe_organization_token/resource_basic_usage.tf": [
-    "Missing required provider"
-  ],
-  "resources/tfe_registry_gpg_key/resource.tf": [
-    "Invalid function argument"
-  ],
-  "resources/tfe_ssh_key/resource.tf": [
-    "Available Write-Only Attribute Alternative"
-  ],
-  "resources/tfe_audit_trail_token/resource_basic_usage.tf": [
-    "Missing required provider"
-  ],
-  "resources/tfe_team_token/resource_basic_usage.tf": [
-    "Missing required provider"
-  ],
-  "resources/tfe_organization_module_sharing/resource.tf": [
-    "Deprecated Resource"
-  ],
-  "resources/tfe_sentinel_policy/resource.tf": [
-    "Deprecated Resource"
-  ],
-  "data-sources/tfe_outputs/data-source_in_the_example_below_assume_we_have_outputs_defined_in_a_my_orgmy_workspace.tf": [
-    "Missing required provider"
-  ],
-  "ephemeral-resources/tfe_outputs/ephemeral-resource_in_the_example_below_assume_we_have_outputs_defined_in_a_my_orgmy_workspace.tf": [
-    "Missing required provider"
-  ],
-  "workspaces_variables/managed/main.tf": [
-    "Missing required provider",
-    "Formatting violation"
-  ],
-  "workspaces_variables/manager/main.tf": [
-    "Missing required provider",
-    "Formatting violation"
-  ],
-  "workspaces_variables/manager/providers.tf": [
-    "Missing required provider",
-    "Formatting violation"
-  ]
+  "file_exceptions": {
+    "resources/tfe_admin_smtp_settings/resource_with_authentication_using_plain_password.tf": [
+      "Available Write-Only Attribute Alternative"
+    ],
+    "resources/tfe_scim_token/resource_with_an_explicit_expiration.tf": [
+      "Missing required provider"
+    ],
+    "resources/tfe_organization_token/resource_basic_usage.tf": [
+      "Missing required provider"
+    ],
+    "resources/tfe_registry_gpg_key/resource.tf": [
+      "Invalid function argument"
+    ],
+    "resources/tfe_ssh_key/resource.tf": [
+      "Available Write-Only Attribute Alternative"
+    ],
+    "resources/tfe_audit_trail_token/resource_basic_usage.tf": [
+      "Missing required provider"
+    ],
+    "resources/tfe_team_token/resource_basic_usage.tf": [
+      "Missing required provider"
+    ],
+    "resources/tfe_organization_module_sharing/resource.tf": [
+      "Deprecated Resource"
+    ],
+    "resources/tfe_sentinel_policy/resource.tf": [
+      "Deprecated Resource"
+    ],
+    "data-sources/tfe_outputs/data-source_in_the_example_below_assume_we_have_outputs_defined_in_a_my_orgmy_workspace.tf": [
+      "Missing required provider"
+    ],
+    "ephemeral-resources/tfe_outputs/ephemeral-resource_in_the_example_below_assume_we_have_outputs_defined_in_a_my_orgmy_workspace.tf": [
+      "Missing required provider"
+    ],
+    "workspaces_variables/managed/main.tf": [
+      "Missing required provider",
+      "Formatting violation"
+    ],
+    "workspaces_variables/manager/main.tf": [
+      "Missing required provider",
+      "Formatting violation"
+    ],
+    "workspaces_variables/manager/providers.tf": [
+      "Missing required provider",
+      "Formatting violation"
+    ]
+  }
 }
