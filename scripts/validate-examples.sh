@@ -13,8 +13,7 @@
 #  5 - Errors found in examples
 #  6 - Required commands (terraform, jq) not found
 #  7 - Input files/directories do not exist
-#  8 - Test directory already exists
-#  9 - Internal data merge error
+#  8 - Internal data merge error
 
 
 # Crash on error
@@ -33,9 +32,6 @@ UNUSED_EXCEPTIONS=()
 # Note that this makes a (strong) assumption about file structure
 PROVIDER_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 TARGET_DIR="${PROVIDER_DIR}/examples"
-
-# Local Constant
-TEST_DIR="${PROVIDER_DIR}/temp-example-validation"
 
 # Constants
 JQ_ERROR_PROCESSING='{"diagnostics":[{"severity":"error","summary":"Processing error","detail":"jq processing failed"}],"error_count":1,"warning_count":0}'
@@ -68,8 +64,7 @@ while [[ $# -gt 0 ]]; do
             echo "  5 - Errors found in examples"
             echo "  6 - Required commands (terraform, jq) not found"
             echo "  7 - Input files/directories do not exist"
-            echo "  8 - Test directory already exists"
-            echo "  9 - Internal data merge error"
+            echo "  8 - Internal data merge error"
             exit 0
             ;;
         *)
@@ -81,6 +76,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Terraform and jq dependencies
+# These can erroneously pass if the command name exists, but don't refer to the real tool
 if ! command -v terraform >/dev/null 2>&1; then
     echo "Error: terraform command not found. Please install Terraform." >&2
     exit 6
@@ -97,13 +93,6 @@ if [ ! -d "${TARGET_DIR}" ]; then
     exit 7
 fi
 
-# Exit if TEST_DIR already exists
-if [ -d "${TEST_DIR}" ]; then
-    echo "Error: Test directory already exists: ${TEST_DIR}"
-    echo "Use of this script will destroy that directory. Please delete or rename this directory to use this script"
-    exit 8
-fi
-
 # Check if EXCEPTIONS_FILE exists and make it absolute, if provided
 if [ -n "${EXCEPTIONS_FILE}" ]; then
     if [ ! -f "${EXCEPTIONS_FILE}" ]; then
@@ -113,16 +102,15 @@ if [ -n "${EXCEPTIONS_FILE}" ]; then
     EXCEPTIONS_FILE="$(cd "$(dirname "${EXCEPTIONS_FILE}")" && pwd)/$(basename "${EXCEPTIONS_FILE}")"
 fi
 
-# Cleanup function and exception hook
+# Create temp working directory and register cleanup
+TEST_DIR=$(mktemp -d)
+TEMP_BREAKING_INFO=""
+
 cleanup() {
-    # Remove temporary files
     if [ -n "${TEMP_BREAKING_INFO}" ] && [ -f "${TEMP_BREAKING_INFO}" ]; then
         rm -f "${TEMP_BREAKING_INFO}" "${TEMP_BREAKING_INFO}.single" "${TEMP_BREAKING_INFO}.new"
     fi
-    if [ -d "${TEST_DIR}" ]; then
-        rm -f "${TEST_DIR}/terraform.rc" "${TEST_DIR}/main.tf"
-        rmdir "${TEST_DIR}" 2>/dev/null || true
-    fi
+    [ -n "${TEST_DIR}" ] && rm -rf "${TEST_DIR}"
 }
 trap cleanup EXIT INT TERM
 
@@ -130,12 +118,12 @@ trap cleanup EXIT INT TERM
 TEMP_BREAKING_INFO=$(mktemp)
 echo "{}" > "${TEMP_BREAKING_INFO}"
 
-# Create TEST_DIR and place terraform.rc
-mkdir "${TEST_DIR}"
-cat > "${TEST_DIR}/terraform.rc" << 'EOF'
+# Place terraform.rc using PROVIDER_DIR as an absolute path so the dev
+# override resolves correctly regardless of where TEST_DIR is located.
+cat > "${TEST_DIR}/terraform.rc" << EOF
 provider_installation {
   dev_overrides {
-    "registry.terraform.io/hashicorp/tfe" = "../"
+    "registry.terraform.io/hashicorp/tfe" = "${PROVIDER_DIR}"
   }
   direct {}
 }
@@ -239,7 +227,7 @@ while IFS= read -r -d '' path; do
             # Since this failure is almost certainly a broad failure and
             # invalidating of other work, we exit fatally
             echo "Failed to merge validation results for ${relative_path}" >&2
-            exit 9
+            exit 8
         fi
         rm -f "${TEMP_BREAKING_INFO}.single"
     fi
@@ -247,6 +235,17 @@ done < <(find "${TARGET_DIR}" -name "*.tf" -type f -print0) # Find next .tf file
 
 
 cd "${PROVIDER_DIR}"
+
+# Flag exception entries whose file path does not exist under TARGET_DIR
+if [ -n "${EXCEPTIONS_FILE}" ]; then
+    while IFS= read -r key; do
+        if [ ! -f "${TARGET_DIR}/${key}" ]; then
+            while IFS= read -r summary; do
+                UNUSED_EXCEPTIONS+=("${key}: \"${summary}\"")
+            done < <(jq -r --arg p "${key}" '.file_exceptions[$p][]' "${EXCEPTIONS_FILE}" 2>/dev/null)
+        fi
+    done < <(jq -r '.file_exceptions | keys[]' "${EXCEPTIONS_FILE}" 2>/dev/null)
+fi
 
 # Report unused exceptions
 # This happens separately so that we always get this output
@@ -262,7 +261,7 @@ if [ ${#UNUSED_EXCEPTIONS[@]} -gt 0 ]; then
     echo ""
 fi
 
-# Collapse into the 'standard' error codes and make sorted json output should errors exist
+# Collapse into the 'standard' exit codes and make sorted json output should errors exist
 if [ "${HAS_ERRORS}" = "true" ]; then
     jq -S '.' "${TEMP_BREAKING_INFO}" > "${JSON_OUTPUT_NAME}"
     echo "Validation errors found. See ${JSON_OUTPUT_NAME} for details."

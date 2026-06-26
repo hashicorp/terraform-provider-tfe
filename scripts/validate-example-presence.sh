@@ -23,6 +23,7 @@ EXAMPLES_DIR="${PROVIDER_DIR}/examples"
 EXCEPTIONS_FILE="${PROVIDER_DIR}/examples/error_exceptions.json"
 
 # Check dependencies
+# These can erroneously pass if the command name exists, but don't refer to the real tool
 if ! command -v jq >/dev/null 2>&1; then
     echo "Error: jq command not found. Please install jq for JSON processing." >&2
     exit 6
@@ -53,11 +54,11 @@ fi
 echo "Generating provider schema..."
 TEMP_DIR=$(mktemp -d)
 PROVIDER_SCHEMA="${TEMP_DIR}/provider-schema.json"
-trap "rm -rf ${TEMP_DIR}" EXIT INT TERM
+trap 'rm -rf "${TEMP_DIR}"' EXIT INT TERM
 
 # Build provider binary
 OS_ARCH="$(go env GOOS)_$(go env GOARCH)"
-PLUGIN_DIR="${TEMP_DIR}/plugins/registry.terraform.io/hashicorp/tfe/0.0.1/${OS_ARCH}"
+PLUGIN_DIR="${TEMP_DIR}/plugins/registry.terraform.io/hashicorp/tfe/0.0.1/${OS_ARCH}" # tfe version is somewhat arbitrary for our particular usage of terraform init; this is the same as in tfplugindocs
 mkdir -p "${PLUGIN_DIR}"
 PROVIDER_BINARY="${PLUGIN_DIR}/terraform-provider-tfe"
 if ! (cd "${PROVIDER_DIR}" && go build -o "${PROVIDER_BINARY}" 2>&1) >/dev/null; then
