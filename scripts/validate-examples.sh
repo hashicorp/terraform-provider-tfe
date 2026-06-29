@@ -11,9 +11,10 @@
 #  3 - Warnings found in examples, no errors
 #  4 - Warning that unused exceptions were found in error_exceptions.json
 #  5 - Errors found in examples
-#  6 - Required commands (terraform, jq) not found
+#  6 - Required commands (terraform, jq, go) not found
 #  7 - Input files/directories do not exist
 #  8 - Internal data merge error
+#  9 - Failure to build provider
 
 
 # Crash on error
@@ -62,9 +63,10 @@ while [[ $# -gt 0 ]]; do
             echo "  3 - Warnings found in examples, no errors"
             echo "  4 - Unused exceptions found in error_exceptions.json"
             echo "  5 - Errors found in examples"
-            echo "  6 - Required commands (terraform, jq) not found"
+            echo "  6 - Required commands (terraform, jq, go) not found"
             echo "  7 - Input files/directories do not exist"
             echo "  8 - Internal data merge error"
+            echo "  9 - Failure to build provider"
             exit 0
             ;;
         *)
@@ -75,7 +77,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Terraform and jq dependencies
+# Terraform, jq, and go dependencies
 # These can erroneously pass if the command name exists, but don't refer to the real tool
 if ! command -v terraform >/dev/null 2>&1; then
     echo "Error: terraform command not found. Please install Terraform." >&2
@@ -84,6 +86,11 @@ fi
 
 if ! command -v jq >/dev/null 2>&1; then
     echo "Error: jq command not found. Please install jq for JSON processing." >&2
+    exit 6
+fi
+
+if ! command -v go >/dev/null 2>&1; then
+    echo "Error: go command not found. Please install Go." >&2
     exit 6
 fi
 
@@ -114,16 +121,27 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
+# Build provider binary
+echo "Building provider"
+# Prepare the direct, temporary location for the built binary
+PLUGIN_DIR="${TEST_DIR}/provider-bin"
+mkdir -p "${PLUGIN_DIR}"
+PROVIDER_BINARY="${PLUGIN_DIR}/terraform-provider-tfe"
+# Build the binary
+if ! (cd "${PROVIDER_DIR}" && go build -o "${PROVIDER_BINARY}" 2>&1) >/dev/null; then
+    echo "Error: failed to build provider binary." >&2
+    exit 9
+fi
+
 # Temporary file to hold JSON
 TEMP_BREAKING_INFO=$(mktemp)
 echo "{}" > "${TEMP_BREAKING_INFO}"
 
-# Place terraform.rc using PROVIDER_DIR as an absolute path so the dev
-# override resolves correctly regardless of where TEST_DIR is located.
+# Place terraform.rc with dev_overrides pointing at the provider binary directory
 cat > "${TEST_DIR}/terraform.rc" << EOF
 provider_installation {
   dev_overrides {
-    "registry.terraform.io/hashicorp/tfe" = "${PROVIDER_DIR}"
+    "hashicorp/tfe" = "${PLUGIN_DIR}"
   }
   direct {}
 }

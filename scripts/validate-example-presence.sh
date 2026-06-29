@@ -57,7 +57,13 @@ PROVIDER_SCHEMA="${TEMP_DIR}/provider-schema.json"
 trap 'rm -rf "${TEMP_DIR}"' EXIT INT TERM
 
 # Build provider binary
-OS_ARCH="$(go env GOOS)_$(go env GOARCH)"
+GOOS="${GOOS:-$(go env GOOS)}"
+GOARCH="${GOARCH:-$(go env GOARCH)}"
+if [ -z "${GOOS}" ] || [ -z "${GOARCH}" ]; then
+    echo "Error: could not determine GOOS/GOARCH from go env." >&2
+    exit 7
+fi
+OS_ARCH="${GOOS}_${GOARCH}"
 PLUGIN_DIR="${TEMP_DIR}/plugins/registry.terraform.io/hashicorp/tfe/0.0.1/${OS_ARCH}" # tfe version is somewhat arbitrary for our particular usage of terraform init; this is the same as in tfplugindocs
 mkdir -p "${PLUGIN_DIR}"
 PROVIDER_BINARY="${PLUGIN_DIR}/terraform-provider-tfe"
