@@ -64,7 +64,7 @@ test-compile:
 	go test -c $(TEST) $(TESTARGS)
 
 generate:
-	go generate ./...
+    go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@v0.25.0 generate --provider-name tfe
 ifdef RESOURCE
 	find docs -type f -name '*.md' ! -name '$(RESOURCE).md' -delete
 	find docs -type d -empty -delete
