@@ -66,7 +66,15 @@ test-compile:
 generate:
     go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@v0.25.0 generate --provider-name tfe
 ifdef RESOURCE
-	find docs -type f -name '*.md' ! -name '$(RESOURCE).md' -delete
-	find docs -type d -empty -delete
+    @tmp="$$(mktemp -d)"; trap 'rm -rf "$$tmp"' EXIT; \
+    go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@v0.25.0 generate --provider-name tfe --rendered-website-dir "$$tmp"; \
+    matches="$$(find "$$tmp" -type f -path "$$tmp/$(RESOURCE)")"; \
+    test -n "$$matches" || { echo "No generated docs matched RESOURCE=$(RESOURCE)"; exit 1; }; \
+    for f in $$matches; do \
+       rel="$${f#$$tmp/}"; \
+       mkdir -p "docs/$$(dirname "$$rel")"; \
+       cp "$$f" "docs/$$rel"; \
+       echo "updated docs/$$rel"; \
+    done
 endif
 .PHONY: build test testacc vet fmt fmtcheck errcheck test-compile sweep generate
