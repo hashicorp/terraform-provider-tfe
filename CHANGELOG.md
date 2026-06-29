@@ -7,6 +7,9 @@ FEATURES:
 BUG FIXES:
 * Removed two documentation files for resources that do not exist and that are not planned. By @brandonc [#2100](https://github.com/hashicorp/terraform-provider-tfe/pull/2100)
 
+ENHANCEMENTS:
+* `r/tfe_project_notification_configuration` and `r/tfe_team_notification_configuration`: Update url attribute to be sensitive, by @kadenluang [#XXXX](https://github.com/hashicorp/terraform-provider-tfe/pull/XXXX)
+
 
 ## v0.78.0
 

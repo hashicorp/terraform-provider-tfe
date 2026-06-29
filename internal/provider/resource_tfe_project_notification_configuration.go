@@ -265,6 +265,7 @@ func (r *resourceTFEProjectNotificationConfiguration) Schema(ctx context.Context
 			"url": schema.StringAttribute{
 				Description: "The HTTP or HTTPS URL where notification requests will be made. This value must not be provided if `email_addresses` or `email_user_ids` is present, or if `destination_type` is `email`.",
 				Optional:    true,
+				Sensitive:   true,
 				Validators: []validator.String{
 					validators.AttributeRequiredIfValueString(
 						"destination_type",
