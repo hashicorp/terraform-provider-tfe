@@ -58,3 +58,4 @@ Excluded Project Policy Sets can be imported; use `<PROJECT ID>/<POLICY SET ID>`
 
 ```shell
 terraform import tfe_project_policy_set_exclusion.test 'prj-123456789/polset-123456789`
+```
