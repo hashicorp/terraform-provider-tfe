@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/identityschema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -32,6 +33,7 @@ var (
 	_ resource.Resource               = &resourceTFEProviderSet{}
 	_ resource.ResourceWithConfigure  = &resourceTFEProviderSet{}
 	_ resource.ResourceWithModifyPlan = &resourceTFEProviderSet{}
+	_ resource.ResourceWithIdentity   = &resourceTFEProviderSet{}
 )
 
 func NewProviderSetResource() resource.Resource {
@@ -57,6 +59,10 @@ type modelTFEProviderSet struct {
 	ProviderConfigHCLWO types.String `tfsdk:"provider_config_hcl_wo"`
 	// ProviderConfigHCLWOVersion is the explicit update trigger for write-only HCL.
 	ProviderConfigHCLWOVersion types.Int64 `tfsdk:"provider_config_hcl_wo_version"`
+}
+
+type TFEProviderSetIdentityModel struct {
+	ID types.String `tfsdk:"id"`
 }
 
 // collectionLengthOptions returns the options for determining the length of
@@ -178,6 +184,16 @@ func (r *resourceTFEProviderSet) Schema(ctx context.Context, req resource.Schema
 					int64validator.ConflictsWith(path.MatchRoot("provider_config_hcl")),
 					int64validator.AlsoRequires(path.MatchRoot("provider_config_hcl_wo")),
 				},
+			},
+		},
+	}
+}
+
+func (r *resourceTFEProviderSet) IdentitySchema(_ context.Context, _ resource.IdentitySchemaRequest, resp *resource.IdentitySchemaResponse) {
+	resp.IdentitySchema = identityschema.Schema{
+		Attributes: map[string]identityschema.Attribute{
+			"id": identityschema.StringAttribute{
+				RequiredForImport: true,
 			},
 		},
 	}
@@ -395,6 +411,12 @@ func (r *resourceTFEProviderSet) Create(ctx context.Context, req resource.Create
 		return
 	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+
+	identity := TFEProviderSetIdentityModel{
+		ID: types.StringValue(ps.ID),
+	}
+	resp.Diagnostics.Append(resp.Identity.Set(ctx, identity)...)
+
 }
 
 // Read handles reading the resource state by making an API call to retrieve the
@@ -434,8 +456,12 @@ func (r *resourceTFEProviderSet) Read(ctx context.Context, req resource.ReadRequ
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+
+	identity := TFEProviderSetIdentityModel{
+		ID: types.StringValue(ps.ID),
+	}
+	resp.Diagnostics.Append(resp.Identity.Set(ctx, identity)...)
 }
 
 // Update handles updating the resource by making an API call to update the
@@ -505,6 +531,11 @@ func (r *resourceTFEProviderSet) Update(ctx context.Context, req resource.Update
 		return
 	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+
+	identity := TFEProviderSetIdentityModel{
+		ID: types.StringValue(ps.ID),
+	}
+	resp.Diagnostics.Append(resp.Identity.Set(ctx, identity)...)
 }
 
 // Delete handles deleting the resource by making an API call to delete the

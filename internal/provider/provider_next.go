@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/action"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
+	"github.com/hashicorp/terraform-plugin-framework/list"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -131,6 +132,7 @@ func (p *frameworkProvider) Configure(ctx context.Context, req provider.Configur
 
 	res.DataSourceData = configuredClient
 	res.ResourceData = configuredClient
+	res.ListResourceData = configuredClient
 	res.EphemeralResourceData = configuredClient
 	res.ActionData = configuredClient
 }
@@ -206,6 +208,12 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewProjectPolicySetExclusionResource,
 		NewSCIMSettingsResource,
 		NewSCIMTokenResource,
+	}
+}
+
+func (p *frameworkProvider) ListResources(_ context.Context) []func() list.ListResource {
+	return []func() list.ListResource{
+		NewProviderSetListResource,
 	}
 }
 

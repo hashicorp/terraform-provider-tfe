@@ -798,9 +798,9 @@ resource "tfe_provider_set" "foobar" {
   name                = "tst-terraform-updated"
   description         = "Provider Set description updated"
   organization        = local.organization_name
-	provider_source     = "registry.terraform.io/hashicorp/google"
-	global              = false
-	provider_config_hcl = <<-EOT
+  provider_source     = "registry.terraform.io/hashicorp/google"
+  global              = false
+  provider_config_hcl = <<-EOT
 provider "google" {
 	region = "us-central1"
 }

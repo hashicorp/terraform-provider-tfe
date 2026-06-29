@@ -27,6 +27,10 @@ type ProviderSetListResourceModel struct {
 	OrganizationName types.String `tfsdk:"organization_name"`
 }
 
+func NewProviderSetListResource() list.ListResource {
+	return &ProviderSetListResource{}
+}
+
 func (r *ProviderSetListResource) ListResourceConfigSchema(_ context.Context, _ list.ListResourceSchemaRequest, resp *list.ListResourceSchemaResponse) {
 	resp.Schema = listschema.Schema{
 		Attributes: map[string]listschema.Attribute{
@@ -39,7 +43,7 @@ func (r *ProviderSetListResource) ListResourceConfigSchema(_ context.Context, _ 
 }
 
 func (r *ProviderSetListResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_provider_set_list"
+	resp.TypeName = req.ProviderTypeName + "_provider_set"
 }
 
 func (r *ProviderSetListResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
