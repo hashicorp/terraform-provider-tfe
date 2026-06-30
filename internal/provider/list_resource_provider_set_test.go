@@ -4,26 +4,29 @@ import (
 	"fmt"
 	"testing"
 
+	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
 	"github.com/hashicorp/terraform-plugin-testing/querycheck"
+	"github.com/hashicorp/terraform-plugin-testing/querycheck/queryfilter"
 	"github.com/hashicorp/terraform-plugin-testing/tfversion"
 )
 
 func TestAccTFEProviderSetList_QueryCheck(t *testing.T) {
 	t.Parallel()
-	//skipUnlessBeta(t)
-	// tfeClient, err := getClientUsingEnv()
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
+	skipUnlessBeta(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	// org, orgCleanup := createOrganization(t, tfeClient, tfe.OrganizationCreateOptions{
-	// 	Name:  tfe.String("tst-" + randomString(t)),
-	// 	Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
-	// })
-	// defer orgCleanup()
+	org, orgCleanup := createOrganization(t, tfeClient, tfe.OrganizationCreateOptions{
+		Name:  tfe.String("tst-" + randomString(t)),
+		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
+	})
+	defer orgCleanup()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() { testAccPreCheck(t) },
@@ -36,14 +39,29 @@ func TestAccTFEProviderSetList_QueryCheck(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create three provider sets for querying
-				Config: testAccTFEProviderSetList_setup("tf-no-code"),
+				Config: testAccTFEProviderSetList_setup(org.Name),
 			},
 			{
 				// Query configuration to list provider sets
-				Config: testAccTFEProviderSetList_query("tf-no-code"),
+				Config: testAccTFEProviderSetList_query(),
 				Query:  true,
 				QueryResultChecks: []querycheck.QueryResultCheck{
-					querycheck.ExpectLength("tfe_provider_set.test", 3),
+					querycheck.ExpectLengthAtLeast("tfe_provider_set.test", 3),
+					querycheck.ExpectResourceDisplayName(
+						"tfe_provider_set.test",
+						queryfilter.ByDisplayName(knownvalue.StringExact("provider-set-one")),
+						knownvalue.StringExact("provider-set-one"),
+					),
+					querycheck.ExpectResourceDisplayName(
+						"tfe_provider_set.test",
+						queryfilter.ByDisplayName(knownvalue.StringExact("provider-set-two")),
+						knownvalue.StringExact("provider-set-two"),
+					),
+					querycheck.ExpectResourceDisplayName(
+						"tfe_provider_set.test",
+						queryfilter.ByDisplayName(knownvalue.StringExact("provider-set-three")),
+						knownvalue.StringExact("provider-set-three"),
+					),
 				},
 			},
 		},
@@ -94,12 +112,8 @@ EOT
 `, organization)
 }
 
-func testAccTFEProviderSetList_query(organization string) string {
-	return fmt.Sprintf(`
-locals {
-	org_name = "%s"
-}
-
+func testAccTFEProviderSetList_query() string {
+	return `
 list "tfe_provider_set" "test" {
 	provider = tfe
 
@@ -107,5 +121,5 @@ list "tfe_provider_set" "test" {
 		organization_name = local.organization_name
 	}
 }
-`, organization)
+`
 }

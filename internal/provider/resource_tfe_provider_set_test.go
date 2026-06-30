@@ -13,7 +13,9 @@ import (
 	fwresource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
+	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
 )
 
 func TestAccTFEProviderSet_basic(t *testing.T) {
@@ -653,6 +655,34 @@ func TestAccTFEProviderSet_Read(t *testing.T) {
 				Config:             testAccTFEProviderSet_basic_with_name(org.Name, providerSetName),
 				PlanOnly:           true,
 				ExpectNonEmptyPlan: true, // Terraform should see it's gone and plan a "Create"
+			},
+		},
+	})
+}
+
+func TestAccTFEProviderSet_identity(t *testing.T) {
+	skipUnlessBeta(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createOrganization(t, tfeClient, tfe.OrganizationCreateOptions{
+		Name:  tfe.String("tst-" + randomString(t)),
+		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
+	})
+	defer orgCleanup()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEProviderSetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEProviderSet_global(org.Name),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectIdentityValueMatchesState("tfe_provider_set.foobar", tfjsonpath.New("id")),
+				},
 			},
 		},
 	})

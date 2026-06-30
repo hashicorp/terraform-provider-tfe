@@ -98,7 +98,10 @@ func (r *ProviderSetListResource) List(ctx context.Context, req list.ListRequest
 			result.DisplayName = providerSet.Name
 
 			// Set resource identity data on the result
-			result.Diagnostics.Append(result.Identity.Set(ctx, providerSet.ID)...)
+			identity := TFEProviderSetIdentityModel{
+				ID: types.StringValue(providerSet.ID),
+			}
+			result.Diagnostics.Append(result.Identity.Set(ctx, identity)...)
 
 			// Only set full resource data when Terraform requested it.
 			if req.IncludeResource {
