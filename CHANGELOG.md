@@ -7,6 +7,7 @@ FEATURES:
 
 BUG FIXES:
 * Removed two documentation files for resources that do not exist and that are not planned. By @brandonc [#2100](https://github.com/hashicorp/terraform-provider-tfe/pull/2100)
+* Fixed  a provider bug where a failed no-code module update could reference an uninitialized module ID [#2122](https://github.com/hashicorp/terraform-provider-tfe/pull/2122)
 
 ENHANCEMENTS:
 * `r/tfe_project_notification_configuration` and `r/tfe_team_notification_configuration`: update url attributes to be sensitive, by @kadenluang [#2120](https://github.com/hashicorp/terraform-provider-tfe/pull/2120)
