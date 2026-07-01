@@ -64,29 +64,36 @@ func (d *dataSourceOrganizationRunTask) Metadata(_ context.Context, req datasour
 
 func (d *dataSourceOrganizationRunTask) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Gets information on an [Organization Run task](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks#creating-a-run-task).",
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Service-generated identifier for the task",
+				Description: "Service-generated identifier for the task.",
 			},
 			"name": schema.StringAttribute{
-				Required: true,
+				Description: "Name of the Run task.",
+				Required:    true,
 			},
 			"organization": schema.StringAttribute{
-				Optional: true,
+				Description: "Name of the organization.",
+				Optional:    true,
 			},
 			"url": schema.StringAttribute{
-				Optional: true,
+				Description: "URL to send a task payload.",
+				Optional:    true,
 			},
 			"category": schema.StringAttribute{
-				Optional: true,
+				Description: "The type of task.",
+				Optional:    true,
 			},
 			"enabled": schema.BoolAttribute{
-				Optional: true,
+				Description: "Whether the task will be run.",
+				Optional:    true,
 			},
 			"description": schema.StringAttribute{
-				Optional: true,
+				Description: "A short description of the task.",
+				Optional:    true,
 			},
 		},
 	}

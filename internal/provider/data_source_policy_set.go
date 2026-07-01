@@ -18,93 +18,107 @@ import (
 
 func dataSourceTFEPolicySet() *schema.Resource {
 	return &schema.Resource{
+		Description: "Retrieves a policy set defined in a specified organization.",
+
 		Read: dataSourceTFEPolicySetRead,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "Name of the policy set.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "Name of the organization.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 
 			"description": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "Description of the policy set.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 
 			"global": {
-				Type:     schema.TypeBool,
-				Computed: true,
+				Description: "Whether or not the policy set applies to all workspaces in the organization.",
+				Type:        schema.TypeBool,
+				Computed:    true,
 			},
 
 			"kind": {
-				Description: "The policy-as-code framework for the policy. Valid values are sentinel and opa",
+				Description: "The policy-as-code framework for the policy. Valid values are `sentinel` and `opa`.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
 
 			"overridable": {
-				Description: "Whether users can override this policy when it fails during a run. Only valid for OPA policies",
+				Description: "Whether users can override this policy when it fails during a run. Only valid for OPA policies.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},
 
 			"agent_enabled": {
-				Description: "Whether the policy set is executed in the HCP Terraform agent. True by default for OPA policies",
+				Description: "Whether the policy set is executed in the HCP Terraform agent. True by default for OPA policies.",
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},
 
 			"policy_tool_version": {
-				Description: "The policy tool version to run the policy evaluation against",
+				Description: "The policy tool version to run the policy evaluation against. For `opa` policy sets, `latest` will not be a valid input.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
 
 			"policies_path": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The sub-path within the attached VCS repository when using `vcs_repo`.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 
 			"policy_update_patterns": {
-				Type:     schema.TypeList,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Computed: true,
+				Description: "Glob patterns specifying which file changes trigger policy set updates. Patterns are relative to the repository root, and a maximum of 100 patterns can be returned. This attribute is only valid when the policy set specifies a VCS repository.",
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Computed:    true,
 			},
 
 			"policy_ids": {
-				Type:     schema.TypeSet,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Computed: true,
+				Description: "IDs of the policies attached to the policy set.",
+				Type:        schema.TypeSet,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Computed:    true,
 			},
 
 			"vcs_repo": {
-				Type:     schema.TypeList,
-				Computed: true,
+				Description: "Settings for the workspace's VCS repository.",
+				Type:        schema.TypeList,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"identifier": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "A reference to your VCS repository in the format `<vcs organization>/<repository>` where `<vcs organization>` and `<repository>` refer to the organization and repository in your VCS provider.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"branch": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The repository branch that Terraform will execute from.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"ingress_submodules": {
-							Type:     schema.TypeBool,
-							Computed: true,
+							Description: "Indicates whether submodules should be fetched when cloning the VCS repository.",
+							Type:        schema.TypeBool,
+							Computed:    true,
 						},
 
 						"oauth_token_id": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "OAuth token ID of the configured VCS connection.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"github_app_installation_id": {
@@ -116,21 +130,24 @@ func dataSourceTFEPolicySet() *schema.Resource {
 			},
 
 			"workspace_ids": {
-				Type:     schema.TypeSet,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Computed: true,
+				Description: "IDs of the workspaces that use the policy set.",
+				Type:        schema.TypeSet,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Computed:    true,
 			},
 
 			"excluded_workspace_ids": {
-				Type:     schema.TypeSet,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Computed: true,
+				Description: "IDs of the workspaces that do not use the policy set.",
+				Type:        schema.TypeSet,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Computed:    true,
 			},
 
 			"project_ids": {
-				Type:     schema.TypeSet,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Computed: true,
+				Description: "IDs of the policies attached to the policy set.",
+				Type:        schema.TypeSet,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Computed:    true,
 			},
 		},
 	}

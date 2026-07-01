@@ -27,7 +27,7 @@ func (d *dataSourceTFEProviderSet) Schema(
 	resp *datasource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "This data source can be used to retrieve a provider set.",
+		Description: "This data source can be used to retrieve a provider set. Note that this data source is currently in beta and isn't generally available to all users. It is subject to change or be removed.",
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
 				Description: "The name of the provider set.",

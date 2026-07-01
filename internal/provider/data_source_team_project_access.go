@@ -19,100 +19,126 @@ import (
 
 func dataSourceTFETeamProjectAccess() *schema.Resource {
 	return &schema.Resource{
+		Description: "Getes information on team permissions on a project.",
+
 		ReadContext: dataSourceTFETeamProjectAccessRead,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The team project access ID.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"access": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The type of access granted to the team on the project.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 
 			"team_id": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "ID of the team.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"project_id": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "ID of the project.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"project_access": {
-				Type:     schema.TypeList,
-				Computed: true,
+				Description: "The permissions granted to the team on the project itself.",
+				Type:        schema.TypeList,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"settings": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The permission granted to the project's settings. Valid values are `read`, `update`, or `delete`.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"teams": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The permission granted to the project's teams. Valid values are `none`, `read`, or `manage`.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"variable_sets": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The permission granted to the project's variable sets. Valid values are `none`, `read`, or `write`.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 					},
 				},
 			},
 
 			"workspace_access": {
-				Type:     schema.TypeList,
-				Computed: true,
+				Description: "The permissions granted to the team across all workspaces in the project.",
+				Type:        schema.TypeList,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"create": {
-							Type:     schema.TypeBool,
-							Computed: true,
+							Description: "Whether the team can create workspaces in the project.",
+							Type:        schema.TypeBool,
+							Computed:    true,
 						},
 
 						"locking": {
-							Type:     schema.TypeBool,
-							Computed: true,
+							Description: "Whether the team can manually lock or unlock workspaces in the project.",
+							Type:        schema.TypeBool,
+							Computed:    true,
 						},
 
 						"move": {
-							Type:     schema.TypeBool,
-							Computed: true,
+							Description: "Whether the team can move workspaces into and out of the project.",
+							Type:        schema.TypeBool,
+							Computed:    true,
 						},
 
 						"delete": {
-							Type:     schema.TypeBool,
-							Computed: true,
+							Description: "Whether the team can delete workspaces in the project.",
+							Type:        schema.TypeBool,
+							Computed:    true,
 						},
 
 						"run_tasks": {
-							Type:     schema.TypeBool,
-							Computed: true,
+							Description: "Whether the team can manage run tasks in the project's workspaces.",
+							Type:        schema.TypeBool,
+							Computed:    true,
 						},
 
 						"policy_overrides": {
-							Type:     schema.TypeBool,
-							Computed: true,
+							Description: "This permission allows a team to override soft-mandatory policy evaluations, provided that team has been granted the org level 'delegate policy overrides' permission.",
+							Type:        schema.TypeBool,
+							Computed:    true,
 						},
 
 						"runs": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The permission granted to runs. Valid values are `read`, `plan`, or `apply`.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"sentinel_mocks": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The permission granted to Sentinel mocks. Valid values are `none` or `read`.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"state_versions": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The permission granted to state versions. Valid values are `none`, `read-outputs`, `read`, or `write`.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"variables": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The permission granted to variables. Valid values are `none`, `read`, or `write`.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 					},
 				},

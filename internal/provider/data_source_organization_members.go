@@ -14,45 +14,60 @@ import (
 
 func dataSourceTFEOrganizationMembers() *schema.Resource {
 	return &schema.Resource{
+		Description: "Gets information about members of an organization.",
+
 		Read: dataSourceTFEOrganizationMembersRead,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "Name of the organization.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "Name of the organization.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 
 			"members": {
-				Type:     schema.TypeList,
-				Computed: true,
+				Description: "A list of active members of the organization.",
+				Type:        schema.TypeList,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"user_id": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The ID of the user.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"organization_membership_id": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The ID of the organization membership.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 					},
 				},
 			},
 
 			"members_waiting": {
-				Type:     schema.TypeList,
-				Computed: true,
+				Description: "A list of members with pending invite to organization.",
+				Type:        schema.TypeList,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"user_id": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The ID of the user.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"organization_membership_id": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The ID of the organization membership.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 					},
 				},

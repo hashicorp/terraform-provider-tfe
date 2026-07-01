@@ -31,26 +31,28 @@ func (d *dataSourceOrganizationRunTaskGlobalSettings) Metadata(_ context.Context
 
 func (d *dataSourceOrganizationRunTaskGlobalSettings) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "[Run tasks](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks) allow HCP Terraform to interact with external systems at specific points in the HCP Terraform run lifecycle. Run tasks are reusable configurations that you can attach to any workspace in an organization. <br><br> The tfe_organization_run_task_global_settings resource creates, updates and destroys the [global settings](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks#global-run-tasks) for an [Organization Run task](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks#creating-a-run-task). Your organization must have the `global-run-task` [entitlement](https://developer.hashicorp.com/terraform/cloud-docs/api-docs#feature-entitlements) to use global run tasks.",
+
 		Attributes: map[string]schema.Attribute{
 			"enabled": schema.BoolAttribute{
-				Description: "Whether the run task will be applied globally",
+				Description: "Whether the run task will be applied globally.",
 				Optional:    true,
 			},
 			"enforcement_level": schema.StringAttribute{
-				Description: "The enforcement level of the global task.",
+				Description: "The enforcement level of the global task. Valid values are `advisory` and `mandatory`",
 				Optional:    true,
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Service-generated identifier for the task settings",
+				Description: "Service-generated identifier for the task settings.",
 			},
 			"stages": schema.ListAttribute{
 				ElementType: types.StringType,
-				Description: "Which stages the task will run in.",
+				Description: "Which stages the task will run in. Valid values are one or more of `pre_plan`, `post_plan`, `pre_apply` and `post_apply`.",
 				Optional:    true,
 			},
 			"task_id": schema.StringAttribute{
-				Description: "The id of the run task.",
+				Description: "The id of the Run task with the global settings.",
 				Required:    true,
 			},
 		},
