@@ -2266,3 +2266,135 @@ resource "tfe_registry_module" "foobar" {
 		envGithubRegistryModuleIdentifer,
 	)
 }
+
+// TestAccTFERegistryModule_updateIdentifierInPlace verifies that changing
+// vcs_repo.identifier updates the module in place rather than forcing recreation.
+func TestAccTFERegistryModule_updateIdentifierInPlace(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccPreCheckTFERegistryModule(t)
+			if os.Getenv("GITHUB_REGISTRY_MODULE_IDENTIFIER_ALT") == "" {
+				t.Skip("Please set GITHUB_REGISTRY_MODULE_IDENTIFIER_ALT to run this test")
+			}
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFERegistryModuleDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFERegistryModule_vcsWithOAuthAndIdentifier(rInt, envGithubRegistryModuleIdentifer),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_registry_module.foobar", "organization", orgName),
+					resource.TestCheckResourceAttr(
+						"tfe_registry_module.foobar", "vcs_repo.0.identifier", envGithubRegistryModuleIdentifer),
+					resource.TestCheckResourceAttrSet(
+						"tfe_registry_module.foobar", "vcs_repo.0.oauth_token_id"),
+				),
+			},
+			{
+				// Change identifier — must update in place, not recreate.
+				Config: testAccTFERegistryModule_vcsWithOAuthAndIdentifier(rInt, os.Getenv("GITHUB_REGISTRY_MODULE_IDENTIFIER_ALT")),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_registry_module.foobar", "vcs_repo.0.identifier", os.Getenv("GITHUB_REGISTRY_MODULE_IDENTIFIER_ALT")),
+					resource.TestCheckResourceAttrSet(
+						"tfe_registry_module.foobar", "vcs_repo.0.oauth_token_id"),
+				),
+			},
+		},
+	})
+}
+
+// TestAccTFERegistryModule_updateOAuthToGitHubApp verifies that swapping the
+// VCS connection from an OAuth token to a GitHub App installation updates the
+// module in place rather than forcing recreation.
+func TestAccTFERegistryModule_updateOAuthToGitHubApp(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccPreCheckTFERegistryModule(t)
+			testAccGHAInstallationPreCheck(t)
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFERegistryModuleDestroy,
+		Steps: []resource.TestStep{
+			{
+				// Start with an OAuth connection.
+				Config: testAccTFERegistryModule_vcsWithOAuthAndIdentifier(rInt, envGithubRegistryModuleIdentifer),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_registry_module.foobar", "organization", orgName),
+					resource.TestCheckResourceAttrSet(
+						"tfe_registry_module.foobar", "vcs_repo.0.oauth_token_id"),
+					resource.TestCheckResourceAttr(
+						"tfe_registry_module.foobar", "vcs_repo.0.github_app_installation_id", ""),
+				),
+			},
+			{
+				// Swap to a GitHub App connection — must update in place.
+				Config: testAccTFERegistryModule_vcsWithGitHubApp(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(
+						"tfe_registry_module.foobar", "vcs_repo.0.github_app_installation_id"),
+					resource.TestCheckResourceAttr(
+						"tfe_registry_module.foobar", "vcs_repo.0.oauth_token_id", ""),
+				),
+			},
+		},
+	})
+}
+
+func testAccTFERegistryModule_vcsWithOAuthAndIdentifier(rInt int, identifier string) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_oauth_client" "foobar" {
+  organization     = tfe_organization.foobar.name
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "%s"
+  service_provider = "github"
+}
+
+resource "tfe_registry_module" "foobar" {
+  organization = tfe_organization.foobar.name
+  vcs_repo {
+    identifier     = "%s"
+    oauth_token_id = tfe_oauth_client.foobar.oauth_token_id
+    tags           = true
+  }
+}`,
+		rInt,
+		envGithubToken,
+		identifier)
+}
+
+func testAccTFERegistryModule_vcsWithGitHubApp(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_registry_module" "foobar" {
+  organization = tfe_organization.foobar.id
+  vcs_repo {
+    identifier                 = "%s"
+    github_app_installation_id = "%s"
+    tags                       = true
+  }
+}`,
+		rInt,
+		envGithubRegistryModuleIdentifer,
+		envGithubAppInstallationID)
+}
