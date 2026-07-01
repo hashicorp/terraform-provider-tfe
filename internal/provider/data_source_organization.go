@@ -66,9 +66,9 @@ func dataSourceTFEOrganization() *schema.Resource {
 			},
 
 			"two_factor_conformant": {
-				// TODO: needs description not present on website
-				Type:     schema.TypeBool,
-				Computed: true,
+				Description: "Whether or not to require two factor authentication for this organization.",
+				Type:        schema.TypeBool,
+				Computed:    true,
 			},
 
 			"send_passing_statuses_for_untriggered_speculative_plans": {

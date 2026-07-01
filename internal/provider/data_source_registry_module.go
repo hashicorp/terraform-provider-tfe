@@ -290,7 +290,6 @@ func (d *dataSourceTFERegistryModule) Schema(_ context.Context, _ datasource.Sch
 			"vcs_repo": schema.ListNestedBlock{
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
-						// TODO: many attributes lack descriptions on the website
 						"branch": schema.StringAttribute{
 							Description: "The git branch used for publishing when using branch-based publishing for the registry module. When a `branch` is set, `tags` will be returned as `false`.",
 							Computed:    true,
@@ -304,7 +303,8 @@ func (d *dataSourceTFERegistryModule) Schema(_ context.Context, _ datasource.Sch
 							Computed:    true,
 						},
 						"ingress_submodules": schema.BoolAttribute{
-							Computed: true,
+							Description: "Indicates whether submodules should be fetched when cloning the VCS repository.",
+							Computed:    true,
 						},
 						"oauth_token_id": schema.StringAttribute{
 							Description: "Token ID of the VCS Connection (OAuth Connection Token) to use. This conflicts with `github_app_installation_id` and can only be used if `github_app_installation_id` is not used.",
@@ -315,10 +315,12 @@ func (d *dataSourceTFERegistryModule) Schema(_ context.Context, _ datasource.Sch
 							Computed:    true,
 						},
 						"repository_http_url": schema.StringAttribute{
-							Computed: true,
+							Description: "The browsable HTTPS URL of the VCS repository.",
+							Computed:    true,
 						},
 						"service_provider": schema.StringAttribute{
-							Computed: true,
+							Description: "The VCS service provider type. Valid values include `github`, `github_enterprise`, `gitlab_hosted`, `gitlab_community_edition`, `gitlab_enterprise_edition`, `bitbucket_hosted`, `bitbucket_data_center`, `bitbucket_server`, `ado_server`, `ado_services`.",
+							Computed:    true,
 						},
 						"source_directory": schema.StringAttribute{
 							Description: "The path to the module configuration files within the VCS repository. This feature is currently in beta and is not available to all users.",
@@ -333,10 +335,12 @@ func (d *dataSourceTFERegistryModule) Schema(_ context.Context, _ datasource.Sch
 							Computed:    true,
 						},
 						"tags_regex": schema.StringAttribute{
-							Computed: true,
+							Description: "Read-only echo of any tags regex stored on the VCS repository.",
+							Computed:    true,
 						},
 						"webhook_url": schema.StringAttribute{
-							Computed: true,
+							Description: "The inbound webhook URL registered with the VCS provider. This is the HCP Terraform or Terraform Enterprise endpoint that the VCS provider calls on push or pull-request events.",
+							Computed:    true,
 						},
 					},
 				},
