@@ -17,6 +17,7 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -105,30 +106,29 @@ func resourceTFERegistryModule() *schema.Resource {
 			"vcs_repo": {
 				Type:     schema.TypeList,
 				Optional: true,
-				ForceNew: true,
 				MinItems: 1,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"display_identifier": {
+							// Atlas recomputes display_identifier server-side for OAuth connections.
+							// Marking it Computed avoids perpetual diffs when it changes alongside
+							// an identifier change. CREATE still sends it when set; Read maps it back.
 							Type:     schema.TypeString,
-							Required: true,
-							ForceNew: true,
+							Optional: true,
+							Computed: true,
 						},
 						"identifier": {
 							Type:     schema.TypeString,
 							Required: true,
-							ForceNew: true,
 						},
 						"oauth_token_id": {
 							Type:          schema.TypeString,
-							ForceNew:      true,
 							Optional:      true,
 							ConflictsWith: []string{"vcs_repo.0.github_app_installation_id"},
 						},
 						"github_app_installation_id": {
 							Type:          schema.TypeString,
-							ForceNew:      true,
 							Optional:      true,
 							ConflictsWith: []string{"vcs_repo.0.oauth_token_id"},
 							AtLeastOneOf:  []string{"vcs_repo.0.oauth_token_id", "vcs_repo.0.github_app_installation_id"},
@@ -243,8 +243,11 @@ func resourceTFERegistryModuleCreateWithVCS(v interface{}, meta interface{}, d *
 	options.VCSRepo = &tfe.RegistryModuleVCSRepoOptions{
 		Identifier:        tfe.String(vcsRepo["identifier"].(string)),
 		GHAInstallationID: tfe.String(vcsRepo["github_app_installation_id"].(string)),
-		DisplayIdentifier: tfe.String(vcsRepo["display_identifier"].(string)),
 		OrganizationName:  tfe.String(orgName),
+	}
+
+	if displayIdentifier, ok := vcsRepo["display_identifier"].(string); ok && displayIdentifier != "" {
+		options.VCSRepo.DisplayIdentifier = tfe.String(displayIdentifier)
 	}
 
 	tags, tagsOk := vcsRepo["tags"].(bool)
@@ -411,19 +414,64 @@ func resourceTFERegistryModuleUpdate(d *schema.ResourceData, meta interface{}) e
 		RegistryName: tfe.RegistryName(d.Get("registry_name").(string)),
 	}
 
+	// vcs_repo changes — including the VCS connection itself (repository
+	// identifier, OAuth token, or GitHub App installation) — go through the
+	// go-tfe v2 client, which supports updating the connection in place.
 	if v, ok := d.GetOk("vcs_repo"); ok { //nolint:nestif
 		vcsRepo := v.([]interface{})[0].(map[string]interface{})
-		options.VCSRepo = &tfe.RegistryModuleVCSRepoUpdateOptions{}
 
-		tags, tagsOk := vcsRepo["tags"].(bool)
-		branch, branchOk := vcsRepo["branch"].(string)
+		vcsRepoModel := models.NewRegistryModules_attributes_vcsRepo()
 
-		if tagsOk {
-			options.VCSRepo.Tags = tfe.Bool(tags)
+		if branch, ok := vcsRepo["branch"].(string); ok && branch != "" {
+			vcsRepoModel.SetBranch(tfe.String(branch))
+		}
+		if tags, ok := vcsRepo["tags"].(bool); ok {
+			vcsRepoModel.SetTags(tfe.Bool(tags))
+		}
+		if identifier, ok := vcsRepo["identifier"].(string); ok && identifier != "" {
+			vcsRepoModel.SetIdentifier(tfe.String(identifier))
 		}
 
-		if branchOk {
-			options.VCSRepo.Branch = tfe.String(branch)
+		// Set only the connection field that is present — setting both trips the
+		// mutual-exclusion check on the server.
+		if oauthTokenID, ok := vcsRepo["oauth_token_id"].(string); ok && oauthTokenID != "" {
+			vcsRepoModel.SetOauthTokenId(tfe.String(oauthTokenID))
+		} else if ghaInstallationID, ok := vcsRepo["github_app_installation_id"].(string); ok && ghaInstallationID != "" {
+			vcsRepoModel.SetGithubAppInstallationId(tfe.String(ghaInstallationID))
+		}
+
+		if sourceDirectory, ok := vcsRepo["source_directory"].(string); ok && sourceDirectory != "" {
+			vcsRepoModel.SetSourceDirectory(tfe.String(sourceDirectory))
+		}
+		if tagPrefix, ok := vcsRepo["tag_prefix"].(string); ok && tagPrefix != "" {
+			vcsRepoModel.SetTagPrefix(tfe.String(tagPrefix))
+		}
+
+		attributes := models.NewRegistryModules_attributes()
+		attributes.SetVcsRepo(vcsRepoModel)
+
+		data := models.NewRegistryModules()
+		data.SetAttributes(attributes)
+
+		envelope := models.NewRegistryModulesEnvelope()
+		envelope.SetData(data)
+
+		err = retry.Retry(time.Duration(5)*time.Minute, func() *retry.RetryError {
+			_, updateErr := config.ClientV2.API.
+				Organizations().ByOrganization_name(rmID.Organization).
+				RegistryModules().
+				ByRegistry_name(string(rmID.RegistryName)).
+				ByNamespace(rmID.Namespace).
+				ByName(rmID.Name).
+				ByProvider(rmID.Provider).
+				Patch(ctx, envelope, nil)
+			if updateErr != nil {
+				return retry.RetryableError(updateErr)
+			}
+			return nil
+		})
+		if err != nil {
+			return fmt.Errorf("Error while updating vcs_repo for module %s/%s: %w", rmID.Organization, rmID.Name, err)
 		}
 	}
 
@@ -448,19 +496,24 @@ func resourceTFERegistryModuleUpdate(d *schema.ResourceData, meta interface{}) e
 		handleAgentPoolID(testConfig, d, options.TestConfig)
 	}
 
-	err = retry.Retry(time.Duration(5)*time.Minute, func() *retry.RetryError {
-		registryModule, err = config.Client.RegistryModules.Update(ctx, rmID, options)
+	// no_code and test_config changes still go through the go-tfe v1 client.
+	if options.NoCode != nil || options.TestConfig != nil {
+		err = retry.Retry(time.Duration(5)*time.Minute, func() *retry.RetryError {
+			registryModule, err = config.Client.RegistryModules.Update(ctx, rmID, options)
+			if err != nil {
+				return retry.RetryableError(err)
+			}
+			return nil
+		})
+
 		if err != nil {
-			return retry.RetryableError(err)
+			return fmt.Errorf("Error while waiting for module %s/%s to be updated: %w", rmID.Organization, rmID.Name, err)
 		}
-		return nil
-	})
 
-	if err != nil {
-		return fmt.Errorf("Error while waiting for module %s/%s to be updated: %w", rmID.Organization, rmID.Name, err)
+		if registryModule != nil {
+			d.SetId(registryModule.ID)
+		}
 	}
-
-	d.SetId(registryModule.ID)
 
 	return resourceTFERegistryModuleRead(d, meta)
 }
