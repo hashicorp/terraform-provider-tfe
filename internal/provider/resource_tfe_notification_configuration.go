@@ -236,6 +236,10 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 				Sensitive:   true,
 				Description: "Write-only alternative to `token`. Changes are detected automatically via a hash stored in private state; increment `token_wo_version` manually to force an update without changing the value.",
 				Validators: []validator.String{
+					validators.AttributeValueConflictValidator(
+						"destination_type",
+						[]string{"email", "microsoft-teams", "slack"},
+					),
 					stringvalidator.ConflictsWith(path.MatchRoot("token")),
 				},
 			},
