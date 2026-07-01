@@ -2,7 +2,7 @@
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_github_app_installation"
 description: |-
-Get information on the Github App Installation.
+  Get information on the Github App Installation.
 ---
 
 # Data Source: tfe_github_app_installation

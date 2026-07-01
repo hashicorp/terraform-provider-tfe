@@ -2,7 +2,7 @@
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_project"
 description: |-
-Get information on a Project.
+  Get information on a Project.
 ---
 
 # Data Source: tfe_project
