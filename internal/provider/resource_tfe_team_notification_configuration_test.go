@@ -947,10 +947,6 @@ func TestAccTFETeamNotificationConfiguration_tokenWriteOnlyValidation(t *testing
 				ExpectError: regexp.MustCompile(`Attribute "token_wo" cannot be specified when "token" is specified`),
 			},
 			{
-				Config:      testAccTFETeamNotificationConfiguration_tokenWriteOnlyMissingVersion(org.Name),
-				ExpectError: regexp.MustCompile(`Attribute "token_wo_version" must be specified when "token_wo" is specified`),
-			},
-			{
 				Config:      testAccTFETeamNotificationConfiguration_versionMissingTokenWO(org.Name),
 				ExpectError: regexp.MustCompile(`Attribute "token_wo" must be specified when "token_wo_version" is specified`),
 			},
@@ -1009,6 +1005,61 @@ func TestAccTFETeamNotificationConfiguration_tokenWO(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_team_notification_configuration.foobar", "token", "1234567890"),
 					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "token_wo"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFETeamNotificationConfiguration_tokenWriteOnlyAutoDetect(t *testing.T) {
+	skipUnlessBeta(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
+	compareValuesSame := statecheck.CompareValue(compare.ValuesSame())
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				// Create with token_wo — version should be auto-set to 1
+				Config: testAccTFETeamNotificationConfiguration_tokenWriteOnlyAuto(org.Name, "token-v1"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "token"),
+					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "token_wo"),
+					resource.TestCheckResourceAttr("tfe_team_notification_configuration.foobar", "token_wo_version", "1"),
+				),
+				ConfigStateChecks: []statecheck.StateCheck{
+					compareValuesSame.AddStateValue(
+						"tfe_team_notification_configuration.foobar", tfjsonpath.New("id"),
+					),
+				},
+			},
+			{
+				// Update with a different token — version should auto-increment to 2
+				Config: testAccTFETeamNotificationConfiguration_tokenWriteOnlyAuto(org.Name, "token-v2"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "token_wo"),
+					resource.TestCheckResourceAttr("tfe_team_notification_configuration.foobar", "token_wo_version", "2"),
+				),
+				ConfigStateChecks: []statecheck.StateCheck{
+					compareValuesSame.AddStateValue(
+						"tfe_team_notification_configuration.foobar", tfjsonpath.New("id"),
+					),
+				},
+			},
+			{
+				// Same token again — version should stay at 2 (no hash change)
+				Config: testAccTFETeamNotificationConfiguration_tokenWriteOnlyAuto(org.Name, "token-v2"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_team_notification_configuration.foobar", "token_wo_version", "2"),
 				),
 			},
 		},
@@ -1575,6 +1626,26 @@ resource "tfe_team_notification_configuration" "foobar" {
   token_wo_version = 1
   team_id          = tfe_team.foobar.id
 }`, orgName, runTasksURL())
+}
+
+func testAccTFETeamNotificationConfiguration_tokenWriteOnlyAuto(orgName, token string) string {
+	return fmt.Sprintf(`
+data "tfe_organization" "foobar" {
+  name = "%s"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-test"
+  organization = data.tfe_organization.foobar.name
+}
+
+resource "tfe_team_notification_configuration" "foobar" {
+  name             = "notification_tokenWO_auto_test"
+  destination_type = "generic"
+  url              = "%s"
+  token_wo         = "%s"
+  team_id          = tfe_team.foobar.id
+}`, orgName, runTasksURL(), token)
 }
 
 func preCheckTFETeamNotificationConfiguration(t *testing.T) {

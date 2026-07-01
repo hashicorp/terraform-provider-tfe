@@ -10,7 +10,7 @@ BUG FIXES:
 
 ENHANCEMENTS:
 * `r/tfe_project_notification_configuration` and `r/tfe_team_notification_configuration`: update url attributes to be sensitive, by @kadenluang [#2120](https://github.com/hashicorp/terraform-provider-tfe/pull/2120)
-
+* `r/tfe_project_notification_configuration` and `r/tfe_team_notification_configuration`: Make `token_wo_version` Computed with auto-managed hash-based change detection, by @jillirami [#2123](https://github.com/hashicorp/terraform-provider-tfe/pull/2123)
 
 ## v0.78.0
 
