@@ -57,19 +57,24 @@ func (a *actionTFEQueryRun) Metadata(ctx context.Context, req action.MetadataReq
 
 func (a *actionTFEQueryRun) Schema(ctx context.Context, req action.SchemaRequest, resp *action.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Creates a query run in an HCP Terraform or Terraform Enterprise workspace.",
 		Attributes: map[string]schema.Attribute{
 			"workspace_id": schema.StringAttribute{
-				Required: true,
+				Description: "The ID of the workspace where the query run will be executed.",
+				Required:    true,
 			},
 			"configuration_version_id": schema.StringAttribute{
-				Optional: true,
+				Description: "specific Configuration Version ID to use for the query run (e.g., \"cv-ntv3HbhJqvFzamy7\"). Exactly one of configuration_version_id or wait_for_latest_configuration must be provided.",
+				Optional:    true,
 			},
 			"variables": schema.MapAttribute{
+				Description: "A map of key-value string pairs representing variables to pass directly into the query run.",
 				ElementType: types.StringType,
 				Optional:    true,
 			},
 			"wait_for_latest_configuration": schema.BoolAttribute{
-				Optional: true,
+				Description: "A boolean flag that, when set to true, tells the action to wait for and use the latest configuration version available in the workspace. Exactly one of wait_for_latest_configuration or configuration_version_id must be provided.",
+				Optional:    true,
 			},
 		},
 	}

@@ -161,34 +161,41 @@ func (d *dataSourceTFEVariables) Schema(_ context.Context, _ datasource.SchemaRe
 		Description: "This data source can be used to retrieve all variables in a workspace or variable set.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				Description: "Static identifier for the variables group in the workspace.",
+				Computed:    true,
 			},
 
 			"workspace_id": schema.StringAttribute{
-				Optional: true,
+				Description: "ID of the workspace.",
+				Optional:    true,
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("variable_set_id")),
 				},
 			},
 
 			"variable_set_id": schema.StringAttribute{
-				Optional: true,
+				Description: "ID of the variable set. One of this or `workspace_id` is required.",
+				Optional:    true,
 			},
 
 			"env": schema.ListAttribute{
+				Description: "List containing environment variables configured on the workspace.",
 				Computed:    true,
 				ElementType: variableType,
 			},
 
 			"terraform": schema.ListAttribute{
+				Description: "List containing terraform variables configured on the workspace.",
 				Computed:    true,
 				ElementType: variableType,
 			},
 
 			"variables": schema.ListAttribute{
+				Description: "List containing all terraform and environment variables configured on the workspace.",
 				Computed:    true,
 				ElementType: variableType,
 			},
+			// TODO the content of each block is not explicitly listed in the current schema
 		},
 	}
 }

@@ -17,23 +17,34 @@ import (
 
 func dataSourceTFETeams() *schema.Resource {
 	return &schema.Resource{
+		Description: "Gets information on teams.",
+
 		Read: dataSourceTFETeamsRead,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "Name of the organization.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "Name of the organization.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 
 			"names": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "A list of team names in an organization.",
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 
 			"ids": {
-				Type:     schema.TypeMap,
-				Computed: true,
+				Description: "A map of team names in an organization and their IDs.",
+				Type:        schema.TypeMap,
+				Computed:    true,
 			},
 		},
 	}

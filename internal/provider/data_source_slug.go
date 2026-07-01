@@ -22,12 +22,15 @@ import (
 
 func dataSourceTFESlug() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manages files.",
+
 		Read: dataSourceTFESlugRead,
 
 		Schema: map[string]*schema.Schema{
 			"source_path": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "The path to the directory where the files are located.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 		},
 	}

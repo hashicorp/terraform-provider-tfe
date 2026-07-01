@@ -39,7 +39,7 @@ func (d *dataSourceCurrentUser) Metadata(_ context.Context, req datasource.Metad
 
 func (d *dataSourceCurrentUser) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Get the current user associated with the API token.",
+		MarkdownDescription: "Get the current user associated with the API token. When authenticated with a team or organization token, HCP Terraform returns a synthetic service user rather than a real user account, so attributes like `email` and `username` will not reflect a real person.",
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

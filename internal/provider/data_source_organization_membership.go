@@ -19,31 +19,44 @@ import (
 
 func dataSourceTFEOrganizationMembership() *schema.Resource {
 	return &schema.Resource{
+		Description: "Gets information about an organization membership. Requires using the provider with HCP Terraform or an instance of Terraform Enterprise at least as recent as v202004-1. Note that if a user updates their email address, configurations using the email address should be updated manually.",
+
 		Read: dataSourceTFEOrganizationMembershipRead,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The organization membership ID.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"email": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "Email of the user.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 
 			"username": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Description: "The username of the user. Although both are option, at least one of `email` and `username` is required.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "Name of the organization.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 
 			"user_id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The ID of the use associated with the organization membership.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 
 			"organization_membership_id": {
+				Description:  "ID belonging to the organization membership.",
 				Type:         schema.TypeString,
 				Optional:     true,
 				Computed:     true,

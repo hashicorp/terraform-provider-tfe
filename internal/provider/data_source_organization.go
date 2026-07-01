@@ -18,76 +18,93 @@ import (
 
 func dataSourceTFEOrganization() *schema.Resource {
 	return &schema.Resource{
+		Description: "Gets information about an organization.",
+
 		Read: dataSourceTFEOrganizationRead,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 
 			"external_id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "An identifier for the organization.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 
 			"collaborator_auth_policy": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "Authentication policy (`password` or `two_factor_mandatory`). Defaults to `password`.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 
 			"cost_estimation_enabled": {
-				Type:     schema.TypeBool,
-				Computed: true,
+				Description: "Whether or not the cost estimation feature is enabled for all workspaces in the organization. Defaults to true. In a HCP Terraform organization which does not have Teams & Governance features, this value is always false and cannot be changed. In Terraform Enterprise, Cost Estimation must also be enabled in Site Administration.",
+				Type:        schema.TypeBool,
+				Computed:    true,
 			},
 
 			"default_project_id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "ID of the organization's default project. All workspaces created without specifying a project ID are created in this project.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 
 			"email": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "Admin email address.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 
 			"owners_team_saml_role_id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The name of the \"owners\" team.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 
 			"two_factor_conformant": {
+				// TODO: needs description not present on website
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
 
 			"send_passing_statuses_for_untriggered_speculative_plans": {
-				Type:     schema.TypeBool,
-				Computed: true,
+				Description: "Whether or not to send VCS status updates for untriggered speculative plans. This can be useful if large numbers of untriggered workspaces are exhausting request limits for connected version control service providers like GitHub. Defaults to true. In Terraform Enterprise, this setting has no effect and cannot be changed but is also available in Site Administration.",
+				Type:        schema.TypeBool,
+				Computed:    true,
 			},
 
 			"aggregated_commit_status_enabled": {
-				Type:     schema.TypeBool,
-				Computed: true,
+				Description: "Whether or not to enable Aggregated Status Checks. This can be useful for monorepo repositories with multiple workspaces receiving status checks for events such as a pull request.",
+				Type:        schema.TypeBool,
+				Computed:    true,
 			},
 
 			"assessments_enforced": {
-				Type:     schema.TypeBool,
-				Computed: true,
+				Description: "(Available only in HCP Terraform) Whether to force health assessments (drift detection) on all eligible workspaces or allow workspaces to set thier own preferences.",
+				Type:        schema.TypeBool,
+				Computed:    true,
 			},
 
 			"speculative_plan_management_enabled": {
-				Type:     schema.TypeBool,
-				Computed: true,
+				Description: "Whether or not to enable Speculative Plan Management. If true, pending VCS-triggered speculative plans from outdated commits will be cancelled if a newer commit is pushed to the same branch.",
+				Type:        schema.TypeBool,
+				Computed:    true,
 			},
 
 			"enforce_hyok": {
-				Type:     schema.TypeBool,
-				Computed: true,
+				Description: "(Available only in HCP Terraform) Whether HYOK is enforced for all new workspaces in the organization.",
+				Type:        schema.TypeBool,
+				Computed:    true,
 			},
+
 			"max_ttl_enabled": {
-				Type:     schema.TypeBool,
-				Computed: true,
+				Description: "Whether maximum token TTL policies are enabled for the organization.",
+				Type:        schema.TypeBool,
+				Computed:    true,
 			},
 		},
 	}

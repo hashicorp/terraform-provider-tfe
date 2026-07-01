@@ -17,17 +17,27 @@ import (
 
 func dataSourceTFESSHKey() *schema.Resource {
 	return &schema.Resource{
+		Description: "Get information on an SSH key.",
+
 		Read: dataSourceTFESSHKeyRead,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the SSH key.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "Name of the SSH key.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 		},
 	}

@@ -17,65 +17,84 @@ import (
 
 func dataSourceTFETeamAccess() *schema.Resource {
 	return &schema.Resource{
+		Description: "Gets information on team permissions on a workspace.",
+
 		Read: dataSourceTFETeamAccessRead,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The team access ID",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"access": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The type of access granted to the team on the workspace.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 
 			"permissions": {
-				Type:     schema.TypeList,
-				Computed: true,
+				Description: "The custom permissions granted to the team on the workspace.",
+				Type:        schema.TypeList,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"runs": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The permission granted to runs. Valid values are `read`, `plan`, or `apply`.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"variables": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The permission granted to variables. Valid values are `none`, `read`, or `write`.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"state_versions": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The permission granted to state versions. Valid values are `none`, `read-outputs`, `read`, or `write`.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"sentinel_mocks": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The permission granted to Sentinel mocks. Valid values are `none` or `read`.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"workspace_locking": {
-							Type:     schema.TypeBool,
-							Computed: true,
+							Description: "Whether the team can manually lock or unlock the workspace.",
+							Type:        schema.TypeBool,
+							Computed:    true,
 						},
 
 						"run_tasks": {
-							Type:     schema.TypeBool,
-							Computed: true,
+							Description: "Whether the team can manage workspace run tasks.",
+							Type:        schema.TypeBool,
+							Computed:    true,
 						},
 
 						"policy_overrides": {
-							Type:     schema.TypeBool,
-							Computed: true,
+							Description: "This permission allows a team to override soft-mandatory policy evaluations, provided that team has been granted the org level 'delegate policy overrides' permission.",
+							Type:        schema.TypeBool,
+							Computed:    true,
 						},
 					},
 				},
 			},
 
 			"team_id": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "ID of the team.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"workspace_id": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "ID of the workspace.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 		},
 	}

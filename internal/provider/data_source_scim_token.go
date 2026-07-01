@@ -55,7 +55,7 @@ func (d *dataSourceTFESCIMToken) Schema(_ context.Context, _ datasource.SchemaRe
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Required:    true,
-				Description: "The ID of the SCIM token",
+				Description: "The ID of the SCIM token.",
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(
 						regexp.MustCompile(`^at-`),
