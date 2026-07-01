@@ -42,7 +42,7 @@ data "tfe_variables" "test" {
 One of following arguments are required:
 
 * `workspace_id` - ID of the workspace.
-* `variable_set_id` - ID of the workspace.
+* `variable_set_id` - ID of the variable set.
 
 ## Attributes Reference
 
