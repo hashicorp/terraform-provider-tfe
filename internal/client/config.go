@@ -84,7 +84,7 @@ func cliConfig() CLIHostConfig {
 	// login. Location isn't configurable.
 	credentialsFilePath, err := credentialsFile()
 	if err != nil {
-		log.Printf("[ERROR] Error detecting default credentials file path: %s", err)
+		log.Printf("[ERROR] Error detecting default credentials file path: %s", logging.Sanitize(err.Error()))
 	} else {
 		credentialsConfig = readCliConfigFile(credentialsFilePath)
 	}
@@ -184,7 +184,7 @@ func configure(tfeHost, token string, insecure bool) (*ClientConfiguration, erro
 			tfeHost = DefaultHostname
 		}
 	}
-	log.Printf("[DEBUG] Configuring client for host %q", tfeHost)
+	log.Printf("[DEBUG] Configuring client for host %q", logging.Sanitize(tfeHost)) // nolint:gosec
 
 	// If ssl_skip_verify is false, it is either set that way in configuration or unset. Check
 	// the environment to see if it was set to true there.  Strictly speaking, this means that
