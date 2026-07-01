@@ -178,25 +178,105 @@ func (d *dataSourceTFEVariables) Schema(_ context.Context, _ datasource.SchemaRe
 				Optional:    true,
 			},
 
-			"env": schema.ListAttribute{
-				Description: "List containing environment variables configured on the workspace.",
-				Computed:    true,
-				ElementType: variableType,
+			"env": schema.ListNestedAttribute{
+					Description: "List containing environment variables configured on the workspace.",
+					Computed:    true,
+					NestedObject: schema.NestedAttributeObject{
+						Attributes: map[string]schema.Attribute{
+							"id": schema.StringAttribute{
+								Description: "The variable ID.",
+								Computed:    true,
+							},
+							"name": schema.StringAttribute{
+								Description: "The variable Key name.",
+								Computed:    true,
+							},
+							"value": schema.StringAttribute{
+								Description: "The variable value. If the variable is sensitive this value will be empty.",
+								Computed:    true,
+							},
+							"category": schema.StringAttribute{
+								Description: "The category of he variable. Valid values are `terraform` or `env`.",
+								Computed:    true,
+							},
+							"hcl": schema.BoolAttribute{
+								Description: "Whether the variable is HCL formatted.",
+								Computed:    true,
+							},
+							"sensitive": schema.BoolAttribute{
+								Description: "Whether the variable's value is sensitive and hidden.",
+								Computed:    true,
+							},
+						},
+					},
+				},
+	
+				"terraform": schema.ListNestedAttribute{
+					Description: "List containing environment variables configured on the workspace.",
+					Computed:    true,
+					NestedObject: schema.NestedAttributeObject{
+						Attributes: map[string]schema.Attribute{
+							"id": schema.StringAttribute{
+								Description: "The variable ID.",
+								Computed:    true,
+							},
+							"name": schema.StringAttribute{
+								Description: "The variable Key name.",
+								Computed:    true,
+							},
+							"value": schema.StringAttribute{
+								Description: "The variable value. If the variable is sensitive this value will be empty.",
+								Computed:    true,
+							},
+							"category": schema.StringAttribute{
+								Description: "The category of he variable. Valid values are `terraform` or `env`.",
+								Computed:    true,
+							},
+							"hcl": schema.BoolAttribute{
+								Description: "Whether the variable is HCL formatted.",
+								Computed:    true,
+							},
+							"sensitive": schema.BoolAttribute{
+								Description: "Whether the variable's value is sensitive and hidden.",
+								Computed:    true,
+							},
+						},
+					},
+				},
+	
+				"variables": schema.ListNestedAttribute{
+					Description: "List containing environment variables configured on the workspace.",
+					Computed:    true,
+					NestedObject: schema.NestedAttributeObject{
+						Attributes: map[string]schema.Attribute{
+							"id": schema.StringAttribute{
+								Description: "The variable ID.",
+								Computed:    true,
+							},
+							"name": schema.StringAttribute{
+								Description: "The variable Key name.",
+								Computed:    true,
+							},
+							"value": schema.StringAttribute{
+								Description: "The variable value. If the variable is sensitive this value will be empty.",
+								Computed:    true,
+							},
+							"category": schema.StringAttribute{
+								Description: "The category of he variable. Valid values are `terraform` or `env`.",
+								Computed:    true,
+							},
+							"hcl": schema.BoolAttribute{
+								Description: "Whether the variable is HCL formatted.",
+								Computed:    true,
+							},
+							"sensitive": schema.BoolAttribute{
+								Description: "Whether the variable's value is sensitive and hidden.",
+								Computed:    true,
+							},
+						},
+					},
+				},
 			},
-
-			"terraform": schema.ListAttribute{
-				Description: "List containing terraform variables configured on the workspace.",
-				Computed:    true,
-				ElementType: variableType,
-			},
-
-			"variables": schema.ListAttribute{
-				Description: "List containing all terraform and environment variables configured on the workspace.",
-				Computed:    true,
-				ElementType: variableType,
-			},
-			// TODO the content of each block is not explicitly listed in the current schema
-		},
 	}
 }
 
