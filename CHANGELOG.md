@@ -8,6 +8,9 @@ BUG FIXES:
 * `r/tfe_project_notification_configuration`: Fix `Provider produced inconsistent result after apply` error on the sensitive `token` attribute when creating a configuration (such as `slack`) without a `token`. By @maed223 [#2140](https://github.com/hashicorp/terraform-provider-tfe/pull/2140)
 * `r/tfe_project_notification_configuration`: Fix `Provider produced inconsistent result after apply` errors on the `triggers`, `email_addresses`, and `email_user_ids` attributes when they are configured as an empty set (`[]`). By @maed223 [#2140](https://github.com/hashicorp/terraform-provider-tfe/pull/2140)
 
+ENHANCEMENTS:
+* `r/tfe_registry_module`: The `vcs_repo` VCS connection (`identifier`, `oauth_token_id`, and `github_app_installation_id`) can now be updated in place instead of forcing resource recreation. By @hashimoon [#2124](https://github.com/hashicorp/terraform-provider-tfe/pull/2124)
+
 ## v0.79.0
 
 FEATURES:

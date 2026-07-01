@@ -17,6 +17,7 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -111,43 +112,39 @@ func resourceTFERegistryModule() *schema.Resource {
 			"vcs_repo": {
 				Type:        schema.TypeList,
 				Optional:    true,
-				ForceNew:    true,
 				MinItems:    1,
 				MaxItems:    1,
-				Description: "Settings for the registry module's VCS repository. Forces a new resource if changed. One of `vcs_repo` or `module_provider` is required.",
+				Description: "Settings for the registry module's VCS repository. One of `vcs_repo` or `module_provider` is required.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"display_identifier": {
 							Type:        schema.TypeString,
-							Required:    true,
-							ForceNew:    true,
-							Description: "The display identifier for your VCS repository. For most VCS providers outside of BitBucket Cloud and Azure DevOps, this will match the `identifier` string.",
+							Optional:    true,
+							Computed:    true,
+							Description: "The display identifier for your VCS repository. For most VCS providers outside of BitBucket Cloud and Azure DevOps, this will match the `identifier` string. Atlas recomputes this server-side for OAuth connections; it is read back from the API and does not need to be set explicitly.",
 						},
 						"identifier": {
 							Type:        schema.TypeString,
 							Required:    true,
-							ForceNew:    true,
-							Description: "A reference to your VCS repository in the format `<organization>/<repository>`. For Azure DevOps: `<ado organization>/<ado project>/_git/<ado repository>`.",
+							Description: "A reference to your VCS repository in the format `<organization>/<repository>`. For Azure DevOps: `<ado organization>/<ado project>/_git/<ado repository>`. Changes to this field update the module in place.",
 						},
 						"oauth_token_id": {
 							Type:          schema.TypeString,
-							ForceNew:      true,
 							Optional:      true,
 							ConflictsWith: []string{"vcs_repo.0.github_app_installation_id"},
-							Description:   "Token ID of the VCS Connection (OAuth Connection Token) to use. Conflicts with `github_app_installation_id`.",
+							Description:   "Token ID of the VCS Connection (OAuth Connection Token) to use. Conflicts with `github_app_installation_id`. Changes to this field update the module in place. Switching from `oauth_token_id` to `github_app_installation_id` is supported.",
 						},
 						"github_app_installation_id": {
 							Type:          schema.TypeString,
-							ForceNew:      true,
 							Optional:      true,
 							ConflictsWith: []string{"vcs_repo.0.oauth_token_id"},
 							AtLeastOneOf:  []string{"vcs_repo.0.oauth_token_id", "vcs_repo.0.github_app_installation_id"},
-							Description:   "The installation ID of the GitHub App. Conflicts with `oauth_token_id`.",
+							Description:   "The installation ID of the GitHub App. Conflicts with `oauth_token_id`. Changes to this field update the module in place. Switching from `github_app_installation_id` to `oauth_token_id` is supported.",
 						},
 						"branch": {
 							Type:        schema.TypeString,
 							Optional:    true,
-							Description: "The git branch used for publishing when using branch-based publishing. When set, `tags` will be returned as `false`.",
+							Description: "The git branch used for publishing when using branch-based publishing. When set, `tags` will be returned as `false`. Changes to this field update the module in place.",
 						},
 						"tags": {
 							Type:        schema.TypeBool,
@@ -159,13 +156,13 @@ func resourceTFERegistryModule() *schema.Resource {
 							Type:        schema.TypeString,
 							Optional:    true,
 							Computed:    true,
-							Description: "The path to the module configuration files within the VCS repository. Beta feature, not available to all users.",
+							Description: "The path to the module configuration files within the VCS repository. Changes to this field update the module in place. Beta feature, not available to all users.",
 						},
 						"tag_prefix": {
 							Type:        schema.TypeString,
 							Optional:    true,
 							Computed:    true,
-							Description: "The prefix to filter repository Git tags when using tag-based publishing in a repository with multiple modules. Beta feature, not available to all users.",
+							Description: "The prefix to filter repository Git tags when using tag-based publishing in a repository with multiple modules. Changes to this field update the module in place. Beta feature, not available to all users.",
 						},
 					},
 				},
@@ -266,8 +263,11 @@ func resourceTFERegistryModuleCreateWithVCS(v interface{}, meta interface{}, d *
 	options.VCSRepo = &tfe.RegistryModuleVCSRepoOptions{
 		Identifier:        tfe.String(vcsRepo["identifier"].(string)),
 		GHAInstallationID: tfe.String(vcsRepo["github_app_installation_id"].(string)),
-		DisplayIdentifier: tfe.String(vcsRepo["display_identifier"].(string)),
 		OrganizationName:  tfe.String(orgName),
+	}
+
+	if displayIdentifier, ok := vcsRepo["display_identifier"].(string); ok && displayIdentifier != "" {
+		options.VCSRepo.DisplayIdentifier = tfe.String(displayIdentifier)
 	}
 
 	tags, tagsOk := vcsRepo["tags"].(bool)
@@ -434,19 +434,10 @@ func resourceTFERegistryModuleUpdate(d *schema.ResourceData, meta interface{}) e
 		RegistryName: tfe.RegistryName(d.Get("registry_name").(string)),
 	}
 
-	if v, ok := d.GetOk("vcs_repo"); ok { //nolint:nestif
+	if v, ok := d.GetOk("vcs_repo"); ok {
 		vcsRepo := v.([]interface{})[0].(map[string]interface{})
-		options.VCSRepo = &tfe.RegistryModuleVCSRepoUpdateOptions{}
-
-		tags, tagsOk := vcsRepo["tags"].(bool)
-		branch, branchOk := vcsRepo["branch"].(string)
-
-		if tagsOk {
-			options.VCSRepo.Tags = tfe.Bool(tags)
-		}
-
-		if branchOk {
-			options.VCSRepo.Branch = tfe.String(branch)
+		if err := updateRegistryModuleVCSRepo(config, rmID, vcsRepo); err != nil {
+			return err
 		}
 	}
 
@@ -471,21 +462,79 @@ func resourceTFERegistryModuleUpdate(d *schema.ResourceData, meta interface{}) e
 		handleAgentPoolID(testConfig, d, options.TestConfig)
 	}
 
-	err = retry.Retry(time.Duration(5)*time.Minute, func() *retry.RetryError {
-		registryModule, err = config.Client.RegistryModules.Update(ctx, rmID, options)
+	if options.NoCode != nil || options.TestConfig != nil {
+		err = retry.Retry(time.Duration(5)*time.Minute, func() *retry.RetryError {
+			registryModule, err = config.Client.RegistryModules.Update(ctx, rmID, options)
+			if err != nil {
+				return retry.RetryableError(err)
+			}
+			return nil
+		})
+
 		if err != nil {
-			return retry.RetryableError(err)
+			return fmt.Errorf("Error while waiting for module %s/%s to be updated: %w", rmID.Organization, rmID.Name, err)
+		}
+
+		if registryModule != nil {
+			d.SetId(registryModule.ID)
+		}
+	}
+
+	return resourceTFERegistryModuleRead(d, meta)
+}
+
+func updateRegistryModuleVCSRepo(config ConfiguredClient, rmID tfe.RegistryModuleID, vcsRepo map[string]interface{}) error {
+	vcsRepoModel := models.NewRegistryModules_attributes_vcsRepo()
+
+	if branch, ok := vcsRepo["branch"].(string); ok && branch != "" {
+		vcsRepoModel.SetBranch(tfe.String(branch))
+	}
+	if tags, ok := vcsRepo["tags"].(bool); ok {
+		vcsRepoModel.SetTags(tfe.Bool(tags))
+	}
+	if identifier, ok := vcsRepo["identifier"].(string); ok && identifier != "" {
+		vcsRepoModel.SetIdentifier(tfe.String(identifier))
+	}
+	if oauthTokenID, ok := vcsRepo["oauth_token_id"].(string); ok && oauthTokenID != "" {
+		vcsRepoModel.SetOauthTokenId(tfe.String(oauthTokenID))
+	} else if ghaInstallationID, ok := vcsRepo["github_app_installation_id"].(string); ok && ghaInstallationID != "" {
+		vcsRepoModel.SetGithubAppInstallationId(tfe.String(ghaInstallationID))
+	}
+	if sourceDirectory, ok := vcsRepo["source_directory"].(string); ok && sourceDirectory != "" {
+		vcsRepoModel.SetSourceDirectory(tfe.String(sourceDirectory))
+	}
+	if tagPrefix, ok := vcsRepo["tag_prefix"].(string); ok && tagPrefix != "" {
+		vcsRepoModel.SetTagPrefix(tfe.String(tagPrefix))
+	}
+
+	attributes := models.NewRegistryModules_attributes()
+	attributes.SetVcsRepo(vcsRepoModel)
+
+	data := models.NewRegistryModules()
+	data.SetAttributes(attributes)
+
+	envelope := models.NewRegistryModulesEnvelope()
+	envelope.SetData(data)
+
+	err := retry.Retry(time.Duration(5)*time.Minute, func() *retry.RetryError {
+		_, updateErr := config.ClientV2.API.
+			Organizations().ByOrganization_name(rmID.Organization).
+			RegistryModules().
+			ByRegistry_name(string(rmID.RegistryName)).
+			ByNamespace(rmID.Namespace).
+			ByName(rmID.Name).
+			ByProvider(rmID.Provider).
+			Patch(ctx, envelope, nil)
+		if updateErr != nil {
+			return retry.RetryableError(updateErr)
 		}
 		return nil
 	})
-
 	if err != nil {
-		return fmt.Errorf("Error while waiting for module %s/%s to be updated: %w", rmID.Organization, rmID.Name, err)
+		return fmt.Errorf("Error while updating vcs_repo for module %s/%s: %w", rmID.Organization, rmID.Name, err)
 	}
 
-	d.SetId(registryModule.ID)
-
-	return resourceTFERegistryModuleRead(d, meta)
+	return nil
 }
 
 func resourceTFERegistryModuleRead(d *schema.ResourceData, meta interface{}) error {
