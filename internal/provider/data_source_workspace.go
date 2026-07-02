@@ -333,21 +333,21 @@ func dataSourceTFEWorkspace() *schema.Resource {
 			},
 
 			"setting_overwrites": {
-				Description: "Settings that are overwritten for this workspace.", // TODO list contents of the setting overwrites block, may require schema changes
+				Description: "Settings that are overwritten for this workspace. Contains: `is-destroyable` - Whether the workspace can be destroyed.", // On migration, ideally reformat into non-inline descriptions
 				Type:        schema.TypeMap,
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeBool},
 			},
 
 			"permissions": {
-				Description: "The permissions for the current user on this workspace.", // TODO list contents of the permissions block, may require schema changes
+				Description: "The permissions for the current user on this workspace. Contains: `can-update` - Can update the workspace. `can-destroy` - Can destroy the workspace. `can-queue-run` - Can queue runs. `can-queue-apply` - Can queue apply. `can-queue-destroy` - Can queue destroy. `can-lock` - Can lock the workspace. `can-unlock` - Can unlock the workspace. `can-force-unlock` - Can force unlock the workspace. `can-read-settings` - Can read workspace settings. `can-update-variable` - Can update variables. `can-manage-run-tasks` - Can manage run tasks. `can-force-delete` - Can force delete the workspace.", // On migration, ideally reformat into non-inline descriptions
 				Type:        schema.TypeMap,
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeBool},
 			},
 
 			"actions": {
-				Description: "Actions that can be performed on this workspace", // TODO list contents of the actions block, may require schema changes
+				Description: "Actions that can be performed on this workspace. Contains: `execution-mode` - Whether execution mode is overwritten at the workspace level. `agent-pool` - Whether agent pool is overwritten at the workspace level.", // On migration, ideally reformat into non-inline descriptions
 				Type:        schema.TypeMap,
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeBool},
