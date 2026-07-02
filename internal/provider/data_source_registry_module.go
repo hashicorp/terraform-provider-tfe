@@ -259,6 +259,7 @@ func (d *dataSourceTFERegistryModule) Schema(_ context.Context, _ datasource.Sch
 				},
 			},
 			"test_config": schema.ListNestedBlock{
+				Description: "Test configuration indicating module testing setup.",
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
 						"tests_enabled": schema.BoolAttribute{
@@ -288,6 +289,7 @@ func (d *dataSourceTFERegistryModule) Schema(_ context.Context, _ datasource.Sch
 				},
 			},
 			"vcs_repo": schema.ListNestedBlock{
+				Description: "Settings for the registry module's VCS repository.",
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
 						"branch": schema.StringAttribute{
