@@ -84,7 +84,7 @@ func dataSourceTFEOrganization() *schema.Resource {
 			},
 
 			"assessments_enforced": {
-				Description: "(Available only in HCP Terraform) Whether to force health assessments (drift detection) on all eligible workspaces or allow workspaces to set thier own preferences.",
+				Description: "(Available only in HCP Terraform) Whether to force health assessments (drift detection) on all eligible workspaces or allow workspaces to set their own preferences.",
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},

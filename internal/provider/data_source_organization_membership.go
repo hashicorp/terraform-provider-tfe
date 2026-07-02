@@ -50,7 +50,7 @@ func dataSourceTFEOrganizationMembership() *schema.Resource {
 			},
 
 			"user_id": {
-				Description: "The ID of the use associated with the organization membership.",
+				Description: "The ID of the user associated with the organization membership.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},

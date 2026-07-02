@@ -113,7 +113,7 @@ func dataSourceTFEWorkspace() *schema.Resource {
 			},
 
 			"assessments_enabled": {
-				Description: "Available only in HCP Terraform) Indicates whether health assessments such as drift detection are enabled for the workspace.",
+				Description: "(Available only in HCP Terraform) Indicates whether health assessments such as drift detection are enabled for the workspace.",
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},
@@ -286,7 +286,7 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Computed:    true,
 			},
 			"hyok_enabled": {
-				Description: "Whther HYOK is enbabled for the workspace.",
+				Description: "Whether HYOK is enbabled for the workspace.",
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},
@@ -303,7 +303,7 @@ func dataSourceTFEWorkspace() *schema.Resource {
 			},
 
 			"updated_at": {
-				Description: "the time when the workspace was last updated.",
+				Description: "The time when the workspace was last updated.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},

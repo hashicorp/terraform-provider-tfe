@@ -196,7 +196,7 @@ func (d *dataSourceTFEVariables) Schema(_ context.Context, _ datasource.SchemaRe
 							Computed:    true,
 						},
 						"category": schema.StringAttribute{
-							Description: "The category of he variable. Valid values are `terraform` or `env`.",
+							Description: "The category of the variable. Valid values are `terraform` or `env`.",
 							Computed:    true,
 						},
 						"hcl": schema.BoolAttribute{
@@ -229,7 +229,7 @@ func (d *dataSourceTFEVariables) Schema(_ context.Context, _ datasource.SchemaRe
 							Computed:    true,
 						},
 						"category": schema.StringAttribute{
-							Description: "The category of he variable. Valid values are `terraform` or `env`.",
+							Description: "The category of the variable. Valid values are `terraform` or `env`.",
 							Computed:    true,
 						},
 						"hcl": schema.BoolAttribute{
@@ -262,7 +262,7 @@ func (d *dataSourceTFEVariables) Schema(_ context.Context, _ datasource.SchemaRe
 							Computed:    true,
 						},
 						"category": schema.StringAttribute{
-							Description: "The category of he variable. Valid values are `terraform` or `env`.",
+							Description: "The category of the variable. Valid values are `terraform` or `env`.",
 							Computed:    true,
 						},
 						"hcl": schema.BoolAttribute{
