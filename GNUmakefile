@@ -63,5 +63,7 @@ test-compile:
 	fi
 	go test -c $(TEST) $(TESTARGS)
 
-.PHONY: build test testacc vet fmt fmtcheck errcheck test-compile sweep
+generate:
+	@./scripts/generate-docs.sh "$(RESOURCE)"
 
+.PHONY: build test testacc vet fmt fmtcheck errcheck test-compile sweep generate
