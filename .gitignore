@@ -26,3 +26,6 @@ site/
 
 # macOS metadata files
 .DS_Store
+
+# Docgen artifacts
+failure_info.json
