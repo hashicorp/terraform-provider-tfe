@@ -96,3 +96,4 @@ SMTP Settings can be imported.
 
 ```shell
 terraform import tfe_admin_smtp_settings.this smtp
+```
