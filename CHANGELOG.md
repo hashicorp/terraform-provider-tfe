@@ -7,6 +7,7 @@ FEATURES:
 
 BUG FIXES:
 * Removed two documentation files for resources that do not exist and that are not planned. By @brandonc [#2100](https://github.com/hashicorp/terraform-provider-tfe/pull/2100)
+* `r/tfe_admin_smtp_settngs`: fixed documentation Example and Attribute list to add missing enabled field. By @cpag [#2107](https://github.com/hashicorp/terraform-provider-tfe/pull/2107)
 
 ENHANCEMENTS:
 * `r/tfe_project_notification_configuration` and `r/tfe_team_notification_configuration`: update url attributes to be sensitive, by @kadenluang [#2120](https://github.com/hashicorp/terraform-provider-tfe/pull/2120)
