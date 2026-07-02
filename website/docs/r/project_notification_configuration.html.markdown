@@ -119,12 +119,14 @@ The following arguments are supported:
   send notifications. Valid values are `run:created`, `run:planning`, `run:needs_attention`, `run:applying`
   `run:completed`, `run:errored`, `assessment:check_failure`, `assessment:drifted`, `assessment:failed`, `workspace:auto_destroy_reminder`, or `workspace:auto_destroy_run_results`.
   If omitted, no notification triggers are configured.
-* `url` - (Required if `destination_type` is `generic`, `microsoft-teams`, or `slack`) The HTTP or HTTPS URL of the notification
+* `url` - (Required if `destination_type` is `generic`, `microsoft-teams`, or `slack` and `url_wo` is not set) The HTTP or HTTPS URL of the notification
   configuration where notification requests will be made. This value _must not_ be provided if `destination_type`
-  is `email`.
+  is `email`. Use `url_wo` instead to keep the URL out of state.
+* `url_wo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) Write-only alternative to `url`. The HTTP or HTTPS URL where notification requests will be made. Use this instead of `url` to prevent the URL from being stored in state. Either `url` or `url_wo` can be provided, but not both. Changes are detected automatically via a SHA-256 hash stored in private state; increment `url_wo_version` manually to force an update without changing the value.
+* `url_wo_version` - (Optional) Tracks the version of the write-only URL. When `url_wo` is set and this attribute is not explicitly configured, the provider automatically detects URL changes via a hash stored in private state and increments this value. Set this manually to force a URL update without changing the value, or for maximum privacy (disables hash storage).
 * `project_id` - (Required) The id of the project that owns the notification configuration.
 
-> **Note:** Write-Only argument `token_wo` is available to use in place of `token`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
+> **Note:** Write-Only arguments `token_wo` and `url_wo` are available to use in place of `token` and `url`. Write-Only arguments are supported in HashiCorp Terraform 1.11.0 and later. [Learn more](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments).
 
 ## Attributes Reference
 
