@@ -4,6 +4,7 @@ FEATURES:
 * **New Resource:** `r/tfe_tag_policy_set` and `r/tfe_tag_policy_set_exclusion`: Adds resources to manage tag-based inclusion and exclusion on policy sets. **NOTE:** This feature is currently in beta and is not available to all users. By @anubhav-goel [#2093](https://github.com/hashicorp/terraform-provider-tfe/pull/2093)
 
 BUG FIXES:
+* `r/tfe_provider_set`: Fix validation to reject provider sets when `global` is false or omitted and no project or workspace scopes are configured.
 * Removed two documentation files for resources that do not exist and that are not planned. By @brandonc [#2100](https://github.com/hashicorp/terraform-provider-tfe/pull/2100)
 
 

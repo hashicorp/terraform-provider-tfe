@@ -232,13 +232,9 @@ func modelFromTFEProviderSet(
 	return m, diags
 }
 
-// ModifyPlan is used to enforce that when global is updated from false to
-// true, workspace_ids and project_ids must be empty, since global provider
-// sets cannot have workspaces or projects attached. This is necessary
-// because the API will automatically detach all workspaces and projects when
-// a provider set is updated to global, which would be unexpected and
-// potentially destructive behavior for users if it were allowed to happen
-// implicitly.
+// ModifyPlan enforces that provider sets are either global or scoped to at
+// least one project or workspace. It also prevents implicitly detaching scopes
+// when a scoped provider set is updated to global.
 func (r *resourceTFEProviderSet) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
 	if req.Plan.Raw.IsNull() {
 		return
@@ -259,12 +255,27 @@ func (r *resourceTFEProviderSet) ModifyPlan(ctx context.Context, req resource.Mo
 		return
 	}
 
+	if plan.Global.IsUnknown() {
+		return
+	}
+
+	workspaceCount := plan.WorkspaceIDs.Length(plan.collectionLengthOptions())
+	projectCount := plan.ProjectIDs.Length(plan.collectionLengthOptions())
+
 	if !plan.Global.ValueBool() {
+		scopesUnknown := plan.WorkspaceIDs.IsUnknown() || plan.ProjectIDs.IsUnknown()
+		if !scopesUnknown && workspaceCount == 0 && projectCount == 0 {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("global"),
+				"Invalid Attribute Combination",
+				"global must be true unless workspace_ids or project_ids are set",
+			)
+		}
 		return
 	}
 
 	// Validate workspace_ids is not set
-	if plan.WorkspaceIDs.Length(plan.collectionLengthOptions()) > 0 {
+	if workspaceCount > 0 {
 		resp.Diagnostics.AddAttributeError(
 			path.Root("workspace_ids"),
 			"Invalid Attribute Combination",
@@ -272,7 +283,7 @@ func (r *resourceTFEProviderSet) ModifyPlan(ctx context.Context, req resource.Mo
 		)
 	}
 	// Validate project_ids is not set
-	if plan.ProjectIDs.Length(plan.collectionLengthOptions()) > 0 {
+	if projectCount > 0 {
 		resp.Diagnostics.AddAttributeError(
 			path.Root("project_ids"),
 			"Invalid Attribute Combination",
