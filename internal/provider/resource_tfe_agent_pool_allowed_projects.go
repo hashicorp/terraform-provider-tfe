@@ -29,15 +29,17 @@ func resourceTFEAgentPoolAllowedProjects() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"agent_pool_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "The ID of the agent pool.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"allowed_project_ids": {
-				Type:     schema.TypeSet,
-				Required: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "IDs of projects to be added as allowed projects on the agent pool.",
+				Type:        schema.TypeSet,
+				Required:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
 	}

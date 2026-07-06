@@ -132,7 +132,8 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 		Version: 1,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				Description: "The ID of the SAML settings.",
+				Computed:    true,
 			},
 			"enabled": schema.BoolAttribute{
 				Description: "Whether or not SAML single sign-on is enabled",
@@ -163,7 +164,8 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 				Default:     booldefault.StaticBool(false),
 			},
 			"old_idp_cert": schema.StringAttribute{
-				Computed: true,
+				Description: "The previous identity provider certificate, kept after the IdP certificate is updated.",
+				Computed:    true,
 			},
 			"idp_cert": schema.StringAttribute{
 				Description: "Identity Provider Certificate specifies the PEM encoded X.509 Certificate as provided by the IdP configuration",

@@ -178,19 +178,22 @@ func (r *resourceTFETestVariable) Schema(ctx context.Context, req resource.Schem
 				},
 			},
 			"description": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
-				Default:  stringdefault.StaticString(""),
+				Description: "Description of the variable.",
+				Optional:    true,
+				Computed:    true,
+				Default:     stringdefault.StaticString(""),
 			},
 			"hcl": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
-				Default:  booldefault.StaticBool(false),
+				Description: "Whether to evaluate the value of the variable as a string of HCL code. Has no effect for environment variables. Defaults to false.",
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 			},
 			"sensitive": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
-				Default:  booldefault.StaticBool(false),
+				Description: "Whether the value is sensitive. If true then the variable is written once and not visible thereafter. Defaults to false.",
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.RequiresReplaceIf(
 						func(ctx context.Context, req planmodifier.BoolRequest, resp *boolplanmodifier.RequiresReplaceIfFuncResponse) {
@@ -204,13 +207,16 @@ func (r *resourceTFETestVariable) Schema(ctx context.Context, req resource.Schem
 				},
 			},
 			"organization": schema.StringAttribute{
-				Required: true,
+				Description: "Name of the organization that owns the registry module on which this test variable is set.",
+				Required:    true,
 			},
 			"module_name": schema.StringAttribute{
-				Required: true,
+				Description: "The name of the registry module on which this test variable is set.",
+				Required:    true,
 			},
 			"module_provider": schema.StringAttribute{
-				Required: true,
+				Description: "The provider of the registry module on which this test variable is set.",
+				Required:    true,
 			},
 			"readable_value": schema.StringAttribute{
 				Computed: true,

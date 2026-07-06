@@ -30,15 +30,17 @@ func resourceTFEProjectPolicySet() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"policy_set_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "ID of the policy set.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"project_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "Project ID to add the policy set to.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 		},
 	}

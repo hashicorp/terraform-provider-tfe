@@ -30,15 +30,17 @@ func resourceTFEWorkspaceVariableSet() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"variable_set_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "The variable set ID.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"workspace_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "Workspace ID to add the variable set to.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 		},
 	}

@@ -32,29 +32,33 @@ func resourceTFEOrganizationToken() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-				ForceNew: true,
+				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    true,
 			},
 
 			"force_regenerate": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				ForceNew: true,
+				Description: "If set to true, a new token will be generated even if a token already exists. This will invalidate the existing token.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				ForceNew:    true,
 			},
 
 			"token": {
-				Type:      schema.TypeString,
-				Computed:  true,
-				Sensitive: true,
+				Description: "The generated token.",
+				Type:        schema.TypeString,
+				Computed:    true,
+				Sensitive:   true,
 			},
 
 			"expired_at": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-				ForceNew: true,
+				Description: "The token's expiration date. The expiration date must be a date/time string in RFC3339 format (e.g., 2024-12-31T23:59:59Z). If no expiration date is supplied, the token will expire 24 months from creation.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    true,
 			},
 		},
 	}

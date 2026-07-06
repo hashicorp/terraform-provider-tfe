@@ -55,65 +55,79 @@ func (r *sentinelVersionResource) Schema(ctx context.Context, req resource.Schem
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
+				Description:   "The ID of the Sentinel version.",
 				Computed:      true,
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"version": schema.StringAttribute{
-				Required: true,
+				Description: "A semantic version string in N.N.N or N.N.N-bundleName format.",
+				Required:    true,
 			},
 			"url": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
+				Description: "The URL where a ZIP-compressed 64-bit Linux binary of this version can be downloaded. Soon to be deprecated in favor of the archs attribute.",
+				Optional:    true,
+				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 					SyncTopLevelURLSHAWithAMD64(),
 				},
 			},
 			"sha": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
+				Description: "The SHA-256 checksum of the compressed Sentinel binary. Soon to be deprecated in favor of the archs attribute.",
+				Optional:    true,
+				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 					SyncTopLevelURLSHAWithAMD64(),
 				},
 			},
 			"official": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
-				Default:  booldefault.StaticBool(false),
+				Description: "Whether or not this is an official release of Sentinel. Defaults to false.",
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 			},
 			"enabled": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
-				Default:  booldefault.StaticBool(true),
+				Description: "Whether or not this version of Sentinel is enabled for use in HCP Terraform and Terraform Enterprise. Defaults to true.",
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(true),
 			},
 			"beta": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
-				Default:  booldefault.StaticBool(false),
+				Description: "Whether or not this version of Sentinel is beta pre-release. Defaults to false.",
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 			},
 			"deprecated": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
-				Default:  booldefault.StaticBool(false),
+				Description: "Whether or not this version of Sentinel is deprecated. Defaults to false.",
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 			},
 			"deprecated_reason": schema.StringAttribute{
-				Optional: true,
+				Description: "Additional context about why a version of Sentinel is deprecated. Defaults to null unless deprecated is true.",
+				Optional:    true,
 			},
 			"archs": schema.SetNestedAttribute{
+				Description: "A list of architecture-specific binaries for this Sentinel version. When specifying architecture-specific binaries, the top-level url and sha attributes are deprecated and should not be used. If both top-level url and sha are specified, an archs entry for the amd64 architecture must also be included, and its url and sha values must match the top-level values.",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"url": schema.StringAttribute{
-							Required: true,
+							Description: "The URL where a ZIP-compressed binary of this version can be downloaded.",
+							Required:    true,
 						},
 						"sha": schema.StringAttribute{
-							Required: true,
+							Description: "The SHA-256 checksum of the compressed binary.",
+							Required:    true,
 						},
 						"os": schema.StringAttribute{
-							Required: true,
+							Description: "The operating system for which this binary is intended.",
+							Required:    true,
 						},
 						"arch": schema.StringAttribute{
-							Required: true,
+							Description: "The architecture for which this binary is intended.",
+							Required:    true,
 						},
 					},
 				},
