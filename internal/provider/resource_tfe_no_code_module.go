@@ -137,7 +137,6 @@ func resourceTFENoCodeModuleCreate(ctx context.Context, d *schema.ResourceData, 
 
 	log.Printf("[DEBUG] Create no-code module for registry module %s", options.RegistryModule.ID)
 	noCodeModule, err := config.Client.RegistryNoCodeModules.Create(ctx, orgName, options)
-
 	if err != nil {
 		return diag.Errorf("Error creating no-code module for registry module %s: %s", options.RegistryModule.ID, err)
 	}
@@ -222,9 +221,8 @@ func resourceTFENoCodeModuleUpdate(ctx context.Context, d *schema.ResourceData, 
 		}
 		return nil
 	})
-
 	if err != nil {
-		return diag.Errorf("Error while waiting for no-code module %s to be updated: %s", noCodeModule.ID, err)
+		return diag.Errorf("Error while waiting for no-code module %s to be updated: %s", d.Id(), err)
 	}
 
 	d.SetId(noCodeModule.ID)

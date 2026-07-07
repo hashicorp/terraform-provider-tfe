@@ -5,8 +5,12 @@ FEATURES:
 * `r/tfe_tag_policy_set` and `r/tfe_tag_policy_set_exclusion`: Removed beta notices. ([#669](https://github.com/hashicorp/terraform-provider-tfe/pull/669))
 * Adds support for s390x Linux builds of the TFE terraform provider. By @JenGoldstrich [#2117](https://github.com/hashicorp/terraform-provider-tfe/pull/2117)
 
+ENHANCEMENTS:
+* Added `make generate` target to run `tfplugindocs` as a tracked Go tool dependency, replacing the previous manual install workflow. Supports optional `RESOURCE=<name>` argument for targeted single-resource doc generation. By @marzuqmazid-ibm [#2115](https://github.com/hashicorp/terraform-provider-tfe/pull/2115)
+
 BUG FIXES:
 * Removed two documentation files for resources that do not exist and that are not planned. By @brandonc [#2100](https://github.com/hashicorp/terraform-provider-tfe/pull/2100)
+* Fixed  a provider bug where a failed no-code module update could reference an uninitialized module ID [#2122](https://github.com/hashicorp/terraform-provider-tfe/pull/2122)
 
 ENHANCEMENTS:
 * `r/tfe_project_notification_configuration` and `r/tfe_team_notification_configuration`: update url attributes to be sensitive, by @kadenluang [#2120](https://github.com/hashicorp/terraform-provider-tfe/pull/2120)
