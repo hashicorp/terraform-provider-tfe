@@ -346,6 +346,45 @@ func TestAccTFEWorkspaceDataSource_readHYOKEnabled(t *testing.T) {
 	})
 }
 
+func TestAccTFEWorkspaceDataSource_providerDefaultOrganization(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	organization, orgCleanup := givenOrganization(t, tfeClient, fmt.Sprintf("tst-%d-deforg", rInt))
+	t.Cleanup(orgCleanup)
+
+	workspaceName := fmt.Sprintf("workspace-%d", rInt)
+	workspace, err := tfeClient.Workspaces.Create(ctx, organization.Name, tfe.WorkspaceCreateOptions{
+		Name: &workspaceName,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := tfeClient.Workspaces.DeleteByID(ctx, workspace.ID); err != nil {
+			t.Errorf("error deleting workspace %s: %s", workspace.ID, err)
+		}
+	})
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspaceDataSourceConfig_providerDefaultOrganization(workspaceName, organization.Name),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "id"),
+					resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "organization", organization.Name),
+					resource.TestCheckResourceAttr("data.tfe_workspace.foobar", "name", workspaceName),
+				),
+			},
+		},
+	})
+}
+
 func testAccTFEWorkspaceDataSourceConfig(rInt int) string {
 	// Only test auto-apply-run-trigger outside enterprise... once the feature
 	// flag is removed, just put it in the normal config.
@@ -597,6 +636,18 @@ data "tfe_workspace" "foobar" {
   name         = tfe_workspace.foobar.name
 }
 `
+}
+
+func testAccTFEWorkspaceDataSourceConfig_providerDefaultOrganization(workspaceName, organizationName string) string {
+	return fmt.Sprintf(`
+provider "tfe" {
+  organization = "%s"
+}
+
+data "tfe_workspace" "foobar" {
+  name = "%s"
+}
+`, organizationName, workspaceName)
 }
 
 func givenOrganization(t *testing.T, tfeClient *tfe.Client, organizationName string) (*tfe.Organization, func()) {
