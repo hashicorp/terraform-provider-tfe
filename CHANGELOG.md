@@ -10,7 +10,7 @@ BUG FIXES:
 
 ENHANCEMENTS:
 * `r/tfe_project_notification_configuration` and `r/tfe_team_notification_configuration`: update url attributes to be sensitive, by @kadenluang [#2120](https://github.com/hashicorp/terraform-provider-tfe/pull/2120)
-
+* Backfilled `description` fields into resource schema attributes across the provider, sourced from the existing website documentation. These surface in the provider schema output and improve editor and documentation tooling. By @marzuqmazid-ibm [#2128](https://github.com/hashicorp/terraform-provider-tfe/pull/2128)
 
 ## v0.78.0
 
