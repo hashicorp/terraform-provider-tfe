@@ -207,6 +207,7 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewGCPOIDCConfigurationResource,
 		NewAzureOIDCConfigurationResource,
 		NewVaultOIDCConfigurationResource,
+		NewWorkspaceResource,
 		NewHYOKConfigurationResource,
 		NewTagPolicySetResource,
 		NewTagPolicySetExclusionResource,

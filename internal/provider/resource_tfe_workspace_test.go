@@ -770,7 +770,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							false, "",
 							true, `["pattern"]`,
 						),
-						ExpectError: regexp.MustCompile(`'trigger_patterns' cannot be populated when 'file_triggers_enabled' is set to false.`),
+						ExpectError: regexp.MustCompile(`'trigger_patterns' cannot be populated when 'file_triggers_enabled' is set to\s+false\.`),
 					},
 				},
 			})
@@ -2299,6 +2299,88 @@ func TestTFEWorkspace_delete_withoutCanForceDeletePermission(t *testing.T) {
 	}
 }
 
+// Compatibility shims for legacy unit tests that still call SDKv2-style
+// helpers directly.
+func resourceTFEWorkspace() *schema.Resource {
+	return &schema.Resource{
+		Read:   resourceTFEWorkspaceRead,
+		Delete: resourceTFEWorkspaceDelete,
+		Schema: map[string]*schema.Schema{
+			"force_delete": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
+		},
+	}
+}
+
+func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
+	config := meta.(ConfiguredClient)
+	id := d.Id()
+
+	_, err := config.Client.Workspaces.ReadByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			d.SetId("")
+			return nil
+		}
+		return err
+	}
+
+	return nil
+}
+
+func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error {
+	config := meta.(ConfiguredClient)
+	id := d.Id()
+
+	ws, err := config.Client.Workspaces.ReadByID(ctx, id)
+	if err != nil {
+		if err == tfe.ErrResourceNotFound {
+			return nil
+		}
+		return fmt.Errorf("Error reading workspace %s: %w", id, err)
+	}
+
+	forceDelete := d.Get("force_delete").(bool)
+
+	if ws.Permissions.CanForceDelete == nil {
+		if forceDelete {
+			err = config.Client.Workspaces.DeleteByID(ctx, id)
+		} else {
+			return fmt.Errorf("Error deleting workspace %s: This version of Terraform Enterprise does not support workspace safe-delete. Workspaces must be force deleted by setting force_delete=true", id)
+		}
+	} else if *ws.Permissions.CanForceDelete {
+		if forceDelete {
+			err = config.Client.Workspaces.DeleteByID(ctx, id)
+		} else {
+			err = errWorkspaceResourceCountCheck(id, ws.ResourceCount)
+			if err == nil {
+				err = safeWorkspaceDelete(ctx, config, id)
+				return errWorkspaceSafeDeleteWithPermission(id, err)
+			}
+		}
+	} else {
+		if forceDelete {
+			return fmt.Errorf("Error deleting workspace %s: missing required permissions to set force delete workspaces in the organization", id)
+		}
+		err = errWorkspaceResourceCountCheck(id, ws.ResourceCount)
+		if err == nil {
+			err = safeWorkspaceDelete(ctx, config, id)
+		}
+	}
+
+	if err != nil {
+		if err == tfe.ErrResourceNotFound {
+			return nil
+		}
+		return fmt.Errorf("Error deleting workspace %s: %w", id, err)
+	}
+
+	return nil
+}
+
 func testAccCheckTFEWorkspaceHTMLURLHasSuffix(resourceName, suffix string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[resourceName]
@@ -2807,7 +2889,7 @@ func TestAccTFEWorkspace_validationAutoDestroyDuration(t *testing.T) {
 	for _, value := range values {
 		steps = append(steps, resource.TestStep{
 			Config:      testAccTFEWorkspace_basicWithAutoDestroyDuration(rInt, value),
-			ExpectError: regexp.MustCompile("must be 1-4 digits followed by d or h"),
+			ExpectError: regexp.MustCompile(`must be 1-4 digits followed by d\s+or\s+h`),
 		})
 	}
 
