@@ -414,7 +414,7 @@ func (r *resourceTFEWorkspaceFramework) Update(ctx context.Context, req resource
 		}
 	}
 
-	r.syncRemoteStateConsumers(ctx, state.ID.ValueString(), state.GlobalRemoteState, state.RemoteStateConsumerIDs, plan.GlobalRemoteState, plan.RemoteStateConsumerIDs, &resp.Diagnostics)
+	r.syncRemoteStateConsumers(ctx, state.ID.ValueString(), state.RemoteStateConsumerIDs, plan.GlobalRemoteState, plan.RemoteStateConsumerIDs, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -807,7 +807,7 @@ func (r *resourceTFEWorkspaceFramework) applyWorkspaceUpdateOptionsFromModel(ctx
 	options.VCSRepo = expandWorkspaceVCSRepoOptions(ctx, model.VCSRepo, diags, true)
 }
 
-func (r *resourceTFEWorkspaceFramework) syncRemoteStateConsumers(ctx context.Context, workspaceID string, oldGlobal types.Bool, oldSet types.Set, newGlobal types.Bool, newSet types.Set, diags *diag.Diagnostics) {
+func (r *resourceTFEWorkspaceFramework) syncRemoteStateConsumers(ctx context.Context, workspaceID string, oldSet types.Set, newGlobal types.Bool, newSet types.Set, diags *diag.Diagnostics) {
 	if !newGlobal.IsNull() && newGlobal.ValueBool() {
 		return
 	}

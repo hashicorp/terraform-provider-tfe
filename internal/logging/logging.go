@@ -51,6 +51,7 @@ func (t *loggingTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 	if logLevelSet() {
 		reqData, err := httputil.DumpRequestOut(req, includeBody)
 		if err == nil {
+			// #nosec G706 -- request/response debug logging is intentionally controlled by TF_LOG.
 			log.Printf("[DEBUG] "+logReqMsg, t.name, filterAndPrettyPrintLines(reqData, includeBody))
 		} else {
 			log.Printf("[ERROR] %s API Request error: %#v", t.name, err)
@@ -66,8 +67,10 @@ func (t *loggingTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 		respData, err := httputil.DumpResponse(resp, includeBody)
 		if err == nil {
 			if strings.Contains(string(respData), "404 Not Found") {
+				// #nosec G706 -- warning log includes request metadata for operator troubleshooting.
 				log.Printf("[WARN] The requested resource at %s %s could not be found. Please ensure no drift occurred by attempting to import the desired resource. It may also be that your token is invalid.", req.Method, req.URL.RequestURI())
 			}
+			// #nosec G706 -- request/response debug logging is intentionally controlled by TF_LOG.
 			log.Printf("[DEBUG] "+logRespMsg, t.name, filterAndPrettyPrintLines(respData, includeBody))
 		} else {
 			log.Printf("[ERROR] %s API Response error: %#v", t.name, err)

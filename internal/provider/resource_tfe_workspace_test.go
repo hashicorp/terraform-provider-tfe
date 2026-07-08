@@ -2337,42 +2337,42 @@ func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error 
 
 	ws, err := config.Client.Workspaces.ReadByID(ctx, id)
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			return nil
 		}
 		return fmt.Errorf("Error reading workspace %s: %w", id, err)
 	}
 
 	forceDelete := d.Get("force_delete").(bool)
+	canForceDelete := ws.Permissions.CanForceDelete
 
-	if ws.Permissions.CanForceDelete == nil {
-		if forceDelete {
-			err = config.Client.Workspaces.DeleteByID(ctx, id)
-		} else {
+	switch {
+	case canForceDelete == nil:
+		if !forceDelete {
 			return fmt.Errorf("Error deleting workspace %s: This version of Terraform Enterprise does not support workspace safe-delete. Workspaces must be force deleted by setting force_delete=true", id)
 		}
-	} else if *ws.Permissions.CanForceDelete {
+		err = config.Client.Workspaces.DeleteByID(ctx, id)
+
+	case *canForceDelete:
 		if forceDelete {
 			err = config.Client.Workspaces.DeleteByID(ctx, id)
-		} else {
-			err = errWorkspaceResourceCountCheck(id, ws.ResourceCount)
-			if err == nil {
-				err = safeWorkspaceDelete(ctx, config, id)
-				return errWorkspaceSafeDeleteWithPermission(id, err)
-			}
+			break
 		}
-	} else {
+		if err = errWorkspaceResourceCountCheck(id, ws.ResourceCount); err == nil {
+			err = errWorkspaceSafeDeleteWithPermission(id, safeWorkspaceDelete(ctx, config, id))
+		}
+
+	default:
 		if forceDelete {
 			return fmt.Errorf("Error deleting workspace %s: missing required permissions to set force delete workspaces in the organization", id)
 		}
-		err = errWorkspaceResourceCountCheck(id, ws.ResourceCount)
-		if err == nil {
+		if err = errWorkspaceResourceCountCheck(id, ws.ResourceCount); err == nil {
 			err = safeWorkspaceDelete(ctx, config, id)
 		}
 	}
 
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			return nil
 		}
 		return fmt.Errorf("Error deleting workspace %s: %w", id, err)

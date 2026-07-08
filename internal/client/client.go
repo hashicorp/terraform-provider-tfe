@@ -63,10 +63,12 @@ func getTokenFromEnv() string {
 }
 
 func getTokenFromCreds(services *disco.Disco, hostname svchost.Hostname) string {
+	// #nosec G706 -- debug logging for host lookup; format string is constant and value is quoted.
 	log.Printf("[DEBUG] Attempting to fetch token from Terraform CLI configuration for hostname %q...", hostname)
 	creds, err := services.CredentialsForHost(hostname)
 	if err != nil {
-		log.Printf("[DEBUG] Failed to get credentials for %s: %s (ignoring)", hostname, err)
+		// #nosec G706 -- debug logging for credential lookup failure; format string is constant.
+		log.Printf("[DEBUG] Failed to get credentials for %q: %v (ignoring)", hostname, err)
 	}
 	if creds != nil {
 		return creds.Token()

@@ -184,6 +184,7 @@ func configure(tfeHost, token string, insecure bool) (*ClientConfiguration, erro
 			tfeHost = DefaultHostname
 		}
 	}
+	// #nosec G706 -- debug logging for configured host; format string is constant and value is quoted.
 	log.Printf("[DEBUG] Configuring client for host %q", tfeHost)
 
 	// If ssl_skip_verify is false, it is either set that way in configuration or unset. Check
