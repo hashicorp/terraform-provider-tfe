@@ -2949,8 +2949,8 @@ func TestAccTFEWorkspace_updateWithAutoDestroyDurationInProject(t *testing.T) {
 				Config: testAccTFEWorkspace_basicInProject(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
-					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_activity_duration", ""),
-					resource.TestCheckResourceAttr("tfe_workspace.foobar", "inherits_project_auto_destroy", "true"),
+					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_activity_duration", "5d"),
+					resource.TestCheckResourceAttr("tfe_workspace.foobar", "inherits_project_auto_destroy", "false"),
 				),
 			},
 		},
@@ -2997,8 +2997,8 @@ func TestAccTFEWorkspace_updateWithAutoDestroyAtInProject(t *testing.T) {
 				Config: testAccTFEWorkspace_basicInProject(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
-					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_at", ""),
-					resource.TestCheckResourceAttr("tfe_workspace.foobar", "inherits_project_auto_destroy", "true"),
+					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_at", "2100-01-01T00:00:00Z"),
+					resource.TestCheckResourceAttr("tfe_workspace.foobar", "inherits_project_auto_destroy", "false"),
 				),
 			},
 		},

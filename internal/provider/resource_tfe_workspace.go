@@ -39,10 +39,10 @@ import (
 )
 
 var (
-	_ resource.Resource                = &resourceTFEWorkspaceFramework{}
-	_ resource.ResourceWithConfigure   = &resourceTFEWorkspaceFramework{}
-	_ resource.ResourceWithModifyPlan  = &resourceTFEWorkspaceFramework{}
-	_ resource.ResourceWithImportState = &resourceTFEWorkspaceFramework{}
+	_ resource.Resource                 = &resourceTFEWorkspaceFramework{}
+	_ resource.ResourceWithConfigure    = &resourceTFEWorkspaceFramework{}
+	_ resource.ResourceWithModifyPlan   = &resourceTFEWorkspaceFramework{}
+	_ resource.ResourceWithImportState  = &resourceTFEWorkspaceFramework{}
 	_ resource.ResourceWithUpgradeState = &resourceTFEWorkspaceFramework{}
 )
 
@@ -160,7 +160,7 @@ func (r *resourceTFEWorkspaceFramework) Schema(_ context.Context, _ resource.Sch
 		"ignore_additional_tag_names":    schema.BoolAttribute{Optional: true},
 		"tags":                           schema.MapAttribute{Optional: true, Computed: true, ElementType: types.StringType, PlanModifiers: []planmodifier.Map{mapplanmodifier.UseStateForUnknown()}},
 		"ignore_additional_tags":         schema.BoolAttribute{Optional: true},
-		"effective_tags":                 schema.MapAttribute{Computed: true, ElementType: types.StringType, PlanModifiers: []planmodifier.Map{mapplanmodifier.UseStateForUnknown()}},
+		"effective_tags":                 schema.MapAttribute{Computed: true, ElementType: types.StringType},
 		"terraform_version":              schema.StringAttribute{Optional: true, Computed: true, PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
 		"trigger_prefixes":               schema.ListAttribute{Optional: true, Computed: true, ElementType: types.StringType, Default: listdefault.StaticValue(types.ListValueMust(types.StringType, []attr.Value{}))},
 		"trigger_patterns":               schema.ListAttribute{Optional: true, Computed: true, ElementType: types.StringType, Default: listdefault.StaticValue(types.ListValueMust(types.StringType, []attr.Value{}))},
@@ -217,20 +217,20 @@ func (r *resourceTFEWorkspaceFramework) UpgradeState(_ context.Context) map[int6
 				}
 
 				newData := modelWorkspace{
-					ID:                  types.StringValue(oldData.ExternalID.ValueString()),
-					Name:                oldData.Name,
-					Organization:        oldData.Organization,
-					AssessmentsEnabled:  oldData.AssessmentsEnabled,
-					AutoApply:           oldData.AutoApply,
-					FileTriggersEnabled: oldData.FileTriggersEnabled,
-					Operations:          oldData.Operations,
-					QueueAllRuns:        oldData.QueueAllRuns,
-					SSHKeyID:            oldData.SSHKeyID,
-					TerraformVersion:    oldData.TerraformVersion,
-					TriggerPrefixes:     oldData.TriggerPrefixes,
-					TriggerPatterns:     types.ListNull(types.StringType),
-					WorkingDirectory:    oldData.WorkingDirectory,
-					TagNames:            types.SetNull(types.StringType),
+					ID:                     types.StringValue(oldData.ExternalID.ValueString()),
+					Name:                   oldData.Name,
+					Organization:           oldData.Organization,
+					AssessmentsEnabled:     oldData.AssessmentsEnabled,
+					AutoApply:              oldData.AutoApply,
+					FileTriggersEnabled:    oldData.FileTriggersEnabled,
+					Operations:             oldData.Operations,
+					QueueAllRuns:           oldData.QueueAllRuns,
+					SSHKeyID:               oldData.SSHKeyID,
+					TerraformVersion:       oldData.TerraformVersion,
+					TriggerPrefixes:        oldData.TriggerPrefixes,
+					TriggerPatterns:        types.ListNull(types.StringType),
+					WorkingDirectory:       oldData.WorkingDirectory,
+					TagNames:               types.SetNull(types.StringType),
 					RemoteStateConsumerIDs: types.SetNull(types.StringType),
 					Tags:                   types.MapNull(types.StringType),
 					EffectiveTags:          types.MapNull(types.StringType),
@@ -381,6 +381,9 @@ func (r *resourceTFEWorkspaceFramework) Update(ctx context.Context, req resource
 	var configExecutionMode types.String
 	var configAgentPoolID types.String
 	var configOperations types.Bool
+	var configTriggerPrefixes types.List
+	var configTriggerPatterns types.List
+	var configTags types.Map
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("auto_destroy_at"), &configAutoDestroyAt)...)
@@ -388,6 +391,9 @@ func (r *resourceTFEWorkspaceFramework) Update(ctx context.Context, req resource
 	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("execution_mode"), &configExecutionMode)...)
 	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("agent_pool_id"), &configAgentPoolID)...)
 	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("operations"), &configOperations)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("trigger_prefixes"), &configTriggerPrefixes)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("trigger_patterns"), &configTriggerPatterns)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("tags"), &configTags)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -410,6 +416,19 @@ func (r *resourceTFEWorkspaceFramework) Update(ctx context.Context, req resource
 	r.applyWorkspaceUpdateOptionsFromModel(ctx, &plan, &opts, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	if configTriggerPatterns.IsNull() {
+		opts.TriggerPatterns = nil
+	} else if configTriggerPrefixes.IsNull() {
+		opts.TriggerPrefixes = nil
+	}
+
+	if !configTags.IsNull() && !configTags.IsUnknown() && len(configTags.Elements()) == 0 && !boolValueOrDefault(plan.IgnoreAdditionalTags, false) {
+		if err := r.config.Client.Workspaces.DeleteAllTagBindings(ctx, state.ID.ValueString()); err != nil {
+			resp.Diagnostics.AddError("Error removing tag bindings", fmt.Sprintf("Error removing tag bindings from workspace %s: %v", state.ID.ValueString(), err))
+			return
+		}
 	}
 
 	if configExecutionMode.IsNull() || configExecutionMode.IsUnknown() {
@@ -630,26 +649,31 @@ func (r *resourceTFEWorkspaceFramework) readByIDIntoState(ctx context.Context, i
 		model.AgentPoolID = types.StringValue("")
 	}
 
-	autoDestroyAt, err := flattenAutoDestroyAt(workspace.AutoDestroyAt)
-	if err != nil {
-		diags.AddError("Error flattening auto destroy", err.Error())
-		return
-	}
-	if autoDestroyAt == nil {
+	if workspace.InheritsProjectAutoDestroy {
 		model.AutoDestroyAt = types.StringValue("")
+		model.AutoDestroyActivityDuration = types.StringValue("")
 	} else {
-		model.AutoDestroyAt = types.StringValue(*autoDestroyAt)
-	}
-
-	if workspace.AutoDestroyActivityDuration.IsSpecified() {
-		v, err := workspace.AutoDestroyActivityDuration.Get()
+		autoDestroyAt, err := flattenAutoDestroyAt(workspace.AutoDestroyAt)
 		if err != nil {
-			diags.AddError("Error reading auto destroy activity duration", err.Error())
+			diags.AddError("Error flattening auto destroy", err.Error())
 			return
 		}
-		model.AutoDestroyActivityDuration = types.StringValue(v)
-	} else {
-		model.AutoDestroyActivityDuration = types.StringValue("")
+		if autoDestroyAt == nil {
+			model.AutoDestroyAt = types.StringValue("")
+		} else {
+			model.AutoDestroyAt = types.StringValue(*autoDestroyAt)
+		}
+
+		if workspace.AutoDestroyActivityDuration.IsSpecified() {
+			v, err := workspace.AutoDestroyActivityDuration.Get()
+			if err != nil {
+				diags.AddError("Error reading auto destroy activity duration", err.Error())
+				return
+			}
+			model.AutoDestroyActivityDuration = types.StringValue(v)
+		} else {
+			model.AutoDestroyActivityDuration = types.StringValue("")
+		}
 	}
 
 	managedTagNames := map[string]struct{}{}
@@ -669,7 +693,7 @@ func (r *resourceTFEWorkspaceFramework) readByIDIntoState(ctx context.Context, i
 			tagNames = append(tagNames, types.StringValue(tagName))
 		}
 	}
-	if len(tagNames) == 0 && !prior.TagNames.IsNull() && !prior.TagNames.IsUnknown() {
+	if !prior.TagNames.IsNull() && !prior.TagNames.IsUnknown() {
 		model.TagNames = prior.TagNames
 	} else {
 		model.TagNames = types.SetValueMust(types.StringType, tagNames)
@@ -685,11 +709,11 @@ func (r *resourceTFEWorkspaceFramework) readByIDIntoState(ctx context.Context, i
 			"github_app_installation_id": types.StringType,
 		}}, []modelWorkspaceVCSRepo{{
 			Identifier:              stringToFramework(workspace.VCSRepo.Identifier),
-			Branch:                  stringToFramework(workspace.VCSRepo.Branch),
+			Branch:                  types.StringValue(workspace.VCSRepo.Branch),
 			IngressSubmodules:       types.BoolValue(workspace.VCSRepo.IngressSubmodules),
-			OAuthTokenID:            stringToFramework(workspace.VCSRepo.OAuthTokenID),
+			OAuthTokenID:            types.StringValue(workspace.VCSRepo.OAuthTokenID),
 			TagsRegex:               types.StringValue(workspace.VCSRepo.TagsRegex),
-			GithubAppInstallationID: stringToFramework(workspace.VCSRepo.GHAInstallationID),
+			GithubAppInstallationID: types.StringValue(workspace.VCSRepo.GHAInstallationID),
 		}})
 		diags.Append(d...)
 		model.VCSRepo = vcsRepoVal
@@ -787,15 +811,19 @@ func (r *resourceTFEWorkspaceFramework) applyWorkspaceOptionsFromModel(ctx conte
 		options.SourceName = tfe.String(model.SourceName.ValueString())
 	}
 
-	options.TagBindings = append(options.TagBindings, expandWorkspaceTagBindings(model.Tags)...)
+	if !model.Tags.IsNull() && !model.Tags.IsUnknown() {
+		options.TagBindings = []*tfe.TagBinding{}
+		options.TagBindings = append(options.TagBindings, expandWorkspaceTagBindings(model.Tags)...)
+	}
 
 	if !model.TerraformVersion.IsNull() && !model.TerraformVersion.IsUnknown() {
 		options.TerraformVersion = tfe.String(model.TerraformVersion.ValueString())
 	}
-	if prefixes, ok := expandWorkspaceStringList(ctx, model.TriggerPrefixes, diags); ok {
+	vcsConfigured := !model.VCSRepo.IsNull() && !model.VCSRepo.IsUnknown()
+	if prefixes, ok := expandWorkspaceStringList(ctx, model.TriggerPrefixes, diags); ok && (vcsConfigured || len(prefixes) > 0) {
 		options.TriggerPrefixes = prefixes
 	}
-	if patterns, ok := expandWorkspaceStringList(ctx, model.TriggerPatterns, diags); ok {
+	if patterns, ok := expandWorkspaceStringList(ctx, model.TriggerPatterns, diags); ok && (vcsConfigured || len(patterns) > 0) {
 		options.TriggerPatterns = patterns
 	}
 	if !model.ProjectID.IsNull() && !model.ProjectID.IsUnknown() && model.ProjectID.ValueString() != "" {
@@ -824,15 +852,19 @@ func (r *resourceTFEWorkspaceFramework) applyWorkspaceUpdateOptionsFromModel(ctx
 		options.AgentPoolID = tfe.String(model.AgentPoolID.ValueString())
 		options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{AgentPool: tfe.Bool(true)}
 	}
-	if !model.AutoDestroyAt.IsNull() && !model.AutoDestroyAt.IsUnknown() && model.AutoDestroyAt.ValueString() != "" {
-		t, err := time.Parse(time.RFC3339, model.AutoDestroyAt.ValueString())
-		if err != nil {
-			diags.AddError("Error expanding auto destroy", err.Error())
-			return
+	if !model.AutoDestroyAt.IsNull() && !model.AutoDestroyAt.IsUnknown() {
+		if model.AutoDestroyAt.ValueString() == "" {
+			options.AutoDestroyAt = jsonapi.NewNullNullableAttr[time.Time]()
+		} else {
+			t, err := time.Parse(time.RFC3339, model.AutoDestroyAt.ValueString())
+			if err != nil {
+				diags.AddError("Error expanding auto destroy", err.Error())
+				return
+			}
+			options.AutoDestroyAt = jsonapi.NewNullableAttrWithValue(t)
 		}
-		options.AutoDestroyAt = jsonapi.NewNullableAttrWithValue(t)
 	}
-	if model.AutoDestroyActivityDuration.IsNull() {
+	if model.AutoDestroyActivityDuration.IsNull() || model.AutoDestroyActivityDuration.IsUnknown() || model.AutoDestroyActivityDuration.ValueString() == "" {
 		options.AutoDestroyActivityDuration = jsonapi.NewNullNullableAttr[string]()
 	} else {
 		options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(model.AutoDestroyActivityDuration.ValueString())
@@ -845,15 +877,19 @@ func (r *resourceTFEWorkspaceFramework) applyWorkspaceUpdateOptionsFromModel(ctx
 		options.Operations = tfe.Bool(model.Operations.ValueBool())
 	}
 
-	options.TagBindings = append(options.TagBindings, expandWorkspaceTagBindings(model.Tags)...)
+	if !model.Tags.IsNull() && !model.Tags.IsUnknown() {
+		options.TagBindings = []*tfe.TagBinding{}
+		options.TagBindings = append(options.TagBindings, expandWorkspaceTagBindings(model.Tags)...)
+	}
 
 	if !model.TerraformVersion.IsNull() && !model.TerraformVersion.IsUnknown() {
 		options.TerraformVersion = tfe.String(model.TerraformVersion.ValueString())
 	}
-	if prefixes, ok := expandWorkspaceStringList(ctx, model.TriggerPrefixes, diags); ok {
+	vcsConfigured := !model.VCSRepo.IsNull() && !model.VCSRepo.IsUnknown()
+	if prefixes, ok := expandWorkspaceStringList(ctx, model.TriggerPrefixes, diags); ok && (vcsConfigured || len(prefixes) > 0) {
 		options.TriggerPrefixes = prefixes
 	}
-	if patterns, ok := expandWorkspaceStringList(ctx, model.TriggerPatterns, diags); ok {
+	if patterns, ok := expandWorkspaceStringList(ctx, model.TriggerPatterns, diags); ok && (vcsConfigured || len(patterns) > 0) {
 		options.TriggerPatterns = patterns
 	}
 	if !model.WorkingDirectory.IsNull() && !model.WorkingDirectory.IsUnknown() {

@@ -55,12 +55,12 @@ func TestResourceTFEWorkspace_UpgradeStateV0_FrameworkPath(t *testing.T) {
 
 	oldState := tfsdk.State{Schema: *upgrader.PriorSchema}
 	oldData := modelWorkspaceV0{
-		ID:                types.StringValue("hashicorp/workspace-test"),
-		ExternalID:        types.StringValue("ws-123"),
-		Name:              types.StringValue("workspace-test"),
-		Organization:      types.StringValue("hashicorp"),
-		TriggerPrefixes:   types.ListNull(types.StringType),
-		VCSRepo:           types.ListNull(types.ObjectType{AttrTypes: map[string]attr.Type{"identifier": types.StringType, "branch": types.StringType, "ingress_submodules": types.BoolType, "oauth_token_id": types.StringType, "github_app_installation_id": types.StringType}}),
+		ID:              types.StringValue("hashicorp/workspace-test"),
+		ExternalID:      types.StringValue("ws-123"),
+		Name:            types.StringValue("workspace-test"),
+		Organization:    types.StringValue("hashicorp"),
+		TriggerPrefixes: types.ListNull(types.StringType),
+		VCSRepo:         types.ListNull(types.ObjectType{AttrTypes: map[string]attr.Type{"identifier": types.StringType, "branch": types.StringType, "ingress_submodules": types.BoolType, "oauth_token_id": types.StringType, "github_app_installation_id": types.StringType}}),
 	}
 	if diags := oldState.Set(ctx, oldData); diags.HasError() {
 		t.Fatalf("failed setting old state: %v", diags)
