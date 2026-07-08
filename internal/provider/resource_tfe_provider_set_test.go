@@ -430,7 +430,7 @@ func TestAccTFEProviderSet_validation(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccTFEProviderSet_no_global_no_relationship("my-org"),
+				Config:      testAccTFEProviderSet_invalid_no_global_no_scopes("my-org"),
 				ExpectError: regexp.MustCompile("global must be true unless workspace_ids or project_ids are set"),
 			},
 			{
