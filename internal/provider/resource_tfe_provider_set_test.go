@@ -718,7 +718,7 @@ EOT
 }`, organization)
 }
 
-func testAccTFEProviderSet_no_global_no_relationship(organization string) string {
+func testAccTFEProviderSet_invalid_no_global_no_scopes(organization string) string {
 	return fmt.Sprintf(`
 locals {
     organization_name = "%s"
