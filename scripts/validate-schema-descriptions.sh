@@ -229,7 +229,7 @@ RAW_MISSING=$(jq -r '
   | (
       # Check component-level description on the root block
       if ($root_block.description // "") == "" then
-        "\("MISSING_COMPONENT")\t\($schema_type)/\($resource_name)\t(component)"
+        "\("MISSING_COMPONENT")\t\($schema_type)/\($resource_name)\t."
       else empty
       end
     ),
