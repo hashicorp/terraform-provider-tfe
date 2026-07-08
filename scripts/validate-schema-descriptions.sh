@@ -136,9 +136,6 @@ if ! jq -e '.provider_schemas["registry.terraform.io/hashicorp/tfe"]' "${PROVIDE
     exit 7
 fi
 
-
-
-
 # Load no_description_required list from exceptions file
 NO_DESCRIPTION_REQUIRED=()
 if [ -f "${EXCEPTIONS_FILE}" ]; then
@@ -215,6 +212,7 @@ RAW_MISSING=$(jq -r '
 
   .provider_schemas["registry.terraform.io/hashicorp/tfe"]
   | to_entries[]
+  | select(.key != "resource_identity_schemas")
   | .key as $schema_type
   | .value
   | (
