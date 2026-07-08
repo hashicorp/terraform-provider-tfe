@@ -88,3 +88,44 @@ func TestResourceTFEWorkspace_UpgradeStateV0_FrameworkPath(t *testing.T) {
 		t.Fatalf("expected id to be ws-123, got %q", newData.ID.ValueString())
 	}
 }
+
+func TestResourceTFEWorkspace_UpgradeStateV0_FrameworkPath_UsesLegacyIDFallback(t *testing.T) {
+	ctx := context.Background()
+	r := &resourceTFEWorkspaceFramework{}
+
+	upgrader := r.UpgradeState(ctx)[0]
+
+	oldState := tfsdk.State{Schema: *upgrader.PriorSchema}
+	oldData := modelWorkspaceV0{
+		ID:              types.StringValue("ws-legacy-id"),
+		ExternalID:      types.StringNull(),
+		Name:            types.StringValue("workspace-test"),
+		Organization:    types.StringValue("hashicorp"),
+		TriggerPrefixes: types.ListNull(types.StringType),
+		VCSRepo:         types.ListNull(types.ObjectType{AttrTypes: map[string]attr.Type{"identifier": types.StringType, "branch": types.StringType, "ingress_submodules": types.BoolType, "oauth_token_id": types.StringType, "github_app_installation_id": types.StringType}}),
+	}
+	if diags := oldState.Set(ctx, oldData); diags.HasError() {
+		t.Fatalf("failed setting old state: %v", diags)
+	}
+
+	schemaResp := &fwresource.SchemaResponse{}
+	r.Schema(ctx, fwresource.SchemaRequest{}, schemaResp)
+	if schemaResp.Schema.Version != 1 {
+		t.Fatalf("expected workspace schema version 1, got %d", schemaResp.Schema.Version)
+	}
+
+	resp := &fwresource.UpgradeStateResponse{State: tfsdk.State{Schema: schemaResp.Schema}}
+	upgrader.StateUpgrader(ctx, fwresource.UpgradeStateRequest{State: &oldState}, resp)
+	if resp.Diagnostics.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", resp.Diagnostics)
+	}
+
+	var newData modelWorkspace
+	if diags := resp.State.Get(ctx, &newData); diags.HasError() {
+		t.Fatalf("failed reading upgraded state: %v", diags)
+	}
+
+	if newData.ID.ValueString() != "ws-legacy-id" {
+		t.Fatalf("expected id to fall back to legacy id, got %q", newData.ID.ValueString())
+	}
+}

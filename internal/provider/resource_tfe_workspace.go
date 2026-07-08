@@ -131,7 +131,7 @@ func (r *resourceTFEWorkspaceFramework) Configure(_ context.Context, req resourc
 }
 
 func (r *resourceTFEWorkspaceFramework) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	resp.Schema = schema.Schema{Attributes: map[string]schema.Attribute{
+	resp.Schema = schema.Schema{Version: 1, Attributes: map[string]schema.Attribute{
 		"id":                             schema.StringAttribute{Computed: true, PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
 		"name":                           schema.StringAttribute{Required: true},
 		"organization":                   schema.StringAttribute{Optional: true, Computed: true, PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
@@ -211,13 +211,19 @@ func (r *resourceTFEWorkspaceFramework) UpgradeState(_ context.Context) map[int6
 					return
 				}
 
-				if oldData.ExternalID.IsNull() || oldData.ExternalID.IsUnknown() || oldData.ExternalID.ValueString() == "" {
-					resp.Diagnostics.AddError("Error upgrading workspace state", "missing or invalid external_id in prior state")
+				workspaceID := ""
+				if !oldData.ExternalID.IsNull() && !oldData.ExternalID.IsUnknown() && oldData.ExternalID.ValueString() != "" {
+					workspaceID = oldData.ExternalID.ValueString()
+				} else if !oldData.ID.IsNull() && !oldData.ID.IsUnknown() && oldData.ID.ValueString() != "" {
+					workspaceID = oldData.ID.ValueString()
+				}
+				if workspaceID == "" {
+					resp.Diagnostics.AddError("Error upgrading workspace state", "missing workspace id in prior state")
 					return
 				}
 
 				newData := modelWorkspace{
-					ID:                     types.StringValue(oldData.ExternalID.ValueString()),
+					ID:                     types.StringValue(workspaceID),
 					Name:                   oldData.Name,
 					Organization:           oldData.Organization,
 					AssessmentsEnabled:     oldData.AssessmentsEnabled,
@@ -418,10 +424,24 @@ func (r *resourceTFEWorkspaceFramework) Update(ctx context.Context, req resource
 		return
 	}
 
-	if configTriggerPatterns.IsNull() {
-		opts.TriggerPatterns = nil
-	} else if configTriggerPrefixes.IsNull() {
-		opts.TriggerPrefixes = nil
+	prefixesConfigured := !configTriggerPrefixes.IsNull() && !configTriggerPrefixes.IsUnknown()
+	patternsConfigured := !configTriggerPatterns.IsNull() && !configTriggerPatterns.IsUnknown()
+
+	switch {
+	case prefixesConfigured:
+		prefixes, _ := expandWorkspaceStringList(ctx, configTriggerPrefixes, &resp.Diagnostics)
+		opts.TriggerPrefixes = prefixes
+		opts.TriggerPatterns = []string{}
+	case patternsConfigured:
+		patterns, _ := expandWorkspaceStringList(ctx, configTriggerPatterns, &resp.Diagnostics)
+		opts.TriggerPatterns = patterns
+		opts.TriggerPrefixes = []string{}
+	default:
+		opts.TriggerPrefixes = []string{}
+		opts.TriggerPatterns = []string{}
+	}
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	if !configTags.IsNull() && !configTags.IsUnknown() && len(configTags.Elements()) == 0 && !boolValueOrDefault(plan.IgnoreAdditionalTags, false) {
@@ -709,11 +729,11 @@ func (r *resourceTFEWorkspaceFramework) readByIDIntoState(ctx context.Context, i
 			"github_app_installation_id": types.StringType,
 		}}, []modelWorkspaceVCSRepo{{
 			Identifier:              stringToFramework(workspace.VCSRepo.Identifier),
-			Branch:                  types.StringValue(workspace.VCSRepo.Branch),
+			Branch:                  stringToFramework(workspace.VCSRepo.Branch),
 			IngressSubmodules:       types.BoolValue(workspace.VCSRepo.IngressSubmodules),
-			OAuthTokenID:            types.StringValue(workspace.VCSRepo.OAuthTokenID),
+			OAuthTokenID:            stringToFramework(workspace.VCSRepo.OAuthTokenID),
 			TagsRegex:               types.StringValue(workspace.VCSRepo.TagsRegex),
-			GithubAppInstallationID: types.StringValue(workspace.VCSRepo.GHAInstallationID),
+			GithubAppInstallationID: stringToFramework(workspace.VCSRepo.GHAInstallationID),
 		}})
 		diags.Append(d...)
 		model.VCSRepo = vcsRepoVal
