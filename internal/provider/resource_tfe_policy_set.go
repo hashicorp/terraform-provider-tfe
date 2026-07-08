@@ -21,6 +21,8 @@ import (
 
 func resourceTFEPolicySet() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manages policy sets, which are groups of policies enforced on Terraform runs.",
+
 		Create: resourceTFEPolicySetCreate,
 		Read:   resourceTFEPolicySetRead,
 		Update: resourceTFEPolicySetUpdate,

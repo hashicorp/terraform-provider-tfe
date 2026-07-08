@@ -21,6 +21,8 @@ import (
 
 func resourceTFEWorkspacePolicySet() *schema.Resource {
 	return &schema.Resource{
+		Description: "Adds and removes policy sets from a workspace.",
+
 		Create: resourceTFEWorkspacePolicySetCreate,
 		Read:   resourceTFEWorkspacePolicySetRead,
 		Delete: resourceTFEWorkspacePolicySetDelete,

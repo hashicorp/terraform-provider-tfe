@@ -21,6 +21,8 @@ import (
 
 func resourceTFEWorkspaceVariableSet() *schema.Resource {
 	return &schema.Resource{
+		Description: "Adds and removes a workspace from a variable set's scope.",
+
 		Create: resourceTFEWorkspaceVariableSetCreate,
 		Read:   resourceTFEWorkspaceVariableSetRead,
 		Delete: resourceTFEWorkspaceVariableSetDelete,

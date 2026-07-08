@@ -19,6 +19,8 @@ import (
 
 func resourceTFEOAuthClient() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manages an OAuth client, which represents the connection between an organization and a VCS provider.",
+
 		Create: resourceTFEOAuthClientCreate,
 		Read:   resourceTFEOAuthClientRead,
 		Delete: resourceTFEOAuthClientDelete,

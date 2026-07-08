@@ -30,6 +30,8 @@ var workspaceIDRegexp = regexp.MustCompile("^ws-[a-zA-Z0-9]{16}$")
 
 func resourceTFEWorkspace() *schema.Resource {
 	return &schema.Resource{
+		Description: "Provides a workspace resource.",
+
 		Create: resourceTFEWorkspaceCreate,
 		Read:   resourceTFEWorkspaceRead,
 		Update: resourceTFEWorkspaceUpdate,

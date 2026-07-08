@@ -53,6 +53,7 @@ type modelAdminTerraformVersion struct {
 
 func (r *terraformVersionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Manages Terraform versions available on HCP Terraform and Terraform Enterprise.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description:   "The ID of the Terraform version.",

@@ -25,6 +25,8 @@ import (
 
 func resourceTFERegistryModule() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manages Terraform modules in the organization's private module registry.",
+
 		Create: resourceTFERegistryModuleCreate,
 		Read:   resourceTFERegistryModuleRead,
 		Update: resourceTFERegistryModuleUpdate,

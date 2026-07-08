@@ -19,6 +19,8 @@ import (
 
 func resourceTFEAgentPoolAllowedWorkspaces() *schema.Resource {
 	return &schema.Resource{
+		Description: "Adds and removes allowed workspaces on an agent pool.",
+
 		Create: resourceTFEAgentPoolAllowedWorkspacesCreate,
 		Read:   resourceTFEAgentPoolAllowedWorkspacesRead,
 		Update: resourceTFEAgentPoolAllowedWorkspacesUpdate,

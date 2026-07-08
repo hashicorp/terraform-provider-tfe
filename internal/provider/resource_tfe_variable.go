@@ -293,7 +293,7 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 				},
 			},
 		},
-		Description:         "",
+		Description:         "Manages variables.",
 		MarkdownDescription: "",
 		DeprecationMessage:  "",
 		Version:             1,

@@ -21,6 +21,8 @@ import (
 
 func resourceTFEAgentPool() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manages agent pools within an organization.",
+
 		Create: resourceTFEAgentPoolCreate,
 		Read:   resourceTFEAgentPoolRead,
 		Update: resourceTFEAgentPoolUpdate,

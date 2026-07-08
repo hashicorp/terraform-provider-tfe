@@ -19,6 +19,8 @@ import (
 
 func resourceTFEOrganizationModuleSharing() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manages module sharing for an organization (Terraform Enterprise only).",
+
 		DeprecationMessage: "the tfe_organization_module_sharing resource is deprecated, please use tfe_admin_organization_settings instead",
 		Create:             resourceTFEOrganizationModuleSharingCreate,
 		Read:               resourceTFEOrganizationModuleSharingRead,

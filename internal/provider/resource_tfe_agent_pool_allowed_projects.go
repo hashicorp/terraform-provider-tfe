@@ -19,6 +19,8 @@ import (
 
 func resourceTFEAgentPoolAllowedProjects() *schema.Resource {
 	return &schema.Resource{
+		Description: "Adds and removes allowed projects on an agent pool.",
+
 		Create: resourceTFEAgentPoolAllowedProjectsCreate,
 		Read:   resourceTFEAgentPoolAllowedProjectsRead,
 		Update: resourceTFEAgentPoolAllowedProjectsUpdate,

@@ -22,6 +22,8 @@ import (
 
 func resourceTFETeamProjectAccess() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manages a team's permissions on a project.",
+
 		CreateContext: resourceTFETeamProjectAccessCreate,
 		ReadContext:   resourceTFETeamProjectAccessRead,
 		UpdateContext: resourceTFETeamProjectAccessUpdate,

@@ -20,6 +20,8 @@ import (
 
 func resourceTFEOrganization() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manages organizations.",
+
 		Create: resourceTFEOrganizationCreate,
 		Read:   resourceTFEOrganizationRead,
 		Update: resourceTFEOrganizationUpdate,

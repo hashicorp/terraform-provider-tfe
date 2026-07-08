@@ -19,6 +19,8 @@ import (
 
 func resourceTFETeamOrganizationMembers() *schema.Resource {
 	return &schema.Resource{
+		Description: "Adds or removes one or more team members using organization membership IDs.",
+
 		Create: resourceTFETeamOrganizationMembersCreate,
 		Read:   resourceTFETeamOrganizationMembersRead,
 		Update: resourceTFETeamOrganizationMembersUpdate,

@@ -23,6 +23,8 @@ var variableSetIDRegexp = regexp.MustCompile("varset-[a-zA-Z0-9]{16}$")
 
 func resourceTFEVariableSet() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manages variable sets.",
+
 		Create: resourceTFEVariableSetCreate,
 		Read:   resourceTFEVariableSetRead,
 		Update: resourceTFEVariableSetUpdate,

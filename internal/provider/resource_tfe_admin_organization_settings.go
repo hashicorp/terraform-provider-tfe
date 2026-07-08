@@ -19,6 +19,8 @@ import (
 
 func resourceTFEAdminOrganizationSettings() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manages admin settings for an organization (Terraform Enterprise only).",
+
 		Create: resourceTFEAdminOrganizationSettingsCreate,
 		Read:   resourceTFEAdminOrganizationSettingsRead,
 		Update: resourceTFEAdminOrganizationSettingsUpdate,

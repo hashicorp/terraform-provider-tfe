@@ -72,6 +72,8 @@ var policyOverridePendingStatuses = map[tfe.RunStatus]bool{
 
 func resourceTFEWorkspaceRun() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manages the initial and/or final Terraform run in a given workspace.",
+
 		Create:        resourceTFEWorkspaceRunCreate,
 		Delete:        resourceTFEWorkspaceRunDelete,
 		Read:          resourceTFEWorkspaceRunRead,

@@ -21,6 +21,8 @@ import (
 
 func resourceTFEOrganizationMembership() *schema.Resource {
 	return &schema.Resource{
+		Description: "Adds or removes a user from an organization.",
+
 		Create: resourceTFEOrganizationMembershipCreate,
 		Read:   resourceTFEOrganizationMembershipRead,
 		Delete: resourceTFEOrganizationMembershipDelete,

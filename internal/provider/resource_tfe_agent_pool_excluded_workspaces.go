@@ -19,6 +19,8 @@ import (
 
 func resourceTFEAgentPoolExcludedWorkspaces() *schema.Resource {
 	return &schema.Resource{
+		Description: "Adds and removes excluded workspaces on an agent pool.",
+
 		Create: resourceTFEAgentPoolExcludedWorkspacesCreate,
 		Read:   resourceTFEAgentPoolExcludedWorkspacesRead,
 		Update: resourceTFEAgentPoolExcludedWorkspacesUpdate,

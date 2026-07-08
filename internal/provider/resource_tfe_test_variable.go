@@ -227,7 +227,7 @@ func (r *resourceTFETestVariable) Schema(ctx context.Context, req resource.Schem
 				},
 			},
 		},
-		Description:         "",
+		Description:         "Manages environment variables used for testing by the Private Module Registry.",
 		MarkdownDescription: "",
 		DeprecationMessage:  "",
 		Version:             1,

@@ -25,6 +25,8 @@ import (
 
 func resourceTFETeam() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manages teams.",
+
 		Create: resourceTFETeamCreate,
 		Read:   resourceTFETeamRead,
 		Update: resourceTFETeamUpdate,

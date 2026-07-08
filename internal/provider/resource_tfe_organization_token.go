@@ -21,6 +21,8 @@ import (
 
 func resourceTFEOrganizationToken() *schema.Resource {
 	return &schema.Resource{
+		Description: "Generates a new organization token, replacing any existing token, which can be used to act as the organization service account.",
+
 		Create: resourceTFEOrganizationTokenCreate,
 		Read:   resourceTFEOrganizationTokenRead,
 		Delete: resourceTFEOrganizationTokenDelete,

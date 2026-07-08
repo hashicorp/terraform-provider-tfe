@@ -21,6 +21,8 @@ import (
 
 func resourceTFESentinelPolicy() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manages Sentinel policies (deprecated, use tfe_policy instead).",
+
 		DeprecationMessage: "tfe_sentinel_policy is deprecated, please use tfe_policy instead",
 		Create:             resourceTFESentinelPolicyCreate,
 		Read:               resourceTFESentinelPolicyRead,

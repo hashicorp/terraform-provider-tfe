@@ -21,6 +21,8 @@ import (
 
 func resourceTFERunTrigger() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manages run triggers, which connect a workspace to one or more source workspaces within an organization.",
+
 		Create: resourceTFERunTriggerCreate,
 		Read:   resourceTFERunTriggerRead,
 		Delete: resourceTFERunTriggerDelete,

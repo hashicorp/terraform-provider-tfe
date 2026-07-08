@@ -107,7 +107,8 @@ func (r *resourceOrgRunTask) Configure(ctx context.Context, req resource.Configu
 
 func (r *resourceOrgRunTask) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Version: 0,
+		Description: "Manages run tasks within an organization.",
+		Version:     0,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,

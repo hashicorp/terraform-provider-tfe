@@ -18,6 +18,8 @@ import (
 
 func resourceTFEAgentToken() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manages agent tokens, which allow agents to communicate securely with HCP Terraform.",
+
 		Create: resourceTFEAgentTokenCreate,
 		Read:   resourceTFEAgentTokenRead,
 		Delete: resourceTFEAgentTokenDelete,

@@ -23,6 +23,8 @@ import (
 
 func resourceTFENoCodeModule() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manages no-code modules for registry modules.",
+
 		CreateContext: resourceTFENoCodeModuleCreate,
 		ReadContext:   resourceTFENoCodeModuleRead,
 		UpdateContext: resourceTFENoCodeModuleUpdate,

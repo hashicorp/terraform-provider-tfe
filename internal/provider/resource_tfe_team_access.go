@@ -38,6 +38,8 @@ const (
 
 func resourceTFETeamAccess() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manages a team's permissions on a workspace.",
+
 		Create: resourceTFETeamAccessCreate,
 		Read:   resourceTFETeamAccessRead,
 		Update: resourceTFETeamAccessUpdate,

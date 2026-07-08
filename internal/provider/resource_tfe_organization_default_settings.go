@@ -92,6 +92,7 @@ func (r *resourceTFEOrganizationDefaultSettings) Metadata(_ context.Context, req
 // Schema implements resource.Resource
 func (r *resourceTFEOrganizationDefaultSettings) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Manages default settings for an organization, primarily the default execution mode.",
 		Attributes: map[string]schema.Attribute{
 			"organization": schema.StringAttribute{
 				Description: "The name of the organization.",

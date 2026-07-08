@@ -21,6 +21,8 @@ import (
 
 func resourceTFEWorkspacePolicySetExclusion() *schema.Resource {
 	return &schema.Resource{
+		Description: "Adds and removes policy sets from an excluded workspace.",
+
 		Create: resourceTFEWorkspacePolicySetExclusionCreate,
 		Read:   resourceTFEWorkspacePolicySetExclusionRead,
 		Delete: resourceTFEWorkspacePolicySetExclusionDelete,

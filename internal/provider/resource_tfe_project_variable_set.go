@@ -21,6 +21,8 @@ import (
 
 func resourceTFEProjectVariableSet() *schema.Resource {
 	return &schema.Resource{
+		Description: "Adds and removes a project from a variable set's scope.",
+
 		Create: resourceTFEProjectVariableSetCreate,
 		Read:   resourceTFEProjectVariableSetRead,
 		Delete: resourceTFEProjectVariableSetDelete,

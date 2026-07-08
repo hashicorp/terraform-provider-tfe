@@ -129,7 +129,8 @@ func (r *resourceTFESAMLSettings) Metadata(_ context.Context, req resource.Metad
 // Schema implements resource.Resource
 func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Version: 1,
+		Description: "Manages SAML settings for Terraform Enterprise.",
+		Version:     1,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "The ID of the SAML settings.",
