@@ -212,7 +212,7 @@ func (d *dataSourceTFEVariables) Schema(_ context.Context, _ datasource.SchemaRe
 			},
 
 			"terraform": schema.ListNestedAttribute{
-				Description: "List containing environment variables configured on the workspace.",
+				Description: "List containing terraform variables configured on the workspace.",
 				Computed:    true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
@@ -245,7 +245,7 @@ func (d *dataSourceTFEVariables) Schema(_ context.Context, _ datasource.SchemaRe
 			},
 
 			"variables": schema.ListNestedAttribute{
-				Description: "List containing environment variables configured on the workspace.",
+				Description: "List containing terraform and environment variables configured on the workspace.",
 				Computed:    true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
