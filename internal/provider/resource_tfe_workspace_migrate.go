@@ -1,126 +1,67 @@
-// Copyright IBM Corp. 2018, 2025
+// Copyright IBM Corp. 2018, 2026
 // SPDX-License-Identifier: MPL-2.0
 
 package provider
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func resourceTfeWorkspaceResourceV0() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Type:     schema.TypeString,
-				Required: true,
-			},
-
-			"organization": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
-			},
-
-			"assessments_enabled": {
-				Type:     schema.TypeBool,
-				Optional: true,
-			},
-
-			"auto_apply": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
-			},
-
-			"file_triggers_enabled": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
-			},
-
-			"operations": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
-			},
-
-			"queue_all_runs": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
-			},
-
-			"ssh_key_id": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "",
-			},
-
-			"terraform_version": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			"trigger_prefixes": {
-				Type:     schema.TypeList,
-				Optional: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-			},
-
-			"working_directory": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			"vcs_repo": {
-				Type:     schema.TypeList,
-				Optional: true,
-				MinItems: 1,
-				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"identifier": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
-
-						"branch": {
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-
-						"ingress_submodules": {
-							Type:     schema.TypeBool,
-							Optional: true,
-							Default:  false,
-						},
-
-						"oauth_token_id": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
-
-						"github_app_installation_id": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-					},
-				},
-			},
-
-			"external_id": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-		},
-	}
+type modelWorkspaceV0 struct {
+	ID                  types.String `tfsdk:"id"`
+	ExternalID          types.String `tfsdk:"external_id"`
+	Name                types.String `tfsdk:"name"`
+	Organization        types.String `tfsdk:"organization"`
+	AssessmentsEnabled  types.Bool   `tfsdk:"assessments_enabled"`
+	AutoApply           types.Bool   `tfsdk:"auto_apply"`
+	FileTriggersEnabled types.Bool   `tfsdk:"file_triggers_enabled"`
+	Operations          types.Bool   `tfsdk:"operations"`
+	QueueAllRuns        types.Bool   `tfsdk:"queue_all_runs"`
+	SSHKeyID            types.String `tfsdk:"ssh_key_id"`
+	TerraformVersion    types.String `tfsdk:"terraform_version"`
+	TriggerPrefixes     types.List   `tfsdk:"trigger_prefixes"`
+	WorkingDirectory    types.String `tfsdk:"working_directory"`
+	VCSRepo             types.List   `tfsdk:"vcs_repo"`
 }
 
-func resourceTfeWorkspaceStateUpgradeV0(_ context.Context, rawState map[string]interface{}, meta interface{}) (map[string]interface{}, error) {
+var resourceTFEWorkspaceSchemaV0 = schema.Schema{
+	Attributes: map[string]schema.Attribute{
+		"id":                    schema.StringAttribute{Computed: true},
+		"external_id":           schema.StringAttribute{Computed: true},
+		"name":                  schema.StringAttribute{Required: true},
+		"organization":          schema.StringAttribute{Required: true},
+		"assessments_enabled":   schema.BoolAttribute{Optional: true},
+		"auto_apply":            schema.BoolAttribute{Optional: true, Computed: true},
+		"file_triggers_enabled": schema.BoolAttribute{Optional: true, Computed: true},
+		"operations":            schema.BoolAttribute{Optional: true, Computed: true},
+		"queue_all_runs":        schema.BoolAttribute{Optional: true, Computed: true},
+		"ssh_key_id":            schema.StringAttribute{Optional: true, Computed: true},
+		"terraform_version":     schema.StringAttribute{Optional: true, Computed: true},
+		"trigger_prefixes":      schema.ListAttribute{Optional: true, ElementType: types.StringType},
+		"working_directory":     schema.StringAttribute{Optional: true, Computed: true},
+	},
+	Blocks: map[string]schema.Block{
+		"vcs_repo": schema.ListNestedBlock{
+			NestedObject: schema.NestedBlockObject{Attributes: map[string]schema.Attribute{
+				"identifier":                 schema.StringAttribute{Required: true},
+				"branch":                     schema.StringAttribute{Optional: true},
+				"ingress_submodules":         schema.BoolAttribute{Optional: true, Computed: true},
+				"oauth_token_id":             schema.StringAttribute{Required: true},
+				"github_app_installation_id": schema.StringAttribute{Computed: true},
+			}},
+		},
+	},
+}
+
+func resourceTfeWorkspaceStateUpgradeV0(_ context.Context, rawState map[string]interface{}, _ interface{}) (map[string]interface{}, error) {
+	if rawState == nil {
+		return nil, fmt.Errorf("raw state is nil")
+	}
+
 	rawState["id"] = rawState["external_id"]
 	return rawState, nil
 }

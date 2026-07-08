@@ -43,6 +43,7 @@ var (
 	_ resource.ResourceWithConfigure   = &resourceTFEWorkspaceFramework{}
 	_ resource.ResourceWithModifyPlan  = &resourceTFEWorkspaceFramework{}
 	_ resource.ResourceWithImportState = &resourceTFEWorkspaceFramework{}
+	_ resource.ResourceWithUpgradeState = &resourceTFEWorkspaceFramework{}
 )
 
 type resourceTFEWorkspaceFramework struct {
@@ -192,6 +193,60 @@ func (r *resourceTFEWorkspaceFramework) IdentitySchema(_ context.Context, _ reso
 		"id":       identityschema.StringAttribute{RequiredForImport: true},
 		"hostname": identityschema.StringAttribute{OptionalForImport: true},
 	}}
+}
+
+func (r *resourceTFEWorkspaceFramework) UpgradeState(_ context.Context) map[int64]resource.StateUpgrader {
+	return map[int64]resource.StateUpgrader{
+		0: {
+			PriorSchema: &resourceTFEWorkspaceSchemaV0,
+			StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
+				if req.State == nil {
+					resp.Diagnostics.AddError("Error upgrading workspace state", "missing prior state")
+					return
+				}
+
+				var oldData modelWorkspaceV0
+				resp.Diagnostics.Append(req.State.Get(ctx, &oldData)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				if oldData.ExternalID.IsNull() || oldData.ExternalID.IsUnknown() || oldData.ExternalID.ValueString() == "" {
+					resp.Diagnostics.AddError("Error upgrading workspace state", "missing or invalid external_id in prior state")
+					return
+				}
+
+				newData := modelWorkspace{
+					ID:                  types.StringValue(oldData.ExternalID.ValueString()),
+					Name:                oldData.Name,
+					Organization:        oldData.Organization,
+					AssessmentsEnabled:  oldData.AssessmentsEnabled,
+					AutoApply:           oldData.AutoApply,
+					FileTriggersEnabled: oldData.FileTriggersEnabled,
+					Operations:          oldData.Operations,
+					QueueAllRuns:        oldData.QueueAllRuns,
+					SSHKeyID:            oldData.SSHKeyID,
+					TerraformVersion:    oldData.TerraformVersion,
+					TriggerPrefixes:     oldData.TriggerPrefixes,
+					TriggerPatterns:     types.ListNull(types.StringType),
+					WorkingDirectory:    oldData.WorkingDirectory,
+					TagNames:            types.SetNull(types.StringType),
+					RemoteStateConsumerIDs: types.SetNull(types.StringType),
+					Tags:                   types.MapNull(types.StringType),
+					EffectiveTags:          types.MapNull(types.StringType),
+					VCSRepo: types.ListNull(types.ObjectType{AttrTypes: map[string]attr.Type{
+						"identifier":                 types.StringType,
+						"branch":                     types.StringType,
+						"ingress_submodules":         types.BoolType,
+						"oauth_token_id":             types.StringType,
+						"tags_regex":                 types.StringType,
+						"github_app_installation_id": types.StringType,
+					}}),
+				}
+				resp.Diagnostics.Append(resp.State.Set(ctx, newData)...)
+			},
+		},
+	}
 }
 
 func (r *resourceTFEWorkspaceFramework) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
@@ -633,7 +688,7 @@ func (r *resourceTFEWorkspaceFramework) readByIDIntoState(ctx context.Context, i
 			Branch:                  stringToFramework(workspace.VCSRepo.Branch),
 			IngressSubmodules:       types.BoolValue(workspace.VCSRepo.IngressSubmodules),
 			OAuthTokenID:            stringToFramework(workspace.VCSRepo.OAuthTokenID),
-			TagsRegex:               stringToFramework(workspace.VCSRepo.TagsRegex),
+			TagsRegex:               types.StringValue(workspace.VCSRepo.TagsRegex),
 			GithubAppInstallationID: stringToFramework(workspace.VCSRepo.GHAInstallationID),
 		}})
 		diags.Append(d...)
