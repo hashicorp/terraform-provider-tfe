@@ -110,7 +110,7 @@ type modelTFEWorkspaceActions struct {
 }
 
 func modelFromTFEWorkspace(ctx context.Context, i *tfe.Workspace, autoDestroyAt *string, autoDestroyDuration string, htmlURLStringPointer *string, derivedGlobalRemoteState bool, remoteStateConsumerIDs []string) (modelTFEWorkspace, diag.Diagnostics) {
-	var diag diag.Diagnostics
+	var diags diag.Diagnostics
 
 	model := modelTFEWorkspace{
 		ID:                  types.StringValue(i.ID),
@@ -166,24 +166,21 @@ func modelFromTFEWorkspace(ctx context.Context, i *tfe.Workspace, autoDestroyAt 
 		ApplyDurationAverage: types.Int64Value(i.ApplyDurationAverage.Milliseconds()),
 		PlanDurationAverage:  types.Int64Value(i.PlanDurationAverage.Milliseconds()),
 		Source:               types.StringValue(string(i.Source)),
-		// VCSRepo:
-		// SettingOverwrites:
-		// Permissions:
-		// Actions:
+		// VCSRepo, SettingOverwrites, Permissions, and Actions handled elsewhere
 	}
 
 	// pulling list and set items
-	triggerPrefixes, prefixesConversionDiag := types.ListValueFrom(ctx, types.StringType, i.TriggerPrefixes)
-	diag.Append(prefixesConversionDiag...)
-	if diag.HasError() {
-		return model, diag
+	triggerPrefixes, prefixesConversionDiags := types.ListValueFrom(ctx, types.StringType, i.TriggerPrefixes)
+	diags.Append(prefixesConversionDiags...)
+	if diags.HasError() {
+		return model, diags
 	}
 	model.TriggerPrefixes = triggerPrefixes
 
-	triggerPatterns, patternsConversionDiag := types.ListValueFrom(ctx, types.StringType, i.TriggerPatterns)
-	diag.Append(patternsConversionDiag...)
-	if diag.HasError() {
-		return model, diag
+	triggerPatterns, patternsConversionDiags := types.ListValueFrom(ctx, types.StringType, i.TriggerPatterns)
+	diags.Append(patternsConversionDiags...)
+	if diags.HasError() {
+		return model, diags
 	}
 	model.TriggerPatterns = triggerPatterns
 
@@ -213,28 +210,28 @@ func modelFromTFEWorkspace(ctx context.Context, i *tfe.Workspace, autoDestroyAt 
 
 	// Pull in remote state consumer ID information
 	if remoteStateConsumerIDs != nil {
-		convertedRemoteStateConsumerIDs, remoteStateConsumerDiag := types.SetValueFrom(ctx, types.StringType, remoteStateConsumerIDs)
-		diag.Append(remoteStateConsumerDiag...)
-		if diag.HasError() {
-			return model, diag
+		convertedRemoteStateConsumerIDs, remoteStateConsumerDiags := types.SetValueFrom(ctx, types.StringType, remoteStateConsumerIDs)
+		diags.Append(remoteStateConsumerDiags...)
+		if diags.HasError() {
+			return model, diags
 		}
 		model.RemoteStateConsumerIDs = convertedRemoteStateConsumerIDs
 	}
 
 	// Include tags
 	tagInfo := helpers.NewTagInfo(nil, i.EffectiveTagBindings, false)
-	effectiveTags, effectiveTagsDiag := types.MapValueFrom(ctx, types.StringType, tagInfo.EffectiveTags)
-	diag.Append(effectiveTagsDiag...)
-	if diag.HasError() {
-		return model, diag
+	effectiveTags, effectiveTagsDiags := types.MapValueFrom(ctx, types.StringType, tagInfo.EffectiveTags)
+	diags.Append(effectiveTagsDiags...)
+	if diags.HasError() {
+		return model, diags
 	}
 	model.EffectiveTags = effectiveTags
 
 	// Update the tag names
-	tagNames, tagNamesDiag := types.SetValueFrom(ctx, types.StringType, i.TagNames)
-	diag.Append(tagNamesDiag...)
-	if diag.HasError() {
-		return model, diag
+	tagNames, tagNamesDiags := types.SetValueFrom(ctx, types.StringType, i.TagNames)
+	diags.Append(tagNamesDiags...)
+	if diags.HasError() {
+		return model, diags
 	}
 	model.TagNames = tagNames
 
@@ -244,7 +241,7 @@ func modelFromTFEWorkspace(ctx context.Context, i *tfe.Workspace, autoDestroyAt 
 		model.VCSRepo = &VCSRepoStruct
 	}
 
-	return model, diag
+	return model, diags
 }
 
 func modelWorkspaceSettingOverwritesFromTFEWorkspace(i *tfe.Workspace) *modelTFEWorkspaceSettingOverwrites {
@@ -712,9 +709,9 @@ func (d *dataSourceTFEWorkspace) Read(ctx context.Context, req datasource.ReadRe
 		return
 	}
 	if err != nil && errors.Is(err, tfe.ErrInvalidIncludeValue) {
-		var fallbackDiag diag.Diagnostics
-		workspace, fallbackDiag = fallbackWorkspaceRead(ctx, d.config, organization, name)
-		resp.Diagnostics.Append(fallbackDiag...)
+		var fallbackDiags diag.Diagnostics
+		workspace, fallbackDiags = fallbackWorkspaceRead(ctx, d.config, organization, name)
+		resp.Diagnostics.Append(fallbackDiags...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -739,7 +736,7 @@ func (d *dataSourceTFEWorkspace) Read(ctx context.Context, req datasource.ReadRe
 	}
 
 	// html url prep
-	var htmlURLStringPointer *string = nil //??? I hope there's a better way to do this
+	var htmlURLStringPointer *string = nil // ??? I hope there's a better way to do this
 	if workspace.Links["self-html"] != nil {
 		baseAPI := d.config.Client.BaseURL()
 		htmlURL := url.URL{
@@ -747,7 +744,7 @@ func (d *dataSourceTFEWorkspace) Read(ctx context.Context, req datasource.ReadRe
 			Host:   baseAPI.Host,
 			Path:   workspace.Links["self-html"].(string),
 		}
-		var htmlURLString string = htmlURL.String()
+		htmlURLString := htmlURL.String()
 		htmlURLStringPointer = &htmlURLString
 	}
 
