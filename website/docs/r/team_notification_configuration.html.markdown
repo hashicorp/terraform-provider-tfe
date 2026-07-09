@@ -59,7 +59,6 @@ resource "tfe_team_notification_configuration" "test" {
   enabled          = true
   destination_type = "generic"
   token_wo         = var.notification_token
-  token_wo_version = 1
   triggers         = ["change_request:created"]
   url              = "https://example.com"
   team_id          = tfe_team.test.id
@@ -153,8 +152,24 @@ The following arguments are supported:
 - `enabled` - (Optional) Whether the notification configuration should be enabled or not.
   Disabled configurations will not send any notifications. Defaults to `false`.
 - `token` - (Optional) A write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Defaults to `null`. This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.
-- `token_wo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments)) Write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Either `token` or `token_wo` can be provided, but not both. Must be used with `token_wo_version`. This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.
-- `token_wo_version` - (Optional) Version of the write-only token. This field is used to trigger updates when the write-only token changes. Must be used with `token_wo`. When `token_wo_version` changes, the write-only token will be updated.
+- `token_wo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments))
+  Write-only alternative to `token`. Never stored in Terraform state. Cannot be used with `token`.
+  This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.
+
+  The provider automatically detects changes by storing a SHA-256 hash of the value in
+  [private state](https://developer.hashicorp.com/terraform/plugin/framework/resources/private-state)
+  and incrementing `token_wo_version` when it changes. No additional configuration is required.
+
+  For maximum privacy — to prevent even the hash from being stored — omit `token_wo` from
+  your config and set `token_wo_version` manually instead, incrementing it whenever you
+  need to push a new token value.
+
+- `token_wo_version` - (Optional) Tracks the version of `token_wo`. In **auto-managed mode**
+  (the default when `token_wo_version` is not set in config), the provider computes this value
+  automatically: it is set to `1` on resource creation and incremented whenever the value of
+  `token_wo` changes. In **manual mode** (when you explicitly set `token_wo_version` in config),
+  auto-detection is disabled and you control updates by incrementing this value yourself —
+  no hash is stored in private state. Cannot be used with `token`.
 - `triggers` - (Optional) The array of triggers for which this notification configuration will
   send notifications. Currently, the only valid value is `change_request:created`.
 
