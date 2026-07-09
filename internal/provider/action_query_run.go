@@ -64,7 +64,7 @@ func (a *actionTFEQueryRun) Schema(ctx context.Context, req action.SchemaRequest
 				Required:    true,
 			},
 			"configuration_version_id": schema.StringAttribute{
-				Description: "specific Configuration Version ID to use for the query run (e.g., \"cv-ntv3HbhJqvFzamy7\"). Exactly one of configuration_version_id or wait_for_latest_configuration must be provided.",
+				Description: "A specific Configuration Version ID to use for the query run (e.g., \"cv-ntv3HbhJqvFzamy7\"). Exactly one of configuration_version_id or wait_for_latest_configuration must be provided.",
 				Optional:    true,
 			},
 			"variables": schema.MapAttribute{
