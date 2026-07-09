@@ -23,7 +23,10 @@ import (
 )
 
 // tfe_project_settings resource
-var _ resource.Resource = &projectSettings{}
+var (
+	_ resource.Resource                = &projectSettings{}
+	_ resource.ResourceWithImportState = &projectSettings{}
+)
 
 // projectOverwritesElementType is the object type definition for the
 // overwrites field schema.
