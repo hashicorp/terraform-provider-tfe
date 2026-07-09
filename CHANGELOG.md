@@ -9,6 +9,7 @@ ENHANCEMENTS:
 * Added `make generate` target to run `tfplugindocs` as a tracked Go tool dependency, replacing the previous manual install workflow. Supports optional `RESOURCE=<name>` argument for targeted single-resource doc generation. By @marzuqmazid-ibm [#2115](https://github.com/hashicorp/terraform-provider-tfe/pull/2115)
 
 BUG FIXES:
+* `r/tfe_provider_set`: Fix validation to reject provider sets when `global` is false or omitted and no project or workspace scopes are configured.
 * Removed two documentation files for resources that do not exist and that are not planned. By @brandonc [#2100](https://github.com/hashicorp/terraform-provider-tfe/pull/2100)
 * Fixed  a provider bug where a failed no-code module update could reference an uninitialized module ID [#2122](https://github.com/hashicorp/terraform-provider-tfe/pull/2122)
 
