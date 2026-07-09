@@ -286,7 +286,7 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Computed:    true,
 			},
 			"hyok_enabled": {
-				Description: "Whether HYOK is enbabled for the workspace.",
+				Description: "Whether HYOK is enabled for the workspace.",
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},
