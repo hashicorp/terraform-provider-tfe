@@ -160,7 +160,7 @@ func resourceTFEWorkspaceRunSchema() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"manual_confirm": {
-				Description: "If set to true a human will have to manually confirm a plan in HCP Terraform's UI to start an apply. If set to false, this resource will be automatically applied. Defaults to false.",
+				Description: "If set to true a human will have to manually confirm a plan in HCP Terraform's UI to start an apply. If set to false, this resource will be automatically applied.",
 				Type:        schema.TypeBool,
 				Required:    true,
 			},
