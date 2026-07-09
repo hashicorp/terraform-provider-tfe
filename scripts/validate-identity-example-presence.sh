@@ -8,12 +8,16 @@
 # Validates that every resource with an identity schema in the provider schema
 # has an associated import-by-identity.tf example file in examples/resources/.
 #
+# The provider schema is generated fresh on each run by building the provider
+# binary and running `terraform providers schema -json`. To skip generation and
+# supply a pre-built schema, set SCHEMA_FILE to an existing JSON file.
+#
 # Exit codes:
 #   0 - Success: All resources with identity schemas have import-by-identity examples
 #   3 - Validation warning: Resources marked as no_identity_example_required have import-by-identity.tf
 #   5 - Validation failed: One or more resources are missing import-by-identity.tf
-#   6 - Required commands (jq) not found
-#   7 - Schema file not found or invalid
+#   6 - Required commands (jq, terraform, go) not found
+#   7 - Schema could not be generated or is invalid
 
 
 # Crash on error
@@ -23,25 +27,26 @@ set -e
 SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
 PROVIDER_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 EXAMPLES_DIR="${EXAMPLES_DIR:-${PROVIDER_DIR}/examples}"
-SCHEMA_FILE="${SCHEMA_FILE:-${SCRIPT_DIR}/real-schema.json}"
 EXCEPTIONS_FILE="${EXCEPTIONS_FILE:-${PROVIDER_DIR}/examples/error_exceptions.json}"
+# SCHEMA_FILE may be set externally (e.g. by tests) to skip generation
+SCHEMA_FILE="${SCHEMA_FILE:-}"
 
 # Check dependencies
-# These can erroneously pass if the command name exists, but don't refer to the real tool
 if ! command -v jq >/dev/null 2>&1; then
     echo "Error: jq command not found. Please install jq for JSON processing." >&2
     exit 6
 fi
 
-# Verify schema file exists and is valid
-if [ ! -f "${SCHEMA_FILE}" ]; then
-    echo "Error: schema file not found at ${SCHEMA_FILE}" >&2
-    exit 7
-fi
-
-if ! jq -e '.provider_schemas["registry.terraform.io/hashicorp/tfe"].resource_identity_schemas' "${SCHEMA_FILE}" >/dev/null 2>&1; then
-    echo "Error: schema file is missing resource_identity_schemas or is invalid JSON." >&2
-    exit 7
+# Only require terraform and go when we need to generate the schema
+if [ -z "${SCHEMA_FILE}" ]; then
+    if ! command -v terraform >/dev/null 2>&1; then
+        echo "Error: terraform command not found. Please install Terraform." >&2
+        exit 6
+    fi
+    if ! command -v go >/dev/null 2>&1; then
+        echo "Error: go command not found. Please install Go." >&2
+        exit 6
+    fi
 fi
 
 # Exit if input folders are missing
@@ -53,6 +58,55 @@ fi
 if [ ! -f "${EXCEPTIONS_FILE}" ]; then
     echo "Warning: error_exceptions.json not found at ${EXCEPTIONS_FILE}" >&2
     echo "Proceeding without exceptions..." >&2
+fi
+
+# Generate provider schema if SCHEMA_FILE was not supplied
+if [ -z "${SCHEMA_FILE}" ]; then
+    echo "Generating provider schema..."
+    TEMP_DIR=$(mktemp -d)
+    trap 'rm -rf "${TEMP_DIR}"' EXIT INT TERM
+    SCHEMA_FILE="${TEMP_DIR}/provider-schema.json"
+
+    # Build provider binary
+    GOOS="${GOOS:-$(go env GOOS)}"
+    GOARCH="${GOARCH:-$(go env GOARCH)}"
+    if [ -z "${GOOS}" ] || [ -z "${GOARCH}" ]; then
+        echo "Error: could not determine GOOS/GOARCH from go env." >&2
+        exit 7
+    fi
+    OS_ARCH="${GOOS}_${GOARCH}"
+    PLUGIN_DIR="${TEMP_DIR}/plugins/registry.terraform.io/hashicorp/tfe/0.0.1/${OS_ARCH}"
+    mkdir -p "${PLUGIN_DIR}"
+    PROVIDER_BINARY="${PLUGIN_DIR}/terraform-provider-tfe"
+    if ! (cd "${PROVIDER_DIR}" && go build -o "${PROVIDER_BINARY}" 2>&1) >/dev/null; then
+        echo "Error: failed to build provider binary." >&2
+        exit 7
+    fi
+
+    # Create minimal provider configuration and extract schema
+    cat > "${TEMP_DIR}/provider.tf" <<EOF
+provider "tfe" {
+}
+EOF
+    if ! (cd "${TEMP_DIR}" && terraform init -get=false -plugin-dir=./plugins >/dev/null 2>&1); then
+        echo "Error: terraform init failed for provider schema generation." >&2
+        exit 7
+    fi
+    if ! (cd "${TEMP_DIR}" && terraform providers schema -json > "${SCHEMA_FILE}" 2>/dev/null); then
+        echo "Error: terraform providers schema failed." >&2
+        exit 7
+    fi
+fi
+
+# Verify the schema file exists, is valid JSON, and contains resource_identity_schemas
+if [ ! -f "${SCHEMA_FILE}" ]; then
+    echo "Error: schema file not found at ${SCHEMA_FILE}" >&2
+    exit 7
+fi
+
+if ! jq -e '.provider_schemas["registry.terraform.io/hashicorp/tfe"].resource_identity_schemas' "${SCHEMA_FILE}" >/dev/null 2>&1; then
+    echo "Error: schema file is missing resource_identity_schemas or is invalid JSON." >&2
+    exit 7
 fi
 
 # Track missing examples and unexpected examples
