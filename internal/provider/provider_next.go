@@ -165,6 +165,7 @@ func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource
 		NewRegistryProvidersDataSource,
 		NewSAMLSettingsDataSource,
 		NewVariablesDataSource,
+		NewWorkspaceDataSource,
 		NewWorkspaceRunTaskDataSource,
 		NewSCIMSettingsDataSource,
 		NewSCIMTokenDataSource,

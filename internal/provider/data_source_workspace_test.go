@@ -150,18 +150,18 @@ func TestAccTFEWorkspaceDataSource_basic(t *testing.T) {
 						"data.tfe_workspace.foobar", "source", "tfe-api"),
 					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "apply_duration_average"),
 					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "plan_duration_average"),
-					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "permissions.can-update"),
-					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "permissions.can-destroy"),
-					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "permissions.can-queue-run"),
-					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "permissions.can-queue-apply"),
-					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "permissions.can-queue-destroy"),
-					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "permissions.can-lock"),
-					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "permissions.can-unlock"),
-					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "permissions.can-force-unlock"),
-					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "permissions.can-read-settings"),
-					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "permissions.can-update-variable"),
-					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "permissions.can-manage-run-tasks"),
-					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "actions.is-destroyable"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "permissions.can_update"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "permissions.can_destroy"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "permissions.can_queue_run"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "permissions.can_queue_apply"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "permissions.can_queue_destroy"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "permissions.can_lock"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "permissions.can_unlock"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "permissions.can_force_unlock"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "permissions.can_read_settings"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "permissions.can_update_variable"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "permissions.can_manage_run_tasks"),
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "actions.is_destroyable"),
 				),
 			},
 		},
@@ -313,6 +313,29 @@ func TestAccTFEWorkspaceDataSource_readProjectIDNonDefault(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "id"),
 					resource.TestCheckResourceAttrPair("tfe_project.foobar", "id", "data.tfe_workspace.foobar", "project_id"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEWorkspaceDataSource_settingOverwrites(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspaceDataSourceConfig_settingOverwrites(rInt),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("data.tfe_workspace.foobar", "id"),
+					// execution_mode is overwritten at org level, so the workspace
+					// setting_overwrites.execution_mode should be false (not overridden at workspace level).
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "setting_overwrites.execution_mode", "false"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_workspace.foobar", "setting_overwrites.agent_pool", "false"),
 				),
 			},
 		},
@@ -597,6 +620,31 @@ data "tfe_workspace" "foobar" {
   name         = tfe_workspace.foobar.name
 }
 `
+}
+
+func testAccTFEWorkspaceDataSourceConfig_settingOverwrites(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_organization_default_settings" "foobar" {
+  organization          = tfe_organization.foobar.id
+  default_execution_mode = "local"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test-%d"
+  organization = tfe_organization.foobar.id
+  depends_on   = [tfe_organization_default_settings.foobar]
+}
+
+data "tfe_workspace" "foobar" {
+  name         = tfe_workspace.foobar.name
+  organization = tfe_workspace.foobar.organization
+  depends_on   = [tfe_workspace.foobar]
+}`, rInt, rInt)
 }
 
 func givenOrganization(t *testing.T, tfeClient *tfe.Client, organizationName string) (*tfe.Organization, func()) {
