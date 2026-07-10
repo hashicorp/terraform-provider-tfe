@@ -23,7 +23,7 @@
 #   5 - Validation failed: One or more components are missing required examples
 #   6 - Required commands (terraform, jq, go) not found
 #   7 - Input files/directories not found or provider schema could not be generated
-#   8 - Exceptions file exists but contains invalid JSON
+#   8 - Exceptions file exists but contains invalid JSON; or internal JSON output error
 #   9 - Failure to build provider
 
 
@@ -64,7 +64,7 @@ if [ ! -d "${EXAMPLES_DIR}" ]; then
 fi
 
 if [ ! -f "${EXCEPTIONS_FILE}" ]; then
-    echo "Warning: error_exceptions.json not found at ${EXCEPTIONS_FILE}" >&2
+    echo "Warning: exceptions file not found at ${EXCEPTIONS_FILE}" >&2
     echo "Proceeding without exceptions..." >&2
 fi
 
@@ -83,13 +83,13 @@ if [ -z "${SCHEMA_FILE}" ]; then
     GOARCH="${GOARCH:-$(go env GOARCH)}"
     if [ -z "${GOOS}" ] || [ -z "${GOARCH}" ]; then
         echo "Error: could not determine GOOS/GOARCH from go env." >&2
-        exit 7
+        exit 9
     fi
     OS_ARCH="${GOOS}_${GOARCH}"
     PLUGIN_DIR="${TEMP_DIR}/plugins/registry.terraform.io/hashicorp/tfe/0.0.1/${OS_ARCH}" # tfe version is somewhat arbitrary for our particular usage of terraform init; this is the same as in tfplugindocs
     mkdir -p "${PLUGIN_DIR}"
     PROVIDER_BINARY="${PLUGIN_DIR}/terraform-provider-tfe"
-    if ! (cd "${PROVIDER_DIR}" && go build -o "${PROVIDER_BINARY}" 2>&1) >/dev/null; then
+    if ! (cd "${PROVIDER_DIR}" && go build -o "${PROVIDER_BINARY}" > /dev/null); then
         echo "Error: failed to build provider binary." >&2
         exit 9
     fi
@@ -101,11 +101,11 @@ provider "tfe" {
 EOF
 
     # Initialize and extract schema
-    if ! (cd "${TEMP_DIR}" && terraform init -get=false -plugin-dir=./plugins >/dev/null 2>&1); then
+    if ! (cd "${TEMP_DIR}" && terraform init -get=false -plugin-dir=./plugins > /dev/null); then
         echo "Error: terraform init failed for provider schema generation." >&2
         exit 7
     fi
-    if ! (cd "${TEMP_DIR}" && terraform providers schema -json > "${SCHEMA_FILE}" 2>/dev/null); then
+    if ! (cd "${TEMP_DIR}" && terraform providers schema -json > "${SCHEMA_FILE}"); then
         echo "Error: terraform providers schema failed." >&2
         exit 7
     fi
@@ -121,8 +121,9 @@ fi
 # Shared exception helpers
 # ---------------------------------------------------------------------------
 
-# Load no_example_required list from exceptions file
+# Load both exception lists from exceptions file in a single guarded pass
 NO_EXAMPLE_REQUIRED=()
+NO_IDENTITY_EXAMPLE_REQUIRED=()
 if [ -f "${EXCEPTIONS_FILE}" ]; then
     if ! jq -e '.' "${EXCEPTIONS_FILE}" >/dev/null 2>&1; then
         echo "Error: exceptions file is not valid JSON: ${EXCEPTIONS_FILE}" >&2
@@ -130,15 +131,10 @@ if [ -f "${EXCEPTIONS_FILE}" ]; then
     fi
     while IFS= read -r component; do
         NO_EXAMPLE_REQUIRED+=("${component}")
-    done < <(jq -r '.no_example_required[]? // empty' "${EXCEPTIONS_FILE}" 2>/dev/null)
-fi
-
-# Load no_identity_example_required list from exceptions file
-NO_IDENTITY_EXAMPLE_REQUIRED=()
-if [ -f "${EXCEPTIONS_FILE}" ]; then
+    done < <(jq -r '.no_example_required[]? // empty' "${EXCEPTIONS_FILE}")
     while IFS= read -r component; do
         NO_IDENTITY_EXAMPLE_REQUIRED+=("${component}")
-    done < <(jq -r '.no_identity_example_required[]? // empty' "${EXCEPTIONS_FILE}" 2>/dev/null)
+    done < <(jq -r '.no_identity_example_required[]? // empty' "${EXCEPTIONS_FILE}")
 fi
 
 # is_example_not_required <component_path> — 0 if excepted, 1 otherwise
@@ -213,7 +209,10 @@ echo "Validating example presence for provider components..."
 echo ""
 
 echo "Checking resources..."
-RESOURCES=$(jq -r '.provider_schemas["registry.terraform.io/hashicorp/tfe"].resource_schemas | keys[]' "${SCHEMA_FILE}" 2>/dev/null || echo "")
+if ! RESOURCES=$(jq -r '.provider_schemas["registry.terraform.io/hashicorp/tfe"].resource_schemas | keys? | .[]?' "${SCHEMA_FILE}" 2>/dev/null); then
+    echo "Error: failed to read resource_schemas from provider schema." >&2
+    exit 7
+fi
 if [ -n "${RESOURCES}" ]; then
     while IFS= read -r resource; do
         check_examples "resources" "${resource}" || true
@@ -221,7 +220,10 @@ if [ -n "${RESOURCES}" ]; then
 fi
 
 echo "Checking data sources..."
-DATA_SOURCES=$(jq -r '.provider_schemas["registry.terraform.io/hashicorp/tfe"].data_source_schemas | keys[]' "${SCHEMA_FILE}" 2>/dev/null || echo "")
+if ! DATA_SOURCES=$(jq -r '.provider_schemas["registry.terraform.io/hashicorp/tfe"].data_source_schemas | keys? | .[]?' "${SCHEMA_FILE}" 2>/dev/null); then
+    echo "Error: failed to read data_source_schemas from provider schema." >&2
+    exit 7
+fi
 if [ -n "${DATA_SOURCES}" ]; then
     while IFS= read -r data_source; do
         check_examples "data-sources" "${data_source}" || true
@@ -229,7 +231,10 @@ if [ -n "${DATA_SOURCES}" ]; then
 fi
 
 echo "Checking actions..."
-ACTIONS=$(jq -r '.provider_schemas["registry.terraform.io/hashicorp/tfe"].action_schemas | keys[]' "${SCHEMA_FILE}" 2>/dev/null || echo "")
+if ! ACTIONS=$(jq -r '.provider_schemas["registry.terraform.io/hashicorp/tfe"].action_schemas | keys? | .[]?' "${SCHEMA_FILE}" 2>/dev/null); then
+    echo "Error: failed to read action_schemas from provider schema." >&2
+    exit 7
+fi
 if [ -n "${ACTIONS}" ]; then
     while IFS= read -r action; do
         check_examples "actions" "${action}" || true
@@ -237,7 +242,10 @@ if [ -n "${ACTIONS}" ]; then
 fi
 
 echo "Checking ephemeral resources..."
-EPHEMERAL_RESOURCES=$(jq -r '.provider_schemas["registry.terraform.io/hashicorp/tfe"].ephemeral_resource_schemas | keys[]' "${SCHEMA_FILE}" 2>/dev/null || echo "")
+if ! EPHEMERAL_RESOURCES=$(jq -r '.provider_schemas["registry.terraform.io/hashicorp/tfe"].ephemeral_resource_schemas | keys? | .[]?' "${SCHEMA_FILE}" 2>/dev/null); then
+    echo "Error: failed to read ephemeral_resource_schemas from provider schema." >&2
+    exit 7
+fi
 if [ -n "${EPHEMERAL_RESOURCES}" ]; then
     while IFS= read -r ephemeral_resource; do
         check_examples "ephemeral-resources" "${ephemeral_resource}" || true
@@ -282,7 +290,10 @@ check_identity_example() {
 }
 
 echo "Checking identity import examples..."
-IDENTITY_RESOURCES=$(jq -r '.provider_schemas["registry.terraform.io/hashicorp/tfe"].resource_identity_schemas | keys[]' "${SCHEMA_FILE}" 2>/dev/null || echo "")
+if ! IDENTITY_RESOURCES=$(jq -r '.provider_schemas["registry.terraform.io/hashicorp/tfe"].resource_identity_schemas | keys? | .[]?' "${SCHEMA_FILE}" 2>/dev/null); then
+    echo "Error: failed to read resource_identity_schemas from provider schema." >&2
+    exit 7
+fi
 if [ -n "${IDENTITY_RESOURCES}" ]; then
     while IFS= read -r resource; do
         check_identity_example "${resource}" || true
@@ -303,7 +314,7 @@ if [ ${#UNEXPECTED_EXAMPLES[@]} -gt 0 ]; then
         echo "  - ${unexpected}"
     done
     echo ""
-    echo "Consider either removing these components from no_example_required in the error exceptions json"
+    echo "Consider removing these components from no_example_required in ${EXCEPTIONS_FILE}"
     echo ""
 fi
 
@@ -315,7 +326,7 @@ if [ ${#UNEXPECTED_IDENTITY[@]} -gt 0 ]; then
         echo "  - ${unexpected}"
     done
     echo ""
-    echo "Consider either removing these components from no_identity_example_required in the error exceptions json"
+    echo "Consider removing these components from no_identity_example_required in ${EXCEPTIONS_FILE}"
     echo ""
 fi
 
