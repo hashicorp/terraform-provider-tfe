@@ -8,10 +8,12 @@
 # Exit codes:
 #  0 - Complete success
 #  1 - Generic errors (including command line args)
-#  3 - Warning: stale entries found in no_description_required
+#  4 - Warning: stale entries found in no_description_required
 #  5 - Errors found: one or more components, attributes, or blocks are missing descriptions
 #  6 - Required commands (terraform, jq, go) not found
-#  7 - Provider directory not found or its schema could not be generated
+#  7 - Input files/directories not found or provider schema could not be generated
+#  8 - Exceptions file exists but contains invalid JSON
+#  9 - Failure to build provider
 
 
 # Crash on error
@@ -47,10 +49,12 @@ while [[ $# -gt 0 ]]; do
             echo "Exit Codes:"
             echo "  0 - Complete success"
             echo "  1 - Generic errors (including command line args)"
-            echo "  3 - Warning: stale entries found in no_description_required"
+            echo "  4 - Warning: stale entries found in no_description_required"
             echo "  5 - Errors found: one or more components, attributes, or blocks are missing descriptions"
             echo "  6 - Required commands (terraform, jq, go) not found"
-            echo "  7 - Provider directory not found or its schema could not be generated"
+            echo "  7 - Input files/directories not found or provider schema could not be generated"
+            echo "  8 - Exceptions file exists but contains invalid JSON"
+            echo "  9 - Failure to build provider"
             exit 0
             ;;
         *)
@@ -103,7 +107,7 @@ GOOS="${GOOS:-$(go env GOOS)}"
 GOARCH="${GOARCH:-$(go env GOARCH)}"
 if [ -z "${GOOS}" ] || [ -z "${GOARCH}" ]; then
     echo "Error: could not determine GOOS/GOARCH from go env." >&2
-    exit 7
+    exit 9
 fi
 OS_ARCH="${GOOS}_${GOARCH}"
 PLUGIN_DIR="${TEMP_DIR}/plugins/registry.terraform.io/hashicorp/tfe/0.0.1/${OS_ARCH}" # tfe version is somewhat arbitrary for our particular usage of terraform init; this is the same as in tfplugindocs
@@ -111,7 +115,7 @@ mkdir -p "${PLUGIN_DIR}"
 PROVIDER_BINARY="${PLUGIN_DIR}/terraform-provider-tfe"
 if ! (cd "${PROVIDER_DIR}" && go build -o "${PROVIDER_BINARY}" 2>&1) >/dev/null; then
     echo "Error: failed to build provider binary." >&2
-    exit 7
+    exit 9
 fi
 
 # Create minimal provider configuration
@@ -139,6 +143,10 @@ fi
 # Load no_description_required list from exceptions file
 NO_DESCRIPTION_REQUIRED=()
 if [ -f "${EXCEPTIONS_FILE}" ]; then
+    if ! jq -e '.' "${EXCEPTIONS_FILE}" >/dev/null 2>&1; then
+        echo "Error: exceptions file is not valid JSON: ${EXCEPTIONS_FILE}" >&2
+        exit 8
+    fi
     # Extract the no_description_required array
     while IFS= read -r entry; do
         NO_DESCRIPTION_REQUIRED+=("${entry}")
@@ -297,7 +305,7 @@ if [ ${#MISSING_DESCRIPTIONS[@]} -gt 0 ]; then
     echo "Validation errors found. See ${JSON_OUTPUT_NAME} for details."
     exit 5
 elif [ ${#UNEXPECTED_DESCRIPTIONS[@]} -gt 0 ]; then
-    exit 3
+    exit 4
 fi
 
 echo "All validations passed successfully."

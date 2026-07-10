@@ -22,7 +22,9 @@
 #   3 - Validation warning: Excepted components have unexpected examples
 #   5 - Validation failed: One or more components are missing required examples
 #   6 - Required commands (terraform, jq, go) not found
-#   7 - Provider directory not found or its schema could not be generated
+#   7 - Input files/directories not found or provider schema could not be generated
+#   8 - Exceptions file exists but contains invalid JSON
+#   9 - Failure to build provider
 
 
 # Crash on error
@@ -58,7 +60,7 @@ fi
 # Exit if input folders are missing
 if [ ! -d "${EXAMPLES_DIR}" ]; then
     echo "Error: examples directory not found at ${EXAMPLES_DIR}" >&2
-    exit 5
+    exit 7
 fi
 
 if [ ! -f "${EXCEPTIONS_FILE}" ]; then
@@ -89,7 +91,7 @@ if [ -z "${SCHEMA_FILE}" ]; then
     PROVIDER_BINARY="${PLUGIN_DIR}/terraform-provider-tfe"
     if ! (cd "${PROVIDER_DIR}" && go build -o "${PROVIDER_BINARY}" 2>&1) >/dev/null; then
         echo "Error: failed to build provider binary." >&2
-        exit 7
+        exit 9
     fi
 
     # Create minimal provider configuration
@@ -122,6 +124,10 @@ fi
 # Load no_example_required list from exceptions file
 NO_EXAMPLE_REQUIRED=()
 if [ -f "${EXCEPTIONS_FILE}" ]; then
+    if ! jq -e '.' "${EXCEPTIONS_FILE}" >/dev/null 2>&1; then
+        echo "Error: exceptions file is not valid JSON: ${EXCEPTIONS_FILE}" >&2
+        exit 8
+    fi
     while IFS= read -r component; do
         NO_EXAMPLE_REQUIRED+=("${component}")
     done < <(jq -r '.no_example_required[]? // empty' "${EXCEPTIONS_FILE}" 2>/dev/null)
