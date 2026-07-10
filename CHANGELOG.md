@@ -1,5 +1,7 @@
 ## Unreleased
 
+## v0.79.0
+
 FEATURES:
 * **New Resource:** `r/tfe_tag_policy_set` and `r/tfe_tag_policy_set_exclusion`: Adds resources to manage tag-based inclusion and exclusion on policy sets. **NOTE:** This feature is currently in beta and is not available to all users. By @anubhav-goel [#2093](https://github.com/hashicorp/terraform-provider-tfe/pull/2093)
 * `r/tfe_tag_policy_set` and `r/tfe_tag_policy_set_exclusion`: Removed beta notices. ([#669](https://github.com/hashicorp/terraform-provider-tfe/pull/669))
