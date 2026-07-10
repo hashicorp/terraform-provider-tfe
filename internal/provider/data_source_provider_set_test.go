@@ -280,7 +280,7 @@ resource "tfe_provider_set" "foobar" {
   description         = "Provider Set description"
   %s
   provider_source     = "registry.terraform.io/hashicorp/aws"
-  global              = false
+  global              = true
   provider_config_hcl = <<-EOT
 provider "aws" {
   region = "us-east-1"

@@ -77,10 +77,10 @@ The following arguments are supported:
 * `name` - (Required) Name of the provider set.
 * `provider_source` - (Required) Source address of the provider, e.g. `registry.terraform.io/hashicorp/tfe`.
 * `description` - (Optional) Description of the provider set.
-* `global` - (Optional) Whether the provider set applies globally. Defaults to `false`.
+* `global` - (Optional) Whether the provider set applies globally. Defaults to `false`. When `global` is `false` or omitted, at least one of `workspace_ids` or `project_ids` must be set.
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
-* `workspace_ids` - (Optional) IDs of the workspaces attached to the provider set. Cannot be set if `global` is `true`.
-* `project_ids` - (Optional) IDs of the projects attached to the provider set. Cannot be set if `global` is `true`.
+* `workspace_ids` - (Optional) IDs of the workspaces attached to the provider set. Required if `global` is `false` or omitted and `project_ids` is not set. Cannot be set if `global` is `true`.
+* `project_ids` - (Optional) IDs of the projects attached to the provider set. Required if `global` is `false` or omitted and `workspace_ids` is not set. Cannot be set if `global` is `true`.
 * `provider_config_hcl` - (Optional) Provider configuration HCL stored in Terraform state.
 * `provider_config_hcl_wo` - (Optional, [Write-Only](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments), Sensitive) Provider configuration HCL that is never stored in state. Cannot be used with `provider_config_hcl`.
 * `provider_config_hcl_wo_version` - (Optional) Version identifier required when `provider_config_hcl_wo` is set to trigger updates.
