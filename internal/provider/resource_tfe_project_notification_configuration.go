@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -217,7 +218,7 @@ func (r *resourceTFEProjectNotificationConfiguration) Schema(ctx context.Context
 			},
 
 			"token_wo": schema.StringAttribute{
-				Description: "A write-only secure token for the notification configuration, guaranteed not to be written to plan or state artifacts.",
+				Description: "Write-only alternative to `token`. Changes are detected automatically via a hash stored in private state; increment `token_wo_version` manually to force an update without changing the value.",
 				Optional:    true,
 				WriteOnly:   true,
 				Sensitive:   true,
@@ -227,12 +228,15 @@ func (r *resourceTFEProjectNotificationConfiguration) Schema(ctx context.Context
 						[]string{"email", "microsoft-teams", "slack"},
 					),
 					stringvalidator.ConflictsWith(path.MatchRoot("token")),
-					stringvalidator.AlsoRequires(path.MatchRoot("token_wo_version")),
 				},
 			},
 			"token_wo_version": schema.Int64Attribute{
 				Optional:    true,
-				Description: "Version of the write-only token to trigger updates",
+				Computed:    true,
+				Description: "Tracks the version of the write-only token. When `token_wo` is set and this attribute is not explicitly configured, the provider automatically detects token changes via a hash stored in private state and increments this value. Set this manually to force a token update without changing the value, or for maximum privacy (disables hash storage).",
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
+				},
 				Validators: []validator.Int64{
 					int64validator.ConflictsWith(path.MatchRoot("token")),
 					int64validator.AlsoRequires(path.MatchRoot("token_wo")),
