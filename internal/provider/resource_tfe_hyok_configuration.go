@@ -10,8 +10,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"strings"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfe "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -45,40 +47,10 @@ type modelTFEHYOKConfiguration struct {
 	Organization          types.String        `tfsdk:"organization"`
 }
 
-func (m *modelTFEHYOKConfiguration) TFEOIDCConfigurationTypeChoice() *tfe.OIDCConfigurationTypeChoice {
-	var typeChoice *tfe.OIDCConfigurationTypeChoice
-	id := m.OIDCConfigurationID.ValueString()
-
-	switch m.OIDCConfigurationType.ValueString() {
-	case OIDCConfigurationTypeAWS:
-		typeChoice = &tfe.OIDCConfigurationTypeChoice{AWSOIDCConfiguration: &tfe.AWSOIDCConfiguration{ID: id}}
-	case OIDCConfigurationTypeGCP:
-		typeChoice = &tfe.OIDCConfigurationTypeChoice{GCPOIDCConfiguration: &tfe.GCPOIDCConfiguration{ID: id}}
-	case OIDCConfigurationTypeVault:
-		typeChoice = &tfe.OIDCConfigurationTypeChoice{VaultOIDCConfiguration: &tfe.VaultOIDCConfiguration{ID: id}}
-	case OIDCConfigurationTypeAzure:
-		typeChoice = &tfe.OIDCConfigurationTypeChoice{AzureOIDCConfiguration: &tfe.AzureOIDCConfiguration{ID: id}}
-	}
-
-	return typeChoice
-}
-
 type modelTFEKMSOptions struct {
 	KeyRegion   types.String `tfsdk:"key_region"`
 	KeyLocation types.String `tfsdk:"key_location"`
 	KeyRingID   types.String `tfsdk:"key_ring_id"`
-}
-
-func (m *modelTFEKMSOptions) TFEKMSOptions() *tfe.KMSOptions {
-	var kmsOptions *tfe.KMSOptions
-	if m != nil {
-		kmsOptions = &tfe.KMSOptions{
-			KeyRegion:   m.KeyRegion.ValueString(),
-			KeyLocation: m.KeyLocation.ValueString(),
-			KeyRingID:   m.KeyRingID.ValueString(),
-		}
-	}
-	return kmsOptions
 }
 
 // List all available OIDC configuration types.
@@ -208,16 +180,10 @@ func (r *resourceTFEHYOKConfiguration) Create(ctx context.Context, req resource.
 		return
 	}
 
-	options := tfe.HYOKConfigurationsCreateOptions{
-		KEKID:             plan.KEKID.ValueString(),
-		Name:              plan.Name.ValueString(),
-		KMSOptions:        plan.KMSOptions.TFEKMSOptions(),
-		OIDCConfiguration: plan.TFEOIDCConfigurationTypeChoice(),
-		AgentPool:         &tfe.AgentPool{ID: plan.AgentPoolID.ValueString()},
-	}
+	options := hyokConfigurationEnvelopeFromModel(plan)
 
 	tflog.Debug(ctx, fmt.Sprintf("Create TFE HYOK Configuration for organization %s", orgName))
-	hyok, err := r.config.Client.HYOKConfigurations.Create(ctx, orgName, options)
+	hyok, err := r.config.ClientV2.API.Organizations().ByOrganization_name(orgName).HyokConfigurations().Post(ctx, options, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating TFE HYOK Configuration", err.Error())
 		return
@@ -236,15 +202,10 @@ func (r *resourceTFEHYOKConfiguration) Read(ctx context.Context, req resource.Re
 	}
 
 	hyokID := state.ID.ValueString()
-	opts := tfe.HYOKConfigurationsReadOptions{
-		Include: []tfe.HYOKConfigurationsIncludeOpt{
-			tfe.HYOKConfigurationsIncludeOIDCConfiguration,
-		},
-	}
 	tflog.Debug(ctx, fmt.Sprintf("Read HYOK configuration: %s", hyokID))
-	hyok, err := r.config.Client.HYOKConfigurations.Read(ctx, state.ID.ValueString(), &opts)
+	hyok, err := r.config.ClientV2.API.HyokConfigurations().ByHyok_configuration_id(state.ID.ValueString()).Get(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfe.ErrNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("HYOK configuration %s no longer exists", hyokID))
 			resp.State.RemoveResource(ctx)
 		} else {
@@ -270,16 +231,11 @@ func (r *resourceTFEHYOKConfiguration) Update(ctx context.Context, req resource.
 		return
 	}
 
-	options := tfe.HYOKConfigurationsUpdateOptions{
-		Name:       plan.Name.ValueStringPointer(),
-		KEKID:      plan.KEKID.ValueStringPointer(),
-		KMSOptions: plan.KMSOptions.TFEKMSOptions(),
-		AgentPool:  &tfe.AgentPool{ID: plan.AgentPoolID.ValueString()},
-	}
+	options := hyokConfigurationEnvelopeFromModel(plan)
 
 	hyokID := state.ID.ValueString()
 	tflog.Debug(ctx, fmt.Sprintf("Update TFE HYOK Configuration %s", hyokID))
-	hyok, err := r.config.Client.HYOKConfigurations.Update(ctx, hyokID, options)
+	hyok, err := r.config.ClientV2.API.HyokConfigurations().ByHyok_configuration_id(hyokID).Patch(ctx, options, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating TFE HYOK Configuration", err.Error())
 		return
@@ -299,9 +255,9 @@ func (r *resourceTFEHYOKConfiguration) Delete(ctx context.Context, req resource.
 
 	hyokID := state.ID.ValueString()
 	tflog.Debug(ctx, fmt.Sprintf("Delete TFE HYOK configuration: %s", hyokID))
-	err := r.config.Client.HYOKConfigurations.Delete(ctx, hyokID)
+	err := r.config.ClientV2.API.HyokConfigurations().ByHyok_configuration_id(hyokID).Delete(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfe.ErrNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("TFE HYOK configuration %s no longer exists", hyokID))
 			return
 		}
@@ -311,38 +267,137 @@ func (r *resourceTFEHYOKConfiguration) Delete(ctx context.Context, req resource.
 	}
 }
 
-func modelFromTFEHYOKConfiguration(p *tfe.HYOKConfiguration) modelTFEHYOKConfiguration {
-	var kmsOptions *modelTFEKMSOptions
-	if p.KMSOptions != nil {
-		kmsOptions = &modelTFEKMSOptions{
-			KeyRegion:   types.StringValue(p.KMSOptions.KeyRegion),
-			KeyLocation: types.StringValue(p.KMSOptions.KeyLocation),
-			KeyRingID:   types.StringValue(p.KMSOptions.KeyRingID),
+func hyokConfigurationEnvelopeFromModel(m modelTFEHYOKConfiguration) models.HyokConfigurationsEnvelopeable {
+	// Attributes
+	attributes := models.NewHyokConfigurations_attributes()
+	attributes.SetName(m.Name.ValueStringPointer())
+	attributes.SetKekId(m.KEKID.ValueStringPointer())
+	attributes.SetKmsOptions(v2KMSOptionsFromModel(m.KMSOptions))
+
+	// Relationships
+	relationships := models.NewHyokConfigurations_relationships()
+	relationships.SetAgentPool(v2AgentPoolRelationship(m.AgentPoolID.ValueString()))
+	relationships.SetOidcConfiguration(v2OIDCConfigurationRelationship(m.OIDCConfigurationID.ValueString(), m.OIDCConfigurationType.ValueString()))
+
+	hyokConfiguration := models.NewHyokConfigurations()
+	hyokConfiguration.SetAttributes(attributes)
+	hyokConfiguration.SetRelationships(relationships)
+
+	envelope := models.NewHyokConfigurationsEnvelope()
+	envelope.SetData(hyokConfiguration)
+	return envelope
+}
+
+func v2KMSOptionsFromModel(m *modelTFEKMSOptions) models.HyokConfigurations_attributes_kmsOptionsable {
+	if m == nil {
+		return nil
+	}
+
+	kmsOptions := models.NewHyokConfigurations_attributes_kmsOptions()
+	kmsOptions.SetKeyRegion(m.KeyRegion.ValueStringPointer())
+	kmsOptions.SetKeyLocation(m.KeyLocation.ValueStringPointer())
+	kmsOptions.SetKeyRingId(m.KeyRingID.ValueStringPointer())
+
+	return kmsOptions
+}
+
+func v2AgentPoolRelationship(agentPoolID string) models.AgentPoolsIdable {
+	agentPoolData := models.NewAgentPoolsId_data()
+	agentPoolData.SetId(&agentPoolID)
+	agentPoolType := models.AGENTPOOLS_AGENTPOOLSID_DATA_TYPE
+	agentPoolData.SetTypeEscaped(&agentPoolType)
+
+	agentPool := models.NewAgentPoolsId()
+	agentPool.SetData(agentPoolData)
+	return agentPool
+}
+
+func v2OIDCConfigurationRelationship(oidcConfigurationID, oidcConfigurationType string) models.OidcConfigurationsIdable {
+	oidcData := models.NewOidcConfigurationsId_data()
+	oidcData.SetId(&oidcConfigurationID)
+	oidcIdType := v2OIDCTypeFromResourceType(oidcConfigurationType)
+	oidcData.SetTypeEscaped(&oidcIdType)
+
+	oidc := models.NewOidcConfigurationsId()
+	oidc.SetData(oidcData)
+	return oidc
+}
+
+func v2OIDCTypeFromResourceType(oidcConfigurationType string) models.OidcConfigurationsId_data_type {
+	switch oidcConfigurationType {
+	case OIDCConfigurationTypeAWS:
+		return models.AWSOIDCCONFIGURATIONS_OIDCCONFIGURATIONSID_DATA_TYPE
+	case OIDCConfigurationTypeGCP:
+		return models.GCPOIDCCONFIGURATIONS_OIDCCONFIGURATIONSID_DATA_TYPE
+	case OIDCConfigurationTypeVault:
+		return models.VAULTOIDCCONFIGURATIONS_OIDCCONFIGURATIONSID_DATA_TYPE
+	case OIDCConfigurationTypeAzure:
+		return models.AZUREOIDCCONFIGURATIONS_OIDCCONFIGURATIONSID_DATA_TYPE
+	default:
+		return models.AWSOIDCCONFIGURATIONS_OIDCCONFIGURATIONSID_DATA_TYPE
+	}
+}
+
+func resourceTypeFromV2OIDCType(t *models.OidcConfigurationsId_data_type) string {
+	if t == nil {
+		return ""
+	}
+
+	switch strings.TrimSpace(t.String()) {
+	case "aws-oidc-configurations":
+		return OIDCConfigurationTypeAWS
+	case "gcp-oidc-configurations":
+		return OIDCConfigurationTypeGCP
+	case "vault-oidc-configurations":
+		return OIDCConfigurationTypeVault
+	case "azure-oidc-configurations":
+		return OIDCConfigurationTypeAzure
+	default:
+		return ""
+	}
+}
+
+func modelFromTFEHYOKConfiguration(p models.HyokConfigurationsEnvelopeable) modelTFEHYOKConfiguration {
+	model := modelTFEHYOKConfiguration{}
+
+	data := p.GetData()
+	if data == nil {
+		return model
+	}
+
+	model.ID = types.StringValue(*data.GetId())
+
+	attributes := data.GetAttributes()
+	if attributes != nil {
+		model.Name = types.StringValue(*attributes.GetName())
+		model.KEKID = types.StringValue(*attributes.GetKekId())
+
+		if attributes.GetKmsOptions() != nil {
+			model.KMSOptions = &modelTFEKMSOptions{
+				KeyRegion:   types.StringValue(*attributes.GetKmsOptions().GetKeyRegion()),
+				KeyLocation: types.StringValue(*attributes.GetKmsOptions().GetKeyLocation()),
+				KeyRingID:   types.StringValue(*attributes.GetKmsOptions().GetKeyRingId()),
+			}
 		}
 	}
 
-	model := modelTFEHYOKConfiguration{
-		ID:           types.StringValue(p.ID),
-		Name:         types.StringValue(p.Name),
-		KEKID:        types.StringValue(p.KEKID),
-		Organization: types.StringValue(p.Organization.Name),
-		AgentPoolID:  types.StringValue(p.AgentPool.ID),
-		KMSOptions:   kmsOptions,
-	}
+	relationships := data.GetRelationships()
+	if relationships != nil {
+		organization := relationships.GetOrganization()
+		if organization != nil && organization.GetData() != nil {
+			model.Organization = types.StringValue(*organization.GetData().GetId())
+		}
 
-	switch {
-	case p.OIDCConfiguration.AWSOIDCConfiguration != nil:
-		model.OIDCConfigurationID = types.StringValue(p.OIDCConfiguration.AWSOIDCConfiguration.ID)
-		model.OIDCConfigurationType = types.StringValue(OIDCConfigurationTypeAWS)
-	case p.OIDCConfiguration.GCPOIDCConfiguration != nil:
-		model.OIDCConfigurationID = types.StringValue(p.OIDCConfiguration.GCPOIDCConfiguration.ID)
-		model.OIDCConfigurationType = types.StringValue(OIDCConfigurationTypeGCP)
-	case p.OIDCConfiguration.AzureOIDCConfiguration != nil:
-		model.OIDCConfigurationID = types.StringValue(p.OIDCConfiguration.AzureOIDCConfiguration.ID)
-		model.OIDCConfigurationType = types.StringValue(OIDCConfigurationTypeAzure)
-	case p.OIDCConfiguration.VaultOIDCConfiguration != nil:
-		model.OIDCConfigurationID = types.StringValue(p.OIDCConfiguration.VaultOIDCConfiguration.ID)
-		model.OIDCConfigurationType = types.StringValue(OIDCConfigurationTypeVault)
+		agentPool := relationships.GetAgentPool()
+		if agentPool != nil && agentPool.GetData() != nil {
+			model.AgentPoolID = types.StringValue(*agentPool.GetData().GetId())
+		}
+
+		oidc := relationships.GetOidcConfiguration()
+		if oidc != nil && oidc.GetData() != nil {
+			model.OIDCConfigurationID = types.StringValue(*oidc.GetData().GetId())
+			model.OIDCConfigurationType = types.StringValue(resourceTypeFromV2OIDCType(oidc.GetData().GetTypeEscaped()))
+		}
 	}
 
 	return model
