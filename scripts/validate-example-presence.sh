@@ -8,10 +8,13 @@
 # Validates two categories of example presence in a single provider schema pass:
 #
 #   1. General examples: every resource, data source, action, and ephemeral
-#      resource has at least one appropriately-prefixed *.tf example file.
+#      resource has at least one appropriately-prefixed *.tf example file,
+#      and at least one such file contains a matching block for that same
+#      component.
 #
 #   2. Identity import examples: every resource with an identity schema has an
-#      import-by-identity.tf file in its examples directory.
+#      import-by-identity.tf file in its examples directory, and that file
+#      contains at least one import block for that same resource.
 #
 # The provider schema is generated once by building the provider binary and
 # running `terraform providers schema -json`. Set SCHEMA_FILE to an existing
@@ -173,20 +176,40 @@ check_examples() {
 
     local example_dir="${EXAMPLES_DIR}/${component_path}"
     local has_examples=false
+    local has_matching_example=false
 
     # Determine required filename prefix based on component type
     local required_prefix=""
+    local block_keyword=""
     case "${component_type}" in
-        "resources")          required_prefix="resource"          ;;
-        "data-sources")       required_prefix="data-source"       ;;
-        "actions")            required_prefix="action"            ;;
-        "ephemeral-resources") required_prefix="ephemeral-resource" ;;
+        "resources")
+            required_prefix="resource"
+            block_keyword="resource"
+            ;;
+        "data-sources")
+            required_prefix="data-source"
+            block_keyword="data"
+            ;;
+        "actions")
+            required_prefix="action"
+            block_keyword="action"
+            ;;
+        "ephemeral-resources")
+            required_prefix="ephemeral-resource"
+            block_keyword="ephemeral"
+            ;;
     esac
 
     # Check if examples exist with the correct prefix (excludes import files and other non-examples)
     if [ -d "${example_dir}" ] && [ -n "${required_prefix}" ] && \
        find "${example_dir}" -maxdepth 1 -name "${required_prefix}*.tf" -type f | grep -q .; then
         has_examples=true
+        while IFS= read -r example_file; do
+            if grep -qE "^\\s*${block_keyword}\\s+\"${component_name}\"\\s+\"[A-Za-z0-9_-]+\"" "${example_file}" 2>/dev/null; then
+                has_matching_example=true
+                break
+            fi
+        done < <(find "${example_dir}" -maxdepth 1 -name "${required_prefix}*.tf" -type f | sort)
     fi
 
     if is_example_not_required "${component_path}"; then
@@ -202,6 +225,8 @@ check_examples() {
         else
             MISSING_EXAMPLES+=("${component_path}: directory exists but contains no example .tf files with the required prefix '${required_prefix}'")
         fi
+    elif [ "${has_matching_example}" = false ]; then
+        MISSING_EXAMPLES+=("${component_path}: example files exist but none contains a ${block_keyword} block targeting ${component_name}.")
     fi
 }
 
@@ -268,9 +293,14 @@ check_identity_example() {
     TOTAL_IDENTITY=$((TOTAL_IDENTITY + 1))
 
     local example_dir="${EXAMPLES_DIR}/${component_path}"
+    local example_file="${example_dir}/import-by-identity.tf"
     local has_example=false
-    if [ -f "${example_dir}/import-by-identity.tf" ]; then
+    local has_matching_import=false
+    if [ -f "${example_file}" ]; then
         has_example=true
+        if grep -qE "(^|[[:space:]])to[[:space:]]*=[[:space:]]*${component_name}\.[[:alnum:]_-]+([[:space:]]|$)" "${example_file}" 2>/dev/null; then
+            has_matching_import=true
+        fi
     fi
 
     if is_identity_example_not_required "${component_path}"; then
@@ -286,6 +316,8 @@ check_identity_example() {
         else
             MISSING_IDENTITY+=("${component_path}: directory exists but contains no import-by-identity.tf file")
         fi
+    elif [ "${has_matching_import}" = false ]; then
+        MISSING_IDENTITY+=("${component_path}: import-by-identity.tf exists but contains no import block targeting ${component_name}.<name>")
     fi
 }
 

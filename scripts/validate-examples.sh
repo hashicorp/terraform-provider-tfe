@@ -77,6 +77,8 @@ if [ -n "${EXCEPTIONS_FILE}" ]; then
         echo "Error: exceptions file is not valid JSON: ${EXCEPTIONS_FILE}" >&2
         exit 8
     fi
+else
+    echo "Warning: no exceptions file configured; running without file_exceptions filtering" >&2
 fi
 
 # Create temp working directory and register cleanup
