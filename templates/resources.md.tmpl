@@ -20,13 +20,6 @@ description: |-
 
 {{- if .HasExamples }}
 {{- range $index, $file := .ExampleFiles }}
-{{- if eq $index 0 }}
-
-Basic usage:
-{{- else if eq $index 1 }}
-
-Additional example(s):
-{{- end }}
 
 {{ tffile $file }}
 {{- end }}
