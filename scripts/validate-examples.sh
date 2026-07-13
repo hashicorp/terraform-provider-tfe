@@ -14,9 +14,9 @@
 #  0 - Complete success
 #  3 - Warnings found in examples, no errors
 #  4 - Warning that unused exceptions were found in error_exceptions.json
-#  5 - Errors found in examples
+#  5 - Errors found in examples or a missing examples directory
 #  6 - Required commands (terraform, jq, go) not found
-#  7 - Input files/directories do not exist
+#  7 - Exceptions file does not exist
 #  8 - Internal data merge error
 #  9 - Failure to build provider
 
@@ -60,10 +60,10 @@ if ! command -v go >/dev/null 2>&1; then
     exit 6
 fi
 
-# Check if TARGET_DIR exists
+# Missing examples directory is a validation failure, same as no examples present.
 if [ ! -d "${TARGET_DIR}" ]; then
     echo "Error: Examples directory does not exist: ${TARGET_DIR}" >&2
-    exit 7
+    exit 5
 fi
 
 # Check if EXCEPTIONS_FILE exists and make it absolute, if provided

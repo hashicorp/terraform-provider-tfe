@@ -20,9 +20,10 @@
 #
 # Exit codes:
 #  0 - Success: All CLI-importable resources have import.sh examples
-#  3 - Validation warning: Resources marked as no_import_example_required have examples
+#  3 - Validation warning: Unexpected import.sh examples found
 #  5 - Validation failed: One or more resources are missing a valid import.sh
 #  7 - Provider source directory or provider.go not found
+#  8 - Exceptions file exists but contains invalid JSON
 
 
 # Crash on error
@@ -65,10 +66,14 @@ TOTAL_COMPONENTS=0
 # Load no_import_example_required list from exceptions file
 NO_IMPORT_EXAMPLE_REQUIRED=()
 if [ -f "${EXCEPTIONS_FILE}" ]; then
+    if ! jq -e '.' "${EXCEPTIONS_FILE}" >/dev/null 2>&1; then
+        echo "Error: exceptions file is not valid JSON: ${EXCEPTIONS_FILE}" >&2
+        exit 8
+    fi
     # Extract the no_import_example_required array
     while IFS= read -r component; do
         NO_IMPORT_EXAMPLE_REQUIRED+=("${component}")
-    done < <(jq -r '.no_import_example_required[]? // empty' "${EXCEPTIONS_FILE}" 2>/dev/null)
+    done < <(jq -r '.no_import_example_required[]? // empty' "${EXCEPTIONS_FILE}")
 fi
 
 # Check if a component is in the no_import_example_required list
@@ -224,13 +229,13 @@ done < <(find "${EXAMPLES_DIR}/resources" -maxdepth 2 -name "import.sh" -type f 
 
 # Check for unexpected examples first (warning)
 if [ ${#UNEXPECTED_EXAMPLES[@]} -gt 0 ]; then
-    echo "Resources marked as no_import_example_required but have import.sh:"
+    echo "Unexpected import.sh examples found:"
     echo ""
     for unexpected in "${UNEXPECTED_EXAMPLES[@]}"; do
         echo "  - ${unexpected}"
     done
     echo ""
-    echo "Consider either removing these components from no_import_example_required in the error exceptions json"
+    echo "Consider removing these components from no_import_example_required in ${EXCEPTIONS_FILE}"
     echo ""
 fi
 

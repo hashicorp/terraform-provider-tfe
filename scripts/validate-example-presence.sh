@@ -22,7 +22,7 @@
 #   3 - Validation warning: Excepted components have unexpected examples
 #   5 - Validation failed: One or more components are missing required examples
 #   6 - Required commands (terraform, jq, go) not found
-#   7 - Input files/directories not found or provider schema could not be generated
+#   7 - Provider schema could not be generated
 #   8 - Exceptions file exists but contains invalid JSON; or internal JSON output error
 #   9 - Failure to build provider
 
@@ -57,10 +57,10 @@ if [ -z "${SCHEMA_FILE}" ]; then
     fi
 fi
 
-# Exit if input folders are missing
+# Missing examples directory is a validation failure, same as no examples present.
 if [ ! -d "${EXAMPLES_DIR}" ]; then
     echo "Error: examples directory not found at ${EXAMPLES_DIR}" >&2
-    exit 7
+    exit 5
 fi
 
 if [ ! -f "${EXCEPTIONS_FILE}" ]; then

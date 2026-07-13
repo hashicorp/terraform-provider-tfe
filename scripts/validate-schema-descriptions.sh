@@ -9,13 +9,15 @@
 #   EXCEPTIONS_FILE    JSON file with description exceptions
 #                      (default: examples/error_exceptions.json — soft warning if absent)
 #   JSON_OUTPUT_NAME   Output JSON file for failures (default: ./missing_descriptions.json)
+#   SCHEMA_FILE        Existing provider schema JSON file to validate directly
+#                      (unset by default — generates schema from the provider)
 #
 # Exit codes:
 #  0 - Complete success
 #  4 - Warning: stale entries found in no_description_required
 #  5 - Errors found: one or more components, attributes, or blocks are missing descriptions
 #  6 - Required commands (terraform, jq, go) not found
-#  7 - Input files/directories not found or provider schema could not be generated
+#  7 - Explicit exceptions file missing; provider schema missing/invalid; or provider schema could not be generated
 #  8 - Exceptions file exists but contains invalid JSON; or internal JSON output error
 #  9 - Failure to build provider
 
@@ -27,6 +29,7 @@ set -e
 SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
 PROVIDER_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 JSON_OUTPUT_NAME="${JSON_OUTPUT_NAME:-missing_descriptions.json}"
+SCHEMA_FILE="${SCHEMA_FILE:-}"
 
 # EXCEPTIONS_FILE: if explicitly set, treat as hard requirement (exit 7 if missing).
 # If unset, fall back to the default path with a soft warning if absent.
@@ -44,14 +47,16 @@ if ! command -v jq >/dev/null 2>&1; then
     exit 6
 fi
 
-if ! command -v terraform >/dev/null 2>&1; then
-    echo "Error: terraform command not found. Please install Terraform." >&2
-    exit 6
-fi
+if [ -z "${SCHEMA_FILE}" ]; then
+    if ! command -v terraform >/dev/null 2>&1; then
+        echo "Error: terraform command not found. Please install Terraform." >&2
+        exit 6
+    fi
 
-if ! command -v go >/dev/null 2>&1; then
-    echo "Error: go command not found. Please install Go." >&2
-    exit 6
+    if ! command -v go >/dev/null 2>&1; then
+        echo "Error: go command not found. Please install Go." >&2
+        exit 6
+    fi
 fi
 
 # Check if EXCEPTIONS_FILE exists and make it absolute
@@ -68,44 +73,48 @@ else
     echo "Proceeding without exceptions..." >&2
 fi
 
-# Generate provider schema to temporary file
-echo "Generating provider schema..."
-TEMP_DIR=$(mktemp -d)
-PROVIDER_SCHEMA="${TEMP_DIR}/provider-schema.json"
+# Generate provider schema to temporary file unless one was provided directly.
+if [ -z "${SCHEMA_FILE}" ]; then
+    echo "Generating provider schema..."
+    TEMP_DIR=$(mktemp -d)
+    PROVIDER_SCHEMA="${TEMP_DIR}/provider-schema.json"
 
-# Exit cleanup trap
-trap 'rm -rf "${TEMP_DIR}"' EXIT INT TERM
+    # Exit cleanup trap
+    trap 'rm -rf "${TEMP_DIR}"' EXIT INT TERM
 
-# Build provider binary
-GOOS="${GOOS:-$(go env GOOS)}"
-GOARCH="${GOARCH:-$(go env GOARCH)}"
-if [ -z "${GOOS}" ] || [ -z "${GOARCH}" ]; then
-    echo "Error: could not determine GOOS/GOARCH from go env." >&2
-    exit 9
-fi
-OS_ARCH="${GOOS}_${GOARCH}"
-PLUGIN_DIR="${TEMP_DIR}/plugins/registry.terraform.io/hashicorp/tfe/0.0.1/${OS_ARCH}" # tfe version is somewhat arbitrary for our particular usage of terraform init; this is the same as in tfplugindocs
-mkdir -p "${PLUGIN_DIR}"
-PROVIDER_BINARY="${PLUGIN_DIR}/terraform-provider-tfe"
-if ! (cd "${PROVIDER_DIR}" && go build -o "${PROVIDER_BINARY}" > /dev/null); then
-    echo "Error: failed to build provider binary." >&2
-    exit 9
-fi
+    # Build provider binary
+    GOOS="${GOOS:-$(go env GOOS)}"
+    GOARCH="${GOARCH:-$(go env GOARCH)}"
+    if [ -z "${GOOS}" ] || [ -z "${GOARCH}" ]; then
+        echo "Error: could not determine GOOS/GOARCH from go env." >&2
+        exit 9
+    fi
+    OS_ARCH="${GOOS}_${GOARCH}"
+    PLUGIN_DIR="${TEMP_DIR}/plugins/registry.terraform.io/hashicorp/tfe/0.0.1/${OS_ARCH}" # tfe version is somewhat arbitrary for our particular usage of terraform init; this is the same as in tfplugindocs
+    mkdir -p "${PLUGIN_DIR}"
+    PROVIDER_BINARY="${PLUGIN_DIR}/terraform-provider-tfe"
+    if ! (cd "${PROVIDER_DIR}" && go build -o "${PROVIDER_BINARY}" > /dev/null); then
+        echo "Error: failed to build provider binary." >&2
+        exit 9
+    fi
 
-# Create minimal provider configuration
-cat > "${TEMP_DIR}/provider.tf" <<EOF
+    # Create minimal provider configuration
+    cat > "${TEMP_DIR}/provider.tf" <<EOF
 provider "tfe" {
 }
 EOF
 
-# Initialize and extract schema
-if ! (cd "${TEMP_DIR}" && terraform init -get=false -plugin-dir=./plugins > /dev/null); then
-    echo "Error: terraform init failed for provider schema generation." >&2
-    exit 7
-fi
-if ! (cd "${TEMP_DIR}" && terraform providers schema -json > "${PROVIDER_SCHEMA}"); then
-    echo "Error: terraform providers schema failed." >&2
-    exit 7
+    # Initialize and extract schema
+    if ! (cd "${TEMP_DIR}" && terraform init -get=false -plugin-dir=./plugins > /dev/null); then
+        echo "Error: terraform init failed for provider schema generation." >&2
+        exit 7
+    fi
+    if ! (cd "${TEMP_DIR}" && terraform providers schema -json > "${PROVIDER_SCHEMA}"); then
+        echo "Error: terraform providers schema failed." >&2
+        exit 7
+    fi
+else
+    PROVIDER_SCHEMA="${SCHEMA_FILE}"
 fi
 
 # Verify the schema file is valid JSON and contains the expected provider key
