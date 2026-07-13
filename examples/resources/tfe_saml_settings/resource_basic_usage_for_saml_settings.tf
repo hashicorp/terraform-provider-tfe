@@ -1,3 +1,5 @@
+# Basic usage for SAML Settings
+
 variable "admin_token" {
   description = "An admin access token"
 }

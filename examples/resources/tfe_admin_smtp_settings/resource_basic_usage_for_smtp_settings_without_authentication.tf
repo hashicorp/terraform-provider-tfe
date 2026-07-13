@@ -1,3 +1,5 @@
+# Basic usage for SMTP Settings without authentication
+
 variable "admin_token" {
   description = "An admin access token"
 }

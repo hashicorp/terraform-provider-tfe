@@ -1,3 +1,5 @@
+# Basic usage for Open Policy Agent (OPA)
+
 resource "tfe_policy" "test" {
   name         = "my-policy-name"
   description  = "This policy always passes"

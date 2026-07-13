@@ -1,3 +1,5 @@
+# Usage of the write-only value for tfe_test_variable
+
 variable "session_token" {
   description = "The session token for use in the write only field"
 }

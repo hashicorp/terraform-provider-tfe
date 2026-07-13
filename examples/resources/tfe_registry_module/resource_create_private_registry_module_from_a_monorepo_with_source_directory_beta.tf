@@ -1,3 +1,5 @@
+# Create private registry module from a monorepo with source_directory (BETA)
+
 resource "tfe_organization" "test-organization" {
   name  = "my-org-name"
   email = "admin@company.com"

@@ -1,3 +1,5 @@
+# Usage for the write-only value
+
 variable "session_token" {
   type      = string
   ephemeral = true

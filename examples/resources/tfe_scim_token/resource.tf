@@ -1,3 +1,5 @@
+# Basic usage
+
 variable "admin_token" {
   description = "An admin access token"
 }

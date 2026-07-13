@@ -1,3 +1,5 @@
+# Wait for the Latest Configuration Version
+
 resource "tfe_workspace" "example" {
   name         = "example-workspace"
   organization = "my-organization"

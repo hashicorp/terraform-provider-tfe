@@ -1,3 +1,5 @@
+# Basic usage
+
 data "tfe_org_max_token_ttl_policy" "example" {
   organization = "my-org-name"
 }

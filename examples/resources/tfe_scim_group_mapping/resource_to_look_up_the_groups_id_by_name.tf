@@ -1,3 +1,5 @@
+# To look up the group's ID by name
+
 variable "admin_token" {
   description = "An admin access token"
 }

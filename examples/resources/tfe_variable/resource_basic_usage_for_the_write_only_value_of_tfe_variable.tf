@@ -1,3 +1,5 @@
+# Basic usage for the write-only value of tfe_variable
+
 variable "session_token" {
   type      = string
   ephemeral = true

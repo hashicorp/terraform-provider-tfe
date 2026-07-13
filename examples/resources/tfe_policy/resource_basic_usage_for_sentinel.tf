@@ -1,3 +1,5 @@
+# Basic usage for Sentinel
+
 resource "tfe_policy" "test" {
   name         = "my-policy-name"
   description  = "This policy always passes"

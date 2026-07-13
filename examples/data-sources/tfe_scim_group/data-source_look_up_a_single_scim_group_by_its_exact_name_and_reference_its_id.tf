@@ -1,3 +1,5 @@
+# Look up a single SCIM group by its exact name and reference its ID
+
 variable "token" {
   description = "An access token"
 }

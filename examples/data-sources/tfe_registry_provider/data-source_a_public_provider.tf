@@ -1,3 +1,5 @@
+# A public provider
+
 resource "tfe_registry_provider" "example" {
   organization  = "my-org-name"
   registry_name = "public"

@@ -1,3 +1,5 @@
+# Create private provider
+
 resource "tfe_organization" "example" {
   name  = "my-org-name"
   email = "admin@company.com"

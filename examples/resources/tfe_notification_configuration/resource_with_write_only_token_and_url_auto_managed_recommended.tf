@@ -1,3 +1,5 @@
+# With write-only token and URL (auto-managed, recommended)
+
 resource "tfe_organization" "test" {
   name  = "my-org-name"
   email = "admin@company.com"

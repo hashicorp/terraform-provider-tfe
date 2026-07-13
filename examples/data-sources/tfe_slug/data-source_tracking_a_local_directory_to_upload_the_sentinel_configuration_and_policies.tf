@@ -1,3 +1,5 @@
+# Tracking a local directory to upload the Sentinel configuration and policies
+
 data "tfe_slug" "test" {
   source_path = "policies/my-policy-set"
 }
