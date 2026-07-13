@@ -10,7 +10,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-	"strings"
 
 	tfe "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/go-tfe/v2/api/models"
@@ -60,6 +59,22 @@ const (
 	OIDCConfigurationTypeVault string = "vault"
 	OIDCConfigurationTypeAzure string = "azure"
 )
+
+var (
+	oidcTypeToIdDataType = map[string]models.OidcConfigurationsId_data_type{
+		OIDCConfigurationTypeAWS:   models.AWSOIDCCONFIGURATIONS_OIDCCONFIGURATIONSID_DATA_TYPE,
+		OIDCConfigurationTypeGCP:   models.GCPOIDCCONFIGURATIONS_OIDCCONFIGURATIONSID_DATA_TYPE,
+		OIDCConfigurationTypeVault: models.VAULTOIDCCONFIGURATIONS_OIDCCONFIGURATIONSID_DATA_TYPE,
+		OIDCConfigurationTypeAzure: models.AZUREOIDCCONFIGURATIONS_OIDCCONFIGURATIONSID_DATA_TYPE,
+	}
+	idDataTypeToOidcType = make(map[models.OidcConfigurationsId_data_type]string, len(oidcTypeToIdDataType))
+)
+
+func init() {
+	for resourceType, idDataType := range oidcTypeToIdDataType {
+		idDataTypeToOidcType[idDataType] = resourceType
+	}
+}
 
 func (r *resourceTFEHYOKConfiguration) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	// Prevent panic if the provider has not been configured.
@@ -307,46 +322,12 @@ func v2AgentPoolRelationship(agentPoolID string) models.AgentPoolsIdable {
 func v2OIDCConfigurationRelationship(oidcConfigurationID, oidcConfigurationType string) models.OidcConfigurationsIdable {
 	oidcData := models.NewOidcConfigurationsId_data()
 	oidcData.SetId(&oidcConfigurationID)
-	oidcIdType := v2OIDCTypeFromResourceType(oidcConfigurationType)
+	oidcIdType := oidcTypeToIdDataType[oidcConfigurationType]
 	oidcData.SetTypeEscaped(&oidcIdType)
 
 	oidc := models.NewOidcConfigurationsId()
 	oidc.SetData(oidcData)
 	return oidc
-}
-
-func v2OIDCTypeFromResourceType(oidcConfigurationType string) models.OidcConfigurationsId_data_type {
-	switch oidcConfigurationType {
-	case OIDCConfigurationTypeAWS:
-		return models.AWSOIDCCONFIGURATIONS_OIDCCONFIGURATIONSID_DATA_TYPE
-	case OIDCConfigurationTypeGCP:
-		return models.GCPOIDCCONFIGURATIONS_OIDCCONFIGURATIONSID_DATA_TYPE
-	case OIDCConfigurationTypeVault:
-		return models.VAULTOIDCCONFIGURATIONS_OIDCCONFIGURATIONSID_DATA_TYPE
-	case OIDCConfigurationTypeAzure:
-		return models.AZUREOIDCCONFIGURATIONS_OIDCCONFIGURATIONSID_DATA_TYPE
-	default:
-		return models.AWSOIDCCONFIGURATIONS_OIDCCONFIGURATIONSID_DATA_TYPE
-	}
-}
-
-func resourceTypeFromV2OIDCType(t *models.OidcConfigurationsId_data_type) string {
-	if t == nil {
-		return ""
-	}
-
-	switch strings.TrimSpace(t.String()) {
-	case "aws-oidc-configurations":
-		return OIDCConfigurationTypeAWS
-	case "gcp-oidc-configurations":
-		return OIDCConfigurationTypeGCP
-	case "vault-oidc-configurations":
-		return OIDCConfigurationTypeVault
-	case "azure-oidc-configurations":
-		return OIDCConfigurationTypeAzure
-	default:
-		return ""
-	}
 }
 
 func modelFromTFEHYOKConfiguration(p models.HyokConfigurationsEnvelopeable) modelTFEHYOKConfiguration {
@@ -374,21 +355,27 @@ func modelFromTFEHYOKConfiguration(p models.HyokConfigurationsEnvelopeable) mode
 	}
 
 	relationships := data.GetRelationships()
-	if relationships != nil {
-		organization := relationships.GetOrganization()
-		if organization != nil && organization.GetData() != nil {
-			model.Organization = types.StringValue(*organization.GetData().GetId())
-		}
+	if relationships == nil {
+		return model
+	}
 
-		agentPool := relationships.GetAgentPool()
-		if agentPool != nil && agentPool.GetData() != nil {
-			model.AgentPoolID = types.StringValue(*agentPool.GetData().GetId())
-		}
+	organization := relationships.GetOrganization()
+	if organization != nil && organization.GetData() != nil {
+		model.Organization = types.StringValue(*organization.GetData().GetId())
+	}
 
-		oidc := relationships.GetOidcConfiguration()
-		if oidc != nil && oidc.GetData() != nil {
-			model.OIDCConfigurationID = types.StringValue(*oidc.GetData().GetId())
-			model.OIDCConfigurationType = types.StringValue(resourceTypeFromV2OIDCType(oidc.GetData().GetTypeEscaped()))
+	agentPool := relationships.GetAgentPool()
+	if agentPool != nil && agentPool.GetData() != nil {
+		model.AgentPoolID = types.StringValue(*agentPool.GetData().GetId())
+	}
+
+	oidc := relationships.GetOidcConfiguration()
+	if oidc != nil && oidc.GetData() != nil {
+		model.OIDCConfigurationID = types.StringValue(*oidc.GetData().GetId())
+
+		oidcType := oidc.GetData().GetTypeEscaped()
+		if oidcType != nil {
+			model.OIDCConfigurationType = types.StringValue(idDataTypeToOidcType[*oidcType])
 		}
 	}
 
