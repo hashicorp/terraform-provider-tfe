@@ -272,7 +272,12 @@ func hyokConfigurationEnvelopeFromModel(m modelTFEHYOKConfiguration) models.Hyok
 	attributes := models.NewHyokConfigurations_attributes()
 	attributes.SetName(m.Name.ValueStringPointer())
 	attributes.SetKekId(m.KEKID.ValueStringPointer())
-	attributes.SetKmsOptions(v2KMSOptionsFromModel(m.KMSOptions))
+
+	kmsOptions := models.NewHyokConfigurations_attributes_kmsOptions()
+	kmsOptions.SetKeyRegion(m.KMSOptions.KeyRegion.ValueStringPointer())
+	kmsOptions.SetKeyLocation(m.KMSOptions.KeyLocation.ValueStringPointer())
+	kmsOptions.SetKeyRingId(m.KMSOptions.KeyRingID.ValueStringPointer())
+	attributes.SetKmsOptions(kmsOptions)
 
 	// Relationships
 	relationships := models.NewHyokConfigurations_relationships()
@@ -286,19 +291,6 @@ func hyokConfigurationEnvelopeFromModel(m modelTFEHYOKConfiguration) models.Hyok
 	envelope := models.NewHyokConfigurationsEnvelope()
 	envelope.SetData(hyokConfiguration)
 	return envelope
-}
-
-func v2KMSOptionsFromModel(m *modelTFEKMSOptions) models.HyokConfigurations_attributes_kmsOptionsable {
-	if m == nil {
-		return nil
-	}
-
-	kmsOptions := models.NewHyokConfigurations_attributes_kmsOptions()
-	kmsOptions.SetKeyRegion(m.KeyRegion.ValueStringPointer())
-	kmsOptions.SetKeyLocation(m.KeyLocation.ValueStringPointer())
-	kmsOptions.SetKeyRingId(m.KeyRingID.ValueStringPointer())
-
-	return kmsOptions
 }
 
 func v2AgentPoolRelationship(agentPoolID string) models.AgentPoolsIdable {
