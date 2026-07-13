@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 data "tfe_slug" "test" {
   source_path = "policies/my-policy-set"
 }

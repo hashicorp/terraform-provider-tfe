@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 resource "tfe_provider_set" "standard" {
   name            = "example-provider-set"
   description     = "Reusable provider config for selected workspaces"

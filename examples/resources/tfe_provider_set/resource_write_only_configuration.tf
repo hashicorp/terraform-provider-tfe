@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 variable "aws_access_key" {
   type      = string
   ephemeral = true

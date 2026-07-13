@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 resource "tfe_workspace" "example" {
   name         = "example-workspace"
   organization = "my-organization"
