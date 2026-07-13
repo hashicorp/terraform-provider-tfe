@@ -19,6 +19,8 @@ import (
 
 func resourceTFETeamMembers() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manages users in a team.",
+
 		Create: resourceTFETeamMembersCreate,
 		Read:   resourceTFETeamMembersRead,
 		Update: resourceTFETeamMembersUpdate,
@@ -29,15 +31,17 @@ func resourceTFETeamMembers() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"team_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "ID of the team.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"usernames": {
-				Type:     schema.TypeSet,
-				Required: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "Names of the users to add.",
+				Type:        schema.TypeSet,
+				Required:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
 	}

@@ -21,6 +21,8 @@ import (
 
 func resourceTFESentinelPolicy() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manages Sentinel policies (deprecated, use tfe_policy instead).",
+
 		DeprecationMessage: "tfe_sentinel_policy is deprecated, please use tfe_policy instead",
 		Create:             resourceTFESentinelPolicyCreate,
 		Read:               resourceTFESentinelPolicyRead,
@@ -34,33 +36,38 @@ func resourceTFESentinelPolicy() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "Name of the policy.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"description": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Description: "A description of the policy's purpose.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-				ForceNew: true,
+				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    true,
 			},
 
 			"policy": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "The actual policy itself.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"enforce_mode": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  string(tfe.EnforcementSoft),
+				Description: "The enforcement level of the policy. Valid values are advisory, hard-mandatory and soft-mandatory. Defaults to soft-mandatory.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     string(tfe.EnforcementSoft),
 				ValidateFunc: validation.StringInSlice(
 					[]string{
 						string(tfe.EnforcementAdvisory),

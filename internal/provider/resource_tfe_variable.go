@@ -224,19 +224,22 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 				},
 			},
 			"description": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
-				Default:  stringdefault.StaticString(""),
+				Description: "Description of the variable.",
+				Optional:    true,
+				Computed:    true,
+				Default:     stringdefault.StaticString(""),
 			},
 			"hcl": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
-				Default:  booldefault.StaticBool(false),
+				Description: "Whether to evaluate the value of the variable as a string of HCL code. Has no effect for environment variables. Defaults to false.",
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 			},
 			"sensitive": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
-				Default:  booldefault.StaticBool(false),
+				Description: "Whether the value is sensitive. If true then the variable is written once and not visible thereafter. Defaults to false.",
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.RequiresReplaceIf(
 						func(ctx context.Context, req planmodifier.BoolRequest, resp *boolplanmodifier.RequiresReplaceIfFuncResponse) {
@@ -250,7 +253,8 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 				},
 			},
 			"workspace_id": schema.StringAttribute{
-				Optional: true,
+				Description: "ID of the workspace that owns the variable. Exactly one of workspace_id or variable_set_id must be provided.",
+				Optional:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -265,7 +269,8 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 				},
 			},
 			"variable_set_id": schema.StringAttribute{
-				Optional: true,
+				Description: "ID of the variable set that owns the variable. Exactly one of workspace_id or variable_set_id must be provided.",
+				Optional:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -288,7 +293,7 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 				},
 			},
 		},
-		Description:         "",
+		Description:         "Manages variables.",
 		MarkdownDescription: "",
 		DeprecationMessage:  "",
 		Version:             1,

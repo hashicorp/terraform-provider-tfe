@@ -20,6 +20,8 @@ import (
 
 func resourceTFETeamOrganizationMember() *schema.Resource {
 	return &schema.Resource{
+		Description: "Adds or removes a team member using an organization membership ID.",
+
 		Create: resourceTFETeamOrganizationMemberCreate,
 		Read:   resourceTFETeamOrganizationMemberRead,
 		Delete: resourceTFETeamOrganizationMemberDelete,
@@ -29,15 +31,17 @@ func resourceTFETeamOrganizationMember() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"team_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "ID of the team.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"organization_membership_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "ID of the organization membership.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 		},
 	}

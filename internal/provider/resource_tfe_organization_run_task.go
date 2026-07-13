@@ -107,7 +107,8 @@ func (r *resourceOrgRunTask) Configure(ctx context.Context, req resource.Configu
 
 func (r *resourceOrgRunTask) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Version: 0,
+		Description: "Manages run tasks within an organization.",
+		Version:     0,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -117,32 +118,37 @@ func (r *resourceOrgRunTask) Schema(ctx context.Context, req resource.SchemaRequ
 				},
 			},
 			"name": schema.StringAttribute{
-				Required: true,
+				Description: "Name of the task.",
+				Required:    true,
 			},
 			"organization": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
+				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
+				Optional:    true,
+				Computed:    true,
 				// From ForceNew: true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"url": schema.StringAttribute{
-				Required: true,
+				Description: "URL to send a run task payload.",
+				Required:    true,
 				Validators: []validator.String{
 					customValidators.IsURLWithHTTPorHTTPS(),
 				},
 			},
 			"category": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
-				Default:  stringdefault.StaticString("task"),
+				Description: "The type of task.",
+				Optional:    true,
+				Computed:    true,
+				Default:     stringdefault.StaticString("task"),
 			},
 			"hmac_key": schema.StringAttribute{
-				Sensitive: true,
-				Optional:  true,
-				Computed:  true,
-				Default:   stringdefault.StaticString(""),
+				Description: "HMAC key to verify run task. Conflicts with hmac_key_wo.",
+				Sensitive:   true,
+				Optional:    true,
+				Computed:    true,
+				Default:     stringdefault.StaticString(""),
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("hmac_key_wo")),
 				},
@@ -169,14 +175,16 @@ func (r *resourceOrgRunTask) Schema(ctx context.Context, req resource.SchemaRequ
 				},
 			},
 			"enabled": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
-				Default:  booldefault.StaticBool(true),
+				Description: "Whether the task will be run.",
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(true),
 			},
 			"description": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
-				Default:  stringdefault.StaticString(""),
+				Description: "A short description of the task.",
+				Optional:    true,
+				Computed:    true,
+				Default:     stringdefault.StaticString(""),
 			},
 		},
 	}

@@ -229,7 +229,8 @@ func (r *projectSettings) Schema(ctx context.Context, req resource.SchemaRequest
 			},
 
 			"project_id": schema.StringAttribute{
-				Required: true,
+				Description: "The ID of the project to manage settings for.",
+				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 					stringplanmodifier.UseStateForUnknown(),
@@ -237,8 +238,9 @@ func (r *projectSettings) Schema(ctx context.Context, req resource.SchemaRequest
 			},
 
 			"default_execution_mode": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
+				Description: "Which execution mode to use as the default for all workspaces in the project. Valid values are remote, local or agent.",
+				Optional:    true,
+				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					unknownIfDefaultExecutionModeUnset{},
 				},
@@ -248,8 +250,9 @@ func (r *projectSettings) Schema(ctx context.Context, req resource.SchemaRequest
 			},
 
 			"default_agent_pool_id": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
+				Description: "The ID of an agent pool to assign to the project. Requires default_execution_mode to be set to agent. This value must not be provided if default_execution_mode is set to any other value.",
+				Optional:    true,
+				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					unknownIfDefaultExecutionModeUnset{},
 					validateProjectDefaultAgentExecutionMode{},
