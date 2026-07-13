@@ -18,20 +18,24 @@ import (
 
 func dataSourceTFEGHAInstallation() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceGHAInstallationRead,
+		Description: "Gets information about the Github App installation.",
+		Read:        dataSourceGHAInstallationRead,
 		Schema: map[string]*schema.Schema{
 			"id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The internal ID of the Github Installation. This is different from the `installation_id`",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"installation_id": {
+				Description:  "ID of the Github Installation. The installation ID can be found in the URL slug when visiting the installation's configuration page, e.g `https://github.com/settings/installations/12345678`.",
 				Type:         schema.TypeInt,
 				Optional:     true,
 				AtLeastOneOf: []string{"name", "installation_id"},
 			},
 			"name": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "Name of the Github user or organization account that installed the app.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 		},
 	}

@@ -17,31 +17,38 @@ import (
 
 func dataSourceTFEOrganizationTags() *schema.Resource {
 	return &schema.Resource{
+		Description: "Gets information about the workspace tags for a given organization.",
+
 		Read: dataSourceTFEOrganizationTagsRead,
 
 		Schema: map[string]*schema.Schema{
 			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "Name of the organization.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 			"tags": {
-				Type:     schema.TypeList,
-				Computed: true,
+				Description: "A list of workspace tags within the organization.",
+				Type:        schema.TypeList,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"name": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The name of the workspace tag.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"id": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The ID of the workspace tag.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"workspace_count": {
-							Type:     schema.TypeInt,
-							Computed: true,
+							Description: "The number of workspaces the tag is associated with.",
+							Type:        schema.TypeInt,
+							Computed:    true,
 						},
 					},
 				},

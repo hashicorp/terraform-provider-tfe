@@ -49,7 +49,8 @@ func (d *dataSourceTFERegistryGPGKeys) Schema(_ context.Context, _ datasource.Sc
 		Description: "This data source can be used to retrieve all private registry GPG keys of an organization.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				Description: "Name of the organization for use as an ID.",
+				Computed:    true,
 			},
 			"organization": schema.StringAttribute{
 				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",

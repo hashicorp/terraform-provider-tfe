@@ -216,5 +216,5 @@ var descriptions = map[string]string{
 		"the token which can be set as credentials in the CLI config file.",
 	"ssl_skip_verify": "Whether or not to skip certificate verifications.",
 	"organization": "The organization to apply to a resource if one is not defined on\n" +
-		"the resource itself",
+		"the resource itself.",
 }

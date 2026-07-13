@@ -64,7 +64,7 @@ func (d *dataSourceTFERegistryProvider) Schema(_ context.Context, _ datasource.S
 				},
 			},
 			"namespace": schema.StringAttribute{
-				Description: "The namespace of the provider. For private providers this is the same as the oraganization.",
+				Description: "The namespace of the provider. For private providers this is the same as the organization.",
 				Optional:    true,
 				Computed:    true,
 			},
