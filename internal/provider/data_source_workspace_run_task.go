@@ -35,7 +35,7 @@ func (d *dataSourceWorkspaceRunTask) Schema(_ context.Context, _ datasource.Sche
 		Description: "Gets information about a [Workspace Run task](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks#associating-run-tasks-with-a-workspace).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "Service-generated identifier for the task",
+				Description: "Service-generated identifier for the task.",
 				Computed:    true,
 			},
 			"workspace_id": schema.StringAttribute{

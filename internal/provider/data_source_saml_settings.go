@@ -69,7 +69,7 @@ func (d *dataSourceTFESAMLSettings) Schema(_ context.Context, _ datasource.Schem
 				Computed:    true,
 			},
 			"enabled": schema.BoolAttribute{
-				Description: "Whetther SAML single sign-on is enabled.",
+				Description: "Whether SAML single sign-on is enabled.",
 				Computed:    true,
 			},
 			"debug": schema.BoolAttribute{
@@ -89,7 +89,7 @@ func (d *dataSourceTFESAMLSettings) Schema(_ context.Context, _ datasource.Schem
 				Computed:    true,
 			},
 			"idp_cert": schema.StringAttribute{
-				Description: "EM encoded X.509 Certificate as provided by the IdP configuration.",
+				Description: "PEM encoded X.509 Certificate as provided by the IdP configuration.",
 				Computed:    true,
 			},
 			"old_idp_cert": schema.StringAttribute{

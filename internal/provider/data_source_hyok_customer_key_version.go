@@ -76,7 +76,7 @@ func (d *dataSourceHYOKCustomerKeyVersion) Schema(ctx context.Context, req datas
 				Computed:    true,
 			},
 			"workspaces_secured": schema.Int64Attribute{
-				Description: "The number workspaces secured by this customer key version.",
+				Description: "The number of workspaces secured by this customer key version.",
 				Computed:    true,
 			},
 			"created_at": schema.StringAttribute{

@@ -144,7 +144,7 @@ func dataSourceTFEPolicySet() *schema.Resource {
 			},
 
 			"project_ids": {
-				Description: "IDs of the policies attached to the policy set.",
+				Description: "IDs of the projects attached to the policy set.",
 				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Computed:    true,

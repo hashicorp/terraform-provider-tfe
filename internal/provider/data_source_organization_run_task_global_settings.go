@@ -39,7 +39,7 @@ func (d *dataSourceOrganizationRunTaskGlobalSettings) Schema(_ context.Context, 
 				Optional:    true,
 			},
 			"enforcement_level": schema.StringAttribute{
-				Description: "The enforcement level of the global task. Valid values are `advisory` and `mandatory`",
+				Description: "The enforcement level of the global task. Valid values are `advisory` and `mandatory`.",
 				Optional:    true,
 			},
 			"id": schema.StringAttribute{

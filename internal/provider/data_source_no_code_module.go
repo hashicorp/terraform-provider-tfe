@@ -71,7 +71,7 @@ func (d *dataSourceTFENoCodeModule) Schema(_ context.Context, _ datasource.Schem
 				Computed:    true,
 			},
 			"enabled": schema.BoolAttribute{
-				Description: "Indiate if this no-code module is currently enabled.",
+				Description: "Indicate if this no-code module is currently enabled.",
 				Computed:    true,
 			},
 		},

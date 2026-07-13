@@ -23,7 +23,7 @@ func dataSourceTFETeamAccess() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"id": {
-				Description: "The team access ID",
+				Description: "The team access ID.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
