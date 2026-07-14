@@ -37,7 +37,7 @@ func dataSourceTFEOrganizationMembership() *schema.Resource {
 			},
 
 			"username": {
-				Description: "The username of the user. Although both are option, at least one of `email` and `username` is required.",
+				Description: "The username of the user. Although both are optional, at least one of `email` and `username` is required.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,

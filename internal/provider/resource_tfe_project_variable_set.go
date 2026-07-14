@@ -31,6 +31,12 @@ func resourceTFEProjectVariableSet() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the variable set attachment. ID format: `<project-id>_<variable-set-id>`.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"variable_set_id": {
 				Description: "ID of the variable set to add.",
 				Type:        schema.TypeString,

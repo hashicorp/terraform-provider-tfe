@@ -274,8 +274,9 @@ func dataSourceTFEWorkspace() *schema.Resource {
 						},
 
 						"github_app_installation_id": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The installation ID of the GitHub App.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 					},
 				},

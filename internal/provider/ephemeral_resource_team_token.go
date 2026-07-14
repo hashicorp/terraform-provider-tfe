@@ -48,23 +48,23 @@ func (e *TeamTokenEphemeralResource) Schema(ctx context.Context, req ephemeral.S
 		Description: "This ephemeral resource can be used to retrieve a team token without saving its value in state.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: `System generated ID of the team token.`,
-				Computed:    true,
+				MarkdownDescription: `System generated ID of the team token.`,
+				Computed:            true,
 			},
 			"team_id": schema.StringAttribute{
-				Description: `ID of the team.`,
-				Required:    true,
+				MarkdownDescription: `ID of the team.`,
+				Required:            true,
 			},
 			"token": schema.StringAttribute{
-				Description: `The generated token.`,
-				Computed:    true,
-				Sensitive:   true,
+				MarkdownDescription: `The generated token.`,
+				Computed:            true,
+				Sensitive:           true,
 			},
 			"expired_at": schema.StringAttribute{
-				Description: `The token's expiration date.`,
-				Optional:    true,
-				Computed:    true,
-				CustomType:  timetypes.RFC3339Type{},
+				MarkdownDescription: `The token's expiration date.`,
+				Optional:            true,
+				Computed:            true,
+				CustomType:          timetypes.RFC3339Type{},
 			},
 		},
 	}

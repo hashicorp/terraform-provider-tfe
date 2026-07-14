@@ -33,25 +33,25 @@ func (e *outputsEphemeralResource) Schema(ctx context.Context, req ephemeral.Sch
 		Description: "This ephemeral resource can be used to retrieve a workspace's state outputs without saving them in state.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: `System-generated unique identifier for the resource.`,
-				Computed:    true,
+				MarkdownDescription: `System-generated unique identifier for the resource.`,
+				Computed:            true,
 			},
 			"organization": schema.StringAttribute{
-				Description: `Name of the organization.`,
-				Optional:    true,
-				Computed:    true,
+				MarkdownDescription: `Name of the organization.`,
+				Optional:            true,
+				Computed:            true,
 			},
 			"workspace": schema.StringAttribute{
-				Description: `Name of the workspace.`,
-				Required:    true,
+				MarkdownDescription: `Name of the workspace.`,
+				Required:            true,
 			},
 			"values": schema.DynamicAttribute{
-				Description: `Values of the workspace outputs.`,
-				Computed:    true,
+				MarkdownDescription: `Values of the workspace outputs.`,
+				Computed:            true,
 			},
 			"nonsensitive_values": schema.DynamicAttribute{
-				Description: `Non-sensitive values of the workspace outputs.`,
-				Computed:    true,
+				MarkdownDescription: `Non-sensitive values of the workspace outputs.`,
+				Computed:            true,
 			},
 		},
 	}

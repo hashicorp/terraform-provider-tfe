@@ -60,6 +60,12 @@ func resourceTFEVariableSet() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the variable set.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"name": {
 				Description: "Name of the variable set.",
 				Type:        schema.TypeString,
@@ -81,7 +87,7 @@ func resourceTFEVariableSet() *schema.Resource {
 			},
 
 			"priority": {
-				Description: "Whether the variables in this set can be over-written by more specific scopes including values set on the command line. Defaults to false.",
+				Description: "When true, the variables in this set take priority over workspace-level variables and cannot be overridden. Defaults to false.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,

@@ -80,6 +80,11 @@ func resourceTFEWorkspaceRun() *schema.Resource {
 		Update:        resourceTFEWorkspaceRunUpdate,
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the run created by this resource.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 			"workspace_id": {
 				Description: "ID of the workspace to execute the run.",
 				Type:        schema.TypeString,

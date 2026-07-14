@@ -22,11 +22,17 @@ import (
 
 func dataSourceTFESlug() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manages files.",
+		Description: "Represents configuration files on a local filesystem intended to be uploaded to HCP Terraform, in lieu of those files being sourced from a configured VCS provider.",
 
 		Read: dataSourceTFESlugRead,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The SHA256 checksum of the files at `source_path`. Do not rely on this value.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"source_path": {
 				Description: "The path to the directory where the files are located.",
 				Type:        schema.TypeString,

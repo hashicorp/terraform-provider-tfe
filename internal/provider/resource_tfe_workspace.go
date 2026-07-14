@@ -95,6 +95,12 @@ func resourceTFEWorkspace() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The workspace ID.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -207,7 +213,7 @@ func resourceTFEWorkspace() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
-				Deprecated:  "Use resource `tfe_workspace_settings` to modify the workspace `remote_state_consumer_ids`. `remote_state_consumer_ids` on `tfe_workspace` is no longer validated properly on this resource and This attribute will be removed in a future release of the provider.",
+				Deprecated:  "Use resource `tfe_workspace_settings` to modify the workspace `remote_state_consumer_ids`. `remote_state_consumer_ids` on `tfe_workspace` is no longer validated properly and will be removed in a future release of the provider.",
 				Description: "**Deprecated** The set of workspace IDs set as explicit remote state consumers for the given workspace. Use tfe_workspace_settings instead.",
 			},
 
@@ -336,7 +342,7 @@ func resourceTFEWorkspace() *schema.Resource {
 				Optional:      true,
 				Elem:          &schema.Schema{Type: schema.TypeString},
 				ConflictsWith: []string{"trigger_prefixes"},
-				Description:   "List of glob patterns that describe the files HCP Terraform monitors for changes. Trigger patterns are always appended to the root directory of the repository. Mutually exclusive with `trigger_prefixes`.",
+				Description:   "List of [glob patterns](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/vcs#glob-patterns-for-automatic-run-triggering) that describe the files HCP Terraform monitors for changes. Trigger patterns are always appended to the root directory of the repository. Mutually exclusive with `trigger_prefixes`.",
 			},
 
 			"working_directory": {
@@ -351,7 +357,7 @@ func resourceTFEWorkspace() *schema.Resource {
 				Optional:    true,
 				MinItems:    1,
 				MaxItems:    1,
-				Description: "Settings for the workspace's VCS repository, enabling the UI/VCS-driven run workflow. Omit this argument to utilize the CLI-driven or API-driven workflows, where runs are not driven by webhooks on your VCS provider.",
+				Description: "Settings for the workspace's VCS repository, enabling the [UI/VCS-driven run workflow](https://developer.hashicorp.com/terraform/cloud-docs/run/ui). Omit this argument to utilize the [CLI-driven](https://developer.hashicorp.com/terraform/cloud-docs/run/cli) or [API-driven](https://developer.hashicorp.com/terraform/cloud-docs/run/api) workflows, where runs are not driven by webhooks on your VCS provider.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"identifier": {

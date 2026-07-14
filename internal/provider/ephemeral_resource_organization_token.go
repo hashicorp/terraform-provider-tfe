@@ -30,19 +30,19 @@ func (e *OrganizationTokenEphemeralResource) Schema(ctx context.Context, req eph
 		Description: "This ephemeral resource can be used to retrieve an organization token without saving its value in state. Using this ephemeral resource will generate a new token each time it is used, invalidating any existing organization token.",
 		Attributes: map[string]schema.Attribute{
 			"organization": schema.StringAttribute{
-				Description: `Name of the organization. If omitted, organization must be defined in the provider config.`,
-				Optional:    true,
-				Computed:    true,
+				MarkdownDescription: `Name of the organization. If omitted, organization must be defined in the provider config.`,
+				Optional:            true,
+				Computed:            true,
 			},
 			"token": schema.StringAttribute{
-				Description: `The generated token.`,
-				Computed:    true,
-				Sensitive:   true,
+				MarkdownDescription: `The generated token.`,
+				Computed:            true,
+				Sensitive:           true,
 			},
 			"expired_at": schema.StringAttribute{
-				Description: `The token's expiration date. The expiration date must be a date/time string in RFC3339 format (e.g., "2024-12-31T23:59:59Z"). If no expiration date is supplied, the expiration date will default to null and never expire.`,
-				Optional:    true,
-				CustomType:  timetypes.RFC3339Type{},
+				MarkdownDescription: `The token's expiration date. The expiration date must be a date/time string in RFC3339 format (e.g., "2024-12-31T23:59:59Z"). If no expiration date is supplied, the expiration date will default to null and never expire.`,
+				Optional:            true,
+				CustomType:          timetypes.RFC3339Type{},
 			},
 		},
 		DeprecationMessage: "Use of this ephemeral resource is deprecated. Please use the `tfe_organization_token` managed resource instead.",

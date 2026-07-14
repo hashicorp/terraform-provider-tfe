@@ -81,6 +81,11 @@ func resourceTFERegistryModule() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the registry module.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 			"organization": {
 				Type:        schema.TypeString,
 				Optional:    true,

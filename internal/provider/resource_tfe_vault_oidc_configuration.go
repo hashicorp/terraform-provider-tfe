@@ -85,10 +85,10 @@ func (r *resourceTFEVaultOIDCConfiguration) Schema(_ context.Context, _ resource
 				Required:    true,
 			},
 			"auth_path": schema.StringAttribute{
-				Description: `The mounting path of JWT auth path of JWT auth. Defaults to "jwt".`,
-				Optional:    true,
-				Computed:    true,
-				Default:     stringdefault.StaticString("jwt"),
+				MarkdownDescription: `The mount path of the JWT authentication method. Defaults to "jwt".`,
+				Optional:            true,
+				Computed:            true,
+				Default:             stringdefault.StaticString("jwt"),
 			},
 			"encoded_cacert": schema.StringAttribute{
 				Description: "A base64 encoded certificate which can be used to authenticate your Vault certificate. Only needed for self-hosted Vault Enterprise instances with a self-signed certificate.",
@@ -105,7 +105,7 @@ func (r *resourceTFEVaultOIDCConfiguration) Schema(_ context.Context, _ resource
 				},
 			},
 		},
-		Description: "Generates a new TFE Vault OIDC Configuration.",
+		Description: "Defines a Vault OIDC configuration resource.",
 	}
 }
 

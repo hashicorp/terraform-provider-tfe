@@ -49,6 +49,12 @@ func resourceTFEAgentPool() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the agent pool.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"name": {
 				Description: "Name of the agent pool.",
 				Type:        schema.TypeString,
@@ -64,7 +70,7 @@ func resourceTFEAgentPool() *schema.Resource {
 			},
 
 			"organization_scoped": {
-				Description: "Whether or not the agent pool is scoped to all workspaces in the organization. Defaults to true. Should be false when limiting workspaces that can use the agent pool with the tfe_agent_pool_allowed_workspaces resource.",
+				Description: "Whether or not the agent pool is scoped to all workspaces in the organization. Defaults to true. Should be false when limiting workspaces that can use the agent pool with the [tfe_agent_pool_allowed_workspaces](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/agent_pool_allowed_workspaces) resource.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,

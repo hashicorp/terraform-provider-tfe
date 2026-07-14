@@ -24,7 +24,7 @@ func dataSourceTFEVariableSet() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"id": {
-				Description: "The ID of the variable.",
+				Description: "The ID of the variable set.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
@@ -54,7 +54,7 @@ func dataSourceTFEVariableSet() *schema.Resource {
 			},
 
 			"priority": {
-				Description: "Whether the variables in this set are able to be over-written.",
+				Description: "When true, the variables in this set take priority over workspace-level variables and cannot be overridden.",
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},

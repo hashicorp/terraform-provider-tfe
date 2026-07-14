@@ -187,10 +187,10 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 			},
 
 			"email_addresses": schema.SetAttribute{
-				Description: "A list of email addresses. This value must not be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
-				Optional:    true,
-				Computed:    true,
-				ElementType: types.StringType,
+				MarkdownDescription: "A list of email addresses. This value must not be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
+				Optional:            true,
+				Computed:            true,
+				ElementType:         types.StringType,
 				Validators: []validator.Set{
 					validators.AttributeValueConflictValidator(
 						"destination_type",
@@ -200,10 +200,10 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 			},
 
 			"email_user_ids": schema.SetAttribute{
-				Description: "A list of user IDs. This value must not be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
-				Optional:    true,
-				Computed:    true,
-				ElementType: types.StringType,
+				MarkdownDescription: "A list of user IDs. This value must not be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
+				Optional:            true,
+				Computed:            true,
+				ElementType:         types.StringType,
 				Validators: []validator.Set{
 					validators.AttributeValueConflictValidator(
 						"destination_type",
@@ -213,15 +213,15 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 			},
 
 			"enabled": schema.BoolAttribute{
-				Description: "Whether the notification configuration should be enabled or not. Disabled configurations will not send any notifications. Defaults to `false`.",
-				Optional:    true,
-				Computed:    true,
-				Default:     booldefault.StaticBool(false),
+				MarkdownDescription: "Whether the notification configuration should be enabled or not. Disabled configurations will not send any notifications. Defaults to `false`.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
 			},
 			"token": schema.StringAttribute{
-				Description: "A write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Defaults to `null`. This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.",
-				Optional:    true,
-				Sensitive:   true,
+				MarkdownDescription: "A write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Defaults to `null`. This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.",
+				Optional:            true,
+				Sensitive:           true,
 				Validators: []validator.String{
 					validators.AttributeValueConflictValidator(
 						"destination_type",
@@ -231,18 +231,18 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 				},
 			},
 			"token_wo": schema.StringAttribute{
-				Optional:    true,
-				WriteOnly:   true,
-				Sensitive:   true,
-				Description: "Write-only alternative to `token`. Changes are detected automatically via a hash stored in private state; increment `token_wo_version` manually to force an update without changing the value.",
+				Optional:            true,
+				WriteOnly:           true,
+				Sensitive:           true,
+				MarkdownDescription: "Write-only alternative to `token`. Changes are detected automatically via a hash stored in private state; increment `token_wo_version` manually to force an update without changing the value.",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("token")),
 				},
 			},
 			"token_wo_version": schema.Int64Attribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "Tracks the version of the write-only token. When `token_wo` is set and this attribute is not explicitly configured, the provider automatically detects token changes via a hash stored in private state and increments this value. Set this manually to force a token update without changing the value, or for maximum privacy (disables hash storage).",
+				Optional:            true,
+				Computed:            true,
+				MarkdownDescription: "Tracks the version of the write-only token. When `token_wo` is set and this attribute is not explicitly configured, the provider automatically detects token changes via a hash stored in private state and increments this value. Set this manually to force a token update without changing the value, or for maximum privacy (disables hash storage).",
 				PlanModifiers: []planmodifier.Int64{
 					int64planmodifier.UseStateForUnknown(),
 				},
@@ -275,9 +275,9 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 			},
 
 			"url": schema.StringAttribute{
-				Description: "The HTTP or HTTPS URL where notification requests will be made. This value must not be provided if `email_addresses` or `email_user_ids` is present, or if `destination_type` is `email`. Use `url_wo` instead to prevent the URL from being stored in state.",
-				Optional:    true,
-				Sensitive:   true,
+				MarkdownDescription: "The HTTP or HTTPS URL where notification requests will be made. This value must not be provided if `email_addresses` or `email_user_ids` is present, or if `destination_type` is `email`. Use `url_wo` instead to prevent the URL from being stored in state.",
+				Optional:            true,
+				Sensitive:           true,
 				Validators: []validator.String{
 					validators.AttributeRequiredIfValueStringUnlessOtherSet(
 						"destination_type",
@@ -297,10 +297,10 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 			},
 
 			"url_wo": schema.StringAttribute{
-				Description: "Write-only alternative to `url`. The HTTP or HTTPS URL where notification requests will be made. Use this instead of `url` to prevent the URL from being stored in state. Changes are detected automatically via a hash stored in private state; increment `url_wo_version` manually to force an update without changing the value.",
-				Optional:    true,
-				WriteOnly:   true,
-				Sensitive:   true,
+				MarkdownDescription: "Write-only alternative to `url`. The HTTP or HTTPS URL where notification requests will be made. Use this instead of `url` to prevent the URL from being stored in state. Changes are detected automatically via a hash stored in private state; increment `url_wo_version` manually to force an update without changing the value.",
+				Optional:            true,
+				WriteOnly:           true,
+				Sensitive:           true,
 				Validators: []validator.String{
 					validators.AttributeRequiredIfValueStringUnlessOtherSet(
 						"destination_type",
@@ -320,9 +320,9 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 			},
 
 			"url_wo_version": schema.Int64Attribute{
-				Description: "Tracks the version of the write-only URL. When `url_wo` is set and this attribute is not explicitly configured, the provider automatically detects URL changes via a hash stored in private state and increments this value. Set this manually to force a URL update without changing the value, or for maximum privacy (disables hash storage).",
-				Optional:    true,
-				Computed:    true,
+				MarkdownDescription: "Tracks the version of the write-only URL. When `url_wo` is set and this attribute is not explicitly configured, the provider automatically detects URL changes via a hash stored in private state and increments this value. Set this manually to force a URL update without changing the value, or for maximum privacy (disables hash storage).",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.Int64{
 					int64planmodifier.UseStateForUnknown(),
 				},

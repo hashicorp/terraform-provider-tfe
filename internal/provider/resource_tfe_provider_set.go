@@ -148,7 +148,7 @@ func (r *resourceTFEProviderSet) Schema(ctx context.Context, req resource.Schema
 				},
 			},
 			"provider_config_hcl": schema.StringAttribute{
-				Description: "The provider configuration managed by the provider set, expressed as a single HCL provider block",
+				Description: "The provider configuration managed by the provider set, expressed as a single HCL provider block.",
 				Optional:    true,
 				Computed:    true,
 				Validators: []validator.String{

@@ -80,7 +80,7 @@ func (r *resourceTFEAWSOIDCConfiguration) Schema(_ context.Context, _ resource.S
 				},
 			},
 		},
-		Description: "Generates a new TFE AWS OIDC Configuration.",
+		Description: "Defines an AWS OIDC configuration resource.",
 	}
 }
 

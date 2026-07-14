@@ -36,6 +36,12 @@ func resourceTFENoCodeModule() *schema.Resource {
 		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the no code module.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"organization": {
 				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
 				Type:        schema.TypeString,

@@ -101,6 +101,7 @@ func (r *resourceTFESSHKey) Metadata(_ context.Context, req resource.MetadataReq
 // Schema implements resource.Resource
 func (r *resourceTFESSHKey) Schema(_ context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Represents an SSH key which includes a name and the SSH private key. An organization can have multiple SSH keys available.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "Service-generated ID for the SSH key.",
@@ -125,7 +126,7 @@ func (r *resourceTFESSHKey) Schema(_ context.Context, req resource.SchemaRequest
 			},
 
 			"key": schema.StringAttribute{
-				Description: "The text of the SSH private key",
+				Description: "The text of the SSH private key.",
 				Optional:    true,
 				Sensitive:   true,
 				Validators: []validator.String{
@@ -149,7 +150,7 @@ func (r *resourceTFESSHKey) Schema(_ context.Context, req resource.SchemaRequest
 
 			"key_wo_version": schema.Int64Attribute{
 				Optional:    true,
-				Description: "Version of the write-only key to trigger updates",
+				Description: "Version of the write-only key to trigger updates.",
 				Validators: []validator.Int64{
 					int64validator.ConflictsWith(path.MatchRoot("key")),
 					int64validator.AlsoRequires(path.MatchRoot("key_wo")),

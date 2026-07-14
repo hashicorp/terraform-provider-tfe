@@ -49,8 +49,8 @@ func (d *dataSourceTFESCIMSettings) Schema(_ context.Context, _ datasource.Schem
 		Description: "Reads the current SCIM provisioning settings for the Terraform Enterprise instance.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the SCIM settings. Always `scim`.",
+				Computed:            true,
+				MarkdownDescription: "The ID of the SCIM settings. Always `scim`.",
 			},
 			"enabled": schema.BoolAttribute{
 				Computed:    true,

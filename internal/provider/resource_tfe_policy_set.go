@@ -49,6 +49,12 @@ func resourceTFEPolicySet() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the policy set.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"name": {
 				Description:  "Name of the policy set.",
 				Type:         schema.TypeString,
@@ -100,14 +106,14 @@ func resourceTFEPolicySet() *schema.Resource {
 			},
 
 			"agent_enabled": {
-				Description: "Whether the policy set is executed in the HCP Terraform agent. True by default for OPA policies",
+				Description: "Whether the policy set is executed in the HCP Terraform agent. true by default for OPA policies.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Computed:    true,
 			},
 
 			"policy_tool_version": {
-				Description: "The policy tool version to run the policy evaluation against",
+				Description: "The policy tool version to run the policy evaluation against.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,

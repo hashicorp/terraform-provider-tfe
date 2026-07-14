@@ -48,6 +48,12 @@ func resourceTFEOrganizationMembership() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The organization membership ID.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"email": {
 				Description: "Email of the user to add.",
 				Type:        schema.TypeString,
