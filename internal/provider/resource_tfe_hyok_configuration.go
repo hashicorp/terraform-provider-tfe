@@ -198,12 +198,12 @@ func (r *resourceTFEHYOKConfiguration) Create(ctx context.Context, req resource.
 	options := hyokConfigurationEnvelopeFromModel(plan)
 
 	tflog.Debug(ctx, fmt.Sprintf("Create TFE HYOK Configuration for organization %s", orgName))
-	hyok, err := r.config.ClientV2.API.Organizations().ByOrganization_name(orgName).HyokConfigurations().Post(ctx, options, nil)
+	envelope, err := r.config.ClientV2.API.Organizations().ByOrganization_name(orgName).HyokConfigurations().Post(ctx, options, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating TFE HYOK Configuration", err.Error())
 		return
 	}
-	result := modelFromTFEHYOKConfiguration(hyok)
+	result := modelFromTFEHYOKConfiguration(envelope)
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
 }
 
@@ -216,22 +216,22 @@ func (r *resourceTFEHYOKConfiguration) Read(ctx context.Context, req resource.Re
 		return
 	}
 
-	hyokID := state.ID.ValueString()
-	tflog.Debug(ctx, fmt.Sprintf("Read HYOK configuration: %s", hyokID))
-	hyok, err := r.config.ClientV2.API.HyokConfigurations().ByHyok_configuration_id(state.ID.ValueString()).Get(ctx, nil)
+	id := state.ID.ValueString()
+	tflog.Debug(ctx, fmt.Sprintf("Read HYOK configuration: %s", id))
+	envelope, err := r.config.ClientV2.API.HyokConfigurations().ByHyok_configuration_id(state.ID.ValueString()).Get(ctx, nil)
 	if err != nil {
 		if errors.Is(err, tfe.ErrNotFound) {
-			tflog.Debug(ctx, fmt.Sprintf("HYOK configuration %s no longer exists", hyokID))
+			tflog.Debug(ctx, fmt.Sprintf("HYOK configuration %s no longer exists", id))
 			resp.State.RemoveResource(ctx)
 		} else {
 			resp.Diagnostics.AddError(
-				fmt.Sprintf("Error reading HYOK configuration %s", hyokID),
+				fmt.Sprintf("Error reading HYOK configuration %s", id),
 				err.Error(),
 			)
 		}
 		return
 	}
-	result := modelFromTFEHYOKConfiguration(hyok)
+	result := modelFromTFEHYOKConfiguration(envelope)
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
 }
 
@@ -248,15 +248,15 @@ func (r *resourceTFEHYOKConfiguration) Update(ctx context.Context, req resource.
 
 	options := hyokConfigurationEnvelopeFromModel(plan)
 
-	hyokID := state.ID.ValueString()
-	tflog.Debug(ctx, fmt.Sprintf("Update TFE HYOK Configuration %s", hyokID))
-	hyok, err := r.config.ClientV2.API.HyokConfigurations().ByHyok_configuration_id(hyokID).Patch(ctx, options, nil)
+	id := state.ID.ValueString()
+	tflog.Debug(ctx, fmt.Sprintf("Update TFE HYOK Configuration %s", id))
+	envelope, err := r.config.ClientV2.API.HyokConfigurations().ByHyok_configuration_id(id).Patch(ctx, options, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating TFE HYOK Configuration", err.Error())
 		return
 	}
 
-	result := modelFromTFEHYOKConfiguration(hyok)
+	result := modelFromTFEHYOKConfiguration(envelope)
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
 }
 
@@ -268,12 +268,12 @@ func (r *resourceTFEHYOKConfiguration) Delete(ctx context.Context, req resource.
 		return
 	}
 
-	hyokID := state.ID.ValueString()
-	tflog.Debug(ctx, fmt.Sprintf("Delete TFE HYOK configuration: %s", hyokID))
-	err := r.config.ClientV2.API.HyokConfigurations().ByHyok_configuration_id(hyokID).Delete(ctx, nil)
+	id := state.ID.ValueString()
+	tflog.Debug(ctx, fmt.Sprintf("Delete TFE HYOK configuration: %s", id))
+	err := r.config.ClientV2.API.HyokConfigurations().ByHyok_configuration_id(id).Delete(ctx, nil)
 	if err != nil {
 		if errors.Is(err, tfe.ErrNotFound) {
-			tflog.Debug(ctx, fmt.Sprintf("TFE HYOK configuration %s no longer exists", hyokID))
+			tflog.Debug(ctx, fmt.Sprintf("TFE HYOK configuration %s no longer exists", id))
 			return
 		}
 
