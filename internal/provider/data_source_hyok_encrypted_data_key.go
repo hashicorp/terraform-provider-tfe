@@ -6,10 +6,12 @@ package provider
 import (
 	"context"
 	"fmt"
+	"time"
+
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"time"
 )
 
 var (
@@ -62,7 +64,7 @@ func (d *dataSourceHYOKEncryptedDataKey) Schema(ctx context.Context, req datasou
 				Required:    true,
 			},
 			"encrypted_dek": schema.StringAttribute{
-				Description: "The encrypted data encryption key (DEK) of the HYOK encrypted data key.",
+				Description: "The encrypted data encryption key of the HYOK encrypted data key.",
 				Computed:    true,
 			},
 			"customer_key_name": schema.StringAttribute{
@@ -86,32 +88,39 @@ func (d *dataSourceHYOKEncryptedDataKey) Read(ctx context.Context, req datasourc
 		return
 	}
 
-	// Make API call to fetch the HYOK customer key version
-	keyVersionEnvelope, err := d.config.ClientV2.API.HyokEncryptedDataKeys().ByHyok_encrypted_data_key_id(data.ID.ValueString()).Get(ctx, nil)
+	// Make API call to fetch the HYOK encrypted data key
+	id := data.ID.ValueString()
+	envelope, err := d.config.ClientV2.API.HyokEncryptedDataKeys().ByHyok_encrypted_data_key_id(id).Get(ctx, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to read HYOK customer key version", err.Error())
+		resp.Diagnostics.AddError("Unable to read HYOK encrypted data key", err.Error())
 		return
-	}
-
-	keyVersion := keyVersionEnvelope.GetData()
-	if keyVersion == nil {
-		resp.Diagnostics.AddError("Unable to read HYOK customer key version", "The API response contained no encrypted data key data.")
-		return
-	}
-
-	var encryptedDEK, customerKeyName string
-	var createdAt time.Time
-	if attributes := keyVersion.GetAttributes(); attributes != nil {
-		encryptedDEK = valueOrZero(attributes.GetEncryptedDek())
-		customerKeyName = valueOrZero(attributes.GetCustomerKeyName())
-		createdAt = valueOrZero(attributes.GetCreatedAt())
 	}
 
 	// Set the computed attributes from the API response
-	data.EncryptedDEK = types.StringValue(encryptedDEK)
-	data.CustomerKeyName = types.StringValue(customerKeyName)
-	data.CreatedAt = types.StringValue(createdAt.Format(time.RFC3339))
+	result := modelFromTFEHYOKEncryptedDataKey(data.ID, envelope)
 
 	// Save data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+}
+
+func modelFromTFEHYOKEncryptedDataKey(id types.String, p models.HyokEncryptedDataKeysEnvelopeable) HYOKEncryptedDataKeyDataSourceModel {
+	model := HYOKEncryptedDataKeyDataSourceModel{ID: id}
+
+	data := p.GetData()
+	if data == nil {
+		return model
+	}
+
+	model.ID = types.StringValue(*data.GetId())
+
+	attributes := data.GetAttributes()
+	if attributes == nil {
+		return model
+	}
+
+	model.EncryptedDEK = types.StringValue(*attributes.GetEncryptedDek())
+	model.CustomerKeyName = types.StringValue(*attributes.GetCustomerKeyName())
+	model.CreatedAt = types.StringValue(attributes.GetCreatedAt().Format(time.RFC3339))
+
+	return model
 }
