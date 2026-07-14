@@ -308,26 +308,28 @@ func hyokConfigurationEnvelopeFromModel(m modelTFEHYOKConfiguration) models.Hyok
 	return envelope
 }
 
-func v2AgentPoolRelationship(agentPoolID string) models.AgentPoolsIdable {
-	agentPoolData := models.NewAgentPoolsId_data()
-	agentPoolData.SetId(&agentPoolID)
-	agentPoolType := models.AGENTPOOLS_AGENTPOOLSID_DATA_TYPE
-	agentPoolData.SetTypeEscaped(&agentPoolType)
+func v2AgentPoolRelationship(id string) models.AgentPoolsIdable {
+	agentPoolsIdData := models.NewAgentPoolsId_data()
 
-	agentPool := models.NewAgentPoolsId()
-	agentPool.SetData(agentPoolData)
-	return agentPool
+	agentPoolsIdData.SetId(&id)
+	agentPoolType := models.AGENTPOOLS_AGENTPOOLSID_DATA_TYPE
+	agentPoolsIdData.SetTypeEscaped(&agentPoolType)
+
+	agentPoolsId := models.NewAgentPoolsId()
+	agentPoolsId.SetData(agentPoolsIdData)
+	return agentPoolsId
 }
 
-func v2OIDCConfigurationRelationship(oidcConfigurationID, oidcConfigurationType string) models.OidcConfigurationsIdable {
-	oidcData := models.NewOidcConfigurationsId_data()
-	oidcData.SetId(&oidcConfigurationID)
-	oidcIdType := oidcTypeToIdDataType[oidcConfigurationType]
-	oidcData.SetTypeEscaped(&oidcIdType)
+func v2OIDCConfigurationRelationship(id, oidcConfigurationType string) models.OidcConfigurationsIdable {
+	oidcIdData := models.NewOidcConfigurationsId_data()
 
-	oidc := models.NewOidcConfigurationsId()
-	oidc.SetData(oidcData)
-	return oidc
+	oidcIdData.SetId(&id)
+	oidcIdType := oidcTypeToIdDataType[oidcConfigurationType]
+	oidcIdData.SetTypeEscaped(&oidcIdType)
+
+	oidcId := models.NewOidcConfigurationsId()
+	oidcId.SetData(oidcIdData)
+	return oidcId
 }
 
 func modelFromTFEHYOKConfiguration(p models.HyokConfigurationsEnvelopeable) modelTFEHYOKConfiguration {
