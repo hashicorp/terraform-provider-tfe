@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 variable "site_admin_group_scim_id" {
   type        = string
   description = "SCIM ID of the group that should map to site admin."

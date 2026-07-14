@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 resource "tfe_organization_run_task_global_settings" "example" {
   task_id           = tfe_organization_run_task.example.id
   enabled           = true

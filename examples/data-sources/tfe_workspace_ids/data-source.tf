@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 data "tfe_workspace_ids" "app-frontend" {
   names        = ["app-frontend-prod", "app-frontend-dev1", "app-frontend-staging"]
   organization = "my-org-name"
