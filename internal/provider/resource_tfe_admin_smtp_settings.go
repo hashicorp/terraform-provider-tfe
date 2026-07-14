@@ -150,7 +150,7 @@ func (r *resourceTFEAdminSMTPSettings) Schema(ctx context.Context, req resource.
 				},
 			},
 			"password_wo": schema.StringAttribute{
-				Description: "The password in write only used to authenticate to the SMTP server. Required if auth is 'login' or 'plain'.",
+				Description: "The password (write-only) used to authenticate to the SMTP server. Required if auth is 'login' or 'plain'.",
 				Optional:    true,
 				Sensitive:   true,
 				WriteOnly:   true,
@@ -161,7 +161,7 @@ func (r *resourceTFEAdminSMTPSettings) Schema(ctx context.Context, req resource.
 			},
 			"password_wo_version": schema.Int64Attribute{
 				Optional:    true,
-				Description: "Version of the write-only private key to trigger updates",
+				Description: "Version of the write-only password to trigger updates.",
 				Validators: []validator.Int64{
 					int64validator.ConflictsWith(path.MatchRoot("password")),
 					int64validator.AlsoRequires(path.MatchRoot("password_wo")),

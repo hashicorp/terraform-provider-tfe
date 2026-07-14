@@ -30,6 +30,12 @@ func resourceTFEAgentPoolExcludedWorkspaces() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of this resource. Do not rely on this value — use `agent_pool_id` instead.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"agent_pool_id": {
 				Description: "The ID of the agent pool.",
 				Type:        schema.TypeString,

@@ -31,6 +31,12 @@ func resourceTFEProjectPolicySet() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the policy set attachment. ID format: `<project-id>_<policy-set-id>`.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"policy_set_id": {
 				Description: "ID of the policy set.",
 				Type:        schema.TypeString,

@@ -56,21 +56,27 @@ func resourceTFEPolicy() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the policy.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"name": {
-				Description: "The name of the policy",
+				Description: "The name of the policy.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
 			},
 
 			"description": {
-				Description: "Text describing the policy's purpose",
+				Description: "Text describing the policy's purpose.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
 
 			"organization": {
-				Description: "Name of the organization that this policy belongs to",
+				Description: "Name of the organization that this policy belongs to.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
@@ -78,7 +84,7 @@ func resourceTFEPolicy() *schema.Resource {
 			},
 
 			"kind": {
-				Description: "The policy-as-code framework for the policy. Valid values are sentinel and opa",
+				Description: "The policy-as-code framework for the policy. Valid values are sentinel and opa.",
 				Type:        schema.TypeString,
 				ForceNew:    true,
 				Optional:    true,
@@ -91,13 +97,13 @@ func resourceTFEPolicy() *schema.Resource {
 			},
 
 			"query": {
-				Description: "The OPA query to run. Required for OPA policies",
+				Description: "The OPA query to run. Required for OPA policies.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
 
 			"policy": {
-				Description: "Text of a valid Sentinel or OPA policy",
+				Description: "Text of a valid Sentinel or OPA policy.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
@@ -105,7 +111,7 @@ func resourceTFEPolicy() *schema.Resource {
 			"enforce_mode": {
 				Type: schema.TypeString,
 				Description: fmt.Sprintf(
-					"The enforcement configuration of the policy. For Sentinel, valid values are %s. For OPA, Valid values are `%s`", sentenceList(
+					"The enforcement configuration of the policy. For Sentinel, valid values are %s. For OPA, valid values are %s.", sentenceList(
 						sentinelPolicyEnforcementLevels(),
 						"`",
 						"`",

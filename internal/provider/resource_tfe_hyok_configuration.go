@@ -184,7 +184,7 @@ func (r *resourceTFEHYOKConfiguration) Schema(_ context.Context, _ resource.Sche
 				},
 			},
 		},
-		Description: "Generates a new TFE HYOK Configuration.",
+		Description: "Defines a HYOK configuration resource.",
 	}
 }
 

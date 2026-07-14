@@ -74,8 +74,8 @@ func (r *resourceTFESCIMGroupMapping) Schema(_ context.Context, _ resource.Schem
 		Description: "Maps a SCIM group to a team in Terraform Enterprise. A team can be mapped to at most one SCIM group.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "The ID of the SCIM group mapping. Since a team can only be mapped to one SCIM group, this is the same as `team_id`.",
-				Computed:    true,
+				MarkdownDescription: "The ID of the SCIM group mapping. Since a team can only be mapped to one SCIM group, this is the same as `team_id`.",
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -101,10 +101,10 @@ func (r *resourceTFESCIMGroupMapping) Schema(_ context.Context, _ resource.Schem
 				},
 			},
 			"paused": schema.BoolAttribute{
-				Description: "Whether provisioning for this mapping is paused. Defaults to `false`.",
-				Optional:    true,
-				Computed:    true,
-				Default:     booldefault.StaticBool(false),
+				MarkdownDescription: "Whether provisioning for this mapping is paused. Defaults to `false`.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
 			},
 		},
 	}

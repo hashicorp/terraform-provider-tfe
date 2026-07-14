@@ -82,24 +82,24 @@ func (r *resourceTFESCIMSettings) Schema(_ context.Context, _ resource.SchemaReq
 		Description: "Manages SCIM provisioning settings for the Terraform Enterprise instance.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "The ID of the SCIM settings. Always `scim`.",
-				Computed:    true,
+				MarkdownDescription: "The ID of the SCIM settings. Always `scim`.",
+				Computed:            true,
 			},
 			"enabled": schema.BoolAttribute{
-				Description: "Whether SCIM provisioning is enabled. Always `true` while this resource exists; use `terraform destroy` to disable. If SCIM is disabled outside of Terraform, the next `terraform plan` will propose re-creating this resource.",
-				Computed:    true,
+				MarkdownDescription: "Whether SCIM provisioning is enabled. Always `true` while this resource exists; use `terraform destroy` to disable. If SCIM is disabled outside of Terraform, the next `terraform plan` will propose re-creating this resource.",
+				Computed:            true,
 			},
 			"paused": schema.BoolAttribute{
-				Description: "Whether SCIM provisioning is paused. Defaults to `false`.",
-				Optional:    true,
-				Computed:    true,
-				Default:     booldefault.StaticBool(false),
+				MarkdownDescription: "Whether SCIM provisioning is paused. Defaults to `false`.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
 			},
 			"site_admin_group_scim_id": schema.StringAttribute{
-				Description: "SCIM ID of the group whose members are granted site admin privileges. Defaults to `\"\"` (no group linked).",
-				Optional:    true,
-				Computed:    true,
-				Default:     stringdefault.StaticString(""),
+				MarkdownDescription: "SCIM ID of the group whose members are granted site admin privileges. Defaults to `\"\"` (no group linked).",
+				Optional:            true,
+				Computed:            true,
+				Default:             stringdefault.StaticString(""),
 			},
 			"site_admin_group_display_name": schema.StringAttribute{
 				Description: "Display name of the group whose members are granted site admin privileges.",

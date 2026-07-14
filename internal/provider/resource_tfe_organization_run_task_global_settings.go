@@ -72,17 +72,18 @@ func (r *resourceOrganizationRunTaskGlobalSettings) Metadata(_ context.Context, 
 
 func (r *resourceOrganizationRunTaskGlobalSettings) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Version: 0,
+		MarkdownDescription: "The tfe_organization_run_task_global_settings resource creates, updates and destroys the [global settings](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks#global-run-tasks) for an [Organization Run task](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks#creating-a-run-task). Your organization must have the `global-run-task` [entitlement](https://developer.hashicorp.com/terraform/cloud-docs/api-docs#feature-entitlements) to use global run tasks.",
+		Version:             0,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Service-generated identifier for the task",
+				Description: "Service-generated identifier for the task.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"enabled": schema.BoolAttribute{
-				Description: "Whether the run task will be applied globally",
+				Description: "Whether the run task will be applied globally.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(true),

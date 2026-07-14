@@ -46,7 +46,7 @@ func (r *resourceTFEDataRetentionPolicy) Metadata(ctx context.Context, req resou
 
 func (r *resourceTFEDataRetentionPolicy) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages the data retention policies for a specific workspace or an the entire organization.",
+		Description: "Manages the data retention policies for a specific workspace or the entire organization.",
 		Version:     1,
 
 		Attributes: map[string]schema.Attribute{
@@ -84,7 +84,7 @@ func (r *resourceTFEDataRetentionPolicy) Schema(ctx context.Context, req resourc
 				Description: "Sets the maximum number of days, months, years data is allowed to exist before it is scheduled for deletion. Cannot be configured if the dont_delete attribute is also configured.",
 				Attributes: map[string]schema.Attribute{
 					"days": schema.NumberAttribute{
-						Description: "Number of days",
+						Description: "Number of days old data must be before it is scheduled for deletion.",
 						Optional:    true,
 						PlanModifiers: []planmodifier.Number{
 							numberplanmodifier.RequiresReplace(),
@@ -98,7 +98,8 @@ func (r *resourceTFEDataRetentionPolicy) Schema(ctx context.Context, req resourc
 				},
 			},
 			"dont_delete": schema.SingleNestedBlock{
-				Attributes: map[string]schema.Attribute{},
+				Description: "When configured, prevents data from being deleted. Cannot be configured if the `delete_older_than` block is also configured.",
+				Attributes:  map[string]schema.Attribute{},
 				Validators: []validator.Object{
 					objectvalidator.ExactlyOneOf(
 						path.MatchRelative().AtParent().AtName("delete_older_than"),

@@ -20,7 +20,7 @@ import (
 
 func resourceTFETeamOrganizationMember() *schema.Resource {
 	return &schema.Resource{
-		Description: "Adds or removes a team member using an organization membership ID.",
+		Description: "Add or remove a team member using a [tfe_organization_membership](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/organization_membership).",
 
 		Create: resourceTFETeamOrganizationMemberCreate,
 		Read:   resourceTFETeamOrganizationMemberRead,
@@ -30,6 +30,12 @@ func resourceTFETeamOrganizationMember() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of this resource, in the format `<team-id>/<organization-membership-id>`. Do not rely on this value.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"team_id": {
 				Description: "ID of the team.",
 				Type:        schema.TypeString,

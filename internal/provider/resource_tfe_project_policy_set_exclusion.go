@@ -77,7 +77,7 @@ func (r *resourceTFEProjectPolicySetExclusionParameter) Schema(_ context.Context
 				},
 			},
 			"policy_set_id": schema.StringAttribute{
-				Description: "The ID of the policy set that will have an exclusion for the project",
+				Description: "The ID of the policy set that will have an exclusion for the project.",
 				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -90,7 +90,7 @@ func (r *resourceTFEProjectPolicySetExclusionParameter) Schema(_ context.Context
 				},
 			},
 			"project_id": schema.StringAttribute{
-				Description: "The ID of the project that will be excluded from the policy set",
+				Description: "The ID of the project that will be excluded from the policy set.",
 				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),

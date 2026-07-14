@@ -90,7 +90,7 @@ func (r *resourceTFEGCPOIDCConfiguration) Schema(_ context.Context, _ resource.S
 				},
 			},
 		},
-		Description: "Generates a new TFE GCP OIDC Configuration.",
+		Description: "Defines a GCP OIDC configuration resource.",
 	}
 }
 

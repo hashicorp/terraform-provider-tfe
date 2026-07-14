@@ -31,6 +31,12 @@ func resourceTFEWorkspaceVariableSet() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the variable set attachment. ID format: `<workspace-id>_<variable-set-id>`.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"variable_set_id": {
 				Description: "The variable set ID.",
 				Type:        schema.TypeString,

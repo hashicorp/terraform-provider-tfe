@@ -90,7 +90,7 @@ func (r *resourceTFEAzureOIDCConfiguration) Schema(_ context.Context, _ resource
 				},
 			},
 		},
-		Description: "Generates a new TFE Azure OIDC Configuration.",
+		Description: "Defines an Azure OIDC configuration resource.",
 	}
 }
 

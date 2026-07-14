@@ -29,6 +29,12 @@ func resourceTFEAdminOrganizationSettings() *schema.Resource {
 		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of this resource. Do not rely on this value — use `organization` instead.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"organization": {
 				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
 				Type:        schema.TypeString,

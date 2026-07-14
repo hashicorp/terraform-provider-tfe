@@ -9,7 +9,7 @@
 
 variable "tf_organization" {
   description = "The HCP Terraform or Enterprise organization under which all operations should be performed."
-  type = string
+  type        = string
 }
 
 variable "vcs_repo_identifier" {
@@ -17,29 +17,29 @@ variable "vcs_repo_identifier" {
   The format of VCS repo identifier might differ depending on the VCS provider,
   see https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/workspace
   EOT
-  type = string
+  type        = string
 }
 
 variable "vcs_token" {
   description = "The VCS token should correspond to an API token that can create OAuth clients."
-  type = string
+  type        = string
 }
 
 variable "vars_mapped_by_workspace_name" {
-    description = <<-EOT
+  description = <<-EOT
     This is the map of workspaces and variables. A workspace is created for each
     top level key and then variables are set on the workspace.
     EOT
-    type = any
+  type        = any
 }
 
 variable "additional_vars" {
   description = "This is a map of additional variables intended to be set in specific workspaces."
-  type = any
+  type        = any
   default = {
     customer_1_workspace = {
       i_am_sensitive_tf_var = {
-        value = "i am sensitive"
+        value     = "i am sensitive"
         sensitive = true
       }
     }
@@ -48,20 +48,20 @@ variable "additional_vars" {
 
 variable "default_var_category" {
   description = "Default category for variables being set in managed workspaces unless specified"
-  default = "terraform"
-  type = string
+  default     = "terraform"
+  type        = string
 }
 
 variable "default_var_hcl" {
   description = "By default, variables being set in managed workspaces will not be interpreted as hcl values"
-  default = false
-  type = bool
+  default     = false
+  type        = bool
 }
 
 variable "default_var_sensitive" {
   description = "By default, variables being set in managed workspaces will be non-sensitive"
-  default = false
-  type = bool
+  default     = false
+  type        = bool
 }
 
 locals {
@@ -85,8 +85,8 @@ locals {
         ws            = ws_name
         var_key       = var_name
         var_value     = var_attrs["value"]
-        var_category  = lookup(var_attrs, "category",  var.default_var_category)
-        var_hcl       = lookup(var_attrs, "hcl",       var.default_var_hcl)
+        var_category  = lookup(var_attrs, "category", var.default_var_category)
+        var_hcl       = lookup(var_attrs, "hcl", var.default_var_hcl)
         var_sensitive = lookup(var_attrs, "sensitive", var.default_var_sensitive)
         ws_id         = tfe_workspace.managed_ws[ws_name].id
       }
@@ -105,14 +105,14 @@ resource "tfe_oauth_client" "gh" {
 
 resource "tfe_workspace" "managed_ws" {
   description = "Create all workspaces specified in the input workspaces map"
-  for_each = var.vars_mapped_by_workspace_name
+  for_each    = var.vars_mapped_by_workspace_name
 
-  name = each.key
+  name         = each.key
   organization = var.tf_organization
-  auto_apply = true
+  auto_apply   = true
   force_delete = true
   vcs_repo {
-    identifier = var.vcs_repo_identifier
+    identifier     = var.vcs_repo_identifier
     oauth_token_id = tfe_oauth_client.gh.oauth_token_id
   }
 }
@@ -155,8 +155,8 @@ resource "random_pet" "a_dynamic_value" {
 }
 
 resource "tfe_variable" "managed_customized_var" {
-  description  = "Create dynamic variable for specific workspaces"
-  for_each     = tfe_workspace.managed_ws
+  description = "Create dynamic variable for specific workspaces"
+  for_each    = tfe_workspace.managed_ws
 
   workspace_id = each.value.id
   key          = "a_customized_var"

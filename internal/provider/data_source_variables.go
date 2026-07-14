@@ -174,8 +174,8 @@ func (d *dataSourceTFEVariables) Schema(_ context.Context, _ datasource.SchemaRe
 			},
 
 			"variable_set_id": schema.StringAttribute{
-				Description: "ID of the variable set. One of this or `workspace_id` is required.",
-				Optional:    true,
+				MarkdownDescription: "ID of the variable set. One of this or `workspace_id` is required.",
+				Optional:            true,
 			},
 
 			"env": schema.ListNestedAttribute{
@@ -196,8 +196,8 @@ func (d *dataSourceTFEVariables) Schema(_ context.Context, _ datasource.SchemaRe
 							Computed:    true,
 						},
 						"category": schema.StringAttribute{
-							Description: "The category of the variable. Valid values are `terraform` or `env`.",
-							Computed:    true,
+							MarkdownDescription: "The category of the variable. Valid values are `terraform` or `env`.",
+							Computed:            true,
 						},
 						"hcl": schema.BoolAttribute{
 							Description: "Whether the variable is HCL formatted.",
@@ -229,8 +229,8 @@ func (d *dataSourceTFEVariables) Schema(_ context.Context, _ datasource.SchemaRe
 							Computed:    true,
 						},
 						"category": schema.StringAttribute{
-							Description: "The category of the variable. Valid values are `terraform` or `env`.",
-							Computed:    true,
+							MarkdownDescription: "The category of the variable. Valid values are `terraform` or `env`.",
+							Computed:            true,
 						},
 						"hcl": schema.BoolAttribute{
 							Description: "Whether the variable is HCL formatted.",
@@ -262,8 +262,8 @@ func (d *dataSourceTFEVariables) Schema(_ context.Context, _ datasource.SchemaRe
 							Computed:    true,
 						},
 						"category": schema.StringAttribute{
-							Description: "The category of the variable. Valid values are `terraform` or `env`.",
-							Computed:    true,
+							MarkdownDescription: "The category of the variable. Valid values are `terraform` or `env`.",
+							Computed:            true,
 						},
 						"hcl": schema.BoolAttribute{
 							Description: "Whether the variable is HCL formatted.",

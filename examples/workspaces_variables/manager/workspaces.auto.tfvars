@@ -37,7 +37,7 @@ vars_mapped_by_workspace_name = {
           "two",
         ]
       EOT
-      hcl = true
+      hcl   = true
     }
 
     a_map = {
@@ -47,11 +47,11 @@ vars_mapped_by_workspace_name = {
           baz = "qux"
         }
       EOT
-      hcl = true
+      hcl   = true
     }
 
     an_env = {
-      value = "an env var"
+      value    = "an env var"
       category = "env"
     }
   }
@@ -68,11 +68,11 @@ vars_mapped_by_workspace_name = {
           baz = "qux"
         }
       EOT
-      hcl = true
+      hcl   = true
     }
 
     another_env = {
-      value = "another env var"
+      value    = "another env var"
       category = "env"
     }
   }

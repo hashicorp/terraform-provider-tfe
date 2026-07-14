@@ -190,10 +190,10 @@ func (r *resourceTFEProjectNotificationConfiguration) Schema(ctx context.Context
 			},
 
 			"email_addresses": schema.SetAttribute{
-				Description: "A list of email addresses. This value must not be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
-				Optional:    true,
-				Computed:    true,
-				ElementType: types.StringType,
+				MarkdownDescription: "A list of email addresses. This value must not be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
+				Optional:            true,
+				Computed:            true,
+				ElementType:         types.StringType,
 				Validators: []validator.Set{
 					validators.AttributeValueConflictValidator(
 						"destination_type",
@@ -203,10 +203,10 @@ func (r *resourceTFEProjectNotificationConfiguration) Schema(ctx context.Context
 			},
 
 			"email_user_ids": schema.SetAttribute{
-				Description: "A list of user IDs. This value must not be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
-				Optional:    true,
-				Computed:    true,
-				ElementType: types.StringType,
+				MarkdownDescription: "A list of user IDs. This value must not be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
+				Optional:            true,
+				Computed:            true,
+				ElementType:         types.StringType,
 				Validators: []validator.Set{
 					validators.AttributeValueConflictValidator(
 						"destination_type",
@@ -216,15 +216,15 @@ func (r *resourceTFEProjectNotificationConfiguration) Schema(ctx context.Context
 			},
 
 			"enabled": schema.BoolAttribute{
-				Description: "Whether the project notification configuration should be enabled or not. Disabled configurations will not send any notifications. Defaults to `false`.",
-				Optional:    true,
-				Computed:    true,
-				Default:     booldefault.StaticBool(false),
+				MarkdownDescription: "Whether the project notification configuration should be enabled or not. Disabled configurations will not send any notifications. Defaults to `false`.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
 			},
 			"token": schema.StringAttribute{
-				Description: "A write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Defaults to `null`. This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.",
-				Optional:    true,
-				Sensitive:   true,
+				MarkdownDescription: "A write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Defaults to `null`. This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.",
+				Optional:            true,
+				Sensitive:           true,
 				Validators: []validator.String{
 					validators.AttributeValueConflictValidator(
 						"destination_type",
@@ -236,7 +236,7 @@ func (r *resourceTFEProjectNotificationConfiguration) Schema(ctx context.Context
 			},
 
 			"token_wo": schema.StringAttribute{
-				Description: "A write-only secure token for the notification configuration, guaranteed not to be written to plan or state artifacts.",
+				Description: "Write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Either `token` or `token_wo` can be provided, but not both. This value must not be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.",
 				Optional:    true,
 				WriteOnly:   true,
 				Sensitive:   true,
@@ -251,7 +251,7 @@ func (r *resourceTFEProjectNotificationConfiguration) Schema(ctx context.Context
 			},
 			"token_wo_version": schema.Int64Attribute{
 				Optional:    true,
-				Description: "Version of the write-only token to trigger updates",
+				Description: "Version of the write-only token. This field is used to trigger updates when the write-only token changes. Must be used with `token_wo`. When `token_wo_version` changes, the write-only token will be updated.",
 				Validators: []validator.Int64{
 					int64validator.ConflictsWith(path.MatchRoot("token")),
 					int64validator.AlsoRequires(path.MatchRoot("token_wo")),
@@ -282,9 +282,9 @@ func (r *resourceTFEProjectNotificationConfiguration) Schema(ctx context.Context
 			},
 
 			"url": schema.StringAttribute{
-				Description: "The HTTP or HTTPS URL where notification requests will be made. This value must not be provided if `email_addresses` or `email_user_ids` is present, or if `destination_type` is `email`. Use `url_wo` instead to prevent the URL from being stored in state.",
-				Optional:    true,
-				Sensitive:   true,
+				MarkdownDescription: "The HTTP or HTTPS URL where notification requests will be made. This value must not be provided if `email_addresses` or `email_user_ids` is present, or if `destination_type` is `email`. Use `url_wo` instead to prevent the URL from being stored in state.",
+				Optional:            true,
+				Sensitive:           true,
 				Validators: []validator.String{
 					validators.AttributeRequiredIfValueStringUnlessOtherSet(
 						"destination_type",

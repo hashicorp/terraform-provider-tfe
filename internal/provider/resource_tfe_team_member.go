@@ -45,6 +45,12 @@ func resourceTFETeamMember() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of this resource, in the format `<team-id>/<username>`. Do not rely on this value.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"team_id": {
 				Description: "ID of the team.",
 				Type:        schema.TypeString,
