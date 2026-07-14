@@ -6,10 +6,12 @@ package provider
 import (
 	"context"
 	"fmt"
+	"time"
+
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"time"
 )
 
 var (
@@ -97,19 +99,41 @@ func (d *dataSourceHYOKCustomerKeyVersion) Read(ctx context.Context, req datasou
 	}
 
 	// Make API call to fetch the HYOK customer key version
-	keyVersion, err := d.config.Client.HYOKCustomerKeyVersions.Read(ctx, data.ID.ValueString())
+	id := data.ID.ValueString()
+	envelope, err := d.config.ClientV2.API.HyokCustomerKeyVersions().ByHyok_customer_key_version_id(id).Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read HYOK customer key version", err.Error())
 		return
 	}
 
 	// Set the computed attributes from the API response
-	data.Status = types.StringValue(string(keyVersion.Status))
-	data.KeyVersion = types.StringValue(keyVersion.KeyVersion)
-	data.CreatedAt = types.StringValue(keyVersion.CreatedAt.Format(time.RFC3339))
-	data.WorkspacesSecured = types.Int64Value(int64(keyVersion.WorkspacesSecured))
-	data.Error = types.StringValue(keyVersion.Error)
+	result := modelFromTFEHYOKCustomerKeyVersion(data.ID, envelope)
 
 	// Save data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+}
+
+func modelFromTFEHYOKCustomerKeyVersion(id types.String, p models.HyokCustomerKeyVersionsEnvelopeable) HYOKCustomerKeyVersionDataSourceModel {
+	model := HYOKCustomerKeyVersionDataSourceModel{ID: id}
+
+	data := p.GetData()
+	if data == nil {
+		return model
+	}
+	if data.GetId() != nil {
+		model.ID = types.StringValue(*data.GetId())
+	}
+
+	attributes := data.GetAttributes()
+	if attributes == nil {
+		return model
+	}
+
+	model.Status = types.StringValue(attributes.GetStatus().String())
+	model.KeyVersion = types.StringValue(*attributes.GetKeyVersion())
+	model.Error = types.StringValue(*attributes.GetError())
+	model.WorkspacesSecured = types.Int64Value(int64(*attributes.GetWorkspacesSecured()))
+	model.CreatedAt = types.StringValue(attributes.GetCreatedAt().Format(time.RFC3339))
+
+	return model
 }
