@@ -28,6 +28,12 @@ description: |-
 {{ tffile .ExampleFile }}
 {{- end }}
 {{- end }}
+{{- if .HasInvocation }}
+
+### Invoking the action directly
+
+{{codefile "shell" .InvocationFile }}
+{{- end }}
 
 {{- if .SchemaMarkdown }}
 
