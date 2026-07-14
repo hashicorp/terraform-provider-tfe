@@ -6,10 +6,12 @@ package provider
 import (
 	"context"
 	"fmt"
+	"time"
+
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"time"
 )
 
 var (
@@ -64,7 +66,7 @@ func (d *dataSourceHYOKCustomerKeyVersion) Schema(ctx context.Context, req datas
 				Required:    true,
 			},
 			"status": schema.StringAttribute{
-				Description: "The status of the customer key version.",
+				Description: "The status of the HYOK customer key version.",
 				Computed:    true,
 			},
 			"error": schema.StringAttribute{
@@ -97,38 +99,41 @@ func (d *dataSourceHYOKCustomerKeyVersion) Read(ctx context.Context, req datasou
 	}
 
 	// Make API call to fetch the HYOK customer key version
-	keyVersionEnvelope, err := d.config.ClientV2.API.HyokCustomerKeyVersions().ByHyok_customer_key_version_id(data.ID.ValueString()).Get(ctx, nil)
+	id := data.ID.ValueString()
+	envelope, err := d.config.ClientV2.API.HyokCustomerKeyVersions().ByHyok_customer_key_version_id(id).Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read HYOK customer key version", err.Error())
 		return
 	}
 
-	keyVersion := keyVersionEnvelope.GetData()
-	if keyVersion == nil {
-		resp.Diagnostics.AddError("Unable to read HYOK customer key version", "The API response contained no key version data.")
-		return
-	}
-
-	var status, keyVersionNumber, errorMessage string
-	var createdAt time.Time
-	var workspacesSecured int64
-	if attributes := keyVersion.GetAttributes(); attributes != nil {
-		if s := attributes.GetStatus(); s != nil {
-			status = s.String()
-		}
-		keyVersionNumber = valueOrZero(attributes.GetKeyVersion())
-		createdAt = valueOrZero(attributes.GetCreatedAt())
-		workspacesSecured = int64(valueOrZero(attributes.GetWorkspacesSecured()))
-		errorMessage = valueOrZero(attributes.GetError())
-	}
-
 	// Set the computed attributes from the API response
-	data.Status = types.StringValue(status)
-	data.KeyVersion = types.StringValue(keyVersionNumber)
-	data.CreatedAt = types.StringValue(createdAt.Format(time.RFC3339))
-	data.WorkspacesSecured = types.Int64Value(workspacesSecured)
-	data.Error = types.StringValue(errorMessage)
+	result := modelFromTFEHYOKCustomerKeyVersion(data.ID, envelope)
 
 	// Save data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+}
+
+func modelFromTFEHYOKCustomerKeyVersion(id types.String, p models.HyokCustomerKeyVersionsEnvelopeable) HYOKCustomerKeyVersionDataSourceModel {
+	model := HYOKCustomerKeyVersionDataSourceModel{ID: id}
+
+	data := p.GetData()
+	if data == nil {
+		return model
+	}
+	if data.GetId() != nil {
+		model.ID = types.StringValue(*data.GetId())
+	}
+
+	attributes := data.GetAttributes()
+	if attributes == nil {
+		return model
+	}
+
+	model.Status = types.StringValue(attributes.GetStatus().String())
+	model.KeyVersion = types.StringValue(*attributes.GetKeyVersion())
+	model.Error = types.StringValue(*attributes.GetError())
+	model.WorkspacesSecured = types.Int64Value(int64(*attributes.GetWorkspacesSecured()))
+	model.CreatedAt = types.StringValue(attributes.GetCreatedAt().Format(time.RFC3339))
+
+	return model
 }
