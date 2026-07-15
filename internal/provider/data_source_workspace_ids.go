@@ -43,13 +43,15 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Optional:    true,
+				Deprecated:  "Use `tag_filters.include` instead. This attribute will be removed in a future release of the provider.",
 			},
 
 			"exclude_tags": {
-				Description: "Deprecated. A list of tag names to exclude when searching.",
+				Description: "A list of tag names to exclude when searching.",
 				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Optional:    true,
+				Deprecated:  "Use `tag_filters.exclude` instead. This attribute will be removed in a future release of the provider.",
 			},
 
 			"tag_filters": {

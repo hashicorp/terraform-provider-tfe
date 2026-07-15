@@ -21,7 +21,8 @@ import (
 
 func resourceTFEWorkspaceVariableSet() *schema.Resource {
 	return &schema.Resource{
-		Description: "Adds and removes a workspace from a variable set's scope.",
+		Description: "Adds and removes a workspace from a variable set's scope.\n\n" +
+			"~> **Note:** `tfe_variable_set` has a deprecated `workspace_ids` argument that should not be used alongside this resource because they manage the same attachments.",
 
 		Create: resourceTFEWorkspaceVariableSetCreate,
 		Read:   resourceTFEWorkspaceVariableSetRead,

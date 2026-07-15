@@ -41,8 +41,10 @@ func (r *resourceTFEStack) Metadata(ctx context.Context, req resource.MetadataRe
 
 func (r *resourceTFEStack) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Defines a Stack resource. Note that a Stack cannot be destroyed if it contains deployments that have underlying managed resources.",
-		Version:     1,
+		Description: "Defines a Stack resource.\n\n" +
+			"-> **Note:** Stack cannot be destroyed if it contains deployments that have underlying managed resources.\n\n" +
+			"~> **Note:** Stack support is currently pre-release/beta and subject to change. A stack cannot be destroyed until all resources in its deployments have been destroyed.",
+		Version: 1,
 
 		Blocks: map[string]schema.Block{
 			"vcs_repo": schema.SingleNestedBlock{

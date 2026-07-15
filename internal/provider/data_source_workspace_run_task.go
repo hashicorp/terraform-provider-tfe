@@ -53,7 +53,7 @@ func (d *dataSourceWorkspaceRunTask) Schema(_ context.Context, _ datasource.Sche
 				Computed:    true,
 			},
 			"stage": schema.StringAttribute{
-				DeprecationMessage: "stage is deprecated, please use `stages` instead",
+				DeprecationMessage: "The `stage` attribute is deprecated. Use `stages` instead.",
 				Description:        "Which stage the task will run in.",
 				Computed:           true,
 			},

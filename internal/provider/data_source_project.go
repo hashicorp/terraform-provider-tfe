@@ -87,7 +87,8 @@ func (d *dataSourceTFEProject) Metadata(_ context.Context, req datasource.Metada
 // Schema defines the schema for the data source.
 func (d *dataSourceTFEProject) Schema(_ context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "This data source can be used to retrieve a project in an organization.",
+		Description: "This data source can be used to retrieve a project in an organization.\n\n" +
+			"~> **Note:** The `workspace_ids` and `workspace_names` attributes are not guaranteed to return values in the same order and cannot be reliably mapped to one another. To map workspace names to IDs reliably, pass those names to the `tfe_workspace_ids` data source.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "The system-generated ID of the project.",

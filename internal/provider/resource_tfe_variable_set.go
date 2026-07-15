@@ -23,7 +23,7 @@ var variableSetIDRegexp = regexp.MustCompile("varset-[a-zA-Z0-9]{16}$")
 
 func resourceTFEVariableSet() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manages variable sets.",
+		Description: "Creates, updates and destroys variable sets.",
 
 		Create: resourceTFEVariableSetCreate,
 		Read:   resourceTFEVariableSetRead,
@@ -102,10 +102,11 @@ func resourceTFEVariableSet() *schema.Resource {
 			},
 
 			"workspace_ids": {
-				Description: "IDs of the workspaces that use the variable set. Must not be set if global is set. Deprecated: Use the tfe_workspace_variable_set resource instead, which is the preferred method of associating a workspace with a variable set.",
+				Description: "IDs of the workspaces that use the variable set. Must not be set if global is set.",
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Computed:    true,
+				Deprecated:  "Use the `tfe_workspace_variable_set` resource instead, which is the preferred method of associating a workspace with a variable set.",
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 

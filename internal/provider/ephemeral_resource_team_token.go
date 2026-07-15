@@ -45,7 +45,8 @@ type TeamTokenPrivateData struct {
 
 func (e *TeamTokenEphemeralResource) Schema(ctx context.Context, req ephemeral.SchemaRequest, resp *ephemeral.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "This ephemeral resource can be used to retrieve a team token without saving its value in state.",
+		Description: "This ephemeral resource can be used to retrieve a team token without saving its value in state.\n\n" +
+			"~> **Warning:** Ephemeral resources are a new feature and may evolve as we continue to explore their most effective uses. [Learn more](https://developer.hashicorp.com/terraform/language/v1.10.x/resources/ephemeral).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: `System generated ID of the team token.`,

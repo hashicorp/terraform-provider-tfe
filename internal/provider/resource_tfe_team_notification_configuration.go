@@ -158,7 +158,7 @@ func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, r
 			},
 
 			"email_addresses": schema.SetAttribute{
-				MarkdownDescription: "A list of email addresses. This value must not be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
+				MarkdownDescription: "(TFE Only) A list of email addresses. This value must not be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
 				Optional:            true,
 				Computed:            true,
 				ElementType:         types.StringType,

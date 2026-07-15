@@ -61,6 +61,7 @@ func (r *resourceTFEAzureOIDCConfiguration) Metadata(_ context.Context, req reso
 
 func (r *resourceTFEAzureOIDCConfiguration) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "Manages an Azure OIDC configuration.\n\n~> **Note:** This resource requires using the provider with HCP Terraform on the HCP Terraform Premium edition. Refer to [HCP Terraform pricing](https://www.hashicorp.com/en/pricing?product_intent=terraform&tab=terraform) for details.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "The ID of the Azure OIDC configuration.",
@@ -90,7 +91,6 @@ func (r *resourceTFEAzureOIDCConfiguration) Schema(_ context.Context, _ resource
 				},
 			},
 		},
-		Description: "Defines an Azure OIDC configuration resource.",
 	}
 }
 
