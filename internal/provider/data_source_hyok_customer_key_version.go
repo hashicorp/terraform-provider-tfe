@@ -6,12 +6,11 @@ package provider
 import (
 	"context"
 	"fmt"
-	"time"
-
 	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"time"
 )
 
 var (
@@ -130,10 +129,16 @@ func modelFromTFEHYOKCustomerKeyVersion(id types.String, p models.HyokCustomerKe
 	}
 
 	model.Status = types.StringValue(attributes.GetStatus().String())
-	model.KeyVersion = types.StringValue(*attributes.GetKeyVersion())
-	model.Error = types.StringValue(*attributes.GetError())
 	model.WorkspacesSecured = types.Int64Value(int64(*attributes.GetWorkspacesSecured()))
 	model.CreatedAt = types.StringValue(attributes.GetCreatedAt().Format(time.RFC3339))
+
+	if attributes.GetKeyVersion() != nil {
+		model.KeyVersion = types.StringValue(*attributes.GetKeyVersion())
+	}
+
+	if attributes.GetError() != nil {
+		model.Error = types.StringValue(*attributes.GetError())
+	}
 
 	return model
 }
