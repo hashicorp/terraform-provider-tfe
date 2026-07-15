@@ -288,11 +288,22 @@ func hyokConfigurationEnvelopeFromModel(m modelTFEHYOKConfiguration) models.Hyok
 	attributes.SetName(m.Name.ValueStringPointer())
 	attributes.SetKekId(m.KEKID.ValueStringPointer())
 
-	kmsOptions := models.NewHyokConfigurations_attributes_kmsOptions()
-	kmsOptions.SetKeyRegion(m.KMSOptions.KeyRegion.ValueStringPointer())
-	kmsOptions.SetKeyLocation(m.KMSOptions.KeyLocation.ValueStringPointer())
-	kmsOptions.SetKeyRingId(m.KMSOptions.KeyRingID.ValueStringPointer())
-	attributes.SetKmsOptions(kmsOptions)
+	// Only send kms_options when the block is configured. Some KMS providers
+	// (e.g. Vault, Azure) have no kms_options, so the block is absent and must
+	// not be sent to the API to keep plan/state consistent.
+	if m.KMSOptions != nil {
+		kmsOptions := models.NewHyokConfigurations_attributes_kmsOptions()
+		if v := m.KMSOptions.KeyRegion.ValueString(); v != "" {
+			kmsOptions.SetKeyRegion(&v)
+		}
+		if v := m.KMSOptions.KeyLocation.ValueString(); v != "" {
+			kmsOptions.SetKeyLocation(&v)
+		}
+		if v := m.KMSOptions.KeyRingID.ValueString(); v != "" {
+			kmsOptions.SetKeyRingId(&v)
+		}
+		attributes.SetKmsOptions(kmsOptions)
+	}
 
 	// Relationships
 	relationships := models.NewHyokConfigurations_relationships()
@@ -347,11 +358,21 @@ func modelFromTFEHYOKConfiguration(p models.HyokConfigurationsEnvelopeable) mode
 		model.Name = types.StringValue(*attributes.GetName())
 		model.KEKID = types.StringValue(*attributes.GetKekId())
 
-		if attributes.GetKmsOptions() != nil {
+		// Only populate kms_options when the API returns it
+		if kms := attributes.GetKmsOptions(); kms != nil {
 			model.KMSOptions = &modelTFEKMSOptions{
-				KeyRegion:   types.StringValue(*attributes.GetKmsOptions().GetKeyRegion()),
-				KeyLocation: types.StringValue(*attributes.GetKmsOptions().GetKeyLocation()),
-				KeyRingID:   types.StringValue(*attributes.GetKmsOptions().GetKeyRingId()),
+				KeyRegion:   types.StringValue(""),
+				KeyLocation: types.StringValue(""),
+				KeyRingID:   types.StringValue(""),
+			}
+			if v := kms.GetKeyRegion(); v != nil {
+				model.KMSOptions.KeyRegion = types.StringValue(*v)
+			}
+			if v := kms.GetKeyLocation(); v != nil {
+				model.KMSOptions.KeyLocation = types.StringValue(*v)
+			}
+			if v := kms.GetKeyRingId(); v != nil {
+				model.KMSOptions.KeyRingID = types.StringValue(*v)
 			}
 		}
 	}
