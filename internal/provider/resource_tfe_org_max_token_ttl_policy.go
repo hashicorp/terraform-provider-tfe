@@ -69,7 +69,7 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Schema(_ context.Context, _ resource.S
 			"When enabled, this policy enforces maximum lifespans for organization, team, audit trail, " +
 			"and user tokens, revoking any tokens that exceed the configured limits.\n\n" +
 			"-> **Note:** To enable or disable the maximum TTL policy feature for an organization, use the `max_ttl_enabled` attribute on the `tfe_organization` resource.\n\n" +
-			"~> **WARNING:** Maximum TTL policies are enforced immediately upon creation or update. Existing tokens that exceed newly configured limits will stop working and return an unauthorized error.\n\n" +
+			"~> **Warning:** Maximum TTL policies are enforced immediately upon creation or update. Existing tokens that exceed newly configured limits will stop working and return an unauthorized error.\n\n" +
 			"~> **Note:** This resource requires using the provider with HCP Terraform or an instance of Terraform Enterprise at least as recent as v2.0.1.",
 		Version: 0,
 
