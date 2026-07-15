@@ -198,9 +198,9 @@ func configure() schema.ConfigureContextFunc {
 		}
 
 		return ConfiguredClient{
-			providerClient.TfeClient,
-			providerClient.TfeClientV2,
-			providerOrganization,
+			Client:       providerClient.TfeClient,
+			ClientV2:     providerClient.TFEClientV2,
+			Organization: providerOrganization,
 		}, diagnosticWarnings
 	}
 }

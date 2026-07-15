@@ -127,7 +127,7 @@ func (p *frameworkProvider) Configure(ctx context.Context, req provider.Configur
 
 	configuredClient := ConfiguredClient{
 		Client:       providerClient.TfeClient,
-		ClientV2:     providerClient.TfeClientV2,
+		ClientV2:     providerClient.TFEClientV2,
 		Organization: data.Organization.ValueString(),
 	}
 
