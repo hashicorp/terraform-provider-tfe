@@ -8,6 +8,7 @@ import (
 	"log"
 	"math"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/go-tfe"
@@ -49,10 +50,21 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 	waitForRun := runArgs["wait_for_run"].(bool)
 	manualConfirm := runArgs["manual_confirm"].(bool)
 	msg, _ := runArgs["message"].(string)
+	allowConfigVersionMissing, _ := runArgs["allow_config_version_missing"].(bool)
 
 	run, err := createRun(config.Client, waitForRun, manualConfirm, isDestroyRun, ws, msg)
 
 	if err != nil {
+		// If the workspace has no configuration version (for example, an empty
+		// workspace that never had a configuration uploaded), the run cannot be
+		// created. When allow_config_version_missing is set, treat this as a
+		// no-op success so that operations such as destroying an empty
+		// workspace do not fail.
+		if allowConfigVersionMissing && isConfigVersionMissingErr(err) {
+			log.Printf("[INFO] Configuration version is missing for workspace %s; skipping run because allow_config_version_missing is set", ws.ID)
+			d.SetId(fmt.Sprintf("%d", rand.New(rand.NewSource(time.Now().UnixNano())).Int()))
+			return nil
+		}
 		return err
 	}
 
@@ -146,6 +158,13 @@ func getRunArgs(d *schema.ResourceData, isDestroyRun bool) map[string]interface{
 	}
 
 	return runArgs
+}
+
+func isConfigVersionMissingErr(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(strings.ToLower(err.Error()), "configuration version is missing")
 }
 
 func createRun(tfeClient *tfe.Client, waitForRun bool, manualConfirm bool, isDestroyRun bool, ws *tfe.Workspace, message string) (*tfe.Run, error) {
