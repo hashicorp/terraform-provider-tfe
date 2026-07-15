@@ -287,22 +287,8 @@ func hyokConfigurationEnvelopeFromModel(m modelTFEHYOKConfiguration) models.Hyok
 	attributes := models.NewHyokConfigurations_attributes()
 	attributes.SetName(m.Name.ValueStringPointer())
 	attributes.SetKekId(m.KEKID.ValueStringPointer())
-
-	// Only send kms_options when the block is configured. Some KMS providers
-	// (e.g. Vault, Azure) have no kms_options, so the block is absent and must
-	// not be sent to the API to keep plan/state consistent.
 	if m.KMSOptions != nil {
-		kmsOptions := models.NewHyokConfigurations_attributes_kmsOptions()
-		if v := m.KMSOptions.KeyRegion.ValueString(); v != "" {
-			kmsOptions.SetKeyRegion(&v)
-		}
-		if v := m.KMSOptions.KeyLocation.ValueString(); v != "" {
-			kmsOptions.SetKeyLocation(&v)
-		}
-		if v := m.KMSOptions.KeyRingID.ValueString(); v != "" {
-			kmsOptions.SetKeyRingId(&v)
-		}
-		attributes.SetKmsOptions(kmsOptions)
+		attributes.SetKmsOptions(v2KMSOptions(m.KMSOptions))
 	}
 
 	// Relationships
@@ -319,12 +305,32 @@ func hyokConfigurationEnvelopeFromModel(m modelTFEHYOKConfiguration) models.Hyok
 	return envelope
 }
 
+func v2KMSOptions(m *modelTFEKMSOptions) *models.HyokConfigurations_attributes_kmsOptions {
+	kmsOptionsAttributes := models.NewHyokConfigurations_attributes_kmsOptions()
+
+	if m == nil {
+		return nil
+	}
+
+	if v := m.KeyRegion.ValueString(); v != "" {
+		kmsOptionsAttributes.SetKeyRegion(&v)
+	}
+	if v := m.KeyLocation.ValueString(); v != "" {
+		kmsOptionsAttributes.SetKeyLocation(&v)
+	}
+	if v := m.KeyRingID.ValueString(); v != "" {
+		kmsOptionsAttributes.SetKeyRingId(&v)
+	}
+
+	return kmsOptionsAttributes
+}
+
 func v2AgentPoolRelationship(id string) models.AgentPoolsIdable {
 	agentPoolsIdData := models.NewAgentPoolsId_data()
 
 	agentPoolsIdData.SetId(&id)
-	agentPoolType := models.AGENTPOOLS_AGENTPOOLSID_DATA_TYPE
-	agentPoolsIdData.SetTypeEscaped(&agentPoolType)
+	//agentPoolType := models.AGENTPOOLS_AGENTPOOLSID_DATA_TYPE
+	//agentPoolsIdData.SetTypeEscaped(&agentPoolType)
 
 	agentPoolsId := models.NewAgentPoolsId()
 	agentPoolsId.SetData(agentPoolsIdData)
@@ -335,8 +341,8 @@ func v2OIDCConfigurationRelationship(id, oidcConfigurationType string) models.Oi
 	oidcIdData := models.NewOidcConfigurationsId_data()
 
 	oidcIdData.SetId(&id)
-	oidcIdType := oidcTypeToIdDataType[oidcConfigurationType]
-	oidcIdData.SetTypeEscaped(&oidcIdType)
+	//oidcIdType := oidcTypeToIdDataType[oidcConfigurationType]
+	//oidcIdData.SetTypeEscaped(&oidcIdType)
 
 	oidcId := models.NewOidcConfigurationsId()
 	oidcId.SetData(oidcIdData)
@@ -357,24 +363,7 @@ func modelFromTFEHYOKConfiguration(p models.HyokConfigurationsEnvelopeable) mode
 	if attributes != nil {
 		model.Name = types.StringValue(*attributes.GetName())
 		model.KEKID = types.StringValue(*attributes.GetKekId())
-
-		// Only populate kms_options when the API returns it
-		if kms := attributes.GetKmsOptions(); kms != nil {
-			model.KMSOptions = &modelTFEKMSOptions{
-				KeyRegion:   types.StringValue(""),
-				KeyLocation: types.StringValue(""),
-				KeyRingID:   types.StringValue(""),
-			}
-			if v := kms.GetKeyRegion(); v != nil {
-				model.KMSOptions.KeyRegion = types.StringValue(*v)
-			}
-			if v := kms.GetKeyLocation(); v != nil {
-				model.KMSOptions.KeyLocation = types.StringValue(*v)
-			}
-			if v := kms.GetKeyRingId(); v != nil {
-				model.KMSOptions.KeyRingID = types.StringValue(*v)
-			}
-		}
+		model.KMSOptions = tfeKMSOptions(attributes.GetKmsOptions())
 	}
 
 	relationships := data.GetRelationships()
@@ -403,4 +392,28 @@ func modelFromTFEHYOKConfiguration(p models.HyokConfigurationsEnvelopeable) mode
 	}
 
 	return model
+}
+
+func tfeKMSOptions(m models.HyokConfigurations_attributes_kmsOptionsable) *modelTFEKMSOptions {
+	if m == nil {
+		return nil
+	}
+
+	kmsOptions := &modelTFEKMSOptions{
+		KeyRegion:   types.StringValue(""),
+		KeyLocation: types.StringValue(""),
+		KeyRingID:   types.StringValue(""),
+	}
+
+	if v := m.GetKeyRegion(); v != nil {
+		kmsOptions.KeyRegion = types.StringValue(*v)
+	}
+	if v := m.GetKeyLocation(); v != nil {
+		kmsOptions.KeyLocation = types.StringValue(*v)
+	}
+	if v := m.GetKeyRingId(); v != nil {
+		kmsOptions.KeyRingID = types.StringValue(*v)
+	}
+
+	return kmsOptions
 }
