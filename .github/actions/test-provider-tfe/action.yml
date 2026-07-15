@@ -40,6 +40,9 @@ inputs:
   testing-github-token:
     description: The GitHub token used for testing scenarios
     required: false
+  testing-github-token-2:
+    description: A second GitHub token used for testing scenarios that require two distinct tokens (e.g. TestAccTFEOAuthClient_updateOAuthTokenID)
+    required: false
   enterprise:
     description: Test enterprise features (`hostname` must be running in ON_PREM mode)
     required: false
@@ -127,6 +130,7 @@ runs:
         GITHUB_WORKSPACE_IDENTIFIER: "svc-team-tf-core-cloud/terraform-random-module"
         GITHUB_WORKSPACE_BRANCH: "main"
         GITHUB_TOKEN: "${{ inputs.testing-github-token }}"
+        GITHUB_TOKEN2: "${{ inputs.testing-github-token-2 }}"
         MOD_PROVIDER: github.com/hashicorp/terraform-provider-tfe
         MOD_TFE: github.com/hashicorp/terraform-provider-tfe/internal/provider
         MOD_VERSION: github.com/hashicorp/terraform-provider-tfe/version
