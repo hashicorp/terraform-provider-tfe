@@ -26,7 +26,10 @@ import (
 )
 
 // tfe_workspace_settings resource
-var _ resource.Resource = &workspaceSettings{}
+var (
+	_ resource.Resource                = &workspaceSettings{}
+	_ resource.ResourceWithImportState = &workspaceSettings{}
+)
 
 // overwritesElementType is the object type definition for the
 // overwrites field schema.
