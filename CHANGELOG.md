@@ -3,12 +3,11 @@
 ENHANCEMENTS:
 * Documentation generation now inserts attribute and resource deprecation guidance into the generated schema docs. By @gbaker-ibm [#2144](https://github.com/hashicorp/terraform-provider-tfe/pull/2144)
 * Corrected and reorganized schema fields across the provider, including placing deprecation marks into those previously noted as deprecated by the documentation. By @gbaker-ibm [#2144](https://github.com/hashicorp/terraform-provider-tfe/pull/2144)
+* `r/tfe_project_notification_configuration`: Add `url_wo` and `url_wo_version` attribute support. By @Maed223 [#2150](https://github.com/hashicorp/terraform-provider-tfe/pull/2150)
+* `r/tfe_workspace_run`: Add `allow_config_version_missing` argument to the `destroy` block to treat a missing configuration version as a no-op success instead of an error. This allows destroy runs against empty workspaces (that never had a configuration version uploaded) to succeed. Setting this in the `apply` block is not allowed. ([#1939](https://github.com/hashicorp/terraform-provider-tfe/issues/1939))
 
 BREAKING CHANGES:
 * `r/tfe_workspace`: The `hyok_enabled` attribute was incorrectly marked as optional, instead of computed and read-only. This means that it could be set in the configuration, even though it would have no effect on the HCP Terraform workspace. This bug has been resolved, but will mean that any `tfe_workspace` which specifies `hyok_enabled` will see an error after upgrade, and will need to remove the attribute. By @JarrettSpiker [#2134](https://github.com/hashicorp/terraform-provider-tfe/pull/2134)
-
-ENHANCEMENTS:
-* `r/tfe_project_notification_configuration`: Add `url_wo` and `url_wo_version` attribute support. By @Maed223 [#2150](https://github.com/hashicorp/terraform-provider-tfe/pull/2150)
 
 BUG FIXES:
 * `r/tfe_workspace`: Fixed a provider bug where `hyok_enabled` was not being set as a computed read-only attribute, causing unreconcilable drift to occur when HYOK was enabled on a provider-managed workspace. By @JarrettSpiker [#2134](https://github.com/hashicorp/terraform-provider-tfe/pull/2134)
