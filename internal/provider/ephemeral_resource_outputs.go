@@ -30,7 +30,9 @@ type outputsEphemeralResource struct {
 
 func (e *outputsEphemeralResource) Schema(ctx context.Context, req ephemeral.SchemaRequest, resp *ephemeral.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "This ephemeral resource can be used to retrieve a workspace's state outputs without saving them in state.",
+		Description: "This ephemeral resource can be used to retrieve a workspace's state outputs without saving them in state.\n\n" +
+			"~> **Warning:** Ephemeral resources are a new feature and may evolve as we continue to explore their most effective uses. [Learn more](https://developer.hashicorp.com/terraform/language/v1.10.x/resources/ephemeral).\n\n" +
+			"~> **Note:** Regardless of output sensitivity in HCP Terraform, this ephemeral resource marks `values` as sensitive and mirrors non-sensitive entries in `nonsensitive_values`.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: `System-generated unique identifier for the resource.`,

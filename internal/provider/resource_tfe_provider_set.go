@@ -77,7 +77,7 @@ func (r *resourceTFEProviderSet) Metadata(ctx context.Context, req resource.Meta
 // Schema defines the schema for the resource.
 func (r *resourceTFEProviderSet) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages provider sets.",
+		MarkdownDescription: "Creates, updates and destroys provider sets.\n\n~> **Warning:** This resource is currently in beta and isn't generally available to all users. It is subject to change or be removed.",
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
 				Description: "The name of the provider set.",

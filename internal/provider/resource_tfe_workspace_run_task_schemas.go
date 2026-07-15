@@ -90,8 +90,9 @@ type modelTFEWorkspaceRunTaskV1 struct {
 }
 
 var resourceWorkspaceRunTaskSchemaV1 = schema.Schema{
-	MarkdownDescription: "The tfe_workspace_run_task resource associates, updates and removes [Workspace Run tasks](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks#associating-run-tasks-with-a-workspace).",
-	Version:             1,
+	MarkdownDescription: "The tfe_workspace_run_task resource associates, updates and removes [Workspace Run tasks](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks#associating-run-tasks-with-a-workspace).\n\n" +
+		"[Run tasks](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks) allow HCP Terraform to interact with external systems at specific points in the HCP Terraform run lifecycle. Run tasks are reusable configurations that you can attach to any workspace in an organization.",
+	Version: 1,
 	Attributes: map[string]schema.Attribute{
 		"id": schema.StringAttribute{
 			Computed:    true,
@@ -127,7 +128,7 @@ var resourceWorkspaceRunTaskSchemaV1 = schema.Schema{
 			},
 		},
 		"stage": schema.StringAttribute{
-			DeprecationMessage: "stage is deprecated, please use stages instead",
+			DeprecationMessage: "The `stage` attribute is deprecated. Use `stages` instead.",
 			Description: fmt.Sprintf("The stage to run the task in. Valid values are %s.", sentenceList(
 				workspaceRunTaskStages(),
 				"`",

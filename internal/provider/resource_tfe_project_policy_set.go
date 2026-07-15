@@ -21,7 +21,10 @@ import (
 
 func resourceTFEProjectPolicySet() *schema.Resource {
 	return &schema.Resource{
-		Description: "Adds and removes policy sets from a project.",
+		Description: "Adds and removes policy sets from a project.\n\n" +
+			"Policies are rules enforced on Terraform runs. Two policy-as-code frameworks are integrated with Terraform Enterprise: Sentinel and Open Policy Agent (OPA).\n\n" +
+			"Policy sets are groups of policies that are applied together to related workspaces. By using policy sets, you can group your policies by attributes such as environment or region. Individual policies that are members of policy sets will only be checked for workspaces that the policy set is attached to.\n\n" +
+			"~> **Note:** Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (`terraform apply`), then add the new one (`terraform apply`).",
 
 		Create: resourceTFEProjectPolicySetCreate,
 		Read:   resourceTFEProjectPolicySetRead,

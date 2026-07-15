@@ -19,7 +19,8 @@ import (
 
 func resourceTFEAgentPoolAllowedWorkspaces() *schema.Resource {
 	return &schema.Resource{
-		Description: "Adds and removes allowed workspaces on an agent pool.",
+		Description: "Adds and removes allowed workspaces on an agent pool.\n\n" +
+			"~> **Note:** This resource requires using the provider with HCP Terraform and a HCP Terraform for Business tier plan.",
 
 		Create: resourceTFEAgentPoolAllowedWorkspacesCreate,
 		Read:   resourceTFEAgentPoolAllowedWorkspacesRead,

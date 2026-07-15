@@ -19,7 +19,8 @@ import (
 
 func resourceTFEAgentPoolAllowedProjects() *schema.Resource {
 	return &schema.Resource{
-		Description: "Adds and removes allowed projects on an agent pool.",
+		Description: "Adds and removes allowed projects on an agent pool.\n\n" +
+			"~> **Note:** This resource requires using the provider with HCP Terraform and a HCP Terraform for Business tier plan.",
 
 		Create: resourceTFEAgentPoolAllowedProjectsCreate,
 		Read:   resourceTFEAgentPoolAllowedProjectsRead,

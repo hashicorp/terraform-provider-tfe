@@ -75,8 +75,9 @@ func (r *resourceTFETagPolicySet) Metadata(_ context.Context, req resource.Metad
 // Schema implements [resource.Resource].
 func (r *resourceTFETagPolicySet) Schema(_ context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Provides a resource which manages tag inclusions on a policy set.",
-		Version:     0,
+		Description: "Provides a resource which manages tag inclusions on a policy set.\n\n" +
+			"~> **Note:** Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (`terraform apply`), then add the new one (`terraform apply`).",
+		Version: 0,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "The composite ID of the tag inclusion, in the format <POLICY_SET_ID>/<TAG_KEY> or <POLICY_SET_ID>/<TAG_KEY>/<TAG_VALUE>.",

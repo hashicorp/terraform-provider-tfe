@@ -129,7 +129,11 @@ func (r *resourceTFESCIMToken) Configure(_ context.Context, req resource.Configu
 
 func (r *resourceTFESCIMToken) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Provides a resource which manages TFE SCIM tokens. These tokens are used for authentication when using the TFE SCIM API.",
+		Description: "Use this resource to create and manage SCIM authentication tokens. It applies only to Terraform Enterprise and requires admin token configuration. See example usage for incorporating an admin token in your provider config.\n\n" +
+			"SCIM must be enabled before a token can be created. SCIM in turn requires SAML, so the examples below depend on both a `tfe_saml_settings` and a `tfe_scim_settings` resource.\n\n" +
+			"The token value is only returned when the token is first created and cannot be read afterwards. Treat the `token` attribute as a sensitive secret and store it accordingly (for example, in a secrets manager).\n\n" +
+			"~> **Note:** Changing `description` or `expired_at` (including removing `expired_at` after it has been set) will force the resource to be replaced, which generates a new token value and invalidates the previous one.",
+
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "The ID of the SCIM token.",

@@ -196,7 +196,7 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 				Optional:    true,
 				WriteOnly:   true,
 				Sensitive:   true,
-				Description: "Value of the variable in write-only mode.",
+				Description: "Value of the variable in write-only mode. Can be used in place of `value`.",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("value")),
 					stringvalidator.AlsoRequires(path.MatchRoot("value_wo_version")),
@@ -293,10 +293,10 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 				},
 			},
 		},
-		Description:         "Manages variables.",
-		MarkdownDescription: "",
-		DeprecationMessage:  "",
-		Version:             1,
+		Description: "Creates, updates and destroys variables.\n\n" +
+			"-> **Note:** While the `value` field may be referenced in other resources, for safety it is always treated as sensitive. This means that it will always be redacted from plan outputs, and any other resource attributes which depend on it will also be redacted. The `readable_value` attribute is not sensitive, and will not be redacted; instead, it will be null if the variable is sensitive. This allows other resources to reference it, while keeping their plan outputs readable.\n\n" +
+			"~> **Note:** When `sensitive` is set to true, Terraform cannot detect and repair drift if `value` is later changed out-of-band via the HCP Terraform UI. Terraform will only change the value for a sensitive variable if you change `value` in the configuration, so that it no longer matches the last known value in the state.",
+		Version: 1,
 	}
 }
 

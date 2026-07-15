@@ -156,8 +156,9 @@ func (r *resourceTFEProjectNotificationConfiguration) Configure(ctx context.Cont
 // Schema implements resource.Resource
 func (r *resourceTFEProjectNotificationConfiguration) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Defines a project notification configuration resource.",
-		Version:     0,
+		Description: "Defines a project notification configuration resource.\n\n" +
+			"HCP Terraform can be configured to send notifications for run state transitions within a project. Project notification configurations allow you to specify a URL, destination type, and what events will trigger the notification. Each project can have up to 20 notification configurations, and they apply to all runs for all workspaces within that project.",
+		Version: 0,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -190,7 +191,7 @@ func (r *resourceTFEProjectNotificationConfiguration) Schema(ctx context.Context
 			},
 
 			"email_addresses": schema.SetAttribute{
-				MarkdownDescription: "A list of email addresses. This value must not be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
+				MarkdownDescription: "(TFE Only) A list of email addresses. This value must not be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
 				Optional:            true,
 				Computed:            true,
 				ElementType:         types.StringType,

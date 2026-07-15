@@ -19,7 +19,8 @@ import (
 
 func resourceTFEOAuthClient() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manages an OAuth client, which represents the connection between an organization and a VCS provider.",
+		Description: "Manages an OAuth client, which represents the connection between an organization and a VCS provider.\n\n" +
+			"-> **Note:** This resource does not currently support creation of Azure DevOps Services OAuth clients.",
 
 		Create: resourceTFEOAuthClientCreate,
 		Read:   resourceTFEOAuthClientRead,
@@ -80,7 +81,7 @@ func resourceTFEOAuthClient() *schema.Resource {
 			},
 
 			"private_key": {
-				Description: "The text of the private key associated with your Azure DevOps Server account. Required for ado_server.",
+				Description: "The text of the private key associated with your Azure DevOps Server account. Required for `ado_server`.",
 				Type:        schema.TypeString,
 				ForceNew:    true,
 				Sensitive:   true,

@@ -21,7 +21,8 @@ import (
 
 func resourceTFEPolicySet() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manages policy sets, which are groups of policies enforced on Terraform runs.",
+		Description: "Manages policy sets, which are groups of policies enforced on Terraform runs.\n\n" +
+			"-> **Note:** When neither `vcs_repo` nor `policy_ids` is specified, the default behavior is to create an empty non-VCS policy set.",
 
 		Create: resourceTFEPolicySetCreate,
 		Read:   resourceTFEPolicySetRead,

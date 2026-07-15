@@ -66,8 +66,10 @@ func (r *resourceTFEProjectPolicySetExclusionParameter) Metadata(_ context.Conte
 // Schema implements [resource.Resource].
 func (r *resourceTFEProjectPolicySetExclusionParameter) Schema(_ context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Provides a resource which manages the exclusion of a project from a policy set.",
-		Version:     0,
+		Description: "Provides a resource which manages the exclusion of a project from a policy set.\n\n" +
+			"-> **Note:** `tfe_policy_set` has an argument `global` that should be `true` to use this resource.\n\n" +
+			"~> **Note:** Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (`terraform apply`), then add the new one (`terraform apply`). Attempting both in a single apply may fail.",
+		Version: 0,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "The ID of the project exclusion. This is a synthetic ID in the format <policy_set_id>_<project_id>.",

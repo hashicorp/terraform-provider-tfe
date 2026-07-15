@@ -71,7 +71,10 @@ func (r *resourceTFESCIMGroupMapping) Configure(_ context.Context, req resource.
 // Schema implements resource.Resource
 func (r *resourceTFESCIMGroupMapping) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Maps a SCIM group to a team in Terraform Enterprise. A team can be mapped to at most one SCIM group.",
+		Description: "Maps a SCIM group to a team in Terraform Enterprise.\n\n" +
+			"When a team is mapped to a SCIM group, its membership is managed by your Identity Provider (IdP) through SCIM provisioning. A team can be mapped to at most one SCIM group.\n\n" +
+			"This resource applies only to Terraform Enterprise and requires admin token configuration. SCIM (and SAML) must be enabled first; see [`tfe_scim_settings`](scim_settings.html) for details. The SCIM group you map to must already be provisioned into Terraform Enterprise by your IdP before the mapping can be created.\n\n" +
+			"~> **Note:** Creating a mapping with `paused = true` does not skip the initial sync. The mapping API does not support creating a mapping in a paused state, so the mapping is created active and then paused in a follow-up request. This means an initial sync of the SCIM group's members onto the team runs before the pause takes effect, and any changes made to the SCIM group during that brief window may be reflected on the team",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "The ID of the SCIM group mapping. Since a team can only be mapped to one SCIM group, this is the same as `team_id`.",

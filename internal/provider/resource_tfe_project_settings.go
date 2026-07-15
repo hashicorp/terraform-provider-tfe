@@ -219,9 +219,9 @@ func (m overwriteExecutionModeIfSpecified) MarkdownDescription(_ context.Context
 
 func (r *projectSettings) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description:        "Additional Project settings, which may override organization defaults.",
-		DeprecationMessage: "",
-		Version:            1,
+		Description: "Additional Project settings, which may override organization defaults. Primarily, this resource allows setting default execution mode and agent pool for all workspaces within a project. When not specified, the organization defaults will be used.\n\n" +
+			"-> **Note:** Requires Terraform CLI version 1.0 and later.",
+		Version: 1,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,

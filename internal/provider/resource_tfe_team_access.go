@@ -38,7 +38,8 @@ const (
 
 func resourceTFETeamAccess() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manages a team's permissions on a workspace.",
+		Description: "Manages a team's permissions on a workspace.\n\n" +
+			"-> **Note:** At least one of `access` or `permissions` must be provided, but not both. Whichever is omitted will automatically reflect the state of the other.",
 
 		Create: resourceTFETeamAccessCreate,
 		Read:   resourceTFETeamAccessRead,
