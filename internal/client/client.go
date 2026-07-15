@@ -188,6 +188,7 @@ func GetClient(tfeHost, token string, insecure bool) (*ProviderClient, error) {
 				log.Printf("[DEBUG] Rate limited by TFE API, retrying request (attempt %d)", attempt)
 			}
 		},
+		HTTPTransport: config.HTTPClient.Transport,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create client: %w", err)
