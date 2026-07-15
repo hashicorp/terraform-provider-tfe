@@ -61,7 +61,7 @@ type modelTFEProjectNotificationConfiguration struct {
 
 // modelFromTFEProjectNotificationConfiguration builds a modelTFEProjectNotificationConfiguration
 // struct from a tfe.NotificationConfiguration value.
-func modelFromTFEProjectNotificationConfiguration(v *tfe.NotificationConfiguration, tokenWOVersion types.Int64, lastValue types.String) (*modelTFEProjectNotificationConfiguration, diag.Diagnostics) {
+func modelFromTFEProjectNotificationConfiguration(v *tfe.NotificationConfiguration, tokenWOVersion types.Int64, lastValue types.String, priorTriggers types.Set) (*modelTFEProjectNotificationConfiguration, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	result := modelTFEProjectNotificationConfiguration{
 		ID:              types.StringValue(v.ID),
@@ -73,7 +73,7 @@ func modelFromTFEProjectNotificationConfiguration(v *tfe.NotificationConfigurati
 	}
 
 	if len(v.EmailAddresses) == 0 {
-		result.EmailAddresses = types.SetNull(types.StringType)
+		result.EmailAddresses = types.SetValueMust(types.StringType, []attr.Value{})
 	} else {
 		emailAddresses, diags := types.SetValueFrom(ctx, types.StringType, v.EmailAddresses)
 		if diags != nil && diags.HasError() {
@@ -83,7 +83,10 @@ func modelFromTFEProjectNotificationConfiguration(v *tfe.NotificationConfigurati
 	}
 
 	if len(v.Triggers) == 0 {
-		result.Triggers = types.SetNull(types.StringType)
+		// triggers is optional and not computed, so preserve the configured
+		// intent (an explicit empty set vs. null) to avoid an inconsistent
+		// result after apply.
+		result.Triggers = priorTriggers
 	} else {
 		triggers, diags := types.SetValueFrom(ctx, types.StringType, v.Triggers)
 		if diags != nil && diags.HasError() {
@@ -93,7 +96,7 @@ func modelFromTFEProjectNotificationConfiguration(v *tfe.NotificationConfigurati
 	}
 
 	if len(v.EmailUsers) == 0 {
-		result.EmailUserIDs = types.SetNull(types.StringType)
+		result.EmailUserIDs = types.SetValueMust(types.StringType, []attr.Value{})
 	} else {
 		emailUserIDs := make([]attr.Value, len(v.EmailUsers))
 		for i, emailUser := range v.EmailUsers {
@@ -369,7 +372,7 @@ func (r *resourceTFEProjectNotificationConfiguration) Create(ctx context.Context
 		return
 	}
 
-	result, diags := modelFromTFEProjectNotificationConfiguration(pnc, config.TokenWOVersion, lastTokenValue)
+	result, diags := modelFromTFEProjectNotificationConfiguration(pnc, config.TokenWOVersion, lastTokenValue, plan.Triggers)
 	if diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return
@@ -401,7 +404,7 @@ func (r *resourceTFEProjectNotificationConfiguration) Read(ctx context.Context, 
 		return
 	}
 
-	result, diags := modelFromTFEProjectNotificationConfiguration(pnc, state.TokenWOVersion, state.Token)
+	result, diags := modelFromTFEProjectNotificationConfiguration(pnc, state.TokenWOVersion, state.Token, state.Triggers)
 	if diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return
@@ -496,7 +499,7 @@ func (r *resourceTFEProjectNotificationConfiguration) Update(ctx context.Context
 		return
 	}
 
-	result, diags := modelFromTFEProjectNotificationConfiguration(pnc, config.TokenWOVersion, lastTokenValue)
+	result, diags := modelFromTFEProjectNotificationConfiguration(pnc, config.TokenWOVersion, lastTokenValue, plan.Triggers)
 	if diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return
