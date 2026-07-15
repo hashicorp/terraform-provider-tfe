@@ -46,6 +46,8 @@ func TestAccTFEProjectNotificationConfiguration_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_project_notification_configuration.foobar", "name", "notification_basic"),
 					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "token", "1234567890"),
+					resource.TestCheckResourceAttr(
 						"tfe_project_notification_configuration.foobar", "triggers.#", "0"),
 					resource.TestCheckResourceAttr(
 						"tfe_project_notification_configuration.foobar", "url", runTasksURL()),
@@ -127,6 +129,8 @@ func TestAccTFEProjectNotificationConfiguration_update(t *testing.T) {
 						"tfe_project_notification_configuration.foobar", "destination_type", "generic"),
 					resource.TestCheckResourceAttr(
 						"tfe_project_notification_configuration.foobar", "name", "notification_basic"),
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "token", "1234567890"),
 					resource.TestCheckResourceAttr(
 						"tfe_project_notification_configuration.foobar", "triggers.#", "0"),
 					resource.TestCheckResourceAttr(
@@ -275,10 +279,6 @@ func testAccCheckTFEProjectNotificationConfigurationAttributes(notificationConfi
 			return fmt.Errorf("bad enabled: %t", notificationConfiguration.Enabled)
 		}
 
-		if notificationConfiguration.Token != "1234567890" {
-			return fmt.Errorf("bad token: %s", notificationConfiguration.Token)
-		}
-
 		if len(notificationConfiguration.Triggers) != 0 {
 			return fmt.Errorf("bad triggers: %v", notificationConfiguration.Triggers)
 		}
@@ -331,15 +331,11 @@ func testAccCheckTFEProjectNotificationConfigurationAttributesUpdate(notificatio
 			return fmt.Errorf("bad enabled: %t", notificationConfiguration.Enabled)
 		}
 
-		if notificationConfiguration.Token != "1234567890_update" {
-			return fmt.Errorf("bad token: %s", notificationConfiguration.Token)
-		}
-
 		if len(notificationConfiguration.Triggers) != 1 {
 			return fmt.Errorf("bad triggers: %v", notificationConfiguration.Triggers)
 		}
 
-		if !reflect.DeepEqual(notificationConfiguration.Triggers, []string{"change_request:created"}) {
+		if !reflect.DeepEqual(notificationConfiguration.Triggers, []string{"run:applying"}) {
 			return fmt.Errorf("bad triggers: %v", notificationConfiguration.Triggers)
 		}
 
@@ -412,7 +408,7 @@ resource "tfe_project_notification_configuration" "foobar" {
   destination_type = "generic"
   enabled          = true
   token            = "1234567890_update"
-  triggers         = ["change_request:created"]
+  triggers         = ["run:applying"]
   url              = "%s"
   project_id       = "%s"
 }`, orgName, runTasksURL(), projectID)
