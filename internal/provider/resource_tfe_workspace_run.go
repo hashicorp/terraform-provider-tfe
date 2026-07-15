@@ -206,6 +206,12 @@ func resourceTFEWorkspaceRunSchema() *schema.Resource {
 				Optional:    true,
 				Default:     true,
 			},
+			"allow_config_version_missing": {
+				Description: "Whether or not to treat a missing configuration version as a success rather than an error when creating the run. This is useful for destroy runs against workspaces that never had a configuration version uploaded (for example, an empty workspace). When set to true and the run cannot be created because the configuration version is missing, the operation is treated as a no-op success. Defaults to false.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
 		},
 	}
 }
