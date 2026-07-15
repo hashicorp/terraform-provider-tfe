@@ -14,6 +14,7 @@ import (
 	"sync"
 
 	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/go-version"
 	providerVersion "github.com/hashicorp/terraform-provider-tfe/version"
 	svchost "github.com/hashicorp/terraform-svchost"
@@ -77,8 +78,14 @@ func getTokenFromCreds(services *disco.Disco, hostname svchost.Hostname) string 
 // TFE Client along with other necessary information for the provider to run it
 type ProviderClient struct {
 	TfeClient   *tfe.Client
+	TfeClientV2 *tfev2.Client
 	tokenSource tokenSource
 }
+
+// clientV2Cache caches go-tfe/v2 clients alongside the v1 clients held in
+// clientCache, keyed the same way. Access is guarded by clientCache's lock,
+// which GetClient holds for its entire duration.
+var clientV2Cache = make(map[string]*tfev2.Client)
 
 // Using presence of TFC_AGENT_VERSION to determine if this provider is running on HCP Terraform / enterprise
 func providerRunningInCloud() bool {
@@ -106,10 +113,11 @@ func GetClient(tfeHost, token string, insecure bool) (*ProviderClient, error) {
 	clientCache.Lock()
 	defer clientCache.Unlock()
 
-	// Try to retrieve the client from cache
+	// Try to retrieve the clients from cache
 	cached := clientCache.GetByConfig(config)
-	if cached != nil {
-		return &ProviderClient{cached, config.tokenSource}, nil
+	cachedV2 := clientV2Cache[config.Key()]
+	if cached != nil && cachedV2 != nil {
+		return &ProviderClient{cached, cachedV2, config.tokenSource}, nil
 	}
 
 	// Discover the Terraform Enterprise address.
@@ -171,9 +179,24 @@ func GetClient(tfeHost, token string, insecure bool) (*ProviderClient, error) {
 	}
 
 	client.RetryServerErrors(true)
-	clientCache.Set(client, config)
 
-	return &ProviderClient{client, config.tokenSource}, nil
+	// Create a go-tfe/v2 client from the same discovered address and token.
+	// The v2 config takes the host and base path separately. Note that the v2
+	// client does not support skipping TLS verification (ssl_skip_verify).
+	clientV2, err := tfev2.NewClient(&tfev2.Config{
+		Address:           fmt.Sprintf("%s://%s", address.Scheme, address.Host),
+		BasePath:          strings.TrimSuffix(address.Path, "/"),
+		Token:             config.Token,
+		RetryServerErrors: true,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create v2 client: %w", err)
+	}
+
+	clientCache.Set(client, config)
+	clientV2Cache[config.Key()] = clientV2
+
+	return &ProviderClient{client, clientV2, config.tokenSource}, nil
 }
 
 // CheckConstraints checks service version constrains against our own

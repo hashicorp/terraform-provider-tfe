@@ -1,5 +1,8 @@
 ## Unreleased
 
+ENHANCEMENTS:
+* `r/tfe_team_token`: Migrated the resource to the go-tfe/v2 API client. Behavior for create/read/delete, import, dual ID semantics, `force_regenerate`, `description`, `expired_at`, and not-found handling is unchanged. By @marzuqmazid-ibm
+
 ## v0.79.0
 
 FEATURES:
