@@ -70,7 +70,6 @@ func modelFromTFEProjectNotificationConfiguration(v *tfe.NotificationConfigurati
 		Enabled:         types.BoolValue(v.Enabled),
 		ProjectID:       types.StringValue(v.SubscribableChoice.Project.ID),
 		TokenWOVersion:  tokenWOVersion,
-		Token:           types.StringValue(""),
 	}
 
 	if len(v.EmailAddresses) == 0 {

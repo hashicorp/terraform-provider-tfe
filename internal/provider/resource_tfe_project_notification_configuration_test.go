@@ -195,6 +195,46 @@ func TestAccTFEProjectNotificationConfiguration_validateSchemaAttributesSlack(t 
 	})
 }
 
+func TestAccTFEProjectNotificationConfiguration_slack(t *testing.T) {
+	skipUnlessBeta(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
+	project := createProject(t, tfeClient, org.Name, tfe.ProjectCreateOptions{
+		Name: "test-project",
+	})
+
+	notificationConfiguration := &tfe.NotificationConfiguration{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { preCheckTFEProjectNotificationConfiguration(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEProjectNotificationConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEProjectNotificationConfiguration_slack(org.Name, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEProjectNotificationConfigurationExists(
+						"tfe_project_notification_configuration.foobar", notificationConfiguration),
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "destination_type", "slack"),
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "name", "notification_slack"),
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "url", runTasksURL()),
+					resource.TestCheckNoResourceAttr(
+						"tfe_project_notification_configuration.foobar", "token"),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckTFEProjectNotificationConfigurationExists(n string, notificationConfiguration *tfe.NotificationConfiguration) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
@@ -373,6 +413,20 @@ resource "tfe_project_notification_configuration" "foobar" {
   enabled          = true
   token            = "1234567890_update"
   triggers         = ["change_request:created"]
+  url              = "%s"
+  project_id       = "%s"
+}`, orgName, runTasksURL(), projectID)
+}
+
+func testAccTFEProjectNotificationConfiguration_slack(orgName, projectID string) string {
+	return fmt.Sprintf(`
+data "tfe_organization" "foobar" {
+  name = "%s"
+}
+
+resource "tfe_project_notification_configuration" "foobar" {
+  name             = "notification_slack"
+  destination_type = "slack"
   url              = "%s"
   project_id       = "%s"
 }`, orgName, runTasksURL(), projectID)
