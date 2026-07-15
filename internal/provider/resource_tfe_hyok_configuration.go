@@ -60,20 +60,11 @@ const (
 	OIDCConfigurationTypeAzure string = "azure"
 )
 
-var (
-	oidcTypeToIdDataType = map[string]models.OidcConfigurationsId_data_type{
-		OIDCConfigurationTypeAWS:   models.AWSOIDCCONFIGURATIONS_OIDCCONFIGURATIONSID_DATA_TYPE,
-		OIDCConfigurationTypeGCP:   models.GCPOIDCCONFIGURATIONS_OIDCCONFIGURATIONSID_DATA_TYPE,
-		OIDCConfigurationTypeVault: models.VAULTOIDCCONFIGURATIONS_OIDCCONFIGURATIONSID_DATA_TYPE,
-		OIDCConfigurationTypeAzure: models.AZUREOIDCCONFIGURATIONS_OIDCCONFIGURATIONSID_DATA_TYPE,
-	}
-	idDataTypeToOidcType = make(map[models.OidcConfigurationsId_data_type]string, len(oidcTypeToIdDataType))
-)
-
-func init() {
-	for resourceType, idDataType := range oidcTypeToIdDataType {
-		idDataTypeToOidcType[idDataType] = resourceType
-	}
+var idDataTypeToOidcConfigurationType = map[models.OidcConfigurationsId_data_type]string{
+	models.AWSOIDCCONFIGURATIONS_OIDCCONFIGURATIONSID_DATA_TYPE:   OIDCConfigurationTypeAWS,
+	models.GCPOIDCCONFIGURATIONS_OIDCCONFIGURATIONSID_DATA_TYPE:   OIDCConfigurationTypeGCP,
+	models.VAULTOIDCCONFIGURATIONS_OIDCCONFIGURATIONSID_DATA_TYPE: OIDCConfigurationTypeVault,
+	models.AZUREOIDCCONFIGURATIONS_OIDCCONFIGURATIONSID_DATA_TYPE: OIDCConfigurationTypeAzure,
 }
 
 func (r *resourceTFEHYOKConfiguration) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -294,7 +285,7 @@ func hyokConfigurationEnvelopeFromModel(m modelTFEHYOKConfiguration) models.Hyok
 	// Relationships
 	relationships := models.NewHyokConfigurations_relationships()
 	relationships.SetAgentPool(v2AgentPoolRelationship(m.AgentPoolID.ValueString()))
-	relationships.SetOidcConfiguration(v2OIDCConfigurationRelationship(m.OIDCConfigurationID.ValueString(), m.OIDCConfigurationType.ValueString()))
+	relationships.SetOidcConfiguration(v2OIDCConfigurationRelationship(m.OIDCConfigurationID.ValueString()))
 
 	hyokConfiguration := models.NewHyokConfigurations()
 	hyokConfiguration.SetAttributes(attributes)
@@ -327,25 +318,21 @@ func v2KMSOptions(m *modelTFEKMSOptions) *models.HyokConfigurations_attributes_k
 
 func v2AgentPoolRelationship(id string) models.AgentPoolsIdable {
 	agentPoolsIdData := models.NewAgentPoolsId_data()
-
 	agentPoolsIdData.SetId(&id)
-	//agentPoolType := models.AGENTPOOLS_AGENTPOOLSID_DATA_TYPE
-	//agentPoolsIdData.SetTypeEscaped(&agentPoolType)
 
 	agentPoolsId := models.NewAgentPoolsId()
 	agentPoolsId.SetData(agentPoolsIdData)
+
 	return agentPoolsId
 }
 
-func v2OIDCConfigurationRelationship(id, oidcConfigurationType string) models.OidcConfigurationsIdable {
+func v2OIDCConfigurationRelationship(id string) models.OidcConfigurationsIdable {
 	oidcIdData := models.NewOidcConfigurationsId_data()
-
 	oidcIdData.SetId(&id)
-	//oidcIdType := oidcTypeToIdDataType[oidcConfigurationType]
-	//oidcIdData.SetTypeEscaped(&oidcIdType)
 
 	oidcId := models.NewOidcConfigurationsId()
 	oidcId.SetData(oidcIdData)
+
 	return oidcId
 }
 
@@ -387,7 +374,7 @@ func modelFromTFEHYOKConfiguration(p models.HyokConfigurationsEnvelopeable) mode
 
 		oidcType := oidc.GetData().GetTypeEscaped()
 		if oidcType != nil {
-			model.OIDCConfigurationType = types.StringValue(idDataTypeToOidcType[*oidcType])
+			model.OIDCConfigurationType = types.StringValue(idDataTypeToOidcConfigurationType[*oidcType])
 		}
 	}
 
