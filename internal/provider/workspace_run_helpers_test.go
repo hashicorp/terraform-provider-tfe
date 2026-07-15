@@ -4,12 +4,45 @@
 package provider
 
 import (
+	"errors"
 	"testing"
 
 	tfe "github.com/hashicorp/go-tfe"
 	tfemocks "github.com/hashicorp/go-tfe/mocks"
 	"go.uber.org/mock/gomock"
 )
+
+func TestIsConfigVersionMissingErr(t *testing.T) {
+	testCases := map[string]struct {
+		err      error
+		expected bool
+	}{
+		"nil error": {
+			nil,
+			false,
+		},
+		"unrelated error": {
+			errors.New("some other error"),
+			false,
+		},
+		"configuration version missing error": {
+			errors.New("error creating run for workspace ws-123: unprocessable entity\n\nConfiguration version is missing"),
+			true,
+		},
+		"lowercase configuration version missing error": {
+			errors.New("configuration version is missing"),
+			true,
+		},
+	}
+
+	for name, testCase := range testCases {
+		t.Run(name, func(t *testing.T) {
+			if got := isConfigVersionMissingErr(testCase.err); got != testCase.expected {
+				t.Fatalf("expected %t, got %t", testCase.expected, got)
+			}
+		})
+	}
+}
 
 func MockRunsListForWorkspaceQueue(t *testing.T, client *tfe.Client, workspaceIDWithExpectedRun string, workspaceIDWithUnexpectedRun string) {
 	ctrl := gomock.NewController(t)
