@@ -8,6 +8,9 @@ BUG FIXES:
 * `r/tfe_project_notification_configuration`: Fix `Provider produced inconsistent result after apply` error on the sensitive `token` attribute when creating a configuration (such as `slack`) without a `token`. By @maed223 [#2140](https://github.com/hashicorp/terraform-provider-tfe/pull/2140)
 * `r/tfe_project_notification_configuration`: Fix `Provider produced inconsistent result after apply` errors on the `triggers`, `email_addresses`, and `email_user_ids` attributes when they are configured as an empty set (`[]`). By @maed223 [#2140](https://github.com/hashicorp/terraform-provider-tfe/pull/2140)
 
+ENHANCEMENTS:
+* `r/tfe_hyok_configuration`: Added multi-region key support for AWS HYOK. By @helenjw ([#2141](https://github.com/hashicorp/terraform-provider-tfe/pull/2141))
+
 ## v0.79.0
 
 FEATURES:
