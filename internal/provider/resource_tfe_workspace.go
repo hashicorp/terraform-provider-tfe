@@ -415,7 +415,7 @@ func resourceTFEWorkspace() *schema.Resource {
 			},
 			"hyok_enabled": {
 				Type:        schema.TypeBool,
-				Optional:    true,
+				Computed:    true,
 				Description: "Whether HYOK (Hold Your Own Key) is enabled for the workspace. Available only in HCP Terraform.",
 			},
 		},
