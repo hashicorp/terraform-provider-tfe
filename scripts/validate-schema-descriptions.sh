@@ -3,15 +3,23 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # Usage:
-#   ./scripts/validate-schema-descriptions.sh [-o <json output file; ./missing_descriptions.json>] [-e <exceptions file; examples/error_exceptions.json>] [--help]
+#   ./scripts/validate-schema-descriptions.sh
+#
+# Environment variables:
+#   EXCEPTIONS_FILE    JSON file with description exceptions
+#                      (default: examples/error_exceptions.json — soft warning if absent)
+#   JSON_OUTPUT_NAME   Output JSON file for failures (default: ./missing_descriptions.json)
+#   SCHEMA_FILE        Existing provider schema JSON file to validate directly
+#                      (unset by default — generates schema from the provider)
 #
 # Exit codes:
 #  0 - Complete success
-#  1 - Generic errors (including command line args)
-#  3 - Warning: stale entries found in no_description_required
+#  4 - Warning: stale entries found in no_description_required
 #  5 - Errors found: one or more components, attributes, or blocks are missing descriptions
 #  6 - Required commands (terraform, jq, go) not found
-#  7 - Provider directory not found or its schema could not be generated
+#  7 - Explicit exceptions file missing; provider schema missing/invalid; or provider schema could not be generated
+#  8 - Exceptions file exists but contains invalid JSON; or internal JSON output error
+#  9 - Failure to build provider
 
 
 # Crash on error
@@ -20,46 +28,17 @@ set -e
 # Variables with defaults
 SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
 PROVIDER_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-EXCEPTIONS_FILE="${PROVIDER_DIR}/examples/error_exceptions.json"
-JSON_OUTPUT_NAME="missing_descriptions.json"
+JSON_OUTPUT_NAME="${JSON_OUTPUT_NAME:-missing_descriptions.json}"
+SCHEMA_FILE="${SCHEMA_FILE:-}"
 
-# Arg parsing
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        -o|--output)
-            JSON_OUTPUT_NAME="$2"
-            shift 2
-            ;;
-        -e|--exceptions)
-            EXCEPTIONS_FILE="$2"
-            shift 2
-            ;;
-        -h|--help)
-            echo "Usage: $0 [OPTIONS]"
-            echo ""
-            echo "Validates that every provider schema attribute and block has a non-empty description."
-            echo ""
-            echo "Options:"
-            echo "  -o, --output FILE        Output JSON file for failures (default: ./missing_descriptions.json)"
-            echo "  -e, --exceptions FILE    JSON file with description exceptions (default: examples/error_exceptions.json)"
-            echo "  -h, --help               Show this help message"
-            echo ""
-            echo "Exit Codes:"
-            echo "  0 - Complete success"
-            echo "  1 - Generic errors (including command line args)"
-            echo "  3 - Warning: stale entries found in no_description_required"
-            echo "  5 - Errors found: one or more components, attributes, or blocks are missing descriptions"
-            echo "  6 - Required commands (terraform, jq, go) not found"
-            echo "  7 - Provider directory not found or its schema could not be generated"
-            exit 0
-            ;;
-        *)
-            echo "Unknown option: $1"
-            echo "Use -h or --help for usage information"
-            exit 1
-            ;;
-    esac
-done
+# EXCEPTIONS_FILE: if explicitly set, treat as hard requirement (exit 7 if missing).
+# If unset, fall back to the default path with a soft warning if absent.
+EXCEPTIONS_FILE_EXPLICIT=false
+if [ -n "${EXCEPTIONS_FILE:-}" ]; then
+    EXCEPTIONS_FILE_EXPLICIT=true
+else
+    EXCEPTIONS_FILE="${PROVIDER_DIR}/examples/error_exceptions.json"
+fi
 
 # Check dependencies
 # These can erroneously pass if the command name exists, but don't refer to the real tool
@@ -68,66 +47,74 @@ if ! command -v jq >/dev/null 2>&1; then
     exit 6
 fi
 
-if ! command -v terraform >/dev/null 2>&1; then
-    echo "Error: terraform command not found. Please install Terraform." >&2
-    exit 6
+if [ -z "${SCHEMA_FILE}" ]; then
+    if ! command -v terraform >/dev/null 2>&1; then
+        echo "Error: terraform command not found. Please install Terraform." >&2
+        exit 6
+    fi
+
+    if ! command -v go >/dev/null 2>&1; then
+        echo "Error: go command not found. Please install Go." >&2
+        exit 6
+    fi
 fi
 
-if ! command -v go >/dev/null 2>&1; then
-    echo "Error: go command not found. Please install Go." >&2
-    exit 6
-fi
-
-# Check if EXCEPTIONS_FILE exists and make it absolute, if provided via -e
-if [ "${EXCEPTIONS_FILE}" != "${PROVIDER_DIR}/examples/error_exceptions.json" ]; then
+# Check if EXCEPTIONS_FILE exists and make it absolute
+if [ "${EXCEPTIONS_FILE_EXPLICIT}" = true ]; then
     if [ ! -f "${EXCEPTIONS_FILE}" ]; then
         echo "Error: Exceptions file does not exist: ${EXCEPTIONS_FILE}" >&2
         exit 7
     fi
+fi
+if [ -f "${EXCEPTIONS_FILE}" ]; then
     EXCEPTIONS_FILE="$(cd "$(dirname "${EXCEPTIONS_FILE}")" && pwd)/$(basename "${EXCEPTIONS_FILE}")"
-elif [ ! -f "${EXCEPTIONS_FILE}" ]; then
+else
     echo "Warning: error_exceptions.json not found at ${EXCEPTIONS_FILE}" >&2
     echo "Proceeding without exceptions..." >&2
 fi
 
-# Generate provider schema to temporary file
-echo "Generating provider schema..."
-TEMP_DIR=$(mktemp -d)
-PROVIDER_SCHEMA="${TEMP_DIR}/provider-schema.json"
+# Generate provider schema to temporary file unless one was provided directly.
+if [ -z "${SCHEMA_FILE}" ]; then
+    echo "Generating provider schema..."
+    TEMP_DIR=$(mktemp -d)
+    PROVIDER_SCHEMA="${TEMP_DIR}/provider-schema.json"
 
-# Exit cleanup trap
-trap 'rm -rf "${TEMP_DIR}"' EXIT INT TERM
+    # Exit cleanup trap
+    trap 'rm -rf "${TEMP_DIR}"' EXIT INT TERM
 
-# Build provider binary
-GOOS="${GOOS:-$(go env GOOS)}"
-GOARCH="${GOARCH:-$(go env GOARCH)}"
-if [ -z "${GOOS}" ] || [ -z "${GOARCH}" ]; then
-    echo "Error: could not determine GOOS/GOARCH from go env." >&2
-    exit 7
-fi
-OS_ARCH="${GOOS}_${GOARCH}"
-PLUGIN_DIR="${TEMP_DIR}/plugins/registry.terraform.io/hashicorp/tfe/0.0.1/${OS_ARCH}" # tfe version is somewhat arbitrary for our particular usage of terraform init; this is the same as in tfplugindocs
-mkdir -p "${PLUGIN_DIR}"
-PROVIDER_BINARY="${PLUGIN_DIR}/terraform-provider-tfe"
-if ! (cd "${PROVIDER_DIR}" && go build -o "${PROVIDER_BINARY}" 2>&1) >/dev/null; then
-    echo "Error: failed to build provider binary." >&2
-    exit 7
-fi
+    # Build provider binary
+    GOOS="${GOOS:-$(go env GOOS)}"
+    GOARCH="${GOARCH:-$(go env GOARCH)}"
+    if [ -z "${GOOS}" ] || [ -z "${GOARCH}" ]; then
+        echo "Error: could not determine GOOS/GOARCH from go env." >&2
+        exit 9
+    fi
+    OS_ARCH="${GOOS}_${GOARCH}"
+    PLUGIN_DIR="${TEMP_DIR}/plugins/registry.terraform.io/hashicorp/tfe/0.0.1/${OS_ARCH}" # tfe version is somewhat arbitrary for our particular usage of terraform init; this is the same as in tfplugindocs
+    mkdir -p "${PLUGIN_DIR}"
+    PROVIDER_BINARY="${PLUGIN_DIR}/terraform-provider-tfe"
+    if ! (cd "${PROVIDER_DIR}" && go build -o "${PROVIDER_BINARY}" > /dev/null); then
+        echo "Error: failed to build provider binary." >&2
+        exit 9
+    fi
 
-# Create minimal provider configuration
-cat > "${TEMP_DIR}/provider.tf" <<EOF
+    # Create minimal provider configuration
+    cat > "${TEMP_DIR}/provider.tf" <<EOF
 provider "tfe" {
 }
 EOF
 
-# Initialize and extract schema
-if ! (cd "${TEMP_DIR}" && terraform init -get=false -plugin-dir=./plugins >/dev/null 2>&1); then
-    echo "Error: terraform init failed for provider schema generation." >&2
-    exit 7
-fi
-if ! (cd "${TEMP_DIR}" && terraform providers schema -json > "${PROVIDER_SCHEMA}" 2>/dev/null); then
-    echo "Error: terraform providers schema failed." >&2
-    exit 7
+    # Initialize and extract schema
+    if ! (cd "${TEMP_DIR}" && terraform init -get=false -plugin-dir=./plugins > /dev/null); then
+        echo "Error: terraform init failed for provider schema generation." >&2
+        exit 7
+    fi
+    if ! (cd "${TEMP_DIR}" && terraform providers schema -json > "${PROVIDER_SCHEMA}"); then
+        echo "Error: terraform providers schema failed." >&2
+        exit 7
+    fi
+else
+    PROVIDER_SCHEMA="${SCHEMA_FILE}"
 fi
 
 # Verify the schema file is valid JSON and contains the expected provider key
@@ -139,10 +126,14 @@ fi
 # Load no_description_required list from exceptions file
 NO_DESCRIPTION_REQUIRED=()
 if [ -f "${EXCEPTIONS_FILE}" ]; then
+    if ! jq -e '.' "${EXCEPTIONS_FILE}" >/dev/null 2>&1; then
+        echo "Error: exceptions file is not valid JSON: ${EXCEPTIONS_FILE}" >&2
+        exit 8
+    fi
     # Extract the no_description_required array
     while IFS= read -r entry; do
         NO_DESCRIPTION_REQUIRED+=("${entry}")
-    done < <(jq -r '.no_description_required[]? // empty' "${EXCEPTIONS_FILE}" 2>/dev/null)
+    done < <(jq -r '.no_description_required[]? // empty' "${EXCEPTIONS_FILE}")
 fi
 
 # Check if an attribute or block path is covered by any entry in no_description_required.
@@ -237,7 +228,10 @@ RAW_MISSING=$(jq -r '
       $root_block | walk_block("") |
       "\(.kind)\t\($schema_type)/\($resource_name)\t\(.path)"
     )
-' "${PROVIDER_SCHEMA}")
+' "${PROVIDER_SCHEMA}") || {
+    echo "Error: failed to walk provider schema — schema may be structurally invalid." >&2
+    exit 7
+}
 
 # Apply exceptions to the raw missing list
 MISSING_DESCRIPTIONS=()
@@ -277,7 +271,7 @@ if [ ${#UNEXPECTED_DESCRIPTIONS[@]} -gt 0 ]; then
         echo "  - ${unexpected}"
     done
     echo ""
-    echo "Consider removing these entries from no_description_required in error_exceptions.json"
+    echo "Consider removing these entries from no_description_required in ${EXCEPTIONS_FILE}"
     echo ""
 fi
 
@@ -287,17 +281,23 @@ if [ ${#MISSING_DESCRIPTIONS[@]} -gt 0 ]; then
     json_output="{}"
     for item in "${MISSING_DESCRIPTIONS[@]}"; do
         IFS=$'\t' read -r kind resource_key attr_path <<< "${item}"
-        json_output=$(echo "${json_output}" | jq \
+        if ! json_output=$(echo "${json_output}" | jq \
             --arg rk "${resource_key}" \
             --arg path "${attr_path}" \
             --arg kind "${kind}" \
-            '.[$rk][$path] = $kind')
+            '.[$rk][$path] = $kind'); then
+            echo "Error: failed to build JSON output." >&2
+            exit 8
+        fi
     done
-    jq -S '.' <<< "${json_output}" > "${JSON_OUTPUT_NAME}"
+    if ! jq -S '.' <<< "${json_output}" > "${JSON_OUTPUT_NAME}"; then
+        echo "Error: failed to write JSON output to ${JSON_OUTPUT_NAME}." >&2
+        exit 8
+    fi
     echo "Validation errors found. See ${JSON_OUTPUT_NAME} for details."
     exit 5
 elif [ ${#UNEXPECTED_DESCRIPTIONS[@]} -gt 0 ]; then
-    exit 3
+    exit 4
 fi
 
 echo "All validations passed successfully."

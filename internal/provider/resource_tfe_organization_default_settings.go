@@ -92,6 +92,7 @@ func (r *resourceTFEOrganizationDefaultSettings) Metadata(_ context.Context, req
 // Schema implements resource.Resource
 func (r *resourceTFEOrganizationDefaultSettings) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Manages default settings for an organization, primarily the default execution mode.",
 		Attributes: map[string]schema.Attribute{
 			"organization": schema.StringAttribute{
 				Description: "The name of the organization.",
@@ -103,7 +104,8 @@ func (r *resourceTFEOrganizationDefaultSettings) Schema(ctx context.Context, req
 			},
 
 			"default_execution_mode": schema.StringAttribute{
-				Required: true,
+				Description: "Which execution mode to use as the default for all workspaces in the organization. Valid values are remote, local or agent.",
+				Required:    true,
 				Validators: []validator.String{
 					stringvalidator.OneOf(ValidExecutionModes...),
 				},
@@ -113,7 +115,8 @@ func (r *resourceTFEOrganizationDefaultSettings) Schema(ctx context.Context, req
 			},
 
 			"default_agent_pool_id": schema.StringAttribute{
-				Optional: true,
+				Description: "The ID of an agent pool to assign as the default for workspaces in the organization. Requires default_execution_mode to be set to agent. This value must not be provided if default_execution_mode is set to any other value.",
+				Optional:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},

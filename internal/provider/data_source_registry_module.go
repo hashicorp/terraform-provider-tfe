@@ -259,10 +259,12 @@ func (d *dataSourceTFERegistryModule) Schema(_ context.Context, _ datasource.Sch
 				},
 			},
 			"test_config": schema.ListNestedBlock{
+				Description: "Test configuration indicating module testing setup.",
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
 						"tests_enabled": schema.BoolAttribute{
-							Computed: true,
+							Description: "Indicates whether tests are enabled for a module.",
+							Computed:    true,
 						},
 					},
 				},
@@ -276,55 +278,71 @@ func (d *dataSourceTFERegistryModule) Schema(_ context.Context, _ datasource.Sch
 							Computed:    true,
 						},
 						"status": schema.StringAttribute{
-							Computed: true,
+							Description: "Status of the module at specific version.",
+							Computed:    true,
 						},
 						"error": schema.StringAttribute{
-							Computed: true,
+							Description: "Error message reported by module at specific version.",
+							Computed:    true,
 						},
 					},
 				},
 			},
 			"vcs_repo": schema.ListNestedBlock{
+				Description: "Settings for the registry module's VCS repository.",
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
 						"branch": schema.StringAttribute{
-							Computed: true,
+							Description: "The git branch used for publishing when using branch-based publishing for the registry module. When a `branch` is set, `tags` will be returned as `false`.",
+							Computed:    true,
 						},
 						"display_identifier": schema.StringAttribute{
-							Computed: true,
+							Description: "The display identifier for your VCS repository. For most VCS providers outside of BitBucket Cloud and Azure DevOps, this will match the `identifier` string.",
+							Computed:    true,
 						},
 						"identifier": schema.StringAttribute{
-							Computed: true,
+							Description: "A reference to your VCS repository in the format `<organization>/<repository>` where `<organization>` and `<repository>` refer to the organization (or project key, for Bitbucket Data Center) and repository in your VCS provider. The format for Azure DevOps is `<ado organization>/<ado project>/_git/<ado repository>`.",
+							Computed:    true,
 						},
 						"ingress_submodules": schema.BoolAttribute{
-							Computed: true,
+							Description: "Indicates whether submodules should be fetched when cloning the VCS repository.",
+							Computed:    true,
 						},
 						"oauth_token_id": schema.StringAttribute{
-							Computed: true,
+							Description: "Token ID of the VCS Connection (OAuth Connection Token) to use. This conflicts with `github_app_installation_id` and can only be used if `github_app_installation_id` is not used.",
+							Computed:    true,
 						},
 						"github_app_installation_id": schema.StringAttribute{
-							Computed: true,
+							Description: "The installation id of the Github App. This conflicts with `oauth_token_id` and can only be used if `oauth_token_id` is not used.",
+							Computed:    true,
 						},
 						"repository_http_url": schema.StringAttribute{
-							Computed: true,
+							Description: "The browsable HTTPS URL of the VCS repository.",
+							Computed:    true,
 						},
 						"service_provider": schema.StringAttribute{
-							Computed: true,
+							Description: "The VCS service provider type. Valid values include `github`, `github_enterprise`, `gitlab_hosted`, `gitlab_community_edition`, `gitlab_enterprise_edition`, `bitbucket_hosted`, `bitbucket_data_center`, `bitbucket_server`, `ado_server`, `ado_services`.",
+							Computed:    true,
 						},
 						"source_directory": schema.StringAttribute{
-							Computed: true,
+							Description: "The path to the module configuration files within the VCS repository. This feature is currently in beta and is not available to all users.",
+							Computed:    true,
 						},
 						"tag_prefix": schema.StringAttribute{
-							Computed: true,
+							Description: "The prefix to filter repository Git tags when using the tag-based publishing type in a repository that contains code for multiple modules. Without a prefix, HCP Terraform and Terraform Enterprise publish new versions for all modules with valid Git tags that use semantic versioning. This feature is currently in beta and is not available to all users.",
+							Computed:    true,
 						},
 						"tags": schema.BoolAttribute{
-							Computed: true,
+							Description: "Specifies whether tag based publishing is enabled for the registry module. When `tags` is set to `true`, the `branch` must be set to an empty value.",
+							Computed:    true,
 						},
 						"tags_regex": schema.StringAttribute{
-							Computed: true,
+							Description: "Read-only echo of any tags regex stored on the VCS repository.",
+							Computed:    true,
 						},
 						"webhook_url": schema.StringAttribute{
-							Computed: true,
+							Description: "The inbound webhook URL registered with the VCS provider. This is the HCP Terraform or Terraform Enterprise endpoint that the VCS provider calls on push or pull-request events.",
+							Computed:    true,
 						},
 					},
 				},

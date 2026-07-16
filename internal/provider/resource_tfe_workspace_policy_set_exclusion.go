@@ -21,6 +21,8 @@ import (
 
 func resourceTFEWorkspacePolicySetExclusion() *schema.Resource {
 	return &schema.Resource{
+		Description: "Adds and removes policy sets from an excluded workspace.",
+
 		Create: resourceTFEWorkspacePolicySetExclusionCreate,
 		Read:   resourceTFEWorkspacePolicySetExclusionRead,
 		Delete: resourceTFEWorkspacePolicySetExclusionDelete,
@@ -30,15 +32,17 @@ func resourceTFEWorkspacePolicySetExclusion() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"policy_set_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "ID of the policy set.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"workspace_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "Excluded workspace ID to add the policy set to.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 		},
 	}

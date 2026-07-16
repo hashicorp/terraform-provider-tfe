@@ -55,7 +55,7 @@ func (d *dataSourceHYOKEncryptedDataKey) Metadata(ctx context.Context, req datas
 
 func (d *dataSourceHYOKEncryptedDataKey) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "This data source can be used to retrieve a HYOK customer key version.",
+		Description: "This data source can be used to retrieve a Hold Your Own Keys (HYOK) encrypted data key.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "The ID of the HYOK encrypted data key.",

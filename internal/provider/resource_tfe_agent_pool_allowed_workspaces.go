@@ -19,6 +19,8 @@ import (
 
 func resourceTFEAgentPoolAllowedWorkspaces() *schema.Resource {
 	return &schema.Resource{
+		Description: "Adds and removes allowed workspaces on an agent pool.",
+
 		Create: resourceTFEAgentPoolAllowedWorkspacesCreate,
 		Read:   resourceTFEAgentPoolAllowedWorkspacesRead,
 		Update: resourceTFEAgentPoolAllowedWorkspacesUpdate,
@@ -29,15 +31,17 @@ func resourceTFEAgentPoolAllowedWorkspaces() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"agent_pool_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "The ID of the agent pool.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"allowed_workspace_ids": {
-				Type:     schema.TypeSet,
-				Required: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "IDs of workspaces to be added as allowed workspaces on the agent pool.",
+				Type:        schema.TypeSet,
+				Required:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
 	}

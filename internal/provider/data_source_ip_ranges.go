@@ -75,7 +75,7 @@ func (d *dataSourceTFEIPRanges) Metadata(_ context.Context, req datasource.Metad
 
 func (d *dataSourceTFEIPRanges) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "This data source can be used to retrieve a list of HCP Terraform's IP ranges.",
+		MarkdownDescription: "This data source can be used to retrieve a list of HCP Terraform's IP ranges. For more information about these IP ranges, view our [documentation about HCP Terraform IP Ranges](https://developer.hashicorp.com/terraform/cloud-docs/architectural-details/ip-ranges).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "Static identifier for HCP Terraform's IP ranges data source.",

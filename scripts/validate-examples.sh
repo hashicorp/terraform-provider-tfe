@@ -3,16 +3,20 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # Usage:
-#   ./scripts/validate-examples.sh [-o <json holding failure data; ./examples/failure_info.json] [-e <json holding errors to except; no default] [--help]
+#   ./scripts/validate-examples.sh
+#
+# Environment variables:
+#   EXCEPTIONS_FILE    JSON file with error/warning exceptions to ignore
+#                      (unset by default — runs without exceptions)
+#   JSON_OUTPUT_NAME   Output JSON file for failures (default: ./failure_info.json)
 #
 # Exit codes:
 #  0 - Complete success
-#  1 - Generic errors (including command line args)
 #  3 - Warnings found in examples, no errors
 #  4 - Warning that unused exceptions were found in error_exceptions.json
-#  5 - Errors found in examples
+#  5 - Errors found in examples or a missing examples directory
 #  6 - Required commands (terraform, jq, go) not found
-#  7 - Input files/directories do not exist
+#  7 - Exceptions file does not exist
 #  8 - Internal data merge error
 #  9 - Failure to build provider
 
@@ -22,8 +26,6 @@ set -e
 
 # Variables with defaults
 SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
-JSON_OUTPUT_NAME="failure_info.json"
-EXCEPTIONS_FILE=""
 TEMP_BREAKING_INFO=""
 HAS_ERRORS=false
 HAS_WARNINGS=false
@@ -34,58 +36,22 @@ UNUSED_EXCEPTIONS=()
 PROVIDER_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 TARGET_DIR="${PROVIDER_DIR}/examples"
 
+# Environment variable overrides with defaults
+EXCEPTIONS_FILE="${EXCEPTIONS_FILE:-}"
+JSON_OUTPUT_NAME="${JSON_OUTPUT_NAME:-failure_info.json}"
+
 # Constants
 JQ_ERROR_PROCESSING='{"diagnostics":[{"severity":"error","summary":"Processing error","detail":"jq processing failed"}],"error_count":1,"warning_count":0}'
 
-# Arg parsing
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        -o|--output)
-            JSON_OUTPUT_NAME="$2"
-            shift 2
-            ;;
-        -e|--exceptions)
-            EXCEPTIONS_FILE="$2"
-            shift 2
-            ;;
-        -h|--help)
-            echo "Usage: $0 [OPTIONS]"
-            echo ""
-            echo "Validates Terraform files in the examples directory."
-            echo ""
-            echo "Options:"
-            echo "  -o, --output FILE           Output JSON file for failures (default: ./failure_info.json)"
-            echo "  -e, --exceptions FILE       JSON file with error/warning exceptions to ignore"
-            echo "  -h, --help                  Show this help message"
-            echo ""
-            echo "Exit Codes:"
-            echo "  0 - Complete success"
-            echo "  3 - Warnings found in examples, no errors"
-            echo "  4 - Unused exceptions found in error_exceptions.json"
-            echo "  5 - Errors found in examples"
-            echo "  6 - Required commands (terraform, jq, go) not found"
-            echo "  7 - Input files/directories do not exist"
-            echo "  8 - Internal data merge error"
-            echo "  9 - Failure to build provider"
-            exit 0
-            ;;
-        *)
-            echo "Unknown option: $1"
-            echo "Use -h or --help for usage information"
-            exit 1
-            ;;
-    esac
-done
-
 # Terraform, jq, and go dependencies
 # These can erroneously pass if the command name exists, but don't refer to the real tool
-if ! command -v terraform >/dev/null 2>&1; then
-    echo "Error: terraform command not found. Please install Terraform." >&2
+if ! command -v jq >/dev/null 2>&1; then
+    echo "Error: jq command not found. Please install jq for JSON processing." >&2
     exit 6
 fi
 
-if ! command -v jq >/dev/null 2>&1; then
-    echo "Error: jq command not found. Please install jq for JSON processing." >&2
+if ! command -v terraform >/dev/null 2>&1; then
+    echo "Error: terraform command not found. Please install Terraform." >&2
     exit 6
 fi
 
@@ -94,19 +60,25 @@ if ! command -v go >/dev/null 2>&1; then
     exit 6
 fi
 
-# Check if TARGET_DIR exists
+# Missing examples directory is a validation failure, same as no examples present.
 if [ ! -d "${TARGET_DIR}" ]; then
-    echo "Error: Examples directory does not exist: ${TARGET_DIR}"
-    exit 7
+    echo "Error: Examples directory does not exist: ${TARGET_DIR}" >&2
+    exit 5
 fi
 
 # Check if EXCEPTIONS_FILE exists and make it absolute, if provided
 if [ -n "${EXCEPTIONS_FILE}" ]; then
     if [ ! -f "${EXCEPTIONS_FILE}" ]; then
-        echo "Error: Exceptions file does not exist: ${EXCEPTIONS_FILE}"
+        echo "Error: Exceptions file does not exist: ${EXCEPTIONS_FILE}" >&2
         exit 7
     fi
     EXCEPTIONS_FILE="$(cd "$(dirname "${EXCEPTIONS_FILE}")" && pwd)/$(basename "${EXCEPTIONS_FILE}")"
+    if ! jq -e '.' "${EXCEPTIONS_FILE}" >/dev/null 2>&1; then
+        echo "Error: exceptions file is not valid JSON: ${EXCEPTIONS_FILE}" >&2
+        exit 8
+    fi
+else
+    echo "Warning: no exceptions file configured; running without file_exceptions filtering" >&2
 fi
 
 # Create temp working directory and register cleanup
@@ -122,13 +94,13 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 # Build provider binary
-echo "Building provider"
+echo "Building provider..."
 # Prepare the direct, temporary location for the built binary
 PLUGIN_DIR="${TEST_DIR}/provider-bin"
 mkdir -p "${PLUGIN_DIR}"
 PROVIDER_BINARY="${PLUGIN_DIR}/terraform-provider-tfe"
 # Build the binary
-if ! (cd "${PROVIDER_DIR}" && go build -o "${PROVIDER_BINARY}" 2>&1) >/dev/null; then
+if ! (cd "${PROVIDER_DIR}" && go build -o "${PROVIDER_BINARY}" > /dev/null); then
     echo "Error: failed to build provider binary." >&2
     exit 9
 fi
@@ -194,8 +166,11 @@ while IFS= read -r -d '' path; do
     # Apply file-specific exceptions, if provided
     if [ -n "${EXCEPTIONS_FILE}" ]; then
         # Check whether this file has any exceptions defined
-        has_exceptions=$(jq --arg path "${relative_path}" '.file_exceptions | has($path)' "${EXCEPTIONS_FILE}" 2>/dev/null)
-        
+        if ! has_exceptions=$(jq --arg path "${relative_path}" '.file_exceptions | has($path)' "${EXCEPTIONS_FILE}"); then
+            echo "Error: failed to read file_exceptions from ${EXCEPTIONS_FILE}" >&2
+            exit 8
+        fi
+
         # Then destroy those errors/warnings
         if [ "${has_exceptions}" = "true" ]; then
             # Find which individual exception summaries did not match any diagnostic
@@ -203,7 +178,7 @@ while IFS= read -r -d '' path; do
                 ($exceptions[0].file_exceptions[$path] // []) as $exception_list |
                 ($exception_list - ([.diagnostics[]?.summary] | unique)) |
                 .[]
-            ' 2>/dev/null || echo "")
+            ' || echo "")
             if [ -n "${unmatched}" ]; then
                 while IFS= read -r summary; do
                     UNUSED_EXCEPTIONS+=("${relative_path}: \"${summary}\"")
@@ -260,9 +235,9 @@ if [ -n "${EXCEPTIONS_FILE}" ]; then
         if [ ! -f "${TARGET_DIR}/${key}" ]; then
             while IFS= read -r summary; do
                 UNUSED_EXCEPTIONS+=("${key}: \"${summary}\"")
-            done < <(jq -r --arg p "${key}" '.file_exceptions[$p][]' "${EXCEPTIONS_FILE}" 2>/dev/null)
+            done < <(jq -r --arg p "${key}" '.file_exceptions[$p][]?' "${EXCEPTIONS_FILE}")
         fi
-    done < <(jq -r '.file_exceptions | keys[]' "${EXCEPTIONS_FILE}" 2>/dev/null)
+    done < <(jq -r '.file_exceptions | keys? | .[]?' "${EXCEPTIONS_FILE}")
 fi
 
 # Report unused exceptions
@@ -275,17 +250,23 @@ if [ ${#UNUSED_EXCEPTIONS[@]} -gt 0 ]; then
         echo "  - ${unused}"
     done
     echo ""
-    echo "Consider removing these entries from file_exceptions in error_exceptions.json"
+    echo "Consider removing these entries from file_exceptions in ${EXCEPTIONS_FILE}"
     echo ""
 fi
 
 # Collapse into the 'standard' exit codes and make sorted json output should errors exist
 if [ "${HAS_ERRORS}" = "true" ]; then
-    jq -S '.' "${TEMP_BREAKING_INFO}" > "${JSON_OUTPUT_NAME}"
+    if ! jq -S '.' "${TEMP_BREAKING_INFO}" > "${JSON_OUTPUT_NAME}"; then
+        echo "Error: failed to write JSON output to ${JSON_OUTPUT_NAME}." >&2
+        exit 8
+    fi
     echo "Validation errors found. See ${JSON_OUTPUT_NAME} for details."
     exit 5
 elif [ "${HAS_WARNINGS}" = "true" ]; then
-    jq -S '.' "${TEMP_BREAKING_INFO}" > "${JSON_OUTPUT_NAME}"
+    if ! jq -S '.' "${TEMP_BREAKING_INFO}" > "${JSON_OUTPUT_NAME}"; then
+        echo "Error: failed to write JSON output to ${JSON_OUTPUT_NAME}." >&2
+        exit 8
+    fi
     echo "Warnings found. See ${JSON_OUTPUT_NAME} for details."
     exit 3
 elif [ ${#UNUSED_EXCEPTIONS[@]} -gt 0 ]; then

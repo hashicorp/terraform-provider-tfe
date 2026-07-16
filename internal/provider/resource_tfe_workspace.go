@@ -30,6 +30,8 @@ var workspaceIDRegexp = regexp.MustCompile("^ws-[a-zA-Z0-9]{16}$")
 
 func resourceTFEWorkspace() *schema.Resource {
 	return &schema.Resource{
+		Description: "Provides a workspace resource.",
+
 		Create: resourceTFEWorkspaceCreate,
 		Read:   resourceTFEWorkspaceRead,
 		Update: resourceTFEWorkspaceUpdate,
@@ -94,21 +96,24 @@ func resourceTFEWorkspace() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "Name of the workspace.",
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    true,
+				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
 			},
 
 			"description": {
-				Type:     schema.TypeString,
-				Computed: true,
-				Optional: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Optional:    true,
+				Description: "A description for the workspace.",
 			},
 
 			"agent_pool_id": {
@@ -117,30 +122,35 @@ func resourceTFEWorkspace() *schema.Resource {
 				Computed:      true,
 				ConflictsWith: []string{"operations"},
 				Deprecated:    "Use resource tfe_workspace_settings to modify the workspace execution settings. This attribute will be removed in a future release of the provider.",
+				Description:   "**Deprecated** The ID of an agent pool to assign to the workspace. Use tfe_workspace_settings instead.",
 			},
 
 			"allow_destroy_plan": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				Description: "Whether destroy plans can be queued on the workspace.",
 			},
 
 			"auto_apply": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Computed: true,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+				Description: "Whether to automatically apply changes when a Terraform plan is successful. Defaults to `false`.",
 			},
 
 			"auto_apply_run_trigger": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "Whether to automatically apply changes for runs that were created by run triggers from another workspace. Defaults to `false`.",
 			},
 
 			"auto_destroy_at": {
-				Type:     schema.TypeString,
-				Computed: true,
-				Optional: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Optional:    true,
+				Description: "A future date/time string at which point all resources in a workspace will be scheduled for deletion. Must be RFC3339 format (e.g. \"2100-01-01T00:00:00Z\"). Conflicts with `auto_destroy_activity_duration`.",
 			},
 
 			"auto_destroy_activity_duration": {
@@ -149,6 +159,7 @@ func resourceTFEWorkspace() *schema.Resource {
 				Optional:      true,
 				ConflictsWith: []string{"auto_destroy_at"},
 				ValidateFunc:  validation.StringMatch(regexp.MustCompile(`^\d{1,4}[dh]$`), "must be 1-4 digits followed by d or h"),
+				Description:   "A duration after workspace activity to automatically schedule an auto-destroy run. Must be of the form `<number><unit>` where unit is \"d\" (days) or \"h\" (hours). Conflicts with `auto_destroy_at`.",
 			},
 
 			"execution_mode": {
@@ -165,40 +176,46 @@ func resourceTFEWorkspace() *schema.Resource {
 					},
 					false,
 				),
+				Description: "**Deprecated** Which execution mode to use. Valid values are `remote`, `local`, or `agent`. Use tfe_workspace_settings instead.",
 			},
 
 			"file_triggers_enabled": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				Description: "Whether to filter runs based on the changed files in a VCS push. If enabled, the working directory and trigger prefixes describe paths which must contain changes for a VCS push to trigger a run. If disabled, any push will trigger a run. Defaults to `true`.",
 			},
 
 			"global_remote_state": {
-				Type:       schema.TypeBool,
-				Optional:   true,
-				Computed:   true,
-				Deprecated: "Use resource `tfe_workspace_settings` to modify the workspace `global_remote_state`. `global_remote_state` on `tfe_workspace` is no longer validated properly and will be removed in a future release of the provider.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+				Deprecated:  "Use resource `tfe_workspace_settings` to modify the workspace `global_remote_state`. `global_remote_state` on `tfe_workspace` is no longer validated properly and will be removed in a future release of the provider.",
+				Description: "**Deprecated** Whether the workspace allows all workspaces in the organization to access its state data during runs. Use tfe_workspace_settings instead.",
 			},
 
 			"inherits_project_auto_destroy": {
-				Type:     schema.TypeBool,
-				Optional: false,
-				Computed: true,
-				Required: false,
+				Type:        schema.TypeBool,
+				Optional:    false,
+				Computed:    true,
+				Required:    false,
+				Description: "Indicates whether this workspace inherits project auto destroy settings.",
 			},
 
 			"remote_state_consumer_ids": {
-				Type:       schema.TypeSet,
-				Optional:   true,
-				Computed:   true,
-				Elem:       &schema.Schema{Type: schema.TypeString},
-				Deprecated: "Use resource `tfe_workspace_settings` to modify the workspace `remote_state_consumer_ids`. `remote_state_consumer_ids` on `tfe_workspace` is no longer validated properly on this resource and This attribute will be removed in a future release of the provider.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Deprecated:  "Use resource `tfe_workspace_settings` to modify the workspace `remote_state_consumer_ids`. `remote_state_consumer_ids` on `tfe_workspace` is no longer validated properly on this resource and This attribute will be removed in a future release of the provider.",
+				Description: "**Deprecated** The set of workspace IDs set as explicit remote state consumers for the given workspace. Use tfe_workspace_settings instead.",
 			},
 
 			"assessments_enabled": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Computed: true,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+				Description: "Whether to regularly run health assessments such as drift detection on the workspace. Defaults to `false`.",
 			},
 
 			"operations": {
@@ -207,24 +224,28 @@ func resourceTFEWorkspace() *schema.Resource {
 				Computed:      true,
 				Deprecated:    "Use tfe_workspace_settings to modify the workspace execution settings. This attribute will be removed in a future release of the provider.",
 				ConflictsWith: []string{"execution_mode", "agent_pool_id"},
+				Description:   "**Deprecated** Whether to use remote execution mode. When set to `false`, the workspace will be used for state storage only. Use tfe_workspace_settings instead.",
 			},
 
 			"project_id": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "ID of the project where the workspace should be created.",
 			},
 
 			"queue_all_runs": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				Description: "Whether the workspace should start automatically performing runs immediately after its creation. When set to `false`, runs triggered by a webhook will not be queued until at least one run has been manually queued. Defaults to `true`.",
 			},
 
 			"source_name": {
 				Type:         schema.TypeString,
 				Optional:     true,
 				RequiredWith: []string{"source_url"},
+				Description:  "A friendly name for the application or client creating this workspace. If set, this will be displayed on the workspace as \"Created via <SOURCE NAME>\". Requires `source_url`. Cannot be updated after creation.",
 			},
 
 			"source_url": {
@@ -232,36 +253,42 @@ func resourceTFEWorkspace() *schema.Resource {
 				Optional:     true,
 				ValidateFunc: validation.IsURLWithHTTPorHTTPS,
 				RequiredWith: []string{"source_name"},
+				Description:  "A URL for the application or client creating this workspace. Requires `source_name`. Cannot be updated after creation.",
 			},
 
 			"speculative_enabled": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				Description: "Whether this workspace allows speculative plans. Setting this to `false` prevents HCP Terraform or the Terraform Enterprise instance from running plans on pull requests. Defaults to `true`.",
 			},
 
 			"ssh_key_id": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "",
+				Description: "The ID of an SSH key to assign to the workspace.",
 			},
 
 			"structured_run_output_enabled": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				Description: "Whether this workspace should show output from Terraform runs using the enhanced UI when available. Setting this to `false` ensures all runs in this workspace will display their output as text logs. Defaults to `true`.",
 			},
 
 			"tag_names": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Description: "A list of tag names for this workspace. Tags must only contain lowercase letters, numbers, colons, or hyphens.",
 			},
 
 			"ignore_additional_tag_names": {
-				Type:     schema.TypeBool,
-				Optional: true,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Explicitly ignores `tag_names` not defined by config so they will not be overwritten by the configured tags.",
 			},
 
 			"tags": {
@@ -271,11 +298,13 @@ func resourceTFEWorkspace() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
+				Description: "A map of key value tags for this workspace.",
 			},
 
 			"ignore_additional_tags": {
-				Type:     schema.TypeBool,
-				Optional: true,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Explicitly ignores `tags` not defined by config so they will not be overwritten by the configured tags.",
 			},
 
 			"effective_tags": {
@@ -284,12 +313,14 @@ func resourceTFEWorkspace() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
+				Description: "A map of key value tags for this workspace, including any tags inherited from the parent project.",
 			},
 
 			"terraform_version": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The version of Terraform to use for this workspace. This can be an exact version or a version constraint (e.g. `~> 1.0.0`). Defaults to the latest available version.",
 			},
 
 			"trigger_prefixes": {
@@ -297,6 +328,7 @@ func resourceTFEWorkspace() *schema.Resource {
 				Optional:      true,
 				Elem:          &schema.Schema{Type: schema.TypeString},
 				ConflictsWith: []string{"trigger_patterns"},
+				Description:   "List of repository-root-relative paths which describe all locations to be tracked for changes.",
 			},
 
 			"trigger_patterns": {
@@ -304,47 +336,55 @@ func resourceTFEWorkspace() *schema.Resource {
 				Optional:      true,
 				Elem:          &schema.Schema{Type: schema.TypeString},
 				ConflictsWith: []string{"trigger_prefixes"},
+				Description:   "List of glob patterns that describe the files HCP Terraform monitors for changes. Trigger patterns are always appended to the root directory of the repository. Mutually exclusive with `trigger_prefixes`.",
 			},
 
 			"working_directory": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "",
+				Description: "A relative path that Terraform will execute within. Defaults to the root of your repository.",
 			},
 
 			"vcs_repo": {
-				Type:     schema.TypeList,
-				Optional: true,
-				MinItems: 1,
-				MaxItems: 1,
+				Type:        schema.TypeList,
+				Optional:    true,
+				MinItems:    1,
+				MaxItems:    1,
+				Description: "Settings for the workspace's VCS repository, enabling the UI/VCS-driven run workflow. Omit this argument to utilize the CLI-driven or API-driven workflows, where runs are not driven by webhooks on your VCS provider.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"identifier": {
-							Type:     schema.TypeString,
-							Required: true,
+							Type:        schema.TypeString,
+							Required:    true,
+							Description: "A reference to your VCS repository in the format `<vcs organization>/<repository>`. For Azure DevOps: `<ado organization>/<ado project>/_git/<ado repository>`.",
 						},
 
 						"branch": {
-							Type:     schema.TypeString,
-							Optional: true,
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "The repository branch that Terraform will execute from. Defaults to the repository's default branch (e.g. main).",
 						},
 
 						"ingress_submodules": {
-							Type:     schema.TypeBool,
-							Optional: true,
-							Default:  false,
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Whether submodules should be fetched when cloning the VCS repository. Defaults to `false`.",
 						},
 
 						"oauth_token_id": {
 							Type:          schema.TypeString,
 							Optional:      true,
 							ConflictsWith: []string{"vcs_repo.0.github_app_installation_id"},
+							Description:   "The VCS Connection (OAuth Connection + Token) to use. This ID can be obtained from a tfe_oauth_client resource. Conflicts with `github_app_installation_id`.",
 						},
 
 						"tags_regex": {
 							Type:          schema.TypeString,
 							Optional:      true,
 							ConflictsWith: []string{"trigger_patterns", "trigger_prefixes"},
+							Description:   "A regular expression used to trigger a workspace run for matching Git tags. Conflicts with `trigger_patterns` and `trigger_prefixes`.",
 						},
 
 						"github_app_installation_id": {
@@ -352,26 +392,31 @@ func resourceTFEWorkspace() *schema.Resource {
 							Optional:      true,
 							ConflictsWith: []string{"vcs_repo.0.oauth_token_id"},
 							AtLeastOneOf:  []string{"vcs_repo.0.oauth_token_id", "vcs_repo.0.github_app_installation_id"},
+							Description:   "The installation ID of the GitHub App. Conflicts with `oauth_token_id`.",
 						},
 					},
 				},
 			},
 			"force_delete": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "If true, the workspace will be force deleted when destroyed via this provider, even if the workspace contains resources managed by Terraform.",
 			},
 			"resource_count": {
-				Type:     schema.TypeInt,
-				Computed: true,
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "The number of resources managed by the workspace.",
 			},
 			"html_url": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The URL to the browsable HTML overview of the workspace.",
 			},
 			"hyok_enabled": {
-				Type:     schema.TypeBool,
-				Optional: true,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Whether HYOK (Hold Your Own Key) is enabled for the workspace. Available only in HCP Terraform.",
 			},
 		},
 	}

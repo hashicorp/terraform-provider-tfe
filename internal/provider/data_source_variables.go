@@ -161,33 +161,120 @@ func (d *dataSourceTFEVariables) Schema(_ context.Context, _ datasource.SchemaRe
 		Description: "This data source can be used to retrieve all variables in a workspace or variable set.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				Description: "Static identifier for the variables group in the workspace.",
+				Computed:    true,
 			},
 
 			"workspace_id": schema.StringAttribute{
-				Optional: true,
+				Description: "ID of the workspace.",
+				Optional:    true,
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("variable_set_id")),
 				},
 			},
 
 			"variable_set_id": schema.StringAttribute{
-				Optional: true,
+				Description: "ID of the variable set. One of this or `workspace_id` is required.",
+				Optional:    true,
 			},
 
-			"env": schema.ListAttribute{
+			"env": schema.ListNestedAttribute{
+				Description: "List containing environment variables configured on the workspace.",
 				Computed:    true,
-				ElementType: variableType,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"id": schema.StringAttribute{
+							Description: "The variable ID.",
+							Computed:    true,
+						},
+						"name": schema.StringAttribute{
+							Description: "The variable Key name.",
+							Computed:    true,
+						},
+						"value": schema.StringAttribute{
+							Description: "The variable value. If the variable is sensitive this value will be empty.",
+							Computed:    true,
+						},
+						"category": schema.StringAttribute{
+							Description: "The category of the variable. Valid values are `terraform` or `env`.",
+							Computed:    true,
+						},
+						"hcl": schema.BoolAttribute{
+							Description: "Whether the variable is HCL formatted.",
+							Computed:    true,
+						},
+						"sensitive": schema.BoolAttribute{
+							Description: "Whether the variable's value is sensitive and hidden.",
+							Computed:    true,
+						},
+					},
+				},
 			},
 
-			"terraform": schema.ListAttribute{
+			"terraform": schema.ListNestedAttribute{
+				Description: "List containing terraform variables configured on the workspace.",
 				Computed:    true,
-				ElementType: variableType,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"id": schema.StringAttribute{
+							Description: "The variable ID.",
+							Computed:    true,
+						},
+						"name": schema.StringAttribute{
+							Description: "The variable Key name.",
+							Computed:    true,
+						},
+						"value": schema.StringAttribute{
+							Description: "The variable value. If the variable is sensitive this value will be empty.",
+							Computed:    true,
+						},
+						"category": schema.StringAttribute{
+							Description: "The category of the variable. Valid values are `terraform` or `env`.",
+							Computed:    true,
+						},
+						"hcl": schema.BoolAttribute{
+							Description: "Whether the variable is HCL formatted.",
+							Computed:    true,
+						},
+						"sensitive": schema.BoolAttribute{
+							Description: "Whether the variable's value is sensitive and hidden.",
+							Computed:    true,
+						},
+					},
+				},
 			},
 
-			"variables": schema.ListAttribute{
+			"variables": schema.ListNestedAttribute{
+				Description: "List containing terraform and environment variables configured on the workspace.",
 				Computed:    true,
-				ElementType: variableType,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"id": schema.StringAttribute{
+							Description: "The variable ID.",
+							Computed:    true,
+						},
+						"name": schema.StringAttribute{
+							Description: "The variable Key name.",
+							Computed:    true,
+						},
+						"value": schema.StringAttribute{
+							Description: "The variable value. If the variable is sensitive this value will be empty.",
+							Computed:    true,
+						},
+						"category": schema.StringAttribute{
+							Description: "The category of the variable. Valid values are `terraform` or `env`.",
+							Computed:    true,
+						},
+						"hcl": schema.BoolAttribute{
+							Description: "Whether the variable is HCL formatted.",
+							Computed:    true,
+						},
+						"sensitive": schema.BoolAttribute{
+							Description: "Whether the variable's value is sensitive and hidden.",
+							Computed:    true,
+						},
+					},
+				},
 			},
 		},
 	}
