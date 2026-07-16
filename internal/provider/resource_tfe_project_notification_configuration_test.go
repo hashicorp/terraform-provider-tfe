@@ -46,6 +46,8 @@ func TestAccTFEProjectNotificationConfiguration_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_project_notification_configuration.foobar", "name", "notification_basic"),
 					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "token", "1234567890"),
+					resource.TestCheckResourceAttr(
 						"tfe_project_notification_configuration.foobar", "triggers.#", "0"),
 					resource.TestCheckResourceAttr(
 						"tfe_project_notification_configuration.foobar", "url", runTasksURL()),
@@ -128,6 +130,8 @@ func TestAccTFEProjectNotificationConfiguration_update(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_project_notification_configuration.foobar", "name", "notification_basic"),
 					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "token", "1234567890"),
+					resource.TestCheckResourceAttr(
 						"tfe_project_notification_configuration.foobar", "triggers.#", "0"),
 					resource.TestCheckResourceAttr(
 						"tfe_project_notification_configuration.foobar", "url", runTasksURL()),
@@ -195,6 +199,46 @@ func TestAccTFEProjectNotificationConfiguration_validateSchemaAttributesSlack(t 
 	})
 }
 
+func TestAccTFEProjectNotificationConfiguration_slack(t *testing.T) {
+	skipUnlessBeta(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
+	project := createProject(t, tfeClient, org.Name, tfe.ProjectCreateOptions{
+		Name: "test-project",
+	})
+
+	notificationConfiguration := &tfe.NotificationConfiguration{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { preCheckTFEProjectNotificationConfiguration(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEProjectNotificationConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEProjectNotificationConfiguration_slack(org.Name, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEProjectNotificationConfigurationExists(
+						"tfe_project_notification_configuration.foobar", notificationConfiguration),
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "destination_type", "slack"),
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "name", "notification_slack"),
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "url", runTasksURL()),
+					resource.TestCheckNoResourceAttr(
+						"tfe_project_notification_configuration.foobar", "token"),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckTFEProjectNotificationConfigurationExists(n string, notificationConfiguration *tfe.NotificationConfiguration) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
@@ -233,10 +277,6 @@ func testAccCheckTFEProjectNotificationConfigurationAttributes(notificationConfi
 
 		if notificationConfiguration.Enabled {
 			return fmt.Errorf("bad enabled: %t", notificationConfiguration.Enabled)
-		}
-
-		if notificationConfiguration.Token != "1234567890" {
-			return fmt.Errorf("bad token: %s", notificationConfiguration.Token)
 		}
 
 		if len(notificationConfiguration.Triggers) != 0 {
@@ -291,15 +331,11 @@ func testAccCheckTFEProjectNotificationConfigurationAttributesUpdate(notificatio
 			return fmt.Errorf("bad enabled: %t", notificationConfiguration.Enabled)
 		}
 
-		if notificationConfiguration.Token != "1234567890_update" {
-			return fmt.Errorf("bad token: %s", notificationConfiguration.Token)
-		}
-
 		if len(notificationConfiguration.Triggers) != 1 {
 			return fmt.Errorf("bad triggers: %v", notificationConfiguration.Triggers)
 		}
 
-		if !reflect.DeepEqual(notificationConfiguration.Triggers, []string{"change_request:created"}) {
+		if !reflect.DeepEqual(notificationConfiguration.Triggers, []string{"run:applying"}) {
 			return fmt.Errorf("bad triggers: %v", notificationConfiguration.Triggers)
 		}
 
@@ -372,7 +408,21 @@ resource "tfe_project_notification_configuration" "foobar" {
   destination_type = "generic"
   enabled          = true
   token            = "1234567890_update"
-  triggers         = ["change_request:created"]
+  triggers         = ["run:applying"]
+  url              = "%s"
+  project_id       = "%s"
+}`, orgName, runTasksURL(), projectID)
+}
+
+func testAccTFEProjectNotificationConfiguration_slack(orgName, projectID string) string {
+	return fmt.Sprintf(`
+data "tfe_organization" "foobar" {
+  name = "%s"
+}
+
+resource "tfe_project_notification_configuration" "foobar" {
+  name             = "notification_slack"
+  destination_type = "slack"
   url              = "%s"
   project_id       = "%s"
 }`, orgName, runTasksURL(), projectID)

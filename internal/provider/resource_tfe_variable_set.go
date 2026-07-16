@@ -23,6 +23,8 @@ var variableSetIDRegexp = regexp.MustCompile("varset-[a-zA-Z0-9]{16}$")
 
 func resourceTFEVariableSet() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manages variable sets.",
+
 		Create: resourceTFEVariableSetCreate,
 		Read:   resourceTFEVariableSetRead,
 		Update: resourceTFEVariableSetUpdate,
@@ -59,16 +61,19 @@ func resourceTFEVariableSet() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "Name of the variable set.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"description": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "Description of the variable set.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 
 			"global": {
+				Description:   "Whether the variable set applies to all workspaces in the organization. Defaults to false. Conflicts with workspace_ids.",
 				Type:          schema.TypeBool,
 				Optional:      true,
 				Default:       false,
@@ -76,37 +81,42 @@ func resourceTFEVariableSet() *schema.Resource {
 			},
 
 			"priority": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
+				Description: "Whether the variables in this set can be over-written by more specific scopes including values set on the command line. Defaults to false.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-				ForceNew: true,
+				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    true,
 			},
 
 			"workspace_ids": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "IDs of the workspaces that use the variable set. Must not be set if global is set. Deprecated: Use the tfe_workspace_variable_set resource instead, which is the preferred method of associating a workspace with a variable set.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 
 			"stack_ids": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "IDs of the stacks that use the variable set.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 
 			"parent_project_id": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-				ForceNew: true,
+				Description: "ID of the project that should own the variable set. If set, the value of global must be false. To assign whether a variable set should be applied to a project, use the tfe_project_variable_set resource.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    true,
 			},
 		},
 	}

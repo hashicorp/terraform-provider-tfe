@@ -65,71 +65,93 @@ func (d *dataSourceTFESAMLSettings) Schema(_ context.Context, _ datasource.Schem
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				Description: "ID of the SAML settings. It is always `saml`.",
+				Computed:    true,
 			},
 			"enabled": schema.BoolAttribute{
-				Computed: true,
+				Description: "Whether SAML single sign-on is enabled.",
+				Computed:    true,
 			},
 			"debug": schema.BoolAttribute{
-				Computed: true,
+				Description: "Whether debug mode is enabled, which means that the SAMLResponse XML will be displayed on the login page.",
+				Computed:    true,
 			},
 			"team_management_enabled": schema.BoolAttribute{
-				Computed: true,
+				Description: "Whether Terraform Enterprise is set to manage team membership.",
+				Computed:    true,
 			},
 			"authn_requests_signed": schema.BoolAttribute{
-				Computed: true,
+				Description: "Whether `<samlp:AuthnRequest>` messages are signed.",
+				Computed:    true,
 			},
 			"want_assertions_signed": schema.BoolAttribute{
-				Computed: true,
+				Description: "Whether `<saml:Assertion>` elements are signed.",
+				Computed:    true,
 			},
 			"idp_cert": schema.StringAttribute{
-				Computed: true,
+				Description: "PEM encoded X.509 Certificate as provided by the IdP configuration.",
+				Computed:    true,
 			},
 			"old_idp_cert": schema.StringAttribute{
-				Computed: true,
+				Description: "Previous version of the PEM encoded X.509 Certificate as provided by the IdP configuration.",
+				Computed:    true,
 			},
 			"slo_endpoint_url": schema.StringAttribute{
-				Computed: true,
+				Description: "Single Log Out URL.",
+				Computed:    true,
 			},
 			"sso_endpoint_url": schema.StringAttribute{
-				Computed: true,
+				Description: "Single Sign On URL.",
+				Computed:    true,
 			},
 			"attr_username": schema.StringAttribute{
-				Computed: true,
+				Description: "Name of the SAML attribute that determines the user's username.",
+				Computed:    true,
 			},
 			"attr_groups": schema.StringAttribute{
-				Computed: true,
+				Description: "Name of the SAML attribute that determines team membership.",
+				Computed:    true,
 			},
 			"attr_site_admin": schema.StringAttribute{
-				Computed: true,
+				Description: "Site admin access role.",
+				Computed:    true,
 			},
 			"site_admin_role": schema.StringAttribute{
-				Computed: true,
+				Description: "Site admin access role.",
+				Computed:    true,
 			},
 			"sso_api_token_session_timeout": schema.Int64Attribute{
-				Computed: true,
+				Description: "Single Sign On session timeout in seconds.",
+				Computed:    true,
 			},
 			"acs_consumer_url": schema.StringAttribute{
-				Computed: true,
+				Description: "ACS Consumer (Recipient) URL.",
+				Computed:    true,
 			},
 			"metadata_url": schema.StringAttribute{
-				Computed: true,
+				Description: "Metadata (Audience) URL.",
+				Computed:    true,
 			},
 			"certificate": schema.StringAttribute{
-				Computed: true,
+				Description: "Request and assertion signing certificate.",
+				Computed:    true,
 			},
 			"private_key": schema.StringAttribute{
-				Computed:  true,
-				Sensitive: true,
+				Description: "The private key used for request and assertion signing.",
+				Computed:    true,
+				Sensitive:   true,
 			},
 			"signature_signing_method": schema.StringAttribute{
-				Computed: true,
+				Description: "Signature Signing Method.",
+				Computed:    true,
 			},
 			"signature_digest_method": schema.StringAttribute{
-				Computed: true,
+				Description: "Signature Digest Method.",
+				Computed:    true,
 			},
 			"provider_type": schema.StringAttribute{
-				Computed: true,
+				Description: "The type of identity provider used. One of `okta`, `entra`, `saml`, or `unknown`.",
+				Computed:    true,
 			},
 		},
 	}

@@ -123,7 +123,7 @@ func testAccTFEStackResourceConfig(orgName, ghToken, ghRepoIdentifier string) st
 
 func testAccTFEStackResourceConfigFull(orgName, ghToken, ghRepoIdentifier string) string {
 	var builder strings.Builder
-	_, _ = fmt.Fprintf(&builder, `
+	fmt.Fprintf(&builder, `
 resource "tfe_organization" "foobar" {
   name  = "%s"
   email = "admin@tfe.local"
@@ -160,8 +160,8 @@ resource "tfe_stack" "foobar" {
     identifier         = "%s"
     oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
   }
+}
 `, orgName, ghToken, ghRepoIdentifier)
-	builder.WriteString("}")
 	return builder.String()
 }
 

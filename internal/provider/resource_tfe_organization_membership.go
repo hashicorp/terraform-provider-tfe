@@ -21,6 +21,8 @@ import (
 
 func resourceTFEOrganizationMembership() *schema.Resource {
 	return &schema.Resource{
+		Description: "Adds or removes a user from an organization.",
+
 		Create: resourceTFEOrganizationMembershipCreate,
 		Read:   resourceTFEOrganizationMembershipRead,
 		Delete: resourceTFEOrganizationMembershipDelete,
@@ -47,26 +49,30 @@ func resourceTFEOrganizationMembership() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"email": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "Email of the user to add.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-				ForceNew: true,
+				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    true,
 			},
 
 			"user_id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The ID of the user associated with the organization membership.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 
 			"username": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The username of the user associated with the organization membership.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 		},
 	}

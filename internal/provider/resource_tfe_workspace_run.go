@@ -72,6 +72,8 @@ var policyOverridePendingStatuses = map[tfe.RunStatus]bool{
 
 func resourceTFEWorkspaceRun() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manages the initial and/or final Terraform run in a given workspace.",
+
 		Create:        resourceTFEWorkspaceRunCreate,
 		Delete:        resourceTFEWorkspaceRunDelete,
 		Read:          resourceTFEWorkspaceRunRead,
@@ -79,11 +81,13 @@ func resourceTFEWorkspaceRun() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"workspace_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "ID of the workspace to execute the run.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 			"apply": {
+				Description:  "Adding an apply block ensures an apply run is queued when the resource is created. The block controls settings for the workspace's apply run during creation.",
 				Type:         schema.TypeList,
 				Elem:         resourceTFEWorkspaceRunSchema(),
 				Optional:     true,
@@ -91,10 +95,11 @@ func resourceTFEWorkspaceRun() *schema.Resource {
 				MaxItems:     1,
 			},
 			"destroy": {
-				Type:     schema.TypeList,
-				Elem:     resourceTFEWorkspaceRunSchema(),
-				Optional: true,
-				MaxItems: 1,
+				Description: "Adding a destroy block ensures a destroy run is queued when the resource is destroyed. The block controls settings for the workspace's destroy run during destruction.",
+				Type:        schema.TypeList,
+				Elem:        resourceTFEWorkspaceRunSchema(),
+				Optional:    true,
+				MaxItems:    1,
 			},
 		},
 	}
@@ -155,37 +160,44 @@ func resourceTFEWorkspaceRunSchema() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"manual_confirm": {
-				Type:     schema.TypeBool,
-				Required: true,
+				Description: "If set to true a human will have to manually confirm a plan in HCP Terraform's UI to start an apply. If set to false, this resource will be automatically applied.",
+				Type:        schema.TypeBool,
+				Required:    true,
 			},
 			"message": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "A custom message to associate with the run. If omitted, the default run message is used.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 			"retry": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
+				Description: "Whether or not to retry on plan or apply errors. When set to true, retry_attempts must also be greater than zero in order for retries to happen. Defaults to true.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
 			},
 			"retry_attempts": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				Default:  3,
+				Description: "The number of retry attempts made after an initial error. Defaults to 3.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Default:     3,
 			},
 			"retry_backoff_min": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				Default:  1,
+				Description: "The minimum time in seconds to backoff before attempting a retry. Defaults to 1.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Default:     1,
 			},
 			"retry_backoff_max": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				Default:  30,
+				Description: "The maximum time in seconds to backoff before attempting a retry. Defaults to 30.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Default:     30,
 			},
 			"wait_for_run": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
+				Description: "Whether or not to wait for a run to reach completion before considering this a success. When set to false, the provider considers the tfe_workspace_run resource to have been created immediately after the run has been queued. When set to true, the provider waits for a successful apply on the target workspace (or a no-change plan). Defaults to true.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
 			},
 		},
 	}

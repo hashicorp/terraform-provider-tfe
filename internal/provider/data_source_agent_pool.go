@@ -14,40 +14,54 @@ import (
 
 func dataSourceTFEAgentPool() *schema.Resource {
 	return &schema.Resource{
+		Description: "Gets information about an agent pool.",
+
 		Read: dataSourceTFEAgentPoolRead,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The agent pool ID.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "Name of the agent pool.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "Name of the organization.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 
 			"organization_scoped": {
-				Type:     schema.TypeBool,
-				Computed: true,
+				Description: "Whether or not the agent pool can be used by all workspaces in the organization.",
+				Type:        schema.TypeBool,
+				Computed:    true,
 			},
 
 			"allowed_workspace_ids": {
-				Type:     schema.TypeSet,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "The set of workspace IDs that have permission to use the agent pool.",
+				Type:        schema.TypeSet,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 
 			"allowed_project_ids": {
-				Type:     schema.TypeSet,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "The set of project IDs that have permission to use the agent pool.",
+				Type:        schema.TypeSet,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 
 			"excluded_workspace_ids": {
-				Type:     schema.TypeSet,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "The set of workspace IDs that are excluded from the scope of the agent pool.",
+				Type:        schema.TypeSet,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
 	}

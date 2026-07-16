@@ -21,6 +21,8 @@ import (
 
 func resourceTFEPolicySet() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manages policy sets, which are groups of policies enforced on Terraform runs.",
+
 		Create: resourceTFEPolicySetCreate,
 		Read:   resourceTFEPolicySetRead,
 		Update: resourceTFEPolicySetUpdate,
@@ -48,25 +50,29 @@ func resourceTFEPolicySet() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"name": {
+				Description:  "Name of the policy set.",
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.StringMatch(regexp.MustCompile(`\A[\w\_\-]+\z`), "can only include letters, numbers, -, and _."),
 			},
 
 			"description": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Description: "A description of the policy set's purpose.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-				ForceNew: true,
+				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    true,
 			},
 
 			"global": {
+				Description:   "Whether or not policies in this set will apply to all workspaces. Defaults to false. Conflicts with workspace_ids.",
 				Type:          schema.TypeBool,
 				Optional:      true,
 				Default:       false,
@@ -74,10 +80,11 @@ func resourceTFEPolicySet() *schema.Resource {
 			},
 
 			"kind": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  string(tfe.Sentinel),
-				ForceNew: true,
+				Description: "The policy-as-code framework associated with the policy. Defaults to sentinel if not provided. Valid values are sentinel and opa. A policy set can only have policies that have the same underlying kind.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     string(tfe.Sentinel),
+				ForceNew:    true,
 				ValidateFunc: validation.StringInSlice(
 					[]string{
 						string(tfe.OPA),
@@ -86,9 +93,10 @@ func resourceTFEPolicySet() *schema.Resource {
 			},
 
 			"overridable": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
+				Description: "Whether or not users can override this policy when it fails during a run. Defaults to false. Only valid for OPA policies.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
 			},
 
 			"agent_enabled": {
@@ -106,13 +114,15 @@ func resourceTFEPolicySet() *schema.Resource {
 			},
 
 			"policy_update_patterns": {
-				Type:     schema.TypeList,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Optional: true,
-				Computed: true,
+				Description: "A list of glob patterns specifying which file changes trigger policy set updates. Patterns are relative to the repository root, and you can specify a maximum of 100 patterns. This argument is only valid when you specify a VCS repository for the policy set.",
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Optional:    true,
+				Computed:    true,
 			},
 
 			"policies_path": {
+				Description:   "The sub-path within the attached VCS repository to ingress when using vcs_repo. All files and directories outside of this sub-path will be ignored. This option can only be supplied when vcs_repo is present. Forces a new resource if changed.",
 				Type:          schema.TypeString,
 				Optional:      true,
 				ForceNew:      true,
@@ -120,12 +130,14 @@ func resourceTFEPolicySet() *schema.Resource {
 			},
 
 			"slug": {
+				Description:   "A reference to the tfe_slug data source that contains the source_path to where the local policies are located. This is used when policies are located locally, and can only be used when there is no VCS repo or explicit policy IDs.",
 				Type:          schema.TypeMap,
 				Optional:      true,
 				ConflictsWith: []string{"policy_ids", "vcs_repo"},
 			},
 
 			"policy_ids": {
+				Description:   "A list of Sentinel policy IDs. This value must not be provided if vcs_repo is provided.",
 				Type:          schema.TypeSet,
 				Optional:      true,
 				Elem:          &schema.Schema{Type: schema.TypeString},
@@ -133,6 +145,7 @@ func resourceTFEPolicySet() *schema.Resource {
 			},
 
 			"vcs_repo": {
+				Description:   "Settings for the policy sets VCS repository. Forces a new resource if changed. This value must not be provided if policy_ids are provided.",
 				Type:          schema.TypeList,
 				Optional:      true,
 				ForceNew:      true,
@@ -142,28 +155,33 @@ func resourceTFEPolicySet() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"identifier": {
-							Type:     schema.TypeString,
-							Required: true,
+							Description: "A reference to your VCS repository in the format <vcs organization>/<repository> where <vcs organization> and <repository> refer to the organization and repository in your VCS provider.",
+							Type:        schema.TypeString,
+							Required:    true,
 						},
 
 						"branch": {
-							Type:     schema.TypeString,
-							Optional: true,
+							Description: "The repository branch that Terraform will execute from. This defaults to the repository's default branch (e.g. main).",
+							Type:        schema.TypeString,
+							Optional:    true,
 						},
 
 						"ingress_submodules": {
-							Type:     schema.TypeBool,
-							Optional: true,
-							Default:  false,
+							Description: "Whether submodules should be fetched when cloning the VCS repository. Defaults to false.",
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
 						},
 
 						"oauth_token_id": {
+							Description:   "Token ID of the VCS Connection (OAuth Connection Token) to use. Conflicts with github_app_installation_id and can only be used if github_app_installation_id is not used.",
 							Type:          schema.TypeString,
 							Optional:      true,
 							ConflictsWith: []string{"vcs_repo.0.github_app_installation_id"},
 						},
 
 						"github_app_installation_id": {
+							Description:   "The installation id of the GitHub App. Conflicts with oauth_token_id and can only be used if oauth_token_id is not used.",
 							Type:          schema.TypeString,
 							Optional:      true,
 							ConflictsWith: []string{"vcs_repo.0.oauth_token_id"},
@@ -174,6 +192,7 @@ func resourceTFEPolicySet() *schema.Resource {
 			},
 
 			"workspace_ids": {
+				Description:   "A list of workspace IDs. This value must not be provided if global is provided.",
 				Type:          schema.TypeSet,
 				Optional:      true,
 				Computed:      true,

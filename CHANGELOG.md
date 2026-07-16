@@ -1,5 +1,13 @@
 ## Unreleased
 
+BREAKING CHANGES:
+* `r/tfe_workspace`: The `hyok_enabled` attribute was incorrectly marked as optional, instead of computed and read-only. This means that it could be set in the configuration, even though it would have no effect on the HCP Terraform workspace. This bug has been resolved, but will mean that any `tfe_workspace` which specifies `hyok_enabled` will see an error after upgrade, and will need to remove the attribute. By @JarrettSpiker [#2134](https://github.com/hashicorp/terraform-provider-tfe/pull/2134)
+
+BUG FIXES:
+* `r/tfe_workspace`: Fixed a provider bug where `hyok_enabled` was not being set as a computed read-only attribute, causing unreconcilable drift to occur when HYOK was enabled on a provider-managed workspace. By @JarrettSpiker [#2134](https://github.com/hashicorp/terraform-provider-tfe/pull/2134)
+* `r/tfe_project_notification_configuration`: Fix `Provider produced inconsistent result after apply` error on the sensitive `token` attribute when creating a configuration (such as `slack`) without a `token`. By @maed223 [#2140](https://github.com/hashicorp/terraform-provider-tfe/pull/2140)
+* `r/tfe_project_notification_configuration`: Fix `Provider produced inconsistent result after apply` errors on the `triggers`, `email_addresses`, and `email_user_ids` attributes when they are configured as an empty set (`[]`). By @maed223 [#2140](https://github.com/hashicorp/terraform-provider-tfe/pull/2140)
+
 ## v0.79.0
 
 FEATURES:
@@ -13,11 +21,11 @@ ENHANCEMENTS:
 BUG FIXES:
 * `r/tfe_provider_set`: Fix validation to reject provider sets when `global` is false or omitted and no project or workspace scopes are configured.
 * Removed two documentation files for resources that do not exist and that are not planned. By @brandonc [#2100](https://github.com/hashicorp/terraform-provider-tfe/pull/2100)
-* Fixed  a provider bug where a failed no-code module update could reference an uninitialized module ID [#2122](https://github.com/hashicorp/terraform-provider-tfe/pull/2122)
+* Fixed a provider bug where a failed no-code module update could reference an uninitialized module ID [#2122](https://github.com/hashicorp/terraform-provider-tfe/pull/2122)
 
 ENHANCEMENTS:
 * `r/tfe_project_notification_configuration` and `r/tfe_team_notification_configuration`: update url attributes to be sensitive, by @kadenluang [#2120](https://github.com/hashicorp/terraform-provider-tfe/pull/2120)
-
+* Backfilled `description` fields into resource schema attributes across the provider, sourced from the existing website documentation. These surface in the provider schema output and improve editor and documentation tooling. By @marzuqmazid-ibm [#2128](https://github.com/hashicorp/terraform-provider-tfe/pull/2128)
 
 ## v0.78.0
 

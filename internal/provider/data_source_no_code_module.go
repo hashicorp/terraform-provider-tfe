@@ -48,7 +48,7 @@ func (d *dataSourceTFENoCodeModule) Metadata(_ context.Context, req datasource.M
 // Schema defines the schema for the data source.
 func (d *dataSourceTFENoCodeModule) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "This data source can be used to retrieve a public or private no-code module.",
+		Description: "This data source can be used to retrieve a public or private existing no-code module.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "ID of the no-code module.",
@@ -71,7 +71,7 @@ func (d *dataSourceTFENoCodeModule) Schema(_ context.Context, _ datasource.Schem
 				Computed:    true,
 			},
 			"enabled": schema.BoolAttribute{
-				Description: "Indiate if this no-code module is currently enabled.",
+				Description: "Indicate if this no-code module is currently enabled.",
 				Computed:    true,
 			},
 		},

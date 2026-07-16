@@ -45,6 +45,7 @@ jobs:
           hostname: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).ngrok_domain }}
           token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_token }}
           testing-github-token: ${{ secrets.TESTING_GITHUB_TOKEN }}
+          testing-github-token-2: ${{ secrets.TESTING_GITHUB_TOKEN2 }}
           enterprise: "1"
           # Skip SAML/SCIM here; they run serially in the singleton-tests job.
           skip: "TestAccTFESAML|TestAccTFESCIM"

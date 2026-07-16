@@ -53,7 +53,8 @@ func (d *dataSourceTFERegistryProviders) Schema(_ context.Context, _ datasource.
 		Description: "This data source can be used to retrieve public and private providers from the private registry of an organization.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				Description: "Name of the organization.",
+				Computed:    true,
 			},
 			"organization": schema.StringAttribute{
 				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",

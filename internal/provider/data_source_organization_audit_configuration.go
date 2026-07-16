@@ -58,6 +58,7 @@ func (d *dataSourceOrganizationAuditConfiguration) Metadata(_ context.Context, r
 
 func (d *dataSourceOrganizationAuditConfiguration) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Gets information about the audit configuration for a given organization. Note that this data source requires using the provider with HCP Terraform.",
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

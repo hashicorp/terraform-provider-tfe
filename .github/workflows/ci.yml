@@ -45,6 +45,7 @@ jobs:
           hostname: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).ngrok_domain }}
           token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_token }}
           testing-github-token: ${{ secrets.TESTING_GITHUB_TOKEN }}
+          testing-github-token-2: ${{ secrets.TESTING_GITHUB_TOKEN2 }}
           datadog-workflow-token: ${{ secrets.TF_WORKFLOW_DATADOG_API_KEY }}
           admin_configuration_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.configuration }}
           admin_provision_licenses_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.provision-licenses }}

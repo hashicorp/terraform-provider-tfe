@@ -23,6 +23,8 @@ import (
 
 func resourceTFEPolicy() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manages policies, which are rules enforced on Terraform runs.",
+
 		Create: resourceTFEPolicyCreate,
 		Read:   resourceTFEPolicyRead,
 		Update: resourceTFEPolicyUpdate,

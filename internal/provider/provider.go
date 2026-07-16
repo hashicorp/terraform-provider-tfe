@@ -9,6 +9,7 @@ import (
 	"os"
 
 	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-provider-tfe/internal/client"
@@ -25,6 +26,7 @@ var (
 // specify one.
 type ConfiguredClient struct {
 	Client       *tfe.Client
+	ClientV2     *tfev2.Client
 	Organization string
 }
 
@@ -194,8 +196,9 @@ func configure() schema.ConfigureContextFunc {
 		}
 
 		return ConfiguredClient{
-			providerClient.TfeClient,
-			providerOrganization,
+			Client:       providerClient.TfeClient,
+			ClientV2:     providerClient.TFEClientV2,
+			Organization: providerOrganization,
 		}, diagnosticWarnings
 	}
 }
@@ -214,5 +217,5 @@ var descriptions = map[string]string{
 		"the token which can be set as credentials in the CLI config file.",
 	"ssl_skip_verify": "Whether or not to skip certificate verifications.",
 	"organization": "The organization to apply to a resource if one is not defined on\n" +
-		"the resource itself",
+		"the resource itself.",
 }

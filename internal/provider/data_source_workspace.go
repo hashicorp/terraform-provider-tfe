@@ -19,143 +19,338 @@ import (
 	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
 )
 
-var (
-	_ datasource.DataSource              = &dataSourceTFEWorkspace{}
-	_ datasource.DataSourceWithConfigure = &dataSourceTFEWorkspace{}
-)
+func dataSourceTFEWorkspace() *schema.Resource {
+	return &schema.Resource{
+		Description: "Gets information about a workspace. Note that using `global_remote_state` or `remote_state_consumer_ids` requires using the provider with HCP Terraform or an instance of Terraform Enterprise at least as recent as v202104-1.",
 
-var workspaceVCSRepoObjectType = types.ObjectType{
-	AttrTypes: map[string]attr.Type{
-		"identifier":                 types.StringType,
-		"branch":                     types.StringType,
-		"ingress_submodules":         types.BoolType,
-		"oauth_token_id":             types.StringType,
-		"tags_regex":                 types.StringType,
-		"github_app_installation_id": types.StringType,
-	},
-}
+		Read: dataSourceTFEWorkspaceRead,
 
-func NewWorkspaceDataSource() datasource.DataSource {
-	return &dataSourceTFEWorkspace{}
-}
+		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The workspace ID.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 
-type dataSourceTFEWorkspace struct {
-	config ConfiguredClient
-}
+			"name": {
+				Description: "Name of the workspace.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
 
-type modelDataSourceTFEWorkspaceVCSRepo struct {
-	Identifier              types.String `tfsdk:"identifier"`
-	Branch                  types.String `tfsdk:"branch"`
-	IngressSubmodules       types.Bool   `tfsdk:"ingress_submodules"`
-	OAuthTokenID            types.String `tfsdk:"oauth_token_id"`
-	TagsRegex               types.String `tfsdk:"tags_regex"`
-	GithubAppInstallationID types.String `tfsdk:"github_app_installation_id"`
-}
+			"organization": {
+				Description: "Name of the organization.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
 
-type modelDataSourceTFEWorkspace struct {
-	ID                          types.String                         `tfsdk:"id"`
-	Name                        types.String                         `tfsdk:"name"`
-	Organization                types.String                         `tfsdk:"organization"`
-	Description                 types.String                         `tfsdk:"description"`
-	AllowDestroyPlan            types.Bool                           `tfsdk:"allow_destroy_plan"`
-	AutoApply                   types.Bool                           `tfsdk:"auto_apply"`
-	AutoApplyRunTrigger         types.Bool                           `tfsdk:"auto_apply_run_trigger"`
-	AutoDestroyAt               types.String                         `tfsdk:"auto_destroy_at"`
-	AutoDestroyActivityDuration types.String                         `tfsdk:"auto_destroy_activity_duration"`
-	InheritsProjectAutoDestroy  types.Bool                           `tfsdk:"inherits_project_auto_destroy"`
-	FileTriggersEnabled         types.Bool                           `tfsdk:"file_triggers_enabled"`
-	GlobalRemoteState           types.Bool                           `tfsdk:"global_remote_state"`
-	ProjectRemoteState          types.Bool                           `tfsdk:"project_remote_state"`
-	RemoteStateConsumerIDs      types.Set                            `tfsdk:"remote_state_consumer_ids"`
-	AssessmentsEnabled          types.Bool                           `tfsdk:"assessments_enabled"`
-	Operations                  types.Bool                           `tfsdk:"operations"`
-	PolicyCheckFailures         types.Int64                          `tfsdk:"policy_check_failures"`
-	ProjectID                   types.String                         `tfsdk:"project_id"`
-	QueueAllRuns                types.Bool                           `tfsdk:"queue_all_runs"`
-	ResourceCount               types.Int64                          `tfsdk:"resource_count"`
-	RunFailures                 types.Int64                          `tfsdk:"run_failures"`
-	RunsCount                   types.Int64                          `tfsdk:"runs_count"`
-	SourceName                  types.String                         `tfsdk:"source_name"`
-	SourceURL                   types.String                         `tfsdk:"source_url"`
-	SpeculativeEnabled          types.Bool                           `tfsdk:"speculative_enabled"`
-	SSHKeyID                    types.String                         `tfsdk:"ssh_key_id"`
-	StructuredRunOutputEnabled  types.Bool                           `tfsdk:"structured_run_output_enabled"`
-	EffectiveTags               types.Map                            `tfsdk:"effective_tags"`
-	TagNames                    types.Set                            `tfsdk:"tag_names"`
-	TerraformVersion            types.String                         `tfsdk:"terraform_version"`
-	TriggerPrefixes             types.List                           `tfsdk:"trigger_prefixes"`
-	TriggerPatterns             types.List                           `tfsdk:"trigger_patterns"`
-	WorkingDirectory            types.String                         `tfsdk:"working_directory"`
-	ExecutionMode               types.String                         `tfsdk:"execution_mode"`
-	VCSRepo                     []modelDataSourceTFEWorkspaceVCSRepo `tfsdk:"vcs_repo"`
-	HTMLURL                     types.String                         `tfsdk:"html_url"`
-	HYOKEnabled                 types.Bool                           `tfsdk:"hyok_enabled"`
-	Locked                      types.Bool                           `tfsdk:"locked"`
-	CreatedAt                   types.String                         `tfsdk:"created_at"`
-	UpdatedAt                   types.String                         `tfsdk:"updated_at"`
-	Environment                 types.String                         `tfsdk:"environment"`
-	ApplyDurationAverage        types.Int64                          `tfsdk:"apply_duration_average"`
-	PlanDurationAverage         types.Int64                          `tfsdk:"plan_duration_average"`
-	Source                      types.String                         `tfsdk:"source"`
-	SettingOverwrites           types.Map                            `tfsdk:"setting_overwrites"`
-	Permissions                 types.Map                            `tfsdk:"permissions"`
-	Actions                     types.Map                            `tfsdk:"actions"`
-}
+			"description": {
+				Description: "Description of the workspace.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 
-func (d *dataSourceTFEWorkspace) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_workspace"
-}
+			"allow_destroy_plan": {
+				Description: "Indicates whether destroy plans can be queued on the workspace.",
+				Type:        schema.TypeBool,
+				Computed:    true,
+			},
 
-func (d *dataSourceTFEWorkspace) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
-	resp.Schema = schema.Schema{
-		Attributes: map[string]schema.Attribute{
-			"id":                             schema.StringAttribute{Computed: true},
-			"name":                           schema.StringAttribute{Required: true},
-			"organization":                   schema.StringAttribute{Optional: true, Computed: true},
-			"description":                    schema.StringAttribute{Computed: true},
-			"allow_destroy_plan":             schema.BoolAttribute{Computed: true},
-			"auto_apply":                     schema.BoolAttribute{Computed: true},
-			"auto_apply_run_trigger":         schema.BoolAttribute{Computed: true},
-			"auto_destroy_at":                schema.StringAttribute{Computed: true},
-			"auto_destroy_activity_duration": schema.StringAttribute{Computed: true},
-			"inherits_project_auto_destroy":  schema.BoolAttribute{Computed: true},
-			"file_triggers_enabled":          schema.BoolAttribute{Computed: true},
-			"global_remote_state":            schema.BoolAttribute{Computed: true},
-			"project_remote_state":           schema.BoolAttribute{Computed: true},
-			"remote_state_consumer_ids":      schema.SetAttribute{Computed: true, ElementType: types.StringType},
-			"assessments_enabled":            schema.BoolAttribute{Computed: true},
-			"operations":                     schema.BoolAttribute{Computed: true},
-			"policy_check_failures":          schema.Int64Attribute{Computed: true},
-			"project_id":                     schema.StringAttribute{Computed: true},
-			"queue_all_runs":                 schema.BoolAttribute{Computed: true},
-			"resource_count":                 schema.Int64Attribute{Computed: true},
-			"run_failures":                   schema.Int64Attribute{Computed: true},
-			"runs_count":                     schema.Int64Attribute{Computed: true},
-			"source_name":                    schema.StringAttribute{Computed: true},
-			"source_url":                     schema.StringAttribute{Computed: true},
-			"speculative_enabled":            schema.BoolAttribute{Computed: true},
-			"ssh_key_id":                     schema.StringAttribute{Computed: true},
-			"structured_run_output_enabled":  schema.BoolAttribute{Computed: true},
-			"effective_tags":                 schema.MapAttribute{Computed: true, ElementType: types.StringType},
-			"tag_names":                      schema.SetAttribute{Optional: true, Computed: true, ElementType: types.StringType},
-			"terraform_version":              schema.StringAttribute{Computed: true},
-			"trigger_prefixes":               schema.ListAttribute{Computed: true, ElementType: types.StringType},
-			"trigger_patterns":               schema.ListAttribute{Computed: true, ElementType: types.StringType},
-			"working_directory":              schema.StringAttribute{Computed: true},
-			"execution_mode":                 schema.StringAttribute{Computed: true},
-			"vcs_repo":                       schema.ListAttribute{Computed: true, ElementType: workspaceVCSRepoObjectType},
-			"html_url":                       schema.StringAttribute{Computed: true},
-			"hyok_enabled":                   schema.BoolAttribute{Computed: true},
-			"locked":                         schema.BoolAttribute{Computed: true},
-			"created_at":                     schema.StringAttribute{Computed: true},
-			"updated_at":                     schema.StringAttribute{Computed: true},
-			"environment":                    schema.StringAttribute{Computed: true},
-			"apply_duration_average":         schema.Int64Attribute{Computed: true},
-			"plan_duration_average":          schema.Int64Attribute{Computed: true},
-			"source":                         schema.StringAttribute{Computed: true},
-			"setting_overwrites":             schema.MapAttribute{Computed: true, ElementType: types.BoolType},
-			"permissions":                    schema.MapAttribute{Computed: true, ElementType: types.BoolType},
-			"actions":                        schema.MapAttribute{Computed: true, ElementType: types.BoolType},
+			"auto_apply": {
+				Description: "Indicates whether to automatically apply changes when a Terraform plan is successful.",
+				Type:        schema.TypeBool,
+				Computed:    true,
+			},
+
+			"auto_apply_run_trigger": {
+				Description: "Whether the workspace will automatically apply changes for runs that were created by run triggers from another workspace.",
+				Type:        schema.TypeBool,
+				Computed:    true,
+			},
+
+			"auto_destroy_at": {
+				Description: "Future date/time string at which point all resources in a workspace will be scheduled to be deleted.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
+			"auto_destroy_activity_duration": {
+				Description: "A duration string representing time after workspace activity when an auto-destroy run will be triggered.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
+			"inherits_project_auto_destroy": {
+				Description: "Indicates whether this workspace inherits project auto destroy settings.",
+				Type:        schema.TypeBool,
+				Computed:    true,
+			},
+
+			"file_triggers_enabled": {
+				Description: "Indicates whether runs are triggered based on the changed files in a VCS push (if `true`) or always triggered on every push (if `false`).",
+				Type:        schema.TypeBool,
+				Computed:    true,
+			},
+
+			"global_remote_state": {
+				Description: "Whether the workspace should allow all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (determined by the `remote_state_consumer_ids` argument). Cannot be true if `project_remote_state` is true.",
+				Type:        schema.TypeBool,
+				Computed:    true,
+			},
+
+			"project_remote_state": {
+				Description: "Whether the workspace should allow all workspaces in the project to access its state data during runs. If false, then only specifically approved workspaces can access its state (determined by the `remote_state_consumer_ids` argument). Cannot be true if `global_remote_state` is true.",
+				Type:        schema.TypeBool,
+				Computed:    true,
+			},
+
+			"remote_state_consumer_ids": {
+				Description: "A set of workspace IDs that will be set as the remote state consumers for the given workspace. Cannot be used if `global_remote_state` or `project_remote_state` is set to `true`.",
+				Type:        schema.TypeSet,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+
+			"assessments_enabled": {
+				Description: "(Available only in HCP Terraform) Indicates whether health assessments such as drift detection are enabled for the workspace.",
+				Type:        schema.TypeBool,
+				Computed:    true,
+			},
+
+			"operations": {
+				Description: "Indicates whether the workspace is using remote execution mode. Set to `false` to switch execution mode to local. `true` by default.",
+				Type:        schema.TypeBool,
+				Computed:    true,
+			},
+
+			"policy_check_failures": {
+				Description: "The number of policy check failures from the latest run.",
+				Type:        schema.TypeInt,
+				Computed:    true,
+			},
+
+			"project_id": {
+				Description: "ID of the workspace's project.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
+			"queue_all_runs": {
+				Description: "Indicates whether the workspace will automatically perform runs in response to webhooks immediately after its creation. If `false`, an initial run must be manually queued to enable future automatic runs.",
+				Type:        schema.TypeBool,
+				Computed:    true,
+			},
+
+			"resource_count": {
+				Description: "The number of resources managed by the workspace.",
+				Type:        schema.TypeInt,
+				Computed:    true,
+			},
+
+			"run_failures": {
+				Description: "The number of run failures on the workspace.",
+				Type:        schema.TypeInt,
+				Computed:    true,
+			},
+
+			"runs_count": {
+				Description: "The number of runs on the workspace.",
+				Type:        schema.TypeInt,
+				Computed:    true,
+			},
+
+			"source_name": {
+				Description: "The name of the workspace creation source, if set.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
+			"source_url": {
+				Description: "The URL of the workspace creation source, if set.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
+			"speculative_enabled": {
+				Description: "Indicates whether this workspace allows speculative plans.",
+				Type:        schema.TypeBool,
+				Computed:    true,
+			},
+
+			"ssh_key_id": {
+				Description: "The ID of an SSH key assigned to the workspace.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
+			"structured_run_output_enabled": {
+				Description: "Indicates whether runs in this workspace use the enhanced apply UI.",
+				Type:        schema.TypeBool,
+				Computed:    true,
+			},
+
+			"effective_tags": {
+				Description: "A map of key-value tags associated with the workspace, including any inherited tags from the parent project.",
+				Type:        schema.TypeMap,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+
+			"tag_names": {
+				Description: "The names of tags added to this workspace.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+
+			"terraform_version": {
+				Description: "The version (or version constraint) of Terraform used for this workspace.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
+			"trigger_prefixes": {
+				Description: "List of trigger prefixes that describe the paths HCP Terraform monitors for changes, in addition to the working directory. Trigger prefixes are always appended to the root directory of the repository.",
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+
+			"trigger_patterns": {
+				Description: "List of [glob patterns](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/vcs#glob-patterns-for-automatic-run-triggering) that describe the files HCP Terraform monitors for changes. Trigger patterns are always appended to the root directory of the repository.",
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+
+			"working_directory": {
+				Description: "A relative path that Terraform will execute within.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
+			"execution_mode": {
+				Description: "Indicates the [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode) of the workspace. **Note:** This value might be derived from an organization-level default or set on the workspace itself; see the [`tfe_workspace_settings` resource](tfe_workspace_settings) for details.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
+			"vcs_repo": {
+				Description: "Settings for the workspace's VCS repository.",
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"identifier": {
+							Description: "A reference to your VCS repository in the format `<vcs organization>/<repository>` where `<vcs organization>` and `<repository>` refer to the organization and repository in your VCS provider.",
+							Type:        schema.TypeString,
+							Computed:    true,
+						},
+
+						"branch": {
+							Description: "The repository branch that Terraform will execute from.",
+							Type:        schema.TypeString,
+							Computed:    true,
+						},
+
+						"ingress_submodules": {
+							Description: "Indicates whether submodules should be fetched when cloning the VCS repository.",
+							Type:        schema.TypeBool,
+							Computed:    true,
+						},
+
+						"oauth_token_id": {
+							Description: "OAuth token ID of the configured VCS connection.",
+							Type:        schema.TypeString,
+							Computed:    true,
+						},
+
+						"tags_regex": {
+							Description: "A regular expression used to trigger a Workspace run for matching Git tags.",
+							Type:        schema.TypeString,
+							Computed:    true,
+						},
+
+						"github_app_installation_id": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+					},
+				},
+			},
+			"html_url": {
+				Description: "The URL to the browsable HTML overview of the workspace.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"hyok_enabled": {
+				Description: "Whether HYOK is enabled for the workspace.",
+				Type:        schema.TypeBool,
+				Computed:    true,
+			},
+			"locked": {
+				Description: "Indicates whether the workspace is locked.",
+				Type:        schema.TypeBool,
+				Computed:    true,
+			},
+
+			"created_at": {
+				Description: "The time when the workspace was created.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
+			"updated_at": {
+				Description: "The time when the workspace was last updated.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
+			"environment": {
+				Description: "The environment of the workspace.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
+			"apply_duration_average": {
+				Description: "The average duration of applies for this workspace.",
+				Type:        schema.TypeInt,
+				Computed:    true,
+			},
+
+			"plan_duration_average": {
+				Description: "The average duration of plans for this workspace.",
+				Type:        schema.TypeInt,
+				Computed:    true,
+			},
+
+			"source": {
+				Description: "The source of the workspace.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
+			"setting_overwrites": {
+				Description: "Settings that are overwritten for this workspace. Contains: `is-destroyable` - Whether the workspace can be destroyed.", // On migration, ideally reformat into non-inline descriptions
+				Type:        schema.TypeMap,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeBool},
+			},
+
+			"permissions": {
+				Description: "The permissions for the current user on this workspace. Contains: `can-update` - Can update the workspace. `can-destroy` - Can destroy the workspace. `can-queue-run` - Can queue runs. `can-queue-apply` - Can queue apply. `can-queue-destroy` - Can queue destroy. `can-lock` - Can lock the workspace. `can-unlock` - Can unlock the workspace. `can-force-unlock` - Can force unlock the workspace. `can-read-settings` - Can read workspace settings. `can-update-variable` - Can update variables. `can-manage-run-tasks` - Can manage run tasks. `can-force-delete` - Can force delete the workspace.", // On migration, ideally reformat into non-inline descriptions
+				Type:        schema.TypeMap,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeBool},
+			},
+
+			"actions": {
+				Description: "Actions that can be performed on this workspace. Contains: `execution-mode` - Whether execution mode is overwritten at the workspace level. `agent-pool` - Whether agent pool is overwritten at the workspace level.", // On migration, ideally reformat into non-inline descriptions
+				Type:        schema.TypeMap,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeBool},
+			},
 		},
 	}
 }

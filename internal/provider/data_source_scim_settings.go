@@ -62,7 +62,7 @@ func (d *dataSourceTFESCIMSettings) Schema(_ context.Context, _ datasource.Schem
 			},
 			"site_admin_group_scim_id": schema.StringAttribute{
 				Computed:    true,
-				Description: "The SCIM ID of the group whose members are granted site admin privileges.",
+				Description: "The SCIM ID of the group whose members are granted site admin privileges. Empty when no group is linked.",
 			},
 			"site_admin_group_display_name": schema.StringAttribute{
 				Computed:    true,

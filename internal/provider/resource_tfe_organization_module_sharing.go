@@ -19,6 +19,8 @@ import (
 
 func resourceTFEOrganizationModuleSharing() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manages module sharing for an organization (Terraform Enterprise only).",
+
 		DeprecationMessage: "the tfe_organization_module_sharing resource is deprecated, please use tfe_admin_organization_settings instead",
 		Create:             resourceTFEOrganizationModuleSharingCreate,
 		Read:               resourceTFEOrganizationModuleSharingRead,
@@ -29,19 +31,21 @@ func resourceTFEOrganizationModuleSharing() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-				ForceNew: true,
+				Description: "Name of the organization. If omitted, organization must be defined in the provider config. Deprecated: Use tfe_admin_organization_settings instead.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    true,
 				DiffSuppressFunc: func(k, old, current string, d *schema.ResourceData) bool {
 					return strings.EqualFold(old, current)
 				},
 			},
 
 			"module_consumers": {
-				Type:     schema.TypeList,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Required: true,
+				Description: "Names of the organizations to consume the module registry.",
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Required:    true,
 			},
 		},
 	}

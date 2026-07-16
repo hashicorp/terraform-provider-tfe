@@ -19,6 +19,8 @@ import (
 
 func resourceTFEAgentPoolExcludedWorkspaces() *schema.Resource {
 	return &schema.Resource{
+		Description: "Adds and removes excluded workspaces on an agent pool.",
+
 		Create: resourceTFEAgentPoolExcludedWorkspacesCreate,
 		Read:   resourceTFEAgentPoolExcludedWorkspacesRead,
 		Update: resourceTFEAgentPoolExcludedWorkspacesUpdate,
@@ -29,15 +31,17 @@ func resourceTFEAgentPoolExcludedWorkspaces() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"agent_pool_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "The ID of the agent pool.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"excluded_workspace_ids": {
-				Type:     schema.TypeSet,
-				Required: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "IDs of workspaces to be added as excluded workspaces on the agent pool.",
+				Type:        schema.TypeSet,
+				Required:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
 	}

@@ -20,23 +20,28 @@ import (
 
 func dataSourceTFEOAuthClient() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceTFEOAuthClientRead,
+		Description: "Gets information about an OAuth client.",
+		Read:        dataSourceTFEOAuthClientRead,
 		Schema: map[string]*schema.Schema{
 			"oauth_client_id": {
+				Description:  "ID of the OAuth client.",
 				Type:         schema.TypeString,
 				Optional:     true,
 				AtLeastOneOf: []string{"oauth_client_id", "name", "service_provider"},
 			},
 			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "The name of the organization in which to search.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 			"name": {
+				Description:  "Name of the OAuth client.",
 				Type:         schema.TypeString,
 				Optional:     true,
 				RequiredWith: []string{"organization"},
 			},
 			"service_provider": {
+				Description:  "The API identifier of the OAuth service provider. If set, must be one of: `ado_server`, `ado_services`, `bitbucket_data_center`,  `bitbucket_hosted`, `bitbucket_server`(deprecated), `github`, `github_enterprise`, `gitlab_hosted`, `gitlab_community_edition`, or `gitlab_enterprise_edition`.",
 				Type:         schema.TypeString,
 				Optional:     true,
 				RequiredWith: []string{"organization"},
@@ -58,37 +63,45 @@ func dataSourceTFEOAuthClient() *schema.Resource {
 				)),
 			},
 			"service_provider_display_name": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The display name of the OAuth service provider.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"api_url": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The client's API URL.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"callback_url": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "OAuth callback URL to provide to the OAuth service provider.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"created_at": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The date and time this OAuth client was created in RFC3339 format.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"http_url": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The client's HTTP URL.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"oauth_token_id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The ID of the OAuth token associated with the OAuth client.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"organization_scoped": {
-				Type:     schema.TypeBool,
-				Computed: true,
+				Description: "Whether or not the agent pool can be used by all workspaces and projects in the organization.",
+				Type:        schema.TypeBool,
+				Computed:    true,
 			},
 			"project_ids": {
-				Type:     schema.TypeSet,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Computed: true,
+				Description: "IDs of the projects that use the oauth client.",
+				Type:        schema.TypeSet,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Computed:    true,
 			},
 		},
 	}

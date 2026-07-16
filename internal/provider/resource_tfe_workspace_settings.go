@@ -26,7 +26,10 @@ import (
 )
 
 // tfe_workspace_settings resource
-var _ resource.Resource = &workspaceSettings{}
+var (
+	_ resource.Resource                = &workspaceSettings{}
+	_ resource.ResourceWithImportState = &workspaceSettings{}
+)
 
 // overwritesElementType is the object type definition for the
 // overwrites field schema.
@@ -373,7 +376,8 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 			},
 
 			"workspace_id": schema.StringAttribute{
-				Required: true,
+				Description: "ID of the workspace.",
+				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 					stringplanmodifier.UseStateForUnknown(),
@@ -381,8 +385,9 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 			},
 
 			"execution_mode": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
+				Description: "Which execution mode to use. Using HCP Terraform, valid values are remote, local or agent. When set to local, the workspace will be used for state storage only. If you omit this attribute, the resource configures the workspace to use your organization's default execution mode (which in turn defaults to remote), removing any explicit value that might have previously been set for the workspace.",
+				Optional:    true,
+				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					unknownIfExecutionModeUnset{},
 				},
@@ -392,8 +397,9 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 			},
 
 			"agent_pool_id": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
+				Description: "The ID of an agent pool to assign to the workspace. Requires execution_mode to be set to agent. This value must not be provided if execution_mode is set to any other value.",
+				Optional:    true,
+				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					unknownIfExecutionModeUnset{},
 					validateAgentExecutionMode{},
@@ -404,6 +410,7 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 			// Once compatibility is broken for v1, and we convert all
 			// providers to protocol v6, this can become a single nested object.
 			"overwrites": schema.ListAttribute{
+				Description: "Can be used to check whether a setting is currently inheriting its value from another resource. Contains execution_mode and agent_pool flags that are true when the value is determined by the workspace itself and false when it is inherited.",
 				Computed:    true,
 				ElementType: overwritesElementType,
 				PlanModifiers: []planmodifier.List{
