@@ -9,8 +9,77 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	tfemocks "github.com/hashicorp/go-tfe/mocks"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"go.uber.org/mock/gomock"
 )
+
+func TestCreateWorkspaceRun_allowConfigVersionMissing(t *testing.T) {
+	configVersionMissingErr := errors.New("error creating run for workspace ws-empty: unprocessable entity\n\nConfiguration version is missing")
+
+	testCases := map[string]struct {
+		allowConfigVersionMissing bool
+		expectNoOp                bool
+	}{
+		"destroy run tolerates missing config version when flag is set": {
+			allowConfigVersionMissing: true,
+			expectNoOp:                true,
+		},
+		"destroy run surfaces missing config version error when flag is unset": {
+			allowConfigVersionMissing: false,
+			expectNoOp:                false,
+		},
+	}
+
+	for name, testCase := range testCases {
+		t.Run(name, func(t *testing.T) {
+			client := testTfeClient(t, testClientOptions{defaultWorkspaceID: "ws-empty"})
+
+			// Register a workspace so that Workspaces.ReadByID succeeds.
+			if _, err := client.Workspaces.Create(ctx, "hashicorp", tfe.WorkspaceCreateOptions{
+				Name: tfe.String("empty"),
+			}); err != nil {
+				t.Fatalf("error creating mock workspace: %v", err)
+			}
+
+			ctrl := gomock.NewController(t)
+			mockRunsAPI := tfemocks.NewMockRuns(ctrl)
+			mockRunsAPI.
+				EXPECT().
+				Create(gomock.Any(), gomock.Any()).
+				Return(nil, configVersionMissingErr).
+				AnyTimes()
+			client.Runs = mockRunsAPI
+
+			d := schema.TestResourceDataRaw(t, resourceTFEWorkspaceRun().Schema, map[string]interface{}{
+				"workspace_id": "ws-empty",
+				"destroy": []interface{}{
+					map[string]interface{}{
+						"manual_confirm":               false,
+						"wait_for_run":                 true,
+						"allow_config_version_missing": testCase.allowConfigVersionMissing,
+					},
+				},
+			})
+
+			meta := ConfiguredClient{Client: client, Organization: "hashicorp"}
+
+			err := createWorkspaceRun(d, meta, true, 0)
+
+			if testCase.expectNoOp {
+				if err != nil {
+					t.Fatalf("expected no error, got %v", err)
+				}
+				if d.Id() == "" {
+					t.Fatal("expected a placeholder ID to be set on no-op destroy")
+				}
+			} else {
+				if err == nil {
+					t.Fatal("expected an error when allow_config_version_missing is unset")
+				}
+			}
+		})
+	}
+}
 
 func TestIsConfigVersionMissingErr(t *testing.T) {
 	testCases := map[string]struct {

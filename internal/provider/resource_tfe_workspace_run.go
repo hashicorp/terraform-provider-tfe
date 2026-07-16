@@ -9,6 +9,7 @@
 package provider
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -80,6 +81,7 @@ func resourceTFEWorkspaceRun() *schema.Resource {
 		Delete:        resourceTFEWorkspaceRunDelete,
 		Read:          resourceTFEWorkspaceRunRead,
 		Update:        resourceTFEWorkspaceRunUpdate,
+		CustomizeDiff: resourceTFEWorkspaceRunCustomizeDiff,
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"id": {
@@ -117,6 +119,19 @@ func resourceTFEWorkspaceRunCreate(d *schema.ResourceData, meta interface{}) err
 	isDestroyRun := false
 	currentRetryAttempts := 0
 	return createWorkspaceRun(d, meta, isDestroyRun, currentRetryAttempts)
+}
+
+// resourceTFEWorkspaceRunCustomizeDiff rejects allow_config_version_missing on
+// the apply block. The flag is only coherent for destroy runs: on the apply
+// path, a no-op would set a synthetic ID that resourceTFEWorkspaceRunRead
+// cannot resolve, dropping the resource from state and producing a perpetual
+// diff. The schema is shared between the apply and destroy blocks, so this diff
+// check is where we constrain the flag to destroy only.
+func resourceTFEWorkspaceRunCustomizeDiff(_ context.Context, d *schema.ResourceDiff, _ interface{}) error {
+	if v, ok := d.GetOk("apply.0.allow_config_version_missing"); ok && v.(bool) {
+		return errors.New("allow_config_version_missing is only supported in the destroy block, not the apply block")
+	}
+	return nil
 }
 
 func resourceTFEWorkspaceRunDelete(d *schema.ResourceData, meta interface{}) error {
@@ -207,7 +222,7 @@ func resourceTFEWorkspaceRunSchema() *schema.Resource {
 				Default:     true,
 			},
 			"allow_config_version_missing": {
-				Description: "Whether or not to treat a missing configuration version as a success rather than an error when creating the run. This is useful for destroy runs against workspaces that never had a configuration version uploaded (for example, an empty workspace). When set to true and the run cannot be created because the configuration version is missing, the operation is treated as a no-op success. Defaults to false.",
+				Description: "Whether or not to treat a missing configuration version as a success rather than an error when creating the run. This is only supported in the destroy block and is useful for destroy runs against workspaces that never had a configuration version uploaded (for example, an empty workspace). When set to true and the run cannot be created because the configuration version is missing, the destroy is treated as a no-op success. Setting this in the apply block is not allowed. Defaults to false.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,

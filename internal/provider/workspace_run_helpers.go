@@ -58,10 +58,15 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 		// If the workspace has no configuration version (for example, an empty
 		// workspace that never had a configuration uploaded), the run cannot be
 		// created. When allow_config_version_missing is set, treat this as a
-		// no-op success so that operations such as destroying an empty
-		// workspace do not fail.
-		if allowConfigVersionMissing && isConfigVersionMissingErr(err) {
-			log.Printf("[INFO] Configuration version is missing for workspace %s; skipping run because allow_config_version_missing is set", ws.ID)
+		// no-op success so that destroying an empty workspace does not fail.
+		//
+		// This is only honored for destroy runs. On the apply path a synthetic
+		// ID here would be re-read by resourceTFEWorkspaceRunRead, fail to
+		// resolve, and drop the resource from state, causing a perpetual diff.
+		// The apply block is additionally prevented from setting this flag via
+		// CustomizeDiff, so this branch should never be reached during create.
+		if isDestroyRun && allowConfigVersionMissing && isConfigVersionMissingErr(err) {
+			log.Printf("[WARN] Configuration version is missing for workspace %s; skipping destroy run because allow_config_version_missing is set", ws.ID)
 			d.SetId(fmt.Sprintf("%d", rand.New(rand.NewSource(time.Now().UnixNano())).Int()))
 			return nil
 		}
@@ -160,6 +165,14 @@ func getRunArgs(d *schema.ResourceData, isDestroyRun bool) map[string]interface{
 	return runArgs
 }
 
+// isConfigVersionMissingErr reports whether err was caused by the workspace
+// lacking a configuration version when creating a run. go-tfe does not expose a
+// typed/sentinel error for this case, so we fall back to matching the API's 422
+// error text ("...\n\nConfiguration version is missing"). The match is
+// lowercased to be resilient to title/detail casing. Note this is not confined
+// to a specific status code, so an unrelated error containing this phrase would
+// also match; the risk is low and the branch is only reached for destroy runs
+// that explicitly opt in via allow_config_version_missing.
 func isConfigVersionMissingErr(err error) bool {
 	if err == nil {
 		return false
