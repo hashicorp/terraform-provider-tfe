@@ -73,6 +73,10 @@ func modelFromTFEProjectNotificationConfiguration(v *tfe.NotificationConfigurati
 	}
 
 	if len(v.EmailAddresses) == 0 {
+		// email_addresses is optional and computed, so returning an empty set
+		// (rather than null) is accepted post-apply for both an explicit empty
+		// set and an omitted value. This differs from triggers, which is not
+		// computed and therefore must echo the exact planned value.
 		result.EmailAddresses = types.SetValueMust(types.StringType, []attr.Value{})
 	} else {
 		emailAddresses, diags := types.SetValueFrom(ctx, types.StringType, v.EmailAddresses)
@@ -96,6 +100,9 @@ func modelFromTFEProjectNotificationConfiguration(v *tfe.NotificationConfigurati
 	}
 
 	if len(v.EmailUsers) == 0 {
+		// email_user_ids is optional and computed, so an empty set is accepted
+		// post-apply for both an explicit empty set and an omitted value (see
+		// the email_addresses note above).
 		result.EmailUserIDs = types.SetValueMust(types.StringType, []attr.Value{})
 	} else {
 		emailUserIDs := make([]attr.Value, len(v.EmailUsers))
