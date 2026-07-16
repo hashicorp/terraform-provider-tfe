@@ -5,7 +5,8 @@ BREAKING CHANGES:
 
 BUG FIXES:
 * `r/tfe_workspace`: Fixed a provider bug where `hyok_enabled` was not being set as a computed read-only attribute, causing unreconcilable drift to occur when HYOK was enabled on a provider-managed workspace. By @JarrettSpiker [#2134](https://github.com/hashicorp/terraform-provider-tfe/pull/2134)
-
+* `r/tfe_project_notification_configuration`: Fix `Provider produced inconsistent result after apply` error on the sensitive `token` attribute when creating a configuration (such as `slack`) without a `token`. By @maed223 [#2140](https://github.com/hashicorp/terraform-provider-tfe/pull/2140)
+* `r/tfe_project_notification_configuration`: Fix `Provider produced inconsistent result after apply` errors on the `triggers`, `email_addresses`, and `email_user_ids` attributes when they are configured as an empty set (`[]`). By @maed223 [#2140](https://github.com/hashicorp/terraform-provider-tfe/pull/2140)
 
 ## v0.79.0
 
