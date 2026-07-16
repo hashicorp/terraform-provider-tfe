@@ -62,6 +62,7 @@ The following arguments are supported:
 
 The `kmsOptions` block is optional, and is used to specify additional fields for some key management services. Supported arguments are:
 * `keyRegion` - (Optional) The AWS region where your key is located.
+* `multiRegion` - (Optional) Boolean value to indicate AWS multi-region key.
 * `keyLocation` - (Optional) The location in which the GCP key ring exists.
 * `keyRingId` - (Optional) The root resource for Google Cloud KMS keys and key versions.
 
