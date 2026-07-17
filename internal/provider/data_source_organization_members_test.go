@@ -53,7 +53,7 @@ func TestAccTFEOrganizationMembersDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.tfe_organization_members.all_members", "members_waiting.0.user_id", membership.User.ID),
 					resource.TestCheckResourceAttr(
-						"data.tfe_organization_members.all_members", "members_waiting.0.user_email", membership.Email),	
+						"data.tfe_organization_members.all_members", "members_waiting.0.user_email", membership.Email),
 				),
 			},
 		},
