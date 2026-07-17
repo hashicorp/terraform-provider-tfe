@@ -1,3 +1,5 @@
+# Basic usage
+
 variable "token" {
   description = "An access token"
 }

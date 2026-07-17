@@ -1,3 +1,5 @@
+# Basic usage
+
 resource "tfe_oauth_client" "test" {
   name                = "my-github-oauth-client"
   organization        = "my-org-name"

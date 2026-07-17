@@ -1,3 +1,5 @@
+# Write-only configuration
+
 variable "aws_access_key" {
   type      = string
   ephemeral = true

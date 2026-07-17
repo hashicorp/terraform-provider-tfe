@@ -1,3 +1,5 @@
+# Creating a no-code module with variable options
+
 resource "tfe_organization" "foobar" {
   name  = "my-org-name"
   email = "admin@company.com"

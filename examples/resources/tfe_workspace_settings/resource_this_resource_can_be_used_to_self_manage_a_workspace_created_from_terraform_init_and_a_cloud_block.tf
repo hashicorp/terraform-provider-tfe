@@ -1,3 +1,5 @@
+# This resource can be used to self manage a workspace created from terraform init and a cloud block
+
 terraform {
   cloud {
     organization = "foo"

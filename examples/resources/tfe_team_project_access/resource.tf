@@ -1,3 +1,5 @@
+# Basic usage
+
 resource "tfe_team" "admin" {
   name         = "my-admin-team"
   organization = "my-org-name"

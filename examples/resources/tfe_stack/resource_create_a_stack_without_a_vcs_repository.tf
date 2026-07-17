@@ -1,3 +1,5 @@
+# Create a stack without a VCS repository
+
 variable "github_token" {
   description = "An access token for github"
 }

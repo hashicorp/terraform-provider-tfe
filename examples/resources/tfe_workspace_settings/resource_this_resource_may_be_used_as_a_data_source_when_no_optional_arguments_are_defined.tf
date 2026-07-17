@@ -1,3 +1,5 @@
+# This resource may be used as a data source when no optional arguments are defined
+
 data "tfe_workspace" "test" {
   name         = "my-workspace-name"
   organization = "my-org-name"

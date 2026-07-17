@@ -1,3 +1,5 @@
+# Basic usage
+
 resource "tfe_terraform_version" "test" {
   version = "1.1.2-custom"
   url     = "https://tfe-host.com/path/to/terraform.zip"

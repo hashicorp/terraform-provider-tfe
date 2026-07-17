@@ -1,3 +1,5 @@
+# Basic usage
+
 resource "tfe_gcp_oidc_configuration" "example" {
   service_account_email  = "myemail@gmail.com"
   project_number         = "11111111"
