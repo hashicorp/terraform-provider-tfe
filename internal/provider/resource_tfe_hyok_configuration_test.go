@@ -29,7 +29,7 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 	org, orgCleanup := createPremiumOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
-	var state models.HyokConfigurationsEnvelopeable
+	var hyokConfigID string
 
 	// With AWS OIDC configuration
 	resource.Test(t, resource.TestCase{
@@ -39,7 +39,7 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 			{
 				Config: testAccTFEAWSHYOKConfigurationConfig(org.Name, "apple", "arn:aws:kms:us-east-1:123456789012:key/key1", "us-east-1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					testAccCheckTFEHYOKConfigurationExists("tfe_hyok_configuration.hyok", &state),
+					testAccCheckTFEHYOKConfigurationExists("tfe_hyok_configuration.hyok", &hyokConfigID),
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "id"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "name", "apple"),
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "oidc_configuration_id"),
@@ -68,7 +68,7 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 			},
 			// Delete - must first revoke configuration to avoid dangling resources
 			{
-				PreConfig: func() { revokeHYOKConfiguration(t, *state.GetData().GetId()) },
+				PreConfig: func() { revokeHYOKConfiguration(t, hyokConfigID) },
 				Config:    testAccTFEHYOKConfigurationDestroyConfig(org.Name),
 			},
 		},
@@ -82,7 +82,7 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 			{
 				Config: testAccTFEVaultHYOKConfigurationConfig(org.Name, "peach", "key1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					testAccCheckTFEHYOKConfigurationExists("tfe_hyok_configuration.hyok", &state),
+					testAccCheckTFEHYOKConfigurationExists("tfe_hyok_configuration.hyok", &hyokConfigID),
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "id"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "name", "peach"),
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "oidc_configuration_id"),
@@ -109,7 +109,7 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 			},
 			// Delete - must first revoke configuration to avoid dangling resources
 			{
-				PreConfig: func() { revokeHYOKConfiguration(t, *state.GetData().GetId()) },
+				PreConfig: func() { revokeHYOKConfiguration(t, hyokConfigID) },
 				Config:    testAccTFEHYOKConfigurationDestroyConfig(org.Name),
 			},
 		},
@@ -123,7 +123,7 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 			{
 				Config: testAccTFEGCPHYOKConfigurationConfig(org.Name, "cucumber", "key1", "global", "key-ring-1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					testAccCheckTFEHYOKConfigurationExists("tfe_hyok_configuration.hyok", &state),
+					testAccCheckTFEHYOKConfigurationExists("tfe_hyok_configuration.hyok", &hyokConfigID),
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "id"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "name", "cucumber"),
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "oidc_configuration_id"),
@@ -143,7 +143,7 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 			{
 				Config: testAccTFEGCPHYOKConfigurationConfig(org.Name, "tomato", "key2", "global", "key-ring-2"),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					testAccCheckTFEHYOKConfigurationExists("tfe_hyok_configuration.hyok", &state),
+					testAccCheckTFEHYOKConfigurationExists("tfe_hyok_configuration.hyok", &hyokConfigID),
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "id"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "name", "tomato"),
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "oidc_configuration_id"),
@@ -155,7 +155,7 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 			},
 			// Delete - must first revoke configuration to avoid dangling resources
 			{
-				PreConfig: func() { revokeHYOKConfiguration(t, *state.GetData().GetId()) },
+				PreConfig: func() { revokeHYOKConfiguration(t, hyokConfigID) },
 				Config:    testAccTFEHYOKConfigurationDestroyConfig(org.Name),
 			},
 		},
@@ -169,7 +169,7 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 			{
 				Config: testAccTFEAzureHYOKConfigurationConfig(org.Name, "banana", "https://random.vault.azure.net/keys/key1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					testAccCheckTFEHYOKConfigurationExists("tfe_hyok_configuration.hyok", &state),
+					testAccCheckTFEHYOKConfigurationExists("tfe_hyok_configuration.hyok", &hyokConfigID),
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "id"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "name", "banana"),
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "oidc_configuration_id"),
@@ -197,7 +197,7 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 			},
 			// Delete - must first revoke configuration to avoid dangling resources
 			{
-				PreConfig: func() { revokeHYOKConfiguration(t, *state.GetData().GetId()) },
+				PreConfig: func() { revokeHYOKConfiguration(t, hyokConfigID) },
 				Config:    testAccTFEHYOKConfigurationDestroyConfig(org.Name),
 			},
 		},
@@ -268,7 +268,7 @@ func revokeHYOKConfiguration(t *testing.T, id string) {
 	}
 }
 
-func testAccCheckTFEHYOKConfigurationExists(n string, hyokConfig *models.HyokConfigurationsEnvelopeable) resource.TestCheckFunc {
+func testAccCheckTFEHYOKConfigurationExists(n string, hyokConfigID *string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -284,7 +284,11 @@ func testAccCheckTFEHYOKConfigurationExists(n string, hyokConfig *models.HyokCon
 			return err
 		}
 
-		*hyokConfig = result
+		if result.GetData() == nil || result.GetData().GetId() == nil {
+			return fmt.Errorf("no HYOK configuration ID returned for %s", rs.Primary.ID)
+		}
+
+		*hyokConfigID = *result.GetData().GetId()
 
 		return nil
 	}
