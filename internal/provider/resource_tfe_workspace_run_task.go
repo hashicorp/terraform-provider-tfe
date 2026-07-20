@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"strings"
 
-	tfev1 "github.com/hashicorp/go-tfe"
 	tfe "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/go-tfe/v2/api/models"
 	organizationsapi "github.com/hashicorp/go-tfe/v2/api/organizations"
@@ -70,23 +69,6 @@ func NewWorkspaceRunTaskResource() resource.Resource {
 	return &resourceWorkspaceRunTask{}
 }
 
-func modelFromTFEWorkspaceRunTask(v *tfev1.WorkspaceRunTask) modelTFEWorkspaceRunTaskV1 {
-	result := modelTFEWorkspaceRunTaskV1{
-		ID:               types.StringValue(v.ID),
-		WorkspaceID:      types.StringValue(v.Workspace.ID),
-		TaskID:           types.StringValue(v.RunTask.ID),
-		EnforcementLevel: types.StringValue(string(v.EnforcementLevel)),
-		Stage:            types.StringValue(string(v.Stage)),
-		Stages:           types.ListNull(types.StringType),
-	}
-
-	if stages, err := types.ListValueFrom(ctx, types.StringType, v.Stages); err == nil {
-		result.Stages = stages
-	}
-
-	return result
-}
-
 func modelFromTFEWorkspaceRunTaskV2(v models.WorkspaceTasksable) modelTFEWorkspaceRunTaskV1 {
 	result := modelTFEWorkspaceRunTaskV1{
 		ID:               types.StringValue(""),
@@ -123,21 +105,61 @@ func modelFromTFEWorkspaceRunTaskV2(v models.WorkspaceTasksable) modelTFEWorkspa
 		}
 	}
 
-	if relationships := v.GetRelationships(); relationships != nil {
-		if workspace := relationships.GetWorkspace(); workspace != nil {
-			if workspaceData := workspace.GetData(); workspaceData != nil && workspaceData.GetId() != nil {
-				result.WorkspaceID = types.StringValue(*workspaceData.GetId())
-			}
-		}
-
-		if task := relationships.GetTask(); task != nil {
-			if taskData := task.GetData(); taskData != nil && taskData.GetId() != nil {
-				result.TaskID = types.StringValue(*taskData.GetId())
-			}
-		}
+	relationships := v.GetRelationships()
+	if workspaceID, ok := workspaceTaskRelationshipWorkspaceID(relationships); ok {
+		result.WorkspaceID = types.StringValue(workspaceID)
+	}
+	if taskID, ok := workspaceTaskRelationshipTaskID(relationships); ok {
+		result.TaskID = types.StringValue(taskID)
 	}
 
 	return result
+}
+
+func workspaceTaskRelationshipWorkspaceID(relationships models.WorkspaceTasks_relationshipsable) (string, bool) {
+	if relationships == nil {
+		return "", false
+	}
+
+	workspace := relationships.GetWorkspace()
+	if workspace == nil {
+		return "", false
+	}
+
+	workspaceData := workspace.GetData()
+	if workspaceData == nil {
+		return "", false
+	}
+
+	id := workspaceData.GetId()
+	if id == nil {
+		return "", false
+	}
+
+	return *id, true
+}
+
+func workspaceTaskRelationshipTaskID(relationships models.WorkspaceTasks_relationshipsable) (string, bool) {
+	if relationships == nil {
+		return "", false
+	}
+
+	task := relationships.GetTask()
+	if task == nil {
+		return "", false
+	}
+
+	taskData := task.GetData()
+	if taskData == nil {
+		return "", false
+	}
+
+	id := taskData.GetId()
+	if id == nil {
+		return "", false
+	}
+
+	return *id, true
 }
 
 func (r *resourceWorkspaceRunTask) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
