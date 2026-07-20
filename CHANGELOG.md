@@ -18,6 +18,9 @@ BUG FIXES:
 ENHANCEMENTS:
 * `r/tfe_registry_module`: The `vcs_repo` VCS connection (`identifier`, `oauth_token_id`, and `github_app_installation_id`) can now be updated in place instead of forcing resource recreation. By @hashimoon [#2124](https://github.com/hashicorp/terraform-provider-tfe/pull/2124)
 
+FEATURES:
+* **New Resource:** `r/tfe_ip_allowlist` and **New Data Source:** `d/tfe_ip_allowlist`: Adds a resource and data source to manage organization IP allowlists (CIDR range lists), including per-range enablement and agent pool scoping. Uses the go-tfe v2 client.
+
 ## v0.79.0
 
 FEATURES:
