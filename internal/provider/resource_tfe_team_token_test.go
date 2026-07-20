@@ -269,7 +269,7 @@ resource "tfe_team_token" "invalid" {
 }
 
 func testAccCheckTFETeamTokenExists(
-	n string, token *models.AuthenticationTokensable) resource.TestCheckFunc {
+	n string, token *models.AuthenticationTokensable) resource.TestCheckFunc { //nolint:gocritic // token is an output param the caller reads after Check runs; AuthenticationTokensable must stay addressable to be settable
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {

@@ -86,11 +86,6 @@ type ProviderClient struct {
 	tokenSource tokenSource
 }
 
-// clientV2Cache caches go-tfe/v2 clients alongside the v1 clients held in
-// clientCache, keyed the same way. Access is guarded by clientCache's lock,
-// which GetClient holds for its entire duration.
-var clientV2Cache = make(map[string]*tfev2.Client)
-
 // Using presence of TFC_AGENT_VERSION to determine if this provider is running on HCP Terraform / enterprise
 func providerRunningInCloud() bool {
 	_, envVariablePresent := os.LookupEnv("TFC_AGENT_VERSION")
