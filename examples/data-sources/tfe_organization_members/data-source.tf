@@ -1,3 +1,5 @@
+# Basic usage
+
 resource "tfe_organization" "bar" {
   name  = "org-bar"
   email = "user@hashicorp.com"

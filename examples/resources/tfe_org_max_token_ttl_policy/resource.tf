@@ -1,3 +1,5 @@
+# Basic usage
+
 resource "tfe_organization" "test_org" {
   name            = "my-organization"
   email           = "admin@example.com"

@@ -1,3 +1,5 @@
+# Pair with tfe_scim_settings to map a SCIM group to the site admin role
+
 variable "token" {
   description = "An access token"
 }

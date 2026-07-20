@@ -1,3 +1,5 @@
+# Linking a SCIM group to site admin (two-apply workflow) - Apply 2: link the site admin group
+
 variable "site_admin_group_scim_id" {
   type        = string
   description = "SCIM ID of the group that should map to site admin."

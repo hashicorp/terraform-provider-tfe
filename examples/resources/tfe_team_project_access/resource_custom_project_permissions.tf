@@ -1,3 +1,5 @@
+# Custom project permissions
+
 resource "tfe_team" "dev" {
   name         = "my-dev-team"
   organization = "my-org-name"

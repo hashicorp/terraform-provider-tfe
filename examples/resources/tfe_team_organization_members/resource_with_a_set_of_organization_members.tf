@@ -1,3 +1,5 @@
+# With a set of organization members
+
 locals {
   all_users = toset([
     "user1@hashicorp.com",

@@ -1,3 +1,5 @@
+# With write-only key
+
 variable "ssh_key" {
   type      = string
   ephemeral = true

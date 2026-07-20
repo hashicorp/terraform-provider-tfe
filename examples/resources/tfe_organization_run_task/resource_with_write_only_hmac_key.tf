@@ -1,3 +1,5 @@
+# With write-only HMAC key
+
 variable "hmac_key" {
   description = "The HMAC key for use in the write only field"
 }

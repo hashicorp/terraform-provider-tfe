@@ -1,3 +1,5 @@
+# With manual confirmation
+
 resource "tfe_organization" "test-organization" {
   name  = "my-org-name"
   email = "admin@company.com"

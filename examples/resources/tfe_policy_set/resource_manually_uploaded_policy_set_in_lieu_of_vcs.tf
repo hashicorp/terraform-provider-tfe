@@ -1,3 +1,5 @@
+# Manually uploaded policy set, in lieu of VCS
+
 resource "tfe_organization" "test-organization" {
   name  = "my-org-name"
   email = "admin@company.com"

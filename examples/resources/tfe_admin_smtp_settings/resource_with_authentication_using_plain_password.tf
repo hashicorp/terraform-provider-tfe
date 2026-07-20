@@ -1,3 +1,5 @@
+# With authentication using plain password
+
 variable "admin_token" {
   description = "An admin access token"
 }
