@@ -4,66 +4,108 @@
 package provider
 
 import (
+	"fmt"
+	"net/http"
 	"testing"
-
-	tfe "github.com/hashicorp/go-tfe"
-	tfemocks "github.com/hashicorp/go-tfe/mocks"
-	"go.uber.org/mock/gomock"
 )
 
-func MockOrganizationMemberships(t *testing.T, client *tfe.Client, orgName string, organizationMemberships []*tfe.OrganizationMembership) {
-	ctrl := gomock.NewController(t)
-	mockOrganizationMembershipAPI := tfemocks.NewMockOrganizationMemberships(ctrl)
-	organizationMembershipsList := tfe.OrganizationMembershipList{
-		Items: organizationMemberships,
-		Pagination: &tfe.Pagination{
-			CurrentPage: 1,
-			TotalPages:  1,
-			TotalCount:  len(organizationMemberships),
-		},
-	}
+// membershipsHandler serves GET
+// /api/v2/organizations/{orgName}/organization-memberships with the given
+// JSON:API pages (served in order by the page[number] query parameter), and
+// responds 404 for any other organization.
+func membershipsHandler(orgName string, pages map[string]string) http.Handler {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/v2/organizations/"+orgName+"/organization-memberships", func(w http.ResponseWriter, r *http.Request) {
+		page := r.URL.Query().Get("page[number]")
+		if page == "" {
+			page = "1"
+		}
+		body, ok := pages[page]
+		if !ok {
+			http.Error(w, `{"errors":[{"status":"404","title":"not found"}]}`, http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		fmt.Fprint(w, body)
+	})
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, `{"errors":[{"status":"404","title":"not found"}]}`, http.StatusNotFound)
+	})
+	return mux
+}
 
-	mockOrganizationMembershipAPI.
-		EXPECT().
-		List(gomock.Any(), orgName, gomock.Any()).
-		Return(&organizationMembershipsList, nil).
-		AnyTimes()
+func membershipResource(membershipID, userID, email, status string) string {
+	return fmt.Sprintf(`{
+		"id": %q,
+		"type": "organization-memberships",
+		"attributes": {"email": %q, "status": %q},
+		"relationships": {
+			"user": {"data": {"id": %q, "type": "users"}},
+			"organization": {"data": {"id": "hashicorp", "type": "organizations"}}
+		}
+	}`, membershipID, email, status, userID)
+}
 
-	mockOrganizationMembershipAPI.
-		EXPECT().
-		List(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(nil, tfe.ErrInvalidOrg).
-		AnyTimes()
-
-	client.OrganizationMemberships = mockOrganizationMembershipAPI
+func paginationMeta(currentPage int, nextPage, totalPages string) string {
+	return fmt.Sprintf(`{"pagination": {"current-page": %d, "next-page": %s, "total-pages": %s}}`, currentPage, nextPage, totalPages)
 }
 
 func TestFetchOrganizationMembers(t *testing.T) {
 	orgName := "hashicorp"
 
+	singlePage := map[string]string{
+		"1": fmt.Sprintf(`{"data": [%s, %s], "meta": %s}`,
+			membershipResource("ou-orgmember-1", "user-orgmember-1", "org_member_1@hashicorp.com", "active"),
+			membershipResource("ou-orgmember-2", "user-orgmember-2", "org_member_2@hashicorp.com", "invited"),
+			paginationMeta(1, "null", "1"),
+		),
+	}
+
+	multiPage := map[string]string{
+		"1": fmt.Sprintf(`{"data": [%s], "meta": %s}`,
+			membershipResource("ou-orgmember-1", "user-orgmember-1", "org_member_1@hashicorp.com", "active"),
+			paginationMeta(1, "2", "2"),
+		),
+		"2": fmt.Sprintf(`{"data": [%s], "meta": %s}`,
+			membershipResource("ou-orgmember-2", "user-orgmember-2", "org_member_2@hashicorp.com", "invited"),
+			paginationMeta(2, "null", "2"),
+		),
+	}
+
+	emptyPage := map[string]string{
+		"1": fmt.Sprintf(`{"data": [], "meta": %s}`, paginationMeta(1, "null", "1")),
+	}
+
 	tests := map[string]struct {
-		members                []*tfe.OrganizationMembership
+		pages                  map[string]string
 		org                    string
 		err                    bool
 		expectedMembers        []map[string]string
 		expectedMembersWaiting []map[string]string
 	}{
-		"with non exisiting organization": {
-			[]*tfe.OrganizationMembership{},
+		"with non existing organization": {
+			emptyPage,
 			"not-an-org",
 			true,
 			nil,
 			nil,
 		},
 		"with no members": {
-			[]*tfe.OrganizationMembership{},
+			emptyPage,
 			orgName,
 			false,
 			nil,
 			nil,
 		},
 		"with both active and invited members": {
-			activeAndInvitedOrganizationMemberships(orgName),
+			singlePage,
+			orgName,
+			false,
+			[]map[string]string{{"user_id": "user-orgmember-1", "organization_membership_id": "ou-orgmember-1"}},
+			[]map[string]string{{"user_id": "user-orgmember-2", "organization_membership_id": "ou-orgmember-2"}},
+		},
+		"with members across multiple pages": {
+			multiPage,
 			orgName,
 			false,
 			[]map[string]string{{"user_id": "user-orgmember-1", "organization_membership_id": "ou-orgmember-1"}},
@@ -71,12 +113,10 @@ func TestFetchOrganizationMembers(t *testing.T) {
 		},
 	}
 
-	client := testTfeClient(t, testClientOptions{defaultOrganization: orgName})
-
 	for name, test := range tests {
-		// Mock the Organization Membership
-		MockOrganizationMemberships(t, client, orgName, test.members)
 		t.Run(name, func(t *testing.T) {
+			client := testTfeClientV2(t, membershipsHandler(orgName, test.pages))
+
 			receivedMembers, receivedMembersWaiting, err := fetchOrganizationMembers(client, test.org)
 
 			if (err != nil) != test.err {
@@ -101,28 +141,5 @@ func checkIsEqualMembers(t *testing.T, receivedMembers []map[string]string, expe
 		}
 	} else if (expectedMembers == nil && receivedMembers != nil) || (expectedMembers != nil && receivedMembers == nil) {
 		t.Fatalf("wrong result\ngot: %#v\nwant: %#v", receivedMembers, expectedMembers)
-	}
-}
-
-func activeAndInvitedOrganizationMemberships(orgName string) []*tfe.OrganizationMembership {
-	return []*tfe.OrganizationMembership{
-		{
-			ID:           "ou-orgmember-1",
-			Status:       tfe.OrganizationMembershipActive,
-			Email:        "org_member_1@hashicorp.com",
-			Organization: &tfe.Organization{Name: orgName},
-			User: &tfe.User{
-				ID: "user-orgmember-1",
-			},
-		},
-		{
-			ID:           "ou-orgmember-2",
-			Status:       tfe.OrganizationMembershipInvited,
-			Email:        "org_member_2@hashicorp.com",
-			Organization: &tfe.Organization{Name: orgName},
-			User: &tfe.User{
-				ID: "user-orgmember-2",
-			},
-		},
 	}
 }
