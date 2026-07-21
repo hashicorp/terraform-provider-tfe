@@ -6,6 +6,15 @@
 // docs/new-resources.md if planning to use this code as boilerplate for
 // a new resource.
 
+// go-tfe v2 migration exception: this data source intentionally remains on
+// the go-tfe v1 client. It depends on `include=user` side-loaded user records
+// (for the `username` attribute and name/email lookups), but the generated v2
+// client cannot deserialize JSON:API `included` arrays: the composed-type
+// factories (e.g. CreateOrganizationsFromDiscriminatorValue) do not
+// discriminate on the JSON:API `type` field, so the first composed type
+// always wins and GetUsers() is always nil. Migrate once the upstream
+// generated client discriminates included records by type.
+
 package provider
 
 import (
