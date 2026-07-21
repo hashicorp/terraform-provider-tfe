@@ -214,23 +214,14 @@ func (r *resourceTFETeamToken) Create(ctx context.Context, req resource.CreateRe
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
 }
 
-// authTokenCreateResponse is the common shape of the two generated Post responses used to
-// create a team token. Both model their single created token as a one-element "data" array
-// (a quirk of the generated client's create-response typing - see the
-// openapi-atlas-verification skill), unlike Get responses for the same resource, which
-// return a single object directly.
-type authTokenCreateResponse interface {
-	GetData() []models.AuthenticationTokensable
-}
-
 // createTeamToken creates (or, for the legacy descriptionless token, regenerates) a team
 // authentication token. It picks the same endpoint go-tfe v1's TeamTokens.CreateWithOptions
 // picked internally based on whether a description was set: go-tfe v2 exposes that choice
-// as two distinct generated builders instead of one convenience method. It also unwraps the
-// single-element array the generated responses return down to the one token the API always
-// creates.
+// as two distinct generated builders instead of one convenience method - the legacy,
+// descriptionless endpoint (singular "authentication-token"), and the endpoint that allows
+// multiple tokens per team (plural "authentication-tokens").
 func createTeamToken(ctx context.Context, api *tfev2api.ApiClient, teamID string, envelope models.AuthenticationTokensEnvelopeable, legacy bool) (models.AuthenticationTokensable, error) {
-	var postResponse authTokenCreateResponse
+	var postResponse models.AuthenticationTokensEnvelopeable
 	var err error
 	if legacy {
 		// Legacy behavior creates (or regenerates) the single, descriptionless team token
@@ -238,20 +229,16 @@ func createTeamToken(ctx context.Context, api *tfev2api.ApiClient, teamID string
 	} else {
 		// Tokens with a description are created on the authentication-tokens
 		// endpoint, which allows multiple tokens per team
-		postResponse, err = api.AuthenticationTokens().ById(teamID).Post(ctx, envelope, nil)
+		postResponse, err = api.Teams().ById(teamID).AuthenticationTokens().Post(ctx, envelope, nil)
 	}
 	if err != nil {
 		return nil, err
 	}
 
-	var tokens []models.AuthenticationTokensable
-	if postResponse != nil {
-		tokens = postResponse.GetData()
-	}
-	if len(tokens) == 0 || tokens[0] == nil || tokens[0].GetId() == nil {
+	if postResponse == nil || postResponse.GetData() == nil || postResponse.GetData().GetId() == nil {
 		return nil, errors.New("API response did not include the created token")
 	}
-	return tokens[0], nil
+	return postResponse.GetData(), nil
 }
 
 func modelFromTFEToken(teamID types.String, tokenID types.String, stateValue types.String, forceRegenerate types.Bool, expiredAt types.String, description types.String) modelTFETeamToken {
@@ -399,14 +386,25 @@ func (r *resourceTFETeamToken) ImportState(ctx context.Context, req resource.Imp
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
-// tokenTeamID extracts the ID of the token's team from its team relationship,
-// which the API returns as a related link (e.g. /api/v2/teams/team-abc123).
+// tokenTeamID extracts the ID of the token's team from its team relationship. The API
+// returns this as a resource identifier (relationships.team.data.id); older Terraform
+// Enterprise releases may instead (or additionally) expose it only as a related link
+// (e.g. /api/v2/teams/team-abc123), so that's used as a defensive fallback.
 func tokenTeamID(token models.AuthenticationTokensable) string {
 	relationships := token.GetRelationships()
-	if relationships == nil || relationships.GetTeam() == nil || relationships.GetTeam().GetLinks() == nil {
+	if relationships == nil || relationships.GetTeam() == nil {
 		return ""
 	}
-	related := relationships.GetTeam().GetLinks().GetRelated()
+	team := relationships.GetTeam()
+
+	if data := team.GetData(); data != nil && data.GetId() != nil {
+		return *data.GetId()
+	}
+
+	if team.GetLinks() == nil {
+		return ""
+	}
+	related := team.GetLinks().GetRelated()
 	if related == nil {
 		return ""
 	}
