@@ -4,10 +4,58 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 
 	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
+	"github.com/hashicorp/go-tfe/v2/api/organizations"
+	abstractions "github.com/microsoft/kiota-abstractions-go"
 )
+
+// fetchOrganizationRunTaskV2 is the go-tfe v2 counterpart of
+// fetchOrganizationRunTask. The v1 version remains until the resources that
+// use it for imports are migrated.
+func fetchOrganizationRunTaskV2(ctx context.Context, name, organization string, client *tfev2.Client) (models.Tasksable, error) {
+	tasksBuilder := client.API.Organizations().ByOrganization_name(organization).Tasks()
+
+	pageSize := int32(100)
+	queryParams := &organizations.ItemTasksRequestBuilderGetQueryParameters{
+		Pagesize: &pageSize,
+	}
+	for {
+		list, err := tasksBuilder.Get(ctx, &abstractions.RequestConfiguration[organizations.ItemTasksRequestBuilderGetQueryParameters]{
+			QueryParameters: queryParams,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("Error retrieving organization tasks: %w", err)
+		}
+
+		for _, task := range list.GetData() {
+			if task == nil {
+				continue
+			}
+			if attributes := task.GetAttributes(); attributes != nil && valueOrZero(attributes.GetName()) == name {
+				return task, nil
+			}
+		}
+
+		// Exit the loop when we've seen all pages.
+		var nextPage *int32
+		if meta := list.GetMeta(); meta != nil {
+			nextPage = nextPageNumber(meta.GetPagination())
+		}
+		if nextPage == nil {
+			break
+		}
+
+		// Update the page number to get the next page.
+		queryParams.Pagenumber = nextPage
+	}
+
+	return nil, fmt.Errorf("could not find organization run task for organization %s and name %s", organization, name)
+}
 
 // fetchOrganizationRunTask returns the task in an organization by name
 func fetchOrganizationRunTask(name, organization string, client *tfe.Client) (*tfe.RunTask, error) {
