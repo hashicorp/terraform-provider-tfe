@@ -83,23 +83,37 @@ func (d *dataSourceCurrentUser) Configure(_ context.Context, req datasource.Conf
 func (d *dataSourceCurrentUser) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
 	tflog.Debug(ctx, "Reading current user")
 
-	user, err := d.config.Client.Users.ReadCurrent(ctx)
+	userEnvelope, err := d.config.ClientV2.API.Account().Details().Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read current user", err.Error())
 		return
 	}
 
+	user := userEnvelope.GetData()
+	if user == nil {
+		resp.Diagnostics.AddError("Unable to read current user", "The API response contained no user data.")
+		return
+	}
+
+	var username, email string
+	var isServiceAccount bool
+	if attributes := user.GetAttributes(); attributes != nil {
+		username = valueOrZero(attributes.GetUsername())
+		email = valueOrZero(attributes.GetEmail())
+		isServiceAccount = valueOrZero(attributes.GetIsServiceAccount())
+	}
+
 	model := modelCurrentUser{
-		ID:               types.StringValue(user.ID),
-		Username:         types.StringValue(user.Username),
-		Email:            types.StringValue(user.Email),
-		IsServiceAccount: types.BoolValue(user.IsServiceAccount),
+		ID:               types.StringValue(valueOrZero(user.GetId())),
+		Username:         types.StringValue(username),
+		Email:            types.StringValue(email),
+		IsServiceAccount: types.BoolValue(isServiceAccount),
 	}
 
 	tflog.Trace(ctx, "Read current user successfully", map[string]any{
-		"user_id":            user.ID,
-		"username":           user.Username,
-		"is_service_account": user.IsServiceAccount,
+		"user_id":            valueOrZero(user.GetId()),
+		"username":           username,
+		"is_service_account": isServiceAccount,
 	})
 
 	diags := resp.State.Set(ctx, &model)
