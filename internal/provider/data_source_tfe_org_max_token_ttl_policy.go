@@ -142,6 +142,14 @@ func (d *dataSourceTFEOrgMaxTokenTTLPolicy) Read(ctx context.Context, req dataso
 
 	tflog.Debug(ctx, fmt.Sprintf("Reading token TTL policies for organization: %s", organization))
 
+	// go-tfe v2 migration exception: this call intentionally remains on the
+	// go-tfe v1 client. The generated v2 model for
+	// GET /organizations/{organization_name}/token-ttl-policies types
+	// max-ttl-ms as *int32 (models.TokenTtlPolicy_attributes), but TTL values
+	// are int64 milliseconds (the 2-year default alone is 63072000000 ms),
+	// which exceeds the int32 range and fails Kiota deserialization. Migrate
+	// once the upstream OpenAPI spec and generated client use int64 for
+	// max-ttl-ms.
 	policyList, err := d.config.Client.OrganizationTokenTTLPolicies.List(ctx, organization, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read organization token TTL policies", err.Error())
