@@ -97,18 +97,37 @@ func (d *dataSourceHYOKCustomerKeyVersion) Read(ctx context.Context, req datasou
 	}
 
 	// Make API call to fetch the HYOK customer key version
-	keyVersion, err := d.config.Client.HYOKCustomerKeyVersions.Read(ctx, data.ID.ValueString())
+	keyVersionEnvelope, err := d.config.ClientV2.API.HyokCustomerKeyVersions().ByHyok_customer_key_version_id(data.ID.ValueString()).Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read HYOK customer key version", err.Error())
 		return
 	}
 
+	keyVersion := keyVersionEnvelope.GetData()
+	if keyVersion == nil {
+		resp.Diagnostics.AddError("Unable to read HYOK customer key version", "The API response contained no key version data.")
+		return
+	}
+
+	var status, keyVersionNumber, errorMessage string
+	var createdAt time.Time
+	var workspacesSecured int64
+	if attributes := keyVersion.GetAttributes(); attributes != nil {
+		if s := attributes.GetStatus(); s != nil {
+			status = s.String()
+		}
+		keyVersionNumber = valueOrZero(attributes.GetKeyVersion())
+		createdAt = valueOrZero(attributes.GetCreatedAt())
+		workspacesSecured = int64(valueOrZero(attributes.GetWorkspacesSecured()))
+		errorMessage = valueOrZero(attributes.GetError())
+	}
+
 	// Set the computed attributes from the API response
-	data.Status = types.StringValue(string(keyVersion.Status))
-	data.KeyVersion = types.StringValue(keyVersion.KeyVersion)
-	data.CreatedAt = types.StringValue(keyVersion.CreatedAt.Format(time.RFC3339))
-	data.WorkspacesSecured = types.Int64Value(int64(keyVersion.WorkspacesSecured))
-	data.Error = types.StringValue(keyVersion.Error)
+	data.Status = types.StringValue(status)
+	data.KeyVersion = types.StringValue(keyVersionNumber)
+	data.CreatedAt = types.StringValue(createdAt.Format(time.RFC3339))
+	data.WorkspacesSecured = types.Int64Value(workspacesSecured)
+	data.Error = types.StringValue(errorMessage)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
