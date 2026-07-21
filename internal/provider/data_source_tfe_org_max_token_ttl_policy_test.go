@@ -4,8 +4,10 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"testing"
 	"time"
 
@@ -69,6 +71,58 @@ func TestAccTFEOrgMaxTokenTTLPolicyDataSource_withResource(t *testing.T) {
 			},
 		},
 	})
+}
+
+// TestFetchTokenTTLPoliciesV2_largeMaxTTL is a regression test for a go-tfe
+// v2 generated-client bug: the generated model for
+// GET /organizations/{organization_name}/token-ttl-policies typed max-ttl-ms
+// as *int32, but real TTL values are int64 milliseconds -- values beyond
+// ~24.8 days (anything over math.MaxInt32 ms) failed Kiota deserialization
+// outright rather than truncating. That bug is why tfe_org_max_token_ttl_policy
+// stayed on go-tfe v1 for a time.
+//
+// This is also the only regression coverage for this bug that runs in CI:
+// the acceptance tests for this data source already exercise a TTL beyond
+// int32 range (user_token_max_ttl = "5y" = 157680000000ms in
+// TestAccTFEOrgMaxTokenTTLPolicyDataSource_withResource), but they're gated
+// behind skipUnlessBeta, and ENABLE_BETA is never set in CI. This test
+// exercises the same real JSON:API deserialization end to end (not just
+// in-memory structs) without requiring a beta-enabled environment.
+func TestFetchTokenTTLPoliciesV2_largeMaxTTL(t *testing.T) {
+	orgName := "hashicorp"
+
+	// 5 years in milliseconds, matching the acceptance test's "5y" case.
+	// This exceeds math.MaxInt32 (2147483647) and would previously fail to
+	// deserialize when max-ttl-ms was typed as *int32.
+	const largeMaxTTLMs = int64(157680000000)
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/v2/organizations/"+orgName+"/token-ttl-policies", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		fmt.Fprintf(w, `{"data": [
+			{"id": "ttl-1", "type": "organization-token-ttl-policies", "attributes": {"token-type": "organization", "max-ttl-ms": %d}},
+			{"id": "ttl-2", "type": "organization-token-ttl-policies", "attributes": {"token-type": "user", "max-ttl-ms": %d}}
+		]}`, int64(2592000000), largeMaxTTLMs)
+	})
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, `{"errors":[{"status":"404","title":"not found"}]}`, http.StatusNotFound)
+	})
+
+	client := testTfeClientV2(t, mux)
+
+	resp, err := client.API.Organizations().ByOrganization_name(orgName).TokenTtlPolicies().Get(context.Background(), nil)
+	if err != nil {
+		t.Fatalf("expected no error deserializing a max-ttl-ms beyond int32 range, got: %v", err)
+	}
+
+	result := modelFromTokenTTLPoliciesData(orgName, resp.GetData())
+
+	if got := result.UserTokenMaxTTLMs.ValueInt64(); got != largeMaxTTLMs {
+		t.Fatalf("wrong user_token_max_ttl_ms\ngot: %d\nwant: %d", got, largeMaxTTLMs)
+	}
+	if got := result.OrgTokenMaxTTLMs.ValueInt64(); got != 2592000000 {
+		t.Fatalf("wrong org_token_max_ttl_ms\ngot: %d\nwant: %d", got, 2592000000)
+	}
 }
 
 func testAccTFEOrgMaxTokenTTLPolicyDataSourceConfig_basic(orgName string) string {
