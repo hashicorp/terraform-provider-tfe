@@ -60,6 +60,47 @@ func TestAccTFETeamToken_multiple_team_tokens(t *testing.T) {
 	})
 }
 
+// TestAccTFETeamToken_createWithDescription is a regression test for a bug in the go-tfe
+// v2 migration: createTeamToken's non-legacy branch (used whenever "description" is set)
+// calls api.AuthenticationTokens().ById(teamID).Post(), which targets
+// POST /authentication-tokens/{team_id}. Atlas only wires GET/DELETE for
+// /authentication-tokens/{id} (see config/routes/v2.rb); the real "create a team token
+// with a description" endpoint is the plural, team-nested
+// POST /teams/{team_id}/authentication-tokens, which has no generated builder in the
+// installed go-tfe/v2 client at all (see the openapi-atlas-verification skill for the
+// full spec/route analysis). Isolated from TestAccTFETeamToken_multiple_team_tokens,
+// which also exercises the unrelated legacy-token array/object response-shape bug in the
+// same config.
+//
+// This test currently fails with a 404 against the wrong URL. It is expected to start
+// passing once the create-with-description path calls a working endpoint (either an
+// upstream go-tfe/v2 fix once /teams/{team_id}/authentication-tokens is promoted out of
+// internal-beta, or a v1 fallback per the go-tfe-v2-migration skill's "Missing or
+// unusable v2 coverage").
+func TestAccTFETeamToken_createWithDescription(t *testing.T) {
+	skipUnlessBeta(t)
+	var token models.AuthenticationTokensable
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	description := fmt.Sprintf("tst-terraform-%d-token", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamTokenDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeamToken_createWithDescription(rInt, description),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFETeamTokenExists(
+						"tfe_team_token.described", &token),
+					resource.TestCheckResourceAttr(
+						"tfe_team_token.described", "description", description),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFETeamToken_existsWithoutForce(t *testing.T) {
 	var token models.AuthenticationTokensable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -261,8 +302,12 @@ resource "tfe_team_token" "invalid" {
 		CheckDestroy:             testAccCheckTFETeamTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config:      conf,
-				ExpectError: regexp.MustCompile(`(?s)team does not exist or version of Terraform Enterprise.*does not support multiple team tokens with descriptions`),
+				Config: conf,
+				// Terraform's CLI wraps long diagnostic text at a column width, and the
+				// wrap point (a literal newline replacing a space) shifts based on the
+				// surrounding text's exact length. Match word-by-word with \s+ instead of
+				// literal spaces so this doesn't depend on exactly where the wrap lands.
+				ExpectError: regexp.MustCompile(`(?s)team\s+does\s+not\s+exist\s+or\s+version\s+of\s+Terraform\s+Enterprise\s+does\s+not\s+support\s+multiple\s+team\s+tokens\s+with\s+descriptions`),
 			},
 		},
 	})
@@ -341,6 +386,24 @@ resource "tfe_team" "foobar" {
 resource "tfe_team_token" "foobar" {
   team_id = tfe_team.foobar.id
 }`, rInt)
+}
+
+func testAccTFETeamToken_createWithDescription(rInt int, description string) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_team_token" "described" {
+  team_id     = tfe_team.foobar.id
+  description = "%s"
+}`, rInt, description)
 }
 
 // NOTE: This config is invalid because you cannot manage multiple tokens for
