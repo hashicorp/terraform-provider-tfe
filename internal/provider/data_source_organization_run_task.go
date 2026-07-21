@@ -154,7 +154,7 @@ func (d *dataSourceOrganizationRunTask) Read(ctx context.Context, req datasource
 		return
 	}
 
-	task, err := fetchOrganizationRunTaskV2(ctx, data.Name.ValueString(), organization, d.config.ClientV2)
+	task, err := fetchOrganizationRunTaskV2(data.Name.ValueString(), organization, d.config.ClientV2)
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading Organization Run Task",
 			fmt.Sprintf("Could not read Run Task %q in organization %q, unexpected error: %s", data.Name.String(), organization, err.Error()),

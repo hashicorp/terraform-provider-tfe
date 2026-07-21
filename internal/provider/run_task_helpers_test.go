@@ -221,7 +221,7 @@ func TestFetchOrganizationRunTaskV2(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			client := testTfeClientV2(t, mux)
 
-			got, err := fetchOrganizationRunTaskV2(context.Background(), test.taskName, test.org, client)
+			got, err := fetchOrganizationRunTaskV2(test.taskName, test.org, client)
 
 			if (err != nil) != test.err {
 				t.Fatalf("expected error is %t, got %v", test.err, err)
