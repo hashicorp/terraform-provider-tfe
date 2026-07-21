@@ -6,15 +6,6 @@
 // docs/new-resources.md if planning to use this code as boilerplate for
 // a new resource.
 
-// go-tfe v2 migration exception: this data source intentionally remains on
-// the go-tfe v1 client. It depends on `include=user` side-loaded user records
-// (for the `username` attribute and name/email lookups), but the generated v2
-// client cannot deserialize JSON:API `included` arrays: the composed-type
-// factories (e.g. CreateOrganizationsFromDiscriminatorValue) do not
-// discriminate on the JSON:API `type` field, so the first composed type
-// always wins and GetUsers() is always nil. Migrate once the upstream
-// generated client discriminates included records by type.
-
 package provider
 
 import (
@@ -22,8 +13,11 @@ import (
 	"errors"
 	"fmt"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/organizationmemberships"
+	membershipitem "github.com/hashicorp/go-tfe/v2/api/organizationmemberships/item"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	abstractions "github.com/microsoft/kiota-abstractions-go"
 )
 
 func dataSourceTFEOrganizationMembership() *schema.Resource {
@@ -89,33 +83,63 @@ func dataSourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interf
 	}
 
 	if orgMemberID == "" {
-		orgMember, err := fetchOrganizationMemberByNameOrEmail(context.Background(), config.Client, organization, username, email)
+		orgMember, err := fetchOrganizationMemberByNameOrEmailV2(context.Background(), config.ClientV2, organization, username, email)
 		if err != nil {
 			return fmt.Errorf("could not find organization membership for organization %s: %w", organization, err)
 		}
 
-		orgMemberID = orgMember.ID
+		orgMemberID = valueOrZero(orgMember.GetId())
 	}
 
 	d.SetId(orgMemberID)
 
-	options := tfe.OrganizationMembershipReadOptions{
-		Include: []tfe.OrgMembershipIncludeOpt{tfe.OrgMembershipUser},
-	}
+	includeUser := membershipitem.USER_GETINCLUDEQUERYPARAMETERTYPE
 
-	membership, err := config.Client.OrganizationMemberships.ReadWithOptions(context.Background(), orgMemberID, options)
+	membershipResponse, err := config.ClientV2.API.OrganizationMemberships().ByOrganization_membership_id(orgMemberID).Get(context.Background(), &abstractions.RequestConfiguration[organizationmemberships.WithOrganization_membership_ItemRequestBuilderGetQueryParameters]{
+		QueryParameters: &organizationmemberships.WithOrganization_membership_ItemRequestBuilderGetQueryParameters{
+			Include: &includeUser,
+		},
+	})
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			d.SetId("")
 			return nil
 		}
 		return fmt.Errorf("error reading configuration of membership %s: %w", orgMemberID, err)
 	}
 
-	d.Set("email", membership.Email)
-	d.Set("organization", membership.Organization.Name)
-	d.Set("user_id", membership.User.ID)
-	d.Set("username", membership.User.Username)
+	membership := membershipResponse.GetData()
+	if membership == nil {
+		return fmt.Errorf("error reading configuration of membership %s: response contained no membership data", orgMemberID)
+	}
+
+	var membershipEmail string
+	if attributes := membership.GetAttributes(); attributes != nil {
+		membershipEmail = valueOrZero(attributes.GetEmail())
+	}
+
+	var organizationName string
+	userID := organizationMembershipUserID(membership)
+	if relationships := membership.GetRelationships(); relationships != nil {
+		if org := relationships.GetOrganization(); org != nil && org.GetData() != nil {
+			organizationName = valueOrZero(org.GetData().GetId())
+		}
+	}
+
+	var membershipUsername string
+	for _, record := range membershipResponse.GetIncluded() {
+		if u := record.GetUsers(); u != nil && userID != "" && valueOrZero(u.GetId()) == userID {
+			if userAttributes := u.GetAttributes(); userAttributes != nil {
+				membershipUsername = valueOrZero(userAttributes.GetUsername())
+			}
+			break
+		}
+	}
+
+	d.Set("email", membershipEmail)
+	d.Set("organization", organizationName)
+	d.Set("user_id", userID)
+	d.Set("username", membershipUsername)
 
 	return nil
 }
