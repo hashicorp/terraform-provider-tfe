@@ -3,6 +3,9 @@
 BREAKING CHANGES:
 * `r/tfe_workspace`: The `hyok_enabled` attribute was incorrectly marked as optional, instead of computed and read-only. This means that it could be set in the configuration, even though it would have no effect on the HCP Terraform workspace. This bug has been resolved, but will mean that any `tfe_workspace` which specifies `hyok_enabled` will see an error after upgrade, and will need to remove the attribute. By @JarrettSpiker [#2134](https://github.com/hashicorp/terraform-provider-tfe/pull/2134)
 
+ENHANCEMENTS:
+* `r/tfe_project_notification_configuration`: Add `url_wo` and `url_wo_version` attribute support. By @Maed223 [#2150](https://github.com/hashicorp/terraform-provider-tfe/pull/2150)
+
 BUG FIXES:
 * `r/tfe_workspace`: Fixed a provider bug where `hyok_enabled` was not being set as a computed read-only attribute, causing unreconcilable drift to occur when HYOK was enabled on a provider-managed workspace. By @JarrettSpiker [#2134](https://github.com/hashicorp/terraform-provider-tfe/pull/2134)
 * `r/tfe_project_notification_configuration`: Fix `Provider produced inconsistent result after apply` error on the sensitive `token` attribute when creating a configuration (such as `slack`) without a `token`. By @maed223 [#2140](https://github.com/hashicorp/terraform-provider-tfe/pull/2140)
