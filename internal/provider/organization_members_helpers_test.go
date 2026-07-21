@@ -4,6 +4,7 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"testing"
@@ -125,6 +126,113 @@ func TestFetchOrganizationMembers(t *testing.T) {
 
 			checkIsEqualMembers(t, receivedMembers, test.expectedMembers)
 			checkIsEqualMembers(t, receivedMembersWaiting, test.expectedMembersWaiting)
+		})
+	}
+}
+
+func userResource(userID, email, username string) string {
+	return fmt.Sprintf(`{
+		"id": %q,
+		"type": "users",
+		"attributes": {"email": %q, "username": %q}
+	}`, userID, email, username)
+}
+
+// TestFetchOrganizationMemberByNameOrEmailV2 is a regression test for a
+// go-tfe v2 generated-client bug: the composed-type factories for JSON:API
+// `included` array elements did not discriminate on the `type` field, so
+// GetUsers() on an included record was always nil regardless of what was
+// actually included. That bug is why tfe_organization_membership stayed on
+// go-tfe v1 for a time. It's fixed upstream (a discriminator was added to the
+// OpenAPI schema for the `included` arrays on the organization-memberships
+// endpoints), and this test exercises real JSON:API deserialization end to
+// end (not just in-memory structs) so a regression would be caught here
+// without requiring a live TFE org or CI-seeded users.
+func TestFetchOrganizationMemberByNameOrEmailV2(t *testing.T) {
+	orgName := "hashicorp"
+
+	pageFor := func(memberships, included string) map[string]string {
+		return map[string]string{
+			"1": fmt.Sprintf(`{"data": [%s], "included": [%s], "meta": %s}`, memberships, included, paginationMeta(1, "null", "1")),
+		}
+	}
+
+	matching := pageFor(
+		membershipResource("ou-orgmember-1", "user-orgmember-1", "org_member_1@hashicorp.com", "active"),
+		userResource("user-orgmember-1", "org_member_1@hashicorp.com", "orgmember1"),
+	)
+
+	noResults := map[string]string{
+		"1": fmt.Sprintf(`{"data": [], "meta": %s}`, paginationMeta(1, "null", "1")),
+	}
+
+	tests := map[string]struct {
+		pages        map[string]string
+		username     string
+		email        string
+		expectExists bool
+		expectedID   string
+		err          bool
+	}{
+		"neither username nor email": {
+			matching,
+			"",
+			"",
+			false,
+			"",
+			true,
+		},
+		"matching email": {
+			matching,
+			"",
+			"org_member_1@hashicorp.com",
+			true,
+			"ou-orgmember-1",
+			false,
+		},
+		"matching username": {
+			matching,
+			"orgmember1",
+			"",
+			true,
+			"ou-orgmember-1",
+			false,
+		},
+		"single result with mismatched identity": {
+			matching,
+			"someone-else",
+			"",
+			false,
+			"",
+			true,
+		},
+		"no results": {
+			noResults,
+			"orgmember1",
+			"",
+			false,
+			"",
+			true,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			client := testTfeClientV2(t, membershipsHandler(orgName, test.pages))
+
+			got, err := fetchOrganizationMemberByNameOrEmailV2(context.Background(), client, orgName, test.username, test.email)
+
+			if (err != nil) != test.err {
+				t.Fatalf("expected error is %t, got %v", test.err, err)
+			}
+
+			if test.expectExists {
+				if got == nil || valueOrZero(got.GetId()) != test.expectedID {
+					t.Fatalf("wrong result\ngot: %#v\nwant membership with ID %q", got, test.expectedID)
+				}
+			} else if got != nil {
+				t.Fatalf("wrong result\ngot: %#v\nwant: nil", got)
+			}
 		})
 	}
 }
