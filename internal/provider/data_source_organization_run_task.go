@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -33,15 +33,36 @@ type modelDataTFEOrganizationRunTaskV0 struct {
 	URL          types.String `tfsdk:"url"`
 }
 
-func dataModelFromTFEOrganizationRunTask(v *tfe.RunTask) modelDataTFEOrganizationRunTaskV0 {
+func dataModelFromTFEOrganizationRunTask(v models.Tasksable, organization string) modelDataTFEOrganizationRunTaskV0 {
+	var category, description, name, url string
+	var enabled bool
+	if attributes := v.GetAttributes(); attributes != nil {
+		category = valueOrZero(attributes.GetCategory())
+		description = valueOrZero(attributes.GetDescription())
+		enabled = valueOrZero(attributes.GetEnabled())
+		name = valueOrZero(attributes.GetName())
+		url = valueOrZero(attributes.GetUrl())
+	}
+
+	// Prefer the organization name from the task's organization relationship,
+	// falling back to the requested organization when it is absent.
+	organizationName := organization
+	if relationships := v.GetRelationships(); relationships != nil {
+		if org := relationships.GetOrganization(); org != nil && org.GetData() != nil {
+			if id := org.GetData().GetId(); id != nil && *id != "" {
+				organizationName = *id
+			}
+		}
+	}
+
 	result := modelDataTFEOrganizationRunTaskV0{
-		Category:     types.StringValue(v.Category),
-		Description:  types.StringValue(v.Description),
-		Enabled:      types.BoolValue(v.Enabled),
-		ID:           types.StringValue(v.ID),
-		Name:         types.StringValue(v.Name),
-		Organization: types.StringValue(v.Organization.Name),
-		URL:          types.StringValue(v.URL),
+		Category:     types.StringValue(category),
+		Description:  types.StringValue(description),
+		Enabled:      types.BoolValue(enabled),
+		ID:           types.StringValue(valueOrZero(v.GetId())),
+		Name:         types.StringValue(name),
+		Organization: types.StringValue(organizationName),
+		URL:          types.StringValue(url),
 	}
 
 	return result
@@ -133,7 +154,7 @@ func (d *dataSourceOrganizationRunTask) Read(ctx context.Context, req datasource
 		return
 	}
 
-	task, err := fetchOrganizationRunTask(data.Name.ValueString(), organization, d.config.Client)
+	task, err := fetchOrganizationRunTaskV2(ctx, data.Name.ValueString(), organization, d.config.ClientV2)
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading Organization Run Task",
 			fmt.Sprintf("Could not read Run Task %q in organization %q, unexpected error: %s", data.Name.String(), organization, err.Error()),
@@ -142,7 +163,7 @@ func (d *dataSourceOrganizationRunTask) Read(ctx context.Context, req datasource
 	}
 
 	// We can never read the HMACkey (Write-only) so assume it's the default (empty)
-	result := dataModelFromTFEOrganizationRunTask(task)
+	result := dataModelFromTFEOrganizationRunTask(task, organization)
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
