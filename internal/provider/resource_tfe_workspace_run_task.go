@@ -9,29 +9,33 @@ import (
 	"fmt"
 	"strings"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfe "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
+	organizationsapi "github.com/hashicorp/go-tfe/v2/api/organizations"
+	workspacesapi "github.com/hashicorp/go-tfe/v2/api/workspaces"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	kiota "github.com/microsoft/kiota-abstractions-go"
 )
 
 const minTFEVersionWorkspaceRunTaskStages = "v202404-1"
 
 func workspaceRunTaskEnforcementLevels() []string {
 	return []string{
-		string(tfe.Advisory),
-		string(tfe.Mandatory),
+		"advisory",
+		"mandatory",
 	}
 }
 
 func workspaceRunTaskStages() []string {
 	return []string{
-		string(tfe.PrePlan),
-		string(tfe.PostPlan),
-		string(tfe.PreApply),
-		string(tfe.PostApply),
+		"pre_plan",
+		"post_plan",
+		"pre_apply",
+		"post_apply",
 	}
 }
 
@@ -65,21 +69,97 @@ func NewWorkspaceRunTaskResource() resource.Resource {
 	return &resourceWorkspaceRunTask{}
 }
 
-func modelFromTFEWorkspaceRunTask(v *tfe.WorkspaceRunTask) modelTFEWorkspaceRunTaskV1 {
+func modelFromTFEWorkspaceRunTaskV2(v models.WorkspaceTasksable) modelTFEWorkspaceRunTaskV1 {
 	result := modelTFEWorkspaceRunTaskV1{
-		ID:               types.StringValue(v.ID),
-		WorkspaceID:      types.StringValue(v.Workspace.ID),
-		TaskID:           types.StringValue(v.RunTask.ID),
-		EnforcementLevel: types.StringValue(string(v.EnforcementLevel)),
-		Stage:            types.StringValue(string(v.Stage)),
+		ID:               types.StringValue(""),
+		WorkspaceID:      types.StringValue(""),
+		TaskID:           types.StringValue(""),
+		EnforcementLevel: types.StringValue(""),
+		Stage:            types.StringValue(""),
 		Stages:           types.ListNull(types.StringType),
 	}
 
-	if stages, err := types.ListValueFrom(ctx, types.StringType, v.Stages); err == nil {
-		result.Stages = stages
+	if v == nil {
+		return result
+	}
+
+	if id := v.GetId(); id != nil {
+		result.ID = types.StringValue(*id)
+	}
+
+	if attrs := v.GetAttributes(); attrs != nil {
+		if enforcementLevel := attrs.GetEnforcementLevel(); enforcementLevel != nil {
+			result.EnforcementLevel = types.StringValue(enforcementLevel.String())
+		}
+
+		if stage := attrs.GetStage(); stage != nil {
+			result.Stage = types.StringValue(*stage)
+		}
+
+		stages := attrs.GetStages()
+		if stages == nil && attrs.GetStage() != nil {
+			stages = []string{*attrs.GetStage()}
+		}
+		if stages, err := types.ListValueFrom(ctx, types.StringType, stages); err == nil {
+			result.Stages = stages
+		}
+	}
+
+	relationships := v.GetRelationships()
+	if workspaceID, ok := workspaceTaskRelationshipWorkspaceID(relationships); ok {
+		result.WorkspaceID = types.StringValue(workspaceID)
+	}
+	if taskID, ok := workspaceTaskRelationshipTaskID(relationships); ok {
+		result.TaskID = types.StringValue(taskID)
 	}
 
 	return result
+}
+
+func workspaceTaskRelationshipWorkspaceID(relationships models.WorkspaceTasks_relationshipsable) (string, bool) {
+	if relationships == nil {
+		return "", false
+	}
+
+	workspace := relationships.GetWorkspace()
+	if workspace == nil {
+		return "", false
+	}
+
+	workspaceData := workspace.GetData()
+	if workspaceData == nil {
+		return "", false
+	}
+
+	id := workspaceData.GetId()
+	if id == nil {
+		return "", false
+	}
+
+	return *id, true
+}
+
+func workspaceTaskRelationshipTaskID(relationships models.WorkspaceTasks_relationshipsable) (string, bool) {
+	if relationships == nil {
+		return "", false
+	}
+
+	task := relationships.GetTask()
+	if task == nil {
+		return "", false
+	}
+
+	taskData := task.GetData()
+	if taskData == nil {
+		return "", false
+	}
+
+	id := taskData.GetId()
+	if id == nil {
+		return "", false
+	}
+
+	return *id, true
 }
 
 func (r *resourceWorkspaceRunTask) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -120,9 +200,9 @@ func (r *resourceWorkspaceRunTask) Read(ctx context.Context, req resource.ReadRe
 	workspaceID := state.WorkspaceID.ValueString()
 
 	tflog.Debug(ctx, "Reading workspace run task")
-	wstask, err := r.config.Client.WorkspaceRunTasks.Read(ctx, workspaceID, wstaskID)
+	wstask, err := r.config.ClientV2.API.Workspaces().ByWorkspace_id(workspaceID).Tasks().ById(wstaskID).Get(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfe.ErrNotFound) {
 			resp.State.RemoveResource(ctx)
 		} else {
 			resp.Diagnostics.AddError("Error reading Workspace Run Task", "Could not read Workspace Run Task, unexpected error: "+err.Error())
@@ -130,7 +210,12 @@ func (r *resourceWorkspaceRunTask) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
-	result := modelFromTFEWorkspaceRunTask(wstask)
+	if wstask == nil || wstask.GetData() == nil {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
+	result := modelFromTFEWorkspaceRunTaskV2(wstask.GetData())
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
@@ -146,56 +231,48 @@ func (r *resourceWorkspaceRunTask) Create(ctx context.Context, req resource.Crea
 	}
 
 	taskID := plan.TaskID.ValueString()
-	task, err := r.config.Client.RunTasks.Read(ctx, taskID)
+	task, err := r.config.ClientV2.API.Tasks().ById(taskID).Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Error retrieving task", "Could not read Organization Run Task "+taskID+", unexpected error: "+err.Error())
 		return
 	}
-
-	workspaceID := plan.WorkspaceID.ValueString()
-	if _, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID); err != nil {
-		resp.Diagnostics.AddError("Error retrieving workspace", "Could not read Workspace "+workspaceID+", unexpected error: "+err.Error())
+	if task == nil || task.GetData() == nil {
+		resp.Diagnostics.AddError("Error retrieving task", "Could not read Organization Run Task "+taskID+", unexpected error: no data returned")
 		return
 	}
 
-	level := tfe.TaskEnforcementLevel(plan.EnforcementLevel.ValueString())
-
-	options := tfe.WorkspaceRunTaskCreateOptions{
-		RunTask:          task,
-		EnforcementLevel: level,
+	workspaceID := plan.WorkspaceID.ValueString()
+	if _, err := r.config.ClientV2.API.Workspaces().ByWorkspace_id(workspaceID).Get(ctx, nil); err != nil {
+		resp.Diagnostics.AddError("Error retrieving workspace", "Could not read Workspace "+workspaceID+", unexpected error: "+err.Error())
+		return
 	}
 
 	stage, stages := r.extractStageAndStages(plan, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	if stage != nil {
-		// Needed for older TFE instances
-		options.Stage = stage //nolint:staticcheck
-	}
-	if stages != nil {
-		options.Stages = &stages
-	}
 
-	tflog.Debug(ctx, fmt.Sprintf("Create task %s in workspace: %s", taskID, workspaceID))
-	wstask, err := r.config.Client.WorkspaceRunTasks.Create(ctx, workspaceID, options)
+	options, err := newWorkspaceRunTaskCreateEnvelope(taskID, plan.EnforcementLevel.ValueString(), stage, stages)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to create workspace task", err.Error())
 		return
 	}
 
-	result := modelFromTFEWorkspaceRunTask(wstask)
+	tflog.Debug(ctx, fmt.Sprintf("Create task %s in workspace: %s", taskID, workspaceID))
+	wstask, err := r.config.ClientV2.API.Workspaces().ByWorkspace_id(workspaceID).Tasks().Post(ctx, options, nil)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to create workspace task", err.Error())
+		return
+	}
+	if wstask == nil || wstask.GetData() == nil {
+		resp.Diagnostics.AddError("Unable to create workspace task", "No Workspace Run Task data was returned by the API")
+		return
+	}
+
+	result := modelFromTFEWorkspaceRunTaskV2(wstask.GetData())
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
-}
-
-func (r *resourceWorkspaceRunTask) stringPointerToStagePointer(val *string) *tfe.Stage {
-	if val == nil {
-		return nil
-	}
-	newVal := tfe.Stage(*val)
-	return &newVal
 }
 
 func (r *resourceWorkspaceRunTask) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -207,35 +284,33 @@ func (r *resourceWorkspaceRunTask) Update(ctx context.Context, req resource.Upda
 		return
 	}
 
-	level := tfe.TaskEnforcementLevel(plan.EnforcementLevel.ValueString())
-
-	options := tfe.WorkspaceRunTaskUpdateOptions{
-		EnforcementLevel: level,
-	}
-
 	stage, stages := r.extractStageAndStages(plan, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	if stage != nil {
-		// Needed for older TFE instances
-		options.Stage = stage //nolint:staticcheck
-	}
-	if stages != nil {
-		options.Stages = &stages
-	}
 
 	wstaskID := plan.ID.ValueString()
-	workspaceID := plan.WorkspaceID.ValueString()
 
-	tflog.Debug(ctx, fmt.Sprintf("Update task %s in workspace %s", wstaskID, workspaceID))
-	wstask, err := r.config.Client.WorkspaceRunTasks.Update(ctx, workspaceID, wstaskID, options)
+	options, err := newWorkspaceRunTaskUpdateEnvelope(wstaskID, plan.EnforcementLevel.ValueString(), stage, stages)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to update workspace task", err.Error())
 		return
 	}
 
-	result := modelFromTFEWorkspaceRunTask(wstask)
+	workspaceID := plan.WorkspaceID.ValueString()
+
+	tflog.Debug(ctx, fmt.Sprintf("Update task %s in workspace %s", wstaskID, workspaceID))
+	wstask, err := r.config.ClientV2.API.Workspaces().ByWorkspace_id(workspaceID).Tasks().ById(wstaskID).Patch(ctx, options, nil)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to update workspace task", err.Error())
+		return
+	}
+	if wstask == nil || wstask.GetData() == nil {
+		resp.Diagnostics.AddError("Unable to update workspace task", "No Workspace Run Task data was returned by the API")
+		return
+	}
+
+	result := modelFromTFEWorkspaceRunTaskV2(wstask.GetData())
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
@@ -253,9 +328,9 @@ func (r *resourceWorkspaceRunTask) Delete(ctx context.Context, req resource.Dele
 	workspaceID := state.WorkspaceID.ValueString()
 
 	tflog.Debug(ctx, fmt.Sprintf("Delete task %s in workspace %s", wstaskID, workspaceID))
-	err := r.config.Client.WorkspaceRunTasks.Delete(ctx, workspaceID, wstaskID)
+	err := r.config.ClientV2.API.Workspaces().ByWorkspace_id(workspaceID).Tasks().ById(wstaskID).Delete(ctx, nil)
 	// Ignore 404s for delete
-	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+	if err != nil && !errors.Is(err, tfe.ErrNotFound) {
 		resp.Diagnostics.AddError(
 			"Error deleting workspace run task",
 			fmt.Sprintf("Couldn't delete task %s in workspace %s: %s", wstaskID, workspaceID, err.Error()),
@@ -278,7 +353,7 @@ func (r *resourceWorkspaceRunTask) ImportState(ctx context.Context, req resource
 	workspaceName := s[1]
 	orgName := s[0]
 
-	if wstask, err := fetchWorkspaceRunTask(taskName, workspaceName, orgName, r.config.Client); err != nil {
+	if wstask, err := fetchWorkspaceRunTaskV2(taskName, workspaceName, orgName, r.config.ClientV2); err != nil {
 		resp.Diagnostics.AddError(
 			"Error importing workspace run task",
 			err.Error(),
@@ -289,7 +364,7 @@ func (r *resourceWorkspaceRunTask) ImportState(ctx context.Context, req resource
 			"Workspace task does not exist or has no details",
 		)
 	} else {
-		result := modelFromTFEWorkspaceRunTask(wstask)
+		result := modelFromTFEWorkspaceRunTaskV2(wstask)
 		resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 	}
 }
@@ -309,16 +384,23 @@ func (r *resourceWorkspaceRunTask) UpgradeState(ctx context.Context) map[int64]r
 				oldWorkspaceID := oldData.WorkspaceID.ValueString()
 				oldID := oldData.ID.ValueString()
 
-				wstask, err := r.config.Client.WorkspaceRunTasks.Read(ctx, oldWorkspaceID, oldID)
-				if err != nil || wstask == nil {
+				wstask, err := r.config.ClientV2.API.Workspaces().ByWorkspace_id(oldWorkspaceID).Tasks().ById(oldID).Get(ctx, nil)
+				if err != nil {
 					resp.Diagnostics.AddError(
 						"Error reading workspace run task",
 						fmt.Sprintf("Couldn't read workspace run task %s while trying to upgrade state of tfe_workspace_run_task: %s", oldID, err.Error()),
 					)
 					return
 				}
+				if wstask == nil || wstask.GetData() == nil {
+					resp.Diagnostics.AddError(
+						"Error reading workspace run task",
+						fmt.Sprintf("Couldn't read workspace run task %s while trying to upgrade state of tfe_workspace_run_task: no data returned", oldID),
+					)
+					return
+				}
 
-				newData := modelFromTFEWorkspaceRunTask(wstask)
+				newData := modelFromTFEWorkspaceRunTaskV2(wstask.GetData())
 				diags = resp.State.Set(ctx, newData)
 				resp.Diagnostics.Append(diags...)
 			},
@@ -336,7 +418,7 @@ func (r *resourceWorkspaceRunTask) addStageSupportDiag(d *diag.Diagnostics, isEr
 	}
 }
 
-func (r *resourceWorkspaceRunTask) extractStageAndStages(plan modelTFEWorkspaceRunTaskV1, d *diag.Diagnostics) (*tfe.Stage, []tfe.Stage) {
+func (r *resourceWorkspaceRunTask) extractStageAndStages(plan modelTFEWorkspaceRunTaskV1, d *diag.Diagnostics) (*string, []string) {
 	// There are some complex interactions here between deprecated values in the TF model, and whether the backend server even supports the newer
 	// API call style. This function attempts to extract the Stage and Stages properties and emit useful diagnostics
 
@@ -360,7 +442,7 @@ func (r *resourceWorkspaceRunTask) extractStageAndStages(plan modelTFEWorkspaceR
 		if plan.Stages.IsUnknown() {
 			// The user has supplied Stage but not Stages. They would already have received the deprecation warning so just munge
 			// the stage into a slice and we're fine
-			stages := []tfe.Stage{tfe.Stage(plan.Stage.ValueString())}
+			stages := []string{plan.Stage.ValueString()}
 			return nil, stages
 		}
 
@@ -370,9 +452,9 @@ func (r *resourceWorkspaceRunTask) extractStageAndStages(plan modelTFEWorkspaceR
 			d.Append(err...)
 			return nil, nil
 		}
-		stages := make([]tfe.Stage, len(stageStrings))
+		stages := make([]string, len(stageStrings))
 		for idx, s := range stageStrings {
-			stages[idx] = tfe.Stage(s.ValueString())
+			stages[idx] = s.ValueString()
 		}
 		return nil, stages
 	}
@@ -402,10 +484,218 @@ func (r *resourceWorkspaceRunTask) extractStageAndStages(plan modelTFEWorkspaceR
 			d.Append(err...)
 			return nil, nil
 		}
-		stage := tfe.Stage(stageStrings[0].ValueString())
+		stage := stageStrings[0].ValueString()
 		return &stage, nil
 	}
 
 	// The user supplied a Stage value to a server that doesn't support stages
-	return r.stringPointerToStagePointer(plan.Stage.ValueStringPointer()), nil
+	return plan.Stage.ValueStringPointer(), nil
+}
+
+func workspaceRunTaskEnforcementLevel(level string) (*models.WorkspaceTasks_attributes_enforcementLevel, error) {
+	switch level {
+	case "advisory":
+		enforcementLevel := models.ADVISORY_WORKSPACETASKS_ATTRIBUTES_ENFORCEMENTLEVEL
+		return &enforcementLevel, nil
+	case "mandatory":
+		enforcementLevel := models.MANDATORY_WORKSPACETASKS_ATTRIBUTES_ENFORCEMENTLEVEL
+		return &enforcementLevel, nil
+	default:
+		return nil, fmt.Errorf("unsupported enforcement level %q", level)
+	}
+}
+
+func newWorkspaceRunTaskAttributes(enforcementLevel string, stage *string, stages []string) (*models.WorkspaceTasks_attributes, error) {
+	parsedEnforcementLevel, err := workspaceRunTaskEnforcementLevel(enforcementLevel)
+	if err != nil {
+		return nil, err
+	}
+
+	attributes := models.NewWorkspaceTasks_attributes()
+	attributes.SetEnforcementLevel(parsedEnforcementLevel)
+	if stage != nil {
+		attributes.SetStage(stage)
+	}
+	if stages != nil {
+		attributes.SetStages(stages)
+	}
+
+	return attributes, nil
+}
+
+func newWorkspaceRunTaskCreateEnvelope(taskID, enforcementLevel string, stage *string, stages []string) (*models.WorkspaceTasksEnvelope, error) {
+	attributes, err := newWorkspaceRunTaskAttributes(enforcementLevel, stage, stages)
+	if err != nil {
+		return nil, err
+	}
+
+	taskRelationshipData := models.NewTasksId_data()
+	taskRelationshipData.SetId(&taskID)
+	taskType := models.TASKS_TASKSID_DATA_TYPE
+	taskRelationshipData.SetTypeEscaped(&taskType)
+
+	taskRelationship := models.NewTasksId()
+	taskRelationship.SetData(taskRelationshipData)
+
+	relationships := models.NewWorkspaceTasks_relationships()
+	relationships.SetTask(taskRelationship)
+
+	workspaceTask := models.NewWorkspaceTasks()
+	workspaceTask.SetAttributes(attributes)
+	workspaceTask.SetRelationships(relationships)
+	workspaceTaskType := models.WORKSPACETASKS_WORKSPACETASKS_TYPE
+	workspaceTask.SetTypeEscaped(&workspaceTaskType)
+
+	envelope := models.NewWorkspaceTasksEnvelope()
+	envelope.SetData(workspaceTask)
+
+	return envelope, nil
+}
+
+func newWorkspaceRunTaskUpdateEnvelope(id, enforcementLevel string, stage *string, stages []string) (*models.WorkspaceTasksEnvelope, error) {
+	attributes, err := newWorkspaceRunTaskAttributes(enforcementLevel, stage, stages)
+	if err != nil {
+		return nil, err
+	}
+
+	workspaceTask := models.NewWorkspaceTasks()
+	workspaceTask.SetId(&id)
+	workspaceTask.SetAttributes(attributes)
+	workspaceTaskType := models.WORKSPACETASKS_WORKSPACETASKS_TYPE
+	workspaceTask.SetTypeEscaped(&workspaceTaskType)
+
+	envelope := models.NewWorkspaceTasksEnvelope()
+	envelope.SetData(workspaceTask)
+
+	return envelope, nil
+}
+
+func fetchWorkspaceRunTaskV2(name, workspace, organization string, client *tfe.Client) (models.WorkspaceTasksable, error) {
+	task, err := fetchOrganizationRunTaskV2(name, organization, client)
+	if err != nil {
+		return nil, fmt.Errorf("Error reading configuration of task %s in organization %s: %w", name, organization, err)
+	}
+
+	ws, err := fetchWorkspaceV2(workspace, organization, client)
+	if err != nil {
+		return nil, fmt.Errorf("Error reading configuration of workspace %s in organization %s: %w", workspace, organization, err)
+	}
+
+	if ws.GetId() == nil {
+		return nil, fmt.Errorf("Error reading configuration of workspace %s in organization %s: workspace has no ID", workspace, organization)
+	}
+
+	workspaceID := *ws.GetId()
+	if task.GetId() == nil {
+		return nil, fmt.Errorf("Error reading configuration of task %s in organization %s: task has no ID", name, organization)
+	}
+	taskID := *task.GetId()
+
+	pageNumber := int32(1)
+	for {
+		query := &workspacesapi.ItemTasksRequestBuilderGetQueryParameters{
+			Pagenumber: &pageNumber,
+		}
+		requestConfig := &kiota.RequestConfiguration[workspacesapi.ItemTasksRequestBuilderGetQueryParameters]{
+			QueryParameters: query,
+		}
+
+		list, err := client.API.Workspaces().ByWorkspace_id(workspaceID).Tasks().Get(ctx, requestConfig)
+		if err != nil {
+			return nil, fmt.Errorf("Error retrieving workspace run tasks: %w", err)
+		}
+		if list == nil {
+			break
+		}
+		if list.GetMeta() == nil {
+			break
+		}
+
+		for _, wstask := range list.GetData() {
+			if wstask == nil || wstask.GetRelationships() == nil || wstask.GetRelationships().GetTask() == nil {
+				continue
+			}
+			taskData := wstask.GetRelationships().GetTask().GetData()
+			if taskData != nil && taskData.GetId() != nil && *taskData.GetId() == taskID {
+				return wstask, nil
+			}
+		}
+
+		nextPage, hasNextPage := nextPageFromPagination(list.GetMeta().GetPagination())
+		if !hasNextPage {
+			break
+		}
+		pageNumber = nextPage
+	}
+
+	return nil, fmt.Errorf("could not find organization run task %s for workspace %s in organization %s", name, workspace, organization)
+}
+
+func fetchOrganizationRunTaskV2(name, organization string, client *tfe.Client) (models.Tasksable, error) {
+	pageNumber := int32(1)
+	for {
+		query := &organizationsapi.ItemTasksRequestBuilderGetQueryParameters{
+			Pagenumber: &pageNumber,
+		}
+		requestConfig := &kiota.RequestConfiguration[organizationsapi.ItemTasksRequestBuilderGetQueryParameters]{
+			QueryParameters: query,
+		}
+
+		list, err := client.API.Organizations().ByOrganization_name(organization).Tasks().Get(ctx, requestConfig)
+		if err != nil {
+			return nil, fmt.Errorf("Error retrieving organization tasks: %w", err)
+		}
+		if list == nil {
+			break
+		}
+		if list.GetMeta() == nil {
+			break
+		}
+
+		for _, task := range list.GetData() {
+			if task == nil || task.GetAttributes() == nil || task.GetAttributes().GetName() == nil {
+				continue
+			}
+			if *task.GetAttributes().GetName() == name {
+				return task, nil
+			}
+		}
+
+		nextPage, hasNextPage := nextPageFromPagination(list.GetMeta().GetPagination())
+		if !hasNextPage {
+			break
+		}
+		pageNumber = nextPage
+	}
+
+	return nil, fmt.Errorf("could not find organization run task for organization %s and name %s", organization, name)
+}
+
+func fetchWorkspaceV2(workspace, organization string, client *tfe.Client) (models.Workspacesable, error) {
+	ws, err := client.API.Organizations().ByOrganization_name(organization).Workspaces().ByWorkspace_name(workspace).Get(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	if ws == nil || ws.GetData() == nil {
+		return nil, fmt.Errorf("workspace %s has no details", workspace)
+	}
+	return ws.GetData(), nil
+}
+
+func nextPageFromPagination(pagination models.Paginationable) (int32, bool) {
+	if pagination == nil {
+		return 0, false
+	}
+
+	currentPage := pagination.GetCurrentPage()
+	totalPages := pagination.GetTotalPages()
+	if currentPage == nil || totalPages == nil || *currentPage >= *totalPages {
+		return 0, false
+	}
+
+	if nextPage := pagination.GetNextPage(); nextPage != nil {
+		return *nextPage, true
+	}
+
+	return *currentPage + 1, true
 }

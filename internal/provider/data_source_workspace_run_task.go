@@ -7,10 +7,12 @@ import (
 	"context"
 	"fmt"
 
-	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/models"
+	workspacesapi "github.com/hashicorp/go-tfe/v2/api/workspaces"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	kiota "github.com/microsoft/kiota-abstractions-go"
 )
 
 var (
@@ -93,21 +95,35 @@ func (d *dataSourceWorkspaceRunTask) Read(ctx context.Context, req datasource.Re
 
 	workspaceID := data.WorkspaceID.ValueString()
 	taskID := data.TaskID.ValueString()
-	var wstask *tfe.WorkspaceRunTask = nil
+	var wstask models.WorkspaceTasksable
 
-	// Create an options struct.
-	options := &tfe.WorkspaceRunTaskListOptions{}
+	pageNumber := int32(1)
 	for {
-		list, err := d.config.Client.WorkspaceRunTasks.List(ctx, workspaceID, options)
+		query := &workspacesapi.ItemTasksRequestBuilderGetQueryParameters{
+			Pagenumber: &pageNumber,
+		}
+		requestConfig := &kiota.RequestConfiguration[workspacesapi.ItemTasksRequestBuilderGetQueryParameters]{
+			QueryParameters: query,
+		}
+
+		list, err := d.config.ClientV2.API.Workspaces().ByWorkspace_id(workspaceID).Tasks().Get(ctx, requestConfig)
 		if err != nil {
 			resp.Diagnostics.AddError("Error retrieving tasks for workspace",
 				fmt.Sprintf("Error retrieving tasks for workspace %s: %s", workspaceID, err.Error()),
 			)
 			return
 		}
+		if list == nil {
+			break
+		}
 
-		for _, item := range list.Items {
-			if item.RunTask.ID == taskID {
+		for _, item := range list.GetData() {
+			if item == nil || item.GetRelationships() == nil || item.GetRelationships().GetTask() == nil {
+				continue
+			}
+
+			taskData := item.GetRelationships().GetTask().GetData()
+			if taskData != nil && taskData.GetId() != nil && *taskData.GetId() == taskID {
 				wstask = item
 				break
 			}
@@ -115,14 +131,15 @@ func (d *dataSourceWorkspaceRunTask) Read(ctx context.Context, req datasource.Re
 		if wstask != nil {
 			break
 		}
-
-		// Exit the loop when we've seen all pages.
-		if list.CurrentPage >= list.TotalPages {
+		if list.GetMeta() == nil {
 			break
 		}
 
-		// Update the page number to get the next page.
-		options.PageNumber = list.NextPage
+		nextPage, hasNextPage := nextPageFromPagination(list.GetMeta().GetPagination())
+		if !hasNextPage {
+			break
+		}
+		pageNumber = nextPage
 	}
 
 	if wstask == nil {
@@ -132,7 +149,7 @@ func (d *dataSourceWorkspaceRunTask) Read(ctx context.Context, req datasource.Re
 		return
 	}
 
-	result := modelFromTFEWorkspaceRunTask(wstask)
+	result := modelFromTFEWorkspaceRunTaskV2(wstask)
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
