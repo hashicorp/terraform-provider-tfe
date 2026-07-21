@@ -268,6 +268,8 @@ func resourceTFERegistryModuleCreateWithVCS(v interface{}, meta interface{}, d *
 
 	if displayIdentifier, ok := vcsRepo["display_identifier"].(string); ok && displayIdentifier != "" {
 		options.VCSRepo.DisplayIdentifier = tfe.String(displayIdentifier)
+	} else {
+		options.VCSRepo.DisplayIdentifier = tfe.String(vcsRepo["identifier"].(string))
 	}
 
 	tags, tagsOk := vcsRepo["tags"].(bool)
