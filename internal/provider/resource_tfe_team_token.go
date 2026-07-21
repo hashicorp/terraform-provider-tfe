@@ -11,6 +11,7 @@ import (
 	"time"
 
 	tfev2 "github.com/hashicorp/go-tfe/v2"
+	tfev2api "github.com/hashicorp/go-tfe/v2/api"
 	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework-validators/boolvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -137,7 +138,8 @@ func (r *resourceTFETeamToken) Create(ctx context.Context, req resource.CreateRe
 
 	teamID := plan.TeamID.ValueString()
 	api := r.config.ClientV2.API
-	if plan.Description.IsNull() {
+	legacy := plan.Description.IsNull()
+	if legacy {
 		// No description indicates legacy behavior where token will be regenerated if it does not exist
 		tflog.Debug(ctx, fmt.Sprintf("Check if a token already exists for team: %s", teamID))
 		_, err := api.Teams().ById(teamID).AuthenticationToken().Get(ctx, nil)
@@ -183,24 +185,7 @@ func (r *resourceTFETeamToken) Create(ctx context.Context, req resource.CreateRe
 	envelope := models.NewAuthenticationTokensEnvelope()
 	envelope.SetData(tokenData)
 
-	var createdTokens []models.AuthenticationTokensable
-	var err error
-	if plan.Description.IsNull() {
-		// Legacy behavior creates (or regenerates) the single, descriptionless team token
-		postResponse, postErr := api.Teams().ById(teamID).AuthenticationToken().Post(ctx, envelope, nil)
-		err = postErr
-		if postResponse != nil {
-			createdTokens = postResponse.GetData()
-		}
-	} else {
-		// Tokens with a description are created on the authentication-tokens
-		// endpoint, which allows multiple tokens per team
-		postResponse, postErr := api.AuthenticationTokens().ById(teamID).Post(ctx, envelope, nil)
-		err = postErr
-		if postResponse != nil {
-			createdTokens = postResponse.GetData()
-		}
-	}
+	token, err := createTeamToken(ctx, api, teamID, envelope, legacy)
 	if err != nil {
 		errDetails := err.Error()
 		if errors.Is(err, tfev2.ErrNotFound) {
@@ -213,15 +198,6 @@ func (r *resourceTFETeamToken) Create(ctx context.Context, req resource.CreateRe
 		)
 		return
 	}
-
-	if len(createdTokens) == 0 || createdTokens[0] == nil || createdTokens[0].GetId() == nil {
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("Error creating new token for team %s", teamID),
-			"API response did not include the created token",
-		)
-		return
-	}
-	token := createdTokens[0]
 
 	tokenValue := types.StringNull()
 	expiredAtValue := types.StringNull()
@@ -236,6 +212,46 @@ func (r *resourceTFETeamToken) Create(ctx context.Context, req resource.CreateRe
 
 	result := modelFromTFEToken(plan.TeamID, types.StringValue(*token.GetId()), tokenValue, plan.ForceRegenerate, expiredAtValue, plan.Description)
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
+}
+
+// authTokenCreateResponse is the common shape of the two generated Post responses used to
+// create a team token. Both model their single created token as a one-element "data" array
+// (a quirk of the generated client's create-response typing - see the
+// openapi-atlas-verification skill), unlike Get responses for the same resource, which
+// return a single object directly.
+type authTokenCreateResponse interface {
+	GetData() []models.AuthenticationTokensable
+}
+
+// createTeamToken creates (or, for the legacy descriptionless token, regenerates) a team
+// authentication token. It picks the same endpoint go-tfe v1's TeamTokens.CreateWithOptions
+// picked internally based on whether a description was set: go-tfe v2 exposes that choice
+// as two distinct generated builders instead of one convenience method. It also unwraps the
+// single-element array the generated responses return down to the one token the API always
+// creates.
+func createTeamToken(ctx context.Context, api *tfev2api.ApiClient, teamID string, envelope models.AuthenticationTokensEnvelopeable, legacy bool) (models.AuthenticationTokensable, error) {
+	var postResponse authTokenCreateResponse
+	var err error
+	if legacy {
+		// Legacy behavior creates (or regenerates) the single, descriptionless team token
+		postResponse, err = api.Teams().ById(teamID).AuthenticationToken().Post(ctx, envelope, nil)
+	} else {
+		// Tokens with a description are created on the authentication-tokens
+		// endpoint, which allows multiple tokens per team
+		postResponse, err = api.AuthenticationTokens().ById(teamID).Post(ctx, envelope, nil)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	var tokens []models.AuthenticationTokensable
+	if postResponse != nil {
+		tokens = postResponse.GetData()
+	}
+	if len(tokens) == 0 || tokens[0] == nil || tokens[0].GetId() == nil {
+		return nil, errors.New("API response did not include the created token")
+	}
+	return tokens[0], nil
 }
 
 func modelFromTFEToken(teamID types.String, tokenID types.String, stateValue types.String, forceRegenerate types.Bool, expiredAt types.String, description types.String) modelTFETeamToken {
