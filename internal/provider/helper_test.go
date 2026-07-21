@@ -10,11 +10,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/go-uuid"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -52,6 +54,25 @@ func testTfeClient(t *testing.T, options testClientOptions) *tfe.Client {
 	}
 
 	client.Workspaces = newMockWorkspaces(options)
+
+	return client
+}
+
+// testTfeClientV2 creates a go-tfe v2 client backed by an httptest server
+// running the given handler. The server is closed when the test finishes.
+func testTfeClientV2(t *testing.T, handler http.Handler) *tfev2.Client {
+	t.Helper()
+
+	server := httptest.NewServer(handler)
+	t.Cleanup(server.Close)
+
+	client, err := tfev2.NewClient(&tfev2.Config{
+		Address: server.URL,
+		Token:   "not-a-token",
+	})
+	if err != nil {
+		t.Fatalf("error creating tfe v2 client: %v", err)
+	}
 
 	return client
 }
