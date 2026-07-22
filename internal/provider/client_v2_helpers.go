@@ -8,6 +8,14 @@ import (
 	abstractions "github.com/microsoft/kiota-abstractions-go"
 )
 
+// ptr returns a pointer to a copy of v. go-tfe v2 generated model setters
+// take pointers (including to generated enum value types, whose constants
+// cannot be addressed directly), but go-tfe v2 does not provide v1's
+// tfe.String/tfe.Bool-style convenience constructors.
+func ptr[T any](v T) *T {
+	return &v
+}
+
 // valueOrZero dereferences an optional pointer returned by a go-tfe v2
 // generated getter, returning the type's zero value when the pointer is nil.
 // This preserves go-tfe v1 behavior, where absent JSON:API attributes were

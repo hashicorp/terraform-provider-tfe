@@ -39,12 +39,12 @@ func init() {
 
 			sdkProvider := Provider()
 			sdkProvider.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
-				providerClient, err := getProviderClientUsingEnv()
-				cc := ConfiguredClient{}
-				if providerClient != nil {
-					cc.Client = providerClient.TfeClient
-					cc.ClientV2 = providerClient.TFEClientV2
-				}
+			providerClient, err := getProviderClientUsingEnv()
+			cc := ConfiguredClient{}
+			if providerClient != nil {
+				cc.Client = providerClient.TfeClient
+				cc.ClientV2 = providerClient.TFEClientV2
+			}
 
 				// Save a reference to the configured client instance for use in tests.
 				testAccConfiguredClient = &cc
@@ -87,18 +87,18 @@ func muxedProvidersWithCustomClient(clientFn func() *tfe.Client) map[string]func
 			nextProvider := providerserver.NewProtocol6(NewFrameworkProvider())
 
 			sdkProvider := Provider()
-			sdkProvider.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
-				// Save a reference to the configured client instance for use in tests.
-				client := clientFn()
-				clientV2, err := getClientV2UsingEnv()
-				cc := ConfiguredClient{
-					Client:   client,
-					ClientV2: clientV2,
-				}
-				testAccConfiguredClient = &cc
-
-				return cc, diag.FromErr(err)
+		sdkProvider.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
+			// Save a reference to the configured client instance for use in tests.
+			client := clientFn()
+			clientV2, err := getClientV2UsingEnv()
+			cc := ConfiguredClient{
+				Client:   client,
+				ClientV2: clientV2,
 			}
+			testAccConfiguredClient = &cc
+
+			return cc, diag.FromErr(err)
+		}
 
 			upgradedSDKProvider, err := tf5to6server.UpgradeServer(
 				ctx,
@@ -136,20 +136,20 @@ func muxedProvidersWithDefaultOrganization(defaultOrgName string) map[string]fun
 			nextProvider := providerserver.NewProtocol6(NewFrameworkProviderWithDefaultOrg(defaultOrgName))
 
 			sdkProvider := Provider()
-			sdkProvider.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
-				providerClient, err := getProviderClientUsingEnv()
-				cc := ConfiguredClient{
-					Organization: defaultOrgName,
-				}
-				if providerClient != nil {
-					cc.Client = providerClient.TfeClient
-					cc.ClientV2 = providerClient.TFEClientV2
-				}
-
-				// Save a reference to the configured client instance for use in tests.
-				testAccConfiguredClient = &cc
-				return cc, diag.FromErr(err)
+		sdkProvider.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
+			providerClient, err := getProviderClientUsingEnv()
+			cc := ConfiguredClient{
+				Organization: defaultOrgName,
 			}
+			if providerClient != nil {
+				cc.Client = providerClient.TfeClient
+				cc.ClientV2 = providerClient.TFEClientV2
+			}
+
+			// Save a reference to the configured client instance for use in tests.
+			testAccConfiguredClient = &cc
+			return cc, diag.FromErr(err)
+		}
 
 			upgradedSDKProvider, err := tf5to6server.UpgradeServer(
 				ctx,
