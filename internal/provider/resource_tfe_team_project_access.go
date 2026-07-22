@@ -419,11 +419,7 @@ func resourceTFETeamProjectAccessRead(ctx context.Context, d *schema.ResourceDat
 	attrs := tmAccess.GetAttributes()
 
 	// Update config.
-	accessValue := ""
-	if a := attrs.GetAccess(); a != nil {
-		accessValue = a.String()
-	}
-	d.Set("access", accessValue)
+	d.Set("access", enumStringOrEmpty(attrs.GetAccess()))
 
 	if relationships := tmAccess.GetRelationships(); relationships != nil && relationships.GetTeam() != nil && relationships.GetTeam().GetData() != nil {
 		d.Set("team_id", valueOrZero(relationships.GetTeam().GetData().GetId()))
@@ -438,18 +434,9 @@ func resourceTFETeamProjectAccessRead(ctx context.Context, d *schema.ResourceDat
 	}
 
 	if pa := attrs.GetProjectAccess(); pa != nil {
-		settingsValue := ""
-		if s := pa.GetSettings(); s != nil {
-			settingsValue = s.String()
-		}
-		teamsValue := ""
-		if t := pa.GetTeams(); t != nil {
-			teamsValue = t.String()
-		}
-
 		projectAccess := []map[string]interface{}{{
-			"settings":      settingsValue,
-			"teams":         teamsValue,
+			"settings":      enumStringOrEmpty(pa.GetSettings()),
+			"teams":         enumStringOrEmpty(pa.GetTeams()),
 			"variable_sets": valueOrZero(pa.GetVariableSets()),
 		}}
 
@@ -459,28 +446,11 @@ func resourceTFETeamProjectAccessRead(ctx context.Context, d *schema.ResourceDat
 	}
 
 	if wa := attrs.GetWorkspaceAccess(); wa != nil {
-		stateVersionsValue := ""
-		if sv := wa.GetStateVersions(); sv != nil {
-			stateVersionsValue = sv.String()
-		}
-		sentinelMocksValue := ""
-		if sm := wa.GetSentinelMocks(); sm != nil {
-			sentinelMocksValue = sm.String()
-		}
-		runsValue := ""
-		if r := wa.GetRuns(); r != nil {
-			runsValue = r.String()
-		}
-		variablesValue := ""
-		if v := wa.GetVariables(); v != nil {
-			variablesValue = v.String()
-		}
-
 		workspaceAccess := []map[string]interface{}{{
-			"state_versions":   stateVersionsValue,
-			"sentinel_mocks":   sentinelMocksValue,
-			"runs":             runsValue,
-			"variables":        variablesValue,
+			"state_versions":   enumStringOrEmpty(wa.GetStateVersions()),
+			"sentinel_mocks":   enumStringOrEmpty(wa.GetSentinelMocks()),
+			"runs":             enumStringOrEmpty(wa.GetRuns()),
+			"variables":        enumStringOrEmpty(wa.GetVariables()),
 			"create":           valueOrZero(wa.GetCreate()),
 			"locking":          valueOrZero(wa.GetLocking()),
 			"move":             valueOrZero(wa.GetMove()),
