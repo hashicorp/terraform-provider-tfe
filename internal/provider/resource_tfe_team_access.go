@@ -10,11 +10,14 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -192,82 +195,134 @@ func resourceTFETeamAccessCreate(d *schema.ResourceData, meta interface{}) error
 
 	// Get the workspace
 	workspaceID := d.Get(teamAccessWorkspaceIDKey).(string)
-	ws, err := config.Client.Workspaces.ReadByID(ctx, workspaceID)
+	ws, err := config.ClientV2.API.Workspaces().ByWorkspace_id(workspaceID).Get(ctx, nil)
 	if err != nil {
 		return fmt.Errorf(
 			"Error retrieving workspace %s: %w", workspaceID, err)
 	}
+	if ws == nil || ws.GetData() == nil {
+		return fmt.Errorf("Error retrieving workspace %s: no data returned", workspaceID)
+	}
 
 	// Get the team.
 	teamID := d.Get(teamAccessTeamIDKey).(string)
-	tm, err := config.Client.Teams.Read(ctx, teamID)
+	tm, err := config.ClientV2.API.Teams().ById(teamID).Get(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("Error retrieving team %s: %w", teamID, err)
 	}
-
-	// Create a new options struct.
-	options := tfe.TeamAccessAddOptions{
-		Access:    tfe.Access(tfe.AccessType(access)),
-		Team:      tm,
-		Workspace: ws,
+	if tm == nil || tm.GetData() == nil {
+		return fmt.Errorf("Error retrieving team %s: no data returned", teamID)
 	}
+
+	// Create a new attributes struct.
+	accessValue, aerr := models.ParseTeamWorkspaces_attributes_access(access)
+	if aerr != nil {
+		return fmt.Errorf("invalid team access value %q: %w", access, aerr)
+	}
+	attributes := models.NewTeamWorkspaces_attributes()
+	attributes.SetAccess(accessValue.(*models.TeamWorkspaces_attributes_access))
 
 	permissionsRunsPath := fmt.Sprintf("%s.0.%s", teamAccessPermissionsKey, permissionsRunsKey)
 	if d.HasChange(permissionsRunsPath) {
 		if v, ok := d.GetOk(permissionsRunsPath); ok {
-			options.Runs = tfe.RunsPermission(tfe.RunsPermissionType(v.(string)))
+			runsValue, err := models.ParseTeamWorkspaces_attributes_runs(v.(string))
+			if err != nil {
+				return fmt.Errorf("invalid runs permission %q: %w", v.(string), err)
+			}
+			attributes.SetRuns(runsValue.(*models.TeamWorkspaces_attributes_runs))
 		}
 	}
 
 	permissionsVariablesPath := fmt.Sprintf("%s.0.%s", teamAccessPermissionsKey, permissionsVariablesKey)
 	if d.HasChange(permissionsVariablesPath) {
 		if v, ok := d.GetOk(permissionsVariablesPath); ok {
-			options.Variables = tfe.VariablesPermission(tfe.VariablesPermissionType(v.(string)))
+			variablesValue, err := models.ParseTeamWorkspaces_attributes_variables(v.(string))
+			if err != nil {
+				return fmt.Errorf("invalid variables permission %q: %w", v.(string), err)
+			}
+			attributes.SetVariables(variablesValue.(*models.TeamWorkspaces_attributes_variables))
 		}
 	}
 
 	permissionsStateVersionsPath := fmt.Sprintf("%s.0.%s", teamAccessPermissionsKey, permissionsStateVersionsKey)
 	if d.HasChange(permissionsStateVersionsPath) {
 		if v, ok := d.GetOk(permissionsStateVersionsPath); ok {
-			options.StateVersions = tfe.StateVersionsPermission(tfe.StateVersionsPermissionType(v.(string)))
+			stateVersionsValue, err := models.ParseTeamWorkspaces_attributes_stateVersions(v.(string))
+			if err != nil {
+				return fmt.Errorf("invalid state_versions permission %q: %w", v.(string), err)
+			}
+			attributes.SetStateVersions(stateVersionsValue.(*models.TeamWorkspaces_attributes_stateVersions))
 		}
 	}
 
 	permissionsSentinelMocksPath := fmt.Sprintf("%s.0.%s", teamAccessPermissionsKey, permissionsSentinelMocksKey)
 	if d.HasChange(permissionsSentinelMocksPath) {
 		if v, ok := d.GetOk(permissionsSentinelMocksPath); ok {
-			options.SentinelMocks = tfe.SentinelMocksPermission(tfe.SentinelMocksPermissionType(v.(string)))
+			sentinelMocksValue, err := models.ParseTeamWorkspaces_attributes_sentinelMocks(v.(string))
+			if err != nil {
+				return fmt.Errorf("invalid sentinel_mocks permission %q: %w", v.(string), err)
+			}
+			attributes.SetSentinelMocks(sentinelMocksValue.(*models.TeamWorkspaces_attributes_sentinelMocks))
 		}
 	}
 
 	permissionsWorkspaceLockingPath := fmt.Sprintf("%s.0.%s", teamAccessPermissionsKey, permissionsWorkspaceLockingKey)
 	if d.HasChange(permissionsWorkspaceLockingPath) {
 		if v, ok := d.GetOkExists(permissionsWorkspaceLockingPath); ok {
-			options.WorkspaceLocking = tfe.Bool(v.(bool))
+			attributes.SetWorkspaceLocking(ptr(v.(bool)))
 		}
 	}
 
 	permissionsRunTasksPath := fmt.Sprintf("%s.0.%s", teamAccessPermissionsKey, permissionsRunTasksKey)
 	if d.HasChange(permissionsRunTasksPath) {
 		if v, ok := d.GetOkExists(permissionsRunTasksPath); ok {
-			options.RunTasks = tfe.Bool(v.(bool))
+			attributes.SetRunTasks(ptr(v.(bool)))
 		}
 	}
 
 	if d.HasChange("permissions.0.policy_overrides") {
 		if v, ok := d.GetOkExists("permissions.0.policy_overrides"); ok {
-			options.PolicyOverrides = tfe.Bool(v.(bool))
+			attributes.SetPolicyOverrides(ptr(v.(bool)))
 		}
 	}
 
-	log.Printf("[DEBUG] Give team %s %s access to workspace: %s", tm.Name, access, ws.Name)
-	tmAccess, err := config.Client.TeamAccess.Add(ctx, options)
+	teamRelationship := models.NewTeamsId()
+	teamRelationshipData := models.NewTeamsId_data()
+	teamRelationshipData.SetId(ptr(teamID))
+	teamRelationshipData.SetTypeEscaped(ptr(models.TEAMS_TEAMSID_DATA_TYPE))
+	teamRelationship.SetData(teamRelationshipData)
+
+	workspaceRelationship := models.NewWorkspacesId()
+	workspaceRelationshipData := models.NewWorkspacesId_data()
+	workspaceRelationshipData.SetId(ptr(workspaceID))
+	workspaceRelationship.SetData(workspaceRelationshipData)
+
+	relationships := models.NewTeamWorkspaces_relationships()
+	relationships.SetTeam(teamRelationship)
+	relationships.SetWorkspace(workspaceRelationship)
+
+	teamWorkspace := models.NewTeamWorkspaces()
+	teamWorkspace.SetTypeEscaped(ptr(models.TEAMWORKSPACES_TEAMWORKSPACES_TYPE))
+	teamWorkspace.SetAttributes(attributes)
+	teamWorkspace.SetRelationships(relationships)
+
+	envelope := models.NewTeamWorkspacesEnvelope()
+	envelope.SetData(teamWorkspace)
+
+	teamName := valueOrZero(tm.GetData().GetAttributes().GetName())
+	workspaceName := valueOrZero(ws.GetData().GetAttributes().GetName())
+
+	log.Printf("[DEBUG] Give team %s %s access to workspace: %s", teamName, access, workspaceName)
+	result, err := config.ClientV2.API.TeamWorkspaces().Post(ctx, envelope, nil)
 	if err != nil {
 		return fmt.Errorf(
-			"Error giving team %s %s access to workspace %s: %w", tm.Name, access, ws.Name, err)
+			"Error giving team %s %s access to workspace %s: %w", teamName, access, workspaceName, err)
+	}
+	if result == nil || result.GetData() == nil {
+		return fmt.Errorf("Error giving team %s %s access to workspace %s: no data returned", teamName, access, workspaceName)
 	}
 
-	d.SetId(tmAccess.ID)
+	d.SetId(valueOrZero(result.GetData().GetId()))
 
 	return resourceTFETeamAccessRead(d, meta)
 }
@@ -276,33 +331,61 @@ func resourceTFETeamAccessRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read configuration of team access: %s", d.Id())
-	tmAccess, err := config.Client.TeamAccess.Read(ctx, d.Id())
+	result, err := config.ClientV2.API.TeamWorkspaces().ByTeam_workspace_id(d.Id()).Get(ctx, nil)
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			log.Printf("[DEBUG] Team access %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}
 		return fmt.Errorf("Error reading configuration of team access %s: %w", d.Id(), err)
 	}
+	if result == nil || result.GetData() == nil {
+		log.Printf("[DEBUG] Team access %s no longer exists", d.Id())
+		d.SetId("")
+		return nil
+	}
+	tmAccess := result.GetData()
+	attrs := tmAccess.GetAttributes()
+
+	accessValue := ""
+	if a := attrs.GetAccess(); a != nil {
+		accessValue = a.String()
+	}
+	runsValue := ""
+	if r := attrs.GetRuns(); r != nil {
+		runsValue = r.String()
+	}
+	variablesValue := ""
+	if v := attrs.GetVariables(); v != nil {
+		variablesValue = v.String()
+	}
+	stateVersionsValue := ""
+	if sv := attrs.GetStateVersions(); sv != nil {
+		stateVersionsValue = sv.String()
+	}
+	sentinelMocksValue := ""
+	if sm := attrs.GetSentinelMocks(); sm != nil {
+		sentinelMocksValue = sm.String()
+	}
 
 	// Update config.
-	d.Set(teamAccessAccessKey, string(tmAccess.Access))
+	d.Set(teamAccessAccessKey, accessValue)
 	permissions := []map[string]interface{}{{
-		permissionsRunsKey:             tmAccess.Runs,
-		permissionsVariablesKey:        tmAccess.Variables,
-		permissionsStateVersionsKey:    tmAccess.StateVersions,
-		permissionsSentinelMocksKey:    tmAccess.SentinelMocks,
-		permissionsWorkspaceLockingKey: tmAccess.WorkspaceLocking,
-		permissionsRunTasksKey:         tmAccess.RunTasks,
-		permissionsPolicyOverridesKey:  tmAccess.PolicyOverrides,
+		permissionsRunsKey:             runsValue,
+		permissionsVariablesKey:        variablesValue,
+		permissionsStateVersionsKey:    stateVersionsValue,
+		permissionsSentinelMocksKey:    sentinelMocksValue,
+		permissionsWorkspaceLockingKey: valueOrZero(attrs.GetWorkspaceLocking()),
+		permissionsRunTasksKey:         valueOrZero(attrs.GetRunTasks()),
+		permissionsPolicyOverridesKey:  valueOrZero(attrs.GetPolicyOverrides()),
 	}}
 	if err := d.Set(teamAccessPermissionsKey, permissions); err != nil {
 		return fmt.Errorf("error setting permissions for team access %s: %w", d.Id(), err)
 	}
 
-	if tmAccess.Team != nil {
-		d.Set(teamAccessTeamIDKey, tmAccess.Team.ID)
+	if relationships := tmAccess.GetRelationships(); relationships != nil && relationships.GetTeam() != nil && relationships.GetTeam().GetData() != nil {
+		d.Set(teamAccessTeamIDKey, valueOrZero(relationships.GetTeam().GetData().GetId()))
 	} else {
 		d.Set(teamAccessTeamIDKey, "")
 	}
@@ -313,77 +396,124 @@ func resourceTFETeamAccessRead(d *schema.ResourceData, meta interface{}) error {
 func resourceTFETeamAccessUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
-	// create an options struct
-	options := tfe.TeamAccessUpdateOptions{}
-
 	// Set access level
 	access := d.Get(teamAccessAccessKey).(string)
-	options.Access = tfe.Access(tfe.AccessType(access))
+	accessValue, aerr := models.ParseTeamWorkspaces_attributes_access(access)
+	if aerr != nil {
+		return fmt.Errorf("invalid team access value %q: %w", access, aerr)
+	}
+	attributes := models.NewTeamWorkspaces_attributes()
+	attributes.SetAccess(accessValue.(*models.TeamWorkspaces_attributes_access))
 
 	permissionsRunsPath := fmt.Sprintf("%s.0.%s", teamAccessPermissionsKey, permissionsRunsKey)
 	if d.HasChange(permissionsRunsPath) {
 		if v, ok := d.GetOk(permissionsRunsPath); ok {
-			options.Runs = tfe.RunsPermission(tfe.RunsPermissionType(v.(string)))
+			runsValue, err := models.ParseTeamWorkspaces_attributes_runs(v.(string))
+			if err != nil {
+				return fmt.Errorf("invalid runs permission %q: %w", v.(string), err)
+			}
+			attributes.SetRuns(runsValue.(*models.TeamWorkspaces_attributes_runs))
 		}
 	}
 
 	permissionsVariablesPath := fmt.Sprintf("%s.0.%s", teamAccessPermissionsKey, permissionsVariablesKey)
 	if d.HasChange(permissionsVariablesPath) {
 		if v, ok := d.GetOk(permissionsVariablesPath); ok {
-			options.Variables = tfe.VariablesPermission(tfe.VariablesPermissionType(v.(string)))
+			variablesValue, err := models.ParseTeamWorkspaces_attributes_variables(v.(string))
+			if err != nil {
+				return fmt.Errorf("invalid variables permission %q: %w", v.(string), err)
+			}
+			attributes.SetVariables(variablesValue.(*models.TeamWorkspaces_attributes_variables))
 		}
 	}
 
 	permissionsStateVersionsPath := fmt.Sprintf("%s.0.%s", teamAccessPermissionsKey, permissionsStateVersionsKey)
 	if d.HasChange(permissionsStateVersionsPath) {
 		if v, ok := d.GetOk(permissionsStateVersionsPath); ok {
-			options.StateVersions = tfe.StateVersionsPermission(tfe.StateVersionsPermissionType(v.(string)))
+			stateVersionsValue, err := models.ParseTeamWorkspaces_attributes_stateVersions(v.(string))
+			if err != nil {
+				return fmt.Errorf("invalid state_versions permission %q: %w", v.(string), err)
+			}
+			attributes.SetStateVersions(stateVersionsValue.(*models.TeamWorkspaces_attributes_stateVersions))
 		}
 	}
 
 	permissionsSentinelMocksPath := fmt.Sprintf("%s.0.%s", teamAccessPermissionsKey, permissionsSentinelMocksKey)
 	if d.HasChange(permissionsSentinelMocksPath) {
 		if v, ok := d.GetOk(permissionsSentinelMocksPath); ok {
-			options.SentinelMocks = tfe.SentinelMocksPermission(tfe.SentinelMocksPermissionType(v.(string)))
+			sentinelMocksValue, err := models.ParseTeamWorkspaces_attributes_sentinelMocks(v.(string))
+			if err != nil {
+				return fmt.Errorf("invalid sentinel_mocks permission %q: %w", v.(string), err)
+			}
+			attributes.SetSentinelMocks(sentinelMocksValue.(*models.TeamWorkspaces_attributes_sentinelMocks))
 		}
 	}
 
 	permissionsWorkspaceLockingPath := fmt.Sprintf("%s.0.%s", teamAccessPermissionsKey, permissionsWorkspaceLockingKey)
 	if d.HasChange(permissionsWorkspaceLockingPath) {
 		if v, ok := d.GetOkExists(permissionsWorkspaceLockingPath); ok {
-			options.WorkspaceLocking = tfe.Bool(v.(bool))
+			attributes.SetWorkspaceLocking(ptr(v.(bool)))
 		}
 	}
 
 	permissionsRunTasksPath := fmt.Sprintf("%s.0.%s", teamAccessPermissionsKey, permissionsRunTasksKey)
 	if d.HasChange(permissionsRunTasksPath) {
 		if v, ok := d.GetOkExists(permissionsRunTasksPath); ok {
-			options.RunTasks = tfe.Bool(v.(bool))
+			attributes.SetRunTasks(ptr(v.(bool)))
 		}
 	}
 
 	if d.HasChange("permissions.0.policy_overrides") {
 		if v, ok := d.GetOkExists("permissions.0.policy_overrides"); ok {
-			options.PolicyOverrides = tfe.Bool(v.(bool))
+			attributes.SetPolicyOverrides(ptr(v.(bool)))
 		}
 	}
 
+	teamWorkspace := models.NewTeamWorkspaces()
+	teamWorkspace.SetTypeEscaped(ptr(models.TEAMWORKSPACES_TEAMWORKSPACES_TYPE))
+	teamWorkspace.SetId(ptr(d.Id()))
+	teamWorkspace.SetAttributes(attributes)
+
+	envelope := models.NewTeamWorkspacesEnvelope()
+	envelope.SetData(teamWorkspace)
+
 	log.Printf("[DEBUG] Update team access: %s", d.Id())
-	tmAccess, err := config.Client.TeamAccess.Update(ctx, d.Id(), options)
+	result, err := config.ClientV2.API.TeamWorkspaces().ByTeam_workspace_id(d.Id()).Patch(ctx, envelope, nil)
 	if err != nil {
 		return fmt.Errorf(
 			"Error updating team access %s: %w", d.Id(), err)
 	}
+	if result == nil || result.GetData() == nil {
+		return fmt.Errorf("Error updating team access %s: no data returned", d.Id())
+	}
+	updatedAttrs := result.GetData().GetAttributes()
+
+	updatedRunsValue := ""
+	if r := updatedAttrs.GetRuns(); r != nil {
+		updatedRunsValue = r.String()
+	}
+	updatedVariablesValue := ""
+	if v := updatedAttrs.GetVariables(); v != nil {
+		updatedVariablesValue = v.String()
+	}
+	updatedStateVersionsValue := ""
+	if sv := updatedAttrs.GetStateVersions(); sv != nil {
+		updatedStateVersionsValue = sv.String()
+	}
+	updatedSentinelMocksValue := ""
+	if sm := updatedAttrs.GetSentinelMocks(); sm != nil {
+		updatedSentinelMocksValue = sm.String()
+	}
 
 	// Update permissions, in the case that they were marked to be recomputed.
 	permissions := []map[string]interface{}{{
-		permissionsRunsKey:             tmAccess.Runs,
-		permissionsVariablesKey:        tmAccess.Variables,
-		permissionsStateVersionsKey:    tmAccess.StateVersions,
-		permissionsSentinelMocksKey:    tmAccess.SentinelMocks,
-		permissionsWorkspaceLockingKey: tmAccess.WorkspaceLocking,
-		permissionsRunTasksKey:         tmAccess.RunTasks,
-		permissionsPolicyOverridesKey:  tmAccess.PolicyOverrides,
+		permissionsRunsKey:             updatedRunsValue,
+		permissionsVariablesKey:        updatedVariablesValue,
+		permissionsStateVersionsKey:    updatedStateVersionsValue,
+		permissionsSentinelMocksKey:    updatedSentinelMocksValue,
+		permissionsWorkspaceLockingKey: valueOrZero(updatedAttrs.GetWorkspaceLocking()),
+		permissionsRunTasksKey:         valueOrZero(updatedAttrs.GetRunTasks()),
+		permissionsPolicyOverridesKey:  valueOrZero(updatedAttrs.GetPolicyOverrides()),
 	}}
 	if err := d.Set(teamAccessPermissionsKey, permissions); err != nil {
 		return fmt.Errorf("error setting permissions for team access %s: %w", d.Id(), err)
@@ -396,9 +526,9 @@ func resourceTFETeamAccessDelete(d *schema.ResourceData, meta interface{}) error
 	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete team access: %s", d.Id())
-	err := config.Client.TeamAccess.Remove(ctx, d.Id())
+	err := config.ClientV2.API.TeamWorkspaces().ByTeam_workspace_id(d.Id()).Delete(ctx, nil)
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			return nil
 		}
 		return fmt.Errorf("Error deleting team access %s: %w", d.Id(), err)
@@ -419,7 +549,7 @@ func resourceTFETeamAccessImporter(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	// Set the fields that are part of the import ID.
-	workspaceID, err := fetchWorkspaceExternalID(s[0]+"/"+s[1], config.Client)
+	workspaceID, err := fetchWorkspaceExternalIDV2(s[0]+"/"+s[1], config.ClientV2)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"error retrieving workspace %s from organization %s: %w", s[1], s[0], err)
