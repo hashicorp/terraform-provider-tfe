@@ -5,8 +5,33 @@ package provider
 
 import (
 	"github.com/hashicorp/go-tfe/v2/api/models"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	abstractions "github.com/microsoft/kiota-abstractions-go"
 )
+
+// enumStringOrEmpty dereferences an optional pointer-to-enum returned by a
+// go-tfe v2 generated getter, returning an empty string when the pointer is
+// nil. This is the standard pattern for optional enum attributes in go-tfe v2
+// generated models, which expose enum values as *T rather than T.
+//
+// Usage: enumStringOrEmpty(attrs.GetRuns())
+func enumStringOrEmpty[T interface{ String() string }](v *T) string {
+	if v == nil {
+		return ""
+	}
+	return (*v).String()
+}
+
+// schemaSetToStringSlice converts a *schema.Set whose elements are strings
+// into a []string. This is a common operation when reading TypeSet fields from
+// Terraform state or config in SDK-style resources.
+func schemaSetToStringSlice(s *schema.Set) []string {
+	items := make([]string, 0, s.Len())
+	for _, v := range s.List() {
+		items = append(items, v.(string))
+	}
+	return items
+}
 
 // ptr returns a pointer to a copy of v. go-tfe v2 generated model setters
 // take pointers (including to generated enum value types, whose constants
