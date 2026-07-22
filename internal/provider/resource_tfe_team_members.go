@@ -55,10 +55,7 @@ func resourceTFETeamMembersCreate(d *schema.ResourceData, meta interface{}) erro
 	teamID := d.Get("team_id").(string)
 
 	// Collect all the usernames that need to be added.
-	var usernames []string
-	for _, username := range d.Get("usernames").(*schema.Set).List() {
-		usernames = append(usernames, username.(string))
-	}
+	usernames := schemaSetToStringSlice(d.Get("usernames").(*schema.Set))
 
 	log.Printf("[DEBUG] Add users to team: %s", teamID)
 	err := teamMembersAddUsersV2(ctx, config.ClientV2.API, teamID, usernames)
@@ -110,13 +107,8 @@ func resourceTFETeamMembersUpdate(d *schema.ResourceData, meta interface{}) erro
 
 		// First add the new users.
 		if newUsers.Len() > 0 {
-			var usernames []string
-			for _, username := range newUsers.List() {
-				usernames = append(usernames, username.(string))
-			}
-
 			log.Printf("[DEBUG] Add users to team: %s", d.Id())
-			err := teamMembersAddUsersV2(ctx, config.ClientV2.API, d.Id(), usernames)
+			err := teamMembersAddUsersV2(ctx, config.ClientV2.API, d.Id(), schemaSetToStringSlice(newUsers))
 			if err != nil {
 				return fmt.Errorf("Error adding users to team %s: %w", d.Id(), err)
 			}
@@ -124,13 +116,8 @@ func resourceTFETeamMembersUpdate(d *schema.ResourceData, meta interface{}) erro
 
 		// Then delete all the old users.
 		if oldUsers.Len() > 0 {
-			var usernames []string
-			for _, username := range oldUsers.List() {
-				usernames = append(usernames, username.(string))
-			}
-
 			log.Printf("[DEBUG] Remove users from team: %s", d.Id())
-			err := teamMembersRemoveUsersV2(ctx, config.ClientV2.API, d.Id(), usernames)
+			err := teamMembersRemoveUsersV2(ctx, config.ClientV2.API, d.Id(), schemaSetToStringSlice(oldUsers))
 			if err != nil {
 				return fmt.Errorf("Error removing users to team %s: %w", d.Id(), err)
 			}

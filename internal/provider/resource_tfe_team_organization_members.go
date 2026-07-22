@@ -56,11 +56,7 @@ func resourceTFETeamOrganizationMembersCreate(d *schema.ResourceData, meta inter
 	// Get the team ID.
 	teamID := d.Get("team_id").(string)
 
-	var organizationMembershipIDs []string
-	// Get all organization membership IDs
-	for _, id := range d.Get("organization_membership_ids").(*schema.Set).List() {
-		organizationMembershipIDs = append(organizationMembershipIDs, id.(string))
-	}
+	organizationMembershipIDs := schemaSetToStringSlice(d.Get("organization_membership_ids").(*schema.Set))
 
 	log.Printf("[DEBUG] Add organization memberships %v to team: %s", organizationMembershipIDs, teamID)
 	err := teamMembersAddOrgMembershipsV2(ctx, config.ClientV2.API, teamID, organizationMembershipIDs)
@@ -165,11 +161,7 @@ func resourceTFETeamOrganizationMembersUpdate(d *schema.ResourceData, meta inter
 
 	// First add the new organization memberships.
 	if membershipIDsToAdd.Len() > 0 {
-		var idsToAdd []string
-		for _, id := range membershipIDsToAdd.List() {
-			idsToAdd = append(idsToAdd, id.(string))
-		}
-
+		idsToAdd := schemaSetToStringSlice(membershipIDsToAdd)
 		log.Printf("[DEBUG] Add organization memberships %v to team: %s", idsToAdd, d.Id())
 		err := teamMembersAddOrgMembershipsV2(ctx, config.ClientV2.API, d.Id(), idsToAdd)
 		if err != nil {
