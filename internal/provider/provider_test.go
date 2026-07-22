@@ -13,6 +13,7 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-mux/tf5to6server"
@@ -39,8 +40,13 @@ func init() {
 			sdkProvider := Provider()
 			sdkProvider.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
 				client, err := getClientUsingEnv()
+				clientV2, v2err := getClientV2UsingEnv()
+				if v2err != nil && err == nil {
+					err = v2err
+				}
 				cc := ConfiguredClient{
-					Client: client,
+					Client:   client,
+					ClientV2: clientV2,
 				}
 
 				// Save a reference to the configured client instance for use in tests.
@@ -84,16 +90,21 @@ func muxedProvidersWithCustomClient(clientFn func() *tfe.Client) map[string]func
 			nextProvider := providerserver.NewProtocol6(NewFrameworkProvider())
 
 			sdkProvider := Provider()
-			sdkProvider.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
-				// Save a reference to the configured client instance for use in tests.
-				client := clientFn()
-				cc := ConfiguredClient{
-					Client: client,
-				}
-				testAccConfiguredClient = &cc
-
-				return cc, nil
+		sdkProvider.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
+			// Save a reference to the configured client instance for use in tests.
+			client := clientFn()
+			// ClientV2 is intentionally omitted here. This factory is used only
+			// by resource_tfe_organization_test.go, which injects a custom v1
+			// client for specific test scenarios and tests only non-migrated
+			// resources. If a migrated resource ever needs this factory, add
+			// ClientV2 via getClientV2UsingEnv() alongside the custom v1 client.
+			cc := ConfiguredClient{
+				Client: client,
 			}
+			testAccConfiguredClient = &cc
+
+			return cc, nil
+		}
 
 			upgradedSDKProvider, err := tf5to6server.UpgradeServer(
 				ctx,
@@ -131,17 +142,22 @@ func muxedProvidersWithDefaultOrganization(defaultOrgName string) map[string]fun
 			nextProvider := providerserver.NewProtocol6(NewFrameworkProviderWithDefaultOrg(defaultOrgName))
 
 			sdkProvider := Provider()
-			sdkProvider.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
-				client, err := getClientUsingEnv()
-				cc := ConfiguredClient{
-					Client:       client,
-					Organization: defaultOrgName,
-				}
-
-				// Save a reference to the configured client instance for use in tests.
-				testAccConfiguredClient = &cc
-				return cc, diag.FromErr(err)
+		sdkProvider.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
+			client, err := getClientUsingEnv()
+			clientV2, v2err := getClientV2UsingEnv()
+			if v2err != nil && err == nil {
+				err = v2err
 			}
+			cc := ConfiguredClient{
+				Client:       client,
+				ClientV2:     clientV2,
+				Organization: defaultOrgName,
+			}
+
+			// Save a reference to the configured client instance for use in tests.
+			testAccConfiguredClient = &cc
+			return cc, diag.FromErr(err)
+		}
 
 			upgradedSDKProvider, err := tf5to6server.UpgradeServer(
 				ctx,
@@ -201,6 +217,25 @@ func getClientUsingEnv() (*tfe.Client, error) {
 		return nil, fmt.Errorf("Error getting client: %w", err)
 	}
 	return providerClient.TfeClient, nil
+}
+
+// getClientV2UsingEnv returns the go-tfe v2 generated client built from the
+// same environment-derived configuration as getClientUsingEnv. Acceptance
+// test provider factories in this file must populate ConfiguredClient.ClientV2
+// with this, alongside Client, or any migrated resource/data source that
+// calls config.ClientV2.API will panic on a nil pointer dereference.
+func getClientV2UsingEnv() (*tfev2.Client, error) {
+	hostname := client.DefaultHostname
+	if os.Getenv("TFE_HOSTNAME") != "" {
+		hostname = os.Getenv("TFE_HOSTNAME")
+	}
+	token := os.Getenv("TFE_TOKEN")
+
+	providerClient, err := client.GetClient(hostname, token, defaultSSLSkipVerify)
+	if err != nil {
+		return nil, fmt.Errorf("Error getting v2 client: %w", err)
+	}
+	return providerClient.TFEClientV2, nil
 }
 
 func getClientWithToken(token string) (*tfe.Client, error) {
