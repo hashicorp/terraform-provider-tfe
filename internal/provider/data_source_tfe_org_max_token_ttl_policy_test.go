@@ -73,21 +73,6 @@ func TestAccTFEOrgMaxTokenTTLPolicyDataSource_withResource(t *testing.T) {
 	})
 }
 
-// TestFetchTokenTTLPoliciesV2_largeMaxTTL is a regression test for a go-tfe
-// v2 generated-client bug: the generated model for
-// GET /organizations/{organization_name}/token-ttl-policies typed max-ttl-ms
-// as *int32, but real TTL values are int64 milliseconds -- values beyond
-// ~24.8 days (anything over math.MaxInt32 ms) failed Kiota deserialization
-// outright rather than truncating. That bug is why tfe_org_max_token_ttl_policy
-// stayed on go-tfe v1 for a time.
-//
-// This is also the only regression coverage for this bug that runs in CI:
-// the acceptance tests for this data source already exercise a TTL beyond
-// int32 range (user_token_max_ttl = "5y" = 157680000000ms in
-// TestAccTFEOrgMaxTokenTTLPolicyDataSource_withResource), but they're gated
-// behind skipUnlessBeta, and ENABLE_BETA is never set in CI. This test
-// exercises the same real JSON:API deserialization end to end (not just
-// in-memory structs) without requiring a beta-enabled environment.
 func TestFetchTokenTTLPoliciesV2_largeMaxTTL(t *testing.T) {
 	orgName := "hashicorp"
 

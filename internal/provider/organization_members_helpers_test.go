@@ -138,16 +138,6 @@ func userResource(userID, email, username string) string {
 	}`, userID, email, username)
 }
 
-// TestFetchOrganizationMemberByNameOrEmailV2 is a regression test for a
-// go-tfe v2 generated-client bug: the composed-type factories for JSON:API
-// `included` array elements did not discriminate on the `type` field, so
-// GetUsers() on an included record was always nil regardless of what was
-// actually included. That bug is why tfe_organization_membership stayed on
-// go-tfe v1 for a time. It's fixed upstream (a discriminator was added to the
-// OpenAPI schema for the `included` arrays on the organization-memberships
-// endpoints), and this test exercises real JSON:API deserialization end to
-// end (not just in-memory structs) so a regression would be caught here
-// without requiring a live TFE org or CI-seeded users.
 func TestFetchOrganizationMemberByNameOrEmailV2(t *testing.T) {
 	orgName := "hashicorp"
 
