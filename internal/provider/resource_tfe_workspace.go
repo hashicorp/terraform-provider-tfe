@@ -1,10 +1,5 @@
-// Copyright IBM Corp. 2018, 2025
+// Copyright IBM Corp. 2018, 2026
 // SPDX-License-Identifier: MPL-2.0
-
-// NOTE: This is a legacy resource and should be migrated to the Plugin
-// Framework if substantial modifications are planned. See
-// docs/new-resources.md if planning to use this code as boilerplate for
-// a new resource.
 
 package provider
 
@@ -12,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net/url"
 	"regexp"
 	"strings"
@@ -20,1324 +14,968 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/jsonapi"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/identityschema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listdefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
 )
 
-var workspaceIDRegexp = regexp.MustCompile("^ws-[a-zA-Z0-9]{16}$")
+var (
+	_ resource.Resource                 = &resourceTFEWorkspaceFramework{}
+	_ resource.ResourceWithConfigure    = &resourceTFEWorkspaceFramework{}
+	_ resource.ResourceWithModifyPlan   = &resourceTFEWorkspaceFramework{}
+	_ resource.ResourceWithImportState  = &resourceTFEWorkspaceFramework{}
+	_ resource.ResourceWithUpgradeState = &resourceTFEWorkspaceFramework{}
+)
 
-func resourceTFEWorkspace() *schema.Resource {
-	return &schema.Resource{
-		Description: "Provides a workspace resource.",
+type resourceTFEWorkspaceFramework struct {
+	config ConfiguredClient
+}
 
-		Create: resourceTFEWorkspaceCreate,
-		Read:   resourceTFEWorkspaceRead,
-		Update: resourceTFEWorkspaceUpdate,
-		Delete: resourceTFEWorkspaceDelete,
-		Importer: &schema.ResourceImporter{
-			StateContext: resourceTFEWorkspaceImporter,
-		},
+type modelWorkspace struct {
+	ID                          types.String `tfsdk:"id"`
+	Name                        types.String `tfsdk:"name"`
+	Organization                types.String `tfsdk:"organization"`
+	Description                 types.String `tfsdk:"description"`
+	AgentPoolID                 types.String `tfsdk:"agent_pool_id"`
+	AllowDestroyPlan            types.Bool   `tfsdk:"allow_destroy_plan"`
+	AutoApply                   types.Bool   `tfsdk:"auto_apply"`
+	AutoApplyRunTrigger         types.Bool   `tfsdk:"auto_apply_run_trigger"`
+	AutoDestroyAt               types.String `tfsdk:"auto_destroy_at"`
+	AutoDestroyActivityDuration types.String `tfsdk:"auto_destroy_activity_duration"`
+	ExecutionMode               types.String `tfsdk:"execution_mode"`
+	FileTriggersEnabled         types.Bool   `tfsdk:"file_triggers_enabled"`
+	GlobalRemoteState           types.Bool   `tfsdk:"global_remote_state"`
+	InheritsProjectAutoDestroy  types.Bool   `tfsdk:"inherits_project_auto_destroy"`
+	RemoteStateConsumerIDs      types.Set    `tfsdk:"remote_state_consumer_ids"`
+	AssessmentsEnabled          types.Bool   `tfsdk:"assessments_enabled"`
+	Operations                  types.Bool   `tfsdk:"operations"`
+	ProjectID                   types.String `tfsdk:"project_id"`
+	QueueAllRuns                types.Bool   `tfsdk:"queue_all_runs"`
+	SourceName                  types.String `tfsdk:"source_name"`
+	SourceURL                   types.String `tfsdk:"source_url"`
+	SpeculativeEnabled          types.Bool   `tfsdk:"speculative_enabled"`
+	SSHKeyID                    types.String `tfsdk:"ssh_key_id"`
+	StructuredRunOutputEnabled  types.Bool   `tfsdk:"structured_run_output_enabled"`
+	TagNames                    types.Set    `tfsdk:"tag_names"`
+	IgnoreAdditionalTagNames    types.Bool   `tfsdk:"ignore_additional_tag_names"`
+	Tags                        types.Map    `tfsdk:"tags"`
+	IgnoreAdditionalTags        types.Bool   `tfsdk:"ignore_additional_tags"`
+	EffectiveTags               types.Map    `tfsdk:"effective_tags"`
+	TerraformVersion            types.String `tfsdk:"terraform_version"`
+	TriggerPrefixes             types.List   `tfsdk:"trigger_prefixes"`
+	TriggerPatterns             types.List   `tfsdk:"trigger_patterns"`
+	WorkingDirectory            types.String `tfsdk:"working_directory"`
+	VCSRepo                     types.List   `tfsdk:"vcs_repo"`
+	ForceDelete                 types.Bool   `tfsdk:"force_delete"`
+	ResourceCount               types.Int64  `tfsdk:"resource_count"`
+	HTMLURL                     types.String `tfsdk:"html_url"`
+	HYOKEnabled                 types.Bool   `tfsdk:"hyok_enabled"`
+}
 
-		SchemaVersion: 1,
-		StateUpgraders: []schema.StateUpgrader{
-			{
-				Type:    resourceTfeWorkspaceResourceV0().CoreConfigSchema().ImpliedType(),
-				Upgrade: resourceTfeWorkspaceStateUpgradeV0,
-				Version: 0,
-			},
-		},
+type modelWorkspaceIdentity struct {
+	ID       types.String `tfsdk:"id"`
+	Hostname types.String `tfsdk:"hostname"`
+}
 
-		CustomizeDiff: func(c context.Context, d *schema.ResourceDiff, meta interface{}) error {
-			if err := validateAgentExecution(c, d); err != nil {
-				return err
-			}
+type modelWorkspaceVCSRepo struct {
+	Identifier              types.String `tfsdk:"identifier"`
+	Branch                  types.String `tfsdk:"branch"`
+	IngressSubmodules       types.Bool   `tfsdk:"ingress_submodules"`
+	OAuthTokenID            types.String `tfsdk:"oauth_token_id"`
+	TagsRegex               types.String `tfsdk:"tags_regex"`
+	GithubAppInstallationID types.String `tfsdk:"github_app_installation_id"`
+}
 
-			if err := validateTagNames(c, d); err != nil {
-				return err
-			}
+func NewWorkspaceResource() resource.Resource {
+	return &resourceTFEWorkspaceFramework{}
+}
 
-			if err := customizeDiffIfProviderDefaultOrganizationChanged(c, d, meta); err != nil {
-				return err
-			}
+func (r *resourceTFEWorkspaceFramework) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_workspace"
+}
 
-			if err := customizeDiffAutoDestroyAt(c, d); err != nil {
-				return err
-			}
+func (r *resourceTFEWorkspaceFramework) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
 
-			if err := customizeDiffAutoDestroyActivityDuration(c, d); err != nil {
-				return err
-			}
+	client, ok := req.ProviderData.(ConfiguredClient)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected resource Configure type",
+			fmt.Sprintf("Expected tfe.ConfiguredClient, got %T", req.ProviderData),
+		)
+		return
+	}
 
-			if d.HasChange("name") {
-				if err := d.SetNewComputed("html_url"); err != nil {
-					return err
-				}
-			}
+	r.config = client
+}
 
-			return nil
-		},
-
-		Identity: &schema.ResourceIdentity{
-			SchemaFunc: func() map[string]*schema.Schema {
-				return map[string]*schema.Schema{
-					"id": {
-						Type:              schema.TypeString,
-						RequiredForImport: true,
-					},
-					"hostname": {
-						Type:              schema.TypeString,
-						OptionalForImport: true,
-					},
-				}
-			},
-		},
-
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "Name of the workspace.",
-			},
-
-			"organization": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-				ForceNew:    true,
-				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
-			},
-
-			"description": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Optional:    true,
-				Description: "A description for the workspace.",
-			},
-
-			"agent_pool_id": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Computed:      true,
-				ConflictsWith: []string{"operations"},
-				Deprecated:    "Use resource tfe_workspace_settings to modify the workspace execution settings. This attribute will be removed in a future release of the provider.",
-				Description:   "**Deprecated** The ID of an agent pool to assign to the workspace. Use tfe_workspace_settings instead.",
-			},
-
-			"allow_destroy_plan": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     true,
-				Description: "Whether destroy plans can be queued on the workspace.",
-			},
-
-			"auto_apply": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Computed:    true,
-				Description: "Whether to automatically apply changes when a Terraform plan is successful. Defaults to `false`.",
-			},
-
-			"auto_apply_run_trigger": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-				Description: "Whether to automatically apply changes for runs that were created by run triggers from another workspace. Defaults to `false`.",
-			},
-
-			"auto_destroy_at": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Optional:    true,
-				Description: "A future date/time string at which point all resources in a workspace will be scheduled for deletion. Must be RFC3339 format (e.g. \"2100-01-01T00:00:00Z\"). Conflicts with `auto_destroy_activity_duration`.",
-			},
-
-			"auto_destroy_activity_duration": {
-				Type:          schema.TypeString,
-				Computed:      true,
-				Optional:      true,
-				ConflictsWith: []string{"auto_destroy_at"},
-				ValidateFunc:  validation.StringMatch(regexp.MustCompile(`^\d{1,4}[dh]$`), "must be 1-4 digits followed by d or h"),
-				Description:   "A duration after workspace activity to automatically schedule an auto-destroy run. Must be of the form `<number><unit>` where unit is \"d\" (days) or \"h\" (hours). Conflicts with `auto_destroy_at`.",
-			},
-
-			"execution_mode": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Computed:      true,
-				ConflictsWith: []string{"operations"},
-				Deprecated:    "Use resource tfe_workspace_settings to modify the workspace execution settings. This attribute will be removed in a future release of the provider.",
-				ValidateFunc: validation.StringInSlice(
-					[]string{
-						"agent",
-						"local",
-						"remote",
-					},
-					false,
-				),
-				Description: "**Deprecated** Which execution mode to use. Valid values are `remote`, `local`, or `agent`. Use tfe_workspace_settings instead.",
-			},
-
-			"file_triggers_enabled": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     true,
-				Description: "Whether to filter runs based on the changed files in a VCS push. If enabled, the working directory and trigger prefixes describe paths which must contain changes for a VCS push to trigger a run. If disabled, any push will trigger a run. Defaults to `true`.",
-			},
-
-			"global_remote_state": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Computed:    true,
-				Deprecated:  "Use resource `tfe_workspace_settings` to modify the workspace `global_remote_state`. `global_remote_state` on `tfe_workspace` is no longer validated properly and will be removed in a future release of the provider.",
-				Description: "**Deprecated** Whether the workspace allows all workspaces in the organization to access its state data during runs. Use tfe_workspace_settings instead.",
-			},
-
-			"inherits_project_auto_destroy": {
-				Type:        schema.TypeBool,
-				Optional:    false,
-				Computed:    true,
-				Required:    false,
-				Description: "Indicates whether this workspace inherits project auto destroy settings.",
-			},
-
-			"remote_state_consumer_ids": {
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Computed:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-				Deprecated:  "Use resource `tfe_workspace_settings` to modify the workspace `remote_state_consumer_ids`. `remote_state_consumer_ids` on `tfe_workspace` is no longer validated properly on this resource and This attribute will be removed in a future release of the provider.",
-				Description: "**Deprecated** The set of workspace IDs set as explicit remote state consumers for the given workspace. Use tfe_workspace_settings instead.",
-			},
-
-			"assessments_enabled": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Computed:    true,
-				Description: "Whether to regularly run health assessments such as drift detection on the workspace. Defaults to `false`.",
-			},
-
-			"operations": {
-				Type:          schema.TypeBool,
-				Optional:      true,
-				Computed:      true,
-				Deprecated:    "Use tfe_workspace_settings to modify the workspace execution settings. This attribute will be removed in a future release of the provider.",
-				ConflictsWith: []string{"execution_mode", "agent_pool_id"},
-				Description:   "**Deprecated** Whether to use remote execution mode. When set to `false`, the workspace will be used for state storage only. Use tfe_workspace_settings instead.",
-			},
-
-			"project_id": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-				Description: "ID of the project where the workspace should be created.",
-			},
-
-			"queue_all_runs": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     true,
-				Description: "Whether the workspace should start automatically performing runs immediately after its creation. When set to `false`, runs triggered by a webhook will not be queued until at least one run has been manually queued. Defaults to `true`.",
-			},
-
-			"source_name": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				RequiredWith: []string{"source_url"},
-				Description:  "A friendly name for the application or client creating this workspace. If set, this will be displayed on the workspace as \"Created via <SOURCE NAME>\". Requires `source_url`. Cannot be updated after creation.",
-			},
-
-			"source_url": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				ValidateFunc: validation.IsURLWithHTTPorHTTPS,
-				RequiredWith: []string{"source_name"},
-				Description:  "A URL for the application or client creating this workspace. Requires `source_name`. Cannot be updated after creation.",
-			},
-
-			"speculative_enabled": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     true,
-				Description: "Whether this workspace allows speculative plans. Setting this to `false` prevents HCP Terraform or the Terraform Enterprise instance from running plans on pull requests. Defaults to `true`.",
-			},
-
-			"ssh_key_id": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Default:     "",
-				Description: "The ID of an SSH key to assign to the workspace.",
-			},
-
-			"structured_run_output_enabled": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     true,
-				Description: "Whether this workspace should show output from Terraform runs using the enhanced UI when available. Setting this to `false` ensures all runs in this workspace will display their output as text logs. Defaults to `true`.",
-			},
-
-			"tag_names": {
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Computed:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-				Description: "A list of tag names for this workspace. Tags must only contain lowercase letters, numbers, colons, or hyphens.",
-			},
-
-			"ignore_additional_tag_names": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Description: "Explicitly ignores `tag_names` not defined by config so they will not be overwritten by the configured tags.",
-			},
-
-			"tags": {
-				Type:     schema.TypeMap,
-				Optional: true,
-				Computed: true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
+func (r *resourceTFEWorkspaceFramework) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{Version: 1, Attributes: map[string]schema.Attribute{
+		"id":                             schema.StringAttribute{Computed: true, PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
+		"name":                           schema.StringAttribute{Required: true},
+		"organization":                   schema.StringAttribute{Optional: true, Computed: true, PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()}},
+		"description":                    schema.StringAttribute{Optional: true, Computed: true},
+		"agent_pool_id":                  schema.StringAttribute{Optional: true, Computed: true, DeprecationMessage: "Use resource tfe_workspace_settings to modify the workspace execution settings. This attribute will be removed in a future release of the provider.", PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
+		"allow_destroy_plan":             schema.BoolAttribute{Optional: true, Computed: true, Default: booldefault.StaticBool(true)},
+		"auto_apply":                     schema.BoolAttribute{Optional: true, Computed: true},
+		"auto_apply_run_trigger":         schema.BoolAttribute{Optional: true, Computed: true, Default: booldefault.StaticBool(false)},
+		"auto_destroy_at":                schema.StringAttribute{Optional: true, Computed: true},
+		"auto_destroy_activity_duration": schema.StringAttribute{Optional: true, Computed: true, Validators: []validator.String{stringvalidator.RegexMatches(regexp.MustCompile(`^\d{1,4}[dh]$`), "must be 1-4 digits followed by d or h")}},
+		"execution_mode":                 schema.StringAttribute{Optional: true, Computed: true, DeprecationMessage: "Use resource tfe_workspace_settings to modify the workspace execution settings. This attribute will be removed in a future release of the provider.", Validators: []validator.String{stringvalidator.OneOf("agent", "local", "remote")}},
+		"file_triggers_enabled":          schema.BoolAttribute{Optional: true, Computed: true, Default: booldefault.StaticBool(true)},
+		"global_remote_state":            schema.BoolAttribute{Optional: true, Computed: true, DeprecationMessage: "Use resource `tfe_workspace_settings` to modify the workspace `global_remote_state`. `global_remote_state` on `tfe_workspace` is no longer validated properly and will be removed in a future release of the provider.", PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()}},
+		"inherits_project_auto_destroy":  schema.BoolAttribute{Computed: true},
+		"remote_state_consumer_ids":      schema.SetAttribute{Optional: true, Computed: true, ElementType: types.StringType, DeprecationMessage: "Use resource `tfe_workspace_settings` to modify the workspace `remote_state_consumer_ids`. This attribute will be removed in a future release of the provider.", PlanModifiers: []planmodifier.Set{setplanmodifier.UseStateForUnknown()}},
+		"assessments_enabled":            schema.BoolAttribute{Optional: true, Computed: true, PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()}},
+		"operations":                     schema.BoolAttribute{Optional: true, Computed: true, DeprecationMessage: "Use tfe_workspace_settings to modify the workspace execution settings. This attribute will be removed in a future release of the provider."},
+		"project_id":                     schema.StringAttribute{Optional: true, Computed: true, PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
+		"queue_all_runs":                 schema.BoolAttribute{Optional: true, Computed: true, Default: booldefault.StaticBool(true)},
+		"source_name":                    schema.StringAttribute{Optional: true},
+		"source_url":                     schema.StringAttribute{Optional: true, Validators: []validator.String{stringvalidator.RegexMatches(regexp.MustCompile(`^https?://`), "must be a valid URL with http or https scheme")}},
+		"speculative_enabled":            schema.BoolAttribute{Optional: true, Computed: true, Default: booldefault.StaticBool(true)},
+		"ssh_key_id":                     schema.StringAttribute{Optional: true, Computed: true, Default: stringdefault.StaticString("")},
+		"structured_run_output_enabled":  schema.BoolAttribute{Optional: true, Computed: true, Default: booldefault.StaticBool(true)},
+		"tag_names":                      schema.SetAttribute{Optional: true, Computed: true, ElementType: types.StringType},
+		"ignore_additional_tag_names":    schema.BoolAttribute{Optional: true},
+		"tags":                           schema.MapAttribute{Optional: true, Computed: true, ElementType: types.StringType, PlanModifiers: []planmodifier.Map{mapplanmodifier.UseStateForUnknown()}},
+		"ignore_additional_tags":         schema.BoolAttribute{Optional: true},
+		"effective_tags":                 schema.MapAttribute{Computed: true, ElementType: types.StringType},
+		"terraform_version":              schema.StringAttribute{Optional: true, Computed: true, PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
+		"trigger_prefixes":               schema.ListAttribute{Optional: true, Computed: true, ElementType: types.StringType, Default: listdefault.StaticValue(types.ListValueMust(types.StringType, []attr.Value{}))},
+		"trigger_patterns":               schema.ListAttribute{Optional: true, Computed: true, ElementType: types.StringType, Default: listdefault.StaticValue(types.ListValueMust(types.StringType, []attr.Value{}))},
+		"working_directory":              schema.StringAttribute{Optional: true, Computed: true, Default: stringdefault.StaticString("")},
+		"force_delete":                   schema.BoolAttribute{Optional: true, Computed: true, Default: booldefault.StaticBool(false)},
+		"resource_count":                 schema.Int64Attribute{Computed: true, PlanModifiers: []planmodifier.Int64{int64planmodifier.UseStateForUnknown()}},
+		"html_url":                       schema.StringAttribute{Computed: true},
+		"hyok_enabled":                   schema.BoolAttribute{Optional: true, Computed: true, PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()}},
+	},
+		Blocks: map[string]schema.Block{
+			"vcs_repo": schema.ListNestedBlock{
+				Validators: []validator.List{
+					listvalidator.SizeBetween(1, 1),
 				},
-				Description: "A map of key value tags for this workspace.",
-			},
-
-			"ignore_additional_tags": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Description: "Explicitly ignores `tags` not defined by config so they will not be overwritten by the configured tags.",
-			},
-
-			"effective_tags": {
-				Type:     schema.TypeMap,
-				Computed: true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-				Description: "A map of key value tags for this workspace, including any tags inherited from the parent project.",
-			},
-
-			"terraform_version": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-				Description: "The version of Terraform to use for this workspace. This can be an exact version or a version constraint (e.g. `~> 1.0.0`). Defaults to the latest available version.",
-			},
-
-			"trigger_prefixes": {
-				Type:          schema.TypeList,
-				Optional:      true,
-				Elem:          &schema.Schema{Type: schema.TypeString},
-				ConflictsWith: []string{"trigger_patterns"},
-				Description:   "List of repository-root-relative paths which describe all locations to be tracked for changes.",
-			},
-
-			"trigger_patterns": {
-				Type:          schema.TypeList,
-				Optional:      true,
-				Elem:          &schema.Schema{Type: schema.TypeString},
-				ConflictsWith: []string{"trigger_prefixes"},
-				Description:   "List of glob patterns that describe the files HCP Terraform monitors for changes. Trigger patterns are always appended to the root directory of the repository. Mutually exclusive with `trigger_prefixes`.",
-			},
-
-			"working_directory": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Default:     "",
-				Description: "A relative path that Terraform will execute within. Defaults to the root of your repository.",
-			},
-
-			"vcs_repo": {
-				Type:        schema.TypeList,
-				Optional:    true,
-				MinItems:    1,
-				MaxItems:    1,
-				Description: "Settings for the workspace's VCS repository, enabling the UI/VCS-driven run workflow. Omit this argument to utilize the CLI-driven or API-driven workflows, where runs are not driven by webhooks on your VCS provider.",
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"identifier": {
-							Type:        schema.TypeString,
-							Required:    true,
-							Description: "A reference to your VCS repository in the format `<vcs organization>/<repository>`. For Azure DevOps: `<ado organization>/<ado project>/_git/<ado repository>`.",
-						},
-
-						"branch": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Description: "The repository branch that Terraform will execute from. Defaults to the repository's default branch (e.g. main).",
-						},
-
-						"ingress_submodules": {
-							Type:        schema.TypeBool,
-							Optional:    true,
-							Default:     false,
-							Description: "Whether submodules should be fetched when cloning the VCS repository. Defaults to `false`.",
-						},
-
-						"oauth_token_id": {
-							Type:          schema.TypeString,
-							Optional:      true,
-							ConflictsWith: []string{"vcs_repo.0.github_app_installation_id"},
-							Description:   "The VCS Connection (OAuth Connection + Token) to use. This ID can be obtained from a tfe_oauth_client resource. Conflicts with `github_app_installation_id`.",
-						},
-
-						"tags_regex": {
-							Type:          schema.TypeString,
-							Optional:      true,
-							ConflictsWith: []string{"trigger_patterns", "trigger_prefixes"},
-							Description:   "A regular expression used to trigger a workspace run for matching Git tags. Conflicts with `trigger_patterns` and `trigger_prefixes`.",
-						},
-
-						"github_app_installation_id": {
-							Type:          schema.TypeString,
-							Optional:      true,
-							ConflictsWith: []string{"vcs_repo.0.oauth_token_id"},
-							AtLeastOneOf:  []string{"vcs_repo.0.oauth_token_id", "vcs_repo.0.github_app_installation_id"},
-							Description:   "The installation ID of the GitHub App. Conflicts with `oauth_token_id`.",
-						},
-					},
-				},
-			},
-			"force_delete": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-				Description: "If true, the workspace will be force deleted when destroyed via this provider, even if the workspace contains resources managed by Terraform.",
-			},
-			"resource_count": {
-				Type:        schema.TypeInt,
-				Computed:    true,
-				Description: "The number of resources managed by the workspace.",
-			},
-			"html_url": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "The URL to the browsable HTML overview of the workspace.",
-			},
-			"hyok_enabled": {
-				Type:        schema.TypeBool,
-				Computed:    true,
-				Description: "Whether HYOK (Hold Your Own Key) is enabled for the workspace. Available only in HCP Terraform.",
+				NestedObject: schema.NestedBlockObject{Attributes: map[string]schema.Attribute{
+					"identifier":                 schema.StringAttribute{Required: true},
+					"branch":                     schema.StringAttribute{Optional: true, Computed: true},
+					"ingress_submodules":         schema.BoolAttribute{Optional: true, Computed: true, Default: booldefault.StaticBool(false)},
+					"oauth_token_id":             schema.StringAttribute{Optional: true, Validators: []validator.String{stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("github_app_installation_id"))}},
+					"tags_regex":                 schema.StringAttribute{Optional: true, Computed: true, Validators: []validator.String{stringvalidator.ConflictsWith(path.MatchRoot("trigger_patterns"), path.MatchRoot("trigger_prefixes"))}},
+					"github_app_installation_id": schema.StringAttribute{Optional: true, Validators: []validator.String{stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("oauth_token_id")), stringvalidator.AtLeastOneOf(path.MatchRelative().AtParent().AtName("oauth_token_id"), path.MatchRelative().AtParent().AtName("github_app_installation_id"))}},
+				}},
 			},
 		},
 	}
 }
 
-func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(ConfiguredClient)
-
-	// Get the name and organization.
-	name := d.Get("name").(string)
-	organization, err := config.schemaOrDefaultOrganization(d)
-	if err != nil {
-		return err
-	}
-
-	// Create a new options struct.
-	options := tfe.WorkspaceCreateOptions{
-		Name:                       tfe.String(name),
-		AllowDestroyPlan:           tfe.Bool(d.Get("allow_destroy_plan").(bool)),
-		AutoApplyRunTrigger:        tfe.Bool(d.Get("auto_apply_run_trigger").(bool)),
-		FileTriggersEnabled:        tfe.Bool(d.Get("file_triggers_enabled").(bool)),
-		QueueAllRuns:               tfe.Bool(d.Get("queue_all_runs").(bool)),
-		SpeculativeEnabled:         tfe.Bool(d.Get("speculative_enabled").(bool)),
-		StructuredRunOutputEnabled: tfe.Bool(d.Get("structured_run_output_enabled").(bool)),
-		WorkingDirectory:           tfe.String(d.Get("working_directory").(string)),
-	}
-
-	// Send global_remote_state if it's set; otherwise, let it be computed.
-	globalRemoteState, ok := d.GetOkExists("global_remote_state")
-	if ok {
-		options.GlobalRemoteState = tfe.Bool(globalRemoteState.(bool))
-	}
-
-	if v, ok := d.GetOkExists("auto_apply"); ok {
-		options.AutoApply = tfe.Bool(v.(bool))
-	}
-
-	if v, ok := d.GetOkExists("assessments_enabled"); ok {
-		options.AssessmentsEnabled = tfe.Bool(v.(bool))
-	}
-
-	if v, ok := d.GetOk("description"); ok {
-		options.Description = tfe.String(v.(string))
-	}
-
-	if v, ok := d.GetOk("agent_pool_id"); ok && v.(string) != "" {
-		options.AgentPoolID = tfe.String(v.(string))
-		options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{
-			ExecutionMode: tfe.Bool(true),
-			AgentPool:     tfe.Bool(true),
-		}
-	}
-
-	if _, ok := d.GetOk("auto_destroy_at"); ok {
-		autoDestroyAt, err := expandAutoDestroyAt(d)
-		if err != nil {
-			return fmt.Errorf("Error expanding auto destroy during create: %w", err)
-		}
-		options.AutoDestroyAt = autoDestroyAt
-	}
-
-	if v, ok := d.GetOk("auto_destroy_activity_duration"); ok {
-		options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(v.(string))
-	}
-
-	if v, ok := d.GetOk("execution_mode"); ok {
-		executionMode := tfe.String(v.(string))
-		options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{
-			ExecutionMode: tfe.Bool(true),
-			AgentPool:     tfe.Bool(true),
-		}
-		options.ExecutionMode = executionMode
-	}
-
-	if v, ok := d.GetOkExists("operations"); ok {
-		options.Operations = tfe.Bool(v.(bool))
-		options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{
-			ExecutionMode: tfe.Bool(true),
-			AgentPool:     tfe.Bool(true),
-		}
-	}
-
-	if options.SettingOverwrites == nil {
-		options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{
-			ExecutionMode: tfe.Bool(false),
-			AgentPool:     tfe.Bool(false),
-		}
-	}
-
-	if v, ok := d.GetOk("source_url"); ok {
-		options.SourceURL = tfe.String(v.(string))
-	}
-	if v, ok := d.GetOk("source_name"); ok {
-		options.SourceName = tfe.String(v.(string))
-	}
-
-	if tagBindings, ok := d.Get("tags").(map[string]interface{}); ok {
-		for key, val := range tagBindings {
-			options.TagBindings = append(options.TagBindings, &tfe.TagBinding{
-				Key:   key,
-				Value: val.(string),
-			})
-		}
-	}
-
-	// Process all configured options.
-	if tfVersion, ok := d.GetOk("terraform_version"); ok {
-		options.TerraformVersion = tfe.String(tfVersion.(string))
-	}
-
-	if tps, ok := d.GetOk("trigger_prefixes"); ok {
-		for _, tp := range tps.([]interface{}) {
-			if val, ok := tp.(string); ok {
-				options.TriggerPrefixes = append(options.TriggerPrefixes, val)
-			}
-		}
-	} else {
-		options.TriggerPrefixes = nil
-	}
-
-	if tps, ok := d.GetOk("trigger_patterns"); ok {
-		for _, tp := range tps.([]interface{}) {
-			options.TriggerPatterns = append(options.TriggerPatterns, tp.(string))
-		}
-	} else {
-		options.TriggerPatterns = nil
-	}
-
-	if d.HasChange("project_id") {
-		if v, ok := d.GetOk("project_id"); ok && v.(string) != "" {
-			options.Project = &tfe.Project{ID: *tfe.String(v.(string))}
-		}
-	}
-
-	// Get and assert the VCS repo configuration block.
-	if v, ok := d.GetOk("vcs_repo"); ok {
-		vcsRepo := v.([]interface{})[0].(map[string]interface{})
-
-		options.VCSRepo = &tfe.VCSRepoOptions{
-			Identifier:        tfe.String(vcsRepo["identifier"].(string)),
-			IngressSubmodules: tfe.Bool(vcsRepo["ingress_submodules"].(bool)),
-			TagsRegex:         tfe.String(vcsRepo["tags_regex"].(string)),
-		}
-
-		// Only set the oauth_token_id if it is configured.
-		if oauthTokenID, ok := vcsRepo["oauth_token_id"].(string); ok && oauthTokenID != "" {
-			options.VCSRepo.OAuthTokenID = tfe.String(oauthTokenID)
-		}
-
-		// Only set the github_app_installation_id if it is configured.
-		if ghaInstallationID, ok := vcsRepo["github_app_installation_id"].(string); ok && ghaInstallationID != "" {
-			options.VCSRepo.GHAInstallationID = tfe.String(ghaInstallationID)
-		}
-
-		// Only set the branch if one is configured.
-		if branch, ok := vcsRepo["branch"].(string); ok && branch != "" {
-			options.VCSRepo.Branch = tfe.String(branch)
-		}
-	}
-
-	for _, tagName := range d.Get("tag_names").(*schema.Set).List() {
-		name := tagName.(string)
-		options.Tags = append(options.Tags, &tfe.Tag{Name: name})
-	}
-
-	log.Printf("[DEBUG] Create workspace %s for organization: %s", name, organization)
-	workspace, err := config.Client.Workspaces.Create(ctx, organization, options)
-	if err != nil {
-		return fmt.Errorf(
-			"Error creating workspace %s for organization %s: %w", name, organization, err)
-	}
-
-	d.SetId(workspace.ID)
-
-	err = helpers.WriteTFEIdentity(d, workspace.ID, config.Client.BaseURL().Host)
-	if err != nil {
-		return err
-	}
-
-	if sshKeyID, ok := d.GetOk("ssh_key_id"); ok {
-		_, err = config.Client.Workspaces.AssignSSHKey(ctx, workspace.ID, tfe.WorkspaceAssignSSHKeyOptions{
-			SSHKeyID: tfe.String(sshKeyID.(string)),
-		})
-		if err != nil {
-			return fmt.Errorf("Error assigning SSH key to workspace %s: %w", name, err)
-		}
-	}
-
-	remoteStateConsumerIDs, ok := d.GetOk("remote_state_consumer_ids")
-	if ok && !globalRemoteState.(bool) {
-		options := tfe.WorkspaceAddRemoteStateConsumersOptions{}
-		for _, remoteStateConsumerID := range remoteStateConsumerIDs.(*schema.Set).List() {
-			options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: remoteStateConsumerID.(string)})
-		}
-		err = config.Client.Workspaces.AddRemoteStateConsumers(ctx, workspace.ID, options)
-		if err != nil {
-			return fmt.Errorf("Error adding remote state consumers to workspace %s: %w", name, err)
-		}
-	}
-
-	return resourceTFEWorkspaceRead(d, meta)
+func (r *resourceTFEWorkspaceFramework) IdentitySchema(_ context.Context, _ resource.IdentitySchemaRequest, resp *resource.IdentitySchemaResponse) {
+	resp.IdentitySchema = identityschema.Schema{Attributes: map[string]identityschema.Attribute{
+		"id":       identityschema.StringAttribute{RequiredForImport: true},
+		"hostname": identityschema.StringAttribute{OptionalForImport: true},
+	}}
 }
 
-func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(ConfiguredClient)
-
-	id := d.Id()
-	log.Printf("[DEBUG] Read configuration of workspace: %s", id)
-	workspace, err := config.Client.Workspaces.ReadByIDWithOptions(ctx, id, &tfe.WorkspaceReadOptions{
-		Include: []tfe.WSIncludeOpt{tfe.WSEffectiveTagBindings},
-	})
-	if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
-		log.Printf("[DEBUG] Workspace %s no longer exists", id)
-		d.SetId("")
-		return nil
-	}
-	if err != nil && errors.Is(err, tfe.ErrInvalidIncludeValue) {
-		log.Printf("[DEBUG] Workspace %s read failed due to unsupported Include; retrying without it", id)
-		workspace, err = config.Client.Workspaces.ReadByID(ctx, id)
-		if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
-			log.Printf("[DEBUG] Workspace %s no longer exists", id)
-			d.SetId("")
-			return nil
-		} else if err != nil {
-			return fmt.Errorf("Error reading workspace %s without include: %w", id, err)
-		}
-	}
-	if err != nil {
-		return fmt.Errorf("Error reading configuration of workspace %s: %w", id, err)
-	}
-
-	err = helpers.WriteTFEIdentity(d, workspace.ID, config.Client.BaseURL().Host)
-	if err != nil {
-		return err
-	}
-
-	// Given this computed attribute will be null when tag bindings are not
-	// supported, directly set to an empty map to avoid continuous planned
-	// changes on this attribute.
-	d.Set("effective_tags", map[string]interface{}{})
-
-	tagInfo := helpers.NewTagInfo(d.Get("tags").(map[string]interface{}), workspace.EffectiveTagBindings, d.Get("ignore_additional_tags").(bool))
-
-	// Update the config.
-	d.Set("name", workspace.Name)
-	d.Set("allow_destroy_plan", workspace.AllowDestroyPlan)
-
-	// TFE (onprem) does not currently have this feature and this value won't be returned in those cases.
-	// workspace.AssessmentsEnabled will default to false
-	d.Set("assessments_enabled", workspace.AssessmentsEnabled)
-
-	d.Set("auto_apply", workspace.AutoApply)
-	d.Set("auto_apply_run_trigger", workspace.AutoApplyRunTrigger)
-	d.Set("description", workspace.Description)
-	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
-	d.Set("operations", workspace.Operations)
-	d.Set("execution_mode", workspace.ExecutionMode)
-	d.Set("effective_tags", tagInfo.EffectiveTags)
-	d.Set("queue_all_runs", workspace.QueueAllRuns)
-	d.Set("source_name", workspace.SourceName)
-	d.Set("source_url", workspace.SourceURL)
-	d.Set("speculative_enabled", workspace.SpeculativeEnabled)
-	d.Set("structured_run_output_enabled", workspace.StructuredRunOutputEnabled)
-	d.Set("tags", tagInfo.SelfTags)
-	d.Set("terraform_version", workspace.TerraformVersion)
-	d.Set("trigger_prefixes", workspace.TriggerPrefixes)
-	d.Set("trigger_patterns", workspace.TriggerPatterns)
-	d.Set("working_directory", workspace.WorkingDirectory)
-	d.Set("organization", workspace.Organization.Name)
-	d.Set("resource_count", workspace.ResourceCount)
-	d.Set("inherits_project_auto_destroy", workspace.InheritsProjectAutoDestroy)
-	d.Set("hyok_enabled", workspace.HYOKEnabled)
-
-	if workspace.Links["self-html"] != nil {
-		baseAPI := config.Client.BaseURL()
-		htmlURL := url.URL{
-			Scheme: baseAPI.Scheme,
-			Host:   baseAPI.Host,
-			Path:   workspace.Links["self-html"].(string),
-		}
-
-		d.Set("html_url", htmlURL.String())
-	}
-
-	// Project will be nil for versions of TFE that predate projects
-	if workspace.Project != nil {
-		d.Set("project_id", workspace.Project.ID)
-	}
-
-	var sshKeyID string
-	if workspace.SSHKey != nil {
-		sshKeyID = workspace.SSHKey.ID
-	}
-	d.Set("ssh_key_id", sshKeyID)
-
-	var agentPoolID string
-	if workspace.AgentPool != nil {
-		agentPoolID = workspace.AgentPool.ID
-	}
-	d.Set("agent_pool_id", agentPoolID)
-
-	autoDestroyAt, err := flattenAutoDestroyAt(workspace.AutoDestroyAt)
-	if err != nil {
-		return fmt.Errorf("Error flattening auto destroy during read: %w", err)
-	}
-	d.Set("auto_destroy_at", autoDestroyAt)
-
-	if workspace.AutoDestroyActivityDuration.IsSpecified() {
-		v, err := workspace.AutoDestroyActivityDuration.Get()
-		if err != nil {
-			return fmt.Errorf("Error reading auto destroy activity duration: %w", err)
-		}
-		d.Set("auto_destroy_activity_duration", v)
-	} else {
-		d.Set("auto_destroy_activity_duration", nil)
-	}
-
-	var tagNames []interface{}
-	managedTags := d.Get("tag_names").(*schema.Set)
-	for _, tagName := range workspace.TagNames {
-		if managedTags.Contains(tagName) || !d.Get("ignore_additional_tag_names").(bool) {
-			tagNames = append(tagNames, tagName)
-		}
-	}
-	d.Set("tag_names", tagNames)
-
-	var vcsRepo []interface{}
-	if workspace.VCSRepo != nil {
-		vcsConfig := map[string]interface{}{
-			"identifier":                 workspace.VCSRepo.Identifier,
-			"branch":                     workspace.VCSRepo.Branch,
-			"ingress_submodules":         workspace.VCSRepo.IngressSubmodules,
-			"oauth_token_id":             workspace.VCSRepo.OAuthTokenID,
-			"github_app_installation_id": workspace.VCSRepo.GHAInstallationID,
-			"tags_regex":                 workspace.VCSRepo.TagsRegex,
-		}
-		vcsRepo = append(vcsRepo, vcsConfig)
-	}
-
-	d.Set("vcs_repo", vcsRepo)
-
-	if workspace.GlobalRemoteState {
-		d.Set("global_remote_state", true)
-	} else {
-		globalRemoteState, remoteStateConsumerIDs, err := readWorkspaceStateConsumers(id, config.Client)
-		if err != nil {
-			return fmt.Errorf(
-				"Error reading remote state consumers for workspace %s: %w", id, err)
-		}
-
-		d.Set("global_remote_state", globalRemoteState)
-		d.Set("remote_state_consumer_ids", remoteStateConsumerIDs)
-	}
-
-	return nil
-}
-
-func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(ConfiguredClient)
-	id := d.Id()
-
-	if d.HasChange("name") || d.HasChange("auto_apply") || d.HasChange("auto_apply_run_trigger") || d.HasChange("queue_all_runs") ||
-		d.HasChange("terraform_version") || d.HasChange("working_directory") ||
-		d.HasChange("vcs_repo") || d.HasChange("file_triggers_enabled") ||
-		d.HasChange("trigger_prefixes") || d.HasChange("trigger_patterns") ||
-		d.HasChange("allow_destroy_plan") || d.HasChange("speculative_enabled") ||
-		d.HasChange("operations") || d.HasChange("execution_mode") ||
-		d.HasChange("description") || d.HasChange("agent_pool_id") ||
-		d.HasChange("global_remote_state") || d.HasChange("structured_run_output_enabled") ||
-		d.HasChange("assessments_enabled") || d.HasChange("project_id") ||
-		hasAutoDestroyAtChange(d) || d.HasChange("auto_destroy_activity_duration") {
-		// Create a new options struct.
-		options := tfe.WorkspaceUpdateOptions{
-			Name:                       tfe.String(d.Get("name").(string)),
-			AllowDestroyPlan:           tfe.Bool(d.Get("allow_destroy_plan").(bool)),
-			AutoApplyRunTrigger:        tfe.Bool(d.Get("auto_apply_run_trigger").(bool)),
-			FileTriggersEnabled:        tfe.Bool(d.Get("file_triggers_enabled").(bool)),
-			GlobalRemoteState:          tfe.Bool(d.Get("global_remote_state").(bool)),
-			QueueAllRuns:               tfe.Bool(d.Get("queue_all_runs").(bool)),
-			SpeculativeEnabled:         tfe.Bool(d.Get("speculative_enabled").(bool)),
-			StructuredRunOutputEnabled: tfe.Bool(d.Get("structured_run_output_enabled").(bool)),
-			WorkingDirectory:           tfe.String(d.Get("working_directory").(string)),
-		}
-
-		if d.HasChange("project_id") {
-			if v, ok := d.GetOk("project_id"); ok && v.(string) != "" {
-				options.Project = &tfe.Project{ID: *tfe.String(v.(string))}
-			}
-		}
-
-		if d.HasChange("assessments_enabled") {
-			if v, ok := d.GetOkExists("assessments_enabled"); ok {
-				options.AssessmentsEnabled = tfe.Bool(v.(bool))
-			}
-		}
-
-		if d.HasChange("auto_apply") {
-			if v, ok := d.GetOkExists("auto_apply"); ok {
-				options.AutoApply = tfe.Bool(v.(bool))
-			}
-		}
-
-		if d.HasChange("description") {
-			if v, ok := d.GetOk("description"); ok {
-				options.Description = tfe.String(v.(string))
-			}
-		}
-
-		// NOTE: since agent_pool_id and execution_mode are both deprecated on
-		// tfe_workspace and we want tfe_workspace_settings to be authoritative,
-		// we must not set the overwrites values to false in the checks below.
-		// (Actually, I think we don't need to set them to true here either,
-		// since the API understands an explicit value in an update request to
-		// also result in an implicit overwrite = true.)
-		if d.HasChange("agent_pool_id") {
-			// Need the raw configuration value of the agent_pool_id because when the workspace's execution mode is set
-			// to default, we can't know for certain what the default value of the agent pool will be. This means we can
-			// only set the agent_pool_id as "NewComputed", meaning that the value returned by the ResourceData will be
-			// whatever the agent_pool_id was in the state
-			agentPoolID := d.GetRawConfig().GetAttr("agent_pool_id")
-
-			// If the agent pool ID was not provided or did not change, the changes made to the execution mode will
-			// be sufficient
-			if !agentPoolID.IsNull() {
-				options.AgentPoolID = tfe.String(agentPoolID.AsString())
-
-				// set setting overwrites
-				options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{
-					AgentPool: tfe.Bool(true),
+func (r *resourceTFEWorkspaceFramework) UpgradeState(_ context.Context) map[int64]resource.StateUpgrader {
+	return map[int64]resource.StateUpgrader{
+		0: {
+			PriorSchema: &resourceTFEWorkspaceSchemaV0,
+			StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
+				if req.State == nil {
+					resp.Diagnostics.AddError("Error upgrading workspace state", "missing prior state")
+					return
 				}
+
+				var oldData modelWorkspaceV0
+				resp.Diagnostics.Append(req.State.Get(ctx, &oldData)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				workspaceID := ""
+				if !oldData.ExternalID.IsNull() && !oldData.ExternalID.IsUnknown() && oldData.ExternalID.ValueString() != "" {
+					workspaceID = oldData.ExternalID.ValueString()
+				} else if !oldData.ID.IsNull() && !oldData.ID.IsUnknown() && oldData.ID.ValueString() != "" {
+					workspaceID = oldData.ID.ValueString()
+				}
+				if workspaceID == "" {
+					resp.Diagnostics.AddError("Error upgrading workspace state", "missing workspace id in prior state")
+					return
+				}
+
+				newData := modelWorkspace{
+					ID:                     types.StringValue(workspaceID),
+					Name:                   oldData.Name,
+					Organization:           oldData.Organization,
+					AssessmentsEnabled:     oldData.AssessmentsEnabled,
+					AutoApply:              oldData.AutoApply,
+					FileTriggersEnabled:    oldData.FileTriggersEnabled,
+					Operations:             oldData.Operations,
+					QueueAllRuns:           oldData.QueueAllRuns,
+					SSHKeyID:               oldData.SSHKeyID,
+					TerraformVersion:       oldData.TerraformVersion,
+					TriggerPrefixes:        oldData.TriggerPrefixes,
+					TriggerPatterns:        types.ListNull(types.StringType),
+					WorkingDirectory:       oldData.WorkingDirectory,
+					TagNames:               types.SetNull(types.StringType),
+					RemoteStateConsumerIDs: types.SetNull(types.StringType),
+					Tags:                   types.MapNull(types.StringType),
+					EffectiveTags:          types.MapNull(types.StringType),
+					VCSRepo: types.ListNull(types.ObjectType{AttrTypes: map[string]attr.Type{
+						"identifier":                 types.StringType,
+						"branch":                     types.StringType,
+						"ingress_submodules":         types.BoolType,
+						"oauth_token_id":             types.StringType,
+						"tags_regex":                 types.StringType,
+						"github_app_installation_id": types.StringType,
+					}}),
+				}
+				resp.Diagnostics.Append(resp.State.Set(ctx, newData)...)
+			},
+		},
+	}
+}
+
+func (r *resourceTFEWorkspaceFramework) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	if req.Plan.Raw.IsNull() {
+		return
+	}
+
+	modifyPlanForDefaultOrganizationChange(ctx, r.config.Organization, req.State, req.Config, req.Plan, resp)
+
+	var plan modelWorkspace
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var configSourceName types.String
+	var configSourceURL types.String
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("source_name"), &configSourceName)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("source_url"), &configSourceURL)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !configSourceURL.IsNull() && !configSourceURL.IsUnknown() && (configSourceName.IsNull() || configSourceName.IsUnknown()) {
+		resp.Diagnostics.AddError("Missing required argument", "The argument \"source_name\" is required when \"source_url\" is set")
+	}
+	if !configSourceName.IsNull() && !configSourceName.IsUnknown() && (configSourceURL.IsNull() || configSourceURL.IsUnknown()) {
+		resp.Diagnostics.AddError("Missing required argument", "The argument \"source_url\" is required when \"source_name\" is set")
+	}
+
+	var configTriggerPrefixes types.List
+	var configTriggerPatterns types.List
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("trigger_prefixes"), &configTriggerPrefixes)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("trigger_patterns"), &configTriggerPatterns)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if hasConfiguredTriggerConflict(configTriggerPrefixes, configTriggerPatterns) {
+		resp.Diagnostics.AddError("Conflicting configuration", "Only one of trigger_prefixes or trigger_patterns can be configured")
+	}
+
+	if !plan.TagNames.IsNull() && !plan.TagNames.IsUnknown() {
+		var tagNames []string
+		resp.Diagnostics.Append(plan.TagNames.ElementsAs(ctx, &tagNames, false)...)
+		for _, tagName := range tagNames {
+			if !validTagName(tagName) {
+				resp.Diagnostics.AddError("Invalid tag_names value", fmt.Sprintf("%q is not a valid tag name. Tag must begin and end with alphanumeric lowercase characters", tagName))
 			}
 		}
+	}
+}
 
-		if hasAutoDestroyAtChange(d) {
-			autoDestroyAt, err := expandAutoDestroyAt(d)
+func (r *resourceTFEWorkspaceFramework) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan modelWorkspace
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var orgName string
+	resp.Diagnostics.Append(r.config.dataOrDefaultOrganization(ctx, req.Config, &orgName)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	opts := tfe.WorkspaceCreateOptions{
+		Name:                       tfe.String(plan.Name.ValueString()),
+		AllowDestroyPlan:           tfe.Bool(boolValueOrDefault(plan.AllowDestroyPlan, true)),
+		AutoApplyRunTrigger:        tfe.Bool(boolValueOrDefault(plan.AutoApplyRunTrigger, false)),
+		FileTriggersEnabled:        tfe.Bool(boolValueOrDefault(plan.FileTriggersEnabled, true)),
+		QueueAllRuns:               tfe.Bool(boolValueOrDefault(plan.QueueAllRuns, true)),
+		SpeculativeEnabled:         tfe.Bool(boolValueOrDefault(plan.SpeculativeEnabled, true)),
+		StructuredRunOutputEnabled: tfe.Bool(boolValueOrDefault(plan.StructuredRunOutputEnabled, true)),
+		WorkingDirectory:           tfe.String(stringValueOrDefault(plan.WorkingDirectory, "")),
+	}
+
+	r.applyWorkspaceOptionsFromModel(ctx, &plan, &opts, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	ws, err := r.config.Client.Workspaces.Create(ctx, orgName, opts)
+	if err != nil {
+		resp.Diagnostics.AddError("Error creating workspace", fmt.Sprintf("Error creating workspace %s for organization %s: %v", plan.Name.ValueString(), orgName, err))
+		return
+	}
+
+	if !plan.SSHKeyID.IsNull() && plan.SSHKeyID.ValueString() != "" {
+		_, err = r.config.Client.Workspaces.AssignSSHKey(ctx, ws.ID, tfe.WorkspaceAssignSSHKeyOptions{SSHKeyID: tfe.String(plan.SSHKeyID.ValueString())})
+		if err != nil {
+			resp.Diagnostics.AddError("Error assigning SSH key", fmt.Sprintf("Error assigning SSH key to workspace %s: %v", plan.Name.ValueString(), err))
+			return
+		}
+	}
+
+	if !plan.GlobalRemoteState.IsNull() && !plan.GlobalRemoteState.IsUnknown() && !plan.GlobalRemoteState.ValueBool() && !plan.RemoteStateConsumerIDs.IsNull() && !plan.RemoteStateConsumerIDs.IsUnknown() {
+		consumerIDs := []string{}
+		resp.Diagnostics.Append(plan.RemoteStateConsumerIDs.ElementsAs(ctx, &consumerIDs, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		if len(consumerIDs) > 0 {
+			addOptions := tfe.WorkspaceAddRemoteStateConsumersOptions{}
+			for _, id := range consumerIDs {
+				addOptions.Workspaces = append(addOptions.Workspaces, &tfe.Workspace{ID: id})
+			}
+			if err := r.config.Client.Workspaces.AddRemoteStateConsumers(ctx, ws.ID, addOptions); err != nil {
+				resp.Diagnostics.AddError("Error adding remote state consumers", fmt.Sprintf("Error adding remote state consumers to workspace %s: %v", plan.Name.ValueString(), err))
+				return
+			}
+		}
+	}
+
+	r.readByIDIntoState(ctx, ws.ID, &plan, &resp.State, resp.Identity, &resp.Diagnostics)
+}
+
+func (r *resourceTFEWorkspaceFramework) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state modelWorkspace
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	r.readByIDIntoState(ctx, state.ID.ValueString(), &state, &resp.State, resp.Identity, &resp.Diagnostics)
+}
+
+func (r *resourceTFEWorkspaceFramework) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan modelWorkspace
+	var state modelWorkspace
+	var configAutoDestroyAt types.String
+	var configAutoDestroyActivityDuration types.String
+	var configExecutionMode types.String
+	var configAgentPoolID types.String
+	var configOperations types.Bool
+	var configTriggerPrefixes types.List
+	var configTriggerPatterns types.List
+	var configTags types.Map
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("auto_destroy_at"), &configAutoDestroyAt)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("auto_destroy_activity_duration"), &configAutoDestroyActivityDuration)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("execution_mode"), &configExecutionMode)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("agent_pool_id"), &configAgentPoolID)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("operations"), &configOperations)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("trigger_prefixes"), &configTriggerPrefixes)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("trigger_patterns"), &configTriggerPatterns)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("tags"), &configTags)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	opts := tfe.WorkspaceUpdateOptions{
+		Name:                       tfe.String(plan.Name.ValueString()),
+		AllowDestroyPlan:           tfe.Bool(boolValueOrDefault(plan.AllowDestroyPlan, true)),
+		AutoApplyRunTrigger:        tfe.Bool(boolValueOrDefault(plan.AutoApplyRunTrigger, false)),
+		FileTriggersEnabled:        tfe.Bool(boolValueOrDefault(plan.FileTriggersEnabled, true)),
+		QueueAllRuns:               tfe.Bool(boolValueOrDefault(plan.QueueAllRuns, true)),
+		SpeculativeEnabled:         tfe.Bool(boolValueOrDefault(plan.SpeculativeEnabled, true)),
+		StructuredRunOutputEnabled: tfe.Bool(boolValueOrDefault(plan.StructuredRunOutputEnabled, true)),
+		WorkingDirectory:           tfe.String(stringValueOrDefault(plan.WorkingDirectory, "")),
+	}
+
+	if !plan.GlobalRemoteState.IsNull() && !plan.GlobalRemoteState.IsUnknown() {
+		opts.GlobalRemoteState = tfe.Bool(plan.GlobalRemoteState.ValueBool())
+	}
+
+	r.applyWorkspaceUpdateOptionsFromModel(ctx, &plan, &opts, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	prefixesConfigured := !configTriggerPrefixes.IsNull() && !configTriggerPrefixes.IsUnknown()
+	patternsConfigured := !configTriggerPatterns.IsNull() && !configTriggerPatterns.IsUnknown()
+
+	switch {
+	case prefixesConfigured:
+		prefixes, _ := expandWorkspaceStringList(ctx, configTriggerPrefixes, &resp.Diagnostics)
+		opts.TriggerPrefixes = prefixes
+		opts.TriggerPatterns = []string{}
+	case patternsConfigured:
+		patterns, _ := expandWorkspaceStringList(ctx, configTriggerPatterns, &resp.Diagnostics)
+		opts.TriggerPatterns = patterns
+		opts.TriggerPrefixes = []string{}
+	default:
+		opts.TriggerPrefixes = []string{}
+		opts.TriggerPatterns = []string{}
+	}
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !configTags.IsNull() && !configTags.IsUnknown() && len(configTags.Elements()) == 0 && !boolValueOrDefault(plan.IgnoreAdditionalTags, false) {
+		if err := r.config.Client.Workspaces.DeleteAllTagBindings(ctx, state.ID.ValueString()); err != nil {
+			resp.Diagnostics.AddError("Error removing tag bindings", fmt.Sprintf("Error removing tag bindings from workspace %s: %v", state.ID.ValueString(), err))
+			return
+		}
+	}
+
+	if configExecutionMode.IsNull() || configExecutionMode.IsUnknown() {
+		opts.ExecutionMode = nil
+		if opts.SettingOverwrites != nil {
+			opts.SettingOverwrites.ExecutionMode = nil
+		}
+	}
+	if configAgentPoolID.IsNull() || configAgentPoolID.IsUnknown() || configAgentPoolID.ValueString() == "" {
+		opts.AgentPoolID = nil
+		if opts.SettingOverwrites != nil {
+			opts.SettingOverwrites.AgentPool = nil
+		}
+	}
+	if configOperations.IsNull() || configOperations.IsUnknown() {
+		opts.Operations = nil
+	}
+	if opts.SettingOverwrites != nil && opts.SettingOverwrites.ExecutionMode == nil && opts.SettingOverwrites.AgentPool == nil {
+		opts.SettingOverwrites = nil
+	}
+
+	if configAutoDestroyAt.IsNull() || configAutoDestroyAt.IsUnknown() || configAutoDestroyAt.ValueString() == "" {
+		opts.AutoDestroyAt = jsonapi.NewNullNullableAttr[time.Time]()
+	} else {
+		t, err := time.Parse(time.RFC3339, configAutoDestroyAt.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError("Error expanding auto destroy", err.Error())
+			return
+		}
+		opts.AutoDestroyAt = jsonapi.NewNullableAttrWithValue(t)
+	}
+
+	if configAutoDestroyActivityDuration.IsNull() || configAutoDestroyActivityDuration.IsUnknown() || configAutoDestroyActivityDuration.ValueString() == "" {
+		opts.AutoDestroyActivityDuration = jsonapi.NewNullNullableAttr[string]()
+	} else {
+		opts.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(configAutoDestroyActivityDuration.ValueString())
+	}
+
+	if _, err := r.config.Client.Workspaces.UpdateByID(ctx, state.ID.ValueString(), opts); err != nil {
+		resp.Diagnostics.AddError("Error updating workspace", fmt.Sprintf("Error updating workspace %s: %v", state.ID.ValueString(), err))
+		return
+	}
+
+	if !plan.SSHKeyID.Equal(state.SSHKeyID) {
+		if !plan.SSHKeyID.IsNull() && plan.SSHKeyID.ValueString() != "" {
+			_, err := r.config.Client.Workspaces.AssignSSHKey(ctx, state.ID.ValueString(), tfe.WorkspaceAssignSSHKeyOptions{SSHKeyID: tfe.String(plan.SSHKeyID.ValueString())})
 			if err != nil {
-				return fmt.Errorf("Error expanding auto destroy during update: %w", err)
-			}
-			options.AutoDestroyAt = autoDestroyAt
-		}
-
-		if d.HasChange("auto_destroy_activity_duration") {
-			duration, ok := d.GetOk("auto_destroy_activity_duration")
-			if !ok {
-				options.AutoDestroyActivityDuration = jsonapi.NewNullNullableAttr[string]()
-			} else {
-				options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(duration.(string))
-			}
-		}
-
-		if d.HasChange("execution_mode") {
-			if v, ok := d.GetOk("execution_mode"); ok {
-				options.ExecutionMode = tfe.String(v.(string))
-
-				// set setting overwrites
-				options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{
-					ExecutionMode: tfe.Bool(true),
-				}
-			}
-		}
-
-		if d.HasChange("operations") {
-			if v, ok := d.GetOkExists("operations"); ok {
-				options.Operations = tfe.Bool(v.(bool))
-			}
-		}
-
-		if tagBindings, ok := d.Get("tags").(map[string]interface{}); ok {
-			for key, val := range tagBindings {
-				options.TagBindings = append(options.TagBindings, &tfe.TagBinding{
-					Key:   key,
-					Value: val.(string),
-				})
-			}
-
-			// If we have no tag bindings and this a deliberate change in config
-			// directly delete the existing bindings.
-			if len(options.TagBindings) == 0 && !d.Get("ignore_additional_tags").(bool) {
-				err := config.Client.Workspaces.DeleteAllTagBindings(ctx, id)
-				if err != nil {
-					return fmt.Errorf("Error removing tag bindings from workspace %s: %w", id, err)
-				}
-			}
-		}
-
-		// Process all configured options.
-		if tfVersion, ok := d.GetOk("terraform_version"); ok {
-			options.TerraformVersion = tfe.String(tfVersion.(string))
-		}
-
-		if tps, ok := d.GetOk("trigger_prefixes"); ok {
-			for _, tp := range tps.([]interface{}) {
-				if val, ok := tp.(string); ok {
-					options.TriggerPrefixes = append(options.TriggerPrefixes, val)
-				}
+				resp.Diagnostics.AddError("Error assigning SSH key", err.Error())
+				return
 			}
 		} else {
-			options.TriggerPrefixes = []string{}
-		}
-
-		if tps, ok := d.GetOk("trigger_patterns"); ok {
-			for _, tp := range tps.([]interface{}) {
-				if val, ok := tp.(string); ok {
-					options.TriggerPatterns = append(options.TriggerPatterns, val)
-				}
-			}
-		} else {
-			options.TriggerPatterns = []string{}
-		}
-
-		if d.GetRawConfig().GetAttr("trigger_patterns").IsNull() {
-			options.TriggerPatterns = nil
-		} else if d.GetRawConfig().GetAttr("trigger_prefixes").IsNull() {
-			options.TriggerPrefixes = nil
-		}
-
-		if workingDir, ok := d.GetOk("working_directory"); ok {
-			options.WorkingDirectory = tfe.String(workingDir.(string))
-		}
-
-		// Get and assert the VCS repo configuration block.
-		if v, ok := d.GetOk("vcs_repo"); ok {
-			vcsRepo := v.([]interface{})[0].(map[string]interface{})
-
-			options.VCSRepo = &tfe.VCSRepoOptions{
-				Identifier:        tfe.String(vcsRepo["identifier"].(string)),
-				Branch:            tfe.String(vcsRepo["branch"].(string)),
-				IngressSubmodules: tfe.Bool(vcsRepo["ingress_submodules"].(bool)),
-				OAuthTokenID:      tfe.String(vcsRepo["oauth_token_id"].(string)),
-				GHAInstallationID: tfe.String(vcsRepo["github_app_installation_id"].(string)),
-				TagsRegex:         tfe.String(vcsRepo["tags_regex"].(string)),
-			}
-		}
-
-		// Remove vcs_repo from the workspace
-		// if the value of vcs_repo has been changed
-		// by removing it from the config
-		if d.HasChange("vcs_repo") {
-			_, ok := d.GetOk("vcs_repo")
-			if !ok {
-				_, err := config.Client.Workspaces.RemoveVCSConnectionByID(ctx, id)
-				if err != nil {
-					d.Partial(true)
-					return fmt.Errorf("Error removing VCS repo from workspace %s: %w", id, err)
-				}
-			}
-		}
-
-		log.Printf("[DEBUG] Update workspace %s", id)
-		_, err := config.Client.Workspaces.UpdateByID(ctx, id, options)
-		if err != nil {
-			d.Partial(true)
-			return fmt.Errorf(
-				"Error updating workspace %s: %w", id, err)
-		}
-	}
-
-	if d.HasChange("ssh_key_id") {
-		sshKeyID := d.Get("ssh_key_id").(string)
-
-		if sshKeyID != "" {
-			_, err := config.Client.Workspaces.AssignSSHKey(
-				ctx,
-				id,
-				tfe.WorkspaceAssignSSHKeyOptions{
-					SSHKeyID: tfe.String(sshKeyID),
-				},
-			)
+			_, err := r.config.Client.Workspaces.UnassignSSHKey(ctx, state.ID.ValueString())
 			if err != nil {
-				return fmt.Errorf("Error assigning SSH key to workspace %s: %w", id, err)
-			}
-		} else {
-			_, err := config.Client.Workspaces.UnassignSSHKey(ctx, id)
-			if err != nil {
-				return fmt.Errorf("Error unassigning SSH key from workspace %s: %w", id, err)
+				resp.Diagnostics.AddError("Error unassigning SSH key", err.Error())
+				return
 			}
 		}
 	}
 
-	if d.HasChange("tag_names") {
-		oldTagNameValues, newTagNameValues := d.GetChange("tag_names")
-		newTagNamesSet := newTagNameValues.(*schema.Set)
-		oldTagNamesSet := oldTagNameValues.(*schema.Set)
-
-		newTagNames := newTagNamesSet.Difference(oldTagNamesSet)
-		oldTagNames := oldTagNamesSet.Difference(newTagNamesSet)
-
-		// First add the new tags
-		if newTagNames.Len() > 0 {
-			var addTags []*tfe.Tag
-
-			for _, tagName := range newTagNames.List() {
-				name := tagName.(string)
-				addTags = append(addTags, &tfe.Tag{Name: name})
-			}
-
-			log.Printf("[DEBUG] Adding tags to workspace: %s", d.Id())
-			err := config.Client.Workspaces.AddTags(ctx, d.Id(), tfe.WorkspaceAddTagsOptions{Tags: addTags})
-			if err != nil {
-				return fmt.Errorf("Error adding tags to workspace %s: %w", d.Id(), err)
-			}
-		}
-
-		// Then remove all the old tags
-		if oldTagNames.Len() > 0 {
-			var removeTags []*tfe.Tag
-
-			for _, tagName := range oldTagNames.List() {
-				removeTags = append(removeTags, &tfe.Tag{Name: tagName.(string)})
-			}
-
-			log.Printf("[DEBUG] Removing tags from workspace: %s", d.Id())
-			err := config.Client.Workspaces.RemoveTags(ctx, d.Id(), tfe.WorkspaceRemoveTagsOptions{Tags: removeTags})
-			if err != nil {
-				return fmt.Errorf("Error removing tags from workspace %s: %w", d.Id(), err)
-			}
-		}
+	r.syncRemoteStateConsumers(ctx, state.ID.ValueString(), state.RemoteStateConsumerIDs, plan.GlobalRemoteState, plan.RemoteStateConsumerIDs, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	globalRemoteState := d.Get("global_remote_state").(bool)
-	if !globalRemoteState && d.HasChange("remote_state_consumer_ids") {
-		oldWorkspaceIDValues, newWorkspaceIDValues := d.GetChange("remote_state_consumer_ids")
-		newWorkspaceIDsSet := newWorkspaceIDValues.(*schema.Set)
-		oldWorkspaceIDsSet := oldWorkspaceIDValues.(*schema.Set)
-
-		newWorkspaceIDs := newWorkspaceIDsSet.Difference(oldWorkspaceIDsSet)
-		oldWorkspaceIDs := oldWorkspaceIDsSet.Difference(newWorkspaceIDsSet)
-
-		// First add the new consumerss
-		if newWorkspaceIDs.Len() > 0 {
-			options := tfe.WorkspaceAddRemoteStateConsumersOptions{}
-
-			for _, workspaceID := range newWorkspaceIDs.List() {
-				options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: workspaceID.(string)})
-			}
-
-			log.Printf("[DEBUG] Adding remote state consumers to workspace: %s", d.Id())
-			err := config.Client.Workspaces.AddRemoteStateConsumers(ctx, d.Id(), options)
-			if err != nil {
-				return fmt.Errorf("Error adding remote state consumers to workspace %s: %w", d.Id(), err)
-			}
-		}
-
-		// Then remove all the old consumers.
-		if oldWorkspaceIDs.Len() > 0 {
-			options := tfe.WorkspaceRemoveRemoteStateConsumersOptions{}
-
-			for _, workspaceID := range oldWorkspaceIDs.List() {
-				options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: workspaceID.(string)})
-			}
-
-			log.Printf("[DEBUG] Removing remote state consumers from workspace: %s", d.Id())
-			err := config.Client.Workspaces.RemoveRemoteStateConsumers(ctx, d.Id(), options)
-			if err != nil {
-				return fmt.Errorf("Error removing remote state consumers from workspace %s: %w", d.Id(), err)
-			}
-		}
-	}
-
-	return resourceTFEWorkspaceRead(d, meta)
+	r.readByIDIntoState(ctx, state.ID.ValueString(), &plan, &resp.State, resp.Identity, &resp.Diagnostics)
 }
 
-func safeWorkspaceDelete(ctx context.Context, config ConfiguredClient, id string) error {
-	return retry.RetryContext(ctx, time.Duration(5)*time.Minute, func() *retry.RetryError {
-		err := config.Client.Workspaces.SafeDeleteByID(ctx, id)
-		if errors.Is(err, tfe.ErrWorkspaceStillProcessing) {
-			return retry.RetryableError(err)
-		} else if err != nil {
-			return retry.NonRetryableError(err)
-		}
-		return nil
-	})
-}
+func (r *resourceTFEWorkspaceFramework) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state modelWorkspace
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
-func resourceTFEWorkspaceDelete(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(ConfiguredClient)
-	id := d.Id()
-
-	log.Printf("[DEBUG] Delete workspace %s", id)
-
-	ws, err := config.Client.Workspaces.ReadByID(ctx, id)
+	id := state.ID.ValueString()
+	ws, err := r.config.Client.Workspaces.ReadByID(ctx, id)
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
-			return nil
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			return
 		}
-		return fmt.Errorf(
-			"Error reading workspace %s: %w", id, err)
+		resp.Diagnostics.AddError("Error reading workspace", fmt.Sprintf("Error reading workspace %s: %v", id, err))
+		return
 	}
 
-	forceDelete := d.Get("force_delete").(bool)
-
-	// presence of Permissions.CanForceDelete will determine if current version of TFE supports safe deletes
+	forceDelete := !state.ForceDelete.IsNull() && state.ForceDelete.ValueBool()
 	if ws.Permissions.CanForceDelete == nil {
 		if forceDelete {
-			err = config.Client.Workspaces.DeleteByID(ctx, id)
+			err = r.config.Client.Workspaces.DeleteByID(ctx, id)
 		} else {
-			return fmt.Errorf(
-				"Error deleting workspace %s: This version of Terraform Enterprise does not support workspace safe-delete. Workspaces must be force deleted by setting force_delete=true", id)
+			resp.Diagnostics.AddError("Error deleting workspace", fmt.Sprintf("This version of Terraform Enterprise does not support workspace safe-delete. Workspaces must be force deleted by setting force_delete=true (workspace %s)", id))
+			return
 		}
 	} else if *ws.Permissions.CanForceDelete {
 		if forceDelete {
-			err = config.Client.Workspaces.DeleteByID(ctx, id)
+			err = r.config.Client.Workspaces.DeleteByID(ctx, id)
 		} else {
 			err = errWorkspaceResourceCountCheck(id, ws.ResourceCount)
-			if err != nil {
-				return err
+			if err == nil {
+				err = errWorkspaceSafeDeleteWithPermission(id, safeWorkspaceDelete(ctx, r.config, id))
 			}
-
-			err = safeWorkspaceDelete(ctx, config, id)
-			return errWorkspaceSafeDeleteWithPermission(id, err)
 		}
 	} else {
 		if forceDelete {
-			return fmt.Errorf(
-				"Error deleting workspace %s: missing required permissions to set force delete workspaces in the organization", id)
+			resp.Diagnostics.AddError("Error deleting workspace", fmt.Sprintf("missing required permissions to set force delete workspaces in the organization for workspace %s", id))
+			return
 		}
 		err = errWorkspaceResourceCountCheck(id, ws.ResourceCount)
+		if err == nil {
+			err = safeWorkspaceDelete(ctx, r.config, id)
+		}
+	}
+
+	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+		resp.Diagnostics.AddError("Error deleting workspace", err.Error())
+	}
+}
+
+func (r *resourceTFEWorkspaceFramework) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	var importID string
+
+	if req.ID != "" {
+		s := strings.Split(req.ID, "/")
+		if len(s) >= 3 {
+			resp.Diagnostics.AddError("Invalid import format", fmt.Sprintf("invalid workspace input format: %s (expected <ORGANIZATION>/<WORKSPACE NAME> or <WORKSPACE ID>)", req.ID))
+			return
+		}
+		if len(s) == 2 {
+			workspaceID, err := fetchWorkspaceExternalID(s[0]+"/"+s[1], r.config.Client)
+			if err != nil {
+				resp.Diagnostics.AddError("Error importing workspace", fmt.Sprintf("error retrieving workspace with name %s from organization %s: %v", s[1], s[0], err))
+				return
+			}
+			importID = workspaceID
+		} else {
+			importID = req.ID
+		}
+	} else {
+		if req.Identity == nil {
+			resp.Diagnostics.AddError("Error importing workspace", "missing identity for import")
+			return
+		}
+		var identity modelWorkspaceIdentity
+		resp.Diagnostics.Append(req.Identity.Get(ctx, &identity)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		if identity.ID.IsNull() || identity.ID.IsUnknown() || identity.ID.ValueString() == "" {
+			resp.Diagnostics.AddError("Error importing workspace", "identity.id must be set for workspace import")
+			return
+		}
+		importID = identity.ID.ValueString()
+	}
+
+	prior := modelWorkspace{}
+	r.readByIDIntoState(ctx, importID, &prior, &resp.State, nil, &resp.Diagnostics)
+}
+
+func (r *resourceTFEWorkspaceFramework) readByIDIntoState(ctx context.Context, id string, prior *modelWorkspace, state *tfsdk.State, identity *tfsdk.ResourceIdentity, diags *diag.Diagnostics) {
+	tflog.Debug(ctx, "Read configuration of workspace", map[string]any{"id": id})
+
+	workspace, err := r.config.Client.Workspaces.ReadByIDWithOptions(ctx, id, &tfe.WorkspaceReadOptions{Include: []tfe.WSIncludeOpt{tfe.WSEffectiveTagBindings}})
+	if err != nil && errors.Is(err, tfe.ErrInvalidIncludeValue) {
+		workspace, err = r.config.Client.Workspaces.ReadByID(ctx, id)
+	}
+	if err != nil {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			state.RemoveResource(ctx)
+			return
+		}
+		diags.AddError("Error reading workspace", fmt.Sprintf("Error reading configuration of workspace %s: %v", id, err))
+		return
+	}
+
+	model := *prior
+	model.ID = types.StringValue(workspace.ID)
+	model.Name = types.StringValue(workspace.Name)
+	model.AllowDestroyPlan = types.BoolValue(workspace.AllowDestroyPlan)
+	model.AssessmentsEnabled = types.BoolValue(workspace.AssessmentsEnabled)
+	model.AutoApply = types.BoolValue(workspace.AutoApply)
+	model.AutoApplyRunTrigger = types.BoolValue(workspace.AutoApplyRunTrigger)
+	model.Description = stringToFramework(workspace.Description)
+	model.FileTriggersEnabled = types.BoolValue(workspace.FileTriggersEnabled)
+	model.Operations = types.BoolValue(workspace.Operations)
+	model.ExecutionMode = stringToFramework(workspace.ExecutionMode)
+	model.QueueAllRuns = types.BoolValue(workspace.QueueAllRuns)
+	model.SourceName = stringToFramework(workspace.SourceName)
+	model.SourceURL = stringToFramework(workspace.SourceURL)
+	model.SpeculativeEnabled = types.BoolValue(workspace.SpeculativeEnabled)
+	model.StructuredRunOutputEnabled = types.BoolValue(workspace.StructuredRunOutputEnabled)
+	model.TerraformVersion = stringToFramework(workspace.TerraformVersion)
+	model.WorkingDirectory = types.StringValue(workspace.WorkingDirectory)
+	model.Organization = types.StringValue(workspace.Organization.Name)
+	model.ResourceCount = types.Int64Value(int64(workspace.ResourceCount))
+	model.InheritsProjectAutoDestroy = types.BoolValue(workspace.InheritsProjectAutoDestroy)
+	if workspace.HYOKEnabled == nil {
+		model.HYOKEnabled = types.BoolNull()
+	} else {
+		model.HYOKEnabled = types.BoolValue(*workspace.HYOKEnabled)
+	}
+	model.TriggerPrefixes = stringSliceToList(workspace.TriggerPrefixes)
+	model.TriggerPatterns = stringSliceToList(workspace.TriggerPatterns)
+
+	if workspace.Project != nil {
+		model.ProjectID = types.StringValue(workspace.Project.ID)
+	} else {
+		model.ProjectID = types.StringNull()
+	}
+
+	if workspace.SSHKey != nil {
+		model.SSHKeyID = types.StringValue(workspace.SSHKey.ID)
+	} else {
+		model.SSHKeyID = types.StringValue("")
+	}
+
+	if workspace.AgentPool != nil {
+		model.AgentPoolID = types.StringValue(workspace.AgentPool.ID)
+	} else {
+		model.AgentPoolID = types.StringValue("")
+	}
+
+	if workspace.InheritsProjectAutoDestroy {
+		model.AutoDestroyAt = types.StringValue("")
+		model.AutoDestroyActivityDuration = types.StringValue("")
+	} else {
+		autoDestroyAt, err := flattenAutoDestroyAt(workspace.AutoDestroyAt)
 		if err != nil {
-			return err
+			diags.AddError("Error flattening auto destroy", err.Error())
+			return
 		}
-		err = safeWorkspaceDelete(ctx, config, id)
-	}
-
-	if err != nil {
-		if err == tfe.ErrResourceNotFound {
-			return nil
+		if autoDestroyAt == nil {
+			model.AutoDestroyAt = types.StringValue("")
+		} else {
+			model.AutoDestroyAt = types.StringValue(*autoDestroyAt)
 		}
-		return fmt.Errorf(
-			"Error deleting workspace %s: %w", id, err)
-	}
-	return nil
-}
 
-// An agent pool can only be specified when execution_mode is set to "agent". You currently cannot specify a
-// schema validation based on a different argument's value, so we do so here at plan time instead.
-func validateAgentExecution(_ context.Context, d *schema.ResourceDiff) error {
-	// since execution_mode and agent_pool_id are marked as Optional: true, and
-	// Computed: true, unsetting the execution_mode/agent_pool_id in the config
-	// after it's been set to a valid value is not detected by ResourceDiff so
-	// we need to read the value from RawConfig instead
-	configMap := d.GetRawConfig().AsValueMap()
-	executionMode, executionModeReadOk := configMap["execution_mode"]
-	agentPoolID, agentPoolIDReadOk := configMap["agent_pool_id"]
-	executionModeSet := !executionMode.IsNull() && executionModeReadOk
-	agentPoolIDSet := !agentPoolID.IsNull() && agentPoolIDReadOk
-	if executionModeSet {
-		executionModeIsAgent := executionMode.AsString() == "agent"
-		if executionModeIsAgent && !agentPoolIDSet {
-			return fmt.Errorf("agent_pool_id must be provided when execution_mode is 'agent'")
-		} else if !executionModeIsAgent && agentPoolIDSet {
-			return fmt.Errorf("execution_mode must be set to 'agent' to assign agent_pool_id")
+		if workspace.AutoDestroyActivityDuration.IsSpecified() {
+			v, err := workspace.AutoDestroyActivityDuration.Get()
+			if err != nil {
+				diags.AddError("Error reading auto destroy activity duration", err.Error())
+				return
+			}
+			model.AutoDestroyActivityDuration = types.StringValue(v)
+		} else {
+			model.AutoDestroyActivityDuration = types.StringValue("")
 		}
 	}
 
-	if d.HasChange("execution_mode") {
-		d.SetNewComputed("operations")
-	} else if d.HasChange("operations") {
-		d.SetNewComputed("execution_mode")
-	}
-
-	return nil
-}
-
-func validTagName(tag string) bool {
-	// Tags are re-validated here because the API will accept uppercase letters and automatically
-	// downcase them, causing resource drift. It's better to catch this issue during the plan phase
-	//
-	//     \A            match beginning of string
-	//     [a-z0-9]      match a letter or number for the first char; case insensitive
-	//     (?:           start non-capture group; used to group sub-expressions; will not capture/store, interally
-	//       [a-z0-9_:-]*     match 0 or more letter, number, colon, or hyphen
-	//       [a-z0-9]    match a letter or number as the final character when this group is present
-	//     )?            end non-capture group; ? is quantifier; matches 0 or 1 instances of the non-capture group in preceding set
-	//     \z            match end of string; requires last char to match preceding subset; in this case, an alphanumeric char
-	tagPattern := regexp.MustCompile(`\A[a-z0-9](?:[a-z0-9_:-]*[a-z0-9])?\z`)
-	return tagPattern.MatchString(tag)
-}
-
-func validateTagNames(_ context.Context, d *schema.ResourceDiff) error {
-	names, ok := d.GetOk("tag_names")
-	if !ok {
-		return nil
-	}
-
-	for _, t := range names.(*schema.Set).List() {
-		tagName := t.(string)
-		if !validTagName(tagName) {
-			return fmt.Errorf("%q is not a valid tag name. Tag must be one or more characters; can include lowercase letters, numbers, colons, hyphens, and underscores; and must begin and end with a letter or number", tagName)
+	managedTagNames := map[string]struct{}{}
+	if !prior.TagNames.IsNull() && !prior.TagNames.IsUnknown() {
+		var current []string
+		diags.Append(prior.TagNames.ElementsAs(ctx, &current, false)...)
+		for _, t := range current {
+			managedTagNames[t] = struct{}{}
 		}
 	}
-	return nil
-}
 
-func resourceTFEWorkspaceImporter(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	config := meta.(ConfiguredClient)
+	tagNames := make([]attr.Value, 0, len(workspace.TagNames))
+	ignoreAdditionalTagNames := !prior.IgnoreAdditionalTagNames.IsNull() && !prior.IgnoreAdditionalTagNames.IsUnknown() && prior.IgnoreAdditionalTagNames.ValueBool()
+	for _, tagName := range workspace.TagNames {
+		_, isManaged := managedTagNames[tagName]
+		if isManaged || !ignoreAdditionalTagNames {
+			tagNames = append(tagNames, types.StringValue(tagName))
+		}
+	}
+	if !prior.TagNames.IsNull() && !prior.TagNames.IsUnknown() {
+		model.TagNames = prior.TagNames
+	} else {
+		model.TagNames = types.SetValueMust(types.StringType, tagNames)
+	}
 
-	s := strings.Split(d.Id(), "/")
-	if len(s) >= 3 {
-		return nil, fmt.Errorf(
-			"invalid workspace input format: %s (expected <ORGANIZATION>/<WORKSPACE NAME> or <WORKSPACE ID>)",
-			d.Id(),
-		)
-	} else if len(s) == 2 {
-		workspaceID, err := fetchWorkspaceExternalID(s[0]+"/"+s[1], config.Client)
+	if workspace.VCSRepo != nil {
+		vcsRepoVal, d := types.ListValueFrom(ctx, types.ObjectType{AttrTypes: map[string]attr.Type{
+			"identifier":                 types.StringType,
+			"branch":                     types.StringType,
+			"ingress_submodules":         types.BoolType,
+			"oauth_token_id":             types.StringType,
+			"tags_regex":                 types.StringType,
+			"github_app_installation_id": types.StringType,
+		}}, []modelWorkspaceVCSRepo{{
+			Identifier:              stringToFramework(workspace.VCSRepo.Identifier),
+			Branch:                  stringToFramework(workspace.VCSRepo.Branch),
+			IngressSubmodules:       types.BoolValue(workspace.VCSRepo.IngressSubmodules),
+			OAuthTokenID:            stringToFramework(workspace.VCSRepo.OAuthTokenID),
+			TagsRegex:               types.StringValue(workspace.VCSRepo.TagsRegex),
+			GithubAppInstallationID: stringToFramework(workspace.VCSRepo.GHAInstallationID),
+		}})
+		diags.Append(d...)
+		model.VCSRepo = vcsRepoVal
+	} else {
+		model.VCSRepo = types.ListNull(types.ObjectType{AttrTypes: map[string]attr.Type{
+			"identifier":                 types.StringType,
+			"branch":                     types.StringType,
+			"ingress_submodules":         types.BoolType,
+			"oauth_token_id":             types.StringType,
+			"tags_regex":                 types.StringType,
+			"github_app_installation_id": types.StringType,
+		}})
+	}
+
+	tagInfo := helpers.NewTagInfo(mapFromStringMapType(prior.Tags), workspace.EffectiveTagBindings, !prior.IgnoreAdditionalTags.IsNull() && !prior.IgnoreAdditionalTags.IsUnknown() && prior.IgnoreAdditionalTags.ValueBool())
+	model.Tags = mapTypeFromStringMap(tagInfo.SelfTags)
+	model.EffectiveTags = mapTypeFromStringMap(tagInfo.EffectiveTags)
+
+	if workspace.GlobalRemoteState {
+		model.GlobalRemoteState = types.BoolValue(true)
+		model.RemoteStateConsumerIDs = types.SetValueMust(types.StringType, []attr.Value{})
+	} else {
+		globalRemoteState, remoteStateConsumerIDs, err := readWorkspaceStateConsumers(id, r.config.Client)
 		if err != nil {
-			return nil, fmt.Errorf(
-				"error retrieving workspace with name %s from organization %s %w", s[1], s[0], err)
+			diags.AddError("Error reading remote state consumers", fmt.Sprintf("Error reading remote state consumers for workspace %s: %v", id, err))
+			return
 		}
-
-		d.SetId(workspaceID)
+		model.GlobalRemoteState = types.BoolValue(globalRemoteState)
+		model.RemoteStateConsumerIDs = stringSliceToSet(remoteStateConsumerIDs)
 	}
 
-	identity, err := d.Identity()
-	if err != nil {
-		return nil, fmt.Errorf("error reading workspace identity: %w", err)
+	if workspace.Links["self-html"] != nil {
+		baseAPI := r.config.Client.BaseURL()
+		htmlURL := url.URL{Scheme: baseAPI.Scheme, Host: baseAPI.Host, Path: workspace.Links["self-html"].(string)}
+		model.HTMLURL = types.StringValue(htmlURL.String())
 	}
 
-	if externalID := identity.Get("id").(string); externalID != "" {
-		// We are importing by identity
-		// This only supported when using an import block, since import blocks
-		// are the only way to specify an identity. Importing via TF CLI does
-		// not support specifying an identity.
-		d.SetId(externalID)
+	if prior.ForceDelete.IsNull() || prior.ForceDelete.IsUnknown() {
+		model.ForceDelete = types.BoolValue(false)
+	} else {
+		model.ForceDelete = prior.ForceDelete
 	}
 
-	return []*schema.ResourceData{d}, nil
+	diags.Append(state.Set(ctx, &model)...)
+
+	if identity != nil {
+		identityModel := modelWorkspaceIdentity{ID: model.ID, Hostname: types.StringValue(r.config.Client.BaseURL().Host)}
+		diags.Append(identity.Set(ctx, &identityModel)...)
+	}
 }
 
-func errWorkspaceSafeDeleteWithPermission(workspaceID string, err error) error {
-	if err != nil {
-		if strings.HasPrefix(err.Error(), "conflict") {
-			return fmt.Errorf("error deleting workspace %s: %w\nThis workspace may either have managed resources in state or has a latest state that's still being processed. Add force_delete = true to the resource config to delete this workspace", workspaceID, err)
+func (r *resourceTFEWorkspaceFramework) applyWorkspaceOptionsFromModel(ctx context.Context, model *modelWorkspace, options *tfe.WorkspaceCreateOptions, diags *diag.Diagnostics) {
+	if !model.GlobalRemoteState.IsNull() && !model.GlobalRemoteState.IsUnknown() {
+		options.GlobalRemoteState = tfe.Bool(model.GlobalRemoteState.ValueBool())
+	}
+	if !model.AutoApply.IsNull() && !model.AutoApply.IsUnknown() {
+		options.AutoApply = tfe.Bool(model.AutoApply.ValueBool())
+	}
+	if !model.AssessmentsEnabled.IsNull() && !model.AssessmentsEnabled.IsUnknown() {
+		options.AssessmentsEnabled = tfe.Bool(model.AssessmentsEnabled.ValueBool())
+	}
+	if !model.Description.IsNull() && !model.Description.IsUnknown() {
+		options.Description = tfe.String(model.Description.ValueString())
+	}
+	if !model.AgentPoolID.IsNull() && !model.AgentPoolID.IsUnknown() && model.AgentPoolID.ValueString() != "" {
+		options.AgentPoolID = tfe.String(model.AgentPoolID.ValueString())
+		options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{ExecutionMode: tfe.Bool(true), AgentPool: tfe.Bool(true)}
+	}
+	if !model.AutoDestroyAt.IsNull() && !model.AutoDestroyAt.IsUnknown() && model.AutoDestroyAt.ValueString() != "" {
+		t, err := time.Parse(time.RFC3339, model.AutoDestroyAt.ValueString())
+		if err != nil {
+			diags.AddError("Error expanding auto destroy", err.Error())
+			return
 		}
-		return err
+		options.AutoDestroyAt = jsonapi.NewNullableAttrWithValue(t)
 	}
-	return nil
+	if !model.AutoDestroyActivityDuration.IsNull() && !model.AutoDestroyActivityDuration.IsUnknown() {
+		options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(model.AutoDestroyActivityDuration.ValueString())
+	}
+	if !model.ExecutionMode.IsNull() && !model.ExecutionMode.IsUnknown() {
+		options.ExecutionMode = tfe.String(model.ExecutionMode.ValueString())
+		options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{ExecutionMode: tfe.Bool(true), AgentPool: tfe.Bool(true)}
+	}
+	if !model.Operations.IsNull() && !model.Operations.IsUnknown() {
+		options.Operations = tfe.Bool(model.Operations.ValueBool())
+		options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{ExecutionMode: tfe.Bool(true), AgentPool: tfe.Bool(true)}
+	}
+	if options.SettingOverwrites == nil {
+		options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{ExecutionMode: tfe.Bool(false), AgentPool: tfe.Bool(false)}
+	}
+	if !model.SourceURL.IsNull() && !model.SourceURL.IsUnknown() {
+		options.SourceURL = tfe.String(model.SourceURL.ValueString())
+	}
+	if !model.SourceName.IsNull() && !model.SourceName.IsUnknown() {
+		options.SourceName = tfe.String(model.SourceName.ValueString())
+	}
+
+	if !model.Tags.IsNull() && !model.Tags.IsUnknown() {
+		options.TagBindings = []*tfe.TagBinding{}
+		options.TagBindings = append(options.TagBindings, expandWorkspaceTagBindings(model.Tags)...)
+	}
+
+	if !model.TerraformVersion.IsNull() && !model.TerraformVersion.IsUnknown() {
+		options.TerraformVersion = tfe.String(model.TerraformVersion.ValueString())
+	}
+	vcsConfigured := !model.VCSRepo.IsNull() && !model.VCSRepo.IsUnknown()
+	if prefixes, ok := expandWorkspaceStringList(ctx, model.TriggerPrefixes, diags); ok && (vcsConfigured || len(prefixes) > 0) {
+		options.TriggerPrefixes = prefixes
+	}
+	if patterns, ok := expandWorkspaceStringList(ctx, model.TriggerPatterns, diags); ok && (vcsConfigured || len(patterns) > 0) {
+		options.TriggerPatterns = patterns
+	}
+	if !model.ProjectID.IsNull() && !model.ProjectID.IsUnknown() && model.ProjectID.ValueString() != "" {
+		options.Project = &tfe.Project{ID: model.ProjectID.ValueString()}
+	}
+	options.VCSRepo = expandWorkspaceVCSRepoOptions(ctx, model.VCSRepo, diags, false)
+	if tags, ok := expandWorkspaceTagNames(ctx, model.TagNames, diags); ok {
+		options.Tags = append(options.Tags, tags...)
+	}
 }
 
-func errWorkspaceResourceCountCheck(workspaceID string, resourceCount int) error {
-	if resourceCount > 0 {
-		return fmt.Errorf(
-			"error deleting workspace %s: This workspace has %v resources under management and must be force deleted by setting force_delete = true", workspaceID, resourceCount)
+func (r *resourceTFEWorkspaceFramework) applyWorkspaceUpdateOptionsFromModel(ctx context.Context, model *modelWorkspace, options *tfe.WorkspaceUpdateOptions, diags *diag.Diagnostics) {
+	if !model.ProjectID.IsNull() && !model.ProjectID.IsUnknown() && model.ProjectID.ValueString() != "" {
+		options.Project = &tfe.Project{ID: model.ProjectID.ValueString()}
 	}
-	return nil
+	if !model.AssessmentsEnabled.IsNull() && !model.AssessmentsEnabled.IsUnknown() {
+		options.AssessmentsEnabled = tfe.Bool(model.AssessmentsEnabled.ValueBool())
+	}
+	if !model.AutoApply.IsNull() && !model.AutoApply.IsUnknown() {
+		options.AutoApply = tfe.Bool(model.AutoApply.ValueBool())
+	}
+	if !model.Description.IsNull() && !model.Description.IsUnknown() {
+		options.Description = tfe.String(model.Description.ValueString())
+	}
+	if !model.AgentPoolID.IsNull() && !model.AgentPoolID.IsUnknown() && model.AgentPoolID.ValueString() != "" {
+		options.AgentPoolID = tfe.String(model.AgentPoolID.ValueString())
+		options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{AgentPool: tfe.Bool(true)}
+	}
+	if !model.AutoDestroyAt.IsNull() && !model.AutoDestroyAt.IsUnknown() {
+		if model.AutoDestroyAt.ValueString() == "" {
+			options.AutoDestroyAt = jsonapi.NewNullNullableAttr[time.Time]()
+		} else {
+			t, err := time.Parse(time.RFC3339, model.AutoDestroyAt.ValueString())
+			if err != nil {
+				diags.AddError("Error expanding auto destroy", err.Error())
+				return
+			}
+			options.AutoDestroyAt = jsonapi.NewNullableAttrWithValue(t)
+		}
+	}
+	if model.AutoDestroyActivityDuration.IsNull() || model.AutoDestroyActivityDuration.IsUnknown() || model.AutoDestroyActivityDuration.ValueString() == "" {
+		options.AutoDestroyActivityDuration = jsonapi.NewNullNullableAttr[string]()
+	} else {
+		options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(model.AutoDestroyActivityDuration.ValueString())
+	}
+	if !model.ExecutionMode.IsNull() && !model.ExecutionMode.IsUnknown() {
+		options.ExecutionMode = tfe.String(model.ExecutionMode.ValueString())
+		options.SettingOverwrites = &tfe.WorkspaceSettingOverwritesOptions{ExecutionMode: tfe.Bool(true)}
+	}
+	if !model.Operations.IsNull() && !model.Operations.IsUnknown() {
+		options.Operations = tfe.Bool(model.Operations.ValueBool())
+	}
+
+	if !model.Tags.IsNull() && !model.Tags.IsUnknown() {
+		options.TagBindings = []*tfe.TagBinding{}
+		options.TagBindings = append(options.TagBindings, expandWorkspaceTagBindings(model.Tags)...)
+	}
+
+	if !model.TerraformVersion.IsNull() && !model.TerraformVersion.IsUnknown() {
+		options.TerraformVersion = tfe.String(model.TerraformVersion.ValueString())
+	}
+	vcsConfigured := !model.VCSRepo.IsNull() && !model.VCSRepo.IsUnknown()
+	if prefixes, ok := expandWorkspaceStringList(ctx, model.TriggerPrefixes, diags); ok && (vcsConfigured || len(prefixes) > 0) {
+		options.TriggerPrefixes = prefixes
+	}
+	if patterns, ok := expandWorkspaceStringList(ctx, model.TriggerPatterns, diags); ok && (vcsConfigured || len(patterns) > 0) {
+		options.TriggerPatterns = patterns
+	}
+	if !model.WorkingDirectory.IsNull() && !model.WorkingDirectory.IsUnknown() {
+		options.WorkingDirectory = tfe.String(model.WorkingDirectory.ValueString())
+	}
+	options.VCSRepo = expandWorkspaceVCSRepoOptions(ctx, model.VCSRepo, diags, true)
 }
 
-func customizeDiffAutoDestroyAt(_ context.Context, d *schema.ResourceDiff) error {
-	config := d.GetRawConfig()
-
-	// check if auto_destroy_activity_duration is set in config
-	if !config.GetAttr("auto_destroy_activity_duration").IsNull() {
-		return nil
+func (r *resourceTFEWorkspaceFramework) syncRemoteStateConsumers(ctx context.Context, workspaceID string, oldSet types.Set, newGlobal types.Bool, newSet types.Set, diags *diag.Diagnostics) {
+	if !newGlobal.IsNull() && newGlobal.ValueBool() {
+		return
 	}
 
-	inheritsProjectAutoDestroy, ok := d.GetOk("inherits_project_auto_destroy")
-	if ok && inheritsProjectAutoDestroy.(bool) {
-		return nil
+	oldIDs := []string{}
+	newIDs := []string{}
+	if !oldSet.IsNull() && !oldSet.IsUnknown() {
+		diags.Append(oldSet.ElementsAs(ctx, &oldIDs, false)...)
+	}
+	if !newSet.IsNull() && !newSet.IsUnknown() {
+		diags.Append(newSet.ElementsAs(ctx, &newIDs, false)...)
+	}
+	if diags.HasError() {
+		return
 	}
 
-	// if config auto_destroy_at is unset but it exists in state, clear it out
-	// required because auto_destroy_at is computed and we want to set it to null
-	if _, ok := d.GetOk("auto_destroy_at"); ok && config.GetAttr("auto_destroy_at").IsNull() {
-		return d.SetNew("auto_destroy_at", nil)
+	oldMap := map[string]struct{}{}
+	newMap := map[string]struct{}{}
+	for _, id := range oldIDs {
+		oldMap[id] = struct{}{}
+	}
+	for _, id := range newIDs {
+		newMap[id] = struct{}{}
 	}
 
-	return nil
-}
-
-func customizeDiffAutoDestroyActivityDuration(_ context.Context, d *schema.ResourceDiff) error {
-	inheritsProjectAutoDestroy, ok := d.GetOk("inherits_project_auto_destroy")
-	if ok && inheritsProjectAutoDestroy.(bool) {
-		return nil
+	toAdd := make([]string, 0)
+	toRemove := make([]string, 0)
+	for id := range newMap {
+		if _, ok := oldMap[id]; !ok {
+			toAdd = append(toAdd, id)
+		}
+	}
+	for id := range oldMap {
+		if _, ok := newMap[id]; !ok {
+			toRemove = append(toRemove, id)
+		}
 	}
 
-	if _, ok := d.GetOk("auto_destroy_activity_duration"); ok && d.GetRawConfig().GetAttr("auto_destroy_activity_duration").IsNull() {
-		return d.SetNew("auto_destroy_activity_duration", nil)
+	if len(toAdd) > 0 {
+		opts := tfe.WorkspaceAddRemoteStateConsumersOptions{}
+		for _, id := range toAdd {
+			opts.Workspaces = append(opts.Workspaces, &tfe.Workspace{ID: id})
+		}
+		if err := r.config.Client.Workspaces.AddRemoteStateConsumers(ctx, workspaceID, opts); err != nil {
+			diags.AddError("Error adding remote state consumers", err.Error())
+			return
+		}
 	}
 
-	return nil
-}
-
-func expandAutoDestroyAt(d *schema.ResourceData) (jsonapi.NullableAttr[time.Time], error) {
-	v := d.GetRawConfig().GetAttr("auto_destroy_at")
-
-	if v.IsNull() {
-		return jsonapi.NewNullNullableAttr[time.Time](), nil
+	if len(toRemove) > 0 {
+		opts := tfe.WorkspaceRemoveRemoteStateConsumersOptions{}
+		for _, id := range toRemove {
+			opts.Workspaces = append(opts.Workspaces, &tfe.Workspace{ID: id})
+		}
+		if err := r.config.Client.Workspaces.RemoveRemoteStateConsumers(ctx, workspaceID, opts); err != nil {
+			diags.AddError("Error removing remote state consumers", err.Error())
+			return
+		}
 	}
-
-	autoDestroyAt, err := time.Parse(time.RFC3339, v.AsString())
-	if err != nil {
-		return nil, err
-	}
-
-	return jsonapi.NewNullableAttrWithValue(autoDestroyAt), nil
-}
-
-func flattenAutoDestroyAt(a jsonapi.NullableAttr[time.Time]) (*string, error) {
-	if !a.IsSpecified() {
-		return nil, nil
-	}
-
-	autoDestroyTime, err := a.Get()
-	if err != nil {
-		return nil, err
-	}
-
-	autoDestroyAt := autoDestroyTime.Format(time.RFC3339)
-	return &autoDestroyAt, nil
-}
-
-func hasAutoDestroyAtChange(d *schema.ResourceData) bool {
-	state := d.GetRawState()
-	if state.IsNull() {
-		return d.HasChange("auto_destroy_at")
-	}
-
-	config := d.GetRawConfig()
-	autoDestroyAt := config.GetAttr("auto_destroy_at")
-	if !autoDestroyAt.IsNull() {
-		return d.HasChange("auto_destroy_at")
-	}
-
-	return config.GetAttr("auto_destroy_at") != state.GetAttr("auto_destroy_at")
 }

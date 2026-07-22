@@ -17,7 +17,10 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	fwresource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
@@ -770,7 +773,7 @@ func TestAccTFEWorkspace_permutation_test_suite(t *testing.T) {
 							false, "",
 							true, `["pattern"]`,
 						),
-						ExpectError: regexp.MustCompile(`'trigger_patterns' cannot be populated when 'file_triggers_enabled' is set to false.`),
+						ExpectError: regexp.MustCompile(`'trigger_patterns' cannot be populated when 'file_triggers_enabled' is set to\s+false\.`),
 					},
 				},
 			})
@@ -2242,8 +2245,7 @@ func TestAccTFEWorkspace_delete_forceDeleteSettingEnabled(t *testing.T) {
 
 func TestTFEWorkspace_delete_withoutCanForceDeletePermission(t *testing.T) {
 	// This test checks that workspace deletion works as expected when communicating with TFE servers which do not send
-	// the CanForceDelete workspace permission. To simulate this we use the mock workspaces client and call the
-	// workspace resource delete function directly, rather than use the usual resource.
+	// the CanForceDelete workspace permission. We invoke the framework delete path directly.
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("test-organization-%d", rInt)
@@ -2259,43 +2261,99 @@ func TestTFEWorkspace_delete_withoutCanForceDeletePermission(t *testing.T) {
 	workspace.Permissions.CanForceDelete = nil
 	workspace.ResourceCount = 2
 
-	rd := resourceTFEWorkspace().TestResourceData()
-	rd.SetId(workspace.ID)
-	err = rd.Set("force_delete", false)
-	if err != nil {
-		t.Fatalf("unexpected err creating configuration state %v", err)
-	}
-
-	err = resourceTFEWorkspaceDelete(rd, config)
-	if err == nil {
+	deleteResp := runWorkspaceFrameworkDelete(t, config, workspace.ID, false)
+	if !deleteResp.Diagnostics.HasError() {
 		t.Fatalf("Expected an error deleting workspace with CanForceDelete=nil, force_delete=false, and %v resources", workspace.ResourceCount)
 	}
 
 	workspace.ResourceCount = 0
 
-	err = resourceTFEWorkspaceDelete(rd, config)
-	if err == nil {
+	deleteResp = runWorkspaceFrameworkDelete(t, config, workspace.ID, false)
+	if !deleteResp.Diagnostics.HasError() {
 		t.Fatalf("Expected an error deleting workspace with CanForceDelete=nil and force_delete=false")
 	}
 	expectedErrSubstring := "This version of Terraform Enterprise does not support workspace safe-delete. Workspaces must be force deleted by setting force_delete=true"
-	if !strings.Contains(err.Error(), expectedErrSubstring) {
-		t.Fatalf("Expected error contains %s but got %s", expectedErrSubstring, err.Error())
+	if !strings.Contains(fmt.Sprintf("%v", deleteResp.Diagnostics), expectedErrSubstring) {
+		t.Fatalf("Expected error contains %s but got %v", expectedErrSubstring, deleteResp.Diagnostics)
 	}
 
 	// now attempt with force_delete=true and confirm that it successfully removes the workspace
-	err = rd.Set("force_delete", true)
-	if err != nil {
-		t.Fatalf("Unexpected err creating configuration state %v", err)
-	}
-
-	err = resourceTFEWorkspaceDelete(rd, config)
-	if err != nil {
-		t.Fatalf("Unexpected err deleting mock workspace %v", err)
+	deleteResp = runWorkspaceFrameworkDelete(t, config, workspace.ID, true)
+	if deleteResp.Diagnostics.HasError() {
+		t.Fatalf("Unexpected delete diagnostics deleting mock workspace: %v", deleteResp.Diagnostics)
 	}
 
 	workspace, err = client.Workspaces.ReadByID(ctx, workspace.ID)
 	if !errors.Is(err, tfe.ErrResourceNotFound) {
 		t.Fatalf("Expected workspace %s to have been deleted", workspace.ID)
+	}
+}
+
+func runWorkspaceFrameworkDelete(t *testing.T, config ConfiguredClient, workspaceID string, forceDelete bool) fwresource.DeleteResponse {
+	t.Helper()
+
+	r := &resourceTFEWorkspaceFramework{config: config}
+
+	schemaResp := &fwresource.SchemaResponse{}
+	r.Schema(ctx, fwresource.SchemaRequest{}, schemaResp)
+
+	stateData := workspaceFrameworkTestStateData(workspaceID, types.BoolValue(forceDelete))
+
+	state := tfsdk.State{Schema: schemaResp.Schema}
+	if diags := state.Set(ctx, &stateData); diags.HasError() {
+		t.Fatalf("unexpected state set diagnostics: %v", diags)
+	}
+
+	deleteResp := fwresource.DeleteResponse{}
+	r.Delete(ctx, fwresource.DeleteRequest{State: tfsdk.State{Schema: schemaResp.Schema, Raw: state.Raw.Copy()}}, &deleteResp)
+
+	return deleteResp
+}
+
+func readWorkspaceByIDUsingFramework(config ConfiguredClient, workspaceID string) error {
+	r := &resourceTFEWorkspaceFramework{config: config}
+
+	schemaResp := &fwresource.SchemaResponse{}
+	r.Schema(ctx, fwresource.SchemaRequest{}, schemaResp)
+
+	stateData := workspaceFrameworkTestStateData(workspaceID, types.BoolValue(false))
+
+	state := tfsdk.State{Schema: schemaResp.Schema}
+	if diags := state.Set(ctx, &stateData); diags.HasError() {
+		return fmt.Errorf("error preparing workspace read state: %v", diags)
+	}
+
+	readResp := fwresource.ReadResponse{State: tfsdk.State{Schema: schemaResp.Schema, Raw: state.Raw.Copy()}}
+	r.Read(ctx, fwresource.ReadRequest{State: tfsdk.State{Schema: schemaResp.Schema, Raw: state.Raw.Copy()}}, &readResp)
+	if readResp.Diagnostics.HasError() {
+		return fmt.Errorf("workspace read diagnostics: %v", readResp.Diagnostics)
+	}
+
+	return nil
+}
+
+func workspaceFrameworkTestStateData(workspaceID string, forceDelete types.Bool) modelWorkspace {
+	vcsRepoObjectType := types.ObjectType{AttrTypes: map[string]attr.Type{
+		"identifier":                 types.StringType,
+		"branch":                     types.StringType,
+		"ingress_submodules":         types.BoolType,
+		"oauth_token_id":             types.StringType,
+		"tags_regex":                 types.StringType,
+		"github_app_installation_id": types.StringType,
+	}}
+
+	return modelWorkspace{
+		ID:                     types.StringValue(workspaceID),
+		Name:                   types.StringValue("workspace-test"),
+		Organization:           types.StringValue("test-org"),
+		ForceDelete:            forceDelete,
+		TagNames:               types.SetNull(types.StringType),
+		RemoteStateConsumerIDs: types.SetNull(types.StringType),
+		Tags:                   types.MapNull(types.StringType),
+		EffectiveTags:          types.MapNull(types.StringType),
+		TriggerPrefixes:        types.ListNull(types.StringType),
+		TriggerPatterns:        types.ListNull(types.StringType),
+		VCSRepo:                types.ListNull(vcsRepoObjectType),
 	}
 }
 
@@ -2359,13 +2417,9 @@ func testAccCheckTFEWorkspacePanic(n string) resource.TestCheckFunc {
 			return fmt.Errorf("Could not delete %s: %w", n, err)
 		}
 
-		// Read the workspace again using the lower level resource reader
-		// which will trigger the panic
-		rd := &schema.ResourceData{}
-		rd.SetId(rs.Primary.ID)
-
-		err = resourceTFEWorkspaceRead(rd, *testAccConfiguredClient)
-		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+		// Read the workspace again using the framework resource reader.
+		err = readWorkspaceByIDUsingFramework(*testAccConfiguredClient, rs.Primary.ID)
+		if err != nil {
 			return fmt.Errorf("Could not re-read resource directly: %w", err)
 		}
 
@@ -2807,7 +2861,7 @@ func TestAccTFEWorkspace_validationAutoDestroyDuration(t *testing.T) {
 	for _, value := range values {
 		steps = append(steps, resource.TestStep{
 			Config:      testAccTFEWorkspace_basicWithAutoDestroyDuration(rInt, value),
-			ExpectError: regexp.MustCompile("must be 1-4 digits followed by d or h"),
+			ExpectError: regexp.MustCompile(`must be 1-4 digits followed by d\s+or\s+h`),
 		})
 	}
 
@@ -2867,8 +2921,8 @@ func TestAccTFEWorkspace_updateWithAutoDestroyDurationInProject(t *testing.T) {
 				Config: testAccTFEWorkspace_basicInProject(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
-					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_activity_duration", ""),
-					resource.TestCheckResourceAttr("tfe_workspace.foobar", "inherits_project_auto_destroy", "true"),
+					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_activity_duration", "5d"),
+					resource.TestCheckResourceAttr("tfe_workspace.foobar", "inherits_project_auto_destroy", "false"),
 				),
 			},
 		},
@@ -2915,8 +2969,8 @@ func TestAccTFEWorkspace_updateWithAutoDestroyAtInProject(t *testing.T) {
 				Config: testAccTFEWorkspace_basicInProject(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEWorkspaceExists("tfe_workspace.foobar", &tfe.Workspace{}),
-					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_at", ""),
-					resource.TestCheckResourceAttr("tfe_workspace.foobar", "inherits_project_auto_destroy", "true"),
+					resource.TestCheckResourceAttr("tfe_workspace.foobar", "auto_destroy_at", "2100-01-01T00:00:00Z"),
+					resource.TestCheckResourceAttr("tfe_workspace.foobar", "inherits_project_auto_destroy", "false"),
 				),
 			},
 		},
