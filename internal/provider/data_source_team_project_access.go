@@ -13,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
-	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/teamprojects"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -154,37 +154,55 @@ func dataSourceTFETeamProjectAccessRead(ctx context.Context, d *schema.ResourceD
 	// Get the project
 	projectID := d.Get("project_id").(string)
 
-	proj, err := config.Client.Projects.Read(ctx, projectID)
+	proj, err := config.ClientV2.API.Projects().ByProject_id(projectID).Get(ctx, nil)
 	if err != nil {
 		return diag.Errorf(
 			"Error retrieving project %s: %v", projectID, err)
 	}
-
-	options := tfe.TeamProjectAccessListOptions{
-		ProjectID: proj.ID,
+	if proj == nil || proj.GetData() == nil {
+		return diag.Errorf("Error retrieving project %s: no data returned", projectID)
 	}
 
-	for {
-		l, err := config.Client.TeamProjectAccess.List(ctx, options)
-		if err != nil {
-			return diag.Errorf("Error retrieving team access list: %v", err)
-		}
+	teamProjectsBuilder := config.ClientV2.API.TeamProjects()
+	queryParams := &teamprojects.TeamProjectsRequestBuilderGetQueryParameters{
+		Filterprojectid: &projectID,
+		Filterteamid:    &teamID,
+	}
 
-		for _, ta := range l.Items {
-			if ta.Team.ID == teamID {
-				d.SetId(ta.ID)
+	result, err := teamProjectsBuilder.Get(ctx, withQueryParams(queryParams))
+	if err != nil {
+		return diag.Errorf("Error retrieving team access list: %v", err)
+	}
+
+	items := result.GetData()
+	for {
+		for _, ta := range items {
+			relationships := ta.GetRelationships()
+			if relationships == nil || relationships.GetTeam() == nil || relationships.GetTeam().GetData() == nil {
+				continue
+			}
+			if valueOrZero(relationships.GetTeam().GetData().GetId()) == teamID {
+				d.SetId(valueOrZero(ta.GetId()))
 				return resourceTFETeamProjectAccessRead(ctx, d, meta)
 			}
 		}
 
-		// Exit the loop when we've seen all pages.
-		if l.CurrentPage >= l.TotalPages {
+		nextPage := nextPageFromMeta(result.GetMeta())
+		if nextPage == nil {
 			break
 		}
 
-		// Update the page number to get the next page.
-		options.PageNumber = l.NextPage
+		queryParams = &teamprojects.TeamProjectsRequestBuilderGetQueryParameters{
+			Filterprojectid: &projectID,
+			Filterteamid:    &teamID,
+			Pagenumber:      nextPage,
+		}
+		result, err = teamProjectsBuilder.Get(ctx, withQueryParams(queryParams))
+		if err != nil {
+			return diag.Errorf("Error retrieving team access list: %v", err)
+		}
+		items = result.GetData()
 	}
 
-	return diag.Errorf("could not find team project access for %s and project %s", teamID, proj.Name)
+	return diag.Errorf("could not find team project access for %s and project %s", teamID, valueOrZero(proj.GetData().GetAttributes().GetName()))
 }
