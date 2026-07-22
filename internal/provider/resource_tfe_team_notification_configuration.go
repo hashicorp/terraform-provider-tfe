@@ -61,9 +61,52 @@ type modelTFETeamNotificationConfiguration struct {
 	TeamID          types.String `tfsdk:"team_id"`
 }
 
+// setNotificationAttributeCollections populates the triggers and email_addresses
+// attributes on attrs from plan, and returns the constructed users relationship
+// (for email_user_ids). It is called identically from both Create and Update.
+func setNotificationAttributeCollections(ctx context.Context, plan modelTFETeamNotificationConfiguration, attrs models.NotificationConfigurations_attributesable) (models.NotificationConfigurations_relationships_usersable, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	var triggers []types.String
+	if d := plan.Triggers.ElementsAs(ctx, &triggers, true); d != nil && d.HasError() {
+		return nil, d
+	}
+	triggerValues := make([]string, 0, len(triggers))
+	for _, t := range triggers {
+		triggerValues = append(triggerValues, t.ValueString())
+	}
+	attrs.SetTriggers(triggerValues)
+
+	emailAddresses := make([]types.String, len(plan.EmailAddresses.Elements()))
+	if d := plan.EmailAddresses.ElementsAs(ctx, &emailAddresses, true); d != nil && d.HasError() {
+		return nil, d
+	}
+	emailAddressValues := make([]string, 0, len(emailAddresses))
+	for _, ea := range emailAddresses {
+		emailAddressValues = append(emailAddressValues, ea.ValueString())
+	}
+	attrs.SetEmailAddresses(emailAddressValues)
+
+	emailUserIDs := make([]types.String, len(plan.EmailUserIDs.Elements()))
+	if d := plan.EmailUserIDs.ElementsAs(ctx, &emailUserIDs, true); d != nil && d.HasError() {
+		return nil, d
+	}
+	emailUserData := make([]models.NotificationConfigurations_relationships_users_dataable, 0, len(emailUserIDs))
+	for _, id := range emailUserIDs {
+		userData := models.NewNotificationConfigurations_relationships_users_data()
+		userData.SetId(id.ValueStringPointer())
+		userData.SetTypeEscaped(ptr(models.USERS_NOTIFICATIONCONFIGURATIONS_RELATIONSHIPS_USERS_DATA_TYPE))
+		emailUserData = append(emailUserData, userData)
+	}
+	users := models.NewNotificationConfigurations_relationships_users()
+	users.SetData(emailUserData)
+
+	return users, diags
+}
+
 // modelFromTFETeamNotificationConfiguration builds a modelTFETeamNotificationConfiguration
 // struct from a go-tfe v2 NotificationConfigurations value.
-func modelFromTFETeamNotificationConfiguration(v models.NotificationConfigurationsable, tokenWOVersion types.Int64, lastValue types.String) (*modelTFETeamNotificationConfiguration, diag.Diagnostics) {
+func modelFromTFETeamNotificationConfiguration(ctx context.Context, v models.NotificationConfigurationsable, tokenWOVersion types.Int64, lastValue types.String) (*modelTFETeamNotificationConfiguration, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	attrs := v.GetAttributes()
 
@@ -346,45 +389,11 @@ func (r *resourceTFETeamNotificationConfiguration) Create(ctx context.Context, r
 		lastTokenValue = plan.Token
 	}
 
-	// Add triggers to the attributes
-	var triggers []types.String
-	if diags := plan.Triggers.ElementsAs(ctx, &triggers, true); diags != nil && diags.HasError() {
-		resp.Diagnostics.Append(diags...)
+	users, collDiags := setNotificationAttributeCollections(ctx, plan, attributes)
+	if collDiags.HasError() {
+		resp.Diagnostics.Append(collDiags...)
 		return
 	}
-	var triggerValues []string
-	for _, trigger := range triggers {
-		triggerValues = append(triggerValues, trigger.ValueString())
-	}
-	attributes.SetTriggers(triggerValues)
-
-	// Add email_addresses to the attributes
-	emailAddresses := make([]types.String, len(plan.EmailAddresses.Elements()))
-	if diags := plan.EmailAddresses.ElementsAs(ctx, &emailAddresses, true); diags != nil && diags.HasError() {
-		resp.Diagnostics.Append(diags...)
-		return
-	}
-	var emailAddressValues []string
-	for _, emailAddress := range emailAddresses {
-		emailAddressValues = append(emailAddressValues, emailAddress.ValueString())
-	}
-	attributes.SetEmailAddresses(emailAddressValues)
-
-	// Add email_user_ids as the "users" relationship
-	emailUserIDs := make([]types.String, len(plan.EmailUserIDs.Elements()))
-	if diags := plan.EmailUserIDs.ElementsAs(ctx, &emailUserIDs, true); diags != nil && diags.HasError() {
-		resp.Diagnostics.Append(diags...)
-		return
-	}
-	var emailUserData []models.NotificationConfigurations_relationships_users_dataable
-	for _, emailUserID := range emailUserIDs {
-		userData := models.NewNotificationConfigurations_relationships_users_data()
-		userData.SetId(emailUserID.ValueStringPointer())
-		userData.SetTypeEscaped(ptr(models.USERS_NOTIFICATIONCONFIGURATIONS_RELATIONSHIPS_USERS_DATA_TYPE))
-		emailUserData = append(emailUserData, userData)
-	}
-	users := models.NewNotificationConfigurations_relationships_users()
-	users.SetData(emailUserData)
 
 	subscribableData := models.NewNotificationConfigurations_relationships_subscribable_data()
 	subscribableData.SetId(ptr(teamID))
@@ -425,7 +434,7 @@ func (r *resourceTFETeamNotificationConfiguration) Create(ctx context.Context, r
 		return
 	}
 
-	modelResult, diags2 := modelFromTFETeamNotificationConfiguration(tnc, config.TokenWOVersion, lastTokenValue)
+	modelResult, diags2 := modelFromTFETeamNotificationConfiguration(ctx, tnc, config.TokenWOVersion, lastTokenValue)
 	if diags2.HasError() {
 		resp.Diagnostics.Append(diags2...)
 		return
@@ -462,7 +471,7 @@ func (r *resourceTFETeamNotificationConfiguration) Read(ctx context.Context, req
 		return
 	}
 
-	result, diags := modelFromTFETeamNotificationConfiguration(envelope.GetData(), state.TokenWOVersion, state.Token)
+	result, diags := modelFromTFETeamNotificationConfiguration(ctx, envelope.GetData(), state.TokenWOVersion, state.Token)
 	if diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return
@@ -517,45 +526,11 @@ func (r *resourceTFETeamNotificationConfiguration) Update(ctx context.Context, r
 		}
 	}
 
-	// Add triggers to the attributes
-	triggers := make([]types.String, len(plan.Triggers.Elements()))
-	if diags := plan.Triggers.ElementsAs(ctx, &triggers, true); diags != nil && diags.HasError() {
-		resp.Diagnostics.Append(diags...)
+	users, collDiags := setNotificationAttributeCollections(ctx, plan, attributes)
+	if collDiags.HasError() {
+		resp.Diagnostics.Append(collDiags...)
 		return
 	}
-	var triggerValues []string
-	for _, trigger := range triggers {
-		triggerValues = append(triggerValues, trigger.ValueString())
-	}
-	attributes.SetTriggers(triggerValues)
-
-	// Add email_addresses to the attributes
-	emailAddresses := make([]types.String, len(plan.EmailAddresses.Elements()))
-	if diags := plan.EmailAddresses.ElementsAs(ctx, &emailAddresses, true); diags != nil && diags.HasError() {
-		resp.Diagnostics.Append(diags...)
-		return
-	}
-	var emailAddressValues []string
-	for _, emailAddress := range emailAddresses {
-		emailAddressValues = append(emailAddressValues, emailAddress.ValueString())
-	}
-	attributes.SetEmailAddresses(emailAddressValues)
-
-	// Add email_user_ids as the "users" relationship
-	emailUserIDs := make([]types.String, len(plan.EmailUserIDs.Elements()))
-	if diags := plan.EmailUserIDs.ElementsAs(ctx, &emailUserIDs, true); diags != nil && diags.HasError() {
-		resp.Diagnostics.Append(diags...)
-		return
-	}
-	var emailUserData []models.NotificationConfigurations_relationships_users_dataable
-	for _, emailUserID := range emailUserIDs {
-		userData := models.NewNotificationConfigurations_relationships_users_data()
-		userData.SetId(emailUserID.ValueStringPointer())
-		userData.SetTypeEscaped(ptr(models.USERS_NOTIFICATIONCONFIGURATIONS_RELATIONSHIPS_USERS_DATA_TYPE))
-		emailUserData = append(emailUserData, userData)
-	}
-	users := models.NewNotificationConfigurations_relationships_users()
-	users.SetData(emailUserData)
 
 	relationships := models.NewNotificationConfigurations_relationships()
 	relationships.SetUsers(users)
@@ -590,7 +565,7 @@ func (r *resourceTFETeamNotificationConfiguration) Update(ctx context.Context, r
 		return
 	}
 
-	result, diags := modelFromTFETeamNotificationConfiguration(tnc, config.TokenWOVersion, lastTokenValue)
+	result, diags := modelFromTFETeamNotificationConfiguration(ctx, tnc, config.TokenWOVersion, lastTokenValue)
 	if diags.HasError() {
 		resp.Diagnostics.Append((diags)...)
 		return
