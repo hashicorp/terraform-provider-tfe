@@ -1,4 +1,4 @@
-// Copyright IBM Corp. 2018, 2025
+// Copyright IBM Corp. 2018, 2026
 // SPDX-License-Identifier: MPL-2.0
 
 // NOTE: This is a legacy resource and should be migrated to the Plugin
@@ -10,11 +10,12 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfe "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -50,17 +51,12 @@ func resourceTFETeamOrganizationMember() *schema.Resource {
 func resourceTFETeamOrganizationMemberCreate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
-	// Get the team ID and username..
+	// Get the team ID and organization membership ID.
 	teamID := d.Get("team_id").(string)
 	organizationMembershipID := d.Get("organization_membership_id").(string)
 
-	// Create a new options struct.
-	options := tfe.TeamMemberAddOptions{
-		OrganizationMembershipIDs: []string{organizationMembershipID},
-	}
-
 	log.Printf("[DEBUG] Add organization membership %q to team: %s", organizationMembershipID, teamID)
-	err := config.Client.TeamMembers.Add(ctx, teamID, options)
+	err := teamMembersAddOrgMembershipsV2(ctx, config.ClientV2.API, teamID, []string{organizationMembershipID})
 	if err != nil {
 		return fmt.Errorf("Error adding organization membership %q to team %s: %w", organizationMembershipID, teamID, err)
 	}
@@ -80,9 +76,9 @@ func resourceTFETeamOrganizationMemberRead(d *schema.ResourceData, meta interfac
 	}
 
 	log.Printf("[DEBUG] Read organization membership from team: %s", teamID)
-	organizationMemberships, err := config.Client.TeamMembers.ListOrganizationMemberships(ctx, teamID)
+	organizationMemberships, err := teamMembersListOrgMembershipsV2(ctx, config.ClientV2.API, teamID)
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrNotFound) {
 			log.Printf("[DEBUG] Organization membership %q no longer exists", d.Id())
 			d.SetId("")
 			return nil
@@ -92,7 +88,7 @@ func resourceTFETeamOrganizationMemberRead(d *schema.ResourceData, meta interfac
 
 	found := false
 	for _, organizationMembership := range organizationMemberships {
-		if organizationMembership.ID == organizationMembershipID {
+		if valueOrZero(organizationMembership.GetId()) == organizationMembershipID {
 			d.Set("team_id", teamID)
 			d.Set("organization_membership_id", organizationMembershipID)
 
@@ -118,13 +114,8 @@ func resourceTFETeamOrganizationMemberDelete(d *schema.ResourceData, meta interf
 		return fmt.Errorf("Error unpacking team member ID: %w", err)
 	}
 
-	// Create a new options struct.
-	options := tfe.TeamMemberRemoveOptions{
-		OrganizationMembershipIDs: []string{organizationMembershipID},
-	}
-
 	log.Printf("[DEBUG] Remove organization membership %q from team: %s", organizationMembershipID, teamID)
-	err = config.Client.TeamMembers.Remove(ctx, teamID, options)
+	err = teamMembersRemoveOrgMembershipsV2(ctx, config.ClientV2.API, teamID, []string{organizationMembershipID})
 	if err != nil {
 		return fmt.Errorf("Error removing organization membership %q to team %s: %w", organizationMembershipID, teamID, err)
 	}
@@ -163,18 +154,18 @@ func resourceTFETeamOrganizationMemberImporter(ctx context.Context, d *schema.Re
 		org := s[0]
 		email := s[1]
 		teamName := s[2]
-		orgMembership, err := fetchOrganizationMemberByNameOrEmail(ctx, config.Client, org, "", email)
+		orgMembership, err := fetchOrganizationMemberByNameOrEmailV2(ctx, config.ClientV2.API, org, "", email)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"error retrieving user with email %s from organization %s: %w", email, org, err)
 		}
-		team, err := fetchTeamByName(ctx, config.Client, org, teamName)
+		team, err := fetchTeamByNameV2(ctx, config.ClientV2.API, org, teamName)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"error retrieving team with name %s from organization %s: %w", teamName, org, err)
 		}
 
-		d.SetId(fmt.Sprintf("%s/%s", team.ID, orgMembership.ID))
+		d.SetId(fmt.Sprintf("%s/%s", valueOrZero(team.GetId()), valueOrZero(orgMembership.GetId())))
 		return []*schema.ResourceData{d}, nil
 	}
 	return nil, fmt.Errorf(
