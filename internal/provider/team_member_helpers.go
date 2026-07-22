@@ -23,12 +23,10 @@ import (
 // tfe_team_organization_members resources, so the add/remove/list operations
 // are centralized here rather than duplicated per resource.
 
-// teamMembersAddUsersV2 adds the given usernames to a team.
-func teamMembersAddUsersV2(ctx context.Context, api *v2api.ApiClient, teamID string, usernames []string) error {
-	if len(usernames) == 0 {
-		return nil
-	}
-
+// buildUsersIdentifierDoc constructs a UsersIdentifierArrayDocument from
+// a slice of usernames, following the Atlas convention of placing the username
+// in the JSON:API "id" field for team-membership relationship endpoints.
+func buildUsersIdentifierDoc(usernames []string) *models.UsersIdentifierArrayDocument {
 	data := make([]models.UsersIdentifierArrayDocument_dataable, 0, len(usernames))
 	for _, username := range usernames {
 		item := models.NewUsersIdentifierArrayDocument_data()
@@ -38,8 +36,15 @@ func teamMembersAddUsersV2(ctx context.Context, api *v2api.ApiClient, teamID str
 	}
 	doc := models.NewUsersIdentifierArrayDocument()
 	doc.SetData(data)
+	return doc
+}
 
-	return api.Teams().ById(teamID).Relationships().Users().Post(ctx, doc, nil)
+// teamMembersAddUsersV2 adds the given usernames to a team.
+func teamMembersAddUsersV2(ctx context.Context, api *v2api.ApiClient, teamID string, usernames []string) error {
+	if len(usernames) == 0 {
+		return nil
+	}
+	return api.Teams().ById(teamID).Relationships().Users().Post(ctx, buildUsersIdentifierDoc(usernames), nil)
 }
 
 // teamMembersRemoveUsersV2 removes the given usernames from a team.
@@ -47,18 +52,7 @@ func teamMembersRemoveUsersV2(ctx context.Context, api *v2api.ApiClient, teamID 
 	if len(usernames) == 0 {
 		return nil
 	}
-
-	data := make([]models.UsersIdentifierArrayDocument_dataable, 0, len(usernames))
-	for _, username := range usernames {
-		item := models.NewUsersIdentifierArrayDocument_data()
-		item.SetId(ptr(username))
-		item.SetTypeEscaped(ptr(models.USERS_USERSIDENTIFIERARRAYDOCUMENT_DATA_TYPE))
-		data = append(data, item)
-	}
-	doc := models.NewUsersIdentifierArrayDocument()
-	doc.SetData(data)
-
-	return api.Teams().ById(teamID).Relationships().Users().Delete(ctx, doc, nil)
+	return api.Teams().ById(teamID).Relationships().Users().Delete(ctx, buildUsersIdentifierDoc(usernames), nil)
 }
 
 // teamMembersListUsersV2 returns the users of a team, mirroring go-tfe v1's
@@ -90,13 +84,9 @@ func teamMembersListUsersV2(ctx context.Context, api *v2api.ApiClient, teamID st
 	return users, nil
 }
 
-// teamMembersAddOrgMembershipsV2 adds the given organization membership IDs
-// to a team.
-func teamMembersAddOrgMembershipsV2(ctx context.Context, api *v2api.ApiClient, teamID string, membershipIDs []string) error {
-	if len(membershipIDs) == 0 {
-		return nil
-	}
-
+// buildOrgMembershipsIdentifierDoc constructs an
+// OrganizationMembershipsIdentifierArrayDocument from a slice of membership IDs.
+func buildOrgMembershipsIdentifierDoc(membershipIDs []string) *models.OrganizationMembershipsIdentifierArrayDocument {
 	data := make([]models.OrganizationMembershipsIdentifierArrayDocument_dataable, 0, len(membershipIDs))
 	for _, id := range membershipIDs {
 		item := models.NewOrganizationMembershipsIdentifierArrayDocument_data()
@@ -106,8 +96,16 @@ func teamMembersAddOrgMembershipsV2(ctx context.Context, api *v2api.ApiClient, t
 	}
 	doc := models.NewOrganizationMembershipsIdentifierArrayDocument()
 	doc.SetData(data)
+	return doc
+}
 
-	return api.Teams().ById(teamID).Relationships().OrganizationMemberships().Post(ctx, doc, nil)
+// teamMembersAddOrgMembershipsV2 adds the given organization membership IDs
+// to a team.
+func teamMembersAddOrgMembershipsV2(ctx context.Context, api *v2api.ApiClient, teamID string, membershipIDs []string) error {
+	if len(membershipIDs) == 0 {
+		return nil
+	}
+	return api.Teams().ById(teamID).Relationships().OrganizationMemberships().Post(ctx, buildOrgMembershipsIdentifierDoc(membershipIDs), nil)
 }
 
 // teamMembersRemoveOrgMembershipsV2 removes the given organization
@@ -116,18 +114,7 @@ func teamMembersRemoveOrgMembershipsV2(ctx context.Context, api *v2api.ApiClient
 	if len(membershipIDs) == 0 {
 		return nil
 	}
-
-	data := make([]models.OrganizationMembershipsIdentifierArrayDocument_dataable, 0, len(membershipIDs))
-	for _, id := range membershipIDs {
-		item := models.NewOrganizationMembershipsIdentifierArrayDocument_data()
-		item.SetId(ptr(id))
-		item.SetTypeEscaped(ptr(models.ORGANIZATIONMEMBERSHIPS_ORGANIZATIONMEMBERSHIPSIDENTIFIERARRAYDOCUMENT_DATA_TYPE))
-		data = append(data, item)
-	}
-	doc := models.NewOrganizationMembershipsIdentifierArrayDocument()
-	doc.SetData(data)
-
-	return api.Teams().ById(teamID).Relationships().OrganizationMemberships().Delete(ctx, doc, nil)
+	return api.Teams().ById(teamID).Relationships().OrganizationMemberships().Delete(ctx, buildOrgMembershipsIdentifierDoc(membershipIDs), nil)
 }
 
 // teamMembersListOrgMembershipsV2 returns all organization memberships
