@@ -60,23 +60,16 @@ func TestAccTFETeamToken_multiple_team_tokens(t *testing.T) {
 	})
 }
 
-// TestAccTFETeamToken_createWithDescription is a regression test for a bug in the go-tfe
-// v2 migration: createTeamToken's non-legacy branch (used whenever "description" is set)
-// calls api.AuthenticationTokens().ById(teamID).Post(), which targets
-// POST /authentication-tokens/{team_id}. Atlas only wires GET/DELETE for
-// /authentication-tokens/{id} (see config/routes/v2.rb); the real "create a team token
-// with a description" endpoint is the plural, team-nested
-// POST /teams/{team_id}/authentication-tokens, which has no generated builder in the
-// installed go-tfe/v2 client at all (see the openapi-atlas-verification skill for the
-// full spec/route analysis). Isolated from TestAccTFETeamToken_multiple_team_tokens,
-// which also exercises the unrelated legacy-token array/object response-shape bug in the
-// same config.
-//
-// This test currently fails with a 404 against the wrong URL. It is expected to start
-// passing once the create-with-description path calls a working endpoint (either an
-// upstream go-tfe/v2 fix once /teams/{team_id}/authentication-tokens is promoted out of
-// internal-beta, or a v1 fallback per the go-tfe-v2-migration skill's "Missing or
-// unusable v2 coverage").
+// TestAccTFETeamToken_createWithDescription is a regression test for a bug found during
+// the go-tfe v2 migration: creating a team token with a description (i.e. supporting
+// multiple tokens per team) has no working go-tfe/v2 endpoint. There is no generated
+// builder for the plural, team-nested POST /teams/{team_id}/authentication-tokens, and
+// the previously generated top-level POST /authentication-tokens/{id} was never actually
+// wired up in Atlas (only GET/DELETE are) and has since been removed from the client
+// entirely. Create falls back to the v1 client for this case until go-tfe/v2 exposes a
+// working endpoint. Isolated from TestAccTFETeamToken_multiple_team_tokens, which also
+// exercises the unrelated legacy-token array/object response-shape bug in the same
+// config.
 func TestAccTFETeamToken_createWithDescription(t *testing.T) {
 	skipUnlessBeta(t)
 	var token models.AuthenticationTokensable
