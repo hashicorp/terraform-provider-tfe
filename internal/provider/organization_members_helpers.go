@@ -13,7 +13,6 @@ import (
 	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/go-tfe/v2/api/organizations"
 	orgmembershipsitem "github.com/hashicorp/go-tfe/v2/api/organizations/item/organizationmemberships"
-	abstractions "github.com/microsoft/kiota-abstractions-go"
 )
 
 func fetchOrganizationMembers(client *tfev2.Client, orgName string) ([]map[string]string, []map[string]string, error) {
@@ -25,9 +24,7 @@ func fetchOrganizationMembers(client *tfev2.Client, orgName string) ([]map[strin
 		Pagesize: &pageSize,
 	}
 	for {
-		organizationMembershipList, err := client.API.Organizations().ByOrganization_name(orgName).OrganizationMemberships().Get(ctx, &abstractions.RequestConfiguration[organizations.ItemOrganizationMembershipsRequestBuilderGetQueryParameters]{
-			QueryParameters: queryParams,
-		})
+		organizationMembershipList, err := client.API.Organizations().ByOrganization_name(orgName).OrganizationMemberships().Get(ctx, withQueryParams(queryParams))
 		if err != nil {
 			return nil, nil, fmt.Errorf("Error retrieving organization members: %w", err)
 		}
@@ -57,10 +54,7 @@ func fetchOrganizationMembers(client *tfev2.Client, orgName string) ([]map[strin
 		}
 
 		// Exit the loop when we've seen all pages.
-		var nextPage *int32
-		if meta := organizationMembershipList.GetMeta(); meta != nil {
-			nextPage = nextPageNumber(meta.GetPagination())
-		}
+		nextPage := nextPageFromMeta(organizationMembershipList.GetMeta())
 		if nextPage == nil {
 			break
 		}
@@ -85,23 +79,6 @@ func organizationMembershipUserID(membership models.OrganizationMembershipsable)
 		return ""
 	}
 	return valueOrZero(user.GetData().GetId())
-}
-
-// organizationMembershipIncludedUser returns the full user record side-loaded
-// for the given membership via include=user, or nil when it is not present in
-// the response. Requires the go-tfe v2 client to correctly discriminate
-// composed `included` array elements by their JSON:API `type`.
-func organizationMembershipIncludedUser(included []organizations.ItemOrganizationMembershipsGetResponse_OrganizationMembershipsGetResponse_includedable, membership models.OrganizationMembershipsable) models.Usersable {
-	userID := organizationMembershipUserID(membership)
-	if userID == "" {
-		return nil
-	}
-	for _, record := range included {
-		if user := record.GetUsers(); user != nil && valueOrZero(user.GetId()) == userID {
-			return user
-		}
-	}
-	return nil
 }
 
 // userEmailAndUsername returns the email and username attributes of a user
@@ -140,9 +117,7 @@ func fetchOrganizationMemberByNameOrEmailV2(ctx context.Context, client *tfev2.C
 
 	membershipsBuilder := client.API.Organizations().ByOrganization_name(organization).OrganizationMemberships()
 
-	oml, err := membershipsBuilder.Get(ctx, &abstractions.RequestConfiguration[organizations.ItemOrganizationMembershipsRequestBuilderGetQueryParameters]{
-		QueryParameters: queryParams,
-	})
+	oml, err := membershipsBuilder.Get(ctx, withQueryParams(queryParams))
 	if err != nil {
 		return nil, fmt.Errorf("failed to list organization memberships: %w", err)
 	}
@@ -152,7 +127,7 @@ func fetchOrganizationMemberByNameOrEmailV2(ctx context.Context, client *tfev2.C
 	case 0:
 		return nil, tfev2.ErrNotFound
 	case 1:
-		userEmail, userName := userEmailAndUsername(organizationMembershipIncludedUser(oml.GetIncluded(), items[0]))
+		userEmail, userName := userEmailAndUsername(findIncludedUser(oml.GetIncluded(), organizationMembershipUserID(items[0])))
 
 		// We check this just in case a user's TFE instance only has one organization member
 		if userEmail != email && userName != username {
@@ -163,26 +138,21 @@ func fetchOrganizationMemberByNameOrEmailV2(ctx context.Context, client *tfev2.C
 	default:
 		for {
 			for _, member := range items {
-				userEmail, userName := userEmailAndUsername(organizationMembershipIncludedUser(oml.GetIncluded(), member))
+				userEmail, userName := userEmailAndUsername(findIncludedUser(oml.GetIncluded(), organizationMembershipUserID(member)))
 				if (len(email) > 0 && userEmail == email) ||
 					(len(username) > 0 && userName == username) {
 					return member, nil
 				}
 			}
 
-			var nextPage *int32
-			if meta := oml.GetMeta(); meta != nil {
-				nextPage = nextPageNumber(meta.GetPagination())
-			}
+			nextPage := nextPageFromMeta(oml.GetMeta())
 			if nextPage == nil {
 				break
 			}
 
 			queryParams.Pagenumber = nextPage
 
-			oml, err = membershipsBuilder.Get(ctx, &abstractions.RequestConfiguration[organizations.ItemOrganizationMembershipsRequestBuilderGetQueryParameters]{
-				QueryParameters: queryParams,
-			})
+			oml, err = membershipsBuilder.Get(ctx, withQueryParams(queryParams))
 			if err != nil {
 				return nil, fmt.Errorf("failed to list organization memberships: %w", err)
 			}

@@ -13,7 +13,6 @@ import (
 
 	"github.com/hashicorp/go-tfe/v2/api/organizations"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	abstractions "github.com/microsoft/kiota-abstractions-go"
 )
 
 func dataSourceTFETeams() *schema.Resource {
@@ -65,9 +64,7 @@ func dataSourceTFETeamsRead(d *schema.ResourceData, meta interface{}) error {
 		Pagesize: &pageSize,
 	}
 
-	teams, err := teamsBuilder.Get(ctx, &abstractions.RequestConfiguration[organizations.ItemTeamsRequestBuilderGetQueryParameters]{
-		QueryParameters: queryParams,
-	})
+	teams, err := teamsBuilder.Get(ctx, withQueryParams(queryParams))
 	if err != nil {
 		return fmt.Errorf("Error retrieving teams: %w", err)
 	}
@@ -86,19 +83,14 @@ func dataSourceTFETeamsRead(d *schema.ResourceData, meta interface{}) error {
 			ids[name] = valueOrZero(team.GetId())
 		}
 
-		var nextPage *int32
-		if meta := teams.GetMeta(); meta != nil {
-			nextPage = nextPageNumber(meta.GetPagination())
-		}
+		nextPage := nextPageFromMeta(teams.GetMeta())
 		if nextPage == nil {
 			break
 		}
 
 		queryParams.Pagenumber = nextPage
 
-		teams, err = teamsBuilder.Get(ctx, &abstractions.RequestConfiguration[organizations.ItemTeamsRequestBuilderGetQueryParameters]{
-			QueryParameters: queryParams,
-		})
+		teams, err = teamsBuilder.Get(ctx, withQueryParams(queryParams))
 		if err != nil {
 			return fmt.Errorf("Error retrieving teams: %w", err)
 		}
