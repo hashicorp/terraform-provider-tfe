@@ -11,6 +11,8 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework-validators/boolvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -135,11 +137,13 @@ func (r *resourceTFETeamToken) Create(ctx context.Context, req resource.CreateRe
 	}
 
 	teamID := plan.TeamID.ValueString()
-	if plan.Description.IsNull() {
+	hasDescription := !plan.Description.IsNull()
+
+	if !hasDescription {
 		// No description indicates legacy behavior where token will be regenerated if it does not exist
 		tflog.Debug(ctx, fmt.Sprintf("Check if a token already exists for team: %s", teamID))
-		_, err := r.config.Client.TeamTokens.Read(ctx, teamID)
-		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+		_, err := r.config.ClientV2.API.Teams().ById(teamID).AuthenticationToken().Get(ctx, nil)
+		if err != nil && !errors.Is(err, tfev2.ErrNotFound) {
 			resp.Diagnostics.AddError(
 				fmt.Sprintf("Error checking if a token exists for team %s", teamID),
 				err.Error(),
@@ -158,44 +162,97 @@ func (r *resourceTFETeamToken) Create(ctx context.Context, req resource.CreateRe
 		}
 	}
 
-	expiredAt := plan.ExpiredAt.ValueString()
-	options := tfe.TeamTokenCreateOptions{
-		Description: plan.Description.ValueStringPointer(),
-	}
-	if !plan.ExpiredAt.IsNull() && expiredAt != "" {
-		expiry, err := time.Parse(time.RFC3339, expiredAt)
+	expiredAtString := plan.ExpiredAt.ValueString()
+	var expiry *time.Time
+	if !plan.ExpiredAt.IsNull() && expiredAtString != "" {
+		parsed, err := time.Parse(time.RFC3339, expiredAtString)
 		if err != nil {
 			resp.Diagnostics.AddError(
-				fmt.Sprintf("%s must be a valid date or time, provided in iso8601 format", expiredAt),
+				fmt.Sprintf("%s must be a valid date or time, provided in iso8601 format", expiredAtString),
 				err.Error(),
 			)
 			return
 		}
-		options.ExpiredAt = &expiry
+		expiry = &parsed
 	}
 
-	token, err := r.config.Client.TeamTokens.CreateWithOptions(ctx, teamID, options)
-	if err != nil {
-		errDetails := err.Error()
-		if errors.Is(err, tfe.ErrResourceNotFound) {
-			errDetails = fmt.Sprintf("%s, team does not exist or version of Terraform Enterprise "+
-				"does not support multiple team tokens with descriptions", errDetails)
+	var tokenID, tokenValue string
+	var tokenExpiredAt time.Time
+
+	if hasDescription {
+		// go-tfe v2 does not generate a route for POST
+		// /teams/{id}/authentication-tokens (plural), which Atlas requires
+		// to create more than one named/described token per team - the
+		// generated client only exposes the singular, legacy
+		// /teams/{id}/authentication-token route. This call remains on
+		// go-tfe v1 until that route is generated. Every other operation on
+		// this resource (the description-less create path below, read, and
+		// delete) uses the go-tfe v2 client.
+		options := tfe.TeamTokenCreateOptions{
+			Description: plan.Description.ValueStringPointer(),
 		}
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("Error creating new token for team %s", teamID),
-			errDetails,
-		)
-		return
+		if expiry != nil {
+			options.ExpiredAt = expiry
+		}
+		token, err := r.config.Client.TeamTokens.CreateWithOptions(ctx, teamID, options)
+		if err != nil {
+			errDetails := err.Error()
+			if errors.Is(err, tfe.ErrResourceNotFound) {
+				errDetails = fmt.Sprintf("%s, team does not exist or version of Terraform Enterprise "+
+					"does not support multiple team tokens with descriptions", errDetails)
+			}
+			resp.Diagnostics.AddError(
+				fmt.Sprintf("Error creating new token for team %s", teamID),
+				errDetails,
+			)
+			return
+		}
+		tokenID = token.ID
+		tokenValue = token.Token
+		tokenExpiredAt = token.ExpiredAt
+	} else {
+		attributes := models.NewAuthenticationTokens_attributes()
+		if expiry != nil {
+			attributes.SetExpiredAt(expiry)
+		}
+		authToken := models.NewAuthenticationTokens()
+		authToken.SetTypeEscaped(ptr(models.AUTHENTICATIONTOKENS_AUTHENTICATIONTOKENS_TYPE))
+		authToken.SetAttributes(attributes)
+		envelope := models.NewAuthenticationTokensEnvelope()
+		envelope.SetData(authToken)
+
+		created, err := r.config.ClientV2.API.Teams().ById(teamID).AuthenticationToken().Post(ctx, envelope, nil)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				fmt.Sprintf("Error creating new token for team %s", teamID),
+				err.Error(),
+			)
+			return
+		}
+		data := created.GetData()
+		if len(data) == 0 {
+			resp.Diagnostics.AddError(
+				fmt.Sprintf("Error creating new token for team %s", teamID),
+				"no data returned by the API",
+			)
+			return
+		}
+
+		tokenID = valueOrZero(data[0].GetId())
+		tokenValue = valueOrZero(data[0].GetAttributes().GetToken())
+		if ea := data[0].GetAttributes().GetExpiredAt(); ea != nil {
+			tokenExpiredAt = *ea
+		}
 	}
 
 	var expiredAtValue types.String
-	if !token.ExpiredAt.IsZero() {
-		expiredAtValue = types.StringValue(token.ExpiredAt.Format(time.RFC3339))
+	if !tokenExpiredAt.IsZero() {
+		expiredAtValue = types.StringValue(tokenExpiredAt.Format(time.RFC3339))
 	} else {
 		expiredAtValue = types.StringNull()
 	}
 
-	result := modelFromTFEToken(plan.TeamID, types.StringValue(token.ID), types.StringValue(token.Token), plan.ForceRegenerate, expiredAtValue, plan.Description)
+	result := modelFromTFEToken(plan.TeamID, types.StringValue(tokenID), types.StringValue(tokenValue), plan.ForceRegenerate, expiredAtValue, plan.Description)
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
 }
 
@@ -231,30 +288,48 @@ func (r *resourceTFETeamToken) Read(ctx context.Context, req resource.ReadReques
 
 	teamID := state.TeamID.ValueString()
 	tflog.Debug(ctx, fmt.Sprintf("Read the token from team: %s", teamID))
-	var token *tfe.TeamToken
-	var err error
+
+	var tokenExpiredAt *time.Time
 	if isTokenID(state.ID.ValueString()) {
-		token, err = r.config.Client.TeamTokens.ReadByID(ctx, state.ID.ValueString())
-	} else {
-		token, err = r.config.Client.TeamTokens.Read(ctx, teamID)
-	}
-	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
-			tflog.Debug(ctx, fmt.Sprintf("Token for team %s no longer exists", teamID))
-			resp.State.RemoveResource(ctx)
+		result, err := r.config.ClientV2.API.AuthenticationTokens().ById(state.ID.ValueString()).Get(ctx, nil)
+		if err != nil {
+			if errors.Is(err, tfev2.ErrNotFound) {
+				tflog.Debug(ctx, fmt.Sprintf("Token for team %s no longer exists", teamID))
+				resp.State.RemoveResource(ctx)
+				return
+			}
+			resp.Diagnostics.AddError(
+				fmt.Sprintf("Error reading token from team %s", teamID),
+				err.Error(),
+			)
 			return
 		}
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("Error reading token from team %s", teamID),
-			err.Error(),
-		)
-		return
+		if result != nil && result.GetData() != nil {
+			tokenExpiredAt = result.GetData().GetAttributes().GetExpiredAt()
+		}
+	} else {
+		result, err := r.config.ClientV2.API.Teams().ById(teamID).AuthenticationToken().Get(ctx, nil)
+		if err != nil {
+			if errors.Is(err, tfev2.ErrNotFound) {
+				tflog.Debug(ctx, fmt.Sprintf("Token for team %s no longer exists", teamID))
+				resp.State.RemoveResource(ctx)
+				return
+			}
+			resp.Diagnostics.AddError(
+				fmt.Sprintf("Error reading token from team %s", teamID),
+				err.Error(),
+			)
+			return
+		}
+		if result != nil && result.GetData() != nil {
+			tokenExpiredAt = result.GetData().GetAttributes().GetExpiredAt()
+		}
 	}
 
 	// if expired_at was set to null at creation, the API returns a default value of 24 months from the creation date.
 	expiredAt := types.StringNull()
-	if token != nil && !token.ExpiredAt.IsZero() {
-		expiredAt = types.StringValue(token.ExpiredAt.Format(time.RFC3339))
+	if tokenExpiredAt != nil && !tokenExpiredAt.IsZero() {
+		expiredAt = types.StringValue(tokenExpiredAt.Format(time.RFC3339))
 	}
 
 	result := modelFromTFEToken(state.TeamID, state.ID, state.Token, state.ForceRegenerate, expiredAt, state.Description)
@@ -278,12 +353,12 @@ func (r *resourceTFETeamToken) Delete(ctx context.Context, req resource.DeleteRe
 	tflog.Debug(ctx, fmt.Sprintf("Delete the token from team: %s", teamID))
 	var err error
 	if isTokenID(state.ID.ValueString()) {
-		err = r.config.Client.TeamTokens.DeleteByID(ctx, state.ID.ValueString())
+		err = r.config.ClientV2.API.AuthenticationTokens().ById(state.ID.ValueString()).Delete(ctx, nil)
 	} else {
-		err = r.config.Client.TeamTokens.Delete(ctx, teamID)
+		err = r.config.ClientV2.API.Teams().ById(teamID).AuthenticationToken().Delete(ctx, nil)
 	}
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("Token for team %s no longer exists", teamID))
 			return
 		}
@@ -301,6 +376,16 @@ func (r *resourceTFETeamToken) ImportState(ctx context.Context, req resource.Imp
 		return
 	}
 
+	// go-tfe v2's generated AuthenticationTokens relationship model only
+	// exposes a "related" link for the owning team
+	// (AuthenticationTokens_relationships.GetTeam() returns
+	// Links_relatedable), not the relationship's JSON:API resource
+	// identifier (id). Import-by-token-ID needs the team ID to populate
+	// team_id, so this lookup remains on go-tfe v1 until go-tfe generates
+	// that relationship's "data" member. This is the only remaining go-tfe
+	// v1 call in this resource; create, read, and delete all use the
+	// go-tfe v2 client.
+	//
 	// Fetch token by ID to set attributes
 	token, err := r.config.Client.TeamTokens.ReadByID(ctx, req.ID)
 	if err != nil {
