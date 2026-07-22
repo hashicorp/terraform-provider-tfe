@@ -10,17 +10,16 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
 
+	tfe "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
-
-	"errors"
-
-	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceTFETeam() *schema.Resource {
@@ -199,6 +198,37 @@ func resourceTFETeam() *schema.Resource {
 	}
 }
 
+// teamOrganizationAccessAttributesV2 builds the go-tfe v2 organization-access
+// attributes from the resource's "organization_access" block. Returns nil
+// when the block is not set, matching go-tfe v1's optional-pointer behavior.
+func teamOrganizationAccessAttributesV2(d *schema.ResourceData) models.Teams_attributes_organizationAccessable {
+	v, ok := d.GetOk("organization_access")
+	if !ok {
+		return nil
+	}
+	organizationAccess := v.([]interface{})[0].(map[string]interface{})
+
+	access := models.NewTeams_attributes_organizationAccess()
+	access.SetManagePolicies(ptr(organizationAccess["manage_policies"].(bool)))
+	access.SetManagePolicyOverrides(ptr(organizationAccess["manage_policy_overrides"].(bool)))
+	access.SetDelegatePolicyOverrides(ptr(organizationAccess["delegate_policy_overrides"].(bool)))
+	access.SetManageWorkspaces(ptr(organizationAccess["manage_workspaces"].(bool)))
+	access.SetManageVcsSettings(ptr(organizationAccess["manage_vcs_settings"].(bool)))
+	access.SetManageProviders(ptr(organizationAccess["manage_providers"].(bool)))
+	access.SetManageModules(ptr(organizationAccess["manage_modules"].(bool)))
+	access.SetManageRunTasks(ptr(organizationAccess["manage_run_tasks"].(bool)))
+	access.SetManageProjects(ptr(organizationAccess["manage_projects"].(bool)))
+	access.SetReadWorkspaces(ptr(organizationAccess["read_workspaces"].(bool)))
+	access.SetReadProjects(ptr(organizationAccess["read_projects"].(bool)))
+	access.SetManageMembership(ptr(organizationAccess["manage_membership"].(bool)))
+	access.SetManageTeams(ptr(organizationAccess["manage_teams"].(bool)))
+	access.SetManageOrganizationAccess(ptr(organizationAccess["manage_organization_access"].(bool)))
+	access.SetAccessSecretTeams(ptr(organizationAccess["access_secret_teams"].(bool)))
+	access.SetManageAgentPools(ptr(organizationAccess["manage_agent_pools"].(bool)))
+
+	return access
+}
+
 func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
@@ -209,48 +239,41 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	// Create a new options struct.
-	options := tfe.TeamCreateOptions{
-		Name: tfe.String(name),
-	}
-
-	if v, ok := d.GetOk("organization_access"); ok {
-		organizationAccess := v.([]interface{})[0].(map[string]interface{})
-
-		options.OrganizationAccess = &tfe.OrganizationAccessOptions{
-			ManagePolicies:           tfe.Bool(organizationAccess["manage_policies"].(bool)),
-			ManagePolicyOverrides:    tfe.Bool(organizationAccess["manage_policy_overrides"].(bool)),
-			DelegatePolicyOverrides:  tfe.Bool(organizationAccess["delegate_policy_overrides"].(bool)),
-			ManageWorkspaces:         tfe.Bool(organizationAccess["manage_workspaces"].(bool)),
-			ManageVCSSettings:        tfe.Bool(organizationAccess["manage_vcs_settings"].(bool)),
-			ManageProviders:          tfe.Bool(organizationAccess["manage_providers"].(bool)),
-			ManageModules:            tfe.Bool(organizationAccess["manage_modules"].(bool)),
-			ManageRunTasks:           tfe.Bool(organizationAccess["manage_run_tasks"].(bool)),
-			ManageProjects:           tfe.Bool(organizationAccess["manage_projects"].(bool)),
-			ReadWorkspaces:           tfe.Bool(organizationAccess["read_workspaces"].(bool)),
-			ReadProjects:             tfe.Bool(organizationAccess["read_projects"].(bool)),
-			ManageMembership:         tfe.Bool(organizationAccess["manage_membership"].(bool)),
-			ManageTeams:              tfe.Bool(organizationAccess["manage_teams"].(bool)),
-			ManageOrganizationAccess: tfe.Bool(organizationAccess["manage_organization_access"].(bool)),
-			AccessSecretTeams:        tfe.Bool(organizationAccess["access_secret_teams"].(bool)),
-			ManageAgentPools:         tfe.Bool(organizationAccess["manage_agent_pools"].(bool)),
-		}
-	}
+	attributes := models.NewTeams_attributes()
+	attributes.SetName(ptr(name))
+	attributes.SetOrganizationAccess(teamOrganizationAccessAttributesV2(d))
 
 	if v, ok := d.GetOk("visibility"); ok {
-		options.Visibility = tfe.String(v.(string))
+		visibility, verr := models.ParseTeams_attributes_visibility(v.(string))
+		if verr != nil {
+			return fmt.Errorf("invalid team visibility %q: %w", v.(string), verr)
+		}
+		attributes.SetVisibility(visibility.(*models.Teams_attributes_visibility))
 	}
 
 	if v, ok := d.GetOk("sso_team_id"); ok {
-		options.SSOTeamID = tfe.String(v.(string))
+		attributes.SetSsoTeamId(ptr(v.(string)))
 	}
 
-	options.AllowMemberTokenManagement = tfe.Bool(d.Get("allow_member_token_management").(bool))
+	attributes.SetAllowMemberTokenManagement(ptr(d.Get("allow_member_token_management").(bool)))
+
+	team := models.NewTeams()
+	team.SetTypeEscaped(ptr(models.TEAMS_TEAMS_TYPE))
+	team.SetAttributes(attributes)
+
+	envelope := models.NewTeamsEnvelope()
+	envelope.SetData(team)
 
 	log.Printf("[DEBUG] Create team %s for organization: %s", name, organization)
-	team, err := config.Client.Teams.Create(ctx, organization, options)
+	result, err := config.ClientV2.API.Organizations().ByOrganization_name(organization).Teams().Post(ctx, envelope, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfe.ErrNotFound) {
+			// go-tfe v2 does not generate a route for organization
+			// entitlement sets (no /organizations/{name}/entitlement-set
+			// request builder exists in the generated client). This call
+			// remains on go-tfe v1 solely to enrich the error message below
+			// when team creation 404s; it is not part of the primary create
+			// call path.
 			entitlements, _ := config.Client.Organizations.ReadEntitlements(ctx, organization)
 			if entitlements == nil {
 				return fmt.Errorf("Error creating team %s for organization %s: %w", name, organization, err)
@@ -261,10 +284,14 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 		}
 		return fmt.Errorf("Error creating team %s for organization %s: %w", name, organization, err)
 	}
+	if result == nil || result.GetData() == nil {
+		return fmt.Errorf("Error creating team %s for organization %s: no data returned", name, organization)
+	}
 
-	d.SetId(team.ID)
+	teamID := valueOrZero(result.GetData().GetId())
+	d.SetId(teamID)
 
-	err = helpers.WriteTFEIdentityWithOrg(d, team.ID, organization, config.Client.BaseURL().Host)
+	err = helpers.WriteTFEIdentityWithOrg(d, teamID, organization, config.Client.BaseURL().Host)
 	if err != nil {
 		return err
 	}
@@ -276,54 +303,66 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read configuration of team: %s", d.Id())
-	team, err := config.Client.Teams.Read(ctx, d.Id())
+	result, err := config.ClientV2.API.Teams().ById(d.Id()).Get(ctx, nil)
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrNotFound) {
 			log.Printf("[DEBUG] Team %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
 		}
 		return fmt.Errorf("Error reading configuration of team %s: %w", d.Id(), err)
 	}
+	if result == nil || result.GetData() == nil {
+		log.Printf("[DEBUG] Team %s no longer exists", d.Id())
+		d.SetId("")
+		return nil
+	}
+	team := result.GetData()
 
 	organization, err := config.schemaOrDefaultOrganization(d)
 	if err != nil {
 		return err
 	}
 
-	err = helpers.WriteTFEIdentityWithOrg(d, team.ID, organization, config.Client.BaseURL().Host)
+	err = helpers.WriteTFEIdentityWithOrg(d, valueOrZero(team.GetId()), organization, config.Client.BaseURL().Host)
 	if err != nil {
 		return err
 	}
 
+	attrs := team.GetAttributes()
+
 	// Update the config.
-	d.Set("name", team.Name)
-	if team.OrganizationAccess != nil {
-		organizationAccess := []map[string]bool{{
-			"manage_policies":            team.OrganizationAccess.ManagePolicies,
-			"manage_policy_overrides":    team.OrganizationAccess.ManagePolicyOverrides,
-			"delegate_policy_overrides":  team.OrganizationAccess.DelegatePolicyOverrides,
-			"manage_workspaces":          team.OrganizationAccess.ManageWorkspaces,
-			"manage_vcs_settings":        team.OrganizationAccess.ManageVCSSettings,
-			"manage_providers":           team.OrganizationAccess.ManageProviders,
-			"manage_modules":             team.OrganizationAccess.ManageModules,
-			"manage_run_tasks":           team.OrganizationAccess.ManageRunTasks,
-			"manage_projects":            team.OrganizationAccess.ManageProjects,
-			"read_projects":              team.OrganizationAccess.ReadProjects,
-			"read_workspaces":            team.OrganizationAccess.ReadWorkspaces,
-			"manage_membership":          team.OrganizationAccess.ManageMembership,
-			"manage_teams":               team.OrganizationAccess.ManageTeams,
-			"manage_organization_access": team.OrganizationAccess.ManageOrganizationAccess,
-			"access_secret_teams":        team.OrganizationAccess.AccessSecretTeams,
-			"manage_agent_pools":         team.OrganizationAccess.ManageAgentPools,
+	d.Set("name", valueOrZero(attrs.GetName()))
+	if organizationAccess := attrs.GetOrganizationAccess(); organizationAccess != nil {
+		organizationAccessData := []map[string]bool{{
+			"manage_policies":            valueOrZero(organizationAccess.GetManagePolicies()),
+			"manage_policy_overrides":    valueOrZero(organizationAccess.GetManagePolicyOverrides()),
+			"delegate_policy_overrides":  valueOrZero(organizationAccess.GetDelegatePolicyOverrides()),
+			"manage_workspaces":          valueOrZero(organizationAccess.GetManageWorkspaces()),
+			"manage_vcs_settings":        valueOrZero(organizationAccess.GetManageVcsSettings()),
+			"manage_providers":           valueOrZero(organizationAccess.GetManageProviders()),
+			"manage_modules":             valueOrZero(organizationAccess.GetManageModules()),
+			"manage_run_tasks":           valueOrZero(organizationAccess.GetManageRunTasks()),
+			"manage_projects":            valueOrZero(organizationAccess.GetManageProjects()),
+			"read_projects":              valueOrZero(organizationAccess.GetReadProjects()),
+			"read_workspaces":            valueOrZero(organizationAccess.GetReadWorkspaces()),
+			"manage_membership":          valueOrZero(organizationAccess.GetManageMembership()),
+			"manage_teams":               valueOrZero(organizationAccess.GetManageTeams()),
+			"manage_organization_access": valueOrZero(organizationAccess.GetManageOrganizationAccess()),
+			"access_secret_teams":        valueOrZero(organizationAccess.GetAccessSecretTeams()),
+			"manage_agent_pools":         valueOrZero(organizationAccess.GetManageAgentPools()),
 		}}
-		if err := d.Set("organization_access", organizationAccess); err != nil {
+		if err := d.Set("organization_access", organizationAccessData); err != nil {
 			return fmt.Errorf("error setting organization access for team %s: %w", d.Id(), err)
 		}
 	}
-	d.Set("visibility", team.Visibility)
-	d.Set("sso_team_id", team.SSOTeamID)
-	d.Set("allow_member_token_management", team.AllowMemberTokenManagement)
+	if visibility := attrs.GetVisibility(); visibility != nil {
+		d.Set("visibility", visibility.String())
+	} else {
+		d.Set("visibility", "")
+	}
+	d.Set("sso_team_id", valueOrZero(attrs.GetSsoTeamId()))
+	d.Set("allow_member_token_management", valueOrZero(attrs.GetAllowMemberTokenManagement()))
 
 	return nil
 }
@@ -331,51 +370,39 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 func resourceTFETeamUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
-	// Get the name and organization.
+	// Get the name.
 	name := d.Get("name").(string)
 
-	// create an options struct
-	options := tfe.TeamUpdateOptions{
-		Name: tfe.String(name),
-	}
-
-	if v, ok := d.GetOk("organization_access"); ok {
-		organizationAccess := v.([]interface{})[0].(map[string]interface{})
-
-		options.OrganizationAccess = &tfe.OrganizationAccessOptions{
-			ManagePolicies:           tfe.Bool(organizationAccess["manage_policies"].(bool)),
-			ManagePolicyOverrides:    tfe.Bool(organizationAccess["manage_policy_overrides"].(bool)),
-			DelegatePolicyOverrides:  tfe.Bool(organizationAccess["delegate_policy_overrides"].(bool)),
-			ManageWorkspaces:         tfe.Bool(organizationAccess["manage_workspaces"].(bool)),
-			ManageVCSSettings:        tfe.Bool(organizationAccess["manage_vcs_settings"].(bool)),
-			ManageProviders:          tfe.Bool(organizationAccess["manage_providers"].(bool)),
-			ManageModules:            tfe.Bool(organizationAccess["manage_modules"].(bool)),
-			ManageRunTasks:           tfe.Bool(organizationAccess["manage_run_tasks"].(bool)),
-			ManageProjects:           tfe.Bool(organizationAccess["manage_projects"].(bool)),
-			ReadProjects:             tfe.Bool(organizationAccess["read_projects"].(bool)),
-			ReadWorkspaces:           tfe.Bool(organizationAccess["read_workspaces"].(bool)),
-			ManageMembership:         tfe.Bool(organizationAccess["manage_membership"].(bool)),
-			ManageTeams:              tfe.Bool(organizationAccess["manage_teams"].(bool)),
-			ManageOrganizationAccess: tfe.Bool(organizationAccess["manage_organization_access"].(bool)),
-			AccessSecretTeams:        tfe.Bool(organizationAccess["access_secret_teams"].(bool)),
-			ManageAgentPools:         tfe.Bool(organizationAccess["manage_agent_pools"].(bool)),
-		}
-	}
+	attributes := models.NewTeams_attributes()
+	attributes.SetName(ptr(name))
+	attributes.SetOrganizationAccess(teamOrganizationAccessAttributesV2(d))
 
 	if v, ok := d.GetOk("visibility"); ok {
-		options.Visibility = tfe.String(v.(string))
+		visibility, verr := models.ParseTeams_attributes_visibility(v.(string))
+		if verr != nil {
+			return fmt.Errorf("invalid team visibility %q: %w", v.(string), verr)
+		}
+		attributes.SetVisibility(visibility.(*models.Teams_attributes_visibility))
 	}
 
 	if v, ok := d.GetOk("sso_team_id"); ok {
-		options.SSOTeamID = tfe.String(v.(string))
+		attributes.SetSsoTeamId(ptr(v.(string)))
 	} else {
-		options.SSOTeamID = tfe.String("")
+		attributes.SetSsoTeamId(ptr(""))
 	}
 
-	options.AllowMemberTokenManagement = tfe.Bool(d.Get("allow_member_token_management").(bool))
+	attributes.SetAllowMemberTokenManagement(ptr(d.Get("allow_member_token_management").(bool)))
+
+	team := models.NewTeams()
+	team.SetTypeEscaped(ptr(models.TEAMS_TEAMS_TYPE))
+	team.SetId(ptr(d.Id()))
+	team.SetAttributes(attributes)
+
+	envelope := models.NewTeamsEnvelope()
+	envelope.SetData(team)
 
 	log.Printf("[DEBUG] Update team: %s", d.Id())
-	_, err := config.Client.Teams.Update(ctx, d.Id(), options)
+	_, err := config.ClientV2.API.Teams().ById(d.Id()).Patch(ctx, envelope, nil)
 	if err != nil {
 		return fmt.Errorf(
 			"Error updating team %s: %w", d.Id(), err)
@@ -398,9 +425,9 @@ func resourceTFETeamDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete team: %s", d.Id())
-	err := config.Client.Teams.Delete(ctx, d.Id())
+	err := config.ClientV2.API.Teams().ById(d.Id()).Delete(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfe.ErrNotFound) {
 			return nil
 		}
 		return fmt.Errorf("Error deleting team %s: %w", d.Id(), err)
@@ -456,18 +483,18 @@ func resourceTFETeamImporter(ctx context.Context, d *schema.ResourceData, meta i
 	// the team by that ID
 	config := meta.(ConfiguredClient)
 	if isResourceIDFormat("team", teamNameOrID) {
-		team, err := config.Client.Teams.Read(ctx, teamNameOrID)
-		if err == nil {
-			d.SetId(team.ID)
+		result, err := config.ClientV2.API.Teams().ById(teamNameOrID).Get(ctx, nil)
+		if err == nil && result != nil && result.GetData() != nil {
+			d.SetId(valueOrZero(result.GetData().GetId()))
 			return []*schema.ResourceData{d}, nil
 		}
 	}
 
 	// a team does not exist (or cannot be found) with the ID s[1]...check if it is the team name instead
-	team, err := fetchTeamByName(ctx, config.Client, orgName, teamNameOrID)
+	team, err := fetchTeamByNameV2(ctx, config.ClientV2.API, orgName, teamNameOrID)
 	if err != nil {
 		return nil, fmt.Errorf("no team found with name or ID %s in organization %s: %w", teamNameOrID, orgName, err)
 	}
-	d.SetId(team.ID)
+	d.SetId(valueOrZero(team.GetId()))
 	return []*schema.ResourceData{d}, nil
 }
