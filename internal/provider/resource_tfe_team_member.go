@@ -9,11 +9,12 @@
 package provider
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strings"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfe "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
 )
@@ -69,13 +70,8 @@ func resourceTFETeamMemberCreate(d *schema.ResourceData, meta interface{}) error
 	teamID := d.Get("team_id").(string)
 	username := d.Get("username").(string)
 
-	// Create a new options struct.
-	options := tfe.TeamMemberAddOptions{
-		Usernames: []string{username},
-	}
-
 	log.Printf("[DEBUG] Add user %q to team: %s", username, teamID)
-	err := config.Client.TeamMembers.Add(ctx, teamID, options)
+	err := teamMembersAddUsersV2(ctx, config.ClientV2.API, teamID, []string{username})
 	if err != nil {
 		return fmt.Errorf("Error adding user %q to team %s: %w", username, teamID, err)
 	}
@@ -101,9 +97,9 @@ func resourceTFETeamMemberRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	log.Printf("[DEBUG] Read users from team: %s", teamID)
-	users, err := config.Client.TeamMembers.List(ctx, teamID)
+	users, err := teamMembersListUsersV2(ctx, config.ClientV2.API, teamID)
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrNotFound) {
 			log.Printf("[DEBUG] User %q no longer exists", d.Id())
 			d.SetId("")
 			return nil
@@ -113,7 +109,7 @@ func resourceTFETeamMemberRead(d *schema.ResourceData, meta interface{}) error {
 
 	found := false
 	for _, user := range users {
-		if user.Username == username {
+		if valueOrZero(user.GetAttributes().GetUsername()) == username {
 			d.Set("team_id", teamID)
 			d.Set("username", username)
 
@@ -147,13 +143,8 @@ func resourceTFETeamMemberDelete(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("Error unpacking team member ID: %w", err)
 	}
 
-	// Create a new options struct.
-	options := tfe.TeamMemberRemoveOptions{
-		Usernames: []string{username},
-	}
-
 	log.Printf("[DEBUG] Remove user %q from team: %s", username, teamID)
-	err = config.Client.TeamMembers.Remove(ctx, teamID, options)
+	err = teamMembersRemoveUsersV2(ctx, config.ClientV2.API, teamID, []string{username})
 	if err != nil {
 		return fmt.Errorf("Error removing user %q to team %s: %w", username, teamID, err)
 	}
