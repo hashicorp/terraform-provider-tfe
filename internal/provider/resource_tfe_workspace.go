@@ -392,7 +392,7 @@ func resourceTFEWorkspace() *schema.Resource {
 							Type:          schema.TypeString,
 							Optional:      true,
 							ConflictsWith: []string{"trigger_patterns", "trigger_prefixes"},
-							Description:   "A regular expression used to trigger a Workspace run for matching Git tags. This option conflicts with `trigger_patterns` and `trigger_prefixes`. Should only set this value if the former is not being used.",
+							Description:   "A regular expression used to trigger a workspace run for matching Git tags. This option conflicts with `trigger_patterns` and `trigger_prefixes`. Should only set this value if the former is not being used.",
 						},
 
 						"github_app_installation_id": {
@@ -409,7 +409,7 @@ func resourceTFEWorkspace() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
-				Description: "If this attribute is present on a workspace that is being deleted through the provider, it will use the existing force delete API. If this attribute is not present or false it will safe delete the workspace.",
+				Description: "If true, the workspace will be force deleted when destroyed via this provider, even if the workspace contains resources managed by Terraform.",
 			},
 			"resource_count": {
 				Type:        schema.TypeInt,
