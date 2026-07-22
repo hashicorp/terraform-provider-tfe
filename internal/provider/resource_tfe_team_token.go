@@ -12,6 +12,7 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	tfev2 "github.com/hashicorp/go-tfe/v2"
+	tfev2api "github.com/hashicorp/go-tfe/v2/api"
 	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework-validators/boolvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -177,81 +178,90 @@ func (r *resourceTFETeamToken) Create(ctx context.Context, req resource.CreateRe
 	}
 
 	var tokenID, tokenValue string
-	expiredAtValue := types.StringNull()
-
+	var expiredAtValue types.String
+	var err error
 	if legacy {
-		// Legacy behavior creates (or regenerates) the single, descriptionless team
-		// token on the singular "authentication-token" endpoint.
-		attributes := models.NewAuthenticationTokens_attributes()
-		attributes.SetDescription(plan.Description.ValueStringPointer())
-		attributes.SetExpiredAt(expiry)
-
-		tokenType := models.AUTHENTICATIONTOKENS_AUTHENTICATIONTOKENS_TYPE
-		tokenData := models.NewAuthenticationTokens()
-		tokenData.SetTypeEscaped(&tokenType)
-		tokenData.SetAttributes(attributes)
-		envelope := models.NewAuthenticationTokensEnvelope()
-		envelope.SetData(tokenData)
-
-		tokenEnvelope, err := api.Teams().ById(teamID).AuthenticationToken().Post(ctx, envelope, nil)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				fmt.Sprintf("Error creating new token for team %s", teamID),
-				err.Error(),
-			)
-			return
-		}
-		if tokenEnvelope == nil || tokenEnvelope.GetData() == nil || tokenEnvelope.GetData().GetId() == nil {
-			resp.Diagnostics.AddError(
-				fmt.Sprintf("Error creating new token for team %s", teamID),
-				"API response did not include the created token",
-			)
-			return
-		}
-
-		token := tokenEnvelope.GetData()
-		tokenID = *token.GetId()
-		if attrs := token.GetAttributes(); attrs != nil {
-			if v := attrs.GetToken(); v != nil {
-				tokenValue = *v
-			}
-			if v := attrs.GetExpiredAt(); v != nil {
-				expiredAtValue = types.StringValue(v.Format(time.RFC3339))
-			}
-		}
+		tokenID, tokenValue, expiredAtValue, err = createLegacyTeamToken(ctx, api, teamID, expiry)
 	} else {
-		// go-tfe/v2 does not yet expose a working endpoint for creating a team token
-		// with a description (i.e. supporting multiple tokens per team): there is no
-		// generated builder for POST /teams/{team_id}/authentication-tokens, and the
-		// previously generated (but never actually wired up in Atlas) top-level
-		// POST /authentication-tokens/{id} has since been removed from the client.
-		// Fall back to the v1 client, which still supports this, until go-tfe/v2
-		// catches up.
-		v1Token, err := r.config.Client.TeamTokens.CreateWithOptions(ctx, teamID, tfe.TeamTokenCreateOptions{
-			Description: plan.Description.ValueStringPointer(),
-			ExpiredAt:   expiry,
-		})
-		if err != nil {
-			errDetails := err.Error()
-			if errors.Is(err, tfe.ErrResourceNotFound) {
-				errDetails = fmt.Sprintf("%s, team does not exist or version of Terraform Enterprise "+
-					"does not support multiple team tokens with descriptions", errDetails)
-			}
-			resp.Diagnostics.AddError(
-				fmt.Sprintf("Error creating new token for team %s", teamID),
-				errDetails,
-			)
-			return
+		tokenID, tokenValue, expiredAtValue, err = createDescribedTeamToken(ctx, r.config.Client, teamID, plan.Description.ValueStringPointer(), expiry)
+	}
+	if err != nil {
+		errDetails := err.Error()
+		if errors.Is(err, tfev2.ErrNotFound) || errors.Is(err, tfe.ErrResourceNotFound) {
+			errDetails = fmt.Sprintf("%s, team does not exist or version of Terraform Enterprise "+
+				"does not support multiple team tokens with descriptions", errDetails)
 		}
-		tokenID = v1Token.ID
-		tokenValue = v1Token.Token
-		if !v1Token.ExpiredAt.IsZero() {
-			expiredAtValue = types.StringValue(v1Token.ExpiredAt.Format(time.RFC3339))
-		}
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Error creating new token for team %s", teamID),
+			errDetails,
+		)
+		return
 	}
 
 	result := modelFromTFEToken(plan.TeamID, types.StringValue(tokenID), types.StringValue(tokenValue), plan.ForceRegenerate, expiredAtValue, plan.Description)
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
+}
+
+// createLegacyTeamToken creates (or, if one already exists, regenerates) the team's
+// single, descriptionless authentication token on the singular "authentication-token"
+// endpoint.
+func createLegacyTeamToken(ctx context.Context, api *tfev2api.ApiClient, teamID string, expiry *time.Time) (id string, value string, expiredAt types.String, err error) {
+	expiredAt = types.StringNull()
+
+	attributes := models.NewAuthenticationTokens_attributes()
+	attributes.SetExpiredAt(expiry)
+
+	tokenType := models.AUTHENTICATIONTOKENS_AUTHENTICATIONTOKENS_TYPE
+	tokenData := models.NewAuthenticationTokens()
+	tokenData.SetTypeEscaped(&tokenType)
+	tokenData.SetAttributes(attributes)
+	envelope := models.NewAuthenticationTokensEnvelope()
+	envelope.SetData(tokenData)
+
+	tokenEnvelope, err := api.Teams().ById(teamID).AuthenticationToken().Post(ctx, envelope, nil)
+	if err != nil {
+		return "", "", expiredAt, err
+	}
+	if tokenEnvelope == nil || tokenEnvelope.GetData() == nil || tokenEnvelope.GetData().GetId() == nil {
+		return "", "", expiredAt, errors.New("API response did not include the created token")
+	}
+
+	token := tokenEnvelope.GetData()
+	id = *token.GetId()
+	if attrs := token.GetAttributes(); attrs != nil {
+		if v := attrs.GetToken(); v != nil {
+			value = *v
+		}
+		if v := attrs.GetExpiredAt(); v != nil {
+			expiredAt = types.StringValue(v.Format(time.RFC3339))
+		}
+	}
+	return id, value, expiredAt, nil
+}
+
+// createDescribedTeamToken creates a team authentication token with a description,
+// allowing multiple tokens per team.
+//
+// go-tfe/v2 does not yet expose a working endpoint for this: there is no generated
+// builder for POST /teams/{team_id}/authentication-tokens, and the previously generated
+// (but never actually wired up in Atlas) top-level POST /authentication-tokens/{id} has
+// since been removed from the client entirely. This falls back to the v1 client, which
+// still supports it, until go-tfe/v2 catches up.
+func createDescribedTeamToken(ctx context.Context, client *tfe.Client, teamID string, description *string, expiry *time.Time) (id string, value string, expiredAt types.String, err error) {
+	expiredAt = types.StringNull()
+
+	token, err := client.TeamTokens.CreateWithOptions(ctx, teamID, tfe.TeamTokenCreateOptions{
+		Description: description,
+		ExpiredAt:   expiry,
+	})
+	if err != nil {
+		return "", "", expiredAt, err
+	}
+
+	if !token.ExpiredAt.IsZero() {
+		expiredAt = types.StringValue(token.ExpiredAt.Format(time.RFC3339))
+	}
+	return token.ID, token.Token, expiredAt, nil
 }
 
 func modelFromTFEToken(teamID types.String, tokenID types.String, stateValue types.String, forceRegenerate types.Bool, expiredAt types.String, description types.String) modelTFETeamToken {
