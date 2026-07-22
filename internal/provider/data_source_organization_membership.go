@@ -17,7 +17,6 @@ import (
 	"github.com/hashicorp/go-tfe/v2/api/organizationmemberships"
 	membershipitem "github.com/hashicorp/go-tfe/v2/api/organizationmemberships/item"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	abstractions "github.com/microsoft/kiota-abstractions-go"
 )
 
 func dataSourceTFEOrganizationMembership() *schema.Resource {
@@ -95,11 +94,9 @@ func dataSourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interf
 
 	includeUser := membershipitem.USER_GETINCLUDEQUERYPARAMETERTYPE
 
-	membershipResponse, err := config.ClientV2.API.OrganizationMemberships().ByOrganization_membership_id(orgMemberID).Get(context.Background(), &abstractions.RequestConfiguration[organizationmemberships.WithOrganization_membership_ItemRequestBuilderGetQueryParameters]{
-		QueryParameters: &organizationmemberships.WithOrganization_membership_ItemRequestBuilderGetQueryParameters{
-			Include: &includeUser,
-		},
-	})
+	membershipResponse, err := config.ClientV2.API.OrganizationMemberships().ByOrganization_membership_id(orgMemberID).Get(context.Background(), withQueryParams(&organizationmemberships.WithOrganization_membership_ItemRequestBuilderGetQueryParameters{
+		Include: &includeUser,
+	}))
 	if err != nil {
 		if errors.Is(err, tfev2.ErrNotFound) {
 			d.SetId("")
@@ -126,15 +123,7 @@ func dataSourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interf
 		}
 	}
 
-	var membershipUsername string
-	for _, record := range membershipResponse.GetIncluded() {
-		if u := record.GetUsers(); u != nil && userID != "" && valueOrZero(u.GetId()) == userID {
-			if userAttributes := u.GetAttributes(); userAttributes != nil {
-				membershipUsername = valueOrZero(userAttributes.GetUsername())
-			}
-			break
-		}
-	}
+	_, membershipUsername := userEmailAndUsername(findIncludedUser(membershipResponse.GetIncluded(), userID))
 
 	d.Set("email", membershipEmail)
 	d.Set("organization", organizationName)

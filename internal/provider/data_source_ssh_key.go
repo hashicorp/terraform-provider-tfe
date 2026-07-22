@@ -13,7 +13,6 @@ import (
 
 	"github.com/hashicorp/go-tfe/v2/api/organizations"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	abstractions "github.com/microsoft/kiota-abstractions-go"
 )
 
 func dataSourceTFESSHKey() *schema.Resource {
@@ -61,9 +60,7 @@ func dataSourceTFESSHKeyRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	for {
-		l, err := config.ClientV2.API.Organizations().ByOrganization_name(organization).SshKeys().Get(ctx, &abstractions.RequestConfiguration[organizations.ItemSshKeysRequestBuilderGetQueryParameters]{
-			QueryParameters: queryParams,
-		})
+		l, err := config.ClientV2.API.Organizations().ByOrganization_name(organization).SshKeys().Get(ctx, withQueryParams(queryParams))
 		if err != nil {
 			return fmt.Errorf("Error retrieving SSH keys: %w", err)
 		}
@@ -76,10 +73,7 @@ func dataSourceTFESSHKeyRead(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		// Exit the loop when we've seen all pages.
-		var nextPage *int32
-		if meta := l.GetMeta(); meta != nil {
-			nextPage = nextPageNumber(meta.GetPagination())
-		}
+		nextPage := nextPageFromMeta(l.GetMeta())
 		if nextPage == nil {
 			break
 		}
