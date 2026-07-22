@@ -1,3 +1,5 @@
+# Basic usage
+
 resource "tfe_provider_set" "standard" {
   name            = "example-provider-set"
   description     = "Reusable provider config for selected workspaces"

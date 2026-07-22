@@ -1,3 +1,5 @@
+# Generate a new team token
+
 resource "tfe_team" "example" {
   organization = "my-org-name"
   name         = "my-team-name"

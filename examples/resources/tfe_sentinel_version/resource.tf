@@ -1,3 +1,5 @@
+# Basic usage
+
 resource "tfe_sentinel_version" "test" {
   version = "0.24.0-custom"
   url     = "https://tfe-host.com/path/to/sentinel.zip"

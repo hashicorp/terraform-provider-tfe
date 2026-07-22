@@ -1,3 +1,5 @@
+# Basic usage
+
 data "tfe_workspace_ids" "app-frontend" {
   names        = ["app-frontend-prod", "app-frontend-dev1", "app-frontend-staging"]
   organization = "my-org-name"

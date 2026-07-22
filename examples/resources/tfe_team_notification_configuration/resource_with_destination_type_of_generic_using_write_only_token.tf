@@ -1,3 +1,5 @@
+# With destination_type of generic using write-only token
+
 variable "notification_token" {
   type      = string
   ephemeral = true

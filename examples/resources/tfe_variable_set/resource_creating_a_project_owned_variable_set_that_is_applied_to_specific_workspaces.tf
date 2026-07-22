@@ -1,3 +1,5 @@
+# Creating a project-owned variable set that is applied to specific workspaces
+
 resource "tfe_organization" "test" {
   name  = "my-org-name"
   email = "admin@company.com"

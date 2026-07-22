@@ -1,3 +1,5 @@
+# Using a Specific Configuration Version ID
+
 resource "tfe_workspace" "example" {
   name         = "example-workspace"
   organization = "my-organization"

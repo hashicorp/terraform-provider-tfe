@@ -1,3 +1,5 @@
+# Using remote_state_consumer_ids
+
 resource "tfe_workspace" "test" {
   for_each = toset(["qa", "production"])
   name     = "${each.value}-test"

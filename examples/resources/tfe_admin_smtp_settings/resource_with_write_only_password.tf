@@ -1,3 +1,5 @@
+# With write-only password
+
 variable "admin_token" {
   description = "An admin access token"
 }

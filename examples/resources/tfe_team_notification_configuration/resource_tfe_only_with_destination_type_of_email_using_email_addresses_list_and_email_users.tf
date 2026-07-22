@@ -1,3 +1,5 @@
+# (TFE only) With destination_type of email, using email_addresses list and email_users
+
 resource "tfe_organization" "test" {
   name  = "my-org-name"
   email = "admin@company.com"
