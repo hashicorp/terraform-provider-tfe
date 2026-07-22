@@ -185,7 +185,7 @@ func fetchOrganizationMemberByNameOrEmailV2(ctx context.Context, api *v2api.ApiC
 
 	include := orgmembershipparams.USER_GETINCLUDEQUERYPARAMETERTYPE
 	queryParams := &organizations.ItemOrganizationMembershipsRequestBuilderGetQueryParameters{
-		Include: &include,
+		Include: []orgmembershipparams.GetIncludeQueryParameterType{include},
 	}
 	if email != "" {
 		queryParams.Filteremail = &email
@@ -230,10 +230,10 @@ func fetchOrganizationMemberByNameOrEmailV2(ctx context.Context, api *v2api.ApiC
 				break
 			}
 
-			pagedParams := &organizations.ItemOrganizationMembershipsRequestBuilderGetQueryParameters{
-				Include:    &include,
-				Pagenumber: nextPage,
-			}
+		pagedParams := &organizations.ItemOrganizationMembershipsRequestBuilderGetQueryParameters{
+			Include:    []orgmembershipparams.GetIncludeQueryParameterType{include},
+			Pagenumber: nextPage,
+		}
 			if email != "" {
 				pagedParams.Filteremail = &email
 			}
@@ -259,7 +259,7 @@ func fetchOrganizationMemberByNameOrEmailV2(ctx context.Context, api *v2api.ApiC
 func readOrganizationMembershipUserV2(ctx context.Context, api *v2api.ApiClient, membershipID string) (models.OrganizationMembershipsable, models.Usersable, error) {
 	include := memberitemparams.USER_GETINCLUDEQUERYPARAMETERTYPE
 	queryParams := &organizationmemberships.WithOrganization_membership_ItemRequestBuilderGetQueryParameters{
-		Include: &include,
+		Include: []memberitemparams.GetIncludeQueryParameterType{include},
 	}
 
 	result, err := api.OrganizationMemberships().ByOrganization_membership_id(membershipID).Get(ctx, withQueryParams(queryParams))
