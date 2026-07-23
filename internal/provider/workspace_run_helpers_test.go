@@ -4,14 +4,80 @@
 package provider
 
 import (
+	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	tfe "github.com/hashicorp/go-tfe"
 	tfemocks "github.com/hashicorp/go-tfe/mocks"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"go.uber.org/mock/gomock"
 )
+
+func TestResourceTFEWorkspaceRunCustomizeDiff(t *testing.T) {
+	r := resourceTFEWorkspaceRun()
+
+	testCases := map[string]struct {
+		config    map[string]interface{}
+		expectErr bool
+	}{
+		"allow_config_version_missing set on apply block is rejected": {
+			config: map[string]interface{}{
+				"workspace_id": "ws-123",
+				"apply": []interface{}{
+					map[string]interface{}{
+						"manual_confirm":               false,
+						"allow_config_version_missing": true,
+					},
+				},
+			},
+			expectErr: true,
+		},
+		"allow_config_version_missing set on destroy block is allowed": {
+			config: map[string]interface{}{
+				"workspace_id": "ws-123",
+				"destroy": []interface{}{
+					map[string]interface{}{
+						"manual_confirm":               false,
+						"allow_config_version_missing": true,
+					},
+				},
+			},
+			expectErr: false,
+		},
+		"allow_config_version_missing unset on apply block is allowed": {
+			config: map[string]interface{}{
+				"workspace_id": "ws-123",
+				"apply": []interface{}{
+					map[string]interface{}{
+						"manual_confirm": false,
+					},
+				},
+			},
+			expectErr: false,
+		},
+	}
+
+	for name, testCase := range testCases {
+		t.Run(name, func(t *testing.T) {
+			rc := terraform.NewResourceConfigRaw(testCase.config)
+			_, err := r.Diff(context.Background(), nil, rc, nil)
+
+			if testCase.expectErr {
+				if err == nil {
+					t.Fatal("expected an error, got nil")
+				}
+				if !strings.Contains(err.Error(), "allow_config_version_missing is only supported in the destroy block") {
+					t.Fatalf("unexpected error: %v", err)
+				}
+			} else if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+		})
+	}
+}
 
 func TestCreateWorkspaceRun_allowConfigVersionMissing(t *testing.T) {
 	configVersionMissingErr := errors.New("error creating run for workspace ws-empty: unprocessable entity\n\nConfiguration version is missing")
@@ -72,10 +138,8 @@ func TestCreateWorkspaceRun_allowConfigVersionMissing(t *testing.T) {
 				if d.Id() == "" {
 					t.Fatal("expected a placeholder ID to be set on no-op destroy")
 				}
-			} else {
-				if err == nil {
-					t.Fatal("expected an error when allow_config_version_missing is unset")
-				}
+			} else if err == nil {
+				t.Fatal("expected an error when allow_config_version_missing is unset")
 			}
 		})
 	}
