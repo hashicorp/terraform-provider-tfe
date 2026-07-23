@@ -47,7 +47,9 @@ func (d *dataSourceTFEOrgMaxTokenTTLPolicy) Schema(_ context.Context, _ datasour
 	resp.Schema = schema.Schema{
 		Description: "Retrieves the maximum time-to-live (TTL) policy for API tokens in an organization. " +
 			"This data source fetches the current TTL limits for organization, team, audit trail, " +
-			"and user tokens from the database.",
+			"and user tokens from the database.\n\n" +
+			"~> **Note:** This data source requires using the provider with HCP Terraform or an instance of Terraform Enterprise at least as recent as v2.0.1.\n\n" +
+			"~> **Warning:** Maximum TTL policies are enforced immediately. Any existing tokens that exceed configured limits will stop working and return an unauthorized error.",
 
 		Attributes: map[string]schema.Attribute{
 			"organization": schema.StringAttribute{

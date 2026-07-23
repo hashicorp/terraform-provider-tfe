@@ -19,7 +19,8 @@ import (
 
 func resourceTFEAgentPoolExcludedWorkspaces() *schema.Resource {
 	return &schema.Resource{
-		Description: "Adds and removes excluded workspaces on an agent pool.",
+		Description: "Adds and removes excluded workspaces on an agent pool.\n\n" +
+			"~> **Note:** This resource requires using the provider with HCP Terraform and a HCP Terraform for Business tier plan.",
 
 		Create: resourceTFEAgentPoolExcludedWorkspacesCreate,
 		Read:   resourceTFEAgentPoolExcludedWorkspacesRead,
@@ -30,6 +31,12 @@ func resourceTFEAgentPoolExcludedWorkspaces() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of this resource. Do not rely on this value — use `agent_pool_id` instead.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"agent_pool_id": {
 				Description: "The ID of the agent pool.",
 				Type:        schema.TypeString,

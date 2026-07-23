@@ -30,10 +30,23 @@
       "Missing required provider"
     ],
     "resources/tfe_organization_module_sharing/resource.tf": [
-      "Deprecated Resource"
+      "Deprecated Resource",
+      "Argument is deprecated"
     ],
     "resources/tfe_sentinel_policy/resource.tf": [
       "Deprecated Resource"
+    ],
+    "data-sources/tfe_workspace_ids/data-source.tf": [
+      "Argument is deprecated"
+    ],
+    "resources/tfe_opa_version/resource.tf": [
+      "Attribute Deprecated"
+    ],
+    "resources/tfe_sentinel_version/resource.tf": [
+      "Attribute Deprecated"
+    ],
+    "resources/tfe_terraform_version/resource.tf": [
+      "Attribute Deprecated"
     ],
     "data-sources/tfe_outputs/data-source_in_the_example_below_assume_we_have_outputs_defined_in_a_my_orgmy_workspace.tf": [
       "Missing required provider"
@@ -42,16 +55,13 @@
       "Missing required provider"
     ],
     "workspaces_variables/managed/main.tf": [
-      "Missing required provider",
-      "Formatting violation"
+      "Missing required provider"
     ],
     "workspaces_variables/manager/main.tf": [
-      "Missing required provider",
-      "Formatting violation"
+      "Missing required provider"
     ],
     "workspaces_variables/manager/providers.tf": [
-      "Missing required provider",
-      "Formatting violation"
+      "Missing required provider"
     ]
   }
 }

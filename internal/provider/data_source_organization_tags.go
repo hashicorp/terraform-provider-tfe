@@ -22,6 +22,12 @@ func dataSourceTFEOrganizationTags() *schema.Resource {
 		Read: dataSourceTFEOrganizationTagsRead,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the workspace tag.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"organization": {
 				Description: "Name of the organization.",
 				Type:        schema.TypeString,

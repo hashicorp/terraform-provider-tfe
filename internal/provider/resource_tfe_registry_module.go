@@ -26,7 +26,10 @@ import (
 
 func resourceTFERegistryModule() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manages Terraform modules in the organization's private module registry.",
+		Description: "Manages Terraform modules in the organization's private module registry.\n\n" +
+			"~> **Warning:** The `agent_execution_mode` and `agent_pool_id` fields in the `test_config` block are currently in beta and are not available to all users.\n\n" +
+			"~> **Note:**  To manage this resource, the token used with the provider needs to be for a team with **owner** permissions or a user who has the permissions explicitly assigned. Crucially, this **does not work** with an organization token! See the [API Access Levels](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/api-tokens#access-levels) documentation for more information.\n\n" +
+			"~> **NOTE:** When using `source_directory`, you **must** explicitly specify both `name` and `module_provider`. This is required because monorepos and repositories with non-standard names (not following `terraform-<provider>-<name>` convention) cannot have these values automatically inferred by the API.",
 
 		Create: resourceTFERegistryModuleCreate,
 		Read:   resourceTFERegistryModuleRead,
@@ -82,6 +85,11 @@ func resourceTFERegistryModule() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the registry module.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 			"organization": {
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -179,7 +187,8 @@ func resourceTFERegistryModule() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Computed:    true,
-				Description: "**Deprecated** Whether to enable no-code provisioning for this module. Use the `tfe_no_code_module` resource instead.",
+				Deprecated:  "Use the `tfe_no_code_module` resource instead.",
+				Description: "Whether to enable no-code provisioning for this module.",
 			},
 			"registry_name": {
 				Type:         schema.TypeString,

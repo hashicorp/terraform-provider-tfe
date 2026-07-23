@@ -111,6 +111,7 @@ func (r *resourceTFEHYOKConfiguration) Metadata(_ context.Context, req resource.
 
 func (r *resourceTFEHYOKConfiguration) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "Manages a HYOK configuration.\n\n~> **Note:** This resource requires using the provider with HCP Terraform on the HCP Terraform Premium edition. Refer to [HCP Terraform pricing](https://www.hashicorp.com/en/pricing?product_intent=terraform&tab=terraform) for details.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "The ID of the HYOK configuration.",
@@ -184,7 +185,6 @@ func (r *resourceTFEHYOKConfiguration) Schema(_ context.Context, _ resource.Sche
 				},
 			},
 		},
-		Description: "Generates a new TFE HYOK Configuration.",
 	}
 }
 

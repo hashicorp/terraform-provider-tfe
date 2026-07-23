@@ -1,4 +1,6 @@
 # Azure DevOps Server Usage
+# Note that this resource requires a private key when creating Azure DevOps Server OAuth clients.
+# Documentation for HCP Terraform and Terraform Enterprise setup can be found here: https://developer.hashicorp.com/terraform/cloud-docs/vcs/azure-devops-server
 
 resource "tfe_oauth_client" "test" {
   name             = "my-ado-oauth-client"

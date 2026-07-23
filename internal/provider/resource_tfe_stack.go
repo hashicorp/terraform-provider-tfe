@@ -41,8 +41,10 @@ func (r *resourceTFEStack) Metadata(ctx context.Context, req resource.MetadataRe
 
 func (r *resourceTFEStack) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Defines a Stack resource. Note that a Stack cannot be destroyed if it contains deployments that have underlying managed resources.",
-		Version:     1,
+		Description: "Defines a Stack resource.\n\n" +
+			"~> **Note:** A stack may not be destroyed until all resources within its deployments have been destroyed.\n\n" +
+			"~> **Note:** Stack support is currently pre-release/beta and subject to change.",
+		Version: 1,
 
 		Blocks: map[string]schema.Block{
 			"vcs_repo": schema.SingleNestedBlock{
@@ -53,16 +55,16 @@ func (r *resourceTFEStack) Schema(ctx context.Context, req resource.SchemaReques
 						Optional:    true,
 					},
 					"branch": schema.StringAttribute{
-						Description: "The repository branch that Terraform should use. This defaults to the respository's default branch (e.g. main).",
+						Description: "The repository branch that Terraform should use. This defaults to the repository's default branch (e.g. main).",
 						Optional:    true,
 					},
 					"github_app_installation_id": schema.StringAttribute{
-						Description: "The installation ID of the GitHub App. This conflicts with `oauth_token_id` and can only be used if `oauth_token_id` is not used.",
-						Optional:    true,
+						MarkdownDescription: "The installation ID of the GitHub App. This conflicts with `oauth_token_id` and can only be used if `oauth_token_id` is not used.",
+						Optional:            true,
 					},
 					"oauth_token_id": schema.StringAttribute{
-						Description: "The VCS Connection to use. This ID can be obtained from a `tfe_oauth_client` resource. This conflicts with `github_app_installation_id` and can only be used if `github_app_installation_id` is not used.",
-						Optional:    true,
+						MarkdownDescription: "The VCS Connection to use. This ID can be obtained from a `tfe_oauth_client` resource. This conflicts with `github_app_installation_id` and can only be used if `github_app_installation_id` is not used.",
+						Optional:            true,
 					},
 				},
 			},
@@ -84,11 +86,11 @@ func (r *resourceTFEStack) Schema(ctx context.Context, req resource.SchemaReques
 				},
 			},
 			"agent_pool_id": schema.StringAttribute{
-				Description: "The ID of an agent pool to assign to the stack",
+				Description: "The ID of an agent pool to assign to the stack.",
 				Optional:    true,
 			},
 			"name": schema.StringAttribute{
-				Description: "Name of the Stack",
+				Description: "Name of the Stack.",
 				Required:    true,
 			},
 			"migration": schema.BoolAttribute{
@@ -104,7 +106,7 @@ func (r *resourceTFEStack) Schema(ctx context.Context, req resource.SchemaReques
 				Computed:    true,
 			},
 			"description": schema.StringAttribute{
-				Description: "Description of the Stack",
+				Description: "Description of the Stack.",
 				Optional:    true,
 			},
 			"working_directory": schema.StringAttribute{

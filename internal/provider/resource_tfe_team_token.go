@@ -71,7 +71,7 @@ func (r *resourceTFETeamToken) Schema(_ context.Context, _ resource.SchemaReques
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "The ID of the token",
+				Description: "The ID of the token.",
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
@@ -85,7 +85,7 @@ func (r *resourceTFETeamToken) Schema(_ context.Context, _ resource.SchemaReques
 				},
 			},
 			"force_regenerate": schema.BoolAttribute{
-				Description: "When set to true will force the audit trail token to be recreated.",
+				Description: "When set to true will force the team token to be recreated.",
 				Optional:    true,
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.RequiresReplace(),
@@ -100,7 +100,7 @@ func (r *resourceTFETeamToken) Schema(_ context.Context, _ resource.SchemaReques
 				Sensitive:   true,
 			},
 			"expired_at": schema.StringAttribute{
-				Description: "The token's expiration date.",
+				Description: "The token's expiration date. Must be a valid RFC3339 timestamp.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{

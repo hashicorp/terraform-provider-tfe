@@ -145,7 +145,7 @@ func (r *resourceTFEPolicySetParameter) Schema(ctx context.Context, req resource
 				Optional:    true,
 				WriteOnly:   true,
 				Sensitive:   true,
-				Description: "Value of the parameter in write-only mode",
+				Description: "Value of the parameter in write-only mode.",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("value")),
 					stringvalidator.AlsoRequires(path.MatchRoot("value_wo_version")),
@@ -154,7 +154,7 @@ func (r *resourceTFEPolicySetParameter) Schema(ctx context.Context, req resource
 
 			"value_wo_version": schema.Int64Attribute{
 				Optional:    true,
-				Description: "Version of the write-only value to trigger updates",
+				Description: "Version of the write-only value to trigger updates.",
 				Validators: []validator.Int64{
 					int64validator.ConflictsWith(path.MatchRoot("value")),
 					int64validator.AlsoRequires(path.MatchRoot("value_wo")),

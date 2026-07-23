@@ -24,6 +24,12 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 		Read: dataSourceTFEWorkspaceIDsRead,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "Derived from the organization name and a hash of the matched workspace IDs. Do not rely on this value.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"names": {
 				Description:  "A list of workspace names to search for. Names that don't match a valid workspace will be omitted from the results, but are not an error. To select _all_ workspaces for an organization, provide a list with a single asterisk, like `[\"*\"]`. The asterisk also supports partial matching on prefix and/or suffix, like `[*-prod]`, `[test-*]`, `[*dev*]`.",
 				Type:         schema.TypeList,
@@ -37,17 +43,19 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Optional:    true,
+				Deprecated:  "Use `tag_filters.include` instead. This attribute will be removed in a future release of the provider.",
 			},
 
 			"exclude_tags": {
-				Description: "Deprecated. A list of tag names to exclude when searching.",
+				Description: "A list of tag names to exclude when searching.",
 				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Optional:    true,
+				Deprecated:  "Use `tag_filters.exclude` instead. This attribute will be removed in a future release of the provider.",
 			},
 
 			"tag_filters": {
-				Description: "Deprecated. A list of tag names to search for.",
+				Description: "A set of key-value tag filters to search for workspaces.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				MinItems:    1,

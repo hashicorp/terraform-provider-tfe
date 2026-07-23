@@ -363,13 +363,13 @@ func (m validateRemoteStateExclusion) MarkdownDescription(_ context.Context) str
 
 func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description:        "Additional Workspace settings that override organization defaults",
-		DeprecationMessage: "",
-		Version:            1,
+		Description: "Manages or reads execution mode and agent pool settings for a workspace. This also interacts with the organization's default values for several settings, which can be managed with [tfe_organization_default_settings](organization_default_settings.html). If other resources need to identify whether a setting is a default or an explicit value set for the workspace, you can refer to the read-only `overwrites` argument.\n\n" +
+			"~> **Warning:** This resource manages values that can alternatively be managed by the  `tfe_workspace` resource. You should not attempt to manage the same property on both resources which could cause a permanent drift. Example properties available on both resources: `description`, `tags`, `auto_apply`, etc.",
+		Version: 1,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Service-generated identifier for the variable",
+				Description: "Service-generated identifier for the workspace settings.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -385,9 +385,9 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 			},
 
 			"execution_mode": schema.StringAttribute{
-				Description: "Which execution mode to use. Using HCP Terraform, valid values are remote, local or agent. When set to local, the workspace will be used for state storage only. If you omit this attribute, the resource configures the workspace to use your organization's default execution mode (which in turn defaults to remote), removing any explicit value that might have previously been set for the workspace.",
-				Optional:    true,
-				Computed:    true,
+				MarkdownDescription: "Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode) to use. Using HCP Terraform, valid values are `remote`, `local` or `agent`. When set to `local`, the workspace will be used for state storage only. **Important:** If you omit this attribute, the resource configures the workspace to use your organization's default execution mode (which in turn defaults to `remote`), removing any explicit value that might have previously been set for the workspace.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					unknownIfExecutionModeUnset{},
 				},
@@ -419,16 +419,16 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 			},
 
 			"global_remote_state": schema.BoolAttribute{
-				Description: "Whether the workspace allows all workspaces in the organization to access its state data during runs. If set to false, and project_remote_state is also false, then only workspaces defined in `remote_state_consumer_ids` can access its state.",
-				Optional:    true,
-				Computed:    true,
+				MarkdownDescription: "Whether the workspace allows all workspaces in the organization to access its state data during runs. If set to false, and project_remote_state is also false, then only workspaces defined in `remote_state_consumer_ids` can access its state.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.Bool{
 					validateRemoteStateExclusion{},
 				},
 			},
 
 			"project_remote_state": schema.BoolAttribute{
-				Description: "Whether the workspace allows all workspaces in the project to access its state data during runs. If set to false, and global_remote_state is also false, only workspaces listed in remote_state_consumer_ids can access its state,",
+				Description: "Whether the workspace allows all workspaces in the project to access its state data during runs. If set to false, and global_remote_state is also false, only workspaces listed in remote_state_consumer_ids can access its state.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.Bool{
@@ -474,7 +474,7 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 			},
 
 			"effective_tags": schema.MapAttribute{
-				Description: "A map of all key-value tags set on the workspace (includes inheritted tags).",
+				Description: "A map of all key-value tags set on the workspace (includes inherited tags).",
 				Optional:    true,
 				Computed:    true,
 				ElementType: types.StringType,

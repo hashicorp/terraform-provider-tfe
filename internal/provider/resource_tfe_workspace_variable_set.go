@@ -21,7 +21,8 @@ import (
 
 func resourceTFEWorkspaceVariableSet() *schema.Resource {
 	return &schema.Resource{
-		Description: "Adds and removes a workspace from a variable set's scope.",
+		Description: "Adds and removes a workspace from a variable set's scope.\n\n" +
+			"~> **Note:** `tfe_variable_set` has a deprecated `workspace_ids` argument that should not be used alongside this resource because they manage the same attachments.",
 
 		Create: resourceTFEWorkspaceVariableSetCreate,
 		Read:   resourceTFEWorkspaceVariableSetRead,
@@ -31,6 +32,12 @@ func resourceTFEWorkspaceVariableSet() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the variable set attachment. ID format: `<workspace-id>_<variable-set-id>`.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"variable_set_id": {
 				Description: "The variable set ID.",
 				Type:        schema.TypeString,

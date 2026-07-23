@@ -2,7 +2,7 @@
 layout: "tfe"
 page_title: "Terraform Enterprise: tfe_project"
 description: |-
-Manages projects.
+  Manages projects.
 ---
 
 # tfe_project

@@ -30,28 +30,30 @@ type outputsEphemeralResource struct {
 
 func (e *outputsEphemeralResource) Schema(ctx context.Context, req ephemeral.SchemaRequest, resp *ephemeral.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "This ephemeral resource can be used to retrieve a workspace's state outputs without saving them in state.",
+		Description: "This ephemeral resource can be used to retrieve a workspace's state outputs without saving them in state.\n\n" +
+			"~> **Warning:** Ephemeral resources are a new feature and may evolve as we continue to explore their most effective uses. [Learn more](https://developer.hashicorp.com/terraform/language/v1.10.x/resources/ephemeral).\n\n" +
+			"~> **Note:** Regardless of output sensitivity in HCP Terraform, this ephemeral resource marks `values` as sensitive and mirrors non-sensitive entries in `nonsensitive_values`.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: `System-generated unique identifier for the resource.`,
-				Computed:    true,
+				MarkdownDescription: `System-generated unique identifier for the resource.`,
+				Computed:            true,
 			},
 			"organization": schema.StringAttribute{
-				Description: `Name of the organization.`,
-				Optional:    true,
-				Computed:    true,
+				MarkdownDescription: `Name of the organization.`,
+				Optional:            true,
+				Computed:            true,
 			},
 			"workspace": schema.StringAttribute{
-				Description: `Name of the workspace.`,
-				Required:    true,
+				MarkdownDescription: `Name of the workspace.`,
+				Required:            true,
 			},
 			"values": schema.DynamicAttribute{
-				Description: `Values of the workspace outputs.`,
-				Computed:    true,
+				MarkdownDescription: `Values of the workspace outputs.`,
+				Computed:            true,
 			},
 			"nonsensitive_values": schema.DynamicAttribute{
-				Description: `Non-sensitive values of the workspace outputs.`,
-				Computed:    true,
+				MarkdownDescription: `Non-sensitive values of the workspace outputs.`,
+				Computed:            true,
 			},
 		},
 	}
