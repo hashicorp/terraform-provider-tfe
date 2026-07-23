@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -45,6 +45,10 @@ func (d *dataSourceTFEProviderSet) Schema(
 				Description: "Whether the provider set applies globally.",
 				Computed:    true,
 			},
+			"priority": schema.BoolAttribute{
+				Description: "Whether the provider set takes priority over provider sets with more specific scopes.",
+				Computed:    true,
+			},
 			"organization": schema.StringAttribute{
 				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
 				Computed:    true,
@@ -73,38 +77,36 @@ type modelDataSourceTFEProviderSet struct {
 	Name           types.String `tfsdk:"name"`
 	Description    types.String `tfsdk:"description"`
 	Global         types.Bool   `tfsdk:"global"`
+	Priority       types.Bool   `tfsdk:"priority"`
 	Organization   types.String `tfsdk:"organization"`
 	WorkspaceIDs   types.Set    `tfsdk:"workspace_ids"`
 	ProjectIDs     types.Set    `tfsdk:"project_ids"`
 	ProviderSource types.String `tfsdk:"provider_source"`
 }
 
-// modelDataSourceFromTFEProviderSet builds a modelDataSourceFromTFEProviderSet struct from a tfe.ProviderSet
+// modelDataSourceFromTFEProviderSet builds a Terraform data source model from
+// v2 Provider Set data.
 func modelDataSourceFromTFEProviderSet(
 	ctx context.Context,
-	v tfe.ProviderSet,
+	v models.ProviderSetsable,
+	organization string,
 ) (m modelDataSourceTFEProviderSet, diags diag.Diagnostics) {
-	organization := ""
-	if v.Organization != nil {
-		organization = v.Organization.Name
-	}
+	attributes := v.GetAttributes()
 
 	// Initialize all fields from the provided API struct
 	m = modelDataSourceTFEProviderSet{
-		ID:             types.StringValue(v.ID),
-		Name:           types.StringValue(v.Name),
-		Description:    types.StringValue(v.Description),
-		Global:         types.BoolValue(v.Global),
+		ID:             types.StringValue(*v.GetId()),
+		Name:           types.StringValue(providerSetStringValue(attributes.GetName())),
+		Description:    types.StringValue(providerSetStringValue(attributes.GetDescription())),
+		Global:         types.BoolValue(providerSetBoolValue(attributes.GetGlobal())),
+		Priority:       types.BoolValue(providerSetBoolValue(attributes.GetPriority())),
 		Organization:   types.StringValue(organization),
-		ProviderSource: types.StringValue(v.ProviderSource),
+		ProviderSource: types.StringValue(providerSetStringValue(attributes.GetProviderSource())),
 		ProjectIDs:     types.SetNull(types.StringType),
 		WorkspaceIDs:   types.SetNull(types.StringType),
 	}
 
-	projectIDs := make([]string, len(v.Projects))
-	for i, project := range v.Projects {
-		projectIDs[i] = project.ID
-	}
+	projectIDs := providerSetProjectIDs(v)
 
 	var d diag.Diagnostics
 
@@ -113,10 +115,7 @@ func modelDataSourceFromTFEProviderSet(
 		diags.Append(d...)
 	}
 
-	workspaceIDs := make([]string, len(v.Workspaces))
-	for i, workspace := range v.Workspaces {
-		workspaceIDs[i] = workspace.ID
-	}
+	workspaceIDs := providerSetWorkspaceIDs(v)
 	if len(workspaceIDs) > 0 {
 		m.WorkspaceIDs, d = types.SetValueFrom(ctx, types.StringType, workspaceIDs)
 		diags.Append(d...)
@@ -182,13 +181,29 @@ func (d *dataSourceTFEProviderSet) Read(
 		return
 	}
 
-	tflog.Debug(ctx, fmt.Sprintf("Read provider set: %s", config.Name.ValueString()))
-	ps, err := d.config.Client.ProviderSets.ReadByName(ctx, organization, config.Name.ValueString())
+	providerSetName := config.Name.ValueString()
+	if err := providerSetOrganizationValidationError(organization); err != nil {
+		resp.Diagnostics.AddError("Error retrieving provider set", err.Error())
+		return
+	}
+	if err := providerSetRequiredNameValidationError(providerSetName); err != nil {
+		resp.Diagnostics.AddError("Error retrieving provider set", err.Error())
+		return
+	}
+
+	tflog.Debug(ctx, fmt.Sprintf("Read provider set: %s", providerSetName))
+	psEnvelope, err := d.config.ClientV2.API.Organizations().ByOrganization_name(organization).ProviderSets().ByProvider_set_name(providerSetName).Get(ctx, nil)
+	if err != nil {
+		err = providerSetLegacyError(err)
+		resp.Diagnostics.AddError("Error retrieving provider set", err.Error())
+		return
+	}
+	ps, err := providerSetDataFromEnvelope(psEnvelope)
 	if err != nil {
 		resp.Diagnostics.AddError("Error retrieving provider set", err.Error())
 		return
 	}
-	m, diags := modelDataSourceFromTFEProviderSet(ctx, *ps)
+	m, diags := modelDataSourceFromTFEProviderSet(ctx, ps, organization)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return

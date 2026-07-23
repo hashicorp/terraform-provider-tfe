@@ -5,16 +5,264 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"regexp"
 	"testing"
 
 	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	fwresource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+func TestProviderSetResourceCompatibilityValidation(t *testing.T) {
+	t.Parallel()
+
+	configurationHCL := "provider \"aws\" {}"
+	for _, test := range []struct {
+		name             string
+		organization     string
+		providerSet      string
+		configurationHCL *string
+		want             error
+	}{
+		{name: "valid", organization: "organization", providerSet: "provider-set", configurationHCL: &configurationHCL},
+		{name: "invalid organization", organization: "invalid/org", providerSet: "provider-set", configurationHCL: &configurationHCL, want: tfe.ErrInvalidOrg},
+		{name: "empty name", organization: "organization", configurationHCL: &configurationHCL, want: tfe.ErrRequiredName},
+		{name: "invalid name", organization: "organization", providerSet: "invalid/name", configurationHCL: &configurationHCL, want: tfe.ErrInvalidName},
+		{name: "missing HCL", organization: "organization", providerSet: "provider-set", want: tfe.ErrRequiredConfigurationHcl},
+		{name: "empty HCL", organization: "organization", providerSet: "provider-set", configurationHCL: tfe.String(""), want: tfe.ErrRequiredConfigurationHcl},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			if got := providerSetCreateValidationError(test.organization, test.providerSet, test.configurationHCL); !errors.Is(got, test.want) {
+				t.Fatalf("expected %v, got %v", test.want, got)
+			}
+		})
+	}
+
+	for _, name := range []string{"", "invalid name"} {
+		if got := providerSetNameValidationError(name); !errors.Is(got, tfe.ErrInvalidName) {
+			t.Fatalf("expected %v for update name %q, got %v", tfe.ErrInvalidName, name, got)
+		}
+	}
+}
+
+func TestNewProviderSetEnvelope_serialization(t *testing.T) {
+	t.Parallel()
+
+	client, err := tfev2.NewClient(&tfev2.Config{
+		Address: "https://example.com",
+		Token:   "test-token",
+	})
+	require.NoError(t, err)
+
+	for _, priority := range []bool{true, false} {
+		t.Run(fmt.Sprintf("priority_%t", priority), func(t *testing.T) {
+			t.Parallel()
+
+			model := modelTFEProviderSet{
+				Priority:     types.BoolValue(priority),
+				ProjectIDs:   types.SetNull(types.StringType),
+				WorkspaceIDs: types.SetNull(types.StringType),
+			}
+			request, err := client.API.ProviderSets().ByProvider_set_id("provset-1234567890123456").ToPatchRequestInformation(
+				context.Background(),
+				newProviderSetEnvelope(model, nil),
+				nil,
+			)
+			require.NoError(t, err)
+
+			var payload struct {
+				Data struct {
+					Type       string `json:"type"`
+					Attributes struct {
+						Priority *bool `json:"priority"`
+					} `json:"attributes"`
+					Relationships struct {
+						Projects *struct {
+							Data []json.RawMessage `json:"data"`
+						} `json:"projects"`
+						Workspaces *struct {
+							Data []json.RawMessage `json:"data"`
+						} `json:"workspaces"`
+					} `json:"relationships"`
+				} `json:"data"`
+			}
+			require.NoError(t, json.Unmarshal(request.Content, &payload))
+
+			assert.Equal(t, "provider-sets", payload.Data.Type)
+			require.NotNil(t, payload.Data.Attributes.Priority)
+			assert.Equal(t, priority, *payload.Data.Attributes.Priority)
+			require.NotNil(t, payload.Data.Relationships.Projects)
+			assert.NotNil(t, payload.Data.Relationships.Projects.Data)
+			assert.Empty(t, payload.Data.Relationships.Projects.Data)
+			require.NotNil(t, payload.Data.Relationships.Workspaces)
+			assert.NotNil(t, payload.Data.Relationships.Workspaces.Data)
+			assert.Empty(t, payload.Data.Relationships.Workspaces.Data)
+		})
+	}
+}
+
+func TestProviderSetRelationshipsFromModel(t *testing.T) {
+	t.Parallel()
+
+	projectIDs, projectDiags := types.SetValueFrom(context.Background(), types.StringType, []string{"prj-1234567890123456"})
+	require.False(t, projectDiags.HasError(), "%v", projectDiags)
+	workspaceIDs, workspaceDiags := types.SetValueFrom(context.Background(), types.StringType, []string{"ws-1234567890123456"})
+	require.False(t, workspaceDiags.HasError(), "%v", workspaceDiags)
+	relationships := providerSetRelationshipsFromModel(modelTFEProviderSet{
+		ProjectIDs:   projectIDs,
+		WorkspaceIDs: workspaceIDs,
+	})
+
+	projects := relationships.GetProjects().GetData()
+	require.Len(t, projects, 1)
+	require.NotNil(t, projects[0].GetId())
+	assert.Equal(t, "prj-1234567890123456", *projects[0].GetId())
+	require.NotNil(t, projects[0].GetTypeEscaped())
+	assert.Equal(t, "projects", projects[0].GetTypeEscaped().String())
+	workspaces := relationships.GetWorkspaces().GetData()
+	require.Len(t, workspaces, 1)
+	require.NotNil(t, workspaces[0].GetId())
+	assert.Equal(t, "ws-1234567890123456", *workspaces[0].GetId())
+	require.NotNil(t, workspaces[0].GetTypeEscaped())
+	assert.Equal(t, "workspaces", workspaces[0].GetTypeEscaped().String())
+}
+
+func TestProviderSetDataFromEnvelope(t *testing.T) {
+	t.Parallel()
+
+	validData := models.NewProviderSets()
+	id := "provset-1234567890123456"
+	validData.SetId(&id)
+	validData.SetAttributes(models.NewProviderSets_attributes())
+	validEnvelope := models.NewProviderSetsEnvelope()
+	validEnvelope.SetData(validData)
+
+	missingIDData := models.NewProviderSets()
+	missingIDData.SetAttributes(models.NewProviderSets_attributes())
+	missingIDEnvelope := models.NewProviderSetsEnvelope()
+	missingIDEnvelope.SetData(missingIDData)
+
+	missingAttributesData := models.NewProviderSets()
+	missingAttributesData.SetId(&id)
+	missingAttributesEnvelope := models.NewProviderSetsEnvelope()
+	missingAttributesEnvelope.SetData(missingAttributesData)
+
+	for _, test := range []struct {
+		name     string
+		envelope models.ProviderSetsEnvelopeable
+		wantErr  string
+	}{
+		{name: "nil envelope", wantErr: "the API returned an empty provider set response"},
+		{name: "missing data", envelope: models.NewProviderSetsEnvelope(), wantErr: "the API returned a provider set response without data"},
+		{name: "missing ID", envelope: missingIDEnvelope, wantErr: "the API returned provider set data without an ID"},
+		{name: "missing attributes", envelope: missingAttributesEnvelope, wantErr: "the API returned provider set data without attributes"},
+		{name: "valid", envelope: validEnvelope},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			got, err := providerSetDataFromEnvelope(test.envelope)
+			if test.wantErr != "" {
+				assert.Nil(t, got)
+				assert.EqualError(t, err, test.wantErr)
+				return
+			}
+			require.NoError(t, err)
+			assert.Same(t, validData, got)
+		})
+	}
+}
+
+func TestModelFromTFEProviderSet(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	id := "provset-1234567890123456"
+	name := "provider-set"
+	description := "description"
+	global := false
+	priority := true
+	providerSource := "registry.terraform.io/hashicorp/aws"
+	configurationHCL := "provider \"aws\" {}"
+	attributes := models.NewProviderSets_attributes()
+	attributes.SetName(&name)
+	attributes.SetDescription(&description)
+	attributes.SetGlobal(&global)
+	attributes.SetPriority(&priority)
+	attributes.SetProviderSource(&providerSource)
+	attributes.SetConfigurationHcl(&configurationHCL)
+
+	projectID := "prj-1234567890123456"
+	project := models.NewProviderSets_relationships_projects_data()
+	project.SetId(&projectID)
+	projectWithoutID := models.NewProviderSets_relationships_projects_data()
+	projects := models.NewProviderSets_relationships_projects()
+	projects.SetData([]models.ProviderSets_relationships_projects_dataable{
+		project,
+		nil,
+		projectWithoutID,
+	})
+
+	workspaceID := "ws-1234567890123456"
+	workspace := models.NewProviderSets_relationships_workspaces_data()
+	workspace.SetId(&workspaceID)
+	workspaceWithoutID := models.NewProviderSets_relationships_workspaces_data()
+	workspaces := models.NewProviderSets_relationships_workspaces()
+	workspaces.SetData([]models.ProviderSets_relationships_workspaces_dataable{
+		workspace,
+		nil,
+		workspaceWithoutID,
+	})
+
+	relationships := models.NewProviderSets_relationships()
+	relationships.SetProjects(projects)
+	relationships.SetWorkspaces(workspaces)
+
+	providerSet := models.NewProviderSets()
+	providerSet.SetId(&id)
+	providerSet.SetAttributes(attributes)
+	providerSet.SetRelationships(relationships)
+
+	result, diags := modelFromTFEProviderSet(ctx, providerSet, "example-org", types.Int64Null())
+	require.False(t, diags.HasError(), "%v", diags)
+
+	assert.Equal(t, id, result.ID.ValueString())
+	assert.Equal(t, "provider-set", result.Name.ValueString())
+	assert.Equal(t, "description", result.Description.ValueString())
+	assert.False(t, result.Global.ValueBool())
+	assert.True(t, result.Priority.ValueBool())
+	assert.Equal(t, "example-org", result.Organization.ValueString())
+	assert.Equal(t, "registry.terraform.io/hashicorp/aws", result.ProviderSource.ValueString())
+	assert.Equal(t, configurationHCL, result.ProviderConfigHCL.ValueString())
+
+	var actualProjectIDs, actualWorkspaceIDs []string
+	projectDiags := result.ProjectIDs.ElementsAs(ctx, &actualProjectIDs, false)
+	require.False(t, projectDiags.HasError(), "%v", projectDiags)
+	workspaceDiags := result.WorkspaceIDs.ElementsAs(ctx, &actualWorkspaceIDs, false)
+	require.False(t, workspaceDiags.HasError(), "%v", workspaceDiags)
+	assert.Equal(t, []string{"prj-1234567890123456"}, actualProjectIDs)
+	assert.Equal(t, []string{"ws-1234567890123456"}, actualWorkspaceIDs)
+
+	providerSet.GetAttributes().SetPriority(nil)
+	providerSet.SetRelationships(nil)
+	result, diags = modelFromTFEProviderSet(ctx, providerSet, "example-org", types.Int64Value(2))
+	require.False(t, diags.HasError(), "%v", diags)
+	assert.False(t, result.Priority.ValueBool())
+	assert.True(t, result.ProjectIDs.IsNull())
+	assert.True(t, result.WorkspaceIDs.IsNull())
+	assert.True(t, result.ProviderConfigHCL.IsNull())
+	assert.Equal(t, int64(2), result.ProviderConfigHCLWOVersion.ValueInt64())
+}
 
 func TestAccTFEProviderSet_basic(t *testing.T) {
 	skipUnlessBeta(t)
@@ -114,6 +362,60 @@ func TestAccTFEProviderSet_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_provider_set.foobar", "workspace_ids.#", "1",
 					),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEProviderSet_priority(t *testing.T) {
+	skipUnlessBeta(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createOrganization(t, tfeClient, tfe.OrganizationCreateOptions{
+		Name:  tfe.String("tst-" + randomString(t)),
+		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
+	})
+	defer orgCleanup()
+
+	resourceName := "tfe_provider_set.foobar"
+	priorityTrue := true
+	priorityFalse := false
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEProviderSetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEProviderSet_priority(org.Name, nil),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "priority", "false"),
+				),
+			},
+			{
+				Config: testAccTFEProviderSet_priority(org.Name, &priorityTrue),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(resourceName, plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "priority", "true"),
+				),
+			},
+			{
+				Config: testAccTFEProviderSet_priority(org.Name, &priorityFalse),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(resourceName, plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "priority", "false"),
 				),
 			},
 		},
@@ -663,6 +965,27 @@ EOT
   project_ids =   [ tfe_project.foo.id ]
   workspace_ids = [ tfe_workspace.foo.id ]
 }`, organization)
+}
+
+func testAccTFEProviderSet_priority(organization string, priority *bool) string {
+	priorityConfig := "// priority omitted"
+	if priority != nil {
+		priorityConfig = fmt.Sprintf("priority = %t", *priority)
+	}
+
+	return fmt.Sprintf(`
+resource "tfe_provider_set" "foobar" {
+  name                = "priority-test"
+  organization        = %q
+  provider_source     = "registry.terraform.io/hashicorp/aws"
+  global              = true
+  %s
+  provider_config_hcl = <<-EOT
+provider "aws" {
+  region = "us-east-1"
+}
+EOT
+}`, organization, priorityConfig)
 }
 
 func testAccTFEProviderSet_basic_updated(organization string) string {
