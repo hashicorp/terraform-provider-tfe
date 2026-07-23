@@ -4,6 +4,7 @@ ENHANCEMENTS:
 * Documentation generation now inserts attribute and resource deprecation guidance into the generated schema docs. By @gbaker-ibm [#2144](https://github.com/hashicorp/terraform-provider-tfe/pull/2144)
 * Corrected and reorganized schema fields across the provider, including placing deprecation marks into those previously noted as deprecated by the documentation. By @gbaker-ibm [#2144](https://github.com/hashicorp/terraform-provider-tfe/pull/2144)
 * `r/tfe_project_notification_configuration`: Add `url_wo` and `url_wo_version` attribute support. By @Maed223 [#2150](https://github.com/hashicorp/terraform-provider-tfe/pull/2150)
+* `r/tfe_provider_set`, `d/tfe_provider_set`: Add `priority` support for managing whether a Provider Set takes priority over Provider Sets with more specific scopes. By @AadarshIBM [#2154](https://github.com/hashicorp/terraform-provider-tfe/pull/2154)
 * `r/tfe_workspace_run`: Destroy runs against workspaces with no configuration version (e.g. empty workspaces that never had a configuration uploaded) are now treated as a no-op success instead of returning an error. ([#2145](https://github.com/hashicorp/terraform-provider-tfe/pull/2145))
 
 BREAKING CHANGES:
