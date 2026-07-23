@@ -63,19 +63,6 @@ jobs:
           # to reliably exclude multiple specific test suites from CI runs.
           skip: "TestAccTFESAMLSettings_omnibus|TestAccTFESCIM"
 
-      - name: Checkout setup-tfe-acceptance-env action
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
-        with:
-          repository: hashicorp/setup-tfe-acceptance-env
-          ref: christian-doucette/initial-version
-          token: ${{ secrets.TF_ACCEPTANCE_ENV_SETUP_PAT }}
-          path: .github/actions/setup-tfe-acceptance-env
-
-      - name: Setup TFE acceptance environment
-        uses: ./.github/actions/setup-tfe-acceptance-env
-        with:
-          github-token: ${{ secrets.TF_ACCEPTANCE_ENV_SETUP_PAT }}
-
   tests-combine-summaries:
     name: Combine Test Reports
     if: "!startsWith(github.head_ref, 'changelog/')"
@@ -113,3 +100,22 @@ jobs:
             exit 0
           fi
           exit 1
+
+  setup-acceptance-env:
+    name: Setup TFE Acceptance Environment
+    if: "!startsWith(github.head_ref, 'changelog/')"
+    needs: [ tests ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout setup-tfe-acceptance-env action
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          repository: hashicorp/setup-tfe-acceptance-env
+          ref: christian-doucette/initial-version
+          token: ${{ secrets.TF_ACCEPTANCE_ENV_SETUP_PAT }}
+          path: .github/actions/setup-tfe-acceptance-env
+
+      - name: Setup TFE acceptance environment
+        uses: ./.github/actions/setup-tfe-acceptance-env
+        with:
+          github-token: ${{ secrets.TF_ACCEPTANCE_ENV_SETUP_PAT }}
