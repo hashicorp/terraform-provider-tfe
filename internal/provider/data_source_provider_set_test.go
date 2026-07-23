@@ -2,14 +2,53 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"testing"
 
 	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
+
+func TestProviderSetReadByNameCompatibility(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		name         string
+		organization string
+		providerSet  string
+		want         error
+	}{
+		{name: "valid", organization: "organization", providerSet: "provider-set"},
+		{name: "empty organization", providerSet: "provider-set", want: tfe.ErrInvalidOrg},
+		{name: "invalid organization", organization: "invalid/org", providerSet: "provider-set", want: tfe.ErrInvalidOrg},
+		{name: "empty name", organization: "organization", want: tfe.ErrRequiredName},
+		{name: "invalid name", organization: "organization", providerSet: "invalid/name", want: tfe.ErrInvalidName},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			got := providerSetOrganizationValidationError(test.organization)
+			if got == nil {
+				got = providerSetRequiredNameValidationError(test.providerSet)
+			}
+			if !errors.Is(got, test.want) {
+				t.Fatalf("expected %v, got %v", test.want, got)
+			}
+		})
+	}
+
+	if got := providerSetLegacyError(tfev2.ErrNotFound); !errors.Is(got, tfe.ErrResourceNotFound) {
+		t.Fatalf("expected %v, got %v", tfe.ErrResourceNotFound, got)
+	}
+
+	otherErr := errors.New("other API error")
+	if got := providerSetLegacyError(otherErr); got != otherErr {
+		t.Fatalf("expected %v, got %v", otherErr, got)
+	}
+}
 
 func TestAccTFEProviderSetDataSource_read(t *testing.T) {
 	skipUnlessBeta(t)
@@ -50,6 +89,9 @@ func TestAccTFEProviderSetDataSource_read(t *testing.T) {
 					),
 					resource.TestCheckResourceAttr(
 						"data.tfe_provider_set.foobar", "global", "false",
+					),
+					resource.TestCheckResourceAttr(
+						"data.tfe_provider_set.foobar", "priority", "true",
 					),
 					resource.TestCheckResourceAttr(
 						"data.tfe_provider_set.foobar", "project_ids.#", "1",
@@ -249,6 +291,7 @@ resource "tfe_provider_set" "foobar" {
   organization        = local.organization
   provider_source     = "registry.terraform.io/hashicorp/aws"
   global              = false
+  priority            = true
   provider_config_hcl = <<-EOT
 provider "aws" {
   region = "us-east-1"

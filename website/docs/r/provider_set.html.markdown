@@ -23,6 +23,7 @@ resource "tfe_provider_set" "standard" {
   description     = "Reusable provider config for selected workspaces"
   organization    = "example-org"
   provider_source = "registry.terraform.io/hashicorp/aws"
+  priority        = true
   workspace_ids = [
     "ws-exampleaaaa11111",
     "ws-examplebbbb22222",
@@ -78,6 +79,7 @@ The following arguments are supported:
 * `provider_source` - (Required) Source address of the provider, e.g. `registry.terraform.io/hashicorp/tfe`.
 * `description` - (Optional) Description of the provider set.
 * `global` - (Optional) Whether the provider set applies globally. Defaults to `false`. When `global` is `false` or omitted, at least one of `workspace_ids` or `project_ids` must be set.
+* `priority` - (Optional) Whether the provider set takes priority over provider sets with more specific scopes. Defaults to `false`.
 * `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
 * `workspace_ids` - (Optional) IDs of the workspaces attached to the provider set. Required if `global` is `false` or omitted and `project_ids` is not set. Cannot be set if `global` is `true`.
 * `project_ids` - (Optional) IDs of the projects attached to the provider set. Required if `global` is `false` or omitted and `workspace_ids` is not set. Cannot be set if `global` is `true`.

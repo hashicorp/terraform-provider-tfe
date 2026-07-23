@@ -9,7 +9,9 @@ import (
 	"fmt"
 	"regexp"
 
-	tfe "github.com/hashicorp/go-tfe"
+	legacytfe "github.com/hashicorp/go-tfe"
+	tfe "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -34,6 +36,8 @@ var (
 	_ resource.ResourceWithModifyPlan = &resourceTFEProviderSet{}
 )
 
+var providerSetPathSegmentRegexp = regexp.MustCompile(`^[^/\s]+$`)
+
 func NewProviderSetResource() resource.Resource {
 	return &resourceTFEProviderSet{}
 }
@@ -47,6 +51,7 @@ type modelTFEProviderSet struct {
 	Name           types.String `tfsdk:"name"`
 	Description    types.String `tfsdk:"description"`
 	Global         types.Bool   `tfsdk:"global"`
+	Priority       types.Bool   `tfsdk:"priority"`
 	Organization   types.String `tfsdk:"organization"`
 	WorkspaceIDs   types.Set    `tfsdk:"workspace_ids"`
 	ProjectIDs     types.Set    `tfsdk:"project_ids"`
@@ -98,6 +103,12 @@ func (r *resourceTFEProviderSet) Schema(ctx context.Context, req resource.Schema
 			},
 			"global": schema.BoolAttribute{
 				Description: "Whether the provider set applies globally.",
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
+			},
+			"priority": schema.BoolAttribute{
+				Description: "Whether the provider set takes priority over provider sets with more specific scopes. Defaults to false.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
@@ -183,20 +194,140 @@ func (r *resourceTFEProviderSet) Schema(ctx context.Context, req resource.Schema
 	}
 }
 
-// modelFromTFEProviderSet builds a modelFromTFEProviderSet struct from a tfe.ProviderSet
+// providerSetDataFromEnvelope extracts Provider Set data from a v2 response
+// envelope and rejects incomplete responses before callers dereference them.
+func providerSetDataFromEnvelope(env models.ProviderSetsEnvelopeable) (models.ProviderSetsable, error) {
+	if env == nil {
+		return nil, errors.New("the API returned an empty provider set response")
+	}
+
+	providerSet := env.GetData()
+	if providerSet == nil {
+		return nil, errors.New("the API returned a provider set response without data")
+	}
+	if providerSet.GetId() == nil {
+		return nil, errors.New("the API returned provider set data without an ID")
+	}
+	if providerSet.GetAttributes() == nil {
+		return nil, errors.New("the API returned provider set data without attributes")
+	}
+
+	return providerSet, nil
+}
+
+func providerSetStringValue(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
+}
+
+func providerSetBoolValue(value *bool) bool {
+	if value == nil {
+		return false
+	}
+	return *value
+}
+
+func providerSetLegacyError(err error) error {
+	if errors.Is(err, tfe.ErrNotFound) {
+		return legacytfe.ErrResourceNotFound
+	}
+	return err
+}
+
+func providerSetOrganizationValidationError(organization string) error {
+	if !providerSetPathSegmentRegexp.MatchString(organization) {
+		return legacytfe.ErrInvalidOrg
+	}
+	return nil
+}
+
+func providerSetRequiredNameValidationError(name string) error {
+	if name == "" {
+		return legacytfe.ErrRequiredName
+	}
+	return providerSetNameValidationError(name)
+}
+
+func providerSetNameValidationError(name string) error {
+	if !providerSetPathSegmentRegexp.MatchString(name) {
+		return legacytfe.ErrInvalidName
+	}
+	return nil
+}
+
+func providerSetCreateValidationError(organization, name string, configurationHCL *string) error {
+	if err := providerSetOrganizationValidationError(organization); err != nil {
+		return err
+	}
+	if err := providerSetRequiredNameValidationError(name); err != nil {
+		return err
+	}
+	if configurationHCL == nil || *configurationHCL == "" {
+		return legacytfe.ErrRequiredConfigurationHcl
+	}
+	return nil
+}
+
+func providerSetProjectIDs(v models.ProviderSetsable) []string {
+	if v.GetRelationships() == nil || v.GetRelationships().GetProjects() == nil {
+		return nil
+	}
+
+	projects := v.GetRelationships().GetProjects().GetData()
+	projectIDs := make([]string, 0, len(projects))
+	for _, project := range projects {
+		if project == nil {
+			continue
+		}
+		id := project.GetId()
+		if id == nil {
+			continue
+		}
+		projectIDs = append(projectIDs, *id)
+	}
+	return projectIDs
+}
+
+func providerSetWorkspaceIDs(v models.ProviderSetsable) []string {
+	if v.GetRelationships() == nil || v.GetRelationships().GetWorkspaces() == nil {
+		return nil
+	}
+
+	workspaces := v.GetRelationships().GetWorkspaces().GetData()
+	workspaceIDs := make([]string, 0, len(workspaces))
+	for _, workspace := range workspaces {
+		if workspace == nil {
+			continue
+		}
+		id := workspace.GetId()
+		if id == nil {
+			continue
+		}
+		workspaceIDs = append(workspaceIDs, *id)
+	}
+	return workspaceIDs
+}
+
+// modelFromTFEProviderSet builds a Terraform model from v2 Provider Set data.
 func modelFromTFEProviderSet(
 	ctx context.Context,
-	v tfe.ProviderSet,
+	v models.ProviderSetsable,
+	organization string,
 	providerConfigHCLWOVersion types.Int64,
 ) (m modelTFEProviderSet, diags diag.Diagnostics) {
+	attributes := v.GetAttributes()
+
 	// Initialize all fields from the provided API struct
 	m = modelTFEProviderSet{
-		ID:             types.StringValue(v.ID),
-		Name:           types.StringValue(v.Name),
-		Description:    types.StringValue(v.Description),
-		Global:         types.BoolValue(v.Global),
-		Organization:   types.StringValue(v.Organization.Name),
-		ProviderSource: types.StringValue(v.ProviderSource),
+		ID:             types.StringValue(*v.GetId()),
+		Name:           types.StringValue(providerSetStringValue(attributes.GetName())),
+		Description:    types.StringValue(providerSetStringValue(attributes.GetDescription())),
+		Global:         types.BoolValue(providerSetBoolValue(attributes.GetGlobal())),
+		Priority:       types.BoolValue(providerSetBoolValue(attributes.GetPriority())),
+		Organization:   types.StringValue(organization),
+		ProviderSource: types.StringValue(providerSetStringValue(attributes.GetProviderSource())),
 		ProjectIDs:     types.SetNull(types.StringType),
 		WorkspaceIDs:   types.SetNull(types.StringType),
 	}
@@ -205,14 +336,11 @@ func modelFromTFEProviderSet(
 		m.ProviderConfigHCL = types.StringNull()
 		m.ProviderConfigHCLWOVersion = providerConfigHCLWOVersion
 	} else {
-		m.ProviderConfigHCL = types.StringValue(v.ConfigurationHcl)
+		m.ProviderConfigHCL = types.StringValue(providerSetStringValue(attributes.GetConfigurationHcl()))
 		m.ProviderConfigHCLWOVersion = types.Int64Null()
 	}
 
-	projectIDs := make([]string, len(v.Projects))
-	for i, project := range v.Projects {
-		projectIDs[i] = project.ID
-	}
+	projectIDs := providerSetProjectIDs(v)
 
 	var d diag.Diagnostics
 
@@ -221,10 +349,7 @@ func modelFromTFEProviderSet(
 		diags.Append(d...)
 	}
 
-	workspaceIDs := make([]string, len(v.Workspaces))
-	for i, workspace := range v.Workspaces {
-		workspaceIDs[i] = workspace.ID
-	}
+	workspaceIDs := providerSetWorkspaceIDs(v)
 	if len(workspaceIDs) > 0 {
 		m.WorkspaceIDs, d = types.SetValueFrom(ctx, types.StringType, workspaceIDs)
 		diags.Append(d...)
@@ -311,32 +436,61 @@ func (r *resourceTFEProviderSet) Configure(ctx context.Context, req resource.Con
 	r.config = client
 }
 
-// tfeWorkspacesFromModel converts the workspace IDs in the model to a slice of
-// tfe.Workspace pointers for API calls.
-func tfeWorkspacesFromModel(m modelTFEProviderSet) []*tfe.Workspace {
-	if m.WorkspaceIDs.IsNull() || m.WorkspaceIDs.IsUnknown() {
-		return []*tfe.Workspace{}
-	}
-	workspaces := make([]*tfe.Workspace, m.WorkspaceIDs.Length(m.collectionLengthOptions()))
+func providerSetRelationshipsFromModel(m modelTFEProviderSet) *models.ProviderSets_relationships {
+	relationships := models.NewProviderSets_relationships()
 
-	for i, v := range m.WorkspaceIDs.Elements() {
-		workspaces[i] = &tfe.Workspace{ID: v.(types.String).ValueString()}
+	projects := models.NewProviderSets_relationships_projects()
+	projectData := make([]models.ProviderSets_relationships_projects_dataable, 0)
+	if !m.ProjectIDs.IsNull() && !m.ProjectIDs.IsUnknown() {
+		projectData = make([]models.ProviderSets_relationships_projects_dataable, 0, len(m.ProjectIDs.Elements()))
+		projectType := models.PROJECTS_PROVIDERSETS_RELATIONSHIPS_PROJECTS_DATA_TYPE
+		for _, value := range m.ProjectIDs.Elements() {
+			project := models.NewProviderSets_relationships_projects_data()
+			project.SetId(value.(types.String).ValueStringPointer())
+			project.SetTypeEscaped(&projectType)
+			projectData = append(projectData, project)
+		}
 	}
-	return workspaces
+	projects.SetData(projectData)
+	relationships.SetProjects(projects)
+
+	workspaces := models.NewProviderSets_relationships_workspaces()
+	workspaceData := make([]models.ProviderSets_relationships_workspaces_dataable, 0)
+	if !m.WorkspaceIDs.IsNull() && !m.WorkspaceIDs.IsUnknown() {
+		workspaceData = make([]models.ProviderSets_relationships_workspaces_dataable, 0, len(m.WorkspaceIDs.Elements()))
+		workspaceType := models.WORKSPACES_PROVIDERSETS_RELATIONSHIPS_WORKSPACES_DATA_TYPE
+		for _, value := range m.WorkspaceIDs.Elements() {
+			workspace := models.NewProviderSets_relationships_workspaces_data()
+			workspace.SetId(value.(types.String).ValueStringPointer())
+			workspace.SetTypeEscaped(&workspaceType)
+			workspaceData = append(workspaceData, workspace)
+		}
+	}
+	workspaces.SetData(workspaceData)
+	relationships.SetWorkspaces(workspaces)
+
+	return relationships
 }
 
-// tfeProjectsFromModel converts the project IDs in the model to a slice of
-// tfe.Project pointers for API calls.
-func tfeProjectsFromModel(m modelTFEProviderSet) []*tfe.Project {
-	if m.ProjectIDs.IsNull() || m.ProjectIDs.IsUnknown() {
-		return []*tfe.Project{}
-	}
-	projects := make([]*tfe.Project, m.ProjectIDs.Length(m.collectionLengthOptions()))
+func newProviderSetEnvelope(m modelTFEProviderSet, configurationHCL *string) *models.ProviderSetsEnvelope {
+	attributes := models.NewProviderSets_attributes()
+	attributes.SetName(m.Name.ValueStringPointer())
+	attributes.SetDescription(m.Description.ValueStringPointer())
+	attributes.SetProviderSource(m.ProviderSource.ValueStringPointer())
+	attributes.SetConfigurationHcl(configurationHCL)
+	attributes.SetGlobal(m.Global.ValueBoolPointer())
+	// Always set priority, including false, so PATCH requests do not omit it.
+	attributes.SetPriority(m.Priority.ValueBoolPointer())
 
-	for i, v := range m.ProjectIDs.Elements() {
-		projects[i] = &tfe.Project{ID: v.(types.String).ValueString()}
-	}
-	return projects
+	providerSet := models.NewProviderSets()
+	providerSetType := models.PROVIDERSETS_PROVIDERSETS_TYPE
+	providerSet.SetTypeEscaped(&providerSetType)
+	providerSet.SetAttributes(attributes)
+	providerSet.SetRelationships(providerSetRelationshipsFromModel(m))
+
+	envelope := models.NewProviderSetsEnvelope()
+	envelope.SetData(providerSet)
+	return envelope
 }
 
 // Create handles the creation of the resource by making an API call to create a
@@ -364,15 +518,7 @@ func (r *resourceTFEProviderSet) Create(ctx context.Context, req resource.Create
 		return
 	}
 
-	options := tfe.ProviderSetCreateOptions{
-		Name:             plan.Name.ValueString(),
-		Description:      plan.Description.ValueStringPointer(),
-		ProviderSource:   plan.ProviderSource.ValueString(),
-		Global:           plan.Global.ValueBoolPointer(),
-		Workspaces:       tfeWorkspacesFromModel(plan),
-		Projects:         tfeProjectsFromModel(plan),
-		ConfigurationHcl: plan.ProviderConfigHCL.ValueString(),
-	}
+	configurationHCL := plan.ProviderConfigHCL.ValueStringPointer()
 
 	if !config.ProviderConfigHCLWO.IsNull() {
 		tflog.Debug(
@@ -382,25 +528,39 @@ func (r *resourceTFEProviderSet) Create(ctx context.Context, req resource.Create
 				plan.Name.ValueString(),
 			),
 		)
-		options.ConfigurationHcl = config.ProviderConfigHCLWO.ValueString()
+		configurationHCL = config.ProviderConfigHCLWO.ValueStringPointer()
 	}
+	if err := providerSetCreateValidationError(orgName, plan.Name.ValueString(), configurationHCL); err != nil {
+		resp.Diagnostics.AddError(
+			"Error creating provider set",
+			fmt.Sprintf("Couldn't create provider set %s: %s", plan.Name.ValueString(), err.Error()),
+		)
+		return
+	}
+	options := newProviderSetEnvelope(plan, configurationHCL)
 
 	tflog.Debug(ctx,
 		fmt.Sprintf(
 			"Creating provider set with name: %s, organization: %s",
-			options.Name,
+			plan.Name.ValueString(),
 			orgName,
 		))
-	ps, err := r.config.Client.ProviderSets.Create(ctx, orgName, options)
+	psEnvelope, err := r.config.ClientV2.API.Organizations().ByOrganization_name(orgName).ProviderSets().Post(ctx, options, nil)
 	if err != nil {
+		err = providerSetLegacyError(err)
 		resp.Diagnostics.AddError(
 			"Error creating provider set",
-			fmt.Sprintf("Couldn't create provider set %s: %s", options.Name, err.Error()),
+			fmt.Sprintf("Couldn't create provider set %s: %s", plan.Name.ValueString(), err.Error()),
 		)
 		return
 	}
+	ps, err := providerSetDataFromEnvelope(psEnvelope)
+	if err != nil {
+		resp.Diagnostics.AddError("Error creating provider set", err.Error())
+		return
+	}
 
-	result, diags := modelFromTFEProviderSet(ctx, *ps, config.ProviderConfigHCLWOVersion)
+	result, diags := modelFromTFEProviderSet(ctx, ps, orgName, config.ProviderConfigHCLWOVersion)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -419,10 +579,10 @@ func (r *resourceTFEProviderSet) Read(ctx context.Context, req resource.ReadRequ
 		return
 	}
 	providerSetID := state.ID.ValueString()
-	ps, err := r.config.Client.ProviderSets.Read(ctx, providerSetID)
+	psEnvelope, err := r.config.ClientV2.API.ProviderSets().ByProvider_set_id(providerSetID).Get(ctx, nil)
 	if err != nil {
 		// If it's gone: that's not an error, but we are done.
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfe.ErrNotFound) {
 			tflog.Debug(
 				ctx, fmt.Sprintf(
 					"Provider Set %s no longer exists", providerSetID,
@@ -438,9 +598,14 @@ func (r *resourceTFEProviderSet) Read(ctx context.Context, req resource.ReadRequ
 
 		return
 	}
+	ps, err := providerSetDataFromEnvelope(psEnvelope)
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading Provider set", err.Error())
+		return
+	}
 
 	// update state
-	result, diags := modelFromTFEProviderSet(ctx, *ps, state.ProviderConfigHCLWOVersion)
+	result, diags := modelFromTFEProviderSet(ctx, ps, state.Organization.ValueString(), state.ProviderConfigHCLWOVersion)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -461,7 +626,13 @@ func (r *resourceTFEProviderSet) Update(ctx context.Context, req resource.Update
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
+	if err := providerSetNameValidationError(plan.Name.ValueString()); err != nil {
+		resp.Diagnostics.AddError(
+			"Error updating provider set",
+			fmt.Sprintf("Couldn't update provider set %s: %s", plan.ID.String(), err.Error()),
+		)
+		return
+	}
 	var config modelTFEProviderSet
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
@@ -475,15 +646,7 @@ func (r *resourceTFEProviderSet) Update(ctx context.Context, req resource.Update
 		return
 	}
 
-	options := tfe.ProviderSetUpdateOptions{
-		Name:             plan.Name.ValueStringPointer(),
-		Description:      plan.Description.ValueStringPointer(),
-		ProviderSource:   plan.ProviderSource.ValueStringPointer(),
-		Global:           plan.Global.ValueBoolPointer(),
-		Workspaces:       tfeWorkspacesFromModel(plan),
-		Projects:         tfeProjectsFromModel(plan),
-		ConfigurationHcl: plan.ProviderConfigHCL.ValueStringPointer(),
-	}
+	configurationHCL := plan.ProviderConfigHCL.ValueStringPointer()
 
 	if !config.ProviderConfigHCLWO.IsNull() {
 		tflog.Debug(
@@ -493,24 +656,31 @@ func (r *resourceTFEProviderSet) Update(ctx context.Context, req resource.Update
 				plan.Name.ValueString(),
 			),
 		)
-		options.ConfigurationHcl = config.ProviderConfigHCLWO.ValueStringPointer()
+		configurationHCL = config.ProviderConfigHCLWO.ValueStringPointer()
 	}
+	options := newProviderSetEnvelope(plan, configurationHCL)
 
 	tflog.Debug(ctx,
 		fmt.Sprintf(
 			"Updating provider set %s",
 			plan.ID.String(),
 		))
-	ps, err := r.config.Client.ProviderSets.Update(ctx, plan.ID.ValueString(), options)
+	psEnvelope, err := r.config.ClientV2.API.ProviderSets().ByProvider_set_id(plan.ID.ValueString()).Patch(ctx, options, nil)
 	if err != nil {
+		err = providerSetLegacyError(err)
 		resp.Diagnostics.AddError(
 			"Error updating provider set",
 			fmt.Sprintf("Couldn't update provider set %s: %s", plan.ID.String(), err.Error()),
 		)
 		return
 	}
+	ps, err := providerSetDataFromEnvelope(psEnvelope)
+	if err != nil {
+		resp.Diagnostics.AddError("Error updating provider set", err.Error())
+		return
+	}
 
-	result, diags := modelFromTFEProviderSet(ctx, *ps, config.ProviderConfigHCLWOVersion)
+	result, diags := modelFromTFEProviderSet(ctx, ps, orgName, config.ProviderConfigHCLWOVersion)
 	resp.Diagnostics.Append(diags...)
 	if diags.HasError() {
 		return
@@ -530,9 +700,9 @@ func (r *resourceTFEProviderSet) Delete(ctx context.Context, req resource.Delete
 	providerSetID := state.ID.ValueString()
 
 	tflog.Debug(ctx, fmt.Sprintf("Delete provider set: %s", providerSetID))
-	err := r.config.Client.ProviderSets.Delete(ctx, providerSetID)
+	err := r.config.ClientV2.API.ProviderSets().ByProvider_set_id(providerSetID).Delete(ctx, nil)
 	// Ignore 404s for delete
-	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+	if err != nil && !errors.Is(err, tfe.ErrNotFound) {
 		resp.Diagnostics.AddError(
 			"Error deleting provider set",
 			fmt.Sprintf("Couldn't delete provider set %s: %s", providerSetID, err.Error()),

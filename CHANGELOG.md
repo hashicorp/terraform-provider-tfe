@@ -9,6 +9,7 @@ BREAKING CHANGES:
 
 ENHANCEMENTS:
 * `r/tfe_project_notification_configuration`: Add `url_wo` and `url_wo_version` attribute support. By @Maed223 [#2150](https://github.com/hashicorp/terraform-provider-tfe/pull/2150)
+* `r/tfe_provider_set`, `d/tfe_provider_set`: Add `priority` support for managing whether a Provider Set takes priority over Provider Sets with more specific scopes. By @AadarshIBM [#2154](https://github.com/hashicorp/terraform-provider-tfe/pull/2154)
 
 BUG FIXES:
 * `r/tfe_workspace`: Fixed a provider bug where `hyok_enabled` was not being set as a computed read-only attribute, causing unreconcilable drift to occur when HYOK was enabled on a provider-managed workspace. By @JarrettSpiker [#2134](https://github.com/hashicorp/terraform-provider-tfe/pull/2134)
