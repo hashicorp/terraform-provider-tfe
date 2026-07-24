@@ -58,10 +58,6 @@ inputs:
     description: The mock run tasks URL to use for testing.
     required: false
     default: "http://testing-mocks.tfe:22180/runtasks/pass"
-  datadog-workflow-token:
-    description: Datadog API key for test optimization
-    required: false
-  
 
 runs:
   using: composite
@@ -101,13 +97,6 @@ runs:
         # When tests are split and run concurrently, lists_tests arg in ci.yml will skip the TestAccTFESAMLSettings_omnibus test suite
         list: ${{ inputs.list_tests }}
     
-    - name: Configure Datadog Test Optimization
-      uses: datadog/test-visibility-github-action@4e7afb05b464fd349275e41e65a7f4de83e7f46b # v2.10.0
-      with:
-        languages: go
-        api_key: ${{ inputs.datadog-workflow-token }}
-        site: datadoghq.com 
-
     - name: Run Tests
       shell: bash
       env:
