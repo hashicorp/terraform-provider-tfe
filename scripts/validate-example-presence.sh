@@ -5,7 +5,7 @@
 # Usage:
 #   ./scripts/validate-example-presence.sh
 #
-# Validates two categories of example presence in a single provider schema pass:
+# Validates three categories of example presence in a single provider schema pass:
 #
 #   1. General examples: every resource, data source, action, and ephemeral
 #      resource has at least one appropriately-prefixed *.tf example file,
@@ -15,6 +15,10 @@
 #   2. Identity import examples: every resource with an identity schema has an
 #      import-by-identity.tf file in its examples directory, and that file
 #      contains at least one import block for that same resource.
+#
+#   3. Action invoke examples: every action has an invoke.sh in its examples
+#      directory containing at least one valid
+#      `terraform apply -invoke=action.<name>.<label>` command.
 #
 # The provider schema is generated once by building the provider binary and
 # running `terraform providers schema -json`. Set SCHEMA_FILE to an existing
@@ -124,9 +128,10 @@ fi
 # Shared exception helpers
 # ---------------------------------------------------------------------------
 
-# Load both exception lists from exceptions file in a single guarded pass
+# Load all exception lists from exceptions file in a single guarded pass
 NO_EXAMPLE_REQUIRED=()
 NO_IDENTITY_EXAMPLE_REQUIRED=()
+NO_INVOKE_EXAMPLE_REQUIRED=()
 if [ -f "${EXCEPTIONS_FILE}" ]; then
     if ! jq -e '.' "${EXCEPTIONS_FILE}" >/dev/null 2>&1; then
         echo "Error: exceptions file is not valid JSON: ${EXCEPTIONS_FILE}" >&2
@@ -138,6 +143,9 @@ if [ -f "${EXCEPTIONS_FILE}" ]; then
     while IFS= read -r component; do
         NO_IDENTITY_EXAMPLE_REQUIRED+=("${component}")
     done < <(jq -r '.no_identity_example_required[]? // empty' "${EXCEPTIONS_FILE}")
+    while IFS= read -r component; do
+        NO_INVOKE_EXAMPLE_REQUIRED+=("${component}")
+    done < <(jq -r '.no_invoke_example_required[]? // empty' "${EXCEPTIONS_FILE}")
 fi
 
 # is_example_not_required <component_path> — 0 if excepted, 1 otherwise
@@ -153,6 +161,15 @@ is_example_not_required() {
 is_identity_example_not_required() {
     local component_path="$1"
     for excluded in "${NO_IDENTITY_EXAMPLE_REQUIRED[@]}"; do
+        [ "${excluded}" = "${component_path}" ] && return 0
+    done
+    return 1
+}
+
+# is_invoke_example_not_required <component_path> — 0 if excepted, 1 otherwise
+is_invoke_example_not_required() {
+    local component_path="$1"
+    for excluded in "${NO_INVOKE_EXAMPLE_REQUIRED[@]}"; do
         [ "${excluded}" = "${component_path}" ] && return 0
     done
     return 1
@@ -333,6 +350,50 @@ if [ -n "${IDENTITY_RESOURCES}" ]; then
 fi
 
 # ---------------------------------------------------------------------------
+# Check 3: action invoke.sh presence
+# ---------------------------------------------------------------------------
+
+MISSING_INVOKE=()
+UNEXPECTED_INVOKE=()
+TOTAL_INVOKE=0
+
+# check_invoke_example <action_name>
+check_invoke_example() {
+    local action_name="$1"  # e.g., "tfe_query_run"
+    local component_path="actions/${action_name}"
+
+    TOTAL_INVOKE=$((TOTAL_INVOKE + 1))
+
+    local invoke_sh="${EXAMPLES_DIR}/${component_path}/invoke.sh"
+    local has_example=false
+    if [ -f "${invoke_sh}" ] && \
+       grep -qE "^terraform apply .*-invoke=action\.${action_name}\.[^ ]+" "${invoke_sh}" 2>/dev/null; then
+        has_example=true
+    fi
+
+    if is_invoke_example_not_required "${component_path}"; then
+        if [ "${has_example}" = true ]; then
+            UNEXPECTED_INVOKE+=("${component_path}: marked as no_invoke_example_required but invoke.sh exists")
+        fi
+        return 0
+    fi
+
+    if [ "${has_example}" = false ]; then
+        if [ ! -f "${invoke_sh}" ]; then
+            MISSING_INVOKE+=("${component_path}: missing examples/${component_path}/invoke.sh")
+        else
+            MISSING_INVOKE+=("${component_path}: invoke.sh exists but contains no valid 'terraform apply -invoke=action.${action_name}.<label>' command")
+        fi
+    fi
+}
+
+if [ -n "${ACTIONS}" ]; then
+    while IFS= read -r action_name; do
+        check_invoke_example "${action_name}" || true
+    done <<< "${ACTIONS}"
+fi
+
+# ---------------------------------------------------------------------------
 # Report
 # ---------------------------------------------------------------------------
 
@@ -362,6 +423,18 @@ if [ ${#UNEXPECTED_IDENTITY[@]} -gt 0 ]; then
     echo ""
 fi
 
+# Unexpected invoke examples (warning)
+if [ ${#UNEXPECTED_INVOKE[@]} -gt 0 ]; then
+    echo "Actions marked as no_invoke_example_required but have invoke.sh:"
+    echo ""
+    for unexpected in "${UNEXPECTED_INVOKE[@]}"; do
+        echo "  - ${unexpected}"
+    done
+    echo ""
+    echo "Consider removing these components from no_invoke_example_required in ${EXCEPTIONS_FILE}"
+    echo ""
+fi
+
 # Missing general examples (error)
 if [ ${#MISSING_EXAMPLES[@]} -gt 0 ]; then
     echo "Components missing examples:"
@@ -386,15 +459,28 @@ if [ ${#MISSING_IDENTITY[@]} -gt 0 ]; then
     echo ""
 fi
 
+# Missing invoke examples (error)
+if [ ${#MISSING_INVOKE[@]} -gt 0 ]; then
+    echo "Actions missing invoke.sh:"
+    echo ""
+    for missing in "${MISSING_INVOKE[@]}"; do
+        echo "  - ${missing}"
+    done
+    echo ""
+    echo "Checked ${TOTAL_INVOKE} actions total."
+    echo ""
+fi
+
 # Exit codes: error beats warning
-if [ ${#MISSING_EXAMPLES[@]} -gt 0 ] || [ ${#MISSING_IDENTITY[@]} -gt 0 ]; then
+if [ ${#MISSING_EXAMPLES[@]} -gt 0 ] || [ ${#MISSING_IDENTITY[@]} -gt 0 ] || [ ${#MISSING_INVOKE[@]} -gt 0 ]; then
     exit 5
 fi
 
-if [ ${#UNEXPECTED_EXAMPLES[@]} -gt 0 ] || [ ${#UNEXPECTED_IDENTITY[@]} -gt 0 ]; then
+if [ ${#UNEXPECTED_EXAMPLES[@]} -gt 0 ] || [ ${#UNEXPECTED_IDENTITY[@]} -gt 0 ] || [ ${#UNEXPECTED_INVOKE[@]} -gt 0 ]; then
     exit 3
 fi
 
 echo "All ${TOTAL_COMPONENTS} components have at least one example file, or are excepted"
 echo "All ${TOTAL_IDENTITY} identity resources have an import-by-identity.tf, or are excepted"
+echo "All ${TOTAL_INVOKE} actions have an invoke.sh, or are excepted"
 exit 0
