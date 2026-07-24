@@ -237,7 +237,7 @@ The `vcs_repo` block supports:
 
 * `display_identifier` - (Optional, Computed) The display identifier for your VCS repository.
   For most VCS providers outside of BitBucket Cloud and Azure DevOps, this will match the `identifier`
-  string. Atlas recomputes this server-side for OAuth connections; it is read back from the API and
+  string. HCP Terraform recomputes this server-side for OAuth connections; it is read back from the API and
   does not need to be set explicitly.
 * `identifier` - (Required) A reference to your VCS repository in the format
   `<organization>/<repository>` where `<organization>` and `<repository>` refer to the organization (or project key, for Bitbucket Data Center)
