@@ -11,7 +11,7 @@ package provider
 import (
 	"fmt"
 
-	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/organizations"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -57,34 +57,50 @@ func dataSourceTFETeamsRead(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	teams, err := config.Client.Teams.List(ctx, organization, &tfe.TeamListOptions{})
+	teamsBuilder := config.ClientV2.API.Organizations().ByOrganization_name(organization).Teams()
+
+	pageSize := int32(100)
+	queryParams := &organizations.ItemTeamsRequestBuilderGetQueryParameters{
+		Pagesize: &pageSize,
+	}
+
+	result, err := teamsBuilder.Get(ctx, withQueryParams(queryParams))
 	if err != nil {
 		return fmt.Errorf("Error retrieving teams: %w", err)
 	}
 
-	if len(teams.Items) == 0 {
+	items := result.GetData()
+	if len(items) == 0 {
 		return fmt.Errorf("could not find teams in %q", organization)
 	}
 
-	options := &tfe.TeamListOptions{}
 	names := []string{}
 	ids := map[string]string{}
 	for {
-		for _, team := range teams.Items {
-			names = append(names, team.Name)
-			ids[team.Name] = team.ID
+		for _, team := range items {
+			attrs := team.GetAttributes()
+			if attrs == nil {
+				continue
+			}
+			name := valueOrZero(attrs.GetName())
+			names = append(names, name)
+			ids[name] = valueOrZero(team.GetId())
 		}
 
-		if teams.CurrentPage >= teams.TotalPages {
+		nextPage := nextPageFromMeta(result.GetMeta())
+		if nextPage == nil {
 			break
 		}
 
-		options.PageNumber = teams.NextPage
-
-		teams, err = config.Client.Teams.List(ctx, organization, options)
+		queryParams = &organizations.ItemTeamsRequestBuilderGetQueryParameters{
+			Pagesize:   &pageSize,
+			Pagenumber: nextPage,
+		}
+		result, err = teamsBuilder.Get(ctx, withQueryParams(queryParams))
 		if err != nil {
 			return fmt.Errorf("Error retrieving teams: %w", err)
 		}
+		items = result.GetData()
 	}
 
 	d.SetId(organization)

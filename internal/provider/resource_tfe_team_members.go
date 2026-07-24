@@ -1,4 +1,4 @@
-// Copyright IBM Corp. 2018, 2025
+// Copyright IBM Corp. 2018, 2026
 // SPDX-License-Identifier: MPL-2.0
 
 // NOTE: This is a legacy resource and should be migrated to the Plugin
@@ -10,10 +10,11 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfe "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -63,16 +64,11 @@ func resourceTFETeamMembersCreate(d *schema.ResourceData, meta interface{}) erro
 	// Get the team ID.
 	teamID := d.Get("team_id").(string)
 
-	// Create a new options struct.
-	options := tfe.TeamMemberAddOptions{}
-
-	// Add all the users that need to be added.
-	for _, username := range d.Get("usernames").(*schema.Set).List() {
-		options.Usernames = append(options.Usernames, username.(string))
-	}
+	// Collect all the usernames that need to be added.
+	usernames := schemaSetToStringSlice(d.Get("usernames").(*schema.Set))
 
 	log.Printf("[DEBUG] Add users to team: %s", teamID)
-	err := config.Client.TeamMembers.Add(ctx, teamID, options)
+	err := teamMembersAddUsersV2(ctx, config.ClientV2.API, teamID, usernames)
 	if err != nil {
 		return fmt.Errorf("Error adding users to team %s: %w", teamID, err)
 	}
@@ -86,9 +82,9 @@ func resourceTFETeamMembersRead(d *schema.ResourceData, meta interface{}) error 
 	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read users from team: %s", d.Id())
-	users, err := config.Client.TeamMembers.List(ctx, d.Id())
+	users, err := teamMembersListUsersV2(ctx, config.ClientV2.API, d.Id())
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrNotFound) {
 			log.Printf("[DEBUG] Users no longer exist")
 			d.SetId("")
 			return nil
@@ -98,7 +94,7 @@ func resourceTFETeamMembersRead(d *schema.ResourceData, meta interface{}) error 
 
 	var usernames []interface{}
 	for _, user := range users {
-		usernames = append(usernames, user.Username)
+		usernames = append(usernames, valueOrZero(user.GetAttributes().GetUsername()))
 	}
 
 	if len(usernames) > 0 {
@@ -121,16 +117,8 @@ func resourceTFETeamMembersUpdate(d *schema.ResourceData, meta interface{}) erro
 
 		// First add the new users.
 		if newUsers.Len() > 0 {
-			// Create a new options struct.
-			options := tfe.TeamMemberAddOptions{}
-
-			// Add all the users that need to be added.
-			for _, username := range newUsers.List() {
-				options.Usernames = append(options.Usernames, username.(string))
-			}
-
 			log.Printf("[DEBUG] Add users to team: %s", d.Id())
-			err := config.Client.TeamMembers.Add(ctx, d.Id(), options)
+			err := teamMembersAddUsersV2(ctx, config.ClientV2.API, d.Id(), schemaSetToStringSlice(newUsers))
 			if err != nil {
 				return fmt.Errorf("Error adding users to team %s: %w", d.Id(), err)
 			}
@@ -138,16 +126,8 @@ func resourceTFETeamMembersUpdate(d *schema.ResourceData, meta interface{}) erro
 
 		// Then delete all the old users.
 		if oldUsers.Len() > 0 {
-			// Create a new options struct.
-			options := tfe.TeamMemberRemoveOptions{}
-
-			// Add all the users that need to be added.
-			for _, username := range oldUsers.List() {
-				options.Usernames = append(options.Usernames, username.(string))
-			}
-
 			log.Printf("[DEBUG] Remove users from team: %s", d.Id())
-			err := config.Client.TeamMembers.Remove(ctx, d.Id(), options)
+			err := teamMembersRemoveUsersV2(ctx, config.ClientV2.API, d.Id(), schemaSetToStringSlice(oldUsers))
 			if err != nil {
 				return fmt.Errorf("Error removing users to team %s: %w", d.Id(), err)
 			}
@@ -161,26 +141,23 @@ func resourceTFETeamMembersDelete(d *schema.ResourceData, meta interface{}) erro
 	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Retrieve users to remove from team: %s", d.Id())
-	users, err := config.Client.TeamMembers.List(ctx, d.Id())
+	users, err := teamMembersListUsersV2(ctx, config.ClientV2.API, d.Id())
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrNotFound) {
 			return nil
 		}
 		return fmt.Errorf("Error retrieving users to remove from team %s: %w", d.Id(), err)
 	}
 
-	// Create a new options struct.
-	options := tfe.TeamMemberRemoveOptions{}
-
-	// Add all the users that need to be removed.
+	var usernames []string
 	for _, user := range users {
-		options.Usernames = append(options.Usernames, user.Username)
+		usernames = append(usernames, valueOrZero(user.GetAttributes().GetUsername()))
 	}
 
 	log.Printf("[DEBUG] Remove users from team: %s", d.Id())
-	err = config.Client.TeamMembers.Remove(ctx, d.Id(), options)
+	err = teamMembersRemoveUsersV2(ctx, config.ClientV2.API, d.Id(), usernames)
 	if err != nil {
-		return fmt.Errorf("Error removing users to team %s: %w", d.Id(), err)
+		return fmt.Errorf("Error removing users from team %s: %w", d.Id(), err)
 	}
 
 	return nil

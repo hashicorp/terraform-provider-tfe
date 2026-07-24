@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-framework-timetypes/timetypes"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral/schema"
@@ -105,6 +106,16 @@ func (e *TeamTokenEphemeralResource) Open(ctx context.Context, req ephemeral.Ope
 
 	desc := fmt.Sprintf("ephemeral-team-token-%s", uuid.New())
 
+	// This always sets a description in order to use the multiple-team-token
+	// API (POST /teams/{id}/authentication-tokens, plural), so that opening
+	// this ephemeral resource repeatedly does not invalidate other
+	// concurrently-open team tokens or the team's legacy descriptionless
+	// token. go-tfe v2 does not generate a route for that plural endpoint -
+	// the generated client only exposes the singular, legacy
+	// /teams/{id}/authentication-token route - so token creation remains on
+	// go-tfe v1 until go-tfe generates that route. Close (below) uses the
+	// go-tfe v2 client.
+	//
 	// Create a new options struct
 	// Set a description to make use of the new multiple token API
 	options := tfe.TeamTokenCreateOptions{
@@ -149,9 +160,9 @@ func (e *TeamTokenEphemeralResource) Close(ctx context.Context, req ephemeral.Cl
 
 	log.Printf("[DEBUG] Removing team token with ID: %s", privateData.ID)
 
-	err := e.config.Client.TeamTokens.Delete(ctx, privateData.ID)
+	err := e.config.ClientV2.API.Teams().ById(privateData.ID).AuthenticationToken().Delete(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			log.Printf("[DEBUG] Team token with ID %s not found, skipping deletion", privateData.ID)
 			return
 		}

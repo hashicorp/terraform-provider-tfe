@@ -9,10 +9,12 @@
 package provider
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -79,68 +81,40 @@ func dataSourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	tl, err := config.Client.Teams.List(ctx, organization, &tfe.TeamListOptions{
-		Names: []string{name},
-	})
+	team, err := fetchTeamByNameV2(ctx, config.ClientV2.API, organization, name)
 	if err != nil {
+		if errors.Is(err, tfev2.ErrNotFound) {
+			return fmt.Errorf("could not find team %s/%s", organization, name)
+		}
 		return fmt.Errorf("Error retrieving teams: %w", err)
 	}
 
-	switch len(tl.Items) {
-	case 0:
-		return fmt.Errorf("could not find team %s/%s", organization, name)
-	case 1:
-		// We check this just in case a user's TFE instance only has one team
-		// and doesn't support the filter query param
-		if tl.Items[0].Name != name {
-			return fmt.Errorf("could not find team %s/%s", organization, name)
-		}
-
-		setTeamResourceData(d, tl.Items[0])
-		return nil
-	default:
-		options := &tfe.TeamListOptions{}
-
-		for {
-			for _, team := range tl.Items {
-				if team.Name == name {
-					setTeamResourceData(d, team)
-					return nil
-				}
-			}
-
-			if tl.CurrentPage >= tl.TotalPages {
-				break
-			}
-
-			options.PageNumber = tl.NextPage
-
-			tl, err = config.Client.Teams.List(ctx, organization, options)
-			if err != nil {
-				return fmt.Errorf("Error retrieving teams: %w", err)
-			}
-		}
-	}
-
-	return fmt.Errorf("could not find team %s/%s", organization, name)
+	setTeamResourceData(d, team)
+	return nil
 }
 
 // setTeamResourceData populates state with the team's attributes. SCIM fields are
 // guarded by nil checks so that older TFE instances do not panic.
-func setTeamResourceData(d *schema.ResourceData, team *tfe.Team) {
-	d.SetId(team.ID)
-	d.Set("sso_team_id", team.SSOTeamID)
+func setTeamResourceData(d *schema.ResourceData, team models.Teamsable) {
+	d.SetId(valueOrZero(team.GetId()))
 
-	if team.SCIMLinked != nil {
-		d.Set("scim_linked", *team.SCIMLinked)
+	attrs := team.GetAttributes()
+	if attrs == nil {
+		return
 	}
-	if team.SCIMGroupName != nil {
-		d.Set("scim_group_name", *team.SCIMGroupName)
+
+	d.Set("sso_team_id", valueOrZero(attrs.GetSsoTeamId()))
+
+	if v := attrs.GetScimLinked(); v != nil {
+		d.Set("scim_linked", *v)
 	}
-	if team.SCIMSyncPaused != nil {
-		d.Set("scim_sync_paused", *team.SCIMSyncPaused)
+	if v := attrs.GetScimGroupName(); v != nil {
+		d.Set("scim_group_name", *v)
 	}
-	if team.SCIMUpdatedAt != nil {
-		d.Set("scim_updated_at", team.SCIMUpdatedAt.Format(time.RFC3339))
+	if v := attrs.GetScimSyncPaused(); v != nil {
+		d.Set("scim_sync_paused", *v)
+	}
+	if v := attrs.GetScimUpdatedAt(); v != nil {
+		d.Set("scim_updated_at", v.Format(time.RFC3339))
 	}
 }
