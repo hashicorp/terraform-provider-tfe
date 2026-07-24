@@ -10,13 +10,13 @@ import (
 	"testing"
 	"time"
 
-	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccTFETeamToken_basic(t *testing.T) {
-	token := &tfe.TeamToken{}
+	var token models.AuthenticationTokensable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -28,7 +28,7 @@ func TestAccTFETeamToken_basic(t *testing.T) {
 				Config: testAccTFETeamToken_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamTokenExists(
-						"tfe_team_token.foobar", token),
+						"tfe_team_token.foobar", &token),
 				),
 			},
 		},
@@ -37,7 +37,7 @@ func TestAccTFETeamToken_basic(t *testing.T) {
 
 func TestAccTFETeamToken_multiple_team_tokens(t *testing.T) {
 	skipUnlessBeta(t)
-	token := &tfe.TeamToken{}
+	var token models.AuthenticationTokensable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -49,11 +49,45 @@ func TestAccTFETeamToken_multiple_team_tokens(t *testing.T) {
 				Config: testAccTFETeamToken_withMultipleTokens(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamTokenExists(
-						"tfe_team_token.multi_token_1", token),
+						"tfe_team_token.multi_token_1", &token),
 					testAccCheckTFETeamTokenExists(
-						"tfe_team_token.multi_token_2", token),
+						"tfe_team_token.multi_token_2", &token),
 					testAccCheckTFETeamTokenExists(
-						"tfe_team_token.legacy", token),
+						"tfe_team_token.legacy", &token),
+				),
+			},
+		},
+	})
+}
+
+// TestAccTFETeamToken_createWithDescription is a regression test for a bug found during
+// the go-tfe v2 migration: creating a team token with a description (i.e. supporting
+// multiple tokens per team) has no working go-tfe/v2 endpoint. There is no generated
+// builder for the plural, team-nested POST /teams/{team_id}/authentication-tokens, and
+// the previously generated top-level POST /authentication-tokens/{id} was never actually
+// wired up in Atlas (only GET/DELETE are) and has since been removed from the client
+// entirely. Create falls back to the v1 client for this case until go-tfe/v2 exposes a
+// working endpoint. Isolated from TestAccTFETeamToken_multiple_team_tokens, which also
+// exercises the unrelated legacy-token array/object response-shape bug in the same
+// config.
+func TestAccTFETeamToken_createWithDescription(t *testing.T) {
+	skipUnlessBeta(t)
+	var token models.AuthenticationTokensable
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	description := fmt.Sprintf("tst-terraform-%d-token", rInt)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamTokenDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeamToken_createWithDescription(rInt, description),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFETeamTokenExists(
+						"tfe_team_token.described", &token),
+					resource.TestCheckResourceAttr(
+						"tfe_team_token.described", "description", description),
 				),
 			},
 		},
@@ -61,7 +95,7 @@ func TestAccTFETeamToken_multiple_team_tokens(t *testing.T) {
 }
 
 func TestAccTFETeamToken_existsWithoutForce(t *testing.T) {
-	token := &tfe.TeamToken{}
+	var token models.AuthenticationTokensable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -73,7 +107,7 @@ func TestAccTFETeamToken_existsWithoutForce(t *testing.T) {
 				Config: testAccTFETeamToken_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamTokenExists(
-						"tfe_team_token.foobar", token),
+						"tfe_team_token.foobar", &token),
 				),
 			},
 
@@ -86,7 +120,7 @@ func TestAccTFETeamToken_existsWithoutForce(t *testing.T) {
 }
 
 func TestAccTFETeamToken_existsWithForce(t *testing.T) {
-	token := &tfe.TeamToken{}
+	var token models.AuthenticationTokensable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -98,7 +132,7 @@ func TestAccTFETeamToken_existsWithForce(t *testing.T) {
 				Config: testAccTFETeamToken_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamTokenExists(
-						"tfe_team_token.foobar", token),
+						"tfe_team_token.foobar", &token),
 				),
 			},
 
@@ -106,7 +140,7 @@ func TestAccTFETeamToken_existsWithForce(t *testing.T) {
 				Config: testAccTFETeamToken_existsWithForce(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamTokenExists(
-						"tfe_team_token.regenerated", token),
+						"tfe_team_token.regenerated", &token),
 				),
 			},
 		},
@@ -132,7 +166,7 @@ func TestAccTFETeamToken_invalidWithForceGenerateAndDescription(t *testing.T) {
 
 func TestAccTFETeamToken_withBlankExpiry(t *testing.T) {
 	skipUnlessBeta(t)
-	token := &tfe.TeamToken{}
+	var token models.AuthenticationTokensable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -144,7 +178,7 @@ func TestAccTFETeamToken_withBlankExpiry(t *testing.T) {
 				Config: testAccTFETeamToken_withBlankExpiry(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamTokenExists(
-						"tfe_team_token.foobar", token),
+						"tfe_team_token.foobar", &token),
 					// When expired_at is not provided, API sets default (24 months)
 					// We now read this value from the API response
 					resource.TestCheckResourceAttrSet(
@@ -156,7 +190,7 @@ func TestAccTFETeamToken_withBlankExpiry(t *testing.T) {
 }
 
 func TestAccTFETeamToken_withValidExpiry(t *testing.T) {
-	token := &tfe.TeamToken{}
+	var token models.AuthenticationTokensable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	expiredAt := "2051-04-11T23:15:59Z"
 
@@ -169,7 +203,7 @@ func TestAccTFETeamToken_withValidExpiry(t *testing.T) {
 				Config: testAccTFETeamToken_withValidExpiry(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETeamTokenExists(
-						"tfe_team_token.expiry", token),
+						"tfe_team_token.expiry", &token),
 					resource.TestCheckResourceAttr(
 						"tfe_team_token.expiry", "expired_at", expiredAt),
 				),
@@ -261,15 +295,19 @@ resource "tfe_team_token" "invalid" {
 		CheckDestroy:             testAccCheckTFETeamTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config:      conf,
-				ExpectError: regexp.MustCompile("resource not found, team does not exist or version of Terraform Enterprise\ndoes not support multiple team tokens with descriptions"),
+				Config: conf,
+				// Terraform's CLI wraps long diagnostic text at a column width, and the
+				// wrap point (a literal newline replacing a space) shifts based on the
+				// surrounding text's exact length. Match word-by-word with \s+ instead of
+				// literal spaces so this doesn't depend on exactly where the wrap lands.
+				ExpectError: regexp.MustCompile(`(?s)team\s+does\s+not\s+exist\s+or\s+version\s+of\s+Terraform\s+Enterprise\s+does\s+not\s+support\s+multiple\s+team\s+tokens\s+with\s+descriptions`),
 			},
 		},
 	})
 }
 
 func testAccCheckTFETeamTokenExists(
-	n string, token *tfe.TeamToken) resource.TestCheckFunc {
+	n string, token *models.AuthenticationTokensable) resource.TestCheckFunc { //nolint:gocritic // token is an output param the caller reads after Check runs; AuthenticationTokensable must stay addressable to be settable
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -280,23 +318,23 @@ func testAccCheckTFETeamTokenExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		var tt *tfe.TeamToken
+		var tt models.AuthenticationTokensEnvelopeable
 		var err error
 		if isTokenID(rs.Primary.ID) {
-			tt, err = testAccConfiguredClient.Client.TeamTokens.ReadByID(ctx, rs.Primary.ID)
+			tt, err = testAccConfiguredClient.ClientV2.API.AuthenticationTokens().ById(rs.Primary.ID).Get(ctx, nil)
 		} else {
-			tt, err = testAccConfiguredClient.Client.TeamTokens.Read(ctx, rs.Primary.ID)
+			tt, err = testAccConfiguredClient.ClientV2.API.Teams().ById(rs.Primary.ID).AuthenticationToken().Get(ctx, nil)
 		}
 
 		if err != nil {
 			return err
 		}
 
-		if tt == nil {
+		if tt == nil || tt.GetData() == nil {
 			return fmt.Errorf("Team token not found")
 		}
 
-		*token = *tt
+		*token = tt.GetData()
 
 		return nil
 	}
@@ -314,9 +352,9 @@ func testAccCheckTFETeamTokenDestroy(s *terraform.State) error {
 
 		var err error
 		if isTokenID(rs.Primary.ID) {
-			_, err = testAccConfiguredClient.Client.TeamTokens.ReadByID(ctx, rs.Primary.ID)
+			_, err = testAccConfiguredClient.ClientV2.API.AuthenticationTokens().ById(rs.Primary.ID).Get(ctx, nil)
 		} else {
-			_, err = testAccConfiguredClient.Client.TeamTokens.Read(ctx, rs.Primary.ID)
+			_, err = testAccConfiguredClient.ClientV2.API.Teams().ById(rs.Primary.ID).AuthenticationToken().Get(ctx, nil)
 		}
 		if err == nil {
 			return fmt.Errorf("Team token %s still exists", rs.Primary.ID)
@@ -341,6 +379,24 @@ resource "tfe_team" "foobar" {
 resource "tfe_team_token" "foobar" {
   team_id = tfe_team.foobar.id
 }`, rInt)
+}
+
+func testAccTFETeamToken_createWithDescription(rInt int, description string) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_team_token" "described" {
+  team_id     = tfe_team.foobar.id
+  description = "%s"
+}`, rInt, description)
 }
 
 // NOTE: This config is invalid because you cannot manage multiple tokens for
