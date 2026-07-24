@@ -16,6 +16,35 @@ jobs:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
       - uses: ./.github/actions/lint-provider-tfe
 
+  setup-acceptance-env:
+    name: Setup TFE Acceptance Environment
+    if: "!startsWith(github.head_ref, 'changelog/')"
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.TF_ACCEPTANCE_ENV_SETUP_PAT }}
+    steps:
+      - name: Checkout setup-tfe-acceptance-env action
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          repository: hashicorp/setup-tfe-acceptance-env
+          ref: christian-doucette/initial-version
+          token: ${{ secrets.TF_ACCEPTANCE_ENV_SETUP_PAT }}
+          path: .github/actions/setup-tfe-acceptance-env
+
+      - name: Checkout tf-developer-productivity-workflows
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          repository: hashicorp/tf-developer-productivity-workflows
+          ref: v0.11.0
+          token: ${{ secrets.TF_ACCEPTANCE_ENV_SETUP_PAT }}
+          path: .github/actions/tf-developer-productivity-workflows
+
+      - name: Setup TFE acceptance environment
+        uses: ./.github/actions/setup-tfe-acceptance-env
+        with:
+          github-token: ${{ secrets.TF_ACCEPTANCE_ENV_SETUP_PAT }}
+
+
   tests:
     name: run
     if: "!startsWith(github.head_ref, 'changelog/')"
@@ -62,6 +91,7 @@ jobs:
           # list_tests at its default (".") and use the `skip` input below, which is forwarded to `go test -skip`
           # to reliably exclude multiple specific test suites from CI runs.
           skip: "TestAccTFESAMLSettings_omnibus|TestAccTFESCIM"
+
   tests-combine-summaries:
     name: Combine Test Reports
     if: "!startsWith(github.head_ref, 'changelog/')"
@@ -99,3 +129,4 @@ jobs:
             exit 0
           fi
           exit 1
+
