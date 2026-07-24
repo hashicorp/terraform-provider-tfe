@@ -129,7 +129,7 @@ func resourceTFERegistryModule() *schema.Resource {
 							Type:        schema.TypeString,
 							Optional:    true,
 							Computed:    true,
-							Description: "The display identifier for your VCS repository. For most VCS providers outside of BitBucket Cloud and Azure DevOps, this will match the `identifier` string. Atlas recomputes this server-side for OAuth connections; it is read back from the API and does not need to be set explicitly.",
+							Description: "The display identifier for your VCS repository. For most VCS providers outside of BitBucket Cloud and Azure DevOps, this will match the `identifier` string. HCP Terraform recomputes this server-side for OAuth connections; it is read back from the API and does not need to be set explicitly.",
 						},
 						"identifier": {
 							Type:        schema.TypeString,
