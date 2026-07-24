@@ -2,6 +2,7 @@
   "no_description_required": [
     "provider/provider/."
   ],
+  "no_invoke_example_required": [],
   "no_example_required": [
     "ephemeral-resources/tfe_agent_token",
     "ephemeral-resources/tfe_audit_trail_token",
