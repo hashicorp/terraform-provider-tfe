@@ -96,6 +96,7 @@ func resourceTFEPolicySet() *schema.Resource {
 					[]string{
 						string(tfe.OPA),
 						string(tfe.Sentinel),
+						string(tfe.TFPolicy),
 					}, false),
 			},
 
