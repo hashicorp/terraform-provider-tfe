@@ -43,6 +43,8 @@ func TestAccTFEOrganizationMembersDataSource_basic(t *testing.T) {
 						"data.tfe_organization_members.all_members", "members.0.organization_membership_id"),
 					resource.TestCheckResourceAttrSet(
 						"data.tfe_organization_members.all_members", "members.0.user_id"),
+					resource.TestCheckResourceAttrSet(
+						"data.tfe_organization_members.all_members", "members.0.user_email"),
 
 					resource.TestCheckResourceAttr(
 						"data.tfe_organization_members.all_members", "members_waiting.#", "1"),
@@ -50,6 +52,8 @@ func TestAccTFEOrganizationMembersDataSource_basic(t *testing.T) {
 						"data.tfe_organization_members.all_members", "members_waiting.0.organization_membership_id", membership.ID),
 					resource.TestCheckResourceAttr(
 						"data.tfe_organization_members.all_members", "members_waiting.0.user_id", membership.User.ID),
+					resource.TestCheckResourceAttr(
+						"data.tfe_organization_members.all_members", "members_waiting.0.user_email", membership.Email),
 				),
 			},
 		},

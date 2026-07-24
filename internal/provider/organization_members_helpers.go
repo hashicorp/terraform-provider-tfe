@@ -25,10 +25,10 @@ func fetchOrganizationMembers(client *tfe.Client, orgName string) ([]map[string]
 		for _, orgMembership := range organizationMembershipList.Items {
 			switch orgMembership.Status {
 			case tfe.OrganizationMembershipActive:
-				member := map[string]string{"user_id": orgMembership.User.ID, "organization_membership_id": orgMembership.ID}
+				member := map[string]string{"user_id": orgMembership.User.ID, "organization_membership_id": orgMembership.ID, "user_email": orgMembership.Email}
 				members = append(members, member)
 			case tfe.OrganizationMembershipInvited:
-				member := map[string]string{"user_id": orgMembership.User.ID, "organization_membership_id": orgMembership.ID}
+				member := map[string]string{"user_id": orgMembership.User.ID, "organization_membership_id": orgMembership.ID, "user_email": orgMembership.Email}
 				membersWaiting = append(membersWaiting, member)
 			default:
 				log.Printf("Organization member with unknown status found: %s", orgMembership.Status)

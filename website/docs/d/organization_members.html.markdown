@@ -39,3 +39,4 @@ The `member` block contains:
 
 * `user_id` - The ID of the user.
 * `organization_membership_id` - The ID of the organization membership.
+* `user_email` - The email of the user.
