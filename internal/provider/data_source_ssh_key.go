@@ -11,7 +11,7 @@ package provider
 import (
 	"fmt"
 
-	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/organizations"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -53,29 +53,33 @@ func dataSourceTFESSHKeyRead(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	// Create an options struct.
-	options := &tfe.SSHKeyListOptions{}
+	// Create the query parameters.
+	pageSize := int32(100)
+	queryParams := &organizations.ItemSshKeysRequestBuilderGetQueryParameters{
+		Pagesize: &pageSize,
+	}
 
 	for {
-		l, err := config.Client.SSHKeys.List(ctx, organization, options)
+		l, err := config.ClientV2.API.Organizations().ByOrganization_name(organization).SshKeys().Get(ctx, withQueryParams(queryParams))
 		if err != nil {
 			return fmt.Errorf("Error retrieving SSH keys: %w", err)
 		}
 
-		for _, k := range l.Items {
-			if k.Name == name {
-				d.SetId(k.ID)
+		for _, k := range l.GetData() {
+			if attributes := k.GetAttributes(); attributes != nil && valueOrZero(attributes.GetName()) == name {
+				d.SetId(valueOrZero(k.GetId()))
 				return nil
 			}
 		}
 
 		// Exit the loop when we've seen all pages.
-		if l.CurrentPage >= l.TotalPages {
+		nextPage := nextPageFromMeta(l.GetMeta())
+		if nextPage == nil {
 			break
 		}
 
 		// Update the page number to get the next page.
-		options.PageNumber = l.NextPage
+		queryParams.Pagenumber = nextPage
 	}
 
 	return fmt.Errorf("could not find SSH key %s/%s", organization, name)

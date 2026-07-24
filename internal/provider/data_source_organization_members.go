@@ -84,7 +84,7 @@ func dataSourceTFEOrganizationMembersRead(d *schema.ResourceData, meta interface
 		return err
 	}
 
-	members, membersWaiting, err := fetchOrganizationMembers(config.Client, organizationName)
+	members, membersWaiting, err := fetchOrganizationMembers(config.ClientV2, organizationName)
 	if err != nil {
 		return err
 	}

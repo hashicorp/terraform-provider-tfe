@@ -87,16 +87,30 @@ func (d *dataSourceHYOKEncryptedDataKey) Read(ctx context.Context, req datasourc
 	}
 
 	// Make API call to fetch the HYOK customer key version
-	keyVersion, err := d.config.Client.HYOKEncryptedDataKeys.Read(ctx, data.ID.ValueString())
+	keyVersionEnvelope, err := d.config.ClientV2.API.HyokEncryptedDataKeys().ByHyok_encrypted_data_key_id(data.ID.ValueString()).Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read HYOK customer key version", err.Error())
 		return
 	}
 
+	keyVersion := keyVersionEnvelope.GetData()
+	if keyVersion == nil {
+		resp.Diagnostics.AddError("Unable to read HYOK customer key version", "The API response contained no encrypted data key data.")
+		return
+	}
+
+	var encryptedDEK, customerKeyName string
+	var createdAt time.Time
+	if attributes := keyVersion.GetAttributes(); attributes != nil {
+		encryptedDEK = valueOrZero(attributes.GetEncryptedDek())
+		customerKeyName = valueOrZero(attributes.GetCustomerKeyName())
+		createdAt = valueOrZero(attributes.GetCreatedAt())
+	}
+
 	// Set the computed attributes from the API response
-	data.EncryptedDEK = types.StringValue(keyVersion.EncryptedDEK)
-	data.CustomerKeyName = types.StringValue(keyVersion.CustomerKeyName)
-	data.CreatedAt = types.StringValue(keyVersion.CreatedAt.Format(time.RFC3339))
+	data.EncryptedDEK = types.StringValue(encryptedDEK)
+	data.CustomerKeyName = types.StringValue(customerKeyName)
+	data.CreatedAt = types.StringValue(createdAt.Format(time.RFC3339))
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

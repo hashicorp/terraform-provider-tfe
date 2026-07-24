@@ -4,8 +4,10 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"testing"
 	"time"
 
@@ -69,6 +71,43 @@ func TestAccTFEOrgMaxTokenTTLPolicyDataSource_withResource(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestFetchTokenTTLPoliciesV2_largeMaxTTL(t *testing.T) {
+	orgName := "hashicorp"
+
+	// 5 years in milliseconds, matching the acceptance test's "5y" case.
+	// This exceeds math.MaxInt32 (2147483647) and would previously fail to
+	// deserialize when max-ttl-ms was typed as *int32.
+	const largeMaxTTLMs = int64(157680000000)
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/v2/organizations/"+orgName+"/token-ttl-policies", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		fmt.Fprintf(w, `{"data": [
+			{"id": "ttl-1", "type": "organization-token-ttl-policies", "attributes": {"token-type": "organization", "max-ttl-ms": %d}},
+			{"id": "ttl-2", "type": "organization-token-ttl-policies", "attributes": {"token-type": "user", "max-ttl-ms": %d}}
+		]}`, int64(2592000000), largeMaxTTLMs)
+	})
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, `{"errors":[{"status":"404","title":"not found"}]}`, http.StatusNotFound)
+	})
+
+	client := testTfeClientV2(t, mux)
+
+	resp, err := client.API.Organizations().ByOrganization_name(orgName).TokenTtlPolicies().Get(context.Background(), nil)
+	if err != nil {
+		t.Fatalf("expected no error deserializing a max-ttl-ms beyond int32 range, got: %v", err)
+	}
+
+	result := modelFromTokenTTLPoliciesData(orgName, resp.GetData())
+
+	if got := result.UserTokenMaxTTLMs.ValueInt64(); got != largeMaxTTLMs {
+		t.Fatalf("wrong user_token_max_ttl_ms\ngot: %d\nwant: %d", got, largeMaxTTLMs)
+	}
+	if got := result.OrgTokenMaxTTLMs.ValueInt64(); got != 2592000000 {
+		t.Fatalf("wrong org_token_max_ttl_ms\ngot: %d\nwant: %d", got, 2592000000)
+	}
 }
 
 func testAccTFEOrgMaxTokenTTLPolicyDataSourceConfig_basic(orgName string) string {
