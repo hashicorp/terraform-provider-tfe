@@ -50,23 +50,16 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 	waitForRun := runArgs["wait_for_run"].(bool)
 	manualConfirm := runArgs["manual_confirm"].(bool)
 	msg, _ := runArgs["message"].(string)
-	allowConfigVersionMissing, _ := runArgs["allow_config_version_missing"].(bool)
 
 	run, err := createRun(config.Client, waitForRun, manualConfirm, isDestroyRun, ws, msg)
 
 	if err != nil {
-		// If the workspace has no configuration version (for example, an empty
-		// workspace that never had a configuration uploaded), the run cannot be
-		// created. When allow_config_version_missing is set, treat this as a
-		// no-op success so that destroying an empty workspace does not fail.
-		//
-		// This is only honored for destroy runs. On the apply path a synthetic
-		// ID here would be re-read by resourceTFEWorkspaceRunRead, fail to
-		// resolve, and drop the resource from state, causing a perpetual diff.
-		// The apply block is additionally prevented from setting this flag via
-		// CustomizeDiff, so this branch should never be reached during create.
-		if isDestroyRun && allowConfigVersionMissing && isConfigVersionMissingErr(err) {
-			log.Printf("[WARN] Configuration version is missing for workspace %s; skipping destroy run because allow_config_version_missing is set", ws.ID)
+		// A destroy run against a workspace with no configuration version
+		// (e.g. an empty workspace that never had config uploaded) cannot be
+		// created. This is analogous to destroying an already-absent resource,
+		// so treat it as a no-op success.
+		if isDestroyRun && isConfigVersionMissingErr(err) {
+			log.Printf("[WARN] Configuration version is missing for workspace %s; treating destroy as a no-op because there is nothing to destroy", ws.ID)
 			d.SetId(fmt.Sprintf("%d", rand.New(rand.NewSource(time.Now().UnixNano())).Int()))
 			return nil
 		}
