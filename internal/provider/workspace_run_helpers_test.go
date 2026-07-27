@@ -4,12 +4,87 @@
 package provider
 
 import (
+	"errors"
 	"testing"
 
 	tfe "github.com/hashicorp/go-tfe"
 	tfemocks "github.com/hashicorp/go-tfe/mocks"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"go.uber.org/mock/gomock"
 )
+
+func TestCreateWorkspaceRun_destroyNoOpsOnMissingConfigVersion(t *testing.T) {
+	configVersionMissingErr := errors.New("error creating run for workspace ws-empty: unprocessable entity\n\nConfiguration version is missing")
+
+	client := testTfeClient(t, testClientOptions{defaultWorkspaceID: "ws-empty"})
+
+	if _, err := client.Workspaces.Create(ctx, "hashicorp", tfe.WorkspaceCreateOptions{
+		Name: tfe.String("empty"),
+	}); err != nil {
+		t.Fatalf("error creating mock workspace: %v", err)
+	}
+
+	ctrl := gomock.NewController(t)
+	mockRunsAPI := tfemocks.NewMockRuns(ctrl)
+	mockRunsAPI.
+		EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		Return(nil, configVersionMissingErr).
+		AnyTimes()
+	client.Runs = mockRunsAPI
+
+	d := schema.TestResourceDataRaw(t, resourceTFEWorkspaceRun().Schema, map[string]interface{}{
+		"workspace_id": "ws-empty",
+		"destroy": []interface{}{
+			map[string]interface{}{
+				"manual_confirm": false,
+				"wait_for_run":   true,
+			},
+		},
+	})
+
+	meta := ConfiguredClient{Client: client, Organization: "hashicorp"}
+
+	err := createWorkspaceRun(d, meta, true, 0)
+	if err != nil {
+		t.Fatalf("expected destroy to no-op on missing config version, got error: %v", err)
+	}
+	if d.Id() == "" {
+		t.Fatal("expected a placeholder ID to be set on no-op destroy")
+	}
+}
+
+func TestIsConfigVersionMissingErr(t *testing.T) {
+	testCases := map[string]struct {
+		err      error
+		expected bool
+	}{
+		"nil error": {
+			nil,
+			false,
+		},
+		"unrelated error": {
+			errors.New("some other error"),
+			false,
+		},
+		"configuration version missing error": {
+			errors.New("error creating run for workspace ws-123: unprocessable entity\n\nConfiguration version is missing"),
+			true,
+		},
+		"lowercase configuration version missing error": {
+			errors.New("configuration version is missing"),
+			true,
+		},
+	}
+
+	for name, testCase := range testCases {
+		t.Run(name, func(t *testing.T) {
+			if got := isConfigVersionMissingErr(testCase.err); got != testCase.expected {
+				t.Fatalf("expected %t, got %t", testCase.expected, got)
+			}
+		})
+	}
+}
 
 func MockRunsListForWorkspaceQueue(t *testing.T, client *tfe.Client, workspaceIDWithExpectedRun string, workspaceIDWithUnexpectedRun string) {
 	ctrl := gomock.NewController(t)
