@@ -204,6 +204,8 @@ Both `apply` and `destroy` block supports:
 * `wait_for_run` - (Optional) Whether or not to wait for a run to reach completion before considering this a success. When set to `false`, the provider considers the `tfe_workspace_run` resource to have been created immediately after the run has been queued. When set to `true`, the provider waits for a successful apply on the target workspace to have applied successfully (or if it resulted in a no-change plan). Defaults to `true`.
 * `message` - (Optional) A custom message to associate with the run. If omitted, the default run message is used. Defaults to `Triggered by tfe_workspace_run resource via terraform-provider-tfe on <date>`.
 
+~> **Note:** If a `destroy` run cannot be created because the workspace has no configuration version (for example, an empty workspace that never had a configuration uploaded), the destroy is automatically treated as a no-op success. This follows the standard Terraform convention of treating the destruction of an already-absent resource as a success.
+
 
 
 ## Attributes Reference
