@@ -85,12 +85,13 @@ func (d *dataSourceOrganizationRunTask) Metadata(_ context.Context, req datasour
 
 func (d *dataSourceOrganizationRunTask) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Gets information on an [Organization Run task](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks#creating-a-run-task).",
+		MarkdownDescription: "Gets information on an [Organization Run task](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks#creating-a-run-task)." +
+			"\n\n[Run tasks](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks) allow HCP Terraform to interact with external systems at specific points in the HCP Terraform run lifecycle. Run tasks are reusable configurations that you can attach to any workspace in an organization.",
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Service-generated identifier for the task.",
+				Description: "The ID for the Run task.",
 			},
 			"name": schema.StringAttribute{
 				Description: "Name of the Run task.",

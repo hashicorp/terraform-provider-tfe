@@ -153,8 +153,9 @@ func (r *resourceTFENotificationConfiguration) Metadata(_ context.Context, req r
 // Schema implements resource.Resource
 func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Defines a notification configuration Resource. HCP Terraform can be configured to send notifications for run state transitions. Notification configurations allow you to specify a URL, destination type, and what events will trigger the notification. Each workspace can have up to 20 notification configurations, and they apply to all runs for that workspace.\n\n~> **NOTE:** The `url_wo` and `token_wo` arguments are write-only alternatives to `url` and `token` that are never stored in Terraform state. They are recommended over their plaintext equivalents.",
-		Version:             0,
+		MarkdownDescription: "Manages a notification configuration Resource." +
+			"\n\nHCP Terraform can be configured to send notifications for run state transitions. Notification configurations allow you to specify a URL, destination type, and what events will trigger the notification. Each workspace can have up to 20 notification configurations, and they apply to all runs for that workspace.\n\n~> **NOTE:** The `url_wo` and `token_wo` arguments are write-only alternatives to `url` and `token` that are never stored in Terraform state. They are recommended over their plaintext equivalents.",
+		Version: 0,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

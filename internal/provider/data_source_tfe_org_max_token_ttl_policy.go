@@ -45,11 +45,12 @@ func (d *dataSourceTFEOrgMaxTokenTTLPolicy) Metadata(_ context.Context, req data
 
 func (d *dataSourceTFEOrgMaxTokenTTLPolicy) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Retrieves the maximum time-to-live (TTL) policy for API tokens in an organization. " +
-			"This data source fetches the current TTL limits for organization, team, audit trail, " +
-			"and user tokens from the database.\n\n" +
-			"~> **Note:** This data source requires using the provider with HCP Terraform or an instance of Terraform Enterprise at least as recent as v2.0.1.\n\n" +
-			"~> **Warning:** Maximum TTL policies are enforced immediately. Any existing tokens that exceed configured limits will stop working and return an unauthorized error.",
+		Description: "Retrieves the maximum time-to-live (TTL) policy for API tokens in an organization. This data source fetches the current TTL limits for organization, team, audit trail, and user tokens." +
+			"\n\n~> **Note:** This data source requires using the provider with HCP Terraform or an instance of Terraform Enterprise at least as recent as v2.0.1." +
+			"\n\n~> **Warning:** Maximum TTL policies are enforced immediately. Any existing tokens that exceed configured limits will stop working and return an \"Unauthorized\" error." +
+			"\n\nEach token type exposes two attributes: a human-readable duration string (e.g. `org_token_max_ttl`) and a millisecond integer (e.g. `org_token_max_ttl_ms`). Use the duration string for display; use milliseconds for time arithmetic or comparisons." +
+			"\n\nIf no TTL policy has been configured for a token type, the data source returns a default value of 2 years for that type." +
+			"\n\nTo check whether the max TTL feature is enabled for an organization, use the `max_ttl_enabled` attribute on the `tfe_organization` resource or data source.",
 
 		Attributes: map[string]schema.Attribute{
 			"organization": schema.StringAttribute{
@@ -74,19 +75,19 @@ func (d *dataSourceTFEOrgMaxTokenTTLPolicy) Schema(_ context.Context, _ datasour
 				Computed:    true,
 			},
 			"org_token_max_ttl": schema.StringAttribute{
-				Description: "Maximum lifespan allowed for organization tokens in human-readable duration format (e.g., '30d', '6mo', '2y').",
+				Description: "Maximum lifespan allowed for organization tokens in human-readable duration format (e.g., `30d`, `6mo`, `2y`).",
 				Computed:    true,
 			},
 			"team_token_max_ttl": schema.StringAttribute{
-				Description: "Maximum lifespan allowed for team tokens in human-readable duration format (e.g., '30d', '6mo', '2y').",
+				Description: "Maximum lifespan allowed for team tokens in human-readable duration format (e.g., `30d`, `6mo`, `2y`).",
 				Computed:    true,
 			},
 			"audit_trail_token_max_ttl": schema.StringAttribute{
-				Description: "Maximum lifespan allowed for audit trail tokens in human-readable duration format (e.g., '30d', '6mo', '2y').",
+				Description: "Maximum lifespan allowed for audit trail tokens in human-readable duration format (e.g., `30d`, `6mo`, `2y`).",
 				Computed:    true,
 			},
 			"user_token_max_ttl": schema.StringAttribute{
-				Description: "Maximum lifespan allowed for user tokens in human-readable duration format (e.g., '30d', '6mo', '2y').",
+				Description: "Maximum lifespan allowed for user tokens in human-readable duration format (e.g., `30d`, `6mo`, `2y`).",
 				Computed:    true,
 			},
 		},

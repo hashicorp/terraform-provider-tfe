@@ -17,7 +17,7 @@ import (
 
 func dataSourceTFESSHKey() *schema.Resource {
 	return &schema.Resource{
-		Description: "Get information on an SSH key.",
+		Description: "Gets information on an SSH key.",
 
 		Read: dataSourceTFESSHKeyRead,
 

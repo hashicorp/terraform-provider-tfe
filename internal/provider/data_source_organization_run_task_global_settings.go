@@ -32,7 +32,8 @@ func (d *dataSourceOrganizationRunTaskGlobalSettings) Metadata(_ context.Context
 
 func (d *dataSourceOrganizationRunTaskGlobalSettings) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "[Run tasks](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks) allow HCP Terraform to interact with external systems at specific points in the HCP Terraform run lifecycle. Run tasks are reusable configurations that you can attach to any workspace in an organization. <br><br> The tfe_organization_run_task_global_settings resource creates, updates and destroys the [global settings](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks#global-run-tasks) for an [Organization Run task](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks#creating-a-run-task). Your organization must have the `global-run-task` [entitlement](https://developer.hashicorp.com/terraform/cloud-docs/api-docs#feature-entitlements) to use global run tasks.",
+		MarkdownDescription: "Gets information on a Run task's global settings." +
+			"\n\n[Run tasks](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks) allow HCP Terraform to interact with external systems at specific points in the HCP Terraform run lifecycle. Run tasks are reusable configurations that you can attach to any workspace in an organization. \n\n The tfe_organization_run_task_global_settings resource creates, updates and destroys the [global settings](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks#global-run-tasks) for an [Organization Run task](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks#creating-a-run-task). Your organization must have the `global-run-task` [entitlement](https://developer.hashicorp.com/terraform/cloud-docs/api-docs#feature-entitlements) to use global run tasks.",
 
 		Attributes: map[string]schema.Attribute{
 			"enabled": schema.BoolAttribute{
@@ -45,7 +46,7 @@ func (d *dataSourceOrganizationRunTaskGlobalSettings) Schema(_ context.Context, 
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Service-generated identifier for the task settings.",
+				Description: "The ID for the task settings.",
 			},
 			"stages": schema.ListAttribute{
 				ElementType:         types.StringType,

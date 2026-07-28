@@ -30,29 +30,29 @@ type outputsEphemeralResource struct {
 
 func (e *outputsEphemeralResource) Schema(ctx context.Context, req ephemeral.SchemaRequest, resp *ephemeral.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "This ephemeral resource can be used to retrieve a workspace's state outputs without saving them in state.\n\n" +
-			"~> **Warning:** Ephemeral resources are a new feature and may evolve as we continue to explore their most effective uses. [Learn more](https://developer.hashicorp.com/terraform/language/v1.10.x/resources/ephemeral).\n\n" +
-			"~> **Note:** Regardless of output sensitivity in HCP Terraform, this ephemeral resource marks `values` as sensitive and mirrors non-sensitive entries in `nonsensitive_values`.",
+		Description: "This ephemeral resource can be used to retrieve a state outputs for a given workspace. It enables output values in one Terraform configuration to be used in another. The retrieved output values are guaranteed not to be written to state." +
+			"\n\n~> **Warning:** Ephemeral resources are a new feature and may evolve as we continue to explore their most effective uses. [Learn more](https://developer.hashicorp.com/terraform/language/v1.10.x/resources/ephemeral)." +
+			"\n\n~> **Note:** Regardless of sensitivity of the output values as set in HCP Terraform, this ephemeral resource treats both `values` and `nonsensitive_values` as sensitive.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				MarkdownDescription: `System-generated unique identifier for the resource.`,
+				MarkdownDescription: "System-generated unique identifier for the resource. Do not rely on this value.",
 				Computed:            true,
 			},
 			"organization": schema.StringAttribute{
-				MarkdownDescription: `Name of the organization.`,
+				MarkdownDescription: "Name of the organization. If omitted, the organization must be defined in the provider config.",
 				Optional:            true,
 				Computed:            true,
 			},
 			"workspace": schema.StringAttribute{
-				MarkdownDescription: `Name of the workspace.`,
+				MarkdownDescription: "Name of the workspace.",
 				Required:            true,
 			},
 			"values": schema.DynamicAttribute{
-				MarkdownDescription: `Values of the workspace outputs.`,
+				MarkdownDescription: "The current output values for the specified workspace.",
 				Computed:            true,
 			},
 			"nonsensitive_values": schema.DynamicAttribute{
-				MarkdownDescription: `Non-sensitive values of the workspace outputs.`,
+				MarkdownDescription: "The current non-sensitive output values for the specified workspace, this is a subset of all output values.",
 				Computed:            true,
 			},
 		},

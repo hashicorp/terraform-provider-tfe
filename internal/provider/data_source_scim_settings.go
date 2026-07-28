@@ -46,7 +46,8 @@ func (d *dataSourceTFESCIMSettings) Metadata(_ context.Context, req datasource.M
 // Schema defines the schema for the data source.
 func (d *dataSourceTFESCIMSettings) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Reads the current SCIM provisioning settings for the Terraform Enterprise instance.",
+		Description: "(Only for Terraform Enterprise) Gets information on SCIM settings." +
+			"\n\nRequires admin token configuration. See example usage for incorporating an admin token in your provider config.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,
@@ -54,19 +55,19 @@ func (d *dataSourceTFESCIMSettings) Schema(_ context.Context, _ datasource.Schem
 			},
 			"enabled": schema.BoolAttribute{
 				Computed:    true,
-				Description: "Whether SCIM provisioning is enabled for the Terraform Enterprise instance.",
+				Description: "Whether SCIM provisioning is enabled.",
 			},
 			"paused": schema.BoolAttribute{
 				Computed:    true,
-				Description: "Whether SCIM provisioning is paused for the Terraform Enterprise instance.",
+				Description: "Whether SCIM provisioning is paused.",
 			},
 			"site_admin_group_scim_id": schema.StringAttribute{
 				Computed:    true,
-				Description: "The SCIM ID of the group whose members are granted site admin privileges. Empty when no group is linked.",
+				Description: "The SCIM ID of the SCIM group whose members are granted site admin privileges. Empty when no group is linked.",
 			},
 			"site_admin_group_display_name": schema.StringAttribute{
 				Computed:    true,
-				Description: "The display name of the group whose members are granted site admin privileges.",
+				Description: "The display name of the SCIM group whose members are granted site admin privileges.",
 			},
 		},
 	}

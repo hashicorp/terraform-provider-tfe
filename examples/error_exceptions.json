@@ -24,15 +24,14 @@
     "resources/tfe_ssh_key/resource.tf": [
       "Available Write-Only Attribute Alternative"
     ],
-    "resources/tfe_audit_trail_token/resource_basic_usage.tf": [
+    "resources/tfe_audit_trail_token/resource_token_with_expiry.tf": [
       "Missing required provider"
     ],
     "resources/tfe_team_token/resource_basic_usage.tf": [
       "Missing required provider"
     ],
     "resources/tfe_organization_module_sharing/resource.tf": [
-      "Deprecated Resource",
-      "Argument is deprecated"
+      "Deprecated Resource"
     ],
     "resources/tfe_sentinel_policy/resource.tf": [
       "Deprecated Resource"
@@ -40,16 +39,7 @@
     "data-sources/tfe_workspace_ids/data-source.tf": [
       "Argument is deprecated"
     ],
-    "resources/tfe_opa_version/resource.tf": [
-      "Attribute Deprecated"
-    ],
-    "resources/tfe_sentinel_version/resource.tf": [
-      "Attribute Deprecated"
-    ],
-    "resources/tfe_terraform_version/resource.tf": [
-      "Attribute Deprecated"
-    ],
-    "data-sources/tfe_outputs/data-source_in_the_example_below_assume_we_have_outputs_defined_in_a_my_orgmy_workspace.tf": [
+    "data-sources/tfe_outputs/data-source.tf": [
       "Missing required provider"
     ],
     "ephemeral-resources/tfe_outputs/ephemeral-resource_in_the_example_below_assume_we_have_outputs_defined_in_a_my_orgmy_workspace.tf": [

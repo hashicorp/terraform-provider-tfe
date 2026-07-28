@@ -129,7 +129,7 @@ func resourceTFETeam() *schema.Resource {
 							Default:     false,
 						},
 						"manage_projects": {
-							Description: "Allow members to create and administrate all projects within the organization. Requires manage_workspaces to be set to true.",
+							Description: "Allow members to create and administrate all projects within the organization. Requires `manage_workspaces` to be set to `true`.",
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Default:     false,
@@ -141,7 +141,7 @@ func resourceTFETeam() *schema.Resource {
 							Default:     false,
 						},
 						"read_projects": {
-							Description: "Allow members to view all projects within the organization. Requires read_workspaces to be set to true.",
+							Description: "Allow members to view all projects within the organization. Requires `read_workspaces` to be set to `true`.",
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Default:     false,
@@ -190,12 +190,12 @@ func resourceTFETeam() *schema.Resource {
 				}, false),
 			},
 			"sso_team_id": {
-				Description: "Unique identifier to control [team membership](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/single-sign-on#team-names-and-sso-team-ids) via SAML. Defaults to null.",
+				Description: "Unique identifier to control [team membership](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/single-sign-on#team-names-and-sso-team-ids) via SAML. Defaults to `null`.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
 			"allow_member_token_management": {
-				Description: "Whether team members can manage team tokens. Used by Owners and users with Manage Teams permissions. Defaults to true.",
+				Description: "Whether team members can manage team tokens. Used by Owners and users with Manage Teams permissions. Defaults to `true`.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,

@@ -52,21 +52,21 @@ func (r *resourceStackVariableSet) Schema(ctx context.Context, req resource.Sche
 		Description: "Manages associations between variable sets and stacks.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "The ID of the stack variable set association.",
+				Description: "The ID of the stack variable set association in the format `stack/varset`.",
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"variable_set_id": schema.StringAttribute{
-				Description: "The ID of the variable set.",
+				Description: "The ID of the variable set to add to the stack.",
 				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(), // Follows tfe_workspace_variable_set and tfe_project_variable_set pattern
 				},
 			},
 			"stack_id": schema.StringAttribute{
-				Description: "The ID of the stack.",
+				Description: "The ID of the stack to which to add the variable set.",
 				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(), // Follows tfe_workspace_variable_set and tfe_project_variable_set pattern

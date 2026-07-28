@@ -21,8 +21,8 @@ import (
 
 func resourceTFEProjectVariableSet() *schema.Resource {
 	return &schema.Resource{
-		Description: "Adds and removes a project from a variable set's scope.\n\n" +
-			"-> **Note:** This resource controls whether a project has access to a variable set, not whether a project owns the variable set. Ownership is specified by setting the `parent_project_id` on the `tfe_variable_set` resource.",
+		Description: "Adds and removes a variable set to a project." +
+			"\n\n-> **Note:** This resource controls whether a project has access to a variable set, not whether a project owns the variable set. Ownership is specified by setting the `parent_project_id` on the `tfe_variable_set` resource.",
 
 		Create: resourceTFEProjectVariableSetCreate,
 		Read:   resourceTFEProjectVariableSetRead,

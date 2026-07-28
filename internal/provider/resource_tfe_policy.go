@@ -23,7 +23,9 @@ import (
 
 func resourceTFEPolicy() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manages policies, which are rules enforced on Terraform runs.",
+		Description: "Manages policies." +
+			"\n\nPolicies are rules enforced on Terraform runs. You can use policies to validate that the Terraform plan complies with security rules and best practices. Two policy-as-code frameworks are integrated with Terraform Enterprise: Sentinel and Open Policy Agent (OPA)." +
+			"\n\nPolicies are configured on a per-organization level and are organized and grouped into policy sets, which define the workspaces on which policies are enforced during runs.",
 
 		Create: resourceTFEPolicyCreate,
 		Read:   resourceTFEPolicyRead,
@@ -76,7 +78,7 @@ func resourceTFEPolicy() *schema.Resource {
 			},
 
 			"organization": {
-				Description: "Name of the organization that this policy belongs to.",
+				Description: "Name of the organization that this policy belongs to. If omitted, organization must be defined in the provider config.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
@@ -84,7 +86,7 @@ func resourceTFEPolicy() *schema.Resource {
 			},
 
 			"kind": {
-				Description: "The policy-as-code framework for the policy. Valid values are sentinel and opa.",
+				Description: "The policy-as-code framework for the policy. Valid values are `sentinel` and `opa`. Defaults to `sentinel` if not provided.",
 				Type:        schema.TypeString,
 				ForceNew:    true,
 				Optional:    true,
@@ -97,7 +99,7 @@ func resourceTFEPolicy() *schema.Resource {
 			},
 
 			"query": {
-				Description: "The OPA query to run. Required for OPA policies.",
+				Description: "The OPA query to identify a specific policy rule that needs to run within your Rego code. Required for OPA policies.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
@@ -111,7 +113,7 @@ func resourceTFEPolicy() *schema.Resource {
 			"enforce_mode": {
 				Type: schema.TypeString,
 				Description: fmt.Sprintf(
-					"The enforcement configuration of the policy. For Sentinel, valid values are %s. For OPA, valid values are %s.", sentenceList(
+					"The enforcement configuration of the policy. For Sentinel, valid values are %s. For OPA, valid values are %s. Defaults to `%s`.", sentenceList(
 						sentinelPolicyEnforcementLevels(),
 						"`",
 						"`",
@@ -120,7 +122,8 @@ func resourceTFEPolicy() *schema.Resource {
 						opaPolicyEnforcementLevels(),
 						"`",
 						"`",
-						"and")),
+						"and"),
+					string(tfe.EnforcementAdvisory)),
 				Optional: true,
 				Computed: true,
 				ValidateFunc: validation.StringInSlice(

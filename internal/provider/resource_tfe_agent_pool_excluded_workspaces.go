@@ -19,8 +19,8 @@ import (
 
 func resourceTFEAgentPoolExcludedWorkspaces() *schema.Resource {
 	return &schema.Resource{
-		Description: "Adds and removes excluded workspaces on an agent pool.\n\n" +
-			"~> **Note:** This resource requires using the provider with HCP Terraform and a HCP Terraform for Business tier plan.",
+		Description: "Adds and removes excluded workspaces on an agent pool." +
+			"\n\n~> **Note:** This resource requires using the provider with HCP Terraform and a HCP Terraform for Business account. [Learn more about HCP Terraform pricing here](https://www.hashicorp.com/products/terraform/pricing).",
 
 		Create: resourceTFEAgentPoolExcludedWorkspacesCreate,
 		Read:   resourceTFEAgentPoolExcludedWorkspacesRead,

@@ -41,9 +41,9 @@ func (r *resourceTFEStack) Metadata(ctx context.Context, req resource.MetadataRe
 
 func (r *resourceTFEStack) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Defines a Stack resource.\n\n" +
-			"~> **Note:** A stack may not be destroyed until all resources within its deployments have been destroyed.\n\n" +
-			"~> **Note:** Stack support is currently pre-release/beta and subject to change.",
+		Description: "Defines a Stack resource." +
+			"\n\n~> **Note:** A stack may not be destroyed until all resources within its deployments have been destroyed." +
+			"\n\n~> **Note:** Stack support is currently pre-release/beta and subject to change.",
 		Version: 1,
 
 		Blocks: map[string]schema.Block{
@@ -51,11 +51,11 @@ func (r *resourceTFEStack) Schema(ctx context.Context, req resource.SchemaReques
 				Description: "VCS repository configuration for the Stack.",
 				Attributes: map[string]schema.Attribute{
 					"identifier": schema.StringAttribute{
-						Description: "Identifier of the VCS repository.",
+						Description: "A reference to your VCS repository in the format `<vcs organization>/<repository>` where `<vcs organization>` and `<repository>` refer to the organization and repository in your VCS provider. The format for Azure DevOps is `<ado organization>/<ado project>/_git/<ado repository>`.",
 						Optional:    true,
 					},
 					"branch": schema.StringAttribute{
-						Description: "The repository branch that Terraform should use. This defaults to the repository's default branch (e.g. main).",
+						Description: "The repository branch that Terraform will execute from. This defaults to the repository's default branch (e.g. main).",
 						Optional:    true,
 					},
 					"github_app_installation_id": schema.StringAttribute{
@@ -63,12 +63,14 @@ func (r *resourceTFEStack) Schema(ctx context.Context, req resource.SchemaReques
 						Optional:            true,
 					},
 					"oauth_token_id": schema.StringAttribute{
-						MarkdownDescription: "The VCS Connection to use. This ID can be obtained from a `tfe_oauth_client` resource. This conflicts with `github_app_installation_id` and can only be used if `github_app_installation_id` is not used.",
+						MarkdownDescription: "The VCS Connection (OAuth Connection + Token) to use. This ID can be obtained from a `tfe_oauth_client` resource. This conflicts with `github_app_installation_id` and can only be used if `github_app_installation_id` is not used.",
 						Optional:            true,
 					},
 				},
 			},
 		},
+
+		// Proposed inclusion for force_delete, following its implementation: "If this argument is true, the stack will be deleted during destroy plans even if it contains deployments that have managed resources. You may need to apply this change to the stack before running terraform destroy. Without this argument, all resources managed by stacks deployments need to be destroyed before the stack may be destroyed."
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -119,7 +121,7 @@ func (r *resourceTFEStack) Schema(ctx context.Context, req resource.SchemaReques
 				ElementType: types.StringType,
 			},
 			"speculative_enabled": schema.BoolAttribute{
-				Description: "Indicates if speculative plans are enabled on this Stack.",
+				Description: "Whether this Stack allows automatic speculative plans. Setting this to `true` will allow Terraform to run plans on pull requests. Defaults to `false.`",
 				Optional:    true,
 				Computed:    true,
 			},

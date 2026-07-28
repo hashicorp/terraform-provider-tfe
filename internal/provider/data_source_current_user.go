@@ -44,7 +44,7 @@ func (d *dataSourceCurrentUser) Schema(_ context.Context, _ datasource.SchemaReq
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,
-				MarkdownDescription: "Service-generated identifier for the user.",
+				MarkdownDescription: "The ID for the user.",
 			},
 			"username": schema.StringAttribute{
 				Computed:            true,

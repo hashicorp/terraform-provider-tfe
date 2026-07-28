@@ -77,7 +77,7 @@ func (r *resourceOrganizationRunTaskGlobalSettings) Schema(_ context.Context, _ 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Service-generated identifier for the task.",
+				Description: "The ID of the Run task global settings.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -102,7 +102,7 @@ func (r *resourceOrganizationRunTaskGlobalSettings) Schema(_ context.Context, _ 
 			},
 			"stages": schema.ListAttribute{
 				ElementType: types.StringType,
-				Description: fmt.Sprintf("Which stages the task will run in. Valid values are %s.", sentenceList(
+				Description: fmt.Sprintf("Which stages the task will run in. Valid values are one or more of %s.", sentenceList(
 					workspaceRunTaskStages(),
 					"`",
 					"`",
@@ -118,7 +118,7 @@ func (r *resourceOrganizationRunTaskGlobalSettings) Schema(_ context.Context, _ 
 				Required: true,
 			},
 			"task_id": schema.StringAttribute{
-				Description: "The id of the run task.",
+				Description: "The ID of the run task which will have the global settings applied.",
 				Required:    true,
 				// When the task changes force a replace
 				PlanModifiers: []planmodifier.String{

@@ -22,7 +22,8 @@ import (
 
 func resourceTFETeamProjectAccess() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manages a team's permissions on a project.",
+		Description: "Manages permissions to a team on a project." +
+			"\n\nIf using `custom` for `access`, you can set the levels of individual permissions that affect the project itself and all workspaces in the project, by using `project_access` and `workspace_access` arguments and their associated permission attributes. When using custom access, if attributes are not set they will be given a default value.",
 
 		CreateContext: resourceTFETeamProjectAccessCreate,
 		ReadContext:   resourceTFETeamProjectAccessRead,
@@ -43,7 +44,7 @@ func resourceTFETeamProjectAccess() *schema.Resource {
 			},
 
 			"access": {
-				Description: "Type of fixed access to grant. Valid values are admin, maintain, write, read, or custom.",
+				Description: "Type of fixed access to grant. Valid values are `admin`, `maintain`, `write`, `read`, or `custom`.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ValidateFunc: validation.StringInSlice(
@@ -73,14 +74,14 @@ func resourceTFETeamProjectAccess() *schema.Resource {
 			},
 
 			"project_access": {
-				Description: "Settings for the team's custom permissions on the project itself. Only used when access is custom.",
+				Description: "Settings for the team's custom permissions on the project itself. Only used when `access` is `custom`.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"settings": {
-							Description: "The permission to grant for the project's settings. Default: read. Valid strings: read, update, or delete.",
+							Description: "The permission to grant for the project's settings. Default: `read`. Valid strings: `read`, `update`, or `delete`.",
 							Type:        schema.TypeString,
 							Optional:    true,
 							Computed:    true,
@@ -95,7 +96,7 @@ func resourceTFETeamProjectAccess() *schema.Resource {
 						},
 
 						"teams": {
-							Description: "The permission to grant for the project's teams. Default: none. Valid strings: none, read, or manage.",
+							Description: "The permission to grant for the project's teams. Default: `none`. Valid strings: `none`, `read`, or `manage`.",
 							Type:        schema.TypeString,
 							Optional:    true,
 							Computed:    true,
@@ -110,7 +111,7 @@ func resourceTFETeamProjectAccess() *schema.Resource {
 						},
 
 						"variable_sets": {
-							Description: "The permission to grant for the project's variable sets. Default: none. Valid strings: none, read, or write.",
+							Description: "The permission to grant for the project's variable sets. Default: `none`. Valid strings:  `none`, `read`, or `write`.",
 							Type:        schema.TypeString,
 							Optional:    true,
 							Computed:    true,
@@ -128,56 +129,56 @@ func resourceTFETeamProjectAccess() *schema.Resource {
 			},
 
 			"workspace_access": {
-				Description: "Settings for the team's custom permissions on all workspaces (and future workspaces) in the project. Only used when access is custom.",
+				Description: "Settings for the team's custom permissions on all workspaces (and future workspaces) in the project. Only used when `access` is `custom`.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"create": {
-							Description: "The permission to create the project's workspaces in the project. Default: false.",
+							Description: "The permission to create the project's workspaces in the project. Default: `false`.",
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Computed:    true,
 						},
 
 						"locking": {
-							Description: "The permission to manually lock or unlock the project's workspaces. Default: false.",
+							Description: "The permission to manually lock or unlock the project's workspaces. Default: `false`.",
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Computed:    true,
 						},
 
 						"move": {
-							Description: "The permission to move workspaces into and out of the project. The team must also have permissions to the project(s) receiving the workspace(s). Default: false.",
+							Description: "The permission to move workspaces into and out of the project. The team must also have permissions to the project(s) receiving the workspace(s). Default: `false`.",
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Computed:    true,
 						},
 
 						"delete": {
-							Description: "The permission to delete the project's workspaces. Default: false.",
+							Description: "The permission to delete the project's workspaces. Default: `false`.",
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Computed:    true,
 						},
 
 						"run_tasks": {
-							Description: "The permission to manage run tasks within the project's workspaces. Default: false.",
+							Description: "The permission to manage run tasks within the project's workspaces. Default: `false`.",
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Computed:    true,
 						},
 
 						"policy_overrides": {
-							Description: "Allows a team to override soft-mandatory policy evaluations, provided that team has been granted the org level delegate policy overrides permission. Default: false.",
+							Description: "Allows a team to override soft-mandatory policy evaluations, provided that team has been granted the org level delegate policy overrides permission. Default: `false`.",
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Computed:    true,
 						},
 
 						"runs": {
-							Description: "The permission to grant the project's workspaces' runs. Default: read. Valid strings: read, plan, or apply.",
+							Description: "The permission to grant the project's workspaces' runs. Default: `read`. Valid strings: `read`, `plan`, or `apply`.",
 							Type:        schema.TypeString,
 							Optional:    true,
 							Computed:    true,
@@ -192,7 +193,7 @@ func resourceTFETeamProjectAccess() *schema.Resource {
 						},
 
 						"sentinel_mocks": {
-							Description: "The permission to grant the project's workspaces' Sentinel mocks. Default: none. Valid strings: none, or read.",
+							Description: "The permission to grant the project's workspaces' Sentinel mocks. Default: `none`. Valid strings: `none`, or `read`.",
 							Type:        schema.TypeString,
 							Optional:    true,
 							Computed:    true,
@@ -206,7 +207,7 @@ func resourceTFETeamProjectAccess() *schema.Resource {
 						},
 
 						"state_versions": {
-							Description: "The permission to grant the project's workspaces' state versions. Default: none. Valid strings: none, read-outputs, read, or write.",
+							Description: "The permission to grant the project's workspaces' state versions. Default: `none`. Valid strings: `none`, `read-outputs`, `read`, or `write`.",
 							Type:        schema.TypeString,
 							Optional:    true,
 							Computed:    true,
@@ -222,7 +223,7 @@ func resourceTFETeamProjectAccess() *schema.Resource {
 						},
 
 						"variables": {
-							Description: "The permission to grant the project's workspaces' variables. Default: none. Valid strings: none, read, or write.",
+							Description: "The permission to grant the project's workspaces' variables. Default: `none`. Valid strings: `none`, `read`, or `write`.",
 							Type:        schema.TypeString,
 							Optional:    true,
 							Computed:    true,

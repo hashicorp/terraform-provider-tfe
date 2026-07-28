@@ -29,8 +29,8 @@ func (d *dataSourceTFEProviderSet) Schema(
 	resp *datasource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "Retrieves a provider set by name.\n\n" +
-			"~> **Warning:** This data source is currently in beta and isn't generally available to all users. It is subject to change or be removed.",
+		Description: "Gets a provider set by name." +
+			"\n\n~> **Warning:** This data source is currently in beta and isn't generally available to all users. It is subject to change or be removed.",
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
 				Description: "The name of the provider set.",
@@ -54,17 +54,17 @@ func (d *dataSourceTFEProviderSet) Schema(
 				Optional:    true,
 			},
 			"workspace_ids": schema.SetAttribute{
-				Description: "The workspace IDs attached to the provider set.",
+				Description: "The IDs of the workspaces attached to the provider set.",
 				ElementType: types.StringType,
 				Computed:    true,
 			},
 			"project_ids": schema.SetAttribute{
-				Description: "The project IDs attached to the provider set.",
+				Description: "The IDs of the projects attached to the provider set.",
 				ElementType: types.StringType,
 				Computed:    true,
 			},
 			"provider_source": schema.StringAttribute{
-				Description: "Source address of the provider, e.g. registry.terraform.io/hashicorp/tfe.",
+				Description: "Source address of the provider, e.g. `registry.terraform.io/hashicorp/tfe`.",
 				Computed:    true,
 			},
 		},
